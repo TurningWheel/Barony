@@ -1,0 +1,19 @@
+You will need the following libraries to build Barony:
+
+ * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it)
+ * libpng
+ * SDL2
+ * SDL2_image
+ * SDL2_net
+ * SDL2_ttf
+
+You will also need the following tools:
+
+ * A working C++ compiler (Visual Studio 2013/2015, MinGW, GCC, or xtools)
+ * CMake (Windows optional)
+
+If you're using Visual Studio, simply open the relevant project file, configure the library and include paths for each project, and build the whole solution to generate the .exe files.
+
+If you're using MinGW or GCC, you'll need to run CMake first, then make.
+
+Keep in mind that there are a lot of references to Steamworks in the code. They should all be #ifdef'd out, but if you get any linker errors about Steamworks, make sure STEAMWORKS is undef'd in main.hpp and try again.

@@ -1,0 +1,23 @@
+id ICON "game.ico"
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Turning Wheel LLC"
+      VALUE "FileDescription", "Barony"
+      VALUE "InternalName", "barony"
+      VALUE "LegalCopyright", "Turning Wheel LLC"
+      VALUE "OriginalFilename", "barony.exe"
+      VALUE "ProductName", "Barony"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

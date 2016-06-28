@@ -1,0 +1,26 @@
+
+#if @Windows@
+	#define WINDOWS
+#endif
+
+#if @Apple@
+	#define APPLE
+#endif
+
+#if @Linux@
+	#define LINUX
+#endif
+
+#if @STEAMWORKS_ENABLED@
+	#define STEAMWORKS
+#endif
+
+#if @NOT_DWORD_DEFINED@
+	/*
+	 * https://msdn.microsoft.com/en-us/library/cc230318.aspx
+	 * A DWORD is a 32-bit unsigned integer (range: 0 through 4294967295 decimal). Because a DWORD is unsigned, its first bit (Most Significant Bit (MSB)) is not reserved for signing. 
+	 * This type is declared as follows:
+	 * typedef unsigned long DWORD, *PDWORD, *LPDWORD;
+	 */
+	typedef unsigned long DWORD;
+#endif

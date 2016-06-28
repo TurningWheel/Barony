@@ -1,0 +1,23 @@
+id ICON "editor.ico"
+1 VERSIONINFO
+FILEVERSION     1,0,0,0
+PRODUCTVERSION  1,0,0,0
+BEGIN
+  BLOCK "StringFileInfo"
+  BEGIN
+    BLOCK "040904E4"
+    BEGIN
+      VALUE "CompanyName", "Turning Wheel LLC"
+      VALUE "FileDescription", "Barony Editor"
+      VALUE "InternalName", "editor"
+      VALUE "LegalCopyright", "Turning Wheel LLC"
+      VALUE "OriginalFilename", "editor.exe"
+      VALUE "ProductName", "Barony Editor"
+    END
+  END
+
+  BLOCK "VarFileInfo"
+  BEGIN
+    VALUE "Translation", 0x409, 1252
+  END
+END

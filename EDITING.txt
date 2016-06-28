@@ -1,0 +1,71 @@
+	
+------ MAP EDITOR ------
+
+Hopefully, you'll find this map editor really intuitive and simple to use out-of-the-box. In the event that you don't, this help file should clear up any misunderstandings.
+
+------ INTRODUCTION ------
+
+Before explaining how the editor works, some information on the nature of the game engine should be explained.
+
+The Barony map editor uses a tilemap to represent world geometry and sprites to represent dynamic objects. Tiles exist in a grid matrix and cannot interact with other tiles or objects by their own volition, though they might occasionally be modified during the game through efforts of certain in-game objects or the game itself. Dynamic objects (or Entities) do not exist in a grid; at run time, they can move and interact freely both with tiles and other entities, and thus are useful for representing things such as characters, items, projectiles, and particles.
+
+Unlike many other tile-based engines which only allow designers to have one tile at a certain X/Y coordinate at once, the Barony editor allows designers to overlap several tiles using a system of _layers_. Every map in Barony has three layers, with the first layer representing the FLOOR, the second representing the WALLS and the third representing the CEILING.
+
+The images for entities (represented by sprites in the editor) and tiles are loaded from their respective text files in the "images" directory and placed into lists when the editor and game start. Since sprites and tiles in the level are referenced by their placement in this textfile (or _index_number_), randomly inserting the names of new images somewhere in the middle of these text files is generally a very bad idea. In the event that certain images listed in either of these textfiles do not exist or fail to be loaded, the game and editor will compensate by using the default "null" image, which should signify designers to an error in their data files.
+
+In the engine, the tile with the 0 index is always drawn completely transparent, but in certain cases in the editor it may appear as a small image with the word "air" written on it.
+
+Now that most of the engine has been explained, we can move onto documenting the various features available in the map editor.
+
+------ THE MENUS ------
+
+The menus at the top of the screen can be used to access a number of important functions.
+
+The File menu lets you create new maps, open existing maps for editing, save your map to disk, and close the editor.
+
+The Edit menu allows you to manipulate objects that you have currently selected with the Select tool, as well as access the undo/redo functions.
+
+The View menu allows you to toggle on and off various settings that change the appearance and functionality of the editor. A check mark is shown next to each option that is currently enabled. The first two options allow you to toggle on and off the toolbox and status bar in the editor, while the "All layers" button allows you to view all the layers in your level at the same time instead of just the current one. In addition, toggling the "Sprites" option lets you hide all the sprites in your level, the "Grid" option lets you toggle the visibility of a grid for the tilemap, and the "3D mode" option lets you view your level from a 3D perspective.
+
+The Map menu allows you to access the Attributes dialog, which lets you change various details of the map you are currently editing. It also gives you access to the Clear Map option, which will clear your entire map of tiles and entities after going through a confirmation window.
+
+The Help menu simply gives you access to an About function, which provides a few details on the authorship of the editor and where to find documentation.
+
+------ THE TOOLBOX ------
+
+Along the right side of the screen, the toolbox is visible by default. The toolbox can be toggled on and off through the View menu mentioned in the previous section.
+
+At the top of the toolbox is a black box with a white rectangle inside of it; this is the minimap, which allows you to quickly ascertain where the screen is relative to the rest of the map. You can also move the screen by holding down the mouse button inside the map and moving the mouse.
+
+Below the minimap is the "Palette ..." and "Sprite ..." buttons. Clicking the Palette button will take you to a screen filled with all the map tiles that you can use to design your level. Placing the cursor over any one of the tiles will cause the editor to display information on the Tile Index at the bottom of the screen, which is occasionally useful for technical reasons. Clicking on any one of the tiles will cause the editor to select that tile and close the palette screen; you can then use the selected tile in the construction of your map.
+
+The "Sprite ..." button allows you to select and place certain sprites into your level in much the same way that you select map tiles from the palette screen. Hovering your mouse over any of the sprites will cause the sprite index to appear at the bottom of the screen; the sprite index determines which entity will spawn in place of the sprite when the map is loaded in-game.
+
+Below the Palette and Sprite buttons, various tool buttons can be found. These buttons are "Point", which lets you paint tiles one at a time; "Brush", which lets you paint multiple tiles at once in a small radius; "Select", which lets you select and manipulate groups of tiles; and "Fill", which lets you fill whole regions of tiles with the currently selected tile.
+
+Below the tool buttons, both the currently selected tile and tile that the mouse is currently hovering over are shown. These two items are simply for reference, though the "Above" tile can be copied to the selected tile at any time by clicking the right mouse button (unless a sprite is under the mouse, in which case the sprite will be selected and duplicated).
+
+------ THE STATUS BAR ------
+
+The status bar shows certain information such as the coordinates of the tile that the mouse is currently over, as well as the layer that the user is currently editing. It also displays the results of certain file operations, such as the saving and loading of map files.
+
+------ THE MAIN VIEWING AREA ------
+
+Outside of the space designated to the menus, toolbox, and status bar, the main editing space can be found. This area is a viewport into a certain section of your level and can be manipulated directly using the mouse.
+
+The following are the controls available to the user when operating in the main viewing area:
+
+Left-click	-	Use the currently selected tool at the cursor's location and in the current layer / select sprites / drop sprites
+Right-click	-	Grab the tile under the mouse in the current layer, or duplicate the sprite under the cursor
+Mouse wheel	-	Change the currently selected layer.
+Arrows		-	Move camera
+S			-	Sprite Palette
+T			-	Tile Palette
+
+In addition, most of the menu functions can be accessed through hotkeys that are listed next to them in the menu.
+
+Note that even if all layers are visible, map editing will only take place in the CURRENTLY SELECTED LAYER, which is visible in the status bar at the bottom of the screen. MAKE SURE you're in the right layer before you start painting tiles and modifying your level! If you can't see where it is you're working because tiles in the foreground are obscuring your view, TURN OFF the "All Layers" option in the View menu at the top of the screen.
+
+------ CONTACT ------
+
+All suggestions, comments, and questions should be sent to: sheridan.rathbun@gmail.com
