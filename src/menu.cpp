@@ -3050,7 +3050,7 @@ void handleMainMenu(bool mode) {
 			firstendmoviealpha[8] = std::min(firstendmoviealpha[8]+2,255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0,firstendmoviealpha[8]),255)<<24;
-			ttfPrintTextColor(ttf16,16+(xres-960)/2,16+(yres-600)/2,color,TRUE,language[1414]);
+			ttfPrintTextColor(ttf16,16,yres-32,color,TRUE,language[1414]);
 		}
 		if( firstendmoviestage>=2 ) {
 			firstendmoviealpha[0] = std::min(firstendmoviealpha[0]+2,255);
@@ -3101,7 +3101,7 @@ void handleMainMenu(bool mode) {
 			secondendmoviealpha[8] = std::min(secondendmoviealpha[8]+2,255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0,secondendmoviealpha[8]),255)<<24;
-			ttfPrintTextColor(ttf16,16+(xres-960)/2,16+(yres-600)/2,color,TRUE,language[1414]);
+			ttfPrintTextColor(ttf16,16,yres-32,color,TRUE,language[1414]);
 		}
 		if( secondendmoviestage>=2 ) {
 			secondendmoviealpha[0] = std::min(secondendmoviealpha[0]+2,255);
