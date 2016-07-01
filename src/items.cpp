@@ -796,11 +796,11 @@ void useItem(Item *item, int player) {
 	if( item == NULL )
 		return;
 
-	if (openedChest[player]) {
+	if (openedChest[player] && itemCategory(item) != SPELL_CAT) {
 		//If a chest is open, put the item in the chest.
 		openedChest[player]->addItemToChestFromInventory(player, item, FALSE);
 		return;
-	} else if( gui_mode == GUI_MODE_SHOP && player==clientnum ) {
+	} else if( gui_mode == GUI_MODE_SHOP && player==clientnum && itemCategory(item) != SPELL_CAT) {
 		bool deal = TRUE;
 		switch( shopkeepertype ) {
 			case 0: // arms & armor

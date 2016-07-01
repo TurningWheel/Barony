@@ -604,6 +604,9 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 	if (!item || !players[player])
 		return;
 
+	if (itemCategory(item) == SPELL_CAT)
+		return;
+
 	if( itemIsEquipped(item, player) == TRUE && !item->canUnequip() ) {
 		messagePlayer(player,language[1087]);
 		item->identified=TRUE;
