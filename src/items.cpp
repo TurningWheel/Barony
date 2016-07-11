@@ -43,6 +43,8 @@ Item *newItem(ItemType type,Status status,Sint16 beatitude,Sint16 count,Uint32 a
 		printlog( "failed to allocate memory for new item!\n" );
 		exit(1);
 	}
+
+	//item->captured_monster = nullptr;
 	
 	// add the item to the inventory
 	if( inventory!=NULL ) {
@@ -1715,4 +1717,14 @@ void Item::apply(int player, Entity *entity) {
 			messagePlayer(player,language[1101], getName());
 		}
 	}
+}
+
+SummonProperties::SummonProperties()
+{
+	//TODO:
+}
+
+SummonProperties::~SummonProperties()
+{
+	//TODO:
 }
