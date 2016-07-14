@@ -17,6 +17,7 @@
 #include "../sound.hpp"
 #include "../net.hpp"
 #include "../magic/magic.hpp"
+#include "../menu.hpp"
 #include "interface.hpp"
 
 
@@ -615,7 +616,7 @@ void updatePlayerInventory() {
 			//Tis a spell.
 			ttfPrintText(ttf12, itemMenuX+50-strlen(itemUseString(currentItem))*TTF12_WIDTH/2, itemMenuY+4, itemUseString(currentItem));
 		}
-		if( mousey<itemMenuY-20 ) {
+		if( mousey<itemMenuY-20) {
 			itemMenuSelected=-1; // for cancelling out
 		}
 		else if( mousey>=itemMenuY-2 && mousey<itemMenuY+20 ) {
@@ -635,10 +636,10 @@ void updatePlayerInventory() {
 		}
 		if( mousex>=itemMenuX+100 )
 			itemMenuSelected=-1; // for cancelling out
-		if( mousex<itemMenuX-10 )
+		if( mousex<itemMenuX-10 || mousex<itemMenuX && settings_right_click_protect)
 			itemMenuSelected=-1; // for cancelling out
 		if( !mousestatus[SDL_BUTTON_RIGHT] ) {
-			if( itemMenuSelected==0 ) {
+			if( itemMenuSelected==0) {
 				if (openedChest[clientnum] && itemCategory(currentItem) != SPELL_CAT) {
 					openedChest[clientnum]->addItemToChestFromInventory(clientnum, currentItem, FALSE);
 					currentItem = uidToItem(itemMenuItem);
