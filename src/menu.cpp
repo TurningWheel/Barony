@@ -3826,9 +3826,12 @@ void buttonBack(button_t *my) {
 	charcreation_step--;
 	if (charcreation_step < 4)
 		playing_random_char = FALSE;
-	if( charcreation_step==3 )
+	if (charcreation_step == 3) {
+		// If we've backed out, save what name was input for later
+		lastname = (char*)malloc(sizeof(inputstr) * sizeof(char) - 1);
+		strcpy(lastname, inputstr);
 		SDL_StopTextInput();
-	else if( charcreation_step==0 )
+	} else if( charcreation_step==0 )
 		buttonCloseSubwindow(my);
 }
 
