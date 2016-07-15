@@ -76,6 +76,7 @@ bool settings_broadcast;
 bool settings_nohud;
 bool settings_colorblind;
 bool settings_spawn_blood;
+bool settings_right_click_protect;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256]="";
@@ -86,6 +87,7 @@ bool settings_auto_hotbar_new_items = TRUE;
 bool settings_disable_messages = TRUE;
 bool playing_random_char = FALSE;
 bool colorblind = FALSE;
+bool right_click_protect = FALSE;
 Sint32 oslidery=0;
 
 Uint32 colorWhite = 0xFFFFFFFF;
@@ -1046,6 +1048,10 @@ void handleMainMenu(bool mode) {
 				ttfPrintTextFormatted(ttf12, subx1+236, suby1+204, "[x] %s", language[1345]);
 			else
 				ttfPrintTextFormatted(ttf12, subx1+236, suby1+204, "[ ] %s", language[1345]);
+			if (settings_right_click_protect)
+				ttfPrintTextFormatted(ttf12, subx1+236, suby1+228, "[x] %s", language[1960]);
+			else
+				ttfPrintTextFormatted(ttf12, subx1+236, suby1+228, "[ ] %s", language[1960]);
 				
 			if( mousestatus[SDL_BUTTON_LEFT] ) {
 				if( omousex >= subx1+242 && omousex < subx1+266 ) {
@@ -1072,6 +1078,10 @@ void handleMainMenu(bool mode) {
 					else if( omousey >= suby1+204 && omousey < suby1+204+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_colorblind = (settings_colorblind==FALSE);
+					}
+					else if (omousey >= suby1+228 && omousey < suby1+228+12) {
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_right_click_protect = (settings_right_click_protect==FALSE);
 					}
 				}
 			}
@@ -3277,6 +3287,7 @@ void openSettingsWindow() {
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
 	settings_colorblind = colorblind;
+	settings_right_click_protect = right_click_protect;
 	settings_gamma = vidgamma;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
@@ -4363,6 +4374,7 @@ void buttonSettingsAccept(button_t *my) {
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
 	colorblind = settings_colorblind;
+	right_click_protect = settings_right_click_protect;
 	vidgamma = settings_gamma;
 	xres = settings_xres;
 	yres = settings_yres;
