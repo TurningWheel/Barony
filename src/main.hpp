@@ -343,6 +343,7 @@ extern Uint32 lastkeypressed;
 extern Sint8 keystatus[512];
 extern char *inputstr;
 extern int inputlen;
+extern char *lastname;
 extern Sint8 mousestatus[6];
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;
