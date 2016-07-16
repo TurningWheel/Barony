@@ -393,9 +393,6 @@ void consoleCommand(char *command_str) {
 	else if(!strncmp(command_str, "/colorblind", 11)) {
 		colorblind = (colorblind==FALSE);
 	}
-	else if(!strncmp(command_str, "/right_click_protect", 19)) {
-		right_click_protect = (right_click_protect==FALSE);
-	}
 	else if (!strncmp(command_str, "/gamma", 6)) {
 		std::stringstream ss;
 		ss << command_str + 7;
@@ -551,6 +548,9 @@ void consoleCommand(char *command_str) {
 	}
 	else if (!strncmp(command_str, "/disablemessages", 15)) {
 		disable_messages = TRUE;
+	}
+	else if (!strncmp(command_str, "/right_click_protect", 19)) {
+		right_click_protect = TRUE;
 	}
 	else {
 		messagePlayer(clientnum,language[305],command_str);
