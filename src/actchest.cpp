@@ -629,12 +629,12 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 
 	// unequip the item
 	if( item->count <= 1 || all) {
-		Item **slot = itemSlot(&stats[player],item);
+		Item **slot = itemSlot(stats[player],item);
 		if( slot != NULL )
 			*slot = NULL;
 	}
 	if( item->node != NULL ) {
-		if( item->node->list==&stats[player].inventory ) {
+		if( item->node->list==&stats[player]->inventory ) {
 			if (!all) {
 				item->count--;
 				if( item->count <= 0 )

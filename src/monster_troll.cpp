@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initTroll(Entity *my, stat_t *myStats) {
+void initTroll(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -263,7 +263,7 @@ void trollDie(Entity *my) {
 
 #define TROLLWALKSPEED .12
 
-void trollMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void trollMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;

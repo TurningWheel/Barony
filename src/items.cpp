@@ -105,7 +105,7 @@ Item *newItem(ItemType type,Status status,Sint16 beatitude,Sint16 count,Uint32 a
 
 		// add the item to the hotbar automatically
 		if( !intro && auto_hotbar_new_items) {
-			if( inventory==&stats[clientnum].inventory ) {
+			if( inventory==&stats[clientnum]->inventory ) {
 				int c;
 				for( c=0; c<NUM_HOTBAR_SLOTS; c++ ) {
 					if( !uidToItem(hotbar[c].item) ) {
@@ -134,7 +134,7 @@ Item *newItem(ItemType type,Status status,Sint16 beatitude,Sint16 count,Uint32 a
 
 Item *uidToItem(Uint32 uid) {
 	node_t *node;
-	for( node=stats[clientnum].inventory.first; node!=NULL; node=node->next ) {
+	for( node=stats[clientnum]->inventory.first; node!=NULL; node=node->next ) {
 		Item *item = (Item *)node->element;
 		if( item->uid == uid )
 			return item;
@@ -552,7 +552,7 @@ void dropItem(Item *item, int player) {
 		
 		// unequip the item
 		if( item->count <= 1 ) {
-			Item **slot = itemSlot(&stats[player],item);
+			Item **slot = itemSlot(stats[player],item);
 			if( slot != NULL )
 				*slot = NULL;
 		}
@@ -587,11 +587,11 @@ void dropItem(Item *item, int player) {
 		playSoundEntity( players[player], 47+rand()%3, 64 );
 		
 		// unequip the item
-		Item **slot = itemSlot(&stats[player],item);
+		Item **slot = itemSlot(stats[player],item);
 		if( slot != NULL )
 			*slot = NULL;
 		if( item->node != NULL ) {
-			if( item->node->list==&stats[0].inventory ) {
+			if( item->node->list==&stats[0]->inventory ) {
 				oldcount = item->count;
 				item->count=1;
 				messagePlayer(player,language[1088],item->description());
@@ -607,7 +607,7 @@ void dropItem(Item *item, int player) {
 	}
 }
 
-Entity *dropItemMonster(Item *item, Entity *monster, stat_t *monsterStats) {
+Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats) {
 	Entity *entity;
 
 	if( !item || !monster )
@@ -671,9 +671,9 @@ void consumeItem(Item *item) {
 		if( item->node != NULL ) {
 			int i;
 			for( i=0; i<MAXPLAYERS; i++ ) {
-				if( item->node->list == &stats[i].inventory ) {
+				if( item->node->list == &stats[i]->inventory ) {
 					Item **slot;
-					if( (slot=itemSlot(&stats[i],item)) != NULL ) {
+					if( (slot=itemSlot(stats[i],item)) != NULL ) {
 						*slot = NULL;
 					}
 				}
@@ -739,9 +739,9 @@ void equipItem(Item *item, Item **slot, int player) {
 		}
 		*slot = item;
 		if( player==clientnum ) {
-			if( slot==&stats[player].weapon ) {
+			if( slot==&stats[player]->weapon ) {
 				weaponSwitch = TRUE;
-			} else if( slot==&stats[player].shield ) {
+			} else if( slot==&stats[player]->shield ) {
 				shieldSwitch = TRUE;
 			}
 		}
@@ -862,7 +862,7 @@ void useItem(Item *item, int player) {
 		if( item->type == FOOD_TIN ) {
 			bool havetinopener = FALSE;
 			node_t *node;
-			for( node=stats[clientnum].inventory.first; node!=NULL; node=node->next ) {
+			for( node=stats[clientnum]->inventory.first; node!=NULL; node=node->next ) {
 				Item *tempitem = (Item *)node->element;
 				if( tempitem->type == TOOL_TINOPENER ) {
 					if( tempitem->status != BROKEN ) {
@@ -894,40 +894,40 @@ void useItem(Item *item, int player) {
 	}
 	switch( item->type ) {
 		case WOODEN_SHIELD:
-			equipItem(item,&stats[player].shield,player);
+			equipItem(item,&stats[player]->shield,player);
 			break;
 		case QUARTERSTAFF:
 		case BRONZE_SWORD:
 		case BRONZE_MACE:
 		case BRONZE_AXE:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case BRONZE_SHIELD:
-			equipItem(item,&stats[player].shield,player);
+			equipItem(item,&stats[player]->shield,player);
 			break;
 		case SLING:
 		case IRON_SPEAR:
 		case IRON_SWORD:
 		case IRON_MACE:
 		case IRON_AXE:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case IRON_SHIELD:
-			equipItem(item,&stats[player].shield,player);
+			equipItem(item,&stats[player]->shield,player);
 			break;
 		case SHORTBOW:
 		case STEEL_HALBERD:
 		case STEEL_SWORD:
 		case STEEL_MACE:
 		case STEEL_AXE:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
-			equipItem(item,&stats[player].shield,player);
+			equipItem(item,&stats[player]->shield,player);
 			break;
 		case CROSSBOW:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case GLOVES:
 		case GLOVES_DEXTERITY:
@@ -935,13 +935,13 @@ void useItem(Item *item, int player) {
 		case BRACERS_CONSTITUTION:
 		case GAUNTLETS:
 		case GAUNTLETS_STRENGTH:
-			equipItem(item,&stats[player].gloves,player);
+			equipItem(item,&stats[player]->gloves,player);
 			break;
 		case CLOAK:
 		case CLOAK_MAGICREFLECTION:
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
-			equipItem(item,&stats[player].cloak,player);
+			equipItem(item,&stats[player]->cloak,player);
 			break;
 		case LEATHER_BOOTS:
 		case LEATHER_BOOTS_SPEED:
@@ -950,12 +950,12 @@ void useItem(Item *item, int player) {
 		case STEEL_BOOTS:
 		case STEEL_BOOTS_LEVITATION:
 		case STEEL_BOOTS_FEATHER:
-			equipItem(item,&stats[player].shoes,player);
+			equipItem(item,&stats[player]->shoes,player);
 			break;
 		case LEATHER_BREASTPIECE:
 		case IRON_BREASTPIECE:
 		case STEEL_BREASTPIECE:
-			equipItem(item,&stats[player].breastplate,player);
+			equipItem(item,&stats[player]->breastplate,player);
 			break;
 		case HAT_PHRYGIAN:
 		case HAT_HOOD:
@@ -964,7 +964,7 @@ void useItem(Item *item, int player) {
 		case LEATHER_HELM:
 		case IRON_HELM:
 		case STEEL_HELM:
-			equipItem(item,&stats[player].helmet,player);
+			equipItem(item,&stats[player]->helmet,player);
 			break;
 		case AMULET_SEXCHANGE:
 			messagePlayer(player,language[1094]);
@@ -974,16 +974,16 @@ void useItem(Item *item, int player) {
 		case AMULET_LIFESAVING:
 		case AMULET_WATERBREATHING:
 		case AMULET_MAGICREFLECTION:
-			equipItem(item,&stats[player].amulet,player);
+			equipItem(item,&stats[player]->amulet,player);
 			break;
 		case AMULET_STRANGULATION:
-			equipItem(item,&stats[player].amulet,player);
+			equipItem(item,&stats[player]->amulet,player);
 			messagePlayer(player,language[1095]);
 			if( item->beatitude>=0 )
 				item->beatitude = -1;
 			break;
 		case AMULET_POISONRESISTANCE:
-			equipItem(item,&stats[player].amulet,player);
+			equipItem(item,&stats[player]->amulet,player);
 			break;
 		case POTION_WATER:
 			item_PotionWater(item, players[player]);
@@ -1106,7 +1106,7 @@ void useItem(Item *item, int player) {
 		case MAGICSTAFF_FIRE:
 		case MAGICSTAFF_LIGHTNING:
 		case MAGICSTAFF_SLEEP:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case RING_ADORNMENT:
 		case RING_SLOWDIGESTION:
@@ -1120,7 +1120,7 @@ void useItem(Item *item, int player) {
 		case RING_LEVITATION:
 		case RING_REGENERATION:
 		case RING_TELEPORTATION:
-			equipItem(item,&stats[player].ring,player);
+			equipItem(item,&stats[player]->ring,player);
 			break;
 		case SPELLBOOK_FORCEBOLT:
 		case SPELLBOOK_MAGICMISSILE:
@@ -1163,10 +1163,10 @@ void useItem(Item *item, int player) {
 		case GEM_JETSTONE:
 		case GEM_OBSIDIAN:
 		case GEM_GLASS:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case TOOL_PICKAXE:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case TOOL_TINOPENER:
 			item_ToolTinOpener(item, player);
@@ -1176,23 +1176,23 @@ void useItem(Item *item, int player) {
 			break;
 		case TOOL_LOCKPICK:
 		case TOOL_SKELETONKEY:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
-			equipItem(item,&stats[player].shield,player);
+			equipItem(item,&stats[player]->shield,player);
 			break;
 		case TOOL_BLINDFOLD:
-			equipItem(item,&stats[player].mask,player);
+			equipItem(item,&stats[player]->mask,player);
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
 			if( multiplayer==CLIENT )
-				if( stats[player].EFFECTS[EFF_BLEEDING] )
+				if( stats[player]->EFFECTS[EFF_BLEEDING] )
 					consumeItem(item);
 			break;
 		case TOOL_GLASSES:
-			equipItem(item,&stats[player].mask,player);
+			equipItem(item,&stats[player]->mask,player);
 			break;
 		case TOOL_BEARTRAP:
 			item_ToolBeartrap(item, player);
@@ -1228,17 +1228,17 @@ void useItem(Item *item, int player) {
 			break;
 		}
 		case ARTIFACT_SWORD:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case ARTIFACT_MACE:
 			if( player==clientnum )
 				messagePlayer(clientnum,language[1096]);
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		case ARTIFACT_SPEAR:
 		case ARTIFACT_AXE:
 		case ARTIFACT_BOW:
-			equipItem(item,&stats[player].weapon,player);
+			equipItem(item,&stats[player]->weapon,player);
 			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n",(int)item->type);
@@ -1274,14 +1274,14 @@ Item *itemPickup(int player,Item *item) {
 		net_packet->len = 25;
 		sendPacketSafe(net_sock, -1, net_packet, player-1);
 	} else {
-		for( node=stats[player].inventory.first; node!=NULL; node=node->next ) {
+		for( node=stats[player]->inventory.first; node!=NULL; node=node->next ) {
 			item2 = (Item *) node->element;
 			if(!itemCompare(item,item2)) {
 				item2->count += item->count;
 				return item2;
 			}
 		}
-		item2 = newItem(item->type,item->status,item->beatitude,item->count,item->appearance,item->identified,&stats[player].inventory);
+		item2 = newItem(item->type,item->status,item->beatitude,item->count,item->appearance,item->identified,&stats[player]->inventory);
 		return item2;
 	}
 	
@@ -1312,7 +1312,7 @@ Item *newItemFromEntity(Entity *entity) {
 
 -------------------------------------------------------------------------------*/
 
-Item **itemSlot(stat_t *myStats, Item *item) {
+Item **itemSlot(Stat *myStats, Item *item) {
 	if( !myStats || !item )
 		return NULL;
 	if(!itemCompare(item,myStats->helmet))
@@ -1347,25 +1347,25 @@ Item **itemSlot(stat_t *myStats, Item *item) {
 -------------------------------------------------------------------------------*/
 
 bool itemIsEquipped(Item *item, int player) {
-	if( !itemCompare(item,stats[player].helmet) )
+	if( !itemCompare(item,stats[player]->helmet) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].breastplate) )
+	if( !itemCompare(item,stats[player]->breastplate) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].gloves) )
+	if( !itemCompare(item,stats[player]->gloves) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].shoes) )
+	if( !itemCompare(item,stats[player]->shoes) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].shield) )
+	if( !itemCompare(item,stats[player]->shield) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].weapon) )
+	if( !itemCompare(item,stats[player]->weapon) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].cloak) )
+	if( !itemCompare(item,stats[player]->cloak) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].amulet) )
+	if( !itemCompare(item,stats[player]->amulet) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].ring) )
+	if( !itemCompare(item,stats[player]->ring) )
 		return TRUE;
-	if( !itemCompare(item,stats[player].mask) )
+	if( !itemCompare(item,stats[player]->mask) )
 		return TRUE;
 	
 	return FALSE;
@@ -1530,10 +1530,10 @@ int Item::buyValue(int player) {
 	value *= ((int)status+5)/10.f;
 	
 	// trading bonus
-	value /= (50+stats[player].PROFICIENCIES[PRO_TRADING])/150.f;
+	value /= (50+stats[player]->PROFICIENCIES[PRO_TRADING])/150.f;
 	
 	// charisma bonus
-	value /= 1.f + stats[player].CHR/20.f;
+	value /= 1.f + stats[player]->CHR/20.f;
 	
 	// result
 	value = std::max(1,value);
@@ -1567,10 +1567,10 @@ int Item::sellValue(int player) {
 	value *= ((int)status+5)/10.f;
 	
 	// trading bonus
-	value *= (50+stats[player].PROFICIENCIES[PRO_TRADING])/150.f;
+	value *= (50+stats[player]->PROFICIENCIES[PRO_TRADING])/150.f;
 	
 	// charisma bonus
-	value *= 1.f + stats[player].CHR/20.f;
+	value *= 1.f + stats[player]->CHR/20.f;
 	
 	// result
 	value = std::max(1,value);
@@ -1633,7 +1633,7 @@ void Item::apply(int player, Entity *entity) {
 		// lockpicks
 		if ( entity->behavior == &actChest ) {
 			if ( entity->skill[4] ) {
-				if ( stats[player].PROFICIENCIES[PRO_LOCKPICKING] > rand()%400 ) {
+				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand()%400 ) {
 					playSoundEntity(entity,91,64);
 					messagePlayer(player,language[1097]);
 					entity->skill[4] = 0;
@@ -1647,11 +1647,11 @@ void Item::apply(int player, Entity *entity) {
 						if ( rand()%5==0 ) {
 							if ( player==clientnum ) {
 								if ( count>1 ) {
-									newItem(type,status,beatitude,count-1,appearance,identified,&stats[player].inventory);
+									newItem(type,status,beatitude,count-1,appearance,identified,&stats[player]->inventory);
 								}
 							}
-							stats[player].weapon->count = 1;
-							stats[player].weapon->status = static_cast<Status>(stats[player].weapon->status - 1);
+							stats[player]->weapon->count = 1;
+							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 							if ( status != BROKEN ) {
 								messagePlayer(player,language[1103]);
 							} else {
@@ -1660,7 +1660,7 @@ void Item::apply(int player, Entity *entity) {
 							if ( player>0 && multiplayer==SERVER ) {
 								strcpy((char *)net_packet->data,"ARMR");
 								net_packet->data[4]=5;
-								net_packet->data[5]=stats[player].weapon->status;
+								net_packet->data[5]=stats[player]->weapon->status;
 								net_packet->address.host = net_clients[player-1].host;
 								net_packet->address.port = net_clients[player-1].port;
 								net_packet->len = 6;
@@ -1674,7 +1674,7 @@ void Item::apply(int player, Entity *entity) {
 			}
 		} else if ( entity->behavior == &actDoor ) {
 			if ( entity->skill[5] ) {
-				if ( stats[player].PROFICIENCIES[PRO_LOCKPICKING] > rand()%400 ) {
+				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand()%400 ) {
 					playSoundEntity(entity,91,64);
 					messagePlayer(player,language[1099]);
 					entity->skill[5] = 0;
@@ -1688,11 +1688,11 @@ void Item::apply(int player, Entity *entity) {
 						if ( rand()%5==0 ) {
 							if ( player==clientnum ) {
 								if ( count>1 ) {
-									newItem(type,status,beatitude,count-1,appearance,identified,&stats[player].inventory);
+									newItem(type,status,beatitude,count-1,appearance,identified,&stats[player]->inventory);
 								}
 							}
-							stats[player].weapon->count = 1;
-							stats[player].weapon->status = static_cast<Status>(stats[player].weapon->status - 1);
+							stats[player]->weapon->count = 1;
+							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
 							if ( status != BROKEN ) {
 								messagePlayer(player,language[1103]);
 							} else {
@@ -1701,7 +1701,7 @@ void Item::apply(int player, Entity *entity) {
 							if ( player>0 && multiplayer==SERVER ) {
 								strcpy((char *)net_packet->data,"ARMR");
 								net_packet->data[4]=5;
-								net_packet->data[5]=stats[player].weapon->status;
+								net_packet->data[5]=stats[player]->weapon->status;
 								net_packet->address.host = net_clients[player-1].host;
 								net_packet->address.port = net_clients[player-1].port;
 								net_packet->len = 6;

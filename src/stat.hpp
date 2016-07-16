@@ -2,7 +2,7 @@
 
 	BARONY
 	File: stat.hpp
-	Desc: header for stat.cpp (contains stat_t type definition)
+	Desc: header for stat.cpp (contains Stat class definition)
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -87,59 +87,57 @@ typedef enum {
 	FEMALE
 } sex_t;
 
-// character stat structure
-typedef struct stat_t {
-	Monster type;
-	sex_t sex;
-	Uint32 appearance;
-	char name[128];
-	char obituary[128];
-	Uint32 poisonKiller; // uid of the entity which killed me via burning/poison
-	
-	// attributes
-	Sint32 HP, MAXHP, OLDHP;
-	Sint32 MP, MAXMP;
-	Sint32 STR, DEX, CON, INT, PER, CHR;
-	Sint32 EXP, LVL;
-	Sint32 GOLD, HUNGER;
-	
-	// skills and effects
-	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
-	bool EFFECTS[NUMEFFECTS];
-	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
-	bool defending;
-	
-	// group think
-	Uint32 leader_uid;
-	list_t FOLLOWERS;
-	int stache_x1, stache_x2;
-	int stache_y1, stache_y2;
-	
-	// equipment
-	list_t inventory;
-	Item *helmet;
-	Item *breastplate;
-	Item *gloves;
-	Item *shoes;
-	Item *shield;
-	Item *weapon;
-	Item *cloak;
-	Item *amulet;
-	Item *ring;
-	Item *mask;
-	
-	// misc
-	FMOD_CHANNEL *monster_sound; //TODO: Do?
-	int monster_idlevar;
+extern class Stat {
+	public:	
+		Monster type;
+		sex_t sex;
+		Uint32 appearance;
+		char name[128];
+		char obituary[128];
+		Uint32 poisonKiller; // uid of the entity which killed me via burning/poison
 
-	list_t magic_effects; //Makes things like the invisibility spell work.
+							 // attributes
+		Sint32 HP, MAXHP, OLDHP;
+		Sint32 MP, MAXMP;
+		Sint32 STR, DEX, CON, INT, PER, CHR;
+		Sint32 EXP, LVL;
+		Sint32 GOLD, HUNGER;
 
-	void printStats(); //Prints the monster's stats to the log.
-} stat_t;
-extern stat_t stats[MAXPLAYERS];
+		// skills and effects
+		Sint32 PROFICIENCIES[NUMPROFICIENCIES];
+		bool EFFECTS[NUMEFFECTS];
+		Sint32 EFFECTS_TIMERS[NUMEFFECTS];
+		bool defending;
 
-void statConstructor(stat_t *stat);
-void statDeconstructor(void *data);
-void clearStats(stat_t *stats);
-void freePlayerEquipment(int x);
-stat_t *copyStats(stat_t *stat);
+		// group think
+		Uint32 leader_uid;
+		list_t FOLLOWERS;
+		int stache_x1, stache_x2;
+		int stache_y1, stache_y2;
+
+		// equipment
+		list_t inventory;
+		Item *helmet;
+		Item *breastplate;
+		Item *gloves;
+		Item *shoes;
+		Item *shield;
+		Item *weapon;
+		Item *cloak;
+		Item *amulet;
+		Item *ring;
+		Item *mask;
+
+		// misc
+		FMOD_CHANNEL *monster_sound; //TODO: Do?
+		int monster_idlevar;
+
+		list_t magic_effects; //Makes things like the invisibility spell work.
+		Stat();
+		~Stat();
+		void clearStats();
+		void freePlayerEquipment();
+		Stat *copyStats();
+		void printStats();
+};
+extern Stat *stats[MAXPLAYERS];

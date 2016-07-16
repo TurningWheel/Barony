@@ -74,7 +74,7 @@ void actBeartrap(Entity *my) {
 		if( my->parent==entity->uid )
 			continue;
 		if( entity->behavior==&actMonster || entity->behavior==&actPlayer ) {
-			stat_t *stat = entity->getStats();
+			Stat *stat = entity->getStats();
 			if( stat ) {
 				if( entityDist(my,entity)<6.5 ) {
 					stat->EFFECTS[EFF_PARALYZED] = TRUE;

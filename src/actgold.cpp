@@ -64,12 +64,12 @@ void actGoldBag(Entity *my) {
 				if(inrange[i]) {
 					if( players[i] != NULL )
 						playSoundEntity( players[i], 242+rand()%4, 64 );
-					stats[i].GOLD += GOLDBAG_AMOUNT;
+					stats[i]->GOLD += GOLDBAG_AMOUNT;
 					if( i!=0 ) {
 						if( multiplayer==SERVER ) {
 							// send the client info on the gold it picked up
 							strcpy((char *)net_packet->data,"GOLD");
-							SDLNet_Write32(stats[i].GOLD,&net_packet->data[4]);
+							SDLNet_Write32(stats[i]->GOLD,&net_packet->data[4]);
 							net_packet->address.host = net_clients[i-1].host;
 							net_packet->address.port = net_clients[i-1].port;
 							net_packet->len = 8;

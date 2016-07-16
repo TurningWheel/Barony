@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initDevil(Entity *my, stat_t *myStats) {
+void initDevil(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -249,25 +249,25 @@ void devilDie(Entity *my) {
 		steamAchievementClient(c,"BARONY_ACH_EVIL_INCARNATE");
 		messagePlayer(c,language[1112]);
 		playSoundPlayer(c, 97, 128);
-		stats[c].STR += 20;
-		stats[c].DEX += 5;
-		stats[c].CON += 20;
-		stats[c].INT += 5;
+		stats[c]->STR += 20;
+		stats[c]->DEX += 5;
+		stats[c]->CON += 20;
+		stats[c]->INT += 5;
 		if( multiplayer==SERVER && c>0 ) {
 			strcpy((char *)net_packet->data,"ATTR");
 			net_packet->data[4]=clientnum;
-			net_packet->data[5]=(Sint8)stats[c].STR;
-			net_packet->data[6]=(Sint8)stats[c].DEX;
-			net_packet->data[7]=(Sint8)stats[c].CON;
-			net_packet->data[8]=(Sint8)stats[c].INT;
-			net_packet->data[9]=(Sint8)stats[c].PER;
-			net_packet->data[10]=(Sint8)stats[c].CHR;
-			net_packet->data[11]=(Sint8)stats[c].EXP;
-			net_packet->data[12]=(Sint8)stats[c].LVL;
-			SDLNet_Write16((Sint16)stats[c].HP,&net_packet->data[13]);
-			SDLNet_Write16((Sint16)stats[c].MAXHP,&net_packet->data[15]);
-			SDLNet_Write16((Sint16)stats[c].MP,&net_packet->data[17]);
-			SDLNet_Write16((Sint16)stats[c].MAXMP,&net_packet->data[19]);
+			net_packet->data[5]=(Sint8)stats[c]->STR;
+			net_packet->data[6]=(Sint8)stats[c]->DEX;
+			net_packet->data[7]=(Sint8)stats[c]->CON;
+			net_packet->data[8]=(Sint8)stats[c]->INT;
+			net_packet->data[9]=(Sint8)stats[c]->PER;
+			net_packet->data[10]=(Sint8)stats[c]->CHR;
+			net_packet->data[11]=(Sint8)stats[c]->EXP;
+			net_packet->data[12]=(Sint8)stats[c]->LVL;
+			SDLNet_Write16((Sint16)stats[c]->HP,&net_packet->data[13]);
+			SDLNet_Write16((Sint16)stats[c]->MAXHP,&net_packet->data[15]);
+			SDLNet_Write16((Sint16)stats[c]->MP,&net_packet->data[17]);
+			SDLNet_Write16((Sint16)stats[c]->MAXMP,&net_packet->data[19]);
 			net_packet->address.host = net_clients[c-1].host;
 			net_packet->address.port = net_clients[c-1].port;
 			net_packet->len = 21;
@@ -277,7 +277,7 @@ void devilDie(Entity *my) {
 	return;
 }
 
-void devilMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;

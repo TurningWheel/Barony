@@ -201,7 +201,7 @@ void actMagiclightBall(Entity *my) {
 
 	caster = uidToEntity(spell->caster);
 	if (caster) {
-		stat_t *stats = caster->getStats();
+		Stat *stats = caster->getStats();
 		if (stats) {
 			if (stats->HP <= 0) {
 				if( my->light != NULL ) {
@@ -511,7 +511,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				//element = (spellElement_t *) element->elements->first->element;
 				element = (spellElement_t *)node->element;
 				//if (hit.entity != NULL) {
-				stat_t *hitstats = NULL;
+				Stat *hitstats = NULL;
 				int player=-1;
 				if (hit.entity) {
 					hitstats = hit.entity->getStats();
@@ -546,7 +546,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						for( node=map.entities->first; node!=NULL; node=node->next ) {
 							entity = (Entity *)node->element;
 							if( entity->behavior == &actMonster && entity != ohitentity ) {
-								stat_t *buddystats = entity->getStats();
+								Stat *buddystats = entity->getStats();
 								if( buddystats != NULL ) {
 									if( hit.entity && hit.entity->checkFriend(entity) ) { //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
 										if( entity->skill[0] == 0 ) { // monster is waiting
@@ -576,7 +576,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
 							Entity *tempEntity = (Entity *)tempNode->element;
 							if( tempEntity->behavior==&actMonster ) {
-								stat_t *stats = tempEntity->getStats();
+								Stat *stats = tempEntity->getStats();
 								if( stats ) {
 									if( stats->type==DEVIL ) {
 										founddevil=TRUE;

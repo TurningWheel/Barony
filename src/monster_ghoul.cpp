@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initGhoul(Entity *my, stat_t *myStats) {
+void initGhoul(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -261,7 +261,7 @@ void ghoulDie(Entity *my) {
 
 #define GHOULWALKSPEED .125
 
-void ghoulMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;

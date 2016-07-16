@@ -129,7 +129,7 @@ void gameLogic(void) {
 	}
 
 	// drunkenness
-	if( stats[clientnum].EFFECTS[EFF_DRUNK] && !intro ) {
+	if( stats[clientnum]->EFFECTS[EFF_DRUNK] && !intro ) {
 		if( drunkextend<0.5 ) {
 			drunkextend += .005;
 			if( drunkextend>0.5 )
@@ -381,16 +381,16 @@ void gameLogic(void) {
 					if( client_disconnected[c] )
 						continue;
 
-					if( list_Size(&stats[c].FOLLOWERS)>=3 ) {
+					if( list_Size(&stats[c]->FOLLOWERS)>=3 ) {
 						steamAchievementClient(c,"BARONY_ACH_NATURAL_BORN_LEADER");
 					}
-					if( stats[i].GOLD>=10000 ) {
+					if( stats[i]->GOLD>=10000 ) {
 						steamAchievementClient(i,"BARONY_ACH_FILTHY_RICH");
 					}
 				}
 			}
 			if( conductPenniless ) {
-				if( stats[clientnum].GOLD>0 ) {
+				if( stats[clientnum]->GOLD>0 ) {
 					conductPenniless = FALSE;
 				}
 			}
@@ -459,20 +459,20 @@ void gameLogic(void) {
 						tempFollowers[c].last = NULL;
 
 						node_t *node;
-						for( node=stats[c].FOLLOWERS.first; node!=NULL; node=node->next ) {
+						for( node=stats[c]->FOLLOWERS.first; node!=NULL; node=node->next ) {
 							Entity *follower = uidToEntity(*((Uint32 *)node->element));
 							if( follower ) {
-								stat_t *followerStats = follower->getStats();
+								Stat *followerStats = follower->getStats();
 								if( followerStats ) {
 									node_t *newNode = list_AddNodeLast(&tempFollowers[c]);
-									newNode->element = copyStats(followerStats);
-									newNode->deconstructor = &statDeconstructor;
-									newNode->size = sizeof(stat_t);
+									newNode->element = followerStats->copyStats();
+//									newNode->deconstructor = &followerStats->~Stat;
+									newNode->size = sizeof(followerStats);
 								}
 							}
 						}
 						
-						list_FreeAll(&stats[c].FOLLOWERS);
+						list_FreeAll(&stats[c]->FOLLOWERS);
 					}
 
 					// unlock some steam achievements
@@ -581,18 +581,18 @@ void gameLogic(void) {
 						if( players[c] && !client_disconnected[c] ) {
 							node_t *node;
 							for( node=tempFollowers[c].first; node!=NULL; node=node->next ) {
-								stat_t *tempStats = (stat_t *)node->element;
+								Stat *tempStats = (Stat *)node->element;
 								Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y);
 								if( monster ) {
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
 
 									node_t *newNode = list_AddNodeLast(&monster->children);
-									newNode->element = copyStats(tempStats);
-									newNode->deconstructor = &statDeconstructor;
-									newNode->size = sizeof(stat_t);
+									newNode->element = tempStats->copyStats();
+//									newNode->deconstructor = &tempStats->~Stat;
+									newNode->size = sizeof(tempStats);
 
-									stat_t *monsterStats = (stat_t *)newNode->element;
+									Stat *monsterStats = (Stat *)newNode->element;
 									monsterStats->leader_uid = players[c]->uid;
 									if( strcmp(monsterStats->name,"") ) {
 										messagePlayer(c,language[720],monsterStats->name);
@@ -602,7 +602,7 @@ void gameLogic(void) {
 									if( !monsterally[HUMAN][monsterStats->type] )
 										monster->flags[USERFLAG2]=TRUE;
 
-									newNode = list_AddNodeLast(&stats[c].FOLLOWERS);
+									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
 									newNode->element = myuid;
@@ -691,20 +691,20 @@ void gameLogic(void) {
 						losingConnection[c] = FALSE;
 						int i;
 						for( i=0; i<MAXPLAYERS; i++ ) {
-							messagePlayer(i,language[724],c,stats[c].name);
+							messagePlayer(i,language[724],c,stats[c]->name);
 						}
 					} else if( !losingConnection[c] && ticks-client_keepalive[c] == TICKS_PER_SECOND*30-1 ) {
 						// 30 second timer
 						losingConnection[c] = TRUE;
 						int i;
 						for( i=0; i<MAXPLAYERS; i++ ) {
-							messagePlayer(clientnum,language[725],c,stats[c].name);
+							messagePlayer(clientnum,language[725],c,stats[c]->name);
 						}
 					} else if( !client_disconnected[c] && ticks-client_keepalive[c] >= TICKS_PER_SECOND*45-1 ) {
 						// additional 15 seconds (kick time)
 						int i;
 						for( i=0; i<MAXPLAYERS; i++ ) {
-							messagePlayer(clientnum,language[726],c,stats[c].name);
+							messagePlayer(clientnum,language[726],c,stats[c]->name);
 						}
 						strcpy((char *)net_packet->data,"KICK");
 						net_packet->address.host = net_clients[c-1].host;
@@ -735,7 +735,7 @@ void gameLogic(void) {
 				client_selected[j]=NULL;
 			}
 
-			for( node=stats[clientnum].inventory.first; node!=NULL; node=nextnode ) {
+			for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 				nextnode = node->next;
 				Item *item = (Item *)node->element;
 
@@ -906,7 +906,7 @@ void gameLogic(void) {
 				}
 			}
 			if( conductPenniless ) {
-				if( stats[clientnum].GOLD>0 ) {
+				if( stats[clientnum]->GOLD>0 ) {
 					conductPenniless = FALSE;
 				}
 			}
@@ -1048,7 +1048,7 @@ void gameLogic(void) {
 				entity->ranbehavior=FALSE;
 			}
 
-			for( node=stats[clientnum].inventory.first; node!=NULL; node=nextnode ) {
+			for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 				nextnode = node->next;
 				Item *item = (Item *)node->element;
 
@@ -1368,7 +1368,7 @@ Uint32 timerCallback(Uint32 interval, void *param) {
 -------------------------------------------------------------------------------*/
 
 void startMessages() {
-	newString(&messages,0xFFFFFFFF,language[734],stats[clientnum].name);
+	newString(&messages,0xFFFFFFFF,language[734],stats[clientnum]->name);
 	newString(&messages,0xFFFFFFFF,language[735],getInputName(impulses[IN_STATUS]));
 	newString(&messages,0xFFFFFFFF,language[736]);
 	newString(&messages,0xFFFFFFFF,language[737]);
@@ -1822,12 +1822,12 @@ int main(int argc, char **argv) {
 						magicRightHand = NULL;
 
 						// reset class loadout
-						stats[0].sex = static_cast<sex_t>(rand()%2);
-						stats[0].appearance = rand()%NUMAPPEARANCES;
-						clearStats(&stats[0]);
+						stats[0]->sex = static_cast<sex_t>(rand()%2);
+						stats[0]->appearance = rand()%NUMAPPEARANCES;
+						stats[0]->clearStats();
 						initClass(0);
 
-						strcpy(stats[0].name,"Avatar");
+						strcpy(stats[0]->name,"Avatar");
 						multiplayer=SINGLE;
 						fadefinished=FALSE;
 						fadeout=FALSE;
@@ -2091,8 +2091,8 @@ int main(int argc, char **argv) {
 												if( client_disconnected[c] )
 													continue;
 												strcpy((char *)net_packet->data,"MSGS");
-												strncpy(chatstring,stats[0].name,std::min<size_t>(strlen(stats[0].name),10)); //TODO: Why are size_t and int being compared?
-												chatstring[std::min<size_t>(strlen(stats[0].name),10)]=0; //TODO: Why are size_t and int being compared?
+												strncpy(chatstring,stats[0]->name,std::min<size_t>(strlen(stats[0]->name),10)); //TODO: Why are size_t and int being compared?
+												chatstring[std::min<size_t>(strlen(stats[0]->name),10)]=0; //TODO: Why are size_t and int being compared?
 												strcat(chatstring,": ");
 												strcat(chatstring,command_str);
 												SDLNet_Write32(color,&net_packet->data[4]);

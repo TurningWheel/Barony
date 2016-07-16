@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initRat(Entity *my, stat_t *myStats) {
+void initRat(Entity *my, Stat *myStats) {
 	int c;
 
 	my->sprite = 131; // rat model

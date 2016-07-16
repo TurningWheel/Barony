@@ -95,8 +95,8 @@ void drawMinimap() {
 			}
 		} else {
 			if( entity->behavior == &actMonster ) {
-				if( stats[clientnum].ring != NULL ) {
-					if( stats[clientnum].ring->type == RING_WARNING ) {
+				if( stats[clientnum]->ring != NULL ) {
+					if( stats[clientnum]->ring->type == RING_WARNING ) {
 						x = floor(entity->x/16);
 						y = floor(entity->y/16);
 						glColor4f( .5, .25, .5, 1 );
@@ -135,7 +135,7 @@ void drawMinimap() {
 				foundme=TRUE;
 		} else if( entity->behavior==&actMonster ) {
 			node_t *node2;
-			for( node2=stats[clientnum].FOLLOWERS.first; node2!=NULL; node2=node2->next ) {
+			for( node2=stats[clientnum]->FOLLOWERS.first; node2!=NULL; node2=node2->next ) {
 				if( *((Uint32 *)node2->element)==entity->uid ) {
 					drawchar=TRUE;
 					break;

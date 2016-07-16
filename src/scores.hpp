@@ -17,7 +17,7 @@
 #define MAXTOPSCORES 10
 typedef struct score_t {
 	Sint32 kills[NUMMONSTERS];
-	stat_t *stats;
+	Stat *stats;
 	Sint32 classnum;
 	Sint32 dungeonlevel;
 	int victory;

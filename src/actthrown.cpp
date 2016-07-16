@@ -181,7 +181,7 @@ void actThrown(Entity *my) {
 				hit.entity->setObituary(whatever);
 
 				Entity *parent = uidToEntity(my->parent);
-				stat_t *hitstats = hit.entity->getStats();
+				Stat *hitstats = hit.entity->getStats();
 				if( hitstats ) {
 					if( hitstats->type < LICH || hitstats->type >= SHOPKEEPER ) { // this makes it impossible to bork the end boss :)
 						switch( item->type ) {

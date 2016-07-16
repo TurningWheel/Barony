@@ -134,23 +134,23 @@ Entity *summonMonster(Monster creature, long x, long y);
 bool monsterMoveAside(Entity *my, Entity *entity);
 
 //--init* functions--
-void initHuman(Entity *my, stat_t *myStats);
-void initRat(Entity *my, stat_t *myStats);
-void initGoblin(Entity *my, stat_t *myStats);
-void initSlime(Entity *my, stat_t *myStats);
-void initScorpion(Entity *my, stat_t *myStats);
-void initSuccubus(Entity *my, stat_t *myStats);
-void initTroll(Entity *my, stat_t *myStats);
-void initShopkeeper(Entity *my, stat_t *myStats);
-void initSkeleton(Entity *my, stat_t *myStats);
-void initMinotaur(Entity *my, stat_t *myStats);
-void initGhoul(Entity *my, stat_t *myStats);
-void initDemon(Entity *my, stat_t *myStats);
-void initSpider(Entity *my, stat_t *myStats);
-void initLich(Entity *my, stat_t *myStats);
-void initImp(Entity *my, stat_t *myStats);
-void initGnome(Entity *my, stat_t *myStats);
-void initDevil(Entity *my, stat_t *myStats);
+void initHuman(Entity *my, Stat *myStats);
+void initRat(Entity *my, Stat *myStats);
+void initGoblin(Entity *my, Stat *myStats);
+void initSlime(Entity *my, Stat *myStats);
+void initScorpion(Entity *my, Stat *myStats);
+void initSuccubus(Entity *my, Stat *myStats);
+void initTroll(Entity *my, Stat *myStats);
+void initShopkeeper(Entity *my, Stat *myStats);
+void initSkeleton(Entity *my, Stat *myStats);
+void initMinotaur(Entity *my, Stat *myStats);
+void initGhoul(Entity *my, Stat *myStats);
+void initDemon(Entity *my, Stat *myStats);
+void initSpider(Entity *my, Stat *myStats);
+void initLich(Entity *my, Stat *myStats);
+void initImp(Entity *my, Stat *myStats);
+void initGnome(Entity *my, Stat *myStats);
+void initDevil(Entity *my, Stat *myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity *my);
@@ -189,23 +189,23 @@ void gnomeDie(Entity *my);
 void devilDie(Entity *my);
 
 //--*MoveBodyparts functions--
-void humanMoveBodyparts(Entity *my, stat_t *myStats, double dist);
+void humanMoveBodyparts(Entity *my, Stat *myStats, double dist);
 void ratAnimate(Entity *my, double dist);
-void goblinMoveBodyparts(Entity *my, stat_t *myStats, double dist);
+void goblinMoveBodyparts(Entity *my, Stat *myStats, double dist);
 void slimeAnimate(Entity *my, double dist);
 void scorpionAnimate(Entity *my, double dist);
-void succubusMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void trollMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void shopkeeperMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void skeletonMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void minotaurMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void ghoulMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void demonMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void spiderMoveBodyparts(Entity *my, stat_t *myStats, double dist);
+void succubusMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void trollMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void demonMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void spiderMoveBodyparts(Entity *my, Stat *myStats, double dist);
 void lichAnimate(Entity *my, double dist);
-void impMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void gnomeMoveBodyparts(Entity *my, stat_t *myStats, double dist);
-void devilMoveBodyparts(Entity *my, stat_t *myStats, double dist);
+void impMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist);
+void devilMoveBodyparts(Entity *my, Stat *myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity *my);
