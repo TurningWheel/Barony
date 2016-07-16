@@ -249,21 +249,6 @@ void updatePlayerInventory() {
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
 			continue;
 
-		// give it a yellow background if it is unidentified
-		if (!item->identified) {
-			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
-			pos.w = 38; pos.h = 38;
-			drawRect(&pos, 31875, 125);
-		} else if (item->beatitude < 0) { // give it a red background if cursed
-			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
-			pos.w = 38; pos.h = 38;
-			drawRect(&pos, 125, 125);
-		} else if (item->beatitude > 0) { // give it a green background if blessed
-			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
-			pos.w = 38; pos.h = 38;
-			drawRect(&pos, 65280, 65);
-		}
-
 		// draw item
 		pos.x = x+item->x*INVENTORY_SLOTSIZE+4; pos.y = y+item->y*INVENTORY_SLOTSIZE+4;
 		pos.w = 32; pos.h = 32;
