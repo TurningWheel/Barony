@@ -282,5 +282,7 @@ extern bool auto_hotbar_new_items;
 
 extern bool disable_messages;
 
+extern bool right_click_protect;
+
 const char *getInputName(Uint32 scancode);
 Sint8 *inputPressed(Uint32 scancode);

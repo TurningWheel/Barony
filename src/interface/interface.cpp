@@ -129,6 +129,7 @@ list_t damageIndicators;
 
 bool auto_hotbar_new_items = TRUE;
 bool disable_messages = FALSE;
+bool right_click_protect = FALSE;
 
 bool loadInterfaceResources() {
 	//General GUI images.
@@ -503,9 +504,6 @@ int saveConfig(char *filename) {
 	if (colorblind) {
 		fprintf(fp, "/colorblind\n");
 	}
-	if (right_click_protect) {
-		fprintf(fp, "/right_click_protect\n");
-	}
 	if (!capture_mouse) {
 		fprintf(fp, "/nocapturemouse\n");
 	}
@@ -522,6 +520,10 @@ int saveConfig(char *filename) {
 	if (disable_messages)
 	{
 		fprintf(fp, "/disablemessages\n");
+	}
+	if (right_click_protect) 
+	{
+		fprintf(fp, "/right_click_protect\n");
 	}
 	fprintf(fp, "/skipintro\n");
 	
