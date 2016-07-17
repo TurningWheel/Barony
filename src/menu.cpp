@@ -805,9 +805,8 @@ void handleMainMenu(bool mode) {
 
 			//strncpy(stats[0].name,inputstr,16);
 			inputlen = 22;
-			if (lastname != NULL && strlen(inputstr) == 0) {
-				strncat(inputstr, lastname, std::max<size_t>(0, inputlen - strlen(inputstr)));
-				lastname = NULL;
+			if (lastname != "" && strlen(inputstr) == 0) {
+				strncat(inputstr, lastname.c_str(), std::max<size_t>(0, inputlen - strlen(inputstr)));
 			}
 
 			if( (ticks-cursorflash)%TICKS_PER_SECOND<TICKS_PER_SECOND/2 ) {
@@ -3741,8 +3740,7 @@ void buttonContinue(button_t *my) {
 		SDL_StartTextInput();
 	} else if( charcreation_step==5 ) {
 		if( SDL_IsTextInputActive() ) {
-			lastname = (char*)malloc(strlen(stats[0].name) * sizeof(char) - 1);
-			strcpy(lastname, stats[0].name);
+			lastname = (string)stats[0].name;
 			SDL_StopTextInput();
 		}
 		#ifdef STEAMWORKS
@@ -3828,8 +3826,7 @@ void buttonBack(button_t *my) {
 		playing_random_char = FALSE;
 	if (charcreation_step == 3) {
 		// If we've backed out, save what name was input for later
-		lastname = (char*)malloc(sizeof(inputstr) * sizeof(char) - 1);
-		strcpy(lastname, inputstr);
+		lastname = (string)inputstr;
 		SDL_StopTextInput();
 	} else if( charcreation_step==0 )
 		buttonCloseSubwindow(my);
