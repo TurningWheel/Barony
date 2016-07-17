@@ -502,8 +502,11 @@ int saveConfig(char *filename) {
 	if (!spawn_blood) {
 		fprintf(fp, "/noblood\n");
 	}
-	if( colorblind ) {
+	if (colorblind) {
 		fprintf(fp, "/colorblind\n");
+	}
+	if (right_click_protect) {
+		fprintf(fp, "/right_click_protect\n");
 	}
 	if (!capture_mouse) {
 		fprintf(fp, "/nocapturemouse\n");

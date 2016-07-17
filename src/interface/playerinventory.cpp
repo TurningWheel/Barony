@@ -17,6 +17,7 @@
 #include "../sound.hpp"
 #include "../net.hpp"
 #include "../magic/magic.hpp"
+#include "../menu.hpp"
 #include "interface.hpp"
 
 
@@ -247,6 +248,21 @@ void updatePlayerInventory() {
 		if( item==selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT))
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
 			continue;
+
+		// give it a yellow background if it is unidentified
+		if (!item->identified) {
+			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
+			pos.w = 38; pos.h = 38;
+			drawRect(&pos, 31875, 125);
+		} else if (item->beatitude < 0) { // give it a red background if cursed
+			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
+			pos.w = 38; pos.h = 38;
+			drawRect(&pos, 125, 125);
+		} else if (item->beatitude > 0) { // give it a green background if blessed
+			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
+			pos.w = 38; pos.h = 38;
+			drawRect(&pos, 65280, 65);
+		}
 
 		// draw item
 		pos.x = x+item->x*INVENTORY_SLOTSIZE+4; pos.y = y+item->y*INVENTORY_SLOTSIZE+4;
@@ -615,7 +631,7 @@ void updatePlayerInventory() {
 			//Tis a spell.
 			ttfPrintText(ttf12, itemMenuX+50-strlen(itemUseString(currentItem))*TTF12_WIDTH/2, itemMenuY+4, itemUseString(currentItem));
 		}
-		if( mousey<itemMenuY-20 ) {
+		if( mousey<itemMenuY-20) {
 			itemMenuSelected=-1; // for cancelling out
 		}
 		else if( mousey>=itemMenuY-2 && mousey<itemMenuY+20 ) {
@@ -635,10 +651,10 @@ void updatePlayerInventory() {
 		}
 		if( mousex>=itemMenuX+100 )
 			itemMenuSelected=-1; // for cancelling out
-		if( mousex<itemMenuX-10 )
+		if( mousex<itemMenuX-10 || mousex<itemMenuX && settings_right_click_protect)
 			itemMenuSelected=-1; // for cancelling out
 		if( !mousestatus[SDL_BUTTON_RIGHT] ) {
-			if( itemMenuSelected==0 ) {
+			if( itemMenuSelected==0) {
 				if (openedChest[clientnum] && itemCategory(currentItem) != SPELL_CAT) {
 					openedChest[clientnum]->addItemToChestFromInventory(clientnum, currentItem, FALSE);
 					currentItem = uidToItem(itemMenuItem);
