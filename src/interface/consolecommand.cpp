@@ -83,9 +83,8 @@ void consoleCommand(char *command_str) {
 	}
 	else if ( !strncmp(command_str, "/lastname ", 10) ) {
 		strcpy(name, command_str+10);
-		lastname = (char*)malloc(strlen(name) * sizeof(char)-1);
-		strcpy(lastname, name);
-		lastname[strlen(lastname) - 1] = '\0';
+		lastname = (string)name;
+		lastname = lastname.substr(0, lastname.size() - 1);
 	}
 	else if( !strncmp(command_str,"/spawnitem ",11) ) {
 		if( !(svFlags&SV_FLAG_CHEATS) ) {

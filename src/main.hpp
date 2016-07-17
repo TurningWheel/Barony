@@ -17,6 +17,9 @@
 
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 
+#include <string>
+using namespace std; //For C++ strings
+
 #ifdef _WIN32
 #define WINDOWS
 #else
@@ -343,7 +346,7 @@ extern Uint32 lastkeypressed;
 extern Sint8 keystatus[512];
 extern char *inputstr;
 extern int inputlen;
-extern char *lastname;
+extern string lastname;
 extern Sint8 mousestatus[6];
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;

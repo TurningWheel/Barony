@@ -612,7 +612,4 @@ void deinitGame() {
 		}
 	}
 	#endif
-
-	// free last saved name
-	free(lastname);
 }
