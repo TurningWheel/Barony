@@ -76,7 +76,6 @@ bool settings_broadcast;
 bool settings_nohud;
 bool settings_colorblind;
 bool settings_spawn_blood;
-bool settings_right_click_protect;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256]="";
@@ -85,9 +84,9 @@ int multiplayerselect=SINGLE;
 int menuselect=0;
 bool settings_auto_hotbar_new_items = TRUE;
 bool settings_disable_messages = TRUE;
+bool settings_right_click_protect = FALSE;
 bool playing_random_char = FALSE;
 bool colorblind = FALSE;
-bool right_click_protect = FALSE;
 Sint32 oslidery=0;
 
 Uint32 colorWhite = 0xFFFFFFFF;
@@ -1048,10 +1047,6 @@ void handleMainMenu(bool mode) {
 				ttfPrintTextFormatted(ttf12, subx1+236, suby1+204, "[x] %s", language[1345]);
 			else
 				ttfPrintTextFormatted(ttf12, subx1+236, suby1+204, "[ ] %s", language[1345]);
-			if (settings_right_click_protect)
-				ttfPrintTextFormatted(ttf12, subx1+236, suby1+228, "[x] %s", language[1960]);
-			else
-				ttfPrintTextFormatted(ttf12, subx1+236, suby1+228, "[ ] %s", language[1960]);
 				
 			if( mousestatus[SDL_BUTTON_LEFT] ) {
 				if( omousex >= subx1+242 && omousex < subx1+266 ) {
@@ -1078,10 +1073,6 @@ void handleMainMenu(bool mode) {
 					else if( omousey >= suby1+204 && omousey < suby1+204+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_colorblind = (settings_colorblind==FALSE);
-					}
-					else if (omousey >= suby1+228 && omousey < suby1+228+12) {
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_right_click_protect = (settings_right_click_protect==FALSE);
 					}
 				}
 			}
@@ -1181,17 +1172,21 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+84, "[ ] %s", language[1372]);
 			if( settings_nohud )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+108, "[x] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[x] %s", language[1373]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+108, "[ ] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[ ] %s", language[1373]);
 			if( settings_auto_hotbar_new_items)
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[x] %s", language[1374]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[ ] %s", language[1374]);
 			if( settings_disable_messages )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+156, "[x] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1536]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+156, "[ ] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1536]);
+			if ( settings_right_click_protect )
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[x] %s", language[1960]);
+			else
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[ ] %s", language[1960]);
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1+24, suby1+180, language[1375]);
@@ -1230,17 +1225,21 @@ void handleMainMenu(bool mode) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_broadcast=(settings_broadcast==FALSE);
 					}
-					else if( omousey >= suby1+108 && omousey < suby1+108+12 ) {
+					else if( omousey >= suby1+100 && omousey < suby1+100+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_nohud=(settings_nohud==FALSE);
 					}
-					else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
+					else if( omousey >= suby1+116 && omousey < suby1+116+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == FALSE);
 					}
-					else if( omousey >= suby1+156 && omousey < suby1+156+12 ) {
+					else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_disable_messages = (settings_disable_messages == FALSE);
+					}
+					else if (omousey >= suby1 + 148 && omousey < suby1 + 148 + 12) {
+						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_right_click_protect = (settings_right_click_protect == FALSE);
 					}
 				}
 				if( multiplayer!=CLIENT ) {
@@ -3287,7 +3286,6 @@ void openSettingsWindow() {
 	settings_bobbing = bobbing;
 	settings_spawn_blood = spawn_blood;
 	settings_colorblind = colorblind;
-	settings_right_click_protect = right_click_protect;
 	settings_gamma = vidgamma;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
@@ -3300,7 +3298,8 @@ void openSettingsWindow() {
 	settings_nohud = nohud;
 	settings_auto_hotbar_new_items = auto_hotbar_new_items;
 	settings_disable_messages = disable_messages;
-	
+	settings_right_click_protect = right_click_protect;
+
 	// create settings window
 	settings_window = TRUE;
 	subwindow = 1;
@@ -4374,7 +4373,6 @@ void buttonSettingsAccept(button_t *my) {
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
 	colorblind = settings_colorblind;
-	right_click_protect = settings_right_click_protect;
 	vidgamma = settings_gamma;
 	xres = settings_xres;
 	yres = settings_yres;
@@ -4415,6 +4413,7 @@ void buttonSettingsAccept(button_t *my) {
 
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
 	disable_messages = settings_disable_messages;
+	right_click_protect = settings_right_click_protect;
 
 	// we need to reposition the settings window now.
 	buttonCloseSubwindow(my);

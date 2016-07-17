@@ -20,6 +20,7 @@
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "paths.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #endif
@@ -3104,6 +3105,9 @@ void Entity::attack(int pose, int charge) {
 									sendPacketSafe(net_sock, -1, net_packet, player-1);
 								}
 							}
+
+							// Update the paths so that monsters know they can walk through it
+							generatePathMaps();
 						} else {
 							spawnBang(hit.x - cos(yaw)*2,hit.y - sin(yaw)*2,0);
 							messagePlayer(player,language[706]);

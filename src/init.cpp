@@ -479,6 +479,11 @@ int loadLanguage(char *lang) {
 	// allocate new language strings
 	language = (char **) calloc(NUMLANGENTRIES,sizeof(char *));
 
+	// Allocate an emptry string for each possible language entry
+	for (c = 0; c < NUMLANGENTRIES; c++) {
+		language[c] = (char *)calloc(1, sizeof(char));
+	}
+
 	// read file
 	Uint32 line;
 	for( line=1; !feof(fp); ) {
