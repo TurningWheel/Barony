@@ -475,6 +475,8 @@ int saveConfig(char *filename) {
 	fprintf(fp,"/gamma %3.3f\n",vidgamma);
 	fprintf(fp,"/fov %d\n",fov);
 	fprintf(fp,"/svflags %d\n",svFlags);
+	if( lastname )
+		fprintf(fp,"/lastname %s\n",lastname);
 	if( smoothlighting )
 		fprintf(fp,"/smoothlighting\n");
 	if( fullscreen )
