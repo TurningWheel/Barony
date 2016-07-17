@@ -87,7 +87,7 @@ typedef enum {
 	FEMALE
 } sex_t;
 
-extern class Stat {
+class Stat {
 	public:	
 		Monster type;
 		sex_t sex;
