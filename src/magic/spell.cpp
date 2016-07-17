@@ -150,7 +150,7 @@ void addSpell(int spell, int player) {
 		spellDeconstructor((void *)new_spell);
 		return;
 	}
-	if( stats[player].PROFICIENCIES[PRO_MAGIC]+statGetINT(&stats[player]) < new_spell->difficulty ) {
+	if( stats[player]->PROFICIENCIES[PRO_MAGIC]+statGetINT(stats[player]) < new_spell->difficulty ) {
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void *)new_spell);
 		return;
@@ -457,7 +457,7 @@ void spell_changeHealth(Entity *entity, int amount) {
 
 		if (multiplayer == SERVER) {
 			strcpy((char *)net_packet->data,"UPHP");
-			SDLNet_Write32((Uint32)stats[player].HP, &net_packet->data[4]);
+			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);
 			SDLNet_Write32(0, &net_packet->data[8]);
 			net_packet->address.host = net_clients[player-1].host;
 			net_packet->address.port = net_clients[player-1].port;

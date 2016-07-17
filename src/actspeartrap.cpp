@@ -93,7 +93,7 @@ void actSpearTrap(Entity *my) {
 				for( node=map.entities->first; node!=NULL; node=node->next ) {
 					Entity *entity = (Entity *)node->element;
 					if( entity->behavior==&actPlayer || entity->behavior==&actMonster ) {
-						stat_t *stats = entity->getStats();
+						Stat *stats = entity->getStats();
 						if( stats ) {
 							if( entityInsideEntity(my,entity) ) {
 								// do damage!

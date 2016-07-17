@@ -42,7 +42,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 
 	if( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 		if( entityInsideEntity( my, entity ) ) {
-			stat_t *stats = entity->getStats();
+			Stat *stats = entity->getStats();
 			if( stats ) {
 				if( entity->behavior==&actPlayer ) {
 					Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
@@ -271,7 +271,7 @@ void actBoulder(Entity *my) {
 			for(i=0;i<MAXPLAYERS;i++) {
 				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 					if(inrange[i]) {
-						if( statGetSTR(&stats[i])<5 ) {
+						if( statGetSTR(stats[i])<5 ) {
 							messagePlayer(i,language[456]);
 						} else {
 							if( players[i] ) {

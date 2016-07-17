@@ -192,7 +192,7 @@ void actWinningPortal(Entity *my) {
 			for( node=map.entities->first; node!=NULL; node=node->next ) {
 				Entity *entity = (Entity *)node->element;
 				if( entity->behavior==&actMonster ) {
-					stat_t *stats = entity->getStats();
+					Stat *stats = entity->getStats();
 					if( stats ) {
 						if( stats->type == LICH || stats->type == DEVIL ) {
 							return;

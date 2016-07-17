@@ -248,7 +248,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 					hit.entity = NULL;
 					return 0;
 				}
-				stat_t *stats;
+				Stat *stats;
 				if( (stats=my->getStats()) != NULL ) {
 					if( stats->EFFECTS[EFF_LEVITATING] == TRUE )
 						levitating=TRUE;
@@ -285,8 +285,8 @@ int barony_clear(double tx, double ty, Entity *my) {
 					continue;
 				if( my->behavior==&actMonster && entity->behavior==&actDoorFrame )
 					continue; // monsters don't have hard collision with door frames
-				stat_t *myStats = my->getStats();
-				stat_t *yourStats = entity->getStats();
+				Stat *myStats = my->getStats();
+				Stat *yourStats = entity->getStats();
 				if( myStats && yourStats ) {
 					if( yourStats->leader_uid == my->uid )
 						continue;
@@ -322,7 +322,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 						if( multiplayer!=CLIENT ) {
 							if( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] ) {
 								bool dyrnwyn=FALSE;
-								stat_t *stats = hit.entity->getStats();
+								Stat *stats = hit.entity->getStats();
 								if( stats )
 									if( stats->weapon )
 										if( stats->weapon->type == ARTIFACT_SWORD )
@@ -337,7 +337,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 								}
 							} else if( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] ) {
 								bool dyrnwyn=FALSE;
-								stat_t *stats = my->getStats();
+								Stat *stats = my->getStats();
 								if( stats )
 									if( stats->weapon )
 										if( stats->weapon->type == ARTIFACT_SWORD )
@@ -555,7 +555,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 	d=0;
 
 	if( my ) {
-		stat_t *stats = my->getStats();
+		Stat *stats = my->getStats();
 		if( stats ) {
 			if( stats->type == DEVIL ) {
 				ground = FALSE;
@@ -718,7 +718,7 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 int checkObstacle(long x, long y, Entity *my, Entity *target) {
 	node_t *node;
 	Entity *entity;
-	stat_t *stats;
+	Stat *stats;
 	bool levitating=FALSE;
 	
 	// get levitation status

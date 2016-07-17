@@ -69,7 +69,11 @@ void list_RemoveNode(node_t *node) {
 	}
 	
 	// once the node is removed from the list, delete it
-	(*node->deconstructor)(node->element);
+	// If a node has a deconstructor, then deconstruct it.  Otherwise it's a class and we'll delete it (which calls the destructor)
+	if (*node->deconstructor)
+		(*node->deconstructor)(node->element);
+	else
+		delete(node->element);
 	free(node);
 }
 

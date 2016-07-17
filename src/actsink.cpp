@@ -124,7 +124,7 @@ void actSink(Entity *my) {
 							if( monster ) {
 								Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
 								messagePlayerColor(i, color, language[582]);
-								stat_t *monsterStats = monster->getStats();
+								Stat *monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
 								monster->sprite = 210;
 								monster->flags[INVISIBLE] = FALSE;
@@ -134,7 +134,7 @@ void actSink(Entity *my) {
 						case 2:
 							playSoundEntity(players[i], 52, 64);
 							messagePlayer(i, language[583]);
-							stats[i].HUNGER += 30; //Less nutrition than the refreshing fountain.
+							stats[i]->HUNGER += 30; //Less nutrition than the refreshing fountain.
 							break;
 						case 3:
 							playSoundEntity(players[i], 52, 64);

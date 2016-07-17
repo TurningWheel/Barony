@@ -195,7 +195,7 @@ Entity::~Entity()
 -------------------------------------------------------------------------------*/
 
 void Entity::setObituary(char *obituary) {
-	stat_t *tempStats = this->getStats();
+	Stat *tempStats = this->getStats();
 	if( !tempStats )
 		return;
 	strncpy(tempStats->obituary,obituary,127);
@@ -212,8 +212,8 @@ void Entity::setObituary(char *obituary) {
 void Entity::killedByMonsterObituary(Entity *victim) {
 	if( !victim )
 		return;
-	stat_t *hitstats = victim->getStats();
-	stat_t *myStats = this->getStats();
+	Stat *hitstats = victim->getStats();
+	Stat *myStats = this->getStats();
 	if( !hitstats || !myStats )
 		return;
 
@@ -311,7 +311,7 @@ int Entity::entityLight() {
 -------------------------------------------------------------------------------*/
 
 void Entity::effectTimes() {
-	stat_t *myStats = this->getStats();
+	Stat *myStats = this->getStats();
 	int player, c;
 	spell_t *spell = NULL;
 	node_t *node = NULL;
@@ -544,7 +544,7 @@ void Entity::effectTimes() {
 -------------------------------------------------------------------------------*/
 
 void Entity::increaseSkill(int skill) {
-	stat_t *myStats = this->getStats();
+	Stat *myStats = this->getStats();
 	int player=-1;
 	
 	if( myStats==NULL )
@@ -614,21 +614,21 @@ void Entity::increaseSkill(int skill) {
 
 	Entity::stats
 	
-	Returns a pointer to a stat_t struct given a pointer to an entity
+	Returns a pointer to a Stat instance given a pointer to an entity
 
 -------------------------------------------------------------------------------*/
 
-stat_t *Entity::getStats() {
+Stat *Entity::getStats() {
 	if (this->behavior == &actMonster) { // monsters
 		if (this->children.first != NULL) {
 			if (this->children.first->next != NULL) {
-				return (stat_t *)this->children.first->next->element;
+				return (Stat *)this->children.first->next->element;
 			}
 		}
 	} else if (this->behavior == &actPlayer) { // players
-		return &stats[this->skill[2]];
+		return stats[this->skill[2]];
 	} else if (this->behavior == &actPlayerLimb) { // player bodyparts
-		return &stats[this->skill[2]];
+		return stats[this->skill[2]];
 	}
 
 	return NULL;
@@ -643,7 +643,7 @@ stat_t *Entity::getStats() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::checkBetterEquipment(stat_t *myStats) {
+void Entity::checkBetterEquipment(Stat *myStats) {
 	if (!myStats) return; //Can't continue without these.
 
 	list_t *items = NULL;
@@ -911,7 +911,7 @@ Entity *uidToEntity(Uint32 uidnum) {
 -------------------------------------------------------------------------------*/
 
 void Entity::setHP(int amount) {
-	stat_t* entitystats = this->getStats();
+	Stat* entitystats = this->getStats();
 
 	if( this->behavior==&actPlayer && godmode )
 		amount=entitystats->MAXHP;
@@ -946,7 +946,7 @@ void Entity::setHP(int amount) {
 -------------------------------------------------------------------------------*/
 
 void Entity::modHP(int amount) {
-	stat_t* entitystats = this->getStats();
+	Stat* entitystats = this->getStats();
 
 	if( this->behavior==&actPlayer && godmode && amount<0 )
 		amount=0;
@@ -965,7 +965,7 @@ void Entity::modHP(int amount) {
 -------------------------------------------------------------------------------*/
 
 void Entity::setMP(int amount) {
-	stat_t* entitystats = this->getStats();
+	Stat* entitystats = this->getStats();
 	
 	if( this->behavior==&actPlayer && godmode )
 		amount=entitystats->MAXMP;
@@ -998,7 +998,7 @@ void Entity::setMP(int amount) {
 -------------------------------------------------------------------------------*/
 
 void Entity::modMP(int amount) {
-	stat_t* entitystats = this->getStats();
+	Stat* entitystats = this->getStats();
 
 	if( this->behavior==&actPlayer && godmode && amount<0 )
 		amount=0;
@@ -1018,7 +1018,7 @@ void Entity::modMP(int amount) {
 
 void Entity::drainMP(int amount) {
 	//A pointer to the entity's stats.
-	stat_t* entitystats = this->getStats();
+	Stat* entitystats = this->getStats();
 
 	//Check if no stats found.
 	if( entitystats==NULL || amount==0 )
@@ -1045,7 +1045,7 @@ void Entity::drainMP(int amount) {
 				//It is. Tell the client its MP just changed.
 				strcpy((char *)net_packet->data,"UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP,&net_packet->data[4]);
-				SDLNet_Write32((Uint32)stats[i].type,&net_packet->data[8]);
+				SDLNet_Write32((Uint32)stats[i]->type,&net_packet->data[8]);
 				net_packet->address.host = net_clients[i-1].host;
 				net_packet->address.port = net_clients[i-1].port;
 				net_packet->len = 12;
@@ -1058,7 +1058,7 @@ void Entity::drainMP(int amount) {
 			strcpy((char *)net_packet->data,"UPMP");
 			net_packet->data[4] = clientnum;
 			SDLNet_Write32((Uint32)entitystats->MP,&net_packet->data[5]);
-			SDLNet_Write32((Uint32)stats[clientnum].type,&net_packet->data[9]);
+			SDLNet_Write32((Uint32)stats[clientnum]->type,&net_packet->data[9]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 13;
@@ -1072,7 +1072,7 @@ void Entity::drainMP(int amount) {
 			messagePlayerColor(player, color, language[621]);
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
-		stat_t *tempStats = this->getStats();
+		Stat *tempStats = this->getStats();
 		if( tempStats ) {
 			if( tempStats->sex==MALE ) {
 				this->setObituary(language[1528]);
@@ -1092,7 +1092,7 @@ void Entity::drainMP(int amount) {
 -------------------------------------------------------------------------------*/
 
 bool Entity::safeConsumeMP(int amount) {
-	stat_t *stat = this->getStats();
+	Stat *stat = this->getStats();
 
 	//Check if no stats found.
 	if (!stat)
@@ -1117,7 +1117,7 @@ bool Entity::safeConsumeMP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::handleEffects(stat_t *myStats) {
+void Entity::handleEffects(Stat *myStats) {
 	int increasestat[3];
 	int i, c;
 	int player=-1;
@@ -1728,7 +1728,7 @@ void Entity::handleEffects(stat_t *myStats) {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getAttack() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	Sint32 attack=0;
 
 	if( (entitystats=this->getStats()) == NULL )
@@ -1751,14 +1751,14 @@ Sint32 Entity::getAttack() {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getSTR() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	
 	if( (entitystats=this->getStats()) == NULL )
 		return 0;
 	return statGetSTR(entitystats);
 }
 
-Sint32 statGetSTR(stat_t *entitystats) {
+Sint32 statGetSTR(Stat *entitystats) {
 	Sint32 STR;
 	
 	STR = entitystats->STR;
@@ -1793,14 +1793,14 @@ Sint32 statGetSTR(stat_t *entitystats) {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getDEX() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	
 	if( (entitystats=this->getStats()) == NULL )
 		return 0;
 	return statGetDEX(entitystats);
 }
 
-Sint32 statGetDEX(stat_t *entitystats) {
+Sint32 statGetDEX(Stat *entitystats) {
 	Sint32 DEX;
 
 	// paralyzed
@@ -1842,14 +1842,14 @@ Sint32 statGetDEX(stat_t *entitystats) {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getCON() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	
 	if( (entitystats=this->getStats()) == NULL )
 		return 0;
 	return statGetCON(entitystats);
 }
 
-Sint32 statGetCON(stat_t *entitystats) {
+Sint32 statGetCON(Stat *entitystats) {
 	Sint32 CON;
 
 	CON = entitystats->CON;
@@ -1881,14 +1881,14 @@ Sint32 statGetCON(stat_t *entitystats) {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getINT() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	
 	if( (entitystats=this->getStats()) == NULL )
 		return 0;
 	return statGetINT(entitystats);
 }
 
-Sint32 statGetINT(stat_t *entitystats) {
+Sint32 statGetINT(Stat *entitystats) {
 	Sint32 INT;
 
 	INT = entitystats->INT;
@@ -1909,14 +1909,14 @@ Sint32 statGetINT(stat_t *entitystats) {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getPER() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	
 	if( (entitystats=this->getStats()) == NULL )
 		return 0;
 	return statGetPER(entitystats);
 }
 
-Sint32 statGetPER(stat_t *entitystats) {
+Sint32 statGetPER(Stat *entitystats) {
 	Sint32 PER;
 	
 	PER = entitystats->PER;
@@ -1937,14 +1937,14 @@ Sint32 statGetPER(stat_t *entitystats) {
 -------------------------------------------------------------------------------*/
 
 Sint32 Entity::getCHR() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	
 	if( (entitystats=this->getStats()) == NULL )
 		return 0;
 	return statGetCHR(entitystats);
 }
 
-Sint32 statGetCHR(stat_t *entitystats) {
+Sint32 statGetCHR(Stat *entitystats) {
 	Sint32 CHR;
 
 	CHR = entitystats->CHR;
@@ -1970,7 +1970,7 @@ Sint32 statGetCHR(stat_t *entitystats) {
 -------------------------------------------------------------------------------*/
 
 bool Entity::isBlind() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	if( (entitystats=this->getStats()) == NULL )
 		return false;
 	
@@ -2004,7 +2004,7 @@ bool Entity::isBlind() {
 -------------------------------------------------------------------------------*/
 
 bool Entity::isInvisible() {
-	stat_t* entitystats;
+	Stat* entitystats;
 	if( (entitystats=getStats()) == NULL )
 		return false;
 	
@@ -2035,7 +2035,7 @@ bool Entity::isInvisible() {
 
 bool Entity::isMobile()
 {
-	stat_t* entitystats;
+	Stat* entitystats;
 	if( (entitystats = getStats()) == NULL )
 		return true;
 
@@ -2148,8 +2148,8 @@ void getItemsOnTile(int x, int y, list_t **list) {
 -------------------------------------------------------------------------------*/
 
 void Entity::attack(int pose, int charge) {
-	stat_t *hitstats = NULL;
-	stat_t *myStats;
+	Stat *hitstats = NULL;
+	Stat *myStats;
 	Entity *entity;
 	int player, playerhit=-1;
 	double dist;
@@ -2170,7 +2170,7 @@ void Entity::attack(int pose, int charge) {
 	if( multiplayer!=CLIENT ) {
 		// animation
 		if( player>=0 ) {
-			if( stats[player].weapon != NULL )
+			if( stats[player]->weapon != NULL )
 				players[player]->skill[9]=pose; // PLAYER_ATTACK
 			else
 				players[player]->skill[9]=1; // special case for punch to eliminate spanking motion :p
@@ -2495,7 +2495,7 @@ void Entity::attack(int pose, int charge) {
 			} else if( hit.entity->behavior == &actMonster ) {
 				if( hit.entity->children.first != NULL ) {
 					if( hit.entity->children.first->next != NULL ) {
-						hitstats = (stat_t *)hit.entity->children.first->next->element;
+						hitstats = (Stat *)hit.entity->children.first->next->element;
 						
 						// alert the monster!
 						if( hit.entity->skill[0]!=1 && (hitstats->type<LICH || hitstats->type>=SHOPKEEPER) ) {
@@ -2513,7 +2513,7 @@ void Entity::attack(int pose, int charge) {
 						for( node=map.entities->first; node!=NULL; node=node->next ) {
 							entity = (Entity *)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
-								stat_t *buddystats = entity->getStats();
+								Stat *buddystats = entity->getStats();
 								if( buddystats != NULL ) {
 									if( entity->checkFriend(hit.entity) ) {
 										if( entity->skill[0] == 0 ) { // monster is waiting
@@ -2534,7 +2534,7 @@ void Entity::attack(int pose, int charge) {
 					}
 				}
 			} else if( hit.entity->behavior == &actPlayer ) {
-				hitstats = &stats[hit.entity->skill[2]];
+				hitstats = stats[hit.entity->skill[2]];
 				playerhit = hit.entity->skill[2];
 				
 				// alert the player's followers!
@@ -2543,7 +2543,7 @@ void Entity::attack(int pose, int charge) {
 					entity = uidToEntity(*c);
 					Entity *ohitentity = hit.entity;
 					if( entity ) {
-						stat_t *buddystats = entity->getStats();
+						Stat *buddystats = entity->getStats();
 						if( buddystats != NULL ) {
 							if( entity->skill[0] == 0 || (entity->skill[0] == 3 && entity->skill[1] != uid) ) { // monster is waiting or hunting
 								entity->skill[0] = 2; // path state
@@ -2627,7 +2627,7 @@ void Entity::attack(int pose, int charge) {
 						Entity *monster = summonMonster(SLIME,x,y);
 						if( monster ) {
 							messagePlayer(player, language[582]);
-							stat_t *monsterStats = monster->getStats();
+							Stat *monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
 						}
 					}
@@ -3141,11 +3141,11 @@ void Entity::attack(int pose, int charge) {
 
 	AC
 	
-	Returns armor class value from a stat_t structure
+	Returns armor class value from a Stat instance
 
 -------------------------------------------------------------------------------*/
 
-int AC(stat_t *stat) {
+int AC(Stat *stat) {
 	if (!stat)
 		return 0;
 
@@ -3279,8 +3279,8 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 	if ( !src )
 		return;
 
-	stat_t *destStats = getStats();
-	stat_t *srcStats = src->getStats();
+	Stat *destStats = getStats();
+	Stat *srcStats = src->getStats();
 
 	if( !destStats || !srcStats )
 		return;
@@ -3414,8 +3414,8 @@ bool Entity::checkEnemy(Entity *your) {
 
 	bool result;
 
-	stat_t *myStats = getStats();
-	stat_t *yourStats = your->getStats();
+	Stat *myStats = getStats();
+	Stat *yourStats = your->getStats();
 
 	if( !myStats || !yourStats )
 		return FALSE;
@@ -3430,7 +3430,7 @@ bool Entity::checkEnemy(Entity *your) {
 	if( yourStats->leader_uid )
 		yourLeader=uidToEntity(yourStats->leader_uid);
 	if( yourLeader ) {
-		stat_t *yourLeaderStats = yourLeader->getStats();
+		Stat *yourLeaderStats = yourLeader->getStats();
 		if( yourLeaderStats ) {
 			if( yourLeader==this ) {
 				return FALSE;
@@ -3445,7 +3445,7 @@ bool Entity::checkEnemy(Entity *your) {
 	if( myStats->leader_uid )
 		myLeader = uidToEntity(myStats->leader_uid);
 	if( myLeader ) {
-		stat_t *myLeaderStats = myLeader->getStats();
+		Stat *myLeaderStats = myLeader->getStats();
 		if( myLeaderStats ) {
 			if( myLeader==your ) {
 				result = FALSE;
@@ -3495,8 +3495,8 @@ bool Entity::checkFriend(Entity *your) {
 	if (!your)
 		return false; //Equivalent to if (!myStats || !yourStats)
 
-	stat_t *myStats = getStats();
-	stat_t *yourStats = your->getStats();
+	Stat *myStats = getStats();
+	Stat *yourStats = your->getStats();
 
 	if( !myStats || !yourStats )
 		return FALSE;
@@ -3509,7 +3509,7 @@ bool Entity::checkFriend(Entity *your) {
 	if( yourStats->leader_uid )
 		yourLeader=uidToEntity(yourStats->leader_uid);
 	if( yourLeader ) {
-		stat_t *yourLeaderStats = yourLeader->getStats();
+		Stat *yourLeaderStats = yourLeader->getStats();
 		if( yourLeaderStats ) {
 			if( yourLeader==this ) {
 				return TRUE;
@@ -3524,7 +3524,7 @@ bool Entity::checkFriend(Entity *your) {
 	if( myStats->leader_uid )
 		myLeader = uidToEntity(myStats->leader_uid);
 	if( myLeader ) {
-		stat_t *myLeaderStats = myLeader->getStats();
+		Stat *myLeaderStats = myLeader->getStats();
 		if( myLeaderStats ) {
 			if( myLeader==your ) {
 				result = TRUE;

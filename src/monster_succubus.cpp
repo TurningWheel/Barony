@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initSuccubus(Entity *my, stat_t *myStats) {
+void initSuccubus(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -248,7 +248,7 @@ void succubusDie(Entity *my) {
 
 #define SUCCUBUSWALKSPEED .25
 
-void succubusMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void succubusMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;

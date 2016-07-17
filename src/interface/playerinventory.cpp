@@ -242,7 +242,7 @@ void updatePlayerInventory() {
 	// draw contents of each slot
 	x = INVENTORY_STARTX;
 	y = INVENTORY_STARTY;
-	for( node=stats[clientnum].inventory.first; node!=NULL; node=nextnode ) {
+	for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 		nextnode = node->next;
 		Item *item = (Item *)node->element;
 		if( item==selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT))
@@ -339,7 +339,7 @@ void updatePlayerInventory() {
 
 	// mouse interactions
 	if( !selectedItem ) {
-		for( node=stats[clientnum].inventory.first; node!=NULL; node=nextnode ) {
+		for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 			nextnode = node->next;
 			Item *item = (Item *)node->element; //I don't like that there's not a check that either are null.
 
@@ -419,7 +419,7 @@ void updatePlayerInventory() {
 						}
 					}
 
-					if( stats[clientnum].HP<=0 )
+					if( stats[clientnum]->HP<=0 )
 						break;
 
 					// handle clicking
@@ -446,7 +446,7 @@ void updatePlayerInventory() {
 				}
 			}
 		}
-	} else if( stats[clientnum].HP>0 ) {
+	} else if( stats[clientnum]->HP>0 ) {
 		// releasing items
 		if( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) ) {
 			if( openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT ) {
@@ -468,7 +468,7 @@ void updatePlayerInventory() {
 					int oldy = selectedItem->y;
 					selectedItem->x = (mousex-x)/INVENTORY_SLOTSIZE;
 					selectedItem->y = (mousey-y)/INVENTORY_SLOTSIZE;
-					for( node=stats[clientnum].inventory.first; node!=NULL; node=nextnode ) {
+					for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 						nextnode = node->next;
 						Item *tempItem = (Item *)node->element;
 						if( tempItem == selectedItem )
@@ -680,7 +680,7 @@ void updatePlayerInventory() {
 							net_packet->len = 26;
 							sendPacketSafe(net_sock, -1, net_packet, 0);
 						}
-						equipItem(currentItem,&stats[clientnum].weapon,clientnum);
+						equipItem(currentItem,&stats[clientnum]->weapon,clientnum);
 						currentItem = uidToItem(itemMenuItem);
 					}
 				}
@@ -714,7 +714,7 @@ void updatePlayerInventory() {
 								net_packet->len = 26;
 								sendPacketSafe(net_sock, -1, net_packet, 0);
 							}
-							equipItem(currentItem,&stats[clientnum].weapon,clientnum);
+							equipItem(currentItem,&stats[clientnum]->weapon,clientnum);
 							currentItem = uidToItem(itemMenuItem);
 						} else {
 							useItem(currentItem,clientnum);

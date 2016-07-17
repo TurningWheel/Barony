@@ -30,31 +30,31 @@ void initClass(int player) {
 
 	// SEX MODIFIER
 	// female; else male
-	if( stats[player].sex ) {
-		stats[player].DEX += 1;
+	if( stats[player]->sex ) {
+		stats[player]->DEX += 1;
 	} else {
-		stats[player].STR += 1;
+		stats[player]->STR += 1;
 	}
 
 	// CLASS LOADOUTS
 	// barbarian
 	if( client_classes[player] == 0 ) {
 		// attributes
-		stats[player].STR += 1;
-		stats[player].CON += 1;
-		stats[player].DEX -= 1;
-		stats[player].INT -= 1;
+		stats[player]->STR += 1;
+		stats[player]->CON += 1;
+		stats[player]->DEX -= 1;
+		stats[player]->INT -= 1;
 	
-		stats[player].MAXHP += 10;
-		stats[player].HP += 10;
-		stats[player].MAXMP -= 10;
-		stats[player].MP -= 10;
+		stats[player]->MAXHP += 10;
+		stats[player]->HP += 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_SWIMMING] = 25;
-		stats[player].PROFICIENCIES[PRO_SHIELD] = 25;
-		stats[player].PROFICIENCIES[PRO_AXE] = 50;
-		stats[player].PROFICIENCIES[PRO_MACE] = 50;
+		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 25;
+		stats[player]->PROFICIENCIES[PRO_AXE] = 50;
+		stats[player]->PROFICIENCIES[PRO_MACE] = 50;
 
 		// iron axe
 		item = newItem(IRON_AXE,SERVICABLE,0,1,0,TRUE,NULL);
@@ -120,22 +120,22 @@ void initClass(int player) {
 	// warrior
 	else if( client_classes[player] == 1 ) {
 		// attributes
-		stats[player].STR += 1;
-		stats[player].DEX += 1;
-		stats[player].CON -= 3;
-		stats[player].INT -= 1;
-		stats[player].PER -= 1;
-		stats[player].CHR += 1;
+		stats[player]->STR += 1;
+		stats[player]->DEX += 1;
+		stats[player]->CON -= 3;
+		stats[player]->INT -= 1;
+		stats[player]->PER -= 1;
+		stats[player]->CHR += 1;
 		
-		stats[player].MAXMP -= 10;
-		stats[player].MP -= 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_LEADERSHIP] = 40;
-		stats[player].PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player].PROFICIENCIES[PRO_SWORD] = 50;
-		stats[player].PROFICIENCIES[PRO_POLEARM] = 50;
-		stats[player].PROFICIENCIES[PRO_SHIELD] = 50;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWORD] = 50;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 50;
+		stats[player]->PROFICIENCIES[PRO_SHIELD] = 50;
 
 		// iron spear
 		item = newItem(IRON_SPEAR,SERVICABLE,0,1,0,TRUE,NULL);
@@ -216,21 +216,21 @@ void initClass(int player) {
 	// healer
 	else if( client_classes[player] == 2 ) {
 		// attributes
-		stats[player].CON += 2;
-		stats[player].INT += 1;
-		stats[player].STR -= 1;
-		stats[player].DEX -= 1;
+		stats[player]->CON += 2;
+		stats[player]->INT += 1;
+		stats[player]->STR -= 1;
+		stats[player]->DEX -= 1;
 		
-		stats[player].MAXHP -= 10;
-		stats[player].HP -= 10;
-		stats[player].MAXMP += 10;
-		stats[player].MP += 10;
+		stats[player]->MAXHP -= 10;
+		stats[player]->HP -= 10;
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player].PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player].PROFICIENCIES[PRO_SWIMMING] = 25;
-		stats[player].PROFICIENCIES[PRO_POLEARM] = 25;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF,SERVICABLE,0,1,0,TRUE,NULL);
@@ -305,23 +305,23 @@ void initClass(int player) {
 	// rogue
 	else if( client_classes[player] == 3 ) {
 		// attributes
-		stats[player].DEX += 2;
-		stats[player].PER += 2;
-		stats[player].INT -= 1;
-		stats[player].STR -= 1;
-		stats[player].CHR -= 1;
+		stats[player]->DEX += 2;
+		stats[player]->PER += 2;
+		stats[player]->INT -= 1;
+		stats[player]->STR -= 1;
+		stats[player]->CHR -= 1;
 		
-		stats[player].MAXHP -= 10;
-		stats[player].HP -= 10;
-		stats[player].MAXMP -= 10;
-		stats[player].MP -= 10;
+		stats[player]->MAXHP -= 10;
+		stats[player]->HP -= 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_APPRAISAL] = 25;
-		stats[player].PROFICIENCIES[PRO_STEALTH] = 50;
-		stats[player].PROFICIENCIES[PRO_LOCKPICKING] = 50;
-		stats[player].PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player].PROFICIENCIES[PRO_SWORD] = 25;
+		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 25;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 50;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
 
 		// bronze sword
 		item = newItem(BRONZE_SWORD,SERVICABLE,0,1,0,TRUE,NULL);
@@ -396,21 +396,21 @@ void initClass(int player) {
 	// wanderer
 	else if( client_classes[player] == 4 ) {
 		// attributes
-		stats[player].CON += 1;
-		stats[player].INT -= 1;
-		stats[player].CHR -= 1;
+		stats[player]->CON += 1;
+		stats[player]->INT -= 1;
+		stats[player]->CHR -= 1;
 		
-		stats[player].MAXHP += 10;
-		stats[player].HP += 10;
-		stats[player].MAXMP -= 10;
-		stats[player].MP -= 10;
+		stats[player]->MAXHP += 10;
+		stats[player]->HP += 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_STEALTH] = 25;
-		stats[player].PROFICIENCIES[PRO_SWIMMING] = 50;
-		stats[player].PROFICIENCIES[PRO_POLEARM] = 25;
-		stats[player].PROFICIENCIES[PRO_RANGED] = 25;
-		stats[player].PROFICIENCIES[PRO_TRADING] = 25;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 50;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
+		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF,WORN,0,1,0,TRUE,NULL);
@@ -501,17 +501,17 @@ void initClass(int player) {
 	// cleric
 	else if( client_classes[player] == 5 ) {
 		// attributes
-		stats[player].PER += 2;
-		stats[player].CON += 1;
-		stats[player].DEX -= 1;
-		stats[player].CHR -= 1;
+		stats[player]->PER += 2;
+		stats[player]->CON += 1;
+		stats[player]->DEX -= 1;
+		stats[player]->CHR -= 1;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_MACE] = 25;
-		stats[player].PROFICIENCIES[PRO_SWIMMING] = 25;
-		stats[player].PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player].PROFICIENCIES[PRO_SPELLCASTING] = 25;
-		stats[player].PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stats[player]->PROFICIENCIES[PRO_MACE] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 
 		// iron mace
 		item = newItem(IRON_MACE,SERVICABLE,1,1,0,TRUE,NULL);
@@ -593,20 +593,20 @@ void initClass(int player) {
 	// merchant
 	else if( client_classes[player] == 6 ) {
 		// attributes
-		stats[player].CHR += 1;
-		stats[player].PER += 1;
-		stats[player].DEX -= 1;
-		stats[player].INT -= 1;
-		stats[player].GOLD += 500;
+		stats[player]->CHR += 1;
+		stats[player]->PER += 1;
+		stats[player]->DEX -= 1;
+		stats[player]->INT -= 1;
+		stats[player]->GOLD += 500;
 		
-		stats[player].MAXMP -= 10;
-		stats[player].MP -= 10;
+		stats[player]->MAXMP -= 10;
+		stats[player]->MP -= 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_AXE] = 25;
-		stats[player].PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stats[player].PROFICIENCIES[PRO_APPRAISAL] = 50;
-		stats[player].PROFICIENCIES[PRO_TRADING] = 50;
+		stats[player]->PROFICIENCIES[PRO_AXE] = 25;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 50;
+		stats[player]->PROFICIENCIES[PRO_TRADING] = 50;
 
 		// bronze axe
 		item = newItem(BRONZE_AXE,SERVICABLE,0,1,0,TRUE,NULL);
@@ -681,20 +681,20 @@ void initClass(int player) {
 	// wizard
 	else if( client_classes[player] == 7 ) {
 		// attributes
-		stats[player].INT += 1;
-		stats[player].PER += 1;
-		stats[player].DEX -= 1;
-		stats[player].CHR -= 1;
+		stats[player]->INT += 1;
+		stats[player]->PER += 1;
+		stats[player]->DEX -= 1;
+		stats[player]->CHR -= 1;
 		
-		stats[player].MAXHP -= 10;
-		stats[player].HP -= 10;
-		stats[player].MAXMP += 20;
-		stats[player].MP += 20;
+		stats[player]->MAXHP -= 10;
+		stats[player]->HP -= 10;
+		stats[player]->MAXMP += 20;
+		stats[player]->MP += 20;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_POLEARM] = 25;
-		stats[player].PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player].PROFICIENCIES[PRO_MAGIC] = 50;
+		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
 
 		// quarterstaff
 		item = newItem(QUARTERSTAFF,SERVICABLE,0,1,0,TRUE,NULL);
@@ -778,21 +778,21 @@ void initClass(int player) {
 	// arcanist
 	else if( client_classes[player] == 8 ) {
 		// attributes
-		stats[player].INT += 1;
-		stats[player].CHR += 1;
-		stats[player].PER -= 1;
-		stats[player].STR -= 1;
+		stats[player]->INT += 1;
+		stats[player]->CHR += 1;
+		stats[player]->PER -= 1;
+		stats[player]->STR -= 1;
 		
-		stats[player].MAXMP += 10;
-		stats[player].MP += 10;
+		stats[player]->MAXMP += 10;
+		stats[player]->MP += 10;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player].PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		stats[player].PROFICIENCIES[PRO_STEALTH] = 25;
-		stats[player].PROFICIENCIES[PRO_LOCKPICKING] = 25;
-		stats[player].PROFICIENCIES[PRO_SWORD] = 25;
-		stats[player].PROFICIENCIES[PRO_RANGED] = 25;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 25;
+		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
+		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 
 		// iron sword
 		item = newItem(IRON_SWORD,SERVICABLE,0,1,0,TRUE,NULL);
@@ -877,18 +877,18 @@ void initClass(int player) {
 	// joker
 	else if( client_classes[player] == 9 ) {
 		// attributes
-		stats[player].INT += 1;
-		stats[player].CHR += 1;
-		stats[player].CON -= 1;
-		stats[player].STR -= 1;
-		stats[player].GOLD += 200;
+		stats[player]->INT += 1;
+		stats[player]->CHR += 1;
+		stats[player]->CON -= 1;
+		stats[player]->STR -= 1;
+		stats[player]->GOLD += 200;
 		
 		// skills
-		stats[player].PROFICIENCIES[PRO_LOCKPICKING] = 25;
-		stats[player].PROFICIENCIES[PRO_TRADING] = 25;
-		stats[player].PROFICIENCIES[PRO_LEADERSHIP] = 20;
-		stats[player].PROFICIENCIES[PRO_MAGIC] = 25;
-		stats[player].PROFICIENCIES[PRO_SPELLCASTING] = 25;
+		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 25;
+		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
+		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
+		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
+		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
 
 		// jester hat
 		item = newItem(HAT_JESTER,SERVICABLE,0,1,0,TRUE,NULL);
@@ -953,7 +953,7 @@ void initClass(int player) {
 	// move default items to the right
 	if( player==clientnum ) {
 		node_t *node;
-		for( node=stats[player].inventory.first; node!=NULL; node=node->next ) {
+		for( node=stats[player]->inventory.first; node!=NULL; node=node->next ) {
 			Item *item = (Item *)node->element;
 			item->x = INVENTORY_SIZEX-item->x-1;
 		}

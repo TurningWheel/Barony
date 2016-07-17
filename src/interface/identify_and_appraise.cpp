@@ -95,7 +95,7 @@ void updateIdentifyGUI() {
 			}
 		}
 
-		list_t *identify_inventory = &stats[clientnum].inventory;
+		list_t *identify_inventory = &stats[clientnum]->inventory;
 
 		if (!identify_inventory) {
 			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
@@ -237,9 +237,9 @@ void identifyGUIIdentify(Item *item) {
 
 		identifygui_appraising = FALSE;
 		if( item->type!=GEM_GLASS )
-			appraisal_timer = (items[item->type].value * 60) / (stats[clientnum].PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised
+			appraisal_timer = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised
 		else
-			appraisal_timer = (1000 * 60) / (stats[clientnum].PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
+			appraisal_timer = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
 		appraisal_timer = std::min(std::max(1,appraisal_timer),36000);
 		appraisal_timermax = appraisal_timer;
 		appraisal_item = item->uid;

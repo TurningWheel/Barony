@@ -332,8 +332,8 @@ Item *newItem(ItemType type, Status status,Sint16 beatitude,Sint16 count,Uint32 
 Item *uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 Item* newItemFromEntity(Entity *entity); //Make sure to call free(item).
-Entity *dropItemMonster(Item *item, Entity *monster, stat_t *monsterStats);
-Item **itemSlot(stat_t *myStats, Item *item);
+Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats);
+Item **itemSlot(Stat *myStats, Item *item);
 
 enum Category itemCategory(Item *item);
 Sint32 itemModel(Item *item);

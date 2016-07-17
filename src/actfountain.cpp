@@ -114,7 +114,7 @@ void actFountain(Entity *my) {
 							messagePlayer(i, language[470]);
 							messagePlayer(i, language[471]);
 							playSoundEntity(players[i], 52, 64);
-							stats[i].HUNGER += 50;
+							stats[i]->HUNGER += 50;
 							break;
 						case 2: {
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
@@ -130,26 +130,26 @@ void actFountain(Entity *my) {
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format,0,255,255);
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayer(i, language[473]);
-							if( stats[i].helmet )
-								stats[i].helmet->beatitude++;
-							if( stats[i].breastplate )
-								stats[i].breastplate->beatitude++;
-							if( stats[i].gloves )
-								stats[i].gloves->beatitude++;
-							if( stats[i].shoes )
-								stats[i].shoes->beatitude++;
-							if( stats[i].shield )
-								stats[i].shield->beatitude++;
-							if( stats[i].weapon )
-								stats[i].weapon->beatitude++;
-							if( stats[i].cloak )
-								stats[i].cloak->beatitude++;
-							if( stats[i].amulet )
-								stats[i].amulet->beatitude++;
-							if( stats[i].ring )
-								stats[i].ring->beatitude++;
-							if( stats[i].mask )
-								stats[i].mask->beatitude++;
+							if( stats[i]->helmet )
+								stats[i]->helmet->beatitude++;
+							if( stats[i]->breastplate )
+								stats[i]->breastplate->beatitude++;
+							if( stats[i]->gloves )
+								stats[i]->gloves->beatitude++;
+							if( stats[i]->shoes )
+								stats[i]->shoes->beatitude++;
+							if( stats[i]->shield )
+								stats[i]->shield->beatitude++;
+							if( stats[i]->weapon )
+								stats[i]->weapon->beatitude++;
+							if( stats[i]->cloak )
+								stats[i]->cloak->beatitude++;
+							if( stats[i]->amulet )
+								stats[i]->amulet->beatitude++;
+							if( stats[i]->ring )
+								stats[i]->ring->beatitude++;
+							if( stats[i]->mask )
+								stats[i]->mask->beatitude++;
 							if( multiplayer==SERVER && i>0 ) {
 								strcpy((char *)net_packet->data,"BLES");
 								net_packet->address.host = net_clients[i-1].host;

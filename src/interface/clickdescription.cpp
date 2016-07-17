@@ -27,7 +27,7 @@
 -------------------------------------------------------------------------------*/
 
 void clickDescription(int player, Entity *entity) {
-	stat_t *stat;
+	Stat *stat;
 	Item *item;
 	Uint32 uidnum;
 	
@@ -104,7 +104,7 @@ void clickDescription(int player, Entity *entity) {
 				if( entity->behavior==&actPlayerLimb || entity->skill[2]==entity->parent ) {
 					if( parent ) {
 						if( parent->behavior==&actPlayer || parent->behavior==&actMonster ) {
-							stat_t *stats = parent->getStats();
+							Stat *stats = parent->getStats();
 							if( stats ) {
 								if( strcmp(stats->name,"") ) {
 									messagePlayer(player,language[253],language[90+stats->type],stats->name);

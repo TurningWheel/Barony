@@ -28,7 +28,7 @@ void item_PotionWater(Item *item, Entity *entity) {
 
 	node_t *node;
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -99,7 +99,7 @@ void item_PotionBooze(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -140,7 +140,7 @@ void item_PotionJuice(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -177,7 +177,7 @@ void item_PotionSickness(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -226,7 +226,7 @@ void item_PotionConfusion(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -267,7 +267,7 @@ void item_PotionCureAilment(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 	int c;
 
 	if( entity->behavior==&actPlayer )
@@ -310,7 +310,7 @@ void item_PotionBlindness(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -349,7 +349,7 @@ void item_PotionInvisibility(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -388,7 +388,7 @@ void item_PotionLevitation(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -427,7 +427,7 @@ void item_PotionSpeed(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -472,7 +472,7 @@ void item_PotionAcid(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -519,7 +519,7 @@ void item_PotionParalysis(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -558,7 +558,7 @@ void item_PotionHealing(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -617,7 +617,7 @@ void item_PotionExtraHealing(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -676,7 +676,7 @@ void item_PotionRestoreMagic(Item *item, Entity *entity) {
 		return;
 
 	int player=-1;
-	stat_t *stats;
+	Stat *stats;
 
 	if( entity->behavior==&actPlayer )
 		player = entity->skill[2];
@@ -842,7 +842,7 @@ void item_ScrollIdentify(Item *item, int player) {
 	
 	for( c=0; c<std::max(item->beatitude+1,1); c++ ) {
 		items=0;
-		for( node=stats[player].inventory.first; node!=NULL; node=node->next ) {
+		for( node=stats[player]->inventory.first; node!=NULL; node=node->next ) {
 			target = (Item *)node->element;
 			if( target && target->identified==FALSE )
 				items++;
@@ -854,7 +854,7 @@ void item_ScrollIdentify(Item *item, int player) {
 		}
 		itemToIdentify = rand()%items;
 		items=0;
-		for( node=stats[player].inventory.first; node!=NULL; node=node->next ) {
+		for( node=stats[player]->inventory.first; node!=NULL; node=node->next ) {
 			target = (Item *)node->element;
 			if( target && target->identified==FALSE ) {
 				if( items==itemToIdentify ) {
@@ -943,14 +943,14 @@ void item_ScrollEnchantWeapon(Item *item, int player) {
 	if( player==clientnum )
 		messagePlayer(player, language[848]);
 	
-	if( stats[player].weapon == NULL ) {
+	if( stats[player]->weapon == NULL ) {
 		if( player==clientnum )
 			messagePlayer(player, language[853]);
 	} else {
 		if( item->beatitude < 0 ) {
 			if( player==clientnum )
 				messagePlayer(player, language[854]);
-			stats[player].weapon->beatitude -= 1;
+			stats[player]->weapon->beatitude -= 1;
 		} else {
 			if( player==clientnum ) {
 				if( item->beatitude == 0 )
@@ -958,7 +958,7 @@ void item_ScrollEnchantWeapon(Item *item, int player) {
 				else
 					messagePlayer(player, language[856]);
 			}
-			stats[player].weapon->beatitude += 1+item->beatitude;
+			stats[player]->weapon->beatitude += 1+item->beatitude;
 		}
 	}
 }
@@ -980,18 +980,18 @@ void item_ScrollEnchantArmor(Item *item, int player) {
 	if( player==clientnum )
 		messagePlayer(player, language[848]);
 	
-	if( stats[player].helmet != NULL )
-		armor = stats[player].helmet;
-	else if( stats[player].breastplate != NULL )
-		armor = stats[player].breastplate;
-	else if( stats[player].gloves != NULL )
-		armor = stats[player].gloves;
-	else if( stats[player].shoes != NULL )
-		armor = stats[player].shoes;
-	else if( stats[player].shield != NULL )
-		armor = stats[player].shield;
-	else if( stats[player].cloak != NULL )
-		armor = stats[player].cloak;
+	if( stats[player]->helmet != NULL )
+		armor = stats[player]->helmet;
+	else if( stats[player]->breastplate != NULL )
+		armor = stats[player]->breastplate;
+	else if( stats[player]->gloves != NULL )
+		armor = stats[player]->gloves;
+	else if( stats[player]->shoes != NULL )
+		armor = stats[player]->shoes;
+	else if( stats[player]->shield != NULL )
+		armor = stats[player]->shield;
+	else if( stats[player]->cloak != NULL )
+		armor = stats[player]->cloak;
 	else
 		armor = NULL;
 	
@@ -1035,28 +1035,28 @@ void item_ScrollRemoveCurse(Item *item, int player) {
 	if( item->beatitude >= 0 ) {
 		if( player==clientnum )
 			messagePlayer(player, language[861]);
-		if( stats[player].helmet != NULL )
-			stats[player].helmet->beatitude = std::max<Sint16>(0,stats[player].helmet->beatitude);
-		if( stats[player].breastplate != NULL )
-			stats[player].breastplate->beatitude = std::max<Sint16>(0,stats[player].breastplate->beatitude);
-		if( stats[player].gloves != NULL )
-			stats[player].gloves->beatitude = std::max<Sint16>(0,stats[player].gloves->beatitude);
-		if( stats[player].shoes != NULL )
-			stats[player].shoes->beatitude = std::max<Sint16>(0,stats[player].shoes->beatitude);
-		if( stats[player].shield != NULL )
-			stats[player].shield->beatitude = std::max<Sint16>(0,stats[player].shield->beatitude);
-		if( stats[player].weapon != NULL )
-			stats[player].weapon->beatitude = std::max<Sint16>(0,stats[player].weapon->beatitude);
-		if( stats[player].cloak != NULL )
-			stats[player].cloak->beatitude = std::max<Sint16>(0,stats[player].cloak->beatitude);
-		if( stats[player].amulet != NULL )
-			stats[player].amulet->beatitude = std::max<Sint16>(0,stats[player].amulet->beatitude);
-		if( stats[player].ring != NULL )
-			stats[player].ring->beatitude = std::max<Sint16>(0,stats[player].ring->beatitude);
-		if( stats[player].mask != NULL )
-			stats[player].mask->beatitude = std::max<Sint16>(0,stats[player].mask->beatitude);
+		if( stats[player]->helmet != NULL )
+			stats[player]->helmet->beatitude = std::max<Sint16>(0,stats[player]->helmet->beatitude);
+		if( stats[player]->breastplate != NULL )
+			stats[player]->breastplate->beatitude = std::max<Sint16>(0,stats[player]->breastplate->beatitude);
+		if( stats[player]->gloves != NULL )
+			stats[player]->gloves->beatitude = std::max<Sint16>(0,stats[player]->gloves->beatitude);
+		if( stats[player]->shoes != NULL )
+			stats[player]->shoes->beatitude = std::max<Sint16>(0,stats[player]->shoes->beatitude);
+		if( stats[player]->shield != NULL )
+			stats[player]->shield->beatitude = std::max<Sint16>(0,stats[player]->shield->beatitude);
+		if( stats[player]->weapon != NULL )
+			stats[player]->weapon->beatitude = std::max<Sint16>(0,stats[player]->weapon->beatitude);
+		if( stats[player]->cloak != NULL )
+			stats[player]->cloak->beatitude = std::max<Sint16>(0,stats[player]->cloak->beatitude);
+		if( stats[player]->amulet != NULL )
+			stats[player]->amulet->beatitude = std::max<Sint16>(0,stats[player]->amulet->beatitude);
+		if( stats[player]->ring != NULL )
+			stats[player]->ring->beatitude = std::max<Sint16>(0,stats[player]->ring->beatitude);
+		if( stats[player]->mask != NULL )
+			stats[player]->mask->beatitude = std::max<Sint16>(0,stats[player]->mask->beatitude);
 		if( item->beatitude > 0 && player==clientnum )
-			for( node=stats[player].inventory.first; node!=NULL; node=node->next ) {
+			for( node=stats[player]->inventory.first; node!=NULL; node=node->next ) {
 				target = (Item *)node->element;
 				target->beatitude = std::max<Sint16>(0,target->beatitude);
 			}
@@ -1126,14 +1126,14 @@ void item_ScrollFood(Item *item, int player) {
 	messagePlayer(player, language[848]);
 	if( item->beatitude >= 0 ) {
 		messagePlayer(player, language[865]);
-		dropItem(newItem(FOOD_FISH,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player].inventory),player);
-		dropItem(newItem(FOOD_BREAD,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player].inventory),player);
-		dropItem(newItem(FOOD_APPLE,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player].inventory),player);
-		dropItem(newItem(FOOD_CHEESE,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player].inventory),player);
-		dropItem(newItem(FOOD_MEAT,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player].inventory),player);
+		dropItem(newItem(FOOD_FISH,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player]->inventory),player);
+		dropItem(newItem(FOOD_BREAD,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player]->inventory),player);
+		dropItem(newItem(FOOD_APPLE,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player]->inventory),player);
+		dropItem(newItem(FOOD_CHEESE,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player]->inventory),player);
+		dropItem(newItem(FOOD_MEAT,EXCELLENT,item->beatitude,1,rand(),TRUE,&stats[player]->inventory),player);
 		return;
 	} else {
-		for( node=stats[player].inventory.first; node!=NULL; node=nextnode ) {
+		for( node=stats[player]->inventory.first; node!=NULL; node=nextnode ) {
 			nextnode = node->next;
 			target = (Item *)node->element;
 			if( itemCategory(target) == FOOD ) {
@@ -1212,20 +1212,20 @@ void item_ScrollRepair(Item *item, int player) {
 	if( player==clientnum )
 		messagePlayer(player, language[848]);
 	
-	if( stats[player].weapon != NULL )
-		armor = stats[player].weapon;
-	else if( stats[player].helmet != NULL )
-		armor = stats[player].helmet;
-	else if( stats[player].breastplate != NULL )
-		armor = stats[player].breastplate;
-	else if( stats[player].gloves != NULL )
-		armor = stats[player].gloves;
-	else if( stats[player].shoes != NULL )
-		armor = stats[player].shoes;
-	else if( stats[player].shield != NULL )
-		armor = stats[player].shield;
-	else if( stats[player].cloak != NULL )
-		armor = stats[player].cloak;
+	if( stats[player]->weapon != NULL )
+		armor = stats[player]->weapon;
+	else if( stats[player]->helmet != NULL )
+		armor = stats[player]->helmet;
+	else if( stats[player]->breastplate != NULL )
+		armor = stats[player]->breastplate;
+	else if( stats[player]->gloves != NULL )
+		armor = stats[player]->gloves;
+	else if( stats[player]->shoes != NULL )
+		armor = stats[player]->shoes;
+	else if( stats[player]->shield != NULL )
+		armor = stats[player]->shield;
+	else if( stats[player]->cloak != NULL )
+		armor = stats[player]->cloak;
 	else
 		armor = NULL;
 	
@@ -1259,18 +1259,18 @@ void item_ScrollDestroyArmor(Item *item, int player) {
 	if( player==clientnum )
 		messagePlayer(player, language[848]);
 	
-	if( stats[player].shield != NULL )
-		armor = stats[player].shield;
-	else if( stats[player].breastplate != NULL )
-		armor = stats[player].breastplate;
-	else if( stats[player].helmet != NULL )
-		armor = stats[player].helmet;
-	else if( stats[player].shoes != NULL )
-		armor = stats[player].shoes;
-	else if( stats[player].gloves != NULL )
-		armor = stats[player].gloves;
-	else if( stats[player].cloak != NULL )
-		armor = stats[player].cloak;
+	if( stats[player]->shield != NULL )
+		armor = stats[player]->shield;
+	else if( stats[player]->breastplate != NULL )
+		armor = stats[player]->breastplate;
+	else if( stats[player]->helmet != NULL )
+		armor = stats[player]->helmet;
+	else if( stats[player]->shoes != NULL )
+		armor = stats[player]->shoes;
+	else if( stats[player]->gloves != NULL )
+		armor = stats[player]->gloves;
+	else if( stats[player]->cloak != NULL )
+		armor = stats[player]->cloak;
 	else
 		armor = NULL;
 	
@@ -1434,14 +1434,14 @@ void item_ScrollSummon(Item *item, int player) {
 			if( item->beatitude>=2 && creature==HUMAN ) {
 				monster->skill[29] = 1; // zap brigadier
 			}
-			stat_t *monsterStats = monster->getStats();
+			Stat *monsterStats = monster->getStats();
 			if( item->beatitude>=0 && monsterStats ) {
 				monsterStats->leader_uid = players[player]->uid;
 				if( !monsterally[HUMAN][monsterStats->type] )
 					monster->flags[USERFLAG2]=TRUE;
 				
 				// update followers for this player
-				node_t *newNode = list_AddNodeLast(&stats[player].FOLLOWERS);
+				node_t *newNode = list_AddNodeLast(&stats[player]->FOLLOWERS);
 				newNode->deconstructor = &defaultDeconstructor;
 				Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
 				newNode->element = myuid;
@@ -1485,19 +1485,19 @@ void item_ToolTowel(Item *item, int player) {
 		messagePlayer(player, language[883]);
 	}
 	if( multiplayer!=CLIENT ) {
-		stats[player].EFFECTS[EFF_GREASY]=FALSE;
-		stats[player].EFFECTS[EFF_MESSY]=FALSE;
+		stats[player]->EFFECTS[EFF_GREASY]=FALSE;
+		stats[player]->EFFECTS[EFF_MESSY]=FALSE;
 	}
 	
 	// stop bleeding
-	if( stats[player].EFFECTS[EFF_BLEEDING] ) {
+	if( stats[player]->EFFECTS[EFF_BLEEDING] ) {
 		if( player==clientnum ) {
 			messagePlayer(player, language[884]);
 			messagePlayer(player, language[885]);
 		}
 		if( multiplayer!=CLIENT ) {
-			stats[player].EFFECTS[EFF_BLEEDING] = FALSE;
-			stats[player].EFFECTS_TIMERS[EFF_BLEEDING] = 0;
+			stats[player]->EFFECTS[EFF_BLEEDING] = FALSE;
+			stats[player]->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		}
 		consumeItem(item);
 	}
@@ -1518,7 +1518,7 @@ void item_ToolMirror(Item *item, int player) {
 	if (!players[player])
 		return;
 
-	if( item->beatitude > 0 && !stats[player].EFFECTS[EFF_GREASY] ) {
+	if( item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY] ) {
 		if( multiplayer != CLIENT) {
 			players[player]->teleportRandom();
 		}
@@ -1526,7 +1526,7 @@ void item_ToolMirror(Item *item, int player) {
 	if( player != clientnum )
 		return;
 	
-	if( stats[player].EFFECTS[EFF_GREASY] ) {
+	if( stats[player]->EFFECTS[EFF_GREASY] ) {
 		messagePlayer(player,language[887]);
 		messagePlayer(player,language[888]);
 		consumeItem(item);
@@ -1537,58 +1537,58 @@ void item_ToolMirror(Item *item, int player) {
 		messagePlayer(player,language[890]);
 		return;
 	} else if( item->beatitude < 0 ) {
-		if( stats[player].EFFECTS[EFF_BLIND] )
+		if( stats[player]->EFFECTS[EFF_BLIND] )
 			messagePlayer(player,language[892]);
 		else
 			messagePlayer(player,language[891]);
 		consumeItem(item);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_BLIND] ) {
+	if( stats[player]->EFFECTS[EFF_BLIND] ) {
 		messagePlayer(player,language[892]);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_INVISIBLE] ) {
+	if( stats[player]->EFFECTS[EFF_INVISIBLE] ) {
 		messagePlayer(player,language[893]);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_DRUNK] ) {
-		if( stats[player].sex == MALE )
+	if( stats[player]->EFFECTS[EFF_DRUNK] ) {
+		if( stats[player]->sex == MALE )
 			messagePlayer(player, language[894]);
 		else
 			messagePlayer(player, language[895]);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_CONFUSED] ) {
+	if( stats[player]->EFFECTS[EFF_CONFUSED] ) {
 		messagePlayer(player, language[896]);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_POISONED] ) {
+	if( stats[player]->EFFECTS[EFF_POISONED] ) {
 		messagePlayer(player, language[897]);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_VOMITING] ) {
+	if( stats[player]->EFFECTS[EFF_VOMITING] ) {
 		messagePlayer(player, language[898]);
 		return;
 	}
-	if( stats[player].EFFECTS[EFF_MESSY] ) {
+	if( stats[player]->EFFECTS[EFF_MESSY] ) {
 		messagePlayer(player, language[899]);
 		return;
 	}
-	if( stats[player].HUNGER < 200 ) {
+	if( stats[player]->HUNGER < 200 ) {
 		messagePlayer(player, language[900]);
 		return;
 	}
-	if( stats[player].HUNGER < 500 ) {
+	if( stats[player]->HUNGER < 500 ) {
 		messagePlayer(player, language[901]);
 		return;
 	}
 	
-	if( stats[player].CHR < 2 ) {
+	if( stats[player]->CHR < 2 ) {
 		messagePlayer(player, language[902]);
 		return;
 	} else {
-		if( stats[player].sex == MALE )
+		if( stats[player]->sex == MALE )
 			messagePlayer(player, language[903]);
 		else
 			messagePlayer(player, language[904]);
@@ -1653,8 +1653,8 @@ void item_Food(Item *item, int player) {
 	int oldcount;
 	int pukeChance;
 	
-	if( stats[player].amulet != NULL ) {
-		if( stats[player].amulet->type == AMULET_STRANGULATION ) {
+	if( stats[player]->amulet != NULL ) {
+		if( stats[player]->amulet->type == AMULET_STRANGULATION ) {
 			if( player==clientnum )
 				messagePlayer(player,language[756]);
 			return;
@@ -1662,7 +1662,7 @@ void item_Food(Item *item, int player) {
 	}
 	
 	// can't eat while vomiting
-	if( stats[player].EFFECTS[EFF_VOMITING] ) {
+	if( stats[player]->EFFECTS[EFF_VOMITING] ) {
 		if( player==clientnum )
 			messagePlayer(player,language[757]);
 		return;
@@ -1717,8 +1717,8 @@ void item_Food(Item *item, int player) {
 	if( item->beatitude<0 && item->type == FOOD_CREAMPIE ) {
 		messagePlayer(player,language[909]);
 		messagePlayer(player,language[910]);
-		stats[player].EFFECTS[EFF_MESSY] = TRUE;
-		stats[player].EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
+		stats[player]->EFFECTS[EFF_MESSY] = TRUE;
+		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
 		serverUpdateEffects(player);
 		consumeItem(item);
 		return;
@@ -1728,25 +1728,25 @@ void item_Food(Item *item, int player) {
 	if( svFlags&SV_FLAG_HUNGER ) {
 		switch( item->type ) {
 			case FOOD_BREAD:
-				stats[player].HUNGER += 400;
+				stats[player]->HUNGER += 400;
 				break;
 			case FOOD_CREAMPIE:
-				stats[player].HUNGER += 200;
+				stats[player]->HUNGER += 200;
 				break;
 			case FOOD_CHEESE:
-				stats[player].HUNGER += 100;
+				stats[player]->HUNGER += 100;
 				break;
 			case FOOD_APPLE:
-				stats[player].HUNGER += 200;
+				stats[player]->HUNGER += 200;
 				break;
 			case FOOD_MEAT:
-				stats[player].HUNGER += 600;
+				stats[player]->HUNGER += 600;
 				break;
 			case FOOD_FISH:
-				stats[player].HUNGER += 500;
+				stats[player]->HUNGER += 500;
 				break;
 			default:
-				stats[player].HUNGER += 10;
+				stats[player]->HUNGER += 10;
 				break;
 		}
 	} else {
@@ -1756,15 +1756,15 @@ void item_Food(Item *item, int player) {
 	}
 	
 	// results of eating
-	if( stats[player].HUNGER <= 250 ) {
+	if( stats[player]->HUNGER <= 250 ) {
 		messagePlayer(player,language[912]);
-	} else if( stats[player].HUNGER < 500 ) {
+	} else if( stats[player]->HUNGER < 500 ) {
 		messagePlayer(player,language[913]);
-	} else if( stats[player].HUNGER < 1000 ) {
+	} else if( stats[player]->HUNGER < 1000 ) {
 		messagePlayer(player,language[914],item->getName());
-	} else if( stats[player].HUNGER < 1500 ) {
+	} else if( stats[player]->HUNGER < 1500 ) {
 		messagePlayer(player,language[915]);
-	} else if( stats[player].HUNGER < 2000 ) {
+	} else if( stats[player]->HUNGER < 2000 ) {
 		if( rand()%3 ) {
 			messagePlayer(player,language[916]);
 		} else {
@@ -1776,7 +1776,7 @@ void item_Food(Item *item, int player) {
 		players[player]->skill[26] = 40+rand()%10;
 	}
 	
-	stats[player].HUNGER = std::min(stats[player].HUNGER,2000);
+	stats[player]->HUNGER = std::min(stats[player]->HUNGER,2000);
 	serverUpdateHunger(player);
 	consumeItem(item);
 }
@@ -1786,8 +1786,8 @@ void item_FoodTin(Item *item, int player) {
 	int pukeChance;
 	bool slippery=FALSE;
 	
-	if( stats[player].amulet != NULL ) {
-		if( stats[player].amulet->type == AMULET_STRANGULATION ) {
+	if( stats[player]->amulet != NULL ) {
+		if( stats[player]->amulet->type == AMULET_STRANGULATION ) {
 			if( player==clientnum )
 				messagePlayer(player,language[756]);
 			return;
@@ -1795,7 +1795,7 @@ void item_FoodTin(Item *item, int player) {
 	}
 	
 	// can't eat while vomiting
-	if( stats[player].EFFECTS[EFF_VOMITING] ) {
+	if( stats[player]->EFFECTS[EFF_VOMITING] ) {
 		if( player==clientnum )
 			messagePlayer(player,language[757]);
 		return;
@@ -1869,7 +1869,7 @@ void item_FoodTin(Item *item, int player) {
 	
 	// replenish nutrition points
 	if( svFlags&SV_FLAG_HUNGER ) {
-		stats[player].HUNGER += 600;
+		stats[player]->HUNGER += 600;
 	} else {
 		if( players[player] )
 			players[player]->modHP(5);
@@ -1879,20 +1879,20 @@ void item_FoodTin(Item *item, int player) {
 	// greasy fingers
 	if( slippery ) {
 		messagePlayer(player, language[966]);
-		stats[player].EFFECTS[EFF_GREASY] = TRUE;
+		stats[player]->EFFECTS[EFF_GREASY] = TRUE;
 		serverUpdateEffects(player);
 	}
 	
 	// results of eating
-	if( stats[player].HUNGER <= 250 ) {
+	if( stats[player]->HUNGER <= 250 ) {
 		messagePlayer(player,language[912]);
-	} else if( stats[player].HUNGER < 500 ) {
+	} else if( stats[player]->HUNGER < 500 ) {
 		messagePlayer(player,language[913]);
-	} else if( stats[player].HUNGER < 1000 ) {
+	} else if( stats[player]->HUNGER < 1000 ) {
 		messagePlayer(player,language[914],item->getName());
-	} else if( stats[player].HUNGER < 1500 ) {
+	} else if( stats[player]->HUNGER < 1500 ) {
 		messagePlayer(player,language[915]);
-	} else if( stats[player].HUNGER < 2000 ) {
+	} else if( stats[player]->HUNGER < 2000 ) {
 		if( rand()%3 ) {
 			messagePlayer(player,language[916]);
 		} else {
@@ -1904,25 +1904,25 @@ void item_FoodTin(Item *item, int player) {
 		players[player]->skill[26] = 40+rand()%10;
 	}
 	
-	stats[player].HUNGER = std::min(stats[player].HUNGER,2000);
+	stats[player]->HUNGER = std::min(stats[player]->HUNGER,2000);
 	serverUpdateHunger(player);
 	consumeItem(item);
 }
 
 void item_AmuletSexChange(Item *item, int player) {
-	if( stats[player].amulet != NULL ) {
-		if( !stats[player].amulet->canUnequip() ) {
+	if( stats[player]->amulet != NULL ) {
+		if( !stats[player]->amulet->canUnequip() ) {
 			if( player == clientnum )
 				messagePlayer(player, language[1087]);
 			return;
 		}
 	}
-	stats[player].amulet = NULL;
-	stats[player].sex = static_cast<sex_t>((stats[player].sex==0));
+	stats[player]->amulet = NULL;
+	stats[player]->sex = static_cast<sex_t>((stats[player]->sex==0));
 	
 	if( player != clientnum )
 		return;
-	if( stats[player].sex==MALE )
+	if( stats[player]->sex==MALE )
 		messagePlayer(player, language[967]);
 	else
 		messagePlayer(player, language[968]);
@@ -1958,7 +1958,7 @@ void item_Spellbook(Item *item, int player) {
 			list_RemoveNode(node);
 
 			// delete its accompanying spell item(s)
-			for( node=stats[player].inventory.first; node!=NULL; node=nextnode ) {
+			for( node=stats[player]->inventory.first; node!=NULL; node=nextnode ) {
 				nextnode=node->next;
 				Item *item = (Item *)node->element;
 				if( item->type==SPELL_ITEM ) {

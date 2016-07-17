@@ -144,19 +144,19 @@ void updateCharacterSheet() {
 	}
 	fov = ofov;
 
-	ttfPrintTextFormatted(ttf12,8,202,"%s",stats[clientnum].name);
-	ttfPrintTextFormatted(ttf12,8,214,language[359],stats[clientnum].LVL,language[1900+client_classes[clientnum]]);
-	ttfPrintTextFormatted(ttf12,8,226,language[360],stats[clientnum].EXP);
+	ttfPrintTextFormatted(ttf12,8,202,"%s",stats[clientnum]->name);
+	ttfPrintTextFormatted(ttf12,8,214,language[359],stats[clientnum]->LVL,language[1900+client_classes[clientnum]]);
+	ttfPrintTextFormatted(ttf12,8,226,language[360],stats[clientnum]->EXP);
 	ttfPrintTextFormatted(ttf12,8,238,language[361],currentlevel);
 
 	// attributes
 	if( attributespage==0 ) {
-		ttfPrintTextFormatted(ttf12,8,262,language[1200],statGetSTR(&stats[clientnum]),stats[clientnum].STR);
-		ttfPrintTextFormatted(ttf12,8,274,language[1201],statGetDEX(&stats[clientnum]),stats[clientnum].DEX);
-		ttfPrintTextFormatted(ttf12,8,286,language[1202],statGetCON(&stats[clientnum]),stats[clientnum].CON);
-		ttfPrintTextFormatted(ttf12,8,298,language[1203],statGetINT(&stats[clientnum]),stats[clientnum].INT);
-		ttfPrintTextFormatted(ttf12,8,310,language[1204],statGetPER(&stats[clientnum]),stats[clientnum].PER);
-		ttfPrintTextFormatted(ttf12,8,322,language[1205],statGetCHR(&stats[clientnum]),stats[clientnum].CHR);
+		ttfPrintTextFormatted(ttf12,8,262,language[1200],statGetSTR(stats[clientnum]),stats[clientnum]->STR);
+		ttfPrintTextFormatted(ttf12,8,274,language[1201],statGetDEX(stats[clientnum]),stats[clientnum]->DEX);
+		ttfPrintTextFormatted(ttf12,8,286,language[1202],statGetCON(stats[clientnum]),stats[clientnum]->CON);
+		ttfPrintTextFormatted(ttf12,8,298,language[1203],statGetINT(stats[clientnum]),stats[clientnum]->INT);
+		ttfPrintTextFormatted(ttf12,8,310,language[1204],statGetPER(stats[clientnum]),stats[clientnum]->PER);
+		ttfPrintTextFormatted(ttf12,8,322,language[1205],statGetCHR(stats[clientnum]),stats[clientnum]->CHR);
 	} else {
 		ttfPrintTextFormatted(ttf12,8,262,language[1883]);
 
@@ -178,33 +178,33 @@ void updateCharacterSheet() {
 	// skill levels
 	if( attributespage>0 ) {
 		for( i=(NUMPROFICIENCIES/2)*(attributespage-1); i<(NUMPROFICIENCIES/2)*attributespage; i++ ) {
-			if( stats[clientnum].PROFICIENCIES[i] == 0 )
+			if( stats[clientnum]->PROFICIENCIES[i] == 0 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[363]);
-			else if( stats[clientnum].PROFICIENCIES[i] < 20 )
+			else if( stats[clientnum]->PROFICIENCIES[i] < 20 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[364]);
-			else if( stats[clientnum].PROFICIENCIES[i] >= 20 && stats[clientnum].PROFICIENCIES[i] < 40 )
+			else if( stats[clientnum]->PROFICIENCIES[i] >= 20 && stats[clientnum]->PROFICIENCIES[i] < 40 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[365]);
-			else if( stats[clientnum].PROFICIENCIES[i] >= 40 && stats[clientnum].PROFICIENCIES[i] < 60 )
+			else if( stats[clientnum]->PROFICIENCIES[i] >= 40 && stats[clientnum]->PROFICIENCIES[i] < 60 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[366]);
-			else if( stats[clientnum].PROFICIENCIES[i] >= 60 && stats[clientnum].PROFICIENCIES[i] < 80 )
+			else if( stats[clientnum]->PROFICIENCIES[i] >= 60 && stats[clientnum]->PROFICIENCIES[i] < 80 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[367]);
-			else if( stats[clientnum].PROFICIENCIES[i] >= 80 && stats[clientnum].PROFICIENCIES[i] < 100 )
+			else if( stats[clientnum]->PROFICIENCIES[i] >= 80 && stats[clientnum]->PROFICIENCIES[i] < 100 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[368]);
-			else if( stats[clientnum].PROFICIENCIES[i] >= 100 )
+			else if( stats[clientnum]->PROFICIENCIES[i] >= 100 )
 				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[369]);
 		}
 	}
 
 	// armor, gold, and weight
 	if( attributespage==0 ) {
-		ttfPrintTextFormatted(ttf12,8,346,language[370],stats[clientnum].GOLD);
-		ttfPrintTextFormatted(ttf12,8,358,language[371],AC(&stats[clientnum]));
+		ttfPrintTextFormatted(ttf12,8,346,language[370],stats[clientnum]->GOLD);
+		ttfPrintTextFormatted(ttf12,8,358,language[371],AC(stats[clientnum]));
 		Uint32 weight=0;
-		for( node=stats[clientnum].inventory.first; node!=NULL; node=node->next ) {
+		for( node=stats[clientnum]->inventory.first; node!=NULL; node=node->next ) {
 			item = (Item *)node->element;
 			weight += items[item->type].weight*item->count;
 		}
-		weight+=stats[clientnum].GOLD/100;
+		weight+=stats[clientnum]->GOLD/100;
 		ttfPrintTextFormatted(ttf12,8,370,language[372],weight);
 	}
 	printTextFormatted(font12x12_bmp,112-30,420-12-8,"%d / 3",attributespage+1); // attributes pane page number
