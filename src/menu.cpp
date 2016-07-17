@@ -809,6 +809,7 @@ void handleMainMenu(bool mode) {
 			inputlen = 22;
 			if (lastname != "" && strlen(inputstr) == 0) {
 				strncat(inputstr, lastname.c_str(), std::max<size_t>(0, inputlen - strlen(inputstr)));
+				lastname = ""; // Set this to nothing while we're currently editing so it doesn't keep filling it.  We'll save it again if we leave this tab.
 			}
 
 			if( (ticks-cursorflash)%TICKS_PER_SECOND<TICKS_PER_SECOND/2 ) {
