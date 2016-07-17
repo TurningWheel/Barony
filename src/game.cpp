@@ -384,7 +384,7 @@ void gameLogic(void) {
 					if( list_Size(&stats[c]->FOLLOWERS)>=3 ) {
 						steamAchievementClient(c,"BARONY_ACH_NATURAL_BORN_LEADER");
 					}
-					if( stats[i]->GOLD>=10000 ) {
+					if( stats[c]->GOLD>=10000 ) {
 						steamAchievementClient(i,"BARONY_ACH_FILTHY_RICH");
 					}
 				}
