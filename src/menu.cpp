@@ -3750,7 +3750,7 @@ void buttonContinue(button_t *my) {
 		SDL_StartTextInput();
 	} else if( charcreation_step==5 ) {
 		if( SDL_IsTextInputActive() ) {
-			lastname = (string)stats[0].name;
+			lastname = (string)stats[0]->name;
 			SDL_StopTextInput();
 		}
 		#ifdef STEAMWORKS
