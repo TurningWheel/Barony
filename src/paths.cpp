@@ -170,7 +170,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	y2 = std::min<unsigned int>(std::max(0,y2),map.height-1); //TODO: Why are int and unsigned int being compared?
 	
 	// get levitation status
-	stat_t *stats = my->getStats();
+	Stat *stats = my->getStats();
 	if( stats ) {
 		if( stats->EFFECTS[EFF_LEVITATING] == TRUE )
 			levitating=TRUE;

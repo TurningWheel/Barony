@@ -106,12 +106,12 @@ public:
 
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
 
-	void handleEffects(stat_t *myStats);
+	void handleEffects(Stat *myStats);
 
 	void effectTimes();
 	void increaseSkill(int skill);
 
-	stat_t *getStats();
+	Stat *getStats();
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
@@ -138,7 +138,7 @@ public:
 	void awardXP(Entity *src, bool share, bool root);
 
 	//--*CheckBetterEquipment functions--
-	void checkBetterEquipment(stat_t *myStats);
+	void checkBetterEquipment(Stat *myStats);
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -180,13 +180,13 @@ class Item;
 extern bool swornenemies[NUMMONSTERS][NUMMONSTERS];
 extern bool monsterally[NUMMONSTERS][NUMMONSTERS];
 
-Sint32 statGetSTR(stat_t *entitystats);
-Sint32 statGetDEX(stat_t *entitystats);
-Sint32 statGetCON(stat_t *entitystats);
-Sint32 statGetINT(stat_t *entitystats);
-Sint32 statGetPER(stat_t *entitystats);
-Sint32 statGetCHR(stat_t *entitystats);
-int AC(stat_t *stat);
+Sint32 statGetSTR(Stat *entitystats);
+Sint32 statGetDEX(Stat *entitystats);
+Sint32 statGetCON(Stat *entitystats);
+Sint32 statGetINT(Stat *entitystats);
+Sint32 statGetPER(Stat *entitystats);
+Sint32 statGetCHR(Stat *entitystats);
+int AC(Stat *stat);
 
 Entity *uidToEntity(Uint32 uidnum);
 list_t *checkTileForEntity(int x, int y); //Don't forget to free the list returned when you're done with it. Also, provide x and y in map, not entity, units.

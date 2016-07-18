@@ -1096,14 +1096,14 @@ void assignActions(map_t *map) {
 						break;
 					}
 					if( multiplayer!=CLIENT ) {
-						if( stats[numplayers].HP <= 0 ) {
+						if( stats[numplayers]->HP <= 0 ) {
 							messagePlayer(numplayers,language[1109]);
-							stats[numplayers].HP = stats[numplayers].MAXHP/2;
-							stats[numplayers].MP = stats[numplayers].MAXMP/2;
-							stats[numplayers].HUNGER = 500;
+							stats[numplayers]->HP = stats[numplayers]->MAXHP/2;
+							stats[numplayers]->MP = stats[numplayers]->MAXMP/2;
+							stats[numplayers]->HUNGER = 500;
 							for( c=0; c<NUMEFFECTS; c++ ) {
-								stats[numplayers].EFFECTS[c] = FALSE;
-								stats[numplayers].EFFECTS_TIMERS[c] = 0;
+								stats[numplayers]->EFFECTS[c] = FALSE;
+								stats[numplayers]->EFFECTS_TIMERS[c] = 0;
 							}
 						}
 					}
@@ -1416,7 +1416,7 @@ void assignActions(map_t *map) {
 				entity->behavior = &actMonster;
 				entity->flags[UPDATENEEDED]=TRUE;
 				entity->skill[5] = -1;
-				stat_t *myStats = NULL;
+				Stat *myStats = NULL;
 
 				if( multiplayer!=CLIENT ) {
 					// need to give the entity its list stuff.
@@ -1425,12 +1425,11 @@ void assignActions(map_t *map) {
 					node2->element = NULL;
 					node2->deconstructor = &emptyDeconstructor;
 
-					myStats = (stat_t *) malloc(sizeof(stat_t));
+					myStats = new Stat();
 					node2 = list_AddNodeLast(&entity->children);
 					node2->element = myStats;
-					node2->deconstructor = &statDeconstructor;
-					node2->size = sizeof(stat_t);
-					statConstructor(myStats);
+//					node2->deconstructor = &myStats->~Stat;
+					node2->size = sizeof(myStats);
 				}
 
 				Monster monsterType = SKELETON;

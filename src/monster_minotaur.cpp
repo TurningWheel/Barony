@@ -20,7 +20,7 @@
 #include "collision.hpp"
 #include "magic/magic.hpp"
 
-void initMinotaur(Entity *my, stat_t *myStats) {
+void initMinotaur(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -285,7 +285,7 @@ void minotaurDie(Entity *my) {
 
 #define MINOTAURWALKSPEED .07
 
-void minotaurMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;
@@ -577,7 +577,7 @@ void actMinotaurTimer(Entity *my) {
 				if( !zapLeaderUid ) {
 					zapLeaderUid = monster->uid;
 				} else {
-					stat_t *monsterStats = monster->getStats();
+					Stat *monsterStats = monster->getStats();
 					monsterStats->leader_uid = zapLeaderUid;
 				}
 			}
@@ -589,7 +589,7 @@ void actMinotaurTimer(Entity *my) {
 			playmusic( sounds[175], FALSE, TRUE, FALSE);
 			for( c=0; c<MAXPLAYERS; c++ ) {
 				Uint32 color = SDL_MapRGB(mainsurface->format,0,255,255);
-				messagePlayerColor(c,color,language[1114],stats[c].name);
+				messagePlayerColor(c,color,language[1114],stats[c]->name);
 			}
 		}
 	} else if( MINOTAURTIMER_LIFE >= TICKS_PER_SECOND*150 && !MINOTAURTIMER_ACTIVE ) { // two and a half minutes
@@ -657,7 +657,7 @@ void actMinotaurCeilingBuster(Entity *my) {
 					if( multiplayer != CLIENT ) {
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK=1;
-						stat_t *myStats = my->getStats();
+						Stat *myStats = my->getStats();
 						if( myStats ) {
 							// easy hack to stop the minotaur while he breaks stuff
 							myStats->EFFECTS[EFF_PARALYZED] = TRUE;

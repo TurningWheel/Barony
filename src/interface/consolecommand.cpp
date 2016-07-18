@@ -94,7 +94,7 @@ void consoleCommand(char *command_str) {
 		strcpy(name,command_str+11);
 		for( c=0; c<NUMITEMS; c++ ) {
 			if( strstr(items[c].name_identified, name) ) {
-				dropItem(newItem(static_cast<ItemType>(c),EXCELLENT,0,1,rand(),TRUE,&stats[clientnum].inventory),0);
+				dropItem(newItem(static_cast<ItemType>(c),EXCELLENT,0,1,rand(),TRUE,&stats[clientnum]->inventory),0);
 				break;
 			}
 		}
@@ -110,7 +110,7 @@ void consoleCommand(char *command_str) {
 		strcpy(name,command_str+13);
 		for( c=0; c<NUMITEMS; c++ ) {
 			if( strstr(items[c].name_identified, name) ) {
-				dropItem(newItem(static_cast<ItemType>(c),WORN,-2,1,rand(),FALSE,&stats[clientnum].inventory),0);
+				dropItem(newItem(static_cast<ItemType>(c),WORN,-2,1,rand(),FALSE,&stats[clientnum]->inventory),0);
 				break;
 			}
 		}
@@ -122,7 +122,7 @@ void consoleCommand(char *command_str) {
 		strcpy(name,command_str+6);
 		if( multiplayer==SERVER ) {
 			for( c=1; c<MAXPLAYERS; c++ ) {
-				if( !client_disconnected[c] && !strncmp(name,stats[c].name,128) ) {
+				if( !client_disconnected[c] && !strncmp(name,stats[c]->name,128) ) {
 					client_disconnected[c] = TRUE;
 					strcpy((char *)net_packet->data,"KICK");
 					net_packet->address.host = net_clients[c-1].host;
@@ -131,7 +131,7 @@ void consoleCommand(char *command_str) {
 					sendPacketSafe(net_sock, -1, net_packet, c-1);
 					int i;
 					for( i=0; i<MAXPLAYERS; i++ ) {
-						messagePlayer(i,language[279],c,stats[c].name);
+						messagePlayer(i,language[279],c,stats[c]->name);
 					}
 					break;
 				}
@@ -151,7 +151,7 @@ void consoleCommand(char *command_str) {
 			return;
 		}
 		strcpy(name,command_str+11);
-		dropItem(newItem(READABLE_BOOK,EXCELLENT,0,1,getBook(name),TRUE,&stats[clientnum].inventory),0);
+		dropItem(newItem(READABLE_BOOK,EXCELLENT,0,1,getBook(name),TRUE,&stats[clientnum]->inventory),0);
 	}
 	else if( !strncmp(command_str,"/savemap ",9) ) {
 		if( command_str[9]!=0 ) {
@@ -362,14 +362,14 @@ void consoleCommand(char *command_str) {
 	}
 	else if( !strncmp(command_str,"/mana", 4) ) {
 		if( multiplayer == SINGLE ) {
-			stats[clientnum].MP = stats[clientnum].MAXMP;
+			stats[clientnum]->MP = stats[clientnum]->MAXMP;
 		} else {
 			messagePlayer(clientnum,language[299]);
 		}
 	}
 	else if( !strncmp(command_str,"/heal", 4) ) {
 		if( multiplayer == SINGLE ) {
-			stats[clientnum].HP = stats[clientnum].MAXHP;
+			stats[clientnum]->HP = stats[clientnum]->MAXHP;
 		} else {
 			messagePlayer(clientnum,language[299]);
 		}
@@ -423,7 +423,7 @@ void consoleCommand(char *command_str) {
 			consoleCommand("/spawnitem crossbow");
 			consoleCommand("/spawnitem magicstaff of lightning");
 			for( c=0; c<NUMPROFICIENCIES; c++ ) {
-				stats[clientnum].PROFICIENCIES[c] = 100;
+				stats[clientnum]->PROFICIENCIES[c] = 100;
 			}
 		} else {
 			messagePlayer(clientnum,language[299]);
@@ -431,7 +431,7 @@ void consoleCommand(char *command_str) {
 	}
 	else if (!strncmp(command_str, "/hunger", 7)) {
 		if( multiplayer==SINGLE ) {
-			stat_t *tempStats = players[clientnum]->getStats();
+			Stat *tempStats = players[clientnum]->getStats();
 			if( tempStats )
 				tempStats->HUNGER = std::max(0,tempStats->HUNGER-100);
 		} else {

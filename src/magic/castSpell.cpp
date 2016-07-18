@@ -53,7 +53,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell){
 	}
 
 	if (player > -1) {
-		if( stats[player].defending ) {
+		if( stats[player]->defending ) {
 			messagePlayer(player,language[407]);
 			return;
 		}
@@ -89,7 +89,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell){
 	//Entity *entity = NULL;
 	//node_t *node = spell->elements->first;
 
-	stat_t *stat = caster->getStats();
+	Stat *stat = caster->getStats();
 	if( !stat )
 		return;
 	
@@ -156,7 +156,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	spell_t *channeled_spell=NULL; //Pointer to the spell if it's a channeled spell. For the purpose of giving it its node in the channeled spell list.
 	node_t *node = spell->elements.first;
 
-	stat_t *stat = caster->getStats();
+	Stat *stat = caster->getStats();
 
 	int player = -1;
 	for (i = 0; i < numplayers; ++i) {
@@ -486,8 +486,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					messagePlayerColor(i,color,language[411]);
 					int c = 0;
 					for (c = 0; c < NUMEFFECTS; ++c) { //This does a whole lot more than just cure ailments.
-						stats[i].EFFECTS[c]=FALSE;
-						stats[i].EFFECTS_TIMERS[c]=0;
+						stats[i]->EFFECTS[c]=FALSE;
+						stats[i]->EFFECTS_TIMERS[c]=0;
 					}
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
@@ -498,7 +498,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 							continue;
 						if( entity->behavior!=&actPlayer && entity->behavior!=&actMonster )
 							continue;
-						stat_t *target_stat = entity->getStats();
+						Stat *target_stat = entity->getStats();
 						if( target_stat ) {
 							if (entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster)) {
 								for (c = 0; c < NUMEFFECTS; ++c) { //This does a whole lot more than just cure ailments.

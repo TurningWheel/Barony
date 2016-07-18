@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initDemon(Entity *my, stat_t *myStats) {
+void initDemon(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -268,7 +268,7 @@ void demonDie(Entity *my) {
 
 #define DEMONWALKSPEED .125
 
-void demonMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;
@@ -497,7 +497,7 @@ void actDemonCeilingBuster(Entity *my) {
 					if( multiplayer != CLIENT ) {
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK=1;
-						stat_t *myStats = my->getStats();
+						Stat *myStats = my->getStats();
 						if( myStats ) {
 							// easy hack to stop the demon while he breaks stuff
 							myStats->EFFECTS[EFF_PARALYZED] = TRUE;

@@ -20,7 +20,7 @@
 #include "collision.hpp"
 #include "classdescriptions.hpp"
 
-void initHuman(Entity *my, stat_t *myStats) {
+void initHuman(Entity *my, Stat *myStats) {
 	int c;
 	node_t *node;
 
@@ -768,7 +768,7 @@ void humanDie(Entity *my) {
 
 #define HUMANWALKSPEED .12
 
-void humanMoveBodyparts(Entity *my, stat_t *myStats, double dist) {
+void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	node_t *node;
 	Entity *entity = NULL, *entity2 = NULL;
 	Entity *rightbody = NULL;

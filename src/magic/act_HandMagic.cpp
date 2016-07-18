@@ -56,7 +56,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	}
 
 	playSoundEntity(caster, 170, 128 );
-	stat_t *stat = caster->getStats();
+	Stat *stat = caster->getStats();
 
 	//Save these two very important pieces of data.
 	animation_manager->caster = caster->uid;
@@ -147,34 +147,34 @@ void actLeftHandMagic(Entity *my)
 
 	//Sprite
 	bool noGloves=FALSE;
-	if( stats[clientnum].gloves == NULL ) {
+	if( stats[clientnum]->gloves == NULL ) {
 		noGloves=TRUE;
 	} else {
-		if( stats[clientnum].gloves->type == GLOVES || stats[clientnum].gloves->type == GLOVES_DEXTERITY ) {
-			my->sprite = 136 + stats[clientnum].sex;
-		} else if( stats[clientnum].gloves->type == BRACERS || stats[clientnum].gloves->type == BRACERS_CONSTITUTION ) {
-			my->sprite = 327 + stats[clientnum].sex;
-		} else if( stats[clientnum].gloves->type == GAUNTLETS || stats[clientnum].gloves->type == GAUNTLETS_STRENGTH ) {
-			my->sprite = 144 + stats[clientnum].sex;
+		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
+			my->sprite = 136 + stats[clientnum]->sex;
+		} else if( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
+			my->sprite = 327 + stats[clientnum]->sex;
+		} else if( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
+			my->sprite = 144 + stats[clientnum]->sex;
 		} else {
 			noGloves = TRUE;
 		}
 	}
 	if( noGloves ) {
-		if( stats[clientnum].appearance/6==0 ) {
-			if( stats[clientnum].sex==FEMALE ) {
+		if( stats[clientnum]->appearance/6==0 ) {
+			if( stats[clientnum]->sex==FEMALE ) {
 				my->sprite = 122;
 			} else {
 				my->sprite = 110;
 			}
-		} else if( stats[clientnum].appearance/6==1 ) {
-			if( stats[clientnum].sex==FEMALE ) {
+		} else if( stats[clientnum]->appearance/6==1 ) {
+			if( stats[clientnum]->sex==FEMALE ) {
 				my->sprite = 351;
 			} else {
 				my->sprite = 338;
 			}
 		} else {
-			if( stats[clientnum].sex==FEMALE ) {
+			if( stats[clientnum]->sex==FEMALE ) {
 				my->sprite = 377;
 			} else {
 				my->sprite = 364;
@@ -185,13 +185,13 @@ void actLeftHandMagic(Entity *my)
 	bool wearingring = FALSE;
 
 	//Select model
-	if (stats[clientnum].ring != NULL)
-		if (stats[clientnum].ring->type == RING_INVISIBILITY)
+	if (stats[clientnum]->ring != NULL)
+		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 			wearingring = TRUE;
-	if (stats[clientnum].cloak != NULL)
-		if (stats[clientnum].cloak->type == CLOAK_INVISIBILITY)
+	if (stats[clientnum]->cloak != NULL)
+		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	if (players[clientnum]->skill[3] == 1 || stats[clientnum].EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
+	if (players[clientnum]->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
 		my->flags[INVISIBLE] = TRUE;
 	}
 
@@ -301,34 +301,34 @@ void actRightHandMagic(Entity *my)
 
 	//Sprite
 	bool noGloves=FALSE;
-	if( stats[clientnum].gloves == NULL ) {
+	if( stats[clientnum]->gloves == NULL ) {
 		noGloves=TRUE;
 	} else {
-		if( stats[clientnum].gloves->type == GLOVES || stats[clientnum].gloves->type == GLOVES_DEXTERITY ) {
-			my->sprite = 132 + stats[clientnum].sex;
-		} else if( stats[clientnum].gloves->type == BRACERS || stats[clientnum].gloves->type == BRACERS_CONSTITUTION ) {
-			my->sprite = 323 + stats[clientnum].sex;
-		} else if( stats[clientnum].gloves->type == GAUNTLETS || stats[clientnum].gloves->type == GAUNTLETS_STRENGTH ) {
-			my->sprite = 140 + stats[clientnum].sex;
+		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
+			my->sprite = 132 + stats[clientnum]->sex;
+		} else if( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
+			my->sprite = 323 + stats[clientnum]->sex;
+		} else if( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
+			my->sprite = 140 + stats[clientnum]->sex;
 		} else {
 			noGloves = TRUE;
 		}
 	}
 	if( noGloves ) {
-		if( stats[clientnum].appearance/6==0 ) {
-			if( stats[clientnum].sex==FEMALE ) {
+		if( stats[clientnum]->appearance/6==0 ) {
+			if( stats[clientnum]->sex==FEMALE ) {
 				my->sprite = 121;
 			} else {
 				my->sprite = 109;
 			}
-		} else if( stats[clientnum].appearance/6==1 ) {
-			if( stats[clientnum].sex==FEMALE ) {
+		} else if( stats[clientnum]->appearance/6==1 ) {
+			if( stats[clientnum]->sex==FEMALE ) {
 				my->sprite = 350;
 			} else {
 				my->sprite = 337;
 			}
 		} else {
-			if( stats[clientnum].sex==FEMALE ) {
+			if( stats[clientnum]->sex==FEMALE ) {
 				my->sprite = 376;
 			} else {
 				my->sprite = 363;
@@ -339,13 +339,13 @@ void actRightHandMagic(Entity *my)
 	bool wearingring = FALSE;
 
 	//Select model
-	if (stats[clientnum].ring != NULL)
-		if (stats[clientnum].ring->type == RING_INVISIBILITY)
+	if (stats[clientnum]->ring != NULL)
+		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 			wearingring = TRUE;
-	if (stats[clientnum].cloak != NULL)
-		if (stats[clientnum].cloak->type == CLOAK_INVISIBILITY)
+	if (stats[clientnum]->cloak != NULL)
+		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	if (players[clientnum]->skill[3] == 1 || stats[clientnum].EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
+	if (players[clientnum]->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
 		my->flags[INVISIBLE] = TRUE;
 	}
 

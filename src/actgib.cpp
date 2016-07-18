@@ -93,7 +93,7 @@ void actGib(Entity *my) {
 
 Entity *spawnGib(Entity *parentent) {
 	Entity *entity;
-	stat_t *parentstats;
+	Stat *parentstats;
 	double vel;
 	int gibsprite=5;
 	

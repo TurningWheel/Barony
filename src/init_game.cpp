@@ -255,17 +255,18 @@ int initGame() {
 	
 	// default player stats
 	for( c=0; c<MAXPLAYERS; c++ ) {
-		if( c>0 )
-			client_disconnected[c]=TRUE;
+		stats[c] = new Stat();
+		if (c > 0)
+			client_disconnected[c] = TRUE;
 		players[c]=NULL;
-		stats[c].sex=static_cast<sex_t>(0);
-		stats[c].appearance=0;
-		strcpy(stats[c].name,"");
-		stats[c].type = HUMAN;
-		stats[c].FOLLOWERS.first = NULL; stats[c].FOLLOWERS.last = NULL;
-		stats[c].inventory.first=NULL;
-		stats[c].inventory.last=NULL;
-		clearStats(&stats[c]);
+		stats[c]->sex=static_cast<sex_t>(0);
+		stats[c]->appearance=0;
+		strcpy(stats[c]->name,"");
+		stats[c]->type = HUMAN;
+		stats[c]->FOLLOWERS.first = NULL; stats[c]->FOLLOWERS.last = NULL;
+		stats[c]->inventory.first=NULL;
+		stats[c]->inventory.last=NULL;
+		stats[c]->clearStats();
 		entitiesToDelete[c].first=NULL;
 		entitiesToDelete[c].last=NULL;
 		if( c==0 )
@@ -396,7 +397,7 @@ void deinitGame() {
 			net_packet->len = 11;
 			sendPacketSafe(net_sock, -1, net_packet, x-1);
 			
-			freePlayerEquipment(x);
+			stats[x]->freePlayerEquipment();
 			client_disconnected[x]=TRUE;
 		}
 	}
@@ -463,7 +464,7 @@ void deinitGame() {
 	appraisal_timer=0;
 	appraisal_item=0;
 	for(c=0;c<MAXPLAYERS;c++)
-		list_FreeAll(&stats[c].inventory);
+		list_FreeAll(&stats[c]->inventory);
 	if( multiplayer==CLIENT ) {
 		if( shopInv ) {
 			list_FreeAll(shopInv);

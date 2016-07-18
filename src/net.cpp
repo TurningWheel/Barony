@@ -215,7 +215,7 @@ void messagePlayerColor(int player, Uint32 color, char *message, ...) {
 	for( c=0; c<MAXPLAYERS; c++ ) {
 		if( client_disconnected[c] )
 			continue;
-		snprintf(tempstr, 256, language[697], stats[c].name);
+		snprintf(tempstr, 256, language[697], stats[c]->name);
 		if( !strcmp(str,tempstr) ) {
 			steamAchievementClient(player,"BARONY_ACH_NOT_A_TEAM_PLAYER");
 		}
@@ -556,7 +556,7 @@ void serverUpdateEffects(int player) {
 	net_packet->data[5] = 0;
 	net_packet->data[6] = 0;
 	for(j=0;j<NUMEFFECTS;j++) {
-		if( stats[player].EFFECTS[j]==TRUE )
+		if( stats[player]->EFFECTS[j]==TRUE )
 			net_packet->data[4+j/8] |= power(2,j-(j/8)*8);
 	}
 	net_packet->address.host = net_clients[player-1].host;
@@ -582,7 +582,7 @@ void serverUpdateHunger(int player) {
 		return;
 		
 	strcpy((char *)net_packet->data,"HNGR");
-	SDLNet_Write32(stats[player].HUNGER,&net_packet->data[4]);
+	SDLNet_Write32(stats[player]->HUNGER,&net_packet->data[4]);
 	net_packet->address.host = net_clients[player-1].host;
 	net_packet->address.port = net_clients[player-1].port;
 	net_packet->len = 8;
@@ -851,14 +851,14 @@ void clientHandlePacket()
 
 	// pause game
 	else if (!strncmp((char *)net_packet->data,"PAUS",4)) {
-		messagePlayer(clientnum,language[1118],stats[net_packet->data[4]].name);
+		messagePlayer(clientnum,language[1118],stats[net_packet->data[4]]->name);
 		pauseGame(2,0);
 		return;
 	}
 
 	// unpause game
 	else if (!strncmp((char *)net_packet->data,"UNPS",4)) {
-		messagePlayer(clientnum,language[1119],stats[net_packet->data[4]].name);
+		messagePlayer(clientnum,language[1119],stats[net_packet->data[4]]->name);
 		pauseGame(1,0);
 		return;
 	}
@@ -976,34 +976,34 @@ void clientHandlePacket()
 	else if (!strncmp((char *)net_packet->data,"ARMR",4)) {
 		switch ( net_packet->data[4] ) {
 			case 0:
-				item = stats[clientnum].helmet;
+				item = stats[clientnum]->helmet;
 				break;
 			case 1:
-				item = stats[clientnum].breastplate;
+				item = stats[clientnum]->breastplate;
 				break;
 			case 2:
-				item = stats[clientnum].gloves;
+				item = stats[clientnum]->gloves;
 				break;
 			case 3:
-				item = stats[clientnum].shoes;
+				item = stats[clientnum]->shoes;
 				break;
 			case 4:
-				item = stats[clientnum].shield;
+				item = stats[clientnum]->shield;
 				break;
 			case 5:
-				item = stats[clientnum].weapon;
+				item = stats[clientnum]->weapon;
 				break;
 			case 6:
-				item = stats[clientnum].cloak;
+				item = stats[clientnum]->cloak;
 				break;
 			case 7:
-				item = stats[clientnum].amulet;
+				item = stats[clientnum]->amulet;
 				break;
 			case 8:
-				item = stats[clientnum].ring;
+				item = stats[clientnum]->ring;
 				break;
 			case 9:
-				item = stats[clientnum].mask;
+				item = stats[clientnum]->mask;
 				break;
 			default:
 				item = NULL;
@@ -1011,7 +1011,7 @@ void clientHandlePacket()
 		}
 		if ( item != NULL ) {
 			if ( item->count>1 ) {
-				newItem(item->type,item->status,item->beatitude,item->count-1,item->appearance,item->identified,&stats[clientnum].inventory);
+				newItem(item->type,item->status,item->beatitude,item->count-1,item->appearance,item->identified,&stats[clientnum]->inventory);
 				item->count=1;
 			}
 			item->status = static_cast<Status>(net_packet->data[5]);
@@ -1023,40 +1023,40 @@ void clientHandlePacket()
 	else if (!strncmp((char *)net_packet->data,"STLA",4)) {
 		switch ( net_packet->data[4] ) {
 			case 0:
-				item = stats[clientnum].helmet;
+				item = stats[clientnum]->helmet;
 				break;
 			case 1:
-				item = stats[clientnum].breastplate;
+				item = stats[clientnum]->breastplate;
 				break;
 			case 2:
-				item = stats[clientnum].gloves;
+				item = stats[clientnum]->gloves;
 				break;
 			case 3:
-				item = stats[clientnum].shoes;
+				item = stats[clientnum]->shoes;
 				break;
 			case 4:
-				item = stats[clientnum].shield;
+				item = stats[clientnum]->shield;
 				break;
 			case 5:
-				item = stats[clientnum].weapon;
+				item = stats[clientnum]->weapon;
 				break;
 			case 6:
-				item = stats[clientnum].cloak;
+				item = stats[clientnum]->cloak;
 				break;
 			case 7:
-				item = stats[clientnum].amulet;
+				item = stats[clientnum]->amulet;
 				break;
 			case 8:
-				item = stats[clientnum].ring;
+				item = stats[clientnum]->ring;
 				break;
 			case 9:
-				item = stats[clientnum].mask;
+				item = stats[clientnum]->mask;
 				break;
 			default:
 				item = NULL;
 				break;
 		}
-		Item **slot = itemSlot(&stats[clientnum],item);
+		Item **slot = itemSlot(stats[clientnum],item);
 		if ( slot != NULL )
 			*slot = NULL;
 		if ( item )
@@ -1151,34 +1151,34 @@ void clientHandlePacket()
 		Item **armor=NULL;
 		switch ( net_packet->data[4] ) {
 			case 0:
-				armor = &stats[clientnum].helmet;
+				armor = &stats[clientnum]->helmet;
 				break;
 			case 1:
-				armor = &stats[clientnum].breastplate;
+				armor = &stats[clientnum]->breastplate;
 				break;
 			case 2:
-				armor = &stats[clientnum].gloves;
+				armor = &stats[clientnum]->gloves;
 				break;
 			case 3:
-				armor = &stats[clientnum].shoes;
+				armor = &stats[clientnum]->shoes;
 				break;
 			case 4:
-				armor = &stats[clientnum].shield;
+				armor = &stats[clientnum]->shield;
 				break;
 			case 5:
-				armor = &stats[clientnum].weapon;
+				armor = &stats[clientnum]->weapon;
 				break;
 			case 6:
-				armor = &stats[clientnum].cloak;
+				armor = &stats[clientnum]->cloak;
 				break;
 			case 7:
-				armor = &stats[clientnum].amulet;
+				armor = &stats[clientnum]->amulet;
 				break;
 			case 8:
-				armor = &stats[clientnum].ring;
+				armor = &stats[clientnum]->ring;
 				break;
 			case 9:
-				armor = &stats[clientnum].mask;
+				armor = &stats[clientnum]->mask;
 				break;
 		}
 		if ( !armor )
@@ -1200,7 +1200,7 @@ void clientHandlePacket()
 
 	// get gold
 	else if (!strncmp((char *)net_packet->data,"GOLD",4)) {
-		stats[clientnum].GOLD = SDLNet_Read32(&net_packet->data[4]);
+		stats[clientnum]->GOLD = SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
@@ -1243,8 +1243,8 @@ void clientHandlePacket()
 			messagePlayerColor(clientnum,color,(char *)(&net_packet->data[8]));
 		}
 		for ( c=0; c<MAXPLAYERS; c++ ) {
-			if ( !strncmp( (char *)(&net_packet->data[8]), stats[c].name, std::min<size_t>(strlen(stats[c].name),10) ) ) { //TODO: Why are size_t and int being compared?
-				if ( net_packet->data[8+std::min<size_t>(strlen(stats[c].name),10)] == ':' ) { //TODO: Why are size_t and int being compared?
+			if ( !strncmp( (char *)(&net_packet->data[8]), stats[c]->name, std::min<size_t>(strlen(stats[c]->name),10) ) ) { //TODO: Why are size_t and int being compared?
+				if ( net_packet->data[8+std::min<size_t>(strlen(stats[c]->name),10)] == ':' ) { //TODO: Why are size_t and int being compared?
 					playSound(238,64);
 				}
 			}
@@ -1272,13 +1272,13 @@ void clientHandlePacket()
 			fadeout_increment = default_fadeout_increment*4;
 			playmusic( sounds[209], FALSE, TRUE, FALSE );
 
-			for ( node=stats[clientnum].inventory.first; node!=NULL; node=nextnode ) {
+			for ( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 				nextnode = node->next;
 				Item *item = (Item *)node->element;
 				if ( itemCategory(item) == SPELL_CAT )
 					return; // don't drop spells on death, stupid!
 				if( itemIsEquipped(item,clientnum) ) {
-					Item **slot = itemSlot(&stats[clientnum],item);
+					Item **slot = itemSlot(stats[clientnum],item);
 					if ( slot != NULL )
 						*slot = NULL;
 					list_RemoveNode(node);
@@ -1300,24 +1300,24 @@ void clientHandlePacket()
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				list_RemoveNode(node);
 			}
-			stats[clientnum].helmet=NULL;
-			stats[clientnum].breastplate=NULL;
-			stats[clientnum].gloves=NULL;
-			stats[clientnum].shoes=NULL;
-			stats[clientnum].shield=NULL;
-			stats[clientnum].weapon=NULL;
-			stats[clientnum].cloak=NULL;
-			stats[clientnum].amulet=NULL;
-			stats[clientnum].ring=NULL;
-			stats[clientnum].mask=NULL;
+			stats[clientnum]->helmet=NULL;
+			stats[clientnum]->breastplate=NULL;
+			stats[clientnum]->gloves=NULL;
+			stats[clientnum]->shoes=NULL;
+			stats[clientnum]->shield=NULL;
+			stats[clientnum]->weapon=NULL;
+			stats[clientnum]->cloak=NULL;
+			stats[clientnum]->amulet=NULL;
+			stats[clientnum]->ring=NULL;
+			stats[clientnum]->mask=NULL;
 		}
 		else if ( !strcmp((char *)(&net_packet->data[8]),language[1109]) ) {
 			// ... or lived
-			stats[clientnum].HP = stats[clientnum].MAXHP/2;
-			stats[clientnum].HUNGER = 500;
+			stats[clientnum]->HP = stats[clientnum]->MAXHP/2;
+			stats[clientnum]->HUNGER = 500;
 			for ( c=0; c<NUMEFFECTS; c++ ) {
-				stats[clientnum].EFFECTS[c] = FALSE;
-				stats[clientnum].EFFECTS_TIMERS[c] = 0;
+				stats[clientnum]->EFFECTS[c] = FALSE;
+				stats[clientnum]->EFFECTS_TIMERS[c] = 0;
 			}
 		}
 		else if ( !strncmp((char *)(&net_packet->data[8]),language[1114],28) ) {
@@ -1326,7 +1326,7 @@ void clientHandlePacket()
 			playmusic( sounds[175], FALSE, TRUE, FALSE );
 		} else if ( (strstr((char *)(&net_packet->data[8]),language[1160]))!=NULL ) {
 			for ( c=0; c<MAXPLAYERS; c++ ) {
-				if ( !strncmp(stats[c].name,(char *)(&net_packet->data[8]),strlen(stats[c].name)) ) {
+				if ( !strncmp(stats[c]->name,(char *)(&net_packet->data[8]),strlen(stats[c]->name)) ) {
 					if ( players[clientnum] && players[c] ) {
 						double tangent = atan2(players[clientnum]->y-players[c]->y,players[clientnum]->x-players[c]->x);
 						players[clientnum]->vel_x += cos(tangent);
@@ -1342,7 +1342,7 @@ void clientHandlePacket()
 	// update health
 	else if (!strncmp((char *)net_packet->data,"UPHP",4)) {
 		if ( (Monster)SDLNet_Read32(&net_packet->data[8]) != NOTHING ) {
-			if ( SDLNet_Read32(&net_packet->data[4]) < stats[clientnum].HP ) {
+			if ( SDLNet_Read32(&net_packet->data[4]) < stats[clientnum]->HP ) {
 				camera_shakex += .1;
 				camera_shakey += 10;
 			} else {
@@ -1350,13 +1350,13 @@ void clientHandlePacket()
 				camera_shakey += 5;
 			}
 		}
-		stats[clientnum].HP = SDLNet_Read32(&net_packet->data[4]);
+		stats[clientnum]->HP = SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
 	// update magic
 	else if (!strncmp((char *)net_packet->data,"UPMP",4)) {
-		stats[clientnum].MP = SDLNet_Read32(&net_packet->data[4]);
+		stats[clientnum]->MP = SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
@@ -1364,27 +1364,27 @@ void clientHandlePacket()
 	else if (!strncmp((char *)net_packet->data,"UPEF",4)) {
 		for (c=0;c<NUMEFFECTS;c++) {
 			if ( net_packet->data[4+c/8]&power(2,c-(c/8)*8) )
-				stats[clientnum].EFFECTS[c] = TRUE;
+				stats[clientnum]->EFFECTS[c] = TRUE;
 			else
-				stats[clientnum].EFFECTS[c] = FALSE;
+				stats[clientnum]->EFFECTS[c] = FALSE;
 		}
 		return;
 	}
 
 	// update attributes
 	else if (!strncmp((char *)net_packet->data,"ATTR",4)) {
-		stats[clientnum].STR = (Sint8)net_packet->data[5];
-		stats[clientnum].DEX = (Sint8)net_packet->data[6];
-		stats[clientnum].CON = (Sint8)net_packet->data[7];
-		stats[clientnum].INT = (Sint8)net_packet->data[8];
-		stats[clientnum].PER = (Sint8)net_packet->data[9];
-		stats[clientnum].CHR = (Sint8)net_packet->data[10];
-		stats[clientnum].EXP = (Sint8)net_packet->data[11];
-		stats[clientnum].LVL = (Sint8)net_packet->data[12];
-		stats[clientnum].HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
-		stats[clientnum].MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
-		stats[clientnum].MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);
-		stats[clientnum].MAXMP = (Sint16)SDLNet_Read16(&net_packet->data[19]);
+		stats[clientnum]->STR = (Sint8)net_packet->data[5];
+		stats[clientnum]->DEX = (Sint8)net_packet->data[6];
+		stats[clientnum]->CON = (Sint8)net_packet->data[7];
+		stats[clientnum]->INT = (Sint8)net_packet->data[8];
+		stats[clientnum]->PER = (Sint8)net_packet->data[9];
+		stats[clientnum]->CHR = (Sint8)net_packet->data[10];
+		stats[clientnum]->EXP = (Sint8)net_packet->data[11];
+		stats[clientnum]->LVL = (Sint8)net_packet->data[12];
+		stats[clientnum]->HP = (Sint16)SDLNet_Read16(&net_packet->data[13]);
+		stats[clientnum]->MAXHP = (Sint16)SDLNet_Read16(&net_packet->data[15]);
+		stats[clientnum]->MP = (Sint16)SDLNet_Read16(&net_packet->data[17]);
+		stats[clientnum]->MAXMP = (Sint16)SDLNet_Read16(&net_packet->data[19]);
 		return;
 	}
 
@@ -1396,13 +1396,13 @@ void clientHandlePacket()
 
 	// update skill
 	else if (!strncmp((char *)net_packet->data,"SKIL",4)) {
-		stats[clientnum].PROFICIENCIES[net_packet->data[5]] = net_packet->data[6];
+		stats[clientnum]->PROFICIENCIES[net_packet->data[5]] = net_packet->data[6];
 		return;
 	}
 
 	// update hunger
 	else if (!strncmp((char *)net_packet->data,"HNGR",4)) {
-		stats[clientnum].HUNGER = (Sint32)SDLNet_Read32(&net_packet->data[4]);
+		stats[clientnum]->HUNGER = (Sint32)SDLNet_Read32(&net_packet->data[4]);
 		return;
 	}
 
@@ -1465,7 +1465,7 @@ void clientHandlePacket()
 			entity2->uid=entity->uid;
 		}
 		for ( i=0; i<MAXPLAYERS; i++ )
-			list_FreeAll(&stats[i].FOLLOWERS);
+			list_FreeAll(&stats[i]->FOLLOWERS);
 
 		// load next level
 		darkmap=FALSE;
@@ -1608,7 +1608,7 @@ void clientHandlePacket()
 	else if (!strncmp((char *)net_packet->data,"LEAD",4)) {
 		Uint32 *uidnum = (Uint32 *) malloc(sizeof(Uint32));
 		*uidnum = (Uint32)SDLNet_Read32(&net_packet->data[4]);
-		node_t *node = list_AddNodeLast(&stats[clientnum].FOLLOWERS);
+		node_t *node = list_AddNodeLast(&stats[clientnum]->FOLLOWERS);
 		node->element = uidnum;
 		node->deconstructor = &defaultDeconstructor;
 		node->size = sizeof(Uint32);
@@ -1617,26 +1617,26 @@ void clientHandlePacket()
 
 	// bless my equipment
 	else if (!strncmp((char *)net_packet->data,"BLES",4)) {
-		if ( stats[clientnum].helmet )
-			stats[clientnum].helmet->beatitude++;
-		if ( stats[clientnum].breastplate )
-			stats[clientnum].breastplate->beatitude++;
-		if ( stats[clientnum].gloves )
-			stats[clientnum].gloves->beatitude++;
-		if ( stats[clientnum].shoes )
-			stats[clientnum].shoes->beatitude++;
-		if ( stats[clientnum].shield )
-			stats[clientnum].shield->beatitude++;
-		if ( stats[clientnum].weapon )
-			stats[clientnum].weapon->beatitude++;
-		if ( stats[clientnum].cloak )
-			stats[clientnum].cloak->beatitude++;
-		if ( stats[clientnum].amulet )
-			stats[clientnum].amulet->beatitude++;
-		if ( stats[clientnum].ring )
-			stats[clientnum].ring->beatitude++;
-		if ( stats[clientnum].mask )
-			stats[clientnum].mask->beatitude++;
+		if ( stats[clientnum]->helmet )
+			stats[clientnum]->helmet->beatitude++;
+		if ( stats[clientnum]->breastplate )
+			stats[clientnum]->breastplate->beatitude++;
+		if ( stats[clientnum]->gloves )
+			stats[clientnum]->gloves->beatitude++;
+		if ( stats[clientnum]->shoes )
+			stats[clientnum]->shoes->beatitude++;
+		if ( stats[clientnum]->shield )
+			stats[clientnum]->shield->beatitude++;
+		if ( stats[clientnum]->weapon )
+			stats[clientnum]->weapon->beatitude++;
+		if ( stats[clientnum]->cloak )
+			stats[clientnum]->cloak->beatitude++;
+		if ( stats[clientnum]->amulet )
+			stats[clientnum]->amulet->beatitude++;
+		if ( stats[clientnum]->ring )
+			stats[clientnum]->ring->beatitude++;
+		if ( stats[clientnum]->mask )
+			stats[clientnum]->mask->beatitude++;
 		return;
 	}
 
@@ -2067,7 +2067,7 @@ void serverHandlePacket()
 
 	// pause game
 	else if (!strncmp((char *)net_packet->data,"PAUS",4)) {
-		messagePlayer(clientnum,language[1118],stats[net_packet->data[4]].name);
+		messagePlayer(clientnum,language[1118],stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
 		pauseGame(2,j);
 		return;
@@ -2075,7 +2075,7 @@ void serverHandlePacket()
 
 	// unpause game
 	else if (!strncmp((char *)net_packet->data,"UNPS",4)) {
-		messagePlayer(clientnum,language[1119],stats[net_packet->data[4]].name);
+		messagePlayer(clientnum,language[1119],stats[net_packet->data[4]]->name);
 		j = net_packet->data[4];
 		pauseGame(1,j);
 		return;
@@ -2221,7 +2221,7 @@ void serverHandlePacket()
 	// disconnect
 	else if (!strncmp((char *)net_packet->data,"DISCONNECT",10)) {
 		int playerDisconnected = net_packet->data[10];
-		strncpy(shortname,stats[playerDisconnected].name,10);
+		strncpy(shortname,stats[playerDisconnected]->name,10);
 		shortname[10]=0;
 		client_disconnected[playerDisconnected]=TRUE;
 		for ( c=1; c<MAXPLAYERS; c++ ) {
@@ -2247,8 +2247,8 @@ void serverHandlePacket()
 		client_keepalive[pnum] = ticks;
 		Uint32 color = SDLNet_Read32(&net_packet->data[5]);
 
-		strncpy(tempstr,stats[pnum].name,std::min<size_t>(strlen(stats[pnum].name),10)); //TODO: Why are size_t and int being compared?
-		tempstr[std::min<size_t>(strlen(stats[pnum].name),10)]=0; //TODO: Why are size_t and int being compared?
+		strncpy(tempstr,stats[pnum]->name,std::min<size_t>(strlen(stats[pnum]->name),10)); //TODO: Why are size_t and int being compared?
+		tempstr[std::min<size_t>(strlen(stats[pnum]->name),10)]=0; //TODO: Why are size_t and int being compared?
 		strcat(tempstr,": ");
 		strcat(tempstr,(char *)(&net_packet->data[9]));
 		messagePlayerColor(clientnum,color,tempstr);
@@ -2287,14 +2287,14 @@ void serverHandlePacket()
 	// item drop
 	else if (!strncmp((char *)net_packet->data,"DROP",4)) {
 		client_keepalive[net_packet->data[25]] = ticks;
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]].inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]]->inventory);
 		dropItem(item,net_packet->data[25]);
 		return;
 	}
 
 	// item drop (on death)
 	else if (!strncmp((char *)net_packet->data,"DIEI",4)) {
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]].inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]]->inventory);
 		entity = newEntity(-1,1,map.entities);
 		entity->x = net_packet->data[26]; entity->x = entity->x*16+8;
 		entity->y = net_packet->data[27]; entity->y = entity->y*16+8;
@@ -2302,7 +2302,7 @@ void serverHandlePacket()
 		entity->flags[PASSABLE] = TRUE;
 		entity->flags[INVISIBLE] = TRUE;
 		for ( c=item->count; c>0; c-- ) {
-			dropItemMonster(item,entity,&stats[net_packet->data[25]]);
+			dropItemMonster(item,entity,stats[net_packet->data[25]]);
 		}
 		list_RemoveNode(entity->mynode);
 		return;
@@ -2310,7 +2310,7 @@ void serverHandlePacket()
 
 	// raise/lower shield
 	else if (!strncmp((char *)net_packet->data,"SHLD",4)) {
-		stats[net_packet->data[4]].defending = net_packet->data[5];
+		stats[net_packet->data[4]]->defending = net_packet->data[5];
 		return;
 	}
 
@@ -2334,7 +2334,7 @@ void serverHandlePacket()
 			printlog("warning: client %d bought item from non-existent shop! (uid=%d)\n",client,uidnum);
 			return;
 		}
-		stat_t *entitystats = entity->getStats();
+		Stat *entitystats = entity->getStats();
 		if ( !entitystats ) {
 			printlog("warning: client %d bought item from a \"shop\" that has no stats! (uid=%d)\n",client,uidnum);
 			return;
@@ -2360,7 +2360,7 @@ void serverHandlePacket()
 			}
 		}
 		entitystats->GOLD += item->buyValue(client);
-		stats[client].GOLD -= item->buyValue(client);
+		stats[client]->GOLD -= item->buyValue(client);
 		if ( rand()%2 ) {
 			players[client]->increaseSkill(PRO_TRADING);
 		}
@@ -2393,7 +2393,7 @@ void serverHandlePacket()
 			printlog("warning: client %d sold item to non-existent shop! (uid=%d)\n",client,uidnum);
 			return;
 		}
-		stat_t *entitystats = entity->getStats();
+		Stat *entitystats = entity->getStats();
 		if ( !entitystats ) {
 			printlog("warning: client %d sold item to a \"shop\" that has no stats! (uid=%d)\n",client,uidnum);
 			return;
@@ -2403,7 +2403,7 @@ void serverHandlePacket()
 		else
 			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]),1,SDLNet_Read32(&net_packet->data[20]),FALSE,&entitystats->inventory);
 		printlog("client %d sold item to shop (uid=%d)\n",client,uidnum);
-		stats[client].GOLD += item->sellValue(client);
+		stats[client]->GOLD += item->sellValue(client);
 		if ( rand()%2 ) {
 			players[client]->increaseSkill(PRO_TRADING);
 		}
@@ -2412,15 +2412,15 @@ void serverHandlePacket()
 
 	// use item
 	else if (!strncmp((char *)net_packet->data,"USEI",4)) {
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]].inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]]->inventory);
 		useItem(item,net_packet->data[25]);
 		return;
 	}
 
 	// equip item (as a weapon)
 	else if(!strncmp((char *)net_packet->data,"EQUI",4)) {
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]].inventory);
-		equipItem(item,&stats[net_packet->data[25]].weapon,net_packet->data[25]);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]),SDLNet_Read32(&net_packet->data[16]),SDLNet_Read32(&net_packet->data[20]),net_packet->data[24],&stats[net_packet->data[25]]->inventory);
+		equipItem(item,&stats[net_packet->data[25]]->weapon,net_packet->data[25]);
 		return;
 	}
 
@@ -2518,34 +2518,34 @@ void serverHandlePacket()
 		int player = net_packet->data[4];
 		switch ( net_packet->data[5] ) {
 			case 0:
-				item = stats[player].helmet;
+				item = stats[player]->helmet;
 				break;
 			case 1:
-				item = stats[player].breastplate;
+				item = stats[player]->breastplate;
 				break;
 			case 2:
-				item = stats[player].gloves;
+				item = stats[player]->gloves;
 				break;
 			case 3:
-				item = stats[player].shoes;
+				item = stats[player]->shoes;
 				break;
 			case 4:
-				item = stats[player].shield;
+				item = stats[player]->shield;
 				break;
 			case 5:
-				item = stats[player].weapon;
+				item = stats[player]->weapon;
 				break;
 			case 6:
-				item = stats[player].cloak;
+				item = stats[player]->cloak;
 				break;
 			case 7:
-				item = stats[player].amulet;
+				item = stats[player]->amulet;
 				break;
 			case 8:
-				item = stats[player].ring;
+				item = stats[player]->ring;
 				break;
 			case 9:
-				item = stats[player].mask;
+				item = stats[player]->mask;
 				break;
 			default:
 				item = NULL;

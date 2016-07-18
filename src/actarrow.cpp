@@ -83,7 +83,7 @@ void actArrow(Entity *my) {
 			ARROW_VELZ = 0;
 			if( hit.entity != NULL ) {
 				Entity *parent = uidToEntity(my->parent);
-				stat_t *hitstats = hit.entity->getStats();
+				Stat *hitstats = hit.entity->getStats();
 				playSoundEntity(my,72+rand()%3,64);
 				if( hitstats != NULL && hit.entity != parent ) {
 					if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
@@ -152,7 +152,7 @@ void actArrow(Entity *my) {
 						for( node=map.entities->first; node!=NULL; node=node->next ) {
 							entity = (Entity *)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
-								stat_t *buddystats = entity->getStats();
+								Stat *buddystats = entity->getStats();
 								if( buddystats != NULL ) {
 									if ( entity->checkFriend(hit.entity) ) {
 										if( entity->skill[0] == 0 ) { // monster is waiting

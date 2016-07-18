@@ -92,7 +92,7 @@ void updateRemoveCurseGUI() {
 			}
 		}
 
-		list_t *removecurse_inventory = &stats[clientnum].inventory;
+		list_t *removecurse_inventory = &stats[clientnum]->inventory;
 
 		if (!removecurse_inventory) {
 			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
@@ -217,25 +217,25 @@ void removecurseGUIRemoveCurse(Item *item) {
 	if( multiplayer==CLIENT && itemIsEquipped(item,clientnum) ) {
 		// the client needs to inform the server that their equipment was uncursed.
 		int armornum = 0;
-		if( item == stats[clientnum].helmet )
+		if( item == stats[clientnum]->helmet )
 			armornum = 0;
-		else if( item == stats[clientnum].breastplate )
+		else if( item == stats[clientnum]->breastplate )
 			armornum = 1;
-		else if( item == stats[clientnum].gloves )
+		else if( item == stats[clientnum]->gloves )
 			armornum = 2;
-		else if( item == stats[clientnum].shoes )
+		else if( item == stats[clientnum]->shoes )
 			armornum = 3;
-		else if( item == stats[clientnum].shield )
+		else if( item == stats[clientnum]->shield )
 			armornum = 4;
-		else if( item == stats[clientnum].weapon )
+		else if( item == stats[clientnum]->weapon )
 			armornum = 5;
-		else if( item == stats[clientnum].cloak )
+		else if( item == stats[clientnum]->cloak )
 			armornum = 6;
-		else if( item == stats[clientnum].amulet )
+		else if( item == stats[clientnum]->amulet )
 			armornum = 7;
-		else if( item == stats[clientnum].ring )
+		else if( item == stats[clientnum]->ring )
 			armornum = 8;
-		else if( item == stats[clientnum].mask )
+		else if( item == stats[clientnum]->mask )
 			armornum = 9;
 		strcpy((char *)net_packet->data,"RCUR");
 		net_packet->data[4] = clientnum;

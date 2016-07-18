@@ -18,7 +18,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initSlime(Entity *my, stat_t *myStats) {
+void initSlime(Entity *my, Stat *myStats) {
 	int c;
 	
 	my->flags[UPDATENEEDED]=TRUE;

@@ -33,7 +33,7 @@ void updateShopWindow() {
 		Entity *entity = uidToEntity(shopkeeper);
 		if (entity)
 		{
-			stat_t *stats = entity->getStats();
+			Stat *stats = entity->getStats();
 			shopkeepername = stats->name;
 		}
 	}
@@ -114,7 +114,7 @@ void updateShopWindow() {
 	ttfPrintText(ttf8,x+12+424,y+4,language[356]);
 	
 	// buying
-	if( stats[clientnum].HP > 0 && players[clientnum] != NULL ) {
+	if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 		if( omousex>=x+12 && omousex<x+inventory_bmp->w-28 ) {
 			pos.x=x+12;
 			pos.w=0; pos.h=0;
@@ -122,7 +122,7 @@ void updateShopWindow() {
 				pos.y=y+16;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum].HP > 0 && players[clientnum] != NULL ) {
+					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[0]);
 					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -132,7 +132,7 @@ void updateShopWindow() {
 				pos.y=y+34;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum].HP > 0 && players[clientnum] != NULL ) {
+					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[1]);
 					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -142,7 +142,7 @@ void updateShopWindow() {
 				pos.y=y+52;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum].HP > 0 && players[clientnum] != NULL ) {
+					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[2]);
 					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -152,7 +152,7 @@ void updateShopWindow() {
 				pos.y=y+70;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum].HP > 0 && players[clientnum] != NULL ) {
+					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[3]);
 					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -222,7 +222,7 @@ void updateShopWindow() {
 	}
 	
 	// draw money count
-	ttfPrintTextFormatted( ttf16, x1+16, y2-32, language[357], stats[clientnum].GOLD );
+	ttfPrintTextFormatted( ttf16, x1+16, y2-32, language[357], stats[clientnum]->GOLD );
 	
 	// chitchat
 	if( (ticks-shoptimer)%600==0 ) {

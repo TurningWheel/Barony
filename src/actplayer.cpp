@@ -241,7 +241,7 @@ void actPlayer(Entity *my) {
 		}
 		
 		// torso
-		entity = newEntity(106+12*stats[PLAYER_NUM].sex, 1, map.entities);
+		entity = newEntity(106+12*stats[PLAYER_NUM]->sex, 1, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2]=PLAYER_NUM;
@@ -259,7 +259,7 @@ void actPlayer(Entity *my) {
 		node->size = sizeof(Entity *);
 
 		// right leg
-		entity = newEntity(107+12*stats[PLAYER_NUM].sex, 1, map.entities);
+		entity = newEntity(107+12*stats[PLAYER_NUM]->sex, 1, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2]=PLAYER_NUM;
@@ -277,7 +277,7 @@ void actPlayer(Entity *my) {
 		node->size = sizeof(Entity *);
 
 		// left leg
-		entity = newEntity(108+12*stats[PLAYER_NUM].sex, 1, map.entities);
+		entity = newEntity(108+12*stats[PLAYER_NUM]->sex, 1, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2]=PLAYER_NUM;
@@ -295,7 +295,7 @@ void actPlayer(Entity *my) {
 		node->size = sizeof(Entity *);
 
 		// right arm
-		entity = newEntity(109+12*stats[PLAYER_NUM].sex, 1, map.entities);
+		entity = newEntity(109+12*stats[PLAYER_NUM]->sex, 1, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2]=PLAYER_NUM;
@@ -313,7 +313,7 @@ void actPlayer(Entity *my) {
 		node->size = sizeof(Entity *);
 
 		// left arm
-		entity = newEntity(110+12*stats[PLAYER_NUM].sex, 1, map.entities);
+		entity = newEntity(110+12*stats[PLAYER_NUM]->sex, 1, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2]=PLAYER_NUM;
@@ -508,8 +508,8 @@ void actPlayer(Entity *my) {
 			}
 
 			// shurar the talking mace
-			if( stats[PLAYER_NUM].weapon ) {
-				if( stats[PLAYER_NUM].weapon->type == ARTIFACT_MACE ) {
+			if( stats[PLAYER_NUM]->weapon ) {
+				if( stats[PLAYER_NUM]->weapon->type == ARTIFACT_MACE ) {
 					if( PLAYER_ALIVETIME%420==0 ) {
 						messagePlayerColor(clientnum,color,language[538+rand()%32]);
 					}
@@ -543,11 +543,11 @@ void actPlayer(Entity *my) {
 					Item *tempItem = uidToItem(appraisal_item);
 					if( tempItem ) {
 						bool success=FALSE;
-						if( stats[PLAYER_NUM].PROFICIENCIES[PRO_APPRAISAL]<100 ) {
+						if( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]<100 ) {
 							if( tempItem->type != GEM_GLASS )
-								success = (stats[PLAYER_NUM].PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= items[tempItem->type].value / 10);
+								success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= items[tempItem->type].value / 10);
 							else
-								success = (stats[PLAYER_NUM].PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= 100);
+								success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= 100);
 						} else {
 							success = TRUE; // always succeed when appraisal is maxed out
 						}
@@ -576,36 +576,36 @@ void actPlayer(Entity *my) {
 	}
 	
 	// remove broken equipment
-	if( stats[PLAYER_NUM].helmet != NULL )
-		if( stats[PLAYER_NUM].helmet->status == BROKEN )
-			stats[PLAYER_NUM].helmet = NULL;
-	if( stats[PLAYER_NUM].breastplate != NULL )
-		if( stats[PLAYER_NUM].breastplate->status == BROKEN )
-			stats[PLAYER_NUM].breastplate = NULL;
-	if( stats[PLAYER_NUM].gloves != NULL )
-		if( stats[PLAYER_NUM].gloves->status == BROKEN )
-			stats[PLAYER_NUM].gloves = NULL;
-	if( stats[PLAYER_NUM].shoes != NULL )
-		if( stats[PLAYER_NUM].shoes->status == BROKEN )
-			stats[PLAYER_NUM].shoes = NULL;
-	if( stats[PLAYER_NUM].shield != NULL )
-		if( stats[PLAYER_NUM].shield->status == BROKEN )
-			stats[PLAYER_NUM].shield = NULL;
-	if( stats[PLAYER_NUM].weapon != NULL )
-		if( stats[PLAYER_NUM].weapon->status == BROKEN )
-			stats[PLAYER_NUM].weapon = NULL;
-	if( stats[PLAYER_NUM].cloak != NULL )
-		if( stats[PLAYER_NUM].cloak->status == BROKEN )
-			stats[PLAYER_NUM].cloak = NULL;
-	if( stats[PLAYER_NUM].amulet != NULL )
-		if( stats[PLAYER_NUM].amulet->status == BROKEN )
-			stats[PLAYER_NUM].amulet = NULL;
-	if( stats[PLAYER_NUM].ring != NULL )
-		if( stats[PLAYER_NUM].ring->status == BROKEN )
-			stats[PLAYER_NUM].ring = NULL;
-	if( stats[PLAYER_NUM].mask != NULL )
-		if( stats[PLAYER_NUM].mask->status == BROKEN )
-			stats[PLAYER_NUM].mask = NULL;
+	if( stats[PLAYER_NUM]->helmet != NULL )
+		if( stats[PLAYER_NUM]->helmet->status == BROKEN )
+			stats[PLAYER_NUM]->helmet = NULL;
+	if( stats[PLAYER_NUM]->breastplate != NULL )
+		if( stats[PLAYER_NUM]->breastplate->status == BROKEN )
+			stats[PLAYER_NUM]->breastplate = NULL;
+	if( stats[PLAYER_NUM]->gloves != NULL )
+		if( stats[PLAYER_NUM]->gloves->status == BROKEN )
+			stats[PLAYER_NUM]->gloves = NULL;
+	if( stats[PLAYER_NUM]->shoes != NULL )
+		if( stats[PLAYER_NUM]->shoes->status == BROKEN )
+			stats[PLAYER_NUM]->shoes = NULL;
+	if( stats[PLAYER_NUM]->shield != NULL )
+		if( stats[PLAYER_NUM]->shield->status == BROKEN )
+			stats[PLAYER_NUM]->shield = NULL;
+	if( stats[PLAYER_NUM]->weapon != NULL )
+		if( stats[PLAYER_NUM]->weapon->status == BROKEN )
+			stats[PLAYER_NUM]->weapon = NULL;
+	if( stats[PLAYER_NUM]->cloak != NULL )
+		if( stats[PLAYER_NUM]->cloak->status == BROKEN )
+			stats[PLAYER_NUM]->cloak = NULL;
+	if( stats[PLAYER_NUM]->amulet != NULL )
+		if( stats[PLAYER_NUM]->amulet->status == BROKEN )
+			stats[PLAYER_NUM]->amulet = NULL;
+	if( stats[PLAYER_NUM]->ring != NULL )
+		if( stats[PLAYER_NUM]->ring->status == BROKEN )
+			stats[PLAYER_NUM]->ring = NULL;
+	if( stats[PLAYER_NUM]->mask != NULL )
+		if( stats[PLAYER_NUM]->mask->status == BROKEN )
+			stats[PLAYER_NUM]->mask = NULL;
 	
 	if( multiplayer != CLIENT ) {
 		my->effectTimes();
@@ -614,13 +614,13 @@ void actPlayer(Entity *my) {
 	// invisibility
 	if( !intro ) {
 		if( PLAYER_NUM==clientnum || multiplayer==SERVER ) {
-			if( stats[PLAYER_NUM].ring != NULL )
-				if( stats[PLAYER_NUM].ring->type == RING_INVISIBILITY )
+			if( stats[PLAYER_NUM]->ring != NULL )
+				if( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
 					wearingring = TRUE;
-			if( stats[PLAYER_NUM].cloak != NULL )
-				if( stats[PLAYER_NUM].cloak->type == CLOAK_INVISIBILITY )
+			if( stats[PLAYER_NUM]->cloak != NULL )
+				if( stats[PLAYER_NUM]->cloak->type == CLOAK_INVISIBILITY )
 					wearingring = TRUE;
-			if( stats[PLAYER_NUM].EFFECTS[EFF_INVISIBLE] == TRUE || wearingring==TRUE ) {
+			if( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring==TRUE ) {
 				if( !my->flags[INVISIBLE] ) {
 					my->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityFlag(my,INVISIBLE);
@@ -675,7 +675,7 @@ void actPlayer(Entity *my) {
 		}
 
 		// sleeping
-		if( stats[PLAYER_NUM].EFFECTS[EFF_ASLEEP] ) {
+		if( stats[PLAYER_NUM]->EFFECTS[EFF_ASLEEP] ) {
 			my->z = 1.5;
 			my->pitch = PI/4;
 		} else {
@@ -683,13 +683,13 @@ void actPlayer(Entity *my) {
 		}
 
 		// levitation
-		if( stats[PLAYER_NUM].EFFECTS[EFF_LEVITATING] == TRUE )
+		if( stats[PLAYER_NUM]->EFFECTS[EFF_LEVITATING] == TRUE )
 			levitating=TRUE;
-		if( stats[PLAYER_NUM].ring != NULL )
-			if( stats[PLAYER_NUM].ring->type == RING_LEVITATION )
+		if( stats[PLAYER_NUM]->ring != NULL )
+			if( stats[PLAYER_NUM]->ring->type == RING_LEVITATION )
 				levitating = TRUE;
-		if( stats[PLAYER_NUM].shoes != NULL )
-			if( stats[PLAYER_NUM].shoes->type == STEEL_BOOTS_LEVITATION )
+		if( stats[PLAYER_NUM]->shoes != NULL )
+			if( stats[PLAYER_NUM]->shoes->type == STEEL_BOOTS_LEVITATION )
 				levitating = TRUE;
 		if( levitating ) {
 			my->z -= 1; // floating
@@ -703,11 +703,11 @@ void actPlayer(Entity *my) {
 				for( v=y-1; v<=y+1; v++ ) {
 					if( entityInsideTile(my,u,v,0) ) { // no floor
 						messagePlayer(PLAYER_NUM,language[572]);
-						stats[PLAYER_NUM].HP = 0; // kill me instantly
+						stats[PLAYER_NUM]->HP = 0; // kill me instantly
 						break;
 					}
 				}
-				if( stats[PLAYER_NUM].HP==0 )
+				if( stats[PLAYER_NUM]->HP==0 )
 					break;
 			}
 		}
@@ -715,8 +715,8 @@ void actPlayer(Entity *my) {
 	
 	// swimming
 	bool waterwalkingboots = FALSE;
-	if( stats[PLAYER_NUM].shoes != NULL )
-		if( stats[PLAYER_NUM].shoes->type == IRON_BOOTS_WATERWALKING )
+	if( stats[PLAYER_NUM]->shoes != NULL )
+		if( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
 			waterwalkingboots = TRUE;
 	bool swimming = FALSE;
 	if( PLAYER_NUM==clientnum || multiplayer==SERVER ) {
@@ -773,7 +773,7 @@ void actPlayer(Entity *my) {
 					PLAYER_BOBMOVE -= .03;
 			}
 			if( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT])) && !command && !swimming ) {
-				if( !stats[clientnum].defending ) {
+				if( !stats[clientnum]->defending ) {
 					if( PLAYER_BOBMODE )
 						PLAYER_BOBMOVE += .05;
 					else
@@ -789,7 +789,7 @@ void actPlayer(Entity *my) {
 				PLAYER_BOB = 0;
 				PLAYER_BOBMODE=0;
 			}
-			if( !swimming && !stats[clientnum].defending ) {
+			if( !swimming && !stats[clientnum]->defending ) {
 				if( PLAYER_BOBMOVE > .2 ) {
 					PLAYER_BOBMOVE=.2;
 					PLAYER_BOBMODE=0;
@@ -871,8 +871,8 @@ void actPlayer(Entity *my) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) || i==PLAYER_CLICKED-1 ) {
 				PLAYER_CLICKED=0;
 				if( inrange[i] && i!=PLAYER_NUM ) {
-					messagePlayer(i,language[575],stats[PLAYER_NUM].name,stats[PLAYER_NUM].HP,stats[PLAYER_NUM].MAXHP,stats[PLAYER_NUM].MP,stats[PLAYER_NUM].MAXMP);
-					messagePlayer(PLAYER_NUM,language[576],stats[i].name);
+					messagePlayer(i,language[575],stats[PLAYER_NUM]->name,stats[PLAYER_NUM]->HP,stats[PLAYER_NUM]->MAXHP,stats[PLAYER_NUM]->MP,stats[PLAYER_NUM]->MAXMP);
+					messagePlayer(PLAYER_NUM,language[576],stats[i]->name);
 					if( PLAYER_NUM==clientnum && players[i] ) {
 						double tangent = atan2(my->y-players[i]->y,my->x-players[i]->x);
 						PLAYER_VELX += cos(tangent);
@@ -886,11 +886,11 @@ void actPlayer(Entity *my) {
 	// torch light
 	if( !intro ) {
 		if( multiplayer==SERVER || PLAYER_NUM==clientnum ) {
-			if( stats[PLAYER_NUM].shield != NULL ) {
+			if( stats[PLAYER_NUM]->shield != NULL ) {
 				if( PLAYER_NUM==clientnum ) {
-					if( stats[PLAYER_NUM].shield->type == TOOL_TORCH ) {
+					if( stats[PLAYER_NUM]->shield->type == TOOL_TORCH ) {
 						PLAYER_TORCH = 7+my->getPER()/3;
-					} else if( stats[PLAYER_NUM].shield->type == TOOL_LANTERN ) {
+					} else if( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN ) {
 						PLAYER_TORCH = 10+my->getPER()/3;
 					} else if( !PLAYER_DEBUGCAM ) {
 						PLAYER_TORCH=3+my->getPER()/3;
@@ -898,9 +898,9 @@ void actPlayer(Entity *my) {
 						PLAYER_TORCH=0;
 					}
 				} else {
-					if( stats[PLAYER_NUM].shield->type == TOOL_TORCH ) {
+					if( stats[PLAYER_NUM]->shield->type == TOOL_TORCH ) {
 						PLAYER_TORCH = 7;
-					} else if( stats[PLAYER_NUM].shield->type == TOOL_LANTERN ) {
+					} else if( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN ) {
 						PLAYER_TORCH = 10;
 					} else {
 						PLAYER_TORCH=0;
@@ -927,14 +927,14 @@ void actPlayer(Entity *my) {
 	// server controls players primarily
 	if( PLAYER_NUM==clientnum || multiplayer==SERVER ) {
 		// set head model
-		if( stats[PLAYER_NUM].appearance<5 ) {
-			my->sprite = 113+12*stats[PLAYER_NUM].sex+stats[PLAYER_NUM].appearance;
-		} else if( stats[PLAYER_NUM].appearance==5 ) {
-			my->sprite = 332+stats[PLAYER_NUM].sex;
-		} else if( stats[PLAYER_NUM].appearance>=6 && stats[PLAYER_NUM].appearance<12 ) {
-			my->sprite = 341+stats[PLAYER_NUM].sex*13+stats[PLAYER_NUM].appearance-6;
-		} else if( stats[PLAYER_NUM].appearance>=12 ) {
-			my->sprite = 367+stats[PLAYER_NUM].sex*13+stats[PLAYER_NUM].appearance-12;
+		if( stats[PLAYER_NUM]->appearance<5 ) {
+			my->sprite = 113+12*stats[PLAYER_NUM]->sex+stats[PLAYER_NUM]->appearance;
+		} else if( stats[PLAYER_NUM]->appearance==5 ) {
+			my->sprite = 332+stats[PLAYER_NUM]->sex;
+		} else if( stats[PLAYER_NUM]->appearance>=6 && stats[PLAYER_NUM]->appearance<12 ) {
+			my->sprite = 341+stats[PLAYER_NUM]->sex*13+stats[PLAYER_NUM]->appearance-6;
+		} else if( stats[PLAYER_NUM]->appearance>=12 ) {
+			my->sprite = 367+stats[PLAYER_NUM]->sex*13+stats[PLAYER_NUM]->appearance-12;
 		} else {
 			my->sprite = 113; // default
 		}
@@ -942,8 +942,8 @@ void actPlayer(Entity *my) {
 	if( multiplayer!=CLIENT ) {
 		// remove client entities that should no longer exist
 		if( !intro ) {
-			my->handleEffects(&stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
-			if( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM].HP <= 0 ) {
+			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
+			if( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 ) {
 				// remove body parts
 				node_t *nextnode;
 				for( node=my->children.first, i=0; node!=NULL; node=nextnode, i++ ) {
@@ -957,7 +957,7 @@ void actPlayer(Entity *my) {
 							break;
 					}
 				}
-				if( stats[PLAYER_NUM].HP <= 0 ) {
+				if( stats[PLAYER_NUM]->HP <= 0 ) {
 					// die
 					playSoundEntity(my, 28, 128);
 					for( i=0; i<5; i++ ) {
@@ -984,7 +984,7 @@ void actPlayer(Entity *my) {
 						}
 					}
 					node_t *spellnode;
-					spellnode = stats[PLAYER_NUM].magic_effects.first;
+					spellnode = stats[PLAYER_NUM]->magic_effects.first;
 					while (spellnode) {
 						node_t *oldnode = spellnode;
 						spellnode = spellnode->next;
@@ -997,7 +997,7 @@ void actPlayer(Entity *my) {
 						if( client_disconnected[c] )
 							continue;
 						char whatever[256];
-						snprintf(whatever,255,"%s %s",stats[PLAYER_NUM].name,stats[PLAYER_NUM].obituary);
+						snprintf(whatever,255,"%s %s",stats[PLAYER_NUM]->name,stats[PLAYER_NUM]->obituary);
 						messagePlayer(c,whatever);
 					}
 					Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
@@ -1026,7 +1026,7 @@ void actPlayer(Entity *my) {
 						fadeout_increment = default_fadeout_increment*4;
 						playmusic(sounds[209],FALSE,TRUE,FALSE);
 
-						for( node=stats[PLAYER_NUM].inventory.first; node!=NULL; node=nextnode ) {
+						for( node=stats[PLAYER_NUM]->inventory.first; node!=NULL; node=nextnode ) {
 							nextnode=node->next;
 							Item *item = (Item *)node->element;
 							if( itemCategory(item) == SPELL_CAT )
@@ -1056,98 +1056,98 @@ void actPlayer(Entity *my) {
 							}
 						}
 						if( multiplayer != SINGLE ) {
-							for( node=stats[PLAYER_NUM].inventory.first; node!=NULL; node=nextnode ) {
+							for( node=stats[PLAYER_NUM]->inventory.first; node!=NULL; node=nextnode ) {
 								nextnode=node->next;
 								Item *item = (Item *)node->element;
 								if( itemCategory(item) == SPELL_CAT )
 									continue; // don't drop spells on death, stupid!
 								list_RemoveNode(node);
 							}
-							stats[0].helmet=NULL;
-							stats[0].breastplate=NULL;
-							stats[0].gloves=NULL;
-							stats[0].shoes=NULL;
-							stats[0].shield=NULL;
-							stats[0].weapon=NULL;
-							stats[0].cloak=NULL;
-							stats[0].amulet=NULL;
-							stats[0].ring=NULL;
-							stats[0].mask=NULL;
+							stats[0]->helmet=NULL;
+							stats[0]->breastplate=NULL;
+							stats[0]->gloves=NULL;
+							stats[0]->shoes=NULL;
+							stats[0]->shield=NULL;
+							stats[0]->weapon=NULL;
+							stats[0]->cloak=NULL;
+							stats[0]->amulet=NULL;
+							stats[0]->ring=NULL;
+							stats[0]->mask=NULL;
 						}
 					} else {
 						my->x = ((int)(my->x/16))*16+8;
 						my->y = ((int)(my->y/16))*16+8;
-						item = stats[PLAYER_NUM].helmet;
+						item = stats[PLAYER_NUM]->helmet;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].breastplate;
+						item = stats[PLAYER_NUM]->breastplate;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].gloves;
+						item = stats[PLAYER_NUM]->gloves;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].shoes;
+						item = stats[PLAYER_NUM]->shoes;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].shield;
+						item = stats[PLAYER_NUM]->shield;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].weapon;
+						item = stats[PLAYER_NUM]->weapon;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].cloak;
+						item = stats[PLAYER_NUM]->cloak;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].amulet;
+						item = stats[PLAYER_NUM]->amulet;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].ring;
+						item = stats[PLAYER_NUM]->ring;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						item = stats[PLAYER_NUM].mask;
+						item = stats[PLAYER_NUM]->mask;
 						if( item ) {
 							int c = item->count;
 							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,&stats[PLAYER_NUM]);
+								dropItemMonster(item,my,stats[PLAYER_NUM]);
 							}
 						}
-						list_FreeAll(&stats[PLAYER_NUM].inventory);
+						list_FreeAll(&stats[PLAYER_NUM]->inventory);
 					}
 					
 					if( multiplayer != SINGLE ) {
@@ -1166,7 +1166,7 @@ void actPlayer(Entity *my) {
 	
 	if( PLAYER_NUM==clientnum && intro==FALSE ) {
 		// effects of drunkenness
-		if( stats[PLAYER_NUM].EFFECTS[EFF_DRUNK]==TRUE ) {
+		if( stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK]==TRUE ) {
 			CHAR_DRUNK++;
 			if( CHAR_DRUNK>=180 ) {
 				CHAR_DRUNK=0;
@@ -1178,30 +1178,30 @@ void actPlayer(Entity *my) {
 		
 		// calculate weight
 		weight=0;
-		for( node=stats[PLAYER_NUM].inventory.first; node!=NULL; node=node->next ) {
+		for( node=stats[PLAYER_NUM]->inventory.first; node!=NULL; node=node->next ) {
 			item = (Item *)node->element;
 			if( item != NULL )
 				if( item->type >= 0 && item->type < NUMITEMS )
 					weight += items[item->type].weight*item->count;
 		}
-		weight+=stats[PLAYER_NUM].GOLD/100;
+		weight+=stats[PLAYER_NUM]->GOLD/100;
 		weightratio = (1000+my->getSTR()*100-weight)/(double)(1000+my->getSTR()*100);
 		weightratio = fmin(fmax(0,weightratio),1);
 		
 		// calculate movement forces
 		if( !command ) {
-			if( !stats[PLAYER_NUM].EFFECTS[EFF_CONFUSED] ) {
+			if( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] ) {
 				// normal controls
-				PLAYER_VELX += (*inputPressed(impulses[IN_FORWARD])-*inputPressed(impulses[IN_BACK])*.25)*cos(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_FORWARD])-*inputPressed(impulses[IN_BACK])*.25)*sin(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
-				PLAYER_VELX += (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]))*cos(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]))*sin(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
+				PLAYER_VELX += (*inputPressed(impulses[IN_FORWARD])-*inputPressed(impulses[IN_BACK])*.25)*cos(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+				PLAYER_VELY += (*inputPressed(impulses[IN_FORWARD])-*inputPressed(impulses[IN_BACK])*.25)*sin(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+				PLAYER_VELX += (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]))*cos(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+				PLAYER_VELY += (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]))*sin(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
 			} else {
 				// controls are backwards when confused
-				PLAYER_VELX += (*inputPressed(impulses[IN_BACK])-(double)*inputPressed(impulses[IN_FORWARD])*.25)*cos(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_BACK])-(double)*inputPressed(impulses[IN_FORWARD])*.25)*sin(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
-				PLAYER_VELX += (*inputPressed(impulses[IN_LEFT])-*inputPressed(impulses[IN_RIGHT]))*cos(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_LEFT])-*inputPressed(impulses[IN_RIGHT]))*sin(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM].defending);
+				PLAYER_VELX += (*inputPressed(impulses[IN_BACK])-(double)*inputPressed(impulses[IN_FORWARD])*.25)*cos(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+				PLAYER_VELY += (*inputPressed(impulses[IN_BACK])-(double)*inputPressed(impulses[IN_FORWARD])*.25)*sin(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+				PLAYER_VELX += (*inputPressed(impulses[IN_LEFT])-*inputPressed(impulses[IN_RIGHT]))*cos(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+				PLAYER_VELY += (*inputPressed(impulses[IN_LEFT])-*inputPressed(impulses[IN_RIGHT]))*sin(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
 			}
 		}
 		PLAYER_VELX *= .75;
@@ -1222,23 +1222,23 @@ void actPlayer(Entity *my) {
 		
 		// swimming slows you down
 		bool amuletwaterbreathing=FALSE;
-		if( stats[PLAYER_NUM].amulet != NULL )
-			if( stats[PLAYER_NUM].amulet->type == AMULET_WATERBREATHING )
+		if( stats[PLAYER_NUM]->amulet != NULL )
+			if( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
 				amuletwaterbreathing=TRUE;
 		if( swimming && !amuletwaterbreathing ) {
-			PLAYER_VELX *= (((stats[PLAYER_NUM].PROFICIENCIES[PRO_SWIMMING]/100.f)*50.f)+50)/100.f;
-			PLAYER_VELY *= (((stats[PLAYER_NUM].PROFICIENCIES[PRO_SWIMMING]/100.f)*50.f)+50)/100.f;
+			PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING]/100.f)*50.f)+50)/100.f;
+			PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING]/100.f)*50.f)+50)/100.f;
 		}
 		
 		// rotate
 		if( !command && my->isMobile() ) {
-			if( !stats[PLAYER_NUM].EFFECTS[EFF_CONFUSED] )
+			if( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				my->yaw += (*inputPressed(impulses[IN_TURNR])-*inputPressed(impulses[IN_TURNL]))*.05;
 			else
 				my->yaw += (*inputPressed(impulses[IN_TURNL])-*inputPressed(impulses[IN_TURNR]))*.05;
 		}
 		if( shootmode && !gamePaused ) {
-			if( !stats[PLAYER_NUM].EFFECTS[EFF_CONFUSED] ) {
+			if( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] ) {
 				if( smoothmouse ) {
 					if( my->isMobile() )
 						PLAYER_ROTX += mousexrel*.006*(mousespeed/128.f);
@@ -1277,13 +1277,13 @@ void actPlayer(Entity *my) {
 		
 		// look up and down
 		if( !command && my->isMobile() ) {
-			if( !stats[PLAYER_NUM].EFFECTS[EFF_CONFUSED] )
+			if( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 				my->pitch += (*inputPressed(impulses[IN_DOWN])-*inputPressed(impulses[IN_UP]))*.05;
 			else
 				my->pitch += (*inputPressed(impulses[IN_UP])-*inputPressed(impulses[IN_DOWN]))*.05;
 		}
 		if( shootmode && !gamePaused ) {
-			if( !stats[PLAYER_NUM].EFFECTS[EFF_CONFUSED] ) {
+			if( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] ) {
 				if( smoothmouse ) {
 					if( my->isMobile() )
 						PLAYER_ROTY += mouseyrel*.006*(mousespeed/128.f)*(reversemouse*2-1);
@@ -1574,20 +1574,20 @@ void actPlayer(Entity *my) {
 			// torso
 			case 1:
 				if( multiplayer!=CLIENT ) {
-					if( stats[PLAYER_NUM].breastplate == NULL ) {
-						switch( stats[PLAYER_NUM].appearance/6 ) {
+					if( stats[PLAYER_NUM]->breastplate == NULL ) {
+						switch( stats[PLAYER_NUM]->appearance/6 ) {
 							case 1:
-								entity->sprite = 334+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 334+13*stats[PLAYER_NUM]->sex;
 								break;
 							case 2:
-								entity->sprite = 360+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 360+13*stats[PLAYER_NUM]->sex;
 								break;
 							default:
-								entity->sprite = 106+12*stats[PLAYER_NUM].sex;
+								entity->sprite = 106+12*stats[PLAYER_NUM]->sex;
 								break;
 						}
 					} else {
-						entity->sprite = itemModel(stats[PLAYER_NUM].breastplate);
+						entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
 					}
 					if( multiplayer==SERVER ) {
 						// update sprites for clients
@@ -1607,28 +1607,28 @@ void actPlayer(Entity *my) {
 			// right leg
 			case 2:
 				if( multiplayer!=CLIENT ) {
-					if( stats[PLAYER_NUM].shoes == NULL ) {
-						switch( stats[PLAYER_NUM].appearance/6 ) {
+					if( stats[PLAYER_NUM]->shoes == NULL ) {
+						switch( stats[PLAYER_NUM]->appearance/6 ) {
 							case 1:
-								entity->sprite = 335+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 335+13*stats[PLAYER_NUM]->sex;
 								break;
 							case 2:
-								entity->sprite = 361+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 361+13*stats[PLAYER_NUM]->sex;
 								break;
 							default:
-								entity->sprite = 107+12*stats[PLAYER_NUM].sex;
+								entity->sprite = 107+12*stats[PLAYER_NUM]->sex;
 								break;
 						}
 					} else {
 						// leather boots
-						if( stats[PLAYER_NUM].shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM].shoes->type == LEATHER_BOOTS_SPEED )
-							entity->sprite = 148+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS_SPEED )
+							entity->sprite = 148+stats[PLAYER_NUM]->sex;
 						// iron boots
-						if( stats[PLAYER_NUM].shoes->type == IRON_BOOTS || stats[PLAYER_NUM].shoes->type == IRON_BOOTS_WATERWALKING )
-							entity->sprite = 152+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS || stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
+							entity->sprite = 152+stats[PLAYER_NUM]->sex;
 						// steel boots
-						if( stats[PLAYER_NUM].shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM].shoes->type <= STEEL_BOOTS_FEATHER )
-							entity->sprite = 156+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM]->shoes->type <= STEEL_BOOTS_FEATHER )
+							entity->sprite = 156+stats[PLAYER_NUM]->sex;
 					}
 					if( multiplayer==SERVER ) {
 						// update sprites for clients
@@ -1652,28 +1652,28 @@ void actPlayer(Entity *my) {
 			// left leg
 			case 3:
 				if( multiplayer!=CLIENT ) {
-					if( stats[PLAYER_NUM].shoes == NULL ) {
-						switch( stats[PLAYER_NUM].appearance/6 ) {
+					if( stats[PLAYER_NUM]->shoes == NULL ) {
+						switch( stats[PLAYER_NUM]->appearance/6 ) {
 							case 1:
-								entity->sprite = 336+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 336+13*stats[PLAYER_NUM]->sex;
 								break;
 							case 2:
-								entity->sprite = 362+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 362+13*stats[PLAYER_NUM]->sex;
 								break;
 							default:
-								entity->sprite = 108+12*stats[PLAYER_NUM].sex;
+								entity->sprite = 108+12*stats[PLAYER_NUM]->sex;
 								break;
 						}
 					} else {
 						// leather boots
-						if( stats[PLAYER_NUM].shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM].shoes->type == LEATHER_BOOTS_SPEED )
-							entity->sprite = 150+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS_SPEED )
+							entity->sprite = 150+stats[PLAYER_NUM]->sex;
 						// iron boots
-						if( stats[PLAYER_NUM].shoes->type == IRON_BOOTS || stats[PLAYER_NUM].shoes->type == IRON_BOOTS_WATERWALKING )
-							entity->sprite = 154+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS || stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
+							entity->sprite = 154+stats[PLAYER_NUM]->sex;
 						// steel boots
-						if( stats[PLAYER_NUM].shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM].shoes->type <= STEEL_BOOTS_FEATHER )
-							entity->sprite = 158+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM]->shoes->type <= STEEL_BOOTS_FEATHER )
+							entity->sprite = 158+stats[PLAYER_NUM]->sex;
 					}
 					if( multiplayer==SERVER ) {
 						// update sprites for clients
@@ -1697,31 +1697,31 @@ void actPlayer(Entity *my) {
 			// right arm
 			case 4: {
 				if( multiplayer!=CLIENT ) {
-					if( stats[PLAYER_NUM].gloves == NULL ) {
-						switch( stats[PLAYER_NUM].appearance/6 ) {
+					if( stats[PLAYER_NUM]->gloves == NULL ) {
+						switch( stats[PLAYER_NUM]->appearance/6 ) {
 							case 1:
-								entity->sprite = 337+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 337+13*stats[PLAYER_NUM]->sex;
 								break;
 							case 2:
-								entity->sprite = 363+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 363+13*stats[PLAYER_NUM]->sex;
 								break;
 							default:
-								entity->sprite = 109+12*stats[PLAYER_NUM].sex;
+								entity->sprite = 109+12*stats[PLAYER_NUM]->sex;
 								break;
 						}
 					} else {
 						// leather gloves
-						if( stats[PLAYER_NUM].gloves->type == GLOVES || stats[PLAYER_NUM].gloves->type == GLOVES_DEXTERITY )
-							entity->sprite = 132+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->gloves->type == GLOVES || stats[PLAYER_NUM]->gloves->type == GLOVES_DEXTERITY )
+							entity->sprite = 132+stats[PLAYER_NUM]->sex;
 						// iron bracers
-						if( stats[PLAYER_NUM].gloves->type == BRACERS || stats[PLAYER_NUM].gloves->type == BRACERS_CONSTITUTION )
-							entity->sprite = 323+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->gloves->type == BRACERS || stats[PLAYER_NUM]->gloves->type == BRACERS_CONSTITUTION )
+							entity->sprite = 323+stats[PLAYER_NUM]->sex;
 						// steel gauntlets
-						if( stats[PLAYER_NUM].gloves->type == GAUNTLETS || stats[PLAYER_NUM].gloves->type == GAUNTLETS_STRENGTH )
-							entity->sprite = 140+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->gloves->type == GAUNTLETS || stats[PLAYER_NUM]->gloves->type == GAUNTLETS_STRENGTH )
+							entity->sprite = 140+stats[PLAYER_NUM]->sex;
 					}
 					if( !PLAYER_ARMBENDED )
-						entity->sprite += 2*(stats[PLAYER_NUM].weapon!=NULL);
+						entity->sprite += 2*(stats[PLAYER_NUM]->weapon!=NULL);
 					if( multiplayer==SERVER ) {
 						// update sprites for clients
 						if( entity->skill[10]!=entity->sprite ) {
@@ -1766,30 +1766,30 @@ void actPlayer(Entity *my) {
 			// left arm
 			case 5: {
 				if( multiplayer!=CLIENT ) {
-					if( stats[PLAYER_NUM].gloves == NULL ) {
-						switch( stats[PLAYER_NUM].appearance/6 ) {
+					if( stats[PLAYER_NUM]->gloves == NULL ) {
+						switch( stats[PLAYER_NUM]->appearance/6 ) {
 							case 1:
-								entity->sprite = 338+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 338+13*stats[PLAYER_NUM]->sex;
 								break;
 							case 2:
-								entity->sprite = 364+13*stats[PLAYER_NUM].sex;
+								entity->sprite = 364+13*stats[PLAYER_NUM]->sex;
 								break;
 							default:
-								entity->sprite = 110+12*stats[PLAYER_NUM].sex;
+								entity->sprite = 110+12*stats[PLAYER_NUM]->sex;
 								break;
 						}
 					} else {
 						// leather gloves
-						if( stats[PLAYER_NUM].gloves->type == GLOVES || stats[PLAYER_NUM].gloves->type == GLOVES_DEXTERITY )
-							entity->sprite = 136+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->gloves->type == GLOVES || stats[PLAYER_NUM]->gloves->type == GLOVES_DEXTERITY )
+							entity->sprite = 136+stats[PLAYER_NUM]->sex;
 						// iron bracers
-						if( stats[PLAYER_NUM].gloves->type == BRACERS || stats[PLAYER_NUM].gloves->type == BRACERS_CONSTITUTION )
-							entity->sprite = 327+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->gloves->type == BRACERS || stats[PLAYER_NUM]->gloves->type == BRACERS_CONSTITUTION )
+							entity->sprite = 327+stats[PLAYER_NUM]->sex;
 						// steel gauntlets
-						if( stats[PLAYER_NUM].gloves->type == GAUNTLETS || stats[PLAYER_NUM].gloves->type == GAUNTLETS_STRENGTH )
-							entity->sprite = 144+stats[PLAYER_NUM].sex;
+						if( stats[PLAYER_NUM]->gloves->type == GAUNTLETS || stats[PLAYER_NUM]->gloves->type == GAUNTLETS_STRENGTH )
+							entity->sprite = 144+stats[PLAYER_NUM]->sex;
 					}
-					entity->sprite += 2*(stats[PLAYER_NUM].shield!=NULL);
+					entity->sprite += 2*(stats[PLAYER_NUM]->shield!=NULL);
 					if( multiplayer==SERVER ) {
 						// update sprites for clients
 						if( entity->skill[10]!=entity->sprite ) {
@@ -1828,11 +1828,11 @@ void actPlayer(Entity *my) {
 					if( swimming ) {
 						entity->flags[INVISIBLE]=TRUE;
 					} else {
-						if( stats[PLAYER_NUM].weapon == NULL || stats[PLAYER_NUM].EFFECTS[EFF_INVISIBLE] || wearingring ) {
+						if( stats[PLAYER_NUM]->weapon == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) {
 							entity->flags[INVISIBLE]=TRUE;
 						} else {
-							entity->sprite = itemModel(stats[PLAYER_NUM].weapon);
-							if( itemCategory(stats[PLAYER_NUM].weapon) == SPELLBOOK )
+							entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
+							if( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
 								entity->flags[INVISIBLE]=TRUE;
 							else
 								entity->flags[INVISIBLE]=FALSE;
@@ -1905,14 +1905,14 @@ void actPlayer(Entity *my) {
 					if( swimming ) {
 						entity->flags[INVISIBLE]=TRUE;
 					} else {
-						if( stats[PLAYER_NUM].shield == NULL ) {
+						if( stats[PLAYER_NUM]->shield == NULL ) {
 							entity->flags[INVISIBLE]=TRUE;
 							entity->sprite = 0;
 						} else {
 							entity->flags[INVISIBLE]=FALSE;
-							entity->sprite = itemModel(stats[PLAYER_NUM].shield);
+							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
 						}
-						if( stats[PLAYER_NUM].EFFECTS[EFF_INVISIBLE] || wearingring ) {
+						if( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) {
 							entity->flags[INVISIBLE]=TRUE;
 						}
 					}
@@ -1962,11 +1962,11 @@ void actPlayer(Entity *my) {
 			// cloak
 			case 8:
 				if( multiplayer!=CLIENT ) {
-					if( stats[PLAYER_NUM].cloak == NULL || stats[PLAYER_NUM].EFFECTS[EFF_INVISIBLE] || wearingring ) {
+					if( stats[PLAYER_NUM]->cloak == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) {
 						entity->flags[INVISIBLE]=TRUE;
 					} else {
 						entity->flags[INVISIBLE]=FALSE;
-						entity->sprite = itemModel(stats[PLAYER_NUM].cloak);
+						entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
 					}
 					if( multiplayer==SERVER ) {
 						// update sprites for clients
@@ -1995,8 +1995,8 @@ void actPlayer(Entity *my) {
 				entity->pitch = my->pitch;
 				entity->roll = 0;
 				if( multiplayer!=CLIENT ) {
-					entity->sprite = itemModel(stats[PLAYER_NUM].helmet);
-					if( stats[PLAYER_NUM].helmet == NULL || stats[PLAYER_NUM].EFFECTS[EFF_INVISIBLE] || wearingring ) {
+					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
+					if( stats[PLAYER_NUM]->helmet == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) {
 						entity->flags[INVISIBLE]=TRUE;
 					} else {
 						entity->flags[INVISIBLE]=FALSE;
@@ -2049,19 +2049,19 @@ void actPlayer(Entity *my) {
 				entity->roll=PI/2;
 				if( multiplayer!=CLIENT ) {
 					bool hasSteelHelm=FALSE;
-					if( stats[PLAYER_NUM].helmet )
-						if( stats[PLAYER_NUM].helmet->type==STEEL_HELM )
+					if( stats[PLAYER_NUM]->helmet )
+						if( stats[PLAYER_NUM]->helmet->type==STEEL_HELM )
 							hasSteelHelm=TRUE;
-					if( stats[PLAYER_NUM].mask == NULL || stats[PLAYER_NUM].EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) {
+					if( stats[PLAYER_NUM]->mask == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) {
 						entity->flags[INVISIBLE]=TRUE;
 					} else {
 						entity->flags[INVISIBLE]=FALSE;
 					}
-					if( stats[PLAYER_NUM].mask != NULL ) {
-						if( stats[PLAYER_NUM].mask->type == TOOL_GLASSES ) {
+					if( stats[PLAYER_NUM]->mask != NULL ) {
+						if( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES ) {
 							entity->sprite = 165; // GlassesWorn.vox
 						} else {
-							entity->sprite = itemModel(stats[PLAYER_NUM].mask);
+							entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
 						}
 					}
 					if( multiplayer==SERVER ) {
@@ -2125,7 +2125,7 @@ void actPlayerLimb(Entity *my) {
 	Entity *parent = uidToEntity(my->parent);
 
 	if( multiplayer==CLIENT ) {
-		if( stats[PLAYER_NUM].HP<=0 ) {
+		if( stats[PLAYER_NUM]->HP<=0 ) {
 			my->flags[INVISIBLE] = TRUE;
 			return;
 		}
