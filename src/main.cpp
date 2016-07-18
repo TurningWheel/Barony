@@ -40,6 +40,7 @@ Sint32 mousexrel=0, mouseyrel=0;
 Entity *selectedEntity = NULL;
 Entity **clickmap=NULL;
 bool capture_mouse = TRUE;
+string lastname;
 
 // net stuff
 Uint32 clientplayer=0;

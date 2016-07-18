@@ -805,6 +805,11 @@ void handleMainMenu(bool mode) {
 			}
 			//strncpy(stats[0]->name,inputstr,16);
 			inputlen = 22;
+			if (lastname != "" && strlen(inputstr) == 0) {
+				strncat(inputstr, lastname.c_str(), std::max<size_t>(0, inputlen - strlen(inputstr)));
+				lastname = ""; // Set this to nothing while we're currently editing so it doesn't keep filling it.  We'll save it again if we leave this tab.
+			}
+
 			if( (ticks-cursorflash)%TICKS_PER_SECOND<TICKS_PER_SECOND/2 ) {
 				int x;
 				TTF_SizeUTF8(ttf16,stats[0]->name,&x,NULL);
@@ -3745,6 +3750,7 @@ void buttonContinue(button_t *my) {
 		SDL_StartTextInput();
 	} else if( charcreation_step==5 ) {
 		if( SDL_IsTextInputActive() ) {
+			lastname = (string)stats[0].name;
 			SDL_StopTextInput();
 		}
 		#ifdef STEAMWORKS
@@ -3828,9 +3834,11 @@ void buttonBack(button_t *my) {
 	charcreation_step--;
 	if (charcreation_step < 4)
 		playing_random_char = FALSE;
-	if( charcreation_step==3 )
+	if (charcreation_step == 3) {
+		// If we've backed out, save what name was input for later
+		lastname = (string)inputstr;
 		SDL_StopTextInput();
-	else if( charcreation_step==0 )
+	} else if( charcreation_step==0 )
 		buttonCloseSubwindow(my);
 }
 
