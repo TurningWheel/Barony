@@ -1,0 +1,2716 @@
+# English language file
+# all entries must contain a string number, followed by a space, followed by a string, ended by a pound character
+# lines beginning with pound character are a comment
+# blank lines are ignored
+
+1 null#
+
+# class names
+
+1900 barbarian#
+1901 warrior#
+1902 healer#
+1903 rogue#
+1904 wanderer#
+1905 cleric#
+1906 merchant#
+1907 wizard#
+1908 arcanist#
+1909 joker#
+
+
+# class descriptions
+
+10 A skilled combatant. What they lack in armor they make up for in strength and fighting
+prowess.
+Difficulty: Normal#
+
+11 The trained soldier. They are heavily armored and make capable leaders.
+Difficulty: Beginner#
+
+12 A talented physician. Though they are poor fighters, they come stocked with medical
+supplies and other healing abilities.
+Difficulty: Normal#
+
+13 The professional hooligan. Dextrous and skilled thieves, though lacking in power and
+equipment.
+Difficulty: Hard#
+
+14 Hardened traveler. Low in armor and combat ability, but well-equipped for the dungeon.
+Difficulty: Normal#
+
+15 Students of the church. Fairly well equipped and able in many ways, they are
+well-rounded adventurers.
+Difficulty: Beginner#
+
+16 A seasoned trader. They are skilled in the market and adept at identifying foreign
+artifacts.
+Difficulty: Hard#
+
+17 The wise magician. Though frail, they are extremely well-versed in magic.
+Difficulty: Hard#
+
+18 A cunning spellcaster. Less magically adept than the Wizard, but hardier and better
+equipped.
+Difficulty: Normal#
+
+19 The wild card. Jokers come with very little equipment, but they have a few tricks up
+their sleeves nonetheless.
+Difficulty: Extreme#
+
+
+# appearance names
+
+20 landguard#
+21 northborn#
+22 firebrand#
+23 hardbred#
+24 highwatch#
+25 gloomforge#
+26 pyrebloom#
+27 snakestone#
+28 windclan#
+29 warblood#
+30 millbound#
+31 sunstalk#
+32 claymount#
+33 stormward#
+34 tradefall#
+35 nighthill#
+36 baytower#
+37 whetsong#
+
+
+# appearance descriptions
+
+38 The balanced face of a landguard.#
+39 The fair complexion of a northborn.#
+40 The wild visage of a firebrand.#
+41 The tough features of a hardbred.#
+42 The refined look of a highwatch.#
+43 The audacious haught of a gloomforge.#
+44 The meticulous grooming of a pyrebloom.#
+45 The ferocious spirit of a snakestone.#
+46 The proud demeanor of a windclan.#
+47 The unrivaled passion of a warblood.#
+48 The conservative modesty of a millbound.#
+49 The single-minded focus of a sunstalk.#
+50 The practical appearance of a claymount.#
+51 The sleek profile of a stormward.#
+52 The brazen flair of a tradefall.#
+53 The exotic presence of a nighthill.#
+54 The determined stoicism of a baytower.#
+55 The natural elegance of a whetsong.#
+
+
+# credit titles
+
+56 Lead Design & Programming#
+57 Audio#
+58 Programming#
+59 Character & Texture Art#
+60 Additional Art#
+61 Writing#
+62 Testing#
+63 Special Thanks#
+64 And of Course...#
+65 You, the Player#
+
+
+# legalese
+
+66 Barony is a product of Turning Wheel LLC#
+67 Copyright (c) 2015, all rights reserved.#
+68 For more information, please visit#
+69 http://www.baronygame.com/#
+
+
+# baron herx subtitles
+
+70 "Best of luck, mortal."#
+71 "All the best, human."#
+72 "Well, good luck, human."#
+73 "Hahahahaha!"#
+74 "My minotaur is hungry!"#
+75 "My pet hungers for human flesh..."#
+76 "The minotaur is coming..."#
+77 "Hmm... another mortal at my doorstep..."#
+78 "Ahh, another one joins the fray..."#
+79 "Hmm... someone new..."#
+80 "You'd best not linger for much longer, mortal."#
+81 "What a pity if you should be here when He arrives..."#
+82 "You would be wise to abandon this place soon, mortal."#
+83 "Hmm... this one's still alive."#
+84 "Hmm, so you've made it this far..."#
+85 "What do you hope to accomplish down here, mortal?"#
+86 "You know nothing of the power that I've found here..."#
+87 "Face me if you dare, mortal. You will not survive."#
+88 "Meet me in my lair, mortal, and I will show you the meaning of pain."#
+89 "Welcome to your doom, mortal!"#
+
+
+# monster names
+
+90 nothing#
+91 human#
+92 rat#
+93 goblin#
+94 slime#
+95 troll#
+96 octopus#
+97 spider#
+98 ghoul#
+99 skeleton#
+100 scorpion#
+101 imp#
+102 bugbear#
+103 gnome#
+104 demon#
+105 succubus#
+106 mimic#
+107 lich#
+108 minotaur#
+109 devil#
+110 shopkeeper#
+
+
+# monster names (plural)
+
+111 nothing#
+112 humans#
+113 rats#
+114 goblins#
+115 slimes#
+116 trolls#
+117 octopuses#
+118 spiders#
+119 ghouls#
+120 skeletons#
+121 scorpions#
+122 imps#
+123 bugbears#
+124 gnomes#
+125 demons#
+126 succubi#
+127 mimics#
+128 liches#
+129 minotaurs#
+130 devils#
+131 shopkeepers#
+
+
+# injury types
+
+132 hits#
+133 hits#
+134 bites#
+135 hits#
+136 slimes you#
+137 thumps you#
+138 wrestles you#
+139 bites#
+140 hits#
+141 hits#
+142 stings#
+143 scratches#
+144 hits#
+145 strikes#
+146 mauls you#
+147 slaps you#
+148 bites#
+149 hits#
+150 pounds you#
+151 pounds you#
+152 hits#
+
+
+# server flags
+
+153 Cheats#
+154 Friendly fire#
+155 Minotaurs#
+156 Hunger#
+157 Traps#
+
+
+# shopkeeper names
+
+158 Adrian#
+159 Bob#
+160 Carmack#
+161 Derek#
+162 Error#
+163 Felix#
+164 Geoff#
+165 Harold#
+166 Izchak#
+167 Jesse#
+168 Ken#
+169 Luke#
+170 Marty#
+171 Norian#
+172 Oliver#
+173 Peter#
+174 Quentin#
+175 Romero#
+176 Sidney#
+177 Tom#
+178 Ulf#
+179 Vern#
+180 Wallace#
+181 Xavier#
+182 Yoshi#
+183 Zeb#
+
+
+# shop names
+
+184 Arms & Armor#
+185 Hat Store#
+186 Jewelry Store#
+187 Bookstore#
+188 Potion Shop#
+189 Fine Staves#
+190 Delicatessen#
+191 Hardware Store#
+192 Lighting Store#
+193 General Store#
+
+
+# shopkeeper lines
+
+194 Greetings!#
+195 Hello!#
+196 Good day!#
+
+
+# shopkeeper sells item at an unfair price
+
+197 Thou hast received a good price for that!#
+198 Excellent choice!#
+199 That was a real bargain!#
+
+
+# shopkeeper sells item at a fair price
+
+200 That is a fair trade.#
+201 I suppose that I can part with it.#
+202 Alright, but not for a penny less!#
+
+
+# shopkeeper refuses a purchase
+
+203 No money, no item!#
+204 I shall not sell it for anything less.#
+205 Thou dost not have enough money!#
+
+
+# shopkeeper buys item at an unfair price
+
+206 I shall gladly buy that!#
+207 I shall buy that from thee!#
+208 I shall buy it!#
+
+
+# shopkeeper buys item at a fair price
+
+209 I suppose I shall mbuy it.#
+210 I shall trade thee for that.#
+211 I shall buy that from thee.#
+
+
+# shopkeeper refuses to buy an item
+
+212 I do not trade in that.#
+213 I am not interested in that.#
+214 No! I have no want for that.#
+
+
+# shopkeeper makes an offer to buy an item
+
+215 I would buy it for %dG.
+
+Trade? (Right click)#
+
+
+# shopkeeper chit-chat
+
+216 They say rings of conflict
+create an aura of strife around a
+person.#
+
+217 Lamp oil? Rope? Bombs? Dost
+thou want it? It is thine my
+friend, so long as thou havest
+enough rubies!#
+
+218 They say some items are
+enchanted with special magical
+effects.#
+
+219 Slimes may be found in two
+colors. It is said that the blue
+ones are stronger.#
+
+220 They say cursed items often do
+the opposite of what they were
+meant to do.#
+
+221 Trolls ignore thee if thou
+keepest thy distance!#
+
+222 Weapons come at different
+levels of effectiveness. Wood and
+bronze are weak, but steel is very
+strong.#
+
+223 The effects of potions wear
+off over time.#
+
+224 Beware of picture books. I
+knew someone who touched one: the
+next thing they knew, they were
+all alone on a tiny island.#
+
+225 Thy skills shall improve as
+thou makest use of them.#
+
+226 Goblins make good scavengers.
+Do not leave powerful items where
+they might find them!#
+
+227 I may look weak, but I'm
+actually a master of the mystic
+arts.#
+
+228 Canned food can make thy hands
+greasy. Use a towel to keep
+thyself clean.#
+
+229 Thou canst bind wounds with
+towels.#
+
+230 Art thou hungry? Rat meat is a
+staple down here.#
+
+231 Scorpion stings can paralyze
+thee. Watch out for them.#
+
+232 They say Succubi enjoy trying
+to steal mens' clothes.#
+
+233 The older food is, the more
+likely it is to make one sick when
+eaten.#
+
+234 Mirrors can do odd things at
+times.#
+
+235 Try to identify items before
+thou makest use of them.#
+
+
+# skill names
+
+236 Locks#
+237 Stealth#
+238 Trading#
+239 Appraise#
+240 Swimming#
+241 Leader#
+242 Casting#
+243 Magic#
+244 Ranged#
+245 Sword#
+246 Mace#
+247 Axe#
+248 Polearm#
+249 Shield#
+
+
+# steam lobby type
+
+250 Private lobby#
+251 Friends-only lobby#
+252 Public lobby#
+
+
+# Left-click (entity spotting) messages
+
+253 You see a %s named %s.#
+254 You see a %s.#
+255 You see a wall-mounted torch.#
+256 You see a door.#
+257 You see %s.#
+258 You see a gold piece.#
+259 You see %d gold pieces.#
+260 You see a campfire.#
+262 You see a fountain.#
+263 You see a sink.#
+264 You see a ladder leading downward.#
+265 You see a ladder leading upward.#
+266 You see a chest.#
+267 You see an iron portcullis.#
+268 You see a spike trap.#
+269 You see a lever.#
+270 You see a boulder.#
+271 You see a headstone.#
+272 You see a mysterious portal.#
+273 You see a chair.#
+274 You see a table.#
+
+
+# console command messages
+
+275 Only the server can modify server flags.#
+276 Server flags updated.#
+277 Cheats are disabled on this server.#
+278 '%s' is not an item!#
+279 Server kicked client %d (%s).#
+280 Failed to find a client by that name.#
+281 Only the server can kick another player.#
+282 You must be playing a multiplayer game to kick!#
+283 Saved map file as '%s'.#
+284 Only the server can do that.#
+285 Skipping to next level...#
+286 Camera at %d, %d, %d
+ Orientation: %3.2f, %d#
+287 noclip always disabled in multiplayer.#
+288 noclip ON#
+289 noclip OFF#
+290 god mode always disabled in multiplayer.#
+291 god mode ON#
+292 god mode OFF#
+293 buddha mode always disabled in multiplayer.#
+294 buddha mode ON#
+295 buddha mode OFF#
+296 friendly mode ON#
+297 friendly mode OFF#
+298 exit at: %d, %d#
+299 That only works in singleplayer.#
+300 number of entities in level: %d#
+301 Killed %d monsters.#
+302 You summon a %s!#
+303 There is no room here for an %s!#
+304 Error! Could not spawn '%s'#
+305 Unrecognized command: '%s'#
+
+
+# status bar
+
+306 HP#
+307 MP#
+
+
+# items and inventory
+
+308 Cost: %d MP#
+309 unidentified#
+310 cursed#
+311 uncursed#
+312 blessed#
+313 (%-5d wght)#
+314 (%-5d gold)#
+315 %+d ATTACK#
+316 %+d ARMOR#
+317 Appraise Item#
+318 Identify Item#
+319 This %s
+ is already identified.#
+320 Identified "%s".#
+321 Appraising "%s"...#
+322 Spells#
+323 Unwield#
+324 Wield#
+325 Unequip#
+326 Equip#
+327 Take Off#
+328 Wear#
+329 Drink#
+330 Read#
+331 Put On#
+1881 Inspect#
+332 Use#
+333 Put Away#
+334 Prepare#
+335 Put Out#
+336 Ignite#
+337 Arm Trap#
+338 Eat#
+339 Ready#
+340 Appraising:     #
+341 Appraising:%3.0f%%#
+342 Spellbook#
+343 Inventory#
+344 Store#
+345 Sell#
+346 Remove Curse from Item#
+347 This %s
+ is already uncursed.#
+348 Uncursed "%s".#
+
+
+# shop gui
+
+349 Weapons#
+350  Armor#
+351 Jewelry#
+352  Magic#
+353   Gem#
+354 Edibles#
+355  Misc#
+356 *#
+357 Gold:%7dG#
+358 Welcome to %s's
+%s!#
+
+
+# character sheet
+
+359 Level %d %s#
+360 Exp:%3d/100#
+361 Dungeon Level: %d#
+1200 STR:            %2d (%2d)#
+1201 DEX:            %2d (%2d)#
+1202 CON:            %2d (%2d)#
+1203 INT:            %2d (%2d)#
+1204 PER:            %2d (%2d)#
+1205 CHR:            %2d (%2d)#
+
+
+# skill levels
+
+363                 none#
+364                 novice#
+365                 basic#
+366                 skilled#
+367                 expert#
+368                 master#
+369                 legend#
+
+
+# rest of the character sheet
+
+370 Gold:%13d Gold#
+371 Armor:%12d AC#
+372 Weight:%11d Wt.#
+
+
+# chest inventory
+
+373 Chest Inventory#
+374 Took %s from the chest.#
+
+
+# magic
+
+375 Insufficient mana!#
+376 You are hit by a spell!#
+377 Your spell hits %s!#
+378 Your spell hits the %s!#
+379 But it bounces off!#
+380 Your cloak is damaged!#
+381 Your cloak is destroyed!#
+382 Your amulet is damaged!#
+383 Your amulet is destroyed!#
+384 Your shield is damaged!#
+385 Your shield is destroyed!#
+386 But the spell is resisted!#
+387 Your spell destroys the door!#
+388 Your spell destroys the chair!#
+389 Your spell destroys the table!#
+390 %s is suddenly confused!#
+391 The %s is suddenly confused!#
+392 You are suddenly confused!#
+393 %s is slowed!#
+394 The %s is slowed!#
+395 You are suddenly slowed!#
+396 You suddenly fall fast asleep!#
+397 %s suddenly falls fast asleep!#
+398 The %s suddenly falls fast asleep!#
+399 You lock the door!#
+400 The spell locks the chest!#
+401 No telling what it did...#
+402 You open the door!#
+403 The spell opens the gate!#
+404 The spell unlocks the chest!#
+405 Your spell destroys the boulder!#
+406 You have angered the gods of Sokoban!#
+407 Cannot cast spells while blocking!#
+408 Unsustaining spell %s.#
+409 You fumble the spell and it fizzles!#
+410 Cannot cast spells while swimming!#
+411 Wow! You feel restored.#
+412 A map coalesces in your mind!#
+413 Uintelligible#
+414 Magic Missile#
+415 Forcebolt#
+416 Fireball#
+417 Lightning#
+418 Light#
+419 Dig#
+420 Invisibility#
+421 Identify#
+422 Mapping#
+423 Healing#
+424 Confuse#
+425 Cure Ailment#
+426 Locking#
+427 Opening#
+428 Sleep#
+429 Cold#
+430 Slow#
+431 Levitation#
+432 Teleportation#
+433 Magic Missile#
+434 Remove Curse#
+435 Magic Mapping#
+436 Sleep#
+437 Confuse#
+438 Extra Healing#
+439 You already know the %s spell!#
+440 This spell is too difficult for you!#
+441 You learn the %s spell.#
+442 Prepared spell %s.#
+443 You feel better.#
+444 Your life force wavers for a moment.#
+445 You feel your life force diminish!#
+
+
+# arrows
+
+446 You shot the %s!#
+447 But it didn't even flinch!#
+448 You shot %s!#
+449 But she didn't even flinch!#
+450 But he didn't even flinch!#
+451 You are hit by an arrow!#
+452 But it bounced off your armor!#
+453 The arrow poisons you!#
+
+
+# traps and furniture
+
+454 You're caught in a beartrap!#
+455 You are struck by a boulder!#
+456 You are not strong enough to move the boulder.#
+457 You pull a torch from the fire.#
+458 The fire is extinguished.#
+459 The chest swings open!#
+460 You slam the chest shut!#
+461 Somebody closed the chest!#
+462 The chest is locked!#
+463 You put the %s into the chest.#
+464 You open the door.#
+465 You close the door.#
+466 The door is locked!#
+467 The fountain is dry.#
+468 You dowse yourself in the waters.#
+469 You summon a succubus!#
+470 You drink from the fountain.#
+471 The cool water refreshes you.#
+472 This is a font of holy water!#
+473 The fountain blesses your equipment.#
+474 The fountain dries up!#
+475 This gate is opened elsewhere.#
+476 This is no time for sitting.#
+477 You pound the table in frustration.#
+
+
+# Easter egg messages
+
+478 "NO WAY! stop fucking clones and minecraft for casual child gamer."#
+479 "icherednoy 'minecraft'"#
+480 "looks like it was made in minecraft"#
+481 "The textures are lawsuitingly-close to Minecraft."#
+482 "Sigh.. another Mineshit bullshit. Fuck no."#
+
+
+# Gold
+
+483 Picked up a gold piece.#
+484 Picked up %d gold pieces.#
+
+
+# headstone messages
+
+485 The headstone is engraved:
+ "Here lies Johnny Yeast
+  Pardon me for not rising"#
+
+486 The headstone is engraved:
+ "Here lies my wife
+  Here let her lie!
+  Now she's at rest and so am I."#
+
+487 The headstone is engraved:
+ "Here lies the body of Blake
+  Hit the gas instead of the brake"#
+
+488 The headstone is engraved:
+ "Here lies Weird Ed
+  Got his package but now he's dead"#
+
+489 The headstone is engraved:
+ "Rest in Peace"#
+
+490 The headstone is engraved:
+ "R.I.P."#
+
+491 The headstone is engraved:
+ "Sum quod eris"#
+
+492 The headstone is engraved:
+ "Off the dock dove Sir Jim
+  Then he found he couldn't swim"#
+
+493 The headstone is engraved:
+ "Here lies Mary Poppins
+  A hole in her umbrella proved undoing"#
+
+494 The headstone is engraved:
+ "Here lies Horace P. Fetch
+  The goblins got him at last"#
+
+495 The headstone is engraved:
+ "Here lies Julian
+  Got thumped by his pet troll"#
+
+496 The headstone is engraved:
+ "Here lies Ingrid
+  Spooked by a scary skeleton"#
+
+497 The headstone is engraved:
+ "Here lies Sir Robin
+  He bravely ran away"#
+
+498 The headstone is engraved:
+ "Here lies Tom
+  Lost a game of Russian Roulette"#
+
+499 The headstone is engraved:
+ "Here lies Mitch
+  Met his end by a lich"#
+
+500 The headstone is engraved:
+ "Here lies The Proto Pegasus
+  Had a potato stuck in its exhaust pipe"#
+
+501 This headstone is blank.#
+
+502 You've disturbed the dead!#
+
+
+# item messages
+
+503 This %s can unlock objects.#
+
+504 Picked up %s.#
+
+
+# ladder and portal messages
+
+505 You must assemble your party to travel onward.#
+506 You descend the ladder.#
+507 You and your party descend the ladder.#
+508 You cannot go back that way.#
+509 You must assemble your party to travel onward.#
+510 You step through the portal.#
+511 You and your party step through the portal.#
+
+
+# herx darkness line
+
+512 You hear a voice inside your head...
+"Can you break this secret technique of darkness?"#
+
+
+# monster chat
+
+513 The %s says:#
+514 The %s doesn't respond.#
+515 %s doesn't respond.#
+516 %s I shall have thy head!#
+517 %s Thou art mine!#
+518 %s En Guarde!#
+519 %s Prepare thyself!#
+520 %s I shall be with thee shortly!#
+521 %s I am somewhat busy now.#
+522 %s I shall talk with thee in a bit!#
+523 %s Bid thy pardon, I speak with someone else.#
+524 %s Bother somebody else!#
+525 %s I shall gladly follow thee, %s!#
+526 %s Lead the way, %s!#
+527 %s I shall follow thee, %s!#
+528 %s Show me the way, %s!#
+529 The %s decides to follow you!#
+530 %s Excuse me.#
+531 %s Pardon me.#
+532 %s Good day.#
+533 %s I bid thy pardon.#
+534 %s *grunt*#
+535 %s Pardon me, %s.#
+536 %s Sorry, %s. I follow another.#
+
+# sharur lines
+
+537 You hear a voice inside your head...#
+538 "Did you know?"
+"You can hear an evil air blowing from traps."
+"It's true!"#
+539 "Did you know?"
+"Fountains sometimes bless your equipment."
+"It's true!"#
+540 "Did you know?"
+"Shopkeepers pay nothing for unidentified gems."
+"It's true!"#
+541 "Did you know?"
+"King Arthur carries the magical sword Dyrnwyn."
+"It's true!"#
+542 "Did you know?"
+"You can set off traps with dropped items."
+"It's true!"#
+543 "Did you know?"
+"Han shot first."
+"It's true!"#
+544 "Did you know?"
+"Rainbow Dash is best pony."
+"It's true!"#
+545 "Did you know?"
+"Spider poison wears off in ten seconds."
+"It's true!"#
+546 "Did you know?"
+"You can find rings in sink drains."
+"It's true!"#
+547 "Did you know?"
+"Jet fuel can't melt steel beams."
+"It's true!"#
+548 "Did you know?"
+"Gungnir never fails to strike true."
+"It's true!"#
+549 "Did you know?"
+"Khryselekatos shoots poison arrows."
+"It's true!"#
+550 "Did you know?"
+"There's a creepy secret hidden in Minetown."
+"It's true!"#
+551 "Did you know?"
+"There are two hidden ways into the underworld."
+"It's true!"#
+552 "Did you know?"
+"General stores will buy anything."
+"It's true!"#
+553 "Did you know?"
+"Certain potions only come in certain colors."
+"It's true!"#
+554 "Did you know?"
+"There is a secret way into hell in the ruins."
+"It's true!"#
+555 "Did you know?"
+"Gungnir is hidden in the Minotaur Maze."
+"It's true!"#
+556 "Did you know?"
+"Khryselekatos lies hidden in the underworld."
+"It's true!"#
+557 "Did you know?"
+"Funny Bones carries the axe named Parashu."
+"It's true!"#
+558 "Did you know?"
+"A winner is you!"
+"It's true!"#
+559 "Did you know?"
+"I can't leave without my buddy Superfly!"
+"It's true!"#
+560 "Did you know?"
+"All toasters toast toast."
+"It's true!"#
+561 "Did you know?"
+"That Mimiga wasn't Sue!"
+"It's true!"#
+562 "Did you know?"
+"Solving Sokoban will make you rich."
+"It's true!"#
+563 "Did you know?"
+"Gnomes and trolls are best friends."
+"It's true!"#
+564 "Did you know?"
+"Shopkeepers really ARE magical geniuses."
+"It's true!"#
+565 "Did you know?"
+"Trolls would rather just be left alone."
+"It's true!"#
+566 "Did you know?"
+"Minotaurs are not quite invincible."
+"It's true!"#
+567 "Did you know?"
+"There is no cure for teleportitis."
+"It's true!"#
+568 "Did you know?"
+"Broken chests don't yield many items."
+"It's true!"#
+569 "Did you know?"
+"There is no spoon."
+"It's true!"#
+
+# random player messages
+
+570 Identified "%s".#
+571 Failed to identify "%s".#
+572 You fall to your death...#
+573 You've fallen in boiling lava!#
+574 The water extinguishes the flames!#
+575 You bump %s. %d/%d HP | %d/%d MP#
+576 %s bumps you.#
+577 You die...#
+578 
+You will be revived if your party
+survives to the next level.#
+579 *hic*#
+
+# more furniture
+
+580 The sink's no longer usable.
+You should call a plumber!#
+581 Hey, there's a ring caught in the drain.#
+582 A slime oozes from the faucet!#
+583 The tap water refreshes you somewhat.#
+584 The water is scalding!#
+585 You hear a pipe groan.
+ The faucet breaks!#
+586 You stumble into a spike trap!#
+588 You are hit by a flying %s!#
+589 You take the torch from the wall.#
+
+# entity messages
+
+590 You suddenly catch fire!#
+591 Your spell (invisibility) was interrupted!#
+592 Your spell (levitation) was interrupted!#
+593 You wake up.#
+594 The poison subsides.#
+595 You feel a bit steadier.#
+596 You can think more clearly now.#
+597 You feel sober again.#
+598 Failed to sustain spell (invisibility).#
+599 Hey! You can see yourself again!#
+600 You can see again.#
+601 Your eyes water.#
+602 Your hands seem cleaner now.#
+603 Your face is no longer messy.#
+604 You return to your normal speed.#
+605 You can move again.#
+606 Failed to sustain spell (levitation).#
+607 You return to the floor once more.#
+608 The voices in your head have stopped.#
+609 Your stomach settles itself.#
+610 You still don't feel very good though.#
+611 You feel hungry now.#
+612 You are very hungry now!
+ You feel weak.#
+613 You are starving now!
+ You feel faint.#
+614 You stop bleeding.#
+615 Your %s ability has improved.#
+616 You now have basic skill in %s#
+617 You are now skilled in %s#
+618 You are now an expert in %s#
+619 You are now a master in %s#
+620 You are now a legend in %s#
+621 Your very life force is transformed into magical energy.#
+622 Level up!#
+623 You feel strong!#
+624 You feel nimble!#
+625 You feel hardy!#
+626 You feel wise!#
+627 You feel observant!#
+628 You feel personable!#
+629 You feel a bit better now.#
+630 You feel hungry.#
+631 You are very hungry!
+ You feel weak.#
+632 You are starving!
+ You feel faint.#
+633 You're wasting away...#
+634 You suddenly feel very nauseated...#
+635 You suddenly vomit!#
+636 Your weapon slips through your fingers!#
+637 Your %s flickers in the darkness.#
+638 Your %s burns out.#
+639 Your amulet glows a faint green.#
+640 The poison insantly subsides!#
+641 The poison seems to have subsided.#
+642 You lose some blood.#
+643 You've stopped bleeding.#
+644 It burns! It burns!#
+645 Your %s smoulders!#
+646 Your %s burns to ash!#
+647 The flames go out.#
+648 Your amulet is choking you!#
+649 Your amulet constricts!#
+650 But what luck! It just broke itself.#
+
+# the extra period here is important, make sure to leave it:
+
+651 You die....#
+
+
+# more entity messages
+
+652 But wait! Your amulet is glowing!#
+653 But wait! Your amulet feels warm!#
+654 You are brought back to life.#
+655 However, your amulet crumbles to dust.#
+656 Whoops, sorry. Guess it was a dud.#
+657 See you in the next life.#
+658 You suddenly wake up!#
+659 Your staff loses some of its charge.#
+660 Your staff has completely burned out.#
+661 Your %s is strained.#
+662 Your %s finally breaks.#
+663 You destroy the boulder!#
+664 Your pickaxe finally breaks!#
+665 Your pickaxe is damaged!#
+666 You hit the door!#
+667 You hit the chest!#
+668 You hit the table!#
+669 You hit the chair!#
+670 The door crashes open!#
+671 The chest is smashed into pieces!#
+672 The table breaks into pieces!#
+673 The chair breaks into pieces!#
+674 door#
+675 chest#
+676 table#
+677 chair#
+678 The pipes groan.#
+679 Your weapon is damaged!#
+680 Your weapon broke on impact!#
+681 Your %s is damaged!#
+682 Your %s is destroyed!#
+683 Dyrnwyn sets you on fire!#
+684 The scorpion has stung you!#
+685 The venom is paralyzing!#
+686 The spiders injects venom into its bite!#
+687 The poison seeps through your veins!#
+688 Hey! That succubus stole your %s!#
+689 You critically hit the %s!#
+690 You hit the %s!#
+691 It didn't even flinch!#
+692 You killed the %s!#
+693 You critically hit %s!#
+694 You hit %s!#
+695 She didn't even flinch!#
+696 He didn't even flinch!#
+697 You killed %s!#
+698 The %s %s!#
+699 %s %s!#
+700 But their blow bounces off!#
+701 You're bleeding!#
+702 The %s is bleeding!#
+703 %s is bleeding!#
+704 Your pickaxe finally breaks!#
+705 Your pickaxe is damaged!#
+706 This wall is too hard to break through.#
+707 You feel a lurching sensation, but it passes.#
+708 You feel disoriented for a moment.#
+
+
+# general game messages
+
+709 Loading...#
+710 Welcome to dungeon level %d.#
+711 Welcome to %s.#
+712 You hear the sound of pickaxes striking rock.#
+713 You hear the faint sound of bustling streets.#
+714 You hear the sound of chanting in the distance.#
+715 You hear howling winds in the distance.#
+716 You hear the faint crash of rolling boulders.#
+717 You hear the distant roar of a hungry minotaur.#
+718 You hear mystic droning in the distance.#
+719 You hear cries of anguish in the distance.#
+720 %s follows you to the next level.#
+721 Your %s friend follows you to the next level.#
+722 %s bids you farewell!#
+723 Your %s bids you farewell!#
+724 Server connection to client %d (%s) regained.
+ Auto-kick cancelled.#
+725 Client %d (%s) is not responding to server.
+ Auto-kicking in 15 seconds...#
+726 Server connection to client %d (%s) lost.
+ Kicking from game.#
+727 You have no room left in your pack for a
+ %s!#
+728 Connection to server regained.
+ Auto disconnect cancelled.#
+729 Server is not responding.
+ Auto disconnect in 15 seconds...#
+730 Connection to server lost.
+ Disconnecting.#
+731 
+Connection to server lost.
+
+Press 'Okay' to return to the main menu.#
+732 Okay#
+733 Random Character#
+734 Welcome to Barony, %s.#
+735 Press <%s> to review your inventory.#
+736 Click the right mouse button to use objects.
+#
+737 You have entered the dungeon.#
+738 Please do not pirate this game!
+
+Our work lives and dies by the support of
+players like you.
+
+Thank you!#
+739 You say: #
+740 You have died#
+
+
+# init messages
+
+741 Loading sprites...#
+742 Loading models...#
+743 Loading tiles...#
+744 Loading sounds...#
+745 Loading models... (%d/%d)#
+746 Loading limb files...#
+747 Loading items...#
+748 Loading music...#
+749 Loading interface...#
+
+
+# item usage messages
+
+750 You can't drink that. You're choking!#
+751 You're still puking up your last meal!#
+752 This tastes like water.#
+753 This tastes like cool water.
+ It's actually pretty refreshing!#
+755 You have a sinking feeling.#
+756 You can't eat that. You're choking!#
+757 You're still puking up your last meal!#
+758 Wow, what a buzz!#
+759 You feel pretty good!#
+760 This tastes like fruit juice.#
+761 Yecch! This tastes like poison.#
+762 You feel very confused!#
+763 Wow! You feel restored.#
+764 You consume a tin of
+ %s.#
+765 You can't see a thing!#
+766 Suddenly, you can no longer see yourself!#
+767 You begin to float through the air!#
+768 You suddenly feel much quicker!#
+769 You return to your normal speed.#
+770 Argh! This stuff burns!#
+771 Augh! You can't move!#
+772 This tastes like medicine.#
+773 You feel better.#
+774 You feel arcane energy flow into you.#
+775 You can't read the scroll while blind.#
+
+
+# mail
+
+776 This is a letter:
+ "This is Moe. I like you Maggie...
+  so much that... I want to...
+  eat you... for dinner."#
+
+780 This is a letter:
+ "Help me.
+  I am waiting for you inside#
+781   Lord Jabu Jabu's belly.
+    --Ruto.
+  PS: Don't tell my father!"#
+
+786 This is a letter:
+ "Double the amount of copper excavated from the
+  mines. The gnomes will pay extra for anything above
+  above the standard amount."#
+
+790 This is a letter:
+
+ "Double, double toil and trouble;
+  Fire burn, and cauldron bubble."#
+
+793 This is just an advertisement:
+
+ "%s's %s has
+  the finest items in all the realm!"#
+
+796 This is an old scrawled note:
+
+ "I lie here in the dark now,
+  waiting for death."#
+
+799 This is an old scrawled note:
+
+ "The Dopefish lives!"#
+
+801 This is an old scrawled note:
+ "Mee wurst troll evurr
+  nobuddy pay brijj tole#
+802   me nott sceary enuf
+  mee gett drunc an kil sellf
+  troll droun"#
+
+807 This is a letter:
+ "Our exploration of the Devil's Bastion has
+  failed after an extended encounter with the
+  dungeon's inhabitants."#
+
+811 This is a hand-written note:
+ "Ten paces northeast from the mizzenmast;#
+812   27 steps down to the hold;
+  And five paces to the right;
+  And dig at spot marked 'X'"#
+
+816 This is a letter:
+
+ "A horse, a horse! My kingdom for a horse!"#
+
+818 This is a letter:
+ "It is tradition to speak with the royal 'we',
+  and to use THIS MUCH VOLUME WHEN ADDRESSING OUR
+  SUBJECTS!!!"#
+
+822 This is a letter:
+
+ "swim swim hungry"#
+
+824 This is a hand-written note:
+
+ "There's daggers in men's smiles."#
+
+826 This is a hand-written note:
+
+ "It's a secret to everybody."#
+
+828 This is a hand-written note:
+
+ "BEHIND YOU!"#
+
+830 This is a letter:
+ "Of all the words of mice and men,
+  The saddest are,
+  'It might have been.'"#
+
+834 This is a blood-stained note:
+
+ "Yes, Avatar, seek a way home!"#
+
+836 This letter is covered in crumbs:
+
+ "Boil 'em, mash 'em, stick 'em in a stew!"#
+
+838 This is a hand-written note:
+
+ "They say life is wasted on the living."#
+
+840 This is a scrawled note:
+
+ "These donuts are great! Jelly-filled are my
+  favorite! Nothing beats a jelly-filled donut."#
+
+843 This is a scrawled note:
+
+ "Hey, I know! I'll use my trusty frying
+  pan... as a drying pan!"#
+
+846 This is a letter:
+
+ "Please disregard the previous letter."#
+
+
+# scrolls
+
+848 As you read the scroll, it disappears.#
+849 This is a scroll of identify!#
+850 But you have no unidentified items...#
+851 A field of light surrounds you!#
+852 This scroll is blank.#
+853 Your hand feels warm for a moment.#
+854 Your weapon glows black.#
+855 Your weapon glows blue.#
+856 Your weapon violently glows blue.#
+857 Your skin feels warm for a moment.#
+858 Your %s glows black.#
+859 Your %s glows blue.#
+860 Your %s violently glows blue.#
+861 You feel like someone is helping you.#
+862 You feel funny for a moment.#
+863 The scroll smokes and crumbles to ash!#
+864 The scroll erupts in a tower of flame!#
+865 A feast suddenly appears before you!#
+866 Your stomach grumbles, but it passes.#
+867 Your food pouch feels lighter!#
+868 A map coalesces in your mind!#
+869 Huh? What? Where am I?#
+870 Your feel a tingling sensation, but it passes.#
+871 Your %s vibrates.#
+872 Your %s looks better!#
+873 Your skin itches for a moment.#
+874 Your %s vibrates.#
+875 Your %s suddenly breaks!#
+876 You feel disoriented for a moment.#
+877 You summon an angry %s!#
+878 You summon some angry %s!#
+879 You summon a friendly %s!#
+880  "I will serve you, master."#
+881 You summon some friendly %s!#
+882  "We will serve you, master."#
+
+
+# more items
+
+883 You wipe yourself clean with the towel.#
+884 You bind the towel around your wound.#
+885 You stop bleeding.#
+886 You can open tins while carrying the tin opener.#
+887 Whoops!#
+888 The mirror slips from your grasp.
+ It shatters into a million pieces!#
+889 You peer into the mirror...#
+890 You are suddenly whisked away!#
+891 You look like a monster!
+ The mirror shatters into a million pieces!#
+892 You forget that you're blind for a bit.#
+893 You don't see anyone in the mirror.#
+894 'eyyy, boy! *hic*#
+895 'eyyy, gurl! *hic*#
+896 Who is THIS?#
+897 You look pale!#
+898 You look pretty queazy.#
+899 There's stuff all over your face!#
+900 You look malnourished.#
+901 You look peckish.#
+902 You look just as ugly as ever.#
+903 You look as handsome as ever!#
+904 You look as beautiful as ever!#
+905 The beartrap suddenly breaks!#
+906 You set the beartrap.#
+907 You consume %s.#
+908 Blecch! Rotten food!#
+909 The pie springs into your face!
+ *SPLAT*#
+910 Your face is covered in cream!#
+911 Mmm, tasty!#
+912 You're still hungry.#
+913 You're not quite full yet.#
+914 That %s hit the spot!#
+915 Oof. You're really full now.#
+916 You feel sick from eating too much.#
+917 URP! Too much food!#
+
+
+# tinned food
+
+918 pureed#
+919 candied#
+920 sauteed#
+921 stir fried#
+922 cured#
+923 broiled#
+924 deep fried#
+925 minced#
+926 roasted#
+927 dried#
+928 homemade#
+929 boiled#
+930 baked#
+931 smoked#
+932 pickled#
+933 french fried#
+934  gecko#
+935  eel#
+936  ham#
+937  beef#
+938  bacon#
+939  turkey#
+940  chicken#
+941  salmon#
+942  trout#
+943  goat#
+944  lamb#
+945  snake#
+946  squid#
+947  crab#
+948  quail#
+949  horse#
+950  with onions#
+951  in a sauce#
+952  with beans#
+953  with corn#
+954  with carrots#
+955  with dumplings#
+956  with radishes#
+957  with peas#
+958  in gravy#
+959  with broccoli#
+960  with turnips#
+961  with beets#
+962  with potatoes#
+963  with rice#
+964  with celery#
+965  with spinach#
+966 The grease makes your fingers slippery.#
+
+
+# yet more items
+
+967 You suddenly feel rather masculine!#
+968 You suddenly feel rather feminine!#
+969 The amulet disintegrates!#
+970 You can't read the book while blind!#
+971 The spellbook suddenly crumbles to ash!#
+972 You forget one of your spells!#
+973 You feel a bit scatter-brained for a moment.#
+
+
+# potion colors
+
+974 blue#
+975 yellow#
+976 brown#
+977 orange#
+978 red#
+979 green#
+980 purple#
+981 white#
+
+
+# item quality strings
+
+982 a broken %+2d #
+983 a decrepit %+2d #
+984 a worn %+2d #
+985 a servicable %+2d #
+986 an excellent %+2d #
+987 a destroyed %+2d #
+988 a cracked %+2d #
+989 a rough %+2d #
+990 a flawed %+2d #
+991 a flawless %+2d #
+992 an evaporated %s %+2d #
+993 a cloudy %s %+2d #
+994 a swirly %s %+2d #
+995 a plain %s %+2d #
+996 a bubbly %s %+2d #
+997 a shredded %+2d #
+998 a torn %+2d #
+999 a faded %+2d #
+1000 a marked %+2d #
+1001 a brand new %+2d #
+1002 a rotten %+2d #
+1003 a mouldy %+2d #
+1004 an aged %+2d #
+1005 a slightly aged %+2d #
+1006 a fresh %+2d #
+1007 copy of "%s"#
+1008 %d broken %+2d #
+1009 %d decrepit %+2d #
+1010 %d worn %+2d #
+1011 %d servicable %+2d #
+1012 %d excellent %+2d #
+1013 %d destroyed %+2d #
+1014 %d cracked %+2d #
+1015 %d rough %+2d #
+1016 %d flawed %+2d #
+1017 %d flawless %+2d #
+1018 %d evaporated %s %+2d #
+1019 %d cloudy %s %+2d #
+1020 %d swirly %s %+2d #
+1021 %d plain %s %+2d #
+1022 %d bubbly %s %+2d #
+1023 %d shredded %+2d #
+1024 %d torn %+2d #
+1025 %d faded %+2d #
+1026 %d marked %+2d #
+1027 %d brand new %+2d #
+1028 %d rotten %+2d #
+1029 %d mouldy %+2d #
+1030 %d aged %+2d #
+1031 %d slightly aged %+2d #
+1032 %d fresh %+2d #
+1033 %d copies of "%s" #
+1034 a broken #
+1035 a decrepit #
+1036 a worn #
+1037 a servicable #
+1038 an excellent #
+1039 a destroyed #
+1040 a cracked #
+1041 a rough #
+1042 a flawed #
+1043 a flawless #
+1044 an evaporated %s #
+1045 a cloudy %s #
+1046 a swirly %s #
+1047 a plain %s #
+1048 a bubbly %s #
+1049 a shredded #
+1050 a torn #
+1051 a faded #
+1052 a marked #
+1053 a brand new #
+1054 a rotten #
+1055 a mouldy #
+1056 an aged #
+1057 a slightly aged #
+1058 a fresh #
+1059 %s labelled %s#
+1060 %d broken #
+1061 %d decrepit #
+1062 %d worn #
+1063 %d servicable #
+1064 %d excellent #
+1065 %d destroyed #
+1066 %d cracked #
+1067 %d rough #
+1068 %d flawed #
+1069 %d flawless #
+1070 %d evaporated %s #
+1071 %d cloudy %s #
+1072 %d swirly %s #
+1073 %d plain %s #
+1074 %d bubbly %s #
+1075 %d shredded #
+1076 %d torn #
+1077 %d faded #
+1078 %d marked #
+1079 %d brand new #
+1080 %d rotten #
+1081 %d mouldy #
+1082 %d aged #
+1083 %d slightly aged #
+1084 %d fresh #
+1085 %d %s labelled %s#
+1086 %d copies of "%s" #
+
+
+# more item messages
+
+1087 You can't. It's cursed!#
+1088 Dropped %s.#
+1089 You can't remove the %s.
+ It's cursed!#
+1090 Equipped %s.#
+1091 Unequipped %s.#
+1092 This %s is useless!#
+1093 You can't open the tin without a tin opener.#
+1094 You put on the amulet.#
+1095 The amulet suddenly constricts!#
+1096 "Hi! I'm Sharur, the talking mace!"#
+
+
+# lockpicks and keys
+
+1097 You unlock the chest.#
+1098 You lock the chest.#
+1099 You unlock the door.#
+1100 You lock the door.#
+1101 This %s can unlock objects.#
+1102 You failed to unlock the chest.#
+1103 Your lockpick is damaged.#
+1104 Your lockpick is broken.#
+1105 This chest is already unlocked.#
+1106 You failed to unlock the door.#
+1107 This door is already unlocked.#
+
+
+# random stuff
+
+1108 The caves are filled with an unnatural darkness.#
+1109 You survive through your party's persistence.#
+1110 You pull the lever.#
+1111 Server flags updated.#
+1112 Run, mortal!
+ The Baphomet dies, but his minions linger.
+ We impart our power upon you!#
+1113 BEWARE!
+ You've unleashed the Minotaur!#
+1114 The ZAP Brigade has arrived!
+ "Fear not %s. We will stand guard for the minotaur."#
+1115 BEWARE!
+ The Minotaur has arrived!#
+1116 You hear a voice inside your head...#
+1117 time = %4d ms#
+1118 %s paused the game.#
+1119 %s unpaused the game.#
+1120 %s has left the game.#
+1121 Autosaving...#
+1122 You begin trading with %s.#
+1123 You buy %s for %dG.#
+1124 You can't sell the %s.
+ It's cursed!#
+1125 You sold %s for %dG.#
+
+# some window and button text
+
+1126 
+The remote server has shut down.
+
+Press 'Okay' to return to the main menu.#
+1127 
+You have been kicked from the game server.
+
+Press 'Okay' to return to the main menu.#
+1128 
+     Are you sure you
+       want to quit?#
+1129 
+      Are you sure you
+   want to end this game?#
+1130 
+          Are you sure you
+     want to restart this game?#
+1131 
+       Do you wish to save before
+          you quit to desktop?
+      Progress will be saved up to
+          the last checkpoint.#
+1132 Requesting lobby list...#
+1133 You have died. Gameover.
+
+#
+1134 Your equipment has been identified.
+#
+1135 Total score: #
+1136 Congratulations!
+You made the top ten.
+
+#
+1137 
+
+
+
+#
+1138     Restart Game   #
+1139 Return to Main Menu#
+1140 You have died.
+#
+1141 You will be revived, however, if your
+party survives to the next level.
+
+#
+1142 As the rest of your party has perished,
+the host must make a new game or restart the
+current one to continue.#
+1143 Total score: #
+1144    Okay   #
+
+
+# death tips
+
+1145 
+Beware of all unidentified items. They may
+damage rather than aid you.#
+1146 
+Never engage enemies while weak. You may be
+easily overwhelmed.#
+1147 
+Use darkness to hide yourself from enemies.#
+1148 
+Rats make a good food source early on.#
+1149 
+Do not be discouraged. Learn from your
+mistakes and you will eventually succeed.#
+1150 
+Hold the left-mouse button to perform a
+critical strike.#
+1151 
+Raise your shield for a large defensive boost.#
+1152 
+Make use of your minimap to navigate the
+dungeon's treacherous mazes.#
+1153 
+Shift click on hotbar items to instantly
+remove them.#
+1154 
+Your character's skill with a weapon has a
+large effect on your effectiveness with it.#
+1155 
+Exercise your different skills to increase
+them.#
+1156 
+Baron Herx loves to talk about his minotaur
+when it is nearby.#
+1157 
+Do you hear the sound of a rock rolling in the
+distance? RUN!#
+1158 
+Potions can be thrown at enemies to varying
+effect.#
+1159 
+Be inventive. Every item has its use.#
+
+
+# more random text
+
+1160  bumps you.#
+1161 Appraise#
+1162 Drop#
+1300 You disable the beartrap.#
+1301 You interrupt the spellcasting!#
+1302 %s says:#
+
+
+# main menu
+
+1303 New Game#
+1304 Introduction#
+1305 Statistics#
+1306 Settings#
+1307 Credits#
+1308 Quit#
+1309 Resume Game#
+1310 End Game#
+1311 Disconnect#
+1312 Restart Game#
+1313 Save & Quit#
+
+1314 Yes#
+1315 No#
+1316 Cancel#
+1317 Accept#
+
+# character creation
+
+1318 Character Creation#
+1319 Sex:#
+1320 Creates a %s character.#
+1321 male#
+1322 female#
+1323 Class:#
+1324 Appearance:#
+1325 Name:#
+1326 Enter your character's name.#
+1327 Gamemode:#
+1328 singleplayer#
+1329 Start a singleplayer game.#
+1330 host multiplayer#
+1331 Host a multiplayer game.#
+1332 join multiplayer#
+1333 Join a multiplayer game.#
+
+# lobby browser
+
+1334 Lobby Browser#
+1335 Server flags:#
+1336 
+None#
+1337 No lobbies found.#
+
+# settings window
+
+1338 Resolution#
+1339 Extra Options#
+1340 smooth lighting#
+1341 fullscreen#
+1342 shaking#
+1343 bobbing#
+1344 blood#
+1345 colorblind mode#
+1346 Field of View (FOV)#
+1347 Gamma#
+
+1348 Game Volume#
+1349 Music Volume#
+
+1350 Click to rebind. ESC cancels.#
+1351 Move Forward#
+1352 Move Left#
+1353 Move Backward#
+1354 Move Right#
+1355 Turn Left#
+1356 Turn Right#
+1357 Look Up#
+1358 Look Down#
+1359 Chat#
+1360 Console Command#
+1361 Character Status#
+1362 Spell List#
+1363 Cast Spell#
+1364 Raise Shield#
+
+1365 Mouse Sensitivity#
+1366 reverse mouse#
+1367 smooth mouse#
+
+1368 The following mouse buttons cannot be
+rebound:#
+
+1369 Left mouse button:
+inspect object, drag item, attack#
+
+1370 Right mouse buttons:
+use object, use item#
+
+1371 Miscellaneous Options#
+1372 hide ip address#
+1373 disable hud#
+1374 add new items to hotbar#
+
+
+# multiplayer windows
+
+1375 Gameflags#
+
+1376 
+***   %s has left the game   ***
+#
+
+1377
+Connection denied:
+#
+
+1378 the server is already full.#
+1379 game version mismatch.#
+1380 server is not running a saved game.#
+1381 server is running a saved game.#
+1382 client save does not match server save.#
+1383 client seed does not match server seed.#
+1384 bad response from server.#
+
+1385 
+Waiting for the server to start the game.
+Address connected to: #
+
+1386
+Waiting for the host to start the game.
+#
+
+1387
+
+Player list:
+#
+
+1388 
+***   %s has joined the game   ***
+#
+
+
+# highscore window
+
+1389 You have no highscores yet!#
+1390 Highscores#
+1391 Long Live#
+1392 the Triumphant!#
+1393 the Eternal!#
+1394 Rest in Peace#
+1395 the %s.#
+
+1396 Experience:    %d/100#
+1397 Total Gold:    %dG#
+1398 STR: %2d (%2d)#
+1399 DEX: %2d (%2d)#
+1400 CON: %2d (%2d)#
+1401 INT: %2d (%2d)#
+1402 PER: %2d (%2d)#
+1403 CHR: %2d (%2d)#
+
+1404 Total Score: %d#
+1405 Time#
+1406 Conduct#
+1407 Average#
+1408 Penniless, #
+1409 Foodless, #
+1410 Vegetarian, #
+1411 Illiterate, #
+1412 Kills:#
+1413 none#
+
+
+# text crawl sequences
+
+1414 Click to continue. ESC skips#
+
+1415 Once upon a time in a far away land, there stood a town called Hamlet.#
+
+1416 
+
+For generations, Hamlet served as a thriving center of commerce for all the
+neighboring cities, and the luck of its people was second to none.#
+
+1417 
+
+
+
+
+That was, until Baron Herx came to rule the land.#
+
+1418 
+
+
+
+
+
+
+The Baron, in his endless greed, forced his citizens to dig the surrounding
+hills for gold, though the earth had never yielded such treasure before.#
+
+1419 
+
+
+
+
+
+
+
+
+
+Meanwhile, as the people were forced to work, they schemed to undo their
+unjust leader. Eventually, they were able to trick him with a promise of gold
+and sealed him within the mines themselves.#
+
+1420 
+
+
+
+
+
+
+
+
+
+
+
+
+
+However, in the years that passed since the people of Hamlet did away with
+their ruler, things did not go well for the people of the village.#
+
+1421 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+In a twist of fate, a variety of monsters began to erupt from the ground
+around the town. Some thought it to be Herx exacting his revenge from beyond
+the grave, but none could be sure, and eventually, all trade in and out of
+town stopped completely.#
+
+1422 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+Today, the region of Hamlet is considered cursed, and no one even knows if
+the town still exists...#
+
+1423 Victorious, you step into the portal. You know not what to expect, but
+are awash with relief. Somehow, you know that the Baron's curse has been
+lifted from this land.#
+
+1424 
+
+
+
+Before you have time to think, you are suddenly standing before the mines
+once more. But something is different; the howls of distant monsters have
+vanished, and the skies, once a menacing black, are clearing to show the
+light of day once again.#
+
+1425 
+
+
+
+
+
+
+
+
+Suddenly, the doors to the mine open wide. Sealed for centuries to contain
+the evil within, they swing out from the inside, as a hundred grateful humans
+rush out to greet the one who destroyed the Baron.#
+
+1426 
+
+
+
+
+
+
+
+
+
+
+
+
+The hellish source of the Baron's power remains a mystery to you, and some
+deliberation leads you to believe that a visit to the Magician's Guild is in
+order for some deeper investigation. But for now, you simply attend to the
+merriment of the people you just saved...#
+
+1427 Hacking your way through every demon in your path, you leap through the
+portal without a moment's hesitation. Anywhere is better than here - or so
+you think.#
+
+1428 
+
+
+
+Suddenly, you find yourself standing wearily in an endless white hall dotted
+with enormous pillars that stretch higher than you can see. Out of
+exhaustion, you drop your weapons and step forward.#
+
+1429 
+
+
+
+
+
+
+
+Surely, if anything were to happen now you would be finished; yet without
+explanation, you suddenly sense power coming back to you. A voice booms out:#
+
+1430 
+
+
+
+
+
+
+
+
+
+
+"Greetings, human. We have witnessed your trials and tribulations and we are
+infinitely impressed by your fortitude and strength of will. Therefore, we
+have a proposition for you..."#
+
+1431 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+As the voice addresses you, you find yourself either unwilling or unable to
+reject what it tells you. Eventually, there is an inexplicable shift in your
+mortal being, and you feel yourself fading away...#
+
+1432 
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+"Evil fades from the mortal world, and its Guardian sleeps. The first age
+comes to a close, and the age of chaos begins. Rest now, brave one: your time
+will come again."#
+
+
+# even more button and window text
+
+1433   OK  #
+1434 Video#
+1435 Audio#
+1436 Keyboard#
+1437 Mouse#
+1438 Misc#
+
+1439 
+Failed to connect to server:
+
+#
+
+1440
+Failed to start server:
+
+#
+
+1441
+Failed to join the selected lobby.
+
+#
+
+1442 
+Failed to create the lobby.
+
+#
+
+1443
+The connection to the server was lost.
+
+#
+
+1444 Requesting lobby list...#
+
+1445 Join Game#
+1446  Refresh #
+
+1447
+Connecting to steam lobby...
+#
+
+1448
+Port#
+
+1449 Host#
+
+1450
+Address:Port#
+
+1451 Join#
+
+1452 You have entered the lobby.
+#
+
+1453 NOTE: As you are loading a save game, only players with
+compatible save games can join.
+#
+
+1454 
+Press "Start Game" when everyone has joined.
+Port hosted on: #
+
+1455
+Press "Start Game" when everyone has joined.
+#
+
+1456
+
+Player list:
+#
+
+1457 Start Game#
+1458 Invite Friends#
+
+1459
+Connecting to server. Please wait...
+#
+
+1460 
+We've found a save file for a character:
+
+#
+
+1461
+
+
+Would you like to start a new game or continue this
+save game?
+
+
+NOTE: Starting a new game will erase this save file!#
+
+1462 Continue my saved game#
+1463 Start a new game#
+1464 Continue#
+1465 Back#
+1466 Random Character#
+
+1467 
+Connecting to steam lobby...
+#
+
+
+# obituary messages
+
+1499 %s's %s ally %s#
+1500 dies randomly.#
+1501 gets roasted by a fireball.#
+1502 gets chilled by a freeze ball.#
+1503 stumbles into an arrow trap.#
+1504 stumbles into a beartrap and dies.#
+1505 fails to dodge the incoming boulder.#
+1506 goes for a swim in some lava.#
+1507 walks into a spike trap and dies.#
+1508 gets killed by a flying %s.#
+1509 was betrayed by his fellow %s.#
+1510 was betrayed by her fellow %s.#
+1511 is violently dispatched by an angry human.#
+1512 gets nibbled to death by a lowly rat.#
+1513 is viciously flayed by a goblin.#
+1514 was gooified by a slimy blob.#
+1515 invades the troll's comfort zone and gets smacked.#
+1516 makes a nice dinner for the hungry spider.#
+1517 decides to become one with the undead.#
+1518 gets spooked by a scary skeleton.#
+1519 tries to make friends with the angry scorpion.#
+1520 forgets that flying imps are not very friendly.#
+1521 gets mugged by a greedy gnome.#
+1522 gets quartered by a demon.#
+1523 tries vainly to make love to the succubus.#
+1524 gets on the Baron's bad-side.#
+1525 is unceremoniously pulverized by the minotaur.#
+1526 is damned to hell. Literally.#
+1527 attempts a robbery and fails.#
+1528 kills himself during an invocation.#
+1529 kills herself during an invocation.#
+1530 diets for a little too long.#
+1531 is finished off by the poison.#
+1532 bleeds to death.#
+1533 burns to a crisp.#
+1534 gets choked to death.#
+1535 drinks the funny potion and dies.#
+
+
+# some random strings
+
+1536 disable pop-up messages#
+1537 (direct ip)#
+1538 Host a multiplayer game without Steamworks, using a direct IP connection.#
+1539 Join a multiplayer game without Steamworks, using a direct IP connection.#
+1540 %s, level %d %s
+singleplayer#
+1541 %s, level %d %s
+server#
+1542 %s, level %d %s
+client (player %d)#
+1543 %s, level %d %s
+server (direct ip)#
+1544 %s, level %d %s
+client (player %d) (direct ip)#
+
+
+# item names
+
+1545 wooden shield#
+1546 wooden shield#
+1547 quarter staff#
+1548 quarter staff#
+1549 bronze sword#
+1550 bronze sword#
+1551 bronze mace#
+1552 bronze mace#
+1553 bronze axe#
+1554 bronze axe#
+1555 bronze shield#
+1556 bronze shield#
+1557 slingshot#
+1558 slingshot#
+1559 iron spear#
+1560 iron spear#
+1561 iron sword#
+1562 iron sword#
+1563 iron mace#
+1564 iron mace#
+1565 iron axe#
+1566 iron axe#
+1567 iron shield#
+1568 iron shield#
+1569 shortbow#
+1570 shortbow#
+1571 steel halberd#
+1572 steel halberd#
+1573 steel sword#
+1574 steel sword#
+1575 steel mace#
+1576 steel mace#
+1577 steel axe#
+1578 steel axe#
+1579 steel shield#
+1580 steel shield#
+1581 steel shield of magic resistance#
+1582 steel shield#
+1583 crossbow#
+1584 crossbow#
+1585 leather gloves#
+1586 gloves#
+1587 leather gloves of dexterity#
+1588 gloves#
+1589 iron bracers#
+1590 bracers#
+1591 iron bracers of constitution#
+1592 bracers#
+1593 steel gauntlets#
+1594 gauntlets#
+1595 steel gauntlets of strength#
+1596 gauntlets#
+1597 cloak#
+1598 cloak#
+1599 cloak of magic reflection#
+1600 cloak#
+1601 cloak of invisibility#
+1602 cloak#
+1603 cloak of protection#
+1604 cloak#
+1605 leather boots#
+1606 leather boots#
+1607 leather boots of speed#
+1608 leather boots#
+1609 iron boots#
+1610 iron boots#
+1611 iron boots of water walking#
+1612 iron boots#
+1613 steel boots#
+1614 steel boots#
+1615 steel boots of levitation#
+1616 steel boots#
+1617 steel boots of feather#
+1618 steel boots#
+1619 leather breastpiece#
+1620 leather breastpiece#
+1621 iron breastpiece#
+1622 iron breastpiece#
+1623 steel breastpiece#
+1624 steel breastpiece#
+1625 phrygian hat#
+1626 phrygian hat#
+1627 hood#
+1628 hood#
+1629 wizard hat#
+1630 wizard hat#
+1631 jester hat#
+1632 jester hat#
+1633 leather helm#
+1634 leather helm#
+1635 iron helm#
+1636 iron helm#
+1637 steel helm#
+1638 steel helm#
+1639 amulet of sex change#
+1640 amulet#
+1641 amulet of life saving#
+1642 amulet#
+1643 amulet of olympic swimming#
+1644 amulet#
+1645 amulet of magic reflection#
+1646 amulet#
+1647 amulet of strangulation#
+1648 amulet#
+1649 amulet of poison resistance#
+1650 amulet#
+1651 bottle of water#
+1652 potion#
+1653 bottle of booze#
+1654 potion#
+1655 bottle of fruit juice#
+1656 potion#
+1657 potion of sickness#
+1658 potion#
+1659 potion of confusion#
+1660 potion#
+1661 potion of extra healing#
+1662 potion#
+1663 potion of healing#
+1664 potion#
+1665 potion of cure ailment#
+1666 potion#
+1667 potion of blindness#
+1668 potion#
+1669 potion of restore magic#
+1670 potion#
+1671 potion of invisibility#
+1672 potion#
+1673 potion of levitation#
+1674 potion#
+1675 potion of speed#
+1676 potion#
+1677 potion of acid#
+1678 potion#
+1679 potion of paralysis#
+1680 potion#
+1681 piece of mail#
+1682 stamped scroll#
+1683 scroll of identify#
+1684 scroll#
+1685 scroll of light#
+1686 scroll#
+1687 blank scroll#
+1688 scroll#
+1689 scroll of enchant weapon#
+1690 scroll#
+1691 scroll of enchant armor#
+1692 scroll#
+1693 scroll of remove curse#
+1694 scroll#
+1695 scroll of fire#
+1696 scroll#
+1697 scroll of food#
+1698 scroll#
+1699 scroll of magic mapping#
+1700 scroll#
+1701 scroll of repair#
+1702 scroll#
+1703 scroll of destroy armor#
+1704 scroll#
+1705 scroll of teleportation#
+1706 scroll#
+1707 scroll of summon#
+1708 scroll#
+1709 magicstaff of light#
+1710 magicstaff#
+1711 magicstaff of digging#
+1712 magicstaff#
+1713 magicstaff of locking#
+1714 magicstaff#
+1715 magicstaff of magic missile#
+1716 magicstaff#
+1717 magicstaff of opening#
+1718 magicstaff#
+1719 magicstaff of slow#
+1720 magicstaff#
+1721 magicstaff of cold#
+1722 magicstaff#
+1723 magicstaff of fire#
+1724 magicstaff#
+1725 magicstaff of lightning#
+1726 magicstaff#
+1727 magicstaff of sleep#
+1728 magicstaff#
+1729 ring of adornment#
+1730 ring#
+1731 ring of slow digestion#
+1732 ring#
+1733 ring of protection#
+1734 ring#
+1735 ring of warning#
+1736 ring#
+1737 ring of strength#
+1738 ring#
+1739 ring of constitution#
+1740 ring#
+1741 ring of invisibility#
+1742 ring#
+1743 ring of magic resistance#
+1744 ring#
+1745 ring of conflict#
+1746 ring#
+1747 ring of levitation#
+1748 ring#
+1749 ring of regeneration#
+1750 ring#
+1751 ring of teleportation#
+1752 ring#
+1753 spellbook of forcebolt#
+1754 spellbook#
+1755 spellbook of magic missile#
+1756 spellbook#
+1757 spellbook of cold#
+1758 spellbook#
+1759 spellbook of fireball#
+1760 spellbook#
+1761 spellbook of light#
+1762 spellbook#
+1763 spellbook of remove curse#
+1764 spellbook#
+1765 spellbook of lightning#
+1766 spellbook#
+1767 spellbook of identify#
+1768 spellbook#
+1769 spellbook of magic mapping#
+1770 spellbook#
+1771 spellbook of sleep#
+1772 spellbook#
+1773 spellbook of confuse#
+1774 spellbook#
+1775 spellbook of slow#
+1776 spellbook#
+1777 spellbook of opening#
+1778 spellbook#
+1779 spellbook of locking#
+1780 spellbook#
+1781 spellbook of levitation#
+1782 spellbook#
+1783 spellbook of invisibility#
+1784 spellbook#
+1785 spellbook of teleportation#
+1786 spellbook#
+1787 spellbook of healing#
+1788 spellbook#
+1789 spellbook of extra healing#
+1790 spellbook#
+1791 spellbook of cure ailment#
+1792 spellbook#
+1793 spellbook of dig#
+1794 spellbook#
+1795 rock#
+1796 rock#
+1797 luckstone#
+1798 rock#
+1799 garnet#
+1800 gem#
+1801 ruby#
+1802 gem#
+1803 jacinth#
+1804 gem#
+1805 amber#
+1806 gem#
+1807 citrine#
+1808 gem#
+1809 jade#
+1810 gem#
+1811 emerald#
+1812 gem#
+1813 sapphire#
+1814 gem#
+1815 aquamarine#
+1816 gem#
+1817 amethyst#
+1818 gem#
+1819 fluorite#
+1820 gem#
+1821 opal#
+1822 gem#
+1823 diamond#
+1824 gem#
+1825 jetstone#
+1826 gem#
+1827 obsidian#
+1828 gem#
+1829 piece of worthless glass#
+1830 gem#
+1831 pickaxe#
+1832 pickaxe#
+1833 tin opener#
+1834 tin opener#
+1835 mirror#
+1836 mirror#
+1837 lockpick#
+1838 lockpick#
+1839 skeleton key#
+1840 key#
+1841 torch#
+1842 torch#
+1843 lantern#
+1844 lantern#
+1845 blindfold#
+1846 blindfold#
+1847 towel#
+1848 towel#
+1849 pair of glasses#
+1850 pair of glasses#
+1851 beartrap#
+1852 beartrap#
+1853 bread#
+1854 bread#
+1855 cream pie#
+1856 cream pie#
+1857 cheese#
+1858 cheese#
+1859 apple#
+1860 apple#
+1861 meat#
+1862 meat#
+1863 fish#
+1864 fish#
+1865 tin#
+1866 tin#
+1867 book#
+1868 readable book#
+1869 spell#
+1870 spell#
+1871 Dyrnwyn#
+1872 magic sword#
+1873 Sharur#
+1874 magic mace#
+1875 Gungnir#
+1876 magic spear#
+1877 Parashu#
+1878 magic axe#
+1879 Khryselakatos#
+1880 magic bow#
+
+# new random messages
+
+1882 skill in %s: %s#
+1883 Skills#
+
+# menu subtitles
+
+1910 Updated Logo Edition!#
+1911 TowerClimb is also fun!#
+1912 Rogue Wizards is spellbinding!#
+1913 Try Crayon Chronicles!#
+1914 Director's Cut!#
+1915 The Pre-Sequel!#
+1916 Return of the Return of the Return!#
+1917 Now with Boulder Traps!#
+1918 100% certified Minotaur!#
+1919 Heart-Gold Version!#
+1920 Enhanced RNG!#
+1921 Now with Steamworks!#
+1922 Baphomet Approved!#
+1923 By Popular Demand!#
+1924 Potato King's Pick!#
+1925 Sharur Approved. It's true!#
+1926 NOBODY expects the Spanish Inquisition!#
+1927 Part of a balanced breakfast!#
+1928 It goes to 11!#
+1929 Right after these messages!#
+1930 Share the load!#
+1931 What do your elf eyes see?#
+1932 They're taking the hobbits to Isengard!#
+1933 You shall not pass!#
+1934 What about breakfast?#
+1935 A wizard is never late!#
+1936 And my axe!#
+1937 Troll in the dungeon!#
+1938 Fool of a Took!#
+1939 Off with her head!#
+
+# extra keybindings :)
+
+1940 Attack#
+1941 Use#
+
+# game/server flags tooltips
+
+# Cheats. CURRENTLY UNUSED
+1942 #
+# Friendly fire. CURRENTLY UNUSED
+1943 #
+# Minotaurs. CURRENTLY UNUSED
+1944 #
+# Hunger. CURRENTLY UNUSED
+1945 #
+# Traps.
+1946 NOTE: Only removes generated traps#
+
+1999 end#
