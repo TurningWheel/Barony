@@ -830,7 +830,7 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 			strcpy(stats[0]->name,"");
 			stats[0]->type = HUMAN;
 			client_classes[0] = 0;
-			clearStats(&stats[0]);
+			stats[0]->clearStats();
 			initClass(0);
 		}
 		score_window=0;
