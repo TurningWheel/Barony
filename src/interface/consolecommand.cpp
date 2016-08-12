@@ -551,6 +551,14 @@ void consoleCommand(char *command_str) {
 	else if (!strncmp(command_str, "/right_click_protect", 19)) {
 		right_click_protect = TRUE;
 	}
+	else if (!strncmp(command_str, "/startfloor ", 12))
+	{
+		startfloor = atoi(&command_str[12]);
+		//Ensure its value is in range.
+		startfloor = std::max(startfloor, 0);
+		//startfloor = std::min(startfloor, numlevels);
+		printlog("Start floor is %d.", startfloor);
+	}
 	else {
 		messagePlayer(clientnum,language[305],command_str);
 	}

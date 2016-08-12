@@ -23,6 +23,8 @@
 #include "paths.hpp"
 #include "collision.hpp"
 
+int startfloor = 0;
+
 /*-------------------------------------------------------------------------------
 
 	monsterCurve

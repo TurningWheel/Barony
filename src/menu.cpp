@@ -2373,13 +2373,13 @@ void handleMainMenu(bool mode) {
 			swornenemies[SHOPKEEPER][HUMAN] = FALSE;
 			monsterally[SHOPKEEPER][HUMAN] = TRUE;
 
-			// setup game
+			// setup game //TODO: Move into a function startGameStuff() or something.
 			entity_uids=1;
 			loading=TRUE;
 			darkmap=FALSE;
 			selected_spell=NULL;
 			shootmode = TRUE;
-			currentlevel = 0;
+			currentlevel = startfloor;
 			secretlevel = FALSE;
 			victory = 0;
 			completionTime = 0;

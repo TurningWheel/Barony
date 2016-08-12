@@ -80,6 +80,7 @@ extern list_t entitiesToDelete[MAXPLAYERS];
 extern bool gamepaused;
 extern char maptoload[256], configtoload[256];
 extern bool loadingmap, loadingconfig;
+extern int startfloor;
 extern bool skipintro;
 extern Uint32 uniqueGameKey;
 

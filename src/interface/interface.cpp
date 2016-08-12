@@ -527,6 +527,10 @@ int saveConfig(char *filename) {
 	{
 		fprintf(fp, "/right_click_protect\n");
 	}
+	if (startfloor)
+	{
+		fprintf(fp, "/startfloor %d\n", startfloor);
+	}
 	fprintf(fp, "/skipintro\n");
 	
 	fclose(fp);
