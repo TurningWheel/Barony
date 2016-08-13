@@ -23,6 +23,7 @@
 #include "net.hpp"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 float limbs[NUMMONSTERS][20][3];
 
@@ -839,12 +840,12 @@ void actMonster(Entity *my) {
 		// broadcast my player allies about my death
 		int playerFollower=MAXPLAYERS;
 		for( c=0; c<MAXPLAYERS; c++ ) {
-			if( players[c] ) {
+			/*if( players[c] ) {
 				if( myStats->leader_uid==players[c]->uid ) {
 					playerFollower=c;
 					break;
 				}
-			}
+			}*/ //TODO: PLAYERSWAP
 		}
 		if( playerFollower<MAXPLAYERS ) {
 			for( c=0; c<MAXPLAYERS; c++ ) {
@@ -1175,7 +1176,7 @@ void actMonster(Entity *my) {
 				messagePlayer(monsterclicked,language[515],myStats->name);
 			}
 		} else {
-			if( MONSTER_TARGET == players[monsterclicked]->uid && MONSTER_STATE != 4 ) {
+			if( /*MONSTER_TARGET == players[monsterclicked]->uid &&*/ MONSTER_STATE != 4 ) { //TODO: PLAYERSWAP
 				switch( myStats->type ) {
 					case SHOPKEEPER:
 					case HUMAN:
@@ -1185,7 +1186,7 @@ void actMonster(Entity *my) {
 						break;
 				}
 			} else if( MONSTER_STATE==4 ) {
-				if( MONSTER_TARGET != players[monsterclicked]->uid ) {
+				/*if( MONSTER_TARGET != players[monsterclicked]->uid ) {
 					switch( myStats->type ) {
 						case SHOPKEEPER:
 						case HUMAN:
@@ -1195,10 +1196,10 @@ void actMonster(Entity *my) {
 							messagePlayer(monsterclicked,language[524],namesays);
 							break;
 					}
-				}
+				}*/ //TODO: PLAYERSWAP
 			} else {
 				if( myStats->type != SHOPKEEPER ) {
-					if( my->checkFriend(players[monsterclicked]) ) {
+					/*if( my->checkFriend(players[monsterclicked]) ) {
 						if( !ringconflict ) {
 							if( myStats->leader_uid == 0 ) {
 								if( stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP]/4 >= list_Size(&stats[monsterclicked]->FOLLOWERS) ) {
@@ -1249,7 +1250,7 @@ void actMonster(Entity *my) {
 								monsterMoveAside(my,players[monsterclicked]);
 							}
 						}
-					}
+					}*/
 				} else {
 					if( !swornenemies[SHOPKEEPER][HUMAN] ) {
 						// shopkeepers start trading
@@ -1439,7 +1440,7 @@ void actMonster(Entity *my) {
 					double distToPlayer = 0;
 					int c, playerToChase=-1;
 					for( c=0; c<MAXPLAYERS; c++ ) {
-						if( players[c] ) {
+						/*if( players[c] ) {
 							if( !distToPlayer ) {
 								distToPlayer = sqrt( pow(my->x-players[c]->x,2) + pow(my->y-players[c]->y,2) );
 								playerToChase = c;
@@ -1450,13 +1451,13 @@ void actMonster(Entity *my) {
 									playerToChase = c;
 								}
 							}
-						}
+						}*/ //TODO: PLAYERSWAP
 					}
 					if( playerToChase>=0 ) {
 						MONSTER_STATE = 2; // path state
-						MONSTER_TARGET = players[playerToChase]->uid;
+						/*MONSTER_TARGET = players[playerToChase]->uid;
 						MONSTER_TARGETX = players[playerToChase]->x;
-						MONSTER_TARGETY = players[playerToChase]->y;
+						MONSTER_TARGETY = players[playerToChase]->y;*/ //TODO: PLAYERSWAP
 					}
 					return;
 				}
@@ -1644,13 +1645,13 @@ void actMonster(Entity *my) {
 			if( myStats->type==SHOPKEEPER ) {
 				// shopkeepers hold a grudge against players
 				for( c=0; c<MAXPLAYERS; c++ ) {
-					if( players[c] ) {
+					/*if( players[c] ) {
 						if( MONSTER_TARGET==players[c]->uid ) {
 							swornenemies[SHOPKEEPER][HUMAN] = TRUE;
 							monsterally[SHOPKEEPER][HUMAN] = FALSE;
 							break;
 						}
-					}
+					}*/ //TODO: PLAYERSWAP
 				}
 			}
 			
@@ -2109,7 +2110,7 @@ void actMonster(Entity *my) {
 					double distToPlayer = 0;
 					int c, playerToChase=-1;
 					for( c=0; c<MAXPLAYERS; c++ ) {
-						if( players[c] ) {
+						/*if( players[c] ) {
 							if( !distToPlayer ) {
 								distToPlayer = sqrt( pow(my->x-players[c]->x,2) + pow(my->y-players[c]->y,2) );
 								playerToChase = c;
@@ -2120,13 +2121,13 @@ void actMonster(Entity *my) {
 									playerToChase = c;
 								}
 							}
-						}
+						}*/ //TODO: PLAYERSWAP
 					}
 					if( playerToChase>=0 ) {
 						MONSTER_STATE = 2; // path state
-						MONSTER_TARGET = players[playerToChase]->uid;
+						/*MONSTER_TARGET = players[playerToChase]->uid;
 						MONSTER_TARGETX = players[playerToChase]->x;
-						MONSTER_TARGETY = players[playerToChase]->y;
+						MONSTER_TARGETY = players[playerToChase]->y;*/ //TODO: PLAYERSWAP
 					}
 					return;
 				}

@@ -226,8 +226,8 @@ void actMagiclightBall(Entity *my) {
 		int i = 0;
 		int player = -1;
 		for (i = 0; i < 4; ++i) {
-			if (players[i] == caster)
-				player = i;
+			/*if (players[i] == caster)
+				player = i;*/ //TODO: PLAYERSWAP
 		}
 		if (player > -1 && multiplayer == SERVER) {
 			strcpy( (char *)net_packet->data, "UNCH");
@@ -263,7 +263,7 @@ void actMagiclightBall(Entity *my) {
 						int i = 0;
 						int player = -1;
 						for (i = 0; i < 4; ++i) {
-							if (players[i] == caster)
+							//if (players[i] == caster) //TODO: PLAYERSWAP
 								player = i;
 						}
 						if (player > -1 && multiplayer == SERVER) {

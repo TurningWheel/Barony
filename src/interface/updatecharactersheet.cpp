@@ -12,8 +12,9 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
-#include "interface.hpp"
 #include "../items.hpp"
+#include "../player.hpp"
+#include "interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -83,30 +84,32 @@ void updateCharacterSheet() {
 	// character sheet
 	double ofov = fov;
 	fov = 50;
-	if( players[clientnum] != NULL ) {
+	//if( players[clientnum] != NULL ) { //TODO: PLAYERSWAP
+	if (1) { //TODO: PLAYERSWAP
 		if( !softwaremode )
 			glClear( GL_DEPTH_BUFFER_BIT );
+		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[clientnum]->x/16.0+.5*cos(players[clientnum]->yaw)-.4*sin(players[clientnum]->yaw);
 		//camera.y=players[clientnum]->y/16.0+.5*sin(players[clientnum]->yaw)+.4*cos(players[clientnum]->yaw);
-		camera_charsheet.x=players[clientnum]->x/16.0+.65;
+		/*camera_charsheet.x=players[clientnum]->x/16.0+.65;
 		camera_charsheet.y=players[clientnum]->y/16.0+.65;
-		camera_charsheet.z=players[clientnum]->z*2;
-		//camera.ang=atan2(players[clientnum]->y/16.0-camera.y,players[clientnum]->x/16.0-camera.x);
+		camera_charsheet.z=players[clientnum]->z*2;*/ //TODO: PLAYERSWAP
+		//camera.ang=atan2(players[clientnum]->y/16.0-camera.y,players[clientnum]->x/16.0-camera.x); //TODO: _NOT_ PLAYERSWAP
 		camera_charsheet.ang=5*PI/4;
 		camera_charsheet.vang=PI/20;
 		camera_charsheet.winx=8;
 		camera_charsheet.winy=8;
 		camera_charsheet.winw=208;
 		camera_charsheet.winh=180;
-		b=players[clientnum]->flags[BRIGHT];
+		/*b=players[clientnum]->flags[BRIGHT];
 		players[clientnum]->flags[BRIGHT]=TRUE;
 		if( !players[clientnum]->flags[INVISIBLE] ) {
 			glDrawVoxel(&camera_charsheet,players[clientnum],REALCOLORS);
 		}
-		players[clientnum]->flags[BRIGHT]=b;
+		players[clientnum]->flags[BRIGHT]=b;*/ //TODO: PLAYERSWAP
 		c=0;
 		if( multiplayer!=CLIENT ) {
-			for( node=players[clientnum]->children.first; node!=NULL; node=node->next ) {
+			for( /*node=players[clientnum]->children.first*/; node!=NULL; node=node->next ) { //TODO: PLAYERSWAP
 				if( c==0 ) {
 					c++;
 					continue;

@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "magic/magic.hpp"
+#include "player.hpp"
 
 void initMinotaur(Entity *my, Stat *myStats) {
 	int c;

@@ -19,6 +19,7 @@
 #include "book.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 void initGnome(Entity *my, Stat *myStats) {
 	int c;

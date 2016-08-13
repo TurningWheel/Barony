@@ -722,16 +722,16 @@ void item_PotionRestoreMagic(Item *item, Entity *entity) {
 }
 
 void item_ScrollMail(Item *item, int player) {
-	if( players[player]==NULL )
-		return;
+	/*if( players[player]==NULL )
+		return;*/ //TODO: PLAYERSWAP
 		
 	if( player != clientnum )
 		return;
 		
-	if( players[player]->isBlind() ) {
+	/*if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -817,7 +817,7 @@ void item_ScrollIdentify(Item *item, int player) {
 	Item *target;
 	int c, items, itemToIdentify, numIdentified=0;
 	
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 
 	if( player != clientnum )
@@ -826,7 +826,7 @@ void item_ScrollIdentify(Item *item, int player) {
 	if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -872,7 +872,7 @@ void item_ScrollIdentify(Item *item, int player) {
 void item_ScrollLight(Item *item, int player) {
 	int c;
 
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 		
 	if( multiplayer==CLIENT )
@@ -881,7 +881,7 @@ void item_ScrollLight(Item *item, int player) {
 	if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -889,7 +889,7 @@ void item_ScrollLight(Item *item, int player) {
 	messagePlayer(player, language[848]);
 	
 	messagePlayer(player, language[851]);
-	lightSphereShadow(players[player]->x/16,players[player]->y/16,8,150);
+	//lightSphereShadow(players[player]->x/16,players[player]->y/16,8,150); //TODO: PLAYERSWAP
 	
 	// send new light info to clients
 	if( multiplayer==SERVER ) {
@@ -897,8 +897,8 @@ void item_ScrollLight(Item *item, int player) {
 			if( client_disconnected[c]==TRUE )
 				continue;
 			strcpy((char *)net_packet->data,"LITS");
-			SDLNet_Write16(players[player]->x/16,&net_packet->data[4]);
-			SDLNet_Write16(players[player]->y/16,&net_packet->data[6]);
+			//SDLNet_Write16(players[player]->x/16,&net_packet->data[4]); //TODO: PLAYERSWAP
+			//SDLNet_Write16(players[player]->y/16,&net_packet->data[6]); //TODO: PLAYERSWAP
 			SDLNet_Write16(8,&net_packet->data[8]);
 			SDLNet_Write16(150,&net_packet->data[10]);
 			net_packet->address.host = net_clients[c-1].host;
@@ -910,7 +910,7 @@ void item_ScrollLight(Item *item, int player) {
 }
 
 void item_ScrollBlank(Item *item, int player) {
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 		
 	if( player != clientnum )
@@ -919,7 +919,7 @@ void item_ScrollBlank(Item *item, int player) {
 	if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -928,14 +928,14 @@ void item_ScrollBlank(Item *item, int player) {
 }
 
 void item_ScrollEnchantWeapon(Item *item, int player) {
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 		
 	if( players[player]->isBlind() ) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -965,14 +965,14 @@ void item_ScrollEnchantWeapon(Item *item, int player) {
 
 void item_ScrollEnchantArmor(Item *item, int player) {
 	Item *armor;
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 		
 	if( players[player]->isBlind() ) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1018,14 +1018,14 @@ void item_ScrollEnchantArmor(Item *item, int player) {
 void item_ScrollRemoveCurse(Item *item, int player) {
 	Item *target;
 	node_t *node;
-	if( players[player]==NULL )
-		return;
+	/*if( players[player]==NULL )
+		return;*/
 	
-	if( players[player]->isBlind() ) {
+	/*if( players[player]->isBlind() ) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/
 	
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1070,13 +1070,13 @@ void item_ScrollFire(Item *item, int player) {
 	if( multiplayer==CLIENT )
 		return;
 		
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 	
 	if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/
 	
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1084,12 +1084,13 @@ void item_ScrollFire(Item *item, int player) {
 	if( item->beatitude < 0 ) {
 		messagePlayer(player, language[863]);
 	} else {
-		playSoundEntity(players[player],153,128);
+		//playSoundEntity(players[player],153,128); //TODO: PLAYERSWAP
 		messagePlayer(player, language[864]);
-		players[player]->flags[BURNING] = TRUE;
+		//players[player]->flags[BURNING] = TRUE; //TODO: PLAYERSWAP
 		int c;
 		for( c=0; c<100; c++ ) {
-			Entity *entity = spawnFlame(players[player]);
+			//Entity *entity = spawnFlame(players[player]); //TODO: PLAYERSWAP
+			Entity *entity; //TODO: PLAYERSWAP
 			entity->sprite=16;
 			double vel = rand()%10;
 			entity->vel_x = vel*cos(entity->yaw)*cos(entity->pitch)*.1;
@@ -1098,7 +1099,7 @@ void item_ScrollFire(Item *item, int player) {
 			entity->skill[0] = 5+rand()%10;
 		}
 		if( player>0 ) {
-			serverUpdateEntityFlag(players[player],BURNING);
+			//serverUpdateEntityFlag(players[player],BURNING); //TODO: PLAYERSWAP
 		}
 	}
 }
@@ -1108,7 +1109,7 @@ void item_ScrollFood(Item *item, int player) {
 	node_t *node, *nextnode;
 	int foundfood=0;
 	
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 
 	// this is a CLIENT function
@@ -1118,7 +1119,7 @@ void item_ScrollFood(Item *item, int player) {
 	if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1152,7 +1153,7 @@ void item_ScrollFood(Item *item, int player) {
 void item_ScrollMagicMapping(Item *item, int player) {
 	int x, y;
 	
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;	
 	
 	// this is a CLIENT function
@@ -1162,7 +1163,7 @@ void item_ScrollMagicMapping(Item *item, int player) {
 	if( players[player]->isBlind() ) {
 		messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 	
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1197,14 +1198,14 @@ void item_ScrollMagicMapping(Item *item, int player) {
 
 void item_ScrollRepair(Item *item, int player) {
 	Item *armor;
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 		
 	if( players[player]->isBlind() ) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1244,14 +1245,14 @@ void item_ScrollRepair(Item *item, int player) {
 
 void item_ScrollDestroyArmor(Item *item, int player) {
 	Item *armor;
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 		
 	if( players[player]->isBlind() ) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1299,7 +1300,7 @@ void item_ScrollDestroyArmor(Item *item, int player) {
 
 void item_ScrollTeleportation(Item *item, int player) {
 	// server only function
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 	if( multiplayer==CLIENT )
 		return;
@@ -1308,7 +1309,7 @@ void item_ScrollTeleportation(Item *item, int player) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
@@ -1319,12 +1320,12 @@ void item_ScrollTeleportation(Item *item, int player) {
 		return;
 	}
 
-	players[player]->teleportRandom();
+	//players[player]->teleportRandom(); //TODO: PLAYERSWAP
 }
 
 void item_ScrollSummon(Item *item, int player) {
 	// server only function
-	if( players[player]==NULL )
+	/*if( players[player]==NULL )
 		return;
 	if( multiplayer==CLIENT )
 		return;
@@ -1333,14 +1334,14 @@ void item_ScrollSummon(Item *item, int player) {
 		if( player==clientnum )
 			messagePlayer(player, language[775]);
 		return;
-	}
+	}*/
 
 	if( player==clientnum )
 		conductIlliterate = FALSE;
 	item->identified = 1;
 	messagePlayer(player, language[848]);
 
-	playSoundEntity(players[player], 153, 64);
+	//playSoundEntity(players[player], 153, 64); //TODO: PLAYERSWAP
 	Uint32 numCreatures = 1;
 	Monster creature = RAT;
 
@@ -1428,7 +1429,8 @@ void item_ScrollSummon(Item *item, int player) {
 	int i;
 	bool spawnedMonster = FALSE;
 	for (i = 0; i < numCreatures; ++i) {
-		Entity *monster = summonMonster(creature, floor(players[player]->x/16)*16+8, floor(players[player]->y/16)*16+8);
+		//Entity *monster = summonMonster(creature, floor(players[player]->x/16)*16+8, floor(players[player]->y/16)*16+8); //TODO: PLAYERSWAP
+		Entity *monster; //TODO: PLAYERSWAP
 		if( monster ) {
 			spawnedMonster = TRUE;
 			if( item->beatitude>=2 && creature==HUMAN ) {
@@ -1436,7 +1438,7 @@ void item_ScrollSummon(Item *item, int player) {
 			}
 			Stat *monsterStats = monster->getStats();
 			if( item->beatitude>=0 && monsterStats ) {
-				monsterStats->leader_uid = players[player]->uid;
+				//monsterStats->leader_uid = players[player]->uid; //TODO: PLAYERSWAP
 				if( !monsterally[HUMAN][monsterStats->type] )
 					monster->flags[USERFLAG2]=TRUE;
 				
@@ -1515,14 +1517,14 @@ void item_ToolTinOpener(Item *item, int player) {
 }
 
 void item_ToolMirror(Item *item, int player) {
-	if (!players[player])
+	/*if (!players[player])
 		return;
 
 	if( item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY] ) {
 		if( multiplayer != CLIENT) {
 			players[player]->teleportRandom();
 		}
-	}
+	}*/ //TODO: PLAYERSWAP
 	if( player != clientnum )
 		return;
 	
@@ -1624,7 +1626,7 @@ void item_ToolBeartrap(Item *item, int player) {
 		if( player==clientnum )
 			messagePlayer(player, language[905]);
 		if( multiplayer!=CLIENT )
-			playSoundEntity(players[player],76,64);
+			//playSoundEntity(players[player],76,64); //TODO: PLAYERSWAP
 		consumeItem(item);
 		return;
 	}
@@ -1632,12 +1634,12 @@ void item_ToolBeartrap(Item *item, int player) {
 	entity->behavior = &actBeartrap;
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[UPDATENEEDED] = TRUE;
-	entity->x = players[player]->x;
+	/*entity->x = players[player]->x;
 	entity->y = players[player]->y;
 	entity->z = 6.75;
 	entity->yaw = players[player]->yaw;
 	entity->roll = -PI/2; // flip the model
-	entity->parent = players[player]->uid;
+	entity->parent = players[player]->uid;*/ //TODO: PLAYERSWAP
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[11] = item->status;
@@ -1686,7 +1688,7 @@ void item_Food(Item *item, int player) {
 	item->count = oldcount;
 	
 	// eating sound
-	playSoundEntity(players[player], 50+rand()%2, 64);
+	//playSoundEntity(players[player], 50+rand()%2, 64); //TODO: PLAYERSWAP
 	
 	// chance of rottenness
 	switch( item->status ) {
@@ -1707,10 +1709,10 @@ void item_Food(Item *item, int player) {
 			break;
 	}
 	if( ((item->beatitude<0 && item->type != FOOD_CREAMPIE) || (rand()%pukeChance==0)) && pukeChance<100 ) {
-		if( players[player] && !svFlags&SV_FLAG_HUNGER )
-			players[player]->modHP(-5);
+		/*if( players[player] && !svFlags&SV_FLAG_HUNGER )
+			players[player]->modHP(-5);*/ //TODO: PLAYERSWAP
 		messagePlayer(player,language[908]);
-		players[player]->skill[26] = 40+rand()%10;
+		//players[player]->skill[26] = 40+rand()%10; //TODO: PLAYERSWAP
 		consumeItem(item);
 		return;
 	}
@@ -1750,8 +1752,8 @@ void item_Food(Item *item, int player) {
 				break;
 		}
 	} else {
-		if( players[player] )
-			players[player]->modHP(5);
+		/*if( players[player] )
+			players[player]->modHP(5);*/ //TODO: PLAYERSWAP
 		messagePlayer(player,language[911]);
 	}
 	
@@ -1769,11 +1771,11 @@ void item_Food(Item *item, int player) {
 			messagePlayer(player,language[916]);
 		} else {
 			messagePlayer(player,language[917]);
-			players[player]->skill[26] = 40+rand()%10;
+			//players[player]->skill[26] = 40+rand()%10; //TODO: PLAYERSWAP
 		}
 	} else {
 		messagePlayer(player,language[917]);
-		players[player]->skill[26] = 40+rand()%10;
+		//players[player]->skill[26] = 40+rand()%10; //TODO: PLAYERSWAP
 	}
 	
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER,2000);
@@ -1838,7 +1840,7 @@ void item_FoodTin(Item *item, int player) {
 	item->count = oldcount;
 	
 	// eating sound
-	playSoundEntity(players[player], 50+rand()%2, 64);
+	//playSoundEntity(players[player], 50+rand()%2, 64); //TODO: PLAYERSWAP
 	
 	// chance of rottenness
 	switch( item->status ) {
@@ -1859,10 +1861,10 @@ void item_FoodTin(Item *item, int player) {
 			break;
 	}
 	if( (item->beatitude<0 || rand()%pukeChance==0) && pukeChance<100 ) {
-		if( players[player] && !svFlags&SV_FLAG_HUNGER )
+		/*if( players[player] && !svFlags&SV_FLAG_HUNGER )
 			players[player]->modHP(-5);
 		messagePlayer(player,language[908]);
-		players[player]->skill[26] = 40+rand()%10;
+		players[player]->skill[26] = 40+rand()%10;*/ //TODO: PLAYERSWAP
 		consumeItem(item);
 		return;
 	}
@@ -1871,8 +1873,8 @@ void item_FoodTin(Item *item, int player) {
 	if( svFlags&SV_FLAG_HUNGER ) {
 		stats[player]->HUNGER += 600;
 	} else {
-		if( players[player] )
-			players[player]->modHP(5);
+		/*if( players[player] )
+			players[player]->modHP(5);*/ //TODO: PLAYERSWAP
 		messagePlayer(player, language[911]);
 	}
 	
@@ -1897,11 +1899,11 @@ void item_FoodTin(Item *item, int player) {
 			messagePlayer(player,language[916]);
 		} else {
 			messagePlayer(player,language[917]);
-			players[player]->skill[26] = 40+rand()%10;
+			//players[player]->skill[26] = 40+rand()%10; //TODO: PLAYERSWAP
 		}
 	} else {
 		messagePlayer(player,language[917]);
-		players[player]->skill[26] = 40+rand()%10;
+		//players[player]->skill[26] = 40+rand()%10; //TODO: PLAYERSWAP
 	}
 	
 	stats[player]->HUNGER = std::min(stats[player]->HUNGER,2000);
@@ -1936,10 +1938,10 @@ void item_Spellbook(Item *item, int player) {
 	if( player!=clientnum )
 		return;
 		
-	if( players[player]->isBlind() ) {
+	/*if( players[player]->isBlind() ) {
 		messagePlayer(player, language[970]);
 		return;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	conductIlliterate = FALSE;
 

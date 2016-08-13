@@ -17,6 +17,7 @@
 #include "items.hpp"
 #include "sound.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 #define CHEST_INIT my->skill[0]
 #define CHEST_STATUS my->skill[1] //0 = closed. 1 = open.
@@ -354,14 +355,14 @@ void actChest(Entity *my) {
 	}
 
 	if (CHEST_STATUS == 1) {
-		if (players[CHEST_OPENER]) {
+		/*if (players[CHEST_OPENER]) {
 			unsigned int distance = sqrt(pow(my->x - players[CHEST_OPENER]->x, 2) + pow(my->y - players[CHEST_OPENER]->y, 2));
 			if (distance > TOUCHRANGE) {
 				my->closeChest();
 			}
 		} else {
 			my->closeChest();
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 
 	//Using the chest (TODO: Monsters using it?).
@@ -601,8 +602,8 @@ void Entity::addItemToChest(Item *item) {
 }
 
 void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
-	if (!item || !players[player])
-		return;
+	/*if (!item || !players[player])
+		return;*/ //TODO: PLAYERSWAP
 
 	if (itemCategory(item) == SPELL_CAT)
 		return;

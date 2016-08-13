@@ -183,12 +183,12 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,language[277]);
 			return;
 		}
-		if( players[clientnum] ) {
+		/*if( players[clientnum] ) {
 			int x = std::min<int>(std::max(0.0,floor(players[clientnum]->x/16)),map.width-1);
 			int y = std::min<int>(std::max(0.0,floor(players[clientnum]->y/16)),map.height-1);
 			messagePlayer(clientnum,"pathMapGrounded value: %d",pathMapGrounded[y+x*map.height]);
 			messagePlayer(clientnum,"pathMapFlying value: %d",pathMapFlying[y+x*map.height]);
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 	else if( !strncmp(command_str,"/exit",5) ) {
 		mainloop=0;
@@ -260,13 +260,13 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,language[277]);
 			return;
 		}
-		if( players[clientnum] != NULL ) {
+		/*if( players[clientnum] != NULL ) {
 			players[clientnum]->skill[3]=(players[clientnum]->skill[3]==0);
 			if( players[clientnum]->skill[3]==1 )
 				messagePlayer(clientnum,"thirdperson ON");
 			else
 				messagePlayer(clientnum,"thirdperson OFF");
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 	else if( !strncmp(command_str,"/res ",5) ) {
 		xres = atoi(&command_str[5]);
@@ -402,8 +402,8 @@ void consoleCommand(char *command_str) {
 	}
 	else if (!strncmp(command_str, "/levelup", 8)) {
 		if( multiplayer==SINGLE ) {
-			if( players[clientnum] )
-				players[clientnum]->getStats()->EXP += 100;
+			/*if( players[clientnum] )
+				players[clientnum]->getStats()->EXP += 100;*/ //TODO: PLAYERSWAP
 		} else {
 			messagePlayer(clientnum,language[299]);
 		}
@@ -431,9 +431,9 @@ void consoleCommand(char *command_str) {
 	}
 	else if (!strncmp(command_str, "/hunger", 7)) {
 		if( multiplayer==SINGLE ) {
-			Stat *tempStats = players[clientnum]->getStats();
+			/*Stat *tempStats = players[clientnum]->getStats();
 			if( tempStats )
-				tempStats->HUNGER = std::max(0,tempStats->HUNGER-100);
+				tempStats->HUNGER = std::max(0,tempStats->HUNGER-100);*/ //TODO: PLAYERSWAP
 		} else {
 			messagePlayer(clientnum,language[299]);
 		}
@@ -452,8 +452,8 @@ void consoleCommand(char *command_str) {
 		if( multiplayer==SINGLE ) {
 			int i = 0;
 			for (; i < 10; ++i) {
-				players[clientnum]->increaseSkill(PRO_MAGIC);
-				players[clientnum]->increaseSkill(PRO_SPELLCASTING);
+				/*players[clientnum]->increaseSkill(PRO_MAGIC);
+				players[clientnum]->increaseSkill(PRO_SPELLCASTING);*/ //TODO: PLAYERSWAP
 			}
 		} else {
 			messagePlayer(clientnum,language[299]);
@@ -487,7 +487,7 @@ void consoleCommand(char *command_str) {
 		if( multiplayer!=SINGLE ) {
 			messagePlayer(clientnum, language[299]);
 		} else {
-			players[clientnum]->setHP(0);
+			//players[clientnum]->setHP(0); //TODO: PLAYERSWAP
 		}
 	}
 	else if (!strncmp(command_str, "/segfault", 9)) {
@@ -501,7 +501,8 @@ void consoleCommand(char *command_str) {
 		}
 		if( multiplayer==CLIENT ) {
 			messagePlayer(clientnum, language[284]);
-		} else if( players[clientnum] ) {
+		} else /*if( players[clientnum] ) {*/ //TODO: PLAYERSWAP
+			if (1) { //TODO: PLAYERSWAP
 			strcpy(name, command_str+8);
 			int i, creature;
 			bool found = FALSE;
@@ -515,10 +516,11 @@ void consoleCommand(char *command_str) {
 			}
 
 			if (found) {
-				playSoundEntity(players[clientnum], 153, 64);
+				//playSoundEntity(players[clientnum], 153, 64); //TODO: PLAYERSWAP
 					
 				//Spawn monster
-				Entity *monster = summonMonster(static_cast<Monster>(creature),players[clientnum]->x+32*cos(players[clientnum]->yaw),players[clientnum]->y+32*sin(players[clientnum]->yaw));
+				//Entity *monster = summonMonster(static_cast<Monster>(creature),players[clientnum]->x+32*cos(players[clientnum]->yaw),players[clientnum]->y+32*sin(players[clientnum]->yaw)); //TODO: PLAYERSWAP
+				Entity *monster; //TODO: PLAYERSWAP
 				if( monster ) {
 					messagePlayer(clientnum, language[302], language[90+creature]);
 				} else {

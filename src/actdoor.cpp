@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -111,12 +112,12 @@ void actDoor(Entity *my) {
 						if( !DOOR_LOCKED ) { // door unlocked
 							if( !DOOR_DIR && !DOOR_STATUS ) {
 								// open door
-								DOOR_STATUS = 1+(players[i]->x>my->x);
+								//DOOR_STATUS = 1+(players[i]->x>my->x); //TODO: PLAYERSWAP
 								playSoundEntity(my,21,96);
 								messagePlayer(i,language[464]);
 							} else if( DOOR_DIR && !DOOR_STATUS ) {
 								// open door
-								DOOR_STATUS = 1+(players[i]->y<my->y);
+								//DOOR_STATUS = 1+(players[i]->y<my->y); //TODO: PLAYERSWAP
 								playSoundEntity(my,21,96);
 								messagePlayer(i,language[464]);
 							} else {

@@ -17,6 +17,7 @@
 #include "entity.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -47,7 +48,7 @@ void actLadder(Entity *my) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
 					for( c=0; c<MAXPLAYERS; c++ ) {
-						if( client_disconnected[c] || players[c] == NULL )
+						/*if( client_disconnected[c] || players[c] == NULL )
 							continue;
 						else
 							playercount++;
@@ -55,7 +56,7 @@ void actLadder(Entity *my) {
 						if( dist > TOUCHRANGE ) {
 							messagePlayer(i,language[505]);
 							return;
-						}
+						}*/ //TODO: PLAYERSWAP
 					}
 					if( playercount==1 )
 						messagePlayer(i,language[506]);
@@ -132,7 +133,7 @@ void actPortal(Entity *my) {
 		if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 			if(inrange[i]) {
 				for( c=0; c<MAXPLAYERS; c++ ) {
-					if( client_disconnected[c] || players[c] == NULL )
+					/*if( client_disconnected[c] || players[c] == NULL )
 						continue;
 					else
 						playercount++;
@@ -140,7 +141,7 @@ void actPortal(Entity *my) {
 					if( dist > TOUCHRANGE ) {
 						messagePlayer(i,language[505]);
 						return;
-					}
+					}*/ //TODO: PLAYERSWAP
 				}
 				if( playercount==1 )
 					messagePlayer(i,language[510]);
@@ -229,7 +230,7 @@ void actWinningPortal(Entity *my) {
 		if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 			if(inrange[i]) {
 				for( c=0; c<MAXPLAYERS; c++ ) {
-					if( client_disconnected[c] || players[c] == NULL )
+					/*if( client_disconnected[c] || players[c] == NULL )
 						continue;
 					else
 						playercount++;
@@ -237,7 +238,7 @@ void actWinningPortal(Entity *my) {
 					if( dist > TOUCHRANGE ) {
 						messagePlayer(i,language[509]);
 						return;
-					}
+					}*/ //TODO: PLAYERSWAP
 				}
 				victory = PORTAL_VICTORYTYPE;
 				if( multiplayer==SERVER ) {

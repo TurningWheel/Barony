@@ -18,6 +18,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 void initDemon(Entity *my, Stat *myStats) {
 	int c;

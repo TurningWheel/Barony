@@ -18,6 +18,7 @@
 #include "net.hpp"
 #include "monster.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 #define BOULDER_STOPPED my->skill[0]
 #define BOULDER_AMBIENCE my->skill[1]
@@ -274,7 +275,7 @@ void actBoulder(Entity *my) {
 						if( statGetSTR(stats[i])<5 ) {
 							messagePlayer(i,language[456]);
 						} else {
-							if( players[i] ) {
+							/*if( players[i] ) {
 								playSoundEntity(my, 151, 128);
 								BOULDER_ROLLING=1;
 								my->x = floor(my->x/16)*16+8;
@@ -304,7 +305,7 @@ void actBoulder(Entity *my) {
 										BOULDER_DESTY -= 16;
 										break;
 								}
-							}
+							}*/ //TODO: PLAYERSWAP
 						}
 					}
 				}

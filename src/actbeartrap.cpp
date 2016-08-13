@@ -18,6 +18,7 @@
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 

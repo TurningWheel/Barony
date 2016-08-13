@@ -18,6 +18,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 void initDevil(Entity *my, Stat *myStats) {
 	int c;
@@ -79,11 +80,11 @@ void initDevil(Entity *my, Stat *myStats) {
 		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
 		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
-		if( players[0] ) {
+		/*if( players[0] ) {
 			MONSTER_TARGET = players[0]->uid;
 			MONSTER_TARGETX = players[0]->x;
 			MONSTER_TARGETY = players[0]->y;
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 
 	// head

@@ -176,8 +176,8 @@ Entity::~Entity()
 
 	// set appropriate player pointer to NULL
 	for ( i=0; i<MAXPLAYERS; i++ )
-		if ( this==players[i] )
-			players[i]=NULL;
+		//if ( this==players[i] ) //TODO: PLAYERSWAP
+			//players[i]=NULL; //TODO: PLAYERSWAP
 	// destroy my children
 	list_FreeAll(&this->children);
 
@@ -359,8 +359,8 @@ void Entity::effectTimes() {
 				invisibility_hijacked = spell;
 				if (!myStats->EFFECTS[EFF_INVISIBLE]) {
 					for (c = 0; c < numplayers; ++c) {
-						if (players[c] == uidToEntity(spell->caster) && players[c] != NULL)
-							messagePlayer(c, language[591]); //If cure ailments or somesuch bombs the status effects.
+						/*if (players[c] == uidToEntity(spell->caster) && players[c] != NULL)
+							messagePlayer(c, language[591]); //If cure ailments or somesuch bombs the status effects.*/ //TODO: PLAYERSWAP
 					}
 					node_t *temp = NULL;
 					if (node->prev)
@@ -374,10 +374,10 @@ void Entity::effectTimes() {
 			case SPELL_LEVITATION:
 				levitation_hijacked = spell;
 				if (!myStats->EFFECTS[EFF_LEVITATING]) {
-					for (c = 0; c < numplayers; ++c) {
+					/*for (c = 0; c < numplayers; ++c) {
 						if (players[c] == uidToEntity(spell->caster) && players[c] != NULL)
 							messagePlayer(c, language[592]);
-					}
+					}*/ //TODO: PLAYERSWAP
 					node_t *temp = NULL;
 					if (node->prev)
 						temp = node->prev;
@@ -439,8 +439,8 @@ void Entity::effectTimes() {
 								} else {
 									int i = 0;
 									for (i = 0; i < 4; ++i) {
-										if (players[i] == caster)
-											messagePlayer(i, language[598]); //TODO: Unhardcode name?
+										/*if (players[i] == caster)
+											messagePlayer(i, language[598]); //TODO: Unhardcode name?*/ //TODO: PLAYERSWAP
 									}
 									list_RemoveNode(invisibility_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 									//list_RemoveNode(invisibility_hijacked->sustain_node); //Remove it from the channeled spells list.
@@ -489,8 +489,8 @@ void Entity::effectTimes() {
 								} else {
 									int i = 0;
 									for (i = 0; i < 4; ++i) {
-										if (players[i] == caster)
-											messagePlayer(i, language[606]); //TODO: Unhardcode name?
+										/*if (players[i] == caster)
+											messagePlayer(i, language[606]); //TODO: Unhardcode name?*/ //TODO: PLAYERSWAP
 									}
 									list_RemoveNode(levitation_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 								}
@@ -923,7 +923,7 @@ void Entity::setHP(int amount) {
 	int i = 0;
 	if( multiplayer == SERVER ) {
 		for( i=1; i<numplayers; i++ ) {
-			if( this == players[i] ) {
+			/*if( this == players[i] ) {
 				// tell the client its HP changed
 				strcpy((char *)net_packet->data,"UPHP");
 				SDLNet_Write32((Uint32)entitystats->HP,&net_packet->data[4]);
@@ -932,7 +932,7 @@ void Entity::setHP(int amount) {
 				net_packet->address.port = net_clients[i-1].port;
 				net_packet->len = 12;
 				sendPacketSafe(net_sock, -1, net_packet, i-1);
-			}
+			}*/ //TODO: PLAYERSWAP
 		}
 	}
 }
@@ -976,7 +976,7 @@ void Entity::setMP(int amount) {
 	int i = 0;
 	if( multiplayer == SERVER ) {
 		for( i=1; i<numplayers; i++ ) {
-			if( this == players[i] ) {
+			/*if( this == players[i] ) {
 				// tell the client its MP just changed
 				strcpy((char *)net_packet->data,"UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP,&net_packet->data[4]);
@@ -984,7 +984,7 @@ void Entity::setMP(int amount) {
 				net_packet->address.port = net_clients[i-1].port;
 				net_packet->len = 8;
 				sendPacketSafe(net_sock, -1, net_packet, i-1);
-			}
+			}*/ //TODO: PLAYERSWAP
 		}
 	}
 }
@@ -1029,9 +1029,9 @@ void Entity::drainMP(int amount) {
 	int player = -1;
 	int i = 0;
 	for (i = 0; i < numplayers; ++i) {
-		if (this == players[i]) {
+		/*if (this == players[i]) {
 			player = i; //Set the player.
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 	if (entitystats->MP < 0) {
 		//Overdrew. Take that extra and flow it over into HP.
@@ -1041,7 +1041,7 @@ void Entity::drainMP(int amount) {
 	if (multiplayer == SERVER) {
 		//First check if the entity is the player.
 		for (i = 1; i < numplayers; ++i) {
-			if (this == players[i]) {
+			/*if (this == players[i]) {
 				//It is. Tell the client its MP just changed.
 				strcpy((char *)net_packet->data,"UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP,&net_packet->data[4]);
@@ -1050,10 +1050,10 @@ void Entity::drainMP(int amount) {
 				net_packet->address.port = net_clients[i-1].port;
 				net_packet->len = 12;
 				sendPacketSafe(net_sock, -1, net_packet, i-1);
-			}
+			}*/ //TODO: PLAYERSWAP
 		}
 	} else if (clientnum != 0 && multiplayer == CLIENT) {
-		if (this == players[clientnum]) {
+		/*if (this == players[clientnum]) {
 			//It's the player entity. Tell the server its MP changed.
 			strcpy((char *)net_packet->data,"UPMP");
 			net_packet->data[4] = clientnum;
@@ -1063,7 +1063,7 @@ void Entity::drainMP(int amount) {
 			net_packet->address.port = net_server.port;
 			net_packet->len = 13;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
-		}
+		}*/
 	}
 
 	if (overdrawn < 0) {
@@ -2170,11 +2170,11 @@ void Entity::attack(int pose, int charge) {
 	if( multiplayer!=CLIENT ) {
 		// animation
 		if( player>=0 ) {
-			if( stats[player]->weapon != NULL )
+			/*if( stats[player]->weapon != NULL )
 				players[player]->skill[9]=pose; // PLAYER_ATTACK
 			else
 				players[player]->skill[9]=1; // special case for punch to eliminate spanking motion :p
-			players[player]->skill[10]=0; // PLAYER_ATTACKTIME
+			players[player]->skill[10]=0; // PLAYER_ATTACKTIME*/ //TODO: PLAYERSWAP
 		} else {
 			if( myStats->weapon != NULL )
 				monster_attack=pose;
@@ -2184,8 +2184,8 @@ void Entity::attack(int pose, int charge) {
 		}
 		if( multiplayer==SERVER ) {
 			if( player>=0 && player<MAXPLAYERS ) {
-				serverUpdateEntitySkill(players[player],9);
-				serverUpdateEntitySkill(players[player],10);
+				//serverUpdateEntitySkill(players[player],9); //TODO: PLAYERSWAP
+				//serverUpdateEntitySkill(players[player],10); //TODO: PLAYERSWAP
 			} else {
 				serverUpdateEntitySkill(this,8);
 				serverUpdateEntitySkill(this,9);
@@ -2390,8 +2390,8 @@ void Entity::attack(int pose, int charge) {
 				entity->skill[13] = 1;
 				entity->skill[14] = myStats->weapon->appearance;
 				entity->skill[15] = myStats->weapon->identified;
-				entity->vel_x = 5 * cos(players[player]->yaw);
-				entity->vel_y = 5 * sin(players[player]->yaw);
+				//entity->vel_x = 5 * cos(players[player]->yaw); //TODO: PLAYERSWAP
+				//entity->vel_y = 5 * sin(players[player]->yaw); //TODO: PLAYERSWAP
 				entity->vel_z = -.5;
 
 				myStats->weapon->count--;

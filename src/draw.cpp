@@ -12,6 +12,7 @@
 #include "main.hpp"
 #include "hash.hpp"
 #include "entity.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 

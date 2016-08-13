@@ -15,6 +15,13 @@
 
 #define EDITOR
 
+//#include "player.hpp"
+
+Entity *selectedEntity = nullptr;
+Sint32 mousex=0, mousey=0;
+Sint32 omousex=0, omousey=0;
+Sint32 mousexrel=0, mouseyrel=0;
+
 int game=0;
 // function prototypes
 Uint32 timerCallback(Uint32 interval, void *param);

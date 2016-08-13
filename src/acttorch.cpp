@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 

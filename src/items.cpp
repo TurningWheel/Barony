@@ -520,7 +520,7 @@ void dropItem(Item *item, int player) {
 	Entity *entity;
 	Sint16 oldcount;
 	
-	if( item == NULL || players[player] == NULL )
+	//if( item == NULL || players[player] == NULL ) //TODO: PLAYERSWAP
 		return;
 	if( itemIsEquipped(item,player) ) {
 		if (!item->canUnequip()) {
@@ -565,6 +565,7 @@ void dropItem(Item *item, int player) {
 		entity = newEntity(-1,1,map.entities);
 		entity->flags[INVISIBLE]=TRUE;
 		entity->flags[UPDATENEEDED]=TRUE;
+		/*
 		entity->x = players[player]->x;
 		entity->y = players[player]->y;
 		entity->sizex = 4;
@@ -585,6 +586,7 @@ void dropItem(Item *item, int player) {
 		
 		// play sound
 		playSoundEntity( players[player], 47+rand()%3, 64 );
+		*/ //TODO: PLAYERSWAP
 		
 		// unequip the item
 		Item **slot = itemSlot(stats[player],item);
@@ -710,7 +712,7 @@ void equipItem(Item *item, Item **slot, int player) {
 			}
 		}
 		if( multiplayer != CLIENT && !intro && !fadeout ) {
-			if( players[player] != NULL ) {
+			/*if( players[player] != NULL ) {
 				if( players[player]->ticks > 60 ) {
 					if( itemCategory(item)==AMULET || itemCategory(item)==RING )
 						playSoundEntity( players[player], 33+rand()%2, 64 );
@@ -721,7 +723,7 @@ void equipItem(Item *item, Item **slot, int player) {
 					else if( item->type == TOOL_TORCH || item->type == TOOL_LANTERN )
 						playSoundEntity( players[player], 134, 64 );
 				}
-			}
+			}*/ //TODO: PLAYERSWAP
 		}
 		if( multiplayer==SERVER && player>0 ) {
 			if( *slot!=NULL ) {
@@ -756,13 +758,13 @@ void equipItem(Item *item, Item **slot, int player) {
 			}
 		}
 		if( multiplayer != CLIENT && !intro && !fadeout ) {
-			if( players[player] != NULL ) {
+			/*if( players[player] != NULL ) {
 				if( players[player]->ticks > 60 ) {
 					if( itemCategory(item)==ARMOR ) {
 						playSoundEntity( players[player], 44+rand()%3, 64 );
 					}
 				}
-			}
+			}*/ //TODO: PLAYERSWAP
 		}
 		if( player!=0 && multiplayer==SERVER ) {
 			if( item->node )
@@ -985,7 +987,7 @@ void useItem(Item *item, int player) {
 		case AMULET_POISONRESISTANCE:
 			equipItem(item,&stats[player]->amulet,player);
 			break;
-		case POTION_WATER:
+		/*case POTION_WATER:
 			item_PotionWater(item, players[player]);
 			break;
 		case POTION_BOOZE:
@@ -1029,11 +1031,11 @@ void useItem(Item *item, int player) {
 			break;
 		case POTION_PARALYSIS:
 			item_PotionParalysis(item, players[player]);
-			break;
+			break;*/ //TODO: PLAYERSWAP
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;
-		case SCROLL_IDENTIFY:
+		/*case SCROLL_IDENTIFY:
 			item_ScrollIdentify(item, player);
 			if( !players[player]->isBlind() )
 				consumeItem(item);
@@ -1095,7 +1097,7 @@ void useItem(Item *item, int player) {
 			item_ScrollSummon(item, player);
 			if( !players[player]->isBlind() )
 				consumeItem(item);
-			break;
+			break;*/ //TODO: PLAYERSWAP
 		case MAGICSTAFF_LIGHT:
 		case MAGICSTAFF_DIGGING:
 		case MAGICSTAFF_LOCKING:
@@ -1210,14 +1212,14 @@ void useItem(Item *item, int player) {
 			break;
 		case READABLE_BOOK:
 			if( numbooks && player==clientnum ) {
-				if( players[player] ) {
+				/*if( players[player] ) {
 					if( !players[player]->isBlind() ) {
 						openBook(books[item->appearance%numbooks], item);
 						conductIlliterate = FALSE;
 					} else {
 						messagePlayer(player,language[970]);
 					}
-				}
+				}*/ //TODO: PLAYERSWAP
 			}
 			break;
 		case SPELL_ITEM: {
@@ -1637,12 +1639,12 @@ void Item::apply(int player, Entity *entity) {
 					playSoundEntity(entity,91,64);
 					messagePlayer(player,language[1097]);
 					entity->skill[4] = 0;
-					players[player]->increaseSkill(PRO_LOCKPICKING);
+					//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
 				} else {
 					playSoundEntity(entity,92,64);
 					messagePlayer(player,language[1102]);
 					if ( rand()%10==0 ) {
-						players[player]->increaseSkill(PRO_LOCKPICKING);
+						//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
 					} else {
 						if ( rand()%5==0 ) {
 							if ( player==clientnum ) {
@@ -1678,12 +1680,12 @@ void Item::apply(int player, Entity *entity) {
 					playSoundEntity(entity,91,64);
 					messagePlayer(player,language[1099]);
 					entity->skill[5] = 0;
-					players[player]->increaseSkill(PRO_LOCKPICKING);
+					//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
 				} else {
 					playSoundEntity(entity,92,64);
 					messagePlayer(player,language[1106]);
 					if ( rand()%10==0 ) {
-						players[player]->increaseSkill(PRO_LOCKPICKING);
+						//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
 					} else {
 						if ( rand()%5==0 ) {
 							if ( player==clientnum ) {

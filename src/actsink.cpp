@@ -18,6 +18,7 @@
 #include "items.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -76,7 +77,7 @@ void actSink(Entity *my) {
 					switch (my->skill[3]) {
 						case 0:
 						{
-							playSoundEntity(players[i], 52, 64);
+							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
 							messagePlayer(i,language[581]);
 							
 							//Randomly choose a ring.
@@ -117,7 +118,7 @@ void actSink(Entity *my) {
 							break;
 						}
 						case 1: {
-							playSoundEntity(players[i], 52, 64);
+							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
 							
 							// spawn slime
 							Entity *monster = summonMonster(SLIME,my->x,my->y);
@@ -132,14 +133,14 @@ void actSink(Entity *my) {
 							break;
 						}
 						case 2:
-							playSoundEntity(players[i], 52, 64);
+							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
 							messagePlayer(i, language[583]);
 							stats[i]->HUNGER += 30; //Less nutrition than the refreshing fountain.
 							break;
 						case 3:
-							playSoundEntity(players[i], 52, 64);
+							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
 							messagePlayer(i, language[584]);
-							players[i]->modHP(-1);
+							//players[i]->modHP(-1); //TODO: PLAYERSWAP
 							break;
 						default: break;
 					}

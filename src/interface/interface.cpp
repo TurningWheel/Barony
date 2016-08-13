@@ -22,6 +22,7 @@
 #include "../sound.hpp"
 #include "../shops.hpp"
 #include "../menu.hpp"
+#include "../player.hpp"
 
 Uint32 svFlags = 30;
 SDL_Surface *backdrop_bmp = NULL;

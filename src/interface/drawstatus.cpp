@@ -17,6 +17,7 @@
 #include "../sound.hpp"
 #include "../net.hpp"
 #include "../menu.hpp"
+#include "../player.hpp"
 #include "interface.hpp"
 
 char enemy_name[128];
@@ -116,18 +117,18 @@ void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint3
 		return;
 
 	for( c=0; c<MAXPLAYERS; c++ ) {
-		if( source==players[c] ) {
+		/*if( source==players[c] ) {
 			player = c;
 			break;
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 
 	int playertarget=-1;
 	for( c=0; c<MAXPLAYERS; c++ ) {
-		if( target==players[c] ) {
+		/*if( target==players[c] ) {
 			playertarget = c;
 			break;
-		}
+		}*/ //TODO: PLAYERSWAP
 	}
 
 	Stat *stats = target->getStats();

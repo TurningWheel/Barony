@@ -12,9 +12,10 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
-#include "interface.hpp"
 #include "../items.hpp"
 #include "../shops.hpp"
+#include "../player.hpp"
+#include "interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -114,7 +115,7 @@ void updateShopWindow() {
 	ttfPrintText(ttf8,x+12+424,y+4,language[356]);
 	
 	// buying
-	if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+	if( stats[clientnum]->HP > 0 /*&& players[clientnum] != NULL */) { //TODO: PLAYERSWAP
 		if( omousex>=x+12 && omousex<x+inventory_bmp->w-28 ) {
 			pos.x=x+12;
 			pos.w=0; pos.h=0;
@@ -122,9 +123,9 @@ void updateShopWindow() {
 				pos.y=y+16;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[0]);
-					}
+					}*/ //TODO: PLAYERSWAP
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
@@ -132,9 +133,9 @@ void updateShopWindow() {
 				pos.y=y+34;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[1]);
-					}
+					}*/ //TODO: PLAYERSWAP
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
@@ -142,9 +143,9 @@ void updateShopWindow() {
 				pos.y=y+52;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[2]);
-					}
+					}*/ //TODO: PLAYERSWAP
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
@@ -152,9 +153,9 @@ void updateShopWindow() {
 				pos.y=y+70;
 				drawImage(inventoryoption_bmp, NULL, &pos);
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
 						buyItemFromShop(shopinvitems[3]);
-					}
+					}*/ //TODO: PLAYERSWAP
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}

@@ -33,7 +33,7 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol) {
 	}
 
 
-	if( player<0 || player>=MAXPLAYERS )
+	if( player<0 || player>=MAXPLAYERS ) //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
 		return NULL;
 	if( player==clientnum ) {
 		return playSound(snd,vol);
@@ -292,13 +292,13 @@ void handleLevelMusic() {
 		return;
 	#endif
 	bool inshop=FALSE;
-	if( players[clientnum] ) {
+	/*if( players[clientnum] ) {
 		int x = (int)players[clientnum]->x/16;
 		int y = (int)players[clientnum]->y/16;
 		if( x>=0 && x<map.width && y>=0 && y<map.height )
 			if( shoparea[y+x*map.height] )
 				inshop=TRUE;
-	}
+	}*/ //TODO: PLAYERSWAP
 
 	bool devilaround=FALSE;
 	bool activeminotaur=FALSE;

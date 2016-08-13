@@ -16,6 +16,7 @@
 #include "../magic/magic.hpp"
 #include "../monster.hpp"
 #include "../net.hpp"
+#include "../player.hpp"
 #include "interface.hpp"
 
 /*-------------------------------------------------------------------------------

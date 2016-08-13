@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "classdescriptions.hpp"
+#include "player.hpp"
 
 void initHuman(Entity *my, Stat *myStats) {
 	int c;

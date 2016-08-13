@@ -18,6 +18,7 @@
 #include "../net.hpp"
 #include "../magic/magic.hpp"
 #include "../menu.hpp"
+#include "../player.hpp"
 #include "interface.hpp"
 
 

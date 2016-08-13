@@ -18,6 +18,7 @@
 #include "net.hpp"
 #include "items.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 void initSpider(Entity *my, Stat *myStats) {
 	int c;

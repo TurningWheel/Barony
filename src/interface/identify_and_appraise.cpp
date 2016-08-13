@@ -14,6 +14,7 @@
 #include "../stat.hpp"
 #include "../items.hpp"
 #include "../net.hpp"
+#include "../player.hpp"
 #include "interface.hpp"
 
 void updateIdentifyGUI() {

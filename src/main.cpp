@@ -34,10 +34,6 @@ Sint8 keystatus[512];
 char *inputstr = NULL;
 int inputlen=0;
 Sint8 mousestatus[6];
-Sint32 mousex=0, mousey=0;
-Sint32 omousex=0, omousey=0;
-Sint32 mousexrel=0, mouseyrel=0;
-Entity *selectedEntity = NULL;
 Entity **clickmap=NULL;
 bool capture_mouse = TRUE;
 string lastname;
@@ -232,7 +228,7 @@ Uint32 cursorflash=0;
 
 bool no_sound = FALSE;
 
-Entity *players[4];
+//Entity *players[4];
 
 hit_t hit;
 

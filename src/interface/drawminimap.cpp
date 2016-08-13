@@ -154,7 +154,7 @@ void drawMinimap() {
 			x = xres-map.width*MINIMAPSCALE+(int)(entity->x/(16.f/MINIMAPSCALE));
 			y = map.height*MINIMAPSCALE-(int)(entity->y/(16.f/MINIMAPSCALE));
 			if( softwaremode ) {
-				//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color);
+				//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
 			} else {
 				glColor4f(((Uint8)(color>>mainsurface->format->Rshift))/255.f,((Uint8)(color>>mainsurface->format->Gshift))/255.f,((Uint8)(color>>mainsurface->format->Bshift))/255.f,1);
 				glBegin(GL_POINTS);
@@ -187,7 +187,7 @@ void drawMinimap() {
 				
 				// draw the pixel
 				if( softwaremode ) {
-					//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color);
+					//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
 				} else {
 					glColor4f(((Uint8)(color>>mainsurface->format->Rshift))/255.f,((Uint8)(color>>mainsurface->format->Gshift))/255.f,((Uint8)(color>>mainsurface->format->Bshift))/255.f,1);
 					glBegin(GL_POINTS);
@@ -199,7 +199,7 @@ void drawMinimap() {
 	}
 	
 	// draw minotaur
-	if( players[clientnum] == NULL )
+	//if( players[clientnum] == NULL ) //TODO: PLAYERSWAP
 		return;
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		Entity *entity = (Entity *)node->element;
@@ -217,7 +217,7 @@ void drawMinimap() {
 				x = xres-map.width*MINIMAPSCALE+(int)(entity->x/(16.f/MINIMAPSCALE));
 				y = map.height*MINIMAPSCALE-(int)(entity->y/(16.f/MINIMAPSCALE));
 				if( softwaremode ) {
-					//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color);
+					//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAP
 				} else {
 					glColor4f(((Uint8)(color>>16))/255.f,((Uint8)(color>>8))/255.f,((Uint8)(color))/255.f,1);
 					glBegin(GL_POINTS);
@@ -249,7 +249,7 @@ void drawMinimap() {
 				
 					// draw the pixel
 					if( softwaremode ) {
-						//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color);
+						//SPG_Pixel(screen,(int)(players[c]->x/16)+564+x+xres/2-(status_bmp->w/2),(int)(players[c]->y/16)+yres-71+y,color); //TODO: NOT a PLAYERSWAR
 					} else {
 						glColor4f(((Uint8)(color>>16))/255.f,((Uint8)(color>>8))/255.f,((Uint8)(color))/255.f,1);
 						glBegin(GL_POINTS);

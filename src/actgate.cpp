@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 #define GATE_INIT my->skill[1]
 #define GATE_STATUS my->skill[3]

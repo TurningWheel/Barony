@@ -15,6 +15,7 @@
 #include "entity.hpp"
 #include "sound.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 

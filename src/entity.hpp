@@ -165,7 +165,7 @@ public:
 
 extern list_t entitiesToDelete[MAXPLAYERS];
 extern Uint32 entity_uids, lastEntityUIDs;
-extern Entity *players[4];
+//extern Entity *players[4];
 extern Uint32 nummonsters;
 
 #define CHAR_POISON my->skill[21] //TODO: Being replaced with Entity char_poison

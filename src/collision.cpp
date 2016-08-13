@@ -21,6 +21,7 @@
 #include "net.hpp"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 

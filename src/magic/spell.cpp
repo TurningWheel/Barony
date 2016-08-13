@@ -161,7 +161,7 @@ void addSpell(int spell, int player) {
 	node->size = sizeof(spell_t);
 	node->deconstructor = &spellDeconstructor;
 
-	players[player]->increaseSkill(PRO_MAGIC);
+	//players[player]->increaseSkill(PRO_MAGIC); //TODO: PLAYERSWAP
 
 	Item *item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, TRUE, NULL);
 	itemPickup(player, item);
@@ -438,7 +438,7 @@ void spell_changeHealth(Entity *entity, int amount) {
 	int player = -1;
 	int i = 0;
 	for (i = 0; i < 4; ++i) {
-		if (entity == players[i])
+		//if (entity == players[i]) //TODO: PLAYERSWAP
 			player = i;
 	}
 

@@ -1128,7 +1128,7 @@ void assignActions(map_t *map) {
 				}
 				entity->flags[BLOCKSIGHT]=TRUE;
 				entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
-				players[numplayers] = entity;
+				//players[numplayers] = entity; //TODO: PLAYERSWAP
 				if( multiplayer!=CLIENT ) {
 					if( numplayers==0 && minotaurlevel ) {
 						// make a minotaur timer

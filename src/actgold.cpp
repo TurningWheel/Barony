@@ -16,6 +16,7 @@
 #include "sound.hpp"
 #include "net.hpp"
 #include "entity.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -62,8 +63,8 @@ void actGoldBag(Entity *my) {
 		for(i=0;i<MAXPLAYERS;i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
-					if( players[i] != NULL )
-						playSoundEntity( players[i], 242+rand()%4, 64 );
+					/*if( players[i] != nullptr )
+						playSoundEntity( players[i], 242+rand()%4, 64 );*/
 					stats[i]->GOLD += GOLDBAG_AMOUNT;
 					if( i!=0 ) {
 						if( multiplayer==SERVER ) {

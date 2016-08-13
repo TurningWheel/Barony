@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "interface/interface.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -110,8 +111,8 @@ void actItem(Entity *my) {
 		for(i=0;i<MAXPLAYERS;i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
-					if( players[i] != NULL )
-						playSoundEntity( players[i], 35+rand()%3, 64 );
+					/*if( players[i] != NULL )
+						playSoundEntity( players[i], 35+rand()%3, 64 );*/ //TODO: PLAYERSWAP
 					Item *item2 = newItemFromEntity(my);
 					if (item2)
 					{

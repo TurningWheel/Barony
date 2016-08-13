@@ -15,6 +15,7 @@
 #include "../items.hpp"
 #include "../sound.hpp"
 #include "../net.hpp"
+#include "../player.hpp"
 #include "interface.hpp"
 
 /*-------------------------------------------------------------------------------

@@ -43,8 +43,8 @@ void startTradingServer(Entity *entity, int player) {
 		return;
 	if( multiplayer==CLIENT )
 		return;
-	if( !players[player] )
-		return;
+	/*if( !players[player] )
+		return;*/
 	
 	Stat *stats = entity->getStats();
 	if( stats==NULL )
@@ -97,7 +97,7 @@ void startTradingServer(Entity *entity, int player) {
 		}
 	}
 	entity->skill[0] = 4; // talk state
-	entity->skill[1] = players[player]->uid;
+	//entity->skill[1] = players[player]->uid; //TODO: PLAYERSWAP
 	messagePlayer(player,language[1122],stats->name);
 }
 
@@ -133,7 +133,7 @@ void buyItemFromShop(Item *item) {
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
 			if( rand()%2 ) {
-				players[clientnum]->increaseSkill(PRO_TRADING);
+				//players[clientnum]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
 			}
 		} else {
 			strcpy((char *)net_packet->data,"SHPB");
@@ -238,7 +238,7 @@ void sellItemToShop(Item *item) {
 	item->count = ocount;
 	if( multiplayer != CLIENT ) {
 		if( rand()%2 ) {
-			players[clientnum]->increaseSkill(PRO_TRADING);
+			//players[clientnum]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
 		}
 	} else {
 		strcpy((char *)net_packet->data,"SHPS");

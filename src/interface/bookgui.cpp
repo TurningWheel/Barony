@@ -12,11 +12,12 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
-#include "interface.hpp"
 #include "../items.hpp"
 #include "../book.hpp"
 #include "../sound.hpp"
 #include "../scores.hpp"
+#include "../player.hpp"
+#include "interface.hpp"
 
 /*-------------------------------------------------------------------------------
 

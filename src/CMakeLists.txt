@@ -78,6 +78,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/scores.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/steam.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/hash.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/player.cpp"
 )
 
 if( WIN32 )

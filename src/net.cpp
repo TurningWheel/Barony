@@ -705,7 +705,7 @@ void clientActions(Entity *entity) {
 			// these are all human heads
 			playernum = SDLNet_Read32(&net_packet->data[30]);
 			if( playernum >= 0 && playernum < MAXPLAYERS ) {
-				players[playernum]=entity;
+				//players[playernum]=entity; //TODO: PLAYERSWAP
 				entity->skill[2] = playernum;
 				entity->behavior = &actPlayer;
 			}
@@ -916,21 +916,21 @@ void clientHandlePacket()
 
 	// player movement correction
 	else if (!strncmp((char *)net_packet->data,"PMOV",4)) {
-		if ( players[clientnum]==NULL )
+		/*if ( players[clientnum]==NULL )
 			return;
 		players[clientnum]->x = ((Sint16)SDLNet_Read16(&net_packet->data[4]))/32.0;
-		players[clientnum]->y = ((Sint16)SDLNet_Read16(&net_packet->data[6]))/32.0;
+		players[clientnum]->y = ((Sint16)SDLNet_Read16(&net_packet->data[6]))/32.0;*/ //TODO: PLAYERSWAP
 		return;
 	}
 
 	// teleport player
 	else if (!strncmp((char *)net_packet->data,"TELE",4)) {
-		if ( players[clientnum]==NULL )
+		//if ( players[clientnum]==NULL ) //TODO: PLAYERSWAP
 			return;
 		x = net_packet->data[4];
 		y = net_packet->data[5];
-		players[clientnum]->x = (x<<4)+8;
-		players[clientnum]->y = (y<<4)+8;
+		/*players[clientnum]->x = (x<<4)+8;
+		players[clientnum]->y = (y<<4)+8;*/ //TODO: PLAYERSWAP
 		return;
 	}
 
@@ -943,8 +943,8 @@ void clientHandlePacket()
 				entity2=newEntity(entity->sprite,1,&removedEntities);
 				entity2->uid=entity->uid;
 				for ( j=0; j<MAXPLAYERS; j++ )
-					if ( entity==players[j] )
-						players[j]=NULL;
+					/*if ( entity==players[j] )
+						players[j]=NULL;*/ //TODO: PLAYERSWAP
 				if ( entity->light ) {
 					list_RemoveNode(entity->light->node);
 					entity->light = NULL;
@@ -1327,11 +1327,11 @@ void clientHandlePacket()
 		} else if ( (strstr((char *)(&net_packet->data[8]),language[1160]))!=NULL ) {
 			for ( c=0; c<MAXPLAYERS; c++ ) {
 				if ( !strncmp(stats[c]->name,(char *)(&net_packet->data[8]),strlen(stats[c]->name)) ) {
-					if ( players[clientnum] && players[c] ) {
+					/*if ( players[clientnum] && players[c] ) {
 						double tangent = atan2(players[clientnum]->y-players[c]->y,players[clientnum]->x-players[c]->x);
 						players[clientnum]->vel_x += cos(tangent);
 						players[clientnum]->vel_y += sin(tangent);
-					}
+					}*/ //TODO: PLAYERSWAP
 					break;
 				}
 			}
@@ -2107,7 +2107,7 @@ void serverHandlePacket()
 	// player move
 	else if (!strncmp((char *)net_packet->data,"PMOV",4)) {
 		client_keepalive[net_packet->data[4]] = ticks;
-		if ( players[net_packet->data[4]]==NULL )
+		//if ( players[net_packet->data[4]]==NULL ) //TODO: PLAYERSWAP
 			return;
 
 		// check if the info is outdated
@@ -2123,7 +2123,7 @@ void serverHandlePacket()
 		pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16]))/128.0;
 
 		// update rotation
-		players[net_packet->data[4]]->yaw = yaw;
+		/*players[net_packet->data[4]]->yaw = yaw;
 		players[net_packet->data[4]]->pitch = pitch;
 
 		// update player's internal velocity variables
@@ -2132,7 +2132,7 @@ void serverHandlePacket()
 
 		// calculate distance
 		dx -= players[net_packet->data[4]]->x;
-		dy -= players[net_packet->data[4]]->y;
+		dy -= players[net_packet->data[4]]->y;*/ //TODO: PLAYERSWAP
 		dist = sqrt( dx*dx + dy*dy );
 
 		// make water passable
@@ -2144,7 +2144,7 @@ void serverHandlePacket()
 		}
 
 		// move player with collision detection
-		if ( clipMove(&players[net_packet->data[4]]->x,&players[net_packet->data[4]]->y,dx,dy,players[net_packet->data[4]]) < dist-.025 ) {
+		/*if ( clipMove(&players[net_packet->data[4]]->x,&players[net_packet->data[4]]->y,dx,dy,players[net_packet->data[4]]) < dist-.025 ) {
 			// player encountered obstacle on path
 			// stop updating position on server side and send client corrected position
 			j = net_packet->data[4];
@@ -2155,7 +2155,7 @@ void serverHandlePacket()
 			net_packet->address.port = net_clients[j-1].port;
 			net_packet->len = 8;
 			sendPacket(net_sock, -1, net_packet, j-1);
-		}
+		}*/ //TODO: PLAYERSWAP
 
 		// make water unpassable
 		for ( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -2362,7 +2362,7 @@ void serverHandlePacket()
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
 		if ( rand()%2 ) {
-			players[client]->increaseSkill(PRO_TRADING);
+			//players[client]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
 		}
 		free(item);
 		return;
@@ -2405,7 +2405,7 @@ void serverHandlePacket()
 		printlog("client %d sold item to shop (uid=%d)\n",client,uidnum);
 		stats[client]->GOLD += item->sellValue(client);
 		if ( rand()%2 ) {
-			players[client]->increaseSkill(PRO_TRADING);
+			//players[client]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
 		}
 		return;
 	}
@@ -2439,8 +2439,8 @@ void serverHandlePacket()
 
 	// attacking
 	else if (!strncmp((char *)net_packet->data,"ATAK",4)) {
-		if ( players[net_packet->data[4]])
-			players[net_packet->data[4]]->attack(net_packet->data[5],net_packet->data[6]);
+		/*if ( players[net_packet->data[4]])
+			players[net_packet->data[4]]->attack(net_packet->data[5],net_packet->data[6]);*/ //TODO: PLAYERSWAP
 		return;
 	}
 
@@ -2456,7 +2456,7 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 
 		spell_t *thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
-		castSpell(players[the_client]->uid, thespell, FALSE, FALSE);
+		//castSpell(players[the_client]->uid, thespell, FALSE, FALSE); //TODO: PLAYERSWAP
 		return;
 	}
 

@@ -12,6 +12,7 @@
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
+#include "player.hpp"
 
 button_t *butX;
 button_t *but_;

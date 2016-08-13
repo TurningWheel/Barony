@@ -20,8 +20,8 @@
 #include "magic.hpp"
 
 void spell_magicMap(int player) {
-	if( players[player]==NULL )
-		return;
+	/*if( players[player]==NULL )
+		return;*/ //TODO: PLAYERSWAP
 
 	if( multiplayer==SERVER && player>0 ) {
 		//Tell the client to map the magic.

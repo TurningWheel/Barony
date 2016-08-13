@@ -33,6 +33,7 @@
 #include "credits.hpp"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -630,7 +631,7 @@ void handleMainMenu(bool mode) {
 		ttfPrintText(ttf16, subx1+8, suby1+8, language[1318]);
 	
 		// draw character window
-		if( players[clientnum] != NULL ) {
+		/*if( players[clientnum] != NULL ) {
 			camera_charsheet.x=players[clientnum]->x/16.0+1;
 			camera_charsheet.y=players[clientnum]->y/16.0-.5;
 			camera_charsheet.z=players[clientnum]->z*2;
@@ -671,7 +672,7 @@ void handleMainMenu(bool mode) {
 					c++;
 				}
 			}
-		}
+		}*/ //TODO: PLAYERSWAP
 			
 		//TODO: Loop through buttons. Disable the random character button if charcreation_step != 1;
 		// sexes
@@ -2210,7 +2211,7 @@ void handleMainMenu(bool mode) {
 			ttfPrintTextFormatted(ttf16, subx1+8, suby1+8, "%s - #%d",language[1390],score_window);
 
 			// draw character window
-			if( players[clientnum] != NULL ) {
+			/*if( players[clientnum] != NULL ) {
 				camera_charsheet.x=players[clientnum]->x/16.0+1;
 				camera_charsheet.y=players[clientnum]->y/16.0-.5;
 				camera_charsheet.z=players[clientnum]->z*2;
@@ -2249,7 +2250,7 @@ void handleMainMenu(bool mode) {
 					}
 					c++;
 				}
-			}
+			}*/ //TODO: PLAYERSWAP
 
 			// print name and class
 			if( victory ) {
@@ -2484,11 +2485,12 @@ void handleMainMenu(bool mode) {
 							node_t *tempNode = list_Node(followers,c);
 							if( tempNode ) {
 								list_t *tempFollowers = (list_t *)tempNode->element;
-								if( players[c] && !client_disconnected[c] ) {
+								if( /*players[c] &&*/ !client_disconnected[c] ) { //TODO: PLAYERSWAP
 									node_t *node;
 									for( node=tempFollowers->first; node!=NULL; node=node->next ) {
 										Stat *tempStats = (Stat *)node->element;
-										Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y);
+										//Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y); //TODO: PLAYERSWAP
+										Entity *monster; //TODO: PLAYERSWAP
 										if( monster ) {
 											monster->skill[3] = 1; // to mark this monster partially initialized
 											list_RemoveNode(monster->children.last);
@@ -2499,7 +2501,7 @@ void handleMainMenu(bool mode) {
 											newNode->size = sizeof(tempStats);
 
 											Stat *monsterStats = (Stat *)newNode->element;
-											monsterStats->leader_uid = players[c]->uid;
+											//monsterStats->leader_uid = players[c]->uid; //TODO: PLAYERSWAP
 											if( !monsterally[HUMAN][monsterStats->type] )
 												monster->flags[USERFLAG2]=TRUE;
 
@@ -2638,8 +2640,8 @@ void handleMainMenu(bool mode) {
 			if( victory ) {
 				int k = 0;
 				for( c=0; c<MAXPLAYERS; c++ ) {
-					if( players[c] )
-						k++;
+					/*if( players[c] )
+						k++;*/ //TODO: PLAYERSWAP
 				}
 				if( k>=2 )
 					steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
@@ -2736,7 +2738,7 @@ void handleMainMenu(bool mode) {
 					client_disconnected[c]=TRUE;
 				else
 					client_disconnected[c]=FALSE;
-				players[c]=NULL;
+				//players[c]=NULL; //TODO: PLAYERSWAP
 				stats[c]->sex=static_cast<sex_t>(0);
 				stats[c]->appearance=0;
 				strcpy(stats[c]->name,"");
@@ -3234,7 +3236,7 @@ void openGameoverWindow() {
 		bool survivingPlayer=FALSE;
 		int c;
 		for( c=0; c<MAXPLAYERS; c++ ) {
-			if( !client_disconnected[c] && players[c] ) {
+			if( !client_disconnected[c] /*&& players[c]*/ ) { //TODO: PLAYERSWAP
 				survivingPlayer=TRUE;
 				break;
 			}

@@ -32,6 +32,7 @@
 #include "prng.hpp"
 #include "collision.hpp"
 #include "paths.hpp"
+#include "player.hpp"
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -578,11 +579,12 @@ void gameLogic(void) {
 					fadealpha=255;
 
 					for( c=0; c<MAXPLAYERS; c++ ) {
-						if( players[c] && !client_disconnected[c] ) {
+						if( /*players[c] &&*/ !client_disconnected[c] ) { //TODO: PLAYERSWAP
 							node_t *node;
 							for( node=tempFollowers[c].first; node!=NULL; node=node->next ) {
 								Stat *tempStats = (Stat *)node->element;
-								Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y);
+								//Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y); //TODO: PLAYERSWAP
+								Entity *monster; //TODO: PLAYERSWAP
 								if( monster ) {
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
@@ -593,7 +595,7 @@ void gameLogic(void) {
 									newNode->size = sizeof(tempStats);
 
 									Stat *monsterStats = (Stat *)newNode->element;
-									monsterStats->leader_uid = players[c]->uid;
+									//monsterStats->leader_uid = players[c]->uid; //TODO: PLAYERSWAP
 									if( strcmp(monsterStats->name,"") ) {
 										messagePlayer(c,language[720],monsterStats->name);
 									} else {
@@ -1348,7 +1350,7 @@ Uint32 timerCallback(Uint32 interval, void *param) {
 	int c;
 	bool playeralive=FALSE;
 	for( c=0; c<MAXPLAYERS; c++ )
-		if( players[c] && !client_disconnected[c] )
+		//if( players[c] && !client_disconnected[c] ) //TODO: PLAYERSWAP
 			playeralive=TRUE;
 	
 	if( (!gamePaused || multiplayer) && !loading && !intro && playeralive )
@@ -1952,7 +1954,7 @@ int main(int argc, char **argv) {
 				drawClearBuffers();
 				camera.ang+=camera_shakex2;
 				camera.vang+=camera_shakey2/200.0;
-				if( players[clientnum]==NULL || !players[clientnum]->isBlind() ) {
+				/*if( players[clientnum]==NULL || !players[clientnum]->isBlind() ) {
 					// drunkenness spinning
 					double cosspin = cos(ticks%360 * PI/180.f)*0.25;
 					double sinspin = sin(ticks%360 * PI/180.f)*0.25;
@@ -1975,7 +1977,7 @@ int main(int argc, char **argv) {
 						camera.ang -= cosspin*drunkextend;
 						camera.vang -= sinspin*drunkextend;
 					}
-				}
+				}*/ //TODO: PLAYERSWAP
 				camera.ang-=camera_shakex2;
 				camera.vang-=camera_shakey2/200.0;
 				
@@ -2039,8 +2041,8 @@ int main(int argc, char **argv) {
 					}
 					if (!command && *inputPressed(impulses[IN_CAST_SPELL])) {
 						*inputPressed(impulses[IN_CAST_SPELL]);
-						if( players[clientnum] )
-							castSpellInit(players[clientnum]->uid, selected_spell);
+						/*if( players[clientnum] )
+							castSpellInit(players[clientnum]->uid, selected_spell);*/ //TODO: PLAYERSWAP
 					}
 					
 					// commands

@@ -28,6 +28,7 @@
 #endif
 #include "menu.hpp"
 #include "paths.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -258,7 +259,7 @@ int initGame() {
 		stats[c] = new Stat();
 		if (c > 0)
 			client_disconnected[c] = TRUE;
-		players[c]=NULL;
+		//players[c]=NULL; //TODO: PLAYERSWAP
 		stats[c]->sex=static_cast<sex_t>(0);
 		stats[c]->appearance=0;
 		strcpy(stats[c]->name,"");
