@@ -2713,4 +2713,6 @@ client (player %d) (direct ip)#
 # Traps.
 1946 NOTE: Only removes generated traps#
 
+1960 right click protection#
+
 1999 end#
