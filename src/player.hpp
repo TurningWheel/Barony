@@ -42,11 +42,13 @@ class Player
 	int playernum;
 
 public:
+	Entity *entity;
+
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 };
 
-//extern Player *players;
+extern Player **players;
 //In the process of switching from the old entity player array, all of the old uses of player need to be hunted down and then corrected to account for the new array.
 //So, search for the comment:
 //TODO: PLAYERSWAP

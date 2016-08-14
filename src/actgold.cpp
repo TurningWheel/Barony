@@ -63,8 +63,8 @@ void actGoldBag(Entity *my) {
 		for(i=0;i<MAXPLAYERS;i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
-					/*if( players[i] != nullptr )
-						playSoundEntity( players[i], 242+rand()%4, 64 );*/
+					if (players[i] && players[i]->entity)
+						playSoundEntity(players[i]->entity, 242+rand()%4, 64 );
 					stats[i]->GOLD += GOLDBAG_AMOUNT;
 					if( i!=0 ) {
 						if( multiplayer==SERVER ) {

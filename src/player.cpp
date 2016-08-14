@@ -11,7 +11,7 @@
 
 #include "player.hpp"
 
-//Player *players = nullptr;
+Player **players = nullptr;
 
 Entity *selectedEntity = nullptr;
 int current_player = 0;
@@ -24,6 +24,7 @@ Player::Player(int in_playernum, bool in_local_host)
 	screen = nullptr;
 	local_host = in_local_host;
 	playernum = in_playernum;
+	entity = nullptr;
 }
 
 Player::~Player()
@@ -31,5 +32,10 @@ Player::~Player()
 	if (screen)
 	{
 		SDL_FreeSurface(screen);
+	}
+
+	if (entity)
+	{
+		delete entity;
 	}
 }

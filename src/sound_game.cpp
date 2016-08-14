@@ -17,6 +17,7 @@
 #include "sound.hpp"
 #include "entity.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -292,13 +293,14 @@ void handleLevelMusic() {
 		return;
 	#endif
 	bool inshop=FALSE;
-	/*if( players[clientnum] ) {
-		int x = (int)players[clientnum]->x/16;
-		int y = (int)players[clientnum]->y/16;
+	if (players[clientnum] && players[clientnum]->entity)
+	{
+		int x = (int)players[clientnum]->entity->x/16;
+		int y = (int)players[clientnum]->entity->y/16;
 		if( x>=0 && x<map.width && y>=0 && y<map.height )
 			if( shoparea[y+x*map.height] )
 				inshop=TRUE;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	bool devilaround=FALSE;
 	bool activeminotaur=FALSE;

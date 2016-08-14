@@ -16,6 +16,7 @@
 #include "../interface/interface.hpp"
 #include "../sound.hpp"
 #include "../items.hpp"
+#include "../player.hpp"
 #include "magic.hpp"
 
 //The spellcasting animation stages:
@@ -128,17 +129,18 @@ void actLeftHandMagic(Entity *my)
 		my->focalz = -1.5;
 	}
 
-	/*if( players[clientnum]==NULL ) {
-		magicLeftHand = NULL;
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	{
+		magicLeftHand = nullptr;
 		spellcastingAnimationManager_deactivate(&cast_animation);
 		list_RemoveNode(my->mynode);
 		return;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	//Set the initial values. (For the particle spray)
 	my->x = 8;
 	my->y = -3;
-	//my->z = (camera.z *.5 - players[clientnum]->z) + 7; //TODO: PLAYERSWAP
+	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	double defaultpitch = (0-6.f) / PI;
@@ -191,9 +193,10 @@ void actLeftHandMagic(Entity *my)
 	if (stats[clientnum]->cloak != NULL)
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	/*if (players[clientnum]->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) // debug cam or player invisible
+	{
 		my->flags[INVISIBLE] = TRUE;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
@@ -223,7 +226,7 @@ void actLeftHandMagic(Entity *my)
 					//Time to consume mana and reset the ticker!
 					cast_animation.consume_timer = cast_animation.consume_interval;
 					if (multiplayer == SINGLE) {
-						//players[clientnum]->drainMP(1); //TODO: PLAYERSWAP
+						players[clientnum]->entity->drainMP(1);
 					}
 					cast_animation.mana_left--;
 				}
@@ -252,7 +255,7 @@ void actLeftHandMagic(Entity *my)
 	}
 
 	//Final position code.
-	//if( players[clientnum] == NULL ) //TODO: PLAYERSWAP
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 		return;
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
@@ -264,7 +267,7 @@ void actLeftHandMagic(Entity *my)
 	my->y = -3;
 	my->y += cast_animation.lefthand_movey;
 	//my->z = (camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a PLAYERSWAP
-	//my->z = (camera.z *.5 - players[clientnum]->z) + 7; //TODO: PLAYERSWAP
+	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
@@ -284,15 +287,16 @@ void actRightHandMagic(Entity *my)
 		my->focalz = -1.5;
 	}
 
-	/*if( players[clientnum]==NULL ) {
-		magicRightHand=NULL;
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	{
+		magicRightHand = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	my->x = 8;
 	my->y = 3;
-	//my->z = (camera.z *.5 - players[clientnum]->z) + 7; //TODO: PLAYERSWAP
+	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	double defaultpitch = (0-6.f) / PI;
@@ -345,9 +349,10 @@ void actRightHandMagic(Entity *my)
 	if (stats[clientnum]->cloak != NULL)
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	/*if (players[clientnum]->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) // debug cam or player invisible
+	{
 		my->flags[INVISIBLE] = TRUE;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
@@ -384,7 +389,7 @@ void actRightHandMagic(Entity *my)
 	}
 
 	//Final position code.
-	//if( players[clientnum] == NULL ) //TODO: PLAYERSWAP
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 		return;
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
@@ -397,7 +402,7 @@ void actRightHandMagic(Entity *my)
 	my->y = 3;
 	my->y -= cast_animation.lefthand_movey;
 	//my->z = (camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a playerswap
-	//my->z = (camera.z *.5 - players[clientnum]->z) + 7; //TODO: PLAYERSWAP
+	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;

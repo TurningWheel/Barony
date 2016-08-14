@@ -514,8 +514,8 @@ void gameLogic(void) {
 							sendPacketSafe(net_sock, -1, net_packet, c-1);
 						}
 					}
-					darkmap=FALSE;
-					numplayers=0;
+					darkmap = FALSE;
+					numplayers = 0;
 					if( !secretlevel )
 						fp = fopen(LEVELSFILE,"r");
 					else
@@ -578,14 +578,17 @@ void gameLogic(void) {
 					fadeout=FALSE;
 					fadealpha=255;
 
-					for( c=0; c<MAXPLAYERS; c++ ) {
-						if( /*players[c] &&*/ !client_disconnected[c] ) { //TODO: PLAYERSWAP
+					for (c = 0; c < MAXPLAYERS; c++)
+					{
+						if (players[c] && players[c]->entity && !client_disconnected[c])
+						{
 							node_t *node;
-							for( node=tempFollowers[c].first; node!=NULL; node=node->next ) {
+							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
+							{
 								Stat *tempStats = (Stat *)node->element;
-								//Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y); //TODO: PLAYERSWAP
-								Entity *monster; //TODO: PLAYERSWAP
-								if( monster ) {
+								Entity *monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
+								if (monster)
+								{
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
 
@@ -595,14 +598,17 @@ void gameLogic(void) {
 									newNode->size = sizeof(tempStats);
 
 									Stat *monsterStats = (Stat *)newNode->element;
-									//monsterStats->leader_uid = players[c]->uid; //TODO: PLAYERSWAP
-									if( strcmp(monsterStats->name,"") ) {
-										messagePlayer(c,language[720],monsterStats->name);
-									} else {
-										messagePlayer(c,language[721],language[90+(int)monsterStats->type]);
+									monsterStats->leader_uid = players[c]->entity->uid;
+									if (strcmp(monsterStats->name, ""))
+									{
+										messagePlayer(c, language[720], monsterStats->name);
 									}
-									if( !monsterally[HUMAN][monsterStats->type] )
-										monster->flags[USERFLAG2]=TRUE;
+									else
+									{
+										messagePlayer(c, language[721], language[90 + (int)monsterStats->type]);
+									}
+									if (!monsterally[HUMAN][monsterStats->type])
+										monster->flags[USERFLAG2] = TRUE;
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
@@ -1335,7 +1341,8 @@ void handleEvents(void) {
 
 -------------------------------------------------------------------------------*/
 
-Uint32 timerCallback(Uint32 interval, void *param) {
+Uint32 timerCallback(Uint32 interval, void *param)
+{
 	SDL_Event event;
 	SDL_UserEvent userevent;
 	
@@ -1349,14 +1356,14 @@ Uint32 timerCallback(Uint32 interval, void *param) {
 
 	int c;
 	bool playeralive=FALSE;
-	for( c=0; c<MAXPLAYERS; c++ )
-		//if( players[c] && !client_disconnected[c] ) //TODO: PLAYERSWAP
-			playeralive=TRUE;
-	
-	if( (!gamePaused || multiplayer) && !loading && !intro && playeralive )
+	for (c = 0; c < MAXPLAYERS; c++)
+		if (players[c] && players[c]->entity && !client_disconnected[c])
+			playeralive = TRUE;
+
+	if ((!gamePaused || multiplayer) && !loading && !intro && playeralive)
 		completionTime++;
 	ticks++;
-	if( !loading )
+	if (!loading)
 		SDL_PushEvent(&event); // so the game doesn't overload itself while loading
 	return(interval);
 }
@@ -1713,8 +1720,8 @@ int main(int argc, char **argv) {
 									camera.ang = 5.0;
 									break;
 							}
-							numplayers=0;
-							multiplayer=0;
+							numplayers = 0;
+							multiplayer = 0;
 							assignActions(&map);
 							generatePathMaps();
 							fadeout=TRUE;
@@ -1783,8 +1790,8 @@ int main(int argc, char **argv) {
 								camera.ang = 5.0;
 								break;
 						}
-						numplayers=0;
-						multiplayer=0;
+						numplayers = 0;
+						multiplayer = 0;
 						assignActions(&map);
 						generatePathMaps();
 						fadeout=TRUE;
@@ -1833,14 +1840,14 @@ int main(int argc, char **argv) {
 						multiplayer=SINGLE;
 						fadefinished=FALSE;
 						fadeout=FALSE;
-						numplayers=0;
-				
+						numplayers = 0;
+
 						// setup game
 						shootmode=TRUE;
 						
 						// make some messages
 						startMessages();
-					
+
 						// load dungeon
 						mapseed = 0;
 						lastEntityUIDs=entity_uids;
@@ -1949,44 +1956,47 @@ int main(int argc, char **argv) {
 						pauseGame(0,MAXPLAYERS);
 					}
 				}
-				
+
 				// main drawing
 				drawClearBuffers();
-				camera.ang+=camera_shakex2;
-				camera.vang+=camera_shakey2/200.0;
-				/*if( players[clientnum]==NULL || !players[clientnum]->isBlind() ) {
+				camera.ang += camera_shakex2;
+				camera.vang += camera_shakey2/200.0;
+				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind())
+				{
 					// drunkenness spinning
 					double cosspin = cos(ticks%360 * PI/180.f)*0.25;
 					double sinspin = sin(ticks%360 * PI/180.f)*0.25;
-					
+
 					//drawSky3D(&camera,sky_bmp);
-					camera.winx=0;
-					camera.winy=0;
-					camera.winw=xres;
-					camera.winh=yres;
-					if( shaking && players[clientnum] && !gamePaused ) {
+					camera.winx = 0;
+					camera.winy = 0;
+					camera.winw = xres;
+					camera.winh = yres;
+					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+					{
 						camera.ang += cosspin*drunkextend;
 						camera.vang += sinspin*drunkextend;
 					}
-					raycast(&camera,REALCOLORS);
+					raycast(&camera, REALCOLORS);
 					
-					glDrawWorld(&camera,REALCOLORS);
+					glDrawWorld(&camera, REALCOLORS);
 					//drawFloors(&camera);
-					drawEntities3D(&camera,REALCOLORS);
-					if( shaking && players[clientnum] && !gamePaused ) {
+					drawEntities3D(&camera, REALCOLORS);
+					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
+					{
 						camera.ang -= cosspin*drunkextend;
 						camera.vang -= sinspin*drunkextend;
 					}
-				}*/ //TODO: PLAYERSWAP
-				camera.ang-=camera_shakex2;
-				camera.vang-=camera_shakey2/200.0;
-				
+				}
+				camera.ang -= camera_shakex2;
+				camera.vang -= camera_shakey2/200.0;
+
 				updateMessages();
 				if( !nohud ) {
 					handleDamageIndicators();
 					drawMessages();
 				}
-				
+
 				if( !gamePaused ) {
 					// status bar
 					if( !nohud )
@@ -2039,12 +2049,13 @@ int main(int argc, char **argv) {
 							attributespage = 0;
 						}
 					}
-					if (!command && *inputPressed(impulses[IN_CAST_SPELL])) {
+					if (!command && *inputPressed(impulses[IN_CAST_SPELL]))
+					{
 						*inputPressed(impulses[IN_CAST_SPELL]);
-						/*if( players[clientnum] )
-							castSpellInit(players[clientnum]->uid, selected_spell);*/ //TODO: PLAYERSWAP
+						if (players[clientnum] && players[clientnum]->entity)
+							castSpellInit(players[clientnum]->entity->uid, selected_spell);
 					}
-					
+
 					// commands
 					if( ( *inputPressed(impulses[IN_CHAT]) || *inputPressed(impulses[IN_COMMAND]) ) && !command ) {
 						*inputPressed(impulses[IN_CHAT])=0;

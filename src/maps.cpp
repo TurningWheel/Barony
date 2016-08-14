@@ -22,6 +22,7 @@
 #include "net.hpp"
 #include "paths.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 int startfloor = 0;
 
@@ -1128,7 +1129,7 @@ void assignActions(map_t *map) {
 				}
 				entity->flags[BLOCKSIGHT]=TRUE;
 				entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
-				//players[numplayers] = entity; //TODO: PLAYERSWAP
+				players[numplayers]->entity = entity;
 				if( multiplayer!=CLIENT ) {
 					if( numplayers==0 && minotaurlevel ) {
 						// make a minotaur timer

@@ -82,42 +82,46 @@ void actDeathCam(Entity *my) {
 		DEATHCAM_ROTY = 0;
 	}
 
-	if( *inputPressed(impulses[IN_ATTACK]) && shootmode ) {
+	if (*inputPressed(impulses[IN_ATTACK]) && shootmode)
+	{
 		*inputPressed(impulses[IN_ATTACK]) = 0;
 		DEATHCAM_PLAYER++;
-		if( DEATHCAM_PLAYER>=MAXPLAYERS )
-			DEATHCAM_PLAYER=0;
-		int c=0;
-		//while( !players[DEATHCAM_PLAYER] ) { //TODO: PLAYERSWAP
+		if (DEATHCAM_PLAYER >= MAXPLAYERS)
+			DEATHCAM_PLAYER = 0;
+		int c = 0;
+		while (!players[DEATHCAM_PLAYER] || !players[DEATHCAM_PLAYER]->entity) //TODO: PLAYERSWAP VERIFY. I'm not sure if the loop's condition should look like this. I think it should be fine...
 		{
-			if( c>MAXPLAYERS )
-				//break; //TODO: PLAYERSWAP
+			if (c > MAXPLAYERS)
+				break;
 			DEATHCAM_PLAYER++;
-			if( DEATHCAM_PLAYER>=MAXPLAYERS )
-				DEATHCAM_PLAYER=0;
+			if (DEATHCAM_PLAYER >= MAXPLAYERS)
+				DEATHCAM_PLAYER = 0;
 			c++;
 		}
 	}
 
-	if( DEATHCAM_PLAYER>=0 ) {
-		/*if( players[DEATHCAM_PLAYER] ) {
-			my->x = players[DEATHCAM_PLAYER]->x;
-			my->y = players[DEATHCAM_PLAYER]->y;
-		}*/ //TODO: PLAYERSWAP
+	if (DEATHCAM_PLAYER >= 0)
+	{
+		if (players[DEATHCAM_PLAYER] && players[DEATHCAM_PLAYER]->entity)
+		{
+			my->x = players[DEATHCAM_PLAYER]->entity->x;
+			my->y = players[DEATHCAM_PLAYER]->entity->y;
+		}
 	}
 
-	if( my->light ) {
+	if (my->light)
+	{
 		list_RemoveNode(my->light->node);
-		my->light = NULL;
+		my->light = nullptr;
 	}
-	my->light = lightSphereShadow(my->x/16,my->y/16,3,128);
+	my->light = lightSphereShadow(my->x/16, my->y/16, 3, 128);
 
 	camera.x = my->x/16.f;
 	camera.y = my->y/16.f;
 	camera.z = my->z*2.f;
 	camera.ang = my->yaw;
 	camera.vang = my->pitch;
-	
+
 	camera.x -= cos(my->yaw)*cos(my->pitch)*1.5;
 	camera.y -= sin(my->yaw)*cos(my->pitch)*1.5;
 	camera.z -= sin(my->pitch)*16;
@@ -759,15 +763,17 @@ void actPlayer(Entity *my) {
 			}
 		}
 	}
-	if( !swimming )
-		if( PLAYER_INWATER )
+	if (!swimming)
+		if (PLAYER_INWATER)
 			PLAYER_INWATER = 0;
-	
-	if( PLAYER_NUM==clientnum ) {
-		//players[PLAYER_NUM]=my; //TODO: PLAYERSWAP
-		
+
+	if (PLAYER_NUM == clientnum)
+	{
+		players[PLAYER_NUM]->entity = my;
+
 		// camera bobbing
-		if( bobbing ) {
+		if (bobbing)
+		{
 			if( swimming ) {
 				if( PLAYER_BOBMODE )
 					PLAYER_BOBMOVE += .03;
@@ -823,7 +829,7 @@ void actPlayer(Entity *my) {
 		} else {
 			PLAYER_BOB = 0;
 		}
-		
+
 		// object interaction
 		if( intro==FALSE ) {
 			if( softwaremode==FALSE ) {
@@ -846,18 +852,27 @@ void actPlayer(Entity *my) {
 					else
 						strcpy((char *)net_packet->data,"CKOR");
 					net_packet->data[4]=PLAYER_NUM;
-					if( selectedEntity->behavior == &actPlayerLimb ) {
-						//SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->uid,&net_packet->data[5]); //TODO: PLAYERSWAP
-					} else {
+					if (selectedEntity->behavior == &actPlayerLimb)
+					{
+						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->uid, &net_packet->data[5]);
+					}
+					else
+					{
 						Entity *tempEntity = uidToEntity(selectedEntity->skill[2]);
-						if( tempEntity ) {
-							if( tempEntity->behavior==&actMonster ) {
-								SDLNet_Write32((Uint32)tempEntity->uid,&net_packet->data[5]);
-							} else {
-								SDLNet_Write32((Uint32)selectedEntity->uid,&net_packet->data[5]);
+						if (tempEntity)
+						{
+							if (tempEntity->behavior == &actMonster)
+							{
+								SDLNet_Write32((Uint32)tempEntity->uid, &net_packet->data[5]);
 							}
-						} else {
-							SDLNet_Write32((Uint32)selectedEntity->uid,&net_packet->data[5]);
+							else
+							{
+								SDLNet_Write32((Uint32)selectedEntity->uid, &net_packet->data[5]);
+							}
+						}
+						else
+						{
+							SDLNet_Write32((Uint32)selectedEntity->uid, &net_packet->data[5]);
 						}
 					}
 					net_packet->address.host = net_server.host;
@@ -868,23 +883,29 @@ void actPlayer(Entity *my) {
 			}
 		}
 	}
-	if( multiplayer!=CLIENT ) {
-		for(i=0;i<MAXPLAYERS;i++) {
-			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) || i==PLAYER_CLICKED-1 ) {
-				PLAYER_CLICKED=0;
-				if( inrange[i] && i!=PLAYER_NUM ) {
-					messagePlayer(i,language[575],stats[PLAYER_NUM]->name,stats[PLAYER_NUM]->HP,stats[PLAYER_NUM]->MAXHP,stats[PLAYER_NUM]->MP,stats[PLAYER_NUM]->MAXMP);
-					messagePlayer(PLAYER_NUM,language[576],stats[i]->name);
-					/*if( PLAYER_NUM==clientnum && players[i] ) {
-						double tangent = atan2(my->y-players[i]->y,my->x-players[i]->x);
+
+	if (multiplayer != CLIENT)
+	{
+		for (i = 0; i < MAXPLAYERS; i++)
+		{
+			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my) || i == PLAYER_CLICKED - 1)
+			{
+				PLAYER_CLICKED = 0;
+				if (inrange[i] && i != PLAYER_NUM)
+				{
+					messagePlayer(i, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
+					messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
+					if (PLAYER_NUM == clientnum && players[i] && players[i]->entity)
+					{
+						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
 						PLAYER_VELX += cos(tangent);
 						PLAYER_VELY += sin(tangent);
-					}*/
+					}
 				}
 			}
 		}
 	}
-	
+
 	// torch light
 	if( !intro ) {
 		if( multiplayer==SERVER || PLAYER_NUM==clientnum ) {
@@ -925,7 +946,7 @@ void actPlayer(Entity *my) {
 	if( PLAYER_TORCH && my->light==NULL ) {
 		my->light = lightSphereShadow(my->x/16,my->y/16,PLAYER_TORCH,50+15*PLAYER_TORCH);
 	}
-	
+
 	// server controls players primarily
 	if( PLAYER_NUM==clientnum || multiplayer==SERVER ) {
 		// set head model
@@ -2145,17 +2166,17 @@ void actPlayerLimb(Entity *my) {
 			}
 		}
 	}
-	
-	if( multiplayer != CLIENT )
+
+	if (multiplayer != CLIENT)
 		return;
-		
-	if( my->skill[2] < 0 || my->skill[2] >= MAXPLAYERS )
+
+	if (my->skill[2] < 0 || my->skill[2] >= MAXPLAYERS )
 		return;
-	/*if( players[my->skill[2]] == NULL ) {
+	if (players[my->skill[2]] == nullptr || players[my->skill[2]]->entity == nullptr)
+	{
 		list_RemoveNode(my->mynode);
 		return;
-	}*/ //TODO: PLAYERSWAP
-		
+	}
 
 	//TODO: These three are _NOT_ PLAYERSWAP
 	//my->vel_x = players[my->skill[2]]->vel_x;
@@ -2163,14 +2184,19 @@ void actPlayerLimb(Entity *my) {
 	//my->vel_z = players[my->skill[2]]->vel_z;
 
 	// set light size
-	/*if( my->sprite == 93 ) { // torch
+	if (my->sprite == 93) // torch
+	{
 		my->skill[4] = 1;
-		players[my->skill[2]]->skill[1] = 6;
-	} else if( my->sprite == 94 ) { // lantern
+		players[my->skill[2]]->entity->skill[1] = 6;
+	}
+	else if (my->sprite == 94) // lantern
+	{
 		my->skill[4] = 1;
-		players[my->skill[2]]->skill[1] = 9;
-	} else {
-		if( my->skill[4] == 1 )
-			players[my->skill[2]]->skill[1] = 0;
-	}*/ //TODO: PLAYERSWAP
+		players[my->skill[2]]->entity->skill[1] = 9;
+	}
+	else
+	{
+		if (my->skill[4] == 1)
+			players[my->skill[2]]->entity->skill[1] = 0;
+	}
 }

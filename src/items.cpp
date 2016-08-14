@@ -23,6 +23,7 @@
 #include "prng.hpp"
 #include "scores.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 Uint32 itemuids=1;
 ItemGeneric items[NUMITEMS];
@@ -519,8 +520,8 @@ void dropItem(Item *item, int player) {
 
 	Entity *entity;
 	Sint16 oldcount;
-	
-	//if( item == NULL || players[player] == NULL ) //TODO: PLAYERSWAP
+
+	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr)
 		return;
 	if( itemIsEquipped(item,player) ) {
 		if (!item->canUnequip()) {
@@ -544,19 +545,19 @@ void dropItem(Item *item, int player) {
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		if (item == open_book_item)
 			closeBookGUI();
-		
+
 		oldcount = item->count;
 		item->count=1;
 		messagePlayer(player,language[1088],item->description());
 		item->count=oldcount-1;
-		
+
 		// unequip the item
 		if( item->count <= 1 ) {
 			Item **slot = itemSlot(stats[player],item);
 			if( slot != NULL )
 				*slot = NULL;
 		}
-		
+
 		if( item->count <= 0 )
 			list_RemoveNode(item->node);
 	} else {
@@ -565,14 +566,13 @@ void dropItem(Item *item, int player) {
 		entity = newEntity(-1,1,map.entities);
 		entity->flags[INVISIBLE]=TRUE;
 		entity->flags[UPDATENEEDED]=TRUE;
-		/*
-		entity->x = players[player]->x;
-		entity->y = players[player]->y;
+		entity->x = players[player]->entity->x;
+		entity->y = players[player]->entity->y;
 		entity->sizex = 4;
 		entity->sizey = 4;
-		entity->yaw = players[player]->yaw;
-		entity->vel_x = (1.5+.025*(rand()%11)) * cos(players[player]->yaw);
-		entity->vel_y = (1.5+.025*(rand()%11)) * sin(players[player]->yaw);
+		entity->yaw = players[player]->entity->yaw;
+		entity->vel_x = (1.5+.025*(rand()%11)) * cos(players[player]->entity->yaw);
+		entity->vel_y = (1.5+.025*(rand()%11)) * sin(players[player]->entity->yaw);
 		entity->vel_z = (-10-rand()%20)*.01;
 		entity->flags[PASSABLE] = TRUE;
 		entity->behavior = &actItem;
@@ -582,12 +582,11 @@ void dropItem(Item *item, int player) {
 		entity->skill[13] = 1;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
-		entity->parent = players[player]->uid;
-		
+		entity->parent = players[player]->entity->uid;
+
 		// play sound
-		playSoundEntity( players[player], 47+rand()%3, 64 );
-		*/ //TODO: PLAYERSWAP
-		
+		playSoundEntity( players[player]->entity, 47+rand()%3, 64 );
+
 		// unequip the item
 		Item **slot = itemSlot(stats[player],item);
 		if( slot != NULL )
@@ -712,18 +711,20 @@ void equipItem(Item *item, Item **slot, int player) {
 			}
 		}
 		if( multiplayer != CLIENT && !intro && !fadeout ) {
-			/*if( players[player] != NULL ) {
-				if( players[player]->ticks > 60 ) {
-					if( itemCategory(item)==AMULET || itemCategory(item)==RING )
-						playSoundEntity( players[player], 33+rand()%2, 64 );
-					else if( itemCategory(item)==WEAPON )
-						playSoundEntity( players[player], 40+rand()%4, 64 );
-					else if( itemCategory(item)==ARMOR )
-						playSoundEntity( players[player], 44+rand()%3, 64 );
-					else if( item->type == TOOL_TORCH || item->type == TOOL_LANTERN )
-						playSoundEntity( players[player], 134, 64 );
+			if( players[player] != nullptr && players[player]->entity != nullptr)
+			{
+				if (players[player]->entity->ticks > 60)
+				{
+					if (itemCategory(item) == AMULET || itemCategory(item) == RING)
+						playSoundEntity(players[player]->entity, 33 + rand()%2, 64);
+					else if (itemCategory(item) == WEAPON)
+						playSoundEntity(players[player]->entity, 40 + rand()%4, 64);
+					else if (itemCategory(item) == ARMOR)
+						playSoundEntity(players[player]->entity, 44 + rand()%3, 64);
+					else if (item->type == TOOL_TORCH || item->type == TOOL_LANTERN)
+						playSoundEntity(players[player]->entity, 134, 64);
 				}
-			}*/ //TODO: PLAYERSWAP
+			}
 		}
 		if( multiplayer==SERVER && player>0 ) {
 			if( *slot!=NULL ) {
@@ -757,14 +758,18 @@ void equipItem(Item *item, Item **slot, int player) {
 				return;
 			}
 		}
-		if( multiplayer != CLIENT && !intro && !fadeout ) {
-			/*if( players[player] != NULL ) {
-				if( players[player]->ticks > 60 ) {
-					if( itemCategory(item)==ARMOR ) {
-						playSoundEntity( players[player], 44+rand()%3, 64 );
+		if (multiplayer != CLIENT && !intro && !fadeout)
+		{
+			if (players[player] != nullptr && players[player]->entity != nullptr)
+			{
+				if (players[player]->entity->ticks > 60)
+				{
+					if (itemCategory(item) == ARMOR)
+					{
+						playSoundEntity(players[player]->entity, 44 + rand()%3, 64);
 					}
 				}
-			}*/ //TODO: PLAYERSWAP
+			}
 		}
 		if( player!=0 && multiplayer==SERVER ) {
 			if( item->node )
@@ -987,62 +992,62 @@ void useItem(Item *item, int player) {
 		case AMULET_POISONRESISTANCE:
 			equipItem(item,&stats[player]->amulet,player);
 			break;
-		/*case POTION_WATER:
-			item_PotionWater(item, players[player]);
+		case POTION_WATER:
+			item_PotionWater(item, players[player]->entity);
 			break;
 		case POTION_BOOZE:
-			item_PotionBooze(item, players[player]);
+			item_PotionBooze(item, players[player]->entity);
 			break;
 		case POTION_JUICE:
-			item_PotionJuice(item, players[player]);
+			item_PotionJuice(item, players[player]->entity);
 			break;
 		case POTION_SICKNESS:
-			item_PotionSickness(item, players[player]);
+			item_PotionSickness(item, players[player]->entity);
 			break;
 		case POTION_CONFUSION:
-			item_PotionConfusion(item, players[player]);
+			item_PotionConfusion(item, players[player]->entity);
 			break;
 		case POTION_EXTRAHEALING:
-			item_PotionExtraHealing(item, players[player]);
+			item_PotionExtraHealing(item, players[player]->entity);
 			break;
 		case POTION_HEALING:
-			item_PotionHealing(item, players[player]);
+			item_PotionHealing(item, players[player]->entity);
 			break;
 		case POTION_CUREAILMENT:
-			item_PotionCureAilment(item, players[player]);
+			item_PotionCureAilment(item, players[player]->entity);
 			break;
 		case POTION_BLINDNESS:
-			item_PotionBlindness(item, players[player]);
+			item_PotionBlindness(item, players[player]->entity);
 			break;
 		case POTION_RESTOREMAGIC:
-			item_PotionRestoreMagic(item, players[player]);
+			item_PotionRestoreMagic(item, players[player]->entity);
 			break;
 		case POTION_INVISIBILITY:
-			item_PotionInvisibility(item, players[player]);
+			item_PotionInvisibility(item, players[player]->entity);
 			break;
 		case POTION_LEVITATION:
-			item_PotionLevitation(item, players[player]);
+			item_PotionLevitation(item, players[player]->entity);
 			break;
 		case POTION_SPEED:
-			item_PotionSpeed(item, players[player]);
+			item_PotionSpeed(item, players[player]->entity);
 			break;
 		case POTION_ACID:
-			item_PotionAcid(item, players[player]);
+			item_PotionAcid(item, players[player]->entity);
 			break;
 		case POTION_PARALYSIS:
-			item_PotionParalysis(item, players[player]);
-			break;*/ //TODO: PLAYERSWAP
+			item_PotionParalysis(item, players[player]->entity);
+			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;
-		/*case SCROLL_IDENTIFY:
+		case SCROLL_IDENTIFY:
 			item_ScrollIdentify(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_LIGHT:
 			item_ScrollLight(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_BLANK:
@@ -1050,54 +1055,54 @@ void useItem(Item *item, int player) {
 			break;
 		case SCROLL_ENCHANTWEAPON:
 			item_ScrollEnchantWeapon(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_ENCHANTARMOR:
 			item_ScrollEnchantArmor(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_REMOVECURSE:
 			item_ScrollRemoveCurse(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_FIRE:
 			item_ScrollFire(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_FOOD:
 			item_ScrollFood(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_MAGICMAPPING:
 			item_ScrollMagicMapping(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_REPAIR:
 			item_ScrollRepair(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_DESTROYARMOR:
 			item_ScrollDestroyArmor(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_TELEPORTATION:
 			item_ScrollTeleportation(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
 			break;
 		case SCROLL_SUMMON:
 			item_ScrollSummon(item, player);
-			if( !players[player]->isBlind() )
+			if( !players[player]->entity->isBlind() )
 				consumeItem(item);
-			break;*/ //TODO: PLAYERSWAP
+			break;
 		case MAGICSTAFF_LIGHT:
 		case MAGICSTAFF_DIGGING:
 		case MAGICSTAFF_LOCKING:
@@ -1211,15 +1216,20 @@ void useItem(Item *item, int player) {
 			item_FoodTin(item, player);
 			break;
 		case READABLE_BOOK:
-			if( numbooks && player==clientnum ) {
-				/*if( players[player] ) {
-					if( !players[player]->isBlind() ) {
+			if (numbooks && player == clientnum)
+			{
+				if (players[player] && players[player]->entity)
+				{
+					if (!players[player]->entity->isBlind())
+					{
 						openBook(books[item->appearance%numbooks], item);
 						conductIlliterate = FALSE;
-					} else {
-						messagePlayer(player,language[970]);
 					}
-				}*/ //TODO: PLAYERSWAP
+					else
+					{
+						messagePlayer(player, language[970]);
+					}
+				}
 			}
 			break;
 		case SPELL_ITEM: {
@@ -1639,12 +1649,13 @@ void Item::apply(int player, Entity *entity) {
 					playSoundEntity(entity,91,64);
 					messagePlayer(player,language[1097]);
 					entity->skill[4] = 0;
-					//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
+					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 				} else {
 					playSoundEntity(entity,92,64);
 					messagePlayer(player,language[1102]);
-					if ( rand()%10==0 ) {
-						//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
+					if (rand()%10 == 0)
+					{
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					} else {
 						if ( rand()%5==0 ) {
 							if ( player==clientnum ) {
@@ -1680,12 +1691,12 @@ void Item::apply(int player, Entity *entity) {
 					playSoundEntity(entity,91,64);
 					messagePlayer(player,language[1099]);
 					entity->skill[5] = 0;
-					//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
+					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 				} else {
 					playSoundEntity(entity,92,64);
 					messagePlayer(player,language[1106]);
 					if ( rand()%10==0 ) {
-						//players[player]->increaseSkill(PRO_LOCKPICKING); //TODO: PLAYERSWAP
+						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					} else {
 						if ( rand()%5==0 ) {
 							if ( player==clientnum ) {

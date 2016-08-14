@@ -838,14 +838,17 @@ void actMonster(Entity *my) {
 		}
 
 		// broadcast my player allies about my death
-		int playerFollower=MAXPLAYERS;
-		for( c=0; c<MAXPLAYERS; c++ ) {
-			/*if( players[c] ) {
-				if( myStats->leader_uid==players[c]->uid ) {
-					playerFollower=c;
+		int playerFollower = MAXPLAYERS;
+		for (c = 0; c < MAXPLAYERS; c++)
+		{
+			if (players[c] && players[c]->entity)
+			{
+				if (myStats->leader_uid == players[c]->entity->uid)
+				{
+					playerFollower = c;
 					break;
 				}
-			}*/ //TODO: PLAYERSWAP
+			}
 		}
 		if( playerFollower<MAXPLAYERS ) {
 			for( c=0; c<MAXPLAYERS; c++ ) {
@@ -1175,92 +1178,124 @@ void actMonster(Entity *my) {
 			} else {
 				messagePlayer(monsterclicked,language[515],myStats->name);
 			}
-		} else {
-			if( /*MONSTER_TARGET == players[monsterclicked]->uid &&*/ MONSTER_STATE != 4 ) { //TODO: PLAYERSWAP
-				switch( myStats->type ) {
+		}
+		else
+		{
+			if (MONSTER_TARGET == players[monsterclicked]->entity->uid && MONSTER_STATE != 4)
+			{
+				switch (myStats->type)
+				{
 					case SHOPKEEPER:
 					case HUMAN:
-						messagePlayer(monsterclicked,language[516+rand()%4],namesays);
+						messagePlayer(monsterclicked, language[516 + rand()%4], namesays);
 						break;
 					default:
 						break;
 				}
-			} else if( MONSTER_STATE==4 ) {
-				/*if( MONSTER_TARGET != players[monsterclicked]->uid ) {
-					switch( myStats->type ) {
+			}
+			else if (MONSTER_STATE == 4)
+			{
+				if (MONSTER_TARGET != players[monsterclicked]->entity->uid)
+				{
+					switch (myStats->type)
+					{
 						case SHOPKEEPER:
 						case HUMAN:
-							messagePlayer(monsterclicked,language[520+rand()%4],namesays);
+							messagePlayer(monsterclicked, language[520 + rand()%4], namesays);
 							break;
 						default:
-							messagePlayer(monsterclicked,language[524],namesays);
+							messagePlayer(monsterclicked, language[524], namesays);
 							break;
 					}
-				}*/ //TODO: PLAYERSWAP
-			} else {
-				if( myStats->type != SHOPKEEPER ) {
-					/*if( my->checkFriend(players[monsterclicked]) ) {
-						if( !ringconflict ) {
-							if( myStats->leader_uid == 0 ) {
-								if( stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP]/4 >= list_Size(&stats[monsterclicked]->FOLLOWERS) ) {
+				}
+			}
+			else
+			{
+				if (myStats->type != SHOPKEEPER)
+				{
+					if (my->checkFriend(players[monsterclicked]->entity))
+					{
+						if (!ringconflict)
+						{
+							if (myStats->leader_uid == 0)
+							{
+								if (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP]/4 >= list_Size(&stats[monsterclicked]->FOLLOWERS))
+								{
 									node_t *newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
 									newNode->element = myuid;
 									*myuid = my->uid;
-									if( my->getINT() > -2 ) {
-										messagePlayer(monsterclicked,language[525+rand()%4],namesays,stats[monsterclicked]->name);
-									} else {
-										messagePlayer(monsterclicked,language[529],language[90+(int)myStats->type]);
+									if (my->getINT() > -2)
+									{
+										messagePlayer(monsterclicked, language[525 + rand()%4], namesays, stats[monsterclicked]->name);
 									}
-									monsterMoveAside(my,players[monsterclicked]);
-									players[monsterclicked]->increaseSkill(PRO_LEADERSHIP);
+									else
+									{
+										messagePlayer(monsterclicked, language[529], language[90 + (int)myStats->type]);
+									}
+									monsterMoveAside(my, players[monsterclicked]->entity);
+									players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 									MONSTER_STATE = 0; // be ready to follow
-									myStats->leader_uid=players[monsterclicked]->uid;
-									if( monsterclicked>0 && multiplayer==SERVER ) {
-										strcpy((char *)net_packet->data,"LEAD");
-										SDLNet_Write32((Uint32)my->uid,&net_packet->data[4]);
-										net_packet->address.host = net_clients[monsterclicked-1].host;
-										net_packet->address.port = net_clients[monsterclicked-1].port;
+									myStats->leader_uid = players[monsterclicked]->entity->uid;
+									if (monsterclicked > 0 && multiplayer == SERVER)
+									{
+										strcpy((char *)net_packet->data, "LEAD");
+										SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]);
+										net_packet->address.host = net_clients[monsterclicked - 1].host;
+										net_packet->address.port = net_clients[monsterclicked - 1].port;
 										net_packet->len = 8;
 										sendPacketSafe(net_sock, -1, net_packet, monsterclicked-1);
 									}
-								} else {
-									if(my->getINT() > -2 ) {
-										messagePlayer(monsterclicked,language[530+rand()%4],namesays);
+								}
+								else
+								{
+									if (my->getINT() > -2)
+									{
+										messagePlayer(monsterclicked, language[530 + rand()%4], namesays);
 										// move aside
-										monsterMoveAside(my,players[monsterclicked]);
-									} else {
-										messagePlayer(monsterclicked,language[534],namesays);
+										monsterMoveAside(my, players[monsterclicked]->entity);
+									}
+									else
+									{
+										messagePlayer(monsterclicked, language[534], namesays);
 									}
 								}
-							} else {
-								if( myStats->leader_uid == players[monsterclicked]->uid ) {
-									if( my->getINT() > -2 )
-										messagePlayer(monsterclicked,language[535],namesays,stats[monsterclicked]->name);
+							}
+							else
+							{
+								if (myStats->leader_uid == players[monsterclicked]->entity->uid)
+								{
+									if (my->getINT() > -2)
+										messagePlayer(monsterclicked, language[535], namesays, stats[monsterclicked]->name);
 									else
-										messagePlayer(monsterclicked,language[534],namesays);
-								} else {
-									if( my->getINT() > -2 )
-										messagePlayer(monsterclicked,language[536],namesays,stats[monsterclicked]->name);
+										messagePlayer(monsterclicked, language[534], namesays);
+								}
+								else
+								{
+									if (my->getINT() > -2)
+										messagePlayer(monsterclicked, language[536], namesays, stats[monsterclicked]->name);
 									else
-										messagePlayer(monsterclicked,language[534],namesays);
+										messagePlayer(monsterclicked, language[534], namesays);
 								}
 								// move aside
-								monsterMoveAside(my,players[monsterclicked]);
+								monsterMoveAside(my, players[monsterclicked]->entity);
 							}
 						}
-					}*/
-				} else {
-					if( !swornenemies[SHOPKEEPER][HUMAN] ) {
+					}
+				}
+				else
+				{
+					if (!swornenemies[SHOPKEEPER][HUMAN])
+					{
 						// shopkeepers start trading
-						startTradingServer(my,monsterclicked);
+						startTradingServer(my, monsterclicked);
 					}
 				}
 			}
 		}
 	}
-	
+
 	if( my->isMobile() ) {
 		// ghouls rise out of the dirt :O
 		if( myStats->type==GHOUL ) {
@@ -1433,36 +1468,45 @@ void actMonster(Entity *my) {
 					}
 				}
 			}
-			
+
 			// minotaurs and liches chase players relentlessly.
-			if( myReflex ) {
-				if( myStats->type == MINOTAUR || myStats->type == LICH || (myStats->type==CREATURE_IMP && strstr(map.name,"Boss")) ) {
+			if (myReflex)
+			{
+				if (myStats->type == MINOTAUR || myStats->type == LICH || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+				{
 					double distToPlayer = 0;
-					int c, playerToChase=-1;
-					for( c=0; c<MAXPLAYERS; c++ ) {
-						/*if( players[c] ) {
-							if( !distToPlayer ) {
-								distToPlayer = sqrt( pow(my->x-players[c]->x,2) + pow(my->y-players[c]->y,2) );
+					int c, playerToChase = -1;
+					for (c = 0; c < MAXPLAYERS; c++)
+					{
+						if (players[c] && players[c]->entity)
+						{
+							if (!distToPlayer)
+							{
+								distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 								playerToChase = c;
-							} else {
-								double newDistToPlayer = sqrt( pow(my->x-players[c]->x,2) + pow(my->y-players[c]->y,2) );
-								if( newDistToPlayer < distToPlayer ) {
+							}
+							else
+							{
+								double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+								if (newDistToPlayer < distToPlayer)
+								{
 									distToPlayer = newDistToPlayer;
 									playerToChase = c;
 								}
 							}
-						}*/ //TODO: PLAYERSWAP
+						}
 					}
-					if( playerToChase>=0 ) {
+					if (playerToChase >= 0)
+					{
 						MONSTER_STATE = 2; // path state
-						/*MONSTER_TARGET = players[playerToChase]->uid;
-						MONSTER_TARGETX = players[playerToChase]->x;
-						MONSTER_TARGETY = players[playerToChase]->y;*/ //TODO: PLAYERSWAP
+						MONSTER_TARGET = players[playerToChase]->entity->uid;
+						MONSTER_TARGETX = players[playerToChase]->entity->x;
+						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
 					return;
 				}
 			}
-			
+
 			// follow the leader :)
 			if( myStats->leader_uid != 0 && my->uid%TICKS_PER_SECOND==ticks%TICKS_PER_SECOND ) {
 				Entity *leader = uidToEntity(myStats->leader_uid);
@@ -1617,7 +1661,7 @@ void actMonster(Entity *my) {
 					MONSTER_STATE = 3; // hunt state
 				}
 			}
-			
+
 			// rotate monster
 			dir = my->yaw - MONSTER_LOOKDIR;
 			while( dir >= PI )
@@ -1642,19 +1686,23 @@ void actMonster(Entity *my) {
 			MONSTER_TARGETY = entity->y;
 			hitstats = entity->getStats();
 
-			if( myStats->type==SHOPKEEPER ) {
+			if (myStats->type == SHOPKEEPER)
+			{
 				// shopkeepers hold a grudge against players
-				for( c=0; c<MAXPLAYERS; c++ ) {
-					/*if( players[c] ) {
-						if( MONSTER_TARGET==players[c]->uid ) {
+				for (c = 0; c < MAXPLAYERS; c++)
+				{
+					if (players[c] && players[c]->entity)
+					{
+						if (MONSTER_TARGET == players[c]->entity->uid)
+						{
 							swornenemies[SHOPKEEPER][HUMAN] = TRUE;
 							monsterally[SHOPKEEPER][HUMAN] = FALSE;
 							break;
 						}
-					}*/ //TODO: PLAYERSWAP
+					}
 				}
 			}
-			
+
 			if( myStats->type != DEVIL ) {
 				// skip if light level is too low and distance is too high
 				int light = entity->entityLight();
@@ -1843,24 +1891,27 @@ void actMonster(Entity *my) {
 									}
 									MONSTER_HITTIME = 0;
 									int tracedist;
-									if( hasrangedweapon )
-										tracedist=160;
+									if (hasrangedweapon)
+										tracedist = 160;
 									else
-										tracedist=STRIKERANGE;
-									double newTangent = atan2( entity->y-my->y, entity->x-my->x );
-									lineTrace(my,my->x,my->y,newTangent,tracedist,0,FALSE);
-									if( hit.entity != NULL ) {
-										hitstats=hit.entity->getStats();
-										if( hit.entity->behavior == &actMonster && !hasrangedweapon ) {
+										tracedist = STRIKERANGE;
+									double newTangent = atan2(entity->y - my->y, entity->x - my->x);
+									lineTrace(my, my->x, my->y, newTangent, tracedist, 0, FALSE);
+									if (hit.entity != nullptr)
+									{
+										hitstats = hit.entity->getStats();
+										if (hit.entity->behavior == &actMonster && !hasrangedweapon)
+										{
 											// alert the monster!
-											if( hit.entity->skill[0]!=1 ) {
+											if (hit.entity->skill[0] !=1)
+											{
 												//hit.entity->skill[0]=0;
 												//hit.entity->skill[4]=0;
 												//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
-												hit.entity->skill[0]=2;
-												hit.entity->skill[1]=my->uid;
-												hit.entity->fskill[2]=my->x;
-												hit.entity->fskill[3]=my->y;
+												hit.entity->skill[0] = 2;
+												hit.entity->skill[1] = my->uid;
+												hit.entity->fskill[2] = my->x;
+												hit.entity->fskill[3] = my->y;
 											}
 										}
 										if( hit.entity->getStats()!=NULL ) {
@@ -2094,40 +2145,53 @@ void actMonster(Entity *my) {
 					}
 				}
 			}
-			
+
 			// minotaurs and liches chase players relentlessly.
-			if( myStats->type == MINOTAUR || (myStats->type == LICH && MONSTER_SPECIAL<=0) || (myStats->type==CREATURE_IMP && strstr(map.name,"Boss")) ) {
-				bool shouldHuntPlayer=FALSE;
+			if (myStats->type == MINOTAUR || (myStats->type == LICH && MONSTER_SPECIAL <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name,"Boss")))
+			{
+				bool shouldHuntPlayer = FALSE;
 				Entity *playerOrNot = uidToEntity(MONSTER_TARGET);
-				if( playerOrNot ) {
-					if( ticks%180==0 && playerOrNot->behavior==&actPlayer ) {
+				if (playerOrNot)
+				{
+					if (ticks%180 == 0 && playerOrNot->behavior == &actPlayer)
+					{
 						shouldHuntPlayer = TRUE;
 					}
-				} else if( ticks%180==0 ) {
+				}
+				else if (ticks%180 == 0)
+				{
 					shouldHuntPlayer = TRUE;
 				}
-				if( shouldHuntPlayer ) {
+				if (shouldHuntPlayer)
+				{
 					double distToPlayer = 0;
-					int c, playerToChase=-1;
-					for( c=0; c<MAXPLAYERS; c++ ) {
-						/*if( players[c] ) {
-							if( !distToPlayer ) {
-								distToPlayer = sqrt( pow(my->x-players[c]->x,2) + pow(my->y-players[c]->y,2) );
+					int c, playerToChase = -1;
+					for (c = 0; c < MAXPLAYERS; c++)
+					{
+						if (players[c] && players[c]->entity)
+						{
+							if (!distToPlayer)
+							{
+								distToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 								playerToChase = c;
-							} else {
-								double newDistToPlayer = sqrt( pow(my->x-players[c]->x,2) + pow(my->y-players[c]->y,2) );
-								if( newDistToPlayer < distToPlayer ) {
+							}
+							else
+							{
+								double newDistToPlayer = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
+								if (newDistToPlayer < distToPlayer)
+								{
 									distToPlayer = newDistToPlayer;
 									playerToChase = c;
 								}
 							}
-						}*/ //TODO: PLAYERSWAP
+						}
 					}
-					if( playerToChase>=0 ) {
+					if (playerToChase >= 0)
+					{
 						MONSTER_STATE = 2; // path state
-						/*MONSTER_TARGET = players[playerToChase]->uid;
-						MONSTER_TARGETX = players[playerToChase]->x;
-						MONSTER_TARGETY = players[playerToChase]->y;*/ //TODO: PLAYERSWAP
+						MONSTER_TARGET = players[playerToChase]->entity->uid;
+						MONSTER_TARGETX = players[playerToChase]->entity->x;
+						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
 					return;
 				}

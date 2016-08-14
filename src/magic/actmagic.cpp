@@ -16,11 +16,12 @@
 #include "../interface/interface.hpp"
 #include "../sound.hpp"
 #include "../items.hpp"
-#include "magic.hpp"
 #include "../monster.hpp"
 #include "../net.hpp"
 #include "../collision.hpp"
 #include "../paths.hpp"
+#include "../player.hpp"
+#include "magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -226,8 +227,8 @@ void actMagiclightBall(Entity *my) {
 		int i = 0;
 		int player = -1;
 		for (i = 0; i < 4; ++i) {
-			/*if (players[i] == caster)
-				player = i;*/ //TODO: PLAYERSWAP
+			if (players[i]->entity == caster)
+				player = i;
 		}
 		if (player > -1 && multiplayer == SERVER) {
 			strcpy( (char *)net_packet->data, "UNCH");
@@ -263,7 +264,7 @@ void actMagiclightBall(Entity *my) {
 						int i = 0;
 						int player = -1;
 						for (i = 0; i < 4; ++i) {
-							//if (players[i] == caster) //TODO: PLAYERSWAP
+							if (players[i]->entity == caster)
 								player = i;
 						}
 						if (player > -1 && multiplayer == SERVER) {

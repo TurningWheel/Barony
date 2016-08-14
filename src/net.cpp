@@ -29,6 +29,7 @@
 #include <steam/steam_api.h>
 #include "steam.hpp"
 #endif
+#include "player.hpp"
 
 NetHandler *net_handler = nullptr;
 
@@ -705,7 +706,7 @@ void clientActions(Entity *entity) {
 			// these are all human heads
 			playernum = SDLNet_Read32(&net_packet->data[30]);
 			if( playernum >= 0 && playernum < MAXPLAYERS ) {
-				//players[playernum]=entity; //TODO: PLAYERSWAP
+				players[playernum]->entity = entity;
 				entity->skill[2] = playernum;
 				entity->behavior = &actPlayer;
 			}
@@ -916,21 +917,21 @@ void clientHandlePacket()
 
 	// player movement correction
 	else if (!strncmp((char *)net_packet->data,"PMOV",4)) {
-		/*if ( players[clientnum]==NULL )
+		if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 			return;
-		players[clientnum]->x = ((Sint16)SDLNet_Read16(&net_packet->data[4]))/32.0;
-		players[clientnum]->y = ((Sint16)SDLNet_Read16(&net_packet->data[6]))/32.0;*/ //TODO: PLAYERSWAP
+		players[clientnum]->entity->x = ((Sint16)SDLNet_Read16(&net_packet->data[4]))/32.0;
+		players[clientnum]->entity->y = ((Sint16)SDLNet_Read16(&net_packet->data[6]))/32.0;
 		return;
 	}
 
 	// teleport player
 	else if (!strncmp((char *)net_packet->data,"TELE",4)) {
-		//if ( players[clientnum]==NULL ) //TODO: PLAYERSWAP
+		if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
 			return;
 		x = net_packet->data[4];
 		y = net_packet->data[5];
-		/*players[clientnum]->x = (x<<4)+8;
-		players[clientnum]->y = (y<<4)+8;*/ //TODO: PLAYERSWAP
+		players[clientnum]->entity->x = (x<<4)+8;
+		players[clientnum]->entity->y = (y<<4)+8;
 		return;
 	}
 
@@ -943,8 +944,8 @@ void clientHandlePacket()
 				entity2=newEntity(entity->sprite,1,&removedEntities);
 				entity2->uid=entity->uid;
 				for ( j=0; j<MAXPLAYERS; j++ )
-					/*if ( entity==players[j] )
-						players[j]=NULL;*/ //TODO: PLAYERSWAP
+					if (entity == players[j]->entity )
+						players[j]->entity = NULL;
 				if ( entity->light ) {
 					list_RemoveNode(entity->light->node);
 					entity->light = NULL;
@@ -1327,11 +1328,12 @@ void clientHandlePacket()
 		} else if ( (strstr((char *)(&net_packet->data[8]),language[1160]))!=NULL ) {
 			for ( c=0; c<MAXPLAYERS; c++ ) {
 				if ( !strncmp(stats[c]->name,(char *)(&net_packet->data[8]),strlen(stats[c]->name)) ) {
-					/*if ( players[clientnum] && players[c] ) {
-						double tangent = atan2(players[clientnum]->y-players[c]->y,players[clientnum]->x-players[c]->x);
-						players[clientnum]->vel_x += cos(tangent);
-						players[clientnum]->vel_y += sin(tangent);
-					}*/ //TODO: PLAYERSWAP
+					if (players[clientnum] && players[clientnum]->entity && players[c] && players[c]->entity)
+					{
+						double tangent = atan2(players[clientnum]->entity->y - players[c]->entity->y, players[clientnum]->entity->x - players[c]->entity->x);
+						players[clientnum]->entity->vel_x += cos(tangent);
+						players[clientnum]->entity->vel_y += sin(tangent);
+					}
 					break;
 				}
 			}
@@ -2107,7 +2109,7 @@ void serverHandlePacket()
 	// player move
 	else if (!strncmp((char *)net_packet->data,"PMOV",4)) {
 		client_keepalive[net_packet->data[4]] = ticks;
-		//if ( players[net_packet->data[4]]==NULL ) //TODO: PLAYERSWAP
+		if (players[net_packet->data[4]] == nullptr || players[net_packet->data[4]]->entity == nullptr)
 			return;
 
 		// check if the info is outdated
@@ -2123,16 +2125,16 @@ void serverHandlePacket()
 		pitch = ((Sint16)SDLNet_Read16(&net_packet->data[16]))/128.0;
 
 		// update rotation
-		/*players[net_packet->data[4]]->yaw = yaw;
-		players[net_packet->data[4]]->pitch = pitch;
+		players[net_packet->data[4]]->entity->yaw = yaw;
+		players[net_packet->data[4]]->entity->pitch = pitch;
 
 		// update player's internal velocity variables
-		players[net_packet->data[4]]->vel_x = velx; // PLAYER_VELX
-		players[net_packet->data[4]]->vel_y = vely; // PLAYER_VELY
+		players[net_packet->data[4]]->entity->vel_x = velx; // PLAYER_VELX
+		players[net_packet->data[4]]->entity->vel_y = vely; // PLAYER_VELY
 
 		// calculate distance
-		dx -= players[net_packet->data[4]]->x;
-		dy -= players[net_packet->data[4]]->y;*/ //TODO: PLAYERSWAP
+		dx -= players[net_packet->data[4]]->entity->x;
+		dy -= players[net_packet->data[4]]->entity->y;
 		dist = sqrt( dx*dx + dy*dy );
 
 		// make water passable
@@ -2144,18 +2146,19 @@ void serverHandlePacket()
 		}
 
 		// move player with collision detection
-		/*if ( clipMove(&players[net_packet->data[4]]->x,&players[net_packet->data[4]]->y,dx,dy,players[net_packet->data[4]]) < dist-.025 ) {
+		if (clipMove(&players[net_packet->data[4]]->entity->x, &players[net_packet->data[4]]->entity->y, dx, dy, players[net_packet->data[4]]->entity) < dist-.025 )
+		{
 			// player encountered obstacle on path
 			// stop updating position on server side and send client corrected position
 			j = net_packet->data[4];
 			strcpy((char *)net_packet->data,"PMOV");
-			SDLNet_Write16((Sint16)(players[j]->x*32),&net_packet->data[4]);
-			SDLNet_Write16((Sint16)(players[j]->y*32),&net_packet->data[6]);
+			SDLNet_Write16((Sint16)(players[j]->entity->x*32),&net_packet->data[4]);
+			SDLNet_Write16((Sint16)(players[j]->entity->y*32),&net_packet->data[6]);
 			net_packet->address.host = net_clients[j-1].host;
 			net_packet->address.port = net_clients[j-1].port;
 			net_packet->len = 8;
 			sendPacket(net_sock, -1, net_packet, j-1);
-		}*/ //TODO: PLAYERSWAP
+		}
 
 		// make water unpassable
 		for ( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -2361,8 +2364,9 @@ void serverHandlePacket()
 		}
 		entitystats->GOLD += item->buyValue(client);
 		stats[client]->GOLD -= item->buyValue(client);
-		if ( rand()%2 ) {
-			//players[client]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
+		if (rand()%2)
+		{
+			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
 		free(item);
 		return;
@@ -2404,8 +2408,9 @@ void serverHandlePacket()
 			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]),1,SDLNet_Read32(&net_packet->data[20]),FALSE,&entitystats->inventory);
 		printlog("client %d sold item to shop (uid=%d)\n",client,uidnum);
 		stats[client]->GOLD += item->sellValue(client);
-		if ( rand()%2 ) {
-			//players[client]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
+		if (rand()%2)
+		{
+			players[client]->entity->increaseSkill(PRO_TRADING);
 		}
 		return;
 	}
@@ -2439,8 +2444,8 @@ void serverHandlePacket()
 
 	// attacking
 	else if (!strncmp((char *)net_packet->data,"ATAK",4)) {
-		/*if ( players[net_packet->data[4]])
-			players[net_packet->data[4]]->attack(net_packet->data[5],net_packet->data[6]);*/ //TODO: PLAYERSWAP
+		if (players[net_packet->data[4]] && players[net_packet->data[4]]->entity)
+			players[net_packet->data[4]]->entity->attack(net_packet->data[5], net_packet->data[6]);
 		return;
 	}
 
@@ -2456,7 +2461,7 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 
 		spell_t *thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
-		//castSpell(players[the_client]->uid, thespell, FALSE, FALSE); //TODO: PLAYERSWAP
+		castSpell(players[the_client]->entity->uid, thespell, FALSE, FALSE);
 		return;
 	}
 

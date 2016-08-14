@@ -112,12 +112,12 @@ void actDoor(Entity *my) {
 						if( !DOOR_LOCKED ) { // door unlocked
 							if( !DOOR_DIR && !DOOR_STATUS ) {
 								// open door
-								//DOOR_STATUS = 1+(players[i]->x>my->x); //TODO: PLAYERSWAP
+								DOOR_STATUS = 1+(players[i]->entity->x>my->x);
 								playSoundEntity(my,21,96);
 								messagePlayer(i,language[464]);
 							} else if( DOOR_DIR && !DOOR_STATUS ) {
 								// open door
-								//DOOR_STATUS = 1+(players[i]->y<my->y); //TODO: PLAYERSWAP
+								DOOR_STATUS = 1+(players[i]->entity->y<my->y);
 								playSoundEntity(my,21,96);
 								messagePlayer(i,language[464]);
 							} else {

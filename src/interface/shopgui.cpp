@@ -103,7 +103,7 @@ void updateShopWindow() {
 		drawImage(button_bmp, NULL, &pos);
 	else
 		drawImage(smallbutton_bmp, NULL, &pos);
-						
+
 	// inventory category labels
 	ttfPrintText(ttf8,x+14,y+4,language[349]);
 	ttfPrintText(ttf8,x+14+60,y+4,language[350]);
@@ -113,49 +113,63 @@ void updateShopWindow() {
 	ttfPrintText(ttf8,x+14+300,y+4,language[354]);
 	ttfPrintText(ttf8,x+14+360,y+4,language[355]);
 	ttfPrintText(ttf8,x+12+424,y+4,language[356]);
-	
+
 	// buying
-	if( stats[clientnum]->HP > 0 /*&& players[clientnum] != NULL */) { //TODO: PLAYERSWAP
-		if( omousex>=x+12 && omousex<x+inventory_bmp->w-28 ) {
-			pos.x=x+12;
-			pos.w=0; pos.h=0;
-			if( omousey>=y+16 && omousey<y+34 ) {
-				pos.y=y+16;
-				drawImage(inventoryoption_bmp, NULL, &pos);
-				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+	if (stats[clientnum]->HP > 0 && players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+	{
+		if (omousex >= x + 12 && omousex < x + inventory_bmp->w - 28)
+		{
+			pos.x = x + 12;
+			pos.w = 0; pos.h = 0;
+			if (omousey >= y + 16 && omousey < y + 34)
+			{
+				pos.y = y + 16;
+				drawImage(inventoryoption_bmp, nullptr, &pos);
+				if (mousestatus[SDL_BUTTON_LEFT])
+				{
+					if (stats[clientnum]->HP > 0 && players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+					{
 						buyItemFromShop(shopinvitems[0]);
-					}*/ //TODO: PLAYERSWAP
+					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
-			else if( omousey>=y+34 && omousey<y+52 ) {
-				pos.y=y+34;
-				drawImage(inventoryoption_bmp, NULL, &pos);
-				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+			else if (omousey >= y + 34 && omousey < y + 52)
+			{
+				pos.y = y + 34;
+				drawImage(inventoryoption_bmp, nullptr, &pos);
+				if (mousestatus[SDL_BUTTON_LEFT])
+				{
+					if (stats[clientnum]->HP > 0 && players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+					{
 						buyItemFromShop(shopinvitems[1]);
-					}*/ //TODO: PLAYERSWAP
+					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
-			else if( omousey>=y+52 && omousey<y+70 ) {
-				pos.y=y+52;
-				drawImage(inventoryoption_bmp, NULL, &pos);
-				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+			else if (omousey >= y + 52 && omousey < y + 70)
+			{
+				pos.y = y + 52;
+				drawImage(inventoryoption_bmp, nullptr, &pos);
+				if (mousestatus[SDL_BUTTON_LEFT])
+				{
+					if (stats[clientnum]->HP > 0 && players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+					{
 						buyItemFromShop(shopinvitems[2]);
-					}*/ //TODO: PLAYERSWAP
+					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
-			else if( omousey>=y+70 && omousey<y+88 ) {
-				pos.y=y+70;
-				drawImage(inventoryoption_bmp, NULL, &pos);
-				if( mousestatus[SDL_BUTTON_LEFT] ) {
-					/*if( stats[clientnum]->HP > 0 && players[clientnum] != NULL ) {
+			else if (omousey >= y + 70 && omousey < y + 88)
+			{
+				pos.y = y + 70;
+				drawImage(inventoryoption_bmp, nullptr, &pos);
+				if (mousestatus[SDL_BUTTON_LEFT])
+				{
+					if (stats[clientnum]->HP > 0 && players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+					{
 						buyItemFromShop(shopinvitems[3]);
-					}*/ //TODO: PLAYERSWAP
+					}
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}

@@ -12,10 +12,11 @@
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
-#include "interface.hpp"
 #include "../items.hpp"
 #include "../sound.hpp"
 #include "../menu.hpp"
+#include "../player.hpp"
+#include "interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -199,7 +200,7 @@ void drawMinimap() {
 	}
 	
 	// draw minotaur
-	//if( players[clientnum] == NULL ) //TODO: PLAYERSWAP
+	if (players[clientnum] == nullptr)
 		return;
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		Entity *entity = (Entity *)node->element;

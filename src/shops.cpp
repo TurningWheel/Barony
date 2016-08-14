@@ -17,6 +17,7 @@
 #include "shops.hpp"
 #include "interface/interface.hpp"
 #include "net.hpp"
+#include "player.hpp"
 
 list_t *shopInv = NULL;
 Uint32 shopkeeper = 0;
@@ -43,8 +44,8 @@ void startTradingServer(Entity *entity, int player) {
 		return;
 	if( multiplayer==CLIENT )
 		return;
-	/*if( !players[player] )
-		return;*/
+	if (!players[player] || !players[player]->entity)
+		return;
 	
 	Stat *stats = entity->getStats();
 	if( stats==NULL )
@@ -97,7 +98,7 @@ void startTradingServer(Entity *entity, int player) {
 		}
 	}
 	entity->skill[0] = 4; // talk state
-	//entity->skill[1] = players[player]->uid; //TODO: PLAYERSWAP
+	entity->skill[1] = players[player]->entity->uid;
 	messagePlayer(player,language[1122],stats->name);
 }
 
@@ -133,7 +134,7 @@ void buyItemFromShop(Item *item) {
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
 			if( rand()%2 ) {
-				//players[clientnum]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
+				players[clientnum]->entity->increaseSkill(PRO_TRADING);
 			}
 		} else {
 			strcpy((char *)net_packet->data,"SHPB");
@@ -238,7 +239,7 @@ void sellItemToShop(Item *item) {
 	item->count = ocount;
 	if( multiplayer != CLIENT ) {
 		if( rand()%2 ) {
-			//players[clientnum]->increaseSkill(PRO_TRADING); //TODO: PLAYERSWAP
+			players[clientnum]->entity->increaseSkill(PRO_TRADING);
 		}
 	} else {
 		strcpy((char *)net_packet->data,"SHPS");

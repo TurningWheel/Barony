@@ -631,11 +631,12 @@ void handleMainMenu(bool mode) {
 		ttfPrintText(ttf16, subx1+8, suby1+8, language[1318]);
 	
 		// draw character window
-		/*if( players[clientnum] != NULL ) {
-			camera_charsheet.x=players[clientnum]->x/16.0+1;
-			camera_charsheet.y=players[clientnum]->y/16.0-.5;
-			camera_charsheet.z=players[clientnum]->z*2;
-			camera_charsheet.ang=atan2(players[clientnum]->y/16.0-camera_charsheet.y,players[clientnum]->x/16.0-camera_charsheet.x);
+		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+		{
+			camera_charsheet.x=players[clientnum]->entity->x/16.0+1;
+			camera_charsheet.y=players[clientnum]->entity->y/16.0-.5;
+			camera_charsheet.z=players[clientnum]->entity->z*2;
+			camera_charsheet.ang=atan2(players[clientnum]->entity->y/16.0-camera_charsheet.y,players[clientnum]->entity->x/16.0-camera_charsheet.x);
 			camera_charsheet.vang=PI/24;
 			camera_charsheet.winw=360;
 			camera_charsheet.winy=suby1+32;
@@ -644,18 +645,18 @@ void handleMainMenu(bool mode) {
 			pos.x = camera_charsheet.winx; pos.y = camera_charsheet.winy;
 			pos.w = camera_charsheet.winw; pos.h = camera_charsheet.winh;
 			drawRect(&pos,0,255);
-			b=players[clientnum]->flags[BRIGHT];
-			players[clientnum]->flags[BRIGHT]=TRUE;
+			b=players[clientnum]->entity->flags[BRIGHT];
+			players[clientnum]->entity->flags[BRIGHT]=TRUE;
 			if (!playing_random_char) {
-				if( !players[clientnum]->flags[INVISIBLE] ) {
+				if( !players[clientnum]->entity->flags[INVISIBLE] ) {
 					double ofov = fov;
 					fov = 50;
-					glDrawVoxel(&camera_charsheet,players[clientnum],REALCOLORS);
+					glDrawVoxel(&camera_charsheet,players[clientnum]->entity,REALCOLORS);
 					fov = ofov;
 				}
-				players[clientnum]->flags[BRIGHT]=b;
+				players[clientnum]->entity->flags[BRIGHT]=b;
 				c=0;
-				for( node=players[clientnum]->children.first; node!=NULL; node=node->next ) {
+				for( node=players[clientnum]->entity->children.first; node!=NULL; node=node->next ) {
 					if( c==0 ) {
 						c++;
 					}
@@ -672,7 +673,7 @@ void handleMainMenu(bool mode) {
 					c++;
 				}
 			}
-		}*/ //TODO: PLAYERSWAP
+		}
 			
 		//TODO: Loop through buttons. Disable the random character button if charcreation_step != 1;
 		// sexes
@@ -2211,11 +2212,12 @@ void handleMainMenu(bool mode) {
 			ttfPrintTextFormatted(ttf16, subx1+8, suby1+8, "%s - #%d",language[1390],score_window);
 
 			// draw character window
-			/*if( players[clientnum] != NULL ) {
-				camera_charsheet.x=players[clientnum]->x/16.0+1;
-				camera_charsheet.y=players[clientnum]->y/16.0-.5;
-				camera_charsheet.z=players[clientnum]->z*2;
-				camera_charsheet.ang=atan2(players[clientnum]->y/16.0-camera_charsheet.y,players[clientnum]->x/16.0-camera_charsheet.x);
+			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+			{
+				camera_charsheet.x=players[clientnum]->entity->x/16.0+1;
+				camera_charsheet.y=players[clientnum]->entity->y/16.0-.5;
+				camera_charsheet.z=players[clientnum]->entity->z*2;
+				camera_charsheet.ang=atan2(players[clientnum]->entity->y/16.0-camera_charsheet.y,players[clientnum]->entity->x/16.0-camera_charsheet.x);
 				camera_charsheet.vang=PI/24;
 				camera_charsheet.winw=400;
 				camera_charsheet.winy=suby1+32;
@@ -2224,17 +2226,17 @@ void handleMainMenu(bool mode) {
 				pos.x = camera_charsheet.winx; pos.y = camera_charsheet.winy;
 				pos.w = camera_charsheet.winw; pos.h = camera_charsheet.winh;
 				drawRect(&pos,0,255);
-				b=players[clientnum]->flags[BRIGHT];
-				players[clientnum]->flags[BRIGHT]=TRUE;
-				if( !players[clientnum]->flags[INVISIBLE] ) {
+				b=players[clientnum]->entity->flags[BRIGHT];
+				players[clientnum]->entity->flags[BRIGHT]=TRUE;
+				if( !players[clientnum]->entity->flags[INVISIBLE] ) {
 					double ofov = fov;
 					fov = 50;
-					glDrawVoxel(&camera_charsheet,players[clientnum],REALCOLORS);
+					glDrawVoxel(&camera_charsheet,players[clientnum]->entity,REALCOLORS);
 					fov = ofov;
 				}
-				players[clientnum]->flags[BRIGHT]=b;
+				players[clientnum]->entity->flags[BRIGHT]=b;
 				c=0;
-				for( node=players[clientnum]->children.first; node!=NULL; node=node->next ) {
+				for( node=players[clientnum]->entity->children.first; node!=NULL; node=node->next ) {
 					if( c==0 ) {
 						c++;
 					}
@@ -2250,7 +2252,7 @@ void handleMainMenu(bool mode) {
 					}
 					c++;
 				}
-			}*/ //TODO: PLAYERSWAP
+			}
 
 			// print name and class
 			if( victory ) {
@@ -2485,12 +2487,12 @@ void handleMainMenu(bool mode) {
 							node_t *tempNode = list_Node(followers,c);
 							if( tempNode ) {
 								list_t *tempFollowers = (list_t *)tempNode->element;
-								if( /*players[c] &&*/ !client_disconnected[c] ) { //TODO: PLAYERSWAP
+								if (players[c] && players[c]->entity && !client_disconnected[c])
+								{
 									node_t *node;
 									for( node=tempFollowers->first; node!=NULL; node=node->next ) {
 										Stat *tempStats = (Stat *)node->element;
-										//Entity *monster = summonMonster(tempStats->type,players[c]->x,players[c]->y); //TODO: PLAYERSWAP
-										Entity *monster; //TODO: PLAYERSWAP
+										Entity *monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
 										if( monster ) {
 											monster->skill[3] = 1; // to mark this monster partially initialized
 											list_RemoveNode(monster->children.last);
@@ -2501,7 +2503,7 @@ void handleMainMenu(bool mode) {
 											newNode->size = sizeof(tempStats);
 
 											Stat *monsterStats = (Stat *)newNode->element;
-											//monsterStats->leader_uid = players[c]->uid; //TODO: PLAYERSWAP
+											monsterStats->leader_uid = players[c]->entity->uid;
 											if( !monsterally[HUMAN][monsterStats->type] )
 												monster->flags[USERFLAG2]=TRUE;
 
@@ -2640,8 +2642,8 @@ void handleMainMenu(bool mode) {
 			if( victory ) {
 				int k = 0;
 				for( c=0; c<MAXPLAYERS; c++ ) {
-					/*if( players[c] )
-						k++;*/ //TODO: PLAYERSWAP
+					if (players[c] && players[c]->entity)
+						k++;
 				}
 				if( k>=2 )
 					steamAchievement("BARONY_ACH_IN_GREATER_NUMBERS");
@@ -2738,7 +2740,7 @@ void handleMainMenu(bool mode) {
 					client_disconnected[c]=TRUE;
 				else
 					client_disconnected[c]=FALSE;
-				//players[c]=NULL; //TODO: PLAYERSWAP
+				players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
 				stats[c]->sex=static_cast<sex_t>(0);
 				stats[c]->appearance=0;
 				strcpy(stats[c]->name,"");
@@ -3235,9 +3237,11 @@ void openGameoverWindow() {
 		
 		bool survivingPlayer=FALSE;
 		int c;
-		for( c=0; c<MAXPLAYERS; c++ ) {
-			if( !client_disconnected[c] /*&& players[c]*/ ) { //TODO: PLAYERSWAP
-				survivingPlayer=TRUE;
+		for (c = 0; c < MAXPLAYERS; c++)
+		{
+			if (!client_disconnected[c] && players[c]->entity)
+			{
+				survivingPlayer = TRUE;
 				break;
 			}
 		}

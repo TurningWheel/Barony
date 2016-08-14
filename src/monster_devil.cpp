@@ -80,11 +80,12 @@ void initDevil(Entity *my, Stat *myStats) {
 		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
 		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
-		/*if( players[0] ) {
-			MONSTER_TARGET = players[0]->uid;
-			MONSTER_TARGETX = players[0]->x;
-			MONSTER_TARGETY = players[0]->y;
-		}*/ //TODO: PLAYERSWAP
+		if (players[0] && players[0]->entity)
+		{
+			MONSTER_TARGET = players[0]->entity->uid;
+			MONSTER_TARGETX = players[0]->entity->x;
+			MONSTER_TARGETY = players[0]->entity->y;
+		}
 	}
 
 	// head

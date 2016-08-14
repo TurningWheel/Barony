@@ -20,6 +20,7 @@
 #include "../monster.hpp"
 #include "../net.hpp"
 #include "../paths.hpp"
+#include "../player.hpp"
 #include "interface.hpp"
 
 /*-------------------------------------------------------------------------------
@@ -178,17 +179,20 @@ void consoleCommand(char *command_str) {
 		}
 		messagePlayer(clientnum,language[286],(int)camera.x,(int)camera.y,(int)camera.z,camera.ang,camera.vang);
 	}
-	else if( !strncmp(command_str,"/pathmap",4) ) {
-		if( !(svFlags&SV_FLAG_CHEATS) ) {
+	else if( !strncmp(command_str,"/pathmap",4) )
+	{
+		if (!(svFlags&SV_FLAG_CHEATS))
+		{
 			messagePlayer(clientnum,language[277]);
 			return;
 		}
-		/*if( players[clientnum] ) {
-			int x = std::min<int>(std::max(0.0,floor(players[clientnum]->x/16)),map.width-1);
-			int y = std::min<int>(std::max(0.0,floor(players[clientnum]->y/16)),map.height-1);
-			messagePlayer(clientnum,"pathMapGrounded value: %d",pathMapGrounded[y+x*map.height]);
-			messagePlayer(clientnum,"pathMapFlying value: %d",pathMapFlying[y+x*map.height]);
-		}*/ //TODO: PLAYERSWAP
+		if (players[clientnum] && players[clientnum]->entity)
+		{
+			int x = std::min<int>(std::max(0.0, floor(players[clientnum]->entity->x/16)), map.width - 1);
+			int y = std::min<int>(std::max(0.0, floor(players[clientnum]->entity->y/16)), map.height - 1);
+			messagePlayer(clientnum, "pathMapGrounded value: %d", pathMapGrounded[y + x*map.height]);
+			messagePlayer(clientnum, "pathMapFlying value: %d", pathMapFlying[y + x*map.height]);
+		}
 	}
 	else if( !strncmp(command_str,"/exit",5) ) {
 		mainloop=0;
@@ -255,18 +259,21 @@ void consoleCommand(char *command_str) {
 				messagePlayer(clientnum,language[298],(int)(entity->x/16),(int)(entity->y/16));
 		}
 	}
-	else if( !strncmp(command_str,"/thirdperson",12) ) {
-		if( !(svFlags&SV_FLAG_CHEATS) ) {
-			messagePlayer(clientnum,language[277]);
+	else if (!strncmp(command_str, "/thirdperson", 12))
+	{
+		if (!(svFlags&SV_FLAG_CHEATS))
+		{
+			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		/*if( players[clientnum] != NULL ) {
-			players[clientnum]->skill[3]=(players[clientnum]->skill[3]==0);
-			if( players[clientnum]->skill[3]==1 )
-				messagePlayer(clientnum,"thirdperson ON");
+		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+		{
+			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
+			if (players[clientnum]->entity->skill[3] == 1)
+				messagePlayer(clientnum, "thirdperson ON");
 			else
-				messagePlayer(clientnum,"thirdperson OFF");
-		}*/ //TODO: PLAYERSWAP
+				messagePlayer(clientnum, "thirdperson OFF");
+		}
 	}
 	else if( !strncmp(command_str,"/res ",5) ) {
 		xres = atoi(&command_str[5]);
@@ -400,11 +407,15 @@ void consoleCommand(char *command_str) {
 	else if (!strncmp(command_str, "/capturemouse", 13)) {
 		capture_mouse = (capture_mouse==FALSE);
 	}
-	else if (!strncmp(command_str, "/levelup", 8)) {
-		if( multiplayer==SINGLE ) {
-			/*if( players[clientnum] )
-				players[clientnum]->getStats()->EXP += 100;*/ //TODO: PLAYERSWAP
-		} else {
+	else if (!strncmp(command_str, "/levelup", 8))
+	{
+		if (multiplayer == SINGLE)
+		{
+			if (players[clientnum] && players[clientnum]->entity)
+				players[clientnum]->entity->getStats()->EXP += 100;
+		}
+		else
+		{
 			messagePlayer(clientnum,language[299]);
 		}
 	}
@@ -429,13 +440,17 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,language[299]);
 		}
 	}
-	else if (!strncmp(command_str, "/hunger", 7)) {
-		if( multiplayer==SINGLE ) {
-			/*Stat *tempStats = players[clientnum]->getStats();
-			if( tempStats )
-				tempStats->HUNGER = std::max(0,tempStats->HUNGER-100);*/ //TODO: PLAYERSWAP
-		} else {
-			messagePlayer(clientnum,language[299]);
+	else if (!strncmp(command_str, "/hunger", 7))
+	{
+		if (multiplayer == SINGLE)
+		{
+			Stat *tempStats = players[clientnum]->entity->getStats();
+			if (tempStats)
+				tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
 		}
 	}
 	else if (!strncmp(command_str, "/testsound ", 11)) {
@@ -448,15 +463,20 @@ void consoleCommand(char *command_str) {
 	else if (!strncmp(command_str, "/skipintro", 10)) {
 		skipintro = (skipintro==FALSE);
 	}
-	else if (!strncmp(command_str, "/levelmagic", 11)) {
-		if( multiplayer==SINGLE ) {
+	else if (!strncmp(command_str, "/levelmagic", 11))
+	{
+		if (multiplayer == SINGLE)
+		{
 			int i = 0;
-			for (; i < 10; ++i) {
-				/*players[clientnum]->increaseSkill(PRO_MAGIC);
-				players[clientnum]->increaseSkill(PRO_SPELLCASTING);*/ //TODO: PLAYERSWAP
+			for (; i < 10; ++i)
+			{
+				players[clientnum]->entity->increaseSkill(PRO_MAGIC);
+				players[clientnum]->entity->increaseSkill(PRO_SPELLCASTING);
 			}
-		} else {
-			messagePlayer(clientnum,language[299]);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
 		}
 	}
 	else if (!strncmp(command_str, "/numentities", 12)) {
@@ -483,50 +503,65 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,language[301],c);
 		}
 	}
-	else if (!strncmp(command_str, "/die", 4)) {
-		if( multiplayer!=SINGLE ) {
+	else if (!strncmp(command_str, "/die", 4))
+	{
+		if (multiplayer != SINGLE)
+		{
 			messagePlayer(clientnum, language[299]);
-		} else {
-			//players[clientnum]->setHP(0); //TODO: PLAYERSWAP
+		}
+		else
+		{
+			players[clientnum]->entity->setHP(0);
 		}
 	}
 	else if (!strncmp(command_str, "/segfault", 9)) {
 		int* potato = NULL;
 		(*potato) = 322; //Crash the game!
 	}
-	else if (!strncmp(command_str, "/summon ", 8)) {
-		if( !(svFlags&SV_FLAG_CHEATS) ) {
-			messagePlayer(clientnum,language[277]);
+	else if (!strncmp(command_str, "/summon ", 8))
+	{
+		if (!(svFlags&SV_FLAG_CHEATS))
+		{
+			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if( multiplayer==CLIENT ) {
+		if (multiplayer == CLIENT)
+		{
 			messagePlayer(clientnum, language[284]);
-		} else /*if( players[clientnum] ) {*/ //TODO: PLAYERSWAP
-			if (1) { //TODO: PLAYERSWAP
-			strcpy(name, command_str+8);
+		}
+		else if (players[clientnum] && players[clientnum]->entity)
+		{
+			strcpy(name, command_str + 8);
 			int i, creature;
 			bool found = FALSE;
 
-			for (i = 1; i < NUMMONSTERS; ++i) { //Start at 1 because 0 is a nothing.
-				if (strstr(language[90+i], name)) {
+			for (i = 1; i < NUMMONSTERS; ++i) //Start at 1 because 0 is a nothing.
+			{
+				if (strstr(language[90+i], name))
+				{
 					creature = i;
 					found = TRUE;
 					break;
 				}
 			}
 
-			if (found) {
-				//playSoundEntity(players[clientnum], 153, 64); //TODO: PLAYERSWAP
-					
+			if (found)
+			{
+				playSoundEntity(players[clientnum]->entity, 153, 64);
+
 				//Spawn monster
-				//Entity *monster = summonMonster(static_cast<Monster>(creature),players[clientnum]->x+32*cos(players[clientnum]->yaw),players[clientnum]->y+32*sin(players[clientnum]->yaw)); //TODO: PLAYERSWAP
-				Entity *monster; //TODO: PLAYERSWAP
-				if( monster ) {
+				Entity *monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32*cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32*sin(players[clientnum]->entity->yaw));
+				if (monster)
+				{
 					messagePlayer(clientnum, language[302], language[90+creature]);
-				} else {
+				}
+				else
+				{
 					messagePlayer(clientnum, language[303], language[90+creature]);
 				}
-			} else {
+			}
+			else
+			{
 				messagePlayer(clientnum, language[304], name);
 			}
 		}

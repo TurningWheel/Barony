@@ -275,20 +275,21 @@ void actBoulder(Entity *my) {
 						if( statGetSTR(stats[i])<5 ) {
 							messagePlayer(i,language[456]);
 						} else {
-							/*if( players[i] ) {
+							if (players[i] && players[i]->entity)
+							{
 								playSoundEntity(my, 151, 128);
 								BOULDER_ROLLING=1;
 								my->x = floor(my->x/16)*16+8;
 								my->y = floor(my->y/16)*16+8;
 								BOULDER_DESTX=(int)(my->x/16)*16+8;
 								BOULDER_DESTY=(int)(my->y/16)*16+8;
-								if( (int)(players[i]->x/16) < (int)(my->x/16) ) {
+								if( (int)(players[i]->entity->x/16) < (int)(my->x/16) ) {
 									BOULDER_ROLLDIR=0; // east
-								} else if( (int)(players[i]->y/16) < (int)(my->y/16) ) {
+								} else if( (int)(players[i]->entity->y/16) < (int)(my->y/16) ) {
 									BOULDER_ROLLDIR=1; // south
-								} else if( (int)(players[i]->x/16) > (int)(my->x/16) ) {
+								} else if( (int)(players[i]->entity->x/16) > (int)(my->x/16) ) {
 									BOULDER_ROLLDIR=2; // west
-								} else if( (int)(players[i]->y/16) > (int)(my->y/16) ) {
+								} else if( (int)(players[i]->entity->y/16) > (int)(my->y/16) ) {
 									BOULDER_ROLLDIR=3; // north
 								}
 								switch( BOULDER_ROLLDIR ) {
@@ -305,7 +306,7 @@ void actBoulder(Entity *my) {
 										BOULDER_DESTY -= 16;
 										break;
 								}
-							}*/ //TODO: PLAYERSWAP
+							}
 						}
 					}
 				}

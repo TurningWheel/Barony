@@ -17,11 +17,12 @@
 #include "../sound.hpp"
 #include "../items.hpp"
 #include "../net.hpp"
+#include "../player.hpp"
 #include "magic.hpp"
 
 void spell_magicMap(int player) {
-	/*if( players[player]==NULL )
-		return;*/ //TODO: PLAYERSWAP
+	if (players[player] == nullptr || players[player]->entity == nullptr)
+		return;
 
 	if( multiplayer==SERVER && player>0 ) {
 		//Tell the client to map the magic.

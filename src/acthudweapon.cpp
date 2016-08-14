@@ -18,6 +18,7 @@
 #include "interface/interface.hpp"
 #include "net.hpp"
 #include "collision.hpp"
+#include "player.hpp"
 
 Entity *hudweapon = NULL;
 Entity *hudarm = NULL;
@@ -38,23 +39,28 @@ Sint32 throwGimpTimer=0; // player cannot throw objects unless zero
 void actHudArm(Entity *my) {
 	hudarm = my;
 	Entity *parent = hudweapon;
-	if( parent == NULL )
-		return;
-	/*if( players[clientnum]==NULL ) {
-		hudarm = NULL;
-		list_RemoveNode(my->mynode);
-		return;
-	}*/ //TODO: PLAYERSWAP
 
-	if( stats[clientnum]->HP<=0 ) {
-		hudarm = NULL;
+	if (parent == nullptr)
+		return;
+
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	{
+		hudarm = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
+	if (stats[clientnum]->HP <= 0)
+	{
+		hudarm = nullptr;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
 	// sprite
 	bool noGloves=FALSE;
-	if( stats[clientnum]->gloves == NULL ) {
+	if (stats[clientnum]->gloves == nullptr)
+	{
 		noGloves=TRUE;
 	} else {
 		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
@@ -140,13 +146,14 @@ void actHudWeapon(Entity *my) {
 			return;
 		}
 	}
-	
+
 	// initialize
-	if( !HUDWEAPON_INIT ) {
-		HUDWEAPON_INIT=1;
+	if (!HUDWEAPON_INIT)
+	{
+		HUDWEAPON_INIT = 1;
 		hudweapon = my;
 		hudweaponuid = my->uid;
-		entity = newEntity(109,1,map.entities); // malearmright.vox
+		entity = newEntity(109, 1, map.entities); // malearmright.vox
 		entity->focalz = -1.5;
 		entity->parent = my->uid;
 		my->parent = entity->uid; // just an easy way to refer to eachother, doesn't mean much
@@ -157,17 +164,18 @@ void actHudWeapon(Entity *my) {
 		entity->flags[PASSABLE] = TRUE;
 		entity->flags[NOUPDATE] = TRUE;
 	}
-	
-	/*if( players[clientnum]==NULL ) {
-		hudweapon = NULL; //PLAYER DED. NULLIFY THIS.
+
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	{
+		hudweapon = nullptr; //PLAYER DED. NULLIFY THIS.
 		list_RemoveNode(my->mynode);
 		return;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	// reduce throwGimpTimer (allows player to throw items again)
 	if( throwGimpTimer>0 )
 		throwGimpTimer--;
-	
+
 	// check levitating value
 	bool levitating = FALSE;
 	if( stats[clientnum]->EFFECTS[EFF_LEVITATING] == TRUE )
@@ -178,44 +186,53 @@ void actHudWeapon(Entity *my) {
 	if( stats[clientnum]->shoes != NULL )
 		if( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
 			levitating = TRUE;
-	
+
 	// water walking boots
 	bool waterwalkingboots = FALSE;
-	if( stats[clientnum]->shoes != NULL )
+	if (stats[clientnum]->shoes != nullptr)
 		if( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING )
 			waterwalkingboots = TRUE;
-			
+
 	// swimming
-	/*if( players[clientnum] ) {
-		if( !levitating && !waterwalkingboots ) {
-			int x = std::min<unsigned>(std::max<int>(0,floor(players[clientnum]->x/16)),map.width-1);
-			int y = std::min<unsigned>(std::max<int>(0,floor(players[clientnum]->y/16)),map.height-1);
-			if( animatedtiles[map.tiles[y*MAPLAYERS+x*MAPLAYERS*map.height]] ) {
+	if (players[clientnum] && players[clientnum]->entity)
+	{
+		if (!levitating && !waterwalkingboots)
+		{
+			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x/16)), map.width - 1);
+			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y/16)), map.height - 1);
+			if (animatedtiles[map.tiles[y*MAPLAYERS+x*MAPLAYERS*map.height]])
+			{
 				my->flags[INVISIBLE] = TRUE;
-				if( parent )
+				if (parent)
 					parent->flags[INVISIBLE] = TRUE;
 				return;
 			}
 		}
-	}*/ //TODO: PLAYERSWAP
-	
+	}
+
 	// select model
-	if( stats[clientnum]->ring != NULL )
-		if( stats[clientnum]->ring->type == RING_INVISIBILITY )
+	if (stats[clientnum]->ring != nullptr)
+		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 			wearingring = TRUE;
-	if( stats[clientnum]->cloak != NULL )
-		if( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
+	if (stats[clientnum]->cloak != nullptr)
+		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	if( /*players[clientnum]->skill[3]==1 ||*/ stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible //TODO: PLAYERSWAP
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring) // debug cam or player invisible
+	{
 		my->flags[INVISIBLE] = TRUE;
-		if( parent != NULL )
+		if (parent != nullptr)
 			parent->flags[INVISIBLE] = TRUE;
-	} else {
-		if( stats[clientnum]->weapon==NULL ) {
+	}
+	else
+	{
+		if (stats[clientnum]->weapon==nullptr)
+		{
 			my->flags[INVISIBLE] = TRUE;
-			if( parent != NULL )
+			if (parent != nullptr)
 				parent->flags[INVISIBLE] = FALSE;
-		} else {
+		}
+		else
+		{
 			if( stats[clientnum]->weapon ) {
 				if( itemModelFirstperson(stats[clientnum]->weapon)!=itemModel(stats[clientnum]->weapon) ) {
 					my->scalex = 0.5f;
@@ -268,9 +285,10 @@ void actHudWeapon(Entity *my) {
 	}
 
 	bool swingweapon=FALSE;
-	/*if(players[clientnum] && *inputPressed(impulses[IN_ATTACK]) && shootmode && !gamePaused && players[clientnum]->isMobile() && !(*inputPressed(impulses[IN_DEFEND])) && HUDWEAPON_OVERCHARGE<MAXCHARGE ) {
+	if (players[clientnum]->entity && *inputPressed(impulses[IN_ATTACK]) && shootmode && !gamePaused && players[clientnum]->entity->isMobile() && !(*inputPressed(impulses[IN_DEFEND])) && HUDWEAPON_OVERCHARGE < MAXCHARGE)
+	{
 		swingweapon=TRUE;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	// weapon switch animation
 	if( weaponSwitch ) {
@@ -312,13 +330,17 @@ void actHudWeapon(Entity *my) {
 						if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
 							if( !stats[clientnum]->defending && !throwGimpTimer ) {
 								// bows need to be drawn back
-								if( !bowDrawingSoundPlaying ) {
-									if( bowFire ) {
-										bowFire=FALSE;
-										//players[clientnum]->attack(0,0); //TODO: PLAYERSWAP
-										HUDWEAPON_MOVEX=3;
+								if (!bowDrawingSoundPlaying)
+								{
+									if (bowFire)
+									{
+										bowFire = FALSE;
+										players[clientnum]->entity->attack(0, 0);
+										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = TICKS_PER_SECOND/4;
-									} else {
+									}
+									else
+									{
 										bowDrawingSound = playSound(246, 64);
 									}
 								}
@@ -347,49 +369,70 @@ void actHudWeapon(Entity *my) {
 								else if( HUDWEAPON_ROLL < 0 )
 									HUDWEAPON_ROLL = std::min(HUDWEAPON_ROLL+.1,0.0);
 							}
-						} else {
-							// crossbows and slings
-							//players[clientnum]->attack(0,0); //TODO: PLAYERSWAP
-							HUDWEAPON_MOVEX=-4;
-							HUDWEAPON_CHOP=3;
 						}
-					} else {
-						HUDWEAPON_CHOP=1;
+						else
+						{
+							// crossbows and slings
+							players[clientnum]->entity->attack(0, 0);
+							HUDWEAPON_MOVEX = -4;
+							HUDWEAPON_CHOP = 3;
+						}
 					}
-				} else {
+					else
+					{
+						HUDWEAPON_CHOP = 1;
+					}
+				}
+				else
+				{
 					Item *item = stats[clientnum]->weapon;
-					if( item ) {
-						if( itemCategory(item)==SPELLBOOK ) {
+					if (item)
+					{
+						if (itemCategory(item) == SPELLBOOK)
+						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							//players[clientnum]->attack(2,0); // will need to add some delay to this so you can't rapid fire spells //TODO: PLAYERSWAP
-						} else if( itemCategory(item)==MAGICSTAFF ) {
-							HUDWEAPON_CHOP=7; // magicstaffs lunge
-						} else if( item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY ) {
+							players[clientnum]->entity->attack(2, 0); // will need to add some delay to this so you can't rapid fire spells
+						}
+						else if (itemCategory(item) == MAGICSTAFF)
+						{
+							HUDWEAPON_CHOP = 7; // magicstaffs lunge
+						}
+						else if (item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY)
+						{
 							// keys and lockpicks
-							HUDWEAPON_MOVEX=5;
-							HUDWEAPON_CHOP=3;
-							//Entity *player = players[clientnum]; //TODO: PLAYERSWAP
-							Entity *player; //TODO: PLAYERSWAP
-							lineTrace(player,player->x,player->y,player->yaw,STRIKERANGE,0,FALSE);
-							if ( hit.entity  && stats[clientnum]->weapon) {
+							HUDWEAPON_MOVEX = 5;
+							HUDWEAPON_CHOP = 3;
+							Entity *player = players[clientnum]->entity;
+							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, FALSE);
+							if (hit.entity  && stats[clientnum]->weapon)
+							{
 								stats[clientnum]->weapon->apply(clientnum, hit.entity);
-							} else {
-								messagePlayer(clientnum,language[503],item->getName());
 							}
-						} else if( ( itemCategory(item)==POTION || itemCategory(item)==GEM ) && !throwGimpTimer ) {
+							else
+							{
+								messagePlayer(clientnum, language[503], item->getName());
+							}
+						}
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM) && !throwGimpTimer)
+						{
 							throwGimpTimer = TICKS_PER_SECOND/2; // limits how often you can throw objects
-							HUDWEAPON_MOVEZ=3;
-							HUDWEAPON_CHOP=3;
-							//players[clientnum]->attack(0,0); //TODO: PLAYERSWAP
-							if( multiplayer==CLIENT ) {
+							HUDWEAPON_MOVEZ = 3;
+							HUDWEAPON_CHOP = 3;
+							players[clientnum]->entity->attack(0, 0);
+							if (multiplayer == CLIENT)
+							{
 								item->count--;
-								if( item->count<=0 ) {
-									if( item->node ) {
+								if (item->count <= 0)
+								{
+									if (item->node)
+									{
 										list_RemoveNode(item->node);
-									} else {
+									}
+									else
+									{
 										free(item);
 									}
-									stats[clientnum]->weapon=NULL;
+									stats[clientnum]->weapon = NULL;
 								}
 							}
 						}
@@ -502,17 +545,22 @@ void actHudWeapon(Entity *my) {
 		if( HUDWEAPON_MOVEY<-2 )
 			HUDWEAPON_MOVEY=-2;
 		HUDWEAPON_MOVEZ-=.65;
-		if( HUDWEAPON_MOVEZ < -6 ) {
+		if (HUDWEAPON_MOVEZ < -6)
+		{
 			HUDWEAPON_MOVEZ = -6;
-			if( HUDWEAPON_PITCH==result && HUDWEAPON_ROLL==0 && HUDWEAPON_YAW==0 && HUDWEAPON_MOVEX==-1 && HUDWEAPON_MOVEY==-2 ) {
-				if( !swingweapon ) {
+			if (HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == -2)
+			{
+				if( !swingweapon )
+				{
 					HUDWEAPON_CHOP++;
-					/*players[clientnum]->attack(1,HUDWEAPON_CHARGE);
-					HUDWEAPON_CHARGE=0;
-					HUDWEAPON_OVERCHARGE=0;
-					if( players[clientnum]->skill[3]==0 ) // debug cam OFF
-						camera_shakey+=6;*/ //TODO: PLAYERSWAP
-				} else {
+					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE);
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+					if (players[clientnum]->entity->skill[3] == 0) // debug cam OFF
+						camera_shakey += 6;
+				}
+				else
+				{
 					HUDWEAPON_CHARGE = std::min(HUDWEAPON_CHARGE+1,MAXCHARGE);
 				}
 			}
@@ -542,17 +590,22 @@ void actHudWeapon(Entity *my) {
 					}
 				}
 			}
-		} else {
-			if( stats[clientnum]->weapon ) {
-				if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type==SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
-					if( bowFire ) {
-						//players[clientnum]->attack(0,0); //TODO: PLAYERSWAP
-						HUDWEAPON_MOVEX=-2;
+		}
+		else
+		{
+			if (stats[clientnum]->weapon)
+			{
+				if (stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW)
+				{
+					if (bowFire)
+					{
+						players[clientnum]->entity->attack(0, 0);
+						HUDWEAPON_MOVEX = -2;
 					}
 				}
 			}
 		}
-		
+
 		if( stats[clientnum]->weapon!=NULL ) {
 			if( rangedweapon ) {
 				if( HUDWEAPON_MOVEX > 0 )
@@ -616,30 +669,40 @@ void actHudWeapon(Entity *my) {
 		if( HUDWEAPON_MOVEY < -6 )
 			HUDWEAPON_MOVEY=-6;
 		HUDWEAPON_ROLL-=.25;
-		if( HUDWEAPON_ROLL<-PI/2 ) {
-			HUDWEAPON_ROLL=-PI/2;
-			if( HUDWEAPON_PITCH==0 && HUDWEAPON_MOVEX==0 && HUDWEAPON_MOVEY==-6 && HUDWEAPON_MOVEZ==-4 ) {
-				if( !swingweapon ) {
+		if (HUDWEAPON_ROLL < -PI/2)
+		{
+			HUDWEAPON_ROLL = -PI/2;
+			if (HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -6 && HUDWEAPON_MOVEZ == -4)
+			{
+				if (!swingweapon)
+				{
 					HUDWEAPON_CHOP++;
-					//players[clientnum]->attack(2,HUDWEAPON_CHARGE); //TODO: PLAYERSWAP
-					HUDWEAPON_CHARGE=0;
-					HUDWEAPON_OVERCHARGE=0;
-					/*if( players[clientnum]->skill[3]==0 ) // debug cam OFF
-						camera_shakex+=.07;*/ //TODO: PLAYERSWAP
-				} else {
+					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE);
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+					if (players[clientnum]->entity->skill[3] == 0) // debug cam OFF
+						camera_shakex += .07;
+				}
+				else
+				{
 					HUDWEAPON_CHARGE = std::min(HUDWEAPON_CHARGE+1,MAXCHARGE);
 				}
 			}
 		}
-	} else if( HUDWEAPON_CHOP==5 ) { // second swing
-		HUDWEAPON_MOVEX=sin(HUDWEAPON_YAW)*1;
-		HUDWEAPON_MOVEY=cos(HUDWEAPON_YAW)*-6;
-		HUDWEAPON_YAW+=.35;
-		if( HUDWEAPON_YAW>(3*PI)/4 ) {
-			HUDWEAPON_YAW=(3*PI)/4;
+	}
+	else if (HUDWEAPON_CHOP == 5) // second swing
+	{
+		HUDWEAPON_MOVEX = sin(HUDWEAPON_YAW) * 1;
+		HUDWEAPON_MOVEY = cos(HUDWEAPON_YAW) * -6;
+		HUDWEAPON_YAW += .35;
+		if (HUDWEAPON_YAW > (3*PI)/4)
+		{
+			HUDWEAPON_YAW = (3*PI)/4;
 			HUDWEAPON_CHOP++;
 		}
-	} else if( HUDWEAPON_CHOP==6 ) { // return from second swing
+	}
+	else if (HUDWEAPON_CHOP == 6) // return from second swing
+	{
 		if( swingweapon ) {
 			// one more swing...
 			if( stats[clientnum]->weapon ) {
@@ -687,19 +750,25 @@ void actHudWeapon(Entity *my) {
 		if( HUDWEAPON_PITCH<.2)
 			HUDWEAPON_PITCH=.2;
 		HUDWEAPON_ROLL-=.15;
-		if( HUDWEAPON_ROLL<-2*PI/5 ) {
-			HUDWEAPON_ROLL=-2*PI/5;
-			if( HUDWEAPON_PITCH==.2 && HUDWEAPON_YAW==result && HUDWEAPON_MOVEX==0 && HUDWEAPON_MOVEY==-1 && HUDWEAPON_MOVEZ==-2 ) {
-				if( !swingweapon ) {
+		if (HUDWEAPON_ROLL < -2*PI/5)
+		{
+			HUDWEAPON_ROLL = -2*PI/5;
+			if (HUDWEAPON_PITCH == .2 && HUDWEAPON_YAW == result && HUDWEAPON_MOVEX == 0 && HUDWEAPON_MOVEY == -1 && HUDWEAPON_MOVEZ == -2)
+			{
+				if (!swingweapon)
+				{
 					HUDWEAPON_CHOP++;
-					/*players[clientnum]->attack(3,HUDWEAPON_CHARGE);
-					HUDWEAPON_CHARGE=0;
-					HUDWEAPON_OVERCHARGE=0;
-					if( players[clientnum]->skill[3]==0 ) { // debug cam OFF
-						camera_shakex+=.03;
-						camera_shakey+=4;
-					}*/
-				} else {
+					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE);
+					HUDWEAPON_CHARGE = 0;
+					HUDWEAPON_OVERCHARGE = 0;
+					if (players[clientnum]->entity->skill[3] == 0) // debug cam OFF
+					{
+						camera_shakex += .03;
+						camera_shakey += 4;
+					}
+				}
+				else
+				{
 					HUDWEAPON_CHARGE = std::min(HUDWEAPON_CHARGE+1,MAXCHARGE);
 				}
 			}
@@ -762,44 +831,53 @@ void actHudWeapon(Entity *my) {
 		}
 		HUDWEAPON_OVERCHARGE++;
 	}
-	
+
 	// move the weapon
-	/*if( players[clientnum] == NULL )
-		return;*/ //TODO: PLAYERSWAP
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+		return;
 	double defaultpitch = PI/8.f;
-	if( stats[clientnum]->weapon == NULL ) {
-		my->x=6+HUDWEAPON_MOVEX;
-		my->y=3+HUDWEAPON_MOVEY;
-		//my->z=(camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: PLAYERSWAP
-		my->yaw=HUDWEAPON_YAW-camera_shakex2;
-		my->pitch=defaultpitch+HUDWEAPON_PITCH-camera_shakey2/200.f;
-		my->roll=HUDWEAPON_ROLL;
-	} else {
+	if (stats[clientnum]->weapon == nullptr)
+	{
+		my->x = 6 + HUDWEAPON_MOVEX;
+		my->y = 3 + HUDWEAPON_MOVEY;
+		my->z = (camera.z*.5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+		my->yaw = HUDWEAPON_YAW - camera_shakex2;
+		my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2/200.f;
+		my->roll = HUDWEAPON_ROLL;
+	}
+	else
+	{
 		Item *item = stats[clientnum]->weapon;
-		if( item ) {
-			if( item->type == TOOL_SKELETONKEY || item->type == TOOL_LOCKPICK )
+		if (item)
+		{
+			if (item->type == TOOL_SKELETONKEY || item->type == TOOL_LOCKPICK)
 				defaultpitch = -PI/8.f;
-			if( item->type == CROSSBOW ) {
-				my->x=6+HUDWEAPON_MOVEX;
-				my->y=1.5+HUDWEAPON_MOVEY;
-				//my->z=(camera.z*.5-players[clientnum]->z)+8+HUDWEAPON_MOVEZ; //TODO: PLAYERSWAP
-				my->yaw=-.05-camera_shakex2;
-				my->pitch=HUDWEAPON_PITCH-camera_shakey2/200.f;
-				my->roll=HUDWEAPON_ROLL;
-			} else if( item->type == SLING || item->type == SHORTBOW || item->type == ARTIFACT_BOW ) {
-				my->x=6+HUDWEAPON_MOVEX;
-				my->y=3+HUDWEAPON_MOVEY;
-				//my->z=(camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: PLAYERSWAP
-				my->yaw=HUDWEAPON_YAW-camera_shakex2;
-				my->pitch=HUDWEAPON_PITCH-camera_shakey2/200.f;
-				my->roll=HUDWEAPON_ROLL;
-			} else {
-				my->x=6+HUDWEAPON_MOVEX + 3*(itemCategory(item)==POTION);
-				my->y=3+HUDWEAPON_MOVEY - 3*(itemCategory(item)==POTION);
-				//my->z=(camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ - 3*(itemCategory(item)==POTION); //TODO: PLAYERSWAP
-				my->yaw=HUDWEAPON_YAW-camera_shakex2;
-				my->pitch=defaultpitch+HUDWEAPON_PITCH-camera_shakey2/200.f;
-				my->roll=HUDWEAPON_ROLL + (PI/2)*(itemCategory(item)==POTION);
+			if (item->type == CROSSBOW)
+			{
+				my->x = 6 + HUDWEAPON_MOVEX;
+				my->y = 1.5 + HUDWEAPON_MOVEY;
+				my->z = (camera.z*.5 - players[clientnum]->entity->z) + 8 + HUDWEAPON_MOVEZ;
+				my->yaw = -.05 - camera_shakex2;
+				my->pitch = HUDWEAPON_PITCH - camera_shakey2/200.f;
+				my->roll = HUDWEAPON_ROLL;
+			}
+			else if (item->type == SLING || item->type == SHORTBOW || item->type == ARTIFACT_BOW)
+			{
+				my->x = 6 + HUDWEAPON_MOVEX;
+				my->y = 3 + HUDWEAPON_MOVEY;
+				my->z = (camera.z*.5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ;
+				my->yaw = HUDWEAPON_YAW - camera_shakex2;
+				my->pitch = HUDWEAPON_PITCH - camera_shakey2/200.f;
+				my->roll = HUDWEAPON_ROLL;
+			}
+			else
+			{
+				my->x = 6 + HUDWEAPON_MOVEX + 3*(itemCategory(item) == POTION);
+				my->y = 3 + HUDWEAPON_MOVEY - 3*(itemCategory(item) == POTION);
+				my->z = (camera.z*.5 - players[clientnum]->entity->z) + 7 + HUDWEAPON_MOVEZ - 3*(itemCategory(item) == POTION);
+				my->yaw = HUDWEAPON_YAW - camera_shakex2;
+				my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2/200.f;
+				my->roll = HUDWEAPON_ROLL + (PI/2)*(itemCategory(item) == POTION);
 			}
 		}
 	}
@@ -813,27 +891,32 @@ void actHudWeapon(Entity *my) {
 #define HUDSHIELD_PITCH my->fskill[4]
 #define HUDSHIELD_ROLL my->fskill[5]
 
-void actHudShield(Entity *my) {
+void actHudShield(Entity *my)
+{
 	my->flags[UNCLICKABLE] = TRUE;
 
 	// isn't active during intro/menu sequence
-	if( intro==TRUE ) {
+	if (intro == TRUE)
+	{
 		my->flags[INVISIBLE] = TRUE;
 		return;
 	}
 
-	if( multiplayer==CLIENT ) {
-		if( stats[clientnum]->HP<=0 ) {
+	if (multiplayer == CLIENT)
+	{
+		if (stats[clientnum]->HP <= 0)
+		{
 			my->flags[INVISIBLE] = TRUE;
 			return;
 		}
 	}
-	
+
 	// this entity only exists so long as the player exists
-	/*if( players[clientnum]==NULL || !hudweapon ) {
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !hudweapon)
+	{
 		list_RemoveNode(my->mynode);
 		return;
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	// check levitating value
 	bool levitating = FALSE;
@@ -845,33 +928,43 @@ void actHudShield(Entity *my) {
 	if( stats[clientnum]->shoes != NULL )
 		if( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
 			levitating = TRUE;
-	
+
 	// water walking boots
 	bool waterwalkingboots = FALSE;
-	if( stats[clientnum]->shoes != NULL )
-		if( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING )
+	if (stats[clientnum]->shoes != nullptr)
+		if (stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING)
 			waterwalkingboots = TRUE;
-	
+
 	// select model
-	bool wearingring=FALSE;
-	if( stats[clientnum]->ring != NULL )
-		if( stats[clientnum]->ring->type == RING_INVISIBILITY )
+	bool wearingring = FALSE;
+	if (stats[clientnum]->ring != nullptr)
+		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 			wearingring = TRUE;
-	if( stats[clientnum]->cloak != NULL )
-		if( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
+	if (stats[clientnum]->cloak != nullptr)
+		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	if( /*players[clientnum]->skill[3]==1 ||*/ stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) // debug cam or player invisible
+	{
 		my->flags[INVISIBLE] = TRUE;
-	} else {
-		if( stats[clientnum]->shield==NULL ) {
+	}
+	else
+	{
+		if (stats[clientnum]->shield == nullptr)
+		{
 			my->flags[INVISIBLE] = TRUE;
-		} else {
-			if( stats[clientnum]->shield ) {
-				if( itemModelFirstperson(stats[clientnum]->shield)!=itemModel(stats[clientnum]->shield) ) {
+		}
+		else
+		{
+			if (stats[clientnum]->shield)
+			{
+				if (itemModelFirstperson(stats[clientnum]->shield)!=itemModel(stats[clientnum]->shield))
+				{
 					my->scalex = 0.5f;
 					my->scaley = 0.5f;
 					my->scalez = 0.5f;
-				} else {
+				}
+				else
+				{
 					my->scalex = 1.f;
 					my->scaley = 1.f;
 					my->scalez = 1.f;
@@ -881,45 +974,57 @@ void actHudShield(Entity *my) {
 			my->flags[INVISIBLE] = FALSE;
 		}
 	}
-			
+
 	// swimming
-	bool swimming=FALSE;
-	/*if( players[clientnum] ) {
-		if( !levitating && !waterwalkingboots ) {
-			int x = std::min<int>(std::max<int>(0,floor(players[clientnum]->x/16)),map.width-1);
-			int y = std::min<int>(std::max<int>(0,floor(players[clientnum]->y/16)),map.height-1);
-			if( animatedtiles[map.tiles[y*MAPLAYERS+x*MAPLAYERS*map.height]] ) {
+	bool swimming = FALSE;
+	if (players[clientnum] && players[clientnum]->entity)
+	{
+		if (!levitating && !waterwalkingboots)
+		{
+			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x/16)), map.width - 1);
+			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y/16)), map.height - 1);
+			if (animatedtiles[map.tiles[y*MAPLAYERS + x*MAPLAYERS*map.height]])
+			{
 				my->flags[INVISIBLE] = TRUE;
 				Entity *parent = uidToEntity(my->parent);
-				if( parent )
+				if (parent)
 					parent->flags[INVISIBLE] = TRUE;
 				swimming=TRUE;
 			}
 		}
-	}*/
+	}
 
-	if (cast_animation.active) {
+	if (cast_animation.active)
+	{
 		my->flags[INVISIBLE] = TRUE;
 	}
 
-	bool defending=FALSE;
-	if( !command && !swimming ) {
-		if( stats[clientnum]->shield ) {
-			/*if( players[clientnum] && (*inputPressed(impulses[IN_DEFEND])) && hudweapon->skill[0]%3==0 && players[clientnum]->isMobile() && !gamePaused && !cast_animation.active) {
+	bool defending = FALSE;
+	if (!command && !swimming)
+	{
+		if (stats[clientnum]->shield)
+		{
+			if (players[clientnum] && players[clientnum]->entity && (*inputPressed(impulses[IN_DEFEND])) && hudweapon->skill[0]%3 == 0 && players[clientnum]->entity->isMobile() && !gamePaused && !cast_animation.active)
+			{
 				defending=TRUE;
-			}*/
+			}
 		}
 	}
 
-	if( defending ) {
-		stats[clientnum]->defending=TRUE;
-	} else {
-		stats[clientnum]->defending=FALSE;
+	if (defending)
+	{
+		stats[clientnum]->defending = TRUE;
+	}
+	else
+	{
+		stats[clientnum]->defending = FALSE;
 	}
 
-	if( multiplayer==CLIENT ) {
-		if( HUDSHIELD_DEFEND!=defending || ticks%120==0 ) {
-			strcpy((char *)net_packet->data,"SHLD");
+	if (multiplayer == CLIENT)
+	{
+		if (HUDSHIELD_DEFEND != defending || ticks%120 == 0)
+		{
+			strcpy((char *)net_packet->data, "SHLD");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = defending;
 			net_packet->address.host = net_server.host;
@@ -928,7 +1033,7 @@ void actHudShield(Entity *my) {
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 	}
-	HUDSHIELD_DEFEND=defending;
+	HUDSHIELD_DEFEND = defending;
 
 	// shield switching animation
 	if( shieldSwitch ) {
@@ -997,30 +1102,35 @@ void actHudShield(Entity *my) {
 		else if( HUDSHIELD_ROLL < 0 )
 			HUDSHIELD_ROLL = std::min<double>(HUDSHIELD_ROLL+.15,0);
 	}
-	
+
 	// set entity position
-	my->x=7+HUDSHIELD_MOVEX;
-	my->y=-3.5+HUDSHIELD_MOVEY;
-	//my->z=6+HUDSHIELD_MOVEZ+(camera.z*.5-players[clientnum]->z); //TODO: PLAYERSWAP
-	my->yaw=HUDSHIELD_YAW-camera_shakex2-PI/3;
-	my->pitch=HUDSHIELD_PITCH-camera_shakey2/200.f;
-	my->roll=HUDSHIELD_ROLL;
+	my->x = 7 + HUDSHIELD_MOVEX;
+	my->y = -3.5 + HUDSHIELD_MOVEY;
+	my->z = 6 + HUDSHIELD_MOVEZ + (camera.z*.5 - players[clientnum]->entity->z);
+	my->yaw = HUDSHIELD_YAW - camera_shakex2-PI/3;
+	my->pitch = HUDSHIELD_PITCH - camera_shakey2/200.f;
+	my->roll = HUDSHIELD_ROLL;
 
 	// torch/lantern flames
-	my->flags[BRIGHT]=FALSE;
-	if( stats[clientnum]->shield && !swimming && /*players[clientnum]->skill[3]==0 &&*/ !cast_animation.active && !shieldSwitch ) {
-		if( itemCategory(stats[clientnum]->shield)==TOOL ) {
-			if( stats[clientnum]->shield->type==TOOL_TORCH ) {
+	my->flags[BRIGHT] = FALSE;
+	if (stats[clientnum]->shield && !swimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch)
+	{
+		if (itemCategory(stats[clientnum]->shield) == TOOL)
+		{
+			if (stats[clientnum]->shield->type == TOOL_TORCH)
+			{
 				Entity *entity = spawnFlame(my);
-				entity->flags[OVERDRAW]=TRUE;
+				entity->flags[OVERDRAW] = TRUE;
 				entity->z -= 2.5*cos(HUDSHIELD_ROLL);
 				entity->y += 2.5*sin(HUDSHIELD_ROLL);
-				my->flags[BRIGHT]=TRUE;
-			} else if( stats[clientnum]->shield->type==TOOL_LANTERN ) {
+				my->flags[BRIGHT] = TRUE;
+			}
+			else if (stats[clientnum]->shield->type == TOOL_LANTERN)
+			{
 				Entity *entity = spawnFlame(my);
-				entity->flags[OVERDRAW]=TRUE;
+				entity->flags[OVERDRAW] = TRUE;
 				entity->z += 1;
-				my->flags[BRIGHT]=TRUE;
+				my->flags[BRIGHT] = TRUE;
 			}
 		}
 	}

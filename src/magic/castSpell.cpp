@@ -18,6 +18,7 @@
 #include "../items.hpp"
 #include "../net.hpp"
 #include "../collision.hpp"
+#include "../player.hpp"
 #include "magic.hpp"
 
 void castSpellInit(Uint32 caster_uid, spell_t *spell){
@@ -46,10 +47,12 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell){
 
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < numplayers; ++i) {
-		/*if (caster == players[i]) {
+	for (i = 0; i < numplayers; ++i)
+	{
+		if (caster == players[i]->entity)
+		{
 			player = i; //Set the player.
-		}*/ //TODO: PLAYERSWAP
+		}
 	}
 
 	if (player > -1) {
@@ -159,11 +162,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	Stat *stat = caster->getStats();
 
 	int player = -1;
-	/*for (i = 0; i < numplayers; ++i) {
-		if (caster == players[i]) {
+	for (i = 0; i < numplayers; ++i)
+	{
+		if (caster == players[i]->entity)
+		{
 			player = i; //Set the player.
 		}
-	}*/ //TODO: PLAYERSWAP
+	}
 
 	bool newbie = FALSE;
 	if( !using_magicstaff && !trap) {
@@ -236,17 +241,19 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	//Check if swimming.
 	if (!waterwalkingboots && !levitating && !trap && player>=0) {
 		bool swimming=FALSE;
-		/*if( players[player] ) {
-			int x = std::min<int>(std::max(0.0,floor(caster->x/16)),map.width-1);
-			int y = std::min<int>(std::max(0.0,floor(caster->y/16)),map.height-1);
-			if( animatedtiles[map.tiles[y*MAPLAYERS+x*MAPLAYERS*map.height]] )
-				swimming=TRUE;
-		}*/ //TODO: PLAYERSWAP
-		if( swimming ) {
+		if (players[player] && players[player]->entity)
+		{
+			int x = std::min<int>(std::max(0.0, floor(caster->x/16)), map.width-1);
+			int y = std::min<int>(std::max(0.0, floor(caster->y/16)), map.height-1);
+			if (animatedtiles[map.tiles[y*MAPLAYERS + x*MAPLAYERS*map.height]])
+				swimming = TRUE;
+		}
+		if (swimming)
+		{
 			//Can't cast spells while swimming if not levitating or water walking.
 			if (player >= 0)
 				messagePlayer(player, language[410]);
-			return NULL;
+			return nullptr;
 		}
 	}
 
@@ -353,9 +360,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			stat->EFFECTS[EFF_INVISIBLE] = TRUE;
 			stat->EFFECTS_TIMERS[EFF_INVISIBLE] = duration;
 			for (i = 0; i < numplayers; ++i) {
-				/*if (caster == players[i]) {
+				if (caster == players[i]->entity)
+				{
 					serverUpdateEffects(i);
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 
 			playSoundEntity(caster, 166, 128 );
@@ -383,9 +391,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			stat->EFFECTS[EFF_LEVITATING] = TRUE;
 			stat->EFFECTS_TIMERS[EFF_LEVITATING] = duration;
 			for (i = 0; i < numplayers; ++i) {
-				/*if (caster == players[i]) {
+				if (caster == players[i]->entity) {
 					serverUpdateEffects(i);
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 
 			playSoundEntity(caster, 178, 128 );
@@ -394,7 +402,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			caster->teleportRandom();
 		} else if (!strcmp(element->name, spellElement_identify.name)) {
 			for (i = 0; i < numplayers; ++i) {
-				/*if (caster == players[i]) {
+				if (caster == players[i]->entity) {
 					spawnMagicEffectParticles(caster->x,caster->y,caster->z,171);
 					if (i != 0) {
 						//Tell the client to identify an item.
@@ -411,13 +419,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 						identifygui_appraising = FALSE;
 						//identifygui_mode = TRUE;
 					}
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 
 			playSoundEntity(caster, 167, 128 );
 		} else if (!strcmp(element->name, spellElement_removecurse.name)) {
 			for (i = 0; i < numplayers; ++i) {
-				/*if (caster == players[i]) {
+				if (caster == players[i]->entity) {
 					spawnMagicEffectParticles(caster->x,caster->y,caster->z,169);
 					if (i != 0) {
 						//Tell the client to uncurse an item.
@@ -432,22 +440,22 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						removecursegui_active = TRUE;
 					}
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 
 			playSoundEntity(caster, 167, 128 );
 		} else if (!strcmp(element->name, spellElement_magicmapping.name)) {
 			for (i = 0; i < numplayers; ++i) {
-				/*if (caster == players[i]) {
+				if (caster == players[i]->entity) {
 					spawnMagicEffectParticles(caster->x,caster->y,caster->z,171);
 					spell_magicMap(i);
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 
 			playSoundEntity(caster, 167, 128 );
 		} else if (!strcmp(element->name, spellElement_heal.name)) { //TODO: Make it work for NPCs.
 			for (i = 0; i < numplayers; ++i) {
-				/*if (caster == players[i]) {
+				if (caster == players[i]->entity) {
 					int amount = element->damage * (((element->mana + extramagic_to_use) / element->base_mana) * element->overload_multiplier); //Amount to heal.
 					if (newbie) {
 						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
@@ -457,7 +465,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 						if (amount < 8)
 							amount = 8; //Range checking.
 					}
-					spell_changeHealth(players[i], amount);
+					spell_changeHealth(players[i]->entity, amount);
 					playSoundEntity(caster, 168, 128);
 
 					for(node = map.entities->first; node->next; node = node->next) {
@@ -474,15 +482,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 						}
 					}
 					break;
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 
 			playSoundEntity(caster, 168, 128);
 			spawnMagicEffectParticles(caster->x,caster->y,caster->z,169);
 		} else if (!strcmp(element->name, spellElement_cure_ailment.name)) { //TODO: Generalize it for NPCs too?
 			for (i = 0; i < numplayers; ++i) {
-				//if (caster == players[i]) { //TODO: PLAYERSWAP
-				if (1) { //TODO: PLAYERSWAP
+				if (caster == players[i]->entity)
+				{
 					Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
 					messagePlayerColor(i,color,language[411]);
 					int c = 0;
@@ -670,9 +678,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 		} else {
 			int target_client = 0;
 			for (i = 0; i < numplayers; ++i) {
-				/*if (players[i] == caster) {
+				if (players[i]->entity == caster)
+				{
 					target_client = i;
-				}*/ //TODO: PLAYERSWAP
+				}
 			}
 			//printlog( "Client is: %d\n", target_client);
 			if (multiplayer == SERVER && target_client != 0) {

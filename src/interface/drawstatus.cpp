@@ -109,26 +109,31 @@ damageIndicator_t *newDamageIndicator(double x, double y) {
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint32 maxhp) {
-	int player=-1;
+void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint32 maxhp)
+{
+	int player = -1;
 	int c;
 
-	if( !source || !target )
+	if (!source || !target)
 		return;
 
-	for( c=0; c<MAXPLAYERS; c++ ) {
-		/*if( source==players[c] ) {
+	for (c = 0; c < MAXPLAYERS; c++)
+	{
+		if (source == players[c]->entity)
+		{
 			player = c;
 			break;
-		}*/ //TODO: PLAYERSWAP
+		}
 	}
 
 	int playertarget=-1;
-	for( c=0; c<MAXPLAYERS; c++ ) {
-		/*if( target==players[c] ) {
+	for (c = 0; c < MAXPLAYERS; c++)
+	{
+		if (target == players[c]->entity)
+		{
 			playertarget = c;
 			break;
-		}*/ //TODO: PLAYERSWAP
+		}
 	}
 
 	Stat *stats = target->getStats();

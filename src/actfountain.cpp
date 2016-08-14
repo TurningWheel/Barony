@@ -95,15 +95,16 @@ void actFountain(Entity *my) {
 					//Depleted
 					messagePlayer(i, language[467]);
 				} else {
-					/*if( players[i]->flags[BURNING] ) {
+					if (players[i]->entity->flags[BURNING])
+					{
 						messagePlayer(i, language[468]);
-						players[i]->flags[BURNING] = FALSE;
-						if( i>0 )
-							serverUpdateEntityFlag(players[i],BURNING);
-					}*/ //TODO: PLAYERSWAP
+						players[i]->entity->flags[BURNING] = FALSE;
+						if (i > 0)
+							serverUpdateEntityFlag(players[i]->entity, BURNING);
+					}
 					switch (my->skill[1]) {
 						case 0: {
-							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
+							playSoundEntity(players[i]->entity, 52, 64);
 							
 							//Spawn succubus.
 							Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
@@ -114,7 +115,7 @@ void actFountain(Entity *my) {
 						case 1:
 							messagePlayer(i, language[470]);
 							messagePlayer(i, language[471]);
-							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
+							playSoundEntity(players[i]->entity, 52, 64);
 							stats[i]->HUNGER += 50;
 							break;
 						case 2: {
@@ -127,7 +128,7 @@ void actFountain(Entity *my) {
 						}
 						case 3: {
 							// bless equipment
-							//playSoundEntity(players[i], 52, 64); //TODO: PLAYERSWAP
+							playSoundEntity(players[i]->entity, 52, 64);
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format,0,255,255);
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayer(i, language[473]);
