@@ -1798,18 +1798,36 @@ list_t *loadGameFollowers() {
 
 -------------------------------------------------------------------------------*/
 
-int deleteSaveGame() {
-	if( access( SAVEGAMEFILE, F_OK ) != -1 ) {
+int deleteSaveGame()
+{
+	if (access(SAVEGAMEFILE, F_OK) != -1)
+	{
 		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE);
 		int result = remove(SAVEGAMEFILE);
-		if( result ) {
+		if (result)
+		{
 			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE);
 			#ifdef _MSC_VER
 			printlog(strerror(errno));
 			#endif
 		}
+	}
+
+	if (access(SAVEGAMEFILE2, F_OK) != -1)
+	{
+		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE2);
+		int result = remove(SAVEGAMEFILE2);
+		if (result)
+		{
+			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE2);
+			#ifdef _MSC_VER
+			printlog(strerror(errno));
+			#endif
+		}
 		return result;
-	} else {
+	}
+	else
+	{
 		return 0;
 	}
 }
