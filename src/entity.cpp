@@ -1677,7 +1677,7 @@ void Entity::handleEffects(Stat *myStats) {
 			}
 		}
 		// life saving
-		if( myStats->amulet->type == AMULET_LIFESAVING ) {
+		if( myStats->amulet->type == AMULET_LIFESAVING ) { //TODO: Doesn't save against boulder traps.
 			if( myStats->HP <= 0 ) { 
 				if( myStats->HUNGER > 0 )
 					messagePlayer(player,language[651]);

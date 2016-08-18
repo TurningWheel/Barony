@@ -713,7 +713,7 @@ void actPlayer(Entity *my) {
 						break;
 					}
 				}
-				if( stats[PLAYER_NUM]->HP==0 )
+				if( stats[PLAYER_NUM]->HP==0 ) //TODO: <= 0?
 					break;
 			}
 		}
@@ -1049,23 +1049,25 @@ void actPlayer(Entity *my) {
 						fadeout_increment = default_fadeout_increment*4;
 						playmusic(sounds[209],FALSE,TRUE,FALSE);
 
-						for( node=stats[PLAYER_NUM]->inventory.first; node!=NULL; node=nextnode ) {
-							nextnode=node->next;
+						for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
+						{
+							nextnode = node->next;
 							Item *item = (Item *)node->element;
-							if( itemCategory(item) == SPELL_CAT )
+							if (itemCategory(item) == SPELL_CAT)
 								continue; // don't drop spells on death, stupid!
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								entity = newEntity(-1,1,map.entities);
-								entity->flags[INVISIBLE]=TRUE;
-								entity->flags[UPDATENEEDED]=TRUE;
+							for (c = item->count; c > 0; c--)
+							{
+								entity = newEntity(-1, 1, map.entities);
+								entity->flags[INVISIBLE] = TRUE;
+								entity->flags[UPDATENEEDED] = TRUE;
 								entity->x = my->x;
 								entity->y = my->y;
 								entity->sizex = 4;
 								entity->sizey = 4;
 								entity->yaw = (rand()%360) * (PI/180.f);
-								entity->vel_x = (rand()%20-10)/10.0;
-								entity->vel_y = (rand()%20-10)/10.0;
+								entity->vel_x = (rand()%20 - 10)/10.0;
+								entity->vel_y = (rand()%20 - 10)/10.0;
 								entity->vel_z = -.5;
 								entity->flags[PASSABLE] = TRUE;
 								entity->flags[USERFLAG1] = TRUE;
@@ -1078,101 +1080,125 @@ void actPlayer(Entity *my) {
 								entity->skill[15] = item->identified;
 							}
 						}
-						if( multiplayer != SINGLE ) {
-							for( node=stats[PLAYER_NUM]->inventory.first; node!=NULL; node=nextnode ) {
-								nextnode=node->next;
+						if (multiplayer != SINGLE)
+						{
+							for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
+							{
+								nextnode = node->next;
 								Item *item = (Item *)node->element;
-								if( itemCategory(item) == SPELL_CAT )
+								if (itemCategory(item) == SPELL_CAT)
 									continue; // don't drop spells on death, stupid!
 								list_RemoveNode(node);
 							}
-							stats[0]->helmet=NULL;
-							stats[0]->breastplate=NULL;
-							stats[0]->gloves=NULL;
-							stats[0]->shoes=NULL;
-							stats[0]->shield=NULL;
-							stats[0]->weapon=NULL;
-							stats[0]->cloak=NULL;
-							stats[0]->amulet=NULL;
-							stats[0]->ring=NULL;
-							stats[0]->mask=NULL;
+							stats[0]->helmet = NULL;
+							stats[0]->breastplate = NULL;
+							stats[0]->gloves = NULL;
+							stats[0]->shoes = NULL;
+							stats[0]->shield = NULL;
+							stats[0]->weapon = NULL;
+							stats[0]->cloak = NULL;
+							stats[0]->amulet = NULL;
+							stats[0]->ring = NULL;
+							stats[0]->mask = NULL;
 						}
-					} else {
-						my->x = ((int)(my->x/16))*16+8;
-						my->y = ((int)(my->y/16))*16+8;
+					}
+					else
+					{
+						my->x = ((int)(my->x/16))*16 + 8;
+						my->y = ((int)(my->y/16))*16 + 8;
 						item = stats[PLAYER_NUM]->helmet;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->breastplate;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->gloves;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->shoes;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->shield;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->weapon;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->cloak;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->amulet;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->ring;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						item = stats[PLAYER_NUM]->mask;
-						if( item ) {
+						if (item)
+						{
 							int c = item->count;
-							for( c=item->count; c>0; c-- ) {
-								dropItemMonster(item,my,stats[PLAYER_NUM]);
+							for (c = item->count; c > 0; c--)
+							{
+								dropItemMonster(item, my, stats[PLAYER_NUM]);
 							}
 						}
 						list_FreeAll(&stats[PLAYER_NUM]->inventory);
 					}
-					
+
 					if( multiplayer != SINGLE ) {
 						messagePlayer(PLAYER_NUM,language[578]);
 					}
@@ -1186,7 +1212,7 @@ void actPlayer(Entity *my) {
 			}
 		}
 	}
-	
+
 	if( PLAYER_NUM==clientnum && intro==FALSE ) {
 		// effects of drunkenness
 		if( stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK]==TRUE ) {
