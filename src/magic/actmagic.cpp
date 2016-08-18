@@ -590,17 +590,20 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							reflection = 3;
 					}
 					if( !reflection ) {
-						if( hitstats->amulet ) {
-							if( hitstats->amulet->type==AMULET_MAGICREFLECTION )
-								reflection=2;
+						if (hitstats->amulet)
+						{
+							if (hitstats->amulet->type == AMULET_MAGICREFLECTION)
+								reflection = 2;
 						}
-						if( hitstats->cloak ) {
-							if( hitstats->cloak->type==CLOAK_MAGICREFLECTION )
-								reflection=1;
+						if (hitstats->cloak)
+						{
+							if (hitstats->cloak->type == CLOAK_MAGICREFLECTION)
+								reflection = 1;
 						}
-						if( hitstats->shield ) {
-							if( hitstats->shield->type==STEEL_SHIELD_RESISTANCE && hitstats->defending )
-								reflection=-1;
+						if (hitstats->shield)
+						{
+							if (hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending)
+								reflection = 3;
 						}
 					}
 				}
@@ -666,17 +669,20 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 								playSoundEntity(hit.entity,76,64);
 							}
 						}
-						if( player>0 && multiplayer==SERVER ) {
+						if (player > 0 && multiplayer == SERVER)
+						{
 							strcpy((char *)net_packet->data,"ARMR");
-							net_packet->data[4]=armornum;
-							if( reflection==1 )
-								net_packet->data[5]=hitstats->amulet->status;
+							net_packet->data[4] = armornum;
+							if (reflection == 1)
+								net_packet->data[5] = hitstats->cloak->status;
+							else if (reflection == 2)
+								net_packet->data[5] = hitstats->amulet->status;
 							else
-								net_packet->data[5]=hitstats->amulet->status;
+								net_packet->data[5] = hitstats->shield->status;
 							net_packet->address.host = net_clients[player-1].host;
 							net_packet->address.port = net_clients[player-1].port;
 							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player-1);
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
 					return;
