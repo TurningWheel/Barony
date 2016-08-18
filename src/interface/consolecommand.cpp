@@ -596,6 +596,10 @@ void consoleCommand(char *command_str) {
 		//startfloor = std::min(startfloor, numlevels);
 		printlog("Start floor is %d.", startfloor);
 	}
+	else if (!strncmp(command_str, "/splitscreen", 12))
+	{
+		splitscreen = true;
+	}
 	else {
 		messagePlayer(clientnum,language[305],command_str);
 	}

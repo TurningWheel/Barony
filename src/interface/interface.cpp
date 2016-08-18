@@ -532,6 +532,10 @@ int saveConfig(char *filename) {
 	{
 		fprintf(fp, "/startfloor %d\n", startfloor);
 	}
+	if (splitscreen)
+	{
+		fprintf(fp, "/splitscreen\n", splitscreen);
+	}
 	fprintf(fp, "/skipintro\n");
 	
 	fclose(fp);

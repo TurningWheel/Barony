@@ -22,6 +22,8 @@ Sint32 mousex=0, mousey=0;
 Sint32 omousex=0, omousey=0;
 Sint32 mousexrel=0, mouseyrel=0;
 
+bool splitscreen = false; //Unused variable, for game only.
+
 int game=0;
 // function prototypes
 Uint32 timerCallback(Uint32 interval, void *param);
