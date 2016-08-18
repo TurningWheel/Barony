@@ -1277,13 +1277,13 @@ void clientHandlePacket()
 				nextnode = node->next;
 				Item *item = (Item *)node->element;
 				if ( itemCategory(item) == SPELL_CAT )
-					return; // don't drop spells on death, stupid!
+					continue; // don't drop spells on death, stupid!
 				if( itemIsEquipped(item,clientnum) ) {
 					Item **slot = itemSlot(stats[clientnum],item);
 					if ( slot != NULL )
 						*slot = NULL;
 					list_RemoveNode(node);
-					return;
+					continue;
 				}
 				strcpy((char *)net_packet->data,"DIEI");
 				SDLNet_Write32((Uint32)item->type,&net_packet->data[4]);
