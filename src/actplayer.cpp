@@ -1025,6 +1025,15 @@ void actPlayer(Entity *my) {
 					}
 					Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
 					messagePlayerColor(PLAYER_NUM,color,language[577]);
+					/* //TODO: Eventually.
+					{
+						strcpy((char *)net_packet->data,"UDIE");
+						net_packet->address.host = net_clients[player-1].host;
+						net_packet->address.port = net_clients[player-1].port;
+						net_packet->len = 4;
+						sendPacketSafe(net_sock, -1, net_packet, player-1);
+					}
+					*/
 					if( clientnum==PLAYER_NUM ) {
 						// deathcam
 						entity = newEntity(-1,1,map.entities);

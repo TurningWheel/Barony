@@ -1250,7 +1250,7 @@ void clientHandlePacket()
 				}
 			}
 		}
-		if ( !strcmp((char *)(&net_packet->data[8]),language[577]) ) {
+		if ( !strcmp((char *)(&net_packet->data[8]),language[577]) ) { //TODO: Replace with a UDIE packet.
 			// this is how the client knows it died...
 			Entity *entity = newEntity(-1,1,map.entities);
 			entity->x = camera.x*16;
