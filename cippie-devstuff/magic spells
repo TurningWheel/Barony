@@ -1,0 +1,43 @@
+1. Force bolt/Magic Missile: 
+I think Force bolt should have higher damage. Magic missile can hit multiple enemies; Force Bolt hits one, but does massive damage.
+
+
+
+
+"spellbook of force bolt",
+"spellbook of magic missile",
+"spellbook of cold",
+"spellbook of fireball",
+"spellbook of lightning",
+"spellbook of remove curse",
+"spellbook of light",
+"spellbook of identify",
+"spellbook of magic mapping",
+"spellbook of sleep",
+"spellbook of confusion",
+"spellbook of slow monster",
+"spellbook of opening",
+"spellbook of locking",
+"spellbook of levitation",
+"spellbook of invisibility",
+"spellbook of teleportation",
+"spellbook of healing",
+"spellbook of extra healing",
+"spellbook of restore ability",
+"spellbook of cure ailment",
+"spellbook of dig",
+On top of these, consider adding these spells:
+Spell of creation (like creating walls/blocks, but maybe also items and stuff) -- Not out of the question. Force wall makes more sense.
+Detect enemy
+Detect trap
+Darkness spell (extinguish light sources? maybe extinguish flame could do that. Magical darkness that sets blindness while you're in it)
+Mine spell (does damage, activates when walked over. Michael Bays please?)
+Pain spell
+
+Note: Maybe let there be multiple spell roots. Like specifying multiple targets.
+Note: Maybe an element that has guidance. Like guided rockets.
+Note: Maybe magic skill affects what elements you can see/discover. Maybe it's a chance. More magic skill = higher chance of finding an element for every spell you have & new spell you learn. Maybe small chance of learning new elements when casting a spell. Maybe instead of showing you all the elements at the start, whenever you cast a spell, if you haven't already hit the max discovered elements for that spell for your level (all things considered), then you learn a new element from that spell. That way, I can throw things like "insubstantial" into the light spell, but the player usually won't discover it until they're a rather high level.
+
+Idea: a guidance element/tracking/hostile detection/targetting/tagging system, a fire element, the element that makes the magic light ball follow the player around, and the missile element, makes basically a shield of fireballs floating around the player/following him around that fly out towards enemies as they come into view.
+
+Idea: forcewall (think Spess) spell. Or just an energy barrier/shield.

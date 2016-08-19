@@ -1,0 +1,33 @@
+Some Technical issues / Design goals:
+
+	* Sounds: see Audio.xls
+	* Lots of level designing to be done.
+	* Art: see Art.xls
+	* Textures produced as needed.
+	* Split some .c files into more individual files.
+	* Item functionality!
+	* Finish skills, attributes, RPG system stuff
+	* Clean up code.
+	* More monsters
+	* Monster group thinking; monster ecosystem!
+	* Game story cutscenes
+	* Slightly more involved character creation process?
+	* Complete menu code
+	* Four dungeon areas: mine, swamp, sand labyrinth, blue fortress
+	* Chests/containers
+	* Shops
+	* NPCs
+	* Theme chests. Most chests spawn with themes; eg food chests, weapons chests, armor chests, scroll chests, spellbook chests, magic chests, potions chests, fighter equipment chest, etc.
+	* Chests spawn lower tier items on the first few dungeon levels and spawn better items the deeper you go.
+	* quickstart parameter to make debugging much easier. Eg -quickstart=wizard and the game starts in the level with the player already set up as a wizard.
+	* "pull the lever"/"wrong lever" puzzle. And methods to figure out which lever is right. (Player can play the game of chance, or they can use their skills/spells/staff of digging/maybe exploration/whatever we can think of)
+	* A repeating mechanism signal source. It turns a signal on and off repeatedly on a time interval.
+	* Stretch goal of sorts: Replace SDL_Mixer with something more powerful.
+	* Add a config option to mute sound when the game loses focus.
+	* Book covers
+	* Lower intelligence characters can't read books. Instead, a special font is used for them to make everything strange symbols. Or something interesting like that.
+	* screenshots/ directory & don't overwrite existing screenshots (maybe replace 0.png 1.png etc with <date>-<time>.png?).
+	* Some enhanced editor functionality, such as shift + left clicking to draw a line from the last point you clicked to the new one. (Pending approval)
+	* Godmode (for debugging)
+	* Summon creatures (enemies & allies) command.
+	* /setskill command to set a skill to a certain level.

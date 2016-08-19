@@ -1,0 +1,46 @@
+AGENDA:
+ * Stackdump code for Windows and OSX
+ * Coding style guidelines.
+ * Controller support.
+
+After that....
+
+
+Long term:
+ * Console ports (PS4 & XBox).
+ * Consider OpenAL Port.
+ * Consider Direct IP support in a multiplayer steam lobby game, if possible.
+ * Summoning magic.
+ * NG+? Just, in general, make the game harder and more interesting for veterans.
+ * Monster respawn (in NG+)?
+ * Multithread pathfinding?
+ * Profile the game because performance.
+ * More support spells/tactics/strategies/mechanics. Maybe as simple as making support spells more available or cheaper...
+ * Summon traps
+ * Blindfold use (psychics. Wireframe rendering? Int capstone?)
+ * Follower/summon commands: hold position/follow toggle, attack that, change equipment?
+
+
+ Some time:
+ * Magic spells should to damage chests.
+ * Option to make right click pop up the context menu, not instant-select.
+
+Things to consider:
+ * Keep track of what all language[] entries means so that we don't have magic numbers (e.g. language[1337]) anywhere, but language[entity->lang_entry] instead, or somesuch (e.g. language[GOBLIN_NAME_LANG_ENTRY]).
+ * Highlight unidentified items
+ * Multithread initial game file/model loading?
+ * Male/female monsters reproduce? Maybe hardmode/NG+ only?
+ * Deflect magic spells with shield/hitting it with sword? -- whole point of shield of magic resistance
+ * Airhorn for Joker.
+ * Acid traps
+ * Instead of lang/en.txt, lang/en/ is a folder with, ex, lang/en/items.txt
+ * Character doll equipment page?
+
+
+Quick little thingies:
+ * None at the moment :)
+
+
+Bugs?
+ * Leadership, right click on angry human. He will swear allegiance to you...despite you trying to murder him a few short moments before.
+Or maybe you're just that good...

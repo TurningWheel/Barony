@@ -1,0 +1,58 @@
+ * Specify mana we pump into a spell to change its power level/effects
+ * Combine multiple spells into one to create a new spell
+ * Easy and intuitive user interface to quickly do all this and switch between spells in combat (personally, I like how Oblivion had that spell selector, though only hotkey bindings could also work)
+ * Spell's level being determined by the mana you pump in. It doesn't arbitrarily get more powerful as you level up, and there aren't more powerful versions of that same spell (eg no fireball level 2. You only get a fireball spell, and you customize how much magic you pump into it to determine its power and effective level)
+ * Spell failure is determined by skill level, spell usage, and how many magic points are pumped into the casting
+ * If a wizard puts more magic points into a spell than allowed by their level/attributes/skills, then that spell's failure will have a small chance to be a critical failure (which goes up as the user tries to overdo themselves in the magic points they pump into the spell) in which they do more than just snap, crackle, and pop in a shower of sparks.
+ * Some items can hold magic to basically extend your mana pool.
+ * Some items increase your spell stability.
+ * Some items automatically increase power of all spells.
+
+
+
+
+"I recently played a first person shooter where, rather than giving alt-fires for all weapons, enabled you to customize minute details about your gun every time you right clicked.
+ie, for shotgun: right click lets you choose number of pellets in a shot, spread cone, blah blah blah"
+
+Possible customization options:
+
+A) Choosing how many magic points to give a spell
+B) Letting them cast certain spells together
+
+"and the interface was clunky and unintuitive too, so it was basically a set it and forget it deal that was superfluous and dumb."
+
+[4:51:20 PM] Ciprian: I'm thinking of doing two things for this
+[4:51:46 PM] Ciprian: A) The player can, in-game, take a spell, hit "create custom spell based off of this," and then set that spell's mana, and/or combine it with other spells that work with it.
+[4:51:52 PM] Ciprian: And B)
+[4:52:03 PM] Ciprian: Saving these spells to a file so that you don't have to recreate them every game.
+[4:52:15 PM] Ciprian: The spells are automatically unlocked whenever you meet the criteria for them in-game.
+[4:53:14 PM] Ciprian: So a player might create a new version of a fireball spell every time they level up since they can pump more magic points into it
+[4:53:31 PM] Ciprian: But they won't be saying "put x magic points into the spell" every time they try to cast it
+
+"reduce the overall width of the inventory window. Leave the rightmost bar where it is. In the new space (bordering the edge of the screen) you can list several small buttons that switch to magic, etc.
+A couple of the tabs will be reduced in size, meaning a couple of the labels will have to be moved, but otherwise it should work.
+A hotkey as fine as long as there's a clickable button too."
+
+
+
+Regarding spell failure chance going down with usage, I think this should work under these guidelines:
+ * Can only reduce spell failure up to a certain amount.
+ * Using one fireball spell affects ALL fireball spells. Maybe. The reasoning being you're better at casting the fireball spell in general, regardless of how much mana you're pumping into it.
+On second thought, this might be too complicated.
+
+Also think how this will affect enemy mages.
+
+Maybe: "You are just a fledging wizard. You don't understand the complex semantics of magic. Your years of study have paid off, though: While you may not be able to write a poem of magic, you can still take the works of other wizards and break them down into the patterns that make them up and re-assemble them pulling in elements from other spells you know to create a new spell!" = wizard's lab
+
+
+
+Now, about how to implement spell parsing:
+
+In cast magic, iterate through all the root nodes of the spell and create the effects for each one. (IDEA: Allow a user to overdraw mana -- hurting them. A warning should be issued though. Maybe disable it by default. "Do you want to turn critical spells on?" for example)
+Then those entities do their thing and if they have nodes, every loop, it updates the node and checks to see if the next node's effect has been activated. Or if they modify the parent.
+For example: root node 1 is magic missile (you can have two since spell->elements is now a list instead of a single element), with parent "on impact." On-impact has "explode" and "explode" has "fire" modifying it. Therefore, as the magic missile moves, every update loop, it checks to see if it's hit anything. If it has, that node's children execute. The first child is explode, so it creates an explosion. But wait! There's more! The explosion has a node modifying it: fire. So the explosion will be FIERY!
+Also, the player can find several secret hidden elements that the stock spells don't have, to add extra flair to this whole shebang. Which ones you have the possibility of finding is randomized, they are a semi-rare treasure.
+
+Concerning overexpending mana supply at the cost of extreme danger, perhaps an immensely powerful tree of magic may prefer to use this -- using your life-force to power spells instead of, or maybe even concurrent with mana.
+Another idea for a class would be a powerful warlock of sorts who has an insane HP -- he starts with that HP and only that HP. He cannot regen HP or increase his max HP in any way shape or form, and all his most powerful spells overextend mana to go into HP and get boosts for draining his life force. Making him a very powerful glass cannon, and a challenge to play.
+Maybe add hidden option to play somebody called "The Necromancer."
