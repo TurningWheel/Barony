@@ -51,11 +51,11 @@ void mainLogic(void) {
 	// messages
 	if( messagetime > 0 )
 		messagetime--;
-	
+
 	// basic editing functions are not available under these cases
 	if( subwindow || tilepalette || spritepalette )
 		return;
-	
+
 	// scroll camera on minimap
 	if( mousestatus[SDL_BUTTON_LEFT] && toolbox ) {
 		if( omousex >= xres-120 && omousex < xres-8 ) {
@@ -737,19 +737,19 @@ int main(int argc, char **argv) {
 	button->x=xres-96; button->y=220;
 	button->sizex=64; button->sizey=16;
 	button->action=&buttonBrush;
-	
+
 	button = butSelect = newButton();
 	strcpy(button->label,"Select");
 	button->x=xres-96; button->y=236;
 	button->sizex=64; button->sizey=16;
 	button->action=&buttonSelect;
-	
+
 	button = butFill = newButton();
 	strcpy(button->label,"Fill");
 	button->x=xres-96; button->y=252;
 	button->sizex=64; button->sizey=16;
 	button->action=&buttonFill;
-	
+
 	// file menu
 	butNew = button = newButton();
 	strcpy(button->label,"New          Ctrl+N");
@@ -757,35 +757,35 @@ int main(int argc, char **argv) {
 	button->sizex=160; button->sizey=16;
 	button->action=&buttonNew;
 	button->visible=0;
-	
+
 	butOpen = button = newButton();
 	strcpy(button->label,"Open ...     Ctrl+O");
 	button->x=16; button->y=32;
 	button->sizex=160; button->sizey=16;
 	button->action=&buttonOpen;
 	button->visible=0;
-	
+
 	butSave = button = newButton();
 	strcpy(button->label,"Save         Ctrl+S");
 	button->x=16; button->y=48;
 	button->sizex=160; button->sizey=16;
 	button->action=&buttonSave;
 	button->visible=0;
-	
+
 	butSaveAs = button = newButton();
 	strcpy(button->label,"Save As ...        ");
 	button->x=16; button->y=64;
 	button->sizex=160; button->sizey=16;
 	button->action=&buttonSaveAs;
 	button->visible=0;
-	
+
 	butExit = button = newButton();
 	strcpy(button->label,"Exit         Alt+F4");
 	button->x=16; button->y=80;
 	button->sizex=160; button->sizey=16;
 	button->action=&buttonExit;
 	button->visible=0;
-	
+
 	// edit menu
 	butCut = button = newButton();
 	strcpy(button->label,"Cut         Ctrl+X");
@@ -793,49 +793,49 @@ int main(int argc, char **argv) {
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonCut;
 	button->visible=0;
-	
+
 	butCopy = button = newButton();
 	strcpy(button->label,"Copy        Ctrl+C");
 	button->x=56; button->y=32;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonCopy;
 	button->visible=0;
-	
+
 	butPaste = button = newButton();
 	strcpy(button->label,"Paste       Ctrl+V");
 	button->x=56; button->y=48;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonPaste;
 	button->visible=0;
-	
+
 	butDelete = button = newButton();
 	strcpy(button->label,"Delete      Del   ");
 	button->x=56; button->y=64;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonDelete;
 	button->visible=0;
-	
+
 	butSelectAll = button = newButton();
 	strcpy(button->label,"Select All  Ctrl+A");
 	button->x=56; button->y=80;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonSelectAll;
 	button->visible=0;
-	
+
 	butUndo = button = newButton();
 	strcpy(button->label,"Undo        Ctrl+Z");
 	button->x=56; button->y=96;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonUndo;
 	button->visible=0;
-	
+
 	butRedo = button = newButton();
 	strcpy(button->label,"Redo        Ctrl+Y");
 	button->x=56; button->y=112;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonRedo;
 	button->visible=0;
-	
+
 	// view menu
 	butStatusBar = button = newButton();
 	strcpy(button->label,"Statusbar   Ctrl+I");
@@ -843,42 +843,42 @@ int main(int argc, char **argv) {
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonStatusBar;
 	button->visible=0;
-	
+
 	butToolbox = button = newButton();
 	strcpy(button->label,"Toolbox     Ctrl+T");
 	button->x=96; button->y=32;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonToolbox;
 	button->visible=0;
-	
+
 	butAllLayers = button = newButton();
 	strcpy(button->label,"All Layers  Ctrl+L");
 	button->x=96; button->y=48;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonAllLayers;
 	button->visible=0;
-	
+
 	butViewSprites = button = newButton();
 	strcpy(button->label,"Sprites     Ctrl+E");
 	button->x=96; button->y=64;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonViewSprites;
 	button->visible=0;
-	
+
 	butGrid = button = newButton();
 	strcpy(button->label,"Grid        Ctrl+G");
 	button->x=96; button->y=80;
 	button->sizex=152; button->sizey=16;
 	button->action=&buttonGrid;
 	button->visible=0;
-	
+
 	but3DMode = button = newButton();
 	strcpy(button->label,"3D Mode     Ctrl+F");
 	button->x=96; button->y=96;
 	button->sizex=152; button->sizey=16;
 	button->action=&button3DMode;
 	button->visible=0;
-	
+
 	// map menu
 	butAttributes = button = newButton();
 	strcpy(button->label,"Attributes ...  Ctrl+M      ");
@@ -886,14 +886,14 @@ int main(int argc, char **argv) {
 	button->sizex=232; button->sizey=16;
 	button->action=&buttonAttributes;
 	button->visible=0;
-	
+
 	butClearMap = button = newButton();
 	strcpy(button->label,"Clear Map       Ctrl+Shift+N");
 	button->x=136; button->y=32;
 	button->sizex=232; button->sizey=16;
 	button->action=&buttonClearMap;
 	button->visible=0;
-	
+
 	// help menu
 	butAbout = button = newButton();
 	strcpy(button->label,"About  F1");
@@ -901,13 +901,13 @@ int main(int argc, char **argv) {
 	button->sizex=80; button->sizey=16;
 	button->action=&buttonAbout;
 	button->visible=0;
-	
+
 	// main loop
 	printlog( "running main loop.\n");
 	while(mainloop) {
 		// game logic
 		handleEvents();
-		
+
 		// move buttons
 		/*if( !fullscreen ) {
 			butX->visible = 0;
@@ -1614,6 +1614,7 @@ int main(int argc, char **argv) {
 			// process and draw buttons
 			handleButtons();
 		}
+
 		if( spritepalette ) {
 			x=0; y=0; z=0;
 			drawRect( NULL, SDL_MapRGB(mainsurface->format,0,0,0),255 ); // wipe screen
@@ -1668,7 +1669,7 @@ int main(int argc, char **argv) {
 			}
 			if(mousestatus[SDL_BUTTON_LEFT])
 				mclick=1;
-			if(!mousestatus[SDL_BUTTON_LEFT]&&mclick) {
+			if(!mousestatus[SDL_BUTTON_LEFT] && mclick) {
 				// create a new object
 				if(palette[mousey+mousex*yres] >= 0) {
 					entity=newEntity(palette[mousey+mousex*yres],0,map.entities);
