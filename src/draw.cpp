@@ -1133,13 +1133,15 @@ void drawDepressed(int x1, int y1, int x2, int y2) {
 	drawRect(&src,SDL_MapRGB(mainsurface->format,128,128,160),255);
 }
 
-void drawWindowFancy(int x1, int y1, int x2, int y2) {
-	if( softwaremode ) {
+void drawWindowFancy(int x1, int y1, int x2, int y2)
+{
+	if (softwaremode)
+	{
 		// no fancy stuff in software mode
-		drawWindow(x1,y1,x2,y2);
+		drawWindow(x1, y1, x2, y2);
 		return;
 	}
-	
+
 	// update projection
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -1149,31 +1151,31 @@ void drawWindowFancy(int x1, int y1, int x2, int y2) {
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
-	
+
 	// draw quads
-	glColor3f(.25,.25,.25);
-	glBindTexture(GL_TEXTURE_2D,0);
+	glColor3f(.25, .25, .25);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBegin(GL_QUADS);
-		glVertex2f(x1, yres-y1);
-		glVertex2f(x1, yres-y2);
-		glVertex2f(x2, yres-y2);
-		glVertex2f(x2, yres-y1);
+		glVertex2f(x1, yres - y1);
+		glVertex2f(x1, yres - y2);
+		glVertex2f(x2, yres - y2);
+		glVertex2f(x2, yres - y1);
 	glEnd();
-	glColor3f(.5,.5,.5);
-	glBindTexture(GL_TEXTURE_2D,0);
+	glColor3f(.5, .5, .5);
+	glBindTexture(GL_TEXTURE_2D, 0);
 	glBegin(GL_QUADS);
-		glVertex2f(x1+1, yres-y1-1);
-		glVertex2f(x1+1, yres-y2+1);
-		glVertex2f(x2-1, yres-y2+1);
-		glVertex2f(x2-1, yres-y1-1);
+		glVertex2f(x1 + 1, yres - y1 - 1);
+		glVertex2f(x1 + 1, yres - y2 + 1);
+		glVertex2f(x2 - 1, yres - y2 + 1);
+		glVertex2f(x2 - 1, yres - y1 - 1);
 	glEnd();
-	glColor3f(.75,.75,.75);
-	glBindTexture(GL_TEXTURE_2D,texid[fancyWindow_bmp->refcount]); // wood texture
+	glColor3f(.75, .75, .75);
+	glBindTexture(GL_TEXTURE_2D, texid[fancyWindow_bmp->refcount]); // wood texture
 	glBegin(GL_QUADS);
-		glTexCoord2f(0, 0); glVertex2f(x1+2, yres-y1-2);
-		glTexCoord2f(0, (y2-y1-4)/(double)tiles[30]->h); glVertex2f(x1+2, yres-y2+2);
-		glTexCoord2f((x2-x1-4)/(double)tiles[30]->w, (y2-y1-4)/(double)tiles[30]->h); glVertex2f(x2-2, yres-y2+2);
-		glTexCoord2f((x2-x1-4)/(double)tiles[30]->w, 0); glVertex2f(x2-2, yres-y1-2);
+		glTexCoord2f(0, 0); glVertex2f(x1 + 2, yres - y1 - 2);
+		glTexCoord2f(0, (y2 - y1 - 4)/(double)tiles[30]->h); glVertex2f(x1 + 2, yres - y2 + 2);
+		glTexCoord2f((x2 - x1 - 4)/(double)tiles[30]->w, (y2-y1-4)/(double)tiles[30]->h); glVertex2f(x2 - 2, yres - y2 + 2);
+		glTexCoord2f((x2 - x1 - 4)/(double)tiles[30]->w, 0); glVertex2f(x2 - 2, yres - y1 - 2);
 	glEnd();
 }
 
