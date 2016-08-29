@@ -4658,6 +4658,7 @@ void buttonLoadGame(button_t *button) {
 		directConnect = true;
 		buttonHostMultiplayer(button);
 	} else if( mul==DIRECTCLIENT ) {
+		directConnect = true;
 		buttonJoinMultiplayer(button);
 	} else if( mul==SINGLE ) {
 		buttonStartSingleplayer(button);
