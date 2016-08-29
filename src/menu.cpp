@@ -4655,12 +4655,14 @@ void buttonLoadGame(button_t *button) {
 	int mul = getSaveGameType();
 
 	if( mul==DIRECTSERVER ) {
+		directConnect = true;
 		buttonHostMultiplayer(button);
 	} else if( mul==DIRECTCLIENT ) {
 		buttonJoinMultiplayer(button);
 	} else if( mul==SINGLE ) {
 		buttonStartSingleplayer(button);
 	} else {
+		directConnect = false;
 		#ifdef STEAMWORKS
 		if( mul==SERVER ) {
 			buttonHostMultiplayer(button);
