@@ -42,6 +42,8 @@ extern bool gamepad_leftx_invert;
 extern bool gamepad_lefty_invert;
 extern bool gamepad_rightx_invert;
 extern bool gamepad_righty_invert;
+extern bool gamepad_menux_invert;
+extern bool gamepad_menuy_invert;
 
 //Game Controller 1 handler
 //TODO: Joystick support?

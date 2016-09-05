@@ -780,14 +780,18 @@ void actPlayer(Entity *my) {
 				else
 					PLAYER_BOBMOVE -= .03;
 			}
-			if( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]) || (game_controller && game_controller->getLeftXMove()) || (game_controller && game_controller->getLeftYMove())) && !command && !swimming ) {
-				if( !stats[clientnum]->defending ) {
-					if( PLAYER_BOBMODE )
+			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && !swimming)
+			{
+				if (!stats[clientnum]->defending)
+				{
+					if (PLAYER_BOBMODE)
 						PLAYER_BOBMOVE += .05;
 					else
 						PLAYER_BOBMOVE -= .05;
-				} else {
-					if( PLAYER_BOBMODE )
+				}
+				else
+				{
+					if (PLAYER_BOBMODE)
 						PLAYER_BOBMOVE += .025;
 					else
 						PLAYER_BOBMOVE -= .025;

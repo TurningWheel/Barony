@@ -577,6 +577,14 @@ int saveConfig(char *filename) {
 	{
 		fprintf(fp, "/gamepad_lefty_invert\n");
 	}
+	if (gamepad_menux_invert)
+	{
+		fprintf(fp, "/gamepad_menux_invert\n");
+	}
+	if (gamepad_menuy_invert)
+	{
+		fprintf(fp, "/gamepad_menuy_invert\n");
+	}
 	fprintf(fp, "/skipintro\n");
 
 	fclose(fp);

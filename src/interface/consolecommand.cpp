@@ -651,6 +651,14 @@ void consoleCommand(char *command_str) {
 	{
 		gamepad_righty_invert = true;
 	}
+	else if (!strncmp(command_str, "/gamepad_menux_invert", 21))
+	{
+		gamepad_menux_invert = true;
+	}
+	else if (!strncmp(command_str, "/gamepad_menuy_invert", 21))
+	{
+		gamepad_menuy_invert = true;
+	}
 	else
 	{
 		messagePlayer(clientnum,language[305],command_str);

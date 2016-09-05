@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "player.hpp"
+#include "game.hpp"
 
 Player **players = nullptr;
 
@@ -31,6 +32,9 @@ bool gamepad_leftx_invert = false;
 bool gamepad_lefty_invert = false;
 bool gamepad_rightx_invert = false;
 bool gamepad_righty_invert = false;
+bool gamepad_menux_invert = false;
+bool gamepad_menuy_invert = false;
+
 
 GameController* game_controller = nullptr;
 
@@ -91,22 +95,47 @@ void GameController::handleLook()
 	if (!isActive())
 		return;
 
-	//Right analog stick = look.
-	int rightx = getRightXMove();
-	int righty = getRightYMove();
-
-	if (rightx || righty)
+	if (!shootmode)
 	{
-		//TODO: Use right stick for character head movement and left stick for mouse movement in the GUI?
-		//The controller needs different sensitivity in the GUI vs moving the character's head around.
-		SDL_Event e;
+		//Left analog stick = move the mouse around on the menus.
+		int leftx = getLeftXMove();
+		if (gamepad_menux_invert)
+			leftx = -leftx;
+		int lefty = getLeftYMove();
+		if (gamepad_menuy_invert)
+			lefty = -lefty;
 
-		e.type = SDL_MOUSEMOTION;
-		e.motion.x = mousex + rightx;
-		e.motion.y = mousey + righty;
-		e.motion.xrel = rightx;
-		e.motion.yrel = righty;
-		SDL_PushEvent(&e);
+		if (leftx || lefty)
+		{
+			SDL_Event e;
+
+			e.type = SDL_MOUSEMOTION;
+			e.motion.x = mousex + leftx;
+			e.motion.y = mousey + lefty;
+			e.motion.xrel = leftx;
+			e.motion.yrel = lefty;
+			SDL_PushEvent(&e);
+		}
+	}
+	else
+	{
+		//Right analog stick = look.
+		int rightx = getRightXMove();
+		int righty = getRightYMove();
+
+		if (rightx || righty)
+		{
+			//TODO: Use right stick for character head movement and left stick for mouse movement in the GUI?
+			//The controller needs different sensitivity in the GUI vs moving the character's head around.
+			SDL_Event e;
+
+			e.type = SDL_MOUSEMOTION;
+			e.motion.x = mousex + rightx;
+			e.motion.y = mousey + righty;
+			e.motion.xrel = rightx;
+			e.motion.yrel = righty;
+			SDL_PushEvent(&e);
+		}
 	}
 }
 
