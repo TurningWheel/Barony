@@ -23,8 +23,8 @@ Sint32 mousexrel=0, mouseyrel=0;
 bool splitscreen = false;
 
 int gamepad_deadzone = 8000;
-int gamepad_leftx_sensitivity = 350;
-int gamepad_lefty_sensitivity = 350;
+int gamepad_leftx_sensitivity = 1400;
+int gamepad_lefty_sensitivity = 1400;
 int gamepad_rightx_sensitivity = 500;
 int gamepad_righty_sensitivity = 600;
 
@@ -125,8 +125,6 @@ void GameController::handleLook()
 
 		if (rightx || righty)
 		{
-			//TODO: Use right stick for character head movement and left stick for mouse movement in the GUI?
-			//The controller needs different sensitivity in the GUI vs moving the character's head around.
 			SDL_Event e;
 
 			e.type = SDL_MOUSEMOTION;
