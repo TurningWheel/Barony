@@ -344,7 +344,7 @@ int initGame() {
 		}
 	}
 	#endif
-	
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,_LOADSTR4,&w,&h);
@@ -354,19 +354,22 @@ int initGame() {
 	#else
 	SDL_GL_SwapWindow(screen);
 	#endif
-	
+
 	// load extraneous game resources
-	title_bmp=loadImage("images/system/title.png");
-	logo_bmp=loadImage("images/system/logo.png");
-	cursor_bmp=loadImage("images/system/cursor.png");
-	cross_bmp=loadImage("images/system/cross.png");
-	
+	title_bmp = loadImage("images/system/title.png");
+	logo_bmp = loadImage("images/system/logo.png");
+	cursor_bmp = loadImage("images/system/cursor.png");
+	cross_bmp = loadImage("images/system/cross.png");
+
 	loadAllScores();
-	if (!loadInterfaceResources()) {
+	if (!loadInterfaceResources())
+	{
 		printlog("Failed to load interface resources.\n");
 		return -1;
 	}
-	
+
+	initGameControllers();
+
 	return 0;
 }
 
@@ -617,6 +620,17 @@ void deinitGame() {
 		}
 	}
 	#endif
+
+	//Close game controller
+	/*if (game_controller)
+	{
+		SDL_GameControllerClose(game_controller);
+		game_controller = nullptr;
+	}*/
+	if (game_controller)
+	{
+		delete game_controller;
+	}
 
 	for (int i = 0; i < MAXPLAYERS; ++i)
 	{

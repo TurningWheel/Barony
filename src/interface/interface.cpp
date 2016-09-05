@@ -356,6 +356,11 @@ void defaultConfig() {
 	consoleCommand("/bind 44 IN_DEFEND");
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
+	consoleCommand("/deadzone 8000");
+	consoleCommand("/gamepad_leftx_sensitivity 350");
+	consoleCommand("/gamepad_lefty_sensitivity 350");
+	consoleCommand("/gamepad_rightx_sensitivity 500");
+	consoleCommand("/gamepad_righty_sensitivity 600");
 	return;
 }
 
@@ -534,10 +539,46 @@ int saveConfig(char *filename) {
 	}
 	if (splitscreen)
 	{
-		fprintf(fp, "/splitscreen\n", splitscreen);
+		fprintf(fp, "/splitscreen\n");
+	}
+	if (gamepad_deadzone)
+	{
+		fprintf(fp, "/deadzone %d\n", gamepad_deadzone);
+	}
+	if (gamepad_leftx_sensitivity)
+	{
+		fprintf(fp, "/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);
+	}
+	if (gamepad_lefty_sensitivity)
+	{
+		fprintf(fp, "/gamepad_lefty_sensitivity %d\n", gamepad_lefty_sensitivity);
+	}
+	if (gamepad_rightx_sensitivity)
+	{
+		fprintf(fp, "/gamepad_rightx_sensitivity %d\n", gamepad_rightx_sensitivity);
+	}
+	if (gamepad_righty_sensitivity)
+	{
+		fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
+	}
+	if (gamepad_rightx_invert)
+	{
+		fprintf(fp, "/gamepad_rightx_invert\n");
+	}
+	if (gamepad_righty_invert)
+	{
+		fprintf(fp, "/gamepad_righty_invert\n");
+	}
+	if (gamepad_leftx_invert)
+	{
+		fprintf(fp, "/gamepad_leftx_invert\n");
+	}
+	if (gamepad_lefty_invert)
+	{
+		fprintf(fp, "/gamepad_lefty_invert\n");
 	}
 	fprintf(fp, "/skipintro\n");
-	
+
 	fclose(fp);
 	if( mallocd )
 		free(filename);

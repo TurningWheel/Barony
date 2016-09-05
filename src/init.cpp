@@ -71,7 +71,7 @@ int initApp(char *title, int fullscreen) {
 	
 	window_title = title;
 	printlog("initializing SDL...\n");
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS ) == -1 ) {
+	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER ) == -1 ) {
 		printlog("failed to initialize SDL: %s\n",SDL_GetError());
 		return 1;
 	}

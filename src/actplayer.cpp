@@ -780,7 +780,7 @@ void actPlayer(Entity *my) {
 				else
 					PLAYER_BOBMOVE -= .03;
 			}
-			if( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT])) && !command && !swimming ) {
+			if( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]) || (game_controller && game_controller->getLeftXMove()) || (game_controller && game_controller->getLeftYMove())) && !command && !swimming ) {
 				if( !stats[clientnum]->defending ) {
 					if( PLAYER_BOBMODE )
 						PLAYER_BOBMOVE += .05;
@@ -1248,19 +1248,48 @@ void actPlayer(Entity *my) {
 		
 		// calculate movement forces
 		if( !command ) {
-			if( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] ) {
-				// normal controls
-				PLAYER_VELX += (*inputPressed(impulses[IN_FORWARD])-*inputPressed(impulses[IN_BACK])*.25)*cos(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_FORWARD])-*inputPressed(impulses[IN_BACK])*.25)*sin(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-				PLAYER_VELX += (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]))*cos(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_RIGHT])-*inputPressed(impulses[IN_LEFT]))*sin(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-			} else {
-				// controls are backwards when confused
-				PLAYER_VELX += (*inputPressed(impulses[IN_BACK])-(double)*inputPressed(impulses[IN_FORWARD])*.25)*cos(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_BACK])-(double)*inputPressed(impulses[IN_FORWARD])*.25)*sin(my->yaw)*.045*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-				PLAYER_VELX += (*inputPressed(impulses[IN_LEFT])-*inputPressed(impulses[IN_RIGHT]))*cos(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
-				PLAYER_VELY += (*inputPressed(impulses[IN_LEFT])-*inputPressed(impulses[IN_RIGHT]))*sin(my->yaw+PI/2)*.0225*(my->getDEX()+10)*weightratio/(1+stats[PLAYER_NUM]->defending);
+			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
+			float x_force = 0;
+			float y_force = 0;
+			if (!stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
+			{
+				//Normal controls.
+				x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
+				y_force = (*inputPressed(impulses[IN_FORWARD]) - (double)*inputPressed(impulses[IN_BACK]) * .25);
 			}
+			else
+			{
+				//Confused controls.
+				x_force = (*inputPressed(impulses[IN_LEFT]) - *inputPressed(impulses[IN_RIGHT]));
+				y_force = (*inputPressed(impulses[IN_BACK]) - (double)*inputPressed(impulses[IN_FORWARD]) * .25);
+			}
+
+			if (game_controller && !*inputPressed(impulses[IN_LEFT]) && !*inputPressed(impulses[IN_RIGHT]))
+			{
+				x_force = game_controller->getLeftXPercent();
+
+				if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
+				{
+					x_force *= -1;
+				}
+			}
+			if (game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK]))
+			{
+				y_force = game_controller->getLeftYPercent();
+
+				if (y_force < 0)
+					y_force *= 0.25f; //Move backwards more slowly.
+
+				if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED])
+				{
+					y_force *= -1;
+				}
+			}
+
+			PLAYER_VELX += y_force * cos(my->yaw) * .045 * (my->getDEX() + 10) * weightratio/(1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += y_force * sin(my->yaw) * .045 * (my->getDEX() + 10) * weightratio/(1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += x_force * cos(my->yaw + PI/2) * .0225 * (my->getDEX() + 10) * weightratio/(1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += x_force * sin(my->yaw + PI/2) * .0225 * (my->getDEX() + 10) * weightratio/(1 + stats[PLAYER_NUM]->defending);
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;

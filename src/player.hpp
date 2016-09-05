@@ -32,6 +32,71 @@ extern Sint32 mousexrel, mouseyrel;
 
 extern bool splitscreen;
 
+extern int gamepad_deadzone;
+extern int gamepad_leftx_sensitivity;
+extern int gamepad_lefty_sensitivity;
+extern int gamepad_rightx_sensitivity;
+extern int gamepad_righty_sensitivity;
+
+extern bool gamepad_leftx_invert;
+extern bool gamepad_lefty_invert;
+extern bool gamepad_rightx_invert;
+extern bool gamepad_righty_invert;
+
+//Game Controller 1 handler
+//TODO: Joystick support?
+//extern SDL_GameController* game_controller;
+
+class GameController
+{
+	SDL_GameController* sdl_device;
+public:
+	GameController();
+	~GameController();
+
+	//Closes the SDL device.
+	void close();
+
+	//Opens the SDL device.
+	//If c < 0 or c >= SDL_NumJoysticks() or c is not a game controller, then returns false.
+	bool open(int c);
+
+	bool isActive();
+
+	void handleLook();
+
+	//Left analog stick movement along the x axis.
+	int getLeftXMove();
+	//...along the y axis.
+	int getLeftYMove();
+	//Right analog stick movement along the x axis.
+	int getRightXMove();
+	//...along the y axis.
+	int getRightYMove();
+
+	//The amount of movement of the given analog stick along its respective axis, with no gamepad sensitivity application. Deadzone is taken into account.
+	int getRawLeftXMove();
+	int getRawLeftYMove();
+	int getRawRightXMove();
+	int getRawRightYMove();
+
+	//Gets the percentage the given stick is pressed along its current axis. From 0% after the deadzone to 100% all the way to the edge of the analog stick.
+	float getLeftXPercent();
+	float getLeftYPercent();
+	float getRightXPercent();
+	float getRightYPercent();
+
+	//The maximum amount the given analog stick can move on its respective axis. After the gamepad deadzone is taken into account.
+	int maxLeftXMove();
+	int maxLeftYMove();
+	int maxRightXMove();
+	int maxRightYMove();
+};
+
+extern GameController* game_controller;
+
+void initGameControllers();
+
 class Player
 {
 	//Splitscreen support. Every player gets their own screen.

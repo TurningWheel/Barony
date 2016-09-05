@@ -600,7 +600,59 @@ void consoleCommand(char *command_str) {
 	{
 		splitscreen = true;
 	}
-	else {
+	else if (!strncmp(command_str, "/deadzone ", 10))
+	{
+		gamepad_deadzone = atoi(&command_str[10]);
+		//Ensure its value is in range.
+		gamepad_deadzone = std::max(gamepad_deadzone, 0);
+		printlog("Controller deadzone is %d.", gamepad_deadzone);
+	}
+	else if (!strncmp(command_str, "/gamepad_leftx_sensitivity ", 27))
+	{
+		gamepad_leftx_sensitivity = atoi(&command_str[27]);
+		//Ensure its value is in range.
+		gamepad_leftx_sensitivity = std::max(gamepad_leftx_sensitivity, 1);
+		printlog("Controller leftx sensitivity is %d.", gamepad_leftx_sensitivity);
+	}
+	else if (!strncmp(command_str, "/gamepad_lefty_sensitivity ", 27))
+	{
+		gamepad_lefty_sensitivity = atoi(&command_str[27]);
+		//Ensure its value is in range.
+		gamepad_lefty_sensitivity = std::max(gamepad_lefty_sensitivity, 1);
+		printlog("Controller lefty sensitivity is %d.", gamepad_lefty_sensitivity);
+	}
+	else if (!strncmp(command_str, "/gamepad_rightx_sensitivity ", 28))
+	{
+		gamepad_rightx_sensitivity = atoi(&command_str[28]);
+		//Ensure its value is in range.
+		gamepad_rightx_sensitivity = std::max(gamepad_rightx_sensitivity, 1);
+		printlog("Controller rightx sensitivity is %d.", gamepad_rightx_sensitivity);
+	}
+	else if (!strncmp(command_str, "/gamepad_righty_sensitivity ", 28))
+	{
+		gamepad_righty_sensitivity = atoi(&command_str[28]);
+		//Ensure its value is in range.
+		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1);
+		printlog("Controller righty sensitivity is %d.", gamepad_righty_sensitivity);
+	}
+	else if (!strncmp(command_str, "/gamepad_leftx_invert", 21))
+	{
+		gamepad_leftx_invert = true;
+	}
+	else if (!strncmp(command_str, "/gamepad_lefty_invert", 21))
+	{
+		gamepad_lefty_invert = true;
+	}
+	else if (!strncmp(command_str, "/gamepad_rightx_invert", 22))
+	{
+		gamepad_rightx_invert = true;
+	}
+	else if (!strncmp(command_str, "/gamepad_righty_invert", 22))
+	{
+		gamepad_righty_invert = true;
+	}
+	else
+	{
 		messagePlayer(clientnum,language[305],command_str);
 	}
 }
