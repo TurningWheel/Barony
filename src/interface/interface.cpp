@@ -357,8 +357,8 @@ void defaultConfig() {
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/deadzone 8000");
-	consoleCommand("/gamepad_leftx_sensitivity 350");
-	consoleCommand("/gamepad_lefty_sensitivity 350");
+	consoleCommand("/gamepad_leftx_sensitivity 1400");
+	consoleCommand("/gamepad_lefty_sensitivity 1400");
 	consoleCommand("/gamepad_rightx_sensitivity 500");
 	consoleCommand("/gamepad_righty_sensitivity 600");
 	return;
