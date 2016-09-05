@@ -52,6 +52,8 @@ extern bool gamepad_menuy_invert;
 class GameController
 {
 	SDL_GameController* sdl_device;
+
+	std::string name;
 public:
 	GameController();
 	~GameController();

@@ -80,6 +80,8 @@ bool GameController::open(int c)
 	else
 	{
 		printlog("Successfully initialized game controller!\n");
+		name = SDL_GameControllerNameForIndex(c);
+		printlog("Controller name is \"%s\"", name);
 	}
 
 	return (sdl_device != nullptr);
@@ -299,6 +301,8 @@ int GameController::maxRightYMove()
 
 void initGameControllers()
 {
+	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
+
 	int c = 0;
 	bool found = false; //TODO: Bugger this and implement multi-controller support.
 	game_controller = new GameController();
