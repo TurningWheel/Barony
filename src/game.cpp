@@ -1322,6 +1322,13 @@ void handleEvents(void) {
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 				break;
+			case SDL_JOYBUTTONDOWN: // if joystick button is pressed
+				joystatus[event.jbutton.button] = 1; // set this button's index to 1
+				lastkeypressed = 299+event.jbutton.button;
+				break;
+			case SDL_JOYBUTTONUP: // if joystick button is released
+				joystatus[event.jbutton.button] = 0; // set this button's index to 0
+				break;
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if( runtimes<5 ) {
 					runtimes++;
@@ -2376,5 +2383,6 @@ int main(int argc, char **argv) {
 		return deinitApp();
 	} catch (...) {
 		//TODO:
+		return 1;
 	}
 }

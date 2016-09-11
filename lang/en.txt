@@ -2159,7 +2159,7 @@ will come again."#
 1433   OK  #
 1434 Video#
 1435 Audio#
-1436 Keyboard#
+1436 Bindings#
 1437 Mouse#
 1438 Misc#
 

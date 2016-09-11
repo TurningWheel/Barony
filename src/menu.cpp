@@ -1133,6 +1133,8 @@ void handleMainMenu(bool mode) {
 			
 			if( rebindkey != -1 && lastkeypressed ) {
 				if( lastkeypressed == SDL_SCANCODE_ESCAPE ) {
+					keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					lastkeypressed = 0;
 					rebindkey=-1;
 				} else {
 					settings_impulses[rebindkey] = lastkeypressed;

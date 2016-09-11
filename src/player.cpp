@@ -220,7 +220,7 @@ int GameController::getRawLeftYMove()
 	else
 		y -= gamepad_deadzone;
 
-	return (!gamepad_lefty_invert) ? y : -y;
+	return (!gamepad_lefty_invert) ? -y : y;
 }
 
 int GameController::getRawRightXMove()

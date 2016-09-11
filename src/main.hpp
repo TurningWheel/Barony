@@ -349,6 +349,7 @@ extern char *inputstr;
 extern int inputlen;
 extern string lastname;
 extern Sint8 mousestatus[6];
+extern Sint8 joystatus[32];
 extern Uint32 cursorflash;
 extern Sint32 camx, camy;
 extern Sint32 newcamx, newcamy;

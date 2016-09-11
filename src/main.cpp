@@ -34,6 +34,7 @@ Sint8 keystatus[512];
 char *inputstr = NULL;
 int inputlen=0;
 Sint8 mousestatus[6];
+Sint8 joystatus[32];
 Entity **clickmap=NULL;
 bool capture_mouse = TRUE;
 string lastname;

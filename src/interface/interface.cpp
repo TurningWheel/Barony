@@ -727,7 +727,7 @@ Sint8 *inputPressed(Uint32 scancode) {
 		return &mousestatus[scancode-282];
 	} else if( scancode<315 ) {
 		// joysticks are currently unimplemented
-		return NULL;
+		return &joystatus[scancode-299];
 	} else {
 		// bad scancode
 		return NULL;
