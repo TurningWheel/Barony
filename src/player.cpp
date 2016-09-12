@@ -27,6 +27,8 @@ int gamepad_leftx_sensitivity = 1400;
 int gamepad_lefty_sensitivity = 1400;
 int gamepad_rightx_sensitivity = 500;
 int gamepad_righty_sensitivity = 600;
+int gamepad_menux_sensitivity = 1400;
+int gamepad_menuy_sensitivity = 1400;
 
 bool gamepad_leftx_invert = false;
 bool gamepad_lefty_invert = false;
@@ -97,33 +99,31 @@ void GameController::handleLook()
 	if (!isActive())
 		return;
 
+	//Right analog stick = look.
+	int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
+	int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
+
 	if (!shootmode)
 	{
-		//Left analog stick = move the mouse around on the menus.
-		int leftx = getLeftXMove();
 		if (gamepad_menux_invert)
-			leftx = -leftx;
-		int lefty = getLeftYMove();
+			rightx = -rightx;
 		if (gamepad_menuy_invert)
-			lefty = -lefty;
+			righty = -righty;
 
-		if (leftx || lefty)
+		if (rightx || righty)
 		{
 			SDL_Event e;
 
 			e.type = SDL_MOUSEMOTION;
-			e.motion.x = mousex + leftx;
-			e.motion.y = mousey + lefty;
-			e.motion.xrel = leftx;
-			e.motion.yrel = lefty;
+			e.motion.x = std::max(0, std::min(camera.winw, mousex + rightx));
+			e.motion.y = std::max(0, std::min(camera.winh, mousey + righty));
+			e.motion.xrel = rightx;
+			e.motion.yrel = righty;
 			SDL_PushEvent(&e);
 		}
 	}
 	else
 	{
-		//Right analog stick = look.
-		int rightx = getRightXMove();
-		int righty = getRightYMove();
 
 		if (rightx || righty)
 		{
@@ -156,7 +156,7 @@ int GameController::getLeftYMove()
 	if (!isActive())
 		return 0;
 
-	int y = getRawLeftYMove();
+	int y = -getRawLeftYMove();
 
 	y /= gamepad_lefty_sensitivity;
 

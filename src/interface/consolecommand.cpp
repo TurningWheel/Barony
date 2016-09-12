@@ -635,6 +635,20 @@ void consoleCommand(char *command_str) {
 		gamepad_righty_sensitivity = std::max(gamepad_righty_sensitivity, 1);
 		printlog("Controller righty sensitivity is %d.", gamepad_righty_sensitivity);
 	}
+	else if (!strncmp(command_str, "/gamepad_menux_sensitivity ", 27))
+	{
+		gamepad_menux_sensitivity = atoi(&command_str[27]);
+		//Ensure its value is in range.
+		gamepad_menux_sensitivity = std::max(gamepad_menux_sensitivity, 1);
+		printlog("Controller menux sensitivity is %d.", gamepad_menux_sensitivity);
+	}
+	else if (!strncmp(command_str, "/gamepad_menuy_sensitivity ", 27))
+	{
+		gamepad_menuy_sensitivity = atoi(&command_str[27]);
+		//Ensure its value is in range.
+		gamepad_menuy_sensitivity = std::max(gamepad_menuy_sensitivity, 1);
+		printlog("Controller menuy sensitivity is %d.", gamepad_menuy_sensitivity);
+	}
 	else if (!strncmp(command_str, "/gamepad_leftx_invert", 21))
 	{
 		gamepad_leftx_invert = true;

@@ -37,6 +37,8 @@ extern int gamepad_leftx_sensitivity;
 extern int gamepad_lefty_sensitivity;
 extern int gamepad_rightx_sensitivity;
 extern int gamepad_righty_sensitivity;
+extern int gamepad_menux_sensitivity;
+extern int gamepad_menuy_sensitivity;
 
 extern bool gamepad_leftx_invert;
 extern bool gamepad_lefty_invert;

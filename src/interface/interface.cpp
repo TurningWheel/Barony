@@ -361,6 +361,8 @@ void defaultConfig() {
 	consoleCommand("/gamepad_lefty_sensitivity 1400");
 	consoleCommand("/gamepad_rightx_sensitivity 500");
 	consoleCommand("/gamepad_righty_sensitivity 600");
+	consoleCommand("/gamepad_menux_sensitivity 1400");
+	consoleCommand("/gamepad_menuy_sensitivity 1400");
 	return;
 }
 
@@ -494,7 +496,7 @@ int saveConfig(char *filename) {
 	fprintf(fp,"/sfxvolume %d\n",sfxvolume);
 	fprintf(fp,"/musvolume %d\n",musvolume);
 	for( c=0; c<NUMIMPULSES; c++ )
-		fprintf(fp,"/bind %d IN_%s\n",impulses[c],impulsenames[c]);
+		fprintf(fp,"/bind %d IN_%s\n",impulses[c],impulsenames[c]); //TODO: Do /joybind.
 	fprintf(fp,"/mousespeed %d\n",(int)(mousespeed));
 	if( reversemouse )
 		fprintf(fp,"/reversemouse\n");
@@ -560,6 +562,14 @@ int saveConfig(char *filename) {
 	if (gamepad_righty_sensitivity)
 	{
 		fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
+	}
+	if (gamepad_menux_sensitivity)
+	{
+		fprintf(fp, "/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
+	}
+	if (gamepad_menuy_sensitivity)
+	{
+		fprintf(fp, "/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
 	}
 	if (gamepad_rightx_invert)
 	{

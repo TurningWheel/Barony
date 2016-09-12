@@ -83,6 +83,8 @@ int initGame() {
 	SDL_GL_SwapWindow(screen);
 	#endif
 
+	initGameControllers();
+
 	// load model offsets
 	printlog( "loading model offsets...\n");
 	for( c=1; c<NUMMONSTERS; c++ ) {
@@ -367,8 +369,6 @@ int initGame() {
 		printlog("Failed to load interface resources.\n");
 		return -1;
 	}
-
-	initGameControllers();
 
 	return 0;
 }
