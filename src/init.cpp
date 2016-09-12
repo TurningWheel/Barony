@@ -47,6 +47,15 @@ int initApp(char *title, int fullscreen) {
 	if( !logfile )
 		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
 
+	for (c = 0; c < NUM_JOY_STATUS; ++c)
+	{
+		joystatus[c] = 0;
+	}
+	for (c = 0; c < NUM_JOY_TRIGGER_STATUS; ++c)
+	{
+		joy_trigger_status[c] = 0;
+	}
+
 	// init some lists
 	button_l.first=NULL; button_l.last=NULL;
 	light_l.first=NULL; light_l.last=NULL;

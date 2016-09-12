@@ -1220,7 +1220,7 @@ void handleEvents(void) {
 
 	if (game_controller && game_controller->isActive())
 	{
-		game_controller->handleLook();
+		game_controller->handleAnalog();
 	}
 
 	while( SDL_PollEvent(&event) ) { // poll SDL events
@@ -1324,7 +1324,7 @@ void handleEvents(void) {
 				break;
 			case SDL_JOYBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.jbutton.button] = 1; // set this button's index to 1
-				lastkeypressed = 299+event.jbutton.button;
+				lastkeypressed = 301+event.jbutton.button;
 				break;
 			case SDL_JOYBUTTONUP: // if joystick button is released
 				joystatus[event.jbutton.button] = 0; // set this button's index to 0

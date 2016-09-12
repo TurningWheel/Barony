@@ -33,6 +33,7 @@ extern Sint32 mousexrel, mouseyrel;
 extern bool splitscreen;
 
 extern int gamepad_deadzone;
+extern int gamepad_trigger_deadzone;
 extern int gamepad_leftx_sensitivity;
 extern int gamepad_lefty_sensitivity;
 extern int gamepad_rightx_sensitivity;
@@ -69,7 +70,11 @@ public:
 
 	bool isActive();
 
-	void handleLook();
+	/*
+	 * Moves the player's head around.
+	 * Handles the triggers.
+	 */
+	void handleAnalog();
 
 	//Left analog stick movement along the x axis.
 	int getLeftXMove();
@@ -80,11 +85,17 @@ public:
 	//...along the y axis.
 	int getRightYMove();
 
+	int getLeftTrigger();
+	int getRightTrigger();
+
 	//The amount of movement of the given analog stick along its respective axis, with no gamepad sensitivity application. Deadzone is taken into account.
 	int getRawLeftXMove();
 	int getRawLeftYMove();
 	int getRawRightXMove();
 	int getRawRightYMove();
+
+	int getRawLeftTrigger();
+	int getRawRightTrigger();
 
 	//Gets the percentage the given stick is pressed along its current axis. From 0% after the deadzone to 100% all the way to the edge of the analog stick.
 	float getLeftXPercent();
@@ -92,11 +103,17 @@ public:
 	float getRightXPercent();
 	float getRightYPercent();
 
+	float getLeftTriggerPercent();
+	float getRightTriggerPercent();
+
 	//The maximum amount the given analog stick can move on its respective axis. After the gamepad deadzone is taken into account.
 	int maxLeftXMove();
 	int maxLeftYMove();
 	int maxRightXMove();
 	int maxRightYMove();
+
+	int maxLeftTrigger();
+	int maxRightTrigger();
 };
 
 extern GameController* game_controller;

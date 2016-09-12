@@ -23,6 +23,7 @@ Sint32 mousexrel=0, mouseyrel=0;
 bool splitscreen = false;
 
 int gamepad_deadzone = 8000;
+int gamepad_trigger_deadzone = 18000;
 int gamepad_leftx_sensitivity = 1400;
 int gamepad_lefty_sensitivity = 1400;
 int gamepad_rightx_sensitivity = 500;
@@ -94,7 +95,7 @@ bool GameController::isActive()
 	return (sdl_device != nullptr);
 }
 
-void GameController::handleLook()
+void GameController::handleAnalog()
 {
 	if (!isActive())
 		return;
@@ -142,6 +143,26 @@ void GameController::handleLook()
 			e.motion.yrel = righty;
 			SDL_PushEvent(&e);
 		}
+	}
+
+	if (getLeftTrigger())
+	{
+		joystatus[0] = 1;
+		lastkeypressed = 299;
+	}
+	else
+	{
+		joystatus[0] = 0;
+	}
+
+	if (getRightTrigger())
+	{
+		joystatus[1] = 1;
+		lastkeypressed = 300;
+	}
+	else
+	{
+		joystatus[1] = 0;
 	}
 }
 
@@ -192,6 +213,19 @@ int GameController::getRightYMove()
 
 	return y;
 }
+
+
+
+int GameController::getLeftTrigger()
+{
+	return getRawLeftTrigger(); //No sensitivity taken into account (yet)
+}
+
+int GameController::getRightTrigger()
+{
+	return getRawRightTrigger(); //No sensitivity taken into account (yet)
+}
+
 
 int GameController::getRawLeftXMove()
 {
@@ -265,25 +299,71 @@ int GameController::getRawRightYMove()
 	return (!gamepad_righty_invert) ? y : -y;
 }
 
+
+
+int GameController::getRawLeftTrigger()
+{
+	if (!isActive())
+		return 0;
+
+	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
+
+	if (n < gamepad_trigger_deadzone)
+		return 0;
+
+	n -= gamepad_trigger_deadzone;
+
+	return n;
+}
+
+int GameController::getRawRightTrigger()
+{
+	if (!isActive())
+		return 0;
+
+	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
+
+	if (n < gamepad_trigger_deadzone)
+		return 0;
+
+	n -= gamepad_trigger_deadzone;
+
+	return n;
+}
+
+
+
 float GameController::getLeftXPercent()
 {
-	return (float)game_controller->getRawLeftXMove() / (float)game_controller->maxLeftXMove();
+	return (float)getRawLeftXMove() / (float)maxLeftXMove();
 }
 
 float GameController::getLeftYPercent()
 {
-	return (float)game_controller->getRawLeftYMove() / (float)game_controller->maxLeftYMove();
+	return (float)getRawLeftYMove() / (float)maxLeftYMove();
 }
 
 float GameController::getRightXPercent()
 {
-	return (float)game_controller->getRawRightXMove() / (float)game_controller->maxRightXMove();
+	return (float)getRawRightXMove() / (float)maxRightXMove();
 }
 
 float GameController::getRightYPercent()
 {
-	return (float)game_controller->getRawRightYMove() / (float)game_controller->maxRightYMove();
+	return (float)getRawRightYMove() / (float)maxRightYMove();
 }
+
+
+float GameController::getLeftTriggerPercent()
+{
+	return (float)getRawLeftTrigger() / (float)maxLeftTrigger();
+}
+
+float GameController::getRightTriggerPercent()
+{
+	return (float)getRawRightTrigger() / (float)maxRightTrigger();
+}
+
 
 int GameController::maxLeftXMove()
 {
@@ -304,6 +384,18 @@ int GameController::maxRightYMove()
 {
 	return 32767 - gamepad_deadzone; //Ya, it's pretty constant in SDL2.
 }
+
+
+int GameController::maxLeftTrigger()
+{
+	return 32767 - gamepad_deadzone;
+}
+
+int GameController::maxRightTrigger()
+{
+	return 32767 - gamepad_deadzone;
+}
+
 
 void initGameControllers()
 {

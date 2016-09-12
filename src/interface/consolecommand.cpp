@@ -397,7 +397,7 @@ void consoleCommand(char *command_str) {
 		}
 		else if (strstr(command_str, "INJOY_LEFT_CLICK"))
 		{
-			joyimpulses[INJOY_PAUSE_MENU] = atoi(&command_str[9]);
+			joyimpulses[INJOY_LEFT_CLICK] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_LEFT_CLICK: %d\n", atoi(&command_str[9]));
 		}
 		else
@@ -647,12 +647,19 @@ void consoleCommand(char *command_str) {
 	{
 		splitscreen = true;
 	}
-	else if (!strncmp(command_str, "/deadzone ", 10))
+	else if (!strncmp(command_str, "/gamepad_deadzone ", 18))
 	{
-		gamepad_deadzone = atoi(&command_str[10]);
+		gamepad_deadzone = atoi(&command_str[18]);
 		//Ensure its value is in range.
 		gamepad_deadzone = std::max(gamepad_deadzone, 0);
 		printlog("Controller deadzone is %d.", gamepad_deadzone);
+	}
+	else if (!strncmp(command_str, "/gamepad_trigger_deadzone ", 26))
+	{
+		gamepad_trigger_deadzone = atoi(&command_str[26]);
+		//Ensure its value is in range.
+		gamepad_trigger_deadzone = std::max(gamepad_trigger_deadzone, 0);
+		printlog("Controller trigger deadzone is %d.", gamepad_trigger_deadzone);
 	}
 	else if (!strncmp(command_str, "/gamepad_leftx_sensitivity ", 27))
 	{

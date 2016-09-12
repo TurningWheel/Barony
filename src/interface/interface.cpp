@@ -349,14 +349,14 @@ void defaultImpulses()
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
 
-	joyimpulses[INJOY_STATUS] = 305;
+	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = 399;
-	joyimpulses[INJOY_CAST_SPELL] = 303;
-	joyimpulses[INJOY_DEFEND] = 399;
-	joyimpulses[INJOY_ATTACK] = 399;
-	joyimpulses[INJOY_USE] = 299;
-	joyimpulses[INJOY_PAUSE_MENU] = 306;
-	joyimpulses[INJOY_LEFT_CLICK] = 299;
+	joyimpulses[INJOY_CAST_SPELL] = 305;
+	joyimpulses[INJOY_DEFEND] = 299;
+	joyimpulses[INJOY_ATTACK] = 300;
+	joyimpulses[INJOY_USE] = 301;
+	joyimpulses[INJOY_PAUSE_MENU] = 308;
+	joyimpulses[INJOY_LEFT_CLICK] = 301;
 }
 
 void defaultConfig() {
@@ -385,15 +385,16 @@ void defaultConfig() {
 	consoleCommand("/bind 44 IN_DEFEND");
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
-	consoleCommand("/joybind 305 INJOY_STATUS");
+	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST");
-	consoleCommand("/joybind 303 INJOY_CAST_SPELL");
-	consoleCommand("/joybind 399 INJOY_DEFEND");
-	consoleCommand("/joybind 399 INJOY_ATTACK");
-	consoleCommand("/joybind 299 INJOY_USE");
-	consoleCommand("/joybind 306 INJOY_PAUSE_MENU");
-	consoleCommand("/joybind 299 INJOY_LEFT_CLICK");
-	consoleCommand("/deadzone 8000");
+	consoleCommand("/joybind 305 INJOY_CAST_SPELL");
+	consoleCommand("/joybind 299 INJOY_DEFEND");
+	consoleCommand("/joybind 300 INJOY_ATTACK");
+	consoleCommand("/joybind 301 INJOY_USE");
+	consoleCommand("/joybind 308 INJOY_PAUSE_MENU");
+	consoleCommand("/joybind 301 INJOY_LEFT_CLICK");
+	consoleCommand("/gamepad_deadzone 8000");
+	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
 	consoleCommand("/gamepad_lefty_sensitivity 1400");
 	consoleCommand("/gamepad_rightx_sensitivity 500");
@@ -595,34 +596,14 @@ int saveConfig(char *filename) {
 	{
 		fprintf(fp, "/splitscreen\n");
 	}
-	if (gamepad_deadzone)
-	{
-		fprintf(fp, "/deadzone %d\n", gamepad_deadzone);
-	}
-	if (gamepad_leftx_sensitivity)
-	{
-		fprintf(fp, "/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);
-	}
-	if (gamepad_lefty_sensitivity)
-	{
-		fprintf(fp, "/gamepad_lefty_sensitivity %d\n", gamepad_lefty_sensitivity);
-	}
-	if (gamepad_rightx_sensitivity)
-	{
-		fprintf(fp, "/gamepad_rightx_sensitivity %d\n", gamepad_rightx_sensitivity);
-	}
-	if (gamepad_righty_sensitivity)
-	{
-		fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
-	}
-	if (gamepad_menux_sensitivity)
-	{
-		fprintf(fp, "/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
-	}
-	if (gamepad_menuy_sensitivity)
-	{
-		fprintf(fp, "/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
-	}
+	fprintf(fp, "/gamepad_deadzone %d\n", gamepad_deadzone);
+	fprintf(fp, "/gamepad_trigger_deadzone %d\n", gamepad_trigger_deadzone);
+	fprintf(fp, "/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);
+	fprintf(fp, "/gamepad_lefty_sensitivity %d\n", gamepad_lefty_sensitivity);
+	fprintf(fp, "/gamepad_rightx_sensitivity %d\n", gamepad_rightx_sensitivity);
+	fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
+	fprintf(fp, "/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
+	fprintf(fp, "/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
 	if (gamepad_rightx_invert)
 	{
 		fprintf(fp, "/gamepad_rightx_invert\n");
@@ -729,42 +710,51 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown key";
 		}
-	} else if( scancode<315 ) {
+	} else if( scancode<301 ) {
 		switch( scancode ) {
 			case 299:
-				return "Button 0";
+				return "Left Trigger";
 			case 300:
-				return "Button 1";
+				return "Right Trigger";
+			default:
+				return "Unknown trigger";
+		}
+	} else if( scancode<317 ) {
+		switch( scancode ) {
 			case 301:
-				return "Button 2";
+				return "Button 0";
 			case 302:
-				return "Button 3";
+				return "Button 1";
 			case 303:
-				return "Button 4";
+				return "Button 2";
 			case 304:
-				return "Button 5";
+				return "Button 3";
 			case 305:
-				return "Button 6";
+				return "Button 4";
 			case 306:
-				return "Button 7";
+				return "Button 5";
 			case 307:
-				return "Button 8";
+				return "Button 6";
 			case 308:
-				return "Button 9";
+				return "Button 7";
 			case 309:
-				return "Button 10";
+				return "Button 8";
 			case 310:
-				return "Button 11";
+				return "Button 9";
 			case 311:
-				return "Button 12";
+				return "Button 10";
 			case 312:
-				return "Button 13";
+				return "Button 11";
 			case 313:
-				return "Button 14";
+				return "Button 12";
 			case 314:
+				return "Button 13";
+			case 315:
+				return "Button 14";
+			case 316:
 				return "Button 15";
 			default:
-				return "Unknown key";
+				return "Unknown button";
 		}
 	} else {
 		return "Unknown key";
@@ -780,17 +770,30 @@ const char *getInputName(Uint32 scancode) {
 
 -------------------------------------------------------------------------------*/
 
-Sint8 *inputPressed(Uint32 scancode) {
-	if( scancode>=0 && scancode<283 ) {
+Sint8 *inputPressed(Uint32 scancode)
+{
+	if (scancode >= 0 && scancode < 283)
+	{
 		// usual (keyboard) scancode range
 		return &keystatus[scancode];
-	} else if( scancode<299 ) {
+	}
+	else if (scancode < 299)
+	{
 		// mouse scancodes
-		return &mousestatus[scancode-282];
-	} else if( scancode<315 ) {
-		return &joystatus[scancode-299];
-	} else {
+		return &mousestatus[scancode - 282];
+	}
+	else if (scancode < 302)
+	{
+		//Analog joystick tricgers mapped to digital status (0 = not pressed, 1 = pressed).
+		return &joy_trigger_status[scancode - 299];
+	}
+	else if (scancode < 317)
+	{
+		return &joystatus[scancode - 301];
+	}
+	else
+	{
 		// bad scancode
-		return NULL;
+		return nullptr;
 	}
 }

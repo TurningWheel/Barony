@@ -1350,6 +1350,8 @@ void handleMainMenu(bool mode) {
 				}
 				else
 				{
+					if (lastkeypressed == SDL_SCANCODE_ESCAPE)
+						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 					lastkeypressed = 0;
 					rebindaction = -1;
 				}
