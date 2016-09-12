@@ -101,6 +101,14 @@ bool playing_random_char = false;
 bool colorblind = false;
 Sint32 oslidery=0;
 
+//Gamepad settings.
+bool settings_gamepad_leftx_invert = false;
+bool settings_gamepad_lefty_invert = false;
+bool settings_gamepad_rightx_invert = false;
+bool settings_gamepad_righty_invert = false;
+bool settings_gamepad_menux_invert = false;
+bool settings_gamepad_menuy_invert = false;
+
 Uint32 colorWhite = 0xFFFFFFFF;
 
 /*-------------------------------------------------------------------------------
@@ -1188,7 +1196,7 @@ void handleMainMenu(bool mode) {
 		//Gamepad tab
 		if (settings_tab == 4)
 		{
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1350]);
+			ttfPrintText(ttf8, subx1 + 24, suby1 + 60, language[1350]);
 
 			bool rebindingaction = false;
 			if (rebindaction != -1)
@@ -1197,12 +1205,12 @@ void handleMainMenu(bool mode) {
 			int c;
 			for (c = 0; c < NUM_JOY_IMPULSES; ++c)
 			{
-				ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16*c, language[1948 + c]);
+				ttfPrintText(ttf8, subx1 + 24, suby1 + 84 + 12*c, language[1948 + c]);
 				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction) //TODO: joystick click :)
 				{
 					if (omousex >= subx1 + 24 && omousex < subx2 - 24)
 					{
-						if (omousey >= suby1 + 84 + c*16 && omousey < suby1 + 96 + c*16)
+						if (omousey >= suby1 + 84 + c*12 && omousey < suby1 + 96 + c*12)
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							lastkeypressed = 0;
@@ -1213,12 +1221,91 @@ void handleMainMenu(bool mode) {
 				}
 
 				if (c != rebindaction)
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c*16, getInputName(settings_joyimpulses[c]));
+					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c*12, getInputName(settings_joyimpulses[c]));
 				else
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c*16, "...");
+					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c*12, "...");
 			}
 
-			//TODO: Change this section to ignore keyboard and mouse input, and to only look at game controller input.
+			int current_option_x = subx1 + 24;
+			int current_option_y = suby1 + 84 + NUM_JOY_IMPULSES * 12 + 20;
+
+			//Checkboxes.
+			if (settings_gamepad_leftx_invert)
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1961]);
+			else
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1961]);
+
+			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				settings_gamepad_leftx_invert = !settings_gamepad_leftx_invert;
+			}
+
+			current_option_y += 12;
+
+			if (settings_gamepad_lefty_invert)
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1962]);
+			else
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1962]);
+
+			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				settings_gamepad_lefty_invert = !settings_gamepad_lefty_invert;
+			}
+
+			current_option_y += 12;
+
+			if (settings_gamepad_rightx_invert)
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1963]);
+			else
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1963]);
+
+			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				settings_gamepad_rightx_invert = !settings_gamepad_rightx_invert;
+			}
+
+			current_option_y += 12;
+
+			if (settings_gamepad_righty_invert)
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1964]);
+			else
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1964]);
+
+			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				settings_gamepad_righty_invert = !settings_gamepad_righty_invert;
+			}
+
+			current_option_y += 12;
+
+			if (settings_gamepad_menux_invert)
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1965]);
+			else
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1965]);
+
+			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				settings_gamepad_menux_invert = !settings_gamepad_menux_invert;
+			}
+
+			current_option_y += 12;
+
+			if (settings_gamepad_menuy_invert)
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1966]);
+			else
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1966]);
+
+			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				settings_gamepad_menuy_invert = !settings_gamepad_menuy_invert;
+			}
+
 			if (rebindaction != -1 && lastkeypressed)
 			{
 
@@ -3398,6 +3485,13 @@ void openSettingsWindow() {
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
 
+	settings_gamepad_leftx_invert = gamepad_leftx_invert;
+	settings_gamepad_lefty_invert = gamepad_lefty_invert;
+	settings_gamepad_rightx_invert = gamepad_rightx_invert;
+	settings_gamepad_righty_invert = gamepad_righty_invert;
+	settings_gamepad_menux_invert = gamepad_menux_invert;
+	settings_gamepad_menuy_invert = gamepad_menuy_invert;
+
 	// create settings window
 	settings_window = TRUE;
 	subwindow = 1;
@@ -4552,6 +4646,13 @@ void buttonSettingsAccept(button_t *my) {
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
+
+	gamepad_leftx_invert = settings_gamepad_leftx_invert;
+	gamepad_lefty_invert = settings_gamepad_lefty_invert;
+	gamepad_rightx_invert = settings_gamepad_rightx_invert;
+	gamepad_righty_invert = settings_gamepad_righty_invert;
+	gamepad_menux_invert = settings_gamepad_menux_invert;
+	gamepad_menuy_invert = settings_gamepad_menuy_invert;
 
 	// we need to reposition the settings window now.
 	buttonCloseSubwindow(my);

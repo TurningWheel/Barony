@@ -103,8 +103,14 @@ void GameController::handleLook()
 	int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
 	int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
 
-	if (!shootmode)
+	if (!shootmode || gamePaused)
 	{
+		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
+		if (gamepad_rightx_invert)
+			rightx = -rightx;
+		if (gamepad_righty_invert)
+			righty = -righty;
+
 		if (gamepad_menux_invert)
 			rightx = -rightx;
 		if (gamepad_menuy_invert)

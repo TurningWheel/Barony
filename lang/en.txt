@@ -2727,4 +2727,11 @@ client (player %d) (direct ip)#
 
 1960 right click protection#
 
+1961 Invert Left Analog Stick X-Axis#
+1962 Invert Left Analog Stick Y-Axis#
+1963 Invert Right Analog Stick X-Axis#
+1964 Invert Right Analog Stick Y-Axis#
+1965 Invert X-Axis in GUI#
+1966 Invert Y-Axis in GUI#
+
 1999 end#
