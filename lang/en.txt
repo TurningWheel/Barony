@@ -2734,4 +2734,9 @@ client (player %d) (direct ip)#
 1965 Invert X-Axis in GUI#
 1966 Invert Y-Axis in GUI#
 
+1967 Right Analog Stick X-Axis Sensitivity#
+1968 Right Analog Stick Y-Axis Sensitivity#
+1969 Menu X-Axis Sensitivity#
+1970 Menu Y-Axis Sensitivity#
+
 1999 end#

@@ -72,16 +72,16 @@ void buttonSteamLobbyBrowserJoinGame(button_t *my);
 void buttonSteamLobbyBrowserRefresh(button_t *my);
 #endif
 
+#define SLIDERFONT font12x12_bmp
+
 // misc functions
 void openSettingsWindow();
 void openFailedConnectionWindow(int mode);
 void openGameoverWindow();
 void openSteamLobbyBrowserWindow(button_t *my);
 void openLoadGameWindow(button_t *my);
-void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int *var);
+void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int *var, SDL_Surface *slider_font = SLIDERFONT, int slider_font_char_width = 16);
 void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double *var);
-
-#define SLIDERFONT font12x12_bmp
 
 // menu variables
 extern bool settings_window;

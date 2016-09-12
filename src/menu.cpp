@@ -109,6 +109,12 @@ bool settings_gamepad_righty_invert = false;
 bool settings_gamepad_menux_invert = false;
 bool settings_gamepad_menuy_invert = false;
 
+int settings_gamepad_deadzone = 1;
+int settings_gamepad_rightx_sensitivity = 1;
+int settings_gamepad_righty_sensitivity = 1;
+int settings_gamepad_menux_sensitivity = 1;
+int settings_gamepad_menuy_sensitivity = 1;
+
 Uint32 colorWhite = 0xFFFFFFFF;
 
 /*-------------------------------------------------------------------------------
@@ -1305,6 +1311,34 @@ void handleMainMenu(bool mode) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menuy_invert = !settings_gamepad_menuy_invert;
 			}
+
+			current_option_y += 24;
+
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1967]);
+			current_option_y += 24;
+			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_rightx_sensitivity, font8x8_bmp, 12); //Doesn't like any fonts besides the default.
+			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_rightx_sensitivity);
+
+			current_option_y += 24;
+
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1968]);
+			current_option_y += 24;
+			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_righty_sensitivity, font8x8_bmp, 12);
+			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_righty_sensitivity);
+
+			current_option_y += 24;
+
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1969]);
+			current_option_y += 24;
+			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menux_sensitivity, font8x8_bmp, 12);
+			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menux_sensitivity);
+
+			current_option_y += 24;
+
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1970]);
+			current_option_y += 24;
+			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
+			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
 
 			if (rebindaction != -1 && lastkeypressed)
 			{
@@ -3492,13 +3526,21 @@ void openSettingsWindow() {
 	settings_gamepad_menux_invert = gamepad_menux_invert;
 	settings_gamepad_menuy_invert = gamepad_menuy_invert;
 
+	settings_gamepad_deadzone = gamepad_deadzone;
+	settings_gamepad_rightx_sensitivity = gamepad_rightx_sensitivity;
+	settings_gamepad_righty_sensitivity = gamepad_righty_sensitivity;
+	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;
+	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;
+
 	// create settings window
 	settings_window = TRUE;
 	subwindow = 1;
 	subx1 = xres/2-256;
 	subx2 = xres/2+256;
-	suby1 = yres/2-192;
-	suby2 = yres/2+192;
+	//suby1 = yres/2-192;
+	//suby2 = yres/2+192;
+	suby1 = yres/2 - 288;
+	suby2 = yres/2 + 288;
 	strcpy(subtext,language[1306]);
 
 	// close button
@@ -4654,6 +4696,13 @@ void buttonSettingsAccept(button_t *my) {
 	gamepad_menux_invert = settings_gamepad_menux_invert;
 	gamepad_menuy_invert = settings_gamepad_menuy_invert;
 
+
+	gamepad_deadzone = settings_gamepad_deadzone;
+	gamepad_rightx_sensitivity = settings_gamepad_rightx_sensitivity;
+	gamepad_righty_sensitivity = settings_gamepad_righty_sensitivity;
+	gamepad_menux_sensitivity = settings_gamepad_menux_sensitivity;
+	gamepad_menuy_sensitivity = settings_gamepad_menuy_sensitivity;
+
 	// we need to reposition the settings window now.
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
@@ -4681,7 +4730,7 @@ void buttonScorePrev(button_t *my) {
 }
 
 // handles slider
-void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int *var) {
+void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int *var, SDL_Surface *slider_font, int slider_font_char_width) {
 	int c;
 
 	// build bar
@@ -4690,15 +4739,15 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 		strcat(tempstr,". ");
 	}
 	strcat(tempstr,"| %d");
-	printTextFormatted(SLIDERFONT, x, y, tempstr, *var);
+	printTextFormatted(slider_font, x, y, tempstr, *var);
 	
 	// control
 	int range = maxvalue-minvalue;
-	int sliderLength = ((strlen(tempstr)-4)*(SLIDERFONT->w/16));
+	int sliderLength = ((strlen(tempstr)-4)*(slider_font->w/slider_font_char_width));
 	if( mousestatus[SDL_BUTTON_LEFT] ) {
-		if( omousex >= x && omousex < x+sliderLength+(SLIDERFONT->w/16) ) {
-			if( omousey >= y-(SLIDERFONT->h/16)/2 && omousey < y+((SLIDERFONT->h/16)/2)*3 ) {
-				*var = ((double)(mousex-x-(SLIDERFONT->w/16)/2)/sliderLength)*range+minvalue;
+		if( omousex >= x && omousex < x+sliderLength+(slider_font->w/slider_font_char_width) ) {
+			if( omousey >= y-(slider_font->h/slider_font_char_width)/2 && omousey < y+((slider_font->h/slider_font_char_width)/2)*3 ) {
+				*var = ((double)(mousex-x-(slider_font->w/slider_font_char_width)/2)/sliderLength)*range+minvalue;
 				if( increment ) {
 					*var += increment/2;
 					*var /= increment;
@@ -4710,9 +4759,9 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 	}
 
 	// draw slider
-	int sliderx = x+(SLIDERFONT->w/16)/2;
+	int sliderx = x+(slider_font->w/slider_font_char_width)/2;
 	sliderx += (((double)(*var)-minvalue)/range)*sliderLength;
-	drawWindowFancy( sliderx-(SLIDERFONT->w/16)/2, y-(SLIDERFONT->h/16)/2, sliderx+(SLIDERFONT->w/16)/2, y+((SLIDERFONT->h/16)/2)*3);
+	drawWindowFancy( sliderx-(slider_font->w/slider_font_char_width)/2, y-(slider_font->h/slider_font_char_width)/2, sliderx+(slider_font->w/slider_font_char_width)/2, y+((slider_font->h/slider_font_char_width)/2)*3);
 }
 
 // handles slider (float)
