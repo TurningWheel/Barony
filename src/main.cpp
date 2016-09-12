@@ -29,6 +29,7 @@ char **language = NULL;
 int reversemouse=0;
 double mousespeed=32;
 Uint32 impulses[NUMIMPULSES];
+Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed=0;
 Sint8 keystatus[512];
 char *inputstr = NULL;

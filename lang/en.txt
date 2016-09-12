@@ -2713,6 +2713,18 @@ client (player %d) (direct ip)#
 # Traps.
 1946 NOTE: Only removes generated traps#
 
+# Gamepad settings menu stuff.
+1947 Gamepad#
+
+1948 Character Status#
+1949 Spell List#
+1950 Cast Spell#
+1951 Raise Shield#
+1952 Attack#
+1953 Use#
+1954 Menu#
+1955 "Left Click"#
+
 1960 right click protection#
 
 1999 end#

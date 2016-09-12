@@ -330,6 +330,35 @@ void freeInterfaceResources() {
 	list_FreeAll(&damageIndicators);
 }
 
+void defaultImpulses()
+{
+	impulses[IN_FORWARD] = 26;
+	impulses[IN_LEFT] = 4;
+	impulses[IN_BACK] = 22;
+	impulses[IN_RIGHT] = 7;
+	impulses[IN_TURNL] = 20;
+	impulses[IN_TURNR] = 8;
+	impulses[IN_UP] = 6;
+	impulses[IN_DOWN] = 29;
+	impulses[IN_CHAT] = 40;
+	impulses[IN_COMMAND] = 56;
+	impulses[IN_STATUS] = 43;
+	impulses[IN_SPELL_LIST] = 16;
+	impulses[IN_CAST_SPELL] = 9;
+	impulses[IN_DEFEND] = 44;
+	impulses[IN_ATTACK] = 283;
+	impulses[IN_USE] = 285;
+
+	joyimpulses[INJOY_STATUS] = 305;
+	joyimpulses[INJOY_SPELL_LIST] = 399;
+	joyimpulses[INJOY_CAST_SPELL] = 303;
+	joyimpulses[INJOY_DEFEND] = 399;
+	joyimpulses[INJOY_ATTACK] = 399;
+	joyimpulses[INJOY_USE] = 299;
+	joyimpulses[INJOY_PAUSE_MENU] = 306;
+	joyimpulses[INJOY_LEFT_CLICK] = 299;
+}
+
 void defaultConfig() {
 	consoleCommand("/res 1280x720");
 	consoleCommand("/gamma 1.000");
@@ -356,6 +385,14 @@ void defaultConfig() {
 	consoleCommand("/bind 44 IN_DEFEND");
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
+	consoleCommand("/joybind 305 INJOY_STATUS");
+	consoleCommand("/joybind 399 INJOY_SPELL_LIST");
+	consoleCommand("/joybind 303 INJOY_CAST_SPELL");
+	consoleCommand("/joybind 399 INJOY_DEFEND");
+	consoleCommand("/joybind 399 INJOY_ATTACK");
+	consoleCommand("/joybind 299 INJOY_USE");
+	consoleCommand("/joybind 306 INJOY_PAUSE_MENU");
+	consoleCommand("/joybind 299 INJOY_LEFT_CLICK");
 	consoleCommand("/deadzone 8000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
 	consoleCommand("/gamepad_lefty_sensitivity 1400");
@@ -388,6 +425,8 @@ void saveCommand(char *content) {
 -------------------------------------------------------------------------------*/
 
 int loadConfig(char *filename) {
+	defaultImpulses(); //So that a config file that's missing impulses can get all them.
+
 	char str[1024];
 	FILE *fp;
 	bool mallocd = FALSE;
@@ -439,6 +478,17 @@ static char impulsenames[NUMIMPULSES][12] = {
 	"DEFEND",
 	"ATTACK",
 	"USE"
+};
+
+static char joyimpulsenames[NUM_JOY_IMPULSES][12] = {
+	"STATUS",
+	"SPELL_LIST",
+	"CAST_SPELL",
+	"DEFEND",
+	"ATTACK",
+	"USE",
+	"PAUSE_MENU",
+	"LEFT_CLICK"
 };
 
 /*-------------------------------------------------------------------------------
@@ -495,8 +545,10 @@ int saveConfig(char *filename) {
 		fprintf(fp,"/bobbing\n");
 	fprintf(fp,"/sfxvolume %d\n",sfxvolume);
 	fprintf(fp,"/musvolume %d\n",musvolume);
-	for( c=0; c<NUMIMPULSES; c++ )
-		fprintf(fp,"/bind %d IN_%s\n",impulses[c],impulsenames[c]); //TODO: Do /joybind.
+	for (c = 0; c < NUMIMPULSES; c++)
+		fprintf(fp, "/bind %d IN_%s\n", impulses[c], impulsenames[c]);
+	for (c = 0; c < NUM_JOY_IMPULSES; c++)
+		fprintf(fp, "/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
 	fprintf(fp,"/mousespeed %d\n",(int)(mousespeed));
 	if( reversemouse )
 		fprintf(fp,"/reversemouse\n");

@@ -50,7 +50,17 @@ bool lobby_window=FALSE;
 bool settings_window=FALSE;
 int connect_window=0;
 int charcreation_step=0;
-int settings_tab=0;
+/*
+ * settings_tab
+ * valid values:
+ *		- 0 = Video settings
+ *		- 1 = Audio settings
+ *		- 2 = Keyboard/binding settings
+ *		- 3 = Mouse settings
+ *		- 4 = Gamepad settings
+ *		- 5 = Misc settings
+ */
+int settings_tab = 0;
 int score_window=0;
 int resolutions[NUMRESOLUTIONS][2] = {
 	{ 960, 600 },
@@ -71,6 +81,7 @@ int settings_fullscreen, settings_shaking, settings_bobbing;
 double settings_gamma;
 int settings_sfxvolume, settings_musvolume;
 int settings_impulses[NUMIMPULSES];
+int settings_joyimpulses[NUM_JOY_IMPULSES];
 int settings_reversemouse;
 double settings_mousespeed;
 bool settings_broadcast;
@@ -83,11 +94,11 @@ char classtoquickstart[256]="";
 bool spawn_blood = TRUE;
 int multiplayerselect=SINGLE;
 int menuselect=0;
-bool settings_auto_hotbar_new_items = TRUE;
-bool settings_disable_messages = TRUE;
-bool settings_right_click_protect = FALSE;
-bool playing_random_char = FALSE;
-bool colorblind = FALSE;
+bool settings_auto_hotbar_new_items = true;
+bool settings_disable_messages = true;
+bool settings_right_click_protect = false;
+bool playing_random_char = false;
+bool colorblind = false;
 Sint32 oslidery=0;
 
 Uint32 colorWhite = 0xFFFFFFFF;
@@ -104,23 +115,24 @@ Uint32 colorWhite = 0xFFFFFFFF;
 int firstendmoviealpha[30];
 int secondendmoviealpha[30];
 int intromoviealpha[30];
-int rebindkey=-1;
+int rebindkey = -1;
+int rebindaction = -1;
 
-Sint32 gearrot=0;
-Sint32 gearsize=5000;
-Uint16 logoalpha=0;
-int credittime=0;
-int creditstage=0;
-int intromovietime=0;
-int intromoviestage=0;
-int firstendmovietime=0;
-int firstendmoviestage=0;
-int secondendmovietime=0;
-int secondendmoviestage=0;
-double drunkextend=0;
-bool losingConnection[4] = { FALSE };
-bool subtitleVisible=FALSE;
-int subtitleCurrent=0;
+Sint32 gearrot = 0;
+Sint32 gearsize = 5000;
+Uint16 logoalpha = 0;
+int credittime = 0;
+int creditstage = 0;
+int intromovietime = 0;
+int intromoviestage = 0;
+int firstendmovietime = 0;
+int firstendmoviestage = 0;
+int secondendmovietime = 0;
+int secondendmoviestage = 0;
+double drunkextend = 0;
+bool losingConnection[4] = { false };
+bool subtitleVisible = false;
+int subtitleCurrent = 0;
 
 void handleMainMenu(bool mode) {
 	SDL_Rect pos, src, dest;
@@ -1173,39 +1185,94 @@ void handleMainMenu(bool mode) {
 			}
 		}
 
+		//Gamepad tab
+		if (settings_tab == 4)
+		{
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1350]);
+
+			bool rebindingaction = false;
+			if (rebindaction != -1)
+				rebindingaction = true;
+
+			int c;
+			for (c = 0; c < NUM_JOY_IMPULSES; ++c)
+			{
+				ttfPrintText(ttf12, subx1 + 24, suby1 + 84 + 16*c, language[1948 + c]);
+				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction) //TODO: joystick click :)
+				{
+					if (omousex >= subx1 + 24 && omousex < subx2 - 24)
+					{
+						if (omousey >= suby1 + 84 + c*16 && omousey < suby1 + 96 + c*16)
+						{
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+							lastkeypressed = 0;
+							rebindingaction = true;
+							rebindaction = c;
+						}
+					}
+				}
+
+				if (c != rebindaction)
+					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c*16, getInputName(settings_joyimpulses[c]));
+				else
+					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c*16, "...");
+			}
+
+			//TODO: Change this section to ignore keyboard and mouse input, and to only look at game controller input.
+			if (rebindaction != -1 && lastkeypressed)
+			{
+
+				if (lastkeypressed >= 299) /* Is a joybutton. */
+				{
+					settings_joyimpulses[rebindaction] = lastkeypressed;
+					rebindaction = -1;
+				}
+				else
+				{
+					lastkeypressed = 0;
+					rebindaction = -1;
+				}
+			}
+		}
+
 		// miscellaneous options
-		if( settings_tab==4 ) {
-			ttfPrintText(ttf12, subx1+24, suby1+60, language[1371]);
-			if( settings_broadcast )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+84, "[x] %s", language[1372]);
+		if (settings_tab == 5)
+		{
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1371]);
+			if (settings_broadcast)
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 84, "[x] %s", language[1372]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+84, "[ ] %s", language[1372]);
-			if( settings_nohud )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[x] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 84, "[ ] %s", language[1372]);
+			if (settings_nohud)
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 100, "[x] %s", language[1373]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[ ] %s", language[1373]);
-			if( settings_auto_hotbar_new_items)
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[x] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 100, "[ ] %s", language[1373]);
+			if (settings_auto_hotbar_new_items)
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 116, "[x] %s", language[1374]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[ ] %s", language[1374]);
-			if( settings_disable_messages )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 116, "[ ] %s", language[1374]);
+			if (settings_disable_messages)
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 132, "[x] %s", language[1536]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1536]);
-			if ( settings_right_click_protect )
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 132, "[ ] %s", language[1536]);
+			if (settings_right_click_protect)
 				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[x] %s", language[1960]);
 			else
 				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[ ] %s", language[1960]);
 
 			// server flag elements
-			ttfPrintText(ttf12, subx1+24, suby1+180, language[1375]);
+			ttfPrintText(ttf12, subx1 + 24, suby1 + 180, language[1375]);
 
 			int i;
-			for( i=0; i<NUM_SERVER_FLAGS; i++ ) {
-				if( svFlags&power(2,i) ) {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+204+16*i,"[x] %s",language[153+i]);
-				} else {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+204+16*i,"[ ] %s",language[153+i]);
+			for (i = 0; i < NUM_SERVER_FLAGS; ++i)
+			{
+				if (svFlags&power(2, i))
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 204 + 16*i, "[x] %s", language[153 + i]);
+				}
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 204 + 16*i, "[ ] %s", language[153 + i]);
 				}
 				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, suby1 + 204 + (i*16), suby1 + 216 + (i*16))) //So many gosh dang magic numbers ._.
 				{
@@ -1228,53 +1295,65 @@ void handleMainMenu(bool mode) {
 				}
 			}
 
-			if( mousestatus[SDL_BUTTON_LEFT] ) {
-				if( omousex >= subx1+42 && omousex < subx1+66 ) {
-					if( omousey >= suby1+84 && omousey < suby1+84+12 ) {
+			if (mousestatus[SDL_BUTTON_LEFT])
+			{
+				if (omousex >= subx1 + 42 && omousex < subx1 + 66)
+				{
+					if (omousey >= suby1 + 84 && omousey < suby1 + 84 + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_broadcast=(settings_broadcast==FALSE);
+						settings_broadcast = (settings_broadcast == false);
 					}
-					else if( omousey >= suby1+100 && omousey < suby1+100+12 ) {
+					else if (omousey >= suby1 + 100 && omousey < suby1 + 100 + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_nohud=(settings_nohud==FALSE);
+						settings_nohud = (settings_nohud == false);
 					}
-					else if( omousey >= suby1+116 && omousey < suby1+116+12 ) {
+					else if (omousey >= suby1 + 116 && omousey < suby1 + 116 + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == FALSE);
+						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == false);
 					}
-					else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
+					else if (omousey >= suby1 + 132 && omousey < suby1 + 132 + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_disable_messages = (settings_disable_messages == FALSE);
+						settings_disable_messages = (settings_disable_messages == false);
 					}
-					else if (omousey >= suby1 + 148 && omousey < suby1 + 148 + 12) {
+					else if (omousey >= suby1 + 148 && omousey < suby1 + 148 + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_right_click_protect = (settings_right_click_protect == FALSE);
+						settings_right_click_protect = (settings_right_click_protect == false);
 					}
 				}
-				if( multiplayer!=CLIENT ) {
-					for( i=0; i<NUM_SERVER_FLAGS; i++ ) {
-						if( mouseInBounds(subx1+36+6,subx1+36+24+6,suby1+204+i*16,suby1+216+i*16) ) {
+				if (multiplayer != CLIENT)
+				{
+					for (i = 0; i < NUM_SERVER_FLAGS; ++i)
+					{
+						if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, suby1 + 204 + i*16, suby1 + 216 + i*16))
+						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 
 							// toggle flag
-							svFlags ^= power(2,i);
+							svFlags ^= power(2, i);
 
-							if( multiplayer==SERVER ) {
+							if (multiplayer == SERVER)
+							{
 								// update client flags
-								strcpy((char *)net_packet->data,"SVFL");
-								SDLNet_Write32(svFlags,&net_packet->data[4]);
+								strcpy((char *)net_packet->data, "SVFL");
+								SDLNet_Write32(svFlags, &net_packet->data[4]);
 								net_packet->len = 8;
 
 								int c;
-								for( c=1; c<MAXPLAYERS; c++ ) {
-									if( client_disconnected[c] )
+								for (c = 1; c < MAXPLAYERS; ++c)
+								{
+									if (client_disconnected[c])
 										continue;
-									net_packet->address.host = net_clients[c-1].host;
-									net_packet->address.port = net_clients[c-1].port;
-									sendPacketSafe(net_sock, -1, net_packet, c-1);
-									messagePlayer(c,language[276]);
+									net_packet->address.host = net_clients[c - 1].host;
+									net_packet->address.port = net_clients[c - 1].port;
+									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									messagePlayer(c, language[276]);
 								}
-								messagePlayer(clientnum,language[276]);
+								messagePlayer(clientnum, language[276]);
 							}
 						}
 					}
@@ -3302,8 +3381,14 @@ void openSettingsWindow() {
 	settings_gamma = vidgamma;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
-	for( c=0; c<NUMIMPULSES; c++ )
+	for (c = 0; c < NUMIMPULSES; c++)
+	{
 		settings_impulses[c] = impulses[c];
+	}
+	for (c = 0; c < NUM_JOY_IMPULSES; c++)
+	{
+		settings_joyimpulses[c] = joyimpulses[c];
+	}
 	settings_reversemouse = reversemouse;
 	settings_smoothmouse = smoothmouse;
 	settings_mousespeed = mousespeed;
@@ -3324,23 +3409,23 @@ void openSettingsWindow() {
 
 	// close button
 	button = newButton();
-	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
-	button->action=&buttonCloseSubwindow;
-	button->visible=1;
-	button->focused=1;
+	strcpy(button->label, "x");
+	button->x = subx2 - 20; button->y = suby1;
+	button->sizex = 20; button->sizey = 20;
+	button->action = &buttonCloseSubwindow;
+	button->visible = 1;
+	button->focused = 1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	
+
 	// cancel button
 	button = newButton();
 	strcpy(button->label,language[1316]);
-	button->x=subx1+8; button->y=suby2-28;
+	button->x=subx1 + 8; button->y=suby2-28;
 	button->sizex=strlen(language[1316])*12+8; button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	// ok button
 	button = newButton();
 	strcpy(button->label,language[1433]);
@@ -3350,7 +3435,7 @@ void openSettingsWindow() {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
-	
+
 	// accept button
 	button = newButton();
 	strcpy(button->label,language[1317]);
@@ -3359,51 +3444,72 @@ void openSettingsWindow() {
 	button->action=&buttonSettingsAccept;
 	button->visible=1;
 	button->focused=1;
-	
+
+	int tabx_so_far = subx1 + 16;
+
 	// video tab
 	button = newButton();
-	strcpy(button->label,language[1434]);
-	button->x=subx1+16; button->y=suby1+24;
-	button->sizex=strlen(language[1434])*12+8; button->sizey=20;
-	button->action=&buttonVideoTab;
-	button->visible=1;
-	button->focused=1;
-	
+	strcpy(button->label, language[1434]);
+	button->x = tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1434])*12 + 8; button->sizey = 20;
+	button->action = &buttonVideoTab;
+	button->visible = 1;
+	button->focused = 1;
+
+	tabx_so_far += strlen(language[1434])*12 + 8;
+
 	// audio tab
 	button = newButton();
-	strcpy(button->label,language[1435]);
-	button->x=subx1+16+strlen(language[1434])*12+8; button->y=suby1+24;
-	button->sizex=strlen(language[1435])*12+8; button->sizey=20;
-	button->action=&buttonAudioTab;
-	button->visible=1;
-	button->focused=1;
-	
+	strcpy(button->label, language[1435]);
+	button->x = tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1435])*12 + 8; button->sizey = 20;
+	button->action = &buttonAudioTab;
+	button->visible = 1;
+	button->focused = 1;
+
+	tabx_so_far += strlen(language[1435])*12 + 8;
+
 	// keyboard tab
 	button = newButton();
-	strcpy(button->label,language[1436]);
-	button->x=subx1+16+strlen(language[1434])*12+8+strlen(language[1435])*12+8; button->y=suby1+24;
-	button->sizex=strlen(language[1436])*12+8; button->sizey=20;
-	button->action=&buttonKeyboardTab;
-	button->visible=1;
-	button->focused=1;
-	
+	strcpy(button->label, language[1436]);
+	button->x = tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1436])*12 + 8; button->sizey = 20;
+	button->action = &buttonKeyboardTab;
+	button->visible = 1;
+	button->focused = 1;
+
+	tabx_so_far += strlen(language[1436])*12 + 8;
+
 	// mouse tab
 	button = newButton();
-	strcpy(button->label,language[1437]);
-	button->x=subx1+16+strlen(language[1434])*12+8+strlen(language[1435])*12+8+strlen(language[1436])*12+8; button->y=suby1+24;
-	button->sizex=strlen(language[1437])*12+8; button->sizey=20;
-	button->action=&buttonMouseTab;
-	button->visible=1;
-	button->focused=1;
+	strcpy(button->label, language[1437]);
+	button->x = tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1437])*12 + 8; button->sizey = 20;
+	button->action = &buttonMouseTab;
+	button->visible = 1;
+	button->focused = 1;
+
+	tabx_so_far += strlen(language[1437])*12 + 8;
+
+	//Gamepad tab.
+	button = newButton();
+	strcpy(button->label, language[1947]);
+	button->x = tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1947])*12 + 8; button->sizey = 20;
+	button->action = &buttonGamepadTab;
+	button->visible = 1;
+	button->focused = 1;
+
+	tabx_so_far += strlen(language[1947])*12 + 8;
 
 	// misc tab
 	button = newButton();
-	strcpy(button->label,language[1438]);
-	button->x=subx1+16+strlen(language[1434])*12+8+strlen(language[1435])*12+8+strlen(language[1436])*12+8+strlen(language[1437])*12+8; button->y=suby1+24;
-	button->sizex=strlen(language[1438])*12+8; button->sizey=20;
-	button->action=&buttonMiscTab;
-	button->visible=1;
-	button->focused=1;
+	strcpy(button->label, language[1438]);
+	button->x =  tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1438])*12 + 8; button->sizey = 20;
+	button->action = &buttonMiscTab;
+	button->visible = 1;
+	button->focused = 1;
 }
 
 void openSteamLobbyWaitWindow(button_t *my);
@@ -4353,28 +4459,39 @@ void buttonDisconnect(button_t *my) {
 }
 
 // open the video tab in the settings window
-void buttonVideoTab(button_t *my) {
-	settings_tab=0;
+void buttonVideoTab(button_t *my)
+{
+	settings_tab = 0;
 }
 
 // open the audio tab in the settings window
-void buttonAudioTab(button_t *my) {
-	settings_tab=1;
+void buttonAudioTab(button_t *my)
+{
+	settings_tab = 1;
 }
 
 // open the keyboard tab in the settings window
-void buttonKeyboardTab(button_t *my) {
-	settings_tab=2;
+void buttonKeyboardTab(button_t *my)
+{
+	settings_tab = 2;
 }
 
 // open the mouse tab in the settings window
-void buttonMouseTab(button_t *my) {
-	settings_tab=3;
+void buttonMouseTab(button_t *my)
+{
+	settings_tab = 3;
+}
+
+// open the keyboard tab in the settings window
+void buttonGamepadTab(button_t *my)
+{
+	settings_tab = 4;
 }
 
 // open the misc tab in the settings window
-void buttonMiscTab(button_t *my) {
-	settings_tab=4;
+void buttonMiscTab(button_t *my)
+{
+	settings_tab = 5;
 }
 
 // settings accept button
@@ -4414,8 +4531,13 @@ void buttonSettingsAccept(button_t *my) {
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	
 	// set keyboard options
-	for( c=0; c<NUMIMPULSES; c++ ) {
+	for (c = 0; c < NUMIMPULSES; c++)
+	{
 		impulses[c] = settings_impulses[c];
+	}
+	for (c = 0; c < NUM_JOY_IMPULSES; c++)
+	{
+		joyimpulses[c] = settings_joyimpulses[c];
 	}
 
 	// set mouse options

@@ -358,6 +358,53 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,"Invalid binding.");
 		}
 	}
+	else if (!strncmp(command_str, "/joybind", 8))
+	{
+		if (strstr(command_str, "INJOY_STATUS"))
+		{
+			joyimpulses[INJOY_STATUS] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_STATUS: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_SPELL_LIST"))
+		{
+			joyimpulses[INJOY_SPELL_LIST] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_SPELL_LIST: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_CAST_SPELL"))
+		{
+			joyimpulses[INJOY_CAST_SPELL] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_CAST_SPELL: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_DEFEND"))
+		{
+			joyimpulses[INJOY_DEFEND] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_DEFEND: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_ATTACK"))
+		{
+			joyimpulses[INJOY_ATTACK] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_ATTACK: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_USE"))
+		{
+			joyimpulses[INJOY_USE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_USE: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_PAUSE_MENU"))
+		{
+			joyimpulses[INJOY_PAUSE_MENU] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_PAUSE_MENU: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_LEFT_CLICK"))
+		{
+			joyimpulses[INJOY_PAUSE_MENU] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_LEFT_CLICK: %d\n", atoi(&command_str[9]));
+		}
+		else
+		{
+			messagePlayer(clientnum, "Invalid binding.");
+		}
+	}
 	else if( !strncmp(command_str,"/mousespeed",11) ) {
 		mousespeed = atoi(&command_str[12]);
 	}

@@ -49,6 +49,7 @@ void buttonVideoTab(button_t *my);
 void buttonAudioTab(button_t *my);
 void buttonKeyboardTab(button_t *my);
 void buttonMouseTab(button_t *my);
+void buttonGamepadTab(button_t *my);
 void buttonMiscTab(button_t *my);
 void buttonSettingsAccept(button_t *my);
 void buttonSettingsOK(button_t *my);

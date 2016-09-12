@@ -1645,7 +1645,7 @@ int main(int argc, char **argv) {
 				}
 			}
 		}
-		
+
 		// load config file
 		if( loadingconfig ) {
 			loadConfig(configtoload);

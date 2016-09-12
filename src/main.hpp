@@ -165,6 +165,17 @@ extern bool stop;
 #define IN_USE 15
 #define NUMIMPULSES 16
 
+//Joystick/gamepad impulses
+#define INJOY_STATUS 0
+#define INJOY_SPELL_LIST 1
+#define INJOY_CAST_SPELL 2
+#define INJOY_DEFEND 3
+#define INJOY_ATTACK 4
+#define INJOY_USE 5
+#define INJOY_PAUSE_MENU 6
+#define INJOY_LEFT_CLICK 7
+#define NUM_JOY_IMPULSES 8
+
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
 #define SDL_BUTTON_WHEELDOWN 5

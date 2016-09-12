@@ -25,8 +25,9 @@ extern list_t steamAchievements;
 #define ENTITY_PACKET_LENGTH 46
 #define NET_PACKET_SIZE 512
 
-// impulses (bound keystrokes)
+// impulses (bound keystrokes, mousestrokes, and joystick/game controller strokes) //TODO: Player-by-player basis.
 extern Uint32 impulses[NUMIMPULSES];
+extern Uint32 joyimpulses[NUM_JOY_IMPULSES]; //Joystick/gamepad only impulses.
 extern int reversemouse;
 extern double mousespeed;
 

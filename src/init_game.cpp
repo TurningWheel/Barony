@@ -131,7 +131,7 @@ int initGame() {
 		// close file
 		fclose(fp);
 	}
-	
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,_LOADSTR2,&w,&h);
@@ -141,7 +141,7 @@ int initGame() {
 	#else
 	SDL_GL_SwapWindow(screen);
 	#endif
-	
+
 	// load item types
 	printlog( "loading items...\n");
 	fp = fopen("items/items.txt","r");
