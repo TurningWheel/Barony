@@ -2724,6 +2724,10 @@ client (player %d) (direct ip)#
 1953 Use#
 1954 Menu#
 1955 "Left Click"#
+1956 D-Pad Left#
+1957 D-Pad Right#
+1958 D-Pad Up#
+1959 D-Pad Down#
 
 1960 right click protection#
 

@@ -44,6 +44,8 @@ GameController* game_controller = nullptr;
 GameController::GameController()
 {
 	sdl_device = nullptr;
+	id = -1;
+	name = "";
 }
 
 GameController::~GameController()
@@ -82,10 +84,12 @@ bool GameController::open(int c)
 	}
 	else
 	{
+		id = c;
 		printlog("Successfully initialized game controller!\n");
 		name = (SDL_GameControllerNameForIndex(c));
 		printlog("Controller name is \"%s\"", name.c_str());
 	}
+
 
 	return (sdl_device != nullptr);
 }

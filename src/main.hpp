@@ -174,7 +174,11 @@ extern bool stop;
 #define INJOY_USE 5
 #define INJOY_PAUSE_MENU 6 //Should this also acts as the escape key?
 #define INJOY_LEFT_CLICK 7
-#define NUM_JOY_IMPULSES 8
+#define INJOY_DPAD_LEFT 8
+#define INJOY_DPAD_RIGHT 9
+#define INJOY_DPAD_UP 10
+#define INJOY_DPAD_DOWN 11
+#define NUM_JOY_IMPULSES 12
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

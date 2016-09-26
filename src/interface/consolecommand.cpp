@@ -400,6 +400,26 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_LEFT_CLICK] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_LEFT_CLICK: %d\n", atoi(&command_str[9]));
 		}
+		else if (strstr(command_str, "INJOY_DPAD_LEFT"))
+		{
+			joyimpulses[INJOY_DPAD_LEFT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_DPAD_LEFT: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_DPAD_RIGHT"))
+		{
+			joyimpulses[INJOY_DPAD_RIGHT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_DPAD_RIGHT: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_DPAD_UP"))
+		{
+			joyimpulses[INJOY_DPAD_UP] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_DPAD_UP: %d\n", atoi(&command_str[9]));
+		}
+		else if (strstr(command_str, "INJOY_DPAD_DOWN"))
+		{
+			joyimpulses[INJOY_DPAD_DOWN] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_DPAD_DOWN: %d\n", atoi(&command_str[9]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");

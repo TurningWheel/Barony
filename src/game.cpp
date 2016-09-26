@@ -1322,10 +1322,11 @@ void handleEvents(void) {
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 				break;
-			case SDL_JOYBUTTONDOWN: // if joystick button is pressed
-				joystatus[event.jbutton.button] = 1; // set this button's index to 1
-				lastkeypressed = 301+event.jbutton.button;
-				if (event.jbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused))
+			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
+				joystatus[event.cbutton.button] = 1; // set this button's index to 1
+				lastkeypressed = 301+event.cbutton.button;
+				printlog("Button %d pressed.", event.cbutton.button);
+				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused))
 				{
 					//Generate a mouse click.
 					SDL_Event e;
@@ -1336,9 +1337,9 @@ void handleEvents(void) {
 					SDL_PushEvent(&e);
 				}
 				break;
-			case SDL_JOYBUTTONUP: // if joystick button is released
-				joystatus[event.jbutton.button] = 0; // set this button's index to 0
-				if (event.jbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK])
+			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
+				joystatus[event.cbutton.button] = 0; // set this button's index to 0
+				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK])
 				{
 					//Generate a mouse lift.
 					SDL_Event e;
@@ -1347,6 +1348,8 @@ void handleEvents(void) {
 					e.button.button = SDL_BUTTON_LEFT;
 					SDL_PushEvent(&e);
 				}
+				break;
+			case SDL_JOYHATMOTION:
 				break;
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if( runtimes<5 ) {

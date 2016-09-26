@@ -351,12 +351,16 @@ void defaultImpulses()
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = 399;
-	joyimpulses[INJOY_CAST_SPELL] = 305;
+	joyimpulses[INJOY_CAST_SPELL] = 309;
 	joyimpulses[INJOY_DEFEND] = 299;
 	joyimpulses[INJOY_ATTACK] = 300;
 	joyimpulses[INJOY_USE] = 301;
-	joyimpulses[INJOY_PAUSE_MENU] = 308;
+	joyimpulses[INJOY_PAUSE_MENU] = 305;
 	joyimpulses[INJOY_LEFT_CLICK] = 301;
+	joyimpulses[INJOY_DPAD_LEFT] = 314;
+	joyimpulses[INJOY_DPAD_RIGHT] = 315;
+	joyimpulses[INJOY_DPAD_UP] = 312;
+	joyimpulses[INJOY_DPAD_DOWN] = 313;
 }
 
 void defaultConfig() {
@@ -393,6 +397,10 @@ void defaultConfig() {
 	consoleCommand("/joybind 301 INJOY_USE");
 	consoleCommand("/joybind 308 INJOY_PAUSE_MENU");
 	consoleCommand("/joybind 301 INJOY_LEFT_CLICK");
+	consoleCommand("/joybind 399 INJOY_DPAD_LEFT");
+	consoleCommand("/joybind 399 INJOY_DPAD_RIGHT");
+	consoleCommand("/joybind 399 INJOY_DPAD_UP");
+	consoleCommand("/joybind 399 INJOY_DPAD_DOWN");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -489,7 +497,11 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][12] = {
 	"ATTACK",
 	"USE",
 	"PAUSE_MENU",
-	"LEFT_CLICK"
+	"LEFT_CLICK",
+	"DPAD_LEFT",
+	"DPAD_RIGHT",
+	"DPAD_UP",
+	"DPAD_DOWN"
 };
 
 /*-------------------------------------------------------------------------------
@@ -710,7 +722,7 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown key";
 		}
-	} else if( scancode<301 ) {
+	} else if( scancode<301 ) { //Game Controller triggers.
 		switch( scancode ) {
 			case 299:
 				return "Left Trigger";
@@ -719,43 +731,8 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown trigger";
 		}
-	} else if( scancode<317 ) {
-		switch( scancode ) {
-			case 301:
-				return "Button 0";
-			case 302:
-				return "Button 1";
-			case 303:
-				return "Button 2";
-			case 304:
-				return "Button 3";
-			case 305:
-				return "Button 4";
-			case 306:
-				return "Button 5";
-			case 307:
-				return "Button 6";
-			case 308:
-				return "Button 7";
-			case 309:
-				return "Button 8";
-			case 310:
-				return "Button 9";
-			case 311:
-				return "Button 10";
-			case 312:
-				return "Button 11";
-			case 313:
-				return "Button 12";
-			case 314:
-				return "Button 13";
-			case 315:
-				return "Button 14";
-			case 316:
-				return "Button 15";
-			default:
-				return "Unknown button";
-		}
+	} else if( scancode<317 ) { //Game controller buttons.
+		return SDL_GameControllerGetStringForButton(static_cast<SDL_GameControllerButton>(scancode - 301));
 	} else {
 		return "Unknown key";
 	}
