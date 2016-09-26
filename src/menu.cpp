@@ -279,9 +279,11 @@ void handleMainMenu(bool mode) {
 		if( mode ) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1303])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
-				if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
-					mousestatus[SDL_BUTTON_LEFT]=0;
-					keystatus[SDL_SCANCODE_RETURN]=0;
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 					playSound(139,64);
 					
 					// look for a save game
@@ -296,9 +298,11 @@ void handleMainMenu(bool mode) {
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1304])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1304]);
-				if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
-					mousestatus[SDL_BUTTON_LEFT]=0;
-					keystatus[SDL_SCANCODE_RETURN]=0;
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 					playSound(139,64);
 					introstage=6; // goes to intro movie
 					playmusic(introductionmusic, TRUE, TRUE, FALSE);
@@ -309,9 +313,11 @@ void handleMainMenu(bool mode) {
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1305])*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, language[1305]);
-				if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
-					mousestatus[SDL_BUTTON_LEFT]=0;
-					keystatus[SDL_SCANCODE_RETURN]=0;
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 					playSound(139,64);
 					
 					// create statistics window
@@ -360,9 +366,11 @@ void handleMainMenu(bool mode) {
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1306]);
-				if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
-					mousestatus[SDL_BUTTON_LEFT]=0;
-					keystatus[SDL_SCANCODE_RETURN]=0;
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 					playSound(139,64);
 					openSettingsWindow();
 				}
@@ -371,22 +379,26 @@ void handleMainMenu(bool mode) {
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1307])*18 && omousey >= yres/4+176 && omousey < yres/4+176+18) || (menuselect==5)) && subwindow==0 && introstage==1 ) {
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+176, colorGray, language[1307]);
-				if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
-					mousestatus[SDL_BUTTON_LEFT]=0;
-					keystatus[SDL_SCANCODE_RETURN]=0;
-					playSound(139,64);
-					introstage=4; // goes to credits
-					fadeout=TRUE;
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
+					playSound(139, 64);
+					introstage = 4; // goes to credits
+					fadeout = TRUE;
 				}
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+176, language[1307]);
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1308])*18 && omousey >= yres/4+200 && omousey < yres/4+200+18) || (menuselect==6)) && subwindow==0 && introstage==1 ) {
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+200, colorGray, language[1308]);
-				if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
-					mousestatus[SDL_BUTTON_LEFT]=0;
-					keystatus[SDL_SCANCODE_RETURN]=0;
-					playSound(139,64);
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+				{
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
+					playSound(139, 64);
 					
 					// create confirmation window
 					subwindow = 1;
@@ -432,9 +444,11 @@ void handleMainMenu(bool mode) {
 			if( introstage!=5 ) {
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1309])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1309]);
-					if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+					{
+						*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN]=0;
+						keystatus[SDL_SCANCODE_RETURN] = 0;
 						playSound(139,64);
 						pauseGame(1,MAXPLAYERS);
 					}
@@ -443,9 +457,11 @@ void handleMainMenu(bool mode) {
 				}
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1306]);
-					if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN]=0;
+						keystatus[SDL_SCANCODE_RETURN] = 0;
+						*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 						playSound(139,64);
 						openSettingsWindow();
 					}
@@ -459,9 +475,11 @@ void handleMainMenu(bool mode) {
 					endgameText = language[1311];
 				if( ((omousex >= 50 && omousex < 50+strlen(endgameText)*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, endgameText);
-					if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN]=0;
+						keystatus[SDL_SCANCODE_RETURN] = 0;
+						*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 						playSound(139,64);
 						
 						// create confirmation window
@@ -480,8 +498,9 @@ void handleMainMenu(bool mode) {
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
-						button->key=SDL_SCANCODE_ESCAPE;
-						
+						button->key = SDL_SCANCODE_ESCAPE;
+						button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+
 						// yes button
 						button = newButton();
 						strcpy(button->label,language[1314]);
@@ -490,8 +509,9 @@ void handleMainMenu(bool mode) {
 						button->action=&buttonEndGameConfirm;
 						button->visible=1;
 						button->focused=1;
-						button->key=SDL_SCANCODE_RETURN;
-						
+						button->key = SDL_SCANCODE_RETURN;
+						button->joykey = joyimpulses[INJOY_NEXT];
+
 						// no button
 						button = newButton();
 						strcpy(button->label,language[1315]);
@@ -507,9 +527,11 @@ void handleMainMenu(bool mode) {
 				if( multiplayer!=CLIENT ) {
 					if( ((omousex >= 50 && omousex < 50+strlen(language[1312])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
 						ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1312]);
-						if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
+						if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							keystatus[SDL_SCANCODE_RETURN]=0;
+							keystatus[SDL_SCANCODE_RETURN] = 0;
+							*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 							playSound(139,64);
 						
 							// create confirmation window
@@ -529,6 +551,7 @@ void handleMainMenu(bool mode) {
 							button->visible=1;
 							button->focused=1;
 							button->key=SDL_SCANCODE_ESCAPE;
+							button->joykey = joyimpulses[INJOY_PAUSE_MENU];
 						
 							// yes button
 							button = newButton();
@@ -542,6 +565,7 @@ void handleMainMenu(bool mode) {
 							button->visible=1;
 							button->focused=1;
 							button->key=SDL_SCANCODE_RETURN;
+							button->joykey = joyimpulses[INJOY_NEXT];
 						
 							// no button
 							button = newButton();
@@ -558,11 +582,13 @@ void handleMainMenu(bool mode) {
 				}
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1313])*18 && omousey >= yres/4+152+24*(multiplayer!=CLIENT) && omousey < yres/4+152+18+24*(multiplayer!=CLIENT)) || (menuselect==4+(multiplayer!=CLIENT))) && subwindow==0 && introstage==1 ) {
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+152+24*(multiplayer!=CLIENT), colorGray, language[1313]);
-					if( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] ) {
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						keystatus[SDL_SCANCODE_RETURN]=0;
+						keystatus[SDL_SCANCODE_RETURN] = 0;
+						*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 						playSound(139,64);
-						
+
 						// create confirmation window
 						subwindow = 1;
 						subx1 = xres/2-188;
@@ -570,7 +596,7 @@ void handleMainMenu(bool mode) {
 						suby1 = yres/2-64;
 						suby2 = yres/2+64;
 						strcpy(subtext,language[1131]);
-						
+
 						// yes button
 						button = newButton();
 						strcpy(button->label,language[1314]);
@@ -580,6 +606,7 @@ void handleMainMenu(bool mode) {
 						button->visible=1;
 						button->focused=1;
 						button->key=SDL_SCANCODE_RETURN;
+						button->joykey = joyimpulses[INJOY_NEXT]; //TODO: Select which button to activate via dpad.
 
 						// no button
 						button = newButton();
@@ -589,7 +616,7 @@ void handleMainMenu(bool mode) {
 						button->action=&buttonQuitNoSaveConfirm;
 						button->visible=1;
 						button->focused=1;
-						
+
 						// cancel button
 						button = newButton();
 						strcpy(button->label,language[1316]);
@@ -608,6 +635,7 @@ void handleMainMenu(bool mode) {
 						button->visible=1;
 						button->focused=1;
 						button->key=SDL_SCANCODE_ESCAPE;
+						button->joykey = joyimpulses[INJOY_PAUSE_MENU];
 					}
 				} else {
 					ttfPrintText(ttf16, 50, yres/4+152+24*(multiplayer!=CLIENT), language[1313]);
