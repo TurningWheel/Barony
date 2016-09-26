@@ -33,7 +33,7 @@ void clickDescription(int player, Entity *entity) {
 	Uint32 uidnum;
 	
 	if( entity==NULL ) {
-		if( !(*inputPressed(impulses[IN_ATTACK])) || shootmode )
+		if( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_ATTACK])) || shootmode )
 			return;
 		if( omousex<camera.winx || omousex>=camera.winx+camera.winw || omousey<camera.winy || omousey>=camera.winy+camera.winh )
 			return;
@@ -87,6 +87,7 @@ void clickDescription(int player, Entity *entity) {
 		if (mouseInBounds(x,x+status_bmp->w,yres-status_bmp->h-hotbar_img->h,yres))
 			return;
 		*inputPressed(impulses[IN_ATTACK])=0;
+		*inputPressed(joyimpulses[INJOY_ATTACK]) = 0;
 		
 		if( softwaremode ) {
 			entity = clickmap[omousey+omousex*yres];

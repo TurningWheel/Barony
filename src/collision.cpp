@@ -50,7 +50,7 @@ Entity *entityClicked() {
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
-	if( !(*inputPressed(impulses[IN_USE])) )
+	if( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_USE])) )
 		return NULL;
 	if( !shootmode ) {
 		if( itemMenuOpen )
@@ -107,6 +107,7 @@ Entity *entityClicked() {
 		if (mouseInBounds(x,x+status_bmp->w,yres-status_bmp->h,yres))
 			return NULL;
 		*inputPressed(impulses[IN_USE])=0;
+		*inputPressed(joyimpulses[INJOY_USE]) = 0;
 		if( softwaremode ) {
 			return clickmap[omousey+omousex*yres];
 		} else {
@@ -114,6 +115,7 @@ Entity *entityClicked() {
 		}
 	} else {
 		*inputPressed(impulses[IN_USE])=0;
+		*inputPressed(joyimpulses[INJOY_USE]) = 0;
 		if( softwaremode ) {
 			return clickmap[(yres/2)+(xres/2)*yres];
 		} else {

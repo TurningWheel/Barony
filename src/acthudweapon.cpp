@@ -285,7 +285,7 @@ void actHudWeapon(Entity *my) {
 	}
 
 	bool swingweapon=FALSE;
-	if (players[clientnum]->entity && *inputPressed(impulses[IN_ATTACK]) && shootmode && !gamePaused && players[clientnum]->entity->isMobile() && !(*inputPressed(impulses[IN_DEFEND])) && HUDWEAPON_OVERCHARGE < MAXCHARGE)
+	if (players[clientnum]->entity && (*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_ATTACK])) && shootmode && !gamePaused && players[clientnum]->entity->isMobile() && !(*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_DEFEND])) && HUDWEAPON_OVERCHARGE < MAXCHARGE)
 	{
 		swingweapon=TRUE;
 	}
@@ -1004,7 +1004,7 @@ void actHudShield(Entity *my)
 	{
 		if (stats[clientnum]->shield)
 		{
-			if (players[clientnum] && players[clientnum]->entity && (*inputPressed(impulses[IN_DEFEND])) && hudweapon->skill[0]%3 == 0 && players[clientnum]->entity->isMobile() && !gamePaused && !cast_animation.active)
+			if (players[clientnum] && players[clientnum]->entity && (*inputPressed(impulses[IN_DEFEND]) || *inputPressed(joyimpulses[INJOY_DEFEND])) && hudweapon->skill[0]%3 == 0 && players[clientnum]->entity->isMobile() && !gamePaused && !cast_animation.active)
 			{
 				defending=TRUE;
 			}

@@ -1325,9 +1325,28 @@ void handleEvents(void) {
 			case SDL_JOYBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.jbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301+event.jbutton.button;
+				if (event.jbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused))
+				{
+					//Generate a mouse click.
+					SDL_Event e;
+
+					e.type = SDL_MOUSEBUTTONDOWN;
+					e.button.button = SDL_BUTTON_LEFT;
+					e.button.clicks = 1; //Single click.
+					SDL_PushEvent(&e);
+				}
 				break;
 			case SDL_JOYBUTTONUP: // if joystick button is released
 				joystatus[event.jbutton.button] = 0; // set this button's index to 0
+				if (event.jbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK])
+				{
+					//Generate a mouse lift.
+					SDL_Event e;
+
+					e.type = SDL_MOUSEBUTTONUP;
+					e.button.button = SDL_BUTTON_LEFT;
+					SDL_PushEvent(&e);
+				}
 				break;
 			case SDL_USEREVENT: // if the game timer has elapsed
 				if( runtimes<5 ) {
@@ -1985,8 +2004,9 @@ int main(int argc, char **argv) {
 				#endif
 				
 				// toggling the game menu
-				if( keystatus[SDL_SCANCODE_ESCAPE] && !command ) {
+				if( (keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_PAUSE_MENU])) && !command ) {
 					keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 					if( !shootmode ) {
 						shootmode = TRUE;
 						gui_mode = GUI_MODE_INVENTORY;
@@ -2063,8 +2083,9 @@ int main(int argc, char **argv) {
 						drawStatus();
 					
 					// interface
-					if( *inputPressed(impulses[IN_STATUS]) ) {
+					if( (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) ) {
 						*inputPressed(impulses[IN_STATUS])=0;
+						*inputPressed(joyimpulses[INJOY_STATUS]) = 0;
 						shootmode=(shootmode==FALSE);
 						gui_mode = GUI_MODE_INVENTORY;
 						selectedItem = NULL;
@@ -2098,8 +2119,9 @@ int main(int argc, char **argv) {
 								openedChest[clientnum]->closeChest();
 						}
 					}
-					if (!command && *inputPressed(impulses[IN_SPELL_LIST])) { //TODO: Move to function in interface or something?
+					if (!command && (*inputPressed(impulses[IN_SPELL_LIST]) || *inputPressed(joyimpulses[INJOY_SPELL_LIST]))) { //TODO: Move to function in interface or something?
 						*inputPressed(impulses[IN_SPELL_LIST]) = 0;
+						*inputPressed(joyimpulses[INJOY_SPELL_LIST]) = 0;
 						gui_mode = GUI_MODE_INVENTORY;
 						selectedItem = NULL;
 						inventory_mode = INVENTORY_MODE_SPELL;
@@ -2109,9 +2131,10 @@ int main(int argc, char **argv) {
 							attributespage = 0;
 						}
 					}
-					if (!command && *inputPressed(impulses[IN_CAST_SPELL]))
+					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || *inputPressed(joyimpulses[INJOY_CAST_SPELL])))
 					{
-						*inputPressed(impulses[IN_CAST_SPELL]);
+						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
+						*inputPressed(joyimpulses[INJOY_CAST_SPELL]) = 0;
 						if (players[clientnum] && players[clientnum]->entity)
 							castSpellInit(players[clientnum]->entity->uid, selected_spell);
 					}

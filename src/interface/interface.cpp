@@ -770,6 +770,8 @@ const char *getInputName(Uint32 scancode) {
 
 -------------------------------------------------------------------------------*/
 
+Sint8 dummy_value = 0; //THIS LINE IS AN UTTER BODGE to stop this function from crashing.
+
 Sint8 *inputPressed(Uint32 scancode)
 {
 	if (scancode >= 0 && scancode < 283)
@@ -782,9 +784,9 @@ Sint8 *inputPressed(Uint32 scancode)
 		// mouse scancodes
 		return &mousestatus[scancode - 282];
 	}
-	else if (scancode < 302)
+	else if (scancode < 301)
 	{
-		//Analog joystick tricgers mapped to digital status (0 = not pressed, 1 = pressed).
+		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
 		return &joy_trigger_status[scancode - 299];
 	}
 	else if (scancode < 317)
@@ -794,6 +796,9 @@ Sint8 *inputPressed(Uint32 scancode)
 	else
 	{
 		// bad scancode
-		return nullptr;
+		//return nullptr; //This crashes.
+		dummy_value = 0;
+		return &dummy_value;
+		//Not an ideal solution, but...
 	}
 }

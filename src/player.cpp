@@ -101,11 +101,14 @@ void GameController::handleAnalog()
 		return;
 
 	//Right analog stick = look.
-	int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
-	int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
 
 	if (!shootmode || gamePaused)
 	{
+		int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
+		int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
+
+
+
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
 		if (gamepad_rightx_invert)
 			rightx = -rightx;
@@ -131,6 +134,8 @@ void GameController::handleAnalog()
 	}
 	else
 	{
+		int rightx = getRightXMove();
+		int righty = getRightYMove();
 
 		if (rightx || righty)
 		{
@@ -147,22 +152,22 @@ void GameController::handleAnalog()
 
 	if (getLeftTrigger())
 	{
-		joystatus[0] = 1;
+		joy_trigger_status[0] = 1;
 		lastkeypressed = 299;
 	}
 	else
 	{
-		joystatus[0] = 0;
+		joy_trigger_status[0] = 0;
 	}
 
 	if (getRightTrigger())
 	{
-		joystatus[1] = 1;
+		joy_trigger_status[1] = 1;
 		lastkeypressed = 300;
 	}
 	else
 	{
-		joystatus[1] = 0;
+		joy_trigger_status[1] = 0;
 	}
 }
 

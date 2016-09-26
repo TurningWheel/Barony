@@ -172,7 +172,7 @@ extern bool stop;
 #define INJOY_DEFEND 3
 #define INJOY_ATTACK 4
 #define INJOY_USE 5
-#define INJOY_PAUSE_MENU 6
+#define INJOY_PAUSE_MENU 6 //Should this also acts as the escape key?
 #define INJOY_LEFT_CLICK 7
 #define NUM_JOY_IMPULSES 8
 
@@ -363,7 +363,7 @@ extern Sint8 mousestatus[6];
 const int NUM_JOY_STATUS = 32;
 extern Sint8 joystatus[NUM_JOY_STATUS];
 const int NUM_JOY_TRIGGER_STATUS = 2;
-extern Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
+extern Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS]; //0 = left, 1 = right.
 extern Uint32 cursorflash;
 extern Sint32 camx, camy;
 extern Sint32 newcamx, newcamy;
