@@ -205,6 +205,7 @@ button_t *newButton(void) {
 	button->visible=1;
 	button->focused=0;
 	button->key=0;
+	button->joykey = -1;
 	button->pressed=FALSE;
 	button->needclick=TRUE;
 	button->action=NULL;

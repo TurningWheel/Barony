@@ -172,13 +172,14 @@ extern bool stop;
 #define INJOY_DEFEND 3
 #define INJOY_ATTACK 4
 #define INJOY_USE 5
-#define INJOY_PAUSE_MENU 6 //Should this also acts as the escape key?
+#define INJOY_PAUSE_MENU 6 //Also acts as the back key/escape key in limited situations.
 #define INJOY_LEFT_CLICK 7
 #define INJOY_DPAD_LEFT 8
 #define INJOY_DPAD_RIGHT 9
 #define INJOY_DPAD_UP 10
 #define INJOY_DPAD_DOWN 11
-#define NUM_JOY_IMPULSES 12
+#define INJOY_NEXT 12
+#define NUM_JOY_IMPULSES 13
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
@@ -275,6 +276,7 @@ typedef struct button_t {
 	Uint8 visible;       // invisible buttons are ignored by the handler
 	Uint8 focused;       // allows this button to function when a subwindow is open
 	SDL_Keycode key;     // key shortcut to activate button
+	int joykey;          // gamepad button used to activate this button.
 	bool pressed;        // whether the button is being pressed or not
 	bool needclick;      // involved in triggering buttons
 	

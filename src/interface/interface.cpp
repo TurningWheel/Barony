@@ -361,6 +361,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_DPAD_RIGHT] = 315;
 	joyimpulses[INJOY_DPAD_UP] = 312;
 	joyimpulses[INJOY_DPAD_DOWN] = 313;
+	joyimpulses[INJOY_NEXT] = 303;
 }
 
 void defaultConfig() {
@@ -397,10 +398,11 @@ void defaultConfig() {
 	consoleCommand("/joybind 301 INJOY_USE");
 	consoleCommand("/joybind 308 INJOY_PAUSE_MENU");
 	consoleCommand("/joybind 301 INJOY_LEFT_CLICK");
-	consoleCommand("/joybind 399 INJOY_DPAD_LEFT");
-	consoleCommand("/joybind 399 INJOY_DPAD_RIGHT");
-	consoleCommand("/joybind 399 INJOY_DPAD_UP");
-	consoleCommand("/joybind 399 INJOY_DPAD_DOWN");
+	consoleCommand("/joybind 314 INJOY_DPAD_LEFT");
+	consoleCommand("/joybind 315 INJOY_DPAD_RIGHT");
+	consoleCommand("/joybind 312 INJOY_DPAD_UP");
+	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
+	consoleCommand("/joybind 303 INJOY_NEXT");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -501,7 +503,8 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][12] = {
 	"DPAD_LEFT",
 	"DPAD_RIGHT",
 	"DPAD_UP",
-	"DPAD_DOWN"
+	"DPAD_DOWN",
+	"NEXT"
 };
 
 /*-------------------------------------------------------------------------------

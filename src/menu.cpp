@@ -221,39 +221,57 @@ void handleMainMenu(bool mode) {
 		}
 
 		// navigate with arrow keys
-		if( !subwindow ) {
-			if( menuselect==0 ) {
-				if( keystatus[SDL_SCANCODE_UP] ) {
+		if (!subwindow)
+		{
+			if (menuselect == 0)
+			{
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				{
 					keystatus[SDL_SCANCODE_UP] = 0;
-					menuselect=1;
-				} else if( keystatus[SDL_SCANCODE_DOWN] ) {
-					keystatus[SDL_SCANCODE_DOWN] = 0;
-					menuselect=1;
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					menuselect = 1;
 				}
-			} else {
-				if( keystatus[SDL_SCANCODE_UP] ) {
-					keystatus[SDL_SCANCODE_UP] = 0;
-					menuselect--;
-					if( menuselect==0 ) {
-						if( mode )
-							menuselect=6;
-						else
-							menuselect=4+(multiplayer!=CLIENT);
-					}
-				} else if( keystatus[SDL_SCANCODE_DOWN] ) {
+				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					menuselect = 1;
+				}
+			}
+			else
+			{
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				{
+					keystatus[SDL_SCANCODE_UP] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					menuselect--;
+					if (menuselect == 0)
+					{
+						if (mode)
+							menuselect = 6;
+						else
+							menuselect = 4 + (multiplayer != CLIENT);
+					}
+				}
+				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				{
+					keystatus[SDL_SCANCODE_DOWN] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					menuselect++;
-					if( mode ) {
-						if( menuselect>6 )
-							menuselect=1;
-					} else {
-						if( menuselect>4+(multiplayer!=CLIENT) )
-							menuselect=1;
+					if (mode)
+					{
+						if (menuselect > 6)
+							menuselect = 1;
+					}
+					else
+					{
+						if (menuselect > 4 +( multiplayer != CLIENT))
+							menuselect = 1;
 					}
 				}
 			}
 		}
-		
+
 		// gray text color
 		Uint32 colorGray = SDL_MapRGBA(mainsurface->format,128,128,128,255);
 
@@ -700,7 +718,7 @@ void handleMainMenu(bool mode) {
 				}
 			}
 		}
-			
+
 		//TODO: Loop through buttons. Disable the random character button if charcreation_step != 1;
 		// sexes
 		if( charcreation_step==1 ) {
@@ -728,16 +746,20 @@ void handleMainMenu(bool mode) {
 					}
 				}
 			}
-			if( keystatus[SDL_SCANCODE_UP] ) {
+			if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+			{
 				keystatus[SDL_SCANCODE_UP] = 0;
-				stats[0]->sex = static_cast<sex_t>((stats[0]->sex==MALE));
+				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
-			if( keystatus[SDL_SCANCODE_DOWN] ) {
+			if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+			{
 				keystatus[SDL_SCANCODE_DOWN] = 0;
-				stats[0]->sex = static_cast<sex_t>((stats[0]->sex==MALE));
+				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
 		}
-	
+
 		// classes
 		else if( charcreation_step==2 ) {
 			ttfPrintText(ttf16, subx1+24, suby1+32, language[1323]);
@@ -747,45 +769,49 @@ void handleMainMenu(bool mode) {
 				} else {
 					ttfPrintTextFormatted(ttf16, subx1+32, suby1+56+16*c, "[ ] %s",language[1900+c]);
 				}
-		
+
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
 					if( omousex >= subx1+40 && omousex < subx1+72 ) {
 						if( omousey >= suby1+56+16*c && omousey < suby1+72+16*c ) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							client_classes[0] = c;
-						
+
 							// reset class loadout
 							stats[0]->clearStats();
 							initClass(0);
 						}
 					}
 				}
-				if( keystatus[SDL_SCANCODE_UP] ) {
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				{
 					keystatus[SDL_SCANCODE_UP] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					client_classes[0]--;
-					if( client_classes[0]<0 )
-						client_classes[0]=9;
-				
+					if (client_classes[0] < 0)
+						client_classes[0] = 9;
+
 					// reset class loadout
 					stats[0]->clearStats();
 					initClass(0);
 				}
-				if( keystatus[SDL_SCANCODE_DOWN] ) {
+				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					client_classes[0]++;
-					if( client_classes[0]>9 )
-						client_classes[0]=0;
-				
+					if (client_classes[0] > 9)
+						client_classes[0] = 0;
+
 					// reset class loadout
 					stats[0]->clearStats();
 					initClass(0);
 				}
 			}
-		
+
 			// class description
 			ttfPrintText(ttf12, subx1+8, suby2-80, language[10+client_classes[0]]);
 		}
-	
+
 		// faces
 		else if( charcreation_step==3 ) {
 			ttfPrintText(ttf16, subx1+24, suby1+32, language[1324]);
@@ -804,28 +830,32 @@ void handleMainMenu(bool mode) {
 						}
 					}
 				}
-				if( keystatus[SDL_SCANCODE_UP] ) {
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				{
 					keystatus[SDL_SCANCODE_UP] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					stats[0]->appearance--;
-					if( stats[0]->appearance>=NUMAPPEARANCES )
-						stats[0]->appearance=NUMAPPEARANCES-1;
+					if (stats[0]->appearance >= NUMAPPEARANCES)
+						stats[0]->appearance = NUMAPPEARANCES - 1;
 				}
-				if( keystatus[SDL_SCANCODE_DOWN] ) {
+				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					stats[0]->appearance++;
-					if( stats[0]->appearance>=NUMAPPEARANCES )
-						stats[0]->appearance=0;
+					if (stats[0]->appearance >= NUMAPPEARANCES)
+						stats[0]->appearance = 0;
 				}
 			}
 		}
-	
+
 		// name
 		else if( charcreation_step==4 ) {
 			ttfPrintText(ttf16, subx1+24, suby1+32, language[1325]);
 			drawDepressed(subx1+40,suby1+56,subx1+364,suby1+88);
 			ttfPrintText(ttf16,subx1+48,suby1+64,stats[0]->name);
 			ttfPrintText(ttf12, subx1+8, suby2-80, language[1326]);
-		
+
 			// enter character name
 			if( !SDL_IsTextInputActive() ) {
 				inputstr = stats[0]->name;
@@ -912,17 +942,21 @@ void handleMainMenu(bool mode) {
 						}
 					}
 				}
-				if( keystatus[SDL_SCANCODE_UP] ) {
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				{
 					keystatus[SDL_SCANCODE_UP] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					multiplayerselect--;
-					if( multiplayerselect<0 )
-						multiplayerselect=nummodes-1;
+					if (multiplayerselect < 0)
+						multiplayerselect = nummodes - 1;
 				}
-				if( keystatus[SDL_SCANCODE_DOWN] ) {
+				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					multiplayerselect++;
-					if( multiplayerselect>nummodes-1 )
-						multiplayerselect=0;
+					if (multiplayerselect > nummodes - 1)
+						multiplayerselect = 0;
 				}
 			}
 		}
@@ -1379,9 +1413,9 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 132, "[ ] %s", language[1536]);
 			if (settings_right_click_protect)
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[x] %s", language[1960]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[x] %s", language[1998]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[ ] %s", language[1960]);
+				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[ ] %s", language[1998]);
 
 			// server flag elements
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 180, language[1375]);
@@ -4902,6 +4936,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
+	button->joykey = joyimpulses[INJOY_NEXT];
 	
 	// Back ...
 	button = newButton();
@@ -4912,6 +4947,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_PAUSE_MENU];
 	int button_back_x = button->x;
 	int button_back_width = button->sizex;
 	
@@ -4923,7 +4959,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->action=&buttonRandomCharacter;
 	button->visible=1;
 	button->focused=1;
-	button->key=SDL_SCANCODE_R;
+	button->key=SDL_SCANCODE_R; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
 }
 
 void buttonLoadGame(button_t *button) {

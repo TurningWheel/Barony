@@ -1144,6 +1144,11 @@ void handleButtons(void) {
 				button->pressed=TRUE;
 				button->needclick=FALSE;
 			}
+			if (button->joykey != -1 && *inputPressed(button->joykey))
+			{
+				button->pressed = TRUE;
+				button->needclick = FALSE;
+			}
 			if( mousestatus[SDL_BUTTON_LEFT] ) {
 				if( mousex >= button->x && mousex < button->x+button->sizex && omousex >= button->x && omousex < button->x+button->sizex ) {
 					if( mousey >= button->y && mousey < button->y+button->sizey && omousey >= button->y && omousey < button->y+button->sizey ) {
@@ -1169,18 +1174,19 @@ void handleButtons(void) {
 				if( !mousestatus[SDL_BUTTON_LEFT] && !keystatus[button->key] ) {
 					if( ( omousex >= button->x && omousex < button->x+button->sizex ) || !button->needclick ) {
 						if( ( omousey >= button->y && omousey < button->y+button->sizey ) || !button->needclick ) {
-							keystatus[button->key]=FALSE;
+							keystatus[button->key] = false;
+							*inputPressed(button->joykey) = 0;
 							playSound(139,64);
 							if( button->action != NULL ) {
 								(*button->action)(button); // run the button's assigned action
 								if( deleteallbuttons ) {
-									deleteallbuttons=FALSE;
+									deleteallbuttons = false;
 									break;
 								}
 							}
 						}
 					}
-					button->pressed = FALSE;
+					button->pressed = false;
 				}
 			} else {
 				drawWindow(button->x,button->y,button->x+button->sizex,button->y+button->sizey);
@@ -1324,8 +1330,7 @@ void handleEvents(void) {
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
-				lastkeypressed = 301+event.cbutton.button;
-				printlog("Button %d pressed.", event.cbutton.button);
+				lastkeypressed = 301 + event.cbutton.button;
 				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused))
 				{
 					//Generate a mouse click.
