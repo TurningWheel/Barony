@@ -2728,19 +2728,19 @@ client (player %d) (direct ip)#
 1957 D-Pad Right#
 1958 D-Pad Up#
 1959 D-Pad Down#
-1960 Next (in MENUs)
+1960 Next (in MENUs)#
 
-1961 Invert Left Analog Stick X-Axis#
-1962 Invert Left Analog Stick Y-Axis#
-1963 Invert Right Analog Stick X-Axis#
-1964 Invert Right Analog Stick Y-Axis#
-1965 Invert X-Axis in GUI#
-1966 Invert Y-Axis in GUI#
+1981 Invert Left Analog Stick X-Axis#
+1982 Invert Left Analog Stick Y-Axis#
+1983 Invert Right Analog Stick X-Axis#
+1984 Invert Right Analog Stick Y-Axis#
+1985 Invert X-Axis in GUI#
+1986 Invert Y-Axis in GUI#
 
-1967 Right Analog Stick X-Axis Sensitivity#
-1968 Right Analog Stick Y-Axis Sensitivity#
-1969 Menu X-Axis Sensitivity#
-1970 Menu Y-Axis Sensitivity#
+1987 Right Analog Stick X-Axis Sensitivity#
+1988 Right Analog Stick Y-Axis Sensitivity#
+1989 Menu X-Axis Sensitivity#
+1990 Menu Y-Axis Sensitivity#
 
 
 

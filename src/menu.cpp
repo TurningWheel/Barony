@@ -1271,9 +1271,9 @@ void handleMainMenu(bool mode) {
 
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1961]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1981]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1961]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1981]);
 
 			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
@@ -1284,9 +1284,9 @@ void handleMainMenu(bool mode) {
 			current_option_y += 12;
 
 			if (settings_gamepad_lefty_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1962]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1982]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1962]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1982]);
 
 			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
@@ -1297,9 +1297,9 @@ void handleMainMenu(bool mode) {
 			current_option_y += 12;
 
 			if (settings_gamepad_rightx_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1963]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1983]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1963]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1983]);
 
 			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
@@ -1310,9 +1310,9 @@ void handleMainMenu(bool mode) {
 			current_option_y += 12;
 
 			if (settings_gamepad_righty_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1964]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1984]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1964]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1984]);
 
 			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
@@ -1323,9 +1323,9 @@ void handleMainMenu(bool mode) {
 			current_option_y += 12;
 
 			if (settings_gamepad_menux_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1965]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1985]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1965]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1985]);
 
 			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
@@ -1336,9 +1336,9 @@ void handleMainMenu(bool mode) {
 			current_option_y += 12;
 
 			if (settings_gamepad_menuy_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1966]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1986]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1966]);
+				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1986]);
 
 			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
@@ -1348,28 +1348,28 @@ void handleMainMenu(bool mode) {
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1967]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1987]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_rightx_sensitivity, font8x8_bmp, 12); //Doesn't like any fonts besides the default.
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_rightx_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1968]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1988]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_righty_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_righty_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1969]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1989]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menux_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menux_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1970]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[1990]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
