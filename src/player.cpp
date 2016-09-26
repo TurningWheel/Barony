@@ -83,8 +83,8 @@ bool GameController::open(int c)
 	else
 	{
 		printlog("Successfully initialized game controller!\n");
-		name = SDL_GameControllerNameForIndex(c);
-		printlog("Controller name is \"%s\"", name);
+		name = (SDL_GameControllerNameForIndex(c));
+		printlog("Controller name is \"%s\"", name.c_str());
 	}
 
 	return (sdl_device != nullptr);
