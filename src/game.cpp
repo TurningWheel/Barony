@@ -832,7 +832,9 @@ void gameLogic(void) {
 					button->action=&buttonCloseAndEndGameConfirm;
 					button->visible=1;
 					button->focused=1;
-					
+					button->key = SDL_SCANCODE_ESCAPE;
+					button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+
 					// okay button
 					button = newButton();
 					strcpy(button->label,language[732]);
@@ -842,6 +844,7 @@ void gameLogic(void) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_RETURN;
+					button->joykey = joyimpulses[INJOY_NEXT];
 
 					client_disconnected[0] = TRUE;
 				}
@@ -1331,7 +1334,7 @@ void handleEvents(void) {
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused))
+				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused) && rebindaction == -1)
 				{
 					//Generate a mouse click.
 					SDL_Event e;
@@ -1766,11 +1769,13 @@ int main(int argc, char **argv) {
 					drawGear(xres/2,yres/2,gearsize,gearrot);
 					drawLine(xres/2-160, yres/2+112, xres/2+160, yres/2+112, SDL_MapRGB(mainsurface->format,127,0,0), std::min<Uint16>(logoalpha,255));
 					printTextFormattedAlpha(font16x16_bmp,(xres/2)-strlen("Turning Wheel")*9,yres/2+128,std::min<Uint16>(std::max<Uint16>(0,logoalpha),255),"Turning Wheel");
-					if( (logoalpha >= 255 || keystatus[SDL_SCANCODE_ESCAPE]) && !fadeout ) {
+					if( (logoalpha >= 255 || keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_NEXT]) || *inputPressed(joyimpulses[INJOY_PAUSE_MENU])) && !fadeout ) {
 						fadeout = TRUE;
 					}
-					if( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] ) {
+					if( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_NEXT]) || *inputPressed(joyimpulses[INJOY_PAUSE_MENU])) {
 						keystatus[SDL_SCANCODE_ESCAPE] = 0;
+						*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
+						*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 						fadealpha=255;
 						#ifndef STEAMWORKS
 							introstage=0;
@@ -1846,7 +1851,8 @@ int main(int argc, char **argv) {
 					old_sdl_ticks = SDL_GetTicks();
 					indev_timer += time_passed;
 
-					if( (keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
+					//if( (*inputPressed(joyimpulses[INJOY_NEXT]) || *inputPressed(joyimpulses[INJOY_PAUSE_MENU]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
+					if( (*inputPressed(joyimpulses[INJOY_NEXT]) || *inputPressed(joyimpulses[INJOY_PAUSE_MENU]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
 						switch( rand()%4 ) {
 							case 0:
 								loadMap("mainmenu1",&map,map.entities);

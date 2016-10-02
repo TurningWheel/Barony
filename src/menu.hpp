@@ -36,6 +36,7 @@ extern int secondendmovietime;
 extern int secondendmoviestage;
 extern double drunkextend;
 extern bool losingConnection[4];
+extern int rebindaction;
 
 // button definitions
 void buttonQuitConfirm(button_t *my);
