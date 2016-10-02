@@ -1334,76 +1334,76 @@ void handleMainMenu(bool mode) {
 
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1981]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1981]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1981]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1981]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_leftx_invert = !settings_gamepad_leftx_invert;
 			}
 
-			current_option_y += 12;
+			current_option_y += 24;
 
 			if (settings_gamepad_lefty_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1982]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1982]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1982]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1982]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_lefty_invert = !settings_gamepad_lefty_invert;
 			}
 
-			current_option_y += 12;
+			current_option_y += 24;
 
 			if (settings_gamepad_rightx_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1983]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1983]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1983]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1983]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_rightx_invert = !settings_gamepad_rightx_invert;
 			}
 
-			current_option_y += 12;
+			current_option_y += 24;
 
 			if (settings_gamepad_righty_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1984]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1984]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1984]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1984]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_righty_invert = !settings_gamepad_righty_invert;
 			}
 
-			current_option_y += 12;
+			current_option_y += 24;
 
 			if (settings_gamepad_menux_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1985]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1985]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1985]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1985]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menux_invert = !settings_gamepad_menux_invert;
 			}
 
-			current_option_y += 12;
+			current_option_y += 24;
 
 			if (settings_gamepad_menuy_invert)
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[x] %s", language[1986]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1986]);
 			else
-				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1986]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1986]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menuy_invert = !settings_gamepad_menuy_invert;
