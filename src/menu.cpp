@@ -57,8 +57,9 @@ int charcreation_step=0;
  *		- 1 = Audio settings
  *		- 2 = Keyboard/binding settings
  *		- 3 = Mouse settings
- *		- 4 = Gamepad settings
- *		- 5 = Misc settings
+ *		- 4 = Gamepad bindings
+ *		- 5 = Gamepad settings
+ *		- 6 = Misc settings
  */
 int settings_tab = 0;
 int score_window=0;
@@ -1286,7 +1287,7 @@ void handleMainMenu(bool mode) {
 			for (c = 0; c < NUM_JOY_IMPULSES; ++c)
 			{
 				ttfPrintText(ttf8, subx1 + 24, suby1 + 84 + 12*c, language[1948 + c]);
-				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction) //TODO: joystick click :)
+				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction)
 				{
 					if (omousex >= subx1 + 24 && omousex < subx2 - 24)
 					{
@@ -1306,8 +1307,30 @@ void handleMainMenu(bool mode) {
 					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c*12, "...");
 			}
 
+			if (rebindaction != -1 && lastkeypressed)
+			{
+
+				if (lastkeypressed >= 299) /* Is a joybutton. */
+				{
+					settings_joyimpulses[rebindaction] = lastkeypressed;
+					*inputPressed(lastkeypressed) = 0; //To prevent bugs where the button will still be treated as pressed after assigning it, potentially doing wonky things.
+					rebindaction = -1;
+				}
+				else
+				{
+					if (lastkeypressed == SDL_SCANCODE_ESCAPE)
+						keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					lastkeypressed = 0;
+					rebindaction = -1;
+				}
+			}
+		}
+
+		//General gamepad settings
+		if (settings_tab == 5)
+		{
 			int current_option_x = subx1 + 24;
-			int current_option_y = suby1 + 84 + NUM_JOY_IMPULSES * 12 + 20;
+			int current_option_y = suby1 + 60;
 
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
@@ -1315,7 +1338,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1981]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_leftx_invert = !settings_gamepad_leftx_invert;
@@ -1328,7 +1351,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1982]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_lefty_invert = !settings_gamepad_lefty_invert;
@@ -1341,7 +1364,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1983]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_rightx_invert = !settings_gamepad_rightx_invert;
@@ -1354,7 +1377,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1984]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_righty_invert = !settings_gamepad_righty_invert;
@@ -1367,7 +1390,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1985]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menux_invert = !settings_gamepad_menux_invert;
@@ -1380,7 +1403,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf8, current_option_x, current_option_y, "[ ] %s", language[1986]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF8_WIDTH, current_option_y, current_option_y + TTF8_HEIGHT))
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menuy_invert = !settings_gamepad_menuy_invert;
@@ -1413,28 +1436,10 @@ void handleMainMenu(bool mode) {
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
-
-			if (rebindaction != -1 && lastkeypressed)
-			{
-
-				if (lastkeypressed >= 299) /* Is a joybutton. */
-				{
-					settings_joyimpulses[rebindaction] = lastkeypressed;
-					*inputPressed(lastkeypressed) = 0; //To prevent bugs where the button will still be treated as pressed after assigning it, potentially doing wonky things.
-					rebindaction = -1;
-				}
-				else
-				{
-					if (lastkeypressed == SDL_SCANCODE_ESCAPE)
-						keystatus[SDL_SCANCODE_ESCAPE] = 0;
-					lastkeypressed = 0;
-					rebindaction = -1;
-				}
-			}
 		}
 
 		// miscellaneous options
-		if (settings_tab == 5)
+		if (settings_tab == 6)
 		{
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1371]);
 			if (settings_broadcast)
@@ -3612,8 +3617,10 @@ void openSettingsWindow() {
 	// create settings window
 	settings_window = TRUE;
 	subwindow = 1;
-	subx1 = xres/2-256;
-	subx2 = xres/2+256;
+	//subx1 = xres/2-256;
+	subx1 = xres/2-352;
+	//subx2 = xres/2+256;
+	subx2 = xres/2+352;
 	//suby1 = yres/2-192;
 	//suby2 = yres/2+192;
 	suby1 = yres/2 - 288;
@@ -3704,16 +3711,27 @@ void openSettingsWindow() {
 
 	tabx_so_far += strlen(language[1437])*12 + 8;
 
-	//Gamepad tab.
+	//Gamepad bindings tab.
 	button = newButton();
 	strcpy(button->label, language[1947]);
 	button->x = tabx_so_far; button->y = suby1 + 24;
 	button->sizex = strlen(language[1947])*12 + 8; button->sizey = 20;
-	button->action = &buttonGamepadTab;
+	button->action = &buttonGamepadBindingsTab;
 	button->visible = 1;
 	button->focused = 1;
 
 	tabx_so_far += strlen(language[1947])*12 + 8;
+
+	//Gamepad settings tab.
+	button = newButton();
+	strcpy(button->label, language[1980]);
+	button->x = tabx_so_far; button->y = suby1 + 24;
+	button->sizex = strlen(language[1980])*12 + 8; button->sizey = 20;
+	button->action = &buttonGamepadSettingsTab;
+	button->visible = 1;
+	button->focused = 1;
+
+	tabx_so_far += strlen(language[1980])*12 + 8;
 
 	// misc tab
 	button = newButton();
@@ -4695,16 +4713,22 @@ void buttonMouseTab(button_t *my)
 	settings_tab = 3;
 }
 
-// open the keyboard tab in the settings window
-void buttonGamepadTab(button_t *my)
+//Open the gamepad bindings tab in the settings window
+void buttonGamepadBindingsTab(button_t *my)
 {
 	settings_tab = 4;
+}
+
+//Open the general gamepad settings tab in the settings window
+void buttonGamepadSettingsTab(button_t *my)
+{
+	settings_tab = 5;
 }
 
 // open the misc tab in the settings window
 void buttonMiscTab(button_t *my)
 {
-	settings_tab = 5;
+	settings_tab = 6;
 }
 
 // settings accept button

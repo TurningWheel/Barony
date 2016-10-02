@@ -2714,7 +2714,7 @@ client (player %d) (direct ip)#
 1946 NOTE: Only removes generated traps#
 
 # Gamepad settings menu stuff.
-1947 Gamepad#
+1947 Gamepad Bindings#
 
 1948 Character Status#
 1949 Spell List#
@@ -2732,6 +2732,8 @@ client (player %d) (direct ip)#
 1961 Next Hotbar#
 1962 Previous Hotbar#
 1963 Activate Hotbar#
+
+1980 Gamepad#
 
 1981 Invert Left Analog Stick X-Axis#
 1982 Invert Left Analog Stick Y-Axis#
