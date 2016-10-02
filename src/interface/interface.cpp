@@ -394,11 +394,11 @@ void defaultConfig() {
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST");
-	consoleCommand("/joybind 305 INJOY_CAST_SPELL");
+	consoleCommand("/joybind 309 INJOY_CAST_SPELL");
 	consoleCommand("/joybind 299 INJOY_DEFEND");
 	consoleCommand("/joybind 300 INJOY_ATTACK");
 	consoleCommand("/joybind 301 INJOY_USE");
-	consoleCommand("/joybind 308 INJOY_PAUSE_MENU");
+	consoleCommand("/joybind 305 INJOY_PAUSE_MENU");
 	consoleCommand("/joybind 303 INJOY_LEFT_CLICK");
 	consoleCommand("/joybind 314 INJOY_DPAD_LEFT");
 	consoleCommand("/joybind 315 INJOY_DPAD_RIGHT");
