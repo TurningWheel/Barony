@@ -123,6 +123,8 @@ SDL_Surface *sustained_spell_generic_icon = NULL;
 
 int buttonclick = 0;
 
+bool draw_cursor = true;
+
 hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 SDL_Surface *hotbar_img = NULL;
 SDL_Surface *hotbar_spell_img = NULL;

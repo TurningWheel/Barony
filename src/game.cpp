@@ -1330,6 +1330,11 @@ void handleEvents(void) {
 				mousey = event.motion.y;
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
+
+				if (!draw_cursor)
+				{
+					draw_cursor = true;
+				}
 				break;
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
@@ -1998,7 +2003,8 @@ int main(int argc, char **argv) {
 						handleMainMenu(intro);
 						
 						// draw mouse
-						if( !movie ) {
+						if (!movie && draw_cursor)
+						{
 							pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
 							pos.w=0; pos.h=0;
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
@@ -2308,14 +2314,12 @@ int main(int argc, char **argv) {
 							updateShopWindow();
 						}
 					}
-					
-					// pointer
-					if( shootmode==FALSE ) {
-						if( !selectedItem ) {
-							pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
-							pos.w=0; pos.h=0;
-							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-						} else {
+
+					// pointer in inventory screen
+					if (shootmode == FALSE)
+					{
+						if (selectedItem)
+						{
 							pos.x=mousex-15; pos.y=mousey-15;
 							pos.w=32; pos.h=32;
 							drawImageScaled(itemSprite(selectedItem), NULL, &pos);
@@ -2334,6 +2338,12 @@ int main(int argc, char **argv) {
 								}
 							}
 						}
+						else if (draw_cursor)
+						{
+							pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
+							pos.w=0; pos.h=0;
+							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
+						} 
 					} else if( !nohud ) {
 						pos.x=xres/2-cross_bmp->w/2; pos.y=yres/2-cross_bmp->h/2;
 						pos.w=0; pos.h=0;
@@ -2367,7 +2377,8 @@ int main(int argc, char **argv) {
 					}
 				}
 				
-				if( (subwindow && !shootmode) || gamePaused ) {
+				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
+				{
 					pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
 					pos.w=0; pos.h=0;
 					drawImageAlpha(cursor_bmp, NULL, &pos, 192);

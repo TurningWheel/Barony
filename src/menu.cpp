@@ -229,12 +229,14 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					draw_cursor = false;
 					menuselect = 1;
 				}
 				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					draw_cursor = false;
 					menuselect = 1;
 				}
 			}
@@ -244,6 +246,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					draw_cursor = false;
 					menuselect--;
 					if (menuselect == 0)
 					{
@@ -257,6 +260,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					draw_cursor = false;
 					menuselect++;
 					if (mode)
 					{
@@ -778,12 +782,14 @@ void handleMainMenu(bool mode) {
 			{
 				keystatus[SDL_SCANCODE_UP] = 0;
 				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+				draw_cursor = false;
 				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
 			if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 			{
 				keystatus[SDL_SCANCODE_DOWN] = 0;
 				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				draw_cursor = false;
 				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
 		}
@@ -814,6 +820,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					draw_cursor = false;
 					client_classes[0]--;
 					if (client_classes[0] < 0)
 						client_classes[0] = 9;
@@ -826,6 +833,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					draw_cursor = false;
 					client_classes[0]++;
 					if (client_classes[0] > 9)
 						client_classes[0] = 0;
@@ -862,6 +870,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					draw_cursor = false;
 					stats[0]->appearance--;
 					if (stats[0]->appearance >= NUMAPPEARANCES)
 						stats[0]->appearance = NUMAPPEARANCES - 1;
@@ -870,6 +879,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					draw_cursor = false;
 					stats[0]->appearance++;
 					if (stats[0]->appearance >= NUMAPPEARANCES)
 						stats[0]->appearance = 0;
@@ -974,6 +984,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					draw_cursor = false;
 					multiplayerselect--;
 					if (multiplayerselect < 0)
 						multiplayerselect = nummodes - 1;
@@ -982,6 +993,7 @@ void handleMainMenu(bool mode) {
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					draw_cursor = false;
 					multiplayerselect++;
 					if (multiplayerselect > nummodes - 1)
 						multiplayerselect = 0;

@@ -77,6 +77,8 @@ extern int dragoffset_x;
 extern int dragoffset_y;
 extern int buttonclick;
 
+extern bool draw_cursor; //True if the gamepad's d-pad has been used to navigate menus and such.
+
 // function prototypes
 void takeScreenshot();
 bool loadInterfaceResources();
