@@ -126,6 +126,7 @@ int buttonclick = 0;
 bool draw_cursor = true;
 
 hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
+int current_hotbar = 0;
 SDL_Surface *hotbar_img = NULL;
 SDL_Surface *hotbar_spell_img = NULL;
 list_t damageIndicators;

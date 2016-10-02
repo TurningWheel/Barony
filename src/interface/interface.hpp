@@ -269,6 +269,7 @@ typedef struct hotbar_slot_t
 
 #define NUM_HOTBAR_SLOTS 10 //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
 extern hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
+extern int current_hotbar; //For use with gamepads and stuff because no hotkeys like a keyboard.
 
 extern SDL_Surface *hotbar_img; //A 64x64 slot.
 extern SDL_Surface *hotbar_spell_img; //Drawn when a spell is in the hotbar. TODO: Replace with unique images for every spell. (Or draw this by default if none found?)

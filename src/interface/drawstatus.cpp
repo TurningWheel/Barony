@@ -414,7 +414,17 @@ void drawStatus() {
 	pos.x = initial_position.x;
 	pos.y = initial_position.y - hotbar_img->h;
 	for (num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w) {
-		drawImage(hotbar_img, NULL, &pos);
+		Uint32 color;
+		if (current_hotbar == num)
+		{
+			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+		}
+		else
+		{
+			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60);
+		}
+		drawImageColor(hotbar_img, NULL, &pos, color);
+
 		item = uidToItem(hotbar[num].item);
 		if (item) {
 			bool used = FALSE;
