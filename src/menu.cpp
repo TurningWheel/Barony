@@ -1420,6 +1420,7 @@ void handleMainMenu(bool mode) {
 				if (lastkeypressed >= 299) /* Is a joybutton. */
 				{
 					settings_joyimpulses[rebindaction] = lastkeypressed;
+					*inputPressed(lastkeypressed) = 0; //To prevent bugs where the button will still be treated as pressed after assigning it, potentially doing wonky things.
 					rebindaction = -1;
 				}
 				else

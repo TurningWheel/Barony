@@ -77,7 +77,7 @@ extern int dragoffset_x;
 extern int dragoffset_y;
 extern int buttonclick;
 
-extern bool draw_cursor; //True if the gamepad's d-pad has been used to navigate menus and such.
+extern bool draw_cursor; //True if the gamepad's d-pad has been used to navigate menus and such. //TODO: Off by default on consoles and the like.
 
 // function prototypes
 void takeScreenshot();

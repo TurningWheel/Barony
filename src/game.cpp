@@ -2024,7 +2024,7 @@ int main(int argc, char **argv) {
 				#endif
 				
 				// toggling the game menu
-				if( (keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_PAUSE_MENU])) && !command ) {
+				if( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command ) {
 					keystatus[SDL_SCANCODE_ESCAPE] = 0;
 					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 					if( !shootmode ) {
