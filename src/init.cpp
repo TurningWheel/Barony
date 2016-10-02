@@ -545,7 +545,7 @@ int loadLanguage(char *lang) {
 		//printlog( "loading entry %d...\n", entry);
 		char entryText[16] = { 0 };
 		snprintf(entryText,15,"%d",entry);
-		if( language[entry] ) {
+		if( language[entry][0] ) {
 			printlog( "warning: duplicate entry %d in '%s':%d\n",entry,filename,line);
 			free(language[entry]);
 		}
