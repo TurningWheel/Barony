@@ -639,6 +639,18 @@ void drawStatus() {
 			keystatus[SDL_SCANCODE_0] = 0;
 			item = uidToItem(hotbar[9].item);
 		}
+
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]))
+		{
+			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
+			selectHotbarSlot(current_hotbar + 1);
+		}
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]))
+		{
+			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
+			selectHotbarSlot(current_hotbar - 1);
+		}
+
 		if( item ) {
 			bool badpotion=FALSE;
 			if( itemCategory(item) == POTION && item->identified ) {

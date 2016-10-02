@@ -277,6 +277,8 @@ extern SDL_Surface *hotbar_spell_img; //Drawn when a spell is in the hotbar. TOD
 //Returns a pointer to a hotbar slot if the specified coordinates are in the area of the hotbar. Used for such things as dragging and dropping items.
 hotbar_slot_t *getHotbar(int x, int y);
 
+void selectHotbarSlot(int slot);
+
 /*
  * True = automatically place items you pick up in your hotbar.
  * False = don't.

@@ -2729,6 +2729,8 @@ client (player %d) (direct ip)#
 1958 D-Pad Up#
 1959 D-Pad Down#
 1960 Next (in MENUs)#
+1961 Next Hotbar#
+1962 Previous Hotbar#
 
 1981 Invert Left Analog Stick X-Axis#
 1982 Invert Left Analog Stick Y-Axis#

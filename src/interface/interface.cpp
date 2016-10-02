@@ -365,6 +365,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_DPAD_UP] = 312;
 	joyimpulses[INJOY_DPAD_DOWN] = 313;
 	joyimpulses[INJOY_NEXT] = 301;
+	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
+	joyimpulses[INJOY_HOTBAR_PREV] = 310;
 }
 
 void defaultConfig() {
@@ -406,6 +408,8 @@ void defaultConfig() {
 	consoleCommand("/joybind 312 INJOY_DPAD_UP");
 	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
 	consoleCommand("/joybind 301 INJOY_NEXT");
+	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
+	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -494,7 +498,7 @@ static char impulsenames[NUMIMPULSES][12] = {
 	"USE"
 };
 
-static char joyimpulsenames[NUM_JOY_IMPULSES][12] = {
+static char joyimpulsenames[NUM_JOY_IMPULSES][15] = {
 	"STATUS",
 	"SPELL_LIST",
 	"CAST_SPELL",
@@ -507,7 +511,9 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][12] = {
 	"DPAD_RIGHT",
 	"DPAD_UP",
 	"DPAD_DOWN",
-	"NEXT"
+	"NEXT",
+	"HOTBAR_NEXT",
+	"HOTBAR_PREV"
 };
 
 /*-------------------------------------------------------------------------------
@@ -784,4 +790,14 @@ Sint8 *inputPressed(Uint32 scancode)
 		return &dummy_value;
 		//Not an ideal solution, but...
 	}
+}
+
+void selectHotbarSlot(int slot)
+{
+	if (slot < 0)
+		slot = NUM_HOTBAR_SLOTS - 1;
+	if (slot >= NUM_HOTBAR_SLOTS)
+		slot = 0;
+
+	current_hotbar = slot;
 }
