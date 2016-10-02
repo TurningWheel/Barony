@@ -181,7 +181,8 @@ extern bool stop;
 #define INJOY_NEXT 12
 #define INJOY_HOTBAR_NEXT 13
 #define INJOY_HOTBAR_PREV 14
-#define NUM_JOY_IMPULSES 15
+#define INJOY_HOTBAR_ACTIVATE 15
+#define NUM_JOY_IMPULSES 16
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

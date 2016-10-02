@@ -651,6 +651,12 @@ void drawStatus() {
 			selectHotbarSlot(current_hotbar - 1);
 		}
 
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]))
+		{
+			*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) = 0;
+			item = uidToItem(hotbar[current_hotbar].item);
+		}
+
 		if( item ) {
 			bool badpotion=FALSE;
 			if( itemCategory(item) == POTION && item->identified ) {

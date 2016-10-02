@@ -367,6 +367,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_NEXT] = 301;
 	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
 	joyimpulses[INJOY_HOTBAR_PREV] = 310;
+	joyimpulses[INJOY_HOTBAR_ACTIVATE] = 304;
 }
 
 void defaultConfig() {
@@ -410,6 +411,7 @@ void defaultConfig() {
 	consoleCommand("/joybind 301 INJOY_NEXT");
 	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
 	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
+	consoleCommand("/joybind 304 INJOY_HOTBAR_ACTIVATE");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -498,7 +500,7 @@ static char impulsenames[NUMIMPULSES][12] = {
 	"USE"
 };
 
-static char joyimpulsenames[NUM_JOY_IMPULSES][15] = {
+static char joyimpulsenames[NUM_JOY_IMPULSES][16] = {
 	"STATUS",
 	"SPELL_LIST",
 	"CAST_SPELL",
@@ -513,7 +515,8 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][15] = {
 	"DPAD_DOWN",
 	"NEXT",
 	"HOTBAR_NEXT",
-	"HOTBAR_PREV"
+	"HOTBAR_PREV",
+	"HOTBAR_ACTIVATE"
 };
 
 /*-------------------------------------------------------------------------------
