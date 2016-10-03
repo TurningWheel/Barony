@@ -277,6 +277,22 @@ int drawRect( SDL_Rect *src, Uint32 color, Uint8 alpha ) {
 	return 0;
 }
 
+
+/*-------------------------------------------------------------------------------
+
+	drawBox
+
+	draws the border of a rectangle
+
+-------------------------------------------------------------------------------*/
+int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha)
+{
+	drawLine(src->x, src->y, src->x + src->w, src->y, color, alpha); //Top.
+	drawLine(src->x, src->y, src->x, src->y + src->h, color, alpha); //Left.
+	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, alpha); //Right.
+	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, color, alpha); //Bottom.
+}
+
 /*-------------------------------------------------------------------------------
 
 	drawGear

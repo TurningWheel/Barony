@@ -240,12 +240,29 @@ void updatePlayerInventory() {
 		drawLine(pos.x,pos.y+y*INVENTORY_SLOTSIZE,pos.x+pos.w,pos.y+y*INVENTORY_SLOTSIZE,SDL_MapRGB(mainsurface->format,150,150,150),255);
 	}
 
+	//Highlight currently selected inventory slot (for gamepad).
+	pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
+	for (x = 0; x < INVENTORY_SIZEX; x++)
+	{
+		for (y = 0; y < INVENTORY_SIZEY; y++)
+		{
+			if (x == selected_inventory_slot_x && y == selected_inventory_slot_y)
+			{
+				pos.x = INVENTORY_STARTX + x*INVENTORY_SLOTSIZE;
+				pos.y = INVENTORY_STARTY + y*INVENTORY_SLOTSIZE;
+				Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
+				drawBox(&pos, color, 127);
+			}
+		}
+	}
+
 	// draw contents of each slot
 	x = INVENTORY_STARTX;
 	y = INVENTORY_STARTY;
 	for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 		nextnode = node->next;
 		Item *item = (Item *)node->element;
+
 		if( item==selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT))
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
 			continue;

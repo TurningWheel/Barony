@@ -525,6 +525,7 @@ void drawCircle(int x, int y, double radius, Uint32 color, Uint8 alpha);
 void drawArc(int x, int y, double radius, double angle1, double angle2, Uint32 color, Uint8 alpha);
 void drawLine(int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha);
 int drawRect(SDL_Rect *src, Uint32 color, Uint8 alpha);
+int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha);
 void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation);
 void drawImage(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos);
 void drawImageScaled(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos);

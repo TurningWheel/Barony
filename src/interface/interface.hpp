@@ -65,6 +65,9 @@ extern int inventorycategory;
 extern int itemscroll;
 extern view_t camera_charsheet;
 
+extern int selected_inventory_slot_x;
+extern int selected_inventory_slot_y;
+
 extern SDL_Surface *inventoryChest_bmp;
 extern SDL_Surface *invclose_bmp;
 extern SDL_Surface *invgraball_bmp;
