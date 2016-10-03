@@ -116,7 +116,9 @@ public:
 	int maxLeftTrigger();
 	int maxRightTrigger();
 
-	void handleInventoryMovement();
+	//Uses dpad to move the cursor around the inventory and select items.
+	//Returns true if moved.
+	bool handleInventoryMovement();
 };
 
 extern GameController* game_controller;

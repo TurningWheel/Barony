@@ -640,15 +640,40 @@ void drawStatus() {
 			item = uidToItem(hotbar[9].item);
 		}
 
+		//Moving the cursor changes the currently selected hotbar slot.
+		if ((mousexrel || mouseyrel) && !shootmode)
+		{
+			pos.x = initial_position.x;
+			pos.y = initial_position.y - hotbar_img->h;
+			for (c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w)
+			{
+				if (mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				{
+					selectHotbarSlot(c);
+				}
+			}
+		}
+
+		bool bumper_moved = false;
+		//Gamepad change hotbar selection.
 		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]))
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
+			bumper_moved = true;
 		}
 		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]))
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
+			bumper_moved = true;
+		}
+
+		if (bumper_moved)
+		{
+			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
+			pos.y = initial_position.y - (hotbar_img->h / 2);
+			SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 		}
 
 		if (*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]))

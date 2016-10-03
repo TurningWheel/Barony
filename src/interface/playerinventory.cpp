@@ -201,13 +201,13 @@ void updateAppraisalItemBox() {
 void select_inventory_slot(int x, int y)
 {
 	if (x < 0)
-		x = INVENTORY_SIZEX - 1; //TODO: Confirm this is in grid units and not pixel units.
+		x = INVENTORY_SIZEX - 1;
 	if (x >= INVENTORY_SIZEX)
 		x = 0;
 
 
 	if (y < 0)
-		y = INVENTORY_SIZEY - 1; //TODO: Confirm this is in grid units and not pixel units.
+		y = INVENTORY_SIZEY - 1;
 	if (y >= INVENTORY_SIZEY)
 		y = 0;
 
@@ -247,7 +247,10 @@ void updatePlayerInventory() {
 
 	if (game_controller)
 	{
-		game_controller->handleInventoryMovement();
+		if (game_controller->handleInventoryMovement())
+		{
+			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+		}
 	}
 
 	// draw grid
@@ -268,10 +271,21 @@ void updatePlayerInventory() {
 	{
 		for (y = 0; y < INVENTORY_SIZEY; y++)
 		{
+			pos.x = INVENTORY_STARTX + x*INVENTORY_SLOTSIZE;
+			pos.y = INVENTORY_STARTY + y*INVENTORY_SLOTSIZE;
+
+			if (mousexrel || mouseyrel)
+			{
+				//Cursor moved over this slot, highlight it.
+				if (mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
+				{
+					selected_inventory_slot_x = x;
+					selected_inventory_slot_y = y;
+				}
+			}
+
 			if (x == selected_inventory_slot_x && y == selected_inventory_slot_y)
 			{
-				pos.x = INVENTORY_STARTX + x*INVENTORY_SLOTSIZE;
-				pos.y = INVENTORY_STARTY + y*INVENTORY_SLOTSIZE;
 				Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
 				drawBox(&pos, color, 127);
 			}

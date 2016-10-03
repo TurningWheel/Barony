@@ -407,30 +407,48 @@ int GameController::maxRightTrigger()
 	return 32767 - gamepad_deadzone;
 }
 
-void GameController::handleInventoryMovement()
+bool GameController::handleInventoryMovement()
 {
+	bool dpad_moved = false;
+
 	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
 	{
 		select_inventory_slot(selected_inventory_slot_x - 1, selected_inventory_slot_y);
 		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+
+		dpad_moved = true;
 	}
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
 	{
 		select_inventory_slot(selected_inventory_slot_x + 1, selected_inventory_slot_y);
 		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+
+		dpad_moved = true;
 	}
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
 	{
 		select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+
+		dpad_moved = true;
 	}
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 	{
 		select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (dpad_moved)
+	{
+		dpad_moved = false;
+		draw_cursor = false;
+
+		return true;
 	}
 }
 
