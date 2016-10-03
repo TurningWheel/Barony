@@ -115,6 +115,8 @@ public:
 
 	int maxLeftTrigger();
 	int maxRightTrigger();
+
+	void handleInventoryMovement();
 };
 
 extern GameController* game_controller;

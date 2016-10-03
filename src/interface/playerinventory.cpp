@@ -198,6 +198,23 @@ void updateAppraisalItemBox() {
 	}
 }
 
+void select_inventory_slot(int x, int y)
+{
+	if (x < 0)
+		x = INVENTORY_SIZEX - 1; //TODO: Confirm this is in grid units and not pixel units.
+	if (x >= INVENTORY_SIZEX)
+		x = 0;
+
+
+	if (y < 0)
+		y = INVENTORY_SIZEY - 1; //TODO: Confirm this is in grid units and not pixel units.
+	if (y >= INVENTORY_SIZEY)
+		y = 0;
+
+	selected_inventory_slot_x = x;
+	selected_inventory_slot_y = y;
+}
+
 /*-------------------------------------------------------------------------------
 
 	updatePlayerInventory
@@ -227,6 +244,11 @@ void updatePlayerInventory() {
 	pos.x = x; pos.y = y;
 	pos.w = INVENTORY_SIZEX*INVENTORY_SLOTSIZE; pos.h = INVENTORY_SIZEY*INVENTORY_SLOTSIZE;
 	drawRect(&pos,0,224);
+
+	if (game_controller)
+	{
+		game_controller->handleInventoryMovement();
+	}
 
 	// draw grid
 	pos.x = x; pos.y = y;

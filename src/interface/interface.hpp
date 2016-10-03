@@ -68,6 +68,8 @@ extern view_t camera_charsheet;
 extern int selected_inventory_slot_x;
 extern int selected_inventory_slot_y;
 
+void select_inventory_slot(int x, int y);
+
 extern SDL_Surface *inventoryChest_bmp;
 extern SDL_Surface *invclose_bmp;
 extern SDL_Surface *invgraball_bmp;
