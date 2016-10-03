@@ -128,14 +128,7 @@ void GameController::handleAnalog()
 
 		if (rightx || righty)
 		{
-			SDL_Event e;
-
-			e.type = SDL_MOUSEMOTION;
-			e.motion.x = std::max(0, std::min(camera.winw, mousex + rightx));
-			e.motion.y = std::max(0, std::min(camera.winh, mousey + righty));
-			e.motion.xrel = rightx;
-			e.motion.yrel = righty;
-			SDL_PushEvent(&e);
+			SDL_WarpMouseInWindow(screen, std::max(0, std::min(camera.winw, mousex + rightx)), std::max(0, std::min(camera.winh, mousey + righty)));
 		}
 	}
 	else
