@@ -108,7 +108,7 @@ void actHudArm(Entity *my) {
 	my->pitch = -17*PI/32;
 }
 
-#ifdef HAVE_FMD
+#ifdef HAVE_FMOD
 FMOD_CHANNEL *bowDrawingSound = NULL;
 FMOD_BOOL bowDrawingSoundPlaying=0;
 #endif
