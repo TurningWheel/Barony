@@ -28,6 +28,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#ifdef HAVE_FMOD
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol) {
 	if (no_sound) {
 		return NULL;
@@ -463,3 +464,40 @@ void handleLevelMusic() {
 		fadeout_increment = default_fadeout_increment;
 	}
 }
+
+#else
+
+/*-------------------------------------------------------------------------------
+
+	playSoundEntity
+	
+	plays a sound effect with the given volume at the given entity's
+	position; returns the channel that the sound is playing in
+
+-------------------------------------------------------------------------------*/
+void* playSound(Uint32 snd, int vol) {
+	return NULL;
+}
+
+void* playSoundPos(double x, double y, Uint32 snd, int vol) {
+	return NULL;
+}
+
+void* playSoundPosLocal(double x, double y, Uint32 snd, int vol) {
+	return NULL;
+}
+
+void* playSoundEntity(Entity *entity, Uint32 snd, int vol) {
+	if (entity == NULL) return NULL;
+	return playSoundPos(entity->x, entity->y, snd, vol);
+}
+
+void* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
+	return playSoundPosLocal(entity->x, entity->y, snd, vol);
+}
+
+void* playSoundPlayer(int player, Uint32 snd, int vol) {
+	return NULL;
+}
+
+#endif
