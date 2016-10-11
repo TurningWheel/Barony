@@ -257,8 +257,10 @@ void handleMainMenu(bool mode) {
 					keystatus[SDL_SCANCODE_RETURN]=0;
 					playSound(139,64);
 					introstage=6; // goes to intro movie
+#ifdef MUSIC
 					playmusic(introductionmusic, TRUE, TRUE, FALSE);
 					fadeout=TRUE;
+#endif
 				}
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+104, language[1304]);
@@ -2418,8 +2420,10 @@ void handleMainMenu(bool mode) {
 			// load dungeon
 			if( multiplayer != CLIENT ) {
 				// stop all sounds
+#ifdef HAVE_FMOD
 				if( sound_group )
 					FMOD_ChannelGroup_Stop(sound_group);
+#endif
 
 				// generate a unique game key (used to identify compatible save games)
 				prng_seed_time();
@@ -2551,8 +2555,10 @@ void handleMainMenu(bool mode) {
 				}
 
 				// stop all sounds
+#ifdef HAVE_FMOD
 				if( sound_group )
 					FMOD_ChannelGroup_Stop(sound_group);
+#endif
 				// load next level
 				mapseed = 0;
 				entity_uids=1;
@@ -2628,7 +2634,9 @@ void handleMainMenu(bool mode) {
 			fadeout=FALSE;
 			creditstage++;
 			if( creditstage>=14 ) {
+#ifdef MUSIC
 				playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 				introstage=1;
 				credittime=0;
 				creditstage=0;
@@ -2661,8 +2669,10 @@ void handleMainMenu(bool mode) {
 			}
 
 			// stop all sounds
+#ifdef HAVE_FMOD
 			if( sound_group )
 				FMOD_ChannelGroup_Stop(sound_group);
+#endif
 			
 			// send disconnect messages
 			if(multiplayer==CLIENT) {
@@ -2795,9 +2805,11 @@ void handleMainMenu(bool mode) {
 			generatePathMaps();
 			gamePaused = FALSE;
 			if( !victory ) {
+#ifdef MUSIC
 				fadefinished=FALSE;
 				fadeout=FALSE;
 				playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 			} else {
 				// conduct achievements
 				if( conductPenniless )
@@ -2829,7 +2841,9 @@ void handleMainMenu(bool mode) {
 			fadeout=FALSE;
 			intromoviestage++;
 			if( intromoviestage>=9 ) {
+#ifdef MUSIC
 				playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 				introstage=1;
 				intromovietime=0;
 				intromoviestage=0;
@@ -2843,8 +2857,10 @@ void handleMainMenu(bool mode) {
 				movie=TRUE;
 			}
 		} else if( introstage==7 ) { // win game sequence (herx)
+#ifdef MUSIC
 			if( firstendmoviestage==0 )
 				playmusic(endgamemusic, TRUE, TRUE, FALSE);
+#endif
 			firstendmoviestage++;
 			if( firstendmoviestage>=5 ) {
 				introstage=4;
@@ -2862,8 +2878,10 @@ void handleMainMenu(bool mode) {
 				movie=TRUE;
 			}
 		} else if( introstage==8 ) { // win game sequence (devil)
+#ifdef MUSIC
 			if( secondendmoviestage==0 )
 				playmusic(endgamemusic, TRUE, TRUE, FALSE);
+#endif
 			secondendmoviestage++;
 			if( secondendmoviestage>=5 ) {
 				introstage=4;
@@ -4408,8 +4426,11 @@ void buttonSettingsAccept(button_t *my) {
 	// set audio options
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
+
+#ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+#endif
 	
 	// set keyboard options
 	for( c=0; c<NUMIMPULSES; c++ ) {

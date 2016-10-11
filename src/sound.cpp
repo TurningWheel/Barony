@@ -9,11 +9,15 @@
 
 -------------------------------------------------------------------------------*/
 
+#ifdef HAVE_FMOD
 #include <fmod_errors.h>
+#endif
+
 #include "main.hpp"
 //#include "game.hpp"
 #include "sound.hpp"
 
+#ifdef HAVE_FMOD
 FMOD_SYSTEM *fmod_system = NULL;
 
 FMOD_RESULT fmod_result;
@@ -155,6 +159,7 @@ void sound_update() {
 
 	//TODO: Mute sound if focus lost.
 }
-
-
 #define SOUND
+
+#endif
+

@@ -108,8 +108,11 @@ void actHudArm(Entity *my) {
 	my->pitch = -17*PI/32;
 }
 
+#ifdef HAVE_FMD
 FMOD_CHANNEL *bowDrawingSound = NULL;
 FMOD_BOOL bowDrawingSoundPlaying=0;
+#endif
+
 bool bowFire=FALSE;
 
 #define HUDWEAPON_CHOP my->skill[0]
@@ -245,6 +248,7 @@ void actHudWeapon(Entity *my) {
 				}
 			}
 			my->sprite = itemModelFirstperson(stats[clientnum]->weapon);
+#ifdef SOUND
 			if( bowDrawingSoundPlaying && bowDrawingSound ) {
 				unsigned int position=0;
 				FMOD_Channel_GetPosition(bowDrawingSound,&position,FMOD_TIMEUNIT_MS);
@@ -254,6 +258,7 @@ void actHudWeapon(Entity *my) {
 					my->sprite++;
 				}
 			}
+#endif
 			if( itemCategory(stats[clientnum]->weapon)==SPELLBOOK ) {
 				my->flags[INVISIBLE] = TRUE;
 				if( parent != NULL )
@@ -301,6 +306,7 @@ void actHudWeapon(Entity *my) {
 	}
 
 	// bow drawing sound check
+#ifdef SOUND
 	if( bowDrawingSound ) {
 		FMOD_BOOL tempBool = bowDrawingSoundPlaying;
 		FMOD_Channel_IsPlaying(bowDrawingSound,&bowDrawingSoundPlaying);
@@ -312,6 +318,7 @@ void actHudWeapon(Entity *my) {
 		bowDrawingSoundPlaying = 0;
 		bowFire = FALSE;
 	}
+#endif
 	
 	// main animation
 	if( HUDWEAPON_CHOP==0 ) {
@@ -330,6 +337,7 @@ void actHudWeapon(Entity *my) {
 						if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
 							if( !stats[clientnum]->defending && !throwGimpTimer ) {
 								// bows need to be drawn back
+#ifdef SOUND
 								if (!bowDrawingSoundPlaying)
 								{
 									if (bowFire)
@@ -344,6 +352,7 @@ void actHudWeapon(Entity *my) {
 										bowDrawingSound = playSound(246, 64);
 									}
 								}
+#endif
 								if( HUDWEAPON_MOVEX > 0 )
 									HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX-1,0.0);
 								else if( HUDWEAPON_MOVEX < 0 )
@@ -443,11 +452,13 @@ void actHudWeapon(Entity *my) {
 			if( !stats[clientnum]->defending ) {
 				if( stats[clientnum]->weapon ) {
 					if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
+#ifdef SOUND
 						if( bowDrawingSoundPlaying && bowDrawingSound ) {
 							FMOD_Channel_Stop(bowDrawingSound);
 							bowDrawingSoundPlaying = 0;
 							bowDrawingSound = NULL;
 						}
+#endif
 						if( HUDWEAPON_MOVEX > 0 )
 							HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX-1,0.0);
 						else if( HUDWEAPON_MOVEX < 0 )

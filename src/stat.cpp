@@ -70,7 +70,9 @@ Stat::Stat() {
 	this->amulet = NULL;
 	this->ring = NULL;
 	this->mask = NULL;
+#ifdef HAVE_FMOD
 	this->monster_sound = NULL;
+#endif
 	this->monster_idlevar = 1;
 	this->magic_effects.first = NULL;
 	this->magic_effects.last = NULL;
@@ -473,7 +475,9 @@ Stat* Stat::copyStats() {
 		newStat->mask = NULL;
 	}
 
+#ifdef HAVE_FMOD
 	newStat->monster_sound = NULL;
+#endif
 	newStat->monster_idlevar = this->monster_idlevar;
 	newStat->magic_effects.first = NULL; newStat->magic_effects.last = NULL;
 
