@@ -425,8 +425,12 @@ void updatePlayerInventory() {
 
 					// handle clicking
 					if( mousestatus[SDL_BUTTON_LEFT] && !selectedItem && !itemMenuOpen ) {
-						selectedItem=item;
-						playSound(139,64); // click sound
+						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
+							dropItem(item,clientnum); // Quick item drop
+						} else {
+							selectedItem=item;
+							playSound(139,64); // click sound
+						}
 					} else if( mousestatus[SDL_BUTTON_RIGHT] && !itemMenuOpen && !selectedItem ) {
 						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
 							// auto-appraise the item
