@@ -284,5 +284,7 @@ extern bool disable_messages;
 
 extern bool right_click_protect;
 
+extern bool auto_appraise_new_items;
+
 const char *getInputName(Uint32 scancode);
 Sint8 *inputPressed(Uint32 scancode);

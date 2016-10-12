@@ -771,6 +771,13 @@ void gameLogic(void) {
 					while( item->count>1 )
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
+				} else {
+					// auto appraise
+					if (auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) ) {
+						identifygui_active = FALSE;
+						identifygui_appraising = TRUE;
+						identifyGUIIdentify(item);
+					}
 				}
 			}
 
@@ -1084,6 +1091,13 @@ void gameLogic(void) {
 					while( item->count>1 )
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
+				} else {
+					// auto appraise
+					if (auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) ) {
+						identifygui_active = FALSE;
+						identifygui_appraising = TRUE;
+						identifyGUIIdentify(item);
+					}
 				}
 			}
 

@@ -131,6 +131,7 @@ list_t damageIndicators;
 bool auto_hotbar_new_items = TRUE;
 bool disable_messages = FALSE;
 bool right_click_protect = FALSE;
+bool auto_appraise_new_items = FALSE;
 
 bool loadInterfaceResources() {
 	//General GUI images.
@@ -527,6 +528,10 @@ int saveConfig(char *filename) {
 	if (right_click_protect) 
 	{
 		fprintf(fp, "/right_click_protect\n");
+	}
+	if (auto_appraise_new_items) 
+	{
+		fprintf(fp, "/autoappraisenewitems\n");
 	}
 	if (startfloor)
 	{

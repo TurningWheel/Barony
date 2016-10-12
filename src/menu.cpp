@@ -86,6 +86,7 @@ int menuselect=0;
 bool settings_auto_hotbar_new_items = TRUE;
 bool settings_disable_messages = TRUE;
 bool settings_right_click_protect = FALSE;
+bool settings_auto_appraise_new_items = TRUE;
 bool playing_random_char = FALSE;
 bool colorblind = FALSE;
 Sint32 oslidery=0;
@@ -1182,28 +1183,32 @@ void handleMainMenu(bool mode) {
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[x] %s", language[1373]);
 			else
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[ ] %s", language[1373]);
-			if( settings_auto_hotbar_new_items)
+			if( settings_auto_hotbar_new_items )
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[x] %s", language[1374]);
 			else
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[ ] %s", language[1374]);
+			if( settings_auto_appraise_new_items )
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1961]);
+			else
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1961]);
 			if( settings_disable_messages )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[x] %s", language[1536]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1536]);
-			if ( settings_right_click_protect )
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[x] %s", language[1960]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[ ] %s", language[1536]);
+			if( settings_right_click_protect )
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+164, "[x] %s", language[1960]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 148, "[ ] %s", language[1960]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+164, "[ ] %s", language[1960]);
 
 			// server flag elements
-			ttfPrintText(ttf12, subx1+24, suby1+180, language[1375]);
+			ttfPrintText(ttf12, subx1+24, suby1+196, language[1375]);
 
 			int i;
 			for( i=0; i<NUM_SERVER_FLAGS; i++ ) {
 				if( svFlags&power(2,i) ) {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+204+16*i,"[x] %s",language[153+i]);
+					ttfPrintTextFormatted(ttf12,subx1+36,suby1+220+16*i,"[x] %s",language[153+i]);
 				} else {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+204+16*i,"[ ] %s",language[153+i]);
+					ttfPrintTextFormatted(ttf12,subx1+36,suby1+220+16*i,"[ ] %s",language[153+i]);
 				}
 				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, suby1 + 204 + (i*16), suby1 + 216 + (i*16))) //So many gosh dang magic numbers ._.
 				{
@@ -1242,9 +1247,13 @@ void handleMainMenu(bool mode) {
 					}
 					else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
+						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == FALSE);
+					}
+					else if( omousey >= suby1+148 && omousey < suby1+148+12 ) {
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_disable_messages = (settings_disable_messages == FALSE);
 					}
-					else if (omousey >= suby1 + 148 && omousey < suby1 + 148 + 12) {
+					else if (omousey >= suby1 + 164 && omousey < suby1 + 164 + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == FALSE);
 					}
@@ -3310,6 +3319,7 @@ void openSettingsWindow() {
 	settings_auto_hotbar_new_items = auto_hotbar_new_items;
 	settings_disable_messages = disable_messages;
 	settings_right_click_protect = right_click_protect;
+	settings_auto_appraise_new_items = auto_appraise_new_items;
 
 	// create settings window
 	settings_window = TRUE;
@@ -4428,6 +4438,7 @@ void buttonSettingsAccept(button_t *my) {
 	auto_hotbar_new_items = settings_auto_hotbar_new_items;
 	disable_messages = settings_disable_messages;
 	right_click_protect = settings_right_click_protect;
+	auto_appraise_new_items = settings_auto_appraise_new_items;
 
 	// we need to reposition the settings window now.
 	buttonCloseSubwindow(my);
