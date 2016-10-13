@@ -1730,12 +1730,16 @@ int main(int argc, char **argv) {
 							fadefinished=FALSE;
 							if( !skipintro && !strcmp(classtoquickstart, "") ) {
 								introstage = 6;
+								#ifdef HAVE_FMOD
 								playmusic(introductionmusic, TRUE, FALSE, FALSE);
+								#endif
 							} else {
 								introstage = 1;
 								fadeout=FALSE;
 								fadefinished=FALSE;
+								#ifdef HAVE_FMOD
 								playmusic(intromusic, TRUE, FALSE, FALSE);
+								#endif
 							}
 						#endif
 					}
