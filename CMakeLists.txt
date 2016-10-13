@@ -11,6 +11,16 @@ else()
   set (STEAMWORKS_ENABLED 0)
 endif()
 
+#FMOD can be disabled in one of two ways: 
+# * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
+# * Setting the environment variable FMOD_ENABLED = 0.
+set(FMOD 0) #Acts as an alias to FMOD_FOUND
+if (DEFINED ENV{FMOD_ENABLED})
+  set (FMOD_ENABLED $ENV{FMOD_ENABLED})
+else()
+  set (FMOD_ENABLED 1) #Enabled by default.
+endif()
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_OSX_ARCHITECTURES x86_64)
@@ -28,7 +38,6 @@ endif()
 set (Apple 0)
 set (Windows 0)
 set (Linux 0)
-set(FMOD 0)
 set (NOT_DWORD_DEFINED 0)
 if( NOT WIN32 )
   set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -Wall -pg -ffast-math -funroll-loops -fstrict-aliasing")
@@ -127,9 +136,11 @@ if( NOT WIN32 AND NOT APPLE)
   #Linux needs these two.
   #Windows has manual links later on.
   #And Macs have their own special line.
-  find_package(FMOD)
-  if (FMOD_FOUND)
-    set(FMOD 1)
+  if (FMOD_ENABLED)
+    find_package(FMOD)
+    if (FMOD_FOUND)
+      set(FMOD 1)
+    endif()
   endif()
   find_package(PNG REQUIRED)
 elseif (APPLE)

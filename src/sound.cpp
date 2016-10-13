@@ -9,13 +9,13 @@
 
 -------------------------------------------------------------------------------*/
 
-#ifdef HAVE_FMOD
-#include <fmod_errors.h>
-#endif
-
 #include "main.hpp"
 //#include "game.hpp"
 #include "sound.hpp"
+
+#ifdef HAVE_FMOD
+#include <fmod_errors.h>
+#endif
 
 #ifdef HAVE_FMOD
 FMOD_SYSTEM *fmod_system = NULL;
