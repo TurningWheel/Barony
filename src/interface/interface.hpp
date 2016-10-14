@@ -163,6 +163,7 @@ extern SDL_Surface *identifyGUI_img;
 
 void updateIdentifyGUI(); //Updates the identify item GUI.
 void identifyGUIIdentify(Item *item); //Identify the given item.
+int getAppraisalTime(Item *item); // Return time in ticks needed to appraise an item
 void drawSustainedSpells(); //Draws an icon for every sustained spell.
 
 //Remove curse GUI definitions.

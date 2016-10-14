@@ -237,14 +237,20 @@ void identifyGUIIdentify(Item *item) {
 		//If it is identified, identify it and print out a message for the player.
 
 		identifygui_appraising = FALSE;
-		if( item->type!=GEM_GLASS )
-			appraisal_timer = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised
-		else
-			appraisal_timer = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
-		appraisal_timer = std::min(std::max(1,appraisal_timer),36000);
+		appraisal_timer = getAppraisalTime(item);
 		appraisal_timermax = appraisal_timer;
 		appraisal_item = item->uid;
 		//printlog( "DEBUGGING: Appraisal timer = %i.\n", appraisal_timer);
 	}
 	identifygui_active = FALSE;
+}
+
+int getAppraisalTime(Item *item) {
+	int appraisal_time;
+	if( item->type!=GEM_GLASS )
+		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised
+	else
+		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
+	std::min(std::max(1,appraisal_time),36000);
+	return appraisal_time;
 }
