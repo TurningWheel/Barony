@@ -34,6 +34,10 @@
 #include "paths.hpp"
 #include "player.hpp"
 
+// for auto appraise
+#include <map>
+#include <algorithm>
+
 #ifdef LINUX
 //Sigsegv catching stuff.
 #include <signal.h>
@@ -89,7 +93,8 @@ void gameLogic(void) {
 	Uint32 i=0, j;
 	FILE *fp;
 	deleteent_t *deleteent;
-	bool entitydeletedself;
+	bool entitydeletedself;				
+	std::map<int, Item*> auto_appraise_map; // store time required to identify items
 	
 	if( creditstage>0 )
 		credittime++;
@@ -772,12 +777,9 @@ void gameLogic(void) {
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
 				} else {
-					// auto appraise
-					if (auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) ) {
-						identifygui_active = FALSE;
-						identifygui_appraising = TRUE;
-						identifyGUIIdentify(item);
-					}
+					// Build a map of how long it takes to identify items
+					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+						auto_appraise_map.insert(std::map<int, Item*>::value_type(getAppraisalTime(item), item));
 				}
 			}
 
@@ -1092,12 +1094,9 @@ void gameLogic(void) {
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
 				} else {
-					// auto appraise
-					if (auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) ) {
-						identifygui_active = FALSE;
-						identifygui_appraising = TRUE;
-						identifyGUIIdentify(item);
-					}
+					// Build a map of how long it takes to identify items
+					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+						auto_appraise_map.insert(std::map<int, Item*>::value_type(getAppraisalTime(item), item));
 				}
 			}
 
@@ -1107,6 +1106,15 @@ void gameLogic(void) {
 			if( kills[HUMAN]>=10 ) {
 				steamAchievement("BARONY_ACH_HOMICIDAL_MANIAC");
 			}
+		}
+
+		// Automatically identify items, shortest time required first
+		if ( auto_appraise_new_items && !auto_appraise_map.empty() )
+		{
+			identifygui_active = FALSE;
+			identifygui_appraising = TRUE;
+			identifyGUIIdentify(auto_appraise_map.begin()->second);
+			auto_appraise_map.clear();
 		}
 	}
 }
