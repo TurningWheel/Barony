@@ -13,13 +13,9 @@ endif()
 
 #FMOD can be disabled in one of two ways: 
 # * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
-# * Setting the environment variable FMOD_ENABLED = 0.
+# * Running cmake with -DFMOD_ENABLED=OFF
 set(FMOD 0) #Acts as an alias to FMOD_FOUND
-if (DEFINED ENV{FMOD_ENABLED})
-  set (FMOD_ENABLED $ENV{FMOD_ENABLED})
-else()
-  set (FMOD_ENABLED 1) #Enabled by default.
-endif()
+option(FMOD_ENABLED "Use the FMOD Ex library in the sound engine" ON)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
