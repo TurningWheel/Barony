@@ -426,6 +426,8 @@ void updatePlayerInventory() {
 					// handle clicking
 					if( mousestatus[SDL_BUTTON_LEFT] && !selectedItem && !itemMenuOpen ) {
 						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
+							keystatus[SDL_SCANCODE_LSHIFT] = 0;
+							keystatus[SDL_SCANCODE_RSHIFT] = 0;
 							dropItem(item,clientnum); // Quick item drop
 						} else {
 							selectedItem=item;
