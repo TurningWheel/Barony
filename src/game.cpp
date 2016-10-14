@@ -33,9 +33,7 @@
 #include "collision.hpp"
 #include "paths.hpp"
 #include "player.hpp"
-
-// for auto appraise
-#include <map>
+#include <limits>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -92,8 +90,9 @@ void gameLogic(void) {
 	Uint32 i=0, j;
 	FILE *fp;
 	deleteent_t *deleteent;
-	bool entitydeletedself;				
-	std::map<int, Item*> auto_appraise_map; // store time required to identify items
+	bool entitydeletedself;
+	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
+	Item *auto_appraise_target = NULL;
 	
 	if( creditstage>0 )
 		credittime++;
@@ -776,9 +775,15 @@ void gameLogic(void) {
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
 				} else {
-					// Build a map of how long it takes to identify items
 					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
-						auto_appraise_map.insert(std::map<int, Item*>::value_type(getAppraisalTime(item), item));
+					{
+						int appraisal_time = getAppraisalTime(item);
+						if (appraisal_time < auto_appraise_lowest_time)
+						{
+							auto_appraise_target = item;
+							auto_appraise_lowest_time = appraisal_time;
+						}
+					}
 				}
 			}
 
@@ -1093,9 +1098,15 @@ void gameLogic(void) {
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
 				} else {
-					// Build a map of how long it takes to identify items
 					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
-						auto_appraise_map.insert(std::map<int, Item*>::value_type(getAppraisalTime(item), item));
+					{
+						int appraisal_time = getAppraisalTime(item);
+						if (appraisal_time < auto_appraise_lowest_time)
+						{
+							auto_appraise_target = item;
+							auto_appraise_lowest_time = appraisal_time;
+						}
+					}
 				}
 			}
 
@@ -1108,12 +1119,11 @@ void gameLogic(void) {
 		}
 
 		// Automatically identify items, shortest time required first
-		if ( auto_appraise_new_items && !auto_appraise_map.empty() )
+		if ( auto_appraise_target != NULL )
 		{
 			identifygui_active = FALSE;
 			identifygui_appraising = TRUE;
-			identifyGUIIdentify(auto_appraise_map.begin()->second);
-			auto_appraise_map.clear();
+			identifyGUIIdentify(auto_appraise_target);
 		}
 	}
 }
