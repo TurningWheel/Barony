@@ -251,6 +251,6 @@ int getAppraisalTime(Item *item) {
 		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised
 	else
 		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
-	std::min(std::max(1,appraisal_time),36000);
+	appraisal_time = std::min(std::max(1,appraisal_time),36000);
 	return appraisal_time;
 }
