@@ -257,9 +257,9 @@ void handleMainMenu(bool mode) {
 					keystatus[SDL_SCANCODE_RETURN]=0;
 					playSound(139,64);
 					introstage=6; // goes to intro movie
+					fadeout=TRUE;
 #ifdef MUSIC
 					playmusic(introductionmusic, TRUE, TRUE, FALSE);
-					fadeout=TRUE;
 #endif
 				}
 			} else {
@@ -2805,9 +2805,9 @@ void handleMainMenu(bool mode) {
 			generatePathMaps();
 			gamePaused = FALSE;
 			if( !victory ) {
-#ifdef MUSIC
 				fadefinished=FALSE;
 				fadeout=FALSE;
+#ifdef MUSIC
 				playmusic(intromusic, TRUE, FALSE, FALSE);
 #endif
 			} else {

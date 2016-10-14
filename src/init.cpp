@@ -9,11 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#ifdef HAVE_FMOD
-#include "fmod.h"
-//#include <fmod_errors.h>
-#endif
-
 #include "main.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
@@ -24,6 +19,11 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+
+#ifdef HAVE_FMOD
+#include "fmod.h"
+//#include <fmod_errors.h>
+#endif
 
 /*-------------------------------------------------------------------------------
 

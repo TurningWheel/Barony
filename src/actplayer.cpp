@@ -1061,7 +1061,6 @@ void actPlayer(Entity *my) {
 #endif
 						combat = FALSE;
 						for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
-
 						{
 							nextnode = node->next;
 							Item *item = (Item *)node->element;

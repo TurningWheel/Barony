@@ -1811,9 +1811,9 @@ int main(int argc, char **argv) {
 #endif
 						} else {
 							introstage = 1;
-#ifdef MUSIC
 							fadeout=FALSE;
 							fadefinished=FALSE;
+#ifdef MUSIC
 							playmusic(intromusic, TRUE, FALSE, FALSE);
 #endif
 						}
