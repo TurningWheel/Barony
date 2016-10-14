@@ -36,7 +36,6 @@
 
 // for auto appraise
 #include <map>
-#include <algorithm>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
