@@ -2714,6 +2714,7 @@ client (player %d) (direct ip)#
 1946 NOTE: Only removes generated traps#
 
 1960 right click protection#
-1961 auto appraise items#
+
+1997 auto appraise items#
 
 1999 end#

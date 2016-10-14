@@ -1188,9 +1188,9 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[ ] %s", language[1374]);
 			if( settings_auto_appraise_new_items )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1961]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1997]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1961]);
+				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1997]);
 			if( settings_disable_messages )
 				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[x] %s", language[1536]);
 			else
