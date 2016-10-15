@@ -480,6 +480,24 @@ void* playSound(Uint32 snd, int vol) {
 }
 
 void* playSoundPos(double x, double y, Uint32 snd, int vol) {
+	int c;
+
+	if(multiplayer==SERVER) {
+		for(c=1; c<MAXPLAYERS; c++) {
+			if( client_disconnected[c]==TRUE )
+				continue;
+			strcpy((char *)net_packet->data,"SNDP");
+			SDLNet_Write32(x,&net_packet->data[4]);
+			SDLNet_Write32(y,&net_packet->data[8]);
+			SDLNet_Write32(snd,&net_packet->data[12]);
+			SDLNet_Write32((Uint32)vol,&net_packet->data[16]);
+			net_packet->address.host = net_clients[c-1].host;
+			net_packet->address.port = net_clients[c-1].port;
+			net_packet->len = 20;
+			sendPacketSafe(net_sock, -1, net_packet, c-1);
+		}
+	}
+
 	return NULL;
 }
 
@@ -497,6 +515,25 @@ void* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
 }
 
 void* playSoundPlayer(int player, Uint32 snd, int vol) {
+	int c;
+
+	if( player<0 || player>=MAXPLAYERS ) //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
+		return NULL;
+	if( player==clientnum ) {
+		return playSound(snd,vol);
+	} else if( multiplayer==SERVER ) {
+		if( client_disconnected[player] )
+			return NULL;
+		strcpy((char *)net_packet->data,"SNDG");
+		SDLNet_Write32(snd,&net_packet->data[4]);
+		SDLNet_Write32((Uint32)vol,&net_packet->data[8]);
+		net_packet->address.host = net_clients[player-1].host;
+		net_packet->address.port = net_clients[player-1].port;
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, player-1);
+		return NULL;
+	}
+
 	return NULL;
 }
 
