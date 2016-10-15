@@ -482,6 +482,9 @@ void* playSound(Uint32 snd, int vol) {
 void* playSoundPos(double x, double y, Uint32 snd, int vol) {
 	int c;
 
+	if (intro || vol == 0)
+		return nullptr;
+
 	if(multiplayer==SERVER) {
 		for(c=1; c<MAXPLAYERS; c++) {
 			if( client_disconnected[c]==TRUE )
@@ -511,6 +514,8 @@ void* playSoundEntity(Entity *entity, Uint32 snd, int vol) {
 }
 
 void* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
+	if( entity==NULL )
+		return NULL;
 	return playSoundPosLocal(entity->x, entity->y, snd, vol);
 }
 
