@@ -33,6 +33,7 @@
 #include "collision.hpp"
 #include "paths.hpp"
 #include "player.hpp"
+#include <limits>
 
 #ifdef LINUX
 //Sigsegv catching stuff.
@@ -90,6 +91,8 @@ void gameLogic(void) {
 	FILE *fp;
 	deleteent_t *deleteent;
 	bool entitydeletedself;
+	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
+	Item *auto_appraise_target = NULL;
 	
 	if( creditstage>0 )
 		credittime++;
@@ -771,6 +774,16 @@ void gameLogic(void) {
 					while( item->count>1 )
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
+				} else {
+					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+					{
+						int appraisal_time = getAppraisalTime(item);
+						if (appraisal_time < auto_appraise_lowest_time)
+						{
+							auto_appraise_target = item;
+							auto_appraise_lowest_time = appraisal_time;
+						}
+					}
 				}
 			}
 
@@ -1087,6 +1100,16 @@ void gameLogic(void) {
 					while( item->count>1 )
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
+				} else {
+					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+					{
+						int appraisal_time = getAppraisalTime(item);
+						if (appraisal_time < auto_appraise_lowest_time)
+						{
+							auto_appraise_target = item;
+							auto_appraise_lowest_time = appraisal_time;
+						}
+					}
 				}
 			}
 
@@ -1096,6 +1119,14 @@ void gameLogic(void) {
 			if( kills[HUMAN]>=10 ) {
 				steamAchievement("BARONY_ACH_HOMICIDAL_MANIAC");
 			}
+		}
+
+		// Automatically identify items, shortest time required first
+		if ( auto_appraise_target != NULL )
+		{
+			identifygui_active = FALSE;
+			identifygui_appraising = TRUE;
+			identifyGUIIdentify(auto_appraise_target);
 		}
 	}
 }
