@@ -778,7 +778,7 @@ void gameLogic(void) {
 					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
 					{
 						int appraisal_time = getAppraisalTime(item);
-						if ( appraisal_time < auto_appraise_lowest_time )
+						if (appraisal_time < auto_appraise_lowest_time)
 						{
 							auto_appraise_target = item;
 							auto_appraise_lowest_time = appraisal_time;
@@ -1101,7 +1101,7 @@ void gameLogic(void) {
 					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
 					{
 						int appraisal_time = getAppraisalTime(item);
-						if ( appraisal_time < auto_appraise_lowest_time )
+						if (appraisal_time < auto_appraise_lowest_time)
 						{
 							auto_appraise_target = item;
 							auto_appraise_lowest_time = appraisal_time;
