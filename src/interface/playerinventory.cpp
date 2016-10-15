@@ -250,19 +250,33 @@ void updatePlayerInventory() {
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
 			continue;
 
-		// give it a yellow background if it is unidentified
-		if (!item->identified) {
+		if (!item->identified)
+		{
+			// give it a yellow background if it is unidentified
 			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
 			pos.w = 38; pos.h = 38;
 			drawRect(&pos, 31875, 125);
-		} else if (item->beatitude < 0) { // give it a red background if cursed
+		}
+		else if (item->beatitude < 0)
+		{
+			// give it a red background if cursed
 			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
 			pos.w = 38; pos.h = 38;
 			drawRect(&pos, 125, 125);
-		} else if (item->beatitude > 0) { // give it a green background if blessed
+		}
+		else if (item->beatitude > 0)
+		{
+			// give it a green background if blessed (light blue if colorblind mode)
 			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2; pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
 			pos.w = 38; pos.h = 38;
-			drawRect(&pos, 65280, 65);
+			if (colorblind)
+			{
+				drawRect(&pos, SDL_MapRGB(mainsurface->format, 100, 245, 255), 65);
+			}
+			else
+			{
+				drawRect(&pos, 65280, 65);
+			}
 		}
 
 		// draw item
@@ -383,15 +397,31 @@ void updatePlayerInventory() {
 								color = SDL_MapRGB(mainsurface->format,255,255,0);
 								ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT, color, language[309] );
 							} else {
-								if( item->beatitude<0 ) {
+								if (item->beatitude < 0)
+								{
+									//Red if cursed
 									color = SDL_MapRGB(mainsurface->format,255,0,0);
-									ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT, color, language[310] );
-								} else if( item->beatitude==0 ) {
+									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
+								}
+								else if (item->beatitude == 0)
+								{
+									//White if normal item.
 									color=0xFFFFFFFF;
-									ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT, color, language[311] );
-								} else {
-									color = SDL_MapRGB(mainsurface->format,0,255,0);
-									ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT, color, language[312] );
+									ttfPrintTextFormattedColor(ttf12, src.x+4+TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
+								}
+								else
+								{
+									//Green if blessed.
+									if (colorblind)
+									{
+										color = SDL_MapRGB(mainsurface->format, 100, 245, 255); //Light blue if colorblind
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format,0, 255, 0);
+									}
+
+									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 								}
 							}
 							if( item->beatitude==0 || !item->identified )
