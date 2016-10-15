@@ -521,7 +521,7 @@ void dropItem(Item *item, int player) {
 	Entity *entity;
 	Sint16 oldcount;
 
-	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr)
+	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr || itemCategory(item) == SPELL_CAT)
 		return;
 	if( itemIsEquipped(item,player) ) {
 		if (!item->canUnequip()) {

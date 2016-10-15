@@ -2715,4 +2715,6 @@ client (player %d) (direct ip)#
 
 1960 right click protection#
 
+1997 auto appraise items#
+
 1999 end#
