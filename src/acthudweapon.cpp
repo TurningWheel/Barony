@@ -111,6 +111,13 @@ void actHudArm(Entity *my) {
 #ifdef HAVE_FMOD
 FMOD_CHANNEL *bowDrawingSound = NULL;
 FMOD_BOOL bowDrawingSoundPlaying=0;
+#else
+// implement bow drawing timer via SDL_GetTicks()
+bool bowDrawingSound = FALSE;
+bool bowDrawingSoundPlaying = FALSE;
+Uint32 bowDrawingStart = 0;
+// based on superficial analysis of the BowDraw1V1.ogg file
+Uint32 bowDrawingLength = 1030;
 #endif
 
 bool bowFire=FALSE;
@@ -258,6 +265,14 @@ void actHudWeapon(Entity *my) {
 					my->sprite++;
 				}
 			}
+#else
+			if (bowDrawingSoundPlaying && bowDrawingSound) {
+				unsigned int position = SDL_GetTicks() - bowDrawingStart;
+				unsigned int length = bowDrawingLength;
+				if ( position>=length/4 ) {
+					my->sprite++;
+				}
+			}
 #endif
 			if( itemCategory(stats[clientnum]->weapon)==SPELLBOOK ) {
 				my->flags[INVISIBLE] = TRUE;
@@ -318,6 +333,18 @@ void actHudWeapon(Entity *my) {
 		bowDrawingSoundPlaying = 0;
 		bowFire = FALSE;
 	}
+#else
+	if( bowDrawingSound ) {
+		bool tempBool = bowDrawingSoundPlaying;
+		bowDrawingSoundPlaying = (SDL_GetTicks() - bowDrawingStart) < bowDrawingLength;
+		if( tempBool && !bowDrawingSoundPlaying )
+			bowFire = TRUE;
+		else if( !tempBool )
+			bowFire = FALSE;
+	} else {
+		bowDrawingSoundPlaying = 0;
+		bowFire = FALSE;
+	}
 #endif
 	
 	// main animation
@@ -337,7 +364,6 @@ void actHudWeapon(Entity *my) {
 						if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
 							if( !stats[clientnum]->defending && !throwGimpTimer ) {
 								// bows need to be drawn back
-#ifdef SOUND
 								if (!bowDrawingSoundPlaying)
 								{
 									if (bowFire)
@@ -349,10 +375,14 @@ void actHudWeapon(Entity *my) {
 									}
 									else
 									{
+#ifdef SOUND
 										bowDrawingSound = playSound(246, 64);
+#else
+										bowDrawingSound = TRUE;
+										bowDrawingStart = SDL_GetTicks();
+#endif
 									}
 								}
-#endif
 								if( HUDWEAPON_MOVEX > 0 )
 									HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX-1,0.0);
 								else if( HUDWEAPON_MOVEX < 0 )
@@ -458,6 +488,12 @@ void actHudWeapon(Entity *my) {
 							bowDrawingSoundPlaying = 0;
 							bowDrawingSound = NULL;
 						}
+#else
+						if( bowDrawingSoundPlaying && bowDrawingSound ) {
+							bowDrawingSoundPlaying = FALSE;
+							bowDrawingSound = FALSE;
+						}
+
 #endif
 						if( HUDWEAPON_MOVEX > 0 )
 							HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX-1,0.0);
