@@ -181,7 +181,7 @@ extern bool stop;
 #define INJOY_NEXT 12
 #define INJOY_HOTBAR_NEXT 13
 #define INJOY_HOTBAR_PREV 14
-#define INJOY_HOTBAR_ACTIVATE 15
+#define INJOY_HOTBAR_ACTIVATE 15 //Activates hotbar item in-game. Clears hotbar slot in-inventory.
 #define NUM_JOY_IMPULSES 16
 
 // since SDL2 gets rid of these and we're too lazy to fix them...

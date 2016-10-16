@@ -230,8 +230,8 @@ bool loadInterfaceResources() {
 		hotbar[i].item = 0;
 	}
 
-	damageIndicators.first = NULL;
-	damageIndicators.last = NULL;
+	damageIndicators.first = nullptr;
+	damageIndicators.last = nullptr;
 
 	return TRUE;
 }

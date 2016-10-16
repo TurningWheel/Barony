@@ -2731,7 +2731,7 @@ client (player %d) (direct ip)#
 1960 Next (in MENUs)#
 1961 Next Hotbar#
 1962 Previous Hotbar#
-1963 Activate Hotbar#
+1963 Activate/Clear Hotbar#
 
 1980 Gamepad#
 

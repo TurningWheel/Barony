@@ -679,7 +679,14 @@ void drawStatus() {
 		if (*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]))
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) = 0;
-			item = uidToItem(hotbar[current_hotbar].item);
+			if (shootmode)
+			{
+				item = uidToItem(hotbar[current_hotbar].item);
+			}
+			else
+			{
+				hotbar[current_hotbar].item = 0;
+			}
 		}
 
 		if( item ) {
