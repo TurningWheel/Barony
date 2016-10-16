@@ -478,7 +478,7 @@ SDL_Surface *itemSprite(Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(Item *item1, Item *item2) {
+int itemCompare(const Item *item1, const Item *item2) {
 	// null cases
 	if( item1 == NULL ) {
 		if( item2 == NULL )
@@ -1358,7 +1358,7 @@ Item **itemSlot(Stat *myStats, Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-bool itemIsEquipped(Item *item, int player) {
+bool itemIsEquipped(const Item *item, int player) {
 	if( !itemCompare(item,stats[player]->helmet) )
 		return TRUE;
 	if( !itemCompare(item,stats[player]->breastplate) )
