@@ -22,6 +22,10 @@
 #include "interface.hpp"
 
 
+//Prototype helper functions for player inventory helper functions.
+void itemContextMenu();
+
+
 SDL_Surface *inventory_mode_item_img = NULL;
 SDL_Surface *inventory_mode_item_highlighted_img = NULL;
 SDL_Surface *inventory_mode_spell_img = NULL;
@@ -37,7 +41,7 @@ int inventory_mode = INVENTORY_MODE_ITEM;
 
 -------------------------------------------------------------------------------*/
 
-char *itemUseString(Item *item) {
+char *itemUseString(const Item *item) {
 	if( itemCategory(item)==WEAPON ) {
 		if( itemIsEquipped(item,clientnum) )
 			return language[323];
@@ -223,14 +227,14 @@ void select_inventory_slot(int x, int y)
 
 -------------------------------------------------------------------------------*/
 
-Item *selectedItem=NULL;
-bool toggleclick=FALSE;
+Item *selectedItem = nullptr;
+bool toggleclick = false;
 
-bool itemMenuOpen=FALSE;
-int itemMenuX=0;
-int itemMenuY=0;
-int itemMenuSelected=0;
-Uint32 itemMenuItem=0;
+bool itemMenuOpen = false;
+int itemMenuX = 0;
+int itemMenuY = 0;
+int itemMenuSelected = 0;
+Uint32 itemMenuItem = 0;
 
 void updatePlayerInventory() {
 	SDL_Rect pos, mode_pos;
@@ -517,13 +521,13 @@ void updatePlayerInventory() {
 					} else if( mousestatus[SDL_BUTTON_RIGHT] && !itemMenuOpen && !selectedItem ) {
 						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
 							// auto-appraise the item
-							identifygui_active = FALSE;
-							identifygui_appraising = TRUE;
+							identifygui_active = false;
+							identifygui_appraising = true;
 							identifyGUIIdentify(item);
 							mousestatus[SDL_BUTTON_RIGHT]=0;
 						} else {
 							// open a drop-down menu of options for "using" the item
-							itemMenuOpen=TRUE;
+							itemMenuOpen = true;
 							itemMenuX=mousex+8;
 							itemMenuY=mousey;
 							itemMenuSelected=0;
@@ -633,194 +637,455 @@ void updatePlayerInventory() {
 		}
 	}
 
-	// item use menu
-	if( itemMenuOpen ) {
-		bool badpotion=FALSE;
-		Item *currentItem = uidToItem(itemMenuItem);
-		if( !currentItem )
-			return;
-		if( itemCategory(currentItem) == POTION && currentItem->identified ) {
-			if( currentItem->type==POTION_SICKNESS || currentItem->type==POTION_CONFUSION || currentItem->type==POTION_BLINDNESS || currentItem->type==POTION_ACID || currentItem->type==POTION_PARALYSIS )
-				badpotion=TRUE;
-		}
+	itemContextMenu();
+}
 
-		if( itemMenuSelected==0 )
-			drawDepressed(itemMenuX,itemMenuY,itemMenuX+100,itemMenuY+20);
+/*
+ * Helper function to drawItemMenuSlots. Draws the empty window for an individual item context menu slot.
+ */
+inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected = false)
+{
+	if (selected)
+	{
+		drawDepressed(x, y, x + width, y + height);
+	}
+	else
+	{
+		drawWindow(x, y, x + width, y + height);
+	}
+}
+
+/*
+ * Helper function to itemContextMenu(). Draws the context menu slots.
+ */
+inline void drawItemMenuSlots(const Item &item, int slot_width, int slot_height)
+{
+	//Draw the action select boxes. "Appraise", "Use, "Equip", etc.
+	int current_x = itemMenuX;
+	int current_y = itemMenuY;
+	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest.
+	if (itemCategory(&item) != SPELL_CAT)
+	{
+		current_y += slot_height;
+		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 1); //Option 1 =>
+
+		current_y += slot_height;
+		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 =>
+
+		if (itemCategory(&item) == POTION)
+		{
+			current_y += slot_height;
+			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 =>
+		}
+	}
+}
+
+/*
+ * drawOptionX() - renders the specified option in the given item option menu slot.
+ */
+inline void drawOptionStoreInChest(int x, int y)
+{
+	int width = 0;
+	TTF_SizeUTF8(ttf12, language[344], &width, nullptr);
+	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[344]);
+}
+
+inline void drawOptionSell(int x, int y)
+{
+	int width = 0;
+	TTF_SizeUTF8(ttf12, language[345], &width, nullptr);
+	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[345]);
+}
+
+inline void drawOptionUse(const Item &item, int x, int y)
+{
+	int width = 0;
+	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(&item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(&item));
+}
+
+inline void drawOptionUnwield(int x, int y)
+{
+	int width = 0;
+	TTF_SizeUTF8(ttf12, language[323], &width, nullptr);
+	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[323]);
+}
+
+inline void drawOptionWield(int x, int y)
+{
+	int width = 0;
+	TTF_SizeUTF8(ttf12, language[324], &width, nullptr);
+	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[324]);
+}
+
+inline void drawOptionAppraise(int x, int y)
+{
+	int width = 0;
+	TTF_SizeUTF8(ttf12, language[1161], &width, nullptr);
+	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[1161]);
+}
+
+inline void drawOptionDrop(int x, int y)
+{
+	int width = 0;
+	TTF_SizeUTF8(ttf12, language[1162], &width, nullptr);
+	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[1162]);
+}
+
+/*
+ * Helper function to itemContextMenu(). Draws a spell's options.
+ */
+inline void drawItemMenuOptionSpell(const Item &item, int x, int y)
+{
+	if (itemCategory(&item) != SPELL_CAT)
+		return;
+
+	int width = 0;
+
+	//Option 0.
+	drawOptionUse(item, x, y);
+}
+
+/*
+ * Helper function to itemContextMenu(). Draws a potion's options.
+ */
+inline void drawItemMenuOptionPotion(const Item &item, int x, int y, int height, bool is_potion_bad = false)
+{
+	if (itemCategory(&item) != POTION)
+		return;
+
+	int width = 0;
+
+	//Option 0.
+	if (openedChest[clientnum])
+	{
+		drawOptionStoreInChest(x, y);
+	}
+	else if (gui_mode == GUI_MODE_SHOP)
+	{
+		drawOptionSell(x, y);
+	}
+	else
+	{
+		if (!is_potion_bad)
+		{
+			drawOptionUse(item, x, y);
+		}
 		else
-			drawWindow(itemMenuX,itemMenuY,itemMenuX+100,itemMenuY+20);
-		if (itemCategory(currentItem) != SPELL_CAT) {
-			if( itemMenuSelected==1)
-				drawDepressed(itemMenuX,itemMenuY+20,itemMenuX+100,itemMenuY+40);
-			else
-				drawWindow(itemMenuX,itemMenuY+20,itemMenuX+100,itemMenuY+40);
-			if( itemMenuSelected==2 )
-				drawDepressed(itemMenuX,itemMenuY+40,itemMenuX+100,itemMenuY+60);
-			else
-				drawWindow(itemMenuX,itemMenuY+40,itemMenuX+100,itemMenuY+60);
-			if( itemCategory(currentItem)==POTION ) {
-				if( itemMenuSelected==3 )
-					drawDepressed(itemMenuX,itemMenuY+60,itemMenuX+100,itemMenuY+80);
-				else
-					drawWindow(itemMenuX,itemMenuY+60,itemMenuX+100,itemMenuY+80);
+		{
+			if (itemIsEquipped(&item, clientnum))
+			{
+				drawOptionUnwield(x, y);
 			}
+			else
+			{
+				drawOptionWield(x, y);
+			}
+		}
+	}
+	y += height;
+
+	//Option 1.
+	if (!is_potion_bad)
+	{
+		if (itemIsEquipped(&item, clientnum))
+		{
+			drawOptionUnwield(x, y);
+		}
+		else
+		{
+			drawOptionWield(x, y);
+		}
+	}
+	else
+	{
+		drawOptionUse(item, x, y);
+	}
+	y += height;
+
+	//Option 1.
+	drawOptionAppraise(x, y);
+	y += height;
+
+	//Option 2.
+	drawOptionDrop(x, y);
+}
+
+/*
+ * Helper function to itemContextMenu(). Draws all other items's options.
+ */
+inline void drawItemMenuOptionGeneric(const Item &item, int x, int y, int height)
+{
+	if (itemCategory(&item) == SPELL_CAT || itemCategory(&item) == POTION)
+	{
+		return;
+	}
+
+	int width = 0;
+
+	//Option 0.
+	if (openedChest[clientnum])
+	{
+		drawOptionStoreInChest(x, y);
+	}
+	else if (gui_mode == GUI_MODE_SHOP)
+	{
+		drawOptionSell(x, y);
+	}
+	else
+	{
+		drawOptionUse(item, x, y);
+	}
+	y += height;
+
+	//Option 1
+	drawOptionAppraise(x, y);
+	y += height;
+
+	//Option 2
+	drawOptionDrop(x, y);
+}
+
+
+/*
+ * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
+ */
+inline void selectItemMenuSlot(const Item &item, int x, int y, int slot_width, int slot_height)
+{
+	int current_x = itemMenuX;
+	int current_y = itemMenuY;
+
+	//TODO: Make this play nicely with gamepad.
+	if (mousey < current_y - slot_height) //Check if out of bounds above.
+	{
+		itemMenuSelected = -1; //For canceling out.
+	}
+	if (mousey >= current_y - 2 && mousey < current_y + slot_height)
+	{
+		itemMenuSelected = 0;
+	}
+	if (itemCategory(&item) != SPELL_CAT)
+	{
+		current_y += slot_height;
+		if (mousey >= current_y && mousey < current_y + slot_height)
+		{
+			itemMenuSelected = 1;
+		}
+		current_y += slot_height;
+		if (mousey >= current_y && mousey < current_y + slot_height)
+		{
+			itemMenuSelected = 2;
+		}
+		current_y += slot_height;
+		if (itemCategory(&item) == POTION)
+		{
+			if (mousey >= current_y && mousey < current_y + slot_height)
+			{
+				itemMenuSelected = 3;
+			}
+			current_y += slot_height;
+		}
+	}
+
+	if (mousey >= current_y + slot_height) //Check if out of bounds below.
+	{
+		itemMenuSelected = -1; //For canceling out.
+	}
+
+	if (mousex >= current_x + slot_width) //Check if out of bounds to the right.
+	{
+		itemMenuSelected = -1; //For canceling out.
+	}
+	if (mousex < itemMenuX - 10 || mousex < itemMenuX && settings_right_click_protect) //Check if out of bounds to the left.
+	{
+		itemMenuSelected = -1; //For canceling out.
+	}
+}
+
+/*
+ * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
+ */
+inline void executeItemMenuOption0(Item *item, bool is_potion_bad = false)
+{
+	if (!item)
+	{
+		return;
+	}
+
+	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT)
+	{
+		//Option 0 = store in chest.
+		openedChest[clientnum]->addItemToChestFromInventory(clientnum, item, false);
+	}
+	else if (gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT)
+	{
+		//Option 0 = sell.
+		sellItemToShop(item);
+	}
+	else
+	{
+		if (!is_potion_bad)
+		{
+			//Option 0 = use.
+			useItem(item, clientnum);
+		}
+		else
+		{
+			//Option 0 = equip.
+			if (multiplayer == CLIENT)
+			{
+				strcpy((char *)net_packet->data, "EQUI");
+				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 26;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			equipItem(item, &stats[clientnum]->weapon, clientnum);
+		}
+	}
+}
+
+inline void executeItemMenuOption1(Item *item, bool is_potion_bad = false)
+{
+	if (!item || itemCategory(item) == SPELL_CAT)
+	{
+		return;
+	}
+
+	if (itemCategory(item) != POTION)
+	{
+		//Option 1 = appraise.
+		identifygui_active = false;
+		identifygui_appraising = true;
+		identifyGUIIdentify(item);
+	}
+	else
+	{
+		if (!is_potion_bad)
+		{
+			//Option 1 = equip.
+			if (multiplayer == CLIENT)
+			{
+				strcpy((char *)net_packet->data, "EQUI");
+				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+				SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+				SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
+				net_packet->data[24] = item->identified;
+				net_packet->data[25] = clientnum;
+				net_packet->address.host = net_server.host;
+				net_packet->address.port = net_server.port;
+				net_packet->len = 26;
+				sendPacketSafe(net_sock, -1, net_packet, 0);
+			}
+			equipItem(item, &stats[clientnum]->weapon, clientnum);
+		}
+		else
+		{
+			//Option 1 = drink/use/whatever.
+			useItem(item, clientnum);
+		}
+	}
+}
+
+inline void executeItemMenuOption2(Item *item)
+{
+	if (!item || itemCategory(item) == SPELL_CAT)
+	{
+		return;
+	}
+
+	if (itemCategory(item) != POTION)
+	{
+		//Option 2 = drop.
+		dropItem(item, clientnum);
+	}
+	else
+	{
+		//Option 2 = appraise.
+		identifygui_active = false;
+		identifygui_appraising = true;
+		identifyGUIIdentify(item);
+	}
+}
+
+inline void executeItemMenuOption3(Item *item)
+{
+	if (!item || itemCategory(item) != POTION)
+	{
+		return;
+	}
+
+	//Option 3 = drop (only potions have option 3).
+	dropItem(item, clientnum);
+}
+
+void itemContextMenu()
+{
+	if (!itemMenuOpen)
+		return;
+
+	Item *current_item = uidToItem(itemMenuItem);
+	if (!current_item)
+		return;
+
+	bool is_potion_bad = false;
+	if (current_item->identified)
+		is_potion_bad = isPotionBad(*current_item);
+
+	const int slot_width = 100;
+	const int slot_height = 20;
+
+	drawItemMenuSlots(*current_item, slot_width, slot_height);
+
+	if (itemCategory(current_item) == SPELL_CAT)
+	{
+		drawItemMenuOptionSpell(*current_item, itemMenuX, itemMenuY);
+	}
+	else
+	{
+		if (itemCategory(current_item) == POTION)
+		{
+			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
+		}
+		else
+		{
+			drawItemMenuOptionGeneric(*current_item, itemMenuX, itemMenuY, slot_height); //Every other item besides potions and spells.
+		}
+	}
+
+	selectItemMenuSlot(*current_item, itemMenuX, itemMenuY, slot_width, slot_height);
+
+	//TODO: Gamepad support.
+	if (!mousestatus[SDL_BUTTON_RIGHT])
+	{
+		switch (itemMenuSelected)
+		{
+			case 0:
+				executeItemMenuOption0(current_item, is_potion_bad);
+				break;
+			case 1:
+				executeItemMenuOption1(current_item, is_potion_bad);
+				break;
+			case 2:
+				executeItemMenuOption2(current_item);
+				break;
+			case 3:
+				executeItemMenuOption3(current_item);
+				break;
+			default:
+				break;
 		}
 
-		if (itemCategory(currentItem) != SPELL_CAT) {
-			if (openedChest[clientnum]) {
-				int w;
-				TTF_SizeUTF8(ttf12,language[344],&w,NULL);
-				ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+4, language[344]);
-			} else if( gui_mode == GUI_MODE_SHOP) {
-				int w;
-				TTF_SizeUTF8(ttf12,language[345],&w,NULL);
-				ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+4, language[345]);
-			} else {
-				if( !badpotion ) {
-					ttfPrintTextFormatted(ttf12, itemMenuX+50-strlen(itemUseString(currentItem))*TTF12_WIDTH/2, itemMenuY+4, "%s", itemUseString(currentItem));
-				} else {
-					if( itemIsEquipped(currentItem,clientnum) ) {
-						int w;
-						TTF_SizeUTF8(ttf12,language[323],&w,NULL);
-						ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+4, language[323]);
-					} else {
-						int w;
-						TTF_SizeUTF8(ttf12,language[324],&w,NULL);
-						ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+4, language[324]);
-					}
-				}
-			}
-			if( itemCategory(currentItem) != POTION ) {
-				int w;
-				TTF_SizeUTF8(ttf12,language[1161],&w,NULL);
-				ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+24, language[1161]);
-				TTF_SizeUTF8(ttf12,language[1162],&w,NULL);
-				ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+44, language[1162]);
-			} else {
-				if( !badpotion ) {
-					if( itemIsEquipped(currentItem,clientnum) ) {
-						int w;
-						TTF_SizeUTF8(ttf12,language[323],&w,NULL);
-						ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+24, language[323]);
-					} else {
-						int w;
-						TTF_SizeUTF8(ttf12,language[324],&w,NULL);
-						ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+24, language[324]);
-					}
-				} else {
-					ttfPrintTextFormatted(ttf12, itemMenuX+50-strlen(itemUseString(currentItem))*TTF12_WIDTH/2, itemMenuY+24, "%s", itemUseString(currentItem));
-				}
-				int w;
-				TTF_SizeUTF8(ttf12,language[1161],&w,NULL);
-				ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+44, language[1161]);
-				TTF_SizeUTF8(ttf12,language[1162],&w,NULL);
-				ttfPrintText(ttf12, itemMenuX+50-w/2, itemMenuY+64, language[1162]);
-			}
-		} else {
-			//Tis a spell.
-			ttfPrintText(ttf12, itemMenuX+50-strlen(itemUseString(currentItem))*TTF12_WIDTH/2, itemMenuY+4, itemUseString(currentItem));
-		}
-		if( mousey<itemMenuY-20) {
-			itemMenuSelected=-1; // for cancelling out
-		}
-		else if( mousey>=itemMenuY-2 && mousey<itemMenuY+20 ) {
-			itemMenuSelected=0;
-		}
-		else if( mousey>=itemMenuY+20 && mousey<itemMenuY+40 ) {
-			itemMenuSelected=1;
-		}
-		else if( mousey>=itemMenuY+40 && mousey<itemMenuY+60 ) {
-			itemMenuSelected=2;
-		}
-		else if( itemCategory(currentItem)==POTION && mousey>=itemMenuY+60 && mousey<itemMenuY+80 ) {
-			itemMenuSelected=3;
-		}
-		else {
-			itemMenuSelected=-1; // for cancelling out
-		}
-		if( mousex>=itemMenuX+100 )
-			itemMenuSelected=-1; // for cancelling out
-		if( mousex<itemMenuX-10 || mousex<itemMenuX && settings_right_click_protect)
-			itemMenuSelected=-1; // for cancelling out
-		if( !mousestatus[SDL_BUTTON_RIGHT] ) {
-			if( itemMenuSelected==0) {
-				if (openedChest[clientnum] && itemCategory(currentItem) != SPELL_CAT) {
-					openedChest[clientnum]->addItemToChestFromInventory(clientnum, currentItem, FALSE);
-					currentItem = uidToItem(itemMenuItem);
-				} else if( gui_mode == GUI_MODE_SHOP && itemCategory(currentItem) != SPELL_CAT ) {
-					sellItemToShop(currentItem);
-					currentItem = uidToItem(itemMenuItem);
-				} else {
-					if( !badpotion ) {
-						useItem(currentItem,clientnum);
-						currentItem = uidToItem(itemMenuItem);
-					} else {
-						if( multiplayer==CLIENT ) {
-							strcpy((char *)net_packet->data,"EQUI");
-							SDLNet_Write32((Uint32)currentItem->type,&net_packet->data[4]);
-							SDLNet_Write32((Uint32)currentItem->status,&net_packet->data[8]);
-							SDLNet_Write32((Uint32)currentItem->beatitude,&net_packet->data[12]);
-							SDLNet_Write32((Uint32)currentItem->count,&net_packet->data[16]);
-							SDLNet_Write32((Uint32)currentItem->appearance,&net_packet->data[20]);
-							net_packet->data[24] = currentItem->identified;
-							net_packet->data[25] = clientnum;
-							net_packet->address.host = net_server.host;
-							net_packet->address.port = net_server.port;
-							net_packet->len = 26;
-							sendPacketSafe(net_sock, -1, net_packet, 0);
-						}
-						equipItem(currentItem,&stats[clientnum]->weapon,clientnum);
-						currentItem = uidToItem(itemMenuItem);
-					}
-				}
-				itemMenuItem=0;
-			}
-			if( (currentItem=uidToItem(itemMenuItem))!=NULL && itemCategory(currentItem) != SPELL_CAT ) {
-				if( itemCategory(currentItem) != POTION ) {
-					if( itemMenuSelected==1 ) {
-						identifygui_active = FALSE;
-						identifygui_appraising = TRUE;
-						identifyGUIIdentify(currentItem);
-						currentItem = uidToItem(itemMenuItem);
-					} else if( itemMenuSelected==2 ) {
-						dropItem(currentItem,clientnum);
-						currentItem = uidToItem(itemMenuItem);
-					}
-				} else {
-					if( itemMenuSelected==1 ) {
-						if( !badpotion ) {
-							if( multiplayer==CLIENT ) {
-								strcpy((char *)net_packet->data,"EQUI");
-								SDLNet_Write32((Uint32)currentItem->type,&net_packet->data[4]);
-								SDLNet_Write32((Uint32)currentItem->status,&net_packet->data[8]);
-								SDLNet_Write32((Uint32)currentItem->beatitude,&net_packet->data[12]);
-								SDLNet_Write32((Uint32)currentItem->count,&net_packet->data[16]);
-								SDLNet_Write32((Uint32)currentItem->appearance,&net_packet->data[20]);
-								net_packet->data[24] = currentItem->identified;
-								net_packet->data[25] = clientnum;
-								net_packet->address.host = net_server.host;
-								net_packet->address.port = net_server.port;
-								net_packet->len = 26;
-								sendPacketSafe(net_sock, -1, net_packet, 0);
-							}
-							equipItem(currentItem,&stats[clientnum]->weapon,clientnum);
-							currentItem = uidToItem(itemMenuItem);
-						} else {
-							useItem(currentItem,clientnum);
-							currentItem = uidToItem(itemMenuItem);
-						}
-					} else if( itemMenuSelected==2 ) {
-						identifygui_active = FALSE;
-						identifygui_appraising = TRUE;
-						identifyGUIIdentify(currentItem);
-						currentItem = uidToItem(itemMenuItem);
-					} else if( itemMenuSelected==3 ) {
-						dropItem(currentItem,clientnum);
-						currentItem = uidToItem(itemMenuItem);
-					}
-					itemMenuItem=0;
-				}
-			}
-			itemMenuOpen=FALSE;
-		}
+		//Close the menu.
+		itemMenuOpen = false;
+		itemMenuItem = 0;
 	}
 }
