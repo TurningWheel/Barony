@@ -375,7 +375,7 @@ char *Item::description() {
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(Item *item) {
+Category itemCategory(const Item *item) {
 	if( !item )
 		return GEM;
 	return items[item->type].category;
@@ -1740,4 +1740,15 @@ SummonProperties::SummonProperties()
 SummonProperties::~SummonProperties()
 {
 	//TODO:
+}
+
+bool isPotionBad(const Item &potion)
+{
+	if (itemCategory(&potion) != POTION)
+		return false;
+
+	if (potion.type == POTION_SICKNESS || potion.type == POTION_CONFUSION || potion.type == POTION_BLINDNESS || potion.type == POTION_ACID || potion.type == POTION_PARALYSIS)
+		return true;
+
+	return false;
 }

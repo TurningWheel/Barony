@@ -35,7 +35,7 @@
 #define LOADSTR3 language[743]
 #define LOADSTR4 language[744]
 
-FILE *logfile=NULL;
+FILE *logfile = nullptr;
 bool steam_init = FALSE;
 
 int initApp(char *title, int fullscreen) {

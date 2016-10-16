@@ -335,7 +335,7 @@ Item* newItemFromEntity(Entity *entity); //Make sure to call free(item).
 Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats);
 Item **itemSlot(Stat *myStats, Item *item);
 
-enum Category itemCategory(Item *item);
+enum Category itemCategory(const Item *item);
 Sint32 itemModel(Item *item);
 Sint32 itemModelFirstperson(Item *item);
 SDL_Surface *itemSprite(Item *item);
@@ -346,3 +346,8 @@ void useItem(Item *item, int player);
 void equipItem(Item *item, Item **slot, int player);
 Item *itemPickup(int player, Item *item);
 bool itemIsEquipped(Item *item, int player);
+
+/*
+ * Returns true if potion is harmful to the player.
+ */
+bool isPotionBad(const Item &potion);
