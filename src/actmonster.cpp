@@ -749,8 +749,10 @@ void actMonster(Entity *my) {
 				}
 			}
 			if( foundlights ) {
+#ifdef HAVE_FMOD
 				if( MONSTER_SOUND )
 					FMOD_Channel_Stop(MONSTER_SOUND);
+#endif
 				int c;
 				for( c=0; c<MAXPLAYERS; c++ ) {
 					MONSTER_SOUND = playSoundPlayer(c,179,128);
@@ -886,8 +888,10 @@ void actMonster(Entity *my) {
 		}
 		
 		// die
+#ifdef HAVE_FMOD
 		if( MONSTER_SOUND )
 			FMOD_Channel_Stop(MONSTER_SOUND);
+#endif
 		myStats = my->getStats();
 		switch( myStats->type ) {
 			case HUMAN:
@@ -981,6 +985,7 @@ void actMonster(Entity *my) {
 	
 	// check to see if monster can scream again
 	if( MONSTER_SOUND != NULL ) {
+#ifdef HAVE_FMOD
 		FMOD_BOOL playing;
 		FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
 		if (!playing) {
@@ -999,6 +1004,7 @@ void actMonster(Entity *my) {
 				}
 			}
 		}
+#endif
 	}
 	
 	// remove broken equipment

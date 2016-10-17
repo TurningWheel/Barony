@@ -585,9 +585,11 @@ void actMinotaurTimer(Entity *my) {
 		}
 
 		if( spawnedsomebody ) {
+#ifdef MUSIC
 			fadein_increment = default_fadein_increment*20;
 			fadeout_increment = default_fadeout_increment*5;
 			playmusic( sounds[175], FALSE, TRUE, FALSE);
+#endif
 			for( c=0; c<MAXPLAYERS; c++ ) {
 				Uint32 color = SDL_MapRGB(mainsurface->format,0,255,255);
 				messagePlayerColor(c,color,language[1114],stats[c]->name);

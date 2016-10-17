@@ -441,8 +441,10 @@ void gameLogic(void) {
 					magicRightHand = NULL;
 
 					// stop all sounds
+#ifdef HAVE_FMOD
 					if( sound_group )
 						FMOD_ChannelGroup_Stop(sound_group);
+#endif
 					
 					// show loading message
 					loading=TRUE;
@@ -1759,12 +1761,16 @@ int main(int argc, char **argv) {
 							fadefinished=FALSE;
 							if( !skipintro && !strcmp(classtoquickstart, "") ) {
 								introstage = 6;
+								#ifdef HAVE_FMOD
 								playmusic(introductionmusic, TRUE, FALSE, FALSE);
+								#endif
 							} else {
 								introstage = 1;
 								fadeout=FALSE;
 								fadefinished=FALSE;
+								#ifdef HAVE_FMOD
 								playmusic(intromusic, TRUE, FALSE, FALSE);
+								#endif
 							}
 						#endif
 					}
@@ -1831,12 +1837,16 @@ int main(int argc, char **argv) {
 					if( fadefinished ) {
 						if( !skipintro && !strcmp(classtoquickstart, "") ) {
 							introstage = 6;
+#ifdef MUSIC
 							playmusic(introductionmusic, TRUE, FALSE, FALSE);
+#endif
 						} else {
 							introstage = 1;
 							fadeout=FALSE;
 							fadefinished=FALSE;
+#ifdef MUSIC
 							playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 						}
 					}
 				} else {

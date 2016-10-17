@@ -11,13 +11,19 @@
 
 #pragma once
 
+
+#include <stdio.h>
+#ifdef HAVE_FMOD
+#include "fmod.h"
+#endif
+
+
+//Pointer to the FMOD system.
+#ifdef HAVE_FMOD
+
 #define SOUND
 #define MUSIC
 
-#include <stdio.h>
-#include "fmod.h"
-
-//Pointer to the FMOD system.
 extern FMOD_SYSTEM *fmod_system;
 
 extern FMOD_RESULT fmod_result;
@@ -81,3 +87,12 @@ void playmusic(FMOD_SOUND *sound, bool loop, bool crossfade, bool resume); //Aut
 void handleLevelMusic(); //Manages and updates the level music.
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
+
+#else
+void* playSound(Uint32, int);
+void* playSoundPos(double x, double y, Uint32, int);
+void* playSoundPosLocal(double, double, Uint32, int);
+void* playSoundEntity(Entity *, Uint32, int);
+void* playSoundEntityLocal(Entity *, Uint32, int);
+void* playSoundPlayer(int, Uint32, int);
+#endif

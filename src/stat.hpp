@@ -11,7 +11,9 @@
 
 #pragma once
 
+#ifdef HAVE_FMOD
 #include "fmod.h"
+#endif
 
 class Item;
 //enum Item;
@@ -129,7 +131,11 @@ class Stat {
 		Item *mask;
 
 		// misc
+#ifdef HAVE_FMOD
 		FMOD_CHANNEL *monster_sound; //TODO: Do?
+#else
+		void *monster_sound;
+#endif
 		int monster_idlevar;
 
 		list_t magic_effects; //Makes things like the invisibility spell work.

@@ -28,6 +28,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#ifdef HAVE_FMOD
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol) {
 	if (no_sound) {
 		return NULL;
@@ -463,3 +464,82 @@ void handleLevelMusic() {
 		fadeout_increment = default_fadeout_increment;
 	}
 }
+
+#else
+
+/*-------------------------------------------------------------------------------
+
+	playSoundEntity
+	
+	plays a sound effect with the given volume at the given entity's
+	position; returns the channel that the sound is playing in
+
+-------------------------------------------------------------------------------*/
+void* playSound(Uint32 snd, int vol) {
+	return NULL;
+}
+
+void* playSoundPos(double x, double y, Uint32 snd, int vol) {
+	int c;
+
+	if (intro || vol == 0)
+		return nullptr;
+
+	if(multiplayer==SERVER) {
+		for(c=1; c<MAXPLAYERS; c++) {
+			if( client_disconnected[c]==TRUE )
+				continue;
+			strcpy((char *)net_packet->data,"SNDP");
+			SDLNet_Write32(x,&net_packet->data[4]);
+			SDLNet_Write32(y,&net_packet->data[8]);
+			SDLNet_Write32(snd,&net_packet->data[12]);
+			SDLNet_Write32((Uint32)vol,&net_packet->data[16]);
+			net_packet->address.host = net_clients[c-1].host;
+			net_packet->address.port = net_clients[c-1].port;
+			net_packet->len = 20;
+			sendPacketSafe(net_sock, -1, net_packet, c-1);
+		}
+	}
+
+	return NULL;
+}
+
+void* playSoundPosLocal(double x, double y, Uint32 snd, int vol) {
+	return NULL;
+}
+
+void* playSoundEntity(Entity *entity, Uint32 snd, int vol) {
+	if (entity == NULL) return NULL;
+	return playSoundPos(entity->x, entity->y, snd, vol);
+}
+
+void* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
+	if( entity==NULL )
+		return NULL;
+	return playSoundPosLocal(entity->x, entity->y, snd, vol);
+}
+
+void* playSoundPlayer(int player, Uint32 snd, int vol) {
+	int c;
+
+	if( player<0 || player>=MAXPLAYERS ) //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
+		return NULL;
+	if( player==clientnum ) {
+		return playSound(snd,vol);
+	} else if( multiplayer==SERVER ) {
+		if( client_disconnected[player] )
+			return NULL;
+		strcpy((char *)net_packet->data,"SNDG");
+		SDLNet_Write32(snd,&net_packet->data[4]);
+		SDLNet_Write32((Uint32)vol,&net_packet->data[8]);
+		net_packet->address.host = net_clients[player-1].host;
+		net_packet->address.port = net_clients[player-1].port;
+		net_packet->len = 12;
+		sendPacketSafe(net_sock, -1, net_packet, player-1);
+		return NULL;
+	}
+
+	return NULL;
+}
+
+#endif
