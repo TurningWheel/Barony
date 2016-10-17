@@ -1173,44 +1173,64 @@ void handleMainMenu(bool mode) {
 		}
 
 		// miscellaneous options
-		if( settings_tab==4 ) {
-			ttfPrintText(ttf12, subx1+24, suby1+60, language[1371]);
+		if (settings_tab == 4)
+		{
+			int current_x = subx1;
+			int current_y = suby1 + 60;
+
+			ttfPrintText(ttf12, subx1+24, current_y, language[1371]);
+			current_y += 24;
+
+			int options_start_y = current_y;
 			if( settings_broadcast )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+84, "[x] %s", language[1372]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1372]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+84, "[ ] %s", language[1372]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1372]);
+			current_y += 16;
 			if( settings_nohud )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[x] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1373]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[ ] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1373]);
+			current_y += 16;
 			if( settings_auto_hotbar_new_items )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[x] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1374]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[ ] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1374]);
+			current_y += 16;
 			if( settings_auto_appraise_new_items )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1997]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1997]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1997]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1997]);
+			current_y += 16;
 			if( settings_disable_messages )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[x] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1536]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[ ] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1536]);
+			current_y += 16;
 			if( settings_right_click_protect )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+164, "[x] %s", language[1960]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1960]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+164, "[ ] %s", language[1960]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1960]);
+			current_y += 32;
 
 			// server flag elements
-			ttfPrintText(ttf12, subx1+24, suby1+196, language[1375]);
+			ttfPrintText(ttf12, subx1+24, current_y, language[1375]);
+			current_y += 24;
 
+
+			int server_flags_start_y = current_y;
 			int i;
-			for( i=0; i<NUM_SERVER_FLAGS; i++ ) {
-				if( svFlags&power(2,i) ) {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+220+16*i,"[x] %s",language[153+i]);
-				} else {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+220+16*i,"[ ] %s",language[153+i]);
+			for( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
+			{
+				if( svFlags&power(2, i) )
+				{
+					ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[153+i]);
 				}
-				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, suby1 + 204 + (i*16), suby1 + 216 + (i*16))) //So many gosh dang magic numbers ._.
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[153+i]);
+				}
+				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12)) //So many gosh dang magic numbers ._.
 				{
 					if (strlen(language[1942 + i]) > 0) //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
@@ -1231,45 +1251,60 @@ void handleMainMenu(bool mode) {
 				}
 			}
 
-			if( mousestatus[SDL_BUTTON_LEFT] ) {
-				if( omousex >= subx1+42 && omousex < subx1+66 ) {
-					if( omousey >= suby1+84 && omousey < suby1+84+12 ) {
+			current_y = options_start_y;
+
+			if( mousestatus[SDL_BUTTON_LEFT] )
+			{
+				if( omousex >= subx1+42 && omousex < subx1+66 )
+				{
+					if (omousey >= current_y && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_broadcast=(settings_broadcast==FALSE);
+						settings_broadcast = (settings_broadcast == false);
 					}
-					else if( omousey >= suby1+100 && omousey < suby1+100+12 ) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_nohud=(settings_nohud==FALSE);
+						settings_nohud = (settings_nohud == false);
 					}
-					else if( omousey >= suby1+116 && omousey < suby1+116+12 ) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == FALSE);
+						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == false);
 					}
-					else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == FALSE);
+						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == false);
 					}
-					else if( omousey >= suby1+148 && omousey < suby1+148+12 ) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_disable_messages = (settings_disable_messages == FALSE);
+						settings_disable_messages = (settings_disable_messages == false);
 					}
-					else if (omousey >= suby1 + 164 && omousey < suby1 + 164 + 12) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_right_click_protect = (settings_right_click_protect == FALSE);
+						settings_right_click_protect = (settings_right_click_protect == false);
 					}
 				}
-				if( multiplayer!=CLIENT ) {
-					for( i=0; i<NUM_SERVER_FLAGS; i++ ) {
-						if( mouseInBounds(subx1+36+6,subx1+36+24+6,suby1+204+i*16,suby1+216+i*16) ) {
+				if( multiplayer != CLIENT )
+				{
+					current_y = server_flags_start_y;
+					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
+					{
+						if( mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
+						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 
 							// toggle flag
-							svFlags ^= power(2,i);
+							svFlags ^= power(2, i);
 
-							if( multiplayer==SERVER ) {
+							if( multiplayer == SERVER )
+							{
 								// update client flags
-								strcpy((char *)net_packet->data,"SVFL");
-								SDLNet_Write32(svFlags,&net_packet->data[4]);
+								strcpy((char *)net_packet->data, "SVFL");
+								SDLNet_Write32(svFlags, &net_packet->data[4]);
 								net_packet->len = 8;
 
 								int c;
