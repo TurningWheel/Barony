@@ -235,7 +235,9 @@ int initGame() {
 	SDL_GL_SwapWindow(screen);
 	#endif
 
+#ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+#endif
 	removedEntities.first=NULL; removedEntities.last=NULL;
 	safePacketsSent.first=NULL; safePacketsSent.last=NULL;
 	for( c=0; c<MAXPLAYERS; c++ ) {

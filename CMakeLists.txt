@@ -11,6 +11,12 @@ else()
   set (STEAMWORKS_ENABLED 0)
 endif()
 
+#FMOD can be disabled in one of two ways: 
+# * Not having FMOD installed will automatically disable FMOD (and, consequently, the game's sound engine as a whole).
+# * Running cmake with -DFMOD_ENABLED=OFF
+set(FMOD 0) #Acts as an alias to FMOD_FOUND
+option(FMOD_ENABLED "Use the FMOD Ex library in the sound engine" ON)
+
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules/")
 
 set(CMAKE_OSX_ARCHITECTURES x86_64)
@@ -74,8 +80,6 @@ set(CMAKE_C_FLAGS_DEBUG "${CMAKE_C_FLAGS_DEBUG} -mcpu=${ARCHITECTURE}")
 set(CMAKE_C_FLAGS_RELEASE "${CMAKE_C_FLAGS_DEBUG} -mcpu=${ARCHITECTURE}")
 endif()
 
-configure_file ( "${PROJECT_SOURCE_DIR}/src/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Config.hpp")
-
 if (APPLE)
   set ( CMAKE_EXE_LINKER_FLAGS "${CMAKE_EXE_LINKER_FLAGS} -LD_RUNPATH_SEARCH_PATHS=@loader_path/../Frameworks -rpath @loader_path/../Frameworks")
 
@@ -128,7 +132,12 @@ if( NOT WIN32 AND NOT APPLE)
   #Linux needs these two.
   #Windows has manual links later on.
   #And Macs have their own special line.
-  find_package(FMOD REQUIRED)
+  if (FMOD_ENABLED)
+    find_package(FMOD)
+    if (FMOD_FOUND)
+      set(FMOD 1)
+    endif()
+  endif()
   find_package(PNG REQUIRED)
 elseif (APPLE)
   #This is to make libpng work on Macs.
@@ -159,7 +168,9 @@ if( NOT WIN32 )
 endif()
 if(NOT WIN32 AND NOT APPLE)
   #Remember, Windows and Mac don't have find_package for fmod and png.
-  include_directories(${FMOD_INCLUDE_DIR})
+  if (FMOD_FOUND)
+    include_directories(${FMOD_INCLUDE_DIR})
+  endif()
   include_directories(${PNG_INCLUDE_DIR})
 elseif (APPLE)
   include_directories("${PROJECT_SOURCE_DIR}/libraries/fmod/inc")
@@ -180,6 +191,8 @@ endif()
 #file(GLOB_RECURSE SOUND_FILES sound/*)
 
 #add_subdirectory(books)
+
+configure_file ( "${PROJECT_SOURCE_DIR}/src/Config.hpp.in" "${PROJECT_SOURCE_DIR}/src/Config.hpp")
 
 message("***************************")
 message("Debug flags: ")
@@ -254,7 +267,9 @@ target_link_libraries(barony -lm)
 if( NOT WIN32 AND NOT APPLE)
   #Remember, Windows and Mac aren't using find_package for FMOD and PNG.
   target_link_libraries(barony ${PNG_LIBRARY})
-  target_link_libraries(barony ${FMOD_LIBRARY})
+  if (FMOD_FOUND)
+    target_link_libraries(barony ${FMOD_LIBRARY})
+  endif()
 endif()
 # We need to link to Winsock if we're on Windows
 if(WIN32)
@@ -318,7 +333,9 @@ target_link_libraries(editor -lm)
 if( NOT WIN32 AND NOT APPLE)
   #Remember, Windows and Mac aren't using find_package for FMOD and PNG.
   target_link_libraries(editor ${PNG_LIBRARY})
-  target_link_libraries(editor ${FMOD_LIBRARY})
+  if (FMOD_FOUND)
+    target_link_libraries(editor ${FMOD_LIBRARY})
+  endif()
 endif()
 if(WIN32)
   target_link_libraries(editor wsock32 ws2_32)
