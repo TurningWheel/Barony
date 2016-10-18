@@ -16,8 +16,9 @@ Following the aforementioned contributing guidelines, the coding style guideline
 
 ###Coding Style Guidelines
 
-`<Forthcoming>`
+\<Forthcoming>
 
 
 Last of all, thank you for taking an interest in contributing to Barony.
- - Ciprian
+
+\- Ciprian
