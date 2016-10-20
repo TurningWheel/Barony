@@ -16,7 +16,7 @@ Following the aforementioned contributing guidelines, the coding style guideline
 
 ###Coding Style Guidelines
 
-\<Forthcoming>
+I’ve uploaded the coding style guidelines to Google docs: https://docs.google.com/document/d/1Wx-tkiNORweFd6htDOn88QG5i4ecyulMGVdXQhxhQnw/edit?usp=sharing
 
 
 Last of all, thank you for taking an interest in contributing to Barony.
