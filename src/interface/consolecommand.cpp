@@ -212,6 +212,10 @@ void consoleCommand(char *command_str) {
 		}
 	}
 	else if( !strncmp(command_str,"/god",4) ) {
+		if ( !(svFlags&SV_FLAG_CHEATS) ) {
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if( multiplayer!=SINGLE ) {
 			messagePlayer(clientnum,language[290]);
 		} else {
