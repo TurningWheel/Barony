@@ -1759,7 +1759,7 @@ Be inventive. Every item has its use.#
 
 # main menu
 
-1303 New Game#
+1303 Start Game#
 1304 Introduction#
 1305 Statistics#
 1306 Settings#
