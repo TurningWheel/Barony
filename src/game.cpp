@@ -2092,7 +2092,7 @@ int main(int argc, char **argv) {
 					}
 					if (!command && *inputPressed(impulses[IN_CAST_SPELL]))
 					{
-						*inputPressed(impulses[IN_CAST_SPELL]);
+						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
 						if (players[clientnum] && players[clientnum]->entity)
 							castSpellInit(players[clientnum]->entity->uid, selected_spell);
 					}
