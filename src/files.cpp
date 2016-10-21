@@ -225,8 +225,11 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 		if( destmap == &map ) {
 			nummonsters=0;
 			minotaurlevel=0;
+
+#ifdef HAVE_FMOD
 			if( strcmp(oldmapname,map.name) )
 				levelmusicplaying=FALSE;
+#endif
 			
 			// create new lightmap
 			if(lightmap!=NULL)

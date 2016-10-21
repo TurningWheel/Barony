@@ -1056,13 +1056,15 @@ void actPlayer(Entity *my) {
 						deleteSaveGame(); // stops save scumming c:
 
 						closeBookGUI();
+
+#ifdef SOUND
 						levelmusicplaying = TRUE;
 						combatmusicplaying = FALSE;
-						combat = FALSE;
 						fadein_increment = default_fadein_increment*4;
 						fadeout_increment = default_fadeout_increment*4;
 						playmusic(sounds[209],FALSE,TRUE,FALSE);
-
+#endif
+						combat = FALSE;
 						for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
 						{
 							nextnode = node->next;

@@ -311,8 +311,10 @@ void handleMainMenu(bool mode) {
 					*inputPressed(joyimpulses[INJOY_NEXT]) = 0;
 					playSound(139,64);
 					introstage=6; // goes to intro movie
-					playmusic(introductionmusic, TRUE, TRUE, FALSE);
 					fadeout=TRUE;
+#ifdef MUSIC
+					playmusic(introductionmusic, TRUE, TRUE, FALSE);
+#endif
 				}
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+104, language[1304]);
@@ -1442,43 +1444,62 @@ void handleMainMenu(bool mode) {
 		// miscellaneous options
 		if (settings_tab == 6)
 		{
-			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1371]);
-			if (settings_broadcast)
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 84, "[x] %s", language[1372]);
+			int current_x = subx1;
+			int current_y = suby1 + 60;
+
+			ttfPrintText(ttf12, subx1+24, current_y, language[1371]);
+			current_y += 24;
+
+			int options_start_y = current_y;
+			if( settings_broadcast )
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1372]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 84, "[ ] %s", language[1372]);
-			if (settings_nohud)
-				ttfPrintTextFormatted(ttf12, subx1 + 36, suby1 + 100, "[x] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1372]);
+			current_y += 16;
+			if( settings_nohud )
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1373]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+100, "[ ] %s", language[1373]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1373]);
+			current_y += 16;
 			if( settings_auto_hotbar_new_items )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[x] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1374]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+116, "[ ] %s", language[1374]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1374]);
+			current_y += 16;
 			if( settings_auto_appraise_new_items )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[x] %s", language[1997]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1997]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+132, "[ ] %s", language[1997]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1997]);
+			current_y += 16;
 			if( settings_disable_messages )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[x] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1536]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+148, "[ ] %s", language[1536]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1536]);
+			current_y += 16;
 			if( settings_right_click_protect )
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+164, "[x] %s", language[1998]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[1998]);
 			else
-				ttfPrintTextFormatted(ttf12, subx1+36, suby1+164, "[ ] %s", language[1998]);
+				ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[1998]);
+			current_y += 32;
 
 			// server flag elements
-			ttfPrintText(ttf12, subx1+24, suby1+196, language[1375]);
+			ttfPrintText(ttf12, subx1+24, current_y, language[1375]);
+			current_y += 24;
 
+
+			int server_flags_start_y = current_y;
 			int i;
-			for( i=0; i<NUM_SERVER_FLAGS; i++ ) {
-				if( svFlags&power(2,i) ) {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+220+16*i,"[x] %s",language[153+i]);
-				} else {
-					ttfPrintTextFormatted(ttf12,subx1+36,suby1+220+16*i,"[ ] %s",language[153+i]);
+			for( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
+			{
+				if( svFlags&power(2, i) )
+				{
+					ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[153+i]);
 				}
-				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, suby1 + 204 + (i*16), suby1 + 216 + (i*16))) //So many gosh dang magic numbers ._.
+				else
+				{
+					ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[153+i]);
+				}
+				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12)) //So many gosh dang magic numbers ._.
 				{
 					if (strlen(language[1942 + i]) > 0) //Don't bother drawing a tooltip if the file doesn't say anything.
 					{
@@ -1499,51 +1520,57 @@ void handleMainMenu(bool mode) {
 				}
 			}
 
-			if (mousestatus[SDL_BUTTON_LEFT])
+			current_y = options_start_y;
+
+			if( mousestatus[SDL_BUTTON_LEFT] )
 			{
-				if (omousex >= subx1 + 42 && omousex < subx1 + 66)
+				if( omousex >= subx1+42 && omousex < subx1+66 )
 				{
-					if (omousey >= suby1 + 84 && omousey < suby1 + 84 + 12)
+					if (omousey >= current_y && omousey < current_y + 12)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_broadcast = (settings_broadcast == false);
 					}
-					else if (omousey >= suby1 + 100 && omousey < suby1 + 100 + 12)
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_nohud = (settings_nohud == false);
 					}
-					else if (omousey >= suby1 + 116 && omousey < suby1 + 116 + 12)
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == false);
 					}
-					else if (omousey >= suby1 + 132 && omousey < suby1 + 132 + 12)
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == FALSE);
+						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == false);
 					}
-					else if( omousey >= suby1+148 && omousey < suby1+148+12 ) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_disable_messages = (settings_disable_messages == FALSE);
+						settings_disable_messages = (settings_disable_messages == false);
 					}
-					else if (omousey >= suby1 + 164 && omousey < suby1 + 164 + 12) {
+					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
 					}
 				}
-				if (multiplayer != CLIENT)
+
+				if( multiplayer != CLIENT )
 				{
-					for (i = 0; i < NUM_SERVER_FLAGS; ++i)
+					current_y = server_flags_start_y;
+					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
 					{
-						if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, suby1 + 204 + i*16, suby1 + 216 + i*16))
+						if( mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 
 							// toggle flag
 							svFlags ^= power(2, i);
 
-							if (multiplayer == SERVER)
+							if( multiplayer == SERVER )
 							{
 								// update client flags
 								strcpy((char *)net_packet->data, "SVFL");
@@ -2706,8 +2733,10 @@ void handleMainMenu(bool mode) {
 			// load dungeon
 			if( multiplayer != CLIENT ) {
 				// stop all sounds
+#ifdef HAVE_FMOD
 				if( sound_group )
 					FMOD_ChannelGroup_Stop(sound_group);
+#endif
 
 				// generate a unique game key (used to identify compatible save games)
 				prng_seed_time();
@@ -2839,8 +2868,10 @@ void handleMainMenu(bool mode) {
 				}
 
 				// stop all sounds
+#ifdef HAVE_FMOD
 				if( sound_group )
 					FMOD_ChannelGroup_Stop(sound_group);
+#endif
 				// load next level
 				mapseed = 0;
 				entity_uids=1;
@@ -2916,7 +2947,9 @@ void handleMainMenu(bool mode) {
 			fadeout=FALSE;
 			creditstage++;
 			if( creditstage>=14 ) {
+#ifdef MUSIC
 				playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 				introstage=1;
 				credittime=0;
 				creditstage=0;
@@ -2949,8 +2982,10 @@ void handleMainMenu(bool mode) {
 			}
 
 			// stop all sounds
+#ifdef HAVE_FMOD
 			if( sound_group )
 				FMOD_ChannelGroup_Stop(sound_group);
+#endif
 			
 			// send disconnect messages
 			if(multiplayer==CLIENT) {
@@ -3085,7 +3120,9 @@ void handleMainMenu(bool mode) {
 			if( !victory ) {
 				fadefinished=FALSE;
 				fadeout=FALSE;
+#ifdef MUSIC
 				playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 			} else {
 				// conduct achievements
 				if( conductPenniless )
@@ -3117,7 +3154,9 @@ void handleMainMenu(bool mode) {
 			fadeout=FALSE;
 			intromoviestage++;
 			if( intromoviestage>=9 ) {
+#ifdef MUSIC
 				playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
 				introstage=1;
 				intromovietime=0;
 				intromoviestage=0;
@@ -3131,8 +3170,10 @@ void handleMainMenu(bool mode) {
 				movie=TRUE;
 			}
 		} else if( introstage==7 ) { // win game sequence (herx)
+#ifdef MUSIC
 			if( firstendmoviestage==0 )
 				playmusic(endgamemusic, TRUE, TRUE, FALSE);
+#endif
 			firstendmoviestage++;
 			if( firstendmoviestage>=5 ) {
 				introstage=4;
@@ -3150,8 +3191,10 @@ void handleMainMenu(bool mode) {
 				movie=TRUE;
 			}
 		} else if( introstage==8 ) { // win game sequence (devil)
+#ifdef MUSIC
 			if( secondendmoviestage==0 )
 				playmusic(endgamemusic, TRUE, TRUE, FALSE);
+#endif
 			secondendmoviestage++;
 			if( secondendmoviestage>=5 ) {
 				introstage=4;
@@ -4769,8 +4812,11 @@ void buttonSettingsAccept(button_t *my) {
 	// set audio options
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
+
+#ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+#endif
 	
 	// set keyboard options
 	for (c = 0; c < NUMIMPULSES; c++)

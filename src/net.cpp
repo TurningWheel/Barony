@@ -1266,12 +1266,15 @@ void clientHandlePacket()
 			deleteSaveGame(); // stops save scumming c:
 
 			closeBookGUI();
+
+#ifdef SOUND
 			levelmusicplaying = TRUE;
 			combatmusicplaying = FALSE;
-			combat = FALSE;
 			fadein_increment = default_fadein_increment*4;
 			fadeout_increment = default_fadeout_increment*4;
 			playmusic( sounds[209], FALSE, TRUE, FALSE );
+#endif
+			combat = FALSE;
 
 			for ( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
 				nextnode = node->next;
@@ -1322,9 +1325,11 @@ void clientHandlePacket()
 			}
 		}
 		else if ( !strncmp((char *)(&net_packet->data[8]),language[1114],28) ) {
+#ifdef MUSIC
 			fadein_increment = default_fadein_increment*20;
 			fadeout_increment = default_fadeout_increment*5;
 			playmusic( sounds[175], FALSE, TRUE, FALSE );
+#endif
 		} else if ( (strstr((char *)(&net_packet->data[8]),language[1160]))!=NULL ) {
 			for ( c=0; c<MAXPLAYERS; c++ ) {
 				if ( !strncmp(stats[c]->name,(char *)(&net_packet->data[8]),strlen(stats[c]->name)) ) {
@@ -1422,8 +1427,10 @@ void clientHandlePacket()
 		magicRightHand = NULL;
 
 		// stop all sounds
+#ifdef HAVE_FMOD
 		if ( sound_group )
 			FMOD_ChannelGroup_Stop(sound_group);
+#endif
 
 		// show loading message
 		#define LOADSTR language[709]

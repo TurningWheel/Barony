@@ -9,8 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#include "fmod.h"
-//#include <fmod_errors.h>
 #include "main.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
@@ -21,6 +19,11 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+
+#ifdef HAVE_FMOD
+#include "fmod.h"
+//#include <fmod_errors.h>
+#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -91,7 +94,7 @@ int initApp(char *title, int fullscreen) {
 		return 2;
 	}*/
 
-	#ifdef SOUND
+	#ifdef HAVE_FMOD
 	printlog("initializing FMOD...\n");
 	fmod_result = FMOD_System_Create(&fmod_system);
 	if (FMODErrorCheck()) {
@@ -360,7 +363,7 @@ int initApp(char *title, int fullscreen) {
 	#endif
 	
 	// load sound effects
-	#ifdef SOUND
+	#ifdef HAVE_FMOD
 	printlog("loading sounds...\n");
 	fp = fopen("sound/sounds.txt","r");
 	for( numsounds=0; !feof(fp); numsounds++ ) {
@@ -1562,7 +1565,7 @@ int deinitApp() {
 	}
 	
 	// free sounds
-	#ifdef SOUND
+	#ifdef HAVE_FMOD
 	printlog("freeing sounds...\n");
 	if( sounds != NULL ) {
 		for( c=0; c<numsounds; c++ ) {
@@ -1601,11 +1604,13 @@ int deinitApp() {
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
+	#ifdef HAVE_FMOD
 	if( fmod_system ) {
 		FMOD_System_Close(fmod_system);
 		FMOD_System_Release(fmod_system);
 		fmod_system = NULL;
 	}
+	#endif
 	if( screen ) {
 		SDL_DestroyWindow(screen);
 		screen = NULL;
