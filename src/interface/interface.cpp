@@ -331,6 +331,25 @@ void freeInterfaceResources() {
 	list_FreeAll(&damageIndicators);
 }
 
+void defaultImpulses() {
+	impulses[IN_FORWARD] = 26;
+	impulses[IN_LEFT] = 4;
+	impulses[IN_BACK] = 22;
+	impulses[IN_RIGHT] = 7;
+	impulses[IN_TURNL] = 20;
+	impulses[IN_TURNR] = 8;
+	impulses[IN_UP] = 6;
+	impulses[IN_DOWN] = 29;
+	impulses[IN_CHAT] = 40;
+	impulses[IN_COMMAND] = 56;
+	impulses[IN_STATUS] = 43;
+	impulses[IN_SPELL_LIST] = 16;
+	impulses[IN_CAST_SPELL] = 9;
+	impulses[IN_DEFEND] = 44;
+	impulses[IN_ATTACK] = 283;
+	impulses[IN_USE] = 285;
+}
+
 void defaultConfig() {
 	consoleCommand("/res 1280x720");
 	consoleCommand("/gamma 1.000");
@@ -382,6 +401,8 @@ void saveCommand(char *content) {
 -------------------------------------------------------------------------------*/
 
 int loadConfig(char *filename) {
+	defaultImpulses(); //So that a config file that's missing impulses can get all them. 
+
 	char str[1024];
 	FILE *fp;
 	bool mallocd = FALSE;
