@@ -11,21 +11,13 @@
 
 #pragma once
 
-// undefine this if you don't want to build with steamworks features
-//#define STEAMWORKS
-//#undef STEAMWORKS //In case you don't want to use build scripts to disable steamworks.
-
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
 
-#ifdef _WIN32
-#define WINDOWS
-#else
 #include "Config.hpp"
-#endif
 
 #ifdef STEAMWORKS
 #define STEAM_APPID 371970
