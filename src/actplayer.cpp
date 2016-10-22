@@ -540,38 +540,42 @@ void actPlayer(Entity *my) {
 			if( tempItem->identified ) {
 				appraisal_timer=0;
 				appraisal_item=0;
+			} else if ( tempItem->type == GEM_ROCK ) {
+				//Auto-succeed on rocks.
+				tempItem->identified = TRUE;
+				messagePlayer(clientnum, language[570], tempItem->description());
+				appraisal_item = 0;
+				appraisal_timer = 0;
 			} else {
 				appraisal_timer -= 1; //De-increment appraisal timer.
 				if (appraisal_timer <= 0) {
 					appraisal_timer = 0;
 
 					//Cool. Time to identify the item.
-					Item *tempItem = uidToItem(appraisal_item);
-					if( tempItem ) {
-						bool success=FALSE;
-						if( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]<100 ) {
-							if( tempItem->type != GEM_GLASS )
-								success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= items[tempItem->type].value / 10);
-							else
-								success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= 100);
-						} else {
-							success = TRUE; // always succeed when appraisal is maxed out
-						}
-						if( success ) {
-							tempItem->identified = TRUE;
-							messagePlayer(clientnum, language[570], tempItem->description());
-						} else {
-							messagePlayer(clientnum, language[571], tempItem->description());
-						}
-
-						//Attempt a level up.
-						if( items[tempItem->type].value > 0 ) {
-							if( tempItem->identified )
-								my->increaseSkill(PRO_APPRAISAL);
-							else if( rand()%5==0 )
-								my->increaseSkill(PRO_APPRAISAL);
-						}
+					bool success=FALSE;
+					if( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]<100 ) {
+						if( tempItem->type != GEM_GLASS )
+							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= items[tempItem->type].value / 10);
+						else
+							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL]+my->getPER()*5 >= 100);
+					} else {
+						success = TRUE; // always succeed when appraisal is maxed out
 					}
+					if( success ) {
+						tempItem->identified = TRUE;
+						messagePlayer(clientnum, language[570], tempItem->description());
+					} else {
+						messagePlayer(clientnum, language[571], tempItem->description());
+					}
+
+					//Attempt a level up.
+					if( items[tempItem->type].value > 0 ) {
+						if( tempItem->identified )
+							my->increaseSkill(PRO_APPRAISAL);
+						else if( rand()%5==0 )
+							my->increaseSkill(PRO_APPRAISAL);
+					}
+
 					appraisal_item = 0;
 				}
 			}
