@@ -12,7 +12,7 @@
 #pragma once
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v2.0.3"
+#define VERSION "v2.0.4"
 #define GAME_CODE
 
 #define MAX_FPS_LIMIT 60
