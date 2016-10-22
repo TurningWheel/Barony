@@ -498,6 +498,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 						stats[i]->EFFECTS[c]=FALSE;
 						stats[i]->EFFECTS_TIMERS[c]=0;
 					}
+					if ( players[clientnum]->entity->flags[BURNING] ) {
+						players[clientnum]->entity->flags[BURNING] = false;
+						serverUpdateEntityFlag(players[clientnum]->entity, BURNING);
+					}
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
 
@@ -517,7 +521,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 								if( entity->behavior==&actPlayer )
 									serverUpdateEffects(entity->skill[2]);
 								if( entity->flags[BURNING] ) {
-									entity->flags[BURNING] = FALSE;
+									entity->flags[BURNING] = false;
 									serverUpdateEntityFlag(entity,BURNING);
 								}
 								playSoundEntity(entity, 168, 128);
