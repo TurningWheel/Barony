@@ -357,6 +357,7 @@ void defaultConfig() {
 	consoleCommand("/bind 44 IN_DEFEND");
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
+	consoleCommand("/autoappraisenewitems");
 	return;
 }
 
