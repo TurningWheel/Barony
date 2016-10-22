@@ -240,9 +240,9 @@ void handleEvents(void) {
 			case SDL_KEYDOWN: // if a key is pressed...
 				if( SDL_IsTextInputActive() ) {
 					#ifdef APPLE
-					if( event.key.keysym.sym == SDLK_DELETE && strlen(inputstr) > 0 ) {
-						inputstr[strlen(inputstr)-1]=0;
-						cursorflash=ticks;
+					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 ) {
+						inputstr[strlen(inputstr) - 1] = 0;
+						cursorflash = ticks;
 					}
 					#else
 					if( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 ) {
