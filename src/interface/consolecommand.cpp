@@ -212,6 +212,10 @@ void consoleCommand(char *command_str) {
 		}
 	}
 	else if( !strncmp(command_str,"/god",4) ) {
+		if ( !(svFlags&SV_FLAG_CHEATS) ) {
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if( multiplayer!=SINGLE ) {
 			messagePlayer(clientnum,language[290]);
 		} else {
@@ -604,6 +608,28 @@ void consoleCommand(char *command_str) {
 	else if (!strncmp(command_str, "/segfault", 9)) {
 		int* potato = NULL;
 		(*potato) = 322; //Crash the game!
+	}
+	else if (!strncmp(command_str, "/flames", 7)) {
+		//Why would you ever do this?
+		if ( !(svFlags&SV_FLAG_CHEATS) ) {
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE ) {
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		players[clientnum]->entity->flags[BURNING] = true;
+		for ( c = 0; c < 100; c++ ) {
+			entity = spawnFlame(players[clientnum]->entity);
+			entity->sprite=16;
+			double vel = rand()%10;
+			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
+			entity->vel_y = vel * sin(entity->yaw) * cos(entity->pitch) * .1;
+			entity->vel_z = vel * sin(entity->pitch) * .2;
+			entity->skill[0] = 5 + rand()%10;
+		}
 	}
 	else if (!strncmp(command_str, "/summon ", 8))
 	{

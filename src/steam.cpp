@@ -392,11 +392,13 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *ca
 	{
 		pauseGame(2,MAXPLAYERS);
 		SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse. (Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
-		SDL_ShowCursor(SDL_TRUE);
+		SDL_ShowCursor(SDL_TRUE); //(Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
 	}
 	else
 	{
-		SDL_SetRelativeMouseMode(SDL_TRUE); //Recapture mouse.
+		if (shootmode && !gamePaused) {
+			SDL_SetRelativeMouseMode(SDL_TRUE); //Recapture mouse.
+		}
 		SDL_ShowCursor(SDL_FALSE);
 	}
 }

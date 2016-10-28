@@ -424,6 +424,7 @@ void defaultConfig() {
 	consoleCommand("/gamepad_righty_sensitivity 600");
 	consoleCommand("/gamepad_menux_sensitivity 1400");
 	consoleCommand("/gamepad_menuy_sensitivity 1400");
+	consoleCommand("/autoappraisenewitems");
 	return;
 }
 

@@ -288,6 +288,10 @@ void item_PotionCureAilment(Item *item, Entity *entity) {
 			messagePlayer(player,language[751]);
 		return;
 	}
+	if ( players[clientnum]->entity->flags[BURNING] ) {
+		players[clientnum]->entity->flags[BURNING] = false;
+		serverUpdateEntityFlag(players[clientnum]->entity, BURNING);
+	}
 	if( multiplayer==CLIENT ) {
 		consumeItem(item);
 		return;

@@ -240,9 +240,9 @@ void handleEvents(void) {
 			case SDL_KEYDOWN: // if a key is pressed...
 				if( SDL_IsTextInputActive() ) {
 					#ifdef APPLE
-					if( event.key.keysym.sym == SDLK_DELETE && strlen(inputstr) > 0 ) {
-						inputstr[strlen(inputstr)-1]=0;
-						cursorflash=ticks;
+					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 ) {
+						inputstr[strlen(inputstr) - 1] = 0;
+						cursorflash = ticks;
 					}
 					#else
 					if( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 ) {
@@ -539,6 +539,20 @@ void redo() {
 	redospot = redospot->next;
 }
 
+void processCommandLine(int argc, char** argv) {
+	int c = 0;
+	if ( argc > 1 ) {
+		for ( c = 1; c < argc; c++ ) {
+			if ( argv[c] != nullptr ) {
+				if ( !strncmp(argv[c], "-map=", 5) ) {
+					strcpy(maptoload, argv[c] + 5);
+					loadingmap = true;
+				}
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	main
@@ -581,7 +595,7 @@ int main(int argc, char **argv) {
 		chdir("barony.app/Contents/Resources");
 		//chdir("..");
 	} else {
-		printlog( "Failed to get binary path. Program may not work corectly!\n");
+		printlog( "Failed to get binary path. Program may not work correctly!\n");
 	}
 	#endif
 	button_t *button;
@@ -597,6 +611,8 @@ int main(int argc, char **argv) {
 	light_t *light=NULL;
 	bool savedundo=FALSE;
 	smoothlighting=TRUE;
+
+	processCommandLine(argc, argv);
 
 	// load default language file (english)
 	if( loadLanguage("en") ) {
@@ -901,6 +917,15 @@ int main(int argc, char **argv) {
 	button->sizex=80; button->sizey=16;
 	button->action=&buttonAbout;
 	button->visible=0;
+
+	if ( loadingmap ) {
+		if ( loadMap(maptoload, &map, map.entities) == -1 ) {
+			strcat(message, "Failed to open ");
+			strcat(message, maptoload);
+		} else {
+			strcpy(filename, maptoload);
+		}
+	}
 
 	// main loop
 	printlog( "running main loop.\n");
