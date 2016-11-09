@@ -82,10 +82,6 @@ Uint32 portnumber;
 bool client_disconnected[MAXPLAYERS];
 list_t entitiesdeleted;
 
-#ifdef STEAMWORKS
-void *steamIDRemote[MAXPLAYERS]={NULL,NULL,NULL,NULL};
-#endif
-
 // fps
 bool showfps=FALSE;
 double t, ot = 0.0, frameval[AVERAGEFRAMES];
