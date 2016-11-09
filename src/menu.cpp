@@ -1934,7 +1934,7 @@ void handleMainMenu(bool mode) {
 
 		// player info text
 		for ( c = 0; c < MAXPLAYERS; ++c ) {
-			if( client_disconnected[c] ) {
+			if ( client_disconnected[c] ) {
 				continue;
 			}
 			string charDisplayName = "";
@@ -1942,7 +1942,7 @@ void handleMainMenu(bool mode) {
 
 #ifdef STEAMWORKS
 			int remoteIDIndex = c;
-			if (multiplayer == SERVER) {
+			if ( multiplayer == SERVER ) {
 				remoteIDIndex--;
 			}
 
@@ -1953,7 +1953,7 @@ void handleMainMenu(bool mode) {
 			}
 #endif
 
-			if( stats[c]->sex ) {
+			if ( stats[c]->sex ) {
 				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60*c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], language[1900 + client_classes[c]]);
 			} else {
 				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60*c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], language[1900 + client_classes[c]]);
