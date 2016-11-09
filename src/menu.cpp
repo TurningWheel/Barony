@@ -2003,7 +2003,7 @@ void handleMainMenu(bool mode) {
 						client_classes[c] = net_packet->data[4+c*(3+16)]; // class
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[5+c*(3+16)]); // sex
 						client_disconnected[c] = net_packet->data[6+c*(3+16)]; // connectedness :p
-						strcpy(stats[c]->name,(char *)(&net_packet->data[7+c*(3+16)])); // name
+						strcpy(stats[c]->name, (char *)(&net_packet->data[7+c*(3+16)])); // name
 					}
 
 					// request svFlags
@@ -2202,13 +2202,31 @@ void handleMainMenu(bool mode) {
 		SDL_Rect tooltip_box;
 
 		// player info text
-		for( c=0; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+		for ( c = 0; c < MAXPLAYERS; ++c ) {
+			if ( client_disconnected[c] ) {
 				continue;
-			if( stats[c]->sex )
-				ttfPrintTextFormatted(ttf12, subx1+8, suby1 + 80+60*c,"%d:  %s\n    %s\n    %s",c+1,stats[c]->name,language[1322],language[1900+client_classes[c]]);
-			else
-				ttfPrintTextFormatted(ttf12, subx1+8, suby1 + 80+60*c,"%d:  %s\n    %s\n    %s",c+1,stats[c]->name,language[1321],language[1900+client_classes[c]]);
+			}
+			string charDisplayName = "";
+			charDisplayName = stats[c]->name;
+
+#ifdef STEAMWORKS
+			int remoteIDIndex = c;
+			if ( multiplayer == SERVER ) {
+				remoteIDIndex--;
+			}
+
+			if ( !directConnect && steamIDRemote[remoteIDIndex] ) {
+				charDisplayName += " (";
+				charDisplayName += SteamFriends()->GetFriendPersonaName(*static_cast<CSteamID* >(steamIDRemote[remoteIDIndex]));
+				charDisplayName += ")";
+			}
+#endif
+
+			if ( stats[c]->sex ) {
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60*c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1322], language[1900 + client_classes[c]]);
+			} else {
+				ttfPrintTextFormatted(ttf12, subx1 + 8, suby1 + 80 + 60*c, "%d:  %s\n    %s\n    %s", c + 1, charDisplayName.c_str(), language[1321], language[1900 + client_classes[c]]);
+			}
 		}
 
 		// select gui element w/ mouse

@@ -415,10 +415,6 @@ extern TCPsocket net_tcpsock;
 extern TCPsocket *net_tcpclients;
 extern SDLNet_SocketSet tcpset;
 
-#ifdef STEAMWORKS
-extern void *steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
-#endif
-
 #define MAXTEXTURES 10240
 #define MAXBUFFERS 256
 
