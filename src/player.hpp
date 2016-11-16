@@ -116,9 +116,17 @@ public:
 	int maxLeftTrigger();
 	int maxRightTrigger();
 
-	//Uses dpad to move the cursor around the inventory and select items.
-	//Returns true if moved.
+	/*
+	 * Uses dpad to move the cursor around the inventory and select items.
+	 * Returns true if moved.
+	 */
 	bool handleInventoryMovement();
+
+	/*
+	 * Uses dpad to move the cursor through the item context menu and select entries.
+	 * Returns true if moved.
+	 */
+	bool handleItemContextMenu(const Item &item);
 };
 
 extern GameController* game_controller;

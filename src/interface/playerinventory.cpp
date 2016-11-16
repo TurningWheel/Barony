@@ -247,7 +247,8 @@ Uint32 itemMenuItem = 0;
 	 * * If mouse behavior mode, toggle drop!
 	 * * If gamepad behavior mode, toggle release if x key pressed.
 	 * * * However, keep in mind that you want a mouse click to trigger drop, just in case potato. You know, controller dying or summat. Don't wanna jam game.
-	 *//*
+	 */
+/*
 
 	//Determine if should drop.
 	bool dropCondition = false;
@@ -279,6 +280,9 @@ void releaseItem(int x, int y) {
 	{
 		selectedItem = nullptr;
 		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+
+		//Warp cursor back into inventory, for gamepad convenience.
+		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
 		return;
 	}
 
@@ -410,7 +414,7 @@ void updatePlayerInventory() {
 
 	if (game_controller)
 	{
-		if (game_controller->handleInventoryMovement())
+		if (!itemMenuOpen && game_controller->handleInventoryMovement())
 		{
 			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
 		}
@@ -675,18 +679,18 @@ void updatePlayerInventory() {
 							dropItem(item,clientnum); // Quick item drop
 						} else {
 							selectedItem = item;
-							itemSelectBehavior = BEHAVIOR_MOUSE;
+							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139,64); // click sound
 
 							if ( *inputPressed(joyimpulses[INJOY_LEFT_CLICK]) ) {
 								*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
-								itemSelectBehavior = BEHAVIOR_GAMEPAD;
+								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
-					} else if( mousestatus[SDL_BUTTON_RIGHT] && !itemMenuOpen && !selectedItem ) {
-						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
+					} else if( (mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_USE])) && !itemMenuOpen && !selectedItem ) {
+						if( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_USE])) ) {
 							// auto-appraise the item
 							identifygui_active = false;
 							identifygui_appraising = true;
@@ -700,6 +704,11 @@ void updatePlayerInventory() {
 							itemMenuY=mousey;
 							itemMenuSelected=0;
 							itemMenuItem=item->uid;
+
+							if ( *inputPressed(joyimpulses[INJOY_USE]) ) {
+								*inputPressed(joyimpulses[INJOY_USE]) = 0;
+								toggleclick = true;
+							}
 						}
 					}
 					break;
@@ -1103,12 +1112,25 @@ inline void executeItemMenuOption3(Item *item)
 
 void itemContextMenu()
 {
-	if (!itemMenuOpen)
+	if (!itemMenuOpen) {
 		return;
+	}
+
+	if ( *inputPressed(joyimpulses[INJOY_CANCEL]) ) {
+		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+		itemMenuOpen = false;
+		//Warp cursor back into inventory, for gamepad convenience.
+		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+		return;
+	}
+
+	//Item *item = uidToItem(itemMenuItem);
 
 	Item *current_item = uidToItem(itemMenuItem);
-	if (!current_item)
+	if (!current_item) {
+		itemMenuOpen = false;
 		return;
+	}
 
 	bool is_potion_bad = false;
 	if (current_item->identified)
@@ -1116,6 +1138,10 @@ void itemContextMenu()
 
 	const int slot_width = 100;
 	const int slot_height = 20;
+
+	if ( game_controller->handleItemContextMenu(*current_item) ) {
+		SDL_WarpMouseInWindow(screen, itemMenuX + (slot_width / 2), itemMenuY + (itemMenuSelected * slot_height) + (slot_height / 2));
+	}
 
 	drawItemMenuSlots(*current_item, slot_width, slot_height);
 
@@ -1137,8 +1163,17 @@ void itemContextMenu()
 
 	selectItemMenuSlot(*current_item, itemMenuX, itemMenuY, slot_width, slot_height);
 
-	//TODO: Gamepad support.
-	if (!mousestatus[SDL_BUTTON_RIGHT])
+	bool activateSelection = false;
+	if (!mousestatus[SDL_BUTTON_RIGHT] && !toggleclick) {
+		activateSelection = true;
+	} else if ( mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_USE]) ) {
+		*inputPressed(joyimpulses[INJOY_USE]) = 0;
+		activateSelection = true;
+		//Warp cursor back into inventory, for gamepad convenience.
+		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+	}
+
+	if (activateSelection)
 	{
 		switch (itemMenuSelected)
 		{
@@ -1162,4 +1197,31 @@ void itemContextMenu()
 		itemMenuOpen = false;
 		itemMenuItem = 0;
 	}
+}
+
+int numItemMenuSlots(const Item& item) {
+	int numSlots = 1; //Option 0 => store in chest, sell, use.
+
+	if (itemCategory(&item) != SPELL_CAT) {
+		numSlots += 2; //Option 1 => wield, unwield, use, appraise. & Option 2 => appraise, drop
+
+		if (itemCategory(&item) == POTION)
+		{
+			numSlots += 1; //Option 3 => drop.
+		}
+	}
+
+	return numSlots;
+}
+
+//Used by the gamepad, primarily. Dpad buttons changes selection.
+void selectItemMenuSlot(const Item& item, int entry) {
+	if (entry > numItemMenuSlots(item)) {
+		entry = 0;
+	}
+	if (entry < 0) {
+		entry = numItemMenuSlots(item);
+	}
+
+	itemMenuSelected = entry;
 }

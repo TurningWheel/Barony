@@ -109,7 +109,17 @@ void updateShopWindow();
 void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint32 maxhp);
 damageIndicator_t *newDamageIndicator(double x, double y);
 
+void selectItemMenuSlot(const Item& item, int entry);
+extern Uint32 itemMenuItem;
 extern bool itemMenuOpen;
+extern int itemMenuSelected;
+
+/*
+ * Used for two purposes:
+ * * In inventory navigation, if you pick up an item, drops it only if detects a second click, not if the button is released.
+ * * In the item context menu, toggles if it should pop open or not.
+ * This makes this variable super useful for gamepad support.
+ */
 extern bool toggleclick;
 
 //Inventory GUI definitions.

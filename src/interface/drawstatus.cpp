@@ -453,9 +453,10 @@ void drawStatus() {
 							}
 						}
 					}
-					if (mousestatus[SDL_BUTTON_RIGHT]) {
+					if (mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_USE]) ) {
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
+						*inputPressed(joyimpulses[INJOY_USE]) = 0;
 						bool badpotion=FALSE;
 						if( itemCategory(item) == POTION && item->identified ) {
 							if( item->type==POTION_SICKNESS || item->type==POTION_CONFUSION || item->type==POTION_BLINDNESS || item->type==POTION_ACID || item->type==POTION_PARALYSIS )
