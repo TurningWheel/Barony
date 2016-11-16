@@ -930,8 +930,8 @@ void clientHandlePacket()
 			return;
 		x = net_packet->data[4];
 		y = net_packet->data[5];
-		players[clientnum]->entity->x = (x<<4)+8;
-		players[clientnum]->entity->y = (y<<4)+8;
+		players[clientnum]->entity->x = x;
+		players[clientnum]->entity->y = y;
 		return;
 	}
 
