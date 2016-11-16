@@ -428,6 +428,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
+					button->joykey = joyimpulses[INJOY_CANCEL];
 					
 					// yes button
 					button = newButton();
@@ -438,6 +439,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_RETURN;
+					button->joykey = joyimpulses[INJOY_NEXT];
 					
 					// no button
 					button = newButton();
