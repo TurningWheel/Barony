@@ -28,6 +28,14 @@
 void initClass(int player) {
 	Item *item, *item2;
 
+	if ( player == clientnum) {
+		//TODO: Dedicated gameStartStuff() function. Seriously.
+		//(same for deathStuff() and/or gameEndStuff().
+		selected_inventory_slot_x = 0;
+		selected_inventory_slot_y = 0;
+		current_hotbar = 0;
+	}
+
 	// SEX MODIFIER
 	// female; else male
 	if( stats[player]->sex ) {

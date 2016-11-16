@@ -469,7 +469,7 @@ void updatePlayerInventory() {
 	}
 
 	if ( !itemMenuOpen ) {
-		//Highlight currently selected inventory slot (for gamepad).
+		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
 		for (x = 0; x < INVENTORY_SIZEX; ++x)
 		{
