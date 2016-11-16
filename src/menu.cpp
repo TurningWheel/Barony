@@ -348,6 +348,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
+					button->joykey = joyimpulses[INJOY_CANCEL];
 					
 					// next button
 					button = newButton();
@@ -358,6 +359,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_RIGHT;
+					button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
 					
 					// previous button
 					button = newButton();
@@ -368,6 +370,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_LEFT;
+					button->joykey = joyimpulses[INJOY_DPAD_LEFT];
 				}
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+128, language[1305]);
@@ -507,7 +510,7 @@ void handleMainMenu(bool mode) {
 						button->visible=1;
 						button->focused=1;
 						button->key = SDL_SCANCODE_ESCAPE;
-						button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+						button->joykey = joyimpulses[INJOY_CANCEL];
 
 						// yes button
 						button = newButton();
@@ -559,7 +562,7 @@ void handleMainMenu(bool mode) {
 							button->visible=1;
 							button->focused=1;
 							button->key=SDL_SCANCODE_ESCAPE;
-							button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+							button->joykey = joyimpulses[INJOY_CANCEL];
 						
 							// yes button
 							button = newButton();
@@ -643,7 +646,7 @@ void handleMainMenu(bool mode) {
 						button->visible=1;
 						button->focused=1;
 						button->key=SDL_SCANCODE_ESCAPE;
-						button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+						button->joykey = joyimpulses[INJOY_CANCEL];
 					}
 				} else {
 					ttfPrintText(ttf16, 50, yres/4+152+24*(multiplayer!=CLIENT), language[1313]);
@@ -5082,7 +5085,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_PAUSE_MENU];
+	button->joykey = joyimpulses[INJOY_CANCEL];
 	int button_back_x = button->x;
 	int button_back_width = button->sizex;
 	
