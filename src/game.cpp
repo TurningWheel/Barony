@@ -1371,7 +1371,7 @@ void handleEvents(void) {
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused) && rebindaction == -1)
+				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused) && rebindaction == -1 && gui_mode == GUI_MODE_NONE)
 				{
 					//Generate a mouse click.
 					SDL_Event e;
@@ -2176,7 +2176,10 @@ int main(int argc, char **argv) {
 							attributespage=0;
 						} else {
 							if (openedChest[clientnum])
+							{
 								openedChest[clientnum]->closeChest();
+							}
+							gui_mode = GUI_MODE_NONE;
 						}
 					}
 					if (!command && (*inputPressed(impulses[IN_SPELL_LIST]) || *inputPressed(joyimpulses[INJOY_SPELL_LIST]))) { //TODO: Move to function in interface or something?

@@ -2722,7 +2722,7 @@ client (player %d) (direct ip)#
 1951 Raise Shield#
 1952 Attack#
 1953 Use#
-1954 Menu/Back/Escape#
+1954 Menu/Escape#
 1955 "Left Click" (in MENUs)#
 1956 D-Pad Left#
 1957 D-Pad Right#
@@ -2732,6 +2732,7 @@ client (player %d) (direct ip)#
 1961 Next Hotbar#
 1962 Previous Hotbar#
 1963 Activate/Clear Hotbar#
+1964 Cancel#
 
 1980 Gamepad#
 

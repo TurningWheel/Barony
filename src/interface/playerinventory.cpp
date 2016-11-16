@@ -32,6 +32,8 @@ SDL_Surface *inventory_mode_spell_img = NULL;
 SDL_Surface *inventory_mode_spell_highlighted_img = NULL;
 int inventory_mode = INVENTORY_MODE_ITEM;
 
+selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
+
 /*-------------------------------------------------------------------------------
 
 	itemUseString
@@ -235,6 +237,163 @@ int itemMenuX = 0;
 int itemMenuY = 0;
 int itemMenuSelected = 0;
 Uint32 itemMenuItem = 0;
+
+/*void releaseItem(int x, int y) {
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+
+	/*
+	 * So, here is what must happen:
+	 * * If mouse behavior mode, toggle drop!
+	 * * If gamepad behavior mode, toggle release if x key pressed.
+	 * * * However, keep in mind that you want a mouse click to trigger drop, just in case potato. You know, controller dying or summat. Don't wanna jam game.
+	 *//*
+
+	//Determine if should drop.
+	bool dropCondition = false;
+	//Check mouse behavior first.
+	if (itemSelectBehavior == BEHAVIOR_MOUSE) {
+		if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick)) {
+			//Releasing mouse button drops the item.
+			dropCondition = true;
+		}
+	} else if (itemSelectBehavior == BEHAVIOR_GAMEPAD) {
+		if (*inputPressed(joyimpulses[INJOY_LEFT_CLICK]))
+		{
+			//Pressing the item pick up button ("x" by default) again will drop the item.
+			dropCondition = true;
+		}
+	}
+
+	if (dropCondition)
+	{
+		//TODO:
+	}
+}*/
+
+void releaseItem(int x, int y) {
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+
+	if ( *inputPressed(joyimpulses[INJOY_CANCEL]))
+	{
+		selectedItem = nullptr;
+		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+		return;
+	}
+
+	//TODO: Do proper refactoring.
+
+	// releasing items
+	if ((!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) //
+			|| ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && toggleclick) ) {
+		*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
+		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT) {
+			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
+					&& mousex < CHEST_INVENTORY_X + inventoryChest_bmp->w
+					&& mousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h) {
+				if (selectedItem->count > 1) {
+					openedChest[clientnum]->addItemToChestFromInventory(
+							clientnum, selectedItem, FALSE);
+					toggleclick = TRUE;
+				} else {
+					openedChest[clientnum]->addItemToChestFromInventory(
+							clientnum, selectedItem, FALSE);
+					selectedItem = NULL;
+					toggleclick = FALSE;
+				}
+			}
+		}
+		if (selectedItem) {
+			if (mousex >= x && mousey >= y
+					&& mousex < x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE
+					&& mousey < y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) {
+				// within inventory
+				int oldx = selectedItem->x;
+				int oldy = selectedItem->y;
+				selectedItem->x = (mousex - x) / INVENTORY_SLOTSIZE;
+				selectedItem->y = (mousey - y) / INVENTORY_SLOTSIZE;
+				for (node = stats[clientnum]->inventory.first; node != NULL;
+						node = nextnode) {
+					nextnode = node->next;
+					Item* tempItem = (Item*) (node->element);
+					if (tempItem == selectedItem)
+						continue;
+
+					toggleclick = FALSE;
+					if (tempItem->x == selectedItem->x
+							&& tempItem->y == selectedItem->y) {
+						if (itemCategory(selectedItem) != SPELL_CAT
+								&& itemCategory(tempItem) == SPELL_CAT) {
+							//It's alright, the item can go here. The item sharing this x is just a spell, but the item being moved isn't a spell.
+						} else if (itemCategory(selectedItem) == SPELL_CAT
+								&& itemCategory(tempItem) != SPELL_CAT) {
+							//It's alright, the item can go here. The item sharing this x isn't a spell, but the item being moved is a spell.
+						} else {
+							//The player just dropped an item onto another item.
+							tempItem->x = oldx;
+							tempItem->y = oldy;
+							selectedItem = tempItem;
+							toggleclick = TRUE;
+							break;
+						}
+					}
+				}
+				if (!toggleclick)
+					selectedItem = NULL;
+
+				playSound(139, 64); // click sound
+			} else if (itemCategory(selectedItem) == SPELL_CAT) {
+				//Outside inventory. Spells can't be dropped.
+				hotbar_slot_t* slot = getHotbar(mousex, mousey);
+				if (slot) {
+					//Add spell to hotbar.
+					Item* tempItem = uidToItem(slot->item);
+					if (tempItem) {
+						slot->item = selectedItem->uid;
+						selectedItem = tempItem;
+						toggleclick = TRUE;
+					} else {
+						slot->item = selectedItem->uid;
+						selectedItem = NULL;
+						toggleclick = FALSE;
+					}
+					playSound(139, 64); // click sound
+				} else {
+					selectedItem = NULL;
+				}
+			} else {
+				// outside inventory
+				hotbar_slot_t* slot = getHotbar(mousex, mousey);
+				if (slot) {
+					//Add item to hotbar.
+					Item* tempItem = uidToItem(slot->item);
+					if (tempItem) {
+						slot->item = selectedItem->uid;
+						selectedItem = tempItem;
+						toggleclick = TRUE;
+					} else {
+						slot->item = selectedItem->uid;
+						selectedItem = NULL;
+						toggleclick = FALSE;
+					}
+					playSound(139, 64); // click sound
+				} else {
+					if (selectedItem->count > 1) {
+						dropItem(selectedItem, clientnum);
+						toggleclick = TRUE;
+					} else {
+						dropItem(selectedItem, clientnum);
+						selectedItem = NULL;
+						toggleclick = FALSE;
+					}
+				}
+			}
+		}
+		if (mousestatus[SDL_BUTTON_LEFT])
+			mousestatus[SDL_BUTTON_LEFT] = 0;
+	}
+}
 
 void updatePlayerInventory() {
 	SDL_Rect pos, mode_pos;
@@ -511,12 +670,20 @@ void updatePlayerInventory() {
 						break;
 
 					// handle clicking
-					if( mousestatus[SDL_BUTTON_LEFT] && !selectedItem && !itemMenuOpen ) {
-						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && !selectedItem && !itemMenuOpen ) {
+						if ( !(*inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
 							dropItem(item,clientnum); // Quick item drop
 						} else {
-							selectedItem=item;
+							selectedItem = item;
+							itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139,64); // click sound
+
+							if ( *inputPressed(joyimpulses[INJOY_LEFT_CLICK]) ) {
+								*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
+								itemSelectBehavior = BEHAVIOR_GAMEPAD;
+								toggleclick = true;
+								//TODO: Change the mouse cursor to THE HAND.
+							}
 						}
 					} else if( mousestatus[SDL_BUTTON_RIGHT] && !itemMenuOpen && !selectedItem ) {
 						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
@@ -526,6 +693,7 @@ void updatePlayerInventory() {
 							identifyGUIIdentify(item);
 							mousestatus[SDL_BUTTON_RIGHT]=0;
 						} else {
+							//TODO: Implement for gamepad.
 							// open a drop-down menu of options for "using" the item
 							itemMenuOpen = true;
 							itemMenuX=mousex+8;
@@ -540,101 +708,7 @@ void updatePlayerInventory() {
 		}
 	} else if( stats[clientnum]->HP>0 ) {
 		// releasing items
-		if( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) ) {
-			if( openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT ) {
-				if( mousex>=CHEST_INVENTORY_X && mousey>=CHEST_INVENTORY_Y && mousex<CHEST_INVENTORY_X+inventoryChest_bmp->w && mousey<CHEST_INVENTORY_Y+inventoryChest_bmp->h ) {
-					if( selectedItem->count>1 ) {
-						openedChest[clientnum]->addItemToChestFromInventory(clientnum, selectedItem, FALSE);
-						toggleclick=TRUE;
-					} else {
-						openedChest[clientnum]->addItemToChestFromInventory(clientnum, selectedItem, FALSE);
-						selectedItem=NULL;
-						toggleclick=FALSE;
-					}
-				}
-			}
-			if( selectedItem ) {
-				if( mousex>=x && mousey>=y && mousex<x+INVENTORY_SIZEX*INVENTORY_SLOTSIZE && mousey<y+INVENTORY_SIZEY*INVENTORY_SLOTSIZE ) {
-					// within inventory
-					int oldx = selectedItem->x;
-					int oldy = selectedItem->y;
-					selectedItem->x = (mousex-x)/INVENTORY_SLOTSIZE;
-					selectedItem->y = (mousey-y)/INVENTORY_SLOTSIZE;
-					for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
-						nextnode = node->next;
-						Item *tempItem = (Item *)node->element;
-						if( tempItem == selectedItem )
-							continue;
-
-						toggleclick=FALSE;
-						if( tempItem->x==selectedItem->x && tempItem->y==selectedItem->y ) {
-							if (itemCategory(selectedItem)!=SPELL_CAT && itemCategory(tempItem) == SPELL_CAT) {
-								//It's alright, the item can go here. The item sharing this x is just a spell, but the item being moved isn't a spell.
-							} else if (itemCategory(selectedItem)==SPELL_CAT && itemCategory(tempItem) != SPELL_CAT) {
-								//It's alright, the item can go here. The item sharing this x isn't a spell, but the item being moved is a spell.
-							} else {
-								//The player just dropped an item onto another item.
-								tempItem->x = oldx;
-								tempItem->y = oldy;
-								selectedItem=tempItem;
-								toggleclick=TRUE;
-								break;
-							}
-						}
-					}
-					if( !toggleclick )
-						selectedItem=NULL;
-					playSound(139,64); // click sound
-				} else if (itemCategory(selectedItem) == SPELL_CAT) {
-					//Outside inventory. Spells can't be dropped.
-					hotbar_slot_t *slot = getHotbar(mousex, mousey);
-					if (slot) {
-						//Add spell to hotbar.
-						Item *tempItem = uidToItem(slot->item);
-						if( tempItem ) {
-							slot->item = selectedItem->uid;
-							selectedItem = tempItem;
-							toggleclick = TRUE;
-						} else {
-							slot->item = selectedItem->uid;
-							selectedItem = NULL;
-							toggleclick=FALSE;
-						}
-						playSound(139,64); // click sound
-					} else {
-						selectedItem = NULL;
-					}
-				} else {
-					// outside inventory
-					hotbar_slot_t *slot = getHotbar(mousex, mousey);
-					if (slot) {
-						//Add item to hotbar.
-						Item *tempItem = uidToItem(slot->item);
-						if( tempItem ) {
-							slot->item = selectedItem->uid;
-							selectedItem = tempItem;
-							toggleclick = TRUE;
-						} else {
-							slot->item = selectedItem->uid;
-							selectedItem = NULL;
-							toggleclick=FALSE;
-						}
-						playSound(139,64); // click sound
-					} else {
-						if( selectedItem->count>1 ) {
-							dropItem(selectedItem,clientnum);
-							toggleclick=TRUE;
-						} else {
-							dropItem(selectedItem,clientnum);
-							selectedItem=NULL;
-							toggleclick=FALSE;
-						}
-					}
-				}
-			}
-			if( mousestatus[SDL_BUTTON_LEFT] )
-				mousestatus[SDL_BUTTON_LEFT] = 0;
-		}
+		releaseItem(x, y);
 	}
 
 	itemContextMenu();

@@ -100,7 +100,7 @@ Item *open_book_item = NULL;
 SDL_Surface *book_highlighted_left_img = NULL;
 SDL_Surface *book_highlighted_right_img = NULL;
 
-int gui_mode = GUI_MODE_INVENTORY;
+int gui_mode = GUI_MODE_NONE;
 
 SDL_Surface *magicspellList_bmp = NULL;
 SDL_Surface *spell_list_titlebar_bmp = NULL;
@@ -372,6 +372,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
 	joyimpulses[INJOY_HOTBAR_PREV] = 310;
 	joyimpulses[INJOY_HOTBAR_ACTIVATE] = 304;
+	joyimpulses[INJOY_CANCEL] = 302;
 }
 
 void defaultConfig() {
@@ -416,6 +417,7 @@ void defaultConfig() {
 	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
 	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
 	consoleCommand("/joybind 304 INJOY_HOTBAR_ACTIVATE");
+	consoleCommand("/joybind 302 INJOY_NEXT");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -521,7 +523,8 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][16] = {
 	"NEXT",
 	"HOTBAR_NEXT",
 	"HOTBAR_PREV",
-	"HOTBAR_ACTIVATE"
+	"HOTBAR_ACTIVATE",
+	"CANCEL"
 };
 
 /*-------------------------------------------------------------------------------

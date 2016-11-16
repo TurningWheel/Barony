@@ -38,9 +38,13 @@ extern Uint32 enemy_timer;
 #define SHOPWINDOW_SIZEY 324
 #endif
 
-#define GUI_MODE_INVENTORY 0
-#define GUI_MODE_MAGIC 1
-#define GUI_MODE_SHOP 2
+static const int GUI_MODE_NONE = -1; //GUI closed, ingame & playing.
+//#define GUI_MODE_INVENTORY 0
+static const int GUI_MODE_INVENTORY = 0;
+//#define GUI_MODE_MAGIC 1
+static const int GUI_MODE_MAGIC = 1;
+//#define GUI_MODE_SHOP 2
+static const int GUI_MODE_SHOP = 2;
 extern int gui_mode;
 
 extern SDL_Surface *font12x12_small_bmp;
@@ -116,6 +120,17 @@ extern SDL_Surface *inventory_mode_item_highlighted_img;
 extern SDL_Surface *inventory_mode_spell_img;
 extern SDL_Surface *inventory_mode_spell_highlighted_img;
 extern int inventory_mode;
+
+/*
+ * Determines how item select (pick up, release) mechanic works.
+ *		BEHAVIOR_MOUSE = press left button to pick up, release left button to drop,
+ *		BEHAVIOR_GAMEPAD = press mapped button (x by default) to select/"grab" item, press again to drop.
+ */
+enum selectBehavior_t {
+	BEHAVIOR_MOUSE = 0,
+	BEHAVIOR_GAMEPAD = 1,
+	ENUM_LEN = 2
+} extern itemSelectBehavior;
 
 //Chest GUI definitions.
 #define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)

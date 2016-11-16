@@ -174,7 +174,8 @@ extern bool stop;
 #define INJOY_HOTBAR_NEXT 13
 #define INJOY_HOTBAR_PREV 14
 #define INJOY_HOTBAR_ACTIVATE 15 //Activates hotbar item in-game. Clears hotbar slot in-inventory.
-#define NUM_JOY_IMPULSES 16
+#define INJOY_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
+#define NUM_JOY_IMPULSES 17
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

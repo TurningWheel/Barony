@@ -433,10 +433,9 @@ void drawStatus() {
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if( stats[clientnum]->HP>0 ) {
 				if (!shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h)) {
-					if( mousestatus[SDL_BUTTON_LEFT] && !selectedItem ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && !selectedItem ) {
 						toggleclick=FALSE;
 						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) {
-							//TODO: Unequip item.
 							hotbar[num].item = 0;
 						} else {
 							//Remove the item if left clicked.
@@ -445,6 +444,13 @@ void drawStatus() {
 								playSound(139,64); // click sound
 							}
 							hotbar[num].item = 0;
+
+							if ( *inputPressed(joyimpulses[INJOY_LEFT_CLICK]) ) {
+								*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
+								itemSelectBehavior = BEHAVIOR_GAMEPAD;
+								toggleclick = true;
+								//TODO: Change the mouse cursor to THE HAND.
+							}
 						}
 					}
 					if (mousestatus[SDL_BUTTON_RIGHT]) {

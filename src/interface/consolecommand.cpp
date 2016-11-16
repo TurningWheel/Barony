@@ -444,6 +444,11 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
 		}
+		else if (strstr(command_str, "INJOY_CANCEL"))
+		{
+			joyimpulses[INJOY_CANCEL] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_CANCEL: %d\n", atoi(&command_str[9]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");
