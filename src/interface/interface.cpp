@@ -507,7 +507,7 @@ static char impulsenames[NUMIMPULSES][12] = {
 	"USE"
 };
 
-static char joyimpulsenames[NUM_JOY_IMPULSES][16] = {
+static char joyimpulsenames[NUM_JOY_IMPULSES][20] = {
 	"STATUS",
 	"SPELL_LIST",
 	"CAST_SPELL",
@@ -793,7 +793,7 @@ Sint8 *inputPressed(Uint32 scancode)
 		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
 		return &joy_trigger_status[scancode - 299];
 	}
-	else if (scancode < 317)
+	else if (scancode < 318)
 	{
 		return &joystatus[scancode - 301];
 	}

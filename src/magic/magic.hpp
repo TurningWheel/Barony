@@ -290,7 +290,7 @@ typedef struct spell_t {
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
 	//TODO: Some way to make spells work with "need to cast more to get better at casting the spell." A sort of spell learning curve. The first time you cast it, prone to failure. Less the more you cast it.
-} spell_t;
+};
 
 extern list_t spellList; //All of the player's spells are stored here.
 extern spell_t *selected_spell; //The spell the player's currently selected.

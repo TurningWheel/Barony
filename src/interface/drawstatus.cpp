@@ -180,6 +180,8 @@ void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint3
 
 -------------------------------------------------------------------------------*/
 
+bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
+
 void drawStatus() {
 	SDL_Rect pos, initial_position;
 	Sint32 x, y, z, c, i;
@@ -447,8 +449,9 @@ void drawStatus() {
 
 							if ( *inputPressed(joyimpulses[INJOY_LEFT_CLICK]) ) {
 								*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
-								itemSelectBehavior = BEHAVIOR_GAMEPAD;
+								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
+								selectedItemFromHotbar = num;
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
@@ -654,7 +657,7 @@ void drawStatus() {
 			pos.y = initial_position.y - hotbar_img->h;
 			for (c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w)
 			{
-				if (mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
 				{
 					selectHotbarSlot(c);
 				}
@@ -663,36 +666,49 @@ void drawStatus() {
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]))
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen)
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]))
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen)
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if (bumper_moved)
+		if (bumper_moved && !itemMenuOpen)
 		{
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
 			pos.y = initial_position.y - (hotbar_img->h / 2);
 			SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 		}
 
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]))
-		{
-			*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) = 0;
-			if (shootmode)
+		if ( !itemMenuOpen && !selectedItem ) {
+			if ( *inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) )
 			{
-				item = uidToItem(hotbar[current_hotbar].item);
+				*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) = 0;
+				if ( shootmode )
+				{
+					item = uidToItem(hotbar[current_hotbar].item);
+				}
+				else
+				{
+					hotbar[current_hotbar].item = 0;
+				}
 			}
-			else
-			{
-				hotbar[current_hotbar].item = 0;
+
+			pos.x = initial_position.x + (current_hotbar * hotbar_img->w);
+			pos.y = initial_position.y - hotbar_img->h;
+			if ( !shootmode && *inputPressed(joyimpulses[INJOY_CANCEL]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
+				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
+				*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+				Item *itemToDrop = uidToItem(hotbar[current_hotbar].item);
+				if ( itemToDrop ) {
+					dropItem(itemToDrop, clientnum);
+				}
 			}
 		}
 

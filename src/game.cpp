@@ -1371,7 +1371,7 @@ void handleEvents(void) {
 			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
 				joystatus[event.cbutton.button] = 1; // set this button's index to 1
 				lastkeypressed = 301 + event.cbutton.button;
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && (!shootmode || gamePaused) && rebindaction == -1 && gui_mode == GUI_MODE_NONE)
+				if ( event.cbutton.button + 301 == joyimpulses[INJOY_LEFT_CLICK] && ( (!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
 				{
 					//Generate a mouse click.
 					SDL_Event e;

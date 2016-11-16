@@ -86,6 +86,11 @@ void clickDescription(int player, Entity *entity) {
 		int x = xres/2-(status_bmp->w/2);
 		if (mouseInBounds(x,x+status_bmp->w,yres-status_bmp->h-hotbar_img->h,yres))
 			return;
+		if ( selectedItem || itemMenuOpen ) {
+			//Will bugger up GUI item interaction if this function continues to run.
+			return;
+		}
+
 		*inputPressed(impulses[IN_ATTACK])=0;
 		*inputPressed(joyimpulses[INJOY_ATTACK]) = 0;
 		

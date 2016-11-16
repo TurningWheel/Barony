@@ -230,6 +230,7 @@ void select_inventory_slot(int x, int y)
 -------------------------------------------------------------------------------*/
 
 Item *selectedItem = nullptr;
+int selectedItemFromHotbar = -1;
 bool toggleclick = false;
 
 bool itemMenuOpen = false;
@@ -268,29 +269,37 @@ Uint32 itemMenuItem = 0;
 
 	if (dropCondition)
 	{
-		//TODO:
 	}
 }*/
 
 void releaseItem(int x, int y) {
+	if ( !selectedItem ) {
+		return;
+	}
+
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
 
 	if ( *inputPressed(joyimpulses[INJOY_CANCEL]))
 	{
+		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS) {
+			//Warp cursor back into hotbar, for gamepad convenience.
+			SDL_WarpMouseInWindow(screen, (STATUS_X) + (selectedItemFromHotbar*hotbar_img->w) + (hotbar_img->w / 2), (STATUS_Y) - (hotbar_img->h / 2));
+			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
+		} else {
+			//Warp cursor back into inventory, for gamepad convenience.
+			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selectedItem->x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selectedItem->y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+		}
+
 		selectedItem = nullptr;
 		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
-
-		//Warp cursor back into inventory, for gamepad convenience.
-		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
 		return;
 	}
 
 	//TODO: Do proper refactoring.
 
 	// releasing items
-	if ((!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) //
-			|| ( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && toggleclick) ) {
+	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || ( (*inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && toggleclick) ) {
 		*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
 		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT) {
 			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
@@ -394,9 +403,36 @@ void releaseItem(int x, int y) {
 				}
 			}
 		}
-		if (mousestatus[SDL_BUTTON_LEFT])
+		if (mousestatus[SDL_BUTTON_LEFT]) {
 			mousestatus[SDL_BUTTON_LEFT] = 0;
+		}
 	}
+}
+
+/*
+ * Because the mouseInBounds() function looks at the omousex for whatever reason.
+ * And changing that function to use mousex has, through much empirical study, been proven to be a bad idea. Things will break.
+ * So, this function is used instead for one thing and only one thing: the gold borders that follow the mouse through the inventory.
+ *
+ * Places used so far:
+ * * Here. In updatePlayerInventory(), where it draws the gold borders around the inventory tile the mouse is hovering over.
+ * * drawstatus.cpp: drawing the gold borders around the hotbar slot the mouse is hovering over
+ */
+bool mouseInBoundsRealtimeCoords(int x1, int x2, int y1, int y2) {
+	if (mousey >= y1 && mousey < y2)
+		if (mousex >= x1 && mousex < x2)
+			return TRUE;
+
+	return FALSE;
+}
+
+void drawBlueInventoryBorder(const Item& item, int x, int y) {
+	SDL_Rect pos;
+	pos.x = x + item.x*INVENTORY_SLOTSIZE + 2; pos.y = y + item.y*INVENTORY_SLOTSIZE + 1;
+	pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
+
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 255, 127);
+	drawBox(&pos, color, 127);
 }
 
 void updatePlayerInventory() {
@@ -432,32 +468,32 @@ void updatePlayerInventory() {
 		drawLine(pos.x,pos.y+y*INVENTORY_SLOTSIZE,pos.x+pos.w,pos.y+y*INVENTORY_SLOTSIZE,SDL_MapRGB(mainsurface->format,150,150,150),255);
 	}
 
-	//Highlight currently selected inventory slot (for gamepad).
-	pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
-	for (x = 0; x < INVENTORY_SIZEX; x++)
-	{
-		for (y = 0; y < INVENTORY_SIZEY; y++)
+	if ( !itemMenuOpen ) {
+		//Highlight currently selected inventory slot (for gamepad).
+		pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
+		for (x = 0; x < INVENTORY_SIZEX; ++x)
 		{
-			pos.x = INVENTORY_STARTX + x*INVENTORY_SLOTSIZE;
-			pos.y = INVENTORY_STARTY + y*INVENTORY_SLOTSIZE;
-
-			if (mousexrel || mouseyrel)
+			for (y = 0; y < INVENTORY_SIZEY; ++y)
 			{
+				pos.x = INVENTORY_STARTX + x*INVENTORY_SLOTSIZE;
+				pos.y = INVENTORY_STARTY + y*INVENTORY_SLOTSIZE;
+
 				//Cursor moved over this slot, highlight it.
-				if (mouseInBounds(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
+				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
 				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
 				}
-			}
 
-			if (x == selected_inventory_slot_x && y == selected_inventory_slot_y)
-			{
-				Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
-				drawBox(&pos, color, 127);
+				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y )
+				{
+					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
+					drawBox(&pos, color, 127);
+				}
 			}
 		}
 	}
+
 
 	// draw contents of each slot
 	x = INVENTORY_STARTX;
@@ -466,9 +502,16 @@ void updatePlayerInventory() {
 		nextnode = node->next;
 		Item *item = (Item *)node->element;
 
-		if( item==selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT))
+		if ( item == selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) ) {
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
+			if ( !(inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) ) {
+				if ( item == selectedItem ) {
+					//Draw blue border around the slot if it's the currently grabbed item.
+					drawBlueInventoryBorder(*item, x, y);
+				}
+			}
 			continue;
+		}
 
 		if (!item->identified)
 		{
@@ -497,6 +540,11 @@ void updatePlayerInventory() {
 			{
 				drawRect(&pos, 65280, 65);
 			}
+		}
+
+		if ( itemMenuOpen && item == uidToItem(itemMenuItem) ) {
+			//Draw blue border around the slot if it's the currently context menu'd item.
+			drawBlueInventoryBorder(*item, x, y);
 		}
 
 		// draw item
@@ -673,10 +721,16 @@ void updatePlayerInventory() {
 					if( stats[clientnum]->HP<=0 )
 						break;
 
+					if ( *inputPressed(joyimpulses[INJOY_CANCEL]) && !itemMenuOpen && !selectedItem ) {
+						*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+
+						dropItem(item, clientnum);
+					}
+
 					// handle clicking
 					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && !selectedItem && !itemMenuOpen ) {
 						if ( !(*inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
-							dropItem(item,clientnum); // Quick item drop
+							dropItem(item, clientnum); // Quick item drop
 						} else {
 							selectedItem = item;
 							//itemSelectBehavior = BEHAVIOR_MOUSE;
@@ -937,7 +991,6 @@ inline void selectItemMenuSlot(const Item &item, int x, int y, int slot_width, i
 	int current_x = itemMenuX;
 	int current_y = itemMenuY;
 
-	//TODO: Make this play nicely with gamepad.
 	if (mousey < current_y - slot_height) //Check if out of bounds above.
 	{
 		itemMenuSelected = -1; //For canceling out.
@@ -978,7 +1031,7 @@ inline void selectItemMenuSlot(const Item &item, int x, int y, int slot_width, i
 	{
 		itemMenuSelected = -1; //For canceling out.
 	}
-	if (mousex < itemMenuX - 10 || mousex < itemMenuX && settings_right_click_protect) //Check if out of bounds to the left.
+	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && settings_right_click_protect) ) //Check if out of bounds to the left.
 	{
 		itemMenuSelected = -1; //For canceling out.
 	}
@@ -1120,7 +1173,7 @@ void itemContextMenu()
 		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
-		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (uidToItem(itemMenuItem)->x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (uidToItem(itemMenuItem)->y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
 		return;
 	}
 
@@ -1166,7 +1219,7 @@ void itemContextMenu()
 	bool activateSelection = false;
 	if (!mousestatus[SDL_BUTTON_RIGHT] && !toggleclick) {
 		activateSelection = true;
-	} else if ( mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_USE]) ) {
+	} else if ( *inputPressed(joyimpulses[INJOY_USE]) ) {
 		*inputPressed(joyimpulses[INJOY_USE]) = 0;
 		activateSelection = true;
 		//Warp cursor back into inventory, for gamepad convenience.

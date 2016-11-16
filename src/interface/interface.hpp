@@ -39,13 +39,17 @@ extern Uint32 enemy_timer;
 #endif
 
 static const int GUI_MODE_NONE = -1; //GUI closed, ingame & playing.
-//#define GUI_MODE_INVENTORY 0
 static const int GUI_MODE_INVENTORY = 0;
-//#define GUI_MODE_MAGIC 1
 static const int GUI_MODE_MAGIC = 1;
-//#define GUI_MODE_SHOP 2
 static const int GUI_MODE_SHOP = 2;
 extern int gui_mode;
+
+/*
+ * So that the cursor jumps back to the hotbar instead of the inventory if a picked up hotbar item is canceled.
+ * Its value indicates which hotbar slot it's from.
+ * -1 means it's not from the hotbar.
+ */
+extern int selectedItemFromHotbar;
 
 extern SDL_Surface *font12x12_small_bmp;
 extern SDL_Surface *backdrop_bmp;
@@ -123,8 +127,8 @@ extern int itemMenuSelected;
 extern bool toggleclick;
 
 //Inventory GUI definitions.
-#define INVENTORY_MODE_ITEM 0
-#define INVENTORY_MODE_SPELL 1
+static const int INVENTORY_MODE_ITEM = 0;
+static const int INVENTORY_MODE_SPELL = 1;
 extern SDL_Surface *inventory_mode_item_img;
 extern SDL_Surface *inventory_mode_item_highlighted_img;
 extern SDL_Surface *inventory_mode_spell_img;
@@ -283,8 +287,6 @@ extern Entity *hudweapon; //A pointer to the hudweapon entity.
  * NOTE: If the status bar width is changed, you need to change the slot image too. Make sure the status bar width stays divisible by 10.
  */
 
-typedef struct spell_t spell_t;
-
 //NOTE: Each hotbar slot is "constructed" in loadInterfaceResources() in interface.c. If you add anything, make sure to initialize it there.
 typedef struct hotbar_slot_t
 {
@@ -298,7 +300,7 @@ typedef struct hotbar_slot_t
 #define HOTBAR_ITEM 1
 #define HOTBAR_SPELL 2
 
-#define NUM_HOTBAR_SLOTS 10 //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
+static const unsigned NUM_HOTBAR_SLOTS = 10; //NOTE: If you change this, you must dive into drawstatus.c and update the hotbar code. It expects 10.
 extern hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 extern int current_hotbar; //For use with gamepads and stuff because no hotkeys like a keyboard.
 
