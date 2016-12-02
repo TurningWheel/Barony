@@ -419,11 +419,11 @@ void drawStatus() {
 		Uint32 color;
 		if (current_hotbar == num)
 		{
-			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
+			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255); //Draw gold border around currently selected hotbar.
 		}
 		else
 		{
-			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60);
+			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60); //Draw normal grey border.
 		}
 		drawImageColor(hotbar_img, NULL, &pos, color);
 

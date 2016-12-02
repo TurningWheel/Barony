@@ -225,14 +225,21 @@ void handleMainMenu(bool mode) {
 		// navigate with arrow keys
 		if (!subwindow)
 		{
+			int warpx, warpy;
 			if (menuselect == 0)
 			{
+				//No menu item selected.
 				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					draw_cursor = false;
 					menuselect = 1;
+					//Warp cursor to menu item, for gamepad convenience.
+					//warpx = 50 + ((strlen(language[1303 + (menuselect - 1)]) * 18) / 2);
+					warpx = 50 + 18;
+					warpy = (yres / 4) + 80 + (18 / 2); //I am a wizard. I hate magic numbers.
+					SDL_WarpMouseInWindow(screen, warpx, warpy);
 				}
 				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 				{
@@ -240,6 +247,9 @@ void handleMainMenu(bool mode) {
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					draw_cursor = false;
 					menuselect = 1;
+					warpx = 50 + 18;
+					warpy = (yres / 4) + 80 + (18 / 2);
+					SDL_WarpMouseInWindow(screen, warpx, warpy);
 				}
 			}
 			else
@@ -252,11 +262,16 @@ void handleMainMenu(bool mode) {
 					menuselect--;
 					if (menuselect == 0)
 					{
-						if (mode)
+						if (mode) {
 							menuselect = 6;
-						else
+						} else {
 							menuselect = 4 + (multiplayer != CLIENT);
+						}
 					}
+
+					warpx = 50 + 18;
+					warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
+					SDL_WarpMouseInWindow(screen, warpx, warpy);
 				}
 				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 				{
@@ -274,6 +289,10 @@ void handleMainMenu(bool mode) {
 						if (menuselect > 4 +( multiplayer != CLIENT))
 							menuselect = 1;
 					}
+
+					warpx = 50 + 18;
+					warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
+					SDL_WarpMouseInWindow(screen, warpx, warpy);
 				}
 			}
 		}
@@ -283,7 +302,25 @@ void handleMainMenu(bool mode) {
 
 		// draw menu
 		if( mode ) {
+			/*
+			 * Mouse menu item select/highlight implicitly handled here.
+			 */
+
+			/*
+			bool mouseover = false;
+			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1303]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18)) ) {
+				//Mouse hovering over a menu item.
+				mouseover = true;
+				menuselect = 1;
+			}
+
+			if ( (mouseover || (menuselect == 1)) && subwindow == 0 && introstage == 1 ) {
+				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
+				//...etc
+			 */
+
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1303])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
+				menuselect = 1;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
 				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 				{
@@ -303,6 +340,7 @@ void handleMainMenu(bool mode) {
 				ttfPrintText(ttf16, 50, yres/4+80, language[1303]);
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1304])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
+				menuselect = 2;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1304]);
 				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 				{
@@ -320,6 +358,7 @@ void handleMainMenu(bool mode) {
 				ttfPrintText(ttf16, 50, yres/4+104, language[1304]);
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1305])*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
+				menuselect = 3;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, language[1305]);
 				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 				{
@@ -376,6 +415,7 @@ void handleMainMenu(bool mode) {
 				ttfPrintText(ttf16, 50, yres/4+128, language[1305]);
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
+				menuselect = 4;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1306]);
 				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 				{
@@ -389,6 +429,7 @@ void handleMainMenu(bool mode) {
 				ttfPrintText(ttf16, 50, yres/4+152, language[1306]);
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1307])*18 && omousey >= yres/4+176 && omousey < yres/4+176+18) || (menuselect==5)) && subwindow==0 && introstage==1 ) {
+				menuselect = 5;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+176, colorGray, language[1307]);
 				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 				{
@@ -403,6 +444,7 @@ void handleMainMenu(bool mode) {
 				ttfPrintText(ttf16, 50, yres/4+176, language[1307]);
 			}
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1308])*18 && omousey >= yres/4+200 && omousey < yres/4+200+18) || (menuselect==6)) && subwindow==0 && introstage==1 ) {
+				menuselect = 6;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+200, colorGray, language[1308]);
 				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 				{
