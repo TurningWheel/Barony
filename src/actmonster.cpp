@@ -105,7 +105,7 @@ double sightranges[NUMMONSTERS] = {
 /*-------------------------------------------------------------------------------
 
 	summonMonster
-	
+
 	summons a monster near (but not at) the given location
 
 -------------------------------------------------------------------------------*/
@@ -130,7 +130,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 	entity->flags[INVISIBLE]=TRUE;
 	entity->ranbehavior = TRUE;
 	entity->skill[5] = nummonsters;
-	
+
 	Stat *myStats = NULL;
 	if( multiplayer!=CLIENT ) {
 		// Need to give the entity its list stuff.
@@ -149,7 +149,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 			myStats->leader_uid = entity->parent;
 			entity->parent = 0;
 		}
-	
+
 		myStats->type = creature;
 	}
 
@@ -189,7 +189,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 				entity->y = y + 16;
 				if(!entityInsideSomething(entity))
 					break; // southwest
-			
+
 				// we can't have monsters in walls...
 				list_RemoveNode(entity->mynode);
 				entity = NULL;
@@ -337,7 +337,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 /*-------------------------------------------------------------------------------
 
 	monsterMoveAside
-	
+
 	Causes the monster given in *entity to move aside from the entity given
 	in *my
 
@@ -346,7 +346,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 bool monsterMoveAside(Entity *my, Entity *entity) {
 	if( MONSTER_STATE != 0 )
 		return FALSE;
-		
+
 	int x = 0, y = 0;
 	if( cos(entity->yaw)>.4 ) {
 		y += 16;
@@ -388,14 +388,14 @@ bool monsterMoveAside(Entity *my, Entity *entity) {
 			}
 		}
 	}
-	
+
 	// move away
 	if( x != 0 || y != 0 ) {
 		MONSTER_STATE = 2;
 		MONSTER_TARGET = 0;
 		MONSTER_TARGETX = my->x+x;
 		MONSTER_TARGETY = my->y+y;
-		
+
 		return TRUE;
 	}
 	return FALSE;
@@ -436,13 +436,13 @@ void actMonster(Entity *my) {
 	// deactivate in menu
 	if( intro )
 		return;
-	
+
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
 	if( multiplayer==CLIENT ) {
 		if( !MONSTER_INIT && my->sprite>=100 ) {
 			MONSTER_INIT=1;
-			
+
 			// make two empty nodes
 			node = list_AddNodeLast(&my->children);
 			node->element = NULL;
@@ -572,7 +572,7 @@ void actMonster(Entity *my) {
 			else {
 				my->flags[BURNABLE]=FALSE;
 			}
-			
+
 			// request entity update (check if I've been deleted)
 			if( ticks%(TICKS_PER_SECOND*5) == my->uid%(TICKS_PER_SECOND*5) ) {
 				strcpy((char *)net_packet->data,"ENTE");
@@ -586,12 +586,12 @@ void actMonster(Entity *my) {
 		}
 		return;
 	}
-	
+
 	if( ticks%(TICKS_PER_SECOND) == my->uid%(TICKS_PER_SECOND/2) )
 		myReflex = TRUE;
 	else
 		myReflex = FALSE;
-	
+
 	// init
 	if( MONSTER_INIT<2 ) { // 0 means no initialization, 1 means stats are initialized
 		my->skill[2] = -4; // tells clients to set this entity behavior to actMonster
@@ -683,12 +683,12 @@ void actMonster(Entity *my) {
 			MONSTER_TARGET = -1;
 		}*/
 		MONSTER_TARGET = 0;
-		
+
 		/*// create an empty first node for traversal purposes //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node = list_AddNodeFirst(my->children);
 		node->element = NULL;
 		node->deconstructor = &emptyDeconstructor;*/
-		
+
 		// assign stats to the monster
 		//myStats = (Stat *) malloc(sizeof(Stat)); //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		//myStats->type = RAT; //GOING TO ASSUME THIS IS ALREADY PROPERLY SET WHEN THE FUNCTION IS CALLED.
@@ -696,7 +696,7 @@ void actMonster(Entity *my) {
 		/*node = list_AddNodeLast(my->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->deconstructor = &defaultDeconstructor;*/
-		
+
 		return;
 	}
 
@@ -717,14 +717,14 @@ void actMonster(Entity *my) {
 	if( myStats->shoes != NULL )
 		if( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
 			levitating = TRUE;
-	
+
 	if( myStats->type == MINOTAUR ) {
 		int c;
 		for( c=0; c<MAXPLAYERS; c++ ) {
 			assailant[c]=TRUE; // as long as this is active, combat music doesn't turn off
 		}
 	}
-	
+
 	if( my->ticks==120+MONSTER_NUMBER ) {
 		serverUpdateBodypartIDs(my);
 	}
@@ -772,7 +772,7 @@ void actMonster(Entity *my) {
 			MONSTER_SPECIAL=0;
 		}
 	}
-	
+
 	// hunger, regaining hp/mp, poison, etc.
 	if( !intro )
 		my->handleEffects(myStats);
@@ -865,7 +865,7 @@ void actMonster(Entity *my) {
 				messagePlayer(c,whatever);
 			}
 		}
-		
+
 		// drop gold
 		if( myStats->GOLD > 0 ) {
 			int x = std::min<int>(std::max(0,(int)(my->x/16)),map.width-1);
@@ -886,7 +886,7 @@ void actMonster(Entity *my) {
 				entity->skill[0] = myStats->GOLD; // amount
 			}
 		}
-		
+
 		// die
 #ifdef HAVE_FMOD
 		if( MONSTER_SOUND )
@@ -963,7 +963,7 @@ void actMonster(Entity *my) {
 		}
 		return;
 	}
-	
+
 	if( multiplayer != CLIENT ) {
 		my->effectTimes();
 	}
@@ -982,7 +982,7 @@ void actMonster(Entity *my) {
 			default: break;
 		}
 	}
-	
+
 	// check to see if monster can scream again
 	if( MONSTER_SOUND != NULL ) {
 #ifdef HAVE_FMOD
@@ -1006,7 +1006,7 @@ void actMonster(Entity *my) {
 		}
 #endif
 	}
-	
+
 	// remove broken equipment
 	if( myStats->helmet != NULL ) {
 		if( myStats->helmet->status == BROKEN ) {
@@ -1068,7 +1068,7 @@ void actMonster(Entity *my) {
 			myStats->mask = NULL;
 		}
 	}
-	
+
 	// calculate weight
 	Sint32 weight=0;
 	if( myStats->helmet != NULL )
@@ -1095,7 +1095,7 @@ void actMonster(Entity *my) {
 	weight/=2; // on monsters weight shouldn't matter so much
 	double weightratio = (1000+my->getSTR()*100-weight)/(double)(1000+my->getSTR()*100);
 	weightratio = fmin(fmax(0,weightratio),1);
-	
+
 	// determine if I have a ranged weapon or not
 	if( myStats->weapon != NULL ) {
 		if( myStats->weapon->type == SLING )
@@ -1111,7 +1111,7 @@ void actMonster(Entity *my) {
 		else if( itemCategory(myStats->weapon) == SPELLBOOK )
 			hasrangedweapon = TRUE;
 	}
-	
+
 	// effect of a ring of conflict
 	bool ringconflict=FALSE;
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -1356,7 +1356,7 @@ void actMonster(Entity *my) {
 				entity->flags[PASSABLE] = FALSE;
 			}
 		}
-		
+
 		// state machine
 		if( MONSTER_STATE==0 ) { // wait state
 			MONSTER_TARGET=-1;
@@ -1376,7 +1376,7 @@ void actMonster(Entity *my) {
 								dir -= PI*2;
 							while( dir < -PI )
 								dir += PI*2;
-						
+
 							// skip if light level is too low and distance is too high
 							int light = entity->entityLight();
 							if( !entity->isInvisible() ) {
@@ -1441,11 +1441,11 @@ void actMonster(Entity *my) {
 											}
 										}
 									}
-									
+
 									if( entity != NULL )
 										if( entity->behavior == &actPlayer )
 											assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
-								
+
 									// alert other monsters of this enemy's presence
 									for( node=map.entities->first; node!=NULL; node=node->next ) {
 										entity = (Entity *)node->element;
@@ -1577,7 +1577,7 @@ void actMonster(Entity *my) {
 					}
 				}
 			}
-			
+
 			// look
 			MONSTER_LOOKTIME++;
 			if( MONSTER_LOOKTIME >= 120 && myStats->type != LICH && myStats->type != DEVIL ) {
@@ -1940,7 +1940,7 @@ void actMonster(Entity *my) {
 									}
 								}
 							}
-							
+
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
 								if( my->x>=0 && my->y>=0 && my->x<map.width<<4 && my->y<map.height<<4 ) {
@@ -1948,7 +1948,7 @@ void actMonster(Entity *my) {
 										map.tiles[MAPLAYERS+(int)(my->y/16)*MAPLAYERS+(int)(my->x/16)*MAPLAYERS*map.height] = 0;
 								}
 							}*/
-						
+
 							// rotate monster
 							if( (hasrangedweapon && dist<100) || (myStats->HP <= myStats->MAXHP/3 && my->getCHR()>=-2) )
 								dir = my->yaw - atan2( -MONSTER_VELY, -MONSTER_VELX );
@@ -2016,7 +2016,7 @@ void actMonster(Entity *my) {
 					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
 					my->yaw = my->yaw-MONSTER_WEAPONYAW;
 				}
-				
+
 				// rotate monster
 				tangent = atan2( entity->y-my->y, entity->x-my->x );
 				MONSTER_VELX = cos(tangent);
@@ -2070,7 +2070,7 @@ void actMonster(Entity *my) {
 								dir -= PI*2;
 							while( dir < -PI )
 								dir += PI*2;
-						
+
 							// skip if light level is too low and distance is too high
 							int light = entity->entityLight();
 							if( !entity->isInvisible() ) {
@@ -2137,7 +2137,7 @@ void actMonster(Entity *my) {
 														}
 													}
 												}
-											
+
 												if( entity != NULL )
 													if( entity->behavior == &actPlayer )
 														assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
@@ -2209,7 +2209,7 @@ void actMonster(Entity *my) {
 					MONSTER_SPECIAL--;
 				}
 			}
-			
+
 			// follow the leader :)
 			if( myStats->leader_uid != 0 && my->uid%TICKS_PER_SECOND==ticks%TICKS_PER_SECOND ) {
 				Entity *leader = uidToEntity(myStats->leader_uid);
@@ -2275,7 +2275,7 @@ void actMonster(Entity *my) {
 					}
 				}
 			}
-			
+
 			entity = uidToEntity(MONSTER_TARGET);
 			if( entity != NULL )
 				if( entity->behavior == &actPlayer )
@@ -2375,7 +2375,7 @@ void actMonster(Entity *my) {
 								if( dist2<=0.1 )
 									MONSTER_STATE = 2; // remake path
 							}
-								
+
 							// rotate monster
 							dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
 							while( dir >= PI )
@@ -2421,7 +2421,7 @@ void actMonster(Entity *my) {
 		} else if( MONSTER_STATE == 4 ) { // talk state
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
-			
+
 			// turn towards target
 			Entity *target = uidToEntity(MONSTER_TARGET);
 			if( target != NULL ) {
@@ -2435,13 +2435,13 @@ void actMonster(Entity *my) {
 					my->yaw += 2*PI;
 				while( my->yaw >= 2*PI )
 					my->yaw -= 2*PI;
-				
+
 				// abandon conversation if distance is too great
 				if( sqrt( pow(my->x-target->x,2) + pow(my->y-target->y,2) ) > TOUCHRANGE ) {
 					MONSTER_STATE = 0;
 					MONSTER_TARGET = 0;
 					int player = -1;
-					if( target->behavior == &actPlayer );
+					if( target->behavior == &actPlayer )
 						player = target->skill[2];
 					if( player==0 ) {
 						shootmode = FALSE;
