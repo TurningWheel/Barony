@@ -160,9 +160,9 @@ extern bool stop;
 //Joystick/gamepad impulses
 #define INJOY_STATUS 0
 #define INJOY_SPELL_LIST 1
-#define INJOY_CAST_SPELL 2
-#define INJOY_DEFEND 3
-#define INJOY_ATTACK 4
+#define INJOY_GAME_CAST_SPELL 2
+#define INJOY_GAME_DEFEND 3
+#define INJOY_GAME_ATTACK 4
 #define INJOY_USE 5
 #define INJOY_PAUSE_MENU 6 //Also acts as the back key/escape key in limited situations.
 #define INJOY_LEFT_CLICK 7

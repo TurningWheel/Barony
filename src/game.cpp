@@ -2194,10 +2194,10 @@ int main(int argc, char **argv) {
 							attributespage = 0;
 						}
 					}
-					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || *inputPressed(joyimpulses[INJOY_CAST_SPELL])))
+					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL])))
 					{
 						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
-						*inputPressed(joyimpulses[INJOY_CAST_SPELL]) = 0;
+						*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
 						if (players[clientnum] && players[clientnum]->entity)
 							castSpellInit(players[clientnum]->entity->uid, selected_spell);
 					}

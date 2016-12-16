@@ -374,20 +374,20 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_SPELL_LIST] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_SPELL_LIST: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_CAST_SPELL"))
+		else if (strstr(command_str, "INJOY_GAME_CAST_SPELL"))
 		{
-			joyimpulses[INJOY_CAST_SPELL] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_CAST_SPELL: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_CAST_SPELL] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_CAST_SPELL: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_DEFEND"))
+		else if (strstr(command_str, "INJOY_GAME_DEFEND"))
 		{
-			joyimpulses[INJOY_DEFEND] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_DEFEND: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_DEFEND] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_DEFEND: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_ATTACK"))
+		else if (strstr(command_str, "INJOY_GAME_ATTACK"))
 		{
-			joyimpulses[INJOY_ATTACK] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_ATTACK: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_ATTACK] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_ATTACK: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_USE"))
 		{
