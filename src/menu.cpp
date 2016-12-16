@@ -498,6 +498,7 @@ void handleMainMenu(bool mode) {
 		} else {
 			if( introstage!=5 ) {
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1309])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
+					menuselect = 1;
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1309]);
 					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 					{
@@ -511,6 +512,7 @@ void handleMainMenu(bool mode) {
 					ttfPrintText(ttf16, 50, yres/4+80, language[1309]);
 				}
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
+					menuselect = 2;
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1306]);
 					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 					{
@@ -529,6 +531,7 @@ void handleMainMenu(bool mode) {
 				else
 					endgameText = language[1311];
 				if( ((omousex >= 50 && omousex < 50+strlen(endgameText)*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
+					menuselect = 3;
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, endgameText);
 					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 					{
@@ -581,6 +584,7 @@ void handleMainMenu(bool mode) {
 				}
 				if( multiplayer!=CLIENT ) {
 					if( ((omousex >= 50 && omousex < 50+strlen(language[1312])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
+						menuselect = 4;
 						ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1312]);
 						if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 						{
@@ -636,6 +640,7 @@ void handleMainMenu(bool mode) {
 					}
 				}
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1313])*18 && omousey >= yres/4+152+24*(multiplayer!=CLIENT) && omousey < yres/4+152+18+24*(multiplayer!=CLIENT)) || (menuselect==4+(multiplayer!=CLIENT))) && subwindow==0 && introstage==1 ) {
+					menuselect = 4 + (multiplayer != CLIENT);
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+152+24*(multiplayer!=CLIENT), colorGray, language[1313]);
 					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_NEXT]))
 					{
