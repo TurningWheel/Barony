@@ -31,6 +31,8 @@ char lobbyText[MAX_STEAM_LOBBIES][32];
 void *lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 
+void *steamIDRemote[MAXPLAYERS]={NULL,NULL,NULL,NULL};
+
 char currentLobbyName[32] = { 0 };
 Uint32 currentSvFlags=0;
 #ifdef STEAMWORKS

@@ -32,6 +32,8 @@ extern char lobbyText[MAX_STEAM_LOBBIES][32];
 extern void *lobbyIDs[MAX_STEAM_LOBBIES];
 extern int lobbyPlayers[MAX_STEAM_LOBBIES];
 
+extern void *steamIDRemote[MAXPLAYERS]; //TODO: Bugger void pointer.
+
 extern bool requestingLobbies;
 
 extern bool serverLoadingSaveGame; // determines whether lobbyToConnectTo is loading a savegame or not

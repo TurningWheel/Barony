@@ -1,6 +1,5 @@
 AGENDA:
  * Stackdump code for Windows and OSX
- * Coding style guidelines.
  * Controller support.
 
 After that....
@@ -35,6 +34,7 @@ Things to consider:
  * Acid traps
  * Instead of lang/en.txt, lang/en/ is a folder with, ex, lang/en/items.txt
  * Character doll equipment page?
+ * "Quickstart" main menu option -- throws you into dungeon level 1, random character customization.
 
 
 Quick little thingies:
