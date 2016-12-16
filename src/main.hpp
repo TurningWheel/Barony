@@ -158,6 +158,7 @@ extern bool stop;
 #define NUMIMPULSES 16
 
 //Joystick/gamepad impulses
+//TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
 #define INJOY_STATUS 0
 #define INJOY_SPELL_LIST 1
 #define INJOY_GAME_CAST_SPELL 2
@@ -165,7 +166,7 @@ extern bool stop;
 #define INJOY_GAME_ATTACK 4
 #define INJOY_USE 5
 #define INJOY_PAUSE_MENU 6 //Also acts as the back key/escape key in limited situations.
-#define INJOY_LEFT_CLICK 7
+#define INJOY_MENU_LEFT_CLICK 7
 #define INJOY_DPAD_LEFT 8
 #define INJOY_DPAD_RIGHT 9
 #define INJOY_DPAD_UP 10
@@ -174,7 +175,7 @@ extern bool stop;
 #define INJOY_HOTBAR_NEXT 13
 #define INJOY_HOTBAR_PREV 14
 #define INJOY_HOTBAR_ACTIVATE 15 //Activates hotbar item in-game. Clears hotbar slot in-inventory.
-#define INJOY_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
+#define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
 #define NUM_JOY_IMPULSES 17
 
 // since SDL2 gets rid of these and we're too lazy to fix them...

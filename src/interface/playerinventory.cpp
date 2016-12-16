@@ -260,7 +260,7 @@ Uint32 itemMenuItem = 0;
 			dropCondition = true;
 		}
 	} else if (itemSelectBehavior == BEHAVIOR_GAMEPAD) {
-		if (*inputPressed(joyimpulses[INJOY_LEFT_CLICK]))
+		if (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]))
 		{
 			//Pressing the item pick up button ("x" by default) again will drop the item.
 			dropCondition = true;
@@ -280,7 +280,7 @@ void releaseItem(int x, int y) {
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
 
-	if ( *inputPressed(joyimpulses[INJOY_CANCEL]))
+	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]))
 	{
 		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS) {
 			//Warp cursor back into hotbar, for gamepad convenience.
@@ -292,15 +292,15 @@ void releaseItem(int x, int y) {
 		}
 
 		selectedItem = nullptr;
-		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 		return;
 	}
 
 	//TODO: Do proper refactoring.
 
 	// releasing items
-	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || ( (*inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && toggleclick) ) {
-		*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
+	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) ) {
+		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT) {
 			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
 					&& mousex < CHEST_INVENTORY_X + inventoryChest_bmp->w
@@ -721,23 +721,23 @@ void updatePlayerInventory() {
 					if( stats[clientnum]->HP<=0 )
 						break;
 
-					if ( *inputPressed(joyimpulses[INJOY_CANCEL]) && !itemMenuOpen && !selectedItem ) {
-						*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+					if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) && !itemMenuOpen && !selectedItem ) {
+						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
-					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && !selectedItem && !itemMenuOpen ) {
-						if ( !(*inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && !selectedItem && !itemMenuOpen ) {
+						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
 							dropItem(item, clientnum); // Quick item drop
 						} else {
 							selectedItem = item;
 							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139,64); // click sound
 
-							if ( *inputPressed(joyimpulses[INJOY_LEFT_CLICK]) ) {
-								*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
+							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) ) {
+								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								//TODO: Change the mouse cursor to THE HAND.
@@ -1169,8 +1169,8 @@ void itemContextMenu()
 		return;
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_CANCEL]) ) {
-		*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) ) {
+		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
 		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (uidToItem(itemMenuItem)->x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (uidToItem(itemMenuItem)->y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));

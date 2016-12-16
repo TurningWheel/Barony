@@ -387,7 +387,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
-					button->joykey = joyimpulses[INJOY_CANCEL];
+					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 					
 					// next button
 					button = newButton();
@@ -470,7 +470,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
-					button->joykey = joyimpulses[INJOY_CANCEL];
+					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 					
 					// yes button
 					button = newButton();
@@ -557,7 +557,7 @@ void handleMainMenu(bool mode) {
 						button->visible=1;
 						button->focused=1;
 						button->key = SDL_SCANCODE_ESCAPE;
-						button->joykey = joyimpulses[INJOY_CANCEL];
+						button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 						// yes button
 						button = newButton();
@@ -610,7 +610,7 @@ void handleMainMenu(bool mode) {
 							button->visible=1;
 							button->focused=1;
 							button->key=SDL_SCANCODE_ESCAPE;
-							button->joykey = joyimpulses[INJOY_CANCEL];
+							button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 						
 							// yes button
 							button = newButton();
@@ -695,7 +695,7 @@ void handleMainMenu(bool mode) {
 						button->visible=1;
 						button->focused=1;
 						button->key=SDL_SCANCODE_ESCAPE;
-						button->joykey = joyimpulses[INJOY_CANCEL];
+						button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 					}
 				} else {
 					ttfPrintText(ttf16, 50, yres/4+152+24*(multiplayer!=CLIENT), language[1313]);
@@ -2030,7 +2030,7 @@ void handleMainMenu(bool mode) {
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
-					button->joykey = joyimpulses[INJOY_CANCEL];
+					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 						
 					// okay button
 					button = newButton();
@@ -2095,7 +2095,7 @@ void handleMainMenu(bool mode) {
 					button->action=&buttonDisconnect;
 					button->visible=1;
 					button->focused=1;
-					button->joykey = joyimpulses[INJOY_CANCEL];
+					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 				}
 			}
 		} else if ( multiplayer==CLIENT ) {
@@ -2184,7 +2184,7 @@ void handleMainMenu(bool mode) {
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
-						button->joykey = joyimpulses[INJOY_CANCEL];
+						button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 				
 						// okay button
 						button = newButton();
@@ -3641,7 +3641,7 @@ void openGameoverWindow() {
 		button->action=&buttonEndGameConfirm;
 		button->visible=1;
 		button->focused=1;
-		button->joykey = joyimpulses[INJOY_CANCEL];
+		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	} else {
 		strcpy(subtext,language[1140]);
 		
@@ -3691,7 +3691,7 @@ void openGameoverWindow() {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
 // sets up the settings window
@@ -3765,7 +3765,7 @@ void openSettingsWindow() {
 	button->visible = 1;
 	button->focused = 1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// cancel button
 	button = newButton();
@@ -3923,7 +3923,7 @@ void openFailedConnectionWindow(int mode) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	
 	// okay button
 	button = newButton();
@@ -3989,7 +3989,7 @@ void openSteamLobbyWaitWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// cancel button
 	button = newButton();
@@ -4034,7 +4034,7 @@ void openSteamLobbyBrowserWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	
 	// join button
 	button = newButton();
@@ -4097,7 +4097,7 @@ void buttonSteamLobbyBrowserJoinGame(button_t *my) {
 		button->visible=1;
 		button->focused=1;
 		button->key=SDL_SCANCODE_ESCAPE;
-		button->joykey = joyimpulses[INJOY_CANCEL];
+		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 		// cancel button
 		button = newButton();
@@ -4269,7 +4269,7 @@ void buttonContinue(button_t *my) {
 			button->visible=1;
 			button->focused=1;
 			button->key=SDL_SCANCODE_ESCAPE;
-			button->joykey = joyimpulses[INJOY_CANCEL];
+			button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 			// cancel button
 			button = newButton();
@@ -4376,7 +4376,7 @@ void buttonHostMultiplayer(button_t *my) {
 		button->visible=1;
 		button->focused=1;
 		button->key=SDL_SCANCODE_ESCAPE;
-		button->joykey = joyimpulses[INJOY_CANCEL];
+		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	
 		// host button
 		button = newButton();
@@ -4429,7 +4429,7 @@ void buttonJoinMultiplayer(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	
 	// join button
 	button = newButton();
@@ -4561,7 +4561,7 @@ void buttonHostLobby(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	c = button->x+button->sizex + 4;
 	
 	// invite friends button
@@ -4629,7 +4629,7 @@ void buttonJoinLobby(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 	// cancel button
 	button = newButton();
@@ -5083,7 +5083,7 @@ void openLoadGameWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 						
 	// yes button
 	button = newButton();
@@ -5169,7 +5169,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_CANCEL];
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	int button_back_x = button->x;
 	int button_back_width = button->sizex;
 	
@@ -5232,7 +5232,7 @@ void buttonLoadGame(button_t *button) {
 				button->visible=1;
 				button->focused=1;
 				button->key=SDL_SCANCODE_ESCAPE;
-				button->joykey = joyimpulses[INJOY_CANCEL];
+				button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
 				// cancel button
 				button = newButton();

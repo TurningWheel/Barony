@@ -363,7 +363,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
 	joyimpulses[INJOY_USE] = 301;
 	joyimpulses[INJOY_PAUSE_MENU] = 305;
-	joyimpulses[INJOY_LEFT_CLICK] = 303;
+	joyimpulses[INJOY_MENU_LEFT_CLICK] = 303;
 	joyimpulses[INJOY_DPAD_LEFT] = 314;
 	joyimpulses[INJOY_DPAD_RIGHT] = 315;
 	joyimpulses[INJOY_DPAD_UP] = 312;
@@ -372,7 +372,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
 	joyimpulses[INJOY_HOTBAR_PREV] = 310;
 	joyimpulses[INJOY_HOTBAR_ACTIVATE] = 304;
-	joyimpulses[INJOY_CANCEL] = 302;
+	joyimpulses[INJOY_MENU_CANCEL] = 302;
 }
 
 void defaultConfig() {
@@ -408,7 +408,7 @@ void defaultConfig() {
 	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
 	consoleCommand("/joybind 301 INJOY_USE");
 	consoleCommand("/joybind 305 INJOY_PAUSE_MENU");
-	consoleCommand("/joybind 303 INJOY_LEFT_CLICK");
+	consoleCommand("/joybind 303 INJOY_MENU_LEFT_CLICK");
 	consoleCommand("/joybind 314 INJOY_DPAD_LEFT");
 	consoleCommand("/joybind 315 INJOY_DPAD_RIGHT");
 	consoleCommand("/joybind 312 INJOY_DPAD_UP");

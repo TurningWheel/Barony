@@ -435,7 +435,7 @@ void drawStatus() {
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if( stats[clientnum]->HP>0 ) {
 				if (!shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h)) {
-					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_LEFT_CLICK])) && !selectedItem ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && !selectedItem ) {
 						toggleclick=FALSE;
 						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) {
 							hotbar[num].item = 0;
@@ -447,8 +447,8 @@ void drawStatus() {
 							}
 							hotbar[num].item = 0;
 
-							if ( *inputPressed(joyimpulses[INJOY_LEFT_CLICK]) ) {
-								*inputPressed(joyimpulses[INJOY_LEFT_CLICK]) = 0;
+							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) ) {
+								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
 								selectedItemFromHotbar = num;
@@ -702,9 +702,9 @@ void drawStatus() {
 
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w);
 			pos.y = initial_position.y - hotbar_img->h;
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_CANCEL]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
+			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				*inputPressed(joyimpulses[INJOY_CANCEL]) = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 				Item *itemToDrop = uidToItem(hotbar[current_hotbar].item);
 				if ( itemToDrop ) {
 					dropItem(itemToDrop, clientnum);

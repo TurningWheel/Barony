@@ -399,10 +399,10 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_PAUSE_MENU] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_PAUSE_MENU: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_LEFT_CLICK"))
+		else if (strstr(command_str, "INJOY_MENU_LEFT_CLICK"))
 		{
-			joyimpulses[INJOY_LEFT_CLICK] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_LEFT_CLICK: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_MENU_LEFT_CLICK] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_LEFT_CLICK: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_DPAD_LEFT"))
 		{
@@ -444,10 +444,10 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_CANCEL"))
+		else if (strstr(command_str, "INJOY_MENU_CANCEL"))
 		{
-			joyimpulses[INJOY_CANCEL] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_CANCEL: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_MENU_CANCEL] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_CANCEL: %d\n", atoi(&command_str[9]));
 		}
 		else
 		{
