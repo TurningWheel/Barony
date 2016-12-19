@@ -721,9 +721,8 @@ void updatePlayerInventory() {
 					if( stats[clientnum]->HP<=0 )
 						break;
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) && !itemMenuOpen && !selectedItem ) {
-						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
-
+					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem ) {
+						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 						dropItem(item, clientnum);
 					}
 

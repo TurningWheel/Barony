@@ -378,6 +378,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_REFRESH_LOBBY] = 304;
 	joyimpulses[INJOY_MENU_LOAD_SAVE] = 304;
 	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
+	joyimpulses[INJOY_MENU_DROP_ITEM] = 302;
 }
 
 void defaultConfig() {
@@ -427,7 +428,9 @@ void defaultConfig() {
 	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
 	consoleCommand("/joybind 304 INJOY_MENU_LOAD_SAVE");
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
-	consoleCommand("/joybind 302 INJOY_NEXT");
+	consoleCommand("/joybind 301 INJOY_NEXT");
+	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
+	consoleCommand("/joybind 302 INJOY_MENU_DROP_ITEM");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -539,7 +542,8 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 	"MENU_HOTBAR_CLEAR",
 	"MENU_REFRESH_LOBBY",
 	"MENU_LOAD_SAVE",
-	"MENU_RANDOM_CHAR"
+	"MENU_RANDOM_CHAR",
+	"MENU_DROP_ITEM"
 };
 
 /*-------------------------------------------------------------------------------

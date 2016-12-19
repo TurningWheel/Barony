@@ -180,6 +180,7 @@ extern bool stop;
 #define INJOY_MENU_REFRESH_LOBBY 19 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_LOAD_SAVE 20 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
+#define INJOY_MENU_DROP_ITEM 22
 
 //Game Exclusive:
 #define INJOY_GAME_CAST_SPELL 2
@@ -188,7 +189,7 @@ extern bool stop;
 #define INJOY_GAME_USE 5
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 22
+#define NUM_JOY_IMPULSES 23
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

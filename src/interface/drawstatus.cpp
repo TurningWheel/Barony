@@ -703,9 +703,9 @@ void drawStatus() {
 
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w);
 			pos.y = initial_position.y - hotbar_img->h;
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
+			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
-				*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
+				*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 				Item *itemToDrop = uidToItem(hotbar[current_hotbar].item);
 				if ( itemToDrop ) {
 					dropItem(itemToDrop, clientnum);

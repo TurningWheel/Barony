@@ -454,11 +454,12 @@ void consoleCommand(char *command_str) {
 		} else if (strstr(command_str, "INJOY_MENU_RANDOM_CHAR")) {
 			joyimpulses[INJOY_MENU_RANDOM_CHAR] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_RANDOM_CHAR: %d\n", atoi(&command_str[9]));
-		}
-		else if (strstr(command_str, "INJOY_MENU_CANCEL"))
-		{
+		} else if (strstr(command_str, "INJOY_MENU_CANCEL")) {
 			joyimpulses[INJOY_MENU_CANCEL] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_CANCEL: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_DROP_ITEM")) {
+			joyimpulses[INJOY_MENU_DROP_ITEM] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_DROP_ITEM: %d\n", atoi(&command_str[9]));
 		}
 		else
 		{

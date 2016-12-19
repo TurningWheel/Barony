@@ -2738,6 +2738,7 @@ client (player %d) (direct ip)#
 1967 Refresh Lobby#
 1968 Don't Load Save (New Game)#
 1969 Random Character#
+1970 Drop Item#
 
 1980 Gamepad#
 
