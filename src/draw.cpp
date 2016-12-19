@@ -291,6 +291,7 @@ int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha)
 	drawLine(src->x, src->y, src->x, src->y + src->h, color, alpha); //Left.
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, alpha); //Right.
 	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, color, alpha); //Bottom.
+	return 0;
 }
 
 /*-------------------------------------------------------------------------------
