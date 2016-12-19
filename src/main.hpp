@@ -173,7 +173,7 @@ extern bool stop;
 
 //Menu Exclusive:
 #define INJOY_MENU_LEFT_CLICK 7
-#define INJOY_NEXT 12 //TODO: Handle.
+#define INJOY_MENU_NEXT 12
 #define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
 #define INJOY_MENU_USE 17 //Opens the context menu in the inventory.
 #define INJOY_MENU_HOTBAR_CLEAR 18 //Clears hotbar slot in-inventory.

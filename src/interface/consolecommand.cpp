@@ -425,10 +425,10 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_DPAD_DOWN] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_DPAD_DOWN: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_NEXT"))
+		else if (strstr(command_str, "INJOY_MENU_NEXT"))
 		{
-			joyimpulses[INJOY_NEXT] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_NEXT: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_MENU_NEXT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_NEXT: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_HOTBAR_NEXT"))
 		{
