@@ -272,7 +272,7 @@ Uint32 itemMenuItem = 0;
 	}
 }*/
 
-void releaseItem(int x, int y) {
+void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflict with inventory context menu?
 	if ( !selectedItem ) {
 		return;
 	}
@@ -735,6 +735,8 @@ void updatePlayerInventory() {
 							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139,64); // click sound
 
+							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
+
 							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) ) {
 								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
@@ -750,13 +752,14 @@ void updatePlayerInventory() {
 							identifyGUIIdentify(item);
 							mousestatus[SDL_BUTTON_RIGHT]=0;
 						} else {
-							//TODO: Implement for gamepad.
 							// open a drop-down menu of options for "using" the item
 							itemMenuOpen = true;
 							itemMenuX=mousex+8;
 							itemMenuY=mousey;
 							itemMenuSelected=0;
 							itemMenuItem=item->uid;
+
+							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
 							if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
 								*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
