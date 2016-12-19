@@ -362,7 +362,6 @@ void defaultImpulses()
 	joyimpulses[INJOY_GAME_DEFEND] = 299;
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
 	joyimpulses[INJOY_GAME_USE] = 301;
-	joyimpulses[INJOY_MENU_USE] = 301;
 	joyimpulses[INJOY_PAUSE_MENU] = 305;
 	joyimpulses[INJOY_MENU_LEFT_CLICK] = 303;
 	joyimpulses[INJOY_DPAD_LEFT] = 314;
@@ -372,8 +371,13 @@ void defaultImpulses()
 	joyimpulses[INJOY_NEXT] = 301;
 	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
 	joyimpulses[INJOY_HOTBAR_PREV] = 310;
-	joyimpulses[INJOY_HOTBAR_ACTIVATE] = 304;
+	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 304;
 	joyimpulses[INJOY_MENU_CANCEL] = 302;
+	joyimpulses[INJOY_MENU_USE] = 301;
+	joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = 304;
+	joyimpulses[INJOY_MENU_REFRESH_LOBBY] = 304;
+	joyimpulses[INJOY_MENU_LOAD_SAVE] = 304;
+	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
 }
 
 void defaultConfig() {
@@ -418,7 +422,11 @@ void defaultConfig() {
 	consoleCommand("/joybind 301 INJOY_NEXT");
 	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
 	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
-	consoleCommand("/joybind 304 INJOY_HOTBAR_ACTIVATE");
+	consoleCommand("/joybind 304 INJOY_GAME_HOTBAR_ACTIVATE");
+	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
+	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
+	consoleCommand("/joybind 304 INJOY_MENU_LOAD_SAVE");
+	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
 	consoleCommand("/joybind 302 INJOY_NEXT");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
@@ -527,7 +535,11 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 	"HOTBAR_PREV",
 	"GAME_HOTBAR_ACTIVATE",
 	"MENU_CANCEL",
-	"MENU_USE"
+	"MENU_USE",
+	"MENU_HOTBAR_CLEAR",
+	"MENU_REFRESH_LOBBY",
+	"MENU_LOAD_SAVE",
+	"MENU_RANDOM_CHAR"
 };
 
 /*-------------------------------------------------------------------------------

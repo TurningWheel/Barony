@@ -176,15 +176,19 @@ extern bool stop;
 #define INJOY_NEXT 12 //TODO: Handle.
 #define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
 #define INJOY_MENU_USE 17 //Opens the context menu in the inventory.
+#define INJOY_MENU_HOTBAR_CLEAR 18 //Clears hotbar slot in-inventory.
+#define INJOY_MENU_REFRESH_LOBBY 19 //Clears hotbar slot in-inventory.
+#define INJOY_MENU_LOAD_SAVE 20 //Clears hotbar slot in-inventory.
+#define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
 
 //Game Exclusive:
 #define INJOY_GAME_CAST_SPELL 2
 #define INJOY_GAME_DEFEND 3
 #define INJOY_GAME_ATTACK 4
 #define INJOY_GAME_USE 5
-#define INJOY_HOTBAR_ACTIVATE 15 //Activates hotbar item in-game. Clears hotbar slot in-inventory. //TODO: Handle
+#define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 18
+#define NUM_JOY_IMPULSES 22
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

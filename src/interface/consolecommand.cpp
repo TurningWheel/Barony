@@ -439,11 +439,21 @@ void consoleCommand(char *command_str) {
 		{
 			joyimpulses[INJOY_HOTBAR_PREV] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
-		}
-		else if (strstr(command_str, "INJOY_HOTBAR_ACTIVATE"))
-		{
-			joyimpulses[INJOY_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_GAME_HOTBAR_ACTIVATE")) {
+			joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_HOTBAR_CLEAR")) {
+			joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_HOTBAR_CLEAR: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_REFRESH_LOBBY")) {
+			joyimpulses[INJOY_MENU_REFRESH_LOBBY] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_REFRESH_LOBBY: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_LOAD_SAVE")) {
+			joyimpulses[INJOY_MENU_LOAD_SAVE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_LOAD_SAVE: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_RANDOM_CHAR")) {
+			joyimpulses[INJOY_MENU_RANDOM_CHAR] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_RANDOM_CHAR: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_MENU_CANCEL"))
 		{

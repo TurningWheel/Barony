@@ -4059,7 +4059,7 @@ void openSteamLobbyBrowserWindow(button_t *my) {
 	#endif
 	button->visible=1;
 	button->focused=1;
-	button->joykey = joyimpulses[INJOY_HOTBAR_ACTIVATE]; //"y" refreshes
+	button->joykey = joyimpulses[INJOY_MENU_REFRESH_LOBBY]; //"y" refreshes
 }
 
 // steam lobby browser join game
@@ -5104,7 +5104,7 @@ void openLoadGameWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_HOTBAR_ACTIVATE]; //load save games no => "y" button
+	button->joykey = joyimpulses[INJOY_MENU_LOAD_SAVE]; //load save games no => "y" button
 }
 
 void buttonOpenCharacterCreationWindow(button_t *my) {
@@ -5182,7 +5182,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_R; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
-	button->joykey = joyimpulses[INJOY_HOTBAR_ACTIVATE]; //random character => "y" button
+	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //random character => "y" button
 }
 
 void buttonLoadGame(button_t *button) {

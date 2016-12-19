@@ -687,17 +687,18 @@ void drawStatus() {
 		}
 
 		if ( !itemMenuOpen && !selectedItem ) {
-			if ( *inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) )
 			{
-				*inputPressed(joyimpulses[INJOY_HOTBAR_ACTIVATE]) = 0;
-				if ( shootmode )
-				{
-					item = uidToItem(hotbar[current_hotbar].item);
-				}
-				else
-				{
-					hotbar[current_hotbar].item = 0;
-				}
+				//Activate a hotbar slot if in-game.
+				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
+				item = uidToItem(hotbar[current_hotbar].item);
+			}
+
+			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) ) {
+				//Clear a hotbar slot if in-inventory.
+				*inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) = 0;
+
+				hotbar[current_hotbar].item = 0;
 			}
 
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w);
