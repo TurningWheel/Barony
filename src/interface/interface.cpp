@@ -361,7 +361,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_GAME_CAST_SPELL] = 309;
 	joyimpulses[INJOY_GAME_DEFEND] = 299;
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
-	joyimpulses[INJOY_USE] = 301;
+	joyimpulses[INJOY_GAME_USE] = 301;
+	joyimpulses[INJOY_MENU_USE] = 301;
 	joyimpulses[INJOY_PAUSE_MENU] = 305;
 	joyimpulses[INJOY_MENU_LEFT_CLICK] = 303;
 	joyimpulses[INJOY_DPAD_LEFT] = 314;
@@ -406,7 +407,8 @@ void defaultConfig() {
 	consoleCommand("/joybind 309 INJOY_GAME_CAST_SPELL");
 	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
 	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
-	consoleCommand("/joybind 301 INJOY_USE");
+	consoleCommand("/joybind 301 INJOY_GAME_USE");
+	consoleCommand("/joybind 301 INJOY_MENU_USE");
 	consoleCommand("/joybind 305 INJOY_PAUSE_MENU");
 	consoleCommand("/joybind 303 INJOY_MENU_LEFT_CLICK");
 	consoleCommand("/joybind 314 INJOY_DPAD_LEFT");
@@ -507,24 +509,25 @@ static char impulsenames[NUMIMPULSES][12] = {
 	"USE"
 };
 
-static char joyimpulsenames[NUM_JOY_IMPULSES][20] = {
+static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 	"STATUS",
 	"SPELL_LIST",
-	"CAST_SPELL",
-	"DEFEND",
-	"ATTACK",
-	"USE",
+	"GAME_CAST_SPELL",
+	"GAME_DEFEND",
+	"GAME_ATTACK",
+	"GAME_USE",
 	"PAUSE_MENU",
-	"LEFT_CLICK",
+	"MENU_LEFT_CLICK",
 	"DPAD_LEFT",
 	"DPAD_RIGHT",
 	"DPAD_UP",
 	"DPAD_DOWN",
-	"NEXT",
+	"MENU_NEXT",
 	"HOTBAR_NEXT",
 	"HOTBAR_PREV",
-	"HOTBAR_ACTIVATE",
-	"CANCEL"
+	"GAME_HOTBAR_ACTIVATE",
+	"MENU_CANCEL",
+	"MENU_USE"
 };
 
 /*-------------------------------------------------------------------------------

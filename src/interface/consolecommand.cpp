@@ -389,12 +389,13 @@ void consoleCommand(char *command_str) {
 			joyimpulses[INJOY_GAME_ATTACK] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_GAME_ATTACK: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_USE"))
-		{
-			joyimpulses[INJOY_USE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_USE: %d\n", atoi(&command_str[9]));
-		}
-		else if (strstr(command_str, "INJOY_PAUSE_MENU"))
+		else if (strstr(command_str, "INJOY_GAME_USE")) {
+			joyimpulses[INJOY_GAME_USE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_USE: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_USE")) {
+			joyimpulses[INJOY_MENU_USE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_USE: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_PAUSE_MENU"))
 		{
 			joyimpulses[INJOY_PAUSE_MENU] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_PAUSE_MENU: %d\n", atoi(&command_str[9]));

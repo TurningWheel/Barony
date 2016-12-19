@@ -743,8 +743,8 @@ void updatePlayerInventory() {
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
-					} else if( (mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_USE])) && !itemMenuOpen && !selectedItem ) {
-						if( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_USE])) ) {
+					} else if( (mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_MENU_USE])) && !itemMenuOpen && !selectedItem ) {
+						if( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE])) ) {
 							// auto-appraise the item
 							identifygui_active = false;
 							identifygui_appraising = true;
@@ -759,8 +759,8 @@ void updatePlayerInventory() {
 							itemMenuSelected=0;
 							itemMenuItem=item->uid;
 
-							if ( *inputPressed(joyimpulses[INJOY_USE]) ) {
-								*inputPressed(joyimpulses[INJOY_USE]) = 0;
+							if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
+								*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 								toggleclick = true;
 							}
 						}
@@ -1219,8 +1219,8 @@ void itemContextMenu()
 	bool activateSelection = false;
 	if (!mousestatus[SDL_BUTTON_RIGHT] && !toggleclick) {
 		activateSelection = true;
-	} else if ( *inputPressed(joyimpulses[INJOY_USE]) ) {
-		*inputPressed(joyimpulses[INJOY_USE]) = 0;
+	} else if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
+		*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 		activateSelection = true;
 		//Warp cursor back into inventory, for gamepad convenience.
 		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
