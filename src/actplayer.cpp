@@ -82,10 +82,12 @@ void actDeathCam(Entity *my) {
 		DEATHCAM_ROTY = 0;
 	}
 
-	if ((*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_GAME_ATTACK])) && shootmode)
+	if ((*inputPressed(impulses[IN_ATTACK]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_ATTACK]))) && shootmode)
 	{
 		*inputPressed(impulses[IN_ATTACK]) = 0;
-		*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+		if ( shootmode ) {
+			*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+		}
 		DEATHCAM_PLAYER++;
 		if (DEATHCAM_PLAYER >= MAXPLAYERS)
 			DEATHCAM_PLAYER = 0;
