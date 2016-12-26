@@ -47,7 +47,6 @@ void actChest(Entity *my) {
 	if (!my)
 		return;
 
-	//TODO: Sounds.
 	CHEST_AMBIENCE--;
 	if( CHEST_AMBIENCE<=0 ) {
 		CHEST_AMBIENCE = TICKS_PER_SECOND*30;
@@ -56,8 +55,6 @@ void actChest(Entity *my) {
 
 	if( multiplayer==CLIENT )
 		return;
-
-	//TODO: Visual effects.
 
 	int i;
 
@@ -325,7 +322,7 @@ void actChest(Entity *my) {
 			if( rand()%2==0 )
 				dropItemMonster(item, my, NULL);
 		}
-		
+
 		// wood chunk particles
 		int c;
 		for( c=0; c<10; c++ ) {
@@ -385,9 +382,8 @@ void actChest(Entity *my) {
 				CHEST_OPENER = chestclicked;
 				openedChest[chestclicked] = my;
 				if (chestclicked != 0 && multiplayer == SERVER) {
-					//TODO: Tell the client that it just opened a chest.
 					//Send all of the items to the client.
-					strcpy((char *)net_packet->data, "CHST"); //Chest. //TODO: When the client recieves this message, let it know it's getting the UID of the chest it's interacting with.
+					strcpy((char *)net_packet->data, "CHST"); //Chest.
 					SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]); //Give the client the UID.
 					net_packet->address.host = net_clients[chestclicked - 1].host;
 					net_packet->address.port = net_clients[chestclicked - 1].port;
@@ -395,7 +391,7 @@ void actChest(Entity *my) {
 					sendPacketSafe(net_sock, -1, net_packet, chestclicked-1);
 					for (node = inventory->first; node != NULL; node = node->next) {
 						item = (Item *) node->element;
-						strcpy((char *)net_packet->data,"CITM"); //Chest item. //TODO: When the client recieves this message, shootmode = false, and start pumping the clientside chest inventory full of items.
+						strcpy((char *)net_packet->data,"CITM"); //Chest item.
 						SDLNet_Write32((Uint32)item->type,&net_packet->data[4]);
 						SDLNet_Write32((Uint32)item->status,&net_packet->data[8]);
 						SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[12]);
@@ -416,7 +412,7 @@ void actChest(Entity *my) {
 				messagePlayer(chestclicked, language[460]);
 				if (CHEST_OPENER != 0) {
 					//TODO: Message the client.
-					strcpy((char *)net_packet->data,"CCLS"); //Chest close. //TODO: Make the client react to this message and close the chest.
+					strcpy((char *)net_packet->data,"CCLS"); //Chest close.
 					net_packet->address.host = net_clients[CHEST_OPENER-1].host;
 					net_packet->address.port = net_clients[CHEST_OPENER-1].port;
 					net_packet->len = 4;
@@ -433,8 +429,6 @@ void actChest(Entity *my) {
 			messagePlayer(chestclicked, language[462]);
 			playSoundEntity(my, 152, 64);
 		}
-
-		//TODO: Locked chests?
 
 		//TODO: Pop open GUI with inventory. Clicking on an item adds it to the player's inventory. If a player clicks on an item in their inventory, it gets added to the chest's inventory. Right clicking adds/grabs all of a stack.
 	}

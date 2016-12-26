@@ -187,7 +187,7 @@ extern bool stop;
 #define INJOY_GAME_CAST_SPELL 2
 #define INJOY_GAME_DEFEND 3
 #define INJOY_GAME_ATTACK 4
-#define INJOY_GAME_USE 5 //TODO: Split. Used in-game for right click & used in-inventory for in-world identification.
+#define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot.
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
 #define NUM_JOY_IMPULSES 23
