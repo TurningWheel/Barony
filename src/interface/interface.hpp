@@ -152,6 +152,17 @@ enum selectBehavior_t {
 extern int chestgui_offset_x;
 extern int chestgui_offset_y;
 extern bool dragging_chestGUI; //The chest GUI is being dragged.
+/*
+ * Currently selected chest inventory slot.
+ * Same deal as with hotbar & inventory selection (exists for gamepad support).
+ * -1 = no selection (e.g. mouse out or no items in the first place).
+ */
+extern int selectedChestSlot;
+void selectChestSlot(int slot);
+int numItemsInChest();
+void warpMouseToSelectedChestSlot();
+
+void warpMouseToSelectedInventorySlot();
 
 //Magic GUI definitions.
 extern SDL_Surface *magicspellList_bmp;

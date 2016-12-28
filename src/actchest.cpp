@@ -406,12 +406,18 @@ void actChest(Entity *my) {
 				} else {
 					shootmode = FALSE;
 					gui_mode = GUI_MODE_INVENTORY; //Set it to the inventory screen so that the player can see the chest.
+					if ( numItemsInChest() > 0 ) { //Warp mouse to first item in chest only if there are any items!
+						selectedChestSlot = 0;
+						warpMouseToSelectedChestSlot();
+					} else {
+						selectedChestSlot = -1;
+						warpMouseToSelectedInventorySlot(); //Because setting shootmode to false tends to start the mouse in the middle of the screen. Which is not nice.
+					}
 				}
 				CHEST_STATUS = 1; //Toggle chest open/closed.
 			} else {
 				messagePlayer(chestclicked, language[460]);
 				if (CHEST_OPENER != 0) {
-					//TODO: Message the client.
 					strcpy((char *)net_packet->data,"CCLS"); //Chest close.
 					net_packet->address.host = net_clients[CHEST_OPENER-1].host;
 					net_packet->address.port = net_clients[CHEST_OPENER-1].port;
@@ -429,8 +435,6 @@ void actChest(Entity *my) {
 			messagePlayer(chestclicked, language[462]);
 			playSoundEntity(my, 152, 64);
 		}
-
-		//TODO: Pop open GUI with inventory. Clicking on an item adds it to the player's inventory. If a player clicks on an item in their inventory, it gets added to the chest's inventory. Right clicking adds/grabs all of a stack.
 	}
 }
 
@@ -527,6 +531,8 @@ void Entity::closeChest() {
 			sendPacketSafe(net_sock, -1, net_packet, chest_opener - 1);
 		} else {
 			chestitemscroll = 0;
+			//Reset chest-gamepad related stuff here.
+			selectedChestSlot = -1;
 		}
 	}
 }
@@ -651,7 +657,11 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 	return; //Do not execute the rest of this function.
 }
 
-Item* Entity::getItemFromChest(Item *item, bool all) {
+Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
+	/*
+	 * getInfoOnly just returns a copy of the item at the slot, it does not actually grab the item.
+	 * Note that the returned memory will need to be freed.
+	 */
 	Item *newitem = NULL;
 
 	if( item == NULL )
@@ -674,21 +684,23 @@ Item* Entity::getItemFromChest(Item *item, bool all) {
 		newitem->identified = item->identified;
 
 		//Tell the server.
-		strcpy( (char *)net_packet->data, "RCIT" ); //Have the server handle this (removing an item from the chest).
-		net_packet->data[4] = clientnum;
-		net_packet->address.host = net_server.host;
-		net_packet->address.port = net_server.port;
-		SDLNet_Write32((Uint32)item->type,&net_packet->data[5]);
-		SDLNet_Write32((Uint32)item->status,&net_packet->data[9]);
-		SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[13]);
-		int count = 1;
-		if (all)
-			count = item->count;
-		SDLNet_Write32((Uint32)count,&net_packet->data[17]);
-		SDLNet_Write32((Uint32)item->appearance,&net_packet->data[21]);
-		net_packet->data[25] = item->identified;
-		net_packet->len = 26;
-		sendPacketSafe(net_sock, -1, net_packet, 0);
+		if ( !getInfoOnly ) {
+			strcpy( (char *)net_packet->data, "RCIT" ); //Have the server remove the item from the chest).
+			net_packet->data[4] = clientnum;
+			net_packet->address.host = net_server.host;
+			net_packet->address.port = net_server.port;
+			SDLNet_Write32((Uint32)item->type,&net_packet->data[5]);
+			SDLNet_Write32((Uint32)item->status,&net_packet->data[9]);
+			SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[13]);
+			int count = 1;
+			if (all)
+				count = item->count;
+			SDLNet_Write32((Uint32)count,&net_packet->data[17]);
+			SDLNet_Write32((Uint32)item->appearance,&net_packet->data[21]);
+			net_packet->data[25] = item->identified;
+			net_packet->len = 26;
+			sendPacketSafe(net_sock, -1, net_packet, 0);
+		}
 	} else {
 		if ( !item )
 			return NULL;
@@ -713,13 +725,17 @@ Item* Entity::getItemFromChest(Item *item, bool all) {
 	if (!all) {
 		//Grab only one item from the chest.
 		newitem->count=1;
-		item->count-=1;
-		if( item->count <= 0 )
-			list_RemoveNode(item->node);
+		if (!getInfoOnly ) {
+			item->count-=1;
+			if( item->count <= 0 )
+				list_RemoveNode(item->node);
+		}
 	} else {
 		//Grab all items from the chest.
 		newitem->count = item->count;
-		list_RemoveNode(item->node);
+		if ( !getInfoOnly ) {
+			list_RemoveNode(item->node);
+		}
 	}
 
 	return newitem;
@@ -737,6 +753,9 @@ void closeChestClientside() {
 	openedChest[clientnum] = NULL;
 
 	chestitemscroll = 0;
+
+	//Reset chest-gamepad related stuff here.
+	selectedChestSlot = -1;
 }
 
 void addItemToChestClientside(Item *item) {

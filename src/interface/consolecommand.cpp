@@ -442,6 +442,9 @@ void consoleCommand(char *command_str) {
 		} else if (strstr(command_str, "INJOY_GAME_HOTBAR_ACTIVATE")) {
 			joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_ACTIVATE: %d\n", atoi(&command_str[9]));
+		} else if ( strstr(command_str, "INJOY_MENU_CHEST_GRAB_ALL")) {
+			joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_CHEST_GRAB_ALL: %d\n", atoi(&command_str[9]));
 		} else if (strstr(command_str, "INJOY_MENU_HOTBAR_CLEAR")) {
 			joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_HOTBAR_CLEAR: %d\n", atoi(&command_str[9]));

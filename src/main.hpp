@@ -175,22 +175,23 @@ extern bool stop;
 #define INJOY_MENU_LEFT_CLICK 7
 #define INJOY_MENU_NEXT 12
 #define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
-#define INJOY_MENU_USE 17 //Opens the context menu in the inventory.
+#define INJOY_MENU_USE 17 //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
 #define INJOY_MENU_HOTBAR_CLEAR 18 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_REFRESH_LOBBY 19 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_LOAD_SAVE 20 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_DROP_ITEM 22
+#define INJOY_MENU_CHEST_GRAB_ALL 23
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
 #define INJOY_GAME_CAST_SPELL 2
 #define INJOY_GAME_DEFEND 3
 #define INJOY_GAME_ATTACK 4
-#define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot.
+#define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 23
+#define NUM_JOY_IMPULSES 24
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

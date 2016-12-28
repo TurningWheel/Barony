@@ -154,7 +154,7 @@ public:
 	void closeChest();
 	void closeChestServer(); //Close the chest serverside, silently. Called when the chest is closed somewhere else for that client, but the server end stuff needs to be tied up.
 	void addItemToChest(Item *item); //Adds an item to the chest. If server, notifies the client. If client, notifies the server.
-	Item *getItemFromChest(Item *item, bool all); //Removes an item from the chest and returns a pointer to it.
+	Item *getItemFromChest(Item *item, bool all, bool getInfoOnly = false); //Removes an item from the chest and returns a pointer to it.
 	void addItemToChestFromInventory(int player, Item *item, bool all);
 	void addItemToChestServer(Item *item); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
 	void removeItemFromChestServer(Item *item, int count); //Called when the server learns that a client removed an item from the chest.

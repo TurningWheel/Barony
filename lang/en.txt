@@ -2739,6 +2739,7 @@ client (player %d) (direct ip)#
 1968 Don't Load Save (New Game)#
 1969 Random Character#
 1970 Drop Item#
+1971 Grab All From Chest#
 
 1980 Gamepad#
 

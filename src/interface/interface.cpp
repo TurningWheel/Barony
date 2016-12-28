@@ -45,11 +45,13 @@ SDL_Surface *button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *inv
 bool gui_clickdrag = FALSE;
 int dragoffset_x = 0;
 int dragoffset_y = 0;
+
 int chestitemscroll = 0;
 list_t chestInv;
 int chestgui_offset_x = 0;
 int chestgui_offset_y = 0;
 bool dragging_chestGUI = FALSE;
+int selectedChestSlot = -1;
 
 int selected_inventory_slot_x = 0;
 int selected_inventory_slot_y = 0;
@@ -372,6 +374,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
 	joyimpulses[INJOY_HOTBAR_PREV] = 310;
 	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 304;
+	joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = 304;
 	joyimpulses[INJOY_MENU_CANCEL] = 302;
 	joyimpulses[INJOY_MENU_USE] = 301;
 	joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = 304;
@@ -424,6 +427,7 @@ void defaultConfig() {
 	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
 	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
 	consoleCommand("/joybind 304 INJOY_GAME_HOTBAR_ACTIVATE");
+	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
 	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
 	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
 	consoleCommand("/joybind 304 INJOY_MENU_LOAD_SAVE");
@@ -543,7 +547,8 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 	"MENU_REFRESH_LOBBY",
 	"MENU_LOAD_SAVE",
 	"MENU_RANDOM_CHAR",
-	"MENU_DROP_ITEM"
+	"MENU_DROP_ITEM",
+	"MENU_CHEST_GRAB_ALL"
 };
 
 /*-------------------------------------------------------------------------------

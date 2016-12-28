@@ -34,6 +34,10 @@ int inventory_mode = INVENTORY_MODE_ITEM;
 
 selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
 
+void warpMouseToSelectedInventorySlot() {
+	SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+}
+
 /*-------------------------------------------------------------------------------
 
 	itemUseString
@@ -206,16 +210,38 @@ void updateAppraisalItemBox() {
 
 void select_inventory_slot(int x, int y)
 {
-	if (x < 0)
+	if ( x < 0 ) { //Wrap around left boundary.
 		x = INVENTORY_SIZEX - 1;
-	if (x >= INVENTORY_SIZEX)
+	}
+	if ( x >= INVENTORY_SIZEX ) { //Wrap around right boundary.
 		x = 0;
+	}
 
+	bool warpInv = true;
 
-	if (y < 0)
+	if ( y < 0 ) { //Wrap around top.
 		y = INVENTORY_SIZEY - 1;
-	if (y >= INVENTORY_SIZEY)
-		y = 0;
+	}
+	if ( y >= INVENTORY_SIZEY ) { //Hit bottom. Wrap around or go to shop/chest?
+		if ( openedChest[clientnum] ) {
+			//Do not want to wrap around if opened chest or shop.
+			warpInv = false;
+
+			y = INVENTORY_SIZEY - 1; //Keeps the selected slot within the inventory, to warp back to later.
+
+			if ( numItemsInChest() > 0 ) { //If chest even has an item...
+				//Then warp cursor to chest.
+				selectedChestSlot = 0; //Warp to first chest slot.
+				int warpX = CHEST_INVENTORY_X + (inventoryoptionChest_bmp->w / 2);
+				int warpY = CHEST_INVENTORY_Y + (inventoryoptionChest_bmp->h / 2)  + 16;
+				SDL_WarpMouseInWindow(screen, warpX, warpY);
+			}
+		}
+
+		if ( warpInv ) { //Wrap around to top.
+			y = 0;
+		}
+	}
 
 	selected_inventory_slot_x = x;
 	selected_inventory_slot_y = y;
@@ -450,9 +476,16 @@ void updatePlayerInventory() {
 
 	if (game_controller)
 	{
-		if (!itemMenuOpen && game_controller->handleInventoryMovement())
+		if ( selectedChestSlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() )
 		{
-			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+			if ( selectedChestSlot < 0) { //This second check prevents the extra mouse warp.
+				warpMouseToSelectedInventorySlot();
+			}
+		} else if ( !itemMenuOpen && game_controller->handleChestMovement() ) {
+			if ( selectedChestSlot < 0 ) {
+				//Move out of chest. Warp cursor back to selected inventory slot.
+				warpMouseToSelectedInventorySlot();
+			}
 		}
 	}
 
@@ -468,8 +501,9 @@ void updatePlayerInventory() {
 		drawLine(pos.x,pos.y+y*INVENTORY_SLOTSIZE,pos.x+pos.w,pos.y+y*INVENTORY_SLOTSIZE,SDL_MapRGB(mainsurface->format,150,150,150),255);
 	}
 
-	if ( !itemMenuOpen ) {
+	if ( !itemMenuOpen && selectedChestSlot < 0 ) {
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
+		//Only if item menu is not open and no chest slots are selected.
 		pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
 		for (x = 0; x < INVENTORY_SIZEX; ++x)
 		{
@@ -721,13 +755,13 @@ void updatePlayerInventory() {
 					if( stats[clientnum]->HP<=0 )
 						break;
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem ) {
+					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 ) {
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
-					if( (mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && !selectedItem && !itemMenuOpen ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0)) && !selectedItem && !itemMenuOpen ) {
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
 							dropItem(item, clientnum); // Quick item drop
 						} else {
@@ -744,8 +778,8 @@ void updatePlayerInventory() {
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
-					} else if( (mousestatus[SDL_BUTTON_RIGHT] || *inputPressed(joyimpulses[INJOY_MENU_USE])) && !itemMenuOpen && !selectedItem ) {
-						if( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE])) ) {
+					} else if( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0)) && !itemMenuOpen && !selectedItem ) {
+						if( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) {
 							// auto-appraise the item
 							identifygui_active = false;
 							identifygui_appraising = true;
