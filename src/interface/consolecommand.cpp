@@ -463,6 +463,12 @@ void consoleCommand(char *command_str) {
 		} else if (strstr(command_str, "INJOY_MENU_DROP_ITEM")) {
 			joyimpulses[INJOY_MENU_DROP_ITEM] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_DROP_ITEM: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_CYCLE_SHOP_LEFT")) {
+			joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_CYCLE_SHOP_LEFT: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_CYCLE_SHOP_RIGHT")) {
+			joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_CYCLE_SHOP_RIGHT: %d\n", atoi(&command_str[9]));
 		}
 		else
 		{
@@ -816,8 +822,17 @@ void consoleCommand(char *command_str) {
 	{
 		gamepad_menuy_invert = true;
 	}
-	else
-	{
+	else if ( !strncmp(command_str, "/gold ", 5) ) {
+		if ( multiplayer != SINGLE ) {
+			messagePlayer(clientnum, language[299]);
+		} else {
+			int amount = atoi(&command_str[5]);
+			stats[clientnum]->GOLD += amount;
+			stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+
+			messagePlayer(clientnum, "Giving %d gold pieces.", amount);
+		}
+	} else {
 		messagePlayer(clientnum,language[305],command_str);
 	}
 }

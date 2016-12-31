@@ -435,7 +435,7 @@ void drawStatus() {
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if( stats[clientnum]->HP>0 ) {
 				if (!shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h)) {
-					if( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && !openedChest[clientnum]) && !selectedItem ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP)) && !selectedItem ) {
 						toggleclick=FALSE;
 						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) {
 							hotbar[num].item = 0;
@@ -447,7 +447,7 @@ void drawStatus() {
 							}
 							hotbar[num].item = 0;
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] ) {
+							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) ) {
 								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
@@ -456,7 +456,7 @@ void drawStatus() {
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum]) ) {
+					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum])  && gui_mode != (GUI_MODE_SHOP) ) {
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
@@ -666,28 +666,28 @@ void drawStatus() {
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum])
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP))
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum])
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP))
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum])
+		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP))
 		{
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
 			pos.y = initial_position.y - (hotbar_img->h / 2);
 			SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 		}
 
-		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] ) {
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) )
+		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) ) {
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] && gui_mode != (GUI_MODE_SHOP)) )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;

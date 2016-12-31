@@ -14,6 +14,7 @@
 #include "main.hpp"
 #include "interface/interface.hpp"
 #include "items.hpp"
+#include "shops.hpp"
 
 Player **players = nullptr;
 
@@ -470,6 +471,58 @@ bool GameController::handleChestMovement() {
 	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 	{
 		selectChestSlot(selectedChestSlot + 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (dpad_moved)
+	{
+		dpad_moved = false;
+		draw_cursor = false;
+
+		return true;
+	}
+
+	return false;
+}
+
+bool GameController::handleShopMovement() {
+	bool dpad_moved = false;
+
+	if ( itemMenuOpen ) {
+		return false;
+	}
+
+	/*
+	//I would love to just do these, but it just wouldn't work with the way the code is set up.
+	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
+	{
+		cycleShopCategories(-1);
+		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
+	{
+		cycleShopCategories(1);
+		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
+
+		dpad_moved = true;
+	}*/
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	{
+		selectShopSlot(selectedShopSlot - 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	{
+		selectShopSlot(selectedShopSlot + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;

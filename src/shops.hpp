@@ -32,3 +32,17 @@ extern char shopkeepername_client[64];
 void startTradingServer(Entity *entity, int player);
 void buyItemFromShop(Item *item);
 void sellItemToShop(Item *item);
+
+extern int selectedShopSlot;
+
+void selectShopSlot(int slot);
+void warpMouseToSelectedShopSlot();
+
+/*
+ * Negative: Left.
+ * Positive: Right.
+ */
+void cycleShopCategories(int direction);
+
+static const int NUM_SHOP_CATEGORIES = 8;
+static const int NUM_SHOP_GUI_SLOTS = 4;

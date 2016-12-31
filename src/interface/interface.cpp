@@ -382,6 +382,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_LOAD_SAVE] = 304;
 	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
 	joyimpulses[INJOY_MENU_DROP_ITEM] = 302;
+	joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT] = 310;
+	joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT] = 311;
 }
 
 void defaultConfig() {
@@ -435,6 +437,8 @@ void defaultConfig() {
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
 	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
 	consoleCommand("/joybind 302 INJOY_MENU_DROP_ITEM");
+	consoleCommand("/joybind 310 INJOY_MENU_CYCLE_SHOP_LEFT");
+	consoleCommand("/joybind 311 INJOY_MENU_CYCLE_SHOP_RIGHT");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -446,6 +450,54 @@ void defaultConfig() {
 	consoleCommand("/autoappraisenewitems");
 	return;
 }
+
+static char impulsenames[NUMIMPULSES][12] = {
+	"FORWARD",
+	"LEFT",
+	"BACK",
+	"RIGHT",
+	"TURNL",
+	"TURNR",
+	"UP",
+	"DOWN",
+	"CHAT",
+	"COMMAND",
+	"STATUS",
+	"SPELL_LIST",
+	"CAST_SPELL",
+	"DEFEND",
+	"ATTACK",
+	"USE"
+};
+
+static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
+	"STATUS",
+	"SPELL_LIST",
+	"GAME_CAST_SPELL",
+	"GAME_DEFEND",
+	"GAME_ATTACK",
+	"GAME_USE",
+	"PAUSE_MENU",
+	"MENU_LEFT_CLICK",
+	"DPAD_LEFT",
+	"DPAD_RIGHT",
+	"DPAD_UP",
+	"DPAD_DOWN",
+	"MENU_NEXT",
+	"HOTBAR_NEXT",
+	"HOTBAR_PREV",
+	"GAME_HOTBAR_ACTIVATE",
+	"MENU_CANCEL",
+	"MENU_USE",
+	"MENU_HOTBAR_CLEAR",
+	"MENU_REFRESH_LOBBY",
+	"MENU_LOAD_SAVE",
+	"MENU_RANDOM_CHAR",
+	"MENU_DROP_ITEM",
+	"MENU_CHEST_GRAB_ALL",
+	"MENU_CYCLE_SHOP_LEFT",
+	"MENU_CYCLE_SHOP_RIGHT"
+};
 
 /*-------------------------------------------------------------------------------
 
@@ -504,52 +556,6 @@ int loadConfig(char *filename) {
 		free(filename);
 	return 0;
 }
-
-static char impulsenames[NUMIMPULSES][12] = {
-	"FORWARD",
-	"LEFT",
-	"BACK",
-	"RIGHT",
-	"TURNL",
-	"TURNR",
-	"UP",
-	"DOWN",
-	"CHAT",
-	"COMMAND",
-	"STATUS",
-	"SPELL_LIST",
-	"CAST_SPELL",
-	"DEFEND",
-	"ATTACK",
-	"USE"
-};
-
-static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
-	"STATUS",
-	"SPELL_LIST",
-	"GAME_CAST_SPELL",
-	"GAME_DEFEND",
-	"GAME_ATTACK",
-	"GAME_USE",
-	"PAUSE_MENU",
-	"MENU_LEFT_CLICK",
-	"DPAD_LEFT",
-	"DPAD_RIGHT",
-	"DPAD_UP",
-	"DPAD_DOWN",
-	"MENU_NEXT",
-	"HOTBAR_NEXT",
-	"HOTBAR_PREV",
-	"GAME_HOTBAR_ACTIVATE",
-	"MENU_CANCEL",
-	"MENU_USE",
-	"MENU_HOTBAR_CLEAR",
-	"MENU_REFRESH_LOBBY",
-	"MENU_LOAD_SAVE",
-	"MENU_RANDOM_CHAR",
-	"MENU_DROP_ITEM",
-	"MENU_CHEST_GRAB_ALL"
-};
 
 /*-------------------------------------------------------------------------------
 

@@ -31,6 +31,8 @@ int shopkeepertype=0;
 char *shopkeepername=NULL;
 char shopkeepername_client[64];
 
+int selectedShopSlot = -1;
+
 /*-------------------------------------------------------------------------------
 
 	startTradingServer
@@ -64,6 +66,14 @@ void startTradingServer(Entity *entity, int player) {
 		shopkeepertype = entity->skill[18];
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
+
+		//Initialize shop gamepad code here.
+		if ( shopinvitems[0] != nullptr ) {
+			selectedShopSlot = 0;
+			warpMouseToSelectedShopSlot();
+		} else {
+			selectedShopSlot = -1;
+		}
 	} else if( multiplayer==SERVER ) {
 		// open shop on client
 		Stat *entitystats = entity->getStats();

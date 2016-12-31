@@ -182,6 +182,8 @@ extern bool stop;
 #define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
 #define INJOY_MENU_DROP_ITEM 22
 #define INJOY_MENU_CHEST_GRAB_ALL 23
+#define INJOY_MENU_CYCLE_SHOP_LEFT 24
+#define INJOY_MENU_CYCLE_SHOP_RIGHT 25
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
@@ -191,7 +193,7 @@ extern bool stop;
 #define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 24
+#define NUM_JOY_IMPULSES 26
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
@@ -377,7 +379,9 @@ extern Sint8 keystatus[512];
 extern char *inputstr;
 extern int inputlen;
 extern string lastname;
-extern Sint8 mousestatus[6];
+static const unsigned NUM_MOUSE_STATUS = 6;
+extern Sint8 mousestatus[NUM_MOUSE_STATUS];
+//extern Sint8 omousestatus[NUM_MOUSE_STATUS];
 const int NUM_JOY_STATUS = 32;
 extern Sint8 joystatus[NUM_JOY_STATUS];
 const int NUM_JOY_TRIGGER_STATUS = 2;

@@ -2088,6 +2088,9 @@ int main(int argc, char **argv) {
 								list_FreeAll(shopInv);
 							}
 							shopkeeper = 0;
+
+							//Clean up shopkeeper gamepad code here.
+							selectedShopSlot = -1;
 						}
 						attributespage=0;
 						if (openedChest[clientnum])
@@ -2167,7 +2170,11 @@ int main(int argc, char **argv) {
 								sendPacketSafe(net_sock, -1, net_packet, 0);
 								list_FreeAll(shopInv);
 							}
+
 							shopkeeper = 0;
+
+							//Clean up shopkeeper gamepad code here.
+							selectedShopSlot = -1;
 						}
 						if( shootmode==FALSE ) {
 							SDL_SetRelativeMouseMode(SDL_FALSE);

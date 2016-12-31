@@ -1218,6 +1218,15 @@ void clientHandlePacket()
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		shopitemscroll = 0;
+
+		//Initialize shop gamepad code here.
+		if ( shopinvitems[0] != nullptr ) {
+			selectedShopSlot = 0;
+			warpMouseToSelectedShopSlot();
+		} else {
+			selectedShopSlot = -1;
+		}
+
 		return;
 	}
 
@@ -1234,6 +1243,8 @@ void clientHandlePacket()
 		shootmode = TRUE;
 		shopkeeper = 0;
 		list_FreeAll(shopInv);
+		//Clean up shop gamepad code here.
+		selectedShopSlot = -1;
 		return;
 	}
 

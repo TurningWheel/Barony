@@ -129,6 +129,12 @@ public:
 	bool handleChestMovement();
 
 	/*
+	 * Uses dpad to move the cursor around a shop's inventory and select items.
+	 * Returns true if moved.
+	 */
+	bool handleShopMovement();
+
+	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */
