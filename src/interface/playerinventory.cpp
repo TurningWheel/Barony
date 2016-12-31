@@ -325,7 +325,7 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 	//TODO: Do proper refactoring.
 
 	// releasing items
-	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) ) {
+	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) ) {
 		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT) {
 			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y

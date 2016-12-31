@@ -72,7 +72,7 @@ int numItemsInChest() {
 
 void warpMouseToSelectedChestSlot() {
 	int x = CHEST_INVENTORY_X + (inventoryoptionChest_bmp->w / 2);
-	int y = CHEST_INVENTORY_Y + 16 + (18 * selectedChestSlot) + (inventoryoptionChest_bmp->h / 2);
+	int y = CHEST_INVENTORY_Y + 16 + (inventoryoptionChest_bmp->h * selectedChestSlot) + (inventoryoptionChest_bmp->h / 2);
 	SDL_WarpMouseInWindow(screen, x, y);
 }
 
@@ -314,7 +314,7 @@ void updateChestInventory() {
 				c = numItemsInChest();
 				chestitemscroll = std::max(0, std::min(chestitemscroll, c - 4));
 
-				repopulateInvItems(chest_inventory); //This doesn't work. I blame Dennis.
+				repopulateInvItems(chest_inventory);
 
 				c = 0;
 
@@ -403,14 +403,7 @@ void selectChestSlot(int slot) {
 			 * * B) Page down, scrolling through chestitemscroll.
 			 */
 
-			int maxChestItemScroll = numItemsInChest() - 4;
-			if ( chestitemscroll < maxChestItemScroll ) {
-				//Case 2/B: page down (++chestitemscroll).
-				++chestitemscroll;
-			} else {
-				//Case 3/A.
-				//Max chest item scroll here. Rebuke movement (do jack diddly squat).
-			}
+			++chestitemscroll; //chestitemscroll is sanitized in updateChestInventory().
 		} else {
 			//Covers case 1.
 			//Move cursor down through the GUi through different selectedChestSlot (++selectedChestSlot).
