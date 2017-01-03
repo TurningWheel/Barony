@@ -50,6 +50,9 @@ GameController::GameController()
 	sdl_device = nullptr;
 	id = -1;
 	name = "";
+
+	oldLeftTrigger = 0;
+	oldRightTrigger = 0;
 }
 
 GameController::~GameController()
@@ -153,21 +156,29 @@ void GameController::handleAnalog()
 
 	if (getLeftTrigger())
 	{
-		joy_trigger_status[0] = 1;
-		lastkeypressed = 299;
+		if ( !oldLeftTrigger ) {
+			oldLeftTrigger = 1;
+			joy_trigger_status[0] = 1;
+			lastkeypressed = 299;
+		}
 	}
 	else
 	{
+		oldLeftTrigger = 0;
 		joy_trigger_status[0] = 0;
 	}
 
 	if (getRightTrigger())
 	{
-		joy_trigger_status[1] = 1;
-		lastkeypressed = 300;
+		if ( !oldRightTrigger ) {
+			oldRightTrigger = 1;
+			joy_trigger_status[1] = 1;
+			lastkeypressed = 300;
+		}
 	}
 	else
 	{
+		oldRightTrigger = 0;
 		joy_trigger_status[1] = 0;
 	}
 }

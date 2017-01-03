@@ -188,6 +188,8 @@ extern bool stop;
 #define INJOY_MENU_BOOK_PREV 27
 #define INJOY_MENU_SETTINGS_NEXT 28
 #define INJOY_MENU_SETTINGS_PREV 29 //TODO: Only one "cycle tabs" binding?
+#define INJOY_MENU_INVENTORY_TAB 30 //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
+#define INJOY_MENU_MAGIC_TAB 31
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
@@ -197,7 +199,7 @@ extern bool stop;
 #define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 30
+#define NUM_JOY_IMPULSES 32
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

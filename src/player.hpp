@@ -57,6 +57,9 @@ class GameController
 	SDL_GameController* sdl_device;
 	int id;
 
+	int oldLeftTrigger;
+	int oldRightTrigger;
+
 	std::string name;
 public:
 	GameController();

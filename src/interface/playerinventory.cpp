@@ -445,6 +445,15 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 	}
 }
 
+void cycleInventoryTab() {
+	if ( inventory_mode == INVENTORY_MODE_ITEM) {
+		inventory_mode = INVENTORY_MODE_SPELL;
+	} else {
+		//inventory_mode == INVENTORY_MODE_SPELL
+		inventory_mode = INVENTORY_MODE_ITEM;
+	}
+}
+
 /*
  * Because the mouseInBounds() function looks at the omousex for whatever reason.
  * And changing that function to use mousex has, through much empirical study, been proven to be a bad idea. Things will break.
@@ -511,6 +520,20 @@ void updatePlayerInventory() {
 			if ( selectedShopSlot < 0 ) {
 				warpMouseToSelectedInventorySlot();
 			}
+		}
+
+		if ( *inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) ) {
+			*inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) = 0;
+			cycleInventoryTab();
+		}
+
+		if ( lastkeypressed == 300 ) {
+			lastkeypressed = 0;
+		}
+
+		if ( *inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) ) {
+			*inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) = 0;
+			cycleInventoryTab();
 		}
 	}
 

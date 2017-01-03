@@ -2746,6 +2746,8 @@ client (player %d) (direct ip)#
 1975 Next Book Page#
 1976 Next Settings Tab#
 1977 Previous Settings Tab#
+1978 Previous Inventory Tab#
+1979 Next Inventory Tab#
 
 1980 Gamepad#
 

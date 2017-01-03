@@ -33,8 +33,9 @@ void clickDescription(int player, Entity *entity) {
 	Uint32 uidnum;
 	
 	if( entity==NULL ) {
-		if( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_GAME_ATTACK])) || shootmode )
+		if( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) || shootmode )
 			return;
+		//One of either IN_ATTACK or INJOY_MENU_LEFT_CLICK is true, && shootmode == false;
 		if( omousex<camera.winx || omousex>=camera.winx+camera.winw || omousey<camera.winy || omousey>=camera.winy+camera.winh )
 			return;
 		if (openedChest[clientnum])
@@ -92,7 +93,7 @@ void clickDescription(int player, Entity *entity) {
 		}
 
 		*inputPressed(impulses[IN_ATTACK])=0;
-		*inputPressed(joyimpulses[INJOY_GAME_ATTACK]) = 0;
+		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 		
 		if( softwaremode ) {
 			entity = clickmap[omousey+omousex*yres];
