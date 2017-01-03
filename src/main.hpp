@@ -184,6 +184,8 @@ extern bool stop;
 #define INJOY_MENU_CHEST_GRAB_ALL 23
 #define INJOY_MENU_CYCLE_SHOP_LEFT 24
 #define INJOY_MENU_CYCLE_SHOP_RIGHT 25
+#define INJOY_MENU_BOOK_NEXT 26
+#define INJOY_MENU_BOOK_PREV 27
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
@@ -193,7 +195,7 @@ extern bool stop;
 #define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 26
+#define NUM_JOY_IMPULSES 28
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4

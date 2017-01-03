@@ -666,20 +666,20 @@ void drawStatus() {
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP))
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open)
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP))
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open)
 		{
 			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP))
+		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open)
 		{
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
 			pos.y = initial_position.y - (hotbar_img->h / 2);
@@ -687,14 +687,14 @@ void drawStatus() {
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) ) {
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] && gui_mode != (GUI_MODE_SHOP)) )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
 				item = uidToItem(hotbar[current_hotbar].item);
 			}
 
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) ) {
+			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) && !book_open ) {
 				//Clear a hotbar slot if in-inventory.
 				*inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) = 0;
 
@@ -703,7 +703,7 @@ void drawStatus() {
 
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w);
 			pos.y = initial_position.y - hotbar_img->h;
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
+			if ( !shootmode && !book_open && !openedChest[clientnum] && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
 				*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 				Item *itemToDrop = uidToItem(hotbar[current_hotbar].item);
