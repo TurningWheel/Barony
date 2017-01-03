@@ -3825,7 +3825,6 @@ void openSettingsWindow() {
 	strcpy(button->label, "x");
 	button->x = subx2 - 20; button->y = suby1;
 	button->sizex = 20; button->sizey = 20;
-	//button->action = &buttonCloseSubwindow;
 	button->action = &buttonCloseSettingsSubwindow;
 	button->visible = 1;
 	button->focused = 1;
