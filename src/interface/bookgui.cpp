@@ -32,6 +32,7 @@ void updateBookGUI() {
 		book_open = false;
 		book_page = nullptr;
 		open_book = nullptr;
+		dragging_book_GUI = false;
 		return;
 	}
 

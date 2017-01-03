@@ -16,6 +16,8 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
+void drawSkillsSheet();
+
 /*-------------------------------------------------------------------------------
 
 	updateCharacterSheet
@@ -44,42 +46,6 @@ void updateCharacterSheet() {
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
 	drawWindowFancy(0, 196, 224, 392);
-	drawWindowFancy(attributesleft_bmp->w, 392, 224-attributesleft_bmp->w, 420);
-
-	if( mousestatus[SDL_BUTTON_LEFT] ) {
-		if( omousey>=392 && omousey<420 ) {
-			if( omousex>=0 && omousex<attributesleft_bmp->w ) {
-				mousestatus[SDL_BUTTON_LEFT]=0;
-				attributespage = std::max(attributespage-1,0);
-				buttonclick=5;
-			}
-			if( omousex>=224-attributesright_bmp->w && omousex<224 ) {
-				mousestatus[SDL_BUTTON_LEFT]=0;
-				attributespage = std::min(attributespage+1,2);
-				buttonclick=6;
-			}
-		}
-	}
-	//Attributes page left button.
-	if( buttonclick==5 ) {
-		pos.x=0; pos.y=392;
-		pos.w=0; pos.h=0;
-		drawImage(attributesleft_bmp, NULL, &pos);
-	} else {
-		pos.x=0; pos.y=392;
-		pos.w=0; pos.h=0;
-		drawImage(attributesleftunclicked_bmp, NULL, &pos);
-	}
-	//Attributes page right button.
-	if( buttonclick==6 ) {
-		pos.x=224-attributesright_bmp->w; pos.y=392;
-		pos.w=0; pos.h=0;
-		drawImage(attributesright_bmp, NULL, &pos);
-	} else {
-		pos.x=224-attributesrightunclicked_bmp->w; pos.y=392;
-		pos.w=0; pos.h=0;
-		drawImage(attributesrightunclicked_bmp, NULL, &pos);
-	}
 
 	// character sheet
 	double ofov = fov;
@@ -157,62 +123,63 @@ void updateCharacterSheet() {
 	ttfPrintTextFormatted(ttf12,8,238,language[361],currentlevel);
 
 	// attributes
-	if( attributespage==0 ) {
-		ttfPrintTextFormatted(ttf12,8,262,language[1200],statGetSTR(stats[clientnum]),stats[clientnum]->STR);
-		ttfPrintTextFormatted(ttf12,8,274,language[1201],statGetDEX(stats[clientnum]),stats[clientnum]->DEX);
-		ttfPrintTextFormatted(ttf12,8,286,language[1202],statGetCON(stats[clientnum]),stats[clientnum]->CON);
-		ttfPrintTextFormatted(ttf12,8,298,language[1203],statGetINT(stats[clientnum]),stats[clientnum]->INT);
-		ttfPrintTextFormatted(ttf12,8,310,language[1204],statGetPER(stats[clientnum]),stats[clientnum]->PER);
-		ttfPrintTextFormatted(ttf12,8,322,language[1205],statGetCHR(stats[clientnum]),stats[clientnum]->CHR);
-	} else {
-		ttfPrintTextFormatted(ttf12,8,262,language[1883]);
-
-		// skills (page one)
-		if( attributespage==1 ) {
-			for( c=0; c<NUMPROFICIENCIES/2; c++ ) {
-				ttfPrintTextFormatted(ttf12,8,286+c*12,"%s:",language[236+c]);
-			}
-		}
-
-		// skills (page two)
-		else if( attributespage==2 ) {
-			for( c=NUMPROFICIENCIES/2; c<NUMPROFICIENCIES; c++ ) {
-				ttfPrintTextFormatted(ttf12,8,286+(c-NUMPROFICIENCIES/2)*12,"%s:",language[236+c]);
-			}
-		}
-	}
-
-	// skill levels
-	if( attributespage>0 ) {
-		for( i=(NUMPROFICIENCIES/2)*(attributespage-1); i<(NUMPROFICIENCIES/2)*attributespage; i++ ) {
-			if( stats[clientnum]->PROFICIENCIES[i] == 0 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[363]);
-			else if( stats[clientnum]->PROFICIENCIES[i] < 20 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[364]);
-			else if( stats[clientnum]->PROFICIENCIES[i] >= 20 && stats[clientnum]->PROFICIENCIES[i] < 40 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[365]);
-			else if( stats[clientnum]->PROFICIENCIES[i] >= 40 && stats[clientnum]->PROFICIENCIES[i] < 60 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[366]);
-			else if( stats[clientnum]->PROFICIENCIES[i] >= 60 && stats[clientnum]->PROFICIENCIES[i] < 80 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[367]);
-			else if( stats[clientnum]->PROFICIENCIES[i] >= 80 && stats[clientnum]->PROFICIENCIES[i] < 100 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[368]);
-			else if( stats[clientnum]->PROFICIENCIES[i] >= 100 )
-				ttfPrintTextFormatted(ttf12,8,286+(i%(NUMPROFICIENCIES/2))*12,language[369]);
-		}
-	}
+	ttfPrintTextFormatted(ttf12,8,262,language[1200],statGetSTR(stats[clientnum]),stats[clientnum]->STR);
+	ttfPrintTextFormatted(ttf12,8,274,language[1201],statGetDEX(stats[clientnum]),stats[clientnum]->DEX);
+	ttfPrintTextFormatted(ttf12,8,286,language[1202],statGetCON(stats[clientnum]),stats[clientnum]->CON);
+	ttfPrintTextFormatted(ttf12,8,298,language[1203],statGetINT(stats[clientnum]),stats[clientnum]->INT);
+	ttfPrintTextFormatted(ttf12,8,310,language[1204],statGetPER(stats[clientnum]),stats[clientnum]->PER);
+	ttfPrintTextFormatted(ttf12,8,322,language[1205],statGetCHR(stats[clientnum]),stats[clientnum]->CHR);
 
 	// armor, gold, and weight
-	if( attributespage==0 ) {
-		ttfPrintTextFormatted(ttf12,8,346,language[370],stats[clientnum]->GOLD);
-		ttfPrintTextFormatted(ttf12,8,358,language[371],AC(stats[clientnum]));
-		Uint32 weight=0;
-		for( node=stats[clientnum]->inventory.first; node!=NULL; node=node->next ) {
-			item = (Item *)node->element;
-			weight += items[item->type].weight*item->count;
-		}
-		weight+=stats[clientnum]->GOLD/100;
-		ttfPrintTextFormatted(ttf12,8,370,language[372],weight);
+	ttfPrintTextFormatted(ttf12,8,346,language[370],stats[clientnum]->GOLD);
+	ttfPrintTextFormatted(ttf12,8,358,language[371],AC(stats[clientnum]));
+	Uint32 weight=0;
+	for( node=stats[clientnum]->inventory.first; node!=NULL; node=node->next ) {
+		item = (Item *)node->element;
+		weight += items[item->type].weight*item->count;
 	}
-	printTextFormatted(font12x12_bmp,112-30,420-12-8,"%d / 3",attributespage+1); // attributes pane page number
+	weight+=stats[clientnum]->GOLD/100;
+	ttfPrintTextFormatted(ttf12,8,370,language[372],weight);
+
+	drawSkillsSheet();
+}
+
+void drawSkillsSheet() {
+	SDL_Rect pos;
+	pos.x = xres - 208;
+	pos.w = 208;
+	pos.y = 32;
+	pos.h = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3);
+
+	drawWindowFancy(pos.x, pos.y, pos.x + pos.w, pos.y + pos.h);
+
+	ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y + 8, language[1883]);
+
+	pos.y += TTF12_HEIGHT*2 + 8;
+
+	SDL_Rect initialSkillPos = pos;
+	//Draw skill names.
+	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (TTF12_HEIGHT /** 2*/) ) {
+		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, "%s:", language[236 + c]);
+	}
+
+	//Draw skill levels.
+	pos = initialSkillPos;
+	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (TTF12_HEIGHT /** 2*/) ) {
+		if ( stats[clientnum]->PROFICIENCIES[i] == 0 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[363]);
+		} else if( stats[clientnum]->PROFICIENCIES[i] < 20 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[364]);
+		} else if( stats[clientnum]->PROFICIENCIES[i] >= 20 && stats[clientnum]->PROFICIENCIES[i] < 40 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[365]);
+		} else if( stats[clientnum]->PROFICIENCIES[i] >= 40 && stats[clientnum]->PROFICIENCIES[i] < 60 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[366]);
+		} else if( stats[clientnum]->PROFICIENCIES[i] >= 60 && stats[clientnum]->PROFICIENCIES[i] < 80 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[367]);
+		} else if( stats[clientnum]->PROFICIENCIES[i] >= 80 && stats[clientnum]->PROFICIENCIES[i] < 100 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[368]);
+		} else if( stats[clientnum]->PROFICIENCIES[i] >= 100 ) {
+			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[369]);
+		}
+	}
 }

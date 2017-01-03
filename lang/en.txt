@@ -581,12 +581,12 @@ thou makest use of them.#
 # skill levels
 
 363                 none#
-364                 novice#
-365                 basic#
-366                 skilled#
-367                 expert#
-368                 master#
-369                 legend#
+364               novice#
+365                basic#
+366              skilled#
+367               expert#
+368               master#
+369               legend#
 
 
 # rest of the character sheet
