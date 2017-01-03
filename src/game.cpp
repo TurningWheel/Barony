@@ -1229,6 +1229,24 @@ void handleButtons(void) {
 				ttfPrintText(ttf12,button->x+(button->sizex-w)/2-2,button->y+(button->sizey-h)/2+3,button->label);
 			}
 		}
+
+		if ( button->outline ) {
+			//Draw golden border.
+			//For such things as which settings tab the controller has presently selected.
+			Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
+			SDL_Rect pos;
+			pos.x = button->x;
+			pos.w = button->sizex;
+			pos.y = button->y;
+			pos.h = button->sizey;
+			drawBox(&pos, color, 127);
+			//Draw a 2 pixel thick box.
+			pos.x = button->x + 1;
+			pos.w = button->sizex - 2;
+			pos.y = button->y + 1;
+			pos.h = button->sizey -2;
+			drawBox(&pos, color, 127);
+		}
 	}
 }
 

@@ -125,3 +125,13 @@ extern bool settings_auto_hotbar_new_items;
 extern bool settings_disable_messages;
 extern bool settings_right_click_protect;
 extern bool settings_auto_appraise_new_items;
+
+static const int NUM_SETTINGS_TABS = 7;
+
+static const int SETTINGS_VIDEO_TAB = 0;
+static const int SETTINGS_AUDIO_TAB = 1;
+static const int SETTINGS_KEYBOARD_TAB = 2;
+static const int SETTINGS_MOUSE_TAB = 3;
+static const int SETTINGS_GAMEPAD_BINDINGS_TAB = 4;
+static const int SETTINGS_GAMEPAD_SETTINGS_TAB = 5;
+static const int SETTINGS_MISC_TAB = 6;

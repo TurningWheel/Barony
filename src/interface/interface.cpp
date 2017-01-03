@@ -386,6 +386,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT] = 311;
 	joyimpulses[INJOY_MENU_BOOK_NEXT] = 311;
 	joyimpulses[INJOY_MENU_BOOK_PREV] = 310;
+	joyimpulses[INJOY_MENU_SETTINGS_NEXT] = 311;
+	joyimpulses[INJOY_MENU_SETTINGS_PREV] = 310;
 }
 
 void defaultConfig() {
@@ -443,6 +445,8 @@ void defaultConfig() {
 	consoleCommand("/joybind 311 INJOY_MENU_CYCLE_SHOP_RIGHT");
 	consoleCommand("/joybind 311 INJOY_MENU_BOOK_NEXT");
 	consoleCommand("/joybind 310 INJOY_MENU_BOOK_PREV");
+	consoleCommand("/joybind 311 INJOY_MENU_SETTINGS_NEXT");
+	consoleCommand("/joybind 310 INJOY_MENU_SETTINGS_PREV");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -502,7 +506,9 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 	"MENU_CYCLE_SHOP_LEFT",
 	"MENU_CYCLE_SHOP_RIGHT",
 	"MENU_BOOK_NEXT",
-	"MENU_BOOK_PREV"
+	"MENU_BOOK_PREV",
+	"MENU_SETTINGS_NEXT",
+	"MENU_SETTINGS_PREV"
 };
 
 /*-------------------------------------------------------------------------------

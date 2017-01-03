@@ -50,6 +50,7 @@ bool lobby_window=FALSE;
 bool settings_window=FALSE;
 int connect_window=0;
 int charcreation_step=0;
+
 /*
  * settings_tab
  * valid values:
@@ -62,6 +63,14 @@ int charcreation_step=0;
  *		- 6 = Misc settings
  */
 int settings_tab = 0;
+button_t* button_video_tab = nullptr;
+button_t* button_audio_tab = nullptr;
+button_t* button_keyboard_tab = nullptr;
+button_t* button_mouse_tab = nullptr;
+button_t* button_gamepad_bindings_tab = nullptr;
+button_t* button_gamepad_settings_tab = nullptr;
+button_t* button_misc_tab = nullptr;
+
 int score_window=0;
 int resolutions[NUMRESOLUTIONS][2] = {
 	{ 960, 600 },
@@ -149,6 +158,50 @@ double drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
+
+button_t* getSettingsTabButton() {
+	switch ( settings_tab ) {
+		case SETTINGS_VIDEO_TAB:
+			return button_video_tab;
+		case SETTINGS_AUDIO_TAB:
+			return button_audio_tab;
+		case SETTINGS_KEYBOARD_TAB:
+			return button_keyboard_tab;
+		case SETTINGS_MOUSE_TAB:
+			return button_mouse_tab;
+		case SETTINGS_GAMEPAD_BINDINGS_TAB:
+			return button_gamepad_bindings_tab;
+		case SETTINGS_GAMEPAD_SETTINGS_TAB:
+			return button_gamepad_settings_tab;
+		case SETTINGS_MISC_TAB:
+			return button_misc_tab;
+	}
+
+	return nullptr;
+}
+
+void changeSettingsTab(int option) {
+	if ( getSettingsTabButton() ) {
+		getSettingsTabButton()->outline = false;
+	}
+
+	settings_tab = option;
+
+	if ( settings_tab < 0 ) {
+		settings_tab = NUM_SETTINGS_TABS - 1;
+	}
+	if ( settings_tab >= NUM_SETTINGS_TABS ) {
+		settings_tab = 0;
+	}
+
+	if ( getSettingsTabButton() ) {
+		button_t* button = getSettingsTabButton();
+		button->outline = true;
+		int x = button->x + (button->sizex / 2);
+		int y = button->y + (button->sizey / 2);
+		SDL_WarpMouseInWindow(screen, x, y);
+	}
+}
 
 void handleMainMenu(bool mode) {
 	SDL_Rect pos, src, dest;
@@ -1163,8 +1216,17 @@ void handleMainMenu(bool mode) {
 		int hovering_selection = -1; //0 to NUM_SERVER_FLAGS used for the game flags settings, e.g. are traps enabled, are cheats enabled, is minotaur enabled, etc.
 		SDL_Rect tooltip_box;
 
+		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) ) {
+			*inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) = 0;;
+			changeSettingsTab(settings_tab + 1);
+		}
+		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) ) {
+			*inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) = 0;
+			changeSettingsTab(settings_tab - 1);
+		}
+
 		// video tab
-		if( settings_tab==0 ) {
+		if( settings_tab==SETTINGS_VIDEO_TAB ) {
 			// resolution
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1338]);
 			for( c=0; c<NUMRESOLUTIONS; c++ ) {
@@ -1250,7 +1312,7 @@ void handleMainMenu(bool mode) {
 		}
 		
 		// audio tab
-		if( settings_tab==1 ) {
+		if( settings_tab==SETTINGS_AUDIO_TAB ) {
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1348]);
 			doSlider(subx1+24,suby1+84,15,0,128,0,&settings_sfxvolume);
 			ttfPrintText(ttf12, subx1+24, suby1+108, language[1349]);
@@ -1258,7 +1320,7 @@ void handleMainMenu(bool mode) {
 		}
 		
 		// keyboard tab
-		if( settings_tab==2 ) {
+		if( settings_tab==SETTINGS_KEYBOARD_TAB ) {
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1350]);
 
 			bool rebindingkey=FALSE;
@@ -1302,7 +1364,7 @@ void handleMainMenu(bool mode) {
 		}
 		
 		// mouse tab
-		if( settings_tab==3 ) {
+		if( settings_tab==SETTINGS_MOUSE_TAB ) {
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1365]);
 			doSliderF(subx1+24,suby1+84,11,0,128,1,&settings_mousespeed);
 			
@@ -1330,7 +1392,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		//Gamepad tab
-		if (settings_tab == 4)
+		if (settings_tab == SETTINGS_GAMEPAD_BINDINGS_TAB)
 		{
 			ttfPrintText(ttf8, subx1 + 24, suby1 + 60, language[1350]);
 
@@ -1382,7 +1444,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		//General gamepad settings
-		if (settings_tab == 5)
+		if (settings_tab == SETTINGS_GAMEPAD_SETTINGS_TAB)
 		{
 			int current_option_x = subx1 + 24;
 			int current_option_y = suby1 + 60;
@@ -1494,7 +1556,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		// miscellaneous options
-		if (settings_tab == 6)
+		if (settings_tab == SETTINGS_MISC_TAB)
 		{
 			int current_x = subx1;
 			int current_y = suby1 + 60;
@@ -3809,6 +3871,7 @@ void openSettingsWindow() {
 	button->action = &buttonVideoTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_video_tab = button;
 
 	tabx_so_far += strlen(language[1434])*12 + 8;
 
@@ -3820,6 +3883,7 @@ void openSettingsWindow() {
 	button->action = &buttonAudioTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_audio_tab = button;
 
 	tabx_so_far += strlen(language[1435])*12 + 8;
 
@@ -3831,6 +3895,7 @@ void openSettingsWindow() {
 	button->action = &buttonKeyboardTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_keyboard_tab = button;
 
 	tabx_so_far += strlen(language[1436])*12 + 8;
 
@@ -3842,6 +3907,7 @@ void openSettingsWindow() {
 	button->action = &buttonMouseTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_mouse_tab = button;
 
 	tabx_so_far += strlen(language[1437])*12 + 8;
 
@@ -3853,6 +3919,7 @@ void openSettingsWindow() {
 	button->action = &buttonGamepadBindingsTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_gamepad_bindings_tab = button;
 
 	tabx_so_far += strlen(language[1947])*12 + 8;
 
@@ -3864,6 +3931,7 @@ void openSettingsWindow() {
 	button->action = &buttonGamepadSettingsTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_gamepad_settings_tab = button;
 
 	tabx_so_far += strlen(language[1980])*12 + 8;
 
@@ -3875,6 +3943,9 @@ void openSettingsWindow() {
 	button->action = &buttonMiscTab;
 	button->visible = 1;
 	button->focused = 1;
+	button_misc_tab = button;
+
+	changeSettingsTab(settings_tab);
 }
 
 void openSteamLobbyWaitWindow(button_t *my);
@@ -4841,43 +4912,43 @@ void buttonDisconnect(button_t *my) {
 // open the video tab in the settings window
 void buttonVideoTab(button_t *my)
 {
-	settings_tab = 0;
+	changeSettingsTab(SETTINGS_VIDEO_TAB);
 }
 
 // open the audio tab in the settings window
 void buttonAudioTab(button_t *my)
 {
-	settings_tab = 1;
+	changeSettingsTab(SETTINGS_AUDIO_TAB);
 }
 
 // open the keyboard tab in the settings window
 void buttonKeyboardTab(button_t *my)
 {
-	settings_tab = 2;
+	changeSettingsTab(SETTINGS_KEYBOARD_TAB);
 }
 
 // open the mouse tab in the settings window
 void buttonMouseTab(button_t *my)
 {
-	settings_tab = 3;
+	changeSettingsTab(SETTINGS_MOUSE_TAB);
 }
 
 //Open the gamepad bindings tab in the settings window
 void buttonGamepadBindingsTab(button_t *my)
 {
-	settings_tab = 4;
+	changeSettingsTab(SETTINGS_GAMEPAD_BINDINGS_TAB);
 }
 
 //Open the general gamepad settings tab in the settings window
 void buttonGamepadSettingsTab(button_t *my)
 {
-	settings_tab = 5;
+	changeSettingsTab(SETTINGS_GAMEPAD_SETTINGS_TAB);
 }
 
 // open the misc tab in the settings window
 void buttonMiscTab(button_t *my)
 {
-	settings_tab = 6;
+	changeSettingsTab(SETTINGS_MISC_TAB);
 }
 
 // settings accept button

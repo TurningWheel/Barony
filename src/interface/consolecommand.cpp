@@ -475,6 +475,12 @@ void consoleCommand(char *command_str) {
 		} else if (strstr(command_str, "INJOY_MENU_BOOK_PREV")) {
 			joyimpulses[INJOY_MENU_BOOK_PREV] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_BOOK_PREV: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_SETTINGS_NEXT")) {
+			joyimpulses[INJOY_MENU_SETTINGS_NEXT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_SETTINGS_NEXT: %d\n", atoi(&command_str[9]));
+		} else if (strstr(command_str, "INJOY_MENU_SETTINGS_PREV")) {
+			joyimpulses[INJOY_MENU_SETTINGS_PREV] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_SETTINGS_PREV: %d\n", atoi(&command_str[9]));
 		}
 		else
 		{

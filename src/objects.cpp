@@ -210,6 +210,9 @@ button_t *newButton(void) {
 	button->needclick=TRUE;
 	button->action=NULL;
 	strcpy(button->label,"nodef");
+
+	button->outline = false;
+
 	return button;
 }
 

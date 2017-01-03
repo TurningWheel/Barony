@@ -186,6 +186,8 @@ extern bool stop;
 #define INJOY_MENU_CYCLE_SHOP_RIGHT 25
 #define INJOY_MENU_BOOK_NEXT 26
 #define INJOY_MENU_BOOK_PREV 27
+#define INJOY_MENU_SETTINGS_NEXT 28
+#define INJOY_MENU_SETTINGS_PREV 29 //TODO: Only one "cycle tabs" binding?
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
@@ -195,7 +197,7 @@ extern bool stop;
 #define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
 #define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 28
+#define NUM_JOY_IMPULSES 30
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
@@ -295,6 +297,7 @@ typedef struct button_t {
 	int joykey;          // gamepad button used to activate this button.
 	bool pressed;        // whether the button is being pressed or not
 	bool needclick;      // involved in triggering buttons
+	bool outline;        // draw golden border if true. For such things as indicated which settings tab gamepad has selected.
 	
 	// a pointer to the button's location in a list
 	node_t *node;
