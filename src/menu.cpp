@@ -128,15 +128,6 @@ int settings_gamepad_menuy_sensitivity = 1;
 
 Uint32 colorWhite = 0xFFFFFFFF;
 
-/*-------------------------------------------------------------------------------
-
-	handleMainMenu
-	
-	draws & processes the game menu; if passed TRUE, does the whole menu,
-	otherwise just handles the reduced ingame menu
-
--------------------------------------------------------------------------------*/
-
 int firstendmoviealpha[30];
 int secondendmoviealpha[30];
 int intromoviealpha[30];
@@ -158,6 +149,8 @@ double drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
+
+void buttonCloseSettingsSubwindow(button_t* my);
 
 button_t* getSettingsTabButton() {
 	switch ( settings_tab ) {
@@ -202,6 +195,15 @@ void changeSettingsTab(int option) {
 		SDL_WarpMouseInWindow(screen, x, y);
 	}
 }
+
+/*-------------------------------------------------------------------------------
+
+	handleMainMenu
+
+	draws & processes the game menu; if passed TRUE, does the whole menu,
+	otherwise just handles the reduced ingame menu
+
+-------------------------------------------------------------------------------*/
 
 void handleMainMenu(bool mode) {
 	SDL_Rect pos, src, dest;
@@ -3823,7 +3825,8 @@ void openSettingsWindow() {
 	strcpy(button->label, "x");
 	button->x = subx2 - 20; button->y = suby1;
 	button->sizex = 20; button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
+	//button->action = &buttonCloseSubwindow;
+	button->action = &buttonCloseSettingsSubwindow;
 	button->visible = 1;
 	button->focused = 1;
 	button->key=SDL_SCANCODE_ESCAPE;
@@ -4278,6 +4281,15 @@ void buttonCloseSubwindow(button_t *my) {
 	if( SDL_IsTextInputActive() )
 		SDL_StopTextInput();
 	playSound(138,64);
+}
+
+void buttonCloseSettingsSubwindow(button_t *my) {
+	if ( rebindkey != -1 || rebindaction != -1 ) {
+		//Do not close settings subwindow if rebinding a key/gamepad button/whatever.
+		return;
+	}
+
+	buttonCloseSubwindow(my);
 }
 
 void buttonCloseAndEndGameConfirm(button_t *my) {
