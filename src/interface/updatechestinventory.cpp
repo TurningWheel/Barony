@@ -18,6 +18,8 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
+Entity* openedChest[4] = { nullptr };
+
 void repopulateInvItems(list_t *chestInventory) {
 	int c = 0;
 
@@ -285,8 +287,9 @@ void updateChestInventory() {
 				pos.x = CHEST_INVENTORY_X + 393; pos.y = CHEST_INVENTORY_Y;
 				pos.w=0; pos.h=0;
 				drawImage(invclose_bmp, NULL, &pos);
-				if (openedChest[clientnum])
+				if (openedChest[clientnum]) {
 					openedChest[clientnum]->closeChest();
+				}
 			}
 			//Chest inventory grab all items button.
 			if (chest_buttonclick == 10) {

@@ -2111,8 +2111,9 @@ int main(int argc, char **argv) {
 							selectedShopSlot = -1;
 						}
 						attributespage=0;
-						if (openedChest[clientnum])
+						if (openedChest[clientnum]) {
 							openedChest[clientnum]->closeChest();
+						}
 					} else {
 						pauseGame(0,MAXPLAYERS);
 					}
@@ -2167,10 +2168,14 @@ int main(int argc, char **argv) {
 					if( (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) ) {
 						*inputPressed(impulses[IN_STATUS])=0;
 						*inputPressed(joyimpulses[INJOY_STATUS]) = 0;
-						shootmode=(shootmode==FALSE);
-						gui_mode = GUI_MODE_INVENTORY;
-						selectedItem = NULL;
-						inventory_mode = INVENTORY_MODE_ITEM;
+
+						if ( shootmode ) {
+							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
+						} else {
+							shootmode = true;
+						}
+
+						//What even is this code? When should it be run?
 						if( shopkeeper != 0 ) {
 							if( multiplayer != CLIENT ) {
 								Entity *entity = uidToEntity(shopkeeper);
@@ -2195,10 +2200,6 @@ int main(int argc, char **argv) {
 							selectedShopSlot = -1;
 						}
 						if( shootmode==FALSE ) {
-							SDL_SetRelativeMouseMode(SDL_FALSE);
-							SDL_WarpMouseInWindow(screen,xres/2,yres/2);
-							mousex = xres/2; mousey = yres/2;
-							attributespage=0;
 						} else {
 							if (openedChest[clientnum])
 							{

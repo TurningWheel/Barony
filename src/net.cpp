@@ -1797,22 +1797,25 @@ void clientHandlePacket()
 
 	//Multiplayer chest code (client).
 	else if (!strncmp((char *)net_packet->data, "CHST", 4)) {
+		i = (int)SDLNet_Read32(&net_packet->data[4]);
+
 		if (openedChest[clientnum]) {
 			//Close the chest.
 			closeChestClientside();
 		}
-		i = (int)SDLNet_Read32(&net_packet->data[4]);
+
 		for (node=map.entities->first; node!=NULL; node=nextnode) {
 			nextnode = node->next;
 			entity2=(Entity*)node->element;
 			if (entity2->uid==i) {
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
 				list_FreeAll(&chestInv);
-				chestInv.first = NULL;
-				chestInv.last = NULL;
-				shootmode = FALSE;
+				chestInv.first = nullptr;
+				chestInv.last = nullptr;
+				openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 			}
 		}
+
 		return;
 	}
 

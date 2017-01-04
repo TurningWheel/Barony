@@ -337,3 +337,6 @@ extern bool auto_appraise_new_items;
 
 const char *getInputName(Uint32 scancode);
 Sint8 *inputPressed(Uint32 scancode);
+
+//All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
+void openStatusScreen(int whichGUIMode, int whichInventoryMode);

@@ -106,7 +106,6 @@ Uint32 mapseed;
 bool *shoparea = NULL;
 
 // game variables
-Entity* openedChest[4] = { NULL };
 bool shootmode=FALSE;
 Sint8 minimap[64][64];
 bool loadnextlevel=FALSE;

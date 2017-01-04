@@ -101,7 +101,6 @@ extern bool secretlevel;
 extern bool darkmap;
 extern int shaking, bobbing;
 extern int musvolume;
-extern Entity* openedChest[4];
 extern SDL_Surface *title_bmp;
 extern SDL_Surface *logo_bmp;
 extern SDL_Surface *cursor_bmp;

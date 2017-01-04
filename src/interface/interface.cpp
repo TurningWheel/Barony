@@ -864,3 +864,15 @@ void selectHotbarSlot(int slot)
 
 	current_hotbar = slot;
 }
+
+void openStatusScreen(int whichGUIMode, int whichInventoryMode) {
+	shootmode = false;
+	gui_mode = whichGUIMode;
+	selectedItem = nullptr;
+	inventory_mode = whichInventoryMode;
+	SDL_SetRelativeMouseMode(SDL_FALSE);
+	SDL_WarpMouseInWindow(screen, xres / 2, yres / 2);
+	mousex = xres / 2;
+	mousey = yres / 2;
+	attributespage = 0;
+}
