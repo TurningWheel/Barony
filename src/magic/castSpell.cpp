@@ -415,9 +415,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 						//Identify an item.
 						shootmode = FALSE;
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
-						identifygui_active = TRUE;
-						identifygui_appraising = FALSE;
+						identifygui_active = true;
+						identifygui_appraising = false;
 						//identifygui_mode = TRUE;
+
+						//Initialize Identify GUI game controller code here.
+						initIdentifyGUIControllerCode();
 					}
 				}
 			}

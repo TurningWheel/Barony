@@ -226,7 +226,6 @@ void select_inventory_slot(int x, int y)
 		if ( openedChest[clientnum] ) {
 			//Do not want to wrap around if opened chest or shop.
 			warpInv = false;
-
 			y = INVENTORY_SIZEY - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
 			if ( numItemsInChest() > 0 ) { //If chest even has an item...
@@ -238,13 +237,21 @@ void select_inventory_slot(int x, int y)
 			}
 		} else if ( gui_mode == GUI_MODE_SHOP ) {
 			warpInv = false;
-
 			y = INVENTORY_SIZEY - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
 			//Warp into shop inventory if shopkeep has any items.
 			if ( shopinvitems[0] ) {
 				selectedShopSlot = 0;
 				warpMouseToSelectedShopSlot();
+			}
+		} else if ( identifygui_active ) {
+			warpInv = false;
+			y = INVENTORY_SIZEY - 1;
+
+			//Warp into identify GUI "inventory"...if there is anything there.
+			if ( identify_items[0] ) {
+				selectedIdentifySlot = 0;
+				warpMouseToSelectedIdentifySlot();
 			}
 		}
 
@@ -506,9 +513,9 @@ void updatePlayerInventory() {
 			}
 		}
 
-		if ( selectedChestSlot < 0 && selectedShopSlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() )
+		if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() )
 		{
-			if ( selectedChestSlot < 0 && selectedShopSlot ) { //This second check prevents the extra mouse warp.
+			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) { //This second check prevents the extra mouse warp.
 				warpMouseToSelectedInventorySlot();
 			}
 		} else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controller->handleChestMovement() ) {
@@ -518,6 +525,10 @@ void updatePlayerInventory() {
 			}
 		} else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controller->handleShopMovement() ) {
 			if ( selectedShopSlot < 0 ) {
+				warpMouseToSelectedInventorySlot();
+			}
+		} else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controller->handleIdentifyMovement() ) {
+			if ( selectedIdentifySlot < 0 ) {
 				warpMouseToSelectedInventorySlot();
 			}
 		}
@@ -549,9 +560,9 @@ void updatePlayerInventory() {
 		drawLine(pos.x,pos.y+y*INVENTORY_SLOTSIZE,pos.x+pos.w,pos.y+y*INVENTORY_SLOTSIZE,SDL_MapRGB(mainsurface->format,150,150,150),255);
 	}
 
-	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 ) {
+	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) {
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
-		//Only if item menu is not open, no chest slot is selected, and no shop slot is selected.
+		//Only if item menu is not open, no chest slot is selected, no shop slot is selected, and no Identify GUI slot is selected.
 		pos.w = INVENTORY_SLOTSIZE; pos.h = INVENTORY_SLOTSIZE;
 		for (x = 0; x < INVENTORY_SIZEX; ++x)
 		{
@@ -803,13 +814,13 @@ void updatePlayerInventory() {
 					if( stats[clientnum]->HP<=0 )
 						break;
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 ) {
+					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) {
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
-					if( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0)) && !selectedItem && !itemMenuOpen ) {
+					if( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0)) && !selectedItem && !itemMenuOpen ) {
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
 							dropItem(item, clientnum); // Quick item drop
 						} else {
@@ -827,13 +838,16 @@ void updatePlayerInventory() {
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
-					} else if( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0)) && !itemMenuOpen && !selectedItem ) {
+					} else if( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0)) && !itemMenuOpen && !selectedItem ) {
 						if( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) {
 							// auto-appraise the item
 							identifygui_active = false;
 							identifygui_appraising = true;
 							identifyGUIIdentify(item);
 							mousestatus[SDL_BUTTON_RIGHT]=0;
+
+							//Cleanup identify GUI gamecontroller code here.
+							selectedIdentifySlot = -1;
 						} else {
 							// open a drop-down menu of options for "using" the item
 							itemMenuOpen = true;
@@ -1184,6 +1198,10 @@ inline void executeItemMenuOption1(Item *item, bool is_potion_bad = false)
 		//Option 1 = appraise.
 		identifygui_active = false;
 		identifygui_appraising = true;
+
+		//Cleanup identify GUI gamecontroller code here.
+		selectedIdentifySlot = -1;
+
 		identifyGUIIdentify(item);
 	}
 	else
@@ -1233,6 +1251,10 @@ inline void executeItemMenuOption2(Item *item)
 		//Option 2 = appraise.
 		identifygui_active = false;
 		identifygui_appraising = true;
+
+		//Cleanup identify GUI gamecontroller code here.
+		selectedIdentifySlot = -1;
+
 		identifyGUIIdentify(item);
 	}
 }

@@ -66,6 +66,7 @@ void startTradingServer(Entity *entity, int player) {
 		shopkeepertype = entity->skill[18];
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
+		identifygui_active = false;
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr ) {

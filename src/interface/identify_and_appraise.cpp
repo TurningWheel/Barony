@@ -17,6 +17,54 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
+//Identify GUI definitions.
+bool identifygui_active = FALSE;
+bool identifygui_appraising = FALSE;
+int identifygui_offset_x = 0;
+int identifygui_offset_y = 0;
+bool dragging_identifyGUI = FALSE;
+int identifyscroll = 0;
+Item *identify_items[NUM_IDENTIFY_GUI_ITEMS];
+SDL_Surface *identifyGUI_img;
+
+int selectedIdentifySlot = -1;
+
+void rebuildIdentifyGUIInventory() {
+	list_t *identify_inventory = &stats[clientnum]->inventory;
+	node_t* node = nullptr;
+	Item* item = nullptr;
+	int c = 0;
+
+	if (identify_inventory) {
+		//Count the number of items in the identify GUI "inventory".
+		for (node = identify_inventory->first; node != NULL; node = node->next) {
+			item = (Item *) node->element;
+			if (item && !item->identified)
+				c++;
+		}
+		identifyscroll = std::max(0, std::min(identifyscroll, c - 4));
+		for (c = 0; c < 4; ++c) {
+			identify_items[c] = NULL;
+		}
+		c = 0;
+
+		//Assign the visible items to the GUI slots.
+		for (node = identify_inventory->first; node != NULL; node = node->next) {
+			if (node->element) {
+				item = (Item *) node->element;
+				if (item && !item->identified) { //Skip over all identified items.
+					c++;
+					if (c <= identifyscroll)
+						continue;
+					identify_items[c - identifyscroll - 1] = item;
+					if (c > 3 + identifyscroll)
+						break;
+				}
+			}
+		}
+	}
+}
+
 void updateIdentifyGUI() {
 	//if (openedChest[clientnum])
 	//	return; //Cannot have the identify and chest GUIs open at the same time.
@@ -130,61 +178,60 @@ void updateIdentifyGUI() {
 				drawImage(invclose_bmp, NULL, &pos);
 				identifygui_active = FALSE;
 				identifygui_appraising = FALSE;
+
+				//Cleanup identify GUI gamecontroller code here.
+				selectedIdentifySlot = -1;
 			}
 
 			Item *item = NULL;
-			if (omousex >= IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 28)) {
-				pos.x = IDENTIFY_GUI_X + 12;
+
+			bool selectingSlot = false;
+			SDL_Rect slotPos;
+			slotPos.x = IDENTIFY_GUI_X;
+			slotPos.w = inventoryoptionChest_bmp->w;
+			slotPos.y = IDENTIFY_GUI_Y + 16;
+			slotPos.h = inventoryoptionChest_bmp->h;
+			for ( int i = 0; i < NUM_IDENTIFY_GUI_ITEMS; ++i, slotPos.y += slotPos.h ) {
+				pos.x = slotPos.x + 12;
 				pos.w = 0; pos.h = 0;
-				if (omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + 34) { //First inventory slot.
-					pos.y = IDENTIFY_GUI_Y + 16;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if (mousestatus[SDL_BUTTON_LEFT]) {
+
+				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && identify_items[i] ) {
+					pos.y = slotPos.y;
+					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+					selectedIdentifySlot = i;
+					selectingSlot = true;
+					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
+						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						identifyGUIIdentify(identify_items[0]);
+						identifyGUIIdentify(identify_items[i]);
+
+						rebuildIdentifyGUIInventory();
+						if ( identify_items[i] == nullptr ) {
+							if ( identify_items[0] == nullptr ) {
+								//Go back to inventory.
+								selectedIdentifySlot = -1;
+								warpMouseToSelectedInventorySlot();
+							} else {
+								//Move up one slot.
+								--selectedIdentifySlot;
+								warpMouseToSelectedIdentifySlot();
+							}
+						}
 					}
 				}
-				else if (omousey >= IDENTIFY_GUI_Y + 34 && omousey < IDENTIFY_GUI_Y + 52) {
-					pos.y = IDENTIFY_GUI_Y + 34;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if (mousestatus[SDL_BUTTON_LEFT]) {
-						mousestatus[SDL_BUTTON_LEFT]=0;
-						identifyGUIIdentify(identify_items[1]);
-					}
-				}
-				else if (omousey >= IDENTIFY_GUI_Y + 52 && omousey < IDENTIFY_GUI_Y + 70 ) {
-					pos.y = IDENTIFY_GUI_Y + 52;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
-						mousestatus[SDL_BUTTON_LEFT]=0;
-						identifyGUIIdentify(identify_items[2]);
-					}
-				}
-				else if (omousey >= IDENTIFY_GUI_Y + 70 && omousey < IDENTIFY_GUI_Y + 88) {
-					pos.y = IDENTIFY_GUI_Y + 70;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
-						mousestatus[SDL_BUTTON_LEFT]=0;
-						identifyGUIIdentify(identify_items[3]);
-					}
-				}
+			}
+
+			if ( !selectingSlot ) {
+				selectedIdentifySlot = -1;
 			}
 
 			//Okay, now prepare to render all the items.
 			y = IDENTIFY_GUI_Y + 22; c = 0;
 			if (identify_inventory) {
-				for (node = identify_inventory->first; node != NULL; node = node->next) {
-					item = (Item *) node->element;
-					if (item && !item->identified)
-						c++;
-				}
-				identifyscroll = std::max(0, std::min(identifyscroll, c - 4));
-				for (c = 0; c < 4; ++c) {
-					identify_items[c] = NULL;
-				}
-				c = 0;
+				rebuildIdentifyGUIInventory();
 
 				//Actually render the items.
+				c = 0;
 				for (node = identify_inventory->first; node != NULL; node = node->next) {
 					if (node->element) {
 						item = (Item *) node->element;
@@ -192,7 +239,6 @@ void updateIdentifyGUI() {
 							c++;
 							if (c <= identifyscroll)
 								continue;
-							identify_items[c - identifyscroll - 1] = item;
 							char tempstr[64] = { 0 };
 							strncpy(tempstr,item->description(),46);
 							if( strlen(tempstr)==46 )
@@ -243,6 +289,9 @@ void identifyGUIIdentify(Item *item) {
 		//printlog( "DEBUGGING: Appraisal timer = %i.\n", appraisal_timer);
 	}
 	identifygui_active = FALSE;
+
+	//Cleanup identify GUI gamecontroller code here.
+	selectedIdentifySlot = -1;
 }
 
 int getAppraisalTime(Item *item) {
@@ -253,4 +302,92 @@ int getAppraisalTime(Item *item) {
 		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
 	appraisal_time = std::min(std::max(1,appraisal_time),36000);
 	return appraisal_time;
+}
+
+inline Item* getItemInfoFromIdentifyGUI(int slot) {
+	if ( slot >= 4 ) {
+		return nullptr; //Out of bounds,
+	}
+
+	return identify_items[slot];
+}
+
+void selectIdentifySlot(int slot) {
+	if ( slot < selectedIdentifySlot ) {
+		//Moving up.
+
+		/*
+		 * Possible cases:
+		 * * 1) Move cursor up the GUI through different selectedIdentifySlot.
+		 * * 2) Page up through identifyscroll--
+		 * * 3) Scrolling up past top of Identify GUI, no identifyscroll (move back to inventory)
+		 */
+
+		if ( selectedIdentifySlot <= 0 ) {
+			//Covers cases 2 & 3.
+
+			/*
+			 * Possible cases:
+			 * * A) Hit very top of Identify "inventory", can't go any further. Return to inventory.
+			 * * B) Page up, scrolling through identifyscroll.
+			 */
+
+			if ( identifyscroll <= 0 ) {
+				//Case 3/A: Return to inventory.
+				selectedIdentifySlot = -1;
+			} else {
+				//Case 2/B: Page up through Identify "inventory".
+				--identifyscroll;
+			}
+		} else {
+			//Covers case 1.
+
+			//Move cursor up the GUI through different selectedIdentifySlot (--selectedIdentifySlot).
+			--selectedIdentifySlot;
+			warpMouseToSelectedIdentifySlot();
+		}
+	} else if ( slot > selectedIdentifySlot ) {
+		//Moving down.
+
+		/*
+		 * Possible cases:
+		 * * 1) Moving cursor down through GUI through different selectedIdentifySlot.
+		 * * 2) Scrolling down past bottom of Identify GUI through identifyscroll++
+		 * * 3) Scrolling down past bottom of Identify GUI, max Identify scroll (revoke move -- can't go beyond limit of Identify GUI).
+		 */
+
+		if ( selectedIdentifySlot >= NUM_IDENTIFY_GUI_ITEMS - 1 ) {
+			//Covers cases 2 & 3.
+			++identifyscroll; //identifyscroll is automatically sanitized in updateIdentifyGUI().
+		} else {
+			//Covers case 1.
+			//Move cursor down through the GUi through different selectedIdentifySlot (++selectedIdentifySlot).
+			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
+
+			/*
+			 * Two possible cases:
+			 * * A) Items below this. Advance selectedIdentifySlot to them.
+			 * * B) On last item already. Do nothing (revoke movement).
+			 */
+
+			Item *item = getItemInfoFromIdentifyGUI(selectedIdentifySlot + 1);
+
+			if ( item ) {
+				++selectedIdentifySlot;
+				warpMouseToSelectedIdentifySlot();
+			} else {
+				//No more items. Stop.
+			}
+		}
+	}
+}
+
+void warpMouseToSelectedIdentifySlot() {
+	SDL_Rect slotPos;
+	slotPos.x = IDENTIFY_GUI_X;
+	slotPos.w = inventoryoptionChest_bmp->w;
+	slotPos.h = inventoryoptionChest_bmp->h;
+	slotPos.y = IDENTIFY_GUI_Y + 16 + (slotPos.h * selectedIdentifySlot);
+
+	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }

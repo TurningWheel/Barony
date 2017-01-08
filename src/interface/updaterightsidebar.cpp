@@ -16,6 +16,7 @@
 #include "../stat.hpp"
 #include "interface.hpp"
 #include "../magic/magic.hpp"
+#include "../player.hpp"
 
 void updateRightSidebar() {
 	//TODO: Update this to manage spells & skills.
@@ -55,6 +56,9 @@ void updateRightSidebar() {
 			identifygui_active = TRUE;
 			identifygui_appraising = TRUE;
 			gui_mode = GUI_MODE_INVENTORY;
+
+			//Initialize Identify GUI game controller code here.
+			initIdentifyGUIControllerCode();
 		}
 	} else {
 		drawImage(rightsidebar_slot_img, NULL, &pos);

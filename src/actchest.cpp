@@ -381,6 +381,7 @@ void actChest(Entity *my) {
 				messagePlayer(chestclicked, language[459]);
 				CHEST_OPENER = chestclicked;
 				openedChest[chestclicked] = my;
+				identifygui_active = false;
 				if (chestclicked != 0 && multiplayer == SERVER) {
 					//Send all of the items to the client.
 					strcpy((char *)net_packet->data, "CHST"); //Chest.

@@ -205,8 +205,14 @@ extern int identifygui_offset_x;
 extern int identifygui_offset_y;
 extern bool dragging_identifyGUI; //The identify GUI is being dragged.
 extern int identifyscroll;
-extern Item *identify_items[4];
+static const int NUM_IDENTIFY_GUI_ITEMS = 4;
+extern Item *identify_items[NUM_IDENTIFY_GUI_ITEMS];
 extern SDL_Surface *identifyGUI_img;
+
+extern int selectedIdentifySlot;
+
+void selectIdentifySlot(int slot);
+void warpMouseToSelectedIdentifySlot();
 
 void updateIdentifyGUI(); //Updates the identify item GUI.
 void identifyGUIIdentify(Item *item); //Identify the given item.
@@ -339,4 +345,4 @@ const char *getInputName(Uint32 scancode);
 Sint8 *inputPressed(Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
-void openStatusScreen(int whichGUIMode, int whichInventoryMode);
+void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.

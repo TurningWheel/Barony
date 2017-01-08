@@ -428,8 +428,6 @@ void selectShopSlot(int slot) {
 			Item *item = getItemInfoFromShop(selectedShopSlot + 1);
 
 			if ( item ) {
-				//free(item); //Cleanup duty.
-
 				++selectedShopSlot;
 				warpMouseToSelectedShopSlot();
 			} else {

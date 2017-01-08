@@ -1218,6 +1218,7 @@ void clientHandlePacket()
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		shopitemscroll = 0;
+		identifygui_active = false; //Really need a centralized function to open up whatever screen/inventory.
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr ) {
@@ -1809,6 +1810,7 @@ void clientHandlePacket()
 			entity2=(Entity*)node->element;
 			if (entity2->uid==i) {
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
+				identifygui_active = false;
 				list_FreeAll(&chestInv);
 				chestInv.first = nullptr;
 				chestInv.last = nullptr;
@@ -1850,10 +1852,14 @@ void clientHandlePacket()
 	//Open up the GUI to identify an item.
 	else if (!strncmp((char *)net_packet->data, "IDEN", 4)) {
 		//identifygui_mode = TRUE;
-		identifygui_active = TRUE;
-		identifygui_appraising = FALSE;
+		identifygui_active = true;
+		identifygui_appraising = false;
 		shootmode = FALSE;
 		gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+
+		//Initialize Identify GUI game controller code here.
+		initIdentifyGUIControllerCode();
+
 		return;
 	}
 

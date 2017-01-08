@@ -138,6 +138,12 @@ public:
 	bool handleShopMovement();
 
 	/*
+	 * Uses dpad to move the cursor around a shop's inventory and select items.
+	 * Returns true if moved.
+	 */
+	bool handleIdentifyMovement();
+
+	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */
@@ -165,6 +171,8 @@ public:
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
 };
+
+void initIdentifyGUIControllerCode();
 
 extern Player **players;
 //In the process of switching from the old entity player array, all of the old uses of player need to be hunted down and then corrected to account for the new array.

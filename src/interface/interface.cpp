@@ -56,16 +56,6 @@ int selectedChestSlot = -1;
 int selected_inventory_slot_x = 0;
 int selected_inventory_slot_y = 0;
 
-//Identify GUI definitions.
-bool identifygui_active = FALSE;
-bool identifygui_appraising = FALSE;
-int identifygui_offset_x = 0;
-int identifygui_offset_y = 0;
-bool dragging_identifyGUI = FALSE;
-int identifyscroll = 0;
-Item *identify_items[4];
-SDL_Surface *identifyGUI_img;
-
 //Remove curse GUI definitions.
 bool removecursegui_active = FALSE;
 bool removecursegui_appraising = FALSE;

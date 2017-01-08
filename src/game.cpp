@@ -1126,8 +1126,11 @@ void gameLogic(void) {
 		// Automatically identify items, shortest time required first
 		if ( auto_appraise_target != NULL )
 		{
-			identifygui_active = FALSE;
-			identifygui_appraising = TRUE;
+			//Cleanup identify GUI gamecontroller code here.
+			selectedIdentifySlot = -1;
+
+			identifygui_active = false;
+			identifygui_appraising = true;
 			identifyGUIIdentify(auto_appraise_target);
 		}
 	}
@@ -2088,6 +2091,8 @@ int main(int argc, char **argv) {
 					if( !shootmode ) {
 						shootmode = TRUE;
 						gui_mode = GUI_MODE_INVENTORY;
+						identifygui_active = false;
+						selectedIdentifySlot = -1;
 						if( shopkeeper != 0 ) {
 							if( multiplayer != CLIENT ) {
 								Entity *entity = uidToEntity(shopkeeper);
@@ -2173,6 +2178,8 @@ int main(int argc, char **argv) {
 							openStatusScreen(GUI_MODE_INVENTORY, INVENTORY_MODE_ITEM);
 						} else {
 							shootmode = true;
+							identifygui_active = false;
+							selectedIdentifySlot = -1;
 						}
 
 						//What even is this code? When should it be run?
@@ -2345,8 +2352,11 @@ int main(int argc, char **argv) {
 						//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
 						if (identifygui_appraising) {
 							//Close the identify GUI if appraising.
-							identifygui_active = FALSE;
-							identifygui_appraising = FALSE;
+							identifygui_active = false;
+							identifygui_appraising = false;
+
+							//Cleanup identify GUI gamecontroller code here.
+							selectedIdentifySlot = -1;
 						}
 						removecursegui_active = FALSE;
 						closeBookGUI();
