@@ -135,3 +135,18 @@ static const int SETTINGS_MOUSE_TAB = 3;
 static const int SETTINGS_GAMEPAD_BINDINGS_TAB = 4;
 static const int SETTINGS_GAMEPAD_SETTINGS_TAB = 5;
 static const int SETTINGS_MISC_TAB = 6;
+
+//Confirm resolution window stuff.
+extern bool resolutionChanged;
+extern bool confirmResolutionWindow;
+extern int resolutionConfirmationTimer;
+static const int RESOLUTION_CONFIRMATION_TIME = 10000; //Time in milliseconds before resolution reverts.
+extern Sint32 oldXres;
+extern Sint32 oldYres;
+extern button_t* revertResolutionButton;
+
+void applySettings();
+void openConfirmResolutionWindow();
+void buttonAcceptResolution(button_t* my);
+void buttonRevertResolution(button_t* my);
+void revertResolution();

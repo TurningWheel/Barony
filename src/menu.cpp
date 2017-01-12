@@ -150,6 +150,14 @@ bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
 
+//Confirm resolution window stuff.
+bool resolutionChanged = false;
+bool confirmResolutionWindow = false;
+int resolutionConfirmationTimer = 0;
+Sint32 oldXres;
+Sint32 oldYres;
+button_t* revertResolutionButton = nullptr;
+
 void buttonCloseSettingsSubwindow(button_t* my);
 
 button_t* getSettingsTabButton() {
@@ -193,6 +201,78 @@ void changeSettingsTab(int option) {
 		int x = button->x + (button->sizex / 2);
 		int y = button->y + (button->sizey / 2);
 		SDL_WarpMouseInWindow(screen, x, y);
+	}
+}
+
+void navigateMainMenuItems(bool mode) {
+	int warpx, warpy;
+	if (menuselect == 0)
+	{
+		//No menu item selected.
+		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+		{
+			keystatus[SDL_SCANCODE_UP] = 0;
+			*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+			draw_cursor = false;
+			menuselect = 1;
+			//Warp cursor to menu item, for gamepad convenience.
+			warpx = 50 + 18;
+			warpy = (yres / 4) + 80 + (18 / 2); //I am a wizard. I hate magic numbers.
+			SDL_WarpMouseInWindow(screen, warpx, warpy);
+		}
+		else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+		{
+			keystatus[SDL_SCANCODE_DOWN] = 0;
+			*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+			draw_cursor = false;
+			menuselect = 1;
+			warpx = 50 + 18;
+			warpy = (yres / 4) + 80 + (18 / 2);
+			SDL_WarpMouseInWindow(screen, warpx, warpy);
+		}
+	}
+	else
+	{
+		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+		{
+			keystatus[SDL_SCANCODE_UP] = 0;
+			*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+			draw_cursor = false;
+			menuselect--;
+			if (menuselect == 0)
+			{
+				if (mode) {
+					menuselect = 6;
+				} else {
+					menuselect = 4 + (multiplayer != CLIENT);
+				}
+			}
+
+			warpx = 50 + 18;
+			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
+			SDL_WarpMouseInWindow(screen, warpx, warpy);
+		}
+		else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+		{
+			keystatus[SDL_SCANCODE_DOWN] = 0;
+			*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+			draw_cursor = false;
+			menuselect++;
+			if (mode)
+			{
+				if (menuselect > 6)
+					menuselect = 1;
+			}
+			else
+			{
+				if (menuselect > 4 +( multiplayer != CLIENT))
+					menuselect = 1;
+			}
+
+			warpx = 50 + 18;
+			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
+			SDL_WarpMouseInWindow(screen, warpx, warpy);
+		}
 	}
 }
 
@@ -280,76 +360,7 @@ void handleMainMenu(bool mode) {
 		// navigate with arrow keys
 		if (!subwindow)
 		{
-			int warpx, warpy;
-			if (menuselect == 0)
-			{
-				//No menu item selected.
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-				{
-					keystatus[SDL_SCANCODE_UP] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
-					draw_cursor = false;
-					menuselect = 1;
-					//Warp cursor to menu item, for gamepad convenience.
-					//warpx = 50 + ((strlen(language[1303 + (menuselect - 1)]) * 18) / 2);
-					warpx = 50 + 18;
-					warpy = (yres / 4) + 80 + (18 / 2); //I am a wizard. I hate magic numbers.
-					SDL_WarpMouseInWindow(screen, warpx, warpy);
-				}
-				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-				{
-					keystatus[SDL_SCANCODE_DOWN] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
-					draw_cursor = false;
-					menuselect = 1;
-					warpx = 50 + 18;
-					warpy = (yres / 4) + 80 + (18 / 2);
-					SDL_WarpMouseInWindow(screen, warpx, warpy);
-				}
-			}
-			else
-			{
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-				{
-					keystatus[SDL_SCANCODE_UP] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
-					draw_cursor = false;
-					menuselect--;
-					if (menuselect == 0)
-					{
-						if (mode) {
-							menuselect = 6;
-						} else {
-							menuselect = 4 + (multiplayer != CLIENT);
-						}
-					}
-
-					warpx = 50 + 18;
-					warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
-					SDL_WarpMouseInWindow(screen, warpx, warpy);
-				}
-				else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-				{
-					keystatus[SDL_SCANCODE_DOWN] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
-					draw_cursor = false;
-					menuselect++;
-					if (mode)
-					{
-						if (menuselect > 6)
-							menuselect = 1;
-					}
-					else
-					{
-						if (menuselect > 4 +( multiplayer != CLIENT))
-							menuselect = 1;
-					}
-
-					warpx = 50 + 18;
-					warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
-					SDL_WarpMouseInWindow(screen, warpx, warpy);
-				}
-			}
+			navigateMainMenuItems(mode);
 		}
 
 		// gray text color
@@ -374,6 +385,7 @@ void handleMainMenu(bool mode) {
 				//...etc
 			 */
 
+			//"Start Game" button.
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1303])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
 				menuselect = 1;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
@@ -394,6 +406,7 @@ void handleMainMenu(bool mode) {
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+80, language[1303]);
 			}
+			//"Introduction" button.
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1304])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
 				menuselect = 2;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1304]);
@@ -412,6 +425,7 @@ void handleMainMenu(bool mode) {
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+104, language[1304]);
 			}
+			//"Statistics" Button.
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1305])*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
 				menuselect = 3;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, language[1305]);
@@ -469,6 +483,7 @@ void handleMainMenu(bool mode) {
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+128, language[1305]);
 			}
+			//"Settings" button.
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
 				menuselect = 4;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1306]);
@@ -483,6 +498,7 @@ void handleMainMenu(bool mode) {
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+152, language[1306]);
 			}
+			//"Credits" button
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1307])*18 && omousey >= yres/4+176 && omousey < yres/4+176+18) || (menuselect==5)) && subwindow==0 && introstage==1 ) {
 				menuselect = 5;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+176, colorGray, language[1307]);
@@ -498,6 +514,7 @@ void handleMainMenu(bool mode) {
 			} else {
 				ttfPrintText(ttf16, 50, yres/4+176, language[1307]);
 			}
+			//"Quit" button.
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1308])*18 && omousey >= yres/4+200 && omousey < yres/4+200+18) || (menuselect==6)) && subwindow==0 && introstage==1 ) {
 				menuselect = 6;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+200, colorGray, language[1308]);
@@ -797,7 +814,21 @@ void handleMainMenu(bool mode) {
 			}
 		}
 		#endif
-		
+
+		//Confirm Resolution Change Window
+		if ( confirmResolutionWindow ) {
+			subx1 = xres/2-128;
+			subx2 = xres/2+128;
+			suby1 = yres/2-40;
+			suby2 = yres/2+40;
+			drawWindowFancy(subx1, suby1, subx2, suby2);
+
+			if ( SDL_GetTicks() >= resolutionConfirmationTimer + RESOLUTION_CONFIRMATION_TIME ) {
+				//Automatically revert.
+				buttonRevertResolution(revertResolutionButton);
+			}
+		}
+
 		// draw subwindow
 		if( subwindow ) {
 			drawWindowFancy(subx1,suby1,subx2,suby2);
@@ -1243,6 +1274,7 @@ void handleMainMenu(bool mode) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							settings_xres = resolutions[c][0];
 							settings_yres = resolutions[c][1];
+							resolutionChanged = true;
 						}
 					}
 				}
@@ -2804,7 +2836,7 @@ void handleMainMenu(bool mode) {
 			}
 		}
 	}
-	
+
 	// handle fade actions
 	if( fadefinished ) {
 		if( introstage==2 ) { // quit game
@@ -3947,6 +3979,10 @@ void openSettingsWindow() {
 	button->focused = 1;
 	button_misc_tab = button;
 
+	//Initialize resolution confirmation window related variables.
+	resolutionChanged = false;
+	resolutionConfirmationTimer = 0;
+
 	changeSettingsTab(settings_tab);
 }
 
@@ -4962,8 +4998,7 @@ void buttonMiscTab(button_t *my)
 	changeSettingsTab(SETTINGS_MISC_TAB);
 }
 
-// settings accept button
-void buttonSettingsAccept(button_t *my) {
+void applySettings() {
 	int c;
 
 	// set video options
@@ -4975,6 +5010,8 @@ void buttonSettingsAccept(button_t *my) {
 	spawn_blood = settings_spawn_blood;
 	colorblind = settings_colorblind;
 	vidgamma = settings_gamma;
+	oldXres = xres;
+	oldYres = yres;
 	xres = settings_xres;
 	yres = settings_yres;
 	camera.winx = 0;
@@ -5000,7 +5037,7 @@ void buttonSettingsAccept(button_t *my) {
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 #endif
-	
+
 	// set keyboard options
 	for (c = 0; c < NUMIMPULSES; c++)
 	{
@@ -5039,18 +5076,102 @@ void buttonSettingsAccept(button_t *my) {
 	gamepad_menux_sensitivity = settings_gamepad_menux_sensitivity;
 	gamepad_menuy_sensitivity = settings_gamepad_menuy_sensitivity;
 
-	// we need to reposition the settings window now.
+	saveConfig("default.cfg");
+}
+
+void openConfirmResolutionWindow() {
+	mousestatus[SDL_BUTTON_LEFT] = 0;
+	keystatus[SDL_SCANCODE_RETURN] = 0;
+	*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+	playSound(139, 64);
+
+	//Create confirmation window
+	subwindow = 1;
+	subx1 = xres/2-128;
+	subx2 = xres/2+128;
+	suby1 = yres/2-40;
+	suby2 = yres/2+40;
+	strcpy(subtext, "Testing resolution.\nWill revert in 10 seconds.");
+
+	//Accept button
+	button_t* button = newButton();
+	strcpy(button->label, "Accept");
+	button->x=subx1+8; button->y=suby2-28;
+	button->sizex=strlen("Accept")*12+8; button->sizey=20;
+	button->action=&buttonAcceptResolution;
+	button->visible=1;
+	button->focused=1;
+	button->key=SDL_SCANCODE_RETURN;
+	button->joykey = joyimpulses[INJOY_MENU_NEXT];
+
+	//Revert button
+	button = newButton();
+	strcpy(button->label, "Revert");
+	button->x=subx2-strlen("Revert")*12-16; button->y=suby2-28;
+	button->sizex=strlen("Revert")*12+8; button->sizey=20;
+	button->action=&buttonRevertResolution;
+	button->visible=1;
+	button->focused=1;
+	button->key=SDL_SCANCODE_ESCAPE;
+	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+	revertResolutionButton = button;
+
+	resolutionConfirmationTimer = SDL_GetTicks();
+	confirmResolutionWindow = true;
+}
+
+void buttonAcceptResolution(button_t* my) {
+	confirmResolutionWindow = false;
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	openSettingsWindow();
-	saveConfig("default.cfg");
+	revertResolutionButton = nullptr;
+
+	applySettings();
+}
+
+void buttonRevertResolution(button_t* my) {
+	revertResolution();
+
+	confirmResolutionWindow = false;
+	buttonCloseSubwindow(my);
+	list_FreeAll(&button_l);
+	deleteallbuttons=TRUE;
+	revertResolutionButton = nullptr;
+}
+
+void revertResolution() {
+	settings_xres = oldXres;
+	settings_yres = oldYres;
+
+	applySettings();
+}
+
+// settings accept button
+void buttonSettingsAccept(button_t *my) {
+	applySettings();
+
+	if ( resolutionChanged ) {
+		buttonCloseSettingsSubwindow(my);
+		resolutionChanged = false;
+		list_FreeAll(&button_l);
+		deleteallbuttons=TRUE;
+		openConfirmResolutionWindow();
+	} else {
+		// we need to reposition the settings window now.
+		buttonCloseSubwindow(my);
+		list_FreeAll(&button_l);
+		deleteallbuttons=TRUE;
+		openSettingsWindow();
+	}
 }
 
 // settings okay button
 void buttonSettingsOK(button_t *my) {
 	buttonSettingsAccept(my);
-	buttonCloseSubwindow(my);
+	if ( !confirmResolutionWindow ) {
+		buttonCloseSubwindow(my);
+	}
 }
 
 // next score button (statistics window)
