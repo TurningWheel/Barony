@@ -45,7 +45,7 @@ void addMessage(Uint32 color, char *content, ...) {
 		va_list argptr;
 		int c, i;
 		char str[1024] = { 0 };
-	
+
 		if (content != NULL) {
 			va_start(argptr, content);
 			i=vsnprintf(str,1023,content,argptr);
@@ -108,7 +108,7 @@ void addMessage(Uint32 color, char *content, ...) {
 			printlog( "[addMessage()] Failed to allocate memory for new string!\n" );
 			exit(1); //Should it do this?
 		}
-	
+
 		new_message->text->color=color;
 		new_message->text->lines=1;
 		if (content != NULL) {
@@ -200,7 +200,7 @@ void updateMessages() {
 		tempNode = tempNode->prev;
 		c++;
 	}
-	
+
 	for( node=notification_messages.first; node!=NULL; node=nextnode ) {
 		nextnode = node->next;
 		current = (Message* )node->element;

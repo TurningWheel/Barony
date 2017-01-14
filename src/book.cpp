@@ -51,7 +51,7 @@ void createBooks() {
 			// allocate memory for books
 			numbooks = list_Size(discoveredbooks);
 			books = (book_t **) malloc(sizeof(book_t *) * numbooks); //Allocate memory for all of the books.
-			
+
 			// sort books alphabetically (bubblesort)
 			do {
 				unsorted = FALSE;
@@ -71,7 +71,7 @@ void createBooks() {
 					}
 				}
 			} while( unsorted );
-			
+
 			// create books
 			for(node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i) {
 				books[i] = (book_t *) malloc(sizeof(book_t));
@@ -97,60 +97,60 @@ void createBooks() {
 
 bool isLetter(char character) {
 	switch (tolower(character)) {
-		case 'a':
-			return TRUE;
-		case 'b':
-			return TRUE;
-		case 'c':
-			return TRUE;
-		case 'd':
-			return TRUE;
-		case 'e':
-			return TRUE;
-		case 'f':
-			return TRUE;
-		case 'g':
-			return TRUE;
-		case 'h':
-			return TRUE;
-		case 'i':
-			return TRUE;
-		case 'j':
-			return TRUE;
-		case 'k':
-			return TRUE;
-		case 'l':
-			return TRUE;
-		case 'm':
-			return TRUE;
-		case 'n':
-			return TRUE;
-		case 'o':
-			return TRUE;
-		case 'p':
-			return TRUE;
-		case 'q':
-			return TRUE;
-		case 'r':
-			return TRUE;
-		case 's':
-			return TRUE;
-		case 't':
-			return TRUE;
-		case 'u':
-			return TRUE;
-		case 'v':
-			return TRUE;
-		case 'w':
-			return TRUE;
-		case 'x':
-			return TRUE;
-		case 'y':
-			return TRUE;
-		case 'z':
-			return TRUE;
-		default:
-			return FALSE;
+	case 'a':
+		return TRUE;
+	case 'b':
+		return TRUE;
+	case 'c':
+		return TRUE;
+	case 'd':
+		return TRUE;
+	case 'e':
+		return TRUE;
+	case 'f':
+		return TRUE;
+	case 'g':
+		return TRUE;
+	case 'h':
+		return TRUE;
+	case 'i':
+		return TRUE;
+	case 'j':
+		return TRUE;
+	case 'k':
+		return TRUE;
+	case 'l':
+		return TRUE;
+	case 'm':
+		return TRUE;
+	case 'n':
+		return TRUE;
+	case 'o':
+		return TRUE;
+	case 'p':
+		return TRUE;
+	case 'q':
+		return TRUE;
+	case 'r':
+		return TRUE;
+	case 's':
+		return TRUE;
+	case 't':
+		return TRUE;
+	case 'u':
+		return TRUE;
+	case 'v':
+		return TRUE;
+	case 'w':
+		return TRUE;
+	case 'x':
+		return TRUE;
+	case 'y':
+		return TRUE;
+	case 'z':
+		return TRUE;
+	default:
+		return FALSE;
 	}
 	return FALSE;
 }
@@ -166,12 +166,12 @@ bool isCharacterPartOfWord(char *text, int index) {
 		return TRUE; //It's a character. Return true because no use continuing this function.
 
 	switch (text[index]) {
-		case '\'':
-			if (isLetter(text[index - 1]) && isLetter(text[index + 1])) //An apostrophe needs to be surrounded by letters to qualify as part of a word.
-				return TRUE;
-			return FALSE;
-		default:
-			return FALSE;
+	case '\'':
+		if (isLetter(text[index - 1]) && isLetter(text[index + 1])) //An apostrophe needs to be surrounded by letters to qualify as part of a word.
+			return TRUE;
+		return FALSE;
+	default:
+		return FALSE;
 	}
 
 	return FALSE;
@@ -223,7 +223,7 @@ int lengthOfCurrentWord(char *text, int index) {
 void createBook(book_t *book) {
 	if (!book)
 		return;
-		
+
 	//Load in the text from a file.
 	strcpy(tempstr, "books/");
 	strcat(tempstr, book->name);
@@ -237,7 +237,8 @@ void createBook(book_t *book) {
 	int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
 	int max_characters = book_characterspace_x * book_characterspace_y;
 
-	book->pages.first = NULL; book->pages.last = NULL;
+	book->pages.first = NULL;
+	book->pages.last = NULL;
 
 	Uint32 color = SDL_MapRGBA(mainsurface->format,0,0,0,255);
 	string_t *string = newString(&book->pages,color,NULL);
@@ -273,8 +274,7 @@ void createBook(book_t *book) {
 		if (x + 1 >= book_characterspace_x) {
 			//Overflowed the line. Go onto the next line.
 			newline = TRUE;
-		}
-		else if (tab <= 0 && book->text[i] == '\n') {
+		} else if (tab <= 0 && book->text[i] == '\n') {
 			newline = TRUE;
 			write_out = FALSE; //Do not want to write out this /n.
 		}

@@ -45,9 +45,9 @@ void actArrow(Entity *my) {
 	Entity *entity;
 	node_t *node;
 	double tangent;
-	
+
 	my->skill[2]=-7; // invokes actEmpty() on clients
-	
+
 	if( !ARROW_POWER ) {
 		ARROW_POWER = 10+(my->sprite==167);
 	}
@@ -63,11 +63,11 @@ void actArrow(Entity *my) {
 		// horizontal motion
 		ARROW_VELX = cos(my->yaw)*7;
 		ARROW_VELY = sin(my->yaw)*7;
-		
+
 		ARROW_OLDX = my->x;
 		ARROW_OLDY = my->y;
 		dist = clipMove(&my->x,&my->y,ARROW_VELX,ARROW_VELY,my);
-		
+
 		// damage monsters
 		if( dist != sqrt(ARROW_VELX*ARROW_VELX+ARROW_VELY*ARROW_VELY) ) {
 			ARROW_STUCK = 1;
@@ -137,7 +137,7 @@ void actArrow(Entity *my) {
 					if( hitstats->HP <= 0 && parent) {
 						parent->awardXP( hit.entity, TRUE, TRUE );
 					}
-					
+
 					// alert the monster
 					if( hit.entity->behavior == &actMonster && parent != NULL ) {
 						if( hit.entity->skill[0]!=1 && (hitstats->type<LICH || hitstats->type>=SHOPKEEPER) ) {
@@ -146,7 +146,7 @@ void actArrow(Entity *my) {
 							hit.entity->fskill[2]=parent->x;
 							hit.entity->fskill[3]=parent->y;
 						}
-							
+
 						// alert other monsters too
 						Entity *ohitentity = hit.entity;
 						for( node=map.entities->first; node!=NULL; node=node->next ) {

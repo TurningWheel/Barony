@@ -17,7 +17,7 @@
 /*-------------------------------------------------------------------------------
 
 	getPixel
-	
+
 	gets the value of a pixel at the given x,y location in the given
 	SDL_Surface
 
@@ -56,7 +56,7 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y) {
 /*-------------------------------------------------------------------------------
 
 	putPixel
-	
+
 	sets the value of a pixel at the given x,y location in the given
 	SDL_Surface
 
@@ -97,7 +97,7 @@ void putPixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
 /*-------------------------------------------------------------------------------
 
 	flipSurface
-	
+
 	flips the contents of an SDL_Surface horizontally, vertically, or both
 
 -------------------------------------------------------------------------------*/
@@ -180,7 +180,7 @@ void drawArc( int x, int y, double radius, double angle1, double angle2, Uint32 
 	GLint lineWidth;
 	glGetIntegerv(GL_LINE_WIDTH,&lineWidth);
 	glLineWidth(2);
-	
+
 	// draw line
 	glColor4f(((Uint8)(color>>mainsurface->format->Rshift))/255.f,((Uint8)(color>>mainsurface->format->Gshift))/255.f,((Uint8)(color>>mainsurface->format->Bshift))/255.f,alpha/255.f);
 	glBindTexture(GL_TEXTURE_2D,0);
@@ -220,14 +220,14 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha ) {
 	GLint lineWidth;
 	glGetIntegerv(GL_LINE_WIDTH,&lineWidth);
 	glLineWidth(2);
-	
+
 	// draw line
 	glColor4f(((Uint8)(color>>mainsurface->format->Rshift))/255.f,((Uint8)(color>>mainsurface->format->Gshift))/255.f,((Uint8)(color>>mainsurface->format->Bshift))/255.f,alpha/255.f);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINES);
-		glVertex2f(x1+1, yres-y1);
-		glVertex2f(x2+1, yres-y2);
+	glVertex2f(x1+1, yres-y1);
+	glVertex2f(x2+1, yres-y2);
 	glEnd();
 	glDisable(GL_LINE_SMOOTH);
 
@@ -255,7 +255,7 @@ int drawRect( SDL_Rect *src, Uint32 color, Uint8 alpha ) {
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
-	
+
 	// for the use of the whole screen
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -264,15 +264,15 @@ int drawRect( SDL_Rect *src, Uint32 color, Uint8 alpha ) {
 		secondsrc.h=yres;
 		src = &secondsrc;
 	}
-	
+
 	// draw quad
 	glColor4f(((Uint8)(color>>mainsurface->format->Rshift))/255.f,((Uint8)(color>>mainsurface->format->Gshift))/255.f,((Uint8)(color>>mainsurface->format->Bshift))/255.f,alpha/255.f);
 	glBindTexture(GL_TEXTURE_2D,0);
 	glBegin(GL_QUADS);
-		glVertex2f(src->x, yres-src->y);
-		glVertex2f(src->x, yres-src->y-src->h);
-		glVertex2f(src->x+src->w, yres-src->y-src->h);
-		glVertex2f(src->x+src->w, yres-src->y);
+	glVertex2f(src->x, yres-src->y);
+	glVertex2f(src->x, yres-src->y-src->h);
+	glVertex2f(src->x+src->w, yres-src->y-src->h);
+	glVertex2f(src->x+src->w, yres-src->y);
 	glEnd();
 	return 0;
 }
@@ -285,8 +285,7 @@ int drawRect( SDL_Rect *src, Uint32 color, Uint8 alpha ) {
 	draws the border of a rectangle
 
 -------------------------------------------------------------------------------*/
-int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha)
-{
+int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha) {
 	drawLine(src->x, src->y, src->x + src->w, src->y, color, alpha); //Top.
 	drawLine(src->x, src->y, src->x, src->y + src->h, color, alpha); //Left.
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, alpha); //Right.
@@ -297,7 +296,7 @@ int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha)
 /*-------------------------------------------------------------------------------
 
 	drawGear
-	
+
 	draws a gear (used for turning wheel splash)
 
 -------------------------------------------------------------------------------*/
@@ -306,7 +305,7 @@ void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation) {
 	Uint32 color;
 	int c;
 	Sint16 x1, y1, x2, y2;
-	
+
 	color = SDL_MapRGB(mainsurface->format,255,127,0);
 	for( c=0; c<6; c++ ) {
 		drawArc(x, y, size, 0+c*60+rotation, 30+c*60+rotation, color, 255);
@@ -331,7 +330,7 @@ void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation) {
 /*-------------------------------------------------------------------------------
 
 	drawImageRotatedAlpha
-	
+
 	blits an image in either an opengl or SDL context, rotating the image
 	relative to the screen and taking an alpha value
 
@@ -351,7 +350,7 @@ void drawImageRotatedAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, do
 	glEnable(GL_BLEND);
 	glTranslatef(pos->x,yres-pos->y,0);
 	glRotatef(-angle * 180 / PI,0.f,0.f,1.f);
-	
+
 	// for the use of a whole image
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -381,7 +380,7 @@ void drawImageRotatedAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, do
 /*-------------------------------------------------------------------------------
 
 	drawImageColor
-	
+
 	blits an image in either an opengl or SDL context while colorizing it
 
 -------------------------------------------------------------------------------*/
@@ -398,7 +397,7 @@ void drawImageColor( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint32 co
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
-	
+
 	// for the use of a whole image
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -433,7 +432,7 @@ void drawImageColor( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint32 co
 /*-------------------------------------------------------------------------------
 
 	drawImageAlpha
-	
+
 	blits an image in either an opengl or SDL context, taking an alpha value
 
 -------------------------------------------------------------------------------*/
@@ -450,7 +449,7 @@ void drawImageAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint8 alp
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
-	
+
 	// for the use of a whole image
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -481,7 +480,7 @@ void drawImageAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint8 alp
 /*-------------------------------------------------------------------------------
 
 	drawImage
-	
+
 	blits an image in either an opengl or SDL context
 
 -------------------------------------------------------------------------------*/
@@ -498,7 +497,7 @@ void drawImage( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
-	
+
 	// for the use of a whole image
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -529,7 +528,7 @@ void drawImage( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 /*-------------------------------------------------------------------------------
 
 	drawImageScaled
-	
+
 	blits an image in either an opengl or SDL context, scaling it
 
 -------------------------------------------------------------------------------*/
@@ -549,7 +548,7 @@ void drawImageScaled( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glEnable(GL_BLEND);
-	
+
 	// for the use of a whole image
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -587,21 +586,21 @@ void drawImageScaled( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 
 SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
 	Sint32 x,y,o_x,o_y;
-	
+
 	if(!Surface || !Width || !Height)
 		return NULL;
-	
+
 	SDL_Surface *_ret = SDL_CreateRGBSurface(Surface->flags, Width, Height, Surface->format->BitsPerPixel, Surface->format->Rmask, Surface->format->Gmask, Surface->format->Bmask, Surface->format->Amask);
-	
+
 	double _stretch_factor_x = (double)Width/(double)Surface->w;
 	double _stretch_factor_y = (double)Height/(double)Surface->h;
-	
+
 	for(y = 0; y < Surface->h; y++)
 		for(x = 0; x < Surface->w; x++)
 			for(o_y = 0; o_y < _stretch_factor_y; ++o_y)
 				for(o_x = 0; o_x < _stretch_factor_x; ++o_x)
 					putPixel(_ret, (Sint32)(_stretch_factor_x * x) + o_x, (Sint32)(_stretch_factor_y * y) + o_y, getPixel(Surface, x, y));
-	
+
 	free(Surface);
 	return _ret;
 }
@@ -609,7 +608,7 @@ SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
 /*-------------------------------------------------------------------------------
 
 	drawImageFancy
-	
+
 	blits an image in either an opengl or SDL context, while coloring,
 	rotating, and scaling it
 
@@ -632,7 +631,7 @@ void drawImageFancy( SDL_Surface *image, Uint32 color, double angle, SDL_Rect *s
 	glEnable(GL_BLEND);
 	glTranslatef(pos->x,yres-pos->y,0);
 	glRotatef(-angle * 180 / PI,0.f,0.f,1.f);
-	
+
 	// for the use of a whole image
 	if( src==NULL ) {
 		secondsrc.x=0;
@@ -678,7 +677,7 @@ void drawSky3D( view_t *camera, SDL_Surface *tex ) {
 	int skyx, skyy;
 	SDL_Rect dest;
 	SDL_Rect src;
-	
+
 	// move the images differently depending upon the screen size
 	screenfactor = xres/320.0;
 
@@ -694,9 +693,9 @@ void drawSky3D( view_t *camera, SDL_Surface *tex ) {
 	dest.y = 0;
 	dest.w = xres;
 	dest.h = yres;
-	
+
 	drawImage(tex, &src, &dest);
-	
+
 	// draw the part of the last part of the sky (only appears when angle > 270 deg.)
 	if( skyx < -960*screenfactor ) {
 		dest.x = 1280*screenfactor+skyx;
@@ -724,7 +723,7 @@ void drawLayer(long camx, long camy, int z, map_t *map) {
 	long minx, miny, maxx, maxy;
 	int index;
 	SDL_Rect pos;
-	
+
 	minx = std::max<long int>(camx>>TEXTUREPOWER,0);
 	maxx = std::min<long int>((camx>>TEXTUREPOWER)+xres/TEXTURESIZE+2,map->width); //TODO: Why are long int and unsigned int being compared?
 	miny = std::max<long int>(camy>>TEXTUREPOWER,0);
@@ -733,8 +732,10 @@ void drawLayer(long camx, long camy, int z, map_t *map) {
 		for( x=minx; x<maxx; x++ ) {
 			index = map->tiles[z+y*MAPLAYERS+x*MAPLAYERS*map->height];
 			if( index > 0) {
-				pos.x = (x<<TEXTUREPOWER)-camx; pos.y = (y<<TEXTUREPOWER)-camy;
-				pos.w = TEXTURESIZE; pos.h = TEXTURESIZE;
+				pos.x = (x<<TEXTUREPOWER)-camx;
+				pos.y = (y<<TEXTUREPOWER)-camy;
+				pos.w = TEXTURESIZE;
+				pos.h = TEXTURESIZE;
 				if( index>=0 && index<numtiles ) {
 					if( tiles[index] != NULL )
 						drawImageScaled(tiles[index], NULL, &pos);
@@ -763,7 +764,7 @@ void drawForeground(long camx, long camy) {
 /*-------------------------------------------------------------------------------
 
 	drawClearBuffers
-	
+
 	clears the screen and resets zbuffer and vismap
 
 -------------------------------------------------------------------------------*/
@@ -781,7 +782,7 @@ void drawClearBuffers() {
 		for( c=0; c<i; c++ )
 			vismap[c] = FALSE;
 	}
-	
+
 	// clear the screen
 	glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
 	drawRect(NULL,0,255);
@@ -790,7 +791,7 @@ void drawClearBuffers() {
 /*-------------------------------------------------------------------------------
 
 	raycast
-	
+
 	Performs raycasting from the given camera's position through the
 	environment to update minimap and vismap
 
@@ -806,33 +807,42 @@ void raycast(view_t *camera, int mode) {
 	double arx, ary;
 	long dincx, dincy;
 	double dval0, dval1;
-	
+
 	Uint8 light;
 	Sint32 z;
 	bool zhit[MAPLAYERS], wallhit;
 
-	posx=floor(camera->x); posy=floor(camera->y); // integer coordinates
-	fracx=camera->x-posx; fracy=camera->y-posy; // fraction coordinates
+	posx=floor(camera->x);
+	posy=floor(camera->y); // integer coordinates
+	fracx=camera->x-posx;
+	fracy=camera->y-posy; // fraction coordinates
 
 	double wfov = (fov * camera->winw / camera->winh) * PI / 180.f;
 	dstart = CLIPNEAR/16.0;
 
-	 // ray vector
+	// ray vector
 	rx = cos(camera->ang - wfov/2.f);
 	ry = sin(camera->ang - wfov/2.f);
 
 	if( posx>=0 && posy>=0 && posx<map.width && posy<map.height )
 		vismap[posy+posx*map.height]=TRUE;
 	for( sx=0; sx<camera->winw; sx++ ) { // for every column of the screen
-		inx=posx; iny=posy;
-		inx2=inx; iny2=iny;
-		
-		arx=0; if(rx) arx = 1.0/fabs(rx);  // distance increments
-		ary=0; if(ry) ary = 1.0/fabs(ry);
-		
+		inx=posx;
+		iny=posy;
+		inx2=inx;
+		iny2=iny;
+
+		arx=0;
+		if(rx) arx = 1.0/fabs(rx);  // distance increments
+		ary=0;
+		if(ry) ary = 1.0/fabs(ry);
+
 		// dval0=dend+1 is there to prevent infinite loops when ray is parallel to axis
-		dincx=0; dval0=1e32; dincy=0; dval1=1e32;
-		
+		dincx=0;
+		dval0=1e32;
+		dincy=0;
+		dval1=1e32;
+
 		// calculate integer coordinate increments
 		// x-axis:
 		if(rx<0) {
@@ -842,7 +852,7 @@ void raycast(view_t *camera, int mode) {
 			dincx=1;
 			dval0=(1-fracx)*arx;
 		}
-		
+
 		// y-axis:
 		if(ry<0) {
 			dincy=-1;
@@ -851,11 +861,13 @@ void raycast(view_t *camera, int mode) {
 			dincy=1;
 			dval1=(1-fracy)*ary;
 		}
-		
-		d=0; dend=CLIPFAR/16;
+
+		d=0;
+		dend=CLIPFAR/16;
 		do {
-			inx2=inx; iny2=iny;
-			
+			inx2=inx;
+			iny2=iny;
+
 			// move the ray one square forward
 			if(dval1>dval0) {
 				inx+=dincx;
@@ -866,14 +878,14 @@ void raycast(view_t *camera, int mode) {
 				d=dval1;
 				dval1+=ary;
 			}
-			
+
 			if( inx>=0 && iny>=0 && inx<map.width && iny<map.height ) {
 				vismap[iny+inx*map.height]=TRUE;
 				for( z=0; z<MAPLAYERS; z++ ) {
 					zhit[z]=FALSE;
 					if( map.tiles[z+iny*MAPLAYERS+inx*MAPLAYERS*map.height] && d>dstart ) { // hit something solid
 						zhit[z]=TRUE;
-						
+
 						// collect light information
 						if( inx2>=0 && iny2>=0 && inx2<map.width && iny2<map.height ) {
 							if( map.tiles[z+iny2*MAPLAYERS+inx2*MAPLAYERS*map.height] )
@@ -882,7 +894,7 @@ void raycast(view_t *camera, int mode) {
 						} else {
 							light = 128;
 						}
-						
+
 						// update minimap
 						if( mode==REALCOLORS )
 							if( d<16 && z==OBSTACLELAYER )
@@ -910,7 +922,7 @@ void raycast(view_t *camera, int mode) {
 					break;
 			}
 		} while(d<dend);
-	
+
 		// new ray vector for next column
 		rx = cos(camera->ang - wfov/2.f + (wfov/camera->winw)*sx);
 		ry = sin(camera->ang - wfov/2.f + (wfov/camera->winw)*sx);
@@ -920,7 +932,7 @@ void raycast(view_t *camera, int mode) {
 /*-------------------------------------------------------------------------------
 
 	drawEntities3D
-	
+
 	Draws all entities in the level as either voxel models or sprites
 
 -------------------------------------------------------------------------------*/
@@ -929,10 +941,10 @@ void drawEntities3D(view_t *camera, int mode) {
 	node_t *node;
 	Entity *entity;
 	long x, y;
-	
+
 	if( map.entities->first == NULL )
 		return;
-		
+
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		entity = (Entity *)node->element;
 		if( entity->flags[INVISIBLE] )
@@ -968,7 +980,7 @@ void drawEntities3D(view_t *camera, int mode) {
 /*-------------------------------------------------------------------------------
 
 	drawEntities2D
-	
+
 	Draws all entities in the level as sprites while accounting for the given
 	camera coordinates
 
@@ -978,37 +990,47 @@ void drawEntities2D(long camx, long camy) {
 	node_t *node;
 	Entity *entity;
 	SDL_Rect pos, box;
-	
+
 	if( map.entities->first == NULL )
 		return;
-	
+
 	// draw entities
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		entity = (Entity *)node->element;
 		if( entity->flags[INVISIBLE] )
 			continue;
-		pos.x = entity->x*(TEXTURESIZE/16)-camx; pos.y = entity->y*(TEXTURESIZE/16)-camy;
-		pos.w = TEXTURESIZE; pos.h = TEXTURESIZE;
+		pos.x = entity->x*(TEXTURESIZE/16)-camx;
+		pos.y = entity->y*(TEXTURESIZE/16)-camy;
+		pos.w = TEXTURESIZE;
+		pos.h = TEXTURESIZE;
 		if( entity->sprite >= 0 && entity->sprite<numsprites ) {
 			if( sprites[entity->sprite] != NULL ) {
 				if( entity == selectedEntity ) {
 					// draws a box around the sprite
-					box.w = TEXTURESIZE; box.h = TEXTURESIZE;
-					box.x = pos.x; box.y = pos.y;
+					box.w = TEXTURESIZE;
+					box.h = TEXTURESIZE;
+					box.x = pos.x;
+					box.y = pos.y;
 					drawRect(&box,SDL_MapRGB(mainsurface->format,255,0,0),255);
-					box.w = TEXTURESIZE-2; box.h = TEXTURESIZE-2;
-					box.x = pos.x+1; box.y = pos.y+1;
+					box.w = TEXTURESIZE-2;
+					box.h = TEXTURESIZE-2;
+					box.x = pos.x+1;
+					box.y = pos.y+1;
 					drawRect(&box,SDL_MapRGB(mainsurface->format,0,0,255),255);
 				}
 				drawImageScaled(sprites[entity->sprite], NULL, &pos);
 			} else {
 				if( entity == selectedEntity ) {
 					// draws a box around the sprite
-					box.w = TEXTURESIZE; box.h = TEXTURESIZE;
-					box.x = pos.x; box.y = pos.y;
+					box.w = TEXTURESIZE;
+					box.h = TEXTURESIZE;
+					box.x = pos.x;
+					box.y = pos.y;
 					drawRect(&box,SDL_MapRGB(mainsurface->format,255,0,0),255);
-					box.w = TEXTURESIZE-2; box.h = TEXTURESIZE-2;
-					box.x = pos.x+1; box.y = pos.y+1;
+					box.w = TEXTURESIZE-2;
+					box.h = TEXTURESIZE-2;
+					box.x = pos.x+1;
+					box.y = pos.y+1;
 					drawRect(&box,SDL_MapRGB(mainsurface->format,0,0,255),255);
 				}
 				drawImageScaled(sprites[0], NULL, &pos);
@@ -1016,11 +1038,15 @@ void drawEntities2D(long camx, long camy) {
 		} else {
 			if( entity == selectedEntity ) {
 				// draws a box around the sprite
-				box.w = TEXTURESIZE; box.h = TEXTURESIZE;
-				box.x = pos.x; box.y = pos.y;
+				box.w = TEXTURESIZE;
+				box.h = TEXTURESIZE;
+				box.x = pos.x;
+				box.y = pos.y;
 				drawRect(&box,SDL_MapRGB(mainsurface->format,255,0,0),255);
-				box.w = TEXTURESIZE-2; box.h = TEXTURESIZE-2;
-				box.x = pos.x+1; box.y = pos.y+1;
+				box.w = TEXTURESIZE-2;
+				box.h = TEXTURESIZE-2;
+				box.x = pos.x+1;
+				box.y = pos.y+1;
 				drawRect(&box,SDL_MapRGB(mainsurface->format,0,0,255),255);
 			}
 			drawImageScaled(sprites[0], NULL, &pos);
@@ -1031,7 +1057,7 @@ void drawEntities2D(long camx, long camy) {
 /*-------------------------------------------------------------------------------
 
 	drawGrid
-	
+
 	Draws a white line grid for the tile map
 
 -------------------------------------------------------------------------------*/
@@ -1039,7 +1065,7 @@ void drawEntities2D(long camx, long camy) {
 void drawGrid(long camx, long camy) {
 	long x, y;
 	Uint32 color;
-	
+
 	color = SDL_MapRGB(mainsurface->format,127,127,127);
 	drawLine(-camx,(map.height<<TEXTUREPOWER)-camy,(map.width<<TEXTUREPOWER)-camx,(map.height<<TEXTUREPOWER)-camy,color,255);
 	drawLine((map.width<<TEXTUREPOWER)-camx,-camy,(map.width<<TEXTUREPOWER)-camx,(map.height<<TEXTUREPOWER)-camy,color,255);
@@ -1054,7 +1080,7 @@ void drawGrid(long camx, long camy) {
 /*-------------------------------------------------------------------------------
 
 	drawEditormap
-	
+
 	Draws a minimap in the upper right corner of the screen to represent
 	the screen's position relative to the rest of the level
 
@@ -1062,41 +1088,43 @@ void drawGrid(long camx, long camy) {
 
 void drawEditormap(long camx, long camy) {
 	SDL_Rect src, osrc;
-	
+
 	src.x = xres-120;
 	src.y = 24;
 	src.w = 112;
 	src.h = 112;
 	drawRect(&src,SDL_MapRGB(mainsurface->format,0,0,0),255);
-	
+
 	// initial box dimensions
 	src.x = (xres-120) + (((double)camx/TEXTURESIZE)*112.0)/map.width;
 	src.y = 24 + (((double)camy/TEXTURESIZE)*112.0)/map.height;
 	src.w = (112.0/map.width)*((double)xres/TEXTURESIZE);
 	src.h = (112.0/map.height)*((double)yres/TEXTURESIZE);
-	
+
 	// clip at left edge
 	if( src.x < xres-120 ) {
 		src.w -= (xres-120)-src.x;
 		src.x = xres-120;
 	}
-	
+
 	// clip at right edge
 	if( src.x+src.w > xres-8 )
 		src.w = xres-8-src.x;
-		
+
 	// clip at top edge
 	if( src.y < 24 ) {
 		src.h -= 24-src.y;
 		src.y = 24;
 	}
-	
+
 	// clip at bottom edge
 	if( src.y+src.h > 136 )
 		src.h = 136-src.y;
-	
-	osrc.x = src.x+1; osrc.y = src.y+1;
-	osrc.w = src.w-2; osrc.h = src.h-2;
+
+	osrc.x = src.x+1;
+	osrc.y = src.y+1;
+	osrc.w = src.w-2;
+	osrc.h = src.h-2;
 	drawRect(&src,SDL_MapRGB(mainsurface->format,255,255,255),255);
 	drawRect(&osrc,SDL_MapRGB(mainsurface->format,0,0,0),255);
 }
@@ -1112,7 +1140,7 @@ void drawEditormap(long camx, long camy) {
 
 void drawWindow(int x1, int y1, int x2, int y2) {
 	SDL_Rect src;
-	
+
 	src.x = x1;
 	src.y = y1;
 	src.w = x2-x1;
@@ -1132,7 +1160,7 @@ void drawWindow(int x1, int y1, int x2, int y2) {
 
 void drawDepressed(int x1, int y1, int x2, int y2) {
 	SDL_Rect src;
-	
+
 	src.x = x1;
 	src.y = y1;
 	src.w = x2-x1;
@@ -1150,10 +1178,8 @@ void drawDepressed(int x1, int y1, int x2, int y2) {
 	drawRect(&src,SDL_MapRGB(mainsurface->format,128,128,160),255);
 }
 
-void drawWindowFancy(int x1, int y1, int x2, int y2)
-{
-	if (softwaremode)
-	{
+void drawWindowFancy(int x1, int y1, int x2, int y2) {
+	if (softwaremode) {
 		// no fancy stuff in software mode
 		drawWindow(x1, y1, x2, y2);
 		return;
@@ -1173,26 +1199,30 @@ void drawWindowFancy(int x1, int y1, int x2, int y2)
 	glColor3f(.25, .25, .25);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBegin(GL_QUADS);
-		glVertex2f(x1, yres - y1);
-		glVertex2f(x1, yres - y2);
-		glVertex2f(x2, yres - y2);
-		glVertex2f(x2, yres - y1);
+	glVertex2f(x1, yres - y1);
+	glVertex2f(x1, yres - y2);
+	glVertex2f(x2, yres - y2);
+	glVertex2f(x2, yres - y1);
 	glEnd();
 	glColor3f(.5, .5, .5);
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glBegin(GL_QUADS);
-		glVertex2f(x1 + 1, yres - y1 - 1);
-		glVertex2f(x1 + 1, yres - y2 + 1);
-		glVertex2f(x2 - 1, yres - y2 + 1);
-		glVertex2f(x2 - 1, yres - y1 - 1);
+	glVertex2f(x1 + 1, yres - y1 - 1);
+	glVertex2f(x1 + 1, yres - y2 + 1);
+	glVertex2f(x2 - 1, yres - y2 + 1);
+	glVertex2f(x2 - 1, yres - y1 - 1);
 	glEnd();
 	glColor3f(.75, .75, .75);
 	glBindTexture(GL_TEXTURE_2D, texid[fancyWindow_bmp->refcount]); // wood texture
 	glBegin(GL_QUADS);
-		glTexCoord2f(0, 0); glVertex2f(x1 + 2, yres - y1 - 2);
-		glTexCoord2f(0, (y2 - y1 - 4)/(double)tiles[30]->h); glVertex2f(x1 + 2, yres - y2 + 2);
-		glTexCoord2f((x2 - x1 - 4)/(double)tiles[30]->w, (y2-y1-4)/(double)tiles[30]->h); glVertex2f(x2 - 2, yres - y2 + 2);
-		glTexCoord2f((x2 - x1 - 4)/(double)tiles[30]->w, 0); glVertex2f(x2 - 2, yres - y1 - 2);
+	glTexCoord2f(0, 0);
+	glVertex2f(x1 + 2, yres - y1 - 2);
+	glTexCoord2f(0, (y2 - y1 - 4)/(double)tiles[30]->h);
+	glVertex2f(x1 + 2, yres - y2 + 2);
+	glTexCoord2f((x2 - x1 - 4)/(double)tiles[30]->w, (y2-y1-4)/(double)tiles[30]->h);
+	glVertex2f(x2 - 2, yres - y2 + 2);
+	glTexCoord2f((x2 - x1 - 4)/(double)tiles[30]->w, 0);
+	glVertex2f(x2 - 2, yres - y1 - 2);
 	glEnd();
 }
 
@@ -1249,20 +1279,20 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 			TTF_SizeUTF8(font,str,&w,&h);
 			if( font==ttf8 ) {
 				surf = SDL_CreateRGBSurface(0,w+2,h+2,
-					mainsurface->format->BitsPerPixel,
-					mainsurface->format->Rmask,
-					mainsurface->format->Gmask,
-					mainsurface->format->Bmask,
-					mainsurface->format->Amask
-				);
+				                            mainsurface->format->BitsPerPixel,
+				                            mainsurface->format->Rmask,
+				                            mainsurface->format->Gmask,
+				                            mainsurface->format->Bmask,
+				                            mainsurface->format->Amask
+				                           );
 			} else {
 				surf = SDL_CreateRGBSurface(0,w+4,h+4,
-					mainsurface->format->BitsPerPixel,
-					mainsurface->format->Rmask,
-					mainsurface->format->Gmask,
-					mainsurface->format->Bmask,
-					mainsurface->format->Amask
-				);
+				                            mainsurface->format->BitsPerPixel,
+				                            mainsurface->format->Rmask,
+				                            mainsurface->format->Gmask,
+				                            mainsurface->format->Bmask,
+				                            mainsurface->format->Amask
+				                           );
 			}
 		}
 
@@ -1273,9 +1303,11 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 
 		// combine the surfaces
 		if( font==ttf8 ) {
-			pos.x = 1; pos.y = 1;
+			pos.x = 1;
+			pos.y = 1;
 		} else {
-			pos.x = 2; pos.y = 2;
+			pos.x = 2;
+			pos.y = 2;
 		}
 		SDL_BlitSurface(textSurf,NULL,surf,&pos);
 
@@ -1293,13 +1325,17 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 
 	// draw the text surface
 	if( font==ttf8 ) {
-		pos.x = x; pos.y = y-3;
+		pos.x = x;
+		pos.y = y-3;
 	} else {
-		pos.x = x+1; pos.y = y-4;
+		pos.x = x+1;
+		pos.y = y-4;
 	}
-	pos.w = surf->w; pos.h = surf->h;
+	pos.w = surf->w;
+	pos.h = surf->h;
 	drawImageColor(surf,NULL,&pos,color);
-	pos.x = x; pos.y = y;
+	pos.x = x;
+	pos.y = y;
 
 	return pos;
 }
@@ -1363,29 +1399,33 @@ void printText( SDL_Surface *font_bmp, int x, int y, char *str ) {
 	int c;
 	int numbytes;
 	SDL_Rect src, dest, odest;
-	
+
 	if( strlen(str) > 2048 ) {
 		printlog("error: buffer overflow in printText\n");
 		return;
 	}
-	
+
 	// format the string
 	numbytes = strlen(str);
-	
+
 	// define font dimensions
 	dest.x = x;
 	dest.y = y;
-	dest.w = font_bmp->w/16; src.w = font_bmp->w/16;
-	dest.h = font_bmp->h/16; src.h = font_bmp->h/16;
-	
+	dest.w = font_bmp->w/16;
+	src.w = font_bmp->w/16;
+	dest.h = font_bmp->h/16;
+	src.h = font_bmp->h/16;
+
 	// print the characters in the string
 	for( c=0; c<numbytes; c++ ) {
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
-			odest.x=dest.x; odest.y=dest.y;
+			odest.x=dest.x;
+			odest.y=dest.y;
 			drawImage( font_bmp, &src, &dest );
-			dest.x=odest.x+src.w; dest.y=odest.y;
+			dest.x=odest.x+src.w;
+			dest.y=odest.y;
 		} else if( str[c]==10 ) {
 			dest.x=x;
 			dest.y+=src.h;
@@ -1407,26 +1447,30 @@ void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... ) {
 	char str[1024] = { 0 };
 	va_list argptr;
 	SDL_Rect src, dest, odest;
-	
+
 	// format the string
 	va_start( argptr, fmt );
 	numbytes = vsnprintf( str, 1023, fmt, argptr );
 	va_end( argptr );
-	
+
 	// define font dimensions
 	dest.x = x;
 	dest.y = y;
-	dest.w = font_bmp->w/16; src.w = font_bmp->w/16;
-	dest.h = font_bmp->h/16; src.h = font_bmp->h/16;
-	
+	dest.w = font_bmp->w/16;
+	src.w = font_bmp->w/16;
+	dest.h = font_bmp->h/16;
+	src.h = font_bmp->h/16;
+
 	// print the characters in the string
 	for( c=0; c<numbytes; c++ ) {
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
-			odest.x=dest.x; odest.y=dest.y;
+			odest.x=dest.x;
+			odest.y=dest.y;
 			drawImage( font_bmp, &src, &dest );
-			dest.x=odest.x+src.w; dest.y=odest.y;
+			dest.x=odest.x+src.w;
+			dest.y=odest.y;
 		} else if( str[c]==10 ) {
 			dest.x=x;
 			dest.y+=src.h;
@@ -1449,26 +1493,30 @@ void printTextFormattedAlpha(SDL_Surface *font_bmp, int x, int y, Uint8 alpha, c
 	char str[1024] = { 0 };
 	va_list argptr;
 	SDL_Rect src, dest, odest;
-	
+
 	// format the string
 	va_start( argptr, fmt );
 	numbytes = vsnprintf( str, 1023, fmt, argptr );
 	va_end( argptr );
-	
+
 	// define font dimensions
 	dest.x = x;
 	dest.y = y;
-	dest.w = font_bmp->w/16; src.w = font_bmp->w/16;
-	dest.h = font_bmp->h/16; src.h = font_bmp->h/16;
-	
+	dest.w = font_bmp->w/16;
+	src.w = font_bmp->w/16;
+	dest.h = font_bmp->h/16;
+	src.h = font_bmp->h/16;
+
 	// print the characters in the string
 	for( c=0; c<numbytes; c++ ) {
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
-			odest.x=dest.x; odest.y=dest.y;
+			odest.x=dest.x;
+			odest.y=dest.y;
 			drawImageAlpha( font_bmp, &src, &dest, alpha );
-			dest.x=odest.x+src.w; dest.y=odest.y;
+			dest.x=odest.x+src.w;
+			dest.y=odest.y;
 		} else if( str[c]==10 ) {
 			dest.x=x;
 			dest.y+=src.h;
@@ -1491,26 +1539,30 @@ void printTextFormattedColor(SDL_Surface *font_bmp, int x, int y, Uint32 color, 
 	char str[1024] = { 0 };
 	va_list argptr;
 	SDL_Rect src, dest, odest;
-	
+
 	// format the string
 	va_start( argptr, fmt );
 	numbytes = vsnprintf( str, 1023, fmt, argptr );
 	va_end( argptr );
-	
+
 	// define font dimensions
 	dest.x = x;
 	dest.y = y;
-	dest.w = font_bmp->w/16; src.w = font_bmp->w/16;
-	dest.h = font_bmp->h/16; src.h = font_bmp->h/16;
-	
+	dest.w = font_bmp->w/16;
+	src.w = font_bmp->w/16;
+	dest.h = font_bmp->h/16;
+	src.h = font_bmp->h/16;
+
 	// print the characters in the string
 	for( c=0; c<numbytes; c++ ) {
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
-			odest.x=dest.x; odest.y=dest.y;
+			odest.x=dest.x;
+			odest.y=dest.y;
 			drawImageColor( font_bmp, &src, &dest, color );
-			dest.x=odest.x+src.w; dest.y=odest.y;
+			dest.x=odest.x+src.w;
+			dest.y=odest.y;
 		} else if( str[c]==10 ) {
 			dest.x=x;
 			dest.y+=src.h;
@@ -1533,27 +1585,31 @@ void printTextFormattedFancy(SDL_Surface *font_bmp, int x, int y, Uint32 color, 
 	char str[1024] = { 0 };
 	va_list argptr;
 	SDL_Rect src, dest;
-	
+
 	// format the string
 	va_start( argptr, fmt );
 	numbytes = vsnprintf( str, 1023, fmt, argptr );
 	va_end( argptr );
-	
+
 	// define font dimensions
 	double newX = x;
 	double newY = y;
-	dest.w = ((double)font_bmp->w/16.f)*scale; src.w = font_bmp->w/16;
-	dest.h = ((double)font_bmp->h/16.f)*scale; src.h = font_bmp->h/16;
-	
+	dest.w = ((double)font_bmp->w/16.f)*scale;
+	src.w = font_bmp->w/16;
+	dest.h = ((double)font_bmp->h/16.f)*scale;
+	src.h = font_bmp->h/16;
+
 	// print the characters in the string
 	int line=0;
 	for( c=0; c<numbytes; c++ ) {
 		src.x = (str[c]*src.w)%font_bmp->w;
 		src.y = (int)((str[c]*src.w)/font_bmp->w)*src.h;
 		if( str[c] != 10 && str[c] != 13 ) { // LF/CR
-			dest.x = newX; dest.y = newY;
+			dest.x = newX;
+			dest.y = newY;
 			drawImageFancy( font_bmp, color, angle, &src, &dest );
-			newX+=(double)dest.w*cos(angle); newY+=(double)dest.h*sin(angle);
+			newX+=(double)dest.w*cos(angle);
+			newY+=(double)dest.h*sin(angle);
 		} else if( str[c]==10 ) {
 			line++;
 			dest.x=x+dest.h*cos(angle+PI/2)*line;

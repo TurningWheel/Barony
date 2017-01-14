@@ -216,8 +216,7 @@ typedef enum Status {
 	EXCELLENT
 } Status;
 
-class SummonProperties
-{
+class SummonProperties {
 	//TODO: Store monster stats.
 public:
 	SummonProperties();
@@ -229,7 +228,7 @@ class Item {
 public:
 	ItemType type;
 	Status status;
-	
+
 	Sint16 beatitude;  // blessedness
 	Sint16 count;      // how many of item
 	Uint32 appearance; // large random static number

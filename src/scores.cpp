@@ -116,48 +116,39 @@ score_t *scoreConstructor() {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->helmet = item2;
-		}
-		else if( stats[clientnum]->breastplate == item ) {
+		} else if( stats[clientnum]->breastplate == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->breastplate = item2;
-		}
-		else if( stats[clientnum]->gloves == item ) {
+		} else if( stats[clientnum]->gloves == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->gloves = item2;
-		}
-		else if( stats[clientnum]->shoes == item ) {
+		} else if( stats[clientnum]->shoes == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->shoes = item2;
-		}
-		else if( stats[clientnum]->shield == item ) {
+		} else if( stats[clientnum]->shield == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->shield = item2;
-		}
-		else if( stats[clientnum]->weapon == item ) {
+		} else if( stats[clientnum]->weapon == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->weapon = item2;
-		}
-		else if( stats[clientnum]->cloak == item ) {
+		} else if( stats[clientnum]->cloak == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->cloak = item2;
-		}
-		else if( stats[clientnum]->amulet == item ) {
+		} else if( stats[clientnum]->amulet == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->amulet = item2;
-		}
-		else if( stats[clientnum]->ring == item ) {
+		} else if( stats[clientnum]->ring == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->ring = item2;
-		}
-		else if( stats[clientnum]->mask == item ) {
+		} else if( stats[clientnum]->mask == item ) {
 			node_t *node2 = list_Node(&score->stats->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			score->stats->mask = item2;
@@ -341,48 +332,39 @@ void loadScore(int scorenum) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->helmet = item2;
-		}
-		else if( score->stats->breastplate == item ) {
+		} else if( score->stats->breastplate == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->breastplate = item2;
-		}
-		else if( score->stats->gloves == item ) {
+		} else if( score->stats->gloves == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->gloves = item2;
-		}
-		else if( score->stats->shoes == item ) {
+		} else if( score->stats->shoes == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->shoes = item2;
-		}
-		else if( score->stats->shield == item ) {
+		} else if( score->stats->shield == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->shield = item2;
-		}
-		else if( score->stats->weapon == item ) {
+		} else if( score->stats->weapon == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->weapon = item2;
-		}
-		else if( score->stats->cloak == item ) {
+		} else if( score->stats->cloak == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->cloak = item2;
-		}
-		else if( score->stats->amulet == item ) {
+		} else if( score->stats->amulet == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->amulet = item2;
-		}
-		else if( score->stats->ring == item ) {
+		} else if( score->stats->ring == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->ring = item2;
-		}
-		else if( score->stats->mask == item ) {
+		} else if( score->stats->mask == item ) {
 			node_t *node2 = list_Node(&stats[0]->inventory,c);
 			Item *item2 = (Item *)node2->element;
 			stats[0]->mask = item2;
@@ -1555,36 +1537,36 @@ int loadGame(int player) {
 					Item *item = newItem(type,status,beatitude,count,appearance,identified,NULL);
 
 					switch( c ) {
-						case 0:
-							stats[player]->helmet = item;
-							break;
-						case 1:
-							stats[player]->breastplate = item;
-							break;
-						case 2:
-							stats[player]->gloves = item;
-							break;
-						case 3:
-							stats[player]->shoes = item;
-							break;
-						case 4:
-							stats[player]->shield = item;
-							break;
-						case 5:
-							stats[player]->weapon = item;
-							break;
-						case 6:
-							stats[player]->cloak = item;
-							break;
-						case 7:
-							stats[player]->amulet = item;
-							break;
-						case 8:
-							stats[player]->ring = item;
-							break;
-						case 9:
-							stats[player]->mask = item;
-							break;
+					case 0:
+						stats[player]->helmet = item;
+						break;
+					case 1:
+						stats[player]->breastplate = item;
+						break;
+					case 2:
+						stats[player]->gloves = item;
+						break;
+					case 3:
+						stats[player]->shoes = item;
+						break;
+					case 4:
+						stats[player]->shield = item;
+						break;
+					case 5:
+						stats[player]->weapon = item;
+						break;
+					case 6:
+						stats[player]->cloak = item;
+						break;
+					case 7:
+						stats[player]->amulet = item;
+						break;
+					case 8:
+						stats[player]->ring = item;
+						break;
+					case 9:
+						stats[player]->mask = item;
+						break;
 					}
 				}
 			}
@@ -1750,36 +1732,36 @@ list_t *loadGameFollowers() {
 					Item *item = newItem(type,status,beatitude,count,appearance,identified,NULL);
 
 					switch( b ) {
-						case 0:
-							followerStats->helmet = item;
-							break;
-						case 1:
-							followerStats->breastplate = item;
-							break;
-						case 2:
-							followerStats->gloves = item;
-							break;
-						case 3:
-							followerStats->shoes = item;
-							break;
-						case 4:
-							followerStats->shield = item;
-							break;
-						case 5:
-							followerStats->weapon = item;
-							break;
-						case 6:
-							followerStats->cloak = item;
-							break;
-						case 7:
-							followerStats->amulet = item;
-							break;
-						case 8:
-							followerStats->ring = item;
-							break;
-						case 9:
-							followerStats->mask = item;
-							break;
+					case 0:
+						followerStats->helmet = item;
+						break;
+					case 1:
+						followerStats->breastplate = item;
+						break;
+					case 2:
+						followerStats->gloves = item;
+						break;
+					case 3:
+						followerStats->shoes = item;
+						break;
+					case 4:
+						followerStats->shield = item;
+						break;
+					case 5:
+						followerStats->weapon = item;
+						break;
+					case 6:
+						followerStats->cloak = item;
+						break;
+					case 7:
+						followerStats->amulet = item;
+						break;
+					case 8:
+						followerStats->ring = item;
+						break;
+					case 9:
+						followerStats->mask = item;
+						break;
 					}
 				}
 			}
@@ -1798,36 +1780,29 @@ list_t *loadGameFollowers() {
 
 -------------------------------------------------------------------------------*/
 
-int deleteSaveGame()
-{
-	if (access(SAVEGAMEFILE, F_OK) != -1)
-	{
+int deleteSaveGame() {
+	if (access(SAVEGAMEFILE, F_OK) != -1) {
 		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE);
 		int result = remove(SAVEGAMEFILE);
-		if (result)
-		{
+		if (result) {
 			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE);
-			#ifdef _MSC_VER
+#ifdef _MSC_VER
 			printlog(strerror(errno));
-			#endif
+#endif
 		}
 	}
 
-	if (access(SAVEGAMEFILE2, F_OK) != -1)
-	{
+	if (access(SAVEGAMEFILE2, F_OK) != -1) {
 		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE2);
 		int result = remove(SAVEGAMEFILE2);
-		if (result)
-		{
+		if (result) {
 			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE2);
-			#ifdef _MSC_VER
+#ifdef _MSC_VER
 			printlog(strerror(errno));
-			#endif
+#endif
 		}
 		return result;
-	}
-	else
-	{
+	} else {
 		return 0;
 	}
 }
@@ -1902,7 +1877,7 @@ char *getSaveGameName() {
 		fclose(fp);
 		return NULL;
 	}
-	
+
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&mul, sizeof(Uint32), 1, fp);
 	fread(&plnum, sizeof(Uint32), 1, fp);
@@ -2016,7 +1991,7 @@ Uint32 getSaveGameUniqueGameKey() {
 		fclose(fp);
 		return 0;
 	}
-	
+
 	fread(&gameKey, sizeof(Uint32), 1, fp);
 
 	// close file
@@ -2056,7 +2031,7 @@ int getSaveGameType() {
 		fclose(fp);
 		return 0;
 	}
-	
+
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&mul, sizeof(Uint32), 1, fp);
 
@@ -2139,7 +2114,7 @@ Uint32 getSaveGameMapSeed() {
 		fclose(fp);
 		return 0;
 	}
-	
+
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fseek(fp, sizeof(Uint32), SEEK_CUR);

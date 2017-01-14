@@ -19,7 +19,7 @@
 /*-------------------------------------------------------------------------------
 
 	renderMagicGUI
-	
+
 	draws all the magic related gui stuff
 
 -------------------------------------------------------------------------------*/
@@ -30,15 +30,17 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 	}*/
 	SDL_Rect pos;
 	//pos.x = MAGICSPELL_LIST_X; pos.y = MAGICSPELL_LIST_Y;
-	pos.x = 0; pos.y = 0;
-	pos.w = 0; pos.h = 0;
+	pos.x = 0;
+	pos.y = 0;
+	pos.w = 0;
+	pos.h = 0;
 
 	if (magic_GUI_state == 0) { //TODO: use defines, not numbers.
 		//drawImage(magicspellList_bmp, NULL, &pos);
 		//TODO: Assemble the interface.
 		//First off, calculate how big the end shebang is gonna be.
-			//Titlebar
-			//One box for each spell up to max spells that can be displayed onscreen at once.
+		//Titlebar
+		//One box for each spell up to max spells that can be displayed onscreen at once.
 		//Set position such that it renders right in the middle of the game view.
 		//Render title bar, increment position and draw all the boxes.
 		//Draw arrow selector thingies if needed.
@@ -103,7 +105,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 /*-------------------------------------------------------------------------------
 
 	updateMagicGUI
-	
+
 	Handles all buttons and such.
 	If the spell list is open, it "equips" spells the player clicks on.
 	If the spell editor is open, well, there's a lot going on there, and it's

@@ -38,7 +38,7 @@ ItemGeneric items[NUMITEMS];
 
 Item *newItem(ItemType type,Status status,Sint16 beatitude,Sint16 count,Uint32 appearance,bool identified,list_t *inventory) {
 	Item *item;
-	
+
 	// allocate memory for the item
 	if( (item = (Item *) malloc(sizeof(Item)))==NULL ) {
 		printlog( "failed to allocate memory for new item!\n" );
@@ -46,7 +46,7 @@ Item *newItem(ItemType type,Status status,Sint16 beatitude,Sint16 count,Uint32 a
 	}
 
 	//item->captured_monster = nullptr;
-	
+
 	// add the item to the inventory
 	if( inventory!=NULL ) {
 		item->node = list_AddNodeLast(inventory);
@@ -56,7 +56,7 @@ Item *newItem(ItemType type,Status status,Sint16 beatitude,Sint16 count,Uint32 a
 	} else {
 		item->node = NULL;
 	}
-	
+
 	// now set all of my data elements
 	item->type=type;
 	item->status=status;
@@ -146,7 +146,7 @@ Item *uidToItem(Uint32 uid) {
 /*-------------------------------------------------------------------------------
 
 	itemCurve
-	
+
 	Selects an item type from the given category of items by factoring in
 	dungeon level, value of the item, etc.
 
@@ -156,12 +156,12 @@ ItemType itemCurve(Category cat) {
 	int numitems = NUMITEMS - ( NUMITEMS - ((int)ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
 	int c;
-	
+
 	if( cat<0 || cat>=NUMCATEGORIES ) {
 		printlog("warning: itemCurve() called with bad category value!\n");
 		return GEM_ROCK;
 	}
-	
+
 	// find highest value of items in category
 	Uint32 highestvalue=0;
 	Uint32 lowestvalue=0;
@@ -177,7 +177,7 @@ ItemType itemCurve(Category cat) {
 		printlog("warning: category passed to itemCurve has no items!\n");
 		return GEM_ROCK;
 	}
-	
+
 	if( cat == SCROLL || cat == POTION || cat == BOOK ) {
 		// these item categories will spawn anything of their type
 		for( c=0; c<numitems; c++ ) {
@@ -191,20 +191,20 @@ ItemType itemCurve(Category cat) {
 			chances[c] = FALSE;
 			if( items[c].category == cat ) {
 				switch( (ItemType)c ) {
-					case TOOL_TINOPENER:
-						if( prng_get_uint()%2 ) // 50% chance
-							chances[c] = TRUE;
-						break;
-					case TOOL_LANTERN:
-						if( prng_get_uint()%4 ) // 75% chance
-							chances[c] = TRUE;
-						break;
-					case TOOL_SKELETONKEY:
-						chances[c] = FALSE; // 0% chance
-						break;
-					default:
+				case TOOL_TINOPENER:
+					if( prng_get_uint()%2 ) // 50% chance
 						chances[c] = TRUE;
-						break;
+					break;
+				case TOOL_LANTERN:
+					if( prng_get_uint()%4 ) // 75% chance
+						chances[c] = TRUE;
+					break;
+				case TOOL_SKELETONKEY:
+					chances[c] = FALSE; // 0% chance
+					break;
+				default:
+					chances[c] = TRUE;
+					break;
 				}
 			}
 		}
@@ -217,7 +217,7 @@ ItemType itemCurve(Category cat) {
 				chances[c] = TRUE;
 		}
 	}
-	
+
 	// calculate number of items left
 	Uint32 numleft=0;
 	for( c=0; c<numitems; c++ ) {
@@ -227,14 +227,14 @@ ItemType itemCurve(Category cat) {
 	if( numleft==0 ) {
 		return GEM_ROCK;
 	}
-	
+
 	// most gems are worthless pieces of glass
 	if( cat==GEM ) {
 		if( prng_get_uint()%10 ) {
 			return GEM_GLASS;
 		}
 	}
-	
+
 	// pick the item
 	int pick = prng_get_uint()%numleft;
 	for( c=0; c<numitems; c++ ) {
@@ -248,7 +248,7 @@ ItemType itemCurve(Category cat) {
 			}
 		}
 	}
-	
+
 	return GEM_ROCK;
 }
 
@@ -489,7 +489,7 @@ int itemCompare(const Item *item1, const Item *item2) {
 		if( item2 == NULL )
 			return 1;
 	}
-	
+
 	// check attributes
 	if(item1->type != item2->type)
 		return 1;
@@ -501,7 +501,7 @@ int itemCompare(const Item *item1, const Item *item2) {
 		return 1;
 	if(item1->identified != item2->identified)
 		return 1;
-	
+
 	// items are identical
 	return 0;
 }
@@ -648,14 +648,14 @@ Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats) {
 			free(item);
 		}
 	}
-	
+
 	return entity;
 }
 
 /*-------------------------------------------------------------------------------
 
 	consumeItem
-	
+
 	consumes an item
 
 -------------------------------------------------------------------------------*/
@@ -711,10 +711,8 @@ void equipItem(Item *item, Item **slot, int player) {
 			}
 		}
 		if( multiplayer != CLIENT && !intro && !fadeout ) {
-			if( players[player] != nullptr && players[player]->entity != nullptr)
-			{
-				if (players[player]->entity->ticks > 60)
-				{
+			if( players[player] != nullptr && players[player]->entity != nullptr) {
+				if (players[player]->entity->ticks > 60) {
 					if (itemCategory(item) == AMULET || itemCategory(item) == RING)
 						playSoundEntity(players[player]->entity, 33 + rand()%2, 64);
 					else if (itemCategory(item) == WEAPON)
@@ -758,14 +756,10 @@ void equipItem(Item *item, Item **slot, int player) {
 				return;
 			}
 		}
-		if (multiplayer != CLIENT && !intro && !fadeout)
-		{
-			if (players[player] != nullptr && players[player]->entity != nullptr)
-			{
-				if (players[player]->entity->ticks > 60)
-				{
-					if (itemCategory(item) == ARMOR)
-					{
+		if (multiplayer != CLIENT && !intro && !fadeout) {
+			if (players[player] != nullptr && players[player]->entity != nullptr) {
+				if (players[player]->entity->ticks > 60) {
+					if (itemCategory(item) == ARMOR) {
 						playSoundEntity(players[player]->entity, 44 + rand()%3, 64);
 					}
 				}
@@ -812,41 +806,41 @@ void useItem(Item *item, int player) {
 	} else if( gui_mode == GUI_MODE_SHOP && player==clientnum && itemCategory(item) != SPELL_CAT) {
 		bool deal = TRUE;
 		switch( shopkeepertype ) {
-			case 0: // arms & armor
-				if( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
-					deal = FALSE;
-				break;
-			case 1: // hats
-				if( itemCategory(item) != ARMOR )
-					deal = FALSE;
-				break;
-			case 2: // jewelry
-				if( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
-					deal = FALSE;
-				break;
-			case 3: // bookstore
-				if( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
-					deal = FALSE;
-				break;
-			case 4: // potion shop
-				if( itemCategory(item) != POTION )
-					deal = FALSE;
-				break;
-			case 5: // magicstaffs
-				if( itemCategory(item) != MAGICSTAFF )
-					deal = FALSE;
-				break;
-			case 6: // food
-				if( itemCategory(item) != FOOD )
-					deal = FALSE;
-				break;
-			case 7: // tools
-			case 8: // lights
-				if( itemCategory(item) != TOOL )
-					deal = FALSE;
-				break;
-			default:
-				break;
+		case 0: // arms & armor
+			if( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+				deal = FALSE;
+			break;
+		case 1: // hats
+			if( itemCategory(item) != ARMOR )
+				deal = FALSE;
+			break;
+		case 2: // jewelry
+			if( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
+				deal = FALSE;
+			break;
+		case 3: // bookstore
+			if( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+				deal = FALSE;
+			break;
+		case 4: // potion shop
+			if( itemCategory(item) != POTION )
+				deal = FALSE;
+			break;
+		case 5: // magicstaffs
+			if( itemCategory(item) != MAGICSTAFF )
+				deal = FALSE;
+			break;
+		case 6: // food
+			if( itemCategory(item) != FOOD )
+				deal = FALSE;
+			break;
+		case 7: // tools
+		case 8: // lights
+			if( itemCategory(item) != TOOL )
+				deal = FALSE;
+			break;
+		default:
+			break;
 		}
 		if( deal ) {
 			sellitem = item;
@@ -858,12 +852,12 @@ void useItem(Item *item, int player) {
 		}
 		return;
 	}
-	
+
 	if( item->status == BROKEN && player==clientnum ) {
 		messagePlayer(player,language[1092],item->getName());
 		return;
 	}
-	
+
 	// tins need a tin opener to open...
 	if( player==clientnum ) {
 		if( item->type == FOOD_TIN ) {
@@ -900,361 +894,356 @@ void useItem(Item *item, int player) {
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 	switch( item->type ) {
-		case WOODEN_SHIELD:
-			equipItem(item,&stats[player]->shield,player);
-			break;
-		case QUARTERSTAFF:
-		case BRONZE_SWORD:
-		case BRONZE_MACE:
-		case BRONZE_AXE:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case BRONZE_SHIELD:
-			equipItem(item,&stats[player]->shield,player);
-			break;
-		case SLING:
-		case IRON_SPEAR:
-		case IRON_SWORD:
-		case IRON_MACE:
-		case IRON_AXE:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case IRON_SHIELD:
-			equipItem(item,&stats[player]->shield,player);
-			break;
-		case SHORTBOW:
-		case STEEL_HALBERD:
-		case STEEL_SWORD:
-		case STEEL_MACE:
-		case STEEL_AXE:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case STEEL_SHIELD:
-		case STEEL_SHIELD_RESISTANCE:
-			equipItem(item,&stats[player]->shield,player);
-			break;
-		case CROSSBOW:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case GLOVES:
-		case GLOVES_DEXTERITY:
-		case BRACERS:
-		case BRACERS_CONSTITUTION:
-		case GAUNTLETS:
-		case GAUNTLETS_STRENGTH:
-			equipItem(item,&stats[player]->gloves,player);
-			break;
-		case CLOAK:
-		case CLOAK_MAGICREFLECTION:
-		case CLOAK_INVISIBILITY:
-		case CLOAK_PROTECTION:
-			equipItem(item,&stats[player]->cloak,player);
-			break;
-		case LEATHER_BOOTS:
-		case LEATHER_BOOTS_SPEED:
-		case IRON_BOOTS:
-		case IRON_BOOTS_WATERWALKING:
-		case STEEL_BOOTS:
-		case STEEL_BOOTS_LEVITATION:
-		case STEEL_BOOTS_FEATHER:
-			equipItem(item,&stats[player]->shoes,player);
-			break;
-		case LEATHER_BREASTPIECE:
-		case IRON_BREASTPIECE:
-		case STEEL_BREASTPIECE:
-			equipItem(item,&stats[player]->breastplate,player);
-			break;
-		case HAT_PHRYGIAN:
-		case HAT_HOOD:
-		case HAT_WIZARD:
-		case HAT_JESTER:
-		case LEATHER_HELM:
-		case IRON_HELM:
-		case STEEL_HELM:
-			equipItem(item,&stats[player]->helmet,player);
-			break;
-		case AMULET_SEXCHANGE:
-			messagePlayer(player,language[1094]);
-			item_AmuletSexChange(item,player);
+	case WOODEN_SHIELD:
+		equipItem(item,&stats[player]->shield,player);
+		break;
+	case QUARTERSTAFF:
+	case BRONZE_SWORD:
+	case BRONZE_MACE:
+	case BRONZE_AXE:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case BRONZE_SHIELD:
+		equipItem(item,&stats[player]->shield,player);
+		break;
+	case SLING:
+	case IRON_SPEAR:
+	case IRON_SWORD:
+	case IRON_MACE:
+	case IRON_AXE:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case IRON_SHIELD:
+		equipItem(item,&stats[player]->shield,player);
+		break;
+	case SHORTBOW:
+	case STEEL_HALBERD:
+	case STEEL_SWORD:
+	case STEEL_MACE:
+	case STEEL_AXE:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case STEEL_SHIELD:
+	case STEEL_SHIELD_RESISTANCE:
+		equipItem(item,&stats[player]->shield,player);
+		break;
+	case CROSSBOW:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case GLOVES:
+	case GLOVES_DEXTERITY:
+	case BRACERS:
+	case BRACERS_CONSTITUTION:
+	case GAUNTLETS:
+	case GAUNTLETS_STRENGTH:
+		equipItem(item,&stats[player]->gloves,player);
+		break;
+	case CLOAK:
+	case CLOAK_MAGICREFLECTION:
+	case CLOAK_INVISIBILITY:
+	case CLOAK_PROTECTION:
+		equipItem(item,&stats[player]->cloak,player);
+		break;
+	case LEATHER_BOOTS:
+	case LEATHER_BOOTS_SPEED:
+	case IRON_BOOTS:
+	case IRON_BOOTS_WATERWALKING:
+	case STEEL_BOOTS:
+	case STEEL_BOOTS_LEVITATION:
+	case STEEL_BOOTS_FEATHER:
+		equipItem(item,&stats[player]->shoes,player);
+		break;
+	case LEATHER_BREASTPIECE:
+	case IRON_BREASTPIECE:
+	case STEEL_BREASTPIECE:
+		equipItem(item,&stats[player]->breastplate,player);
+		break;
+	case HAT_PHRYGIAN:
+	case HAT_HOOD:
+	case HAT_WIZARD:
+	case HAT_JESTER:
+	case LEATHER_HELM:
+	case IRON_HELM:
+	case STEEL_HELM:
+		equipItem(item,&stats[player]->helmet,player);
+		break;
+	case AMULET_SEXCHANGE:
+		messagePlayer(player,language[1094]);
+		item_AmuletSexChange(item,player);
+		consumeItem(item);
+		break;
+	case AMULET_LIFESAVING:
+	case AMULET_WATERBREATHING:
+	case AMULET_MAGICREFLECTION:
+		equipItem(item,&stats[player]->amulet,player);
+		break;
+	case AMULET_STRANGULATION:
+		equipItem(item,&stats[player]->amulet,player);
+		messagePlayer(player,language[1095]);
+		if( item->beatitude>=0 )
+			item->beatitude = -1;
+		break;
+	case AMULET_POISONRESISTANCE:
+		equipItem(item,&stats[player]->amulet,player);
+		break;
+	case POTION_WATER:
+		item_PotionWater(item, players[player]->entity);
+		break;
+	case POTION_BOOZE:
+		item_PotionBooze(item, players[player]->entity);
+		break;
+	case POTION_JUICE:
+		item_PotionJuice(item, players[player]->entity);
+		break;
+	case POTION_SICKNESS:
+		item_PotionSickness(item, players[player]->entity);
+		break;
+	case POTION_CONFUSION:
+		item_PotionConfusion(item, players[player]->entity);
+		break;
+	case POTION_EXTRAHEALING:
+		item_PotionExtraHealing(item, players[player]->entity);
+		break;
+	case POTION_HEALING:
+		item_PotionHealing(item, players[player]->entity);
+		break;
+	case POTION_CUREAILMENT:
+		item_PotionCureAilment(item, players[player]->entity);
+		break;
+	case POTION_BLINDNESS:
+		item_PotionBlindness(item, players[player]->entity);
+		break;
+	case POTION_RESTOREMAGIC:
+		item_PotionRestoreMagic(item, players[player]->entity);
+		break;
+	case POTION_INVISIBILITY:
+		item_PotionInvisibility(item, players[player]->entity);
+		break;
+	case POTION_LEVITATION:
+		item_PotionLevitation(item, players[player]->entity);
+		break;
+	case POTION_SPEED:
+		item_PotionSpeed(item, players[player]->entity);
+		break;
+	case POTION_ACID:
+		item_PotionAcid(item, players[player]->entity);
+		break;
+	case POTION_PARALYSIS:
+		item_PotionParalysis(item, players[player]->entity);
+		break;
+	case SCROLL_MAIL:
+		item_ScrollMail(item, player);
+		break;
+	case SCROLL_IDENTIFY:
+		item_ScrollIdentify(item, player);
+		if( !players[player]->entity->isBlind() )
 			consumeItem(item);
-			break;
-		case AMULET_LIFESAVING:
-		case AMULET_WATERBREATHING:
-		case AMULET_MAGICREFLECTION:
-			equipItem(item,&stats[player]->amulet,player);
-			break;
-		case AMULET_STRANGULATION:
-			equipItem(item,&stats[player]->amulet,player);
-			messagePlayer(player,language[1095]);
-			if( item->beatitude>=0 )
-				item->beatitude = -1;
-			break;
-		case AMULET_POISONRESISTANCE:
-			equipItem(item,&stats[player]->amulet,player);
-			break;
-		case POTION_WATER:
-			item_PotionWater(item, players[player]->entity);
-			break;
-		case POTION_BOOZE:
-			item_PotionBooze(item, players[player]->entity);
-			break;
-		case POTION_JUICE:
-			item_PotionJuice(item, players[player]->entity);
-			break;
-		case POTION_SICKNESS:
-			item_PotionSickness(item, players[player]->entity);
-			break;
-		case POTION_CONFUSION:
-			item_PotionConfusion(item, players[player]->entity);
-			break;
-		case POTION_EXTRAHEALING:
-			item_PotionExtraHealing(item, players[player]->entity);
-			break;
-		case POTION_HEALING:
-			item_PotionHealing(item, players[player]->entity);
-			break;
-		case POTION_CUREAILMENT:
-			item_PotionCureAilment(item, players[player]->entity);
-			break;
-		case POTION_BLINDNESS:
-			item_PotionBlindness(item, players[player]->entity);
-			break;
-		case POTION_RESTOREMAGIC:
-			item_PotionRestoreMagic(item, players[player]->entity);
-			break;
-		case POTION_INVISIBILITY:
-			item_PotionInvisibility(item, players[player]->entity);
-			break;
-		case POTION_LEVITATION:
-			item_PotionLevitation(item, players[player]->entity);
-			break;
-		case POTION_SPEED:
-			item_PotionSpeed(item, players[player]->entity);
-			break;
-		case POTION_ACID:
-			item_PotionAcid(item, players[player]->entity);
-			break;
-		case POTION_PARALYSIS:
-			item_PotionParalysis(item, players[player]->entity);
-			break;
-		case SCROLL_MAIL:
-			item_ScrollMail(item, player);
-			break;
-		case SCROLL_IDENTIFY:
-			item_ScrollIdentify(item, player);
-			if( !players[player]->entity->isBlind() )
+		break;
+	case SCROLL_LIGHT:
+		item_ScrollLight(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_BLANK:
+		item_ScrollBlank(item, player);
+		break;
+	case SCROLL_ENCHANTWEAPON:
+		item_ScrollEnchantWeapon(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_ENCHANTARMOR:
+		item_ScrollEnchantArmor(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_REMOVECURSE:
+		item_ScrollRemoveCurse(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_FIRE:
+		item_ScrollFire(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_FOOD:
+		item_ScrollFood(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_MAGICMAPPING:
+		item_ScrollMagicMapping(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_REPAIR:
+		item_ScrollRepair(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_DESTROYARMOR:
+		item_ScrollDestroyArmor(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_TELEPORTATION:
+		item_ScrollTeleportation(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case SCROLL_SUMMON:
+		item_ScrollSummon(item, player);
+		if( !players[player]->entity->isBlind() )
+			consumeItem(item);
+		break;
+	case MAGICSTAFF_LIGHT:
+	case MAGICSTAFF_DIGGING:
+	case MAGICSTAFF_LOCKING:
+	case MAGICSTAFF_MAGICMISSILE:
+	case MAGICSTAFF_OPENING:
+	case MAGICSTAFF_SLOW:
+	case MAGICSTAFF_COLD:
+	case MAGICSTAFF_FIRE:
+	case MAGICSTAFF_LIGHTNING:
+	case MAGICSTAFF_SLEEP:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case RING_ADORNMENT:
+	case RING_SLOWDIGESTION:
+	case RING_PROTECTION:
+	case RING_WARNING:
+	case RING_STRENGTH:
+	case RING_CONSTITUTION:
+	case RING_INVISIBILITY:
+	case RING_MAGICRESISTANCE:
+	case RING_CONFLICT:
+	case RING_LEVITATION:
+	case RING_REGENERATION:
+	case RING_TELEPORTATION:
+		equipItem(item,&stats[player]->ring,player);
+		break;
+	case SPELLBOOK_FORCEBOLT:
+	case SPELLBOOK_MAGICMISSILE:
+	case SPELLBOOK_COLD:
+	case SPELLBOOK_FIREBALL:
+	case SPELLBOOK_LIGHTNING:
+	case SPELLBOOK_REMOVECURSE:
+	case SPELLBOOK_LIGHT:
+	case SPELLBOOK_IDENTIFY:
+	case SPELLBOOK_MAGICMAPPING:
+	case SPELLBOOK_SLEEP:
+	case SPELLBOOK_CONFUSE:
+	case SPELLBOOK_SLOW:
+	case SPELLBOOK_OPENING:
+	case SPELLBOOK_LOCKING:
+	case SPELLBOOK_LEVITATION:
+	case SPELLBOOK_INVISIBILITY:
+	case SPELLBOOK_TELEPORTATION:
+	case SPELLBOOK_HEALING:
+	case SPELLBOOK_EXTRAHEALING:
+	case SPELLBOOK_CUREAILMENT:
+	case SPELLBOOK_DIG:
+		item_Spellbook(item,player);
+		break;
+	case GEM_ROCK:
+	case GEM_LUCK:
+	case GEM_GARNET:
+	case GEM_RUBY:
+	case GEM_JACINTH:
+	case GEM_AMBER:
+	case GEM_CITRINE:
+	case GEM_JADE:
+	case GEM_EMERALD:
+	case GEM_SAPPHIRE:
+	case GEM_AQUAMARINE:
+	case GEM_AMETHYST:
+	case GEM_FLUORITE:
+	case GEM_OPAL:
+	case GEM_DIAMOND:
+	case GEM_JETSTONE:
+	case GEM_OBSIDIAN:
+	case GEM_GLASS:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case TOOL_PICKAXE:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case TOOL_TINOPENER:
+		item_ToolTinOpener(item, player);
+		break;
+	case TOOL_MIRROR:
+		item_ToolMirror(item, player);
+		break;
+	case TOOL_LOCKPICK:
+	case TOOL_SKELETONKEY:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case TOOL_TORCH:
+	case TOOL_LANTERN:
+		equipItem(item,&stats[player]->shield,player);
+		break;
+	case TOOL_BLINDFOLD:
+		equipItem(item,&stats[player]->mask,player);
+		break;
+	case TOOL_TOWEL:
+		item_ToolTowel(item, player);
+		if( multiplayer==CLIENT )
+			if( stats[player]->EFFECTS[EFF_BLEEDING] )
 				consumeItem(item);
-			break;
-		case SCROLL_LIGHT:
-			item_ScrollLight(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_BLANK:
-			item_ScrollBlank(item, player);
-			break;
-		case SCROLL_ENCHANTWEAPON:
-			item_ScrollEnchantWeapon(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_ENCHANTARMOR:
-			item_ScrollEnchantArmor(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_REMOVECURSE:
-			item_ScrollRemoveCurse(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_FIRE:
-			item_ScrollFire(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_FOOD:
-			item_ScrollFood(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_MAGICMAPPING:
-			item_ScrollMagicMapping(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_REPAIR:
-			item_ScrollRepair(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_DESTROYARMOR:
-			item_ScrollDestroyArmor(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_TELEPORTATION:
-			item_ScrollTeleportation(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case SCROLL_SUMMON:
-			item_ScrollSummon(item, player);
-			if( !players[player]->entity->isBlind() )
-				consumeItem(item);
-			break;
-		case MAGICSTAFF_LIGHT:
-		case MAGICSTAFF_DIGGING:
-		case MAGICSTAFF_LOCKING:
-		case MAGICSTAFF_MAGICMISSILE:
-		case MAGICSTAFF_OPENING:
-		case MAGICSTAFF_SLOW:
-		case MAGICSTAFF_COLD:
-		case MAGICSTAFF_FIRE:
-		case MAGICSTAFF_LIGHTNING:
-		case MAGICSTAFF_SLEEP:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case RING_ADORNMENT:
-		case RING_SLOWDIGESTION:
-		case RING_PROTECTION:
-		case RING_WARNING:
-		case RING_STRENGTH:
-		case RING_CONSTITUTION:
-		case RING_INVISIBILITY:
-		case RING_MAGICRESISTANCE:
-		case RING_CONFLICT:
-		case RING_LEVITATION:
-		case RING_REGENERATION:
-		case RING_TELEPORTATION:
-			equipItem(item,&stats[player]->ring,player);
-			break;
-		case SPELLBOOK_FORCEBOLT:
-		case SPELLBOOK_MAGICMISSILE:
-		case SPELLBOOK_COLD:
-		case SPELLBOOK_FIREBALL:
-		case SPELLBOOK_LIGHTNING:
-		case SPELLBOOK_REMOVECURSE:
-		case SPELLBOOK_LIGHT:
-		case SPELLBOOK_IDENTIFY:
-		case SPELLBOOK_MAGICMAPPING:
-		case SPELLBOOK_SLEEP:
-		case SPELLBOOK_CONFUSE:
-		case SPELLBOOK_SLOW:
-		case SPELLBOOK_OPENING:
-		case SPELLBOOK_LOCKING:
-		case SPELLBOOK_LEVITATION:
-		case SPELLBOOK_INVISIBILITY:
-		case SPELLBOOK_TELEPORTATION:
-		case SPELLBOOK_HEALING:
-		case SPELLBOOK_EXTRAHEALING:
-		case SPELLBOOK_CUREAILMENT:
-		case SPELLBOOK_DIG:
-			item_Spellbook(item,player);
-			break;
-		case GEM_ROCK:
-		case GEM_LUCK:
-		case GEM_GARNET:
-		case GEM_RUBY:
-		case GEM_JACINTH:
-		case GEM_AMBER:
-		case GEM_CITRINE:
-		case GEM_JADE:
-		case GEM_EMERALD:
-		case GEM_SAPPHIRE:
-		case GEM_AQUAMARINE:
-		case GEM_AMETHYST:
-		case GEM_FLUORITE:
-		case GEM_OPAL:
-		case GEM_DIAMOND:
-		case GEM_JETSTONE:
-		case GEM_OBSIDIAN:
-		case GEM_GLASS:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case TOOL_PICKAXE:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case TOOL_TINOPENER:
-			item_ToolTinOpener(item, player);
-			break;
-		case TOOL_MIRROR:
-			item_ToolMirror(item, player);
-			break;
-		case TOOL_LOCKPICK:
-		case TOOL_SKELETONKEY:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case TOOL_TORCH:
-		case TOOL_LANTERN:
-			equipItem(item,&stats[player]->shield,player);
-			break;
-		case TOOL_BLINDFOLD:
-			equipItem(item,&stats[player]->mask,player);
-			break;
-		case TOOL_TOWEL:
-			item_ToolTowel(item, player);
-			if( multiplayer==CLIENT )
-				if( stats[player]->EFFECTS[EFF_BLEEDING] )
-					consumeItem(item);
-			break;
-		case TOOL_GLASSES:
-			equipItem(item,&stats[player]->mask,player);
-			break;
-		case TOOL_BEARTRAP:
-			item_ToolBeartrap(item, player);
-			break;
-		case FOOD_BREAD:
-		case FOOD_CREAMPIE:
-		case FOOD_CHEESE:
-		case FOOD_APPLE:
-		case FOOD_MEAT:
-		case FOOD_FISH:
-			item_Food(item, player);
-			break;
-		case FOOD_TIN:
-			item_FoodTin(item, player);
-			break;
-		case READABLE_BOOK:
-			if (numbooks && player == clientnum)
-			{
-				if (players[player] && players[player]->entity)
-				{
-					if (!players[player]->entity->isBlind())
-					{
-						openBook(books[item->appearance%numbooks], item);
-						conductIlliterate = FALSE;
-					}
-					else
-					{
-						messagePlayer(player, language[970]);
-					}
+		break;
+	case TOOL_GLASSES:
+		equipItem(item,&stats[player]->mask,player);
+		break;
+	case TOOL_BEARTRAP:
+		item_ToolBeartrap(item, player);
+		break;
+	case FOOD_BREAD:
+	case FOOD_CREAMPIE:
+	case FOOD_CHEESE:
+	case FOOD_APPLE:
+	case FOOD_MEAT:
+	case FOOD_FISH:
+		item_Food(item, player);
+		break;
+	case FOOD_TIN:
+		item_FoodTin(item, player);
+		break;
+	case READABLE_BOOK:
+		if (numbooks && player == clientnum) {
+			if (players[player] && players[player]->entity) {
+				if (!players[player]->entity->isBlind()) {
+					openBook(books[item->appearance%numbooks], item);
+					conductIlliterate = FALSE;
+				} else {
+					messagePlayer(player, language[970]);
 				}
 			}
-			break;
-		case SPELL_ITEM: {
-			;
-			spell_t *spell = getSpellFromItem(item);
-			if (spell)
-				equipSpell(spell, player);
-			break;
 		}
-		case ARTIFACT_SWORD:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case ARTIFACT_MACE:
-			if( player==clientnum )
-				messagePlayer(clientnum,language[1096]);
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		case ARTIFACT_SPEAR:
-		case ARTIFACT_AXE:
-		case ARTIFACT_BOW:
-			equipItem(item,&stats[player]->weapon,player);
-			break;
-		default:
-			printlog("error: item %d used, but it has no use case!\n",(int)item->type);
-			break;
+		break;
+	case SPELL_ITEM: {
+		;
+		spell_t *spell = getSpellFromItem(item);
+		if (spell)
+			equipSpell(spell, player);
+		break;
+	}
+	case ARTIFACT_SWORD:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case ARTIFACT_MACE:
+		if( player==clientnum )
+			messagePlayer(clientnum,language[1096]);
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	case ARTIFACT_SPEAR:
+	case ARTIFACT_AXE:
+	case ARTIFACT_BOW:
+		equipItem(item,&stats[player]->weapon,player);
+		break;
+	default:
+		printlog("error: item %d used, but it has no use case!\n",(int)item->type);
+		break;
 	}
 }
 
@@ -1296,14 +1285,14 @@ Item *itemPickup(int player,Item *item) {
 		item2 = newItem(item->type,item->status,item->beatitude,item->count,item->appearance,item->identified,&stats[player]->inventory);
 		return item2;
 	}
-	
+
 	return item;
 }
 
 /*-------------------------------------------------------------------------------
 
 	newItemFromEntity
-	
+
 	returns a pointer to an item struct from the given entity if it's an
 	"item" entity, and returns NULL if the entity is anything else
 
@@ -1318,7 +1307,7 @@ Item *newItemFromEntity(Entity *entity) {
 /*-------------------------------------------------------------------------------
 
 	itemSlot
-	
+
 	returns a pointer to the equipment slot in which the item is residing,
 	or NULL if the item isn't stored in an equipment slot
 
@@ -1379,7 +1368,7 @@ bool itemIsEquipped(const Item *item, int player) {
 		return TRUE;
 	if( !itemCompare(item,stats[player]->mask) )
 		return TRUE;
-	
+
 	return FALSE;
 }
 
@@ -1499,8 +1488,7 @@ Sint32 Item::armorGetAC() {
 
 -------------------------------------------------------------------------------*/
 
-bool Item::canUnequip()
-{
+bool Item::canUnequip() {
 	/*
 	//Spellbooks are no longer equipable.
 	if (type >= 100 && type <= 121) { //Spellbooks always unequipable regardless of cursed.
@@ -1525,7 +1513,7 @@ bool Item::canUnequip()
 
 int Item::buyValue(int player) {
 	int value = items[type].value; // base value
-	
+
 	// identified bonus
 	if( identified ) {
 		value *= .8;
@@ -1536,17 +1524,17 @@ int Item::buyValue(int player) {
 			value *= 1.25;
 		}
 	}
-	
+
 	// cursed and status bonuses
 	value *= 1.f + beatitude/20.f;
 	value *= ((int)status+5)/10.f;
-	
+
 	// trading bonus
 	value /= (50+stats[player]->PROFICIENCIES[PRO_TRADING])/150.f;
-	
+
 	// charisma bonus
 	value /= 1.f + stats[player]->CHR/20.f;
-	
+
 	// result
 	value = std::max(1,value);
 	return std::max(value,items[type].value);
@@ -1562,7 +1550,7 @@ int Item::buyValue(int player) {
 
 int Item::sellValue(int player) {
 	int value = items[type].value; // base value
-	
+
 	// identified bonus
 	if ( identified ) {
 		value *= 1.20;
@@ -1573,17 +1561,17 @@ int Item::sellValue(int player) {
 			value *= .75;
 		}
 	}
-	
+
 	// cursed and status bonuses
 	value *= 1.f + beatitude/20.f;
 	value *= ((int)status+5)/10.f;
-	
+
 	// trading bonus
 	value *= (50+stats[player]->PROFICIENCIES[PRO_TRADING])/150.f;
-	
+
 	// charisma bonus
 	value *= 1.f + stats[player]->CHR/20.f;
-	
+
 	// result
 	value = std::max(1,value);
 	return std::min(value,items[type].value);
@@ -1592,7 +1580,7 @@ int Item::sellValue(int player) {
 /*-------------------------------------------------------------------------------
 
 	Item::apply
-	
+
 	Applies the given item from the given player to the given entity
 	(ie for key unlocking door)
 
@@ -1653,8 +1641,7 @@ void Item::apply(int player, Entity *entity) {
 				} else {
 					playSoundEntity(entity,92,64);
 					messagePlayer(player,language[1102]);
-					if (rand()%10 == 0)
-					{
+					if (rand()%10 == 0) {
 						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 					} else {
 						if ( rand()%5==0 ) {
@@ -1732,18 +1719,15 @@ void Item::apply(int player, Entity *entity) {
 	}
 }
 
-SummonProperties::SummonProperties()
-{
+SummonProperties::SummonProperties() {
 	//TODO:
 }
 
-SummonProperties::~SummonProperties()
-{
+SummonProperties::~SummonProperties() {
 	//TODO:
 }
 
-bool isPotionBad(const Item &potion)
-{
+bool isPotionBad(const Item &potion) {
 	if (itemCategory(&potion) != POTION)
 		return false;
 

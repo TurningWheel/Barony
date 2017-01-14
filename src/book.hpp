@@ -14,8 +14,7 @@
 #include "main.hpp"
 
 //TODO: The book name will need to be replaced with books[item->appearnce%numbooks]->name as opposed to item->name in the inventory.
-typedef struct book_t
-{
+typedef struct book_t {
 	char *text; //The total book's text. Do not render this.
 
 	char *name; //The book's name. Must be created before the pages are created.

@@ -77,7 +77,7 @@ int fullscreen = 0;
 bool smoothlighting=FALSE;
 list_t removedEntities;
 list_t entitiesToDelete[MAXPLAYERS];
-Entity *client_selected[MAXPLAYERS]={NULL,NULL,NULL,NULL};
+Entity *client_selected[MAXPLAYERS]= {NULL,NULL,NULL,NULL};
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
 Uint32 client_keepalive[MAXPLAYERS];
@@ -233,7 +233,7 @@ hit_t hit;
 /*-------------------------------------------------------------------------------
 
 	longestline
-	
+
 	returns the longest line of characters in a string (stopping for
 	newlines)
 
@@ -261,8 +261,7 @@ int longestline(char *str) {
 
 -------------------------------------------------------------------------------*/
 
-int concatedStringLength(char *str, ...)
-{
+int concatedStringLength(char *str, ...) {
 	va_list argptr;
 	char newstr[1024] = { 0 };
 
@@ -295,8 +294,7 @@ int sgn(double x) {
 
 -------------------------------------------------------------------------------*/
 
-int numdigits_sint16(Sint16 x)
-{
+int numdigits_sint16(Sint16 x) {
 	return snprintf(NULL, 0, "%d", x);
 }
 

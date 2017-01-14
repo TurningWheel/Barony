@@ -22,7 +22,7 @@
 
 void initScorpion(Entity *my, Stat *myStats) {
 	int c;
-	
+
 	my->flags[UPDATENEEDED]=TRUE;
 	my->flags[INVISIBLE]=FALSE;
 
@@ -39,8 +39,10 @@ void initScorpion(Entity *my, Stat *myStats) {
 		strcpy(myStats->name,"");
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 70; myStats->MAXHP = 70;
-		myStats->MP = 10; myStats->MAXMP = 10;
+		myStats->HP = 70;
+		myStats->MAXHP = 70;
+		myStats->MP = 10;
+		myStats->MAXMP = 10;
 		myStats->OLDHP = myStats->HP;
 		myStats->STR = 13;
 		myStats->DEX = 3;
@@ -54,7 +56,8 @@ void initScorpion(Entity *my, Stat *myStats) {
 		myStats->HUNGER = 900;
 		if( !myStats->leader_uid )
 			myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -76,7 +79,8 @@ void initScorpion(Entity *my, Stat *myStats) {
 
 		if( rand()%50==0 && !my->flags[USERFLAG2] ) {
 			strcpy(myStats->name,"Skrabblag");
-			myStats->HP = 100; myStats->MAXHP = 100;
+			myStats->HP = 100;
+			myStats->MAXHP = 100;
 			myStats->OLDHP = myStats->HP;
 			myStats->STR = 15;
 			myStats->DEX = 5;
@@ -95,7 +99,7 @@ void initScorpion(Entity *my, Stat *myStats) {
 			}
 		}
 	}
-	
+
 	// tail
 	Entity *entity = newEntity(197, 0, map.entities);
 	entity->sizex = 4;
@@ -116,7 +120,7 @@ void initScorpion(Entity *my, Stat *myStats) {
 
 void scorpionDie(Entity *my) {
 	node_t *node, *nextnode;
-	
+
 	int c = 0;
 	for( c=0; c<5; c++ ) {
 		Entity *gib = spawnGib(my);
@@ -158,20 +162,19 @@ void scorpionDie(Entity *my) {
 }
 void actScorpionTail(Entity *my) {
 	int i;
-	
+
 	Entity *parent = NULL;
 	if( (parent=uidToEntity(my->skill[2]))==NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	if( multiplayer!=CLIENT ) {
 		for( i=0; i<MAXPLAYERS; i++ ) {
 			if( inrange[i] ) {
 				if( i==0 && selectedEntity==my ) {
 					parent->skill[13] = i+1;
-				}
-				else if( client_selected[i]==my ) {
+				} else if( client_selected[i]==my ) {
 					parent->skill[13] = i+1;
 				}
 			}
@@ -234,7 +237,7 @@ void scorpionAnimate(Entity *my, double dist) {
 			my->sprite=196;
 		}
 	}
-	
+
 	// move tail
 	for(bodypart=0, node = my->children.first; node!=NULL; node=node->next, bodypart++) {
 		if( bodypart<2 ) {

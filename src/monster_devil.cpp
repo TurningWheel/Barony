@@ -42,8 +42,10 @@ void initDevil(Entity *my, Stat *myStats) {
 		strcpy(myStats->name,"Baphomet");
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 1250+250*numplayers; myStats->MAXHP = myStats->HP;
-		myStats->MP = 2000; myStats->MAXMP = 2000;
+		myStats->HP = 1250+250*numplayers;
+		myStats->MAXHP = myStats->HP;
+		myStats->MP = 2000;
+		myStats->MAXMP = 2000;
 		myStats->OLDHP = myStats->HP;
 		myStats->STR = -50;
 		myStats->DEX = -20;
@@ -55,7 +57,8 @@ void initDevil(Entity *my, Stat *myStats) {
 		myStats->LVL = 30;
 		myStats->HUNGER = 900;
 		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -80,8 +83,7 @@ void initDevil(Entity *my, Stat *myStats) {
 		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
 		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
-		if (players[0] && players[0]->entity)
-		{
+		if (players[0] && players[0]->entity) {
 			MONSTER_TARGET = players[0]->entity->uid;
 			MONSTER_TARGETX = players[0]->entity->x;
 			MONSTER_TARGETY = players[0]->entity->y;
@@ -181,20 +183,19 @@ void initDevil(Entity *my, Stat *myStats) {
 
 void actDevilLimb(Entity *my) {
 	int i;
-	
+
 	Entity *parent = NULL;
 	if( (parent=uidToEntity(my->skill[2]))==NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	if( multiplayer!=CLIENT ) {
 		for( i=0; i<MAXPLAYERS; i++ ) {
 			if( inrange[i] ) {
 				if( i==0 && selectedEntity==my ) {
 					parent->skill[13] = i+1;
-				}
-				else if( client_selected[i]==my ) {
+				} else if( client_selected[i]==my ) {
 					parent->skill[13] = i+1;
 				}
 			}
@@ -285,7 +286,7 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	Entity *rightbody = NULL;
 	Entity *leftbody = NULL;
 	int bodypart;
-	
+
 	// set invisibility
 	if( multiplayer != CLIENT ) {
 		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
@@ -410,111 +411,111 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		}
 
 		switch( bodypart ) {
-			// head
-			case 2: {
-				entity->z-=16;
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
-				for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
-					double lowestdist = 5000;
-					if( tempEntity->behavior == &actPlayer ) {
-						double disttoplayer = entityDist(my,tempEntity);
-						if( disttoplayer < lowestdist ) {
-							playertotrack = tempEntity;
-						}
+		// head
+		case 2: {
+			entity->z-=16;
+			node_t *tempNode;
+			Entity *playertotrack = NULL;
+			for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
+				Entity *tempEntity = (Entity *)tempNode->element;
+				double lowestdist = 5000;
+				if( tempEntity->behavior == &actPlayer ) {
+					double disttoplayer = entityDist(my,tempEntity);
+					if( disttoplayer < lowestdist ) {
+						playertotrack = tempEntity;
 					}
 				}
-				if( playertotrack && !MONSTER_ATTACK ) {
-					double tangent = atan2( playertotrack->y-entity->y, playertotrack->x-entity->x );
-					double dir = entity->yaw - tangent;
-					while( dir >= PI )
-						dir -= PI*2;
-					while( dir < -PI )
-						dir += PI*2;
-					entity->yaw -= dir/8;
-
-					double dir2 = my->yaw - tangent;
-					while( dir2 >= PI )
-						dir2 -= PI*2;
-					while( dir2 < -PI )
-						dir2 += PI*2;
-					if( dir2>PI/2 )
-						entity->yaw = my->yaw - PI/2;
-					else if( dir2<-PI/2 )
-						entity->yaw = my->yaw + PI/2;
-				} else {
-					if( MONSTER_ATTACKTIME==0 ) {
-						entity->yaw = my->yaw;
-					} else {
-						if( MONSTER_ATTACK==1 ) {
-							entity->yaw = std::min(entity->yaw+.1,my->yaw+PI/6);
-						} else if( MONSTER_ATTACK==2 ) {
-							entity->yaw = std::max(entity->yaw-.1,my->yaw-PI/6);
-						}
-					}
-				}
-				if( MONSTER_ATTACK==4 ) {
-					entity->pitch = std::max(entity->pitch-.1,-PI/6);
-				} else {
-					entity->pitch = std::min(entity->pitch+.1,0.0);
-				}
-				break;
 			}
-			// right bicep
-			case 3:
-				entity->z-=8;
-				if( MONSTER_ATTACK==1 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
-					entity->yaw += PI/4;
-				if( MONSTER_ATTACK==5 )
-					entity->yaw += MONSTER_WEAPONYAW;
-				break;
-			// right forearm
-			case 4:
-				if( !MONSTER_ARMBENDED && MONSTER_ATTACK!=1 && MONSTER_ATTACK!=3 ) {
-					entity->focalx = limbs[DEVIL][3][0]; // 0
-					entity->focaly = limbs[DEVIL][3][1]; // 17
-					entity->focalz = limbs[DEVIL][3][2]; // 26
-					entity->pitch = rightbody->pitch;
+			if( playertotrack && !MONSTER_ATTACK ) {
+				double tangent = atan2( playertotrack->y-entity->y, playertotrack->x-entity->x );
+				double dir = entity->yaw - tangent;
+				while( dir >= PI )
+					dir -= PI*2;
+				while( dir < -PI )
+					dir += PI*2;
+				entity->yaw -= dir/8;
+
+				double dir2 = my->yaw - tangent;
+				while( dir2 >= PI )
+					dir2 -= PI*2;
+				while( dir2 < -PI )
+					dir2 += PI*2;
+				if( dir2>PI/2 )
+					entity->yaw = my->yaw - PI/2;
+				else if( dir2<-PI/2 )
+					entity->yaw = my->yaw + PI/2;
+			} else {
+				if( MONSTER_ATTACKTIME==0 ) {
+					entity->yaw = my->yaw;
 				} else {
-					entity->focalx = limbs[DEVIL][3][0] - 18; // -18
-					entity->focaly = limbs[DEVIL][3][1]; // 17
-					entity->focalz = limbs[DEVIL][3][2] - 16; // 10
-					entity->pitch = rightbody->pitch-PI/2;
+					if( MONSTER_ATTACK==1 ) {
+						entity->yaw = std::min(entity->yaw+.1,my->yaw+PI/6);
+					} else if( MONSTER_ATTACK==2 ) {
+						entity->yaw = std::max(entity->yaw-.1,my->yaw-PI/6);
+					}
 				}
-				entity->z-=8;
-				if( MONSTER_ATTACK==1 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
-					entity->yaw += PI/4;
-				if( MONSTER_ATTACK==5 )
-					entity->yaw += MONSTER_WEAPONYAW;
-				break;
-			// left bicep
-			case 5:
-				entity->z-=8;
-				if( MONSTER_ATTACK==2 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
-					entity->yaw -= PI/4;
-				if( MONSTER_ATTACK==6 )
-					entity->yaw -= MONSTER_WEAPONYAW;
-				break;
-			// left forearm
-			case 6:
-				if( !MONSTER_ARMBENDED && MONSTER_ATTACK!=2 && MONSTER_ATTACK!=3 ) {
-					entity->focalx = limbs[DEVIL][5][0]; // 0
-					entity->focaly = limbs[DEVIL][5][1]; // -17
-					entity->focalz = limbs[DEVIL][5][2]; // 26
-					entity->pitch = leftbody->pitch;
-				} else {
-					entity->focalx = limbs[DEVIL][5][0] - 18; // -18
-					entity->focaly = limbs[DEVIL][5][1]; // -17
-					entity->focalz = limbs[DEVIL][5][2] - 16; // 10
-					entity->pitch = leftbody->pitch-PI/2;
-				}
-				entity->z-=8;
-				if( MONSTER_ATTACK==2 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
-					entity->yaw -= PI/4;
-				if( MONSTER_ATTACK==6 )
-					entity->yaw -= MONSTER_WEAPONYAW;
-				break;
+			}
+			if( MONSTER_ATTACK==4 ) {
+				entity->pitch = std::max(entity->pitch-.1,-PI/6);
+			} else {
+				entity->pitch = std::min(entity->pitch+.1,0.0);
+			}
+			break;
+		}
+		// right bicep
+		case 3:
+			entity->z-=8;
+			if( MONSTER_ATTACK==1 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
+				entity->yaw += PI/4;
+			if( MONSTER_ATTACK==5 )
+				entity->yaw += MONSTER_WEAPONYAW;
+			break;
+		// right forearm
+		case 4:
+			if( !MONSTER_ARMBENDED && MONSTER_ATTACK!=1 && MONSTER_ATTACK!=3 ) {
+				entity->focalx = limbs[DEVIL][3][0]; // 0
+				entity->focaly = limbs[DEVIL][3][1]; // 17
+				entity->focalz = limbs[DEVIL][3][2]; // 26
+				entity->pitch = rightbody->pitch;
+			} else {
+				entity->focalx = limbs[DEVIL][3][0] - 18; // -18
+				entity->focaly = limbs[DEVIL][3][1]; // 17
+				entity->focalz = limbs[DEVIL][3][2] - 16; // 10
+				entity->pitch = rightbody->pitch-PI/2;
+			}
+			entity->z-=8;
+			if( MONSTER_ATTACK==1 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
+				entity->yaw += PI/4;
+			if( MONSTER_ATTACK==5 )
+				entity->yaw += MONSTER_WEAPONYAW;
+			break;
+		// left bicep
+		case 5:
+			entity->z-=8;
+			if( MONSTER_ATTACK==2 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
+				entity->yaw -= PI/4;
+			if( MONSTER_ATTACK==6 )
+				entity->yaw -= MONSTER_WEAPONYAW;
+			break;
+		// left forearm
+		case 6:
+			if( !MONSTER_ARMBENDED && MONSTER_ATTACK!=2 && MONSTER_ATTACK!=3 ) {
+				entity->focalx = limbs[DEVIL][5][0]; // 0
+				entity->focaly = limbs[DEVIL][5][1]; // -17
+				entity->focalz = limbs[DEVIL][5][2]; // 26
+				entity->pitch = leftbody->pitch;
+			} else {
+				entity->focalx = limbs[DEVIL][5][0] - 18; // -18
+				entity->focaly = limbs[DEVIL][5][1]; // -17
+				entity->focalz = limbs[DEVIL][5][2] - 16; // 10
+				entity->pitch = leftbody->pitch-PI/2;
+			}
+			entity->z-=8;
+			if( MONSTER_ATTACK==2 || MONSTER_ATTACK==3 || MONSTER_ATTACK==4 )
+				entity->yaw -= PI/4;
+			if( MONSTER_ATTACK==6 )
+				entity->yaw -= MONSTER_WEAPONYAW;
+			break;
 		}
 	}
 	if( MONSTER_ATTACK != 0 )

@@ -80,71 +80,71 @@ void addSpell(int spell, int player) {
 	spell_t *new_spell = NULL;
 
 	switch( spell ) {
-		case SPELL_FORCEBOLT:
-			new_spell = copySpell(&spell_forcebolt);
-			break;
-		case SPELL_MAGICMISSILE:
-			new_spell = copySpell(&spell_magicmissile);
-			break;
-		case SPELL_COLD:
-			new_spell = copySpell(&spell_cold);
-			break;
-		case SPELL_FIREBALL:
-			new_spell = copySpell(&spell_fireball);
-			break;
-		case SPELL_LIGHTNING:
-			new_spell = copySpell(&spell_lightning);
-			break;
-		case SPELL_REMOVECURSE:
-			new_spell = copySpell(&spell_removecurse);
-			break;
-		case SPELL_LIGHT:
-			new_spell = copySpell(&spell_light);
-			break;
-		case SPELL_IDENTIFY:
-			new_spell = copySpell(&spell_identify);
-			break;
-		case SPELL_MAGICMAPPING:
-			new_spell = copySpell(&spell_magicmapping);
-			break;
-		case SPELL_SLEEP:
-			new_spell = copySpell(&spell_sleep);
-			break;
-		case SPELL_CONFUSE:
-			new_spell = copySpell(&spell_confuse);
-			break;
-		case SPELL_SLOW:
-			new_spell = copySpell(&spell_slow);
-			break;
-		case SPELL_OPENING:
-			new_spell = copySpell(&spell_opening);
-			break;
-		case SPELL_LOCKING:
-			new_spell = copySpell(&spell_locking);
-			break;
-		case SPELL_LEVITATION:
-			new_spell = copySpell(&spell_levitation);
-			break;
-		case SPELL_INVISIBILITY:
-			new_spell = copySpell(&spell_invisibility);
-			break;
-		case SPELL_TELEPORTATION:
-			new_spell = copySpell(&spell_teleportation);
-			break;
-		case SPELL_HEALING:
-			new_spell = copySpell(&spell_healing);
-			break;
-		case SPELL_EXTRAHEALING:
-			new_spell = copySpell(&spell_extrahealing);
-			break;
-		case SPELL_CUREAILMENT:
-			new_spell = copySpell(&spell_cureailment);
-			break;
-		case SPELL_DIG:
-			new_spell = copySpell(&spell_dig);
-			break;
-		default:
-			return;
+	case SPELL_FORCEBOLT:
+		new_spell = copySpell(&spell_forcebolt);
+		break;
+	case SPELL_MAGICMISSILE:
+		new_spell = copySpell(&spell_magicmissile);
+		break;
+	case SPELL_COLD:
+		new_spell = copySpell(&spell_cold);
+		break;
+	case SPELL_FIREBALL:
+		new_spell = copySpell(&spell_fireball);
+		break;
+	case SPELL_LIGHTNING:
+		new_spell = copySpell(&spell_lightning);
+		break;
+	case SPELL_REMOVECURSE:
+		new_spell = copySpell(&spell_removecurse);
+		break;
+	case SPELL_LIGHT:
+		new_spell = copySpell(&spell_light);
+		break;
+	case SPELL_IDENTIFY:
+		new_spell = copySpell(&spell_identify);
+		break;
+	case SPELL_MAGICMAPPING:
+		new_spell = copySpell(&spell_magicmapping);
+		break;
+	case SPELL_SLEEP:
+		new_spell = copySpell(&spell_sleep);
+		break;
+	case SPELL_CONFUSE:
+		new_spell = copySpell(&spell_confuse);
+		break;
+	case SPELL_SLOW:
+		new_spell = copySpell(&spell_slow);
+		break;
+	case SPELL_OPENING:
+		new_spell = copySpell(&spell_opening);
+		break;
+	case SPELL_LOCKING:
+		new_spell = copySpell(&spell_locking);
+		break;
+	case SPELL_LEVITATION:
+		new_spell = copySpell(&spell_levitation);
+		break;
+	case SPELL_INVISIBILITY:
+		new_spell = copySpell(&spell_invisibility);
+		break;
+	case SPELL_TELEPORTATION:
+		new_spell = copySpell(&spell_teleportation);
+		break;
+	case SPELL_HEALING:
+		new_spell = copySpell(&spell_healing);
+		break;
+	case SPELL_EXTRAHEALING:
+		new_spell = copySpell(&spell_extrahealing);
+		break;
+	case SPELL_CUREAILMENT:
+		new_spell = copySpell(&spell_cureailment);
+		break;
+	case SPELL_DIG:
+		new_spell = copySpell(&spell_dig);
+		break;
+	default:
+		return;
 	}
 	if( spellInList(&spellList, new_spell) ) {
 		messagePlayer(player, language[439],new_spell->name);
@@ -214,7 +214,8 @@ void spellElementConstructor(spellElement_t *element) {
 	element->duration = 0;
 	element->can_be_learned = TRUE;
 	strcpy(element->name, "New Element");
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	element->node = NULL;
 	element->channeled = FALSE;
 }
@@ -243,7 +244,8 @@ spell_t *copySpell(spell_t *spell) {
 
 	result->sustain_node = NULL;
 	result->magic_effects_node = NULL;
-	result->elements.first = NULL; result->elements.last = NULL;
+	result->elements.first = NULL;
+	result->elements.last = NULL;
 
 	for( node=spell->elements.first; node!=NULL; node=node->next ) {
 		spellElement_t *tempElement = (spellElement_t *) node->element;
@@ -267,7 +269,8 @@ spellElement_t *copySpellElement(spellElement_t *spellElement) {
 	*result = *spellElement; // copy over all the static data members.
 
 	result->node = NULL;
-	result->elements.first = NULL; result->elements.last = NULL;
+	result->elements.first = NULL;
+	result->elements.last = NULL;
 
 	for( node=spellElement->elements.first; node!=NULL; node=node->next ) {
 		spellElement_t *tempElement = (spellElement_t *) node->element;
@@ -345,72 +348,72 @@ spell_t *getSpellFromID(int ID) {
 	spell_t *spell = NULL;
 
 	switch (ID) {
-		case SPELL_FORCEBOLT:
-			spell = &spell_forcebolt;
-			break;
-		case SPELL_MAGICMISSILE:
-			spell = &spell_magicmissile;
-			break;
-		case SPELL_COLD:
-			spell = &spell_cold;
-			break;
-		case SPELL_FIREBALL:
-			spell = &spell_fireball;
-			break;
-		case SPELL_LIGHTNING:
-			spell = &spell_lightning;
-			break;
-		case SPELL_REMOVECURSE:
-			spell = &spell_removecurse;
-			break;
-		case SPELL_LIGHT:
-			spell = &spell_light;
-			break;
-		case SPELL_IDENTIFY:
-			spell = &spell_identify;
-			break;
-		case SPELL_MAGICMAPPING:
-			spell = &spell_magicmapping;
-			break;
-		case SPELL_SLEEP:
-			spell = &spell_sleep;
-			break;
-		case SPELL_CONFUSE:
-			spell = &spell_confuse;
-			break;
-		case SPELL_SLOW:
-			spell = &spell_slow;
-			break;
-		case SPELL_OPENING:
-			spell = &spell_opening;
-			break;
-		case SPELL_LOCKING:
-			spell = &spell_locking;
-			break;
-		case SPELL_LEVITATION:
-			spell = &spell_levitation;
-			break;
-		case SPELL_INVISIBILITY:
-			spell = &spell_invisibility;
-			break;
-		case SPELL_TELEPORTATION:
-			spell = &spell_teleportation;
-			break;
-		case SPELL_HEALING:
-			spell = &spell_healing;
-			break;
-		case SPELL_EXTRAHEALING:
-			spell = &spell_extrahealing;
-			break;
-		/*case SPELL_RESTOREABILITY:
-			spell = &spell_restoreability;
-			break;*/
-		case SPELL_CUREAILMENT:
-			spell = &spell_cureailment;
-			break;
-		case SPELL_DIG:
-			spell = &spell_dig;
-			break;
+	case SPELL_FORCEBOLT:
+		spell = &spell_forcebolt;
+		break;
+	case SPELL_MAGICMISSILE:
+		spell = &spell_magicmissile;
+		break;
+	case SPELL_COLD:
+		spell = &spell_cold;
+		break;
+	case SPELL_FIREBALL:
+		spell = &spell_fireball;
+		break;
+	case SPELL_LIGHTNING:
+		spell = &spell_lightning;
+		break;
+	case SPELL_REMOVECURSE:
+		spell = &spell_removecurse;
+		break;
+	case SPELL_LIGHT:
+		spell = &spell_light;
+		break;
+	case SPELL_IDENTIFY:
+		spell = &spell_identify;
+		break;
+	case SPELL_MAGICMAPPING:
+		spell = &spell_magicmapping;
+		break;
+	case SPELL_SLEEP:
+		spell = &spell_sleep;
+		break;
+	case SPELL_CONFUSE:
+		spell = &spell_confuse;
+		break;
+	case SPELL_SLOW:
+		spell = &spell_slow;
+		break;
+	case SPELL_OPENING:
+		spell = &spell_opening;
+		break;
+	case SPELL_LOCKING:
+		spell = &spell_locking;
+		break;
+	case SPELL_LEVITATION:
+		spell = &spell_levitation;
+		break;
+	case SPELL_INVISIBILITY:
+		spell = &spell_invisibility;
+		break;
+	case SPELL_TELEPORTATION:
+		spell = &spell_teleportation;
+		break;
+	case SPELL_HEALING:
+		spell = &spell_healing;
+		break;
+	case SPELL_EXTRAHEALING:
+		spell = &spell_extrahealing;
+		break;
+	/*case SPELL_RESTOREABILITY:
+		spell = &spell_restoreability;
+		break;*/
+	case SPELL_CUREAILMENT:
+		spell = &spell_cureailment;
+		break;
+	case SPELL_DIG:
+		spell = &spell_dig;
+		break;
 	}
 
 	return spell;

@@ -177,7 +177,7 @@ bool loadInterfaceResources() {
 	category_bmp[9]=loadImage("images/system/Tool.png");
 	category_bmp[10]=loadImage("images/system/Food.png");
 	category_bmp[11]=loadImage("images/system/Spellbook.png");*/
-	
+
 	//Chest images..
 	inventoryChest_bmp = loadImage("images/system/InventoryChest.png");
 	inventoryoptionChest_bmp = loadImage("images/system/InventoryOptionChest.png");
@@ -242,9 +242,9 @@ void freeInterfaceResources() {
 	if(hunger_bmp)
 		SDL_FreeSurface(hunger_bmp);
 	//if(textup_bmp)
-		//SDL_FreeSurface(textup_bmp);
+	//SDL_FreeSurface(textup_bmp);
 	//if(textdown_bmp)
-		//SDL_FreeSurface(textdown_bmp);
+	//SDL_FreeSurface(textdown_bmp);
 	if(attributesleft_bmp)
 		SDL_FreeSurface(attributesleft_bmp);
 	if(attributesright_bmp)
@@ -298,8 +298,8 @@ void freeInterfaceResources() {
 	if(damage_bmp != NULL)
 		SDL_FreeSurface(damage_bmp);
 	//for( c=0; c<NUMCATEGORIES; c++ )
-		//if(category_bmp[c]!=NULL)
-			//SDL_FreeSurface(category_bmp[c]);
+	//if(category_bmp[c]!=NULL)
+	//SDL_FreeSurface(category_bmp[c]);
 	if(identifyGUI_img != NULL)
 		SDL_FreeSurface(identifyGUI_img);
 	/*if (rightsidebar_titlebar_img)
@@ -313,11 +313,11 @@ void freeInterfaceResources() {
 	if (bookgui_img)
 		SDL_FreeSurface(bookgui_img);
 	//if (nextpage_img)
-		//SDL_FreeSurface(nextpage_img);
+	//SDL_FreeSurface(nextpage_img);
 	//if (previouspage_img)
-		//SDL_FreeSurface(previouspage_img);
+	//SDL_FreeSurface(previouspage_img);
 	//if (bookclose_img)
-		//SDL_FreeSurface(bookclose_img);
+	//SDL_FreeSurface(bookclose_img);
 	if (book_highlighted_left_img)
 		SDL_FreeSurface(book_highlighted_left_img);
 	if (book_highlighted_right_img)
@@ -329,8 +329,7 @@ void freeInterfaceResources() {
 	list_FreeAll(&damageIndicators);
 }
 
-void defaultImpulses()
-{
+void defaultImpulses() {
 	impulses[IN_FORWARD] = 26;
 	impulses[IN_LEFT] = 4;
 	impulses[IN_BACK] = 22;
@@ -510,7 +509,7 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 /*-------------------------------------------------------------------------------
 
 	saveCommand
-	
+
 	saves a command to the command history
 
 -------------------------------------------------------------------------------*/
@@ -522,7 +521,7 @@ void saveCommand(char *content) {
 /*-------------------------------------------------------------------------------
 
 	loadConfig
-	
+
 	Reads the provided config file and executes the commands therein. Return
 	value represents number of errors in config file
 
@@ -536,7 +535,7 @@ int loadConfig(char *filename) {
 	bool mallocd = FALSE;
 
 	printlog("Loading config '%s'...\n",filename);
-	
+
 	if( strstr(filename,".cfg") == NULL ) {
 		char *filename2 = filename;
 		filename = (char *) malloc(sizeof(char)*256);
@@ -544,14 +543,14 @@ int loadConfig(char *filename) {
 		mallocd = TRUE;
 		strcat(filename,".cfg");
 	}
-	
+
 	// open the config file
 	if( (fp = fopen(filename,"rb")) == NULL ) {
 		printlog("warning: config file '%s' does not exist!\n", filename);
 		defaultConfig(); //Set up the game with the default config.
 		return 0;
 	}
-	
+
 	// read commands from it
 	while( fgets(str,1024,fp) != NULL ) {
 		if( str[0] != '#' && str[0]!='\n' && str[0]!='\r' ) { // if this line is not white space or a comment
@@ -568,7 +567,7 @@ int loadConfig(char *filename) {
 /*-------------------------------------------------------------------------------
 
 	saveConfig
-	
+
 	Opens the provided config file and saves the status of certain variables
 	therein
 
@@ -582,7 +581,7 @@ int saveConfig(char *filename) {
 	bool mallocd = FALSE;
 
 	printlog("Saving config '%s'...\n",filename);
-	
+
 	if( strstr(filename,".cfg") == NULL ) {
 		char *filename2 = filename;
 		filename = (char *) malloc(sizeof(char)*256);
@@ -590,17 +589,17 @@ int saveConfig(char *filename) {
 		mallocd = TRUE;
 		strcat(filename,".cfg");
 	}
-	
+
 	// open the config file
 	if( (fp = fopen(filename,"wb")) == NULL ) {
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
 		return 1;
 	}
-	
+
 	// write config header
 	fprintf(fp,"# %s\n",filename);
 	fprintf(fp,"# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n",tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
-	
+
 	// write contents of config
 	fprintf(fp,"/lang %s\n",languageCode);
 	fprintf(fp,"/res %dx%d\n",xres,yres);
@@ -649,28 +648,22 @@ int saveConfig(char *filename) {
 	if (nohud) {
 		fprintf(fp, "/nohud\n");
 	}
-	if (!auto_hotbar_new_items)
-	{
+	if (!auto_hotbar_new_items) {
 		fprintf(fp, "/disablehotbarnewitems\n");
 	}
-	if (disable_messages)
-	{
+	if (disable_messages) {
 		fprintf(fp, "/disablemessages\n");
 	}
-	if (right_click_protect) 
-	{
+	if (right_click_protect) {
 		fprintf(fp, "/right_click_protect\n");
 	}
-	if (auto_appraise_new_items) 
-	{
+	if (auto_appraise_new_items) {
 		fprintf(fp, "/autoappraisenewitems\n");
 	}
-	if (startfloor)
-	{
+	if (startfloor) {
 		fprintf(fp, "/startfloor %d\n", startfloor);
 	}
-	if (splitscreen)
-	{
+	if (splitscreen) {
 		fprintf(fp, "/splitscreen\n");
 	}
 	fprintf(fp, "/gamepad_deadzone %d\n", gamepad_deadzone);
@@ -681,28 +674,22 @@ int saveConfig(char *filename) {
 	fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
 	fprintf(fp, "/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
 	fprintf(fp, "/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
-	if (gamepad_rightx_invert)
-	{
+	if (gamepad_rightx_invert) {
 		fprintf(fp, "/gamepad_rightx_invert\n");
 	}
-	if (gamepad_righty_invert)
-	{
+	if (gamepad_righty_invert) {
 		fprintf(fp, "/gamepad_righty_invert\n");
 	}
-	if (gamepad_leftx_invert)
-	{
+	if (gamepad_leftx_invert) {
 		fprintf(fp, "/gamepad_leftx_invert\n");
 	}
-	if (gamepad_lefty_invert)
-	{
+	if (gamepad_lefty_invert) {
 		fprintf(fp, "/gamepad_lefty_invert\n");
 	}
-	if (gamepad_menux_invert)
-	{
+	if (gamepad_menux_invert) {
 		fprintf(fp, "/gamepad_menux_invert\n");
 	}
-	if (gamepad_menuy_invert)
-	{
+	if (gamepad_menuy_invert) {
 		fprintf(fp, "/gamepad_menuy_invert\n");
 	}
 	fprintf(fp, "/skipintro\n");
@@ -716,7 +703,7 @@ int saveConfig(char *filename) {
 /*-------------------------------------------------------------------------------
 
 	mouseInBounds
-	
+
 	Returns true if the mouse is within the rectangle specified, otherwise
 	returns false
 
@@ -742,8 +729,8 @@ hotbar_slot_t *getHotbar(int x, int y) {
 /*-------------------------------------------------------------------------------
 
 	getInputName
-	
-	Returns the character string from the 
+
+	Returns the character string from the
 
 -------------------------------------------------------------------------------*/
 
@@ -752,49 +739,49 @@ const char *getInputName(Uint32 scancode) {
 		return SDL_GetKeyName(SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode)));
 	} else if( scancode<299 ) {
 		switch( scancode ) {
-			case 283:
-				return "Mouse 0";
-			case 284:
-				return "Mouse 1";
-			case 285:
-				return "Mouse 2";
-			case 286:
-				return "Mouse 3";
-			case 287:
-				return "Wheel up";
-			case 288:
-				return "Wheel down";
-			case 289:
-				return "Mouse 6";
-			case 290:
-				return "Mouse 7";
-			case 291:
-				return "Mouse 8";
-			case 292:
-				return "Mouse 9";
-			case 293:
-				return "Mouse 10";
-			case 294:
-				return "Mouse 11";
-			case 295:
-				return "Mouse 12";
-			case 296:
-				return "Mouse 13";
-			case 297:
-				return "Mouse 14";
-			case 298:
-				return "Mouse 15";
-			default:
-				return "Unknown key";
+		case 283:
+			return "Mouse 0";
+		case 284:
+			return "Mouse 1";
+		case 285:
+			return "Mouse 2";
+		case 286:
+			return "Mouse 3";
+		case 287:
+			return "Wheel up";
+		case 288:
+			return "Wheel down";
+		case 289:
+			return "Mouse 6";
+		case 290:
+			return "Mouse 7";
+		case 291:
+			return "Mouse 8";
+		case 292:
+			return "Mouse 9";
+		case 293:
+			return "Mouse 10";
+		case 294:
+			return "Mouse 11";
+		case 295:
+			return "Mouse 12";
+		case 296:
+			return "Mouse 13";
+		case 297:
+			return "Mouse 14";
+		case 298:
+			return "Mouse 15";
+		default:
+			return "Unknown key";
 		}
 	} else if( scancode<301 ) { //Game Controller triggers.
 		switch( scancode ) {
-			case 299:
-				return "Left Trigger";
-			case 300:
-				return "Right Trigger";
-			default:
-				return "Unknown trigger";
+		case 299:
+			return "Left Trigger";
+		case 300:
+			return "Right Trigger";
+		default:
+			return "Unknown trigger";
 		}
 	} else if( scancode<317 ) { //Game controller buttons.
 		return SDL_GameControllerGetStringForButton(static_cast<SDL_GameControllerButton>(scancode - 301));
@@ -814,29 +801,19 @@ const char *getInputName(Uint32 scancode) {
 
 Sint8 dummy_value = 0; //THIS LINE IS AN UTTER BODGE to stop this function from crashing.
 
-Sint8 *inputPressed(Uint32 scancode)
-{
-	if (scancode >= 0 && scancode < 283)
-	{
+Sint8 *inputPressed(Uint32 scancode) {
+	if (scancode >= 0 && scancode < 283) {
 		// usual (keyboard) scancode range
 		return &keystatus[scancode];
-	}
-	else if (scancode < 299)
-	{
+	} else if (scancode < 299) {
 		// mouse scancodes
 		return &mousestatus[scancode - 282];
-	}
-	else if (scancode < 301)
-	{
+	} else if (scancode < 301) {
 		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
 		return &joy_trigger_status[scancode - 299];
-	}
-	else if (scancode < 318)
-	{
+	} else if (scancode < 318) {
 		return &joystatus[scancode - 301];
-	}
-	else
-	{
+	} else {
 		// bad scancode
 		//return nullptr; //This crashes.
 		dummy_value = 0;
@@ -845,8 +822,7 @@ Sint8 *inputPressed(Uint32 scancode)
 	}
 }
 
-void selectHotbarSlot(int slot)
-{
+void selectHotbarSlot(int slot) {
 	if (slot < 0)
 		slot = NUM_HOTBAR_SLOTS - 1;
 	if (slot >= NUM_HOTBAR_SLOTS)

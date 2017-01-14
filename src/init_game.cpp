@@ -33,7 +33,7 @@
 /*-------------------------------------------------------------------------------
 
 	initGame
-	
+
 	initializes certain game specific resources
 
 -------------------------------------------------------------------------------*/
@@ -57,7 +57,7 @@ int initGame() {
 	lobbyChatboxMessages.last = NULL;
 
 	// steam stuff
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	cpp_SteamServerWrapper_Instantiate(); //TODO: Remove these wrappers.
 	cpp_SteamServerClientWrapper_Instantiate();
 
@@ -70,18 +70,18 @@ int initGame() {
 	cpp_SteamServerClientWrapper_OnLobbyMatchListCallback = &steam_OnLobbyMatchListCallback;
 	cpp_SteamServerClientWrapper_OnP2PSessionConnectFail = &steam_OnP2PSessionConnectFail;
 	cpp_SteamServerClientWrapper_OnLobbyDataUpdate = &steam_OnLobbyDataUpdatedCallback;
-	#endif
-	
+#endif
+
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
 	TTF_SizeUTF8(ttf16,_LOADSTR1,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,_LOADSTR1);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
+#endif
 
 	initGameControllers();
 
@@ -136,11 +136,11 @@ int initGame() {
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,_LOADSTR2,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,_LOADSTR2);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
+#endif
 
 	// load item types
 	printlog( "loading items...\n");
@@ -148,10 +148,14 @@ int initGame() {
 	for( c=0; !feof(fp); c++ ) {
 		items[c].name_identified = language[1545+c*2];
 		items[c].name_unidentified = language[1546+c*2];
-		fscanf(fp,"%d",&items[c].index); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		fscanf(fp,"%d",&items[c].fpindex); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		fscanf(fp,"%d",&items[c].variations); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%d",&items[c].index);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%d",&items[c].fpindex);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%d",&items[c].variations);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%s",name);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 		if( !strcmp(name,"WEAPON") )
 			items[c].category = WEAPON;
 		else if( !strcmp(name,"ARMOR") )
@@ -178,9 +182,12 @@ int initGame() {
 			items[c].category = SPELL_CAT;
 		else
 			items[c].category = GEM;
-		fscanf(fp,"%d",&items[c].weight); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		fscanf(fp,"%d",&items[c].value); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		items[c].images.first = NULL; items[c].images.last = NULL;
+		fscanf(fp,"%d",&items[c].weight);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%d",&items[c].value);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		items[c].images.first = NULL;
+		items[c].images.last = NULL;
 		while( 1 ) {
 			string_t *string = (string_t *) malloc(sizeof(string_t));
 			string->data = (char *) malloc(sizeof(char)*64);
@@ -209,7 +216,8 @@ int initGame() {
 		}
 	}
 	for( c=0; c<NUMITEMS; c++ ) {
-		items[c].surfaces.first=NULL; items[c].surfaces.last=NULL;
+		items[c].surfaces.first=NULL;
+		items[c].surfaces.last=NULL;
 		for( x=0; x<list_Size(&items[c].images); x++ ) {
 			SDL_Surface **surface = (SDL_Surface **) malloc(sizeof(SDL_Surface *));
 			node_t *node = list_AddNodeLast(&items[c].surfaces);
@@ -226,42 +234,47 @@ int initGame() {
 
 	createBooks();
 	setupSpells();
-	
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,_LOADSTR3,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,_LOADSTR3);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
+#endif
 
 #ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 #endif
-	removedEntities.first=NULL; removedEntities.last=NULL;
-	safePacketsSent.first=NULL; safePacketsSent.last=NULL;
+	removedEntities.first=NULL;
+	removedEntities.last=NULL;
+	safePacketsSent.first=NULL;
+	safePacketsSent.last=NULL;
 	for( c=0; c<MAXPLAYERS; c++ ) {
 		safePacketsReceived[c].first=NULL;
 		safePacketsReceived[c].last=NULL;
 	}
 	topscores.first = NULL;
 	topscores.last = NULL;
-	messages.first=NULL; messages.last=NULL;
-	chestInv.first=NULL; chestInv.last=NULL;
-	command_history.first = NULL; command_history.last = NULL;
+	messages.first=NULL;
+	messages.last=NULL;
+	chestInv.first=NULL;
+	chestInv.last=NULL;
+	command_history.first = NULL;
+	command_history.last = NULL;
 	for( c=0; c<4; c++ ) {
 		invitems[c]=NULL;
 		invitemschest[c] = NULL;
 		openedChest[c] = NULL;
 	}
-	mousex=xres/2; mousey=yres/2;
+	mousex=xres/2;
+	mousey=yres/2;
 
 	players = new Player*[MAXPLAYERS];
 	// default player stats
-	for (c = 0; c < MAXPLAYERS; c++)
-	{
+	for (c = 0; c < MAXPLAYERS; c++) {
 		players[c] = new Player();
 		stats[c] = new Stat();
 		if (c > 0)
@@ -271,7 +284,8 @@ int initGame() {
 		stats[c]->appearance = 0;
 		strcpy(stats[c]->name, "");
 		stats[c]->type = HUMAN;
-		stats[c]->FOLLOWERS.first = nullptr; stats[c]->FOLLOWERS.last = nullptr;
+		stats[c]->FOLLOWERS.first = nullptr;
+		stats[c]->FOLLOWERS.last = nullptr;
 		stats[c]->inventory.first = nullptr;
 		stats[c]->inventory.last = nullptr;
 		stats[c]->clearStats();
@@ -282,7 +296,7 @@ int initGame() {
 	}
 
 	// load music
-	#ifdef SOUND
+#ifdef SOUND
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intro.ogg", FMOD_SOFTWARE, NULL, &intromusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/introduction.ogg", FMOD_SOFTWARE, NULL, &introductionmusic);
@@ -347,17 +361,17 @@ int initGame() {
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
 		}
 	}
-	#endif
+#endif
 
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,_LOADSTR4,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,_LOADSTR4);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
+#endif
 
 	// load extraneous game resources
 	title_bmp = loadImage("images/system/title.png");
@@ -366,8 +380,7 @@ int initGame() {
 	cross_bmp = loadImage("images/system/cross.png");
 
 	loadAllScores();
-	if (!loadInterfaceResources())
-	{
+	if (!loadInterfaceResources()) {
 		printlog("Failed to load interface resources.\n");
 		return -1;
 	}
@@ -378,14 +391,14 @@ int initGame() {
 /*-------------------------------------------------------------------------------
 
 	deinitGame
-	
+
 	deinitializes certain game specific resources
 
 -------------------------------------------------------------------------------*/
 
 void deinitGame() {
 	int c, x;
-	
+
 	// send disconnect messages
 	if(multiplayer==CLIENT) {
 		strcpy((char *)net_packet->data,"DISCONNECT");
@@ -405,12 +418,12 @@ void deinitGame() {
 			net_packet->address.port = net_clients[x-1].port;
 			net_packet->len = 11;
 			sendPacketSafe(net_sock, -1, net_packet, x-1);
-			
+
 			stats[x]->freePlayerEquipment();
 			client_disconnected[x]=TRUE;
 		}
 	}
-	
+
 	// this short delay makes sure that the disconnect message gets out
 	Uint32 timetoshutdown=SDL_GetTicks();
 	while( SDL_GetTicks()-timetoshutdown<500 ) {
@@ -424,7 +437,7 @@ void deinitGame() {
 			node_t *node, *nextnode;
 			for( node=safePacketsSent.first; node!=NULL; node=nextnode ) {
 				nextnode = node->next;
-			
+
 				packetsend_t *packet = (packetsend_t *)node->element;
 				sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
 				packet->tries++;
@@ -472,7 +485,7 @@ void deinitGame() {
 	}
 	appraisal_timer=0;
 	appraisal_item=0;
-	for(c=0;c<MAXPLAYERS;c++)
+	for(c=0; c<MAXPLAYERS; c++)
 		list_FreeAll(&stats[c]->inventory);
 	if( multiplayer==CLIENT ) {
 		if( shopInv ) {
@@ -494,11 +507,11 @@ void deinitGame() {
 	}
 	list_FreeAll(&spellList);
 	list_FreeAll(&command_history);
-	
+
 	list_FreeAll(&safePacketsSent);
 	for( c=0; c<MAXPLAYERS; c++ )
 		list_FreeAll(&safePacketsReceived[c]);
-	#ifdef SOUND
+#ifdef SOUND
 	FMOD_Channel_Stop(music_channel);
 	FMOD_Channel_Stop(music_channel2);
 	FMOD_Sound_Release(intromusic);
@@ -541,8 +554,8 @@ void deinitGame() {
 		FMOD_Sound_Release(minotaurmusic[c]);
 	if( minotaurmusic )
 		free(minotaurmusic);
-	#endif
-	
+#endif
+
 	// free items
 	printlog( "freeing item data...\n");
 	for( c=0; c<NUMITEMS; c++ ) {
@@ -597,7 +610,7 @@ void deinitGame() {
 	list_FreeAll(&lobbyChatboxMessages);
 
 	// steam stuff
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	cpp_SteamServerWrapper_Destroy();
 	cpp_SteamServerClientWrapper_Destroy();
 	if ( currentLobby ) {
@@ -621,7 +634,7 @@ void deinitGame() {
 			lobbyIDs[c] = NULL;
 		}
 	}
-	#endif
+#endif
 
 	//Close game controller
 	/*if (game_controller)
@@ -629,13 +642,11 @@ void deinitGame() {
 		SDL_GameControllerClose(game_controller);
 		game_controller = nullptr;
 	}*/
-	if (game_controller)
-	{
+	if (game_controller) {
 		delete game_controller;
 	}
 
-	for (int i = 0; i < MAXPLAYERS; ++i)
-	{
+	for (int i = 0; i < MAXPLAYERS; ++i) {
 		delete players[i];
 	}
 	delete[] players;

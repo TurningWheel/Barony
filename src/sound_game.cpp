@@ -22,7 +22,7 @@
 /*-------------------------------------------------------------------------------
 
 	playSoundPlayer
-	
+
 	has the given player play the specified global sound effect. Mostly
 	used by the server to instruct clients to play a certain sound.
 
@@ -58,7 +58,7 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol) {
 /*-------------------------------------------------------------------------------
 
 	playSoundPos
-	
+
 	plays a sound effect with the given volume at the given
 	position; returns the channel that the sound is playing in
 
@@ -69,9 +69,9 @@ FMOD_CHANNEL* playSoundPos(double x, double y, Uint32 snd, int vol) {
 		return NULL;
 	}
 
-	#ifndef SOUND
+#ifndef SOUND
 	return NULL;
-	#endif
+#endif
 
 	FMOD_CHANNEL *channel;
 	int c;
@@ -123,9 +123,9 @@ FMOD_CHANNEL* playSoundPosLocal(double x, double y, Uint32 snd, int vol) {
 		return NULL;
 	}
 
-	#ifndef SOUND
+#ifndef SOUND
 	return NULL;
-	#endif
+#endif
 
 	FMOD_CHANNEL *channel;
 
@@ -158,7 +158,7 @@ FMOD_CHANNEL* playSoundPosLocal(double x, double y, Uint32 snd, int vol) {
 /*-------------------------------------------------------------------------------
 
 	playSoundEntity
-	
+
 	plays a sound effect with the given volume at the given entity's
 	position; returns the channel that the sound is playing in
 
@@ -183,7 +183,7 @@ FMOD_CHANNEL* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
 /*-------------------------------------------------------------------------------
 
 	playSound
-	
+
 	plays a sound effect with the given volume and returns the channel that
 	the sound is playing in
 
@@ -193,9 +193,9 @@ FMOD_CHANNEL* playSound(Uint32 snd, int vol) {
 	if (no_sound) {
 		return NULL;
 	}
-	#ifndef SOUND
+#ifndef SOUND
 	return NULL;
-	#endif
+#endif
 	if (!fmod_system || snd < 0 || snd >= numsounds || !sound_group)
 		return NULL;
 	if (sounds[snd] == NULL || vol == 0)
@@ -222,12 +222,12 @@ void playmusic(FMOD_SOUND *sound, bool loop, bool crossfade, bool resume) {
 	if (no_sound) {
 		return;
 	}
-	#ifndef SOUND
-		return;
-	#endif
-	#ifndef MUSIC
-		return;
-	#endif
+#ifndef SOUND
+	return;
+#endif
+#ifndef MUSIC
+	return;
+#endif
 	fadein_increment = default_fadein_increment;
 	fadeout_increment = default_fadeout_increment;
 	if (!fmod_system || !sound) {
@@ -287,15 +287,14 @@ void handleLevelMusic() {
 	if (no_sound) {
 		return;
 	}
-	#ifndef SOUND
-		return;
-	#endif
-	#ifndef MUSIC
-		return;
-	#endif
+#ifndef SOUND
+	return;
+#endif
+#ifndef MUSIC
+	return;
+#endif
 	bool inshop=FALSE;
-	if (players[clientnum] && players[clientnum]->entity)
-	{
+	if (players[clientnum] && players[clientnum]->entity) {
 		int x = (int)players[clientnum]->entity->x/16;
 		int y = (int)players[clientnum]->entity->y/16;
 		if( x>=0 && x<map.width && y>=0 && y<map.height )
@@ -320,7 +319,7 @@ void handleLevelMusic() {
 			break;
 		}
 	}
-	
+
 	FMOD_BOOL playing=TRUE;
 	FMOD_Channel_IsPlaying(music_channel,&playing);
 
@@ -470,7 +469,7 @@ void handleLevelMusic() {
 /*-------------------------------------------------------------------------------
 
 	playSoundEntity
-	
+
 	plays a sound effect with the given volume at the given entity's
 	position; returns the channel that the sound is playing in
 

@@ -31,7 +31,7 @@ char lobbyText[MAX_STEAM_LOBBIES][32];
 void *lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 
-void *steamIDRemote[MAXPLAYERS]={NULL,NULL,NULL,NULL};
+void *steamIDRemote[MAXPLAYERS]= {NULL,NULL,NULL,NULL};
 
 char currentLobbyName[32] = { 0 };
 Uint32 currentSvFlags=0;
@@ -91,23 +91,21 @@ void (*cpp_SteamServerWrapper_OnP2PSessionRequest)(void *p_Callback);
 void (*cpp_SteamServerWrapper_OnSteamServersConnectFailure)(void *pConnectFailure);
 void (*cpp_SteamServerWrapper_OnSteamServersDisconnected)(void *pLoggedOff);
 void (*cpp_SteamServerWrapper_OnSteamServersConnected)(void *pLogonSuccess);
-void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void *pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type 
+void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void *pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 
 
 
-class SteamServerWrapper
-{
+class SteamServerWrapper {
 public:
 	SteamServerWrapper()
-	:
-	m_CallbackSteamServersConnected(this, &SteamServerWrapper::OnSteamServersConnected),
-	m_CallbackSteamServersDisconnected(this, &SteamServerWrapper::OnSteamServersDisconnected),
-	m_CallbackSteamServersConnectFailure( this, &SteamServerWrapper::OnSteamServersConnectFailure ),
-	m_CallbackPolicyResponse(this, &SteamServerWrapper::OnPolicyResponse),
-	m_CallbackGSAuthTicketResponse(this, &SteamServerWrapper::OnValidateAuthTicketResponse),
-	m_CallbackP2PSessionRequest(this, &SteamServerWrapper::OnP2PSessionRequest),
-	m_CallbackP2PSessionConnectFail(this, &SteamServerWrapper::OnP2PSessionConnectFail)
-	{
+		:
+		m_CallbackSteamServersConnected(this, &SteamServerWrapper::OnSteamServersConnected),
+		m_CallbackSteamServersDisconnected(this, &SteamServerWrapper::OnSteamServersDisconnected),
+		m_CallbackSteamServersConnectFailure( this, &SteamServerWrapper::OnSteamServersConnectFailure ),
+		m_CallbackPolicyResponse(this, &SteamServerWrapper::OnPolicyResponse),
+		m_CallbackGSAuthTicketResponse(this, &SteamServerWrapper::OnValidateAuthTicketResponse),
+		m_CallbackP2PSessionRequest(this, &SteamServerWrapper::OnP2PSessionRequest),
+		m_CallbackP2PSessionConnectFail(this, &SteamServerWrapper::OnP2PSessionConnectFail) {
 		cpp_SteamServerWrapper_OnSteamServersConnected = nullptr;
 		cpp_SteamServerWrapper_OnSteamServersDisconnected = nullptr;
 		cpp_SteamServerWrapper_OnSteamServersConnectFailure = nullptr;
@@ -132,57 +130,47 @@ public:
 	STEAM_GAMESERVER_CALLBACK(SteamServerWrapper, OnP2PSessionConnectFail, P2PSessionConnectFail_t, m_CallbackP2PSessionConnectFail);
 } *steam_server_wrapper;
 
-void SteamServerWrapper::OnSteamServersConnected(SteamServersConnected_t *pLogonSuccess)
-{
+void SteamServerWrapper::OnSteamServersConnected(SteamServersConnected_t *pLogonSuccess) {
 	if (cpp_SteamServerWrapper_OnSteamServersConnected)
 		(*cpp_SteamServerWrapper_OnSteamServersConnected)(pLogonSuccess);
 }
 
-void SteamServerWrapper::OnSteamServersDisconnected(SteamServersDisconnected_t *pLoggedOff)
-{
+void SteamServerWrapper::OnSteamServersDisconnected(SteamServersDisconnected_t *pLoggedOff) {
 	if (cpp_SteamServerWrapper_OnSteamServersDisconnected)
 		(*cpp_SteamServerWrapper_OnSteamServersDisconnected)(pLoggedOff);
 }
 
-void SteamServerWrapper::OnSteamServersConnectFailure(SteamServerConnectFailure_t *pConnectFailure)
-{
-	if (cpp_SteamServerWrapper_OnSteamServersConnectFailure)
-	{
+void SteamServerWrapper::OnSteamServersConnectFailure(SteamServerConnectFailure_t *pConnectFailure) {
+	if (cpp_SteamServerWrapper_OnSteamServersConnectFailure) {
 		(*cpp_SteamServerWrapper_OnSteamServersConnectFailure)(pConnectFailure);
 	}
 }
 
-void SteamServerWrapper::OnPolicyResponse(GSPolicyResponse_t *pPolicyResponse)
-{
+void SteamServerWrapper::OnPolicyResponse(GSPolicyResponse_t *pPolicyResponse) {
 	if (cpp_SteamServerWrapper_OnPolicyResponse)
 		(*cpp_SteamServerWrapper_OnPolicyResponse)(pPolicyResponse);
 }
 
-void SteamServerWrapper::OnValidateAuthTicketResponse(ValidateAuthTicketResponse_t *pResponse)
-{
+void SteamServerWrapper::OnValidateAuthTicketResponse(ValidateAuthTicketResponse_t *pResponse) {
 	if (cpp_SteamServerWrapper_OnValidateAuthTicketResponse)
 		(*cpp_SteamServerWrapper_OnValidateAuthTicketResponse)(pResponse);
 }
 
-void SteamServerWrapper::OnP2PSessionRequest(P2PSessionRequest_t *pCallback)
-{
+void SteamServerWrapper::OnP2PSessionRequest(P2PSessionRequest_t *pCallback) {
 	if (cpp_SteamServerWrapper_OnP2PSessionRequest)
 		(*cpp_SteamServerWrapper_OnP2PSessionRequest)(pCallback);
 }
 
-void SteamServerWrapper::OnP2PSessionConnectFail(P2PSessionConnectFail_t *pCallback)
-{
+void SteamServerWrapper::OnP2PSessionConnectFail(P2PSessionConnectFail_t *pCallback) {
 	if (cpp_SteamServerWrapper_OnP2PSessionConnectFail)
 		(*cpp_SteamServerWrapper_OnP2PSessionConnectFail)(pCallback);
 }
 
-void cpp_SteamServerWrapper_Instantiate()
-{
+void cpp_SteamServerWrapper_Instantiate() {
 	steam_server_wrapper = new SteamServerWrapper();
 }
 
-void cpp_SteamServerWrapper_Destroy()
-{
+void cpp_SteamServerWrapper_Destroy() {
 	delete steam_server_wrapper;
 	steam_server_wrapper = nullptr;
 }
@@ -190,26 +178,24 @@ void cpp_SteamServerWrapper_Destroy()
 
 
 
-class SteamServerClientWrapper
-{
+class SteamServerClientWrapper {
 public:
 	SteamServerClientWrapper()
-	:
-	m_LobbyGameCreated(this, &SteamServerClientWrapper::OnLobbyGameCreated),
-	m_GameJoinRequested(this, &SteamServerClientWrapper::OnGameJoinRequested),
-	m_AvatarImageLoadedCreated(this, &SteamServerClientWrapper::OnAvatarImageLoaded),
-	m_SteamServersConnected(this, &SteamServerClientWrapper::OnSteamServersConnected),
-	m_SteamServersDisconnected(this, &SteamServerClientWrapper::OnSteamServersDisconnected),
-	m_SteamServerConnectFailure(this, &SteamServerClientWrapper::OnSteamServerConnectFailure),
-	m_CallbackGameOverlayActivated(this, &SteamServerClientWrapper::OnGameOverlayActivated),
-	m_CallbackGameWebCallback( this, &SteamServerClientWrapper::OnGameWebCallback),
-	m_CallbackWorkshopItemInstalled(this, &SteamServerClientWrapper::OnWorkshopItemInstalled),
-	m_CallbackP2PSessionConnectFail(this, &SteamServerClientWrapper::OnP2PSessionConnectFail),
-	m_CallbackP2PSessionRequest(this, &SteamServerClientWrapper::OnP2PSessionRequest),
-	m_CallbackLobbyDataUpdate(this, &SteamServerClientWrapper::OnLobbyDataUpdate),
-	m_IPCFailureCallback(this, &SteamServerClientWrapper::OnIPCFailure),
-	m_SteamShutdownCallback(this, &SteamServerClientWrapper::OnSteamShutdown)
-	{
+		:
+		m_LobbyGameCreated(this, &SteamServerClientWrapper::OnLobbyGameCreated),
+		m_GameJoinRequested(this, &SteamServerClientWrapper::OnGameJoinRequested),
+		m_AvatarImageLoadedCreated(this, &SteamServerClientWrapper::OnAvatarImageLoaded),
+		m_SteamServersConnected(this, &SteamServerClientWrapper::OnSteamServersConnected),
+		m_SteamServersDisconnected(this, &SteamServerClientWrapper::OnSteamServersDisconnected),
+		m_SteamServerConnectFailure(this, &SteamServerClientWrapper::OnSteamServerConnectFailure),
+		m_CallbackGameOverlayActivated(this, &SteamServerClientWrapper::OnGameOverlayActivated),
+		m_CallbackGameWebCallback( this, &SteamServerClientWrapper::OnGameWebCallback),
+		m_CallbackWorkshopItemInstalled(this, &SteamServerClientWrapper::OnWorkshopItemInstalled),
+		m_CallbackP2PSessionConnectFail(this, &SteamServerClientWrapper::OnP2PSessionConnectFail),
+		m_CallbackP2PSessionRequest(this, &SteamServerClientWrapper::OnP2PSessionRequest),
+		m_CallbackLobbyDataUpdate(this, &SteamServerClientWrapper::OnLobbyDataUpdate),
+		m_IPCFailureCallback(this, &SteamServerClientWrapper::OnIPCFailure),
+		m_SteamShutdownCallback(this, &SteamServerClientWrapper::OnSteamShutdown) {
 		cpp_SteamServerClientWrapper_OnLobbyGameCreated = nullptr;
 		cpp_SteamServerClientWrapper_OnGameJoinRequested = nullptr;
 		cpp_SteamServerClientWrapper_OnAvatarImageLoaded = nullptr;
@@ -264,7 +250,7 @@ public:
 	void OnLobbyEntered( LobbyEnter_t *pCallback, bool bIOFailure );
 	CCallResult<SteamServerClientWrapper, LobbyEnter_t> m_SteamCallResultLobbyEntered; //Why isn't this set in the example?
 	void m_SteamCallResultLobbyEntered_Set(SteamAPICall_t hSteamAPICall);
-	
+
 	void OnLobbyMatchListCallback( LobbyMatchList_t *pCallback, bool bIOFailure );
 	CCallResult<SteamServerClientWrapper, LobbyMatchList_t> m_SteamCallResultLobbyMatchList;
 	void m_SteamCallResultLobbyMatchList_Set(SteamAPICall_t hSteamAPICall);
@@ -277,31 +263,25 @@ public:
 
 private:
 	// simple class to marshal callbacks from pinging a game server
-	class CGameServerPing : public ISteamMatchmakingPingResponse
-	{
+	class CGameServerPing : public ISteamMatchmakingPingResponse {
 	public:
-		CGameServerPing()
-		{
+		CGameServerPing() {
 			m_hGameServerQuery = HSERVERQUERY_INVALID;
 			m_pClient = NULL;
 		}
 
-		void RetrieveSteamIDFromGameServer( SteamServerClientWrapper *pClient, uint32_t unIP, uint16_t unPort )
-		{
+		void RetrieveSteamIDFromGameServer( SteamServerClientWrapper *pClient, uint32_t unIP, uint16_t unPort ) {
 			m_pClient = pClient;
 			m_hGameServerQuery = SteamMatchmakingServers()->PingServer( unIP, unPort, this );
 		}
 
-		void CancelPing()
-		{
+		void CancelPing() {
 			m_hGameServerQuery = HSERVERQUERY_INVALID;
 		}
 
 		// Server has responded successfully and has updated data
-		virtual void ServerResponded( gameserveritem_t &server )
-		{
-			if ( m_hGameServerQuery != HSERVERQUERY_INVALID && server.m_steamID.IsValid() )
-			{
+		virtual void ServerResponded( gameserveritem_t &server ) {
+			if ( m_hGameServerQuery != HSERVERQUERY_INVALID && server.m_steamID.IsValid() ) {
 				(*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)( static_cast<void *>(&server.m_steamID) );
 			}
 
@@ -309,8 +289,7 @@ private:
 		}
 
 		// Server failed to respond to the ping request
-		virtual void ServerFailedToRespond()
-		{
+		virtual void ServerFailedToRespond() {
 			m_hGameServerQuery = HSERVERQUERY_INVALID;
 		}
 
@@ -323,81 +302,67 @@ private:
 
 
 
-void SteamServerClientWrapper::OnLobbyDataUpdate(LobbyDataUpdate_t *pCallback)
-{
+void SteamServerClientWrapper::OnLobbyDataUpdate(LobbyDataUpdate_t *pCallback) {
 	if (cpp_SteamServerClientWrapper_OnLobbyDataUpdate)
 		(*cpp_SteamServerClientWrapper_OnLobbyDataUpdate)(pCallback);
 }
 
-void SteamServerClientWrapper::OnP2PSessionRequest(P2PSessionRequest_t *pCallback)
-{
+void SteamServerClientWrapper::OnP2PSessionRequest(P2PSessionRequest_t *pCallback) {
 	if (cpp_SteamServerClientWrapper_OnP2PSessionRequest)
 		(*cpp_SteamServerClientWrapper_OnP2PSessionRequest)(pCallback);
 }
 
-void c_RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort )
-{
+void c_RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort ) {
 	steam_server_client_wrapper->RetrieveSteamIDFromGameServer( m_unServerIP, m_usServerPort );
 }
 
-void SteamServerClientWrapper::RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort )
-{
+void SteamServerClientWrapper::RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort ) {
 	m_GameServerPing.RetrieveSteamIDFromGameServer( this, m_unServerIP, m_usServerPort );
 }
 
-void SteamServerClientWrapper::OnLobbyGameCreated(LobbyGameCreated_t *pCallback)
-{
+void SteamServerClientWrapper::OnLobbyGameCreated(LobbyGameCreated_t *pCallback) {
 	if (cpp_SteamServerClientWrapper_OnLobbyGameCreated)
 		(*cpp_SteamServerClientWrapper_OnLobbyGameCreated)(pCallback);
 }
 
-void SteamServerClientWrapper::OnGameJoinRequested(GameLobbyJoinRequested_t *pCallback)
-{
+void SteamServerClientWrapper::OnGameJoinRequested(GameLobbyJoinRequested_t *pCallback) {
 	if (cpp_SteamServerClientWrapper_OnGameJoinRequested)
 		(*cpp_SteamServerClientWrapper_OnGameJoinRequested)(pCallback);
 }
 
-void SteamServerClientWrapper::OnAvatarImageLoaded(AvatarImageLoaded_t *pCallback)
-{
+void SteamServerClientWrapper::OnAvatarImageLoaded(AvatarImageLoaded_t *pCallback) {
 	if (cpp_SteamServerClientWrapper_OnAvatarImageLoaded)
 		(*cpp_SteamServerClientWrapper_OnAvatarImageLoaded)(pCallback);
 }
 
-void SteamServerClientWrapper::OnSteamServersConnected(SteamServersConnected_t *callback)
-{
+void SteamServerClientWrapper::OnSteamServersConnected(SteamServersConnected_t *callback) {
 	if (cpp_SteamServerClientWrapper_OnSteamServersConnected)
 		(*cpp_SteamServerClientWrapper_OnSteamServersConnected)(callback);
 }
 
-void SteamServerClientWrapper::OnSteamServersDisconnected(SteamServersDisconnected_t *callback)
-{
+void SteamServerClientWrapper::OnSteamServersDisconnected(SteamServersDisconnected_t *callback) {
 	if (cpp_SteamServerClientWrapper_OnSteamServersDisconnected)
 		(*cpp_SteamServerClientWrapper_OnSteamServersDisconnected)(callback);
 }
 
-void SteamServerClientWrapper::OnSteamServerConnectFailure(SteamServerConnectFailure_t *callback)
-{
+void SteamServerClientWrapper::OnSteamServerConnectFailure(SteamServerConnectFailure_t *callback) {
 	if (cpp_SteamServerClientWrapper_OnSteamServerConnectFailure)
 		(*cpp_SteamServerClientWrapper_OnSteamServerConnectFailure)(callback);
 }
 
-void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *callback)
-{
+void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *callback) {
 	if (!callback)
 		return;
 
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog("OnGameOverlayActivated\n");
-	#endif
+#endif
 
-	if (callback->m_bActive)
-	{
+	if (callback->m_bActive) {
 		pauseGame(2,MAXPLAYERS);
 		SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse. (Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
 		SDL_ShowCursor(SDL_TRUE); //(Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
-	}
-	else
-	{
+	} else {
 		if (shootmode && !gamePaused) {
 			SDL_SetRelativeMouseMode(SDL_TRUE); //Recapture mouse.
 		}
@@ -405,110 +370,92 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *ca
 	}
 }
 
-void SteamServerClientWrapper::OnGameWebCallback(GameWebCallback_t *callback)
-{
+void SteamServerClientWrapper::OnGameWebCallback(GameWebCallback_t *callback) {
 	if (cpp_SteamServerClientWrapper_OnGameWebCallback)
 		(*cpp_SteamServerClientWrapper_OnGameWebCallback)(callback);
 }
 
-void SteamServerClientWrapper::OnWorkshopItemInstalled(ItemInstalled_t *pParam)
-{
+void SteamServerClientWrapper::OnWorkshopItemInstalled(ItemInstalled_t *pParam) {
 	if (cpp_SteamServerClientWrapper_OnWorkshopItemInstalled)
 		(cpp_SteamServerClientWrapper_OnWorkshopItemInstalled)(pParam);
 }
 
-void SteamServerClientWrapper::OnP2PSessionConnectFail(P2PSessionConnectFail_t *pCallback)
-{
+void SteamServerClientWrapper::OnP2PSessionConnectFail(P2PSessionConnectFail_t *pCallback) {
 	if (cpp_SteamServerClientWrapper_OnP2PSessionConnectFail)
 		(*cpp_SteamServerClientWrapper_OnP2PSessionConnectFail)(pCallback);
 }
 
-void SteamServerClientWrapper::OnIPCFailure(IPCFailure_t *failure)
-{
+void SteamServerClientWrapper::OnIPCFailure(IPCFailure_t *failure) {
 	if (cpp_SteamServerClientWrapper_OnIPCFailure)
 		(*cpp_SteamServerClientWrapper_OnIPCFailure)(failure);
 }
 
-void SteamServerClientWrapper::OnSteamShutdown(SteamShutdown_t *callback)
-{
+void SteamServerClientWrapper::OnSteamShutdown(SteamShutdown_t *callback) {
 	if (cpp_SteamServerClientWrapper_OnSteamShutdown)
 		(*cpp_SteamServerClientWrapper_OnSteamShutdown)(callback);
 }
 
-void SteamServerClientWrapper::OnLobbyCreated(LobbyCreated_t *pCallback, bool bIOFailure)
-{
+void SteamServerClientWrapper::OnLobbyCreated(LobbyCreated_t *pCallback, bool bIOFailure) {
 	if (cpp_SteamServerClientWrapper_OnLobbyCreated)
 		(*cpp_SteamServerClientWrapper_OnLobbyCreated)(pCallback, bIOFailure);
 }
 
-void SteamServerClientWrapper::m_SteamCallResultLobbyCreated_Set(SteamAPICall_t hSteamAPICall)
-{
+void SteamServerClientWrapper::m_SteamCallResultLobbyCreated_Set(SteamAPICall_t hSteamAPICall) {
 	m_SteamCallResultLobbyCreated.Set(hSteamAPICall, this, &SteamServerClientWrapper::OnLobbyCreated);
 }
 
-void SteamServerClientWrapper::OnLobbyMatchListCallback(LobbyMatchList_t *pCallback, bool bIOFailure)
-{
+void SteamServerClientWrapper::OnLobbyMatchListCallback(LobbyMatchList_t *pCallback, bool bIOFailure) {
 	if (cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)
 		(*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(pCallback, bIOFailure);
 }
 
-void SteamServerClientWrapper::m_SteamCallResultLobbyMatchList_Set(SteamAPICall_t hSteamAPICall)
-{
+void SteamServerClientWrapper::m_SteamCallResultLobbyMatchList_Set(SteamAPICall_t hSteamAPICall) {
 	m_SteamCallResultLobbyMatchList.Set( hSteamAPICall, this, &SteamServerClientWrapper::OnLobbyMatchListCallback );
 }
 
-void SteamServerClientWrapper::OnLobbyEntered(LobbyEnter_t *pCallback, bool bIOFailure)
-{
+void SteamServerClientWrapper::OnLobbyEntered(LobbyEnter_t *pCallback, bool bIOFailure) {
 	if (cpp_SteamServerClientWrapper_OnLobbyEntered)
 		(*cpp_SteamServerClientWrapper_OnLobbyEntered)(pCallback, bIOFailure);
 }
 
-void SteamServerClientWrapper::m_SteamCallResultLobbyEntered_Set(SteamAPICall_t hSteamAPICall)
-{
+void SteamServerClientWrapper::m_SteamCallResultLobbyEntered_Set(SteamAPICall_t hSteamAPICall) {
 	m_SteamCallResultLobbyEntered.Set(hSteamAPICall, this, &SteamServerClientWrapper::OnLobbyEntered);
 }
 
-void SteamServerClientWrapper::OnRequestEncryptedAppTicket(EncryptedAppTicketResponse_t *pEncryptedAppTicketResponse, bool bIOFailure)
-{
+void SteamServerClientWrapper::OnRequestEncryptedAppTicket(EncryptedAppTicketResponse_t *pEncryptedAppTicketResponse, bool bIOFailure) {
 	if (cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)
 		(*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(pEncryptedAppTicketResponse, bIOFailure);
 }
 
-void SteamServerClientWrapper::m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall)
-{
+void SteamServerClientWrapper::m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall) {
 	m_SteamCallResultEncryptedAppTicket.Set(hSteamAPICall, this, &SteamServerClientWrapper::OnRequestEncryptedAppTicket);
 }
 
 
 
-SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList()
-{
+SteamAPICall_t cpp_SteamMatchmaking_RequestLobbyList() {
 	SteamAPICall_t m_SteamCallResultLobbyMatchList = SteamMatchmaking()->RequestLobbyList();
 	steam_server_client_wrapper->m_SteamCallResultLobbyMatchList_Set(m_SteamCallResultLobbyMatchList);
 	return m_SteamCallResultLobbyMatchList;
 }
 
-SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby)
-{
+SteamAPICall_t cpp_SteamMatchmaking_JoinLobby(CSteamID steamIDLobby) {
 	SteamAPICall_t steamAPICall = SteamMatchmaking()->JoinLobby(steamIDLobby);
 	steam_server_client_wrapper->m_SteamCallResultLobbyEntered_Set(steamAPICall);
 	return steamAPICall;
 }
 
-SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers)
-{
+SteamAPICall_t cpp_SteamMatchmaking_CreateLobby(ELobbyType eLobbyType, int cMaxMembers) {
 	SteamAPICall_t steamAPICall = SteamMatchmaking()->CreateLobby(eLobbyType, cMaxMembers);
 	steam_server_client_wrapper->m_SteamCallResultLobbyCreated_Set(steamAPICall);
 	return steamAPICall;
 }
 
-void cpp_SteamServerClientWrapper_Instantiate()
-{
+void cpp_SteamServerClientWrapper_Instantiate() {
 	steam_server_client_wrapper = new SteamServerClientWrapper();
 }
 
-void cpp_SteamServerClientWrapper_Destroy()
-{
+void cpp_SteamServerClientWrapper_Destroy() {
 	delete steam_server_client_wrapper;
 	steam_server_client_wrapper = nullptr;
 }
@@ -530,9 +477,9 @@ void cpp_SteamServerClientWrapper_Destroy()
 -------------------------------------------------------------------------------*/
 
 bool achievementUnlocked(const char *achName) {
-	#ifndef STEAMWORKS
+#ifndef STEAMWORKS
 	return FALSE;
-	#else
+#else
 
 	// check internal achievement record
 	node_t *node;
@@ -543,7 +490,7 @@ bool achievementUnlocked(const char *achName) {
 	}
 	return FALSE;
 
-	#endif
+#endif
 }
 
 /*-------------------------------------------------------------------------------
@@ -555,9 +502,9 @@ bool achievementUnlocked(const char *achName) {
 -------------------------------------------------------------------------------*/
 
 void steamAchievement(const char *achName) {
-	#ifndef STEAMWORKS
+#ifndef STEAMWORKS
 	return;
-	#else
+#else
 
 	if( !achievementUnlocked(achName) ) {
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
@@ -572,7 +519,7 @@ void steamAchievement(const char *achName) {
 		node->deconstructor = &defaultDeconstructor;
 	}
 
-	#endif
+#endif
 }
 
 /*-------------------------------------------------------------------------------
@@ -615,30 +562,27 @@ void steamAchievementClient(int player, const char *achName) {
 -------------------------------------------------------------------------------*/
 
 //Helper func. //TODO: Bugger.
-void* cpp_P2PSessionRequest_t_m_steamIDRemote(void *P2PSessionRequest_t_instance)
-{
+void* cpp_P2PSessionRequest_t_m_steamIDRemote(void *P2PSessionRequest_t_instance) {
 	CSteamID *id = new CSteamID; //TODO: Memleak?
 	*id = static_cast<P2PSessionRequest_t*>(P2PSessionRequest_t_instance)->m_steamIDRemote;
 	return id;
 }
 
 void steam_OnP2PSessionRequest( void *p_Callback ) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "OnP2PSessionRequest\n" );
-	#endif
+#endif
 	SteamNetworking()->AcceptP2PSessionWithUser(*static_cast<CSteamID* >(cpp_P2PSessionRequest_t_m_steamIDRemote(p_Callback)));
 }
 
 //Helper func. //TODO: Bugger.
-void cpp_Free_CSteamID(void *steamID)
-{
+void cpp_Free_CSteamID(void *steamID) {
 	CSteamID *id = static_cast<CSteamID*>(steamID);
 	delete id;
 }
 
 //Helper func. //TODO: Bugger.
-void* cpp_SteamMatchmaking_GetLobbyByIndex(int iLobby)
-{
+void* cpp_SteamMatchmaking_GetLobbyByIndex(int iLobby) {
 	CSteamID *id = new CSteamID();
 	*id = SteamMatchmaking()->GetLobbyByIndex(iLobby);
 	return id;
@@ -691,17 +635,16 @@ void steam_OnLobbyMatchListCallback( void *pCallback, bool bIOFailure ) {
 }
 
 //Helper func. //TODO: Bugger it!
-void *cpp_LobbyDataUpdated_pCallback_m_ulSteamIDLobby(void *pCallback)
-{
+void *cpp_LobbyDataUpdated_pCallback_m_ulSteamIDLobby(void *pCallback) {
 	CSteamID *id = new CSteamID();
 	*id = static_cast<LobbyDataUpdate_t*>(pCallback)->m_ulSteamIDLobby;
 	return id;
 }
 
 void steam_OnLobbyDataUpdatedCallback( void *pCallback ) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "OnLobbyDataUpdatedCallback\n" );
-	#endif
+#endif
 
 	// finish processing lobby invite?
 	if ( stillConnectingToLobby ) {
@@ -733,17 +676,16 @@ void steam_OnLobbyDataUpdatedCallback( void *pCallback ) {
 }
 
 //Helper func. //TODO: BUGGER THIS.
-void* cpp_LobbyCreated_Lobby(void *pCallback)
-{
+void* cpp_LobbyCreated_Lobby(void *pCallback) {
 	CSteamID *id = new CSteamID;
 	*id = static_cast<LobbyCreated_t*>(pCallback)->m_ulSteamIDLobby;
 	return id;
 }
 
 void steam_OnLobbyCreated( void *pCallback, bool bIOFailure ) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "OnLobbyCreated\n" );
-	#endif
+#endif
 	if ( static_cast<EResult>(static_cast<LobbyCreated_t*>(pCallback)->m_eResult) == k_EResultOK ) { //TODO: Make sure port from c_EResult to EResult works flawlessly.
 		if ( currentLobby ) {
 			SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
@@ -806,17 +748,16 @@ void processLobbyInvite() {
 }
 
 //Helper func. //TODO: Bugger.
-void *cpp_GameJoinRequested_m_steamIDLobby(void *pCallback)
-{
+void *cpp_GameJoinRequested_m_steamIDLobby(void *pCallback) {
 	CSteamID *id = new CSteamID;
 	*id = static_cast<GameLobbyJoinRequested_t*>(pCallback)->m_steamIDLobby;
 	return id;
 }
 
 void steam_OnGameJoinRequested( void *pCallback ) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "OnGameJoinRequested\n" );
-	#endif
+#endif
 
 	// return to a state where we can join the lobby
 	if ( !intro ) {
@@ -847,7 +788,7 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 	}
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	
+
 	if ( lobbyToConnectTo ) {
 		cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Utter bodge.
 	}
@@ -856,11 +797,9 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 }
 
 //Helper func. //TODO: Bugger.
-void cpp_SteamMatchmaking_JoinLobbyPCH(const char *pchLobbyID)
-{
+void cpp_SteamMatchmaking_JoinLobbyPCH(const char *pchLobbyID) {
 	CSteamID steamIDLobby( (uint64)atoll( pchLobbyID ) );
-	if( steamIDLobby.IsValid() )
-	{
+	if( steamIDLobby.IsValid() ) {
 		SteamAPICall_t steamAPICall = SteamMatchmaking()->JoinLobby(steamIDLobby);
 		steam_server_client_wrapper->m_SteamCallResultLobbyEntered_Set(steamAPICall);
 	}
@@ -868,11 +807,11 @@ void cpp_SteamMatchmaking_JoinLobbyPCH(const char *pchLobbyID)
 
 // searches (char pchCmdLine[]) for a connect lobby command
 void steam_ConnectToLobby() {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "ConnectToLobby\n" );
-	#endif
+#endif
 
-	// parse out the connect 
+	// parse out the connect
 	char pchLobbyID[1024];
 
 	// look for +connect_lobby command
@@ -890,17 +829,16 @@ void steam_ConnectToLobby() {
 	}
 }
 
-void *cpp_pCallback_m_ulSteamIDLobby( void *pCallback )
-{
+void *cpp_pCallback_m_ulSteamIDLobby( void *pCallback ) {
 	CSteamID *id = new CSteamID();
 	*id = static_cast<LobbyEnter_t*>(pCallback)->m_ulSteamIDLobby;
 	return id;
 }
 
 void steam_OnLobbyEntered( void *pCallback, bool bIOFailure ) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "OnLobbyEntered\n" );
-	#endif
+#endif
 
 	if ( !connectingToLobby )
 		return;
@@ -926,17 +864,17 @@ void steam_OnLobbyEntered( void *pCallback, bool bIOFailure ) {
 }
 
 void steam_GameServerPingOnServerResponded(void *steamID) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "GameServerPingOnServerResponded\n" );
-	#endif
+#endif
 
 	steamIDGameServer = steamID;
 }
 
 void steam_OnP2PSessionConnectFail( void *pCallback ) {
-	#ifdef STEAMDEBUG
+#ifdef STEAMDEBUG
 	printlog( "OnP2PSessionConnectFail\n" );
-	#endif
+#endif
 
 	printlog("warning: failed to establish steam P2P connection.\n");
 

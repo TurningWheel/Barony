@@ -53,11 +53,11 @@ button_t *butAbout;
 
 void buttonExit(button_t *my) {
 	button_t *button;
-	
+
 	// this shouldn't work if a window is already open
 	if( subwindow )
 		return;
-	
+
 	menuVisible = 0;
 	subwindow=1;
 	subx1=xres/2-128;
@@ -65,19 +65,23 @@ void buttonExit(button_t *my) {
 	suby1=yres/2-32;
 	suby2=yres/2+32;
 	strcpy(subtext,"Are you sure you want to quit?\nAny unsaved work will be lost.");
-	
+
 	button = newButton();
 	strcpy(button->label,"Yes");
-	button->x=subx1+32; button->y=suby2-24;
-	button->sizex=32; button->sizey=16;
+	button->x=subx1+32;
+	button->y=suby2-24;
+	button->sizex=32;
+	button->sizey=16;
 	button->action=&buttonExitConfirm;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"No");
-	button->x=subx2-56; button->y=suby2-24;
-	button->sizex=24; button->sizey=16;
+	button->x=subx2-56;
+	button->y=suby2-24;
+	button->sizex=24;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -134,7 +138,7 @@ void buttonFile(button_t *my) {
 
 void buttonNew(button_t *my) {
 	button_t *button;
-	
+
 	editproperty = 0;
 	inputstr = map.name;
 	snprintf(widthtext, 4, "%d", map.width);
@@ -150,27 +154,33 @@ void buttonNew(button_t *my) {
 	suby1=yres/2-80;
 	suby2=yres/2+80;
 	strcpy(subtext,"New map:");
-	
+
 	button = newButton();
 	strcpy(button->label,"Create");
-	button->x=subx2-64; button->y=suby2-48;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-48;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonNewConfirm;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"Cancel");
-	button->x=subx2-64; button->y=suby2-24;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-24;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"X");
-	button->x=subx2-16; button->y=suby1;
-	button->sizex=16; button->sizey=16;
+	button->x=subx2-16;
+	button->y=suby1;
+	button->sizex=16;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -196,8 +206,7 @@ void buttonNewConfirm(button_t *my) {
 						map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 2;
 					else
 						map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 0;
-				}
-				else
+				} else
 					map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 1;
 			}
 		}
@@ -236,31 +245,37 @@ void buttonOpen(button_t *my) {
 	suby1=yres/2-120;
 	suby2=yres/2+120;
 	strcpy(subtext,"Open file:");
-	
+
 	button = newButton();
 	strcpy(button->label," Open ");
-	button->x=subx2-64; button->y=suby2-48;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-48;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonOpenConfirm;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"Cancel");
-	button->x=subx2-64; button->y=suby2-24;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-24;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"X");
-	button->x=subx2-16; button->y=suby1;
-	button->sizex=16; button->sizey=16;
+	button->x=subx2-16;
+	button->y=suby1;
+	button->sizex=16;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	// file list
 	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
@@ -365,31 +380,37 @@ void buttonSaveAs(button_t *my) {
 	suby1=yres/2-120;
 	suby2=yres/2+120;
 	strcpy(subtext,"Save file:");
-	
+
 	button = newButton();
 	strcpy(button->label," Save ");
-	button->x=subx2-64; button->y=suby2-48;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-48;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonSave;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"Cancel");
-	button->x=subx2-64; button->y=suby2-24;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-24;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"X");
-	button->x=subx2-16; button->y=suby1;
-	button->sizex=16; button->sizey=16;
+	button->x=subx2-16;
+	button->y=suby1;
+	button->sizex=16;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	// file list
 	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
@@ -444,7 +465,7 @@ void buttonCut(button_t *my) {
 void buttonCopy(button_t *my) {
 	menuVisible=0;
 	int x, y;
-	
+
 	// copy the selected tiles
 	if(selectedarea && !pasting) {
 		copymap.width = selectedarea_x2-selectedarea_x1+1;
@@ -465,7 +486,7 @@ void buttonCopy(button_t *my) {
 
 void buttonPaste(button_t *my) {
 	menuVisible=0;
-	
+
 	// paste the selected tiles
 	if( copymap.tiles != NULL ) {
 		pasting = TRUE;
@@ -476,7 +497,7 @@ void buttonPaste(button_t *my) {
 void buttonDelete(button_t *my) {
 	menuVisible=0;
 	makeUndo();
-	
+
 	// delete the selected entity, if there is one
 	if(selectedEntity != NULL) {
 		list_RemoveNode(selectedEntity->mynode);
@@ -565,7 +586,7 @@ void buttonMap(button_t *my) {
 
 void buttonAttributes(button_t *my) {
 	button_t *button;
-	
+
 	editproperty = 0;
 	inputstr = map.name;
 	snprintf(widthtext, 4, "%d", map.width);
@@ -581,27 +602,33 @@ void buttonAttributes(button_t *my) {
 	suby1=yres/2-80;
 	suby2=yres/2+80;
 	strcpy(subtext,"Map properties:");
-	
+
 	button = newButton();
 	strcpy(button->label,"  OK  ");
-	button->x=subx2-64; button->y=suby2-48;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-48;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonAttributesConfirm;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"Cancel");
-	button->x=subx2-64; button->y=suby2-24;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-64;
+	button->y=suby2-24;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"X");
-	button->x=subx2-16; button->y=suby1;
-	button->sizex=16; button->sizey=16;
+	button->x=subx2-16;
+	button->y=suby1;
+	button->sizex=16;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -611,7 +638,7 @@ void buttonAttributesConfirm(button_t *my) {
 	int x, y, z, c;
 	map_t mapcopy;
 	makeUndo();
-	
+
 	// make a copy of the current map
 	mapcopy.width = map.width;
 	mapcopy.height = map.height;
@@ -623,7 +650,7 @@ void buttonAttributesConfirm(button_t *my) {
 			}
 		}
 	}
-	
+
 	// allocate memory for a new map
 	free(map.tiles);
 	map.width=atoi(widthtext);
@@ -641,7 +668,7 @@ void buttonAttributesConfirm(button_t *my) {
 	lightmap=(int *) malloc(sizeof(Sint32)*map.width*map.height);
 	for(c=0; c<map.width*map.height; c++ )
 		lightmap[c]=0;
-	
+
 	// transfer data from the new map to the old map and fill extra space with empty data
 	for( z=0; z<MAPLAYERS; z++ ) {
 		for( y=0; y<map.height; y++ ) {
@@ -661,7 +688,7 @@ void buttonAttributesConfirm(button_t *my) {
 
 void buttonClearMap(button_t *my) {
 	button_t *button;
-	
+
 	menuVisible = 0;
 	subwindow=1;
 	subx1=xres/2-160;
@@ -669,27 +696,33 @@ void buttonClearMap(button_t *my) {
 	suby1=yres/2-56;
 	suby2=yres/2+56;
 	strcpy(subtext,"Warning:\n\nThis option will completely erase your\nentire map.\n\nAre you sure you want to continue?\n");
-	
+
 	button = newButton();
 	strcpy(button->label,"OK");
-	button->x=subx1+64; button->y=suby2-24;
-	button->sizex=24; button->sizey=16;
+	button->x=subx1+64;
+	button->y=suby2-24;
+	button->sizex=24;
+	button->sizey=16;
 	button->action=&buttonClearMapConfirm;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"Cancel");
-	button->x=subx2-112; button->y=suby2-24;
-	button->sizex=56; button->sizey=16;
+	button->x=subx2-112;
+	button->y=suby2-24;
+	button->sizex=56;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"X");
-	button->x=subx2-16; button->y=suby1;
-	button->sizex=16; button->sizey=16;
+	button->x=subx2-16;
+	button->y=suby1;
+	button->sizex=16;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -720,7 +753,7 @@ void buttonHelp(button_t *my) {
 
 void buttonAbout(button_t *my) {
 	button_t *button;
-	
+
 	menuVisible = 0;
 	subwindow=1;
 	subx1=xres/2-160;
@@ -728,23 +761,27 @@ void buttonAbout(button_t *my) {
 	suby1=yres/2-56;
 	suby2=yres/2+56;
 	strcpy(subtext,"Barony: Map Editor v1.2"
-		"\n\nSee EDITING for full documentation."
-		"\n\nThis software is copyright 2013 (c)"
-		"\nSheridan Rathbun, all rights reserved."
-		"\n\nSee LICENSE for details.\n");
-	
+	       "\n\nSee EDITING for full documentation."
+	       "\n\nThis software is copyright 2013 (c)"
+	       "\nSheridan Rathbun, all rights reserved."
+	       "\n\nSee LICENSE for details.\n");
+
 	button = newButton();
 	strcpy(button->label,"OK");
-	button->x=xres/2-12; button->y=suby2-24;
-	button->sizex=24; button->sizey=16;
+	button->x=xres/2-12;
+	button->y=suby2-24;
+	button->sizex=24;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	button = newButton();
 	strcpy(button->label,"X");
-	button->x=subx2-16; button->y=suby1;
-	button->sizex=16; button->sizey=16;
+	button->x=subx2-16;
+	button->y=suby1;
+	button->sizex=16;
+	button->sizey=16;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -753,7 +790,7 @@ void buttonAbout(button_t *my) {
 // Subwindows
 void buttonCloseSubwindow(button_t *my) {
 	int c;
-	
+
 	// close window
 	subwindow=0;
 	newwindow=0;

@@ -131,7 +131,7 @@ void actSwitch(Entity *my) {
 	} else {
 		my->flags[NOUPDATE] = TRUE;
 	}
-	
+
 	// Rotate the switch when it is on/off.
 	if( my->skill[0] ) {
 		if( my->roll > -PI/4 ) {
@@ -169,11 +169,11 @@ void actTrap(Entity *my) {
 	Entity *entity;
 	bool somebodyonme = FALSE;
 	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
-	
+
 	if( TRAP_ON ) {
 		my->switchUpdateNeighbors();
 	}
-	
+
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		entity = (Entity *)node->element;
 		if( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder ) {
@@ -212,7 +212,7 @@ void actTrapPermanent(Entity *my) {
 			}
 		}
 	}
-	
+
 	if( TRAPPERMANENT_ON ) {
 		my->switchUpdateNeighbors();
 	} else {
@@ -291,7 +291,8 @@ void getPowerablesOnTile(int x, int y, list_t **list) {
 	//And then free the list returned by checkTileForEntity.
 
 	//Right. First, grab all the entities on the tile.
-	list_t *entities = NULL; entities = checkTileForEntity(x, y);
+	list_t *entities = NULL;
+	entities = checkTileForEntity(x, y);
 
 	if (!entities) return; //No use continuing, got no entities.
 

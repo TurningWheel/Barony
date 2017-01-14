@@ -39,8 +39,10 @@ void initLich(Entity *my, Stat *myStats) {
 		strcpy(myStats->name,"Baron Herx");
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 1000+250*numplayers; myStats->MAXHP = myStats->HP;
-		myStats->MP = 1000; myStats->MAXMP = 1000;
+		myStats->HP = 1000+250*numplayers;
+		myStats->MAXHP = myStats->HP;
+		myStats->MP = 1000;
+		myStats->MAXMP = 1000;
 		myStats->OLDHP = myStats->HP;
 		myStats->STR = 20;
 		myStats->DEX = 8;
@@ -53,7 +55,8 @@ void initLich(Entity *my, Stat *myStats) {
 		myStats->GOLD = 100;
 		myStats->HUNGER = 900;
 		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -76,7 +79,7 @@ void initLich(Entity *my, Stat *myStats) {
 		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
-	
+
 	// right arm
 	Entity *entity = newEntity(276, 0, map.entities);
 	entity->sizex = 4;
@@ -94,7 +97,7 @@ void initLich(Entity *my, Stat *myStats) {
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity *);
-	
+
 	// left arm
 	entity = newEntity(275, 0, map.entities);
 	entity->sizex = 4;
@@ -112,7 +115,7 @@ void initLich(Entity *my, Stat *myStats) {
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity *);
-	
+
 	// head
 	entity = newEntity(277, 0, map.entities);
 	entity->yaw=my->yaw;
@@ -140,35 +143,35 @@ void lichDie(Entity *my) {
 		Entity *entity = spawnGib(my);
 		if( entity ) {
 			switch( c ) {
-				case 0:
-					entity->sprite = 230;
-					break;
-				case 1:
-					entity->sprite = 231;
-					break;
-				case 2:
-					entity->sprite = 233;
-					break;
-				case 3:
-					entity->sprite = 235;
-					break;
-				case 4:
-					entity->sprite = 236;
-					break;
-				case 5:
-					entity->sprite = 274;
-					break;
-				case 6:
-					entity->sprite = 275;
-					break;
-				case 7:
-					entity->sprite = 276;
-					break;
-				case 8:
-					entity->sprite = 277;
-					break;
-				default:
-					break;
+			case 0:
+				entity->sprite = 230;
+				break;
+			case 1:
+				entity->sprite = 231;
+				break;
+			case 2:
+				entity->sprite = 233;
+				break;
+			case 3:
+				entity->sprite = 235;
+				break;
+			case 4:
+				entity->sprite = 236;
+				break;
+			case 5:
+				entity->sprite = 274;
+				break;
+			case 6:
+				entity->sprite = 275;
+				break;
+			case 7:
+				entity->sprite = 276;
+				break;
+			case 8:
+				entity->sprite = 277;
+				break;
+			default:
+				break;
 			}
 			serverSpawnGibForClient(entity);
 		}
@@ -227,20 +230,19 @@ void lichDie(Entity *my) {
 
 void actLichLimb(Entity *my) {
 	int i;
-	
+
 	Entity *parent = NULL;
 	if( (parent=uidToEntity(my->skill[2]))==NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	if( multiplayer!=CLIENT ) {
 		for( i=0; i<MAXPLAYERS; i++ ) {
 			if( inrange[i] ) {
 				if( i==0 && selectedEntity==my ) {
 					parent->skill[13] = i+1;
-				}
-				else if( client_selected[i]==my ) {
+				} else if( client_selected[i]==my ) {
 					parent->skill[13] = i+1;
 				}
 			}
@@ -307,7 +309,7 @@ void lichAnimate(Entity *my, double dist) {
 			my->light = lightSphereShadow(my->x/16,my->y/16,4,192);
 		}
 	}
-	
+
 	// move arms
 	Entity *rightarm=NULL;
 	for(bodypart=0, node = my->children.first; node!=NULL; node=node->next, bodypart++) {
@@ -344,60 +346,60 @@ void lichAnimate(Entity *my, double dist) {
 			entity->pitch = rightarm->pitch;
 		}
 		switch( bodypart ) {
-			// right arm
-			case 2:
-				entity->x+=2.75*cos(my->yaw+PI/2);
-				entity->y+=2.75*sin(my->yaw+PI/2);
-				entity->z-=3.25;
-				entity->yaw += MONSTER_WEAPONYAW;
-				break;
-			// left arm
-			case 3:
-				entity->x-=2.75*cos(my->yaw+PI/2);
-				entity->y-=2.75*sin(my->yaw+PI/2);
-				entity->z-=3.25;
-				entity->yaw -= MONSTER_WEAPONYAW;
-				break;
-			// head
-			case 4: {
-				entity->z-=4.25;
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
-				for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
-					double lowestdist = 5000;
-					if( tempEntity->behavior == &actPlayer ) {
-						double disttoplayer = entityDist(my,tempEntity);
-						if( disttoplayer < lowestdist ) {
-							playertotrack = tempEntity;
-						}
+		// right arm
+		case 2:
+			entity->x+=2.75*cos(my->yaw+PI/2);
+			entity->y+=2.75*sin(my->yaw+PI/2);
+			entity->z-=3.25;
+			entity->yaw += MONSTER_WEAPONYAW;
+			break;
+		// left arm
+		case 3:
+			entity->x-=2.75*cos(my->yaw+PI/2);
+			entity->y-=2.75*sin(my->yaw+PI/2);
+			entity->z-=3.25;
+			entity->yaw -= MONSTER_WEAPONYAW;
+			break;
+		// head
+		case 4: {
+			entity->z-=4.25;
+			node_t *tempNode;
+			Entity *playertotrack = NULL;
+			for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
+				Entity *tempEntity = (Entity *)tempNode->element;
+				double lowestdist = 5000;
+				if( tempEntity->behavior == &actPlayer ) {
+					double disttoplayer = entityDist(my,tempEntity);
+					if( disttoplayer < lowestdist ) {
+						playertotrack = tempEntity;
 					}
 				}
-				if( playertotrack && !MONSTER_ATTACK ) {
-					double tangent = atan2( playertotrack->y-entity->y, playertotrack->x-entity->x );
-					double dir = entity->yaw - tangent;
-					while( dir >= PI )
-						dir -= PI*2;
-					while( dir < -PI )
-						dir += PI*2;
-					entity->yaw -= dir/8;
-
-					double dir2 = my->yaw - tangent;
-					while( dir2 >= PI )
-						dir2 -= PI*2;
-					while( dir2 < -PI )
-						dir2 += PI*2;
-					if( dir2>PI/2 )
-						entity->yaw = my->yaw - PI/2;
-					else if( dir2<-PI/2 )
-						entity->yaw = my->yaw + PI/2;
-				} else {
-					entity->yaw = my->yaw;
-				}
-				break;
 			}
-			default:
-				break;
+			if( playertotrack && !MONSTER_ATTACK ) {
+				double tangent = atan2( playertotrack->y-entity->y, playertotrack->x-entity->x );
+				double dir = entity->yaw - tangent;
+				while( dir >= PI )
+					dir -= PI*2;
+				while( dir < -PI )
+					dir += PI*2;
+				entity->yaw -= dir/8;
+
+				double dir2 = my->yaw - tangent;
+				while( dir2 >= PI )
+					dir2 -= PI*2;
+				while( dir2 < -PI )
+					dir2 += PI*2;
+				if( dir2>PI/2 )
+					entity->yaw = my->yaw - PI/2;
+				else if( dir2<-PI/2 )
+					entity->yaw = my->yaw + PI/2;
+			} else {
+				entity->yaw = my->yaw;
+			}
+			break;
+		}
+		default:
+			break;
 		}
 	}
 }

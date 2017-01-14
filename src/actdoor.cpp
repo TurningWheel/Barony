@@ -45,7 +45,7 @@ void actDoor(Entity *my) {
 
 	Entity *entity;
 	int i, c;
-		
+
 	if( !DOOR_INIT ) {
 		DOOR_INIT=1;
 		DOOR_STARTANG=my->yaw;
@@ -104,9 +104,9 @@ void actDoor(Entity *my) {
 				list_RemoveNode(my->mynode);
 				return;
 			}
-		
+
 			// using door
-			for(i=0;i<MAXPLAYERS;i++) {
+			for(i=0; i<MAXPLAYERS; i++) {
 				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 					if(inrange[i]) {
 						if( !DOOR_LOCKED ) { // door unlocked
@@ -135,7 +135,7 @@ void actDoor(Entity *my) {
 				}
 			}
 		}
-		
+
 		// door swinging
 		if( !DOOR_STATUS ) {
 			// closing door
@@ -150,15 +150,14 @@ void actDoor(Entity *my) {
 					my->yaw = std::max(DOOR_STARTANG+PI/2,my->yaw-0.15);
 				else if( my->yaw < DOOR_STARTANG+PI/2 )
 					my->yaw = std::min(DOOR_STARTANG+PI/2,my->yaw+0.15);
-			}
-			else if( DOOR_STATUS == 2 ) {
+			} else if( DOOR_STATUS == 2 ) {
 				if( my->yaw > DOOR_STARTANG-PI/2 )
 					my->yaw = std::max(DOOR_STARTANG-PI/2,my->yaw-0.15);
 				else if( my->yaw < DOOR_STARTANG-PI/2 )
 					my->yaw = std::min(DOOR_STARTANG-PI/2,my->yaw+0.15);
 			}
 		}
-		
+
 		// setting collision
 		if( my->yaw == DOOR_STARTANG && my->flags[PASSABLE] ) {
 			// don't set impassable if someone's inside, otherwise do
@@ -189,7 +188,7 @@ void actDoor(Entity *my) {
 				my->x += 5;
 			my->flags[PASSABLE] = TRUE;
 		}
-		
+
 		// update for clients
 		if( multiplayer==SERVER ) {
 			if( DOOR_OLDSTATUS!=DOOR_STATUS ) {

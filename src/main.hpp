@@ -29,58 +29,58 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #include <time.h>
 #include <fcntl.h>
 #ifndef WINDOWS
-	#include <unistd.h>
+#include <unistd.h>
 #endif
 #include <string.h>
 #include <ctype.h>
 #ifdef WINDOWS
-	#define GL_GLEXT_PROTOTYPES
-	#include <windows.h>
-	#undef min
-	#undef max
+#define GL_GLEXT_PROTOTYPES
+#include <windows.h>
+#undef min
+#undef max
 #endif
 #ifdef APPLE
-	#include <Cocoa/Cocoa.h>
-	//#include <OpenGL/OpenGL.h>
-	#define GL_GLEXT_PROTOTYPES
-	#include <GLUT/glut.h>
-	#include <OpenGL/gl3ext.h>
-	#include <OpenGL/gl3.h>
-	#include <SDL2/SDL_opengl.h>
+#include <Cocoa/Cocoa.h>
+//#include <OpenGL/OpenGL.h>
+#define GL_GLEXT_PROTOTYPES
+#include <GLUT/glut.h>
+#include <OpenGL/gl3ext.h>
+#include <OpenGL/gl3.h>
+#include <SDL2/SDL_opengl.h>
 #else
-	#define GL_GLEXT_PROTOTYPES
-	#include <GL/gl.h>
-	#include <GL/glu.h>
-    #include <GL/glext.h>
-    #include "SDL_opengl.h"
+#define GL_GLEXT_PROTOTYPES
+#include <GL/gl.h>
+#include <GL/glu.h>
+#include <GL/glext.h>
+#include "SDL_opengl.h"
 #endif
 #ifdef APPLE
-    #include <SDL2/SDL.h>
+#include <SDL2/SDL.h>
 #else
-    #include "SDL.h"
+#include "SDL.h"
 #endif
 #ifdef WINDOWS
 #include "SDL_syswm.h"
 #endif
 #ifdef APPLE
-    #include <SDL2_image/SDL_image.h>
+#include <SDL2_image/SDL_image.h>
 #else
-    #include "SDL_image.h"
+#include "SDL_image.h"
 #endif
 //#include "SDL_mixer.h"
 #ifdef APPLE
-    #include <SDL2_net/SDL_net.h>
+#include <SDL2_net/SDL_net.h>
 #else
-    #include "SDL_net.h"
+#include "SDL_net.h"
 #endif
 #ifdef APPLE
-    #include <SDL2_ttf/SDL_ttf.h>
+#include <SDL2_ttf/SDL_ttf.h>
 #else
-    #include "SDL_ttf.h"
+#include "SDL_ttf.h"
 #endif
 //#include "sprig.h"
 #include "savepng.hpp"
-	
+
 #ifndef APPLE
 #define FALSE false
 #define TRUE true
@@ -92,16 +92,16 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #endif
 
 #ifdef _MSC_VER
-	#include <io.h>
-	#define F_OK 0	// check for existence 
-	#define X_OK 1	// check for execute permission 
-	#define W_OK 2	// check for write permission 
-	#define R_OK 4	// check for read permission
+#include <io.h>
+#define F_OK 0	// check for existence 
+#define X_OK 1	// check for execute permission 
+#define W_OK 2	// check for write permission 
+#define R_OK 4	// check for read permission
 
-	#if _MSC_VER != 1900 //Don't need this if running visual studio 2015.
-		#define snprintf _snprintf
-	#endif
-	#define access _access
+#if _MSC_VER != 1900 //Don't need this if running visual studio 2015.
+#define snprintf _snprintf
+#endif
+#define access _access
 #endif
 
 #define PI 3.14159265358979323846
@@ -256,7 +256,7 @@ typedef struct light_t {
 	Sint32 radius;
 	Sint32 intensity;
 	Sint32 *tiles;
-	
+
 	// a pointer to the light's location in a list
 	node_t *node;
 } light_t;
@@ -300,10 +300,10 @@ typedef struct button_t {
 	bool pressed;        // whether the button is being pressed or not
 	bool needclick;      // involved in triggering buttons
 	bool outline;        // draw golden border if true. For such things as indicated which settings tab gamepad has selected.
-	
+
 	// a pointer to the button's location in a list
 	node_t *node;
-	
+
 	void (*action)(struct button_t *my);
 } button_t;
 

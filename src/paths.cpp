@@ -29,7 +29,7 @@ int pathMapZone = 1;
 /*-------------------------------------------------------------------------------
 
 	heuristic
-	
+
 	Uses the Manhattan Method to calculate the path heuristic from x1, y1
 	to x2, y2
 
@@ -44,7 +44,7 @@ Uint32 heuristic(int x1, int y1, int x2, int y2) {
 /*-------------------------------------------------------------------------------
 
 	heapAdd
-	
+
 	Adds a pathnode to the heap
 
 -------------------------------------------------------------------------------*/
@@ -71,7 +71,7 @@ pathnode_t **heapAdd(pathnode_t **heap, pathnode_t *pathnode, long *length) {
 /*-------------------------------------------------------------------------------
 
 	heapRemove
-	
+
 	Removes a pathnode from the heap
 
 -------------------------------------------------------------------------------*/
@@ -79,12 +79,12 @@ pathnode_t **heapAdd(pathnode_t **heap, pathnode_t *pathnode, long *length) {
 pathnode_t **heapRemove(pathnode_t **heap, long *length) {
 	long u, v=1;
 	pathnode_t *pathnode;
-	
+
 	heap[1]=heap[*length];
 	*length -= 1;
 	while( 1 ) {
 		u = v;
-		
+
 		if( (u<<1)+1 <= *length ) {
 			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h )
 				v = u<<1;
@@ -94,7 +94,7 @@ pathnode_t **heapRemove(pathnode_t **heap, long *length) {
 			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h )
 				v = u<<1;
 		}
-		
+
 		if( u != v ) {
 			pathnode = heap[u];
 			heap[u] = heap[v];
@@ -103,7 +103,7 @@ pathnode_t **heapRemove(pathnode_t **heap, long *length) {
 			break;
 		}
 	}
-	
+
 	return heap;
 }
 
@@ -137,7 +137,7 @@ int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
 /*-------------------------------------------------------------------------------
 
 	generatePath
-	
+
 	generates a path through the level using the A* pathfinding algorithm.
 	Takes a starting point and destination in map coordinates, and returns
 	a list of pathnodes which lead from the starting point to the destination.
@@ -168,7 +168,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	y1 = std::min<unsigned int>(std::max(0,y1),map.height-1);
 	x2 = std::min<unsigned int>(std::max(0,x2),map.width-1);
 	y2 = std::min<unsigned int>(std::max(0,y2),map.height-1); //TODO: Why are int and unsigned int being compared?
-	
+
 	// get levitation status
 	Stat *stats = my->getStats();
 	if( stats ) {
@@ -216,7 +216,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 		int y = std::min<unsigned int>(std::max<int>(0,entity->y/16),map.height-1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		pathMap[y+x*map.height] = 0;
 	}
-		
+
 	openList = (list_t *) malloc(sizeof(list_t));
 	openList->first = NULL;
 	openList->last = NULL;
@@ -225,13 +225,13 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	closedList->last = NULL;
 	binaryheap = (pathnode_t **) malloc(sizeof(pathnode_t *)*map.width*map.height);
 	binaryheap[0] = NULL;
-	
+
 	// create starting node in list
 	pathnode = newPathnode(openList,x1,y1,NULL,1);
 	pathnode->g=0;
 	pathnode->h=heuristic(x1,y1,x2,y2);
 	heapAdd(binaryheap,pathnode,&heaplength);
-	
+
 	while( openList->first != NULL ) {
 		/*pathnode = (pathnode_t *)openList->first->element;
 		for( node=openList->first; node!=NULL; node=node->next ) {
@@ -272,7 +272,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 			free(pathMap);
 			return path;
 		}
-		
+
 		// expand search
 		for( y=-1; y<=1; y++ ) {
 			for( x=-1; x<=1; x++ ) {
@@ -359,7 +359,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 /*-------------------------------------------------------------------------------
 
 	generatePathMaps
-	
+
 	Maps out islands in the game map for the path generator
 
 -------------------------------------------------------------------------------*/
@@ -421,7 +421,7 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 
 	if( obstacle )
 		return;
-	
+
 	pathMap[y+x*map.height] = zone;
 	bool repeat;
 	do {

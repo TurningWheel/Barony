@@ -26,7 +26,7 @@ extern Sint32 mousexrel, mouseyrel;
  * TODO: Will need to make messages work for each hotseat player.
  * This will probably involve taking the current notification_messages thing and instead including that in a wrapper or something that is owned by each player instance.
  * Basically, each player will need to keep track of its own messages.
- * 
+ *
  * I believe one of the splitscreen layouts included a version where all of the messages were communal and were in the center of the screen or summat.
  */
 
@@ -52,8 +52,7 @@ extern bool gamepad_menuy_invert;
 //TODO: Joystick support?
 //extern SDL_GameController* game_controller;
 
-class GameController
-{
+class GameController {
 	SDL_GameController* sdl_device;
 	int id;
 
@@ -154,8 +153,7 @@ extern GameController* game_controller;
 
 void initGameControllers();
 
-class Player
-{
+class Player {
 	//Splitscreen support. Every player gets their own screen.
 	//Except in multiplayer. In that case, this is just a big old dummy class.
 	SDL_Surface *screen;

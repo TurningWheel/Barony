@@ -20,7 +20,7 @@
 
 void initSlime(Entity *my, Stat *myStats) {
 	int c;
-	
+
 	my->flags[UPDATENEEDED]=TRUE;
 	my->flags[INVISIBLE]=FALSE;
 
@@ -41,13 +41,17 @@ void initSlime(Entity *my, Stat *myStats) {
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
 		if( myStats->LVL == 7 ) { // blue slime
-			myStats->HP = 70; myStats->MAXHP = 70;
-			myStats->MP = 70; myStats->MAXMP = 70;
+			myStats->HP = 70;
+			myStats->MAXHP = 70;
+			myStats->MP = 70;
+			myStats->MAXMP = 70;
 			myStats->STR = 10;
 		} else { // green slime
 			myStats->STR = 3;
-			myStats->HP = 60; myStats->MAXHP = 60;
-			myStats->MP = 60; myStats->MAXMP = 60;
+			myStats->HP = 60;
+			myStats->MAXHP = 60;
+			myStats->MP = 60;
+			myStats->MAXMP = 60;
 		}
 		myStats->OLDHP = myStats->HP;
 		myStats->DEX = -4;
@@ -60,7 +64,8 @@ void initSlime(Entity *my, Stat *myStats) {
 		myStats->HUNGER = 900;
 		if( !myStats->leader_uid )
 			myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;

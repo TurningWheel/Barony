@@ -42,8 +42,10 @@ void initDemon(Entity *my, Stat *myStats) {
 		myStats->appearance = rand();
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 120; myStats->MAXHP = myStats->HP;
-		myStats->MP = 200; myStats->MAXMP = 200;
+		myStats->HP = 120;
+		myStats->MAXHP = myStats->HP;
+		myStats->MP = 200;
+		myStats->MAXMP = 200;
 		myStats->OLDHP = myStats->HP;
 		myStats->STR = 30;
 		myStats->DEX = 10;
@@ -68,7 +70,8 @@ void initDemon(Entity *my, Stat *myStats) {
 		myStats->HUNGER = 900;
 		if( !myStats->leader_uid )
 			myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -202,20 +205,19 @@ void initDemon(Entity *my, Stat *myStats) {
 
 void actDemonLimb(Entity *my) {
 	int i;
-	
+
 	Entity *parent = NULL;
 	if( (parent=uidToEntity(my->skill[2]))==NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	if( multiplayer!=CLIENT ) {
 		for( i=0; i<MAXPLAYERS; i++ ) {
 			if( inrange[i] ) {
 				if( i==0 && selectedEntity==my ) {
 					parent->skill[13] = i+1;
-				}
-				else if( client_selected[i]==my ) {
+				} else if( client_selected[i]==my ) {
 					parent->skill[13] = i+1;
 				}
 			}
@@ -274,7 +276,7 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;
 	int bodypart;
-	
+
 	// set invisibility
 	if( multiplayer != CLIENT ) {
 		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
@@ -407,7 +409,7 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					}
 				}
 			}
-			
+
 			if( bodypart!=5 || (MONSTER_ATTACK==0 && MONSTER_ATTACKTIME==0) ) {
 				if( dist>0.1 ) {
 					if( entity->skill[0] ) {
@@ -444,39 +446,39 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		}
 		switch( bodypart ) {
-			// torso
-			case 2:
-				entity->x-=.5*cos(my->yaw);
-				entity->y-=.5*sin(my->yaw);
-				entity->z+=5;
-				break;
-			// right leg
-			case 3:
-				entity->x+=2.25*cos(my->yaw+PI/2)-1.25*cos(my->yaw);
-				entity->y+=2.25*sin(my->yaw+PI/2)-1.25*sin(my->yaw);
-				entity->z+=7.5;
-				break;
-			// left leg
-			case 4:
-				entity->x-=2.25*cos(my->yaw+PI/2)+1.25*cos(my->yaw);
-				entity->y-=2.25*sin(my->yaw+PI/2)+1.25*sin(my->yaw);
-				entity->z+=7.5;
-				break;
-			// right arm
-			case 5:
-				entity->x+=5*cos(my->yaw+PI/2)-1*cos(my->yaw);
-				entity->y+=5*sin(my->yaw+PI/2)-1*sin(my->yaw);
-				entity->z+=2.75;
-				entity->yaw += MONSTER_WEAPONYAW;
-				break;
-			// left arm
-			case 6:
-				entity->x-=5*cos(my->yaw+PI/2)+1*cos(my->yaw);
-				entity->y-=5*sin(my->yaw+PI/2)+1*sin(my->yaw);
-				entity->z+=2.75;
-				break;
-			default:
-				break;
+		// torso
+		case 2:
+			entity->x-=.5*cos(my->yaw);
+			entity->y-=.5*sin(my->yaw);
+			entity->z+=5;
+			break;
+		// right leg
+		case 3:
+			entity->x+=2.25*cos(my->yaw+PI/2)-1.25*cos(my->yaw);
+			entity->y+=2.25*sin(my->yaw+PI/2)-1.25*sin(my->yaw);
+			entity->z+=7.5;
+			break;
+		// left leg
+		case 4:
+			entity->x-=2.25*cos(my->yaw+PI/2)+1.25*cos(my->yaw);
+			entity->y-=2.25*sin(my->yaw+PI/2)+1.25*sin(my->yaw);
+			entity->z+=7.5;
+			break;
+		// right arm
+		case 5:
+			entity->x+=5*cos(my->yaw+PI/2)-1*cos(my->yaw);
+			entity->y+=5*sin(my->yaw+PI/2)-1*sin(my->yaw);
+			entity->z+=2.75;
+			entity->yaw += MONSTER_WEAPONYAW;
+			break;
+		// left arm
+		case 6:
+			entity->x-=5*cos(my->yaw+PI/2)+1*cos(my->yaw);
+			entity->y-=5*sin(my->yaw+PI/2)+1*sin(my->yaw);
+			entity->z+=2.75;
+			break;
+		default:
+			break;
 		}
 	}
 	if( MONSTER_ATTACK != 0 )
@@ -505,7 +507,7 @@ void actDemonCeilingBuster(Entity *my) {
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = TICKS_PER_SECOND/2;
 						}
 					}
-					
+
 					// spawn several rock particles (NOT items)
 					int c, i = 6+rand()%4;
 					for( c=0; c<i; c++ ) {

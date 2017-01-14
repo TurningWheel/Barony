@@ -43,8 +43,7 @@
 
 const unsigned STACK_SIZE = 10;
 
-void segfault_sigaction(int signal, siginfo_t *si, void *arg)
-{
+void segfault_sigaction(int signal, siginfo_t *si, void *arg) {
 	printf("Caught segfault at address %p\n", si->si_addr);
 
 	printlog("Caught segfault at address %p\n", si->si_addr);
@@ -93,7 +92,7 @@ void gameLogic(void) {
 	bool entitydeletedself;
 	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
 	Item *auto_appraise_target = NULL;
-	
+
 	if( creditstage>0 )
 		credittime++;
 	if( intromoviestage>0 )
@@ -103,10 +102,10 @@ void gameLogic(void) {
 	if( secondendmoviestage>0 )
 		secondendmovietime++;
 
-	#ifdef SOUND
+#ifdef SOUND
 	sound_update(); //Update FMOD and whatnot.
-	#endif
-	
+#endif
+
 	// camera shaking
 	if( shaking ) {
 		camera_shakex2 = (camera_shakex2+camera_shakex)*.8;
@@ -125,7 +124,8 @@ void gameLogic(void) {
 			} else {
 				camera_shakex += .01;
 			}
-		} if( camera_shakey2 > 0 ) {
+		}
+		if( camera_shakey2 > 0 ) {
 			camera_shakey -= 1;
 		} else if( camera_shakey2 < 0 ) {
 			camera_shakey += 1;
@@ -146,7 +146,7 @@ void gameLogic(void) {
 				drunkextend=0;
 		}
 	}
-	
+
 	// fading in/out
 	if( fadeout==TRUE ) {
 		fadealpha = std::min(fadealpha+5,255);
@@ -169,13 +169,13 @@ void gameLogic(void) {
 	} else {
 		fadealpha = std::max(0,fadealpha-5);
 	}
-	
+
 	// handle safe packets
 	if( !(ticks%4) ) {
 		j=0;
 		for( node=safePacketsSent.first; node!=NULL; node=nextnode ) {
 			nextnode = node->next;
-		
+
 			packetsend_t *packet = (packetsend_t *)node->element;
 			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
 			packet->tries++;
@@ -209,7 +209,7 @@ void gameLogic(void) {
 
 	// damage indicator timers
 	handleDamageIndicatorTicks();
-	
+
 	if( intro==TRUE ) {
 		// rotate gear
 		gearrot += 1;
@@ -241,7 +241,7 @@ void gameLogic(void) {
 				}
 			}
 		}
-		
+
 		// execute entity behaviors
 		c=multiplayer;
 		x=clientnum;
@@ -287,7 +287,7 @@ void gameLogic(void) {
 					j=0;
 					for( node=entitiesToDelete[i].first; node!=NULL; node=nextnode ) {
 						nextnode = node->next;
-				
+
 						// send the delete entity command to the client
 						strcpy((char *)net_packet->data,"ENTD");
 						deleteent = (deleteent_t *)node->element;
@@ -296,7 +296,7 @@ void gameLogic(void) {
 						net_packet->address.port = net_clients[i-1].port;
 						net_packet->len = 8;
 						sendPacket(net_sock, -1, net_packet, i-1);
-					
+
 						// quit reminding clients after a certain number of attempts
 						deleteent->tries++;
 						if( deleteent->tries >= MAXTRIES )
@@ -340,7 +340,7 @@ void gameLogic(void) {
 											playSoundPosLocal( x*16+8, y*16+8, 135, 32 );
 										}
 									}
-									
+
 									// lava bubbles
 									if( lavatiles[map.tiles[index]] ) {
 										if( ticks%40==(y+x*map.height)%40 && rand()%3==0 ) {
@@ -378,7 +378,7 @@ void gameLogic(void) {
 					}
 				}
 			}
-					
+
 			// periodic steam achievement check
 			if( ticks%TICKS_PER_SECOND==0 ) {
 				for( c=0; c<MAXPLAYERS; c++ ) {
@@ -445,19 +445,19 @@ void gameLogic(void) {
 					if( sound_group )
 						FMOD_ChannelGroup_Stop(sound_group);
 #endif
-					
+
 					// show loading message
 					loading=TRUE;
 					drawClearBuffers();
 					int w, h;
 					TTF_SizeUTF8(ttf16,language[709],&w,&h);
 					ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,language[709]);
-					#ifdef APPLE
+#ifdef APPLE
 					SDL_RenderPresent(renderer);
-					#else
+#else
 					SDL_GL_SwapWindow(screen);
-					#endif
-					
+#endif
+
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
 					for( c=0; c<MAXPLAYERS; c++ ) {
@@ -477,29 +477,29 @@ void gameLogic(void) {
 								}
 							}
 						}
-						
+
 						list_FreeAll(&stats[c]->FOLLOWERS);
 					}
 
 					// unlock some steam achievements
 					if( !secretlevel ) {
 						switch( currentlevel ) {
-							case 0:
-								steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
-								break;
-							case 4:
-								steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
-								break;
-							case 9:
-								steamAchievement("BARONY_ACH_JUNGLE_FEVER");
-								break;
-							case 14:
-								steamAchievement("BARONY_ACH_SANDMAN");
-								break;
-								
+						case 0:
+							steamAchievement("BARONY_ACH_ENTER_THE_DUNGEON");
+							break;
+						case 4:
+							steamAchievement("BARONY_ACH_TWISTY_PASSAGES");
+							break;
+						case 9:
+							steamAchievement("BARONY_ACH_JUNGLE_FEVER");
+							break;
+						case 14:
+							steamAchievement("BARONY_ACH_SANDMAN");
+							break;
+
 						}
 					}
-					
+
 					// signal clients about level change
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
@@ -527,13 +527,16 @@ void gameLogic(void) {
 						fp = fopen(SECRETLEVELSFILE,"r");
 					for( i=0; i<currentlevel; i++ )
 						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-					fscanf(fp,"%s",tempstr); while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
+					fscanf(fp,"%s",tempstr);
+					while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
 					int result = 0;
 					if( !strcmp(tempstr,"gen:") ) {
-						fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+						fscanf(fp,"%s",tempstr);
+						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 						result = generateDungeon(tempstr,mapseed);
 					} else if( !strcmp(tempstr,"map:") ) {
-						fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+						fscanf(fp,"%s",tempstr);
+						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 						result = loadMap(tempstr,&map,map.entities);
 					}
 					fclose(fp);
@@ -550,32 +553,32 @@ void gameLogic(void) {
 						messagePlayer(clientnum,language[711],map.name);
 					if( !secretlevel && result ) {
 						switch( currentlevel ) {
-							case 2:
-								messagePlayer(clientnum,language[712]);
-								break;
-							case 3:
-								messagePlayer(clientnum,language[713]);
-								break;
-							case 7:
-								messagePlayer(clientnum,language[714]);
-								break;
-							case 8:
-								messagePlayer(clientnum,language[715]);
-								break;
-							case 11:
-								messagePlayer(clientnum,language[716]);
-								break;
-							case 13:
-								messagePlayer(clientnum,language[717]);
-								break;
-							case 16:
-								messagePlayer(clientnum,language[718]);
-								break;
-							case 18:
-								messagePlayer(clientnum,language[719]);
-								break;
-							default:
-								break;
+						case 2:
+							messagePlayer(clientnum,language[712]);
+							break;
+						case 3:
+							messagePlayer(clientnum,language[713]);
+							break;
+						case 7:
+							messagePlayer(clientnum,language[714]);
+							break;
+						case 8:
+							messagePlayer(clientnum,language[715]);
+							break;
+						case 11:
+							messagePlayer(clientnum,language[716]);
+							break;
+						case 13:
+							messagePlayer(clientnum,language[717]);
+							break;
+						case 16:
+							messagePlayer(clientnum,language[718]);
+							break;
+						case 18:
+							messagePlayer(clientnum,language[719]);
+							break;
+						default:
+							break;
 						}
 					}
 					loadnextlevel=FALSE;
@@ -583,17 +586,13 @@ void gameLogic(void) {
 					fadeout=FALSE;
 					fadealpha=255;
 
-					for (c = 0; c < MAXPLAYERS; c++)
-					{
-						if (players[c] && players[c]->entity && !client_disconnected[c])
-						{
+					for (c = 0; c < MAXPLAYERS; c++) {
+						if (players[c] && players[c]->entity && !client_disconnected[c]) {
 							node_t *node;
-							for (node = tempFollowers[c].first; node != nullptr; node = node->next)
-							{
+							for (node = tempFollowers[c].first; node != nullptr; node = node->next) {
 								Stat *tempStats = (Stat *)node->element;
 								Entity *monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
-								if (monster)
-								{
+								if (monster) {
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
 
@@ -604,12 +603,9 @@ void gameLogic(void) {
 
 									Stat *monsterStats = (Stat *)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->uid;
-									if (strcmp(monsterStats->name, ""))
-									{
+									if (strcmp(monsterStats->name, "")) {
 										messagePlayer(c, language[720], monsterStats->name);
-									}
-									else
-									{
+									} else {
 										messagePlayer(c, language[721], language[90 + (int)monsterStats->type]);
 									}
 									if (!monsterally[HUMAN][monsterStats->type])
@@ -649,7 +645,7 @@ void gameLogic(void) {
 				entity = (Entity *)node->element;
 				entity->ranbehavior=FALSE;
 			}
-			
+
 			if( multiplayer==SERVER ) {
 				// periodically remind clients of the current level
 				if( ticks%(TICKS_PER_SECOND*3)==0 ) {
@@ -685,7 +681,7 @@ void gameLogic(void) {
 						}
 					}
 				}
-				
+
 				// handle keep alives
 				for( c=1; c<MAXPLAYERS; c++ ) {
 					if( client_disconnected[c] )
@@ -728,7 +724,7 @@ void gameLogic(void) {
 					}
 				}
 			}
-			
+
 			// update clients on assailant status
 			for( c=1; c<MAXPLAYERS; c++ ) {
 				if( !client_disconnected[c] ) {
@@ -754,20 +750,20 @@ void gameLogic(void) {
 
 				// unlock achievements for special collected items
 				switch( item->type ) {
-					case ARTIFACT_SWORD:
-						steamAchievement("BARONY_ACH_KING_ARTHURS_BLADE");
-						break;
-					case ARTIFACT_MACE:
-						steamAchievement("BARONY_ACH_SPUD_LORD");
-						break;
-					case ARTIFACT_AXE:
-						steamAchievement("BARONY_ACH_THANKS_MR_SKELTAL");
-						break;
-					case ARTIFACT_SPEAR:
-						steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
-						break;
-					default:
-						break;
+				case ARTIFACT_SWORD:
+					steamAchievement("BARONY_ACH_KING_ARTHURS_BLADE");
+					break;
+				case ARTIFACT_MACE:
+					steamAchievement("BARONY_ACH_SPUD_LORD");
+					break;
+				case ARTIFACT_AXE:
+					steamAchievement("BARONY_ACH_THANKS_MR_SKELTAL");
+					break;
+				case ARTIFACT_SPEAR:
+					steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
+					break;
+				default:
+					break;
 				}
 
 				// drop any inventory items you don't have room for
@@ -777,11 +773,9 @@ void gameLogic(void) {
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
 				} else {
-					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
-					{
+					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) ) {
 						int appraisal_time = getAppraisalTime(item);
-						if (appraisal_time < auto_appraise_lowest_time)
-						{
+						if (appraisal_time < auto_appraise_lowest_time) {
 							auto_appraise_target = item;
 							auto_appraise_lowest_time = appraisal_time;
 						}
@@ -818,10 +812,10 @@ void gameLogic(void) {
 				} else if( !client_disconnected[c] && ticks-client_keepalive[0] >= TICKS_PER_SECOND*45-1 ) {
 					// additional 15 seconds (disconnect time)
 					messagePlayer(clientnum,language[730]);
-					
+
 					button_t *button;
 					pauseGame(2,0);
-						
+
 					// close current window
 					buttonCloseSubwindow(NULL);
 					for( node=button_l.first; node!=NULL; node=nextnode ) {
@@ -830,7 +824,7 @@ void gameLogic(void) {
 						if( button->focused )
 							list_RemoveNode(button->node);
 					}
-					
+
 					// create new window
 					subwindow = 1;
 					subx1 = xres/2-256;
@@ -842,8 +836,10 @@ void gameLogic(void) {
 					// close button
 					button = newButton();
 					strcpy(button->label,"x");
-					button->x=subx2-20; button->y=suby1;
-					button->sizex=20; button->sizey=20;
+					button->x=subx2-20;
+					button->y=suby1;
+					button->sizex=20;
+					button->sizey=20;
 					button->action=&buttonCloseAndEndGameConfirm;
 					button->visible=1;
 					button->focused=1;
@@ -853,8 +849,10 @@ void gameLogic(void) {
 					// okay button
 					button = newButton();
 					strcpy(button->label,language[732]);
-					button->x=subx2-(subx2-subx1)/2-28; button->y=suby2-28;
-					button->sizex=56; button->sizey=20;
+					button->x=subx2-(subx2-subx1)/2-28;
+					button->y=suby2-28;
+					button->sizex=56;
+					button->sizey=20;
 					button->action=&buttonCloseAndEndGameConfirm;
 					button->visible=1;
 					button->focused=1;
@@ -893,7 +891,7 @@ void gameLogic(void) {
 											playSoundPosLocal( x*16+8, y*16+8, 135, 32 );
 										}
 									}
-									
+
 									// lava bubbles
 									if( lavatiles[map.tiles[index]] ) {
 										if( ticks%40==(y+x*map.height)%40 && rand()%3==0 ) {
@@ -1004,7 +1002,7 @@ void gameLogic(void) {
 										clipMove(&entity->new_x,&entity->new_y,entity->vel_x,entity->vel_y,entity);
 										if( entity->behavior == &actPlayer ) {
 											node_t *node2;
-											for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {	
+											for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {
 												Entity *bodypart = (Entity *)node2->element;
 												if( bodypart->behavior == &actPlayerLimb ) {
 													if( bodypart->skill[2] == entity->skill[2] ) {
@@ -1018,7 +1016,7 @@ void gameLogic(void) {
 										}
 										if( entity->behavior == &actMonster ) {
 											node_t *node2;
-											for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {	
+											for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {
 												Entity *bodypart = (Entity *)node2->element;
 												if( bodypart->skill[2] == entity->uid && bodypart->parent == entity->uid ) {
 													bodypart->x += entity->x-ox;
@@ -1031,7 +1029,7 @@ void gameLogic(void) {
 									}
 									entity->z += entity->vel_z;
 									entity->new_z += entity->vel_z;
-							
+
 									// rotate to new angles
 									double dir = entity->new_yaw - entity->yaw;
 									while( dir >= PI )
@@ -1080,20 +1078,20 @@ void gameLogic(void) {
 
 				// unlock achievements for special collected items
 				switch( item->type ) {
-					case ARTIFACT_SWORD:
-						steamAchievement("BARONY_ACH_KING_ARTHURS_BLADE");
-						break;
-					case ARTIFACT_MACE:
-						steamAchievement("BARONY_ACH_SPUD_LORD");
-						break;
-					case ARTIFACT_AXE:
-						steamAchievement("BARONY_ACH_THANKS_MR_SKELTAL");
-						break;
-					case ARTIFACT_SPEAR:
-						steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
-						break;
-					default:
-						break;
+				case ARTIFACT_SWORD:
+					steamAchievement("BARONY_ACH_KING_ARTHURS_BLADE");
+					break;
+				case ARTIFACT_MACE:
+					steamAchievement("BARONY_ACH_SPUD_LORD");
+					break;
+				case ARTIFACT_AXE:
+					steamAchievement("BARONY_ACH_THANKS_MR_SKELTAL");
+					break;
+				case ARTIFACT_SPEAR:
+					steamAchievement("BARONY_ACH_SPEAR_OF_DESTINY");
+					break;
+				default:
+					break;
 				}
 
 				// drop any inventory items you don't have room for
@@ -1103,11 +1101,9 @@ void gameLogic(void) {
 						dropItem(item,clientnum);
 					dropItem(item,clientnum);
 				} else {
-					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
-					{
+					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) ) {
 						int appraisal_time = getAppraisalTime(item);
-						if (appraisal_time < auto_appraise_lowest_time)
-						{
+						if (appraisal_time < auto_appraise_lowest_time) {
 							auto_appraise_target = item;
 							auto_appraise_lowest_time = appraisal_time;
 						}
@@ -1124,8 +1120,7 @@ void gameLogic(void) {
 		}
 
 		// Automatically identify items, shortest time required first
-		if ( auto_appraise_target != NULL )
-		{
+		if ( auto_appraise_target != NULL ) {
 			//Cleanup identify GUI gamecontroller code here.
 			selectedIdentifySlot = -1;
 
@@ -1152,7 +1147,7 @@ void handleButtons(void) {
 	node_t *nextnode;
 	button_t *button;
 	int w=0, h=0;
-	
+
 	// handle buttons
 	for( node=button_l.first; node!=NULL; node=nextnode ) {
 		nextnode = node->next;
@@ -1183,8 +1178,7 @@ void handleButtons(void) {
 				button->pressed=TRUE;
 				button->needclick=FALSE;
 			}
-			if (button->joykey != -1 && *inputPressed(button->joykey))
-			{
+			if (button->joykey != -1 && *inputPressed(button->joykey)) {
 				button->pressed = TRUE;
 				button->needclick = FALSE;
 			}
@@ -1270,161 +1264,157 @@ void handleEvents(void) {
 	t = SDL_GetTicks();
 	timesync = t-ot;
 	ot = t;
-	
+
 	// calculate fps
 	if( timesync != 0 )
 		frameval[cycles%AVERAGEFRAMES] = 1.0/timesync;
 	else
 		frameval[cycles%AVERAGEFRAMES] = 1.0;
 	d = frameval[0];
-	for(j=1;j<AVERAGEFRAMES;j++)
+	for(j=1; j<AVERAGEFRAMES; j++)
 		d += frameval[j];
 	fps = (d/AVERAGEFRAMES)*1000;
 
-	if (game_controller && game_controller->isActive())
-	{
+	if (game_controller && game_controller->isActive()) {
 		game_controller->handleAnalog();
 	}
 
 	while( SDL_PollEvent(&event) ) { // poll SDL events
 		// Global events
 		switch( event.type ) {
-			case SDL_QUIT: // if SDL receives the shutdown signal
-				mainloop = 0;
-				break;
-			case SDL_KEYDOWN: // if a key is pressed...
-				if( command ) {
-					if (event.key.keysym.sym == SDLK_UP) {
-						if (!chosen_command && command_history.last) { //If no command is chosen (user has not tried to go up through the commands yet...
-							//Assign the chosen command as the last thing the user typed.
-							chosen_command = command_history.last;
+		case SDL_QUIT: // if SDL receives the shutdown signal
+			mainloop = 0;
+			break;
+		case SDL_KEYDOWN: // if a key is pressed...
+			if( command ) {
+				if (event.key.keysym.sym == SDLK_UP) {
+					if (!chosen_command && command_history.last) { //If no command is chosen (user has not tried to go up through the commands yet...
+						//Assign the chosen command as the last thing the user typed.
+						chosen_command = command_history.last;
+						strcpy(command_str, ((string_t* )chosen_command->element)->data);
+					} else if (chosen_command) {
+						//Scroll up through the list. Do nothing if already at the top.
+						if (chosen_command->prev) {
+							chosen_command = chosen_command->prev;
 							strcpy(command_str, ((string_t* )chosen_command->element)->data);
-						} else if (chosen_command) {
-							//Scroll up through the list. Do nothing if already at the top.
-							if (chosen_command->prev) {
-								chosen_command = chosen_command->prev;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
-							}
 						}
-					} else if (event.key.keysym.sym == SDLK_DOWN) {
-						if (chosen_command) { //If a command is chosen...
-							//Scroll down through the history, back to the latest command.
-							if (chosen_command->next) {
-								//Move on to the newer command.
-								chosen_command = chosen_command->next;
-								strcpy(command_str, ((string_t* )chosen_command->element)->data);
-							} else {
-								//Already latest command. Clear the chosen command.
-								chosen_command = NULL;
-								strcpy(command_str, "");
-							}
+					}
+				} else if (event.key.keysym.sym == SDLK_DOWN) {
+					if (chosen_command) { //If a command is chosen...
+						//Scroll down through the history, back to the latest command.
+						if (chosen_command->next) {
+							//Move on to the newer command.
+							chosen_command = chosen_command->next;
+							strcpy(command_str, ((string_t* )chosen_command->element)->data);
+						} else {
+							//Already latest command. Clear the chosen command.
+							chosen_command = NULL;
+							strcpy(command_str, "");
 						}
 					}
 				}
-				if( SDL_IsTextInputActive() ) {
-					#ifdef APPLE
-					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 ) {
-						inputstr[strlen(inputstr) - 1] = 0;
-						cursorflash = ticks;
-					}
-					#else
-					if( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 ) {
-						inputstr[strlen(inputstr)-1]=0;
-						cursorflash=ticks;
-					}
-					#endif
-					else if( event.key.keysym.sym == SDLK_c && SDL_GetModState()&KMOD_CTRL ) {
-						SDL_SetClipboardText(inputstr);
-						cursorflash=ticks;
-					} else if( event.key.keysym.sym == SDLK_v && SDL_GetModState()&KMOD_CTRL ) {
-						strncpy(inputstr,SDL_GetClipboardText(),inputlen);
-						cursorflash=ticks;
-					}
+			}
+			if( SDL_IsTextInputActive() ) {
+#ifdef APPLE
+				if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 ) {
+					inputstr[strlen(inputstr) - 1] = 0;
+					cursorflash = ticks;
 				}
-				lastkeypressed = event.key.keysym.scancode;
-				keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
-				break;
-			case SDL_KEYUP: // if a key is unpressed...
-				keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
-				break;
-			case SDL_TEXTINPUT:
-				if( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) ) {
-					if( (event.text.text[0] != 'v' && event.text.text[0] != 'V') || !(SDL_GetModState()&KMOD_CTRL) ) {
-						strncat(inputstr,event.text.text,std::max<size_t>(0,inputlen-strlen(inputstr)));
-						cursorflash=ticks;
-					}
+#else
+				if( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 ) {
+					inputstr[strlen(inputstr)-1]=0;
+					cursorflash=ticks;
 				}
-				break;
-			case SDL_MOUSEBUTTONDOWN: // if a mouse button is pressed...
-				mousestatus[event.button.button] = 1; // set this mouse button to 1
-				lastkeypressed = 282+event.button.button;
-				break;
-			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
-				mousestatus[event.button.button] = 0; // set this mouse button to 0
-				buttonclick=0; // release any buttons that were being held down
-				gui_clickdrag = FALSE;
-				break;
-			case SDL_MOUSEWHEEL:
-				if( event.wheel.y>0 ) {
-					mousestatus[SDL_BUTTON_WHEELUP] = 1;
-					lastkeypressed = 287;
-				} else if( event.wheel.y<0 ) {
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
-					lastkeypressed = 288;
+#endif
+				else if( event.key.keysym.sym == SDLK_c && SDL_GetModState()&KMOD_CTRL ) {
+					SDL_SetClipboardText(inputstr);
+					cursorflash=ticks;
+				} else if( event.key.keysym.sym == SDLK_v && SDL_GetModState()&KMOD_CTRL ) {
+					strncpy(inputstr,SDL_GetClipboardText(),inputlen);
+					cursorflash=ticks;
 				}
-				break;
-			case SDL_MOUSEMOTION: // if the mouse is moved...
-				if( firstmouseevent == TRUE ) {
-					firstmouseevent=FALSE;
-					break;
+			}
+			lastkeypressed = event.key.keysym.scancode;
+			keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+			break;
+		case SDL_KEYUP: // if a key is unpressed...
+			keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+			break;
+		case SDL_TEXTINPUT:
+			if( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) ) {
+				if( (event.text.text[0] != 'v' && event.text.text[0] != 'V') || !(SDL_GetModState()&KMOD_CTRL) ) {
+					strncat(inputstr,event.text.text,std::max<size_t>(0,inputlen-strlen(inputstr)));
+					cursorflash=ticks;
 				}
-				menuselect=0;
-				mousex = event.motion.x;
-				mousey = event.motion.y;
-				mousexrel += event.motion.xrel;
-				mouseyrel += event.motion.yrel;
+			}
+			break;
+		case SDL_MOUSEBUTTONDOWN: // if a mouse button is pressed...
+			mousestatus[event.button.button] = 1; // set this mouse button to 1
+			lastkeypressed = 282+event.button.button;
+			break;
+		case SDL_MOUSEBUTTONUP: // if a mouse button is released...
+			mousestatus[event.button.button] = 0; // set this mouse button to 0
+			buttonclick=0; // release any buttons that were being held down
+			gui_clickdrag = FALSE;
+			break;
+		case SDL_MOUSEWHEEL:
+			if( event.wheel.y>0 ) {
+				mousestatus[SDL_BUTTON_WHEELUP] = 1;
+				lastkeypressed = 287;
+			} else if( event.wheel.y<0 ) {
+				mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
+				lastkeypressed = 288;
+			}
+			break;
+		case SDL_MOUSEMOTION: // if the mouse is moved...
+			if( firstmouseevent == TRUE ) {
+				firstmouseevent=FALSE;
+				break;
+			}
+			menuselect=0;
+			mousex = event.motion.x;
+			mousey = event.motion.y;
+			mousexrel += event.motion.xrel;
+			mouseyrel += event.motion.yrel;
 
-				if (!draw_cursor)
-				{
-					draw_cursor = true;
-				}
-				break;
-			case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
-				joystatus[event.cbutton.button] = 1; // set this button's index to 1
-				lastkeypressed = 301 + event.cbutton.button;
-				if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ( (!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 )
-				{
-					//Generate a mouse click.
-					SDL_Event e;
+			if (!draw_cursor) {
+				draw_cursor = true;
+			}
+			break;
+		case SDL_CONTROLLERBUTTONDOWN: // if joystick button is pressed
+			joystatus[event.cbutton.button] = 1; // set this button's index to 1
+			lastkeypressed = 301 + event.cbutton.button;
+			if ( event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK] && ( (!shootmode && gui_mode == GUI_MODE_NONE) || gamePaused) && rebindaction == -1 ) {
+				//Generate a mouse click.
+				SDL_Event e;
 
-					e.type = SDL_MOUSEBUTTONDOWN;
-					e.button.button = SDL_BUTTON_LEFT;
-					e.button.clicks = 1; //Single click.
-					SDL_PushEvent(&e);
-				}
-				break;
-			case SDL_CONTROLLERBUTTONUP: // if joystick button is released
-				joystatus[event.cbutton.button] = 0; // set this button's index to 0
-				if (event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK])
-				{
-					//Generate a mouse lift.
-					SDL_Event e;
+				e.type = SDL_MOUSEBUTTONDOWN;
+				e.button.button = SDL_BUTTON_LEFT;
+				e.button.clicks = 1; //Single click.
+				SDL_PushEvent(&e);
+			}
+			break;
+		case SDL_CONTROLLERBUTTONUP: // if joystick button is released
+			joystatus[event.cbutton.button] = 0; // set this button's index to 0
+			if (event.cbutton.button + 301 == joyimpulses[INJOY_MENU_LEFT_CLICK]) {
+				//Generate a mouse lift.
+				SDL_Event e;
 
-					e.type = SDL_MOUSEBUTTONUP;
-					e.button.button = SDL_BUTTON_LEFT;
-					SDL_PushEvent(&e);
-				}
-				break;
-			case SDL_JOYHATMOTION:
-				break;
-			case SDL_USEREVENT: // if the game timer has elapsed
-				if( runtimes<5 ) {
-					runtimes++;
-					gameLogic();
-					mousexrel=0;
-					mouseyrel=0;
-				}
-				break;
+				e.type = SDL_MOUSEBUTTONUP;
+				e.button.button = SDL_BUTTON_LEFT;
+				SDL_PushEvent(&e);
+			}
+			break;
+		case SDL_JOYHATMOTION:
+			break;
+		case SDL_USEREVENT: // if the game timer has elapsed
+			if( runtimes<5 ) {
+				runtimes++;
+				gameLogic();
+				mousexrel=0;
+				mouseyrel=0;
+			}
+			break;
 			/*case SDL_CONTROLLERAXISMOTION:
 				printlog("Controller axis motion detected.\n");
 				//if (event.caxis.which == 0) //TODO: Multi-controller support.
@@ -1489,16 +1479,15 @@ void handleEvents(void) {
 
 -------------------------------------------------------------------------------*/
 
-Uint32 timerCallback(Uint32 interval, void *param)
-{
+Uint32 timerCallback(Uint32 interval, void *param) {
 	SDL_Event event;
 	SDL_UserEvent userevent;
-	
+
 	userevent.type = SDL_USEREVENT;
 	userevent.code = 0;
 	userevent.data1 = NULL;
 	userevent.data2 = NULL;
-	
+
 	event.type = SDL_USEREVENT;
 	event.user = userevent;
 
@@ -1519,7 +1508,7 @@ Uint32 timerCallback(Uint32 interval, void *param)
 /*-------------------------------------------------------------------------------
 
 	startMessages
-	
+
 	prints several messages to the console for game start.
 
 -------------------------------------------------------------------------------*/
@@ -1541,7 +1530,7 @@ void startMessages() {
 
 void pauseGame(int mode, int ignoreplayer) {
 	int c;
-	
+
 	if( intro )
 		return;
 	if( mode==1 && !gamePaused )
@@ -1621,11 +1610,11 @@ bool frameRateLimit( Uint32 maxFrameRate ) {
 	if( millisecondsElapsed < desiredFrameMilliseconds ) {
 		// if enough time is left sleep, otherwise just keep spinning so we don't go over the limit...
 		if( desiredFrameMilliseconds - millisecondsElapsed > 3.0f ) {
-			#ifndef WINDOWS
+#ifndef WINDOWS
 			usleep( 5000 );
-			#else
+#else
 			Sleep( 5 );
-			#endif
+#endif
 		}
 
 		return TRUE;
@@ -1637,7 +1626,7 @@ bool frameRateLimit( Uint32 maxFrameRate ) {
 /*-------------------------------------------------------------------------------
 
 	main
-	
+
 	Initializes game resources, harbors main game loop, and cleans up
 	afterwords
 
@@ -1652,7 +1641,7 @@ bool frameRateLimit( Uint32 maxFrameRate ) {
 
 int main(int argc, char **argv) {
 
-	#ifdef LINUX
+#ifdef LINUX
 	//Catch segfault stuff.
 	struct sigaction sa;
 
@@ -1662,10 +1651,10 @@ int main(int argc, char **argv) {
 	sa.sa_flags = SA_SIGINFO;
 
 	sigaction(SIGSEGV, &sa, NULL);
-	#endif
+#endif
 
 	try {
-		#ifdef APPLE
+#ifdef APPLE
 		uint32_t buffsize = 4096;
 		char binarypath[buffsize];
 		int result = _NSGetExecutablePath(binarypath, &buffsize);
@@ -1689,7 +1678,7 @@ int main(int argc, char **argv) {
 		} else {
 			printlog("Failed to get binary path. Program may not work corectly!\n");
 		}
-		#endif
+#endif
 		SDL_Rect pos, src;
 		int c;
 		//int tilesreceived=0;
@@ -1706,7 +1695,7 @@ int main(int argc, char **argv) {
 			fclose(logfile);
 			exit(1);
 		}
-		
+
 		// read command line arguments
 		if( argc>1 ) {
 			for(c=1; c<argc; c++) {
@@ -1745,10 +1734,10 @@ int main(int argc, char **argv) {
 		if( (c=initApp("Barony",fullscreen)) ) {
 			printlog("Critical error: %d\n",c);
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,"Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info,\n"
-				"or contact us through our website at http://www.baronygame.com/ for support.",
-				screen);
+			                         "Barony has encountered a critical error and cannot start.\n\n"
+			                         "Please check the log.txt file in the game directory for additional info,\n"
+			                         "or contact us through our website at http://www.baronygame.com/ for support.",
+			                         screen);
 			deinitApp();
 			exit(c);
 		}
@@ -1762,37 +1751,38 @@ int main(int argc, char **argv) {
 		tm_info = localtime(&timething);
 		strftime( buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info );
 		printlog("Launch time: %s\n", buffer);
-		
+
 		if ( (c = initGame()) ) {
 			printlog("Critical error in initGame: %d\n", c);
 			SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR,"Uh oh",
-				"Barony has encountered a critical error and cannot start.\n\n"
-				"Please check the log.txt file in the game directory for additional info,\n"
-				"or contact us through our website at http://www.baronygame.com/ for support.",
-				screen);
+			                         "Barony has encountered a critical error and cannot start.\n\n"
+			                         "Please check the log.txt file in the game directory for additional info,\n"
+			                         "or contact us through our website at http://www.baronygame.com/ for support.",
+			                         screen);
 			deinitGame();
 			deinitApp();
 			exit(c);
 		}
 		initialized = TRUE;
-		
+
 		// initialize map
 		map.tiles = NULL;
 		map.entities = (list_t *) malloc(sizeof(list_t));
-		map.entities->first = NULL; map.entities->last = NULL;
-		
+		map.entities->first = NULL;
+		map.entities->last = NULL;
+
 		// instantiate a timer
 		timer = SDL_AddTimer(1000/TICKS_PER_SECOND, timerCallback, NULL);
 		srand(time(NULL));
-		
+
 		// play splash sound
-		#ifdef MUSIC
+#ifdef MUSIC
 		playmusic(splashmusic, FALSE, FALSE, FALSE);
-		#endif
+#endif
 
 		int old_sdl_ticks = 0;
 		int indev_timer = 0;
-			
+
 		// main loop
 		printlog("running main loop.\n");
 		while(mainloop) {
@@ -1810,10 +1800,10 @@ int main(int argc, char **argv) {
 			handleEvents();
 
 			// handle steam callbacks
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			SteamAPI_RunCallbacks();
-			#endif
-			
+#endif
+
 			if( intro ) {
 				if( introstage==-1 ) {
 					// hack to fix these things from breaking everything...
@@ -1835,61 +1825,61 @@ int main(int argc, char **argv) {
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 						fadealpha=255;
-						#ifndef STEAMWORKS
-							introstage=0;
+#ifndef STEAMWORKS
+						introstage=0;
+						fadeout=FALSE;
+						fadefinished=FALSE;
+#else
+						switch( rand()%4 ) {
+						case 0:
+							loadMap("mainmenu1",&map,map.entities);
+							camera.x = 8;
+							camera.y = 4.5;
+							camera.z = 0;
+							camera.ang = 0.6;
+							break;
+						case 1:
+							loadMap("mainmenu2",&map,map.entities);
+							camera.x = 7;
+							camera.y = 4;
+							camera.z = -4;
+							camera.ang = 1.0;
+							break;
+						case 2:
+							loadMap("mainmenu3",&map,map.entities);
+							camera.x = 5;
+							camera.y = 3;
+							camera.z = 0;
+							camera.ang = 1.0;
+							break;
+						case 3:
+							loadMap("mainmenu4",&map,map.entities);
+							camera.x = 6;
+							camera.y = 14.5;
+							camera.z = -24;
+							camera.ang = 5.0;
+							break;
+						}
+						numplayers = 0;
+						multiplayer = 0;
+						assignActions(&map);
+						generatePathMaps();
+						fadeout=TRUE;
+						fadefinished=FALSE;
+						if( !skipintro && !strcmp(classtoquickstart, "") ) {
+							introstage = 6;
+#ifdef HAVE_FMOD
+							playmusic(introductionmusic, TRUE, FALSE, FALSE);
+#endif
+						} else {
+							introstage = 1;
 							fadeout=FALSE;
 							fadefinished=FALSE;
-						#else
-							switch( rand()%4 ) {
-								case 0:
-									loadMap("mainmenu1",&map,map.entities);
-									camera.x = 8;
-									camera.y = 4.5;
-									camera.z = 0;
-									camera.ang = 0.6;
-									break;
-								case 1:
-									loadMap("mainmenu2",&map,map.entities);
-									camera.x = 7;
-									camera.y = 4;
-									camera.z = -4;
-									camera.ang = 1.0;
-									break;
-								case 2:
-									loadMap("mainmenu3",&map,map.entities);
-									camera.x = 5;
-									camera.y = 3;
-									camera.z = 0;
-									camera.ang = 1.0;
-									break;
-								case 3:
-									loadMap("mainmenu4",&map,map.entities);
-									camera.x = 6;
-									camera.y = 14.5;
-									camera.z = -24;
-									camera.ang = 5.0;
-									break;
-							}
-							numplayers = 0;
-							multiplayer = 0;
-							assignActions(&map);
-							generatePathMaps();
-							fadeout=TRUE;
-							fadefinished=FALSE;
-							if( !skipintro && !strcmp(classtoquickstart, "") ) {
-								introstage = 6;
-								#ifdef HAVE_FMOD
-								playmusic(introductionmusic, TRUE, FALSE, FALSE);
-								#endif
-							} else {
-								introstage = 1;
-								fadeout=FALSE;
-								fadefinished=FALSE;
-								#ifdef HAVE_FMOD
-								playmusic(intromusic, TRUE, FALSE, FALSE);
-								#endif
-							}
-						#endif
+#ifdef HAVE_FMOD
+							playmusic(intromusic, TRUE, FALSE, FALSE);
+#endif
+						}
+#endif
 					}
 				} else if( introstage==0 ) {
 					// hack to fix these things from breaking everything...
@@ -1916,34 +1906,34 @@ int main(int argc, char **argv) {
 					//if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || *inputPressed(joyimpulses[INJOY_BACK]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
 					if( (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) || keystatus[SDL_SCANCODE_ESCAPE] || keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || mousestatus[SDL_BUTTON_LEFT] || indev_timer >= indev_displaytime) && !fadeout) {
 						switch( rand()%4 ) {
-							case 0:
-								loadMap("mainmenu1",&map,map.entities);
-								camera.x = 8;
-								camera.y = 4.5;
-								camera.z = 0;
-								camera.ang = 0.6;
-								break;
-							case 1:
-								loadMap("mainmenu2",&map,map.entities);
-								camera.x = 7;
-								camera.y = 4;
-								camera.z = -4;
-								camera.ang = 1.0;
-								break;
-							case 2:
-								loadMap("mainmenu3",&map,map.entities);
-								camera.x = 5;
-								camera.y = 3;
-								camera.z = 0;
-								camera.ang = 1.0;
-								break;
-							case 3:
-								loadMap("mainmenu4",&map,map.entities);
-								camera.x = 6;
-								camera.y = 14.5;
-								camera.z = -24;
-								camera.ang = 5.0;
-								break;
+						case 0:
+							loadMap("mainmenu1",&map,map.entities);
+							camera.x = 8;
+							camera.y = 4.5;
+							camera.z = 0;
+							camera.ang = 0.6;
+							break;
+						case 1:
+							loadMap("mainmenu2",&map,map.entities);
+							camera.x = 7;
+							camera.y = 4;
+							camera.z = -4;
+							camera.ang = 1.0;
+							break;
+						case 2:
+							loadMap("mainmenu3",&map,map.entities);
+							camera.x = 5;
+							camera.y = 3;
+							camera.z = 0;
+							camera.ang = 1.0;
+							break;
+						case 3:
+							loadMap("mainmenu4",&map,map.entities);
+							camera.x = 6;
+							camera.y = 14.5;
+							camera.z = -24;
+							camera.ang = 5.0;
+							break;
 						}
 						numplayers = 0;
 						multiplayer = 0;
@@ -2003,7 +1993,7 @@ int main(int argc, char **argv) {
 
 						// setup game
 						shootmode=TRUE;
-						
+
 						// make some messages
 						startMessages();
 
@@ -2019,12 +2009,15 @@ int main(int argc, char **argv) {
 								fp = fopen(LEVELSFILE,"r");
 							else
 								fp = fopen(SECRETLEVELSFILE,"r");
-							fscanf(fp,"%s",tempstr); while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
+							fscanf(fp,"%s",tempstr);
+							while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
 							if( !strcmp(tempstr,"gen:") ) {
-								fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+								fscanf(fp,"%s",tempstr);
+								while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 								generateDungeon(tempstr,rand());
 							} else if( !strcmp(tempstr,"map:") ) {
-								fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+								fscanf(fp,"%s",tempstr);
+								while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 								loadMap(tempstr,&map,map.entities);
 							}
 							fclose(fp);
@@ -2039,13 +2032,13 @@ int main(int argc, char **argv) {
 						generatePathMaps();
 
 						saveGame();
-					
+
 						// kick off the main loop!
 						strcpy(classtoquickstart,"");
 						intro=FALSE;
 						loading=FALSE;
 					} else {
-						
+
 						// draws the menu level "backdrop"
 						drawClearBuffers();
 						if( movie==FALSE ) {
@@ -2060,14 +2053,15 @@ int main(int argc, char **argv) {
 							drawEntities3D(&camera,REALCOLORS);
 							list_RemoveNode(light->node);
 						}
-						
+
 						handleMainMenu(intro);
-						
+
 						// draw mouse
-						if (!movie && draw_cursor)
-						{
-							pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
-							pos.w=0; pos.h=0;
+						if (!movie && draw_cursor) {
+							pos.x=mousex-cursor_bmp->w/2;
+							pos.y=mousey-cursor_bmp->h/2;
+							pos.w=0;
+							pos.h=0;
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 						}
 					}
@@ -2077,13 +2071,14 @@ int main(int argc, char **argv) {
 					// make sure shop inventory is alloc'd
 					if( !shopInv ) {
 						shopInv = (list_t *) malloc(sizeof(list_t));
-						shopInv->first = NULL; shopInv->last = NULL;
+						shopInv->first = NULL;
+						shopInv->last = NULL;
 					}
 				}
-				#ifdef MUSIC
+#ifdef MUSIC
 				handleLevelMusic();
-				#endif
-				
+#endif
+
 				// toggling the game menu
 				if( (keystatus[SDL_SCANCODE_ESCAPE] || (*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) && rebindaction == -1)) && !command ) {
 					keystatus[SDL_SCANCODE_ESCAPE] = 0;
@@ -2128,8 +2123,7 @@ int main(int argc, char **argv) {
 				drawClearBuffers();
 				camera.ang += camera_shakex2;
 				camera.vang += camera_shakey2/200.0;
-				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind())
-				{
+				if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr || !players[clientnum]->entity->isBlind()) {
 					// drunkenness spinning
 					double cosspin = cos(ticks%360 * PI/180.f)*0.25;
 					double sinspin = sin(ticks%360 * PI/180.f)*0.25;
@@ -2139,18 +2133,16 @@ int main(int argc, char **argv) {
 					camera.winy = 0;
 					camera.winw = xres;
 					camera.winh = yres;
-					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
-					{
+					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused) {
 						camera.ang += cosspin*drunkextend;
 						camera.vang += sinspin*drunkextend;
 					}
 					raycast(&camera, REALCOLORS);
-					
+
 					glDrawWorld(&camera, REALCOLORS);
 					//drawFloors(&camera);
 					drawEntities3D(&camera, REALCOLORS);
-					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused)
-					{
+					if (shaking && players[clientnum] && players[clientnum]->entity && !gamePaused) {
 						camera.ang -= cosspin*drunkextend;
 						camera.vang -= sinspin*drunkextend;
 					}
@@ -2168,7 +2160,7 @@ int main(int argc, char **argv) {
 					// status bar
 					if( !nohud )
 						drawStatus();
-					
+
 					// interface
 					if( (*inputPressed(impulses[IN_STATUS]) || *inputPressed(joyimpulses[INJOY_STATUS])) ) {
 						*inputPressed(impulses[IN_STATUS])=0;
@@ -2208,8 +2200,7 @@ int main(int argc, char **argv) {
 						}
 						if( shootmode==FALSE ) {
 						} else {
-							if (openedChest[clientnum])
-							{
+							if (openedChest[clientnum]) {
 								openedChest[clientnum]->closeChest();
 							}
 							gui_mode = GUI_MODE_NONE;
@@ -2227,8 +2218,7 @@ int main(int argc, char **argv) {
 							attributespage = 0;
 						}
 					}
-					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]))))
-					{
+					if (!command && (*inputPressed(impulses[IN_CAST_SPELL]) || (shootmode && *inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL])))) {
 						*inputPressed(impulses[IN_CAST_SPELL]) = 0;
 						if ( shootmode ) {
 							*inputPressed(joyimpulses[INJOY_GAME_CAST_SPELL]) = 0;
@@ -2314,7 +2304,7 @@ int main(int argc, char **argv) {
 										Uint32 color = SDL_MapRGBA(mainsurface->format,0,255,255,255);
 										messagePlayerColor(clientnum,color,chatstring);
 										playSound(238,64);
-										
+
 										// send message to server
 										strcpy((char *)net_packet->data,"MSGS");
 										net_packet->data[4] = clientnum;
@@ -2344,7 +2334,7 @@ int main(int argc, char **argv) {
 						if( SDL_IsTextInputActive() )
 							SDL_StopTextInput();
 					}
-					
+
 					// other status
 					if( shootmode==FALSE ) {
 						SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -2397,12 +2387,12 @@ int main(int argc, char **argv) {
 					}
 
 					// pointer in inventory screen
-					if (shootmode == FALSE)
-					{
-						if (selectedItem)
-						{
-							pos.x=mousex-15; pos.y=mousey-15;
-							pos.w=32; pos.h=32;
+					if (shootmode == FALSE) {
+						if (selectedItem) {
+							pos.x=mousex-15;
+							pos.y=mousey-15;
+							pos.w=32;
+							pos.h=32;
 							drawImageScaled(itemSprite(selectedItem), NULL, &pos);
 							if( selectedItem->count>1 )
 								ttfPrintTextFormatted(ttf8,pos.x+24,pos.y+24,"%d",selectedItem->count);
@@ -2418,25 +2408,29 @@ int main(int argc, char **argv) {
 									drawImage(equipped_bmp, NULL, &pos);
 								}
 							}
-						}
-						else if (draw_cursor)
-						{
-							pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
-							pos.w=0; pos.h=0;
+						} else if (draw_cursor) {
+							pos.x=mousex-cursor_bmp->w/2;
+							pos.y=mousey-cursor_bmp->h/2;
+							pos.w=0;
+							pos.h=0;
 							drawImageAlpha(cursor_bmp, NULL, &pos, 192);
-						} 
+						}
 					} else if( !nohud ) {
-						pos.x=xres/2-cross_bmp->w/2; pos.y=yres/2-cross_bmp->h/2;
-						pos.w=0; pos.h=0;
+						pos.x=xres/2-cross_bmp->w/2;
+						pos.y=yres/2-cross_bmp->h/2;
+						pos.w=0;
+						pos.h=0;
 						drawImageAlpha(cross_bmp, NULL, &pos, 128);
 					}
 				} else if( !multiplayer ) {
 					// darken the rest of the screen
-					src.x = 0; src.y = 0;
-					src.w = mainsurface->w; src.h = mainsurface->h;
+					src.x = 0;
+					src.y = 0;
+					src.w = mainsurface->w;
+					src.h = mainsurface->h;
 					drawRect(&src, SDL_MapRGB(mainsurface->format,0,0,0), 127);
 				}
-				
+
 				if( gamePaused ) {
 					// handle menu
 					handleMainMenu(intro);
@@ -2457,34 +2451,37 @@ int main(int argc, char **argv) {
 						handleButtons();
 					}
 				}
-				
-				if (((subwindow && !shootmode) || gamePaused) && draw_cursor)
-				{
-					pos.x=mousex-cursor_bmp->w/2; pos.y=mousey-cursor_bmp->h/2;
-					pos.w=0; pos.h=0;
+
+				if (((subwindow && !shootmode) || gamePaused) && draw_cursor) {
+					pos.x=mousex-cursor_bmp->w/2;
+					pos.y=mousey-cursor_bmp->h/2;
+					pos.w=0;
+					pos.h=0;
 					drawImageAlpha(cursor_bmp, NULL, &pos, 192);
 				}
 			}
-			
+
 			// fade in/out effect
 			if( fadealpha > 0 ) {
-				src.x = 0; src.y = 0;
-				src.w = mainsurface->w; src.h = mainsurface->h;
+				src.x = 0;
+				src.y = 0;
+				src.w = mainsurface->w;
+				src.h = mainsurface->h;
 				drawRect(&src, SDL_MapRGB(mainsurface->format,0,0,0), fadealpha);
 			}
-			
+
 			// fps counter
 			if( showfps ) {
 				printTextFormatted(font8x8_bmp, 8, 8, "fps = %3.1f", fps);
 			}
-			
+
 			// update screen
-			#ifdef APPLE
+#ifdef APPLE
 			SDL_RenderPresent(renderer);
-			#else
+#else
 			SDL_GL_SwapWindow(screen);
-			#endif
-			
+#endif
+
 			// screenshots
 			if( keystatus[SDL_SCANCODE_F6] ) {
 				keystatus[SDL_SCANCODE_F6]=0;
@@ -2506,7 +2503,7 @@ int main(int argc, char **argv) {
 			cycles++;
 		}
 		saveConfig("default.cfg");
-		
+
 		// deinit
 		deinitGame();
 		return deinitApp();

@@ -35,13 +35,13 @@
 void actCampfire(Entity *my) {
 	Entity *entity;
 	int i;
-	
+
 	// init
 	if( !CAMPFIRE_INIT ) {
 		CAMPFIRE_INIT = 1;
 		CAMPFIRE_HEALTH = MAXPLAYERS;
 	}
-		
+
 	// crackling sounds
 	if( CAMPFIRE_HEALTH>0 ) {
 		CAMPFIRE_SOUNDTIME--;
@@ -49,7 +49,7 @@ void actCampfire(Entity *my) {
 			CAMPFIRE_SOUNDTIME = 480;
 			playSoundEntityLocal( my, 133, 128 );
 		}
-	
+
 		// spew flame particles
 		for( i=0; i<3; i++ ) {
 			entity = spawnFlame(my);
@@ -59,7 +59,7 @@ void actCampfire(Entity *my) {
 		}
 		entity = spawnFlame(my);
 		entity->z -= 2;
-	
+
 		// light environment
 		if( !CAMPFIRE_LIGHTING ) {
 			my->light = lightSphereShadow(my->x/16, my->y/16, 6, 160);
@@ -68,13 +68,12 @@ void actCampfire(Entity *my) {
 		CAMPFIRE_FLICKER--;
 		if(CAMPFIRE_FLICKER<=0) {
 			CAMPFIRE_LIGHTING=(CAMPFIRE_LIGHTING==1)+1;
-		
+
 			if(CAMPFIRE_LIGHTING==1) {
 				if( my->light != NULL )
 					list_RemoveNode(my->light->node);
 				my->light = lightSphereShadow(my->x/16, my->y/16, 6, 160);
-			}
-			else {
+			} else {
 				if( my->light != NULL )
 					list_RemoveNode(my->light->node);
 				my->light = lightSphereShadow(my->x/16, my->y/16, 6, 152);
@@ -91,7 +90,7 @@ void actCampfire(Entity *my) {
 
 	if( multiplayer != CLIENT ) {
 		// using campfire
-		for(i=0;i<MAXPLAYERS;i++) {
+		for(i=0; i<MAXPLAYERS; i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
 					if( CAMPFIRE_HEALTH>0 ) {

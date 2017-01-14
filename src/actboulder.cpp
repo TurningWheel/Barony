@@ -72,7 +72,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 				if( stats->HP > 0 ) {
 					// spawn several rock items
 					int i = 8+rand()%4;
-					
+
 					int c;
 					for( c=0; c<i; c++ ) {
 						Entity *entity = newEntity(-1,1,map.entities);
@@ -100,7 +100,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 
 					double ox = my->x;
 					double oy = my->y;
-					
+
 					// destroy the boulder
 					playSoundEntity(my,67,128);
 					list_RemoveNode(my->mynode);
@@ -160,7 +160,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 
 void actBoulder(Entity *my) {
 	int i;
-	
+
 	my->skill[2]=-7; // invokes actEmpty() on clients
 	my->flags[UPDATENEEDED] = TRUE;
 
@@ -230,7 +230,7 @@ void actBoulder(Entity *my) {
 			if( multiplayer==SERVER )
 				serverUpdateEntityFlag(my,PASSABLE);
 		}
-		
+
 		// horizontal velocity
 		my->vel_x += cos(my->yaw)*.1;
 		my->vel_y += sin(my->yaw)*.1;
@@ -253,7 +253,7 @@ void actBoulder(Entity *my) {
 			double dist = sqrt(pow(my->vel_x,2)+pow(my->vel_y,2));
 			my->pitch += dist*.06;
 			my->roll = PI/2;
-		
+
 			// crush objects
 			if( dist && !BOULDER_NOGROUND ) {
 				node_t *node;
@@ -267,18 +267,17 @@ void actBoulder(Entity *my) {
 			}
 		}
 	}
-	
+
 	// pushing boulders
 	if( BOULDER_STOPPED ) {
 		if( !BOULDER_ROLLING ) {
-			for(i=0;i<MAXPLAYERS;i++) {
+			for(i=0; i<MAXPLAYERS; i++) {
 				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 					if(inrange[i]) {
 						if( statGetSTR(stats[i])<5 ) {
 							messagePlayer(i,language[456]);
 						} else {
-							if (players[i] && players[i]->entity)
-							{
+							if (players[i] && players[i]->entity) {
 								playSoundEntity(my, 151, 128);
 								BOULDER_ROLLING=1;
 								my->x = floor(my->x/16)*16+8;
@@ -295,18 +294,18 @@ void actBoulder(Entity *my) {
 									BOULDER_ROLLDIR=3; // north
 								}
 								switch( BOULDER_ROLLDIR ) {
-									case 0:
-										BOULDER_DESTX += 16;
-										break;
-									case 1:
-										BOULDER_DESTY += 16;
-										break;
-									case 2:
-										BOULDER_DESTX -= 16;
-										break;
-									case 3:
-										BOULDER_DESTY -= 16;
-										break;
+								case 0:
+									BOULDER_DESTX += 16;
+									break;
+								case 1:
+									BOULDER_DESTY += 16;
+									break;
+								case 2:
+									BOULDER_DESTX -= 16;
+									break;
+								case 3:
+									BOULDER_DESTY -= 16;
+									break;
 								}
 							}
 						}
@@ -315,22 +314,22 @@ void actBoulder(Entity *my) {
 			}
 		} else {
 			switch( BOULDER_ROLLDIR ) {
-				case 0:
-					my->vel_x=1;
-					my->vel_y=0;
-					break;
-				case 1:
-					my->vel_x=0;
-					my->vel_y=1;
-					break;
-				case 2:
-					my->vel_x=-1;
-					my->vel_y=0;
-					break;
-				case 3:
-					my->vel_x=0;
-					my->vel_y=-1;
-					break;
+			case 0:
+				my->vel_x=1;
+				my->vel_y=0;
+				break;
+			case 1:
+				my->vel_x=0;
+				my->vel_y=1;
+				break;
+			case 2:
+				my->vel_x=-1;
+				my->vel_y=0;
+				break;
+			case 3:
+				my->vel_x=0;
+				my->vel_y=-1;
+				break;
 			}
 			int x = (my->x+my->vel_x*8)/16;
 			int y = (my->y+my->vel_y*8)/16;
@@ -375,7 +374,7 @@ void actBoulder(Entity *my) {
 					my->yaw += 2*PI;
 				while( my->yaw >= 2*PI )
 					my->yaw -= 2*PI;
-		
+
 				// crush objects
 				if( dist && !BOULDER_NOGROUND ) {
 					node_t *node;
@@ -400,7 +399,7 @@ void actBoulder(Entity *my) {
 		my->roll -= PI*2;
 	while( my->roll < 0 )
 		my->roll += PI*2;
-	
+
 	// rolling sound
 	if( !BOULDER_STOPPED && (fabs(my->vel_x)>0 || fabs(my->vel_y)>0) ) {
 		BOULDER_AMBIENCE++;
@@ -423,7 +422,7 @@ void actBoulderTrap(Entity *my) {
 		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND*30;
 		playSoundEntity( my, 149, 64 );
 	}
-	
+
 	if( !my->skill[28] )
 		return;
 
@@ -436,22 +435,22 @@ void actBoulderTrap(Entity *my) {
 			BOULDERTRAP_FIRED = 1;
 			for( c=0; c<4; c++ ) {
 				switch( c ) {
-					case 0:
-						x = 16;
-						y = 0;
-						break;
-					case 1:
-						x = 0;
-						y = 16;
-						break;
-					case 2:
-						x = -16;
-						y = 0;
-						break;
-					case 3:
-						x = 0;
-						y = -16;
-						break;
+				case 0:
+					x = 16;
+					y = 0;
+					break;
+				case 1:
+					x = 0;
+					y = 16;
+					break;
+				case 2:
+					x = -16;
+					y = 0;
+					break;
+				case 3:
+					x = 0;
+					y = -16;
+					break;
 				}
 				x = ((int)(x+my->x))>>4;
 				y = ((int)(y+my->y))>>4;

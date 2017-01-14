@@ -22,7 +22,7 @@
 /*-------------------------------------------------------------------------------
 
 	clickDescription
-	
+
 	reports the name of the entity clicked on in use mode
 
 -------------------------------------------------------------------------------*/
@@ -31,7 +31,7 @@ void clickDescription(int player, Entity *entity) {
 	Stat *stat;
 	Item *item;
 	Uint32 uidnum;
-	
+
 	if( entity==NULL ) {
 		if( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) || shootmode )
 			return;
@@ -53,7 +53,7 @@ void clickDescription(int player, Entity *entity) {
 					return; //Click falls inside the right sidebar.
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
-				//return NULL;
+			//return NULL;
 			if( mouseInBounds(INVENTORY_STARTX,INVENTORY_STARTX+INVENTORY_SIZEX*INVENTORY_SLOTSIZE,INVENTORY_STARTY,INVENTORY_STARTY+INVENTORY_SIZEY*INVENTORY_SLOTSIZE) ) {
 				// clicked in inventory
 				return;
@@ -94,7 +94,7 @@ void clickDescription(int player, Entity *entity) {
 
 		*inputPressed(impulses[IN_ATTACK])=0;
 		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
-		
+
 		if( softwaremode ) {
 			entity = clickmap[omousey+omousex*yres];
 		} else {
@@ -104,7 +104,7 @@ void clickDescription(int player, Entity *entity) {
 			entity = uidToEntity(uidnum);
 		}
 	}
-	
+
 	if( entity != NULL ) {
 		if( multiplayer != CLIENT ) {
 			if( (stat=entity->getStats())==NULL ) {
@@ -122,63 +122,46 @@ void clickDescription(int player, Entity *entity) {
 							}
 						}
 					}
-				}
-				else if( entity->behavior==&actTorch ) {
+				} else if( entity->behavior==&actTorch ) {
 					messagePlayer(player,language[255]);
-				}
-				else if( entity->behavior==&actDoor ) {
+				} else if( entity->behavior==&actDoor ) {
 					messagePlayer(player,language[256]);
-				}
-				else if( entity->behavior==&actItem ) {
+				} else if( entity->behavior==&actItem ) {
 					item = newItem(static_cast<ItemType>(entity->skill[10]),static_cast<Status>(entity->skill[11]),entity->skill[12],entity->skill[13],entity->skill[14],FALSE,NULL);
 					if (item) {
 						messagePlayer(player,language[257],item->description());
 						free(item);
 					}
-				}
-				else if( entity->behavior==&actGoldBag ) {
+				} else if( entity->behavior==&actGoldBag ) {
 					if( entity->skill[0]==1 )
 						messagePlayer(player,language[258]);
 					else
 						messagePlayer(player,language[259],entity->skill[0]);
-				}
-				else if( entity->behavior==&actCampfire) {
+				} else if( entity->behavior==&actCampfire) {
 					messagePlayer(player,language[260]);
-				}
-				else if( entity->behavior==&actFountain) {
+				} else if( entity->behavior==&actFountain) {
 					messagePlayer(player,language[262]);
-				}
-				else if( entity->behavior==&actSink) {
+				} else if( entity->behavior==&actSink) {
 					messagePlayer(player,language[263]);
-				}
-				else if( entity->behavior==&actLadder) {
+				} else if( entity->behavior==&actLadder) {
 					messagePlayer(player,language[264]);
-				}
-				else if( entity->behavior==&actLadderUp) {
+				} else if( entity->behavior==&actLadderUp) {
 					messagePlayer(player,language[265]);
-				}
-				else if( entity->behavior==&actChest || entity->behavior==&actChestLid ) {
+				} else if( entity->behavior==&actChest || entity->behavior==&actChestLid ) {
 					messagePlayer(player,language[266]);
-				}
-				else if( entity->behavior==&actGate) {
+				} else if( entity->behavior==&actGate) {
 					messagePlayer(player,language[267]);
-				}
-				else if( entity->behavior==&actSpearTrap) {
+				} else if( entity->behavior==&actSpearTrap) {
 					messagePlayer(player,language[268]);
-				}
-				else if( entity->behavior==&actSwitch) {
+				} else if( entity->behavior==&actSwitch) {
 					messagePlayer(player,language[269]);
-				}
-				else if( entity->behavior==&actBoulder ) {
+				} else if( entity->behavior==&actBoulder ) {
 					messagePlayer(player,language[270]);
-				}
-				else if( entity->behavior==&actHeadstone ) {
+				} else if( entity->behavior==&actHeadstone ) {
 					messagePlayer(player,language[271]);
-				}
-				else if( entity->behavior==&actPortal || entity->behavior==&actWinningPortal ) {
+				} else if( entity->behavior==&actPortal || entity->behavior==&actWinningPortal ) {
 					messagePlayer(player,language[272]);
-				}
-				else if( entity->behavior==&actFurniture ) {
+				} else if( entity->behavior==&actFurniture ) {
 					if( entity->skill[0] )
 						messagePlayer(player,language[273]);
 					else

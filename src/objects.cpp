@@ -89,7 +89,7 @@ void entityDeconstructor(void *data) {
 void lightDeconstructor(void *data) {
 	Sint32 x, y;
 	light_t *light;
-	
+
 	if( data != NULL) {
 		light = (light_t *)data;
 		if( light->tiles != NULL ) {
@@ -165,8 +165,7 @@ Entity *newEntity(Sint32 sprite, Uint32 pos, list_t *entlist) {
 	}*/
 	try {
 		entity = new Entity(sprite, pos, entlist);
-	}
-	catch (std::bad_alloc& ba) {
+	} catch (std::bad_alloc& ba) {
 		printlog( "failed to allocate memory for new entity!\n" );
 		exit(1);
 	}
@@ -184,19 +183,19 @@ Entity *newEntity(Sint32 sprite, Uint32 pos, list_t *entlist) {
 
 button_t *newButton(void) {
 	button_t *button;
-	
+
 	// allocate memory for button
 	if( (button = (button_t *) malloc(sizeof(button_t)))==NULL ) {
 		printlog( "failed to allocate memory for new button!\n" );
 		exit(1);
 	}
-	
+
 	// add the button to the button list
 	button->node = list_AddNodeLast(&button_l);
 	button->node->element = button;
 	button->node->deconstructor = &defaultDeconstructor;
 	button->node->size = sizeof(button_t);
-	
+
 	// now set all of my data elements to ZERO or NULL
 	button->x=0;
 	button->y=0;
@@ -226,19 +225,19 @@ button_t *newButton(void) {
 
 light_t *newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
 	light_t *light;
-	
+
 	// allocate memory for light
 	if( (light = (light_t *) malloc(sizeof(light_t)))==NULL ) {
 		printlog( "failed to allocate memory for new light!\n" );
 		exit(1);
 	}
-	
+
 	// add the light to the light list
 	light->node = list_AddNodeLast(&light_l);
 	light->node->element = light;
 	light->node->deconstructor = &lightDeconstructor;
 	light->node->size = sizeof(light_t);
-	
+
 	// now set all of my data elements to ZERO or NULL
 	light->x=x;
 	light->y=y;
@@ -266,20 +265,20 @@ string_t *newString(list_t *list, Uint32 color, char *content, ...) {
 	char str[1024] = { 0 };
 	va_list argptr;
 	int c, i;
-	
+
 	// allocate memory for string
 	if( (string = (string_t *) malloc(sizeof(string_t)))==NULL ) {
 		printlog( "failed to allocate memory for new string!\n" );
 		exit(1);
 	}
-	
+
 	if( content ) {
 		if( strlen(content) > 2048 ) {
 			printlog( "error creating new string: buffer overflow.\n" );
 			exit(1);
 		}
 	}
-	
+
 	string->color=color;
 	string->lines=1;
 	if( content != NULL ) {
@@ -301,7 +300,7 @@ string_t *newString(list_t *list, Uint32 color, char *content, ...) {
 	} else {
 		string->data = NULL;
 	}
-	
+
 	// add the string to the list
 	if( list != NULL ) {
 		string->node = list_AddNodeLast(list);
@@ -311,7 +310,7 @@ string_t *newString(list_t *list, Uint32 color, char *content, ...) {
 	} else {
 		string->node = NULL;
 	}
-	
+
 	return string;
 }
 
@@ -331,14 +330,14 @@ pathnode_t *newPathnode(list_t *list, Sint32 x, Sint32 y, pathnode_t *parent, Si
 		printlog( "failed to allocate memory for new pathnode!\n" );
 		exit(1);
 	}
-	
+
 	// assign values
 	pathnode->x = x;
 	pathnode->y = y;
 	pathnode->parent = parent;
 	pathnode->g = 0;
 	pathnode->h = 0;
-	
+
 	// add the pathnode to the list
 	if( !pos )
 		pathnode->node = list_AddNodeFirst(list);
@@ -347,6 +346,6 @@ pathnode_t *newPathnode(list_t *list, Sint32 x, Sint32 y, pathnode_t *parent, Si
 	pathnode->node->element = pathnode;
 	pathnode->node->deconstructor = &defaultDeconstructor;
 	pathnode->node->size = sizeof(pathnode_t);
-	
+
 	return pathnode;
 }

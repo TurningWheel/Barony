@@ -14,10 +14,10 @@
 /*-------------------------------------------------------------------------------
 
 	lightSphereShadow
-	
+
 	Adds a circle of light to the lightmap at x and y with the supplied
 	radius and intensity; casts shadows against walls
-	
+
 	intensity can be from -255 to 255
 
 -------------------------------------------------------------------------------*/
@@ -31,12 +31,12 @@ light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) 
 	Sint32 dxabs, dyabs;
 	bool wallhit;
 	int index, z;
-	
+
 	if( intensity==0 )
 		return NULL;
 	light = newLight(x,y,radius,intensity);
 	intensity = std::min(std::max(-255,intensity),255);
-	
+
 	for( v=y-radius; v<=y+radius; v++ ) {
 		for( u=x-radius; u<=x+radius; u++ ) {
 			if( u>=0 && v>=0 && u<map.width && v<map.height ) {
@@ -46,7 +46,8 @@ light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) 
 				dyabs=abs(dy);
 				a=dyabs*.5;
 				b=dxabs*.5;
-				u2=u; v2=v;
+				u2=u;
+				v2=v;
 				wallhit=TRUE;
 				index = v*MAPLAYERS+u*MAPLAYERS*map.height;
 				for( z=0; z<MAPLAYERS; z++ ) {
@@ -101,10 +102,10 @@ light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) 
 /*-------------------------------------------------------------------------------
 
 	lightSphere
-	
+
 	Adds a circle of light to the lightmap at x and y with the supplied
 	radius and intensity; casts no shadows
-	
+
 	intensity can be from -255 to 255
 
 -------------------------------------------------------------------------------*/
@@ -113,12 +114,12 @@ light_t *lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
 	light_t *light;
 	Sint32 u, v;
 	Sint32 dx, dy;
-	
+
 	if( intensity==0 )
 		return NULL;
 	light = newLight(x,y,radius,intensity);
 	intensity = std::min(std::max(-255,intensity),255);
-	
+
 	for( v=y-radius; v<=y+radius; v++ ) {
 		for( u=x-radius; u<=x+radius; u++ ) {
 			if( u>=0 && v>=0 && u<map.width && v<map.height ) {

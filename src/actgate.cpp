@@ -56,10 +56,10 @@ void actGate(Entity *my) {
 		my->scaley = 1.01;
 		my->scalez = 1.01;
 	}
-	
+
 	// rightclick message
 	if( multiplayer!=CLIENT ) {
-		for(i=0;i<MAXPLAYERS;i++) {
+		for(i=0; i<MAXPLAYERS; i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
 					messagePlayer(i,language[475]);
@@ -80,7 +80,7 @@ void actGate(Entity *my) {
 		//Opening gate.
 		if( my->z > GATE_STARTHEIGHT-12 ) {
 			my->z = std::max(GATE_STARTHEIGHT-12, my->z - 0.25);
-			
+
 			// rattle the gate
 			GATE_RATTLE = (GATE_RATTLE==0);
 			if( GATE_RATTLE ) {
@@ -99,7 +99,7 @@ void actGate(Entity *my) {
 			}
 		}
 	}
-	
+
 	//Setting collision
 	node_t *node;
 	bool somebodyinside = FALSE;

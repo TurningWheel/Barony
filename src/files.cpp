@@ -18,7 +18,7 @@
 /*-------------------------------------------------------------------------------
 
 	glLoadTexture
-	
+
 	Binds the given image to an opengl texture name
 
 -------------------------------------------------------------------------------*/
@@ -44,7 +44,7 @@ void glLoadTexture(SDL_Surface *image, int texnum) {
 /*-------------------------------------------------------------------------------
 
 	loadImage
-	
+
 	Loads the image specified in filename, binds it to an opengl texture name,
 	and returns the image as an SDL_Surface
 
@@ -84,7 +84,7 @@ SDL_Surface *loadImage(char *filename) {
 /*-------------------------------------------------------------------------------
 
 	loadVoxel
-	
+
 	Loads a voxel model from the given filename
 
 -------------------------------------------------------------------------------*/
@@ -108,9 +108,12 @@ voxel_t *loadVoxel(char *filename2) {
 			return NULL;
 		}
 		model = (voxel_t *) malloc(sizeof(voxel_t));
-		model->sizex = 0; fread(&model->sizex,sizeof(Sint32),1,file);
-		model->sizey = 0; fread(&model->sizey,sizeof(Sint32),1,file);
-		model->sizez = 0; fread(&model->sizez,sizeof(Sint32),1,file);
+		model->sizex = 0;
+		fread(&model->sizex,sizeof(Sint32),1,file);
+		model->sizey = 0;
+		fread(&model->sizey,sizeof(Sint32),1,file);
+		model->sizez = 0;
+		fread(&model->sizez,sizeof(Sint32),1,file);
 		model->data = (Uint8 *) malloc(sizeof(Uint8)*model->sizex*model->sizey*model->sizez);
 		memset(model->data,0,sizeof(Uint8)*model->sizex*model->sizey*model->sizez);
 		fread(model->data,sizeof(Uint8),model->sizex*model->sizey*model->sizez,file);
@@ -123,7 +126,7 @@ voxel_t *loadVoxel(char *filename2) {
 		}
 		fclose(file);
 		free(filename);
-		
+
 		return model;
 	} else {
 		return NULL;
@@ -133,7 +136,7 @@ voxel_t *loadVoxel(char *filename2) {
 /*-------------------------------------------------------------------------------
 
 	loadMap
-	
+
 	Loads a map from the given filename
 
 -------------------------------------------------------------------------------*/
@@ -150,7 +153,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 
 	char oldmapname[64];
 	strcpy(oldmapname,map.name);
-	
+
 	if( filename2 != NULL && strcmp(filename2,"") ) {
 		c=0;
 		while(1) {
@@ -161,12 +164,12 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 		filename = (char *) malloc(sizeof(char)*256);
 		strcpy(filename,"maps/");
 		strcat(filename,filename2);
-		
+
 		if( strcmp(filename,"..") && strcmp(filename,".") ) {
 			// add extension if missing
 			if( strstr(filename,".lmp") == NULL )
 				strcat(filename,".lmp");
-			
+
 			// load the file!
 			if((fp = fopen(filename, "rb")) == NULL) {
 				printlog("warning: failed to open file '%s' for map loading!\n",filename);
@@ -221,7 +224,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 		}
 		free(filename);
 		fclose(fp);
-		
+
 		if( destmap == &map ) {
 			nummonsters=0;
 			minotaurlevel=0;
@@ -230,7 +233,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			if( strcmp(oldmapname,map.name) )
 				levelmusicplaying=FALSE;
 #endif
-			
+
 			// create new lightmap
 			if(lightmap!=NULL)
 				free(lightmap);
@@ -242,12 +245,12 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 				for(c=0; c<destmap->width*destmap->height; c++ )
 					lightmap[c]=32;
 			}
-			
+
 			// create a new vismap
 			if(vismap!=NULL)
 				free(vismap);
 			vismap=(bool *) calloc(destmap->width*destmap->height,sizeof(bool));
-	
+
 			// reset minimap
 			for( x=0; x<64; x++ )
 				for( y=0; y<64; y++ )
@@ -267,7 +270,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 				camera.ang = 0;
 				camera.vang = 0;
 			}
-			
+
 			// shoparea
 			if( shoparea )
 				free(shoparea);
@@ -276,10 +279,10 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 				for( y=0; y<destmap->height; y++ )
 					shoparea[y+x*destmap->height] = FALSE;
 		}
-		
+
 		for( c=0; c<512; c++ )
 			keystatus[c] = 0;
-		
+
 		return numentities;
 	} else {
 		return -1;
@@ -289,7 +292,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 /*-------------------------------------------------------------------------------
 
 	saveMap
-	
+
 	Saves a map to the given filename
 
 -------------------------------------------------------------------------------*/
@@ -301,12 +304,12 @@ int saveMap(char *filename2) {
 	Entity *entity;
 	char *filename;
 	Sint32 x, y;
-	
+
 	if( filename2 != NULL && strcmp(filename2,"") ) {
 		filename = (char *) malloc(sizeof(char)*256);
 		strcpy(filename,"maps/");
 		strcat(filename,filename2);
-		
+
 		if( strstr(filename,".lmp") == NULL )
 			strcat(filename,".lmp");
 		if((fp = fopen(filename, "wb")) == NULL) {
@@ -320,10 +323,10 @@ int saveMap(char *filename2) {
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
 		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
 		fwrite(map.tiles, sizeof(Sint32), map.width*map.height*MAPLAYERS, fp);
-		for(node=map.entities->first;node!=NULL;node=node->next)
+		for(node=map.entities->first; node!=NULL; node=node->next)
 			numentities++;
 		fwrite(&numentities,sizeof(Uint32), 1, fp); // number of entities on the map
-		for(node=map.entities->first;node!=NULL;node=node->next) {
+		for(node=map.entities->first; node!=NULL; node=node->next) {
 			entity = (Entity *) node->element;
 			fwrite(&entity->sprite,sizeof(Sint32), 1, fp);
 			x = entity->x;
@@ -383,7 +386,8 @@ list_t *directoryContents(char *directory) {
 	}
 
 	list = (list_t *) malloc(sizeof(list_t));
-	list->first = NULL; list->last = NULL;
+	list->first = NULL;
+	list->last = NULL;
 
 	while ((entry=readdir(dir))!=NULL) {
 		strcpy(tempstr, directory);

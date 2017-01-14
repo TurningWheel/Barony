@@ -57,10 +57,10 @@ void actGoldBag(Entity *my) {
 		GOLDBAG_AMBIENCE = TICKS_PER_SECOND*30;
 		playSoundEntityLocal( my, 149, 16 );
 	}
-	
+
 	// pick up gold
 	if( multiplayer!=CLIENT ) {
-		for(i=0;i<MAXPLAYERS;i++) {
+		for(i=0; i<MAXPLAYERS; i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
 					if (players[i] && players[i]->entity)

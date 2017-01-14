@@ -33,7 +33,7 @@
 
 void actTorch(Entity *my) {
 	int i;
-	
+
 	// ambient noises (yeah, torches can make these...)
 	TORCH_FIRE--;
 	if( TORCH_FIRE <= 0 ) {
@@ -64,23 +64,22 @@ void actTorch(Entity *my) {
 	TORCH_FLICKER--;
 	if(TORCH_FLICKER<=0) {
 		TORCH_LIGHTING=(TORCH_LIGHTING==1)+1;
-		
+
 		if(TORCH_LIGHTING==1) {
 			if( my->light != NULL )
 				list_RemoveNode(my->light->node);
 			my->light = lightSphereShadow(my->x/16, my->y/16, 7, 192);
-		}
-		else {
+		} else {
 			if( my->light != NULL )
 				list_RemoveNode(my->light->node);
 			my->light = lightSphereShadow(my->x/16, my->y/16, 7, 174);
 		}
 		TORCH_FLICKER=2+rand()%7;
 	}
-	
+
 	// using
 	if( multiplayer != CLIENT ) {
-		for(i=0;i<MAXPLAYERS;i++) {
+		for(i=0; i<MAXPLAYERS; i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
 					messagePlayer(i,language[589]);

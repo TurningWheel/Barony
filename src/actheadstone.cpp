@@ -54,7 +54,7 @@ void actHeadstone(Entity *my) {
 			return;
 		}
 	}
-	
+
 	HEADSTONE_AMBIENCE--;
 	if( HEADSTONE_AMBIENCE<=0 ) {
 		HEADSTONE_AMBIENCE = TICKS_PER_SECOND*30;
@@ -69,13 +69,13 @@ void actHeadstone(Entity *my) {
 		HEADSTONE_MESSAGE = rand();
 		HEADSTONE_GHOUL = (rand()%4==0);
 	}
-	
+
 	bool shouldspawn=FALSE;
-	
+
 	// rightclick message
 	int i;
 	if( multiplayer!=CLIENT ) {
-		for(i=0;i<MAXPLAYERS;i++) {
+		for(i=0; i<MAXPLAYERS; i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
 					messagePlayer(i,language[485+HEADSTONE_MESSAGE%17]);
@@ -93,7 +93,7 @@ void actHeadstone(Entity *my) {
 	if( my->skill[28] == 2 || shouldspawn ) {
 		if( !HEADSTONE_FIRED ) {
 			HEADSTONE_FIRED = 1;
-			
+
 			// make a ghoul
 			Entity *monster = summonMonster(GHOUL,my->x,my->y);
 			if( monster )

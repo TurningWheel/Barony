@@ -44,8 +44,10 @@ void initMinotaur(Entity *my, Stat *myStats) {
 		strcpy(myStats->name,"");
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 400; myStats->MAXHP = 400;
-		myStats->MP = 100; myStats->MAXMP = 100;
+		myStats->HP = 400;
+		myStats->MAXHP = 400;
+		myStats->MP = 100;
+		myStats->MAXMP = 100;
 		myStats->OLDHP = myStats->HP;
 		if( strcmp(map.name,"Hell Boss") ) {
 			myStats->STR = 35;
@@ -65,7 +67,8 @@ void initMinotaur(Entity *my, Stat *myStats) {
 		myStats->HUNGER = 900;
 		if( !myStats->leader_uid )
 			myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -91,22 +94,22 @@ void initMinotaur(Entity *my, Stat *myStats) {
 
 		ItemType gemtype = GEM_RUBY;
 		switch( rand()%4 ) {
-			case 0:
-				gemtype = GEM_RUBY;
-				break;
-			case 1:
-				gemtype = GEM_EMERALD;
-				break;
-			case 2:
-				gemtype = GEM_SAPPHIRE;
-				break;
-			case 3:
-				gemtype = GEM_DIAMOND;
-				break;
+		case 0:
+			gemtype = GEM_RUBY;
+			break;
+		case 1:
+			gemtype = GEM_EMERALD;
+			break;
+		case 2:
+			gemtype = GEM_SAPPHIRE;
+			break;
+		case 3:
+			gemtype = GEM_DIAMOND;
+			break;
 		}
 		newItem( gemtype, EXCELLENT, 0, 1, rand(), TRUE, &myStats->inventory );
 	}
-	
+
 	// head
 	Entity *entity = newEntity(237, 0, map.entities);
 	entity->sizex = 4;
@@ -218,20 +221,19 @@ void initMinotaur(Entity *my, Stat *myStats) {
 
 void actMinotaurLimb(Entity *my) {
 	int i;
-	
+
 	Entity *parent = NULL;
 	if( (parent=uidToEntity(my->skill[2]))==NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	if( multiplayer!=CLIENT ) {
 		for( i=0; i<MAXPLAYERS; i++ ) {
 			if( inrange[i] ) {
 				if( i==0 && selectedEntity==my ) {
 					parent->skill[13] = i+1;
-				}
-				else if( client_selected[i]==my ) {
+				} else if( client_selected[i]==my ) {
 					parent->skill[13] = i+1;
 				}
 			}
@@ -293,7 +295,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	Entity *head = NULL;
 	Entity *chest = NULL;
 	int bodypart;
-	
+
 	// set invisibility
 	if( multiplayer != CLIENT ) {
 		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
@@ -449,7 +451,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					}
 				}
 			}
-			
+
 			if( bodypart!=6 || (MONSTER_ATTACK==0 && MONSTER_ATTACKTIME==0) ) {
 				if( dist>0.1 ) {
 					if( entity->skill[0] ) {
@@ -488,35 +490,35 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		}
 		switch( bodypart ) {
-			// head
-			case 2:
-				entity->z-=11;
-				break;
-			// chest
-			case 3:
-				entity->z-=4.5;
-				break;
-			// right leg
-			case 4:
-				entity->x+=2.5*cos(my->yaw+PI/2)-.5*cos(my->yaw);
-				entity->y+=2.5*sin(my->yaw+PI/2)-.5*sin(my->yaw);
-				entity->z+=2.5;
-				break;
-			// left leg
-			case 5:
-				entity->x-=2.5*cos(my->yaw+PI/2)+.5*cos(my->yaw);
-				entity->y-=2.5*sin(my->yaw+PI/2)+.5*sin(my->yaw);
-				entity->z+=2.5;
-				break;
-			// right arm
-			case 6:
-				entity->z-=6;
-				entity->yaw += MONSTER_WEAPONYAW;
-				break;
-			// left arm
-			case 7:
-				entity->z-=6;
-				break;
+		// head
+		case 2:
+			entity->z-=11;
+			break;
+		// chest
+		case 3:
+			entity->z-=4.5;
+			break;
+		// right leg
+		case 4:
+			entity->x+=2.5*cos(my->yaw+PI/2)-.5*cos(my->yaw);
+			entity->y+=2.5*sin(my->yaw+PI/2)-.5*sin(my->yaw);
+			entity->z+=2.5;
+			break;
+		// left leg
+		case 5:
+			entity->x-=2.5*cos(my->yaw+PI/2)+.5*cos(my->yaw);
+			entity->y-=2.5*sin(my->yaw+PI/2)+.5*sin(my->yaw);
+			entity->z+=2.5;
+			break;
+		// right arm
+		case 6:
+			entity->z-=6;
+			entity->yaw += MONSTER_WEAPONYAW;
+			break;
+		// left arm
+		case 7:
+			entity->z-=6;
+			break;
 		}
 	}
 	if( MONSTER_ATTACK != 0 )
@@ -564,7 +566,7 @@ void actMinotaurTrap(Entity *my) {
 
 void actMinotaurTimer(Entity *my) {
 	node_t *node;
-	
+
 	MINOTAURTIMER_LIFE++;
 	if( MINOTAURTIMER_LIFE == TICKS_PER_SECOND*120 && rand()%5==0 ) { // two minutes
 		int c;
@@ -667,7 +669,7 @@ void actMinotaurCeilingBuster(Entity *my) {
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 10;
 						}
 					}
-					
+
 					// spawn several rock particles (NOT items)
 					int c, i = 6+rand()%4;
 					for( c=0; c<i; c++ ) {

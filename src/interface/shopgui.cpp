@@ -166,7 +166,7 @@ void warpMouseToSelectedShopSlot() {
 /*-------------------------------------------------------------------------------
 
 	updateShopWindow
-	
+
 	Draws and processes everything related to the shop window
 
 -------------------------------------------------------------------------------*/
@@ -175,25 +175,25 @@ void updateShopWindow() {
 	SDL_Rect pos;
 	node_t *node;
 	int c;
-	
+
 	if( multiplayer != CLIENT ) {
 		Entity *entity = uidToEntity(shopkeeper);
-		if (entity)
-		{
+		if (entity) {
 			Stat *stats = entity->getStats();
 			shopkeepername = stats->name;
 		}
 	}
-	
+
 	// draw window
 	int x1 = xres/2-SHOPWINDOW_SIZEX/2, x2 = xres/2+SHOPWINDOW_SIZEX/2;
 	int y1 = yres/2-SHOPWINDOW_SIZEY/2, y2 = yres/2+SHOPWINDOW_SIZEY/2;
 	drawWindowFancy( x1, y1, x2, y2 );
-	
+
 	// clicking
 	int x = x1+(x2-x1)/2-inventory_bmp->w/2;
 	int y = y1+16+160;
-	pos.x = x; pos.y = y;
+	pos.x = x;
+	pos.y = y;
 	drawImage(inventory_bmp, NULL, &pos);
 	if( mousestatus[SDL_BUTTON_LEFT] ) {
 		if( omousey>=y && omousey<y+16 ) {
@@ -201,15 +201,13 @@ void updateShopWindow() {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				shopinventorycategory=(omousex-x-12)/button_bmp->w;
 			}
-		}
-		else if( omousey>=y+16 && omousey<y+52 ) {
+		} else if( omousey>=y+16 && omousey<y+52 ) {
 			if( omousex>=x+inventory_bmp->w-28 && omousex<x+inventory_bmp->w-12 ) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				buttonclick=10;
 				shopitemscroll--;
 			}
-		}
-		else if( omousey>=y+52 && omousey<y+88 ) {
+		} else if( omousey>=y+52 && omousey<y+88 ) {
 			if( omousex>=x+inventory_bmp->w-28 && omousex<x+inventory_bmp->w-12 ) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				buttonclick=11;
@@ -217,7 +215,7 @@ void updateShopWindow() {
 			}
 		}
 	}
-	
+
 	// mousewheel
 	if( omousex>=x+12 && omousex<x+inventory_bmp->w-28 ) {
 		if( omousey>=16 && omousey<y+inventory_bmp->h-8 ) {
@@ -233,18 +231,24 @@ void updateShopWindow() {
 
 	// inventory up button
 	if( buttonclick==10 ) {
-		pos.x=x+inventory_bmp->w-28; pos.y=y+16;
-		pos.w=0; pos.h=0;
+		pos.x=x+inventory_bmp->w-28;
+		pos.y=y+16;
+		pos.w=0;
+		pos.h=0;
 		drawImage(invup_bmp, NULL, &pos);
 	}
 	// inventory down button
 	if( buttonclick==11 ) {
-		pos.x=x+inventory_bmp->w-28; pos.y=y+52;
-		pos.w=0; pos.h=0;
+		pos.x=x+inventory_bmp->w-28;
+		pos.y=y+52;
+		pos.w=0;
+		pos.h=0;
 		drawImage(invdown_bmp, NULL, &pos);
 	}
-	pos.x=x+12+button_bmp->w*shopinventorycategory; pos.y=y;
-	pos.w=0; pos.h=0;
+	pos.x=x+12+button_bmp->w*shopinventorycategory;
+	pos.y=y;
+	pos.w=0;
+	pos.h=0;
 	if( shopinventorycategory <= 6 )
 		drawImage(button_bmp, NULL, &pos);
 	else
@@ -296,23 +300,24 @@ void updateShopWindow() {
 			ttfPrintTextFormatted(ttf8,x+12+348,y3,"%7dG",item->buyValue(clientnum));
 			pos.x=x+12+16;
 			pos.y=y+17+18*(c-shopitemscroll-1);
-			pos.w=16; pos.h=16;
+			pos.w=16;
+			pos.h=16;
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			y3+=18;
 			if( c>3+shopitemscroll )
 				break;
 		}
 	}
-	
+
 	// draw money count
 	ttfPrintTextFormatted( ttf16, x1+16, y2-32, language[357], stats[clientnum]->GOLD );
-	
+
 	// chitchat
 	if( (ticks-shoptimer)%600==0 ) {
 		shopspeech = language[216+rand()%NUMCHITCHAT];
 		shoptimer--;
 	}
-	
+
 	// draw speech
 	if (sellitem)
 		ttfPrintTextFormatted( ttf16, x1+16+160+16, y1+32, shopspeech, sellitem->sellValue(clientnum) );
@@ -321,14 +326,14 @@ void updateShopWindow() {
 	if( !strcmp(shopspeech,language[194]) || !strcmp(shopspeech,language[195]) || !strcmp(shopspeech,language[196]) ) {
 		ttfPrintTextFormatted( ttf16, x1+16+160+16, y1+64, language[358], shopkeepername, language[184+shopkeepertype] );
 	}
-	
+
 	// draw black box for shopkeeper
 	pos.x = x1+16;
 	pos.y = y1+16;
 	pos.w = 160;
 	pos.h = 160;
 	drawRect(&pos,0,255);
-	
+
 	// draw shopkeeper
 	if( uidToEntity(shopkeeper) ) {
 		Entity *entity = uidToEntity(shopkeeper);

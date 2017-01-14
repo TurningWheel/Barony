@@ -44,7 +44,7 @@ void actGib(Entity *my) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	// horizontal motion
 	my->yaw += sqrt(GIB_VELX*GIB_VELX + GIB_VELY*GIB_VELY)*.05;
 	my->x += GIB_VELX;
@@ -96,31 +96,31 @@ Entity *spawnGib(Entity *parentent) {
 	Stat *parentstats;
 	double vel;
 	int gibsprite=5;
-	
+
 	if( parentent == NULL )
 		return NULL;
 	if( (parentstats=parentent->getStats())!=NULL ) {
 		switch( gibtype[(int)parentstats->type] ) {
-			case 0:
-				return NULL;
-			case 1:
-				gibsprite = 5;
-				break;
-			case 2:
+		case 0:
+			return NULL;
+		case 1:
+			gibsprite = 5;
+			break;
+		case 2:
+			gibsprite = 211;
+			break;
+		case 3:
+			if( parentent->sprite==210 )
 				gibsprite = 211;
-				break;
-			case 3:
-				if( parentent->sprite==210 )
-					gibsprite = 211;
-				else
-					gibsprite = 215;
-				break;
-			default:
-				gibsprite = 5;
-				break;
+			else
+				gibsprite = 215;
+			break;
+		default:
+			gibsprite = 5;
+			break;
 		}
 	}
-	
+
 	entity = newEntity(gibsprite,1,map.entities);
 	entity->x = parentent->x;
 	entity->y = parentent->y;
@@ -145,13 +145,13 @@ Entity *spawnGib(Entity *parentent) {
 	if( multiplayer != CLIENT )
 		entity_uids--;
 	entity->uid = -3;
-	
+
 	return entity;
 }
 
 Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 	double vel;
-	
+
 	Entity *entity = newEntity(sprite,1,map.entities);
 	entity->x = x;
 	entity->y = y;
@@ -170,7 +170,7 @@ Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[UNCLICKABLE] = TRUE;
-	
+
 	return entity;
 }
 

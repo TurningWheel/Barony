@@ -55,8 +55,8 @@ void actAnimator(Entity *my) {
 void actRotate(Entity *my) {
 	my->yaw += 0.1;
 	my->flags[PASSABLE]=TRUE; // this entity should always be passable
-	
-	#ifdef TESTSPRITES
+
+#ifdef TESTSPRITES
 	if( keystatus[SDL_SCANCODE_HOME] ) {
 		keystatus[SDL_SCANCODE_HOME] = 0;
 		my->sprite++;
@@ -71,7 +71,7 @@ void actRotate(Entity *my) {
 			my->sprite = 0;
 		messagePlayer(clientnum,"test sprite: %d",my->sprite);
 	}
-	#endif
+#endif
 }
 
 #define LIQUID_TIMER my->skill[0]
@@ -182,7 +182,7 @@ void actFurniture(Entity *my) {
 
 			// using
 			int i;
-			for(i=0;i<MAXPLAYERS;i++) {
+			for(i=0; i<MAXPLAYERS; i++) {
 				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 					if(inrange[i]) {
 						if( FURNITURE_TYPE )
@@ -207,7 +207,7 @@ void actMCaxe(Entity *my) {
 		if( multiplayer!=CLIENT ) {
 			// use
 			int i;
-			for(i=0;i<MAXPLAYERS;i++) {
+			for(i=0; i<MAXPLAYERS; i++) {
 				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 					if(inrange[i]) {
 						messagePlayer(i,language[478+rand()%5]);

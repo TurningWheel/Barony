@@ -45,7 +45,7 @@
 void actItem(Entity *my) {
 	Item *item;
 	int i;
-	
+
 	if( multiplayer==CLIENT ) {
 		my->flags[NOUPDATE]=TRUE;
 		if( ITEM_LIFE==0 ) {
@@ -107,22 +107,16 @@ void actItem(Entity *my) {
 	}*/
 
 	// pick up item
-	if (multiplayer != CLIENT)
-	{
-		for ( i = 0; i < MAXPLAYERS; i++)
-		{
-			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my))
-			{
-				if (inrange[i])
-				{
+	if (multiplayer != CLIENT) {
+		for ( i = 0; i < MAXPLAYERS; i++) {
+			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my)) {
+				if (inrange[i]) {
 					if (players[i] != nullptr && players[i]->entity != nullptr)
 						playSoundEntity( players[i]->entity, 35 + rand()%3, 64 );
 					Item *item2 = newItemFromEntity(my);
-					if (item2)
-					{
+					if (item2) {
 						item = itemPickup(i, item2);
-						if (item)
-						{
+						if (item) {
 							if (i == 0)
 								free(item2);
 							int oldcount = item->count;
@@ -176,13 +170,13 @@ void actItem(Entity *my) {
 			my->roll += 0.04;
 		}
 	}
-	
+
 	// falling out of the map
 	if( my->z > 128 ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	// don't perform unneeded computations on items that have basically no velocity
 	double groundheight = 7.5-models[my->sprite]->sizey*.25;
 	if( onground && my->z > groundheight-.0001 && my->z < groundheight+.0001 && fabs(ITEM_VELX)<0.02 && fabs(ITEM_VELY)<0.02 ) {
@@ -190,7 +184,7 @@ void actItem(Entity *my) {
 		my->flags[UPDATENEEDED] = FALSE;
 		return;
 	}
-	
+
 	// horizontal motion
 	if( ITEM_NOCOLLISION ) {
 		double newx = my->x+ITEM_VELX;

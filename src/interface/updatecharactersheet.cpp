@@ -21,7 +21,7 @@ void drawSkillsSheet();
 /*-------------------------------------------------------------------------------
 
 	updateCharacterSheet
-	
+
 	Draws the character sheet and processes all interaction with it
 
 -------------------------------------------------------------------------------*/
@@ -35,11 +35,13 @@ void updateCharacterSheet() {
 	Entity *entity = NULL;
 	Item *item = NULL;
 	int c;
-	
+
 	// draw window
 	drawWindowFancy(0, 0, 224, 196);
-	pos.x=8; pos.y=8;
-	pos.w=208; pos.h=180;
+	pos.x=8;
+	pos.y=8;
+	pos.w=208;
+	pos.h=180;
 	drawRect(&pos,0,255);
 	//drawImage(character_bmp, NULL, &pos);
 	//pos.x=0; pos.y=196;
@@ -50,8 +52,7 @@ void updateCharacterSheet() {
 	// character sheet
 	double ofov = fov;
 	fov = 50;
-	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
-	{
+	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr) {
 		if (!softwaremode)
 			glClear(GL_DEPTH_BUFFER_BIT);
 		//TODO: These two NOT PLAYERSWAP
@@ -69,18 +70,14 @@ void updateCharacterSheet() {
 		camera_charsheet.winh = 180;
 		b = players[clientnum]->entity->flags[BRIGHT];
 		players[clientnum]->entity->flags[BRIGHT]=TRUE;
-		if (!players[clientnum]->entity->flags[INVISIBLE])
-		{
+		if (!players[clientnum]->entity->flags[INVISIBLE]) {
 			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 		}
 		players[clientnum]->entity->flags[BRIGHT] = b;
 		c = 0;
-		if (multiplayer != CLIENT)
-		{
-			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next)
-			{
-				if (c == 0)
-				{
+		if (multiplayer != CLIENT) {
+			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next) {
+				if (c == 0) {
 					c++;
 					continue;
 				}

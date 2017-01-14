@@ -67,14 +67,14 @@ public:
 	double scalex, scaley, scalez; // stretches/squashes the entity visually
 	Sint32 sizex, sizey;           // entity bounding box size
 	Sint32 sprite;                 // the entity's sprite index
-	
+
 	// network stuff
 	Uint32 lastupdate;                   // last time since the entity was updated
 	Uint32 lastupdateserver;             // used to sort out old packets
 	double vel_x, vel_y, vel_z;          // entity velocity vector
 	double new_x, new_y, new_z;          // world coordinates
 	double new_yaw, new_pitch, new_roll; // rotation
-	
+
 	// entity attributes
 	double fskill[30]; // floating point general purpose variables
 	Sint32 skill[30];  // general purpose variables
@@ -83,7 +83,7 @@ public:
 	light_t *light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
-	
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t *mynode;
 

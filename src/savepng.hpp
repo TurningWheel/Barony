@@ -7,9 +7,9 @@
  * http://www.libpng.org/pub/png/src/libpng-LICENSE.txt
  */
 #ifdef APPLE
-    #include <SDL2/SDL_video.h>
+#include <SDL2/SDL_video.h>
 #else
-    #include <SDL_video.h>
+#include <SDL_video.h>
 #endif
 /*
  * Save an SDL_Surface as a PNG file.
@@ -22,7 +22,7 @@
 
 /*
  * Save an SDL_Surface as a PNG file, using writable RWops.
- * 
+ *
  * surface - the SDL_Surface structure containing the image to be saved
  * dst - a data stream to save to
  * freedst - non-zero to close the stream after being written

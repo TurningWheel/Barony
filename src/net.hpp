@@ -54,8 +54,7 @@ const Uint32 SV_FLAG_MINOTAURS = 4;
 const Uint32 SV_FLAG_HUNGER  = 8;
 const Uint32 SV_FLAG_TRAPS = 16;
 
-class SteamPacketWrapper
-{
+class SteamPacketWrapper {
 	Uint8 *_data;
 	int _len;
 	//TODO: Encapsulate CSteam ID?
@@ -67,8 +66,7 @@ public:
 	int& len();
 };
 
-class NetHandler
-{
+class NetHandler {
 	SDL_Thread* steam_packet_thread;
 	bool continue_multithreading_steam_packets;
 

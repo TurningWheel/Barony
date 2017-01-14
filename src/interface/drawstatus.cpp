@@ -37,7 +37,7 @@ void handleDamageIndicators() {
 	for( node=damageIndicators.first; node!=NULL; node=nextnode ) {
 		nextnode = node->next;
 		damageIndicator_t *damageIndicator = (damageIndicator_t *)node->element;
-		
+
 		double tangent = atan2( damageIndicator->y/16-camera.y, damageIndicator->x/16-camera.x );
 		double angle = tangent - camera.ang;
 		angle += 3*PI/2;
@@ -80,13 +80,13 @@ void handleDamageIndicatorTicks() {
 
 damageIndicator_t *newDamageIndicator(double x, double y) {
 	damageIndicator_t *damageIndicator;
-	
+
 	// allocate memory for the indicator
 	if( (damageIndicator = (damageIndicator_t *) malloc(sizeof(damageIndicator_t)))==NULL ) {
 		printlog( "failed to allocate memory for new damage indicator!\n" );
 		exit(1);
 	}
-	
+
 	// add the indicator to the list of indicators
 	damageIndicator->node = list_AddNodeLast(&damageIndicators);
 	damageIndicator->node->element = damageIndicator;
@@ -97,7 +97,7 @@ damageIndicator_t *newDamageIndicator(double x, double y) {
 	damageIndicator->y = y;
 	damageIndicator->alpha = 1.f;
 	damageIndicator->ticks = 120; // two seconds
-	
+
 	return damageIndicator;
 }
 
@@ -109,28 +109,23 @@ damageIndicator_t *newDamageIndicator(double x, double y) {
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint32 maxhp)
-{
+void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint32 maxhp) {
 	int player = -1;
 	int c;
 
 	if (!source || !target)
 		return;
 
-	for (c = 0; c < MAXPLAYERS; c++)
-	{
-		if (source == players[c]->entity)
-		{
+	for (c = 0; c < MAXPLAYERS; c++) {
+		if (source == players[c]->entity) {
 			player = c;
 			break;
 		}
 	}
 
 	int playertarget=-1;
-	for (c = 0; c < MAXPLAYERS; c++)
-	{
-		if (target == players[c]->entity)
-		{
+	for (c = 0; c < MAXPLAYERS; c++) {
+		if (target == players[c]->entity) {
 			playertarget = c;
 			break;
 		}
@@ -194,13 +189,16 @@ void drawStatus() {
 	initial_position.y = pos.y;
 	initial_position.w = 0;
 	initial_position.h = 0;
-	pos.w=0; pos.h=0;
+	pos.w=0;
+	pos.h=0;
 	drawImage(status_bmp, NULL, &pos);
-	
+
 	// hunger icon
 	if( stats[clientnum]->HUNGER <= 250 && (ticks%50)-(ticks%25) ) {
-		pos.x=128; pos.y=yres-160;
-		pos.w=64; pos.h=64;
+		pos.x=128;
+		pos.y=yres-160;
+		pos.w=64;
+		pos.h=64;
 		drawImageScaled(hunger_bmp, NULL, &pos);
 	}
 
@@ -229,9 +227,10 @@ void drawStatus() {
 		int y = yres-221+16-TTF12_HEIGHT/2+2;
 		ttfPrintText(ttf12, x, y, enemy_name );
 	}
-	
+
 	// messages
-	x=xres/2-(status_bmp->w/2)+24; y=yres;
+	x=xres/2-(status_bmp->w/2)+24;
+	y=yres;
 	textscroll=std::max(std::min<Uint32>(list_Size(&messages)-3,textscroll),0u);
 	c=0;
 	for( node=messages.last; node!=NULL; node=node->prev ) {
@@ -272,8 +271,7 @@ void drawStatus() {
 				textscroll++;
 				mousestatus[SDL_BUTTON_LEFT]=0;
 			}
-		}
-		else if( omousey>=yres-status_bmp->h+34 && omousey<yres-status_bmp->h+34+28 ) {
+		} else if( omousey>=yres-status_bmp->h+34 && omousey<yres-status_bmp->h+34+28 ) {
 			if( omousex>=xres/2-status_bmp->w/2+618 && omousex<xres/2-status_bmp->w/2+618+11 ) {
 				// text scroll down
 				buttonclick=12;
@@ -282,8 +280,7 @@ void drawStatus() {
 					textscroll=0;
 				mousestatus[SDL_BUTTON_LEFT]=0;
 			}
-		}
-		else if( omousey>=yres-status_bmp->h+62 && omousey<yres-status_bmp->h+62+31 ) {
+		} else if( omousey>=yres-status_bmp->h+62 && omousey<yres-status_bmp->h+62+31 ) {
 			if( omousex>=xres/2-status_bmp->w/2+618 && omousex<xres/2-status_bmp->w/2+618+11 ) {
 				// text scroll down all the way
 				buttonclick=4;
@@ -318,22 +315,28 @@ void drawStatus() {
 
 	//Text scroll up button.
 	if( buttonclick==3 ) {
-		pos.x=xres/2-status_bmp->w/2+617; pos.y=yres-status_bmp->h+7;
-		pos.w=11; pos.h=27;
+		pos.x=xres/2-status_bmp->w/2+617;
+		pos.y=yres-status_bmp->h+7;
+		pos.w=11;
+		pos.h=27;
 		drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
 		//drawImage(textup_bmp, NULL, &pos);
 	}
 	//Text scroll down all the way button.
 	if( buttonclick==4 ) {
-		pos.x=xres/2-status_bmp->w/2+617; pos.y=yres-status_bmp->h+62;
-		pos.w=11; pos.h=31;
+		pos.x=xres/2-status_bmp->w/2+617;
+		pos.y=yres-status_bmp->h+62;
+		pos.w=11;
+		pos.h=31;
 		drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
 		//drawImage(textdown_bmp, NULL, &pos);
 	}
 	//Text scroll down button.
 	if( buttonclick==12 ) {
-		pos.x=xres/2-status_bmp->w/2+617; pos.y=yres-status_bmp->h+34;
-		pos.w=11; pos.h=28;
+		pos.x=xres/2-status_bmp->w/2+617;
+		pos.y=yres-status_bmp->h+34;
+		pos.w=11;
+		pos.h=28;
 		drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
 		//drawImage(textup_bmp, NULL, &pos);
 	}
@@ -344,7 +347,7 @@ void drawStatus() {
 		drawRect(&pos,SDL_MapRGB(mainsurface->format,255,255,255),80);
 		//drawImage(textdown_bmp, NULL, &pos);
 	}*/
-	
+
 	// health
 	pos.x = 76;
 	pos.w = 38;
@@ -386,7 +389,7 @@ void drawStatus() {
 	}
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
 	printTextFormatted(font12x12_bmp, 96-strlen(tempstr)*6, yres-16-64-6, tempstr );
-		
+
 	// magic
 	pos.x = 12;
 	pos.w = 39;
@@ -417,12 +420,9 @@ void drawStatus() {
 	pos.y = initial_position.y - hotbar_img->h;
 	for (num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w) {
 		Uint32 color;
-		if ( current_hotbar == num && !openedChest[clientnum] )
-		{
+		if ( current_hotbar == num && !openedChest[clientnum] ) {
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255); //Draw gold border around currently selected hotbar.
-		}
-		else
-		{
+		} else {
 			color = SDL_MapRGBA(mainsurface->format, 255, 255, 255, 60); //Draw normal grey border.
 		}
 		drawImageColor(hotbar_img, NULL, &pos, color);
@@ -541,7 +541,8 @@ void drawStatus() {
 				if (mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h)) {
 					//Tooltip
 					SDL_Rect src;
-					src.x = mousex+16; src.y = mousey+8;
+					src.x = mousex+16;
+					src.y = mousey+8;
 					if (itemCategory(item) == SPELL_CAT) {
 						spell_t *spell = getSpellFromItem(item);
 						if (spell) {
@@ -655,14 +656,11 @@ void drawStatus() {
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.
-		if ((mousexrel || mouseyrel) && !shootmode)
-		{
+		if ((mousexrel || mouseyrel) && !shootmode) {
 			pos.x = initial_position.x;
 			pos.y = initial_position.y - hotbar_img->h;
-			for (c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w)
-			{
-				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
-				{
+			for (c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w) {
+				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h)) {
 					selectHotbarSlot(c);
 				}
 			}
@@ -670,29 +668,25 @@ void drawStatus() {
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active)
-		{
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active) {
 			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active)
-		{
+		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active) {
 			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active)
-		{
+		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active) {
 			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
 			pos.y = initial_position.y - (hotbar_img->h / 2);
 			SDL_WarpMouseInWindow(screen, pos.x, pos.y);
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) ) {
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open  && !identifygui_active )
-			{
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open  && !identifygui_active ) {
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
 				item = uidToItem(hotbar[current_hotbar].item);

@@ -37,8 +37,7 @@
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
-void* cpp_SteamMatchmaking_GetLobbyOwner(void *steamIDLobby)
-{
+void* cpp_SteamMatchmaking_GetLobbyOwner(void *steamIDLobby) {
 	CSteamID *id = new CSteamID();
 	*id = SteamMatchmaking()->GetLobbyOwner(*static_cast<CSteamID*>(steamIDLobby));
 	return id; //Still don't like this method.
@@ -162,20 +161,20 @@ void buttonCloseSettingsSubwindow(button_t* my);
 
 button_t* getSettingsTabButton() {
 	switch ( settings_tab ) {
-		case SETTINGS_VIDEO_TAB:
-			return button_video_tab;
-		case SETTINGS_AUDIO_TAB:
-			return button_audio_tab;
-		case SETTINGS_KEYBOARD_TAB:
-			return button_keyboard_tab;
-		case SETTINGS_MOUSE_TAB:
-			return button_mouse_tab;
-		case SETTINGS_GAMEPAD_BINDINGS_TAB:
-			return button_gamepad_bindings_tab;
-		case SETTINGS_GAMEPAD_SETTINGS_TAB:
-			return button_gamepad_settings_tab;
-		case SETTINGS_MISC_TAB:
-			return button_misc_tab;
+	case SETTINGS_VIDEO_TAB:
+		return button_video_tab;
+	case SETTINGS_AUDIO_TAB:
+		return button_audio_tab;
+	case SETTINGS_KEYBOARD_TAB:
+		return button_keyboard_tab;
+	case SETTINGS_MOUSE_TAB:
+		return button_mouse_tab;
+	case SETTINGS_GAMEPAD_BINDINGS_TAB:
+		return button_gamepad_bindings_tab;
+	case SETTINGS_GAMEPAD_SETTINGS_TAB:
+		return button_gamepad_settings_tab;
+	case SETTINGS_MISC_TAB:
+		return button_misc_tab;
 	}
 
 	return nullptr;
@@ -206,11 +205,9 @@ void changeSettingsTab(int option) {
 
 void navigateMainMenuItems(bool mode) {
 	int warpx, warpy;
-	if (menuselect == 0)
-	{
+	if (menuselect == 0) {
 		//No menu item selected.
-		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-		{
+		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 			keystatus[SDL_SCANCODE_UP] = 0;
 			*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 			draw_cursor = false;
@@ -219,9 +216,7 @@ void navigateMainMenuItems(bool mode) {
 			warpx = 50 + 18;
 			warpy = (yres / 4) + 80 + (18 / 2); //I am a wizard. I hate magic numbers.
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
-		}
-		else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-		{
+		} else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 			keystatus[SDL_SCANCODE_DOWN] = 0;
 			*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 			draw_cursor = false;
@@ -230,17 +225,13 @@ void navigateMainMenuItems(bool mode) {
 			warpy = (yres / 4) + 80 + (18 / 2);
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
 		}
-	}
-	else
-	{
-		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-		{
+	} else {
+		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 			keystatus[SDL_SCANCODE_UP] = 0;
 			*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 			draw_cursor = false;
 			menuselect--;
-			if (menuselect == 0)
-			{
+			if (menuselect == 0) {
 				if (mode) {
 					menuselect = 6;
 				} else {
@@ -251,20 +242,15 @@ void navigateMainMenuItems(bool mode) {
 			warpx = 50 + 18;
 			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
-		}
-		else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-		{
+		} else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 			keystatus[SDL_SCANCODE_DOWN] = 0;
 			*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 			draw_cursor = false;
 			menuselect++;
-			if (mode)
-			{
+			if (mode) {
 				if (menuselect > 6)
 					menuselect = 1;
-			}
-			else
-			{
+			} else {
 				if (menuselect > 4 +( multiplayer != CLIENT))
 					menuselect = 1;
 			}
@@ -297,13 +283,17 @@ void handleMainMenu(bool mode) {
 	FILE *fp;
 	//SDL_Surface *sky_bmp;
 	button_t *button;
-	
+
 	if( !movie ) {
 		// title pic
-		src.x = 0; src.y = 0;
-		src.w = title_bmp->w; src.h = title_bmp->h;
-		dest.x = 20; dest.y = 20;
-		dest.w = xres; dest.h = yres;
+		src.x = 0;
+		src.y = 0;
+		src.w = title_bmp->w;
+		src.h = title_bmp->h;
+		dest.x = 20;
+		dest.y = 20;
+		dest.w = xres;
+		dest.h = yres;
 		if( mode || introstage!=5 ) {
 			drawImage(title_bmp, &src, &dest);
 		}
@@ -311,7 +301,7 @@ void handleMainMenu(bool mode) {
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format,255,255,0,255);
 			ttfPrintTextColor(ttf16,176,20+title_bmp->h-24,colorYellow,TRUE,language[1910+subtitleCurrent]);
 		}
-		
+
 		// print game version
 		if( mode || introstage!=5 ) {
 			char version[64];
@@ -358,8 +348,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		// navigate with arrow keys
-		if (!subwindow)
-		{
+		if (!subwindow) {
 			navigateMainMenuItems(mode);
 		}
 
@@ -389,13 +378,12 @@ void handleMainMenu(bool mode) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1303])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
 				menuselect = 1;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-				{
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
 					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 					playSound(139,64);
-					
+
 					// look for a save game
 					if( saveGameExists() ) {
 						openLoadGameWindow(NULL);
@@ -410,8 +398,7 @@ void handleMainMenu(bool mode) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1304])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
 				menuselect = 2;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1304]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-				{
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
 					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
@@ -429,13 +416,12 @@ void handleMainMenu(bool mode) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1305])*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
 				menuselect = 3;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, language[1305]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-				{
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
 					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 					playSound(139,64);
-					
+
 					// create statistics window
 					clientnum=0;
 					subwindow = 1;
@@ -450,30 +436,36 @@ void handleMainMenu(bool mode) {
 					// close button
 					button = newButton();
 					strcpy(button->label,"x");
-					button->x=subx2-20; button->y=suby1;
-					button->sizex=20; button->sizey=20;
+					button->x=subx2-20;
+					button->y=suby1;
+					button->sizex=20;
+					button->sizey=20;
 					button->action=&buttonCloseSubwindow;
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-					
+
 					// next button
 					button = newButton();
 					strcpy(button->label,">");
-					button->sizex=strlen(">")*12+8; button->sizey=20;
-					button->x=subx2-button->sizex-4; button->y=suby2-24;
+					button->sizex=strlen(">")*12+8;
+					button->sizey=20;
+					button->x=subx2-button->sizex-4;
+					button->y=suby2-24;
 					button->action=&buttonScoreNext;
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_RIGHT;
 					button->joykey = joyimpulses[INJOY_DPAD_RIGHT];
-					
+
 					// previous button
 					button = newButton();
 					strcpy(button->label,"<");
-					button->sizex=strlen("<")*12+8; button->sizey=20;
-					button->x=subx1+4; button->y=suby2-24;
+					button->sizex=strlen("<")*12+8;
+					button->sizey=20;
+					button->x=subx1+4;
+					button->y=suby2-24;
 					button->action=&buttonScorePrev;
 					button->visible=1;
 					button->focused=1;
@@ -487,8 +479,7 @@ void handleMainMenu(bool mode) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
 				menuselect = 4;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1306]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-				{
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
 					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
@@ -502,8 +493,7 @@ void handleMainMenu(bool mode) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1307])*18 && omousey >= yres/4+176 && omousey < yres/4+176+18) || (menuselect==5)) && subwindow==0 && introstage==1 ) {
 				menuselect = 5;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+176, colorGray, language[1307]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-				{
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
 					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
@@ -518,13 +508,12 @@ void handleMainMenu(bool mode) {
 			if( ((omousex >= 50 && omousex < 50+strlen(language[1308])*18 && omousey >= yres/4+200 && omousey < yres/4+200+18) || (menuselect==6)) && subwindow==0 && introstage==1 ) {
 				menuselect = 6;
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+200, colorGray, language[1308]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-				{
+				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
 					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 					playSound(139, 64);
-					
+
 					// create confirmation window
 					subwindow = 1;
 					subx1 = xres/2-128;
@@ -536,30 +525,36 @@ void handleMainMenu(bool mode) {
 					// close button
 					button = newButton();
 					strcpy(button->label,"x");
-					button->x=subx2-20; button->y=suby1;
-					button->sizex=20; button->sizey=20;
+					button->x=subx2-20;
+					button->y=suby1;
+					button->sizex=20;
+					button->sizey=20;
 					button->action=&buttonCloseSubwindow;
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-					
+
 					// yes button
 					button = newButton();
 					strcpy(button->label,language[1314]);
-					button->x=subx1+8; button->y=suby2-28;
-					button->sizex=strlen(language[1314])*12+8; button->sizey=20;
+					button->x=subx1+8;
+					button->y=suby2-28;
+					button->sizex=strlen(language[1314])*12+8;
+					button->sizey=20;
 					button->action=&buttonQuitConfirm;
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_RETURN;
 					button->joykey = joyimpulses[INJOY_MENU_NEXT];
-					
+
 					// no button
 					button = newButton();
 					strcpy(button->label,language[1315]);
-					button->x=subx2-strlen(language[1315])*12-16; button->y=suby2-28;
-					button->sizex=strlen(language[1315])*12+8; button->sizey=20;
+					button->x=subx2-strlen(language[1315])*12-16;
+					button->y=suby2-28;
+					button->sizex=strlen(language[1315])*12+8;
+					button->sizey=20;
 					button->action=&buttonCloseSubwindow;
 					button->visible=1;
 					button->focused=1;
@@ -572,8 +567,7 @@ void handleMainMenu(bool mode) {
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1309])*18 && omousey >= yres/4+80 && omousey < yres/4+80+18) || (menuselect==1)) && subwindow==0 && introstage==1 ) {
 					menuselect = 1;
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1309]);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-					{
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
@@ -586,8 +580,7 @@ void handleMainMenu(bool mode) {
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1306])*18 && omousey >= yres/4+104 && omousey < yres/4+104+18) || (menuselect==2)) && subwindow==0 && introstage==1 ) {
 					menuselect = 2;
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+104, colorGray, language[1306]);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-					{
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
@@ -605,13 +598,12 @@ void handleMainMenu(bool mode) {
 				if( ((omousex >= 50 && omousex < 50+strlen(endgameText)*18 && omousey >= yres/4+128 && omousey < yres/4+128+18) || (menuselect==3)) && subwindow==0 && introstage==1 ) {
 					menuselect = 3;
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+128, colorGray, endgameText);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-					{
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 						playSound(139,64);
-						
+
 						// create confirmation window
 						subwindow = 1;
 						subx1 = xres/2-140;
@@ -623,8 +615,10 @@ void handleMainMenu(bool mode) {
 						// close button
 						button = newButton();
 						strcpy(button->label,"x");
-						button->x=subx2-20; button->y=suby1;
-						button->sizex=20; button->sizey=20;
+						button->x=subx2-20;
+						button->y=suby1;
+						button->sizex=20;
+						button->sizey=20;
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
@@ -634,8 +628,10 @@ void handleMainMenu(bool mode) {
 						// yes button
 						button = newButton();
 						strcpy(button->label,language[1314]);
-						button->x=subx1+8; button->y=suby2-28;
-						button->sizex=strlen(language[1314])*12+8; button->sizey=20;
+						button->x=subx1+8;
+						button->y=suby2-28;
+						button->sizex=strlen(language[1314])*12+8;
+						button->sizey=20;
 						button->action=&buttonEndGameConfirm;
 						button->visible=1;
 						button->focused=1;
@@ -645,8 +641,10 @@ void handleMainMenu(bool mode) {
 						// no button
 						button = newButton();
 						strcpy(button->label,language[1315]);
-						button->x=subx2-strlen(language[1315])*12-16; button->y=suby2-28;
-						button->sizex=strlen(language[1315])*12+8; button->sizey=20;
+						button->x=subx2-strlen(language[1315])*12-16;
+						button->y=suby2-28;
+						button->sizex=strlen(language[1315])*12+8;
+						button->sizey=20;
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
@@ -658,13 +656,12 @@ void handleMainMenu(bool mode) {
 					if( ((omousex >= 50 && omousex < 50+strlen(language[1312])*18 && omousey >= yres/4+152 && omousey < yres/4+152+18) || (menuselect==4)) && subwindow==0 && introstage==1 ) {
 						menuselect = 4;
 						ttfPrintTextFormattedColor(ttf16, 50, yres/4+152, colorGray, language[1312]);
-						if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-						{
+						if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							keystatus[SDL_SCANCODE_RETURN] = 0;
 							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 							playSound(139,64);
-						
+
 							// create confirmation window
 							subwindow = 1;
 							subx1 = xres/2-164;
@@ -676,19 +673,23 @@ void handleMainMenu(bool mode) {
 							// close button
 							button = newButton();
 							strcpy(button->label,"x");
-							button->x=subx2-20; button->y=suby1;
-							button->sizex=20; button->sizey=20;
+							button->x=subx2-20;
+							button->y=suby1;
+							button->sizex=20;
+							button->sizey=20;
 							button->action=&buttonCloseSubwindow;
 							button->visible=1;
 							button->focused=1;
 							button->key=SDL_SCANCODE_ESCAPE;
 							button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-						
+
 							// yes button
 							button = newButton();
 							strcpy(button->label,language[1314]);
-							button->x=subx1+8; button->y=suby2-28;
-							button->sizex=strlen(language[1314])*12+8; button->sizey=20;
+							button->x=subx1+8;
+							button->y=suby2-28;
+							button->sizex=strlen(language[1314])*12+8;
+							button->sizey=20;
 							if( multiplayer==SINGLE )
 								button->action=&buttonStartSingleplayer;
 							else
@@ -697,12 +698,14 @@ void handleMainMenu(bool mode) {
 							button->focused=1;
 							button->key=SDL_SCANCODE_RETURN;
 							button->joykey = joyimpulses[INJOY_MENU_NEXT];
-						
+
 							// no button
 							button = newButton();
 							strcpy(button->label,language[1315]);
-							button->x=subx2-strlen(language[1315])*12-16; button->y=suby2-28;
-							button->sizex=strlen(language[1315])*12+8; button->sizey=20;
+							button->x=subx2-strlen(language[1315])*12-16;
+							button->y=suby2-28;
+							button->sizex=strlen(language[1315])*12+8;
+							button->sizey=20;
 							button->action=&buttonCloseSubwindow;
 							button->visible=1;
 							button->focused=1;
@@ -714,8 +717,7 @@ void handleMainMenu(bool mode) {
 				if( ((omousex >= 50 && omousex < 50+strlen(language[1313])*18 && omousey >= yres/4+152+24*(multiplayer!=CLIENT) && omousey < yres/4+152+18+24*(multiplayer!=CLIENT)) || (menuselect==4+(multiplayer!=CLIENT))) && subwindow==0 && introstage==1 ) {
 					menuselect = 4 + (multiplayer != CLIENT);
 					ttfPrintTextFormattedColor(ttf16, 50, yres/4+152+24*(multiplayer!=CLIENT), colorGray, language[1313]);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
-					{
+					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT])) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
@@ -732,8 +734,10 @@ void handleMainMenu(bool mode) {
 						// yes button
 						button = newButton();
 						strcpy(button->label,language[1314]);
-						button->x=subx1+8; button->y=suby2-28;
-						button->sizex=strlen(language[1314])*12+8; button->sizey=20;
+						button->x=subx1+8;
+						button->y=suby2-28;
+						button->sizex=strlen(language[1314])*12+8;
+						button->sizey=20;
 						button->action=&buttonQuitConfirm;
 						button->visible=1;
 						button->focused=1;
@@ -743,8 +747,10 @@ void handleMainMenu(bool mode) {
 						// no button
 						button = newButton();
 						strcpy(button->label,language[1315]);
-						button->sizex=strlen(language[1315])*12+8; button->sizey=20;
-						button->x=subx1+(subx2-subx1)/2-button->sizex/2; button->y=suby2-28;
+						button->sizex=strlen(language[1315])*12+8;
+						button->sizey=20;
+						button->x=subx1+(subx2-subx1)/2-button->sizex/2;
+						button->y=suby2-28;
 						button->action=&buttonQuitNoSaveConfirm;
 						button->visible=1;
 						button->focused=1;
@@ -752,8 +758,10 @@ void handleMainMenu(bool mode) {
 						// cancel button
 						button = newButton();
 						strcpy(button->label,language[1316]);
-						button->x=subx2-strlen(language[1316])*12-16; button->y=suby2-28;
-						button->sizex=strlen(language[1316])*12+8; button->sizey=20;
+						button->x=subx2-strlen(language[1316])*12-16;
+						button->y=suby2-28;
+						button->sizex=strlen(language[1316])*12+8;
+						button->sizey=20;
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
@@ -761,8 +769,10 @@ void handleMainMenu(bool mode) {
 						// close button
 						button = newButton();
 						strcpy(button->label,"x");
-						button->x=subx2-20; button->y=suby1;
-						button->sizex=20; button->sizey=20;
+						button->x=subx2-20;
+						button->y=suby1;
+						button->sizex=20;
+						button->sizey=20;
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
@@ -775,7 +785,7 @@ void handleMainMenu(bool mode) {
 			}
 		}
 
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		if ( intro ) {
 			// lobby list request succeeded
 			if ( !requestingLobbies && !strcmp(subtext,language[1132]) ) {
@@ -813,7 +823,7 @@ void handleMainMenu(bool mode) {
 				buttonJoinLobby(NULL);
 			}
 		}
-		#endif
+#endif
 
 		//Confirm Resolution Change Window
 		if ( confirmResolutionWindow ) {
@@ -843,14 +853,13 @@ void handleMainMenu(bool mode) {
 		// process button actions
 		handleButtons();
 	}
-	
+
 	// character creation screen
 	if( charcreation_step >= 1 && charcreation_step < 6 ) {
 		ttfPrintText(ttf16, subx1+8, suby1+8, language[1318]);
-	
+
 		// draw character window
-		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
-		{
+		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr) {
 			camera_charsheet.x=players[clientnum]->entity->x/16.0+1;
 			camera_charsheet.y=players[clientnum]->entity->y/16.0-.5;
 			camera_charsheet.z=players[clientnum]->entity->z*2;
@@ -860,8 +869,10 @@ void handleMainMenu(bool mode) {
 			camera_charsheet.winy=suby1+32;
 			camera_charsheet.winh=suby2-96-camera_charsheet.winy;
 			camera_charsheet.winx=subx2-camera_charsheet.winw-32;
-			pos.x = camera_charsheet.winx; pos.y = camera_charsheet.winy;
-			pos.w = camera_charsheet.winw; pos.h = camera_charsheet.winh;
+			pos.x = camera_charsheet.winx;
+			pos.y = camera_charsheet.winy;
+			pos.w = camera_charsheet.winw;
+			pos.h = camera_charsheet.winh;
 			drawRect(&pos,0,255);
 			b=players[clientnum]->entity->flags[BRIGHT];
 			players[clientnum]->entity->flags[BRIGHT]=TRUE;
@@ -900,12 +911,12 @@ void handleMainMenu(bool mode) {
 			if( stats[0]->sex==0 ) {
 				ttfPrintTextFormatted(ttf16, subx1+32, suby1+56, "[o] %s", language[1321]);
 				ttfPrintTextFormatted(ttf16, subx1+32, suby1+72, "[ ] %s", language[1322]);
-			
+
 				ttfPrintTextFormatted(ttf12, subx1+8, suby2-80, language[1320], language[1321]);
 			} else {
 				ttfPrintTextFormatted(ttf16, subx1+32, suby1+56, "[ ] %s", language[1321]);
 				ttfPrintTextFormatted(ttf16, subx1+32, suby1+72, "[o] %s", language[1322]);
-			
+
 				ttfPrintTextFormatted(ttf12, subx1+8, suby2-80, language[1320], language[1322]);
 			}
 			if( mousestatus[SDL_BUTTON_LEFT] ) {
@@ -913,22 +924,19 @@ void handleMainMenu(bool mode) {
 					if( omousey >= suby1+56 && omousey < suby1+72 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = MALE;
-					}
-					else if( omousey >= suby1+72 && omousey < suby1+88 ) {
+					} else if( omousey >= suby1+72 && omousey < suby1+88 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						stats[0]->sex = FEMALE;
 					}
 				}
 			}
-			if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-			{
+			if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 				keystatus[SDL_SCANCODE_UP] = 0;
 				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 				draw_cursor = false;
 				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
-			if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-			{
+			if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 				keystatus[SDL_SCANCODE_DOWN] = 0;
 				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 				draw_cursor = false;
@@ -958,8 +966,7 @@ void handleMainMenu(bool mode) {
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-				{
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					draw_cursor = false;
@@ -971,8 +978,7 @@ void handleMainMenu(bool mode) {
 					stats[0]->clearStats();
 					initClass(0);
 				}
-				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-				{
+				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					draw_cursor = false;
@@ -1008,8 +1014,7 @@ void handleMainMenu(bool mode) {
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-				{
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					draw_cursor = false;
@@ -1017,8 +1022,7 @@ void handleMainMenu(bool mode) {
 					if (stats[0]->appearance >= NUMAPPEARANCES)
 						stats[0]->appearance = NUMAPPEARANCES - 1;
 				}
-				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-				{
+				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					draw_cursor = false;
@@ -1060,51 +1064,51 @@ void handleMainMenu(bool mode) {
 			ttfPrintText(ttf16, subx1+24, suby1+32, language[1327]);
 
 			int nummodes=3;
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			nummodes+=2;
-			#endif
+#endif
 
 			for( c=0; c<nummodes; c++ ) {
 				if( multiplayerselect==c ) {
 					switch( c ) {
-						case 0:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+56, "[o] %s",language[1328]);
-							ttfPrintText(ttf12, subx1+8, suby2-80, language[1329]);
-							break;
-						case 1:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+76, "[o] %s",language[1330]);
-							ttfPrintText(ttf12, subx1+8, suby2-80, language[1331]);
-							break;
-						case 2:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+96, "[o] %s",language[1332]);
-							ttfPrintText(ttf12, subx1+8, suby2-80, language[1333]);
-							break;
-						case 3:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+136, "[o] %s\n     %s",language[1330],language[1537]);
-							ttfPrintText(ttf12, subx1+8, suby2-80, language[1538]);
-							break;
-						case 4:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+176, "[o] %s\n     %s",language[1332],language[1537]);
-							ttfPrintText(ttf12, subx1+8, suby2-80, language[1539]);
-							break;
+					case 0:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+56, "[o] %s",language[1328]);
+						ttfPrintText(ttf12, subx1+8, suby2-80, language[1329]);
+						break;
+					case 1:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+76, "[o] %s",language[1330]);
+						ttfPrintText(ttf12, subx1+8, suby2-80, language[1331]);
+						break;
+					case 2:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+96, "[o] %s",language[1332]);
+						ttfPrintText(ttf12, subx1+8, suby2-80, language[1333]);
+						break;
+					case 3:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+136, "[o] %s\n     %s",language[1330],language[1537]);
+						ttfPrintText(ttf12, subx1+8, suby2-80, language[1538]);
+						break;
+					case 4:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+176, "[o] %s\n     %s",language[1332],language[1537]);
+						ttfPrintText(ttf12, subx1+8, suby2-80, language[1539]);
+						break;
 					}
 				} else {
 					switch( c ) {
-						case 0:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+56, "[ ] %s",language[1328]);
-							break;
-						case 1:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+76, "[ ] %s",language[1330]);
-							break;
-						case 2:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+96, "[ ] %s",language[1332]);
-							break;
-						case 3:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+136, "[ ] %s\n     %s",language[1330],language[1537]);
-							break;
-						case 4:
-							ttfPrintTextFormatted(ttf16, subx1+32, suby1+176, "[ ] %s\n     %s",language[1332],language[1537]);
-							break;
+					case 0:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+56, "[ ] %s",language[1328]);
+						break;
+					case 1:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+76, "[ ] %s",language[1330]);
+						break;
+					case 2:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+96, "[ ] %s",language[1332]);
+						break;
+					case 3:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+136, "[ ] %s\n     %s",language[1330],language[1537]);
+						break;
+					case 4:
+						ttfPrintTextFormatted(ttf16, subx1+32, suby1+176, "[ ] %s\n     %s",language[1332],language[1537]);
+						break;
 					}
 				}
 				if( mousestatus[SDL_BUTTON_LEFT] ) {
@@ -1122,8 +1126,7 @@ void handleMainMenu(bool mode) {
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
-				{
+				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 					keystatus[SDL_SCANCODE_UP] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					draw_cursor = false;
@@ -1131,8 +1134,7 @@ void handleMainMenu(bool mode) {
 					if (multiplayerselect < 0)
 						multiplayerselect = nummodes - 1;
 				}
-				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-				{
+				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 					keystatus[SDL_SCANCODE_DOWN] = 0;
 					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					draw_cursor = false;
@@ -1145,7 +1147,7 @@ void handleMainMenu(bool mode) {
 	}
 
 	// steam lobby browser
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	if ( subwindow && !strcmp(subtext,language[1334]) ) {
 		drawDepressed(subx1+8, suby1+24, subx2-32, suby2-64);
 		drawDepressed(subx2-32, suby1+24, subx2-8, suby2-64);
@@ -1154,7 +1156,7 @@ void handleMainMenu(bool mode) {
 		slidersize=std::min<int>(((suby2-65)-(suby1+25)),((suby2-65)-(suby1+25)) / ((double)std::max(numSteamLobbies+1,1)/20));
 		slidery=std::min(std::max(suby1+25,slidery),suby2-65-slidersize);
 		drawWindowFancy(subx2-31,slidery,subx2-9,slidery+slidersize);
-					
+
 		// directory list offset from slider
 		Sint32 y2 = ((double)(slidery-suby1-20) / ((suby2-52)-(suby1+20)))*(numSteamLobbies+1);
 		if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2-32 && omousex < subx2-8 && omousey >= suby1+24 && omousey < suby2-64 ) {
@@ -1173,7 +1175,7 @@ void handleMainMenu(bool mode) {
 		SDL_Rect flagsBox;
 		char flagsBoxText[256];
 		int hoveringSelection = -1;
-					
+
 		// select/inspect lobbies
 		if ( omousex >= subx1+8 && omousex < subx2-32 && omousey >= suby1+26 && omousey < suby2-64 ) {
 			hoveringSelection = std::min(std::max(0,y2+((omousey-suby1-24)>>4)),MAX_STEAM_LOBBIES);
@@ -1189,9 +1191,11 @@ void handleMainMenu(bool mode) {
 						numSvFlags++;
 					}
 				}
-				
-				flagsBox.x = mousex+8; flagsBox.y = mousey+8;
-				flagsBox.w = strlen(language[1335])*12+4; flagsBox.h = 16+12*std::max(2,numSvFlags+1);
+
+				flagsBox.x = mousex+8;
+				flagsBox.y = mousey+8;
+				flagsBox.w = strlen(language[1335])*12+4;
+				flagsBox.h = 16+12*std::max(2,numSvFlags+1);
 				strcpy(flagsBoxText,language[1335]);
 				strcat(flagsBoxText,"\n");
 
@@ -1216,16 +1220,19 @@ void handleMainMenu(bool mode) {
 			}
 		}
 		selectedSteamLobby = std::min(std::max(y2,selectedSteamLobby),std::min(std::max(numSteamLobbies-1,0),y2+17));
-		pos.x = subx1+10; pos.y = suby1+26+(selectedSteamLobby-y2)*16;
-		pos.w = subx2-subx1-44; pos.h = 16;
+		pos.x = subx1+10;
+		pos.y = suby1+26+(selectedSteamLobby-y2)*16;
+		pos.w = subx2-subx1-44;
+		pos.h = 16;
 		drawRect(&pos,SDL_MapRGB(mainsurface->format,64,64,64),255);
-					
+
 		// print all lobby entries
-		Sint32 x=subx1+10; Sint32 y=suby1+28;
+		Sint32 x=subx1+10;
+		Sint32 y=suby1+28;
 		if ( numSteamLobbies>0 ) {
 			Sint32 z;
 			c=std::min(numSteamLobbies,18+y2);
-			for(z=y2;z<c;z++) {
+			for(z=y2; z<c; z++) {
 				ttfPrintTextFormatted(ttf12,x,y,lobbyText[z]); // name
 				ttfPrintTextFormatted(ttf12,subx2-72,y,"%d/4",lobbyPlayers[z]); // player count
 				y+=16;
@@ -1240,7 +1247,7 @@ void handleMainMenu(bool mode) {
 			ttfPrintTextFormatted(ttf12, flagsBox.x+2, flagsBox.y+2, flagsBoxText);
 		}
 	}
-	#endif
+#endif
 
 	// settings window
 	if( settings_window==TRUE ) {
@@ -1279,7 +1286,7 @@ void handleMainMenu(bool mode) {
 					}
 				}
 			}
-			
+
 			// extra options
 			ttfPrintText(ttf12, subx1+224, suby1+60, language[1339]);
 			if( settings_smoothlighting )
@@ -1306,45 +1313,40 @@ void handleMainMenu(bool mode) {
 				ttfPrintTextFormatted(ttf12, subx1+236, suby1+204, "[x] %s", language[1345]);
 			else
 				ttfPrintTextFormatted(ttf12, subx1+236, suby1+204, "[ ] %s", language[1345]);
-				
+
 			if( mousestatus[SDL_BUTTON_LEFT] ) {
 				if( omousex >= subx1+242 && omousex < subx1+266 ) {
 					if( omousey >= suby1+84 && omousey < suby1+84+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_smoothlighting=(settings_smoothlighting==0);
-					}
-					else if( omousey >= suby1+108 && omousey < suby1+108+12 ) {
+					} else if( omousey >= suby1+108 && omousey < suby1+108+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_fullscreen=(settings_fullscreen==0);
-					}
-					else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
+					} else if( omousey >= suby1+132 && omousey < suby1+132+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_shaking=(settings_shaking==0);
-					}
-					else if( omousey >= suby1+156 && omousey < suby1+156+12 ) {
+					} else if( omousey >= suby1+156 && omousey < suby1+156+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_bobbing=(settings_bobbing==0);
-					}
-					else if( omousey >= suby1+180 && omousey < suby1+180+12 ) {
+					} else if( omousey >= suby1+180 && omousey < suby1+180+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_spawn_blood = (settings_spawn_blood == 0);
-					}
-					else if( omousey >= suby1+204 && omousey < suby1+204+12 ) {
+					} else if( omousey >= suby1+204 && omousey < suby1+204+12 ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_colorblind = (settings_colorblind==FALSE);
 					}
 				}
 			}
-			
+
 			// fov slider
 			ttfPrintText(ttf12, subx1+24, suby2-128, language[1346]);
 			doSlider(subx1+24,suby2-104,14,40,100,1,(int *)(&settings_fov));
-			
+
 			// gamma slider
 			ttfPrintText(ttf12, subx1+24, suby2-80, language[1347]);
 			doSliderF(subx1+24,suby2-56,14,0.25,2.f,0.25,&settings_gamma);
 		}
-		
+
 		// audio tab
 		if( settings_tab==SETTINGS_AUDIO_TAB ) {
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1348]);
@@ -1352,7 +1354,7 @@ void handleMainMenu(bool mode) {
 			ttfPrintText(ttf12, subx1+24, suby1+108, language[1349]);
 			doSlider(subx1+24,suby1+132,15,0,128,0,&settings_musvolume);
 		}
-		
+
 		// keyboard tab
 		if( settings_tab==SETTINGS_KEYBOARD_TAB ) {
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1350]);
@@ -1382,7 +1384,7 @@ void handleMainMenu(bool mode) {
 				else
 					ttfPrintText(ttf12, subx1+256, suby1+84+c*16, "...");
 			}
-			
+
 			if( rebindkey != -1 && lastkeypressed ) {
 				if( lastkeypressed == SDL_SCANCODE_ESCAPE ) {
 					keystatus[SDL_SCANCODE_ESCAPE] = 0;
@@ -1396,12 +1398,12 @@ void handleMainMenu(bool mode) {
 				}
 			}
 		}
-		
+
 		// mouse tab
 		if( settings_tab==SETTINGS_MOUSE_TAB ) {
 			ttfPrintText(ttf12, subx1+24, suby1+60, language[1365]);
 			doSliderF(subx1+24,suby1+84,11,0,128,1,&settings_mousespeed);
-			
+
 			// checkboxes
 			if( settings_reversemouse )
 				ttfPrintTextFormatted(ttf12, subx1+24, suby1+108, "[x] %s", language[1366]);
@@ -1426,8 +1428,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		//Gamepad tab
-		if (settings_tab == SETTINGS_GAMEPAD_BINDINGS_TAB)
-		{
+		if (settings_tab == SETTINGS_GAMEPAD_BINDINGS_TAB) {
 			ttfPrintText(ttf8, subx1 + 24, suby1 + 60, language[1350]);
 
 			bool rebindingaction = false;
@@ -1435,15 +1436,11 @@ void handleMainMenu(bool mode) {
 				rebindingaction = true;
 
 			int c;
-			for (c = 0; c < NUM_JOY_IMPULSES; ++c)
-			{
+			for (c = 0; c < NUM_JOY_IMPULSES; ++c) {
 				ttfPrintText(ttf8, subx1 + 24, suby1 + 84 + 12*c, language[1948 + c]);
-				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction)
-				{
-					if (omousex >= subx1 + 24 && omousex < subx2 - 24)
-					{
-						if (omousey >= suby1 + 84 + c*12 && omousey < suby1 + 96 + c*12)
-						{
+				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction) {
+					if (omousex >= subx1 + 24 && omousex < subx2 - 24) {
+						if (omousey >= suby1 + 84 + c*12 && omousey < suby1 + 96 + c*12) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							lastkeypressed = 0;
 							rebindingaction = true;
@@ -1458,17 +1455,13 @@ void handleMainMenu(bool mode) {
 					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c*12, "...");
 			}
 
-			if (rebindaction != -1 && lastkeypressed)
-			{
+			if (rebindaction != -1 && lastkeypressed) {
 
-				if (lastkeypressed >= 299) /* Is a joybutton. */
-				{
+				if (lastkeypressed >= 299) { /* Is a joybutton. */
 					settings_joyimpulses[rebindaction] = lastkeypressed;
 					*inputPressed(lastkeypressed) = 0; //To prevent bugs where the button will still be treated as pressed after assigning it, potentially doing wonky things.
 					rebindaction = -1;
-				}
-				else
-				{
+				} else {
 					if (lastkeypressed == SDL_SCANCODE_ESCAPE)
 						keystatus[SDL_SCANCODE_ESCAPE] = 0;
 					lastkeypressed = 0;
@@ -1478,8 +1471,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		//General gamepad settings
-		if (settings_tab == SETTINGS_GAMEPAD_SETTINGS_TAB)
-		{
+		if (settings_tab == SETTINGS_GAMEPAD_SETTINGS_TAB) {
 			int current_option_x = subx1 + 24;
 			int current_option_y = suby1 + 60;
 
@@ -1489,8 +1481,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1981]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
-			{
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT)) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_leftx_invert = !settings_gamepad_leftx_invert;
 			}
@@ -1502,8 +1493,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1982]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
-			{
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT)) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_lefty_invert = !settings_gamepad_lefty_invert;
 			}
@@ -1515,8 +1505,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1983]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
-			{
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT)) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_rightx_invert = !settings_gamepad_rightx_invert;
 			}
@@ -1528,8 +1517,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1984]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
-			{
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT)) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_righty_invert = !settings_gamepad_righty_invert;
 			}
@@ -1541,8 +1529,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1985]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
-			{
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT)) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menux_invert = !settings_gamepad_menux_invert;
 			}
@@ -1554,8 +1541,7 @@ void handleMainMenu(bool mode) {
 			else
 				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1986]);
 
-			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
-			{
+			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT)) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				settings_gamepad_menuy_invert = !settings_gamepad_menuy_invert;
 			}
@@ -1590,8 +1576,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		// miscellaneous options
-		if (settings_tab == SETTINGS_MISC_TAB)
-		{
+		if (settings_tab == SETTINGS_MISC_TAB) {
 			int current_x = subx1;
 			int current_y = suby1 + 60;
 
@@ -1637,97 +1622,72 @@ void handleMainMenu(bool mode) {
 
 			int server_flags_start_y = current_y;
 			int i;
-			for( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 )
-			{
-				if( svFlags&power(2, i) )
-				{
+			for( i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16 ) {
+				if( svFlags&power(2, i) ) {
 					ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[x] %s", language[153+i]);
-				}
-				else
-				{
+				} else {
 					ttfPrintTextFormatted(ttf12, subx1+36, current_y, "[ ] %s", language[153+i]);
 				}
-				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12)) //So many gosh dang magic numbers ._.
-				{
-					if (strlen(language[1942 + i]) > 0) //Don't bother drawing a tooltip if the file doesn't say anything.
-					{
+				if (mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12)) { //So many gosh dang magic numbers ._.
+					if (strlen(language[1942 + i]) > 0) { //Don't bother drawing a tooltip if the file doesn't say anything.
 						hovering_selection = i;
-						tooltip_box.x = omousex + 16; tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
+						tooltip_box.x = omousex + 16;
+						tooltip_box.y = omousey + 8; //I hate magic numbers :|. These should probably be replaced with omousex + mousecursorsprite->width, omousey + mousecursorsprite->height, respectively.
 						tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 						tooltip_box.h = TTF12_HEIGHT + 8;
 					}
 				}
 			}
 
-			if (hovering_selection > -1)
-			{
+			if (hovering_selection > -1) {
 				drawTooltip(&tooltip_box);
-				if (hovering_selection < NUM_SERVER_FLAGS)
-				{
+				if (hovering_selection < NUM_SERVER_FLAGS) {
 					ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
 				}
 			}
 
 			current_y = options_start_y;
 
-			if( mousestatus[SDL_BUTTON_LEFT] )
-			{
-				if( omousex >= subx1+42 && omousex < subx1+66 )
-				{
-					if (omousey >= current_y && omousey < current_y + 12)
-					{
+			if( mousestatus[SDL_BUTTON_LEFT] ) {
+				if( omousex >= subx1+42 && omousex < subx1+66 ) {
+					if (omousey >= current_y && omousey < current_y + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_broadcast = (settings_broadcast == false);
-					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
-					{
+					} else if (omousey >= (current_y += 16) && omousey < current_y + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_nohud = (settings_nohud == false);
-					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
-					{
+					} else if (omousey >= (current_y += 16) && omousey < current_y + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_auto_hotbar_new_items = (settings_auto_hotbar_new_items == false);
-					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
-					{
+					} else if (omousey >= (current_y += 16) && omousey < current_y + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_auto_appraise_new_items = (settings_auto_appraise_new_items == false);
-					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
-					{
+					} else if (omousey >= (current_y += 16) && omousey < current_y + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_disable_messages = (settings_disable_messages == false);
-					}
-					else if (omousey >= (current_y += 16) && omousey < current_y + 12)
-					{
+					} else if (omousey >= (current_y += 16) && omousey < current_y + 12) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						settings_right_click_protect = (settings_right_click_protect == false);
 					}
 				}
 
-				if( multiplayer != CLIENT )
-				{
+				if( multiplayer != CLIENT ) {
 					current_y = server_flags_start_y;
-					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
-					{
-						if( mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) )
-						{
+					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16) {
+						if( mouseInBounds(subx1 + 36 + 6, subx1 + 36 + 24 + 6, current_y, current_y + 12) ) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 
 							// toggle flag
 							svFlags ^= power(2, i);
 
-							if( multiplayer == SERVER )
-							{
+							if( multiplayer == SERVER ) {
 								// update client flags
 								strcpy((char *)net_packet->data, "SVFL");
 								SDLNet_Write32(svFlags, &net_packet->data[4]);
 								net_packet->len = 8;
 
 								int c;
-								for (c = 1; c < MAXPLAYERS; ++c)
-								{
+								for (c = 1; c < MAXPLAYERS; ++c) {
 									if (client_disconnected[c])
 										continue;
 									net_packet->address.host = net_clients[c - 1].host;
@@ -1749,7 +1709,7 @@ void handleMainMenu(bool mode) {
 		if( connect_window==SERVER ) {
 			drawDepressed(subx1+8,suby1+40,subx2-8,suby1+64);
 			ttfPrintText(ttf12,subx1+12,suby1+46,portnumber_char);
-		
+
 			// enter port number
 			if( !SDL_IsTextInputActive() ) {
 				SDL_StartTextInput();
@@ -1762,8 +1722,7 @@ void handleMainMenu(bool mode) {
 				TTF_SizeUTF8(ttf12,portnumber_char,&x,NULL);
 				ttfPrintText(ttf12,subx1+12+x,suby1+46,"_");
 			}
-		}
-		else if( connect_window==CLIENT ) {
+		} else if( connect_window==CLIENT ) {
 			drawDepressed(subx1+8,suby1+40,subx2-8,suby1+64);
 			if( !broadcast ) {
 				ttfPrintText(ttf12,subx1 +12,suby1+46,connectaddress);
@@ -1772,7 +1731,7 @@ void handleMainMenu(bool mode) {
 				for( i=0; i<strlen(connectaddress); i++ )
 					ttfPrintText(ttf12,subx1+12+12*i,suby1+46,"*");
 			}
-			
+
 			// enter address
 			if( !SDL_IsTextInputActive() ) {
 				SDL_StartTextInput();
@@ -1791,9 +1750,9 @@ void handleMainMenu(bool mode) {
 	// communicating with clients
 	if ( multiplayer==SERVER && mode ) {
 		//void *newSteamID = NULL; //TODO: Bugger void pointers!
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		CSteamID newSteamID;
-		#endif
+#endif
 
 		// hosting the lobby
 		int numpacket;
@@ -1802,7 +1761,7 @@ void handleMainMenu(bool mode) {
 				if ( !SDLNet_UDP_Recv(net_sock, net_packet) )
 					break;
 			} else {
-				#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 				uint32_t packetlen = 0;
 				if ( !SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0) )
 					break;
@@ -1823,13 +1782,13 @@ void handleMainMenu(bool mode) {
 				if ( mySteamID.ConvertToUint64() == newSteamID.ConvertToUint64() ) {
 					continue;
 				}
-				#endif
+#endif
 			}
 
 			if ( handleSafePacket() )
 				continue;
 			if (!strncmp((char *)net_packet->data,"BARONY_JOIN_REQUEST",19)) {
-				#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 				if ( !directConnect ) {
 					bool skipJoin=FALSE;
 					for ( c=0; c<MAXPLAYERS; c++ ) {
@@ -1844,7 +1803,7 @@ void handleMainMenu(bool mode) {
 					if ( skipJoin )
 						continue;
 				}
-				#endif
+#endif
 				if ( strcmp( VERSION, (char *)net_packet->data+54 ) ) {
 					c = MAXPLAYERS+1; // wrong version number
 				} else {
@@ -1885,7 +1844,7 @@ void handleMainMenu(bool mode) {
 						SDLNet_TCP_Send(net_tcpclients[MAXPLAYERS-1],net_packet->data,net_packet->len);
 						SDLNet_TCP_Close(net_tcpclients[MAXPLAYERS-1]);
 					} else {
-						#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
 						SDL_Delay(5);
 						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
@@ -1896,7 +1855,7 @@ void handleMainMenu(bool mode) {
 						SDL_Delay(5);
 						SteamNetworking()->SendP2PPacket(newSteamID, net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
 						SDL_Delay(5);
-						#endif
+#endif
 					}
 				} else {
 					// on success, client gets legit player number
@@ -1915,7 +1874,7 @@ void handleMainMenu(bool mode) {
 						printlog("client %d connected.\n",c);
 					}
 					client_keepalive[c]=ticks;
-						
+
 					// send existing clients info on new client
 					for ( x=1; x<MAXPLAYERS; x++ ) {
 						if ( client_disconnected[x] || c==x )
@@ -1949,7 +1908,7 @@ void handleMainMenu(bool mode) {
 					if ( directConnect ) {
 						SDLNet_TCP_Send(net_tcpclients[c-1],net_packet->data,net_packet->len);
 					} else {
-						#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 						if ( steamIDRemote[c-1] )
 							cpp_Free_CSteamID( steamIDRemote[c-1] );
 						steamIDRemote[c-1] = new CSteamID();
@@ -1964,7 +1923,7 @@ void handleMainMenu(bool mode) {
 						SDL_Delay(5);
 						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c-1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
 						SDL_Delay(5);
-						#endif
+#endif
 					}
 				}
 				continue;
@@ -1984,7 +1943,7 @@ void handleMainMenu(bool mode) {
 				playSound(238,64);
 				continue;
 			}
-			
+
 			// player disconnected
 			else if(!strncmp((char *)net_packet->data,"PLAYERDISCONNECT",16)) {
 				client_disconnected[net_packet->data[16]] = TRUE;
@@ -2018,7 +1977,7 @@ void handleMainMenu(bool mode) {
 				}
 				continue;
 			}
-				
+
 			// keepalive
 			else if(!strncmp((char *)net_packet->data,"KEEPALIVE",9)) {
 				client_keepalive[net_packet->data[9]] = ticks;
@@ -2030,9 +1989,9 @@ void handleMainMenu(bool mode) {
 	// communicating with server
 	if ( multiplayer==CLIENT && mode ) {
 		if ( receivedclientnum==FALSE ) {
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			CSteamID newSteamID;
-			#endif
+#endif
 
 			// trying to connect to the server and get a player number
 			// receive the packet:
@@ -2042,7 +2001,7 @@ void handleMainMenu(bool mode) {
 					gotPacket = TRUE;
 				}
 			} else {
-				#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 				int numpacket;
 				for ( numpacket=0; numpacket<PACKET_LIMIT; numpacket++ ) {
 					uint32_t packetlen = 0;
@@ -2063,7 +2022,7 @@ void handleMainMenu(bool mode) {
 					gotPacket = TRUE;
 					break;
 				}
-				#endif
+#endif
 			}
 
 			// parse the packet:
@@ -2074,7 +2033,7 @@ void handleMainMenu(bool mode) {
 				if ( clientnum>=MAXPLAYERS || clientnum<=0 ) {
 					printlog("connection attempt denied by server.\n");
 					multiplayer=SINGLE;
-						
+
 					// close current window
 					buttonCloseSubwindow(NULL);
 					for ( node=button_l.first; node!=NULL; node=nextnode ) {
@@ -2084,7 +2043,7 @@ void handleMainMenu(bool mode) {
 							list_RemoveNode(button->node);
 					}
 
-					#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 					if ( !directConnect ) {
 						if ( currentLobby ) {
 							SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
@@ -2092,7 +2051,7 @@ void handleMainMenu(bool mode) {
 							currentLobby = NULL;
 						}
 					}
-					#endif
+#endif
 
 					// create new window
 					subwindow = 1;
@@ -2120,19 +2079,23 @@ void handleMainMenu(bool mode) {
 					// close button
 					button = newButton();
 					strcpy(button->label,"x");
-					button->x=subx2-20; button->y=suby1;
-					button->sizex=20; button->sizey=20;
+					button->x=subx2-20;
+					button->y=suby1;
+					button->sizex=20;
+					button->sizey=20;
 					button->action=&buttonCloseSubwindow;
 					button->visible=1;
 					button->focused=1;
 					button->key=SDL_SCANCODE_ESCAPE;
 					button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-						
+
 					// okay button
 					button = newButton();
 					strcpy(button->label,language[732]);
-					button->x=subx2-(subx2-subx1)/2-28; button->y=suby2-28;
-					button->sizex=56; button->sizey=20;
+					button->x=subx2-(subx2-subx1)/2-28;
+					button->y=suby2-28;
+					button->sizex=56;
+					button->sizey=20;
 					button->action=&buttonCloseSubwindow;
 					button->visible=1;
 					button->focused=1;
@@ -2146,7 +2109,7 @@ void handleMainMenu(bool mode) {
 					client_disconnected[clientnum] = FALSE;
 					if ( !loadingsavegame )
 						stats[clientnum]->appearance=stats[0]->appearance;
-						
+
 					// now set up everybody else
 					for ( c=0; c<MAXPLAYERS; c++ ) {
 						client_disconnected[c] = FALSE;
@@ -2182,12 +2145,14 @@ void handleMainMenu(bool mode) {
 						strcpy(subtext, language[1386]);
 					}
 					strcat(subtext, language[1387]);
-		
+
 					// disconnect button
 					button = newButton();
 					strcpy(button->label,language[1311]);
-					button->sizex=strlen(language[1311])*12+8; button->sizey=20;
-					button->x=subx1+4; button->y=suby2-24;
+					button->sizex=strlen(language[1311])*12+8;
+					button->sizey=20;
+					button->x=subx1+4;
+					button->y=suby2-24;
 					button->action=&buttonDisconnect;
 					button->visible=1;
 					button->focused=1;
@@ -2195,9 +2160,9 @@ void handleMainMenu(bool mode) {
 				}
 			}
 		} else if ( multiplayer==CLIENT ) {
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			CSteamID newSteamID;
-			#endif
+#endif
 			int numpacket;
 			for ( numpacket=0; numpacket<PACKET_LIMIT; numpacket++ ) {
 				if ( directConnect ) {
@@ -2205,7 +2170,7 @@ void handleMainMenu(bool mode) {
 						break;
 					}
 				} else {
-					#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 					uint32_t packetlen = 0;
 					if ( !SteamNetworking()->IsP2PPacketAvailable(&packetlen, 0) )
 						break;
@@ -2221,7 +2186,7 @@ void handleMainMenu(bool mode) {
 					if (mySteamID.ConvertToUint64() == newSteamID.ConvertToUint64()) {
 						continue;
 					}
-					#endif
+#endif
 				}
 
 				if ( handleSafePacket() )
@@ -2237,7 +2202,7 @@ void handleMainMenu(bool mode) {
 					fadeout=TRUE;
 					continue;
 				}
-			
+
 				// new player
 				else if (!strncmp((char *)net_packet->data,"NEWPLAYER",9)) {
 					client_disconnected[net_packet->data[9]] = FALSE;
@@ -2250,7 +2215,7 @@ void handleMainMenu(bool mode) {
 					newString(&lobbyChatboxMessages,0xFFFFFFFF,language[1388],shortname);
 					continue;
 				}
-			
+
 				// player disconnect
 				else if (!strncmp((char *)net_packet->data,"PLAYERDISCONNECT",16)) {
 					client_disconnected[net_packet->data[16]] = TRUE;
@@ -2263,7 +2228,7 @@ void handleMainMenu(bool mode) {
 							if ( button->focused )
 								list_RemoveNode(button->node);
 						}
-				
+
 						// create new window
 						subwindow = 1;
 						subx1 = xres/2-256;
@@ -2271,27 +2236,31 @@ void handleMainMenu(bool mode) {
 						suby1 = yres/2-40;
 						suby2 = yres/2+40;
 						strcpy(subtext,language[1126]);
-				
+
 						// close button
 						button = newButton();
 						strcpy(button->label,"x");
-						button->x=subx2-20; button->y=suby1;
-						button->sizex=20; button->sizey=20;
+						button->x=subx2-20;
+						button->y=suby1;
+						button->sizex=20;
+						button->sizey=20;
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
 						button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-				
+
 						// okay button
 						button = newButton();
 						strcpy(button->label,language[732]);
-						button->x=subx2-(subx2-subx1)/2-20; button->y=suby2-24;
-						button->sizex=56; button->sizey=20;
+						button->x=subx2-(subx2-subx1)/2-20;
+						button->y=suby2-24;
+						button->sizex=56;
+						button->sizey=20;
 						button->action=&buttonCloseSubwindow;
 						button->visible=1;
 						button->focused=1;
 						button->joykey = joyimpulses[INJOY_MENU_NEXT];
-				
+
 						// reset multiplayer status
 						multiplayer = SINGLE;
 						stats[0]->sex = stats[clientnum]->sex;
@@ -2306,7 +2275,7 @@ void handleMainMenu(bool mode) {
 						// close any existing net interfaces
 						closeNetworkInterfaces();
 
-						#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 						if ( !directConnect ) {
 							if ( currentLobby ) {
 								SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
@@ -2314,7 +2283,7 @@ void handleMainMenu(bool mode) {
 								currentLobby = NULL;
 							}
 						}
-						#endif
+#endif
 					} else {
 						char shortname[11] = { 0 };
 						strncpy(shortname,stats[net_packet->data[16]]->name,10);
@@ -2335,7 +2304,7 @@ void handleMainMenu(bool mode) {
 					svFlags = SDLNet_Read32(&net_packet->data[4]);
 					continue;
 				}
-					
+
 				// keepalive
 				else if (!strncmp((char *)net_packet->data,"KEEPALIVE",9)) {
 					client_keepalive[0] = ticks;
@@ -2347,7 +2316,7 @@ void handleMainMenu(bool mode) {
 	if( multiplayer==SINGLE ) {
 		receivedclientnum = FALSE;
 	}
-	
+
 	// lobby window
 	if( lobby_window ) {
 
@@ -2391,15 +2360,14 @@ void handleMainMenu(bool mode) {
 				inputstr = lobbyChatbox;
 				inputlen = LOBBY_CHATBOX_LENGTH-1;
 				cursorflash = ticks;
-			}
-			else if( mouseInBounds(xres/2,subx2-32,suby1+56,suby1+68) && multiplayer==SERVER ) {
+			} else if( mouseInBounds(xres/2,subx2-32,suby1+56,suby1+68) && multiplayer==SERVER ) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 
 				// lobby name
-				#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 				inputstr = currentLobbyName;
 				inputlen = 31;
-				#endif
+#endif
 				cursorflash = ticks;
 			}
 
@@ -2428,47 +2396,47 @@ void handleMainMenu(bool mode) {
 						}
 
 						// update lobby data
-						#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 						if ( !directConnect ) {
 							char svFlagsChar[16];
 							snprintf(svFlagsChar,15,"%d",svFlags);
 							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar);
 						}
-						#endif
+#endif
 					}
 				}
 			}
 
 			// switch lobby type
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			if ( !directConnect ) {
 				if ( multiplayer==SERVER ) {
 					for ( i=0; i<3; i++ ) {
 						if ( mouseInBounds(xres/2+8+6,xres/2+8+30,suby1+256+i*16,suby1+268+i*16) ) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							switch( i ) {
-								default:
-									currentLobbyType = k_ELobbyTypePrivate;
-									break;
-								case 1:
-									currentLobbyType = k_ELobbyTypeFriendsOnly;
-									break;
-								case 2:
-									currentLobbyType = k_ELobbyTypePublic;
-									break;
+							default:
+								currentLobbyType = k_ELobbyTypePrivate;
+								break;
+							case 1:
+								currentLobbyType = k_ELobbyTypeFriendsOnly;
+								break;
+							case 2:
+								currentLobbyType = k_ELobbyTypePublic;
+								break;
 							}
 							SteamMatchmaking()->SetLobbyType(*static_cast<CSteamID*>(currentLobby), currentLobbyType);
 						}
 					}
 				}
 			}
-			#endif
+#endif
 		}
 
 		// switch textboxes with TAB
 		if( keystatus[SDL_SCANCODE_TAB] ) {
 			keystatus[SDL_SCANCODE_TAB] = 0;
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			if( inputstr==currentLobbyName ) {
 				inputstr = lobbyChatbox;
 				inputlen = LOBBY_CHATBOX_LENGTH-1;
@@ -2476,7 +2444,7 @@ void handleMainMenu(bool mode) {
 				inputstr = currentLobbyName;
 				inputlen = 31;
 			}
-			#endif
+#endif
 		}
 
 		// server flag elements
@@ -2487,12 +2455,11 @@ void handleMainMenu(bool mode) {
 			} else {
 				ttfPrintTextFormatted(ttf12,xres/2+8,suby1+80+16*i,"[ ] %s",language[153+i]);
 			}
-			if (mouseInBounds((xres / 2) + 8 + 6, (xres / 2) + 8 + 30, suby1 + 80 + (i*16), suby1 + 92 + (i*16))) //So many gosh dang magic numbers ._.
-			{
-				if (strlen(language[1942 + i]) > 0) //Don't bother drawing a tooltip if the file doesn't say anything.
-				{
+			if (mouseInBounds((xres / 2) + 8 + 6, (xres / 2) + 8 + 30, suby1 + 80 + (i*16), suby1 + 92 + (i*16))) { //So many gosh dang magic numbers ._.
+				if (strlen(language[1942 + i]) > 0) { //Don't bother drawing a tooltip if the file doesn't say anything.
 					hovering_selection = i;
-					tooltip_box.x = mousex + 16; tooltip_box.y = mousey + 8;
+					tooltip_box.x = mousex + 16;
+					tooltip_box.y = mousey + 8;
 					tooltip_box.w = strlen(language[1942 + i]) * TTF12_WIDTH + 8; //MORE MAGIC NUMBERS. HNNGH. I can guess what they all do, but dang.
 					tooltip_box.h = TTF12_HEIGHT + 8;
 				}
@@ -2500,7 +2467,7 @@ void handleMainMenu(bool mode) {
 		}
 
 		// lobby type elements
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		if ( !directConnect ) {
 			if ( multiplayer==SERVER ) {
 				for ( i=0; i<3; i++ ) {
@@ -2512,9 +2479,9 @@ void handleMainMenu(bool mode) {
 				}
 			}
 		}
-		#endif
-		
-		#ifdef STEAMWORKS
+#endif
+
+#ifdef STEAMWORKS
 		if ( !directConnect ) {
 			// server name
 			drawDepressed(xres/2, suby1+56, xres/2+388, suby1+72);
@@ -2543,7 +2510,7 @@ void handleMainMenu(bool mode) {
 				}
 			}
 		}
-		#endif
+#endif
 
 		// chatbox gui elements
 		drawDepressed(subx1+16, suby2-256, subx2-16, suby2-48);
@@ -2616,7 +2583,7 @@ void handleMainMenu(bool mode) {
 				}
 			}
 		}
-		
+
 		// draw chatbox entry text and cursor
 		ttfPrintTextFormatted(ttf12, subx1+18, suby2-46, ">%s", lobbyChatbox);
 		if( inputstr==lobbyChatbox ) {
@@ -2627,11 +2594,9 @@ void handleMainMenu(bool mode) {
 			}
 		}
 
-		if (hovering_selection > -1)
-		{
+		if (hovering_selection > -1) {
 			drawTooltip(&tooltip_box);
-			if (hovering_selection < NUM_SERVER_FLAGS)
-			{
+			if (hovering_selection < NUM_SERVER_FLAGS) {
 				ttfPrintTextFormatted(ttf12, tooltip_box.x + 4, tooltip_box.y + 4, language[1942 + hovering_selection]);
 			}
 		}
@@ -2666,7 +2631,7 @@ void handleMainMenu(bool mode) {
 				openFailedConnectionWindow(3); // lost connection to server box
 			}
 		}
-		
+
 		// send keepalive messages every second
 		if( ticks%(TICKS_PER_SECOND*1)==0 && multiplayer!=SINGLE ) {
 			strcpy((char *)net_packet->data,"KEEPALIVE");
@@ -2692,14 +2657,13 @@ void handleMainMenu(bool mode) {
 	// statistics window
 	if( score_window ) {
 		if( !list_Size(&topscores) ) {
-			#define NOSCORESSTR language[1389]
+#define NOSCORESSTR language[1389]
 			ttfPrintTextFormatted(ttf16, xres/2-strlen(NOSCORESSTR)*9, yres/2-9, NOSCORESSTR);
 		} else {
 			ttfPrintTextFormatted(ttf16, subx1+8, suby1+8, "%s - #%d",language[1390],score_window);
 
 			// draw character window
-			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
-			{
+			if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr) {
 				camera_charsheet.x=players[clientnum]->entity->x/16.0+1;
 				camera_charsheet.y=players[clientnum]->entity->y/16.0-.5;
 				camera_charsheet.z=players[clientnum]->entity->z*2;
@@ -2709,8 +2673,10 @@ void handleMainMenu(bool mode) {
 				camera_charsheet.winy=suby1+32;
 				camera_charsheet.winh=suby2-96-camera_charsheet.winy;
 				camera_charsheet.winx=subx1+32;
-				pos.x = camera_charsheet.winx; pos.y = camera_charsheet.winy;
-				pos.w = camera_charsheet.winw; pos.h = camera_charsheet.winh;
+				pos.x = camera_charsheet.winx;
+				pos.y = camera_charsheet.winy;
+				pos.w = camera_charsheet.winw;
+				pos.h = camera_charsheet.winh;
 				drawRect(&pos,0,255);
 				b=players[clientnum]->entity->flags[BRIGHT];
 				players[clientnum]->entity->flags[BRIGHT]=TRUE;
@@ -2842,8 +2808,7 @@ void handleMainMenu(bool mode) {
 		if( introstage==2 ) { // quit game
 			introstage=0;
 			mainloop = 0;
-		}
-		else if( introstage==3 ) { // new game
+		} else if( introstage==3 ) { // new game
 			introstage=1;
 			fadefinished=FALSE;
 			fadeout=FALSE;
@@ -2887,7 +2852,7 @@ void handleMainMenu(bool mode) {
 			buddhamode = FALSE;
 			everybodyfriendly = FALSE;
 
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			if ( !directConnect ) {
 				if ( currentLobby ) {
 					// once the game is started, the lobby is no longer needed.
@@ -2899,8 +2864,8 @@ void handleMainMenu(bool mode) {
 					currentLobby = NULL;
 				}
 			}
-			#endif
-		
+#endif
+
 			// load dungeon
 			if( multiplayer != CLIENT ) {
 				// stop all sounds
@@ -2930,7 +2895,7 @@ void handleMainMenu(bool mode) {
 				hudweapon = NULL;
 				magicLeftHand = NULL;
 				magicRightHand = NULL;
-				
+
 				for( node=map.entities->first; node!=NULL; node=node->next ) {
 					entity = (Entity *)node->element;
 					entity->flags[NOUPDATE] = TRUE;
@@ -2946,12 +2911,15 @@ void handleMainMenu(bool mode) {
 					int i;
 					for( i=0; i<currentlevel; i++ )
 						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-					fscanf(fp,"%s",tempstr); while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
+					fscanf(fp,"%s",tempstr);
+					while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
 					if( !strcmp(tempstr,"gen:") ) {
-						fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+						fscanf(fp,"%s",tempstr);
+						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 						generateDungeon(tempstr,mapseed);
 					} else if( !strcmp(tempstr,"map:") ) {
-						fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+						fscanf(fp,"%s",tempstr);
+						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 						loadMap(tempstr,&map,map.entities);
 					}
 					fclose(fp);
@@ -2975,8 +2943,7 @@ void handleMainMenu(bool mode) {
 							node_t *tempNode = list_Node(followers,c);
 							if( tempNode ) {
 								list_t *tempFollowers = (list_t *)tempNode->element;
-								if (players[c] && players[c]->entity && !client_disconnected[c])
-								{
+								if (players[c] && players[c]->entity && !client_disconnected[c]) {
 									node_t *node;
 									for( node=tempFollowers->first; node!=NULL; node=node->next ) {
 										Stat *tempStats = (Stat *)node->element;
@@ -3000,7 +2967,7 @@ void handleMainMenu(bool mode) {
 											Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
 											newNode->element = myuid;
 											*myuid = monster->uid;
-											
+
 											if( c>0 && multiplayer==SERVER ) {
 												strcpy((char *)net_packet->data,"LEAD");
 												SDLNet_Write32((Uint32)monster->uid,&net_packet->data[4]);
@@ -3029,7 +2996,7 @@ void handleMainMenu(bool mode) {
 				magicRightHand = NULL;
 
 				client_disconnected[0] = FALSE;
-			
+
 				// initialize class
 				if( !loadingsavegame ) {
 					stats[clientnum]->clearStats();
@@ -3056,12 +3023,15 @@ void handleMainMenu(bool mode) {
 					int i;
 					for( i=0; i<currentlevel; i++ )
 						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-					fscanf(fp,"%s",tempstr); while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
+					fscanf(fp,"%s",tempstr);
+					while( fgetc(fp) != ' ' ) if( feof(fp) ) break;
 					if( !strcmp(tempstr,"gen:") ) {
-						fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+						fscanf(fp,"%s",tempstr);
+						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 						generateDungeon(tempstr,mapseed);
 					} else if( !strcmp(tempstr,"map:") ) {
-						fscanf(fp,"%s",tempstr); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+						fscanf(fp,"%s",tempstr);
+						while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 						loadMap(tempstr,&map,map.entities);
 					}
 					fclose(fp);
@@ -3080,7 +3050,7 @@ void handleMainMenu(bool mode) {
 					if( entity->flags[NOUPDATE] )
 						list_RemoveNode(entity->mynode); // we're anticipating this entity data from server
 				}
-					
+
 				printlog("Done.\n");
 			}
 
@@ -3088,8 +3058,8 @@ void handleMainMenu(bool mode) {
 			usedClass[client_classes[clientnum]] = TRUE;
 			bool usedAllClasses = TRUE;
 			for( c=0; c<10; c++ )
-			if( !usedClass[c] )
-				usedAllClasses = FALSE;
+				if( !usedClass[c] )
+					usedAllClasses = FALSE;
 			if( usedAllClasses )
 				steamAchievement("BARONY_ACH_SPICE_OF_LIFE");
 
@@ -3100,15 +3070,15 @@ void handleMainMenu(bool mode) {
 			for( c=0; c<MAXPLAYERS; c++ )
 				list_FreeAll(&safePacketsReceived[c]);
 			deleteAllNotificationMessages();
-			for(c=0;c<MAXPLAYERS;c++) {
+			for(c=0; c<MAXPLAYERS; c++) {
 				list_FreeAll(&stats[c]->FOLLOWERS);
 			}
 			list_FreeAll(&removedEntities);
 			list_FreeAll(&chestInv);
-		
+
 			// make some messages
 			startMessages();
-		
+
 			// kick off the main loop!
 			pauseGame(1,0);
 			loading=FALSE;
@@ -3143,7 +3113,7 @@ void handleMainMenu(bool mode) {
 
 			// make a highscore!
 			saveScore();
-			
+
 			// pick a new subtitle :)
 			subtitleCurrent = rand()%NUMSUBTITLES;
 			subtitleVisible = TRUE;
@@ -3157,7 +3127,7 @@ void handleMainMenu(bool mode) {
 			if( sound_group )
 				FMOD_ChannelGroup_Stop(sound_group);
 #endif
-			
+
 			// send disconnect messages
 			if(multiplayer==CLIENT) {
 				strcpy((char *)net_packet->data,"DISCONNECT");
@@ -3180,7 +3150,7 @@ void handleMainMenu(bool mode) {
 					client_disconnected[x]=TRUE;
 				}
 			}
-		
+
 			// clean up shopInv
 			if( multiplayer==CLIENT ) {
 				if( shopInv ) {
@@ -3220,14 +3190,14 @@ void handleMainMenu(bool mode) {
 			for( c=0; c<MAXPLAYERS; c++ )
 				list_FreeAll(&safePacketsReceived[c]);
 			deleteAllNotificationMessages();
-			for(c=0;c<MAXPLAYERS;c++) {
+			for(c=0; c<MAXPLAYERS; c++) {
 				stats[c]->freePlayerEquipment();
 				list_FreeAll(&stats[c]->inventory);
 				list_FreeAll(&stats[c]->FOLLOWERS);
 			}
 			list_FreeAll(&removedEntities);
 			list_FreeAll(&chestInv);
-			
+
 			// default player stats
 			for( c=0; c<MAXPLAYERS; c++ ) {
 				if( c>0 )
@@ -3251,37 +3221,37 @@ void handleMainMenu(bool mode) {
 			hudweapon = NULL;
 			magicLeftHand = NULL;
 			magicRightHand = NULL;
-			
+
 			// load menu level
 			switch( rand()%4 ) {
-				case 0:
-					loadMap("mainmenu1",&map,map.entities);
-					camera.x = 8;
-					camera.y = 4.5;
-					camera.z = 0;
-					camera.ang = 0.6;
-					break;
-				case 1:
-					loadMap("mainmenu2",&map,map.entities);
-					camera.x = 7;
-					camera.y = 4;
-					camera.z = -4;
-					camera.ang = 1.0;
-					break;
-				case 2:
-					loadMap("mainmenu3",&map,map.entities);
-					camera.x = 5;
-					camera.y = 3;
-					camera.z = 0;
-					camera.ang = 1.0;
-					break;
-				case 3:
-					loadMap("mainmenu4",&map,map.entities);
-					camera.x = 6;
-					camera.y = 14.5;
-					camera.z = -24;
-					camera.ang = 5.0;
-					break;
+			case 0:
+				loadMap("mainmenu1",&map,map.entities);
+				camera.x = 8;
+				camera.y = 4.5;
+				camera.z = 0;
+				camera.ang = 0.6;
+				break;
+			case 1:
+				loadMap("mainmenu2",&map,map.entities);
+				camera.x = 7;
+				camera.y = 4;
+				camera.z = -4;
+				camera.ang = 1.0;
+				break;
+			case 2:
+				loadMap("mainmenu3",&map,map.entities);
+				camera.x = 5;
+				camera.y = 3;
+				camera.z = 0;
+				camera.ang = 1.0;
+				break;
+			case 3:
+				loadMap("mainmenu4",&map,map.entities);
+				camera.x = 6;
+				camera.y = 14.5;
+				camera.z = -24;
+				camera.ang = 5.0;
+				break;
 			}
 			camera.vang=0;
 			numplayers=0;
@@ -3315,11 +3285,11 @@ void handleMainMenu(bool mode) {
 			}
 
 			// finish handling invite
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			if( stillConnectingToLobby ) {
 				processLobbyInvite();
 			}
-			#endif
+#endif
 		} else if( introstage==6 ) { // introduction cutscene
 			fadefinished=FALSE;
 			fadeout=FALSE;
@@ -3384,46 +3354,40 @@ void handleMainMenu(bool mode) {
 			}
 		}
 	}
-	
+
 	// credits sequence
 	if( creditstage>0 ) {
 		if( (credittime>=300 && (creditstage<=10 ||creditstage>12)) || (credittime>=180 && creditstage==11) ||
-			(credittime>=480 && creditstage==12) || mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) ) {
+		        (credittime>=480 && creditstage==12) || mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) ) {
 			mousestatus[SDL_BUTTON_LEFT]=0;
 			*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 			introstage=4;
 			fadeout=TRUE;
 		}
-		
+
 		// stages
 		Uint32 colorBlue = SDL_MapRGBA(mainsurface->format,0,92,255,255);
 		if( creditstage==1 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[56]),yres/2-9-18,colorBlue,language[56]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE02),yres/2-9+18,CREDITSLINE02);
-		}
-		else if( creditstage==2 ) {
+		} else if( creditstage==2 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[57]),yres/2-9-18,colorBlue,language[57]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE04),yres/2-9+18,CREDITSLINE04);
-		}
-		else if( creditstage==3 ) {
+		} else if( creditstage==3 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[58]),yres/2-9-18,colorBlue,language[58]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE06),yres/2-9+18,CREDITSLINE06);
-		}
-		else if( creditstage==4 ) {
+		} else if( creditstage==4 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[59]),yres/2-9-18*2,colorBlue,language[59]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE39),yres/2+9,CREDITSLINE39);
-		}
-		else if( creditstage==5 ) {
+		} else if( creditstage==5 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[60]),yres/2-9-18,colorBlue,language[60]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE11),yres/2-9,CREDITSLINE11);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE08),yres/2-9+18,CREDITSLINE08);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE09),yres/2+9+18*1,CREDITSLINE09);
-		}
-		else if( creditstage==6 ) {
+		} else if( creditstage==6 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[61]),yres/2-9-18,colorBlue,language[61]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE13),yres/2-9+18,CREDITSLINE13);
-		}
-		else if( creditstage==7 ) {
+		} else if( creditstage==7 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[62]),yres/2-9-18*4,colorBlue,language[62]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE15),yres/2-9-18*2,CREDITSLINE15);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE16),yres/2-9-18*1,CREDITSLINE16);
@@ -3432,8 +3396,7 @@ void handleMainMenu(bool mode) {
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE19),yres/2+9+18*1,CREDITSLINE19);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE20),yres/2+9+18*2,CREDITSLINE20);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE21),yres/2+9+18*3,CREDITSLINE21);
-		}
-		else if( creditstage==8 ) {
+		} else if( creditstage==8 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[63]),yres/2-9-18*4,colorBlue,language[63]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE23),yres/2-9-18*2,CREDITSLINE23);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE24),yres/2-9-18*1,CREDITSLINE24);
@@ -3443,45 +3406,52 @@ void handleMainMenu(bool mode) {
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE28),yres/2+9+18*2,CREDITSLINE28);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE29),yres/2+9+18*3,CREDITSLINE29);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE30),yres/2+9+18*4,CREDITSLINE30);
-		}
-		else if( creditstage==9 ) {
+		} else if( creditstage==9 ) {
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[64]),yres/2-9-18,colorBlue,language[64]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[65]),yres/2-9+18,language[65]);
-		}
-		else if( creditstage==10 ) {
+		} else if( creditstage==10 ) {
 			// logo
-			src.x = 0; src.y = 0;
-			src.w = logo_bmp->w; src.h = logo_bmp->h;
-			dest.x = xres/2-(logo_bmp->w+title_bmp->w)/2-16; dest.y = yres/2-logo_bmp->h/2;
-			dest.w = xres; dest.h = yres;
+			src.x = 0;
+			src.y = 0;
+			src.w = logo_bmp->w;
+			src.h = logo_bmp->h;
+			dest.x = xres/2-(logo_bmp->w+title_bmp->w)/2-16;
+			dest.y = yres/2-logo_bmp->h/2;
+			dest.w = xres;
+			dest.h = yres;
 			drawImage(logo_bmp, &src, &dest);
 			// title
-			src.x = 0; src.y = 0;
-			src.w = title_bmp->w; src.h = title_bmp->h;
-			dest.x = xres/2-(logo_bmp->w+title_bmp->w)/2+logo_bmp->w+16; dest.y = yres/2-title_bmp->h/2;
-			dest.w = xres; dest.h = yres;
+			src.x = 0;
+			src.y = 0;
+			src.w = title_bmp->w;
+			src.h = title_bmp->h;
+			dest.x = xres/2-(logo_bmp->w+title_bmp->w)/2+logo_bmp->w+16;
+			dest.y = yres/2-title_bmp->h/2;
+			dest.w = xres;
+			dest.h = yres;
 			drawImage(title_bmp, &src, &dest);
 			// text
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[66]),yres/2+96,language[66]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[67]),yres/2+116,language[67]);
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[68]),yres/2+136,language[68]);
 			ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(language[69]),yres/2+156,colorBlue,language[69]);
-		}
-		else if( creditstage==12 ) {
+		} else if( creditstage==12 ) {
 			ttfPrintTextFormatted(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2-9,CREDITSLINE37);
 			//ttfPrintTextFormattedColor(ttf16,xres/2-(TTF16_WIDTH/2)*strlen(CREDITSLINE37),yres/2+9,colorBlue,CREDITSLINE38);
 		}
 	}
-	
+
 	// intro sequence
 	if( intromoviestage>0 ) {
 		SDL_Rect pos;
-		pos.x = 0; pos.y = 0;
-		pos.w = xres; pos.h = (((double)xres)/backdrop_bmp->w)*backdrop_bmp->h;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((double)xres)/backdrop_bmp->w)*backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if( intromovietime>=600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
-			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime>=120 && intromoviestage==1) || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) ) {
+		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime>=120 && intromoviestage==1) || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) ) {
 			intromovietime=0;
 			mousestatus[SDL_BUTTON_LEFT]=0;
 			*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
@@ -3492,7 +3462,7 @@ void handleMainMenu(bool mode) {
 				fadeout=TRUE;
 			}
 		}
-		
+
 		if( intromoviestage>=1 ) {
 			intromoviealpha[8] = std::min(intromoviealpha[8]+2,255);
 			Uint32 color = 0x00FFFFFF;
@@ -3552,12 +3522,14 @@ void handleMainMenu(bool mode) {
 	// first end sequence (defeating herx)
 	if( firstendmoviestage>0 ) {
 		SDL_Rect pos;
-		pos.x = 0; pos.y = 0;
-		pos.w = xres; pos.h = (((double)xres)/backdrop_bmp->w)*backdrop_bmp->h;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((double)xres)/backdrop_bmp->w)*backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if( firstendmovietime>=600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
-			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime>=120 && firstendmoviestage==1) ) {
+		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (firstendmovietime>=120 && firstendmoviestage==1) ) {
 			firstendmovietime=0;
 			mousestatus[SDL_BUTTON_LEFT]=0;
 			if( firstendmoviestage!=5 ) {
@@ -3567,7 +3539,7 @@ void handleMainMenu(bool mode) {
 				fadeout=TRUE;
 			}
 		}
-		
+
 		if( firstendmoviestage>=1 ) {
 			firstendmoviealpha[8] = std::min(firstendmoviealpha[8]+2,255);
 			Uint32 color = 0x00FFFFFF;
@@ -3603,12 +3575,14 @@ void handleMainMenu(bool mode) {
 	// second end sequence (defeating the devil)
 	if( secondendmoviestage>0 ) {
 		SDL_Rect pos;
-		pos.x = 0; pos.y = 0;
-		pos.w = xres; pos.h = (((double)xres)/backdrop_bmp->w)*backdrop_bmp->h;
+		pos.x = 0;
+		pos.y = 0;
+		pos.w = xres;
+		pos.h = (((double)xres)/backdrop_bmp->w)*backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if( secondendmovietime>=600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
-			keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime>=120 && secondendmoviestage==1) ) {
+		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (secondendmovietime>=120 && secondendmoviestage==1) ) {
 			secondendmovietime=0;
 			mousestatus[SDL_BUTTON_LEFT]=0;
 			if( secondendmoviestage!=7 ) {
@@ -3618,7 +3592,7 @@ void handleMainMenu(bool mode) {
 				fadeout=TRUE;
 			}
 		}
-		
+
 		if( secondendmoviestage>=1 ) {
 			secondendmoviealpha[8] = std::min(secondendmoviealpha[8]+2,255);
 			Uint32 color = 0x00FFFFFF;
@@ -3667,7 +3641,7 @@ void handleMainMenu(bool mode) {
 /*-------------------------------------------------------------------------------
 
 	button functions
-	
+
 	this section contains numerous button functions for the game
 
 -------------------------------------------------------------------------------*/
@@ -3675,7 +3649,7 @@ void handleMainMenu(bool mode) {
 // opens the gameover window
 void openGameoverWindow() {
 	node_t *node;
-	
+
 	subwindow = 1;
 	subx1 = xres/2-288;
 	subx2 = xres/2+288;
@@ -3722,8 +3696,10 @@ void openGameoverWindow() {
 		// Restart
 		button = newButton();
 		strcpy(button->label,language[1138]);
-		button->x=subx2-strlen(language[1138])*12-16; button->y=suby2-28;
-		button->sizex=strlen(language[1138])*12+8; button->sizey=20;
+		button->x=subx2-strlen(language[1138])*12-16;
+		button->y=suby2-28;
+		button->sizex=strlen(language[1138])*12+8;
+		button->sizey=20;
 		button->action=&buttonStartSingleplayer;
 		button->visible=1;
 		button->focused=1;
@@ -3732,21 +3708,21 @@ void openGameoverWindow() {
 		// Return to Main Menu
 		button = newButton();
 		strcpy(button->label,language[1139]);
-		button->x=subx1+8; button->y=suby2-28;
-		button->sizex=strlen(language[1139])*12+8; button->sizey=20;
+		button->x=subx1+8;
+		button->y=suby2-28;
+		button->sizex=strlen(language[1139])*12+8;
+		button->sizey=20;
 		button->action=&buttonEndGameConfirm;
 		button->visible=1;
 		button->focused=1;
 		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	} else {
 		strcpy(subtext,language[1140]);
-		
+
 		bool survivingPlayer=FALSE;
 		int c;
-		for (c = 0; c < MAXPLAYERS; c++)
-		{
-			if (!client_disconnected[c] && players[c]->entity)
-			{
+		for (c = 0; c < MAXPLAYERS; c++) {
+			if (!client_disconnected[c] && players[c]->entity) {
 				survivingPlayer = TRUE;
 				break;
 			}
@@ -3765,8 +3741,10 @@ void openGameoverWindow() {
 		// Okay
 		button = newButton();
 		strcpy(button->label,language[1144]);
-		button->sizex=strlen(language[1144])*12+8; button->sizey=20;
-		button->x=subx1+(subx2-subx1)/2-button->sizex/2; button->y=suby2-28;
+		button->sizex=strlen(language[1144])*12+8;
+		button->sizey=20;
+		button->x=subx1+(subx2-subx1)/2-button->sizex/2;
+		button->y=suby2-28;
 		button->action=&buttonCloseSubwindow;
 		button->visible=1;
 		button->focused=1;
@@ -3781,8 +3759,10 @@ void openGameoverWindow() {
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -3808,12 +3788,10 @@ void openSettingsWindow() {
 	settings_gamma = vidgamma;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
-	for (c = 0; c < NUMIMPULSES; c++)
-	{
+	for (c = 0; c < NUMIMPULSES; c++) {
 		settings_impulses[c] = impulses[c];
 	}
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
-	{
+	for (c = 0; c < NUM_JOY_IMPULSES; c++) {
 		settings_joyimpulses[c] = joyimpulses[c];
 	}
 	settings_reversemouse = reversemouse;
@@ -3855,8 +3833,10 @@ void openSettingsWindow() {
 	// close button
 	button = newButton();
 	strcpy(button->label, "x");
-	button->x = subx2 - 20; button->y = suby1;
-	button->sizex = 20; button->sizey = 20;
+	button->x = subx2 - 20;
+	button->y = suby1;
+	button->sizex = 20;
+	button->sizey = 20;
 	button->action = &buttonCloseSettingsSubwindow;
 	button->visible = 1;
 	button->focused = 1;
@@ -3866,8 +3846,10 @@ void openSettingsWindow() {
 	// cancel button
 	button = newButton();
 	strcpy(button->label,language[1316]);
-	button->x=subx1 + 8; button->y=suby2-28;
-	button->sizex=strlen(language[1316])*12+8; button->sizey=20;
+	button->x=subx1 + 8;
+	button->y=suby2-28;
+	button->sizex=strlen(language[1316])*12+8;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -3875,8 +3857,10 @@ void openSettingsWindow() {
 	// ok button
 	button = newButton();
 	strcpy(button->label,language[1433]);
-	button->x=subx2-strlen(language[1433])*12-16; button->y=suby2-28;
-	button->sizex=strlen(language[1433])*12+8; button->sizey=20;
+	button->x=subx2-strlen(language[1433])*12-16;
+	button->y=suby2-28;
+	button->sizex=strlen(language[1433])*12+8;
+	button->sizey=20;
 	button->action=&buttonSettingsOK;
 	button->visible=1;
 	button->focused=1;
@@ -3886,8 +3870,10 @@ void openSettingsWindow() {
 	// accept button
 	button = newButton();
 	strcpy(button->label,language[1317]);
-	button->x=subx2-strlen(language[1317])*12-16-strlen(language[1317])*12-16; button->y=suby2-28;
-	button->sizex=strlen(language[1317])*12+8; button->sizey=20;
+	button->x=subx2-strlen(language[1317])*12-16-strlen(language[1317])*12-16;
+	button->y=suby2-28;
+	button->sizex=strlen(language[1317])*12+8;
+	button->sizey=20;
 	button->action=&buttonSettingsAccept;
 	button->visible=1;
 	button->focused=1;
@@ -3900,8 +3886,10 @@ void openSettingsWindow() {
 	// video tab
 	button = newButton();
 	strcpy(button->label, language[1434]);
-	button->x = tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1434])*12 + 8; button->sizey = 20;
+	button->x = tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1434])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonVideoTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3912,8 +3900,10 @@ void openSettingsWindow() {
 	// audio tab
 	button = newButton();
 	strcpy(button->label, language[1435]);
-	button->x = tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1435])*12 + 8; button->sizey = 20;
+	button->x = tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1435])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonAudioTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3924,8 +3914,10 @@ void openSettingsWindow() {
 	// keyboard tab
 	button = newButton();
 	strcpy(button->label, language[1436]);
-	button->x = tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1436])*12 + 8; button->sizey = 20;
+	button->x = tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1436])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonKeyboardTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3936,8 +3928,10 @@ void openSettingsWindow() {
 	// mouse tab
 	button = newButton();
 	strcpy(button->label, language[1437]);
-	button->x = tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1437])*12 + 8; button->sizey = 20;
+	button->x = tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1437])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonMouseTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3948,8 +3942,10 @@ void openSettingsWindow() {
 	//Gamepad bindings tab.
 	button = newButton();
 	strcpy(button->label, language[1947]);
-	button->x = tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1947])*12 + 8; button->sizey = 20;
+	button->x = tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1947])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonGamepadBindingsTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3960,8 +3956,10 @@ void openSettingsWindow() {
 	//Gamepad settings tab.
 	button = newButton();
 	strcpy(button->label, language[1980]);
-	button->x = tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1980])*12 + 8; button->sizey = 20;
+	button->x = tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1980])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonGamepadSettingsTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3972,8 +3970,10 @@ void openSettingsWindow() {
 	// misc tab
 	button = newButton();
 	strcpy(button->label, language[1438]);
-	button->x =  tabx_so_far; button->y = suby1 + 24;
-	button->sizex = strlen(language[1438])*12 + 8; button->sizey = 20;
+	button->x =  tabx_so_far;
+	button->y = suby1 + 24;
+	button->sizex = strlen(language[1438])*12 + 8;
+	button->sizey = 20;
 	button->action = &buttonMiscTab;
 	button->visible = 1;
 	button->focused = 1;
@@ -3991,12 +3991,12 @@ void openSteamLobbyWaitWindow(button_t *my);
 // "failed to connect" message
 void openFailedConnectionWindow(int mode) {
 	button_t *button;
-	
+
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	
+
 	// create new window
 	subwindow = 1;
 	subx1 = xres/2-256;
@@ -4026,24 +4026,28 @@ void openFailedConnectionWindow(int mode) {
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-	
+
 	// okay button
 	button = newButton();
 	strcpy(button->label,language[732]);
-	button->x=subx2-(subx2-subx1)/2-strlen(language[732])*6; button->y=suby2-24;
-	button->sizex=strlen(language[732])*12+8; button->sizey=20;
+	button->x=subx2-(subx2-subx1)/2-strlen(language[732])*6;
+	button->y=suby2-24;
+	button->sizex=strlen(language[732])*12+8;
+	button->sizey=20;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	
+
 	if( directConnect ) {
 		if( mode==CLIENT )
 			button->action=&buttonJoinMultiplayer;
@@ -4072,28 +4076,30 @@ void openSteamLobbyWaitWindow(button_t *my) {
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	
+
 	// create new window
 	subwindow = 1;
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	requestingLobbies = TRUE;
-	#endif
+#endif
 	subx1 = xres/2-256;
 	subx2 = xres/2+256;
 	suby1 = yres/2-64;
 	suby2 = yres/2+64;
 	strcpy(subtext,language[1444]);
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	//c_SteamMatchmaking_RequestLobbyList();
 	//SteamMatchmaking()->RequestLobbyList(); //TODO: Is this sufficient for it to work?
 	cpp_SteamMatchmaking_RequestLobbyList();
-	#endif
+#endif
 
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -4103,8 +4109,10 @@ void openSteamLobbyWaitWindow(button_t *my) {
 	// cancel button
 	button = newButton();
 	strcpy(button->label,language[1316]);
-	button->sizex=strlen(language[1316])*12+8; button->sizey=20;
-	button->x=subx1 + (subx2-subx1)/2 - button->sizex/2; button->y=suby2-28;
+	button->sizex=strlen(language[1316])*12+8;
+	button->sizey=20;
+	button->x=subx1 + (subx2-subx1)/2 - button->sizex/2;
+	button->y=suby2-28;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -4113,12 +4121,12 @@ void openSteamLobbyWaitWindow(button_t *my) {
 // opens the lobby browser window (steam client only)
 void openSteamLobbyBrowserWindow(button_t *my) {
 	button_t *button;
-	
+
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	
+
 	// create new window
 	subwindow = 1;
 	subx1 = xres/2-280;
@@ -4128,44 +4136,50 @@ void openSteamLobbyBrowserWindow(button_t *my) {
 	strcpy(subtext,language[1334]);
 
 	// setup lobby browser
-	#ifdef STEAMWORKS //TODO: Should this whole function be ifdeffed?
+#ifdef STEAMWORKS //TODO: Should this whole function be ifdeffed?
 	selectedSteamLobby=0;
-	#endif
+#endif
 	slidery=0;
 	oslidery=0;
 
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-	
+
 	// join button
 	button = newButton();
 	strcpy(button->label,language[1445]);
-	button->x=subx1+8; button->y=suby2-56;
-	button->sizex=strlen(language[1445])*12+8; button->sizey=20;
-	#ifdef STEAMWORKS
+	button->x=subx1+8;
+	button->y=suby2-56;
+	button->sizex=strlen(language[1445])*12+8;
+	button->sizey=20;
+#ifdef STEAMWORKS
 	button->action=&buttonSteamLobbyBrowserJoinGame;
-	#endif
+#endif
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	
+
 	// refresh button
 	button = newButton();
 	strcpy(button->label,language[1446]);
-	button->x=subx1+8; button->y=suby2-28;
-	button->sizex=strlen(language[1446])*12+8; button->sizey=20;
-	#ifdef STEAMWORKS
+	button->x=subx1+8;
+	button->y=suby2-28;
+	button->sizex=strlen(language[1446])*12+8;
+	button->sizey=20;
+#ifdef STEAMWORKS
 	button->action=&buttonSteamLobbyBrowserRefresh;
-	#endif
+#endif
 	button->visible=1;
 	button->focused=1;
 	button->joykey = joyimpulses[INJOY_MENU_REFRESH_LOBBY]; //"y" refreshes
@@ -4173,9 +4187,9 @@ void openSteamLobbyBrowserWindow(button_t *my) {
 
 // steam lobby browser join game
 void buttonSteamLobbyBrowserJoinGame(button_t *my) {
-	#ifndef STEAMWORKS
+#ifndef STEAMWORKS
 	return;
-	#else
+#else
 
 	button_t *button;
 	int lobbyIndex = std::min(std::max(0,selectedSteamLobby),MAX_STEAM_LOBBIES-1);
@@ -4188,7 +4202,7 @@ void buttonSteamLobbyBrowserJoinGame(button_t *my) {
 		deleteallbuttons=TRUE;
 		connectingToLobby = temp1;
 		connectingToLobbyWindow = temp2;
-				
+
 		// create new window
 		subwindow = 1;
 		subx1 = xres/2-256;
@@ -4200,8 +4214,10 @@ void buttonSteamLobbyBrowserJoinGame(button_t *my) {
 		// close button
 		button = newButton();
 		strcpy(button->label,"x");
-		button->x=subx2-20; button->y=suby1;
-		button->sizex=20; button->sizey=20;
+		button->x=subx2-20;
+		button->y=suby1;
+		button->sizex=20;
+		button->sizey=20;
 		button->action=&openSteamLobbyWaitWindow;
 		button->visible=1;
 		button->focused=1;
@@ -4211,27 +4227,29 @@ void buttonSteamLobbyBrowserJoinGame(button_t *my) {
 		// cancel button
 		button = newButton();
 		strcpy(button->label,language[1316]);
-		button->sizex=strlen(language[1316])*12+8; button->sizey=20;
-		button->x=subx1 + (subx2-subx1)/2 - button->sizex/2; button->y=suby2-28;
+		button->sizex=strlen(language[1316])*12+8;
+		button->sizey=20;
+		button->x=subx1 + (subx2-subx1)/2 - button->sizex/2;
+		button->y=suby2-28;
 		button->action=&openSteamLobbyWaitWindow;
 		button->visible=1;
 		button->focused=1;
-		
+
 		connectingToLobby = TRUE;
 		connectingToLobbyWindow = TRUE;
 		strncpy( currentLobbyName, lobbyText[lobbyIndex], 31 );
 		cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyIDs[lobbyIndex]));
 	}
-	#endif
+#endif
 }
 
 // steam lobby browser refresh
 void buttonSteamLobbyBrowserRefresh(button_t *my) {
-	#ifndef STEAMWORKS
+#ifndef STEAMWORKS
 	return;
-	#else
+#else
 	openSteamLobbyWaitWindow(my);
-	#endif
+#endif
 }
 
 // quit game button
@@ -4293,14 +4311,14 @@ void buttonCloseSubwindow(button_t *my) {
 		initClass(0);
 	}
 	rebindkey=-1;
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	requestingLobbies=FALSE;
-	#endif
+#endif
 	score_window=0;
 	lobby_window=FALSE;
 	settings_window=FALSE;
 	connect_window=0;
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	if( charcreation_step ) {
 		if( lobbyToConnectTo ) {
 			// cancel lobby invitation acceptance
@@ -4310,7 +4328,7 @@ void buttonCloseSubwindow(button_t *my) {
 	}
 	connectingToLobbyWindow=FALSE;
 	connectingToLobby=FALSE;
-	#endif
+#endif
 	charcreation_step=0;
 	subwindow=0;
 	if( SDL_IsTextInputActive() )
@@ -4347,7 +4365,7 @@ void buttonContinue(button_t *my) {
 	charcreation_ticks = ticks;
 	if( charcreation_step==4 && !strcmp(stats[0]->name,"") )
 		return;
-	
+
 	charcreation_step++;
 	if( charcreation_step==4 ) {
 		inputstr = stats[0]->name;
@@ -4357,10 +4375,10 @@ void buttonContinue(button_t *my) {
 			lastname = (string)stats[0]->name;
 			SDL_StopTextInput();
 		}
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		if( lobbyToConnectTo ) {
 			charcreation_step=0;
-			
+
 			// close current window
 			int temp1 = connectingToLobby;
 			int temp2 = connectingToLobbyWindow;
@@ -4369,7 +4387,7 @@ void buttonContinue(button_t *my) {
 			deleteallbuttons=TRUE;
 			connectingToLobby = temp1;
 			connectingToLobbyWindow = temp2;
-			
+
 			// create new window
 			subwindow = 1;
 			subx1 = xres/2-256;
@@ -4381,8 +4399,10 @@ void buttonContinue(button_t *my) {
 			// close button
 			button = newButton();
 			strcpy(button->label,"x");
-			button->x=subx2-20; button->y=suby1;
-			button->sizex=20; button->sizey=20;
+			button->x=subx2-20;
+			button->y=suby1;
+			button->sizex=20;
+			button->sizey=20;
 			button->action=&openSteamLobbyWaitWindow;
 			button->visible=1;
 			button->focused=1;
@@ -4392,12 +4412,14 @@ void buttonContinue(button_t *my) {
 			// cancel button
 			button = newButton();
 			strcpy(button->label,language[1316]);
-			button->sizex=strlen(language[1316])*12+8; button->sizey=20;
-			button->x=subx1 + (subx2-subx1)/2 - button->sizex/2; button->y=suby2-28;
+			button->sizex=strlen(language[1316])*12+8;
+			button->sizey=20;
+			button->x=subx1 + (subx2-subx1)/2 - button->sizex/2;
+			button->y=suby2-28;
 			button->action=&openSteamLobbyWaitWindow;
 			button->visible=1;
 			button->focused=1;
-			
+
 			connectingToLobby = TRUE;
 			connectingToLobbyWindow = TRUE;
 			strncpy( currentLobbyName, "", 31 );
@@ -4405,25 +4427,25 @@ void buttonContinue(button_t *my) {
 			cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Bugger this.
 			lobbyToConnectTo = NULL;
 		}
-		#endif
+#endif
 	} else if( charcreation_step==6 ) {
 		if( multiplayerselect==SINGLE ) {
 			buttonStartSingleplayer(my);
 		} else if( multiplayerselect==SERVER ) {
-			#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 			directConnect=FALSE;
-			#else
+#else
 			directConnect=TRUE;
-			#endif
+#endif
 			buttonHostMultiplayer(my);
 		} else if( multiplayerselect==CLIENT ) {
-			#ifndef STEAMWORKS
+#ifndef STEAMWORKS
 			directConnect=TRUE;
 			buttonJoinMultiplayer(my);
-			#else
+#else
 			directConnect=FALSE;
 			openSteamLobbyWaitWindow(my);
-			#endif
+#endif
 		} else if( multiplayerselect==DIRECTSERVER ) {
 			directConnect=TRUE;
 			buttonHostMultiplayer(my);
@@ -4475,7 +4497,7 @@ void buttonHostMultiplayer(button_t *my) {
 		buttonCloseSubwindow(my);
 		list_FreeAll(&button_l);
 		deleteallbuttons=TRUE;
-	
+
 		// open port window
 		connect_window = SERVER;
 		subwindow = 1;
@@ -4488,30 +4510,36 @@ void buttonHostMultiplayer(button_t *my) {
 		// close button
 		button = newButton();
 		strcpy(button->label,"x");
-		button->x=subx2-20; button->y=suby1;
-		button->sizex=20; button->sizey=20;
+		button->x=subx2-20;
+		button->y=suby1;
+		button->sizex=20;
+		button->sizey=20;
 		button->action=&buttonCloseSubwindow;
 		button->visible=1;
 		button->focused=1;
 		button->key=SDL_SCANCODE_ESCAPE;
 		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-	
+
 		// host button
 		button = newButton();
 		strcpy(button->label,language[1449]);
-		button->sizex=strlen(language[1449])*12+8; button->sizey=20;
-		button->x=subx2-button->sizex-4; button->y=suby2-24;
+		button->sizex=strlen(language[1449])*12+8;
+		button->sizey=20;
+		button->x=subx2-button->sizex-4;
+		button->y=suby2-24;
 		button->action=&buttonHostLobby;
 		button->visible=1;
 		button->focused=1;
 		button->key=SDL_SCANCODE_RETURN;
 		button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	
+
 		// cancel button
 		button = newButton();
 		strcpy(button->label,language[1316]);
-		button->sizex=strlen(language[1316])*12+8; button->sizey=20;
-		button->x=subx1+4; button->y=suby2-24;
+		button->sizex=strlen(language[1316])*12+8;
+		button->sizey=20;
+		button->x=subx1+4;
+		button->y=suby2-24;
 		button->action=&buttonCloseSubwindow;
 		button->visible=1;
 		button->focused=1;
@@ -4523,12 +4551,12 @@ void buttonHostMultiplayer(button_t *my) {
 // join a multiplayer game
 void buttonJoinMultiplayer(button_t *my) {
 	button_t *button;
-	
+
 	// close current window
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	
+
 	// open port window
 	connect_window = CLIENT;
 	subwindow = 1;
@@ -4541,30 +4569,36 @@ void buttonJoinMultiplayer(button_t *my) {
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-	
+
 	// join button
 	button = newButton();
 	strcpy(button->label,language[1451]);
-	button->sizex=strlen(language[1451])*12+8; button->sizey=20;
-	button->x=subx2-button->sizex-4; button->y=suby2-24;
+	button->sizex=strlen(language[1451])*12+8;
+	button->sizey=20;
+	button->x=subx2-button->sizex-4;
+	button->y=suby2-24;
 	button->action=&buttonJoinLobby;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	
+
 	// cancel button
 	button = newButton();
 	strcpy(button->label,language[1316]);
-	button->x=subx1+4; button->y=suby2-24;
-	button->sizex=strlen(language[1316])*12+8; button->sizey=20;
+	button->x=subx1+4;
+	button->y=suby2-24;
+	button->sizex=strlen(language[1316])*12+8;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
@@ -4591,7 +4625,7 @@ void buttonHostLobby(button_t *my) {
 	closeNetworkInterfaces();
 
 	if( !directConnect ) {
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		for( c=0; c<MAXPLAYERS; c++ ) {
 			if( steamIDRemote[c] ) {
 				cpp_Free_CSteamID( steamIDRemote[c] ); //TODO: Bugger this.
@@ -4600,7 +4634,7 @@ void buttonHostLobby(button_t *my) {
 		}
 		currentLobbyType = k_ELobbyTypePrivate;
 		cpp_SteamMatchmaking_CreateLobby(currentLobbyType, 4);
-		#endif
+#endif
 	} else {
 		// resolve host's address
 		if(SDLNet_ResolveHost(&net_server, NULL, portnumber) == -1) {
@@ -4608,7 +4642,7 @@ void buttonHostLobby(button_t *my) {
 			openFailedConnectionWindow(SERVER);
 			return;
 		}
-	
+
 		// open sockets
 		if(!(net_sock = SDLNet_UDP_Open(portnumber))) {
 			printlog( "warning: SDLNet_UDP_open has failed: %s\n", SDLNet_GetError());
@@ -4623,7 +4657,7 @@ void buttonHostLobby(button_t *my) {
 		tcpset = SDLNet_AllocSocketSet(4);
 		SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
 	}
-		
+
 	// allocate data for client connections
 	net_clients = (IPaddress *) malloc(sizeof(IPaddress)*MAXPLAYERS);
 	net_tcpclients = (TCPsocket *) malloc(sizeof(TCPsocket)*MAXPLAYERS);
@@ -4636,13 +4670,13 @@ void buttonHostLobby(button_t *my) {
 		openFailedConnectionWindow(SERVER);
 		return;
 	}
-	
+
 	if( directConnect ) {
 		printlog( "server initialized successfully.\n");
 	} else {
 		printlog( "steam lobby opened successfully.\n");
 	}
-		
+
 	// open lobby window
 	multiplayer = SERVER;
 	lobby_window = TRUE;
@@ -4659,40 +4693,46 @@ void buttonHostLobby(button_t *my) {
 		strcpy(subtext, language[1455]);
 		strcat(subtext, language[1456]);
 	}
-	
+
 	// start game button
 	button = newButton();
 	strcpy(button->label,language[1457]);
-	button->sizex=strlen(language[1457])*12+8; button->sizey=20;
-	button->x=subx2-button->sizex-4; button->y=suby2-24;
+	button->sizex=strlen(language[1457])*12+8;
+	button->sizey=20;
+	button->x=subx2-button->sizex-4;
+	button->y=suby2-24;
 	button->action=&buttonStartServer;
 	button->visible=1;
 	button->focused=1;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	
+
 	// disconnect button
 	button = newButton();
 	strcpy(button->label,language[1311]);
-	button->sizex=strlen(language[1311])*12+8; button->sizey=20;
-	button->x=subx1+4; button->y=suby2-24;
+	button->sizex=strlen(language[1311])*12+8;
+	button->sizey=20;
+	button->x=subx1+4;
+	button->y=suby2-24;
 	button->action=&buttonDisconnect;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	c = button->x+button->sizex + 4;
-	
+
 	// invite friends button
 	if( !directConnect ) {
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		button = newButton();
 		strcpy(button->label,language[1458]);
-		button->sizex=strlen(language[1458])*12+8; button->sizey=20;
-		button->x=c; button->y=suby2-24;
+		button->sizex=strlen(language[1458])*12+8;
+		button->sizey=20;
+		button->x=c;
+		button->y=suby2-24;
 		button->action=&buttonInviteFriends;
 		button->visible=1;
 		button->focused=1;
-		#endif
+#endif
 	}
 
 	if( loadingsavegame )
@@ -4711,22 +4751,22 @@ void buttonJoinLobby(button_t *my) {
 	client_keepalive[0] = ticks;
 
 	// close current window
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	int temp1 = connectingToLobby;
 	int temp2 = connectingToLobbyWindow;
-	#endif
+#endif
 	if( directConnect )
 		buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	connectingToLobby = temp1;
 	connectingToLobbyWindow = temp2;
-	#endif
+#endif
 
 	if( loadingsavegame )
 		loadGame(getSaveGameClientnum());
-		
+
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages,0xFFFFFFFF,language[1452]);
@@ -4741,8 +4781,10 @@ void buttonJoinLobby(button_t *my) {
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&openSteamLobbyWaitWindow;
 	button->visible=1;
 	button->focused=1;
@@ -4752,12 +4794,14 @@ void buttonJoinLobby(button_t *my) {
 	// cancel button
 	button = newButton();
 	strcpy(button->label,language[1316]);
-	button->sizex=strlen(language[1316])*12+8; button->sizey=20;
-	button->x=subx1 + (subx2-subx1)/2 - button->sizex/2; button->y=suby2-28;
+	button->sizex=strlen(language[1316])*12+8;
+	button->sizey=20;
+	button->x=subx1 + (subx2-subx1)/2 - button->sizex/2;
+	button->y=suby2-28;
 	button->action=&openSteamLobbyWaitWindow;
 	button->visible=1;
 	button->focused=1;
-	
+
 	if( directConnect ) {
 		for( c=0; c<sizeof(connectaddress); c++ ) {
 			if( connectaddress[c] == ':' )
@@ -4768,7 +4812,7 @@ void buttonJoinLobby(button_t *my) {
 		strcpy(last_ip, connectaddress);
 		saveConfig("default.cfg");
 	}
-	
+
 	// close any existing net interfaces
 	closeNetworkInterfaces();
 
@@ -4780,7 +4824,7 @@ void buttonJoinLobby(button_t *my) {
 			openFailedConnectionWindow(CLIENT);
 			return;
 		}
-		
+
 		// open sockets
 		printlog("opening TCP and UDP sockets...\n");
 		if(!(net_sock = SDLNet_UDP_Open(0))) {
@@ -4796,7 +4840,7 @@ void buttonJoinLobby(button_t *my) {
 		tcpset = SDLNet_AllocSocketSet(4);
 		SDLNet_TCP_AddSocket(tcpset, net_tcpsock);
 	}
-		
+
 	// allocate packet data
 	if(!(net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE))) {
 		printlog( "warning: packet allocation failed.\n");
@@ -4808,7 +4852,7 @@ void buttonJoinLobby(button_t *my) {
 		printlog( "successfully contacted server at %s:%d.\n", address, portnumber);
 
 	printlog( "submitting join request...\n");
-	
+
 	// send join request
 	strcpy((char *)net_packet->data,"BARONY_JOIN_REQUEST");
 	if( loadingsavegame ) {
@@ -4839,7 +4883,7 @@ void buttonJoinLobby(button_t *my) {
 	net_packet->address.port = net_server.port;
 	net_packet->len = 72;
 	if( !directConnect ) {
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
 		sendPacket(net_sock, -1, net_packet, 0);
@@ -4850,7 +4894,7 @@ void buttonJoinLobby(button_t *my) {
 		SDL_Delay(5);
 		sendPacket(net_sock, -1, net_packet, 0);
 		SDL_Delay(5);
-		#endif
+#endif
 	} else {
 		sendPacket(net_sock, -1, net_packet, 0);
 	}
@@ -4859,7 +4903,7 @@ void buttonJoinLobby(button_t *my) {
 // starts the game as server
 void buttonStartServer(button_t *my) {
 	int c;
-	
+
 	// close window
 	buttonCloseSubwindow(my);
 
@@ -4908,7 +4952,7 @@ void buttonInviteFriends(button_t *my) {
 // disconnects from whatever lobby the game is connected to
 void buttonDisconnect(button_t *my) {
 	int c;
-	
+
 	if( multiplayer==SERVER ) {
 		// send disconnect message to clients
 		for( c=1; c<MAXPLAYERS; c++ ) {
@@ -4930,7 +4974,7 @@ void buttonDisconnect(button_t *my) {
 		net_packet->len = 17;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
-	
+
 	// reset multiplayer status
 	multiplayer = SINGLE;
 	stats[0]->sex = stats[clientnum]->sex;
@@ -4944,57 +4988,50 @@ void buttonDisconnect(button_t *my) {
 
 	// close any existing net interfaces
 	closeNetworkInterfaces();
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	if( currentLobby ) {
 		SteamMatchmaking()->LeaveLobby(*static_cast<CSteamID*>(currentLobby));
 		cpp_Free_CSteamID(currentLobby); //TODO: Bugger this.
 		currentLobby = NULL;
 	}
-	#endif
-	
+#endif
+
 	// close lobby window
 	buttonCloseSubwindow(my);
 }
 
 // open the video tab in the settings window
-void buttonVideoTab(button_t *my)
-{
+void buttonVideoTab(button_t *my) {
 	changeSettingsTab(SETTINGS_VIDEO_TAB);
 }
 
 // open the audio tab in the settings window
-void buttonAudioTab(button_t *my)
-{
+void buttonAudioTab(button_t *my) {
 	changeSettingsTab(SETTINGS_AUDIO_TAB);
 }
 
 // open the keyboard tab in the settings window
-void buttonKeyboardTab(button_t *my)
-{
+void buttonKeyboardTab(button_t *my) {
 	changeSettingsTab(SETTINGS_KEYBOARD_TAB);
 }
 
 // open the mouse tab in the settings window
-void buttonMouseTab(button_t *my)
-{
+void buttonMouseTab(button_t *my) {
 	changeSettingsTab(SETTINGS_MOUSE_TAB);
 }
 
 //Open the gamepad bindings tab in the settings window
-void buttonGamepadBindingsTab(button_t *my)
-{
+void buttonGamepadBindingsTab(button_t *my) {
 	changeSettingsTab(SETTINGS_GAMEPAD_BINDINGS_TAB);
 }
 
 //Open the general gamepad settings tab in the settings window
-void buttonGamepadSettingsTab(button_t *my)
-{
+void buttonGamepadSettingsTab(button_t *my) {
 	changeSettingsTab(SETTINGS_GAMEPAD_SETTINGS_TAB);
 }
 
 // open the misc tab in the settings window
-void buttonMiscTab(button_t *my)
-{
+void buttonMiscTab(button_t *my) {
 	changeSettingsTab(SETTINGS_MISC_TAB);
 }
 
@@ -5028,7 +5065,7 @@ void applySettings() {
 	if( clickmap != NULL )
 		free(clickmap);
 	clickmap=(Entity **) malloc(sizeof(Entity *)*xres*yres);
-	
+
 	// set audio options
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
@@ -5039,12 +5076,10 @@ void applySettings() {
 #endif
 
 	// set keyboard options
-	for (c = 0; c < NUMIMPULSES; c++)
-	{
+	for (c = 0; c < NUMIMPULSES; c++) {
 		impulses[c] = settings_impulses[c];
 	}
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
-	{
+	for (c = 0; c < NUM_JOY_IMPULSES; c++) {
 		joyimpulses[c] = settings_joyimpulses[c];
 	}
 
@@ -5096,8 +5131,10 @@ void openConfirmResolutionWindow() {
 	//Accept button
 	button_t* button = newButton();
 	strcpy(button->label, "Accept");
-	button->x=subx1+8; button->y=suby2-28;
-	button->sizex=strlen("Accept")*12+8; button->sizey=20;
+	button->x=subx1+8;
+	button->y=suby2-28;
+	button->sizex=strlen("Accept")*12+8;
+	button->sizey=20;
 	button->action=&buttonAcceptResolution;
 	button->visible=1;
 	button->focused=1;
@@ -5107,8 +5144,10 @@ void openConfirmResolutionWindow() {
 	//Revert button
 	button = newButton();
 	strcpy(button->label, "Revert");
-	button->x=subx2-strlen("Revert")*12-16; button->y=suby2-28;
-	button->sizex=strlen("Revert")*12+8; button->sizey=20;
+	button->x=subx2-strlen("Revert")*12-16;
+	button->y=suby2-28;
+	button->sizex=strlen("Revert")*12+8;
+	button->sizey=20;
 	button->action=&buttonRevertResolution;
 	button->visible=1;
 	button->focused=1;
@@ -5197,7 +5236,7 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 	}
 	strcat(tempstr,"| %d");
 	printTextFormatted(slider_font, x, y, tempstr, *var);
-	
+
 	// control
 	int range = maxvalue-minvalue;
 	int sliderLength = ((strlen(tempstr)-4)*(slider_font->w/slider_font_char_width));
@@ -5232,7 +5271,7 @@ void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double 
 	}
 	strcat(tempstr,"| %.3f");
 	printTextFormatted(SLIDERFONT, x, y, tempstr, *var);
-	
+
 	// control
 	double range = maxvalue-minvalue;
 	int sliderLength = ((strlen(tempstr)-6)*(SLIDERFONT->w/16));
@@ -5259,7 +5298,7 @@ void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double 
 
 void openLoadGameWindow(button_t *my) {
 	button_t *button;
-	
+
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
@@ -5280,29 +5319,35 @@ void openLoadGameWindow(button_t *my) {
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-						
+
 	// yes button
 	button = newButton();
 	strcpy(button->label,language[1462]);
-	button->sizex=strlen(language[1462])*12+8; button->sizey=20;
-	button->x=subx1+(subx2-subx1)/2-button->sizex/2; button->y=suby2-52;
+	button->sizex=strlen(language[1462])*12+8;
+	button->sizey=20;
+	button->x=subx1+(subx2-subx1)/2-button->sizex/2;
+	button->y=suby2-52;
 	button->action=&buttonLoadGame;
 	button->visible=1;
 	button->focused=1;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT]; //load save game yes => "a" button
-						
+
 	// no button
 	button = newButton();
 	strcpy(button->label,language[1463]);
-	button->sizex=strlen(language[1463])*12+8; button->sizey=20;
-	button->x=subx1+(subx2-subx1)/2-button->sizex/2; button->y=suby2-28;
+	button->sizex=strlen(language[1463])*12+8;
+	button->sizey=20;
+	button->x=subx1+(subx2-subx1)/2-button->sizex/2;
+	button->y=suby2-28;
 	button->action=&buttonOpenCharacterCreationWindow;
 	button->visible=1;
 	button->focused=1;
@@ -5325,7 +5370,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	client_classes[0] = 0;
 	stats[0]->clearStats();
 	initClass(0);
-	
+
 	// close current window
 	if( subwindow ) {
 		buttonCloseSubwindow(NULL);
@@ -5345,29 +5390,35 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	// close button
 	button = newButton();
 	strcpy(button->label,"x");
-	button->x=subx2-20; button->y=suby1;
-	button->sizex=20; button->sizey=20;
+	button->x=subx2-20;
+	button->y=suby1;
+	button->sizex=20;
+	button->sizey=20;
 	button->action=&buttonCloseSubwindow;
 	button->visible=1;
 	button->focused=1;
 	button->joykey = joyimpulses[INJOY_PAUSE_MENU];
-	
+
 	// Continue ...
 	button = newButton();
 	strcpy(button->label,language[1464]);
-	button->sizex=strlen(language[1464])*12+8; button->sizey=20;
-	button->x=subx2-button->sizex-4; button->y=suby2-24;
+	button->sizex=strlen(language[1464])*12+8;
+	button->sizey=20;
+	button->x=subx2-button->sizex-4;
+	button->y=suby2-24;
 	button->action=&buttonContinue;
 	button->visible=1;
 	button->focused=1;
 	button->key=SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	
+
 	// Back ...
 	button = newButton();
 	strcpy(button->label,language[1465]);
-	button->x=subx1+4; button->y=suby2-24;
-	button->sizex=strlen(language[1465])*12+8; button->sizey=20;
+	button->x=subx1+4;
+	button->y=suby2-24;
+	button->sizex=strlen(language[1465])*12+8;
+	button->sizey=20;
 	button->action=&buttonBack;
 	button->visible=1;
 	button->focused=1;
@@ -5375,12 +5426,14 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	int button_back_x = button->x;
 	int button_back_width = button->sizex;
-	
+
 	// Random Character ...
 	button = newButton();
 	strcpy(button->label,language[1466]);
-	button->x=button_back_x+button_back_width+4; button->y=suby2-24;
-	button->sizex=strlen(language[1466])*12+8; button->sizey=20;
+	button->x=button_back_x+button_back_width+4;
+	button->y=suby2-24;
+	button->sizex=strlen(language[1466])*12+8;
+	button->sizey=20;
 	button->action=&buttonRandomCharacter;
 	button->visible=1;
 	button->focused=1;
@@ -5402,7 +5455,7 @@ void buttonLoadGame(button_t *button) {
 		buttonStartSingleplayer(button);
 	} else {
 		directConnect = false;
-		#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 		if( mul==SERVER ) {
 			buttonHostMultiplayer(button);
 		} else if( mul==CLIENT ) {
@@ -5417,7 +5470,7 @@ void buttonLoadGame(button_t *button) {
 				deleteallbuttons=TRUE;
 				connectingToLobby = temp1;
 				connectingToLobbyWindow = temp2;
-			
+
 				// create new window
 				subwindow = 1;
 				subx1 = xres/2-256;
@@ -5429,8 +5482,10 @@ void buttonLoadGame(button_t *button) {
 				// close button
 				button = newButton();
 				strcpy(button->label,"x");
-				button->x=subx2-20; button->y=suby1;
-				button->sizex=20; button->sizey=20;
+				button->x=subx2-20;
+				button->y=suby1;
+				button->sizex=20;
+				button->sizey=20;
 				button->action=&openSteamLobbyWaitWindow;
 				button->visible=1;
 				button->focused=1;
@@ -5440,12 +5495,14 @@ void buttonLoadGame(button_t *button) {
 				// cancel button
 				button = newButton();
 				strcpy(button->label,language[1316]);
-				button->sizex=strlen(language[1316])*12+8; button->sizey=20;
-				button->x=subx1 + (subx2-subx1)/2 - button->sizex/2; button->y=suby2-28;
+				button->sizex=strlen(language[1316])*12+8;
+				button->sizey=20;
+				button->x=subx1 + (subx2-subx1)/2 - button->sizex/2;
+				button->y=suby2-28;
 				button->action=&openSteamLobbyWaitWindow;
 				button->visible=1;
 				button->focused=1;
-			
+
 				connectingToLobby = TRUE;
 				connectingToLobbyWindow = TRUE;
 				strncpy( currentLobbyName, "", 31 );
@@ -5456,7 +5513,7 @@ void buttonLoadGame(button_t *button) {
 		} else {
 			buttonStartSingleplayer(button);
 		}
-		#endif
+#endif
 	}
 }
 

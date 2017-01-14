@@ -79,7 +79,7 @@ void updateIdentifyGUI() {
 		pos.x = IDENTIFY_GUI_X;
 		pos.y = IDENTIFY_GUI_Y;
 		drawImage(identifyGUI_img, NULL, &pos);
-		
+
 		//Buttons
 		if( mousestatus[SDL_BUTTON_LEFT] ) {
 			//Identify GUI scroll up button.
@@ -97,8 +97,7 @@ void updateIdentifyGUI() {
 					identifyscroll++;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
-			}
-			else if (omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15) {
+			} else if (omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15) {
 				//Identify GUI close button.
 				if (omousex >= IDENTIFY_GUI_X + 393 && omousex < IDENTIFY_GUI_X + 407) {
 					buttonclick = 9;
@@ -113,7 +112,7 @@ void updateIdentifyGUI() {
 				}
 			}
 		}
-		
+
 		// mousewheel
 		if( omousex>=IDENTIFY_GUI_X+12 && omousex<IDENTIFY_GUI_X+(identifyGUI_img->w-28) ) {
 			if( omousey>=IDENTIFY_GUI_Y+16 && omousey<IDENTIFY_GUI_Y+(identifyGUI_img->h-8) ) {
@@ -126,7 +125,7 @@ void updateIdentifyGUI() {
 				}
 			}
 		}
-		
+
 		if (dragging_identifyGUI) {
 			if (gui_clickdrag) {
 				identifygui_offset_x = (omousex - dragoffset_x) - (IDENTIFY_GUI_X - identifygui_offset_x);
@@ -161,20 +160,26 @@ void updateIdentifyGUI() {
 
 			//Identify GUI up button.
 			if (buttonclick == 7) {
-				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28); pos.y = IDENTIFY_GUI_Y + 16;
-				pos.w = 0; pos.h = 0;
+				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28);
+				pos.y = IDENTIFY_GUI_Y + 16;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invup_bmp, NULL, &pos);
 			}
 			//Identify GUI down button.
 			if (buttonclick == 8) {
-				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28); pos.y = IDENTIFY_GUI_Y + 52;
-				pos.w = 0; pos.h = 0;
+				pos.x = IDENTIFY_GUI_X + (identifyGUI_img->w - 28);
+				pos.y = IDENTIFY_GUI_Y + 52;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invdown_bmp, NULL, &pos);
 			}
 			//Identify GUI close button.
 			if (buttonclick == 9) {
-				pos.x = IDENTIFY_GUI_X + 393; pos.y = IDENTIFY_GUI_Y;
-				pos.w = 0; pos.h = 0;
+				pos.x = IDENTIFY_GUI_X + 393;
+				pos.y = IDENTIFY_GUI_Y;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
 				identifygui_active = FALSE;
 				identifygui_appraising = FALSE;
@@ -193,7 +198,8 @@ void updateIdentifyGUI() {
 			slotPos.h = inventoryoptionChest_bmp->h;
 			for ( int i = 0; i < NUM_IDENTIFY_GUI_ITEMS; ++i, slotPos.y += slotPos.h ) {
 				pos.x = slotPos.x + 12;
-				pos.w = 0; pos.h = 0;
+				pos.w = 0;
+				pos.h = 0;
 
 				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && identify_items[i] ) {
 					pos.y = slotPos.y;
@@ -226,7 +232,8 @@ void updateIdentifyGUI() {
 			}
 
 			//Okay, now prepare to render all the items.
-			y = IDENTIFY_GUI_Y + 22; c = 0;
+			y = IDENTIFY_GUI_Y + 22;
+			c = 0;
 			if (identify_inventory) {
 				rebuildIdentifyGUIInventory();
 
@@ -246,7 +253,8 @@ void updateIdentifyGUI() {
 							ttfPrintText(ttf8,IDENTIFY_GUI_X+36,y,tempstr);
 							pos.x = IDENTIFY_GUI_X + 16;
 							pos.y = IDENTIFY_GUI_Y + 17 + 18 * (c - identifyscroll - 1);
-							pos.w = 16; pos.h = 16;
+							pos.w = 16;
+							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
 							y += 18;
 							if (c > 3 + identifyscroll)

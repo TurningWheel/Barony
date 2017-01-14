@@ -70,7 +70,8 @@ void actChest(Entity *my) {
 		node->element = malloc(sizeof(list_t)); //Allocate memory for the inventory list.
 		node->deconstructor = &listDeconstructor;
 		list_t *inventory = (list_t *) node->element;
-		inventory->first = NULL; inventory->last = NULL;
+		inventory->first = NULL;
+		inventory->last = NULL;
 
 		int itemcount = 0;
 
@@ -82,230 +83,230 @@ void actChest(Entity *my) {
 		}
 
 		switch (chesttype) { //Note that all of this needs to be properly balanced over time.
-			//TODO: Make all applicable item additions work on a category based search?
+		//TODO: Make all applicable item additions work on a category based search?
+		case 0:
+			//Completely random.
+			itemcount = (rand()%5) + 1;
+			for (i = 0; i < itemcount; ++i) {
+				//And add the current entity to it.
+				int itemnum = rand() % NUMITEMS;
+				while (itemnum == SPELL_ITEM)
+					itemnum = rand() % NUMITEMS; //Keep trying until you don't get a spell.
+				newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+		case 1:
+			//Garbage chest
+			if (rand()%2) {
+				//Empty.
+			} else {
+				//Some worthless garbage. Like a rock. //TODO: Sometimes spawn item 139, worthless piece of glass. Maybe go a step further and have a random amount of items, say 1 - 5, and they can be either rock or the worthless piece of glass or any other garbage.
+				newItem(GEM_ROCK, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+		case 2:
+			//Food.
+			//Items 152 - 158 are all food.
+			itemcount = (rand()%5) + 1;
+			for (i = 0; i < itemcount; ++i) {
+				newItem(static_cast<ItemType>(FOOD_BREAD + (rand()%7)), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+		case 3:
+			//Treasures, jewelry, gems 'n stuff.
+			itemcount = (rand()%5) + 1;
+			for (i = 0; i < itemcount; ++i) {
+				if( rand()%4 )
+					newItem(static_cast<ItemType>(GEM_GARNET + rand()%15), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else
+					newItem(GEM_GLASS, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			//Random chance to spawn a ring or an amulet or some other jewelry.
+			if (rand()%2) {
+				if (rand()%2) {
+					//Spawn a ring.
+					newItem(static_cast<ItemType>(RING_ADORNMENT + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				} else {
+					//Spawn an amulet.
+					newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rand()%6), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				}
+			}
+			break;
+		case 4:
+			//Weapons, armor, stuff.
+			//Further break this down into either spawning only weapon(s), only armor(s), or a combo, like a set.
+
+			switch (rand()%3) { //TODO: Note, switch to rand()%4 if/when case 3 is implemented.
 			case 0:
-				//Completely random.
-				itemcount = (rand()%5) + 1;
+				//Only a weapon. Items 0 - 16.
+			{
+				int item = rand()%18;
+				//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
+				if (item < 16)
+					//Almost every weapon.
+					newItem(static_cast<ItemType>(rand()%17), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else
+					//Crossbow.
+					newItem(CROSSBOW, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+			case 1:
+				//Only a piece of armor.
+			{
+				/*
+				 * 0 - 1 are the steel shields, items 17 and 18.
+				 * 2 - 5 are the gauntlets, items 20 - 23.
+				 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
+				 * 16 - 19 are the hats & helmets, items 40 - 43
+				 */
+				int item = rand()%20;
+				if (item <= 1)
+					//Steel shields. Items 17 & 18.
+					newItem(static_cast<ItemType>(17 + rand()%2), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else if (item <= 5)
+					//Gauntlets. Items 20 - 23.
+					newItem(static_cast<ItemType>(20 + rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else if (item <= 15)
+					//Boots & shirts. Items 28 - 37.
+					newItem(static_cast<ItemType>(28 + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else if (item <= 10)
+					//Hats & helmets. Items 40 - 43.
+					newItem(static_cast<ItemType>(40+rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+			case 2:
+				//A weapon and an armor.
+			{
+				int item = rand()%18;
+				//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
+				if (item < 16)
+					//Almost every weapon.
+					newItem(static_cast<ItemType>(rand()%17), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else
+					//Crossbow.
+					newItem(static_cast<ItemType>(19), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+
+				/*
+				 * 0 - 1 are the steel shields, items 17 and 18.
+				 * 2 - 5 are the gauntlets, items 20 - 23.
+				 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
+				 * 16 - 19 are the hats & helmets, items 40 - 43
+				 */
+				item = rand()%20;
+				if (item <= 1)
+					//Steel shields. Items 17 & 18.
+					newItem(static_cast<ItemType>(17 + rand()%2), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else if (item <= 5)
+					//Gauntlets. Items 20 - 23.
+					newItem(static_cast<ItemType>(20 + rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else if (item <= 15)
+					//Boots & shirts. Items 28 - 37.
+					newItem(static_cast<ItemType>(28 + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				else if (item <= 10)
+					//Hats & helmets. Items 40 - 43.
+					newItem(static_cast<ItemType>(40+rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+			case 3:
+				//TODO: Rarer. Getting a full set of armor + a weapon.
+				break;
+			}
+			break;
+		case 5:
+			//Tools.
+			itemcount = 1 + rand()%2;
+			for (i = 0; i < itemcount; ++i) {
+				newItem(static_cast<ItemType>(TOOL_PICKAXE+rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+		case 6:
+			//Magic chest.
+			//So first choose what kind of magic chest it is.
+		{
+			/*
+			 * Types:
+			 * * Scroll chest. Has some scrolls in it ( 3 - 5).
+			 * * Book chest. Basically a small library. 1-3 books.
+			 * * Staff chest. Staff or 2.
+			 * * Wizard's chest, which will contain 1-2 scrolls, a magic book, a staff, and either a wizard/magician/whatever implement of some sort or a piece of armor.
+			 */
+			int magic_type = rand()%4;
+
+			switch (magic_type) {
+			case 0:
+				//Have 3-5 scrolls.
+				itemcount = 3 + (rand()%3);
 				for (i = 0; i < itemcount; ++i) {
-					//And add the current entity to it.
-					int itemnum = rand() % NUMITEMS;
-					while (itemnum == SPELL_ITEM)
-						itemnum = rand() % NUMITEMS; //Keep trying until you don't get a spell.
-					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			case 1:
-				//Garbage chest
-				if (rand()%2) {
-					//Empty.
-				} else {
-					//Some worthless garbage. Like a rock. //TODO: Sometimes spawn item 139, worthless piece of glass. Maybe go a step further and have a random amount of items, say 1 - 5, and they can be either rock or the worthless piece of glass or any other garbage.
-					newItem(GEM_ROCK, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				//Have 1-3 books.
+				itemcount = 1 + (rand()%3);
+				for (i = 0; i < itemcount; ++i) {
+					newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand()%22), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			case 2:
-				//Food.
-				//Items 152 - 158 are all food.
-				itemcount = (rand()%5) + 1;
-				for (i = 0; i < itemcount; ++i) {
-					newItem(static_cast<ItemType>(FOOD_BREAD + (rand()%7)), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-				}
+				//A staff.
+				newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
 				break;
 			case 3:
-				//Treasures, jewelry, gems 'n stuff.
-				itemcount = (rand()%5) + 1;
-				for (i = 0; i < itemcount; ++i) {
-					if( rand()%4 )
-						newItem(static_cast<ItemType>(GEM_GARNET + rand()%15), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-					else
-						newItem(GEM_GLASS, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-				}
-				//Random chance to spawn a ring or an amulet or some other jewelry.
-				if (rand()%2) {
-					if (rand()%2) {
-						//Spawn a ring.
-						newItem(static_cast<ItemType>(RING_ADORNMENT + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-					} else {
-						//Spawn an amulet.
-						newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rand()%6), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-					}
-				}
-				break;
-			case 4:
-				//Weapons, armor, stuff.
-				//Further break this down into either spawning only weapon(s), only armor(s), or a combo, like a set.
+				//So spawn several items at once. A wizard's chest!
 
-				switch (rand()%3) { //TODO: Note, switch to rand()%4 if/when case 3 is implemented.
-					case 0:
-						//Only a weapon. Items 0 - 16.
-						{
-							int item = rand()%18;
-							//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
-							if (item < 16)
-								//Almost every weapon.
-								newItem(static_cast<ItemType>(rand()%17), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else
-								//Crossbow.
-								newItem(CROSSBOW, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-						}
-						break;
-					case 1:
-						//Only a piece of armor.
-						{
-							/*
-							 * 0 - 1 are the steel shields, items 17 and 18.
-							 * 2 - 5 are the gauntlets, items 20 - 23.
-							 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
-							 * 16 - 19 are the hats & helmets, items 40 - 43
-							 */
-							int item = rand()%20;
-							if (item <= 1)
-								//Steel shields. Items 17 & 18.
-								newItem(static_cast<ItemType>(17 + rand()%2), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else if (item <= 5)
-								//Gauntlets. Items 20 - 23.
-								newItem(static_cast<ItemType>(20 + rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else if (item <= 15)
-								//Boots & shirts. Items 28 - 37.
-								newItem(static_cast<ItemType>(28 + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else if (item <= 10)
-								//Hats & helmets. Items 40 - 43.
-								newItem(static_cast<ItemType>(40+rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-						}
-						break;
-					case 2:
-						//A weapon and an armor.
-						{
-							int item = rand()%18;
-							//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
-							if (item < 16)
-								//Almost every weapon.
-								newItem(static_cast<ItemType>(rand()%17), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else
-								//Crossbow.
-								newItem(static_cast<ItemType>(19), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-
-							/*
-							 * 0 - 1 are the steel shields, items 17 and 18.
-							 * 2 - 5 are the gauntlets, items 20 - 23.
-							 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
-							 * 16 - 19 are the hats & helmets, items 40 - 43
-							 */
-							item = rand()%20;
-							if (item <= 1)
-								//Steel shields. Items 17 & 18.
-								newItem(static_cast<ItemType>(17 + rand()%2), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else if (item <= 5)
-								//Gauntlets. Items 20 - 23.
-								newItem(static_cast<ItemType>(20 + rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else if (item <= 15)
-								//Boots & shirts. Items 28 - 37.
-								newItem(static_cast<ItemType>(28 + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							else if (item <= 10)
-								//Hats & helmets. Items 40 - 43.
-								newItem(static_cast<ItemType>(40+rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-						}
-						break;
-					case 3:
-						//TODO: Rarer. Getting a full set of armor + a weapon.
-						break;
-				}
-				break;
-			case 5:
-				//Tools.
+				//First the scrolls (1 - 2).
 				itemcount = 1 + rand()%2;
 				for (i = 0; i < itemcount; ++i) {
-					newItem(static_cast<ItemType>(TOOL_PICKAXE+rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+				}
+
+				newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand()%22), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+
+				newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+
+				switch (rand()%6) {
+				case 0:
+					//A cloak. Item 24.
+					newItem(CLOAK, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					break;
+				case 1:
+					//A cloak of magic resistance. Item 25.
+					newItem(CLOAK_MAGICREFLECTION, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					break;
+				case 2:
+					//A cloak of invisibility. Item 26.
+					newItem(CLOAK_INVISIBILITY, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					break;
+				case 3:
+					//A cloak of protection. Item 27.
+					newItem(CLOAK_PROTECTION, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					break;
+				case 4:
+					//A phyregian's hat. Item 38.
+					newItem(HAT_PHRYGIAN, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					break;
+				case 5:
+					//A wizard's hat. Item 39.
+					newItem(HAT_WIZARD, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					break;
 				}
 				break;
-			case 6:
-				//Magic chest.
-				//So first choose what kind of magic chest it is.
-				{
-					/*
-					 * Types:
-					 * * Scroll chest. Has some scrolls in it ( 3 - 5).
-					 * * Book chest. Basically a small library. 1-3 books.
-					 * * Staff chest. Staff or 2.
-					 * * Wizard's chest, which will contain 1-2 scrolls, a magic book, a staff, and either a wizard/magician/whatever implement of some sort or a piece of armor.
-					 */
-					int magic_type = rand()%4;
-
-					switch (magic_type) {
-						case 0:
-							//Have 3-5 scrolls.
-							itemcount = 3 + (rand()%3);
-							for (i = 0; i < itemcount; ++i) {
-								newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							}
-							break;
-						case 1:
-							//Have 1-3 books.
-							itemcount = 1 + (rand()%3);
-							for (i = 0; i < itemcount; ++i) {
-								newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand()%22), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							}
-							break;
-						case 2:
-							//A staff.
-							newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							break;
-						case 3:
-							//So spawn several items at once. A wizard's chest!
-
-							//First the scrolls (1 - 2).
-							itemcount = 1 + rand()%2;
-							for (i = 0; i < itemcount; ++i) {
-								newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-							}
-
-							newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand()%22), static_cast<Status>(WORN+rand()%3), 0 , 1, rand(), FALSE, inventory);
-
-							newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-
-							switch (rand()%6) {
-								case 0:
-									//A cloak. Item 24.
-									newItem(CLOAK, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-									break;
-								case 1:
-									//A cloak of magic resistance. Item 25.
-									newItem(CLOAK_MAGICREFLECTION, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-									break;
-								case 2:
-									//A cloak of invisibility. Item 26.
-									newItem(CLOAK_INVISIBILITY, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-									break;
-								case 3:
-									//A cloak of protection. Item 27.
-									newItem(CLOAK_PROTECTION, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-									break;
-								case 4:
-									//A phyregian's hat. Item 38.
-									newItem(HAT_PHRYGIAN, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-									break;
-								case 5:
-									//A wizard's hat. Item 39.
-									newItem(HAT_WIZARD, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-									break;
-							}
-							break;
-					}
-				}
-				break;
-			case 7:
-				//Potions.
-				//Items 50 - 64 are potions.
-				itemcount = (rand()%3) + 1;
-				for (i = 0; i < itemcount; ++i) {
-					newItem(static_cast<ItemType>(POTION_WATER + (rand()%15)), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
-				}
-				break;
-			default:
-				//Default case. Should never be reached.
-				newItem(static_cast<ItemType>(0), BROKEN, 0, 1, rand(), FALSE, inventory);
-				printlog( "warning: default cause in chest init theme type reached. This should never happen.");
-				break;
+			}
+		}
+		break;
+		case 7:
+			//Potions.
+			//Items 50 - 64 are potions.
+			itemcount = (rand()%3) + 1;
+			for (i = 0; i < itemcount; ++i) {
+				newItem(static_cast<ItemType>(POTION_WATER + (rand()%15)), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+			}
+			break;
+		default:
+			//Default case. Should never be reached.
+			newItem(static_cast<ItemType>(0), BROKEN, 0, 1, rand(), FALSE, inventory);
+			printlog("warning: default cause in chest init theme type reached. This should never happen.");
+			break;
 		}
 	}
 
@@ -441,7 +442,7 @@ void actChest(Entity *my) {
 
 void actChestLid(Entity *my) {
 	int i;
-	
+
 	Entity *parent = uidToEntity(my->parent);
 	if( !parent ) {
 		list_RemoveNode(my->mynode);
@@ -456,7 +457,7 @@ void actChestLid(Entity *my) {
 				serverUpdateEntitySkill(my,1);
 			}
 		}
-	
+
 		for (i = 0; i < MAXPLAYERS; ++i) {
 			if ( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if (inrange[i]) {
@@ -465,7 +466,7 @@ void actChestLid(Entity *my) {
 			}
 		}
 	}
-	
+
 	if( my->skill[1] ) {
 		// chest is open
 		if( !my->skill[0] ) {

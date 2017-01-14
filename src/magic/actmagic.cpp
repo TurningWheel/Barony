@@ -40,33 +40,33 @@ void actMagicTrap(Entity *my) {
 	if( !MAGICTRAP_INIT ) {
 		MAGICTRAP_INIT = 1;
 		switch( rand()%8 ) {
-			case 0:
-				MAGICTRAP_SPELL = SPELL_FORCEBOLT;
-				break;
-			case 1:
-				MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
-				break;
-			case 2:
-				MAGICTRAP_SPELL = SPELL_COLD;
-				break;
-			case 3:
-				MAGICTRAP_SPELL = SPELL_FIREBALL;
-				break;
-			case 4:
-				MAGICTRAP_SPELL = SPELL_LIGHTNING;
-				break;
-			case 5:
-				MAGICTRAP_SPELL = SPELL_SLEEP;
-				break;
-			case 6:
-				MAGICTRAP_SPELL = SPELL_CONFUSE;
-				break;
-			case 7:
-				MAGICTRAP_SPELL = SPELL_SLOW;
-				break;
-			default:
-				MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
-				break;
+		case 0:
+			MAGICTRAP_SPELL = SPELL_FORCEBOLT;
+			break;
+		case 1:
+			MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
+			break;
+		case 2:
+			MAGICTRAP_SPELL = SPELL_COLD;
+			break;
+		case 3:
+			MAGICTRAP_SPELL = SPELL_FIREBALL;
+			break;
+		case 4:
+			MAGICTRAP_SPELL = SPELL_LIGHTNING;
+			break;
+		case 5:
+			MAGICTRAP_SPELL = SPELL_SLEEP;
+			break;
+		case 6:
+			MAGICTRAP_SPELL = SPELL_CONFUSE;
+			break;
+		case 7:
+			MAGICTRAP_SPELL = SPELL_SLOW;
+			break;
+		default:
+			MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
+			break;
 		}
 		my->light = lightSphere(my->x/16,my->y/16,3,192);
 	}
@@ -88,30 +88,30 @@ void actMagicTrap(Entity *my) {
 		int oldir=0;
 		int x=0, y=0;
 		switch (MAGICTRAP_DIRECTION) {
-			case 0:
-				x = 12;
-				y = 0;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION++;
-				break;
-			case 1:
-				x = 0;
-				y = 12;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION++;
-				break;
-			case 2:
-				x = -12;
-				y = 0;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION++;
-				break;
-			case 3:
-				x = 0;
-				y = -12;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION = 0;
-				break;
+		case 0:
+			x = 12;
+			y = 0;
+			oldir = MAGICTRAP_DIRECTION;
+			MAGICTRAP_DIRECTION++;
+			break;
+		case 1:
+			x = 0;
+			y = 12;
+			oldir = MAGICTRAP_DIRECTION;
+			MAGICTRAP_DIRECTION++;
+			break;
+		case 2:
+			x = -12;
+			y = 0;
+			oldir = MAGICTRAP_DIRECTION;
+			MAGICTRAP_DIRECTION++;
+			break;
+		case 3:
+			x = 0;
+			y = -12;
+			oldir = MAGICTRAP_DIRECTION;
+			MAGICTRAP_DIRECTION = 0;
+			break;
 		}
 		int u = std::min<int>(std::max(0.0,(my->x+x)/16),map.width-1);
 		int v = std::min<int>(std::max(0.0,(my->y+y)/16),map.height-1);
@@ -153,8 +153,7 @@ void actMagiclightBall(Entity *my) {
 				if( my->light != NULL )
 					list_RemoveNode(my->light->node);
 				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-			}
-			else {
+			} else {
 				if( my->light != NULL )
 					list_RemoveNode(my->light->node);
 				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
@@ -324,7 +323,7 @@ void actMagiclightBall(Entity *my) {
 					my->vel_y = sin(tangent) * ((distance - MAGICLIGHT_BALL_FOLLOW_DISTANCE) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
 					my->x += (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
 					my->y += (my->vel_y < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_y : MAGIC_LIGHTBALL_SPEEDLIMIT;
-				//} else if (!map.tiles[(int)(OBSTACLELAYER + (my->y / 16) * MAPLAYERS + (my->x / 16) * MAPLAYERS * map.height)]) { //If not in wall..
+					//} else if (!map.tiles[(int)(OBSTACLELAYER + (my->y / 16) * MAPLAYERS + (my->x / 16) * MAPLAYERS * map.height)]) { //If not in wall..
 				} else {
 					//messagePlayer(0, "******Pathfinding.");
 					//Caster is not in line of sight. Calculate a move path.
@@ -441,8 +440,7 @@ void actMagiclightBall(Entity *my) {
 				if( my->light != NULL )
 					list_RemoveNode(my->light->node);
 				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-			}
-			else {
+			} else {
 				if( my->light != NULL )
 					list_RemoveNode(my->light->node);
 				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
@@ -480,7 +478,8 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 	//node_t *node = NULL;
 	spellElement_t *element = NULL;
 	node_t *node = NULL;
-	int i = 0; int c = 0;
+	int i = 0;
+	int c = 0;
 	Entity *entity = NULL;
 	double tangent;
 
@@ -541,7 +540,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							hit.entity->fskill[2]=parent->x;
 							hit.entity->fskill[3]=parent->y;
 						}
-							
+
 						// alert other monsters too
 						Entity *ohitentity = hit.entity;
 						for( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -590,18 +589,15 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							reflection = 3;
 					}
 					if( !reflection ) {
-						if (hitstats->amulet)
-						{
+						if (hitstats->amulet) {
 							if (hitstats->amulet->type == AMULET_MAGICREFLECTION)
 								reflection = 2;
 						}
-						if (hitstats->cloak)
-						{
+						if (hitstats->cloak) {
 							if (hitstats->cloak->type == CLOAK_MAGICREFLECTION)
 								reflection = 1;
 						}
-						if (hitstats->shield)
-						{
+						if (hitstats->shield) {
 							if (hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending)
 								reflection = 3;
 						}
@@ -669,8 +665,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 								playSoundEntity(hit.entity,76,64);
 							}
 						}
-						if (player > 0 && multiplayer == SERVER)
-						{
+						if (player > 0 && multiplayer == SERVER) {
 							strcpy((char *)net_packet->data,"ARMR");
 							net_packet->data[4] = armornum;
 							if (reflection == 1)
@@ -768,27 +763,27 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 )
+									if( parent )
+										if( parent->behavior == &actPlayer )
+											messagePlayer(parent->skill[2],language[387]);
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
@@ -885,29 +880,29 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 )
+									if( parent )
+										if( parent->behavior == &actPlayer )
+											messagePlayer(parent->skill[2],language[387]);
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
 
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
@@ -963,7 +958,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							damage /= (1+(int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
-								spawnGib(hit.entity);
+							spawnGib(hit.entity);
 							//}
 
 							// write the obituary
@@ -1006,27 +1001,27 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 )
+									if( parent )
+										if( parent->behavior == &actPlayer )
+											messagePlayer(parent->skill[2],language[387]);
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
@@ -1300,31 +1295,31 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										messagePlayer(parent->skill[2],language[387]);
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 ) {
+									if( parent ) {
+										if( parent->behavior == &actPlayer ) {
+											messagePlayer(parent->skill[2],language[387]);
+										}
 									}
 								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
 							damage /= (1+(int)resistance);
@@ -1482,7 +1477,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 					} else {
 						if( hit.entity->behavior == &actBoulder ) {
 							int i = 8+rand()%4;
-					
+
 							int c;
 							for( c=0; c<i; c++ ) {
 								Entity *entity = newEntity(-1,1,map.entities);
@@ -1510,7 +1505,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 							double ox = hit.entity->x;
 							double oy = hit.entity->y;
-						
+
 							// destroy the boulder
 							playSoundEntity(hit.entity,67,128);
 							list_RemoveNode(hit.entity->mynode);
@@ -1567,8 +1562,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 					if( my->light != NULL )
 						list_RemoveNode(my->light->node);
 					my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-				}
-				else {
+				} else {
 					if( my->light != NULL )
 						list_RemoveNode(my->light->node);
 					my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
@@ -1604,8 +1598,7 @@ void actMagicClient(Entity *my) {
 			if( my->light != NULL )
 				list_RemoveNode(my->light->node);
 			my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-		}
-		else {
+		} else {
 			if( my->light != NULL )
 				list_RemoveNode(my->light->node);
 			my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
@@ -1662,7 +1655,7 @@ Entity *spawnMagicParticle(Entity *parentent) {
 	if( multiplayer != CLIENT )
 		entity_uids--;
 	entity->uid = -3;
-	
+
 	return entity;
 }
 

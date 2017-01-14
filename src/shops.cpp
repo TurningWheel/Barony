@@ -36,7 +36,7 @@ int selectedShopSlot = -1;
 /*-------------------------------------------------------------------------------
 
 	startTradingServer
-	
+
 	called on server, initiates trade sequence between player and NPC
 
 -------------------------------------------------------------------------------*/
@@ -48,11 +48,11 @@ void startTradingServer(Entity *entity, int player) {
 		return;
 	if (!players[player] || !players[player]->entity)
 		return;
-	
+
 	Stat *stats = entity->getStats();
 	if( stats==NULL )
 		return;
-		
+
 	if( player==0 ) {
 		shootmode = FALSE;
 		gui_mode = GUI_MODE_SHOP;
@@ -87,7 +87,7 @@ void startTradingServer(Entity *entity, int player) {
 		net_packet->address.port = net_clients[player-1].port;
 		net_packet->len = 9+strlen(entitystats->name)+1;
 		sendPacketSafe(net_sock, -1, net_packet, player-1);
-		
+
 		// fill client's shop inventory with items
 		node_t *node;
 		for( node=entitystats->inventory.first; node!=NULL; node=node->next ) {
@@ -116,7 +116,7 @@ void startTradingServer(Entity *entity, int player) {
 /*-------------------------------------------------------------------------------
 
 	buyItemFromShop
-	
+
 	buys the given item from the currently open shop
 
 -------------------------------------------------------------------------------*/
@@ -150,7 +150,7 @@ void buyItemFromShop(Item *item) {
 		} else {
 			strcpy((char *)net_packet->data,"SHPB");
 			SDLNet_Write32(shopkeeper,&net_packet->data[4]);
-			
+
 			// send item that was bought to server
 			SDLNet_Write32(item->type,&net_packet->data[8]);
 			SDLNet_Write32(item->status,&net_packet->data[12]);
@@ -177,7 +177,7 @@ void buyItemFromShop(Item *item) {
 /*-------------------------------------------------------------------------------
 
 	sellItemToShop
-	
+
 	sells the given item to the currently open shop
 
 -------------------------------------------------------------------------------*/
@@ -190,44 +190,44 @@ void sellItemToShop(Item *item) {
 		playSound(90,64);
 		return;
 	}
-		
+
 	bool deal = TRUE;
 	switch( shopkeepertype ) {
-		case 0: // arms & armor
-			if( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
-				deal = FALSE;
-			break;
-		case 1: // hats
-			if( itemCategory(item) != ARMOR )
-				deal = FALSE;
-			break;
-		case 2: // jewelry
-			if( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
-				deal = FALSE;
-			break;
-		case 3: // bookstore
-			if( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
-				deal = FALSE;
-			break;
-		case 4: // potion shop
-			if( itemCategory(item) != POTION )
-				deal = FALSE;
-			break;
-		case 5: // magicstaffs
-			if( itemCategory(item) != MAGICSTAFF )
-				deal = FALSE;
-			break;
-		case 6: // food
-			if( itemCategory(item) != FOOD )
-				deal = FALSE;
-			break;
-		case 7: // tools
-		case 8: // lights
-			if( itemCategory(item) != TOOL )
-				deal = FALSE;
-			break;
-		default:
-			break;
+	case 0: // arms & armor
+		if( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+			deal = FALSE;
+		break;
+	case 1: // hats
+		if( itemCategory(item) != ARMOR )
+			deal = FALSE;
+		break;
+	case 2: // jewelry
+		if( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
+			deal = FALSE;
+		break;
+	case 3: // bookstore
+		if( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+			deal = FALSE;
+		break;
+	case 4: // potion shop
+		if( itemCategory(item) != POTION )
+			deal = FALSE;
+		break;
+	case 5: // magicstaffs
+		if( itemCategory(item) != MAGICSTAFF )
+			deal = FALSE;
+		break;
+	case 6: // food
+		if( itemCategory(item) != FOOD )
+			deal = FALSE;
+		break;
+	case 7: // tools
+	case 8: // lights
+		if( itemCategory(item) != TOOL )
+			deal = FALSE;
+		break;
+	default:
+		break;
 	}
 	if( !deal ) {
 		shopspeech = language[212+rand()%3];
@@ -235,7 +235,7 @@ void sellItemToShop(Item *item) {
 		playSound(90,64);
 		return;
 	}
-	
+
 	if( items[item->type].value*.75 <= item->sellValue(clientnum) )
 		shopspeech = language[209+rand()%3];
 	else
@@ -255,7 +255,7 @@ void sellItemToShop(Item *item) {
 	} else {
 		strcpy((char *)net_packet->data,"SHPS");
 		SDLNet_Write32(shopkeeper,&net_packet->data[4]);
-		
+
 		// send item that was sold to server
 		SDLNet_Write32(item->type,&net_packet->data[8]);
 		SDLNet_Write32(item->status,&net_packet->data[12]);

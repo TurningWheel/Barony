@@ -23,10 +23,10 @@ void initRat(Entity *my, Stat *myStats) {
 	int c;
 
 	my->sprite = 131; // rat model
-	
+
 	my->flags[UPDATENEEDED]=TRUE;
 	my->flags[INVISIBLE]=FALSE;
-	
+
 	if( multiplayer!=CLIENT ) {
 		MONSTER_SPOTSND = 29;
 		MONSTER_SPOTVAR = 1;
@@ -39,8 +39,10 @@ void initRat(Entity *my, Stat *myStats) {
 		strcpy(myStats->name,"");
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 30; myStats->MAXHP = 30;
-		myStats->MP = 10; myStats->MAXMP = 10;
+		myStats->HP = 30;
+		myStats->MAXHP = 30;
+		myStats->MP = 10;
+		myStats->MAXMP = 10;
 		myStats->OLDHP = myStats->HP;
 		myStats->STR = 0;
 		myStats->DEX = 2;
@@ -54,7 +56,8 @@ void initRat(Entity *my, Stat *myStats) {
 		myStats->HUNGER = 900;
 		if( !myStats->leader_uid )
 			myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -73,7 +76,7 @@ void initRat(Entity *my, Stat *myStats) {
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-	
+
 		if( rand()%4 ) {
 			if( rand()%2 )
 				newItem( FOOD_MEAT, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
@@ -83,7 +86,8 @@ void initRat(Entity *my, Stat *myStats) {
 
 		if( rand()%50==0 && !my->flags[USERFLAG2] ) {
 			strcpy(myStats->name,"Algernon");
-			myStats->HP = 60; myStats->MAXHP = 60;
+			myStats->HP = 60;
+			myStats->MAXHP = 60;
 			myStats->OLDHP = myStats->HP;
 			myStats->STR = -1;
 			myStats->DEX = 20;

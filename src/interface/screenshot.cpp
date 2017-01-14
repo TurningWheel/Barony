@@ -18,7 +18,7 @@
 /*-------------------------------------------------------------------------------
 
 	takeScreenshot
-	
+
 	takes a screenshot of the game and saves it in the current directory
 
 -------------------------------------------------------------------------------*/
@@ -26,7 +26,7 @@
 void takeScreenshot() {
 	char filename[1024];
 	SDL_Surface *temp, *temp2;
-	
+
 	strcpy( filename, "Screenshot " );
 	time_t timer;
 	char buffer[32];
@@ -36,7 +36,7 @@ void takeScreenshot() {
 	strftime( buffer, 32, "%Y-%m-%d %H-%M-%S", tm_info );
 	strcat( filename, buffer );
 	strcat( filename, ".png" );
-	
+
 	temp = SDL_CreateRGBSurface(0,xres,yres,32,0,0,0,0);
 	SDL_LockSurface(temp);
 	glReadPixels(0,0,xres,yres,GL_BGRA,GL_UNSIGNED_BYTE,temp->pixels);

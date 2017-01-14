@@ -21,11 +21,10 @@
 #include "../player.hpp"
 #include "magic.hpp"
 
-void castSpellInit(Uint32 caster_uid, spell_t *spell){
+void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 	Entity *caster = uidToEntity(caster_uid);
 	node_t *node = NULL;
-	if (!caster || !spell)
-	{
+	if (!caster || !spell) {
 		//Need a spell and caster to cast a spell.
 		return;
 	}
@@ -47,10 +46,8 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell){
 
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < numplayers; ++i)
-	{
-		if (caster == players[i]->entity)
-		{
+	for (i = 0; i < numplayers; ++i) {
+		if (caster == players[i]->entity) {
 			player = i; //Set the player.
 		}
 	}
@@ -95,9 +92,9 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell){
 	Stat *stat = caster->getStats();
 	if( !stat )
 		return;
-	
+
 	if (stat->EFFECTS[EFF_PARALYZED]) {
-		return;		
+		return;
 	}
 
 	magiccost = getCostOfSpell(spell);
@@ -121,14 +118,13 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell){
 Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool trap) {
 	Entity *caster = uidToEntity(caster_uid);
 
-	if (!caster || !spell)
-	{
+	if (!caster || !spell) {
 		//Need a spell and caster to cast a spell.
 		return NULL;
 	}
 
 	Entity *result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
-	#define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat)),100) //Shortcut!
+#define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat)),100) //Shortcut!
 
 	if (clientnum != 0 && multiplayer == CLIENT) {
 		strcpy( (char *)net_packet->data, "SPEL" );
@@ -144,10 +140,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	if (!spell->elements.first) {
 		return NULL;
 	}
-	
+
 	//node_t *node = spell->types->first;
 
-	#define PROPULSION_MISSILE 1
+#define PROPULSION_MISSILE 1
 	int i = 0;
 	int chance = 0;
 	int propulsion = 0;
@@ -162,10 +158,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	Stat *stat = caster->getStats();
 
 	int player = -1;
-	for (i = 0; i < numplayers; ++i)
-	{
-		if (caster == players[i]->entity)
-		{
+	for (i = 0; i < numplayers; ++i) {
+		if (caster == players[i]->entity) {
 			player = i; //Set the player.
 		}
 	}
@@ -241,15 +235,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	//Check if swimming.
 	if (!waterwalkingboots && !levitating && !trap && player>=0) {
 		bool swimming=FALSE;
-		if (players[player] && players[player]->entity)
-		{
+		if (players[player] && players[player]->entity) {
 			int x = std::min<int>(std::max(0.0, floor(caster->x/16)), map.width-1);
 			int y = std::min<int>(std::max(0.0, floor(caster->y/16)), map.height-1);
 			if (animatedtiles[map.tiles[y*MAPLAYERS + x*MAPLAYERS*map.height]])
 				swimming = TRUE;
 		}
-		if (swimming)
-		{
+		if (swimming) {
 			//Can't cast spells while swimming if not levitating or water walking.
 			if (player >= 0)
 				messagePlayer(player, language[410]);
@@ -360,8 +352,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			stat->EFFECTS[EFF_INVISIBLE] = TRUE;
 			stat->EFFECTS_TIMERS[EFF_INVISIBLE] = duration;
 			for (i = 0; i < numplayers; ++i) {
-				if (caster == players[i]->entity)
-				{
+				if (caster == players[i]->entity) {
 					serverUpdateEffects(i);
 				}
 			}
@@ -492,8 +483,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			spawnMagicEffectParticles(caster->x,caster->y,caster->z,169);
 		} else if (!strcmp(element->name, spellElement_cure_ailment.name)) { //TODO: Generalize it for NPCs too?
 			for (i = 0; i < numplayers; ++i) {
-				if (caster == players[i]->entity)
-				{
+				if (caster == players[i]->entity) {
 					Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
 					messagePlayerColor(i,color,language[411]);
 					int c = 0;
@@ -553,7 +543,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			entity->flags[PASSABLE]=TRUE;
 			entity->flags[BRIGHT]=TRUE;
 			entity->behavior = &actMagicMissile;
-			
+
 			double missile_speed = 4 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
@@ -681,12 +671,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 
 	if (spell_isChanneled(spell) && !using_magicstaff) { //TODO: What about magic traps and channeled spells?
 		if (!channeled_spell) {
-				printlog( "What. Spell is channeled but no channeled_spell pointer? What sorcery is this?\n");
+			printlog( "What. Spell is channeled but no channeled_spell pointer? What sorcery is this?\n");
 		} else {
 			int target_client = 0;
 			for (i = 0; i < numplayers; ++i) {
-				if (players[i]->entity == caster)
-				{
+				if (players[i]->entity == caster) {
 					target_client = i;
 				}
 			}

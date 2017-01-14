@@ -95,5 +95,5 @@ extern void (*cpp_SteamServerClientWrapper_OnSteamShutdown)(void *callback);
 extern void (*cpp_SteamServerClientWrapper_OnLobbyCreated)(void *pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyCreated_t.
 extern void (*cpp_SteamServerClientWrapper_OnLobbyEntered)(void *pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyEnter_t.
 extern void (*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(void *pCallback, bool bIOFailure); //Where pCallback is a pointer to type LobbyMatchList_t.
-extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void *pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type 
+extern void (*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(void *pEncryptedAppTicketResponse, bool bIOFailure); //Where pEncryptedAppTicketResponse is of type
 extern void (*cpp_SteamServerClientWrapper_GameServerPingOnServerResponded)(void *steamID);

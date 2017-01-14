@@ -76,6 +76,6 @@ Entity *spawnFlame(Entity *parentent) {
 	if( multiplayer != CLIENT )
 		entity_uids--;
 	entity->uid = -3;
-	
+
 	return entity;
 }

@@ -41,8 +41,10 @@ void initTroll(Entity *my, Stat *myStats) {
 		myStats->appearance = rand();
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
-		myStats->HP = 100+rand()%20; myStats->MAXHP = myStats->HP;
-		myStats->MP = 30; myStats->MAXMP = 30;
+		myStats->HP = 100+rand()%20;
+		myStats->MAXHP = myStats->HP;
+		myStats->MP = 30;
+		myStats->MAXMP = 30;
 		myStats->OLDHP = myStats->HP;
 		myStats->STR = 15;
 		myStats->DEX = -2;
@@ -56,7 +58,8 @@ void initTroll(Entity *my, Stat *myStats) {
 		myStats->HUNGER = 900;
 		if( !myStats->leader_uid )
 			myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first=NULL; myStats->FOLLOWERS.last=NULL;
+		myStats->FOLLOWERS.first=NULL;
+		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
 			if( c<NUMPROFICIENCIES )
 				myStats->PROFICIENCIES[c]=0;
@@ -197,20 +200,19 @@ void initTroll(Entity *my, Stat *myStats) {
 
 void actTrollLimb(Entity *my) {
 	int i;
-	
+
 	Entity *parent = NULL;
 	if( (parent=uidToEntity(my->skill[2]))==NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
-	
+
 	if( multiplayer!=CLIENT ) {
 		for( i=0; i<MAXPLAYERS; i++ ) {
 			if( inrange[i] ) {
 				if( i==0 && selectedEntity==my ) {
 					parent->skill[13] = i+1;
-				}
-				else if( client_selected[i]==my ) {
+				} else if( client_selected[i]==my ) {
 					parent->skill[13] = i+1;
 				}
 			}
@@ -269,7 +271,7 @@ void trollMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	Entity *entity = NULL;
 	Entity *rightbody = NULL;
 	int bodypart;
-	
+
 	// set invisibility
 	if( multiplayer != CLIENT ) {
 		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
@@ -411,7 +413,7 @@ void trollMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					}
 				}
 			}
-			
+
 			if( bodypart!=5 || (MONSTER_ATTACK==0 && MONSTER_ATTACKTIME==0) ) {
 				if( dist>0.1 ) {
 					if( entity->skill[0] ) {
@@ -441,51 +443,51 @@ void trollMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		}
 		switch( bodypart ) {
-			// torso
-			case 2:
-				entity->x-=.5*cos(my->yaw);
-				entity->y-=.5*sin(my->yaw);
-				entity->z+=2.25;
-				break;
-			// right leg
-			case 3:
-				entity->x+=2*cos(my->yaw+PI/2)-1.25*cos(my->yaw);
-				entity->y+=2*sin(my->yaw+PI/2)-1.25*sin(my->yaw);
-				entity->z+=5;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
-					entity->yaw += PI/8;
-					entity->pitch = -PI/2;
-				}
-				break;
-			// left leg
-			case 4:
-				entity->x-=2*cos(my->yaw+PI/2)+1.25*cos(my->yaw);
-				entity->y-=2*sin(my->yaw+PI/2)+1.25*sin(my->yaw);
-				entity->z+=5;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
-					entity->yaw -= PI/8;
-					entity->pitch = -PI/2;
-				}
-				break;
-			// right arm
-			case 5:
-				entity->x+=3.5*cos(my->yaw+PI/2)-1*cos(my->yaw);
-				entity->y+=3.5*sin(my->yaw+PI/2)-1*sin(my->yaw);
-				entity->z+=.1;
-				entity->yaw += MONSTER_WEAPONYAW;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
-					entity->pitch = 0;
-				}
-				break;
-			// left arm
-			case 6:
-				entity->x-=3.5*cos(my->yaw+PI/2)+1*cos(my->yaw);
-				entity->y-=3.5*sin(my->yaw+PI/2)+1*sin(my->yaw);
-				entity->z+=.1;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
-					entity->pitch = 0;
-				}
-				break;
+		// torso
+		case 2:
+			entity->x-=.5*cos(my->yaw);
+			entity->y-=.5*sin(my->yaw);
+			entity->z+=2.25;
+			break;
+		// right leg
+		case 3:
+			entity->x+=2*cos(my->yaw+PI/2)-1.25*cos(my->yaw);
+			entity->y+=2*sin(my->yaw+PI/2)-1.25*sin(my->yaw);
+			entity->z+=5;
+			if( my->z >= 1.4 && my->z <= 1.6 ) {
+				entity->yaw += PI/8;
+				entity->pitch = -PI/2;
+			}
+			break;
+		// left leg
+		case 4:
+			entity->x-=2*cos(my->yaw+PI/2)+1.25*cos(my->yaw);
+			entity->y-=2*sin(my->yaw+PI/2)+1.25*sin(my->yaw);
+			entity->z+=5;
+			if( my->z >= 1.4 && my->z <= 1.6 ) {
+				entity->yaw -= PI/8;
+				entity->pitch = -PI/2;
+			}
+			break;
+		// right arm
+		case 5:
+			entity->x+=3.5*cos(my->yaw+PI/2)-1*cos(my->yaw);
+			entity->y+=3.5*sin(my->yaw+PI/2)-1*sin(my->yaw);
+			entity->z+=.1;
+			entity->yaw += MONSTER_WEAPONYAW;
+			if( my->z >= 1.4 && my->z <= 1.6 ) {
+				entity->pitch = 0;
+			}
+			break;
+		// left arm
+		case 6:
+			entity->x-=3.5*cos(my->yaw+PI/2)+1*cos(my->yaw);
+			entity->y-=3.5*sin(my->yaw+PI/2)+1*sin(my->yaw);
+			entity->z+=.1;
+			if( my->z >= 1.4 && my->z <= 1.6 ) {
+				entity->pitch = 0;
+			}
+			break;
 		}
 	}
 	if( MONSTER_ATTACK != 0 )

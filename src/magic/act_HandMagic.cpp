@@ -114,8 +114,7 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 [12:49:46 PM] Sheridan Kane Rathbun: the first step is to get the hands visible on the screen when you cast. worry about moving them when that critical part is done.
 */
 
-void actLeftHandMagic(Entity *my)
-{
+void actLeftHandMagic(Entity *my) {
 	//int c = 0;
 	if (intro == TRUE) {
 		my->flags[INVISIBLE] = TRUE;
@@ -129,8 +128,7 @@ void actLeftHandMagic(Entity *my)
 		my->focalz = -1.5;
 	}
 
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
-	{
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr) {
 		magicLeftHand = nullptr;
 		spellcastingAnimationManager_deactivate(&cast_animation);
 		list_RemoveNode(my->mynode);
@@ -193,64 +191,63 @@ void actLeftHandMagic(Entity *my)
 	if (stats[clientnum]->cloak != NULL)
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) // debug cam or player invisible
-	{
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
 		my->flags[INVISIBLE] = TRUE;
 	}
 
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
-			case CIRCLE:
-				if(ticks%5==0) {
-					Entity *entity = spawnGib(my);
-					entity->flags[INVISIBLE] = FALSE;
-					entity->flags[SPRITE] = TRUE;
-					entity->flags[NOUPDATE] = TRUE;
-					entity->flags[UPDATENEEDED] = FALSE;
-					entity->flags[OVERDRAW] = TRUE;
-					entity->flags[BRIGHT] = TRUE;
-					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
-					entity->scaley = 0.25f;
-					entity->scalez = 0.25f;
-					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-					entity->yaw = ((rand()%6)*60)*PI/180.0;
-					entity->pitch = (rand()%360)*PI/180.0;
-					entity->roll = (rand()%360)*PI/180.0;
-					entity->vel_x = cos(entity->yaw)*.1;
-					entity->vel_y = sin(entity->yaw)*.1;
-					entity->vel_z = -.15;
-					entity->fskill[3] = 0.01;
+		case CIRCLE:
+			if(ticks%5==0) {
+				Entity *entity = spawnGib(my);
+				entity->flags[INVISIBLE] = FALSE;
+				entity->flags[SPRITE] = TRUE;
+				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[UPDATENEEDED] = FALSE;
+				entity->flags[OVERDRAW] = TRUE;
+				entity->flags[BRIGHT] = TRUE;
+				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+				entity->scaley = 0.25f;
+				entity->scalez = 0.25f;
+				entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+				entity->yaw = ((rand()%6)*60)*PI/180.0;
+				entity->pitch = (rand()%360)*PI/180.0;
+				entity->roll = (rand()%360)*PI/180.0;
+				entity->vel_x = cos(entity->yaw)*.1;
+				entity->vel_y = sin(entity->yaw)*.1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+			}
+			cast_animation.consume_timer--;
+			if (cast_animation.consume_timer < 0 && cast_animation.mana_left > 0) {
+				//Time to consume mana and reset the ticker!
+				cast_animation.consume_timer = cast_animation.consume_interval;
+				if (multiplayer == SINGLE) {
+					players[clientnum]->entity->drainMP(1);
 				}
-				cast_animation.consume_timer--;
-				if (cast_animation.consume_timer < 0 && cast_animation.mana_left > 0) {
-					//Time to consume mana and reset the ticker!
-					cast_animation.consume_timer = cast_animation.consume_interval;
-					if (multiplayer == SINGLE) {
-						players[clientnum]->entity->drainMP(1);
-					}
-					cast_animation.mana_left--;
-				}
+				cast_animation.mana_left--;
+			}
 
-				cast_animation.lefthand_angle += HANDMAGIC_CIRCLE_SPEED;
-				cast_animation.lefthand_movex = cos(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
-				cast_animation.lefthand_movey = sin(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
-				if (cast_animation.lefthand_angle >= 2 * PI) { //Completed one loop.
-					cast_animation.lefthand_angle = 0;
-					cast_animation.circle_count++;
-					if (cast_animation.circle_count >= cast_animation.times_to_circle)
-						//Finished circling. Time to move on!
-						cast_animation.stage++;
-				}
-				break;
-			case THROW:
-				//messagePlayer(clientnum, "IN THROW");
-				//TODO: Throw animation! Or something.
-				cast_animation.stage++;
-				break;
-			default:
-				//messagePlayer(clientnum, "DEFAULT CASE");
-				spellcastingAnimationManager_completeSpell(&cast_animation);
-				break;
+			cast_animation.lefthand_angle += HANDMAGIC_CIRCLE_SPEED;
+			cast_animation.lefthand_movex = cos(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
+			cast_animation.lefthand_movey = sin(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
+			if (cast_animation.lefthand_angle >= 2 * PI) { //Completed one loop.
+				cast_animation.lefthand_angle = 0;
+				cast_animation.circle_count++;
+				if (cast_animation.circle_count >= cast_animation.times_to_circle)
+					//Finished circling. Time to move on!
+					cast_animation.stage++;
+			}
+			break;
+		case THROW:
+			//messagePlayer(clientnum, "IN THROW");
+			//TODO: Throw animation! Or something.
+			cast_animation.stage++;
+			break;
+		default:
+			//messagePlayer(clientnum, "DEFAULT CASE");
+			spellcastingAnimationManager_completeSpell(&cast_animation);
+			break;
 		}
 	}
 
@@ -274,8 +271,7 @@ void actLeftHandMagic(Entity *my)
 	my->roll = HANDMAGIC_ROLL;
 }
 
-void actRightHandMagic(Entity *my)
-{
+void actRightHandMagic(Entity *my) {
 	if (intro == TRUE) {
 		my->flags[INVISIBLE] = TRUE;
 		return;
@@ -287,8 +283,7 @@ void actRightHandMagic(Entity *my)
 		my->focalz = -1.5;
 	}
 
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
-	{
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr) {
 		magicRightHand = nullptr;
 		list_RemoveNode(my->mynode);
 		return;
@@ -349,42 +344,41 @@ void actRightHandMagic(Entity *my)
 	if (stats[clientnum]->cloak != NULL)
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 			wearingring = TRUE;
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) // debug cam or player invisible
-	{
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
 		my->flags[INVISIBLE] = TRUE;
 	}
 
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
-			case CIRCLE:
-				if (ticks%5==0) {
-					//messagePlayer(0, "Pingas!");
-					Entity *entity = spawnGib(my);
-					entity->flags[INVISIBLE] = FALSE;
-					entity->flags[SPRITE] = TRUE;
-					entity->flags[NOUPDATE] = TRUE;
-					entity->flags[UPDATENEEDED] = FALSE;
-					entity->flags[OVERDRAW] = TRUE;
-					entity->flags[BRIGHT] = TRUE;
-					//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
-					//entity->sizey = 1;
-					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
-					entity->scaley = 0.25f;
-					entity->scalez = 0.25f;
-					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-					entity->yaw = ((rand()%6)*60)*PI/180.0;
-					entity->pitch = (rand()%360)*PI/180.0;
-					entity->roll = (rand()%360)*PI/180.0;
-					entity->vel_x = cos(entity->yaw)*.1;
-					entity->vel_y = sin(entity->yaw)*.1;
-					entity->vel_z = -.15;
-					entity->fskill[3] = 0.01;
-				}
-				break;
-			case THROW:
-				break;
-			default:
-				break;
+		case CIRCLE:
+			if (ticks%5==0) {
+				//messagePlayer(0, "Pingas!");
+				Entity *entity = spawnGib(my);
+				entity->flags[INVISIBLE] = FALSE;
+				entity->flags[SPRITE] = TRUE;
+				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[UPDATENEEDED] = FALSE;
+				entity->flags[OVERDRAW] = TRUE;
+				entity->flags[BRIGHT] = TRUE;
+				//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
+				//entity->sizey = 1;
+				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+				entity->scaley = 0.25f;
+				entity->scalez = 0.25f;
+				entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+				entity->yaw = ((rand()%6)*60)*PI/180.0;
+				entity->pitch = (rand()%360)*PI/180.0;
+				entity->roll = (rand()%360)*PI/180.0;
+				entity->vel_x = cos(entity->yaw)*.1;
+				entity->vel_y = sin(entity->yaw)*.1;
+				entity->vel_z = -.15;
+				entity->fskill[3] = 0.01;
+			}
+			break;
+		case THROW:
+			break;
+		default:
+			break;
 		}
 	}
 

@@ -28,7 +28,7 @@
 /*-------------------------------------------------------------------------------
 
 	initApp
-	
+
 	initializes all the application variables and starts the engine
 
 -------------------------------------------------------------------------------*/
@@ -50,19 +50,20 @@ int initApp(char *title, int fullscreen) {
 	if( !logfile )
 		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
 
-	for (c = 0; c < NUM_JOY_STATUS; ++c)
-	{
+	for (c = 0; c < NUM_JOY_STATUS; ++c) {
 		joystatus[c] = 0;
 	}
-	for (c = 0; c < NUM_JOY_TRIGGER_STATUS; ++c)
-	{
+	for (c = 0; c < NUM_JOY_TRIGGER_STATUS; ++c) {
 		joy_trigger_status[c] = 0;
 	}
 
 	// init some lists
-	button_l.first=NULL; button_l.last=NULL;
-	light_l.first=NULL; light_l.last=NULL;
-	entitiesdeleted.first=NULL; entitiesdeleted.last=NULL;
+	button_l.first=NULL;
+	button_l.last=NULL;
+	light_l.first=NULL;
+	light_l.last=NULL;
+	entitiesdeleted.first=NULL;
+	entitiesdeleted.last=NULL;
 	for( c=0; c<HASH_SIZE; c++ ) {
 		ttfTextHash[c].first = NULL;
 		ttfTextHash[c].last = NULL;
@@ -71,7 +72,7 @@ int initApp(char *title, int fullscreen) {
 	map.tiles = NULL;
 
 	// init steamworks
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	SteamAPI_RestartAppIfNecessary(STEAM_APPID);
 	if( !SteamAPI_Init() ) {
 		printlog("error: failed to initialize Steamworks!\n");
@@ -79,8 +80,8 @@ int initApp(char *title, int fullscreen) {
 		return 1;
 	}
 	steam_init = TRUE;
-	#endif
-	
+#endif
+
 	window_title = title;
 	printlog("initializing SDL...\n");
 	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER ) == -1 ) {
@@ -94,7 +95,7 @@ int initApp(char *title, int fullscreen) {
 		return 2;
 	}*/
 
-	#ifdef HAVE_FMOD
+#ifdef HAVE_FMOD
 	printlog("initializing FMOD...\n");
 	fmod_result = FMOD_System_Create(&fmod_system);
 	if (FMODErrorCheck()) {
@@ -123,7 +124,7 @@ int initApp(char *title, int fullscreen) {
 			}
 		}
 	}
-	#endif
+#endif
 	printlog("initializing SDL_net...\n");
 	if( SDLNet_Init() < 0 ) {
 		printlog("failed to initialize SDL_net: %s\n", SDLNet_GetError());
@@ -139,7 +140,7 @@ int initApp(char *title, int fullscreen) {
 	if( game )
 		SDL_ShowCursor(SDL_FALSE);
 	SDL_StopTextInput();
-	
+
 	// initialize video
 	if( !initVideo() ) {
 		return 3;
@@ -147,9 +148,9 @@ int initApp(char *title, int fullscreen) {
 	//SDL_EnableUNICODE(1);
 	//SDL_WM_SetCaption(title, 0);
 	//SDL_EnableKeyRepeat(SDL_DEFAULT_REPEAT_DELAY,SDL_DEFAULT_REPEAT_INTERVAL);
-	
+
 	// get pointers to opengl extensions
-	#ifdef WINDOWS
+#ifdef WINDOWS
 	bool noextensions=FALSE;
 	if( !softwaremode ) {
 		if( (SDL_glGenBuffers=(PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers"))==NULL )
@@ -177,11 +178,11 @@ int initApp(char *title, int fullscreen) {
 		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
 		disablevbos=TRUE;
 	}
-	#else
+#else
 	if (softwaremode)
 		printlog("notice: using software rendering.\n");
-	#endif
-	
+#endif
+
 	// initialize buffers
 	zbuffer=(double *) malloc(sizeof(double)*xres*yres);
 	clickmap=(Entity **) malloc(sizeof(Entity *)*xres*yres);
@@ -196,21 +197,21 @@ int initApp(char *title, int fullscreen) {
 	//SDL_glGenBuffers(MAXBUFFERS, vboid);
 
 	// load windows icon
-	#ifndef _MSC_VER
-		#if defined(WINDOWS) && defined(GCL_HICON)
-			HINSTANCE handle = GetModuleHandle(NULL);
-			HICON icon = LoadIcon(handle, "id");
-			if( icon != NULL ) {
-				SDL_SysWMinfo wminfo;
-				SDL_VERSION( &wminfo.version );
-				if( SDL_GetWindowWMInfo(screen,&wminfo)==SDL_TRUE ) {
-					HWND hwnd = wminfo.info.win.window;
-					SetClassLong(hwnd, GCL_HICON, (LONG)icon);
-				}
-			}
-		#endif
-	#endif
-	
+#ifndef _MSC_VER
+#if defined(WINDOWS) && defined(GCL_HICON)
+	HINSTANCE handle = GetModuleHandle(NULL);
+	HICON icon = LoadIcon(handle, "id");
+	if( icon != NULL ) {
+		SDL_SysWMinfo wminfo;
+		SDL_VERSION( &wminfo.version );
+		if( SDL_GetWindowWMInfo(screen,&wminfo)==SDL_TRUE ) {
+			HWND hwnd = wminfo.info.win.window;
+			SetClassLong(hwnd, GCL_HICON, (LONG)icon);
+		}
+	}
+#endif
+#endif
+
 	// load resources
 	printlog("loading engine resources...\n");
 	if((fancyWindow_bmp=loadImage("images/system/fancyWindow.png")) == NULL) {
@@ -229,18 +230,18 @@ int initApp(char *title, int fullscreen) {
 		printlog("failed to load font16x16.png\n");
 		return 5;
 	}
-	
+
 	// print a loading message
 	drawClearBuffers();
 	int w, h;
 	TTF_SizeUTF8(ttf16,LOADSTR1,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,LOADSTR1);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
-	
+#endif
+
 	// load sprites
 	printlog("loading sprites...\n");
 	fp = fopen("images/sprites.txt","r");
@@ -255,7 +256,8 @@ int initApp(char *title, int fullscreen) {
 	sprites = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numsprites);
 	fp = fopen("images/sprites.txt","r");
 	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%s",name);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 		sprites[c] = loadImage(name);
 		if( sprites[c] == NULL ) {
 			printlog("warning: failed to load '%s' listed at line %d in sprites.txt\n",name,c+1);
@@ -265,17 +267,17 @@ int initApp(char *title, int fullscreen) {
 			}
 		}
 	}
-	
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,LOADSTR2,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,LOADSTR2);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
-	
+#endif
+
 	// load models
 	printlog("loading models...\n");
 	fp = fopen("models/models.txt","r");
@@ -290,7 +292,8 @@ int initApp(char *title, int fullscreen) {
 	models = (voxel_t **) malloc(sizeof(voxel_t *)*nummodels);
 	fp = fopen("models/models.txt","r");
 	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%s",name);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 		models[c] = loadVoxel(name);
 		if( models[c] == NULL ) {
 			printlog("warning: failed to load '%s' listed at line %d in models.txt\n",name,c+1);
@@ -302,17 +305,17 @@ int initApp(char *title, int fullscreen) {
 	}
 	if( !softwaremode )
 		generatePolyModels();
-	
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,LOADSTR3,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,LOADSTR3);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
-	
+#endif
+
 	// load tiles
 	printlog("loading tiles...\n");
 	fp = fopen("images/tiles.txt","r");
@@ -329,12 +332,13 @@ int initApp(char *title, int fullscreen) {
 	lavatiles = (bool *) malloc(sizeof(bool)*numtiles);
 	fp = fopen("images/tiles.txt","r");
 	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%s",name);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = FALSE;
 		lavatiles[c] = FALSE;
 		if( tiles[c] != NULL ) {
-			for(x=0;x<strlen(name);x++) {
+			for(x=0; x<strlen(name); x++) {
 				if( name[x]>=48 && name[x]<58 ) {
 					animatedtiles[c]=TRUE;
 					break;
@@ -351,19 +355,19 @@ int initApp(char *title, int fullscreen) {
 			}
 		}
 	}
-	
+
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16,LOADSTR4,&w,&h);
 	ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,LOADSTR4);
-	#ifdef APPLE
+#ifdef APPLE
 	SDL_RenderPresent(renderer);
-	#else
+#else
 	SDL_GL_SwapWindow(screen);
-	#endif
-	
+#endif
+
 	// load sound effects
-	#ifdef HAVE_FMOD
+#ifdef HAVE_FMOD
 	printlog("loading sounds...\n");
 	fp = fopen("sound/sounds.txt","r");
 	for( numsounds=0; !feof(fp); numsounds++ ) {
@@ -377,7 +381,8 @@ int initApp(char *title, int fullscreen) {
 	sounds = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*numsounds);
 	fp = fopen("sound/sounds.txt","r");
 	for( c=0; !feof(fp); c++ ) {
-		fscanf(fp,"%s",name); while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		fscanf(fp,"%s",name);
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
 		//TODO: Might need to malloc the sounds[c]->sound
 		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
 		if (FMODErrorCheck()) {
@@ -388,7 +393,7 @@ int initApp(char *title, int fullscreen) {
 	fclose(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-	#endif
+#endif
 
 	return 0;
 }
@@ -396,7 +401,7 @@ int initApp(char *title, int fullscreen) {
 /*-------------------------------------------------------------------------------
 
 	loadLanguage
-	
+
 	loads the language file with the given language code in *lang
 
 -------------------------------------------------------------------------------*/
@@ -433,7 +438,7 @@ int loadLanguage(char *lang) {
 			return 1;
 		}
 	}
-	
+
 	// load fonts
 	char fontName[64] = { 0 };
 	snprintf(fontName,63,"lang/%s.ttf",lang);
@@ -468,7 +473,7 @@ int loadLanguage(char *lang) {
 	}
 	TTF_SetFontKerning(ttf16, 0);
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
-	
+
 	// open language file
 	if( (fp=fopen(filename,"r"))==NULL ) {
 		printlog("error: unable to load language file: '%s'",filename);
@@ -565,7 +570,7 @@ int loadLanguage(char *lang) {
 /*-------------------------------------------------------------------------------
 
 	reloadLanguage
-	
+
 	reloads the current language file
 
 -------------------------------------------------------------------------------*/
@@ -581,7 +586,7 @@ int reloadLanguage() {
 /*-------------------------------------------------------------------------------
 
 	generatePolyModels
-	
+
 	processes voxel models and turns them into polygon-based models (surface
 	optimized)
 
@@ -611,11 +616,11 @@ void generatePolyModels() {
 		int w, h;
 		TTF_SizeUTF8(ttf16,loadText,&w,&h);
 		ttfPrintText(ttf16,(xres-w)/2,(yres-h)/2,loadText);
-		#ifdef APPLE
+#ifdef APPLE
 		SDL_RenderPresent(renderer);
-		#else
+#else
 		SDL_GL_SwapWindow(screen);
-		#endif
+#endif
 
 		numquads=0;
 		polymodels[c].numfaces = 0;
@@ -625,7 +630,7 @@ void generatePolyModels() {
 		indexdown[0] = model->sizez*model->sizey;
 		indexdown[1] = model->sizez;
 		indexdown[2] = 1;
-		
+
 		// find front faces
 		for( x=models[c]->sizex-1; x>=0; x-- ) {
 			for( z=0; z<models[c]->sizez; z++ ) {
@@ -653,7 +658,7 @@ void generatePolyModels() {
 							quad1->vertex[2].x = x-model->sizex/2.f+1;
 							quad1->vertex[2].y = y-model->sizey/2.f;
 							quad1->vertex[2].z = z-model->sizez/2.f;
-							
+
 							// optimize quad
 							node_t *node;
 							for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -687,7 +692,7 @@ void generatePolyModels() {
 								buildingquad=TRUE;
 								numquads++;
 								polymodels[c].numfaces+=2;
-								
+
 								quad1 = (polyquad_t *) calloc(1,sizeof(polyquad_t));
 								quad1->side = 0;
 								quad1->vertex[0].x = x-model->sizex/2.f+1;
@@ -721,7 +726,7 @@ void generatePolyModels() {
 					quad1->vertex[2].x = x-model->sizex/2.f+1;
 					quad1->vertex[2].y = y-model->sizey/2.f;
 					quad1->vertex[2].z = z-model->sizez/2.f;
-					
+
 					// optimize quad
 					node_t *node;
 					for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -744,7 +749,7 @@ void generatePolyModels() {
 				}
 			}
 		}
-		
+
 		// find back faces
 		for( x=0; x<models[c]->sizex; x++ ) {
 			for( z=0; z<models[c]->sizez; z++ ) {
@@ -772,7 +777,7 @@ void generatePolyModels() {
 							quad1->vertex[2].x = x-model->sizex/2.f;
 							quad1->vertex[2].y = y-model->sizey/2.f;
 							quad1->vertex[2].z = z-model->sizez/2.f-1;
-							
+
 							// optimize quad
 							node_t *node;
 							for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -806,7 +811,7 @@ void generatePolyModels() {
 								buildingquad=TRUE;
 								numquads++;
 								polymodels[c].numfaces+=2;
-								
+
 								quad1 = (polyquad_t *) calloc(1,sizeof(polyquad_t));
 								quad1->side = 1;
 								quad1->vertex[0].x = x-model->sizex/2.f;
@@ -840,7 +845,7 @@ void generatePolyModels() {
 					quad1->vertex[2].x = x-model->sizex/2.f;
 					quad1->vertex[2].y = y-model->sizey/2.f;
 					quad1->vertex[2].z = z-model->sizez/2.f-1;
-					
+
 					// optimize quad
 					node_t *node;
 					for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -863,7 +868,7 @@ void generatePolyModels() {
 				}
 			}
 		}
-		
+
 		// find right faces
 		for( y=models[c]->sizey-1; y>=0; y-- ) {
 			for( z=0; z<models[c]->sizez; z++ ) {
@@ -891,7 +896,7 @@ void generatePolyModels() {
 							quad1->vertex[2].x = x-model->sizex/2.f;
 							quad1->vertex[2].y = y-model->sizey/2.f+1;
 							quad1->vertex[2].z = z-model->sizez/2.f-1;
-							
+
 							// optimize quad
 							node_t *node;
 							for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -925,7 +930,7 @@ void generatePolyModels() {
 								buildingquad=TRUE;
 								numquads++;
 								polymodels[c].numfaces+=2;
-								
+
 								quad1 = (polyquad_t *) calloc(1,sizeof(polyquad_t));
 								quad1->side = 2;
 								quad1->vertex[0].x = x-model->sizex/2.f;
@@ -958,7 +963,7 @@ void generatePolyModels() {
 					quad1->vertex[2].x = x-model->sizex/2.f;
 					quad1->vertex[2].y = y-model->sizey/2.f+1;
 					quad1->vertex[2].z = z-model->sizez/2.f-1;
-					
+
 					// optimize quad
 					node_t *node;
 					for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -981,7 +986,7 @@ void generatePolyModels() {
 				}
 			}
 		}
-		
+
 		// find left faces
 		for( y=0; y<models[c]->sizey; y++ ) {
 			for( z=0; z<models[c]->sizez; z++ ) {
@@ -1009,7 +1014,7 @@ void generatePolyModels() {
 							quad1->vertex[2].x = x-model->sizex/2.f;
 							quad1->vertex[2].y = y-model->sizey/2.f;
 							quad1->vertex[2].z = z-model->sizez/2.f;
-							
+
 							// optimize quad
 							node_t *node;
 							for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -1043,7 +1048,7 @@ void generatePolyModels() {
 								buildingquad=TRUE;
 								numquads++;
 								polymodels[c].numfaces+=2;
-								
+
 								quad1 = (polyquad_t *) calloc(1,sizeof(polyquad_t));
 								quad1->side = 3;
 								quad1->vertex[0].x = x-model->sizex/2.f;
@@ -1076,7 +1081,7 @@ void generatePolyModels() {
 					quad1->vertex[2].x = x-model->sizex/2.f;
 					quad1->vertex[2].y = y-model->sizey/2.f;
 					quad1->vertex[2].z = z-model->sizez/2.f;
-					
+
 					// optimize quad
 					node_t *node;
 					for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -1099,7 +1104,7 @@ void generatePolyModels() {
 				}
 			}
 		}
-		
+
 		// find bottom faces
 		for( z=models[c]->sizez-1; z>=0; z-- ) {
 			for( y=0; y<models[c]->sizey; y++ ) {
@@ -1127,7 +1132,7 @@ void generatePolyModels() {
 							quad1->vertex[2].x = x-model->sizex/2.f;
 							quad1->vertex[2].y = y-model->sizey/2.f+1;
 							quad1->vertex[2].z = z-model->sizez/2.f;
-							
+
 							// optimize quad
 							node_t *node;
 							for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -1161,7 +1166,7 @@ void generatePolyModels() {
 								buildingquad=TRUE;
 								numquads++;
 								polymodels[c].numfaces+=2;
-								
+
 								quad1 = (polyquad_t *) calloc(1,sizeof(polyquad_t));
 								quad1->side = 4;
 								quad1->vertex[0].x = x-model->sizex/2.f;
@@ -1195,7 +1200,7 @@ void generatePolyModels() {
 					quad1->vertex[2].x = x-model->sizex/2.f;
 					quad1->vertex[2].y = y-model->sizey/2.f+1;
 					quad1->vertex[2].z = z-model->sizez/2.f;
-					
+
 					// optimize quad
 					node_t *node;
 					for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -1218,7 +1223,7 @@ void generatePolyModels() {
 				}
 			}
 		}
-		
+
 		// find top faces
 		for( z=0; z<models[c]->sizez; z++ ) {
 			for( y=0; y<models[c]->sizey; y++ ) {
@@ -1246,7 +1251,7 @@ void generatePolyModels() {
 							quad1->vertex[2].x = x-model->sizex/2.f;
 							quad1->vertex[2].y = y-model->sizey/2.f;
 							quad1->vertex[2].z = z-model->sizez/2.f-1;
-							
+
 							// optimize quad
 							node_t *node;
 							for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -1280,7 +1285,7 @@ void generatePolyModels() {
 								buildingquad=TRUE;
 								numquads++;
 								polymodels[c].numfaces+=2;
-								
+
 								quad1 = (polyquad_t *) calloc(1,sizeof(polyquad_t));
 								quad1->side = 5;
 								quad1->vertex[0].x = x-model->sizex/2.f;
@@ -1314,7 +1319,7 @@ void generatePolyModels() {
 					quad1->vertex[2].x = x-model->sizex/2.f;
 					quad1->vertex[2].y = y-model->sizey/2.f;
 					quad1->vertex[2].z = z-model->sizez/2.f-1;
-					
+
 					// optimize quad
 					node_t *node;
 					for( i=0, node=quads.first; i<numquads-1; i++, node=node->next ) {
@@ -1337,7 +1342,7 @@ void generatePolyModels() {
 				}
 			}
 		}
-		
+
 		// translate quads into triangles
 		polymodels[c].faces = (polytriangle_t *) malloc(sizeof(polytriangle_t)*polymodels[c].numfaces);
 		for( i=0; i<polymodels[c].numfaces; i++ ) {
@@ -1360,7 +1365,7 @@ void generatePolyModels() {
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
-	
+
 	// now store models into VBOs
 	if( !disablevbos )
 		generateVBOs();
@@ -1369,7 +1374,7 @@ void generatePolyModels() {
 /*-------------------------------------------------------------------------------
 
 	generateVBOs
-	
+
 	generates VBOs/VAs from polymodel data
 
 -------------------------------------------------------------------------------*/
@@ -1431,7 +1436,7 @@ void generateVBOs() {
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9*polymodels[c].numfaces, points, GL_STATIC_DRAW);
 		SDL_glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		SDL_glEnableVertexAttribArray(0);
-		
+
 		// color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat)*9*polymodels[c].numfaces, colors, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
@@ -1455,14 +1460,14 @@ void generateVBOs() {
 /*-------------------------------------------------------------------------------
 
 	deinitApp
-	
+
 	frees all memory consumed by the application and terminates the engine
 
 -------------------------------------------------------------------------------*/
 
 int deinitApp() {
 	Uint32 c;
-	
+
 	// close engine
 	printlog("closing engine...\n");
 	printlog("removing engine timer...\n");
@@ -1485,7 +1490,7 @@ int deinitApp() {
 		TTF_CloseFont(ttf12);
 	if( ttf16 )
 		TTF_CloseFont(ttf16);
-	
+
 	printlog("freeing map data...\n");
 	if( map.entities != NULL ) {
 		list_FreeAll(map.entities);
@@ -1502,7 +1507,7 @@ int deinitApp() {
 	for( c=0; c<HASH_SIZE; c++ ) {
 		list_FreeAll(&ttfTextHash[c]);
 	}
-	
+
 	// free textures
 	printlog("freeing textures...\n");
 	if( tiles != NULL ) {
@@ -1532,7 +1537,7 @@ int deinitApp() {
 		}
 		free(sprites);
 	}
-	
+
 	// free models
 	printlog("freeing models...\n");
 	if( models != NULL ) {
@@ -1563,9 +1568,9 @@ int deinitApp() {
 		}
 		free(polymodels);
 	}
-	
+
 	// free sounds
-	#ifdef HAVE_FMOD
+#ifdef HAVE_FMOD
 	printlog("freeing sounds...\n");
 	if( sounds != NULL ) {
 		for( c=0; c<numsounds; c++ ) {
@@ -1577,8 +1582,8 @@ int deinitApp() {
 		}
 		free(sounds); //Then free the sound array.
 	}
-	#endif
-		
+#endif
+
 	// delete opengl buffers
 	if( allsurfaces != NULL )
 		free(allsurfaces);
@@ -1586,7 +1591,7 @@ int deinitApp() {
 		glDeleteTextures(MAXTEXTURES,texid);
 		free(texid);
 	}
-	
+
 	// delete opengl buffers
 	/*SDL_glDeleteBuffers(MAXBUFFERS,vboid);
 	if( vboid != NULL )
@@ -1594,7 +1599,7 @@ int deinitApp() {
 	SDL_glDeleteVertexArrays(MAXBUFFERS,vaoid);
 	if( vaoid != NULL )
 		free(vaoid);*/
-	
+
 	// close network interfaces
 	closeNetworkInterfaces();
 
@@ -1604,23 +1609,23 @@ int deinitApp() {
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-	#ifdef HAVE_FMOD
+#ifdef HAVE_FMOD
 	if( fmod_system ) {
 		FMOD_System_Close(fmod_system);
 		FMOD_System_Release(fmod_system);
 		fmod_system = NULL;
 	}
-	#endif
+#endif
 	if( screen ) {
 		SDL_DestroyWindow(screen);
 		screen = NULL;
 	}
 	if( renderer ) {
-		#ifdef APPLE
+#ifdef APPLE
 		SDL_DestroyRenderer(renderer);
-		#else
+#else
 		SDL_GL_DeleteContext(renderer);
-		#endif
+#endif
 		renderer = NULL;
 	}
 	if( mainsurface ) {
@@ -1629,7 +1634,7 @@ int deinitApp() {
 	}
 	TTF_Quit();
 	SDL_Quit();
-	
+
 	// free video and input buffers
 	if( zbuffer != NULL )
 		free(zbuffer);
@@ -1637,13 +1642,13 @@ int deinitApp() {
 		free(clickmap);
 
 	// shutdown steamworks
-	#ifdef STEAMWORKS
+#ifdef STEAMWORKS
 	if( steam_init ) {
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
 		SteamAPI_Shutdown();
 	}
-	#endif
+#endif
 
 	// free currently loaded language if any
 	if( language ) {
@@ -1664,7 +1669,7 @@ int deinitApp() {
 /*-------------------------------------------------------------------------------
 
 	initVideo
-	
+
 	Sets the SDL/openGL context using global video variables
 
 -------------------------------------------------------------------------------*/
@@ -1687,13 +1692,13 @@ bool initVideo() {
 		flags |= SDL_WINDOW_RESIZABLE;
 	if( !softwaremode )
 		flags |= SDL_WINDOW_OPENGL;
-	#ifdef APPLE
+#ifdef APPLE
 	if( fullscreen ) {
 		flags |= SDL_WINDOW_BORDERLESS;
 	}
 	SDL_DestroyWindow(screen);
 	screen = NULL;
-	#endif
+#endif
 	int screen_width = xres;
 	if (splitscreen)
 		screen_width *= 2;
@@ -1710,30 +1715,30 @@ bool initVideo() {
 			SDL_SetWindowFullscreen(screen,0);
 	}
 	if( !renderer ) {
-		#ifdef APPLE
+#ifdef APPLE
 		if((renderer=SDL_CreateRenderer(screen,-1,0)) == NULL) {
-		#else
+#else
 		if((renderer=SDL_GL_CreateContext(screen)) == NULL) {
-		#endif
+#endif
 			printlog("failed to create SDL renderer. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
 			return FALSE;
 		}
 	}
-	#ifndef APPLE
+#ifndef APPLE
 	SDL_GL_MakeCurrent(screen,renderer);
-	#endif
-	#if SDL_BYTEORDER == SDL_BIG_ENDIAN
-		Uint32 rmask = 0xff000000;
-		Uint32 gmask = 0x00ff0000;
-		Uint32 bmask = 0x0000ff00;
-		Uint32 amask = 0x000000ff;
-	#else
-		Uint32 rmask = 0x000000ff;
-		Uint32 gmask = 0x0000ff00;
-		Uint32 bmask = 0x00ff0000;
-		Uint32 amask = 0xff000000;
-	#endif
+#endif
+#if SDL_BYTEORDER == SDL_BIG_ENDIAN
+	Uint32 rmask = 0xff000000;
+	Uint32 gmask = 0x00ff0000;
+	Uint32 bmask = 0x0000ff00;
+	Uint32 amask = 0x000000ff;
+#else
+	Uint32 rmask = 0x000000ff;
+	Uint32 gmask = 0x0000ff00;
+	Uint32 bmask = 0x00ff0000;
+	Uint32 amask = 0xff000000;
+#endif
 	if((mainsurface=SDL_CreateRGBSurface(0,xres,yres,32,rmask,gmask,bmask,amask)) == NULL) {
 		printlog("failed to create main window surface.\n");
 		return FALSE;
@@ -1763,7 +1768,7 @@ bool initVideo() {
 /*-------------------------------------------------------------------------------
 
 	changeVideoMode
-	
+
 	In windows: saves the openGL context, sets the video mode, and restores
 	the context
 	otherwise: acts as a wrapper for initVideo
@@ -1776,7 +1781,7 @@ bool changeVideoMode() {
 
 	// delete old texture names (they're going away anyway)
 	glDeleteTextures(MAXTEXTURES,texid);
-	
+
 	// delete vertex data
 	if( !disablevbos ) {
 		for( c=0; c<nummodels; c++ ) {
@@ -1785,24 +1790,24 @@ bool changeVideoMode() {
 			SDL_glDeleteVertexArrays(1, &polymodels[c].va);
 		}
 	}
-	
+
 	/*if( screen ) {
 		SDL_DestroyWindow(screen);
 		screen = NULL;
 	}*/
 	if( renderer ) {
-		#ifdef APPLE
+#ifdef APPLE
 		SDL_DestroyRenderer(renderer);
-		#else
+#else
 		SDL_GL_DeleteContext(renderer);
-		#endif
+#endif
 		renderer = NULL;
 	}
 	if( mainsurface ) {
 		SDL_FreeSurface(mainsurface);
 		mainsurface = NULL;
 	}
-	
+
 	// set video mode
 	int result = initVideo();
 	if( !result ) {
@@ -1813,17 +1818,17 @@ bool changeVideoMode() {
 		if( !initVideo() )
 			return FALSE;
 	}
-		
+
 	// now reload all textures
 	glGenTextures(MAXTEXTURES,texid);
 	for( c=1; c<imgref; c++ ) {
 		glLoadTexture(allsurfaces[c],c);
 	}
-	
+
 	// regenerate vbos
 	if( !disablevbos )
 		generateVBOs();
-	
+
 	// success
 	return TRUE;
 }

@@ -45,8 +45,7 @@ bool gamepad_menuy_invert = false;
 
 GameController* game_controller = nullptr;
 
-GameController::GameController()
-{
+GameController::GameController() {
 	sdl_device = nullptr;
 	id = -1;
 	name = "";
@@ -55,25 +54,20 @@ GameController::GameController()
 	oldRightTrigger = 0;
 }
 
-GameController::~GameController()
-{
-	if (sdl_device)
-	{
+GameController::~GameController() {
+	if (sdl_device) {
 		close();
 	}
 }
 
-void GameController::close()
-{
-	if (sdl_device)
-	{
+void GameController::close() {
+	if (sdl_device) {
 		SDL_GameControllerClose(sdl_device);
 		sdl_device = nullptr;
 	}
 }
 
-bool GameController::open(int c)
-{
+bool GameController::open(int c) {
 	if (sdl_device)
 		close();
 
@@ -85,12 +79,9 @@ bool GameController::open(int c)
 
 	sdl_device = SDL_GameControllerOpen(c);
 
-	if (sdl_device == nullptr)
-	{
+	if (sdl_device == nullptr) {
 		printlog("Error: Failed to open game controller! SDL Error: %s\n", SDL_GetError());
-	}
-	else
-	{
+	} else {
 		id = c;
 		printlog("Successfully initialized game controller!\n");
 		name = (SDL_GameControllerNameForIndex(c));
@@ -101,20 +92,17 @@ bool GameController::open(int c)
 	return (sdl_device != nullptr);
 }
 
-bool GameController::isActive()
-{
+bool GameController::isActive() {
 	return (sdl_device != nullptr);
 }
 
-void GameController::handleAnalog()
-{
+void GameController::handleAnalog() {
 	if (!isActive())
 		return;
 
 	//Right analog stick = look.
 
-	if (!shootmode || gamePaused)
-	{
+	if (!shootmode || gamePaused) {
 		int rightx = getRawRightXMove() / gamepad_menux_sensitivity;
 		int righty = getRawRightYMove() / gamepad_menuy_sensitivity;
 
@@ -131,18 +119,14 @@ void GameController::handleAnalog()
 		if (gamepad_menuy_invert)
 			righty = -righty;
 
-		if (rightx || righty)
-		{
+		if (rightx || righty) {
 			SDL_WarpMouseInWindow(screen, std::max(0, std::min(camera.winw, mousex + rightx)), std::max(0, std::min(camera.winh, mousey + righty)));
 		}
-	}
-	else
-	{
+	} else {
 		int rightx = getRightXMove();
 		int righty = getRightYMove();
 
-		if (rightx || righty)
-		{
+		if (rightx || righty) {
 			SDL_Event e;
 
 			e.type = SDL_MOUSEMOTION;
@@ -154,37 +138,30 @@ void GameController::handleAnalog()
 		}
 	}
 
-	if (getLeftTrigger())
-	{
+	if (getLeftTrigger()) {
 		if ( !oldLeftTrigger ) {
 			oldLeftTrigger = 1;
 			joy_trigger_status[0] = 1;
 			lastkeypressed = 299;
 		}
-	}
-	else
-	{
+	} else {
 		oldLeftTrigger = 0;
 		joy_trigger_status[0] = 0;
 	}
 
-	if (getRightTrigger())
-	{
+	if (getRightTrigger()) {
 		if ( !oldRightTrigger ) {
 			oldRightTrigger = 1;
 			joy_trigger_status[1] = 1;
 			lastkeypressed = 300;
 		}
-	}
-	else
-	{
+	} else {
 		oldRightTrigger = 0;
 		joy_trigger_status[1] = 0;
 	}
 }
 
-int GameController::getLeftXMove()
-{
+int GameController::getLeftXMove() {
 	if (!isActive())
 		return 0;
 
@@ -195,8 +172,7 @@ int GameController::getLeftXMove()
 	return x;
 }
 
-int GameController::getLeftYMove()
-{
+int GameController::getLeftYMove() {
 	if (!isActive())
 		return 0;
 
@@ -207,8 +183,7 @@ int GameController::getLeftYMove()
 	return y;
 }
 
-int GameController::getRightXMove()
-{
+int GameController::getRightXMove() {
 	if (!isActive())
 		return 0;
 
@@ -219,8 +194,7 @@ int GameController::getRightXMove()
 	return x;
 }
 
-int GameController::getRightYMove()
-{
+int GameController::getRightYMove() {
 	if (!isActive())
 		return 0;
 
@@ -233,19 +207,16 @@ int GameController::getRightYMove()
 
 
 
-int GameController::getLeftTrigger()
-{
+int GameController::getLeftTrigger() {
 	return getRawLeftTrigger(); //No sensitivity taken into account (yet)
 }
 
-int GameController::getRightTrigger()
-{
+int GameController::getRightTrigger() {
 	return getRawRightTrigger(); //No sensitivity taken into account (yet)
 }
 
 
-int GameController::getRawLeftXMove()
-{
+int GameController::getRawLeftXMove() {
 	if (!isActive())
 		return 0;
 
@@ -262,8 +233,7 @@ int GameController::getRawLeftXMove()
 	return (!gamepad_leftx_invert) ? x : -x;
 }
 
-int GameController::getRawLeftYMove()
-{
+int GameController::getRawLeftYMove() {
 	if (!isActive())
 		return 0;
 
@@ -280,8 +250,7 @@ int GameController::getRawLeftYMove()
 	return (!gamepad_lefty_invert) ? -y : y;
 }
 
-int GameController::getRawRightXMove()
-{
+int GameController::getRawRightXMove() {
 	if (!isActive())
 		return 0;
 
@@ -298,8 +267,7 @@ int GameController::getRawRightXMove()
 	return (!gamepad_rightx_invert) ? x : -x;
 }
 
-int GameController::getRawRightYMove()
-{
+int GameController::getRawRightYMove() {
 	if (!isActive())
 		return 0;
 
@@ -318,8 +286,7 @@ int GameController::getRawRightYMove()
 
 
 
-int GameController::getRawLeftTrigger()
-{
+int GameController::getRawLeftTrigger() {
 	if (!isActive())
 		return 0;
 
@@ -333,8 +300,7 @@ int GameController::getRawLeftTrigger()
 	return n;
 }
 
-int GameController::getRawRightTrigger()
-{
+int GameController::getRawRightTrigger() {
 	if (!isActive())
 		return 0;
 
@@ -350,111 +316,93 @@ int GameController::getRawRightTrigger()
 
 
 
-float GameController::getLeftXPercent()
-{
+float GameController::getLeftXPercent() {
 	return (float)getRawLeftXMove() / (float)maxLeftXMove();
 }
 
-float GameController::getLeftYPercent()
-{
+float GameController::getLeftYPercent() {
 	return (float)getRawLeftYMove() / (float)maxLeftYMove();
 }
 
-float GameController::getRightXPercent()
-{
+float GameController::getRightXPercent() {
 	return (float)getRawRightXMove() / (float)maxRightXMove();
 }
 
-float GameController::getRightYPercent()
-{
+float GameController::getRightYPercent() {
 	return (float)getRawRightYMove() / (float)maxRightYMove();
 }
 
 
-float GameController::getLeftTriggerPercent()
-{
+float GameController::getLeftTriggerPercent() {
 	return (float)getRawLeftTrigger() / (float)maxLeftTrigger();
 }
 
-float GameController::getRightTriggerPercent()
-{
+float GameController::getRightTriggerPercent() {
 	return (float)getRawRightTrigger() / (float)maxRightTrigger();
 }
 
 
-int GameController::maxLeftXMove()
-{
+int GameController::maxLeftXMove() {
 	return 32767 - gamepad_deadzone;
 }
 
-int GameController::maxLeftYMove()
-{
+int GameController::maxLeftYMove() {
 	return 32767 - gamepad_deadzone;
 }
 
-int GameController::maxRightXMove()
-{
+int GameController::maxRightXMove() {
 	return 32767 - gamepad_deadzone;
 }
 
-int GameController::maxRightYMove()
-{
+int GameController::maxRightYMove() {
 	return 32767 - gamepad_deadzone; //Ya, it's pretty constant in SDL2.
 }
 
 
-int GameController::maxLeftTrigger()
-{
+int GameController::maxLeftTrigger() {
 	return 32767 - gamepad_deadzone;
 }
 
-int GameController::maxRightTrigger()
-{
+int GameController::maxRightTrigger() {
 	return 32767 - gamepad_deadzone;
 }
 
-bool GameController::handleInventoryMovement()
-{
+bool GameController::handleInventoryMovement() {
 	bool dpad_moved = false;
 
 	if (itemMenuOpen) {
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT])) {
 		select_inventory_slot(selected_inventory_slot_x - 1, selected_inventory_slot_y);
 		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT])) {
 		select_inventory_slot(selected_inventory_slot_x + 1, selected_inventory_slot_y);
 		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 		select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 		select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (dpad_moved)
-	{
+	if (dpad_moved) {
 		dpad_moved = false;
 		draw_cursor = false;
 
@@ -471,24 +419,21 @@ bool GameController::handleChestMovement() {
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 		selectChestSlot(selectedChestSlot - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 		selectChestSlot(selectedChestSlot + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (dpad_moved)
-	{
+	if (dpad_moved) {
 		dpad_moved = false;
 		draw_cursor = false;
 
@@ -523,24 +468,21 @@ bool GameController::handleShopMovement() {
 		dpad_moved = true;
 	}*/
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 		selectShopSlot(selectedShopSlot - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 		selectShopSlot(selectedShopSlot + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (dpad_moved)
-	{
+	if (dpad_moved) {
 		dpad_moved = false;
 		draw_cursor = false;
 
@@ -557,24 +499,21 @@ bool GameController::handleIdentifyMovement() {
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 		selectIdentifySlot(selectedIdentifySlot - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 		selectIdentifySlot(selectedIdentifySlot + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (dpad_moved)
-	{
+	if (dpad_moved) {
 		dpad_moved = false;
 		draw_cursor = false;
 
@@ -584,32 +523,28 @@ bool GameController::handleIdentifyMovement() {
 	return false;
 }
 
-bool GameController::handleItemContextMenu(const Item &item)
-{
+bool GameController::handleItemContextMenu(const Item &item) {
 	bool dpad_moved = false;
 
 	if (!itemMenuOpen) {
 		return false;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP])) {
 		selectItemMenuSlot(item, itemMenuSelected - 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
-	{
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN])) {
 		selectItemMenuSlot(item, itemMenuSelected + 1);
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;
 	}
 
-	if (dpad_moved)
-	{
+	if (dpad_moved) {
 		dpad_moved = false;
 		draw_cursor = false;
 
@@ -620,48 +555,38 @@ bool GameController::handleItemContextMenu(const Item &item)
 }
 
 
-void initGameControllers()
-{
+void initGameControllers() {
 	SDL_GameControllerAddMappingsFromFile("gamecontrollerdb.txt");
 
 	int c = 0;
 	bool found = false; //TODO: Bugger this and implement multi-controller support.
 	game_controller = new GameController();
-	for (c = 0; c < SDL_NumJoysticks() && !found; ++c) //TODO: Bugger this and implement multi-controller support on a player-by-player basis.
-	{
-		if (SDL_IsGameController(c) && game_controller->open(c))
-		{
+	for (c = 0; c < SDL_NumJoysticks() && !found; ++c) { //TODO: Bugger this and implement multi-controller support on a player-by-player basis.
+		if (SDL_IsGameController(c) && game_controller->open(c)) {
 			printlog("(Device %d successfully initialized as game controller.)\n", c);
 			found = true; //TODO: Bugger this and implement multi-controller support.
-		}
-		else
-		{
+		} else {
 			printlog("Info: device %d is not a game controller! Joysticks are not supported.\n", c);
 		}
 	}
-	if (!found)
-	{
+	if (!found) {
 		printlog("Info: No game controller detected!");
 	}
 }
 
-Player::Player(int in_playernum, bool in_local_host)
-{
+Player::Player(int in_playernum, bool in_local_host) {
 	screen = nullptr;
 	local_host = in_local_host;
 	playernum = in_playernum;
 	entity = nullptr;
 }
 
-Player::~Player()
-{
-	if (screen)
-	{
+Player::~Player() {
+	if (screen) {
 		SDL_FreeSurface(screen);
 	}
 
-	if (entity)
-	{
+	if (entity) {
 		delete entity;
 	}
 }

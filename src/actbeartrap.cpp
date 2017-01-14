@@ -39,7 +39,7 @@ void actBeartrap(Entity *my) {
 	int i;
 
 	// undo beartrap
-	for(i=0;i<MAXPLAYERS;i++) {
+	for(i=0; i<MAXPLAYERS; i++) {
 		if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 			if(inrange[i]) {
 				Entity *entity = newEntity(-1,1,map.entities);

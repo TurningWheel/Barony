@@ -305,13 +305,12 @@ extern Entity *hudweapon; //A pointer to the hudweapon entity.
  */
 
 //NOTE: Each hotbar slot is "constructed" in loadInterfaceResources() in interface.c. If you add anything, make sure to initialize it there.
-typedef struct hotbar_slot_t
-{
+typedef struct hotbar_slot_t {
 	/*
 	 * This is an item's ID. It just resolves to NULL if an item is no longer valid.
 	 */
 	Uint32 item;
-}hotbar_slot_t;
+} hotbar_slot_t;
 
 #define HOTBAR_EMPTY 0
 #define HOTBAR_ITEM 1

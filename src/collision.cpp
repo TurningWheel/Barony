@@ -72,7 +72,7 @@ Entity *entityClicked() {
 					return NULL; //Click falls inside the right sidebar.
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
-				//return NULL;
+			//return NULL;
 			if( mouseInBounds(INVENTORY_STARTX,INVENTORY_STARTX+INVENTORY_SIZEX*INVENTORY_SLOTSIZE,INVENTORY_STARTY,INVENTORY_STARTY+INVENTORY_SIZEY*INVENTORY_SLOTSIZE) ) {
 				// clicked in inventory
 				return NULL;
@@ -122,7 +122,7 @@ Entity *entityClicked() {
 			glReadPixels(xres/2,yres/2,1,1,GL_RGBA,GL_UNSIGNED_BYTE,(void *)pixel);
 		}
 	}
-	
+
 	// pixel processing (opengl only)
 	if( softwaremode==FALSE) {
 		uidnum = pixel[0] + (((Uint32)pixel[1])<<8) + (((Uint32)pixel[2])<<16) + (((Uint32)pixel[3])<<24);
@@ -202,12 +202,12 @@ bool entityInsideEntity(Entity *entity1, Entity *entity2) {
 bool entityInsideSomething(Entity *entity) {
 	node_t *node;
 	int z;
-	
+
 	// test against the map
 	for( z=0; z<MAPLAYERS; z++ )
 		if( entityInsideTile(entity,entity->x/16,entity->y/16,z) )
 			return TRUE;
-	
+
 	// test against entities
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		Entity *testEntity = (Entity *)node->element;
@@ -216,7 +216,7 @@ bool entityInsideSomething(Entity *entity) {
 		if( entityInsideEntity(entity,testEntity) )
 			return TRUE;
 	}
-	
+
 	return FALSE;
 }
 
@@ -240,7 +240,8 @@ int barony_clear(double tx, double ty, Entity *my) {
 
 	for( ty2=ty-my->sizey; ty2<=ty+my->sizey; ty2++ ) {
 		for( tx2=tx-my->sizex; tx2<=tx+my->sizex; tx2++ ) {
-			x = (long)floor(tx2/16); y = (long)floor(ty2/16);
+			x = (long)floor(tx2/16);
+			y = (long)floor(ty2/16);
 			if( x>=0 && y>=0 && x<map.width && y<map.height ) {
 				if(map.tiles[OBSTACLELAYER+y*MAPLAYERS+x*MAPLAYERS*map.height]) {
 					// hit a wall
@@ -282,7 +283,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 					return 0;
 				}
 			}
-			for(node=map.entities->first;node!=NULL;node=node->next) {
+			for(node=map.entities->first; node!=NULL; node=node->next) {
 				entity = (Entity *)node->element;
 				if( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid )
 					continue;
@@ -303,13 +304,13 @@ int barony_clear(double tx, double ty, Entity *my) {
 				if( multiplayer==CLIENT ) {
 					// fixes bug where clients can't move through humans
 					if( (entity->sprite>=113 && entity->sprite<118) ||
-						(entity->sprite>=125 && entity->sprite<130) ||
-						(entity->sprite>=332 && entity->sprite<334) ||
-						(entity->sprite>=341 && entity->sprite<347) ||
-						(entity->sprite>=354 && entity->sprite<360) ||
-						(entity->sprite>=367 && entity->sprite<373) ||
-						(entity->sprite>=380 && entity->sprite<386) ||
-						entity->sprite==217 ) { // human heads
+					        (entity->sprite>=125 && entity->sprite<130) ||
+					        (entity->sprite>=332 && entity->sprite<334) ||
+					        (entity->sprite>=341 && entity->sprite<347) ||
+					        (entity->sprite>=354 && entity->sprite<360) ||
+					        (entity->sprite>=367 && entity->sprite<373) ||
+					        (entity->sprite>=380 && entity->sprite<386) ||
+					        entity->sprite==217 ) { // human heads
 						continue;
 					} else if( my->behavior==&actPlayer && entity->flags[USERFLAG2] ) {
 						continue; // fix clients not being able to walk through friendly monsters
@@ -361,7 +362,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 			}
 		}
 	}
-		
+
 	return 1;
 }
 
@@ -377,30 +378,33 @@ int barony_clear(double tx, double ty, Entity *my) {
 double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
 	double tx, ty;
 	hit.entity = NULL;
-	
+
 	// move x and y
 	tx=*x+vx;
 	ty=*y+vy;
 	if(barony_clear(tx,ty,my)) {
-		*x=tx; *y=ty;
+		*x=tx;
+		*y=ty;
 		hit.side = 0;
 		return sqrt(vx*vx+vy*vy);
 	}
-	
+
 	// only move x
 	tx=*x+vx;
 	ty=*y;
 	if(barony_clear(tx,ty,my)) {
-		*x=tx; *y=ty;
+		*x=tx;
+		*y=ty;
 		hit.side = VERTICAL;
 		return fabs(vx);
 	}
-	
+
 	// only move y
 	tx=*x;
 	ty=*y+vy;
 	if(barony_clear(tx,ty,my)) {
-		*x=tx; *y=ty;
+		*x=tx;
+		*y=ty;
 		hit.side = HORIZONTAL;
 		return fabs(vy);
 	}
@@ -411,7 +415,7 @@ double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
 /*-------------------------------------------------------------------------------
 
 	findEntityInLine
-	
+
 	returns the closest entity to intersect a ray starting from x1, y1 and
 	extending along the given angle. May return an improper result when
 	some entities overlap one another.
@@ -423,12 +427,12 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 	node_t *node;
 	double lowestDist = 9999;
 	int quadrant = 0;
-	
+
 	while( angle>=PI*2 )
 		angle-=PI*2;
 	while( angle<0 )
 		angle+=PI*2;
-	
+
 	if( angle >= PI/2 && angle < PI )
 		quadrant = 1;
 	else if( angle >= 0 && angle < PI/2 )
@@ -437,7 +441,7 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 		quadrant = 3;
 	else
 		quadrant = 4;
-		
+
 	bool adjust = FALSE;
 	if( angle >= PI/2 && angle < 3*(PI/2) ) {
 		adjust = TRUE;
@@ -447,12 +451,12 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 		while( angle<-PI )
 			angle+=PI*2;
 	}
-	
+
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		Entity *entity = (Entity *)node->element;
 		if( (entity!=target && target!=NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) )
 			continue;
-		
+
 		if( quadrant==2 || quadrant==4 ) {
 			// upper right and lower left
 			double upperX = entity->x+entity->sizex;
@@ -467,7 +471,7 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 				if( lowerTan < 0 )
 					lowerTan += PI*2;
 			}
-			
+
 			// determine whether line intersects entity
 			if( quadrant==2 ) {
 				if( angle>=upperTan && angle<=lowerTan ) {
@@ -500,7 +504,7 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 				if( lowerTan < 0 )
 					lowerTan += PI*2;
 			}
-			
+
 			// determine whether line intersects entity
 			if( quadrant==3 ) {
 				if( angle>=upperTan && angle<=lowerTan ) {
@@ -543,18 +547,40 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 	double arx, ary;
 	double dincx, dval0, dincy, dval1;
 	double d;
-	
-	posx=floor(x1); posy=floor(y1); // integer coordinates
-	fracx=x1-posx; fracy=y1-posy; // fraction coordinates
-	rx = cos(angle); ry = sin(angle);
-	ix=0; iy=0;
 
-	inx=posx; iny=posy;
-	arx=0; if (rx) arx = 1.0/fabs(rx);
-	ary=0; if (ry) ary = 1.0/fabs(ry);
-	dincx=0; dval0=1e32; dincy=0; dval1=1e32;
-	if (rx<0) {dincx=-1; dval0=fracx*arx;} else if (rx>0) {dincx=1; dval0=(1.0-fracx)*arx;}
-	if (ry<0) {dincy=-1; dval1=fracy*ary;} else if (ry>0) {dincy=1; dval1=(1.0-fracy)*ary;}
+	posx=floor(x1);
+	posy=floor(y1); // integer coordinates
+	fracx=x1-posx;
+	fracy=y1-posy; // fraction coordinates
+	rx = cos(angle);
+	ry = sin(angle);
+	ix=0;
+	iy=0;
+
+	inx=posx;
+	iny=posy;
+	arx=0;
+	if (rx) arx = 1.0/fabs(rx);
+	ary=0;
+	if (ry) ary = 1.0/fabs(ry);
+	dincx=0;
+	dval0=1e32;
+	dincy=0;
+	dval1=1e32;
+	if (rx<0) {
+		dincx=-1;
+		dval0=fracx*arx;
+	} else if (rx>0) {
+		dincx=1;
+		dval0=(1.0-fracx)*arx;
+	}
+	if (ry<0) {
+		dincy=-1;
+		dval1=fracy*ary;
+	} else if (ry>0) {
+		dincy=1;
+		dval1=(1.0-fracy)*ary;
+	}
 	d=0;
 
 	if( my ) {
@@ -565,19 +591,28 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 			}
 		}
 	}
-	
+
 	Entity *entity = findEntityInLine(my,x1,y1,angle,entities,NULL);
-	
+
 	// trace the line
 	while( d<range ) {
-		if( dval1>dval0 ) { inx+=dincx; d=dval0; dval0+=arx; hit.side=HORIZONTAL; }
-		else { iny+=dincy; d=dval1; dval1+=ary; hit.side=VERTICAL; }
+		if( dval1>dval0 ) {
+			inx+=dincx;
+			d=dval0;
+			dval0+=arx;
+			hit.side=HORIZONTAL;
+		} else {
+			iny+=dincy;
+			d=dval1;
+			dval1+=ary;
+			hit.side=VERTICAL;
+		}
 		if( inx < 0 || iny < 0 || (inx>>4) >= map.width || (iny>>4) >= map.height )
 			break;
-		
+
 		ix = x1 + rx*d;
 		iy = y1 + ry*d;
-		
+
 		// check against the map
 		int index = (iny>>4)*MAPLAYERS+(inx>>4)*MAPLAYERS*map.height;
 		if( map.tiles[OBSTACLELAYER+index] ) {
@@ -602,7 +637,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 				return d;
 			}
 		}
-		
+
 		// check against entity
 		if( entity ) {
 			if( ix >= entity->x-entity->sizex && ix <= entity->x+entity->sizex ) {
@@ -635,32 +670,63 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 	double arx, ary;
 	double dincx, dval0, dincy, dval1;
 	double d;
-	
-	posx=floor(x1); posy=floor(y1); // integer coordinates
-	fracx=x1-posx; fracy=y1-posy; // fraction coordinates
-	rx = cos(angle); ry = sin(angle);
-	ix=0; iy=0;
 
-	inx=posx; iny=posy;
-	arx=0; if (rx) arx = 1.0/fabs(rx);
-	ary=0; if (ry) ary = 1.0/fabs(ry);
-	dincx=0; dval0=1e32; dincy=0; dval1=1e32;
-	if (rx<0) {dincx=-1; dval0=fracx*arx;} else if (rx>0) {dincx=1; dval0=(1.0-fracx)*arx;}
-	if (ry<0) {dincy=-1; dval1=fracy*ary;} else if (ry>0) {dincy=1; dval1=(1.0-fracy)*ary;}
+	posx=floor(x1);
+	posy=floor(y1); // integer coordinates
+	fracx=x1-posx;
+	fracy=y1-posy; // fraction coordinates
+	rx = cos(angle);
+	ry = sin(angle);
+	ix=0;
+	iy=0;
+
+	inx=posx;
+	iny=posy;
+	arx=0;
+	if (rx) arx = 1.0/fabs(rx);
+	ary=0;
+	if (ry) ary = 1.0/fabs(ry);
+	dincx=0;
+	dval0=1e32;
+	dincy=0;
+	dval1=1e32;
+	if (rx<0) {
+		dincx=-1;
+		dval0=fracx*arx;
+	} else if (rx>0) {
+		dincx=1;
+		dval0=(1.0-fracx)*arx;
+	}
+	if (ry<0) {
+		dincy=-1;
+		dval1=fracy*ary;
+	} else if (ry>0) {
+		dincy=1;
+		dval1=(1.0-fracy)*ary;
+	}
 	d=0;
-	
+
 	Entity *entity = findEntityInLine(my,x1,y1,angle,entities,target);
-	
+
 	// trace the line
 	while( d<range ) {
-		if( dval1>dval0 ) { inx+=dincx; d=dval0; dval0+=arx; hit.side=HORIZONTAL; }
-		else { iny+=dincy; d=dval1; dval1+=ary; hit.side=VERTICAL; }
+		if( dval1>dval0 ) {
+			inx+=dincx;
+			d=dval0;
+			dval0+=arx;
+			hit.side=HORIZONTAL;
+		} else {
+			iny+=dincy;
+			d=dval1;
+			dval1+=ary;
+			hit.side=VERTICAL;
+		}
 		if( inx < 0 || iny < 0 || (inx>>4) >= map.width || (iny>>4) >= map.height )
 			break;
-		
+
 		ix = x1 + rx*d;
 		iy = y1 + ry*d;
-		
+
 		// check against the map
 		int index = (iny>>4)*MAPLAYERS+(inx>>4)*MAPLAYERS*map.height;
 		if( map.tiles[OBSTACLELAYER+index] ) {
@@ -685,7 +751,7 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 				return d;
 			}
 		}
-		
+
 		// check against entity
 		if( entity ) {
 			if( ix >= entity->x-entity->sizex && ix <= entity->x+entity->sizex ) {
@@ -723,7 +789,7 @@ int checkObstacle(long x, long y, Entity *my, Entity *target) {
 	Entity *entity;
 	Stat *stats;
 	bool levitating=FALSE;
-	
+
 	// get levitation status
 	if( (my && (stats=my->getStats()))!=NULL ) {
 		if( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
@@ -772,6 +838,6 @@ int checkObstacle(long x, long y, Entity *my, Entity *target) {
 				return 1;
 		}
 	}
-	
+
 	return 0;
 }
