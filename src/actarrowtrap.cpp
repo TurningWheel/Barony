@@ -44,8 +44,9 @@ void actArrowTrap(Entity *my) {
 		playSoundEntity( my, 149, 128 );
 	}
 
-	if( !my->skill[28] )
+	if( !my->skill[28] ) {
 		return;
+	}
 
 	// received on signal
 	if( my->skill[28] == 2) {
@@ -53,22 +54,22 @@ void actArrowTrap(Entity *my) {
 			ARROWTRAP_FIRED = 1;
 			for( c=0; c<4; c++ ) {
 				switch( c ) {
-				case 0:
-					x = 12;
-					y = 0;
-					break;
-				case 1:
-					x = 0;
-					y = 12;
-					break;
-				case 2:
-					x = -12;
-					y = 0;
-					break;
-				case 3:
-					x = 0;
-					y = -12;
-					break;
+					case 0:
+						x = 12;
+						y = 0;
+						break;
+					case 1:
+						x = 0;
+						y = 12;
+						break;
+					case 2:
+						x = -12;
+						y = 0;
+						break;
+					case 3:
+						x = 0;
+						y = -12;
+						break;
 				}
 				if( !checkObstacle(my->x+x, my->y+y, my, NULL) ) {
 					Entity *entity = newEntity(166, 1, map.entities); // arrow

@@ -38,8 +38,9 @@
 -------------------------------------------------------------------------------*/
 
 int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
-	if (!my || !entity)
+	if (!my || !entity) {
 		return 0;
+	}
 
 	if( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 		if( entityInsideEntity( my, entity ) ) {
@@ -67,8 +68,9 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 				entity->modHP(-80);
 				entity->setObituary(language[1505]);
 				if( entity->behavior==&actPlayer )
-					if( stats->HP<=0 )
+					if( stats->HP<=0 ) {
 						steamAchievementClient(entity->skill[2],"BARONY_ACH_THROW_ME_THE_WHIP");
+					}
 				if( stats->HP > 0 ) {
 					// spawn several rock items
 					int i = 8+rand()%4;
@@ -130,8 +132,9 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 				playSoundEntity(my,181,128);
 				if( my->flags[PASSABLE] ) {
 					my->flags[PASSABLE] = FALSE;
-					if( multiplayer==SERVER )
+					if( multiplayer==SERVER ) {
 						serverUpdateEntityFlag(my,PASSABLE);
+					}
 				}
 			}
 		}
@@ -139,10 +142,11 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 		if( entityInsideEntity( my, entity ) ) {
 			playSoundEntity(entity,28,64);
 			entity->skill[4] = 0;
-			if( !entity->skill[0] )
+			if( !entity->skill[0] ) {
 				entity->skill[6] = (my->x > entity->x);
-			else
+			} else {
 				entity->skill[6] = (my->y < entity->y);
+			}
 			playSoundEntity(my,181,128);
 		}
 	}
@@ -168,14 +172,16 @@ void actBoulder(Entity *my) {
 	int x = std::min<int>(std::max(0,(int)(my->x/16)),map.width);
 	int y = std::min<int>(std::max(0,(int)(my->y/16)),map.height);
 	Uint32 index = y*MAPLAYERS+x*MAPLAYERS*map.height;
-	if( !map.tiles[index] || animatedtiles[map.tiles[index]] )
+	if( !map.tiles[index] || animatedtiles[map.tiles[index]] ) {
 		noground = TRUE;
+	}
 
 	// gravity
 	bool nobounce=TRUE;
 	if( !BOULDER_NOGROUND )
-		if( noground )
+		if( noground ) {
 			BOULDER_NOGROUND = TRUE;
+		}
 	if( my->z < 0 || BOULDER_NOGROUND ) {
 		my->vel_z = std::min(my->vel_z+.1,3.0);
 		my->vel_x *= 0.85f;
@@ -190,10 +196,12 @@ void actBoulder(Entity *my) {
 				node_t *node;
 				for( node=map.entities->first; node!=NULL; node=node->next ) {
 					Entity *entity = (Entity *)node->element;
-					if( entity == my )
+					if( entity == my ) {
 						continue;
-					if( boulderCheckAgainstEntity(my,entity) )
+					}
+					if( boulderCheckAgainstEntity(my,entity) ) {
 						return;
+					}
 				}
 			}
 		}
@@ -203,8 +211,9 @@ void actBoulder(Entity *my) {
 			my->vel_z = -(my->vel_z/2);
 			nobounce = TRUE;
 		} else {
-			if( my->vel_z )
+			if( my->vel_z ) {
 				playSoundEntity(my,182,128);
+			}
 			my->vel_z = 0;
 			nobounce = FALSE;
 		}
@@ -214,8 +223,9 @@ void actBoulder(Entity *my) {
 	if( nobounce ) {
 		if( !my->flags[PASSABLE] ) {
 			my->flags[PASSABLE] = TRUE;
-			if( multiplayer==SERVER )
+			if( multiplayer==SERVER ) {
 				serverUpdateEntityFlag(my,PASSABLE);
+			}
 		}
 		if( !BOULDER_STOPPED ) {
 			my->x += my->vel_x;
@@ -227,21 +237,26 @@ void actBoulder(Entity *my) {
 	} else if( !BOULDER_STOPPED ) {
 		if( my->flags[PASSABLE] ) {
 			my->flags[PASSABLE] = FALSE;
-			if( multiplayer==SERVER )
+			if( multiplayer==SERVER ) {
 				serverUpdateEntityFlag(my,PASSABLE);
+			}
 		}
 
 		// horizontal velocity
 		my->vel_x += cos(my->yaw)*.1;
 		my->vel_y += sin(my->yaw)*.1;
-		if( my->vel_x > 1.5 )
+		if( my->vel_x > 1.5 ) {
 			my->vel_x = 1.5;
-		if( my->vel_x < -1.5 )
+		}
+		if( my->vel_x < -1.5 ) {
 			my->vel_x = -1.5;
-		if( my->vel_y > 1.5 )
+		}
+		if( my->vel_y > 1.5 ) {
 			my->vel_y = 1.5;
-		if( my->vel_y < -1.5 )
+		}
+		if( my->vel_y < -1.5 ) {
 			my->vel_y = -1.5;
+		}
 		int x = std::min<int>(std::max(0.0,(my->x+cos(my->yaw)*8)/16),map.width-1);
 		int y = std::min<int>(std::max(0.0,(my->y+sin(my->yaw)*8)/16),map.height-1);
 		if( map.tiles[OBSTACLELAYER+y*MAPLAYERS+x*MAPLAYERS*map.height] ) {
@@ -259,10 +274,12 @@ void actBoulder(Entity *my) {
 				node_t *node;
 				for( node=map.entities->first; node!=NULL; node=node->next ) {
 					Entity *entity = (Entity *)node->element;
-					if( entity == my )
+					if( entity == my ) {
 						continue;
-					if( boulderCheckAgainstEntity(my,entity) )
+					}
+					if( boulderCheckAgainstEntity(my,entity) ) {
 						return;
+					}
 				}
 			}
 		}
@@ -294,18 +311,18 @@ void actBoulder(Entity *my) {
 									BOULDER_ROLLDIR=3; // north
 								}
 								switch( BOULDER_ROLLDIR ) {
-								case 0:
-									BOULDER_DESTX += 16;
-									break;
-								case 1:
-									BOULDER_DESTY += 16;
-									break;
-								case 2:
-									BOULDER_DESTX -= 16;
-									break;
-								case 3:
-									BOULDER_DESTY -= 16;
-									break;
+									case 0:
+										BOULDER_DESTX += 16;
+										break;
+									case 1:
+										BOULDER_DESTY += 16;
+										break;
+									case 2:
+										BOULDER_DESTX -= 16;
+										break;
+									case 3:
+										BOULDER_DESTY -= 16;
+										break;
 								}
 							}
 						}
@@ -314,22 +331,22 @@ void actBoulder(Entity *my) {
 			}
 		} else {
 			switch( BOULDER_ROLLDIR ) {
-			case 0:
-				my->vel_x=1;
-				my->vel_y=0;
-				break;
-			case 1:
-				my->vel_x=0;
-				my->vel_y=1;
-				break;
-			case 2:
-				my->vel_x=-1;
-				my->vel_y=0;
-				break;
-			case 3:
-				my->vel_x=0;
-				my->vel_y=-1;
-				break;
+				case 0:
+					my->vel_x=1;
+					my->vel_y=0;
+					break;
+				case 1:
+					my->vel_x=0;
+					my->vel_y=1;
+					break;
+				case 2:
+					my->vel_x=-1;
+					my->vel_y=0;
+					break;
+				case 3:
+					my->vel_x=0;
+					my->vel_y=-1;
+					break;
 			}
 			int x = (my->x+my->vel_x*8)/16;
 			int y = (my->y+my->vel_y*8)/16;
@@ -365,25 +382,31 @@ void actBoulder(Entity *my) {
 					}
 				}
 				double dir = my->yaw - BOULDER_ROLLDIR*PI/2;
-				while( dir >= PI )
+				while( dir >= PI ) {
 					dir -= PI*2;
-				while( dir < -PI )
+				}
+				while( dir < -PI ) {
 					dir += PI*2;
+				}
 				my->yaw -= dir/16;
-				while( my->yaw < 0 )
+				while( my->yaw < 0 ) {
 					my->yaw += 2*PI;
-				while( my->yaw >= 2*PI )
+				}
+				while( my->yaw >= 2*PI ) {
 					my->yaw -= 2*PI;
+				}
 
 				// crush objects
 				if( dist && !BOULDER_NOGROUND ) {
 					node_t *node;
 					for( node=map.entities->first; node!=NULL; node=node->next ) {
 						Entity *entity = (Entity *)node->element;
-						if( entity == my )
+						if( entity == my ) {
 							continue;
-						if( boulderCheckAgainstEntity(my,entity) )
+						}
+						if( boulderCheckAgainstEntity(my,entity) ) {
 							return;
+						}
 					}
 				}
 			}
@@ -391,14 +414,18 @@ void actBoulder(Entity *my) {
 	}
 
 	// wrap around angles
-	while( my->pitch >= PI*2 )
+	while( my->pitch >= PI*2 ) {
 		my->pitch -= PI*2;
-	while( my->pitch < 0 )
+	}
+	while( my->pitch < 0 ) {
 		my->pitch += PI*2;
-	while( my->roll >= PI*2 )
+	}
+	while( my->roll >= PI*2 ) {
 		my->roll -= PI*2;
-	while( my->roll < 0 )
+	}
+	while( my->roll < 0 ) {
 		my->roll += PI*2;
+	}
 
 	// rolling sound
 	if( !BOULDER_STOPPED && (fabs(my->vel_x)>0 || fabs(my->vel_y)>0) ) {
@@ -423,34 +450,36 @@ void actBoulderTrap(Entity *my) {
 		playSoundEntity( my, 149, 64 );
 	}
 
-	if( !my->skill[28] )
+	if( !my->skill[28] ) {
 		return;
+	}
 
 	// received on signal
 	if( my->skill[28] == 2) {
 		if( !BOULDERTRAP_FIRED ) {
 			playSoundEntity(my, 150, 128);
-			for( c=0; c<MAXPLAYERS; c++ )
+			for( c=0; c<MAXPLAYERS; c++ ) {
 				playSoundPlayer(c, 150, 64);
+			}
 			BOULDERTRAP_FIRED = 1;
 			for( c=0; c<4; c++ ) {
 				switch( c ) {
-				case 0:
-					x = 16;
-					y = 0;
-					break;
-				case 1:
-					x = 0;
-					y = 16;
-					break;
-				case 2:
-					x = -16;
-					y = 0;
-					break;
-				case 3:
-					x = 0;
-					y = -16;
-					break;
+					case 0:
+						x = 16;
+						y = 0;
+						break;
+					case 1:
+						x = 0;
+						y = 16;
+						break;
+					case 2:
+						x = -16;
+						y = 0;
+						break;
+					case 3:
+						x = 0;
+						y = -16;
+						break;
 				}
 				x = ((int)(x+my->x))>>4;
 				y = ((int)(y+my->y))>>4;
@@ -466,10 +495,11 @@ void actBoulderTrap(Entity *my) {
 						entity->sizey = 7;
 						if( checkObstacle( entity->x+cos(entity->yaw)*16, entity->y+sin(entity->yaw)*16, entity, NULL ) ) {
 							entity->yaw += PI*(rand()%2)-PI/2;
-							if( entity->yaw >= PI*2 )
+							if( entity->yaw >= PI*2 ) {
 								entity->yaw -= PI*2;
-							else if( entity->yaw < 0 )
+							} else if( entity->yaw < 0 ) {
 								entity->yaw += PI*2;
+							}
 						}
 						entity->behavior = &actBoulder;
 						entity->flags[UPDATENEEDED] = TRUE;

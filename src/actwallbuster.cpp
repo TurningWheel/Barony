@@ -29,8 +29,9 @@
 void actWallBuster(Entity *my) {
 	int c;
 
-	if( !my->skill[28] )
+	if( !my->skill[28] ) {
 		return;
+	}
 
 	// received on signal
 	if( my->skill[28] == 2) {
@@ -41,8 +42,9 @@ void actWallBuster(Entity *my) {
 		spawnExplosion(my->x,my->y,my->z-8);
 		if( multiplayer==SERVER ) {
 			for( c=0; c<MAXPLAYERS; c++ ) {
-				if( client_disconnected[c]==TRUE )
+				if( client_disconnected[c]==TRUE ) {
 					continue;
+				}
 				strcpy((char *)net_packet->data,"WACD");
 				SDLNet_Write16(x,&net_packet->data[4]);
 				SDLNet_Write16(y,&net_packet->data[6]);
@@ -59,8 +61,9 @@ void actWallBuster(Entity *my) {
 void actWallBuilder(Entity *my) {
 	int c;
 
-	if( !my->skill[28] )
+	if( !my->skill[28] ) {
 		return;
+	}
 
 	// received on signal
 	if( my->skill[28] == 2) {
@@ -70,8 +73,9 @@ void actWallBuilder(Entity *my) {
 		map.tiles[OBSTACLELAYER+y*MAPLAYERS+x*MAPLAYERS*map.height] = map.tiles[y*MAPLAYERS+x*MAPLAYERS*map.height];
 		if( multiplayer==SERVER ) {
 			for( c=0; c<MAXPLAYERS; c++ ) {
-				if( client_disconnected[c]==TRUE )
+				if( client_disconnected[c]==TRUE ) {
 					continue;
+				}
 				strcpy((char *)net_packet->data,"WALC");
 				SDLNet_Write16(x,&net_packet->data[4]);
 				SDLNet_Write16(y,&net_packet->data[6]);

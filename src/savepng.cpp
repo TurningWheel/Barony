@@ -66,30 +66,40 @@ int SDL_SavePNG_RW(SDL_Surface *surface, SDL_RWops *dst, int freedst) {
 	/* Initialize and do basic error checking */
 	if (!dst) {
 		SDL_SetError("Argument 2 to SDL_SavePNG_RW can't be NULL, expecting SDL_RWops*\n");
-		if (freedst) SDL_RWclose(dst);
+		if (freedst) {
+			SDL_RWclose(dst);
+		}
 		return (ERROR);
 	}
 	if (!surface) {
 		SDL_SetError("Argument 1 to SDL_SavePNG_RW can't be NULL, expecting SDL_Surface*\n");
-		if (freedst) SDL_RWclose(dst);
+		if (freedst) {
+			SDL_RWclose(dst);
+		}
 		return (ERROR);
 	}
 	png_ptr = png_create_write_struct(PNG_LIBPNG_VER_STRING, NULL, png_error_SDL, NULL); /* err_ptr, err_fn, warn_fn */
 	if (!png_ptr) {
 		SDL_SetError("Unable to png_create_write_struct on %s\n", PNG_LIBPNG_VER_STRING);
-		if (freedst) SDL_RWclose(dst);
+		if (freedst) {
+			SDL_RWclose(dst);
+		}
 		return (ERROR);
 	}
 	info_ptr = png_create_info_struct(png_ptr);
 	if (!info_ptr) {
 		SDL_SetError("Unable to png_create_info_struct\n");
 		png_destroy_write_struct(&png_ptr, NULL);
-		if (freedst) SDL_RWclose(dst);
+		if (freedst) {
+			SDL_RWclose(dst);
+		}
 		return (ERROR);
 	}
 	if (setjmp(png_jmpbuf(png_ptr))) {	/* All other errors, see also "png_error_SDL" */
 		png_destroy_write_struct(&png_ptr, &info_ptr);
-		if (freedst) SDL_RWclose(dst);
+		if (freedst) {
+			SDL_RWclose(dst);
+		}
 		return (ERROR);
 	}
 
@@ -110,8 +120,9 @@ int SDL_SavePNG_RW(SDL_Surface *surface, SDL_RWops *dst, int freedst) {
 		}
 		png_set_PLTE(png_ptr, info_ptr, pal_ptr, pal->ncolors);
 		free(pal_ptr);
-	} else if (surface->format->BytesPerPixel > 3 || surface->format->Amask)
+	} else if (surface->format->BytesPerPixel > 3 || surface->format->Amask) {
 		colortype |= PNG_COLOR_MASK_ALPHA;
+	}
 
 	png_set_IHDR(png_ptr, info_ptr, surface->w, surface->h, 8, colortype,
 	             PNG_INTERLACE_NONE, PNG_COMPRESSION_TYPE_DEFAULT, PNG_FILTER_TYPE_DEFAULT);
@@ -121,25 +132,30 @@ int SDL_SavePNG_RW(SDL_Surface *surface, SDL_RWops *dst, int freedst) {
 	/* Allow BGR surfaces */
 	if (surface->format->Rmask == bmask
 	        && surface->format->Gmask == gmask
-	        && surface->format->Bmask == rmask)
+	        && surface->format->Bmask == rmask) {
 		png_set_bgr(png_ptr);
+	}
 
 	/* Write everything */
 	png_write_info(png_ptr, info_ptr);
 #ifdef USE_ROW_POINTERS
 	row_pointers = (png_bytep*) malloc(sizeof(png_bytep)*surface->h);
-	for (i = 0; i < surface->h; i++)
+	for (i = 0; i < surface->h; i++) {
 		row_pointers[i] = (png_bytep)(Uint8*)surface->pixels + i * surface->pitch;
+	}
 	png_write_image(png_ptr, row_pointers);
 	free(row_pointers);
 #else
-	for (i = 0; i < surface->h; i++)
+	for (i = 0; i < surface->h; i++) {
 		png_write_row(png_ptr, (png_bytep)(Uint8*)surface->pixels + i * surface->pitch);
+	}
 #endif
 	png_write_end(png_ptr, info_ptr);
 
 	/* Done */
 	png_destroy_write_struct(&png_ptr, &info_ptr);
-	if (freedst) SDL_RWclose(dst);
+	if (freedst) {
+		SDL_RWclose(dst);
+	}
 	return (SUCCESS);
 }

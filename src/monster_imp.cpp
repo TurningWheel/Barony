@@ -55,22 +55,27 @@ void initImp(Entity *my, Stat *myStats) {
 		myStats->CHR = -3;
 		myStats->EXP = 0;
 		myStats->LVL = 14;
-		if( rand()%10 )
+		if( rand()%10 ) {
 			myStats->GOLD = 0;
-		else
+		} else {
 			myStats->GOLD = 20+rand()%20;
+		}
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -363,22 +368,25 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if( bodypart==3||bodypart==6 ) {
-			if( bodypart==3 )
+			if( bodypart==3 ) {
 				rightbody = (Entity *)node->next->element;
+			}
 			if( bodypart==3 || !MONSTER_ATTACK ) {
 				if( !rightbody->skill[0] ) {
 					entity->pitch -= IMPWALKSPEED;
 					if( entity->pitch < -PI/8.0 ) {
 						entity->pitch = -PI/8.0;
-						if(bodypart==3)
+						if(bodypart==3) {
 							entity->skill[0]=1;
+						}
 					}
 				} else {
 					entity->pitch += IMPWALKSPEED;
 					if( entity->pitch > PI/8.0 ) {
 						entity->pitch = PI/8.0;
-						if(bodypart==3)
+						if(bodypart==3) {
 							entity->skill[0]=0;
+						}
 					}
 				}
 			} else {
@@ -389,8 +397,9 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					entity->pitch = -3*PI/4;
 					entity->roll = 0;
 				} else {
-					if( entity->pitch >= -PI/2 )
+					if( entity->pitch >= -PI/2 ) {
 						MONSTER_ARMBENDED = 1;
+					}
 					if( entity->pitch >= PI/4 ) {
 						entity->skill[0] = rightbody->skill[0];
 						MONSTER_WEAPONYAW = 0;
@@ -413,8 +422,9 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 						entity->pitch = -3*PI/4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI/2 )
+						if( entity->pitch >= -PI/2 ) {
 							MONSTER_ARMBENDED = 1;
+						}
 						if( entity->pitch >= PI/4 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
@@ -445,59 +455,61 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		} else if( bodypart==7 || bodypart==8 ) {
 			entity->fskill[1] += .1;
-			if( entity->fskill[1] >= PI*2 )
+			if( entity->fskill[1] >= PI*2 ) {
 				entity->fskill[1] -= PI*2;
+			}
 		}
 		switch( bodypart ) {
-		// torso
-		case 2:
-			entity->x-=2*cos(my->yaw);
-			entity->y-=2*sin(my->yaw);
-			entity->z+=2.75;
-			break;
-		// right leg
-		case 3:
-			entity->x+=1*cos(my->yaw+PI/2);
-			entity->y+=1*sin(my->yaw+PI/2);
-			entity->z+=6;
-			break;
-		// left leg
-		case 4:
-			entity->x-=1*cos(my->yaw+PI/2);
-			entity->y-=1*sin(my->yaw+PI/2);
-			entity->z+=6;
-			break;
-		// right arm
-		case 5:
-			entity->x+=3*cos(my->yaw+PI/2)-1*cos(my->yaw);
-			entity->y+=3*sin(my->yaw+PI/2)-1*sin(my->yaw);
-			entity->z+=1;
-			entity->yaw += MONSTER_WEAPONYAW;
-			break;
-		// left arm
-		case 6:
-			entity->x-=3*cos(my->yaw+PI/2)+1*cos(my->yaw);
-			entity->y-=3*sin(my->yaw+PI/2)+1*sin(my->yaw);
-			entity->z+=1;
-			break;
-		// right wing
-		case 7:
-			entity->x+=1*cos(my->yaw+PI/2)-2.5*cos(my->yaw);
-			entity->y+=1*sin(my->yaw+PI/2)-2.5*sin(my->yaw);
-			entity->z+=1;
-			entity->yaw += cos(entity->fskill[1])*PI/6+PI/6;
-			break;
-		// left wing
-		case 8:
-			entity->x-=1*cos(my->yaw+PI/2)+2.5*cos(my->yaw);
-			entity->y-=1*sin(my->yaw+PI/2)+2.5*sin(my->yaw);
-			entity->z+=1;
-			entity->yaw -= cos(entity->fskill[1])*PI/6+PI/6;
-			break;
+			// torso
+			case 2:
+				entity->x-=2*cos(my->yaw);
+				entity->y-=2*sin(my->yaw);
+				entity->z+=2.75;
+				break;
+			// right leg
+			case 3:
+				entity->x+=1*cos(my->yaw+PI/2);
+				entity->y+=1*sin(my->yaw+PI/2);
+				entity->z+=6;
+				break;
+			// left leg
+			case 4:
+				entity->x-=1*cos(my->yaw+PI/2);
+				entity->y-=1*sin(my->yaw+PI/2);
+				entity->z+=6;
+				break;
+			// right arm
+			case 5:
+				entity->x+=3*cos(my->yaw+PI/2)-1*cos(my->yaw);
+				entity->y+=3*sin(my->yaw+PI/2)-1*sin(my->yaw);
+				entity->z+=1;
+				entity->yaw += MONSTER_WEAPONYAW;
+				break;
+			// left arm
+			case 6:
+				entity->x-=3*cos(my->yaw+PI/2)+1*cos(my->yaw);
+				entity->y-=3*sin(my->yaw+PI/2)+1*sin(my->yaw);
+				entity->z+=1;
+				break;
+			// right wing
+			case 7:
+				entity->x+=1*cos(my->yaw+PI/2)-2.5*cos(my->yaw);
+				entity->y+=1*sin(my->yaw+PI/2)-2.5*sin(my->yaw);
+				entity->z+=1;
+				entity->yaw += cos(entity->fskill[1])*PI/6+PI/6;
+				break;
+			// left wing
+			case 8:
+				entity->x-=1*cos(my->yaw+PI/2)+2.5*cos(my->yaw);
+				entity->y-=1*sin(my->yaw+PI/2)+2.5*sin(my->yaw);
+				entity->z+=1;
+				entity->yaw -= cos(entity->fskill[1])*PI/6+PI/6;
+				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 )
+	if( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
-	else
+	} else {
 		MONSTER_ATTACKTIME=0;
+	}
 }

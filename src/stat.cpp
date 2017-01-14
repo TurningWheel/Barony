@@ -81,73 +81,83 @@ Stat::Stat() {
 //Destructor
 Stat::~Stat() {
 	if (this->helmet != NULL) {
-		if (this->helmet->node == NULL)
+		if (this->helmet->node == NULL) {
 			free(this->helmet);
-		else
+		} else {
 			list_RemoveNode(this->helmet->node);
+		}
 		this->helmet = NULL;
 	}
 	if (this->breastplate != NULL) {
-		if (this->breastplate->node == NULL)
+		if (this->breastplate->node == NULL) {
 			free(this->breastplate);
-		else
+		} else {
 			list_RemoveNode(this->breastplate->node);
+		}
 		this->breastplate = NULL;
 	}
 	if (this->gloves != NULL) {
-		if (this->gloves->node == NULL)
+		if (this->gloves->node == NULL) {
 			free(this->gloves);
-		else
+		} else {
 			list_RemoveNode(this->gloves->node);
+		}
 		this->gloves = NULL;
 	}
 	if (this->shoes != NULL) {
-		if (this->shoes->node == NULL)
+		if (this->shoes->node == NULL) {
 			free(this->shoes);
-		else
+		} else {
 			list_RemoveNode(this->shoes->node);
+		}
 		this->shoes = NULL;
 	}
 	if (this->shield != NULL) {
-		if (this->shield->node == NULL)
+		if (this->shield->node == NULL) {
 			free(this->shield);
-		else
+		} else {
 			list_RemoveNode(this->shield->node);
+		}
 		this->shield = NULL;
 	}
 	if (this->weapon != NULL) {
-		if (this->weapon->node == NULL)
+		if (this->weapon->node == NULL) {
 			free(this->weapon);
-		else
+		} else {
 			list_RemoveNode(this->weapon->node);
+		}
 		this->weapon = NULL;
 	}
 	if (this->cloak != NULL) {
-		if (this->cloak->node == NULL)
+		if (this->cloak->node == NULL) {
 			free(this->cloak);
-		else
+		} else {
 			list_RemoveNode(this->cloak->node);
+		}
 		this->cloak = NULL;
 	}
 	if (this->amulet != NULL) {
-		if (this->amulet->node == NULL)
+		if (this->amulet->node == NULL) {
 			free(this->amulet);
-		else
+		} else {
 			list_RemoveNode(this->amulet->node);
+		}
 		this->amulet = NULL;
 	}
 	if (this->ring != NULL) {
-		if (this->ring->node == NULL)
+		if (this->ring->node == NULL) {
 			free(this->ring);
-		else
+		} else {
 			list_RemoveNode(this->ring->node);
+		}
 		this->ring = NULL;
 	}
 	if (this->mask != NULL) {
-		if (this->mask->node == NULL)
+		if (this->mask->node == NULL) {
 			free(this->mask);
-		else
+		} else {
 			list_RemoveNode(this->mask->node);
+		}
 		this->mask = NULL;
 	}
 	//Free memory for magic effects.
@@ -185,8 +195,9 @@ void Stat::clearStats() {
 	this->EXP = 0;
 	list_FreeAll(&this->FOLLOWERS);
 	for (x = 0; x<std::max(NUMPROFICIENCIES, NUMEFFECTS); x++) {
-		if (x<NUMPROFICIENCIES)
+		if (x<NUMPROFICIENCIES) {
 			this->PROFICIENCIES[x] = 0;
+		}
 		if (x<NUMEFFECTS) {
 			this->EFFECTS[x] = FALSE;
 			this->EFFECTS_TIMERS[x] = 0;
@@ -215,73 +226,83 @@ frees all the malloc'd data for the given player's equipment
 
 void Stat::freePlayerEquipment() {
 	if (this->helmet != NULL) {
-		if (this->helmet->node)
+		if (this->helmet->node) {
 			list_RemoveNode(this->helmet->node);
-		else
+		} else {
 			free(this->helmet);
+		}
 		this->helmet = NULL;
 	}
 	if (this->breastplate != NULL) {
-		if (this->breastplate->node)
+		if (this->breastplate->node) {
 			list_RemoveNode(this->breastplate->node);
-		else
+		} else {
 			free(this->breastplate);
+		}
 		this->breastplate = NULL;
 	}
 	if (this->gloves != NULL) {
-		if (this->gloves->node)
+		if (this->gloves->node) {
 			list_RemoveNode(this->gloves->node);
-		else
+		} else {
 			free(this->gloves);
+		}
 		this->gloves = NULL;
 	}
 	if (this->shoes != NULL) {
-		if (this->shoes->node)
+		if (this->shoes->node) {
 			list_RemoveNode(this->shoes->node);
-		else
+		} else {
 			free(this->shoes);
+		}
 		this->shoes = NULL;
 	}
 	if (this->shield != NULL) {
-		if (this->shield->node)
+		if (this->shield->node) {
 			list_RemoveNode(this->shield->node);
-		else
+		} else {
 			free(this->shield);
+		}
 		this->shield = NULL;
 	}
 	if (this->weapon != NULL) {
-		if (this->weapon->node)
+		if (this->weapon->node) {
 			list_RemoveNode(this->weapon->node);
-		else
+		} else {
 			free(this->weapon);
+		}
 		this->weapon = NULL;
 	}
 	if (this->cloak != NULL) {
-		if (this->cloak->node)
+		if (this->cloak->node) {
 			list_RemoveNode(this->cloak->node);
-		else
+		} else {
 			free(this->cloak);
+		}
 		this->cloak = NULL;
 	}
 	if (this->amulet != NULL) {
-		if (this->amulet->node)
+		if (this->amulet->node) {
 			list_RemoveNode(this->amulet->node);
-		else
+		} else {
 			free(this->amulet);
+		}
 		this->amulet = NULL;
 	}
 	if (this->ring != NULL) {
-		if (this->ring->node)
+		if (this->ring->node) {
 			list_RemoveNode(this->ring->node);
-		else
+		} else {
 			free(this->ring);
+		}
 		this->ring = NULL;
 	}
 	if (this->mask != NULL) {
-		if (this->mask->node)
+		if (this->mask->node) {
 			list_RemoveNode(this->mask->node);
-		else
+		} else {
 			free(this->mask);
+		}
 		this->mask = NULL;
 	}
 }

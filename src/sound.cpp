@@ -129,8 +129,9 @@ void sound_update() {
 
 			if (volume < 1.0f) {
 				volume += fadein_increment*2;
-				if (volume > 1.0f)
+				if (volume > 1.0f) {
 					volume = 1.0f;
+				}
 				FMOD_Channel_SetVolume(music_channel, volume);
 			}
 		}

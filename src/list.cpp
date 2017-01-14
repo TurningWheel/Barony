@@ -70,10 +70,11 @@ void list_RemoveNode(node_t *node) {
 
 	// once the node is removed from the list, delete it
 	// If a node has a deconstructor, then deconstruct it.  Otherwise it's a class and we'll delete it (which calls the destructor)
-	if (*node->deconstructor)
+	if (*node->deconstructor) {
 		(*node->deconstructor)(node->element);
-	else
+	} else {
 		delete(node->element);
+	}
 	free(node);
 }
 
@@ -172,8 +173,9 @@ node_t *list_AddNodeLast(list_t *list) {
 
 node_t *list_AddNode(list_t *list, int index) {
 	node_t *node;
-	if( index<0 || index>list_Size(list))
+	if( index<0 || index>list_Size(list)) {
 		return NULL;
+	}
 
 	// allocate memory for node
 	if( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
@@ -274,8 +276,9 @@ list_t *list_Copy(list_t *destlist, list_t *srclist) {
 -------------------------------------------------------------------------------*/
 
 list_t *list_CopyNew(list_t *srclist) {
-	if( !srclist )
+	if( !srclist ) {
 		return NULL;
+	}
 	list_t *destlist = (list_t *) malloc(sizeof(list_t));
 	if( !destlist ) {
 		printlog("critical error: list_CopyNew() failed to allocate memory for new list!\n");
@@ -313,8 +316,9 @@ Uint32 list_Index(node_t *node) {
 	int i;
 
 	for( i=0, tempnode=node->list->first; tempnode!=NULL; tempnode=tempnode->next, i++ ) {
-		if( tempnode==node )
+		if( tempnode==node ) {
 			break;
+		}
 	}
 
 	return i;
@@ -329,8 +333,9 @@ Uint32 list_Index(node_t *node) {
 -------------------------------------------------------------------------------*/
 
 node_t *list_Node(list_t *list, int index) {
-	if( index<0 || index>=list_Size(list) )
+	if( index<0 || index>=list_Size(list) ) {
 		return NULL;
+	}
 
 	int i;
 	node_t *node=list->first;

@@ -68,14 +68,17 @@ void GameController::close() {
 }
 
 bool GameController::open(int c) {
-	if (sdl_device)
+	if (sdl_device) {
 		close();
+	}
 
-	if (c < 0 || c >= SDL_NumJoysticks())
+	if (c < 0 || c >= SDL_NumJoysticks()) {
 		return false;
+	}
 
-	if (!SDL_IsGameController(c))
+	if (!SDL_IsGameController(c)) {
 		return false;
+	}
 
 	sdl_device = SDL_GameControllerOpen(c);
 
@@ -97,8 +100,9 @@ bool GameController::isActive() {
 }
 
 void GameController::handleAnalog() {
-	if (!isActive())
+	if (!isActive()) {
 		return;
+	}
 
 	//Right analog stick = look.
 
@@ -109,15 +113,19 @@ void GameController::handleAnalog() {
 
 
 		//The right stick's inversion and the menu's inversion should be independent of eachother. This just undoes any inversion.
-		if (gamepad_rightx_invert)
+		if (gamepad_rightx_invert) {
 			rightx = -rightx;
-		if (gamepad_righty_invert)
+		}
+		if (gamepad_righty_invert) {
 			righty = -righty;
+		}
 
-		if (gamepad_menux_invert)
+		if (gamepad_menux_invert) {
 			rightx = -rightx;
-		if (gamepad_menuy_invert)
+		}
+		if (gamepad_menuy_invert) {
 			righty = -righty;
+		}
 
 		if (rightx || righty) {
 			SDL_WarpMouseInWindow(screen, std::max(0, std::min(camera.winw, mousex + rightx)), std::max(0, std::min(camera.winh, mousey + righty)));
@@ -162,8 +170,9 @@ void GameController::handleAnalog() {
 }
 
 int GameController::getLeftXMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int x = getRawLeftXMove();
 
@@ -173,8 +182,9 @@ int GameController::getLeftXMove() {
 }
 
 int GameController::getLeftYMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int y = -getRawLeftYMove();
 
@@ -184,8 +194,9 @@ int GameController::getLeftYMove() {
 }
 
 int GameController::getRightXMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int x = getRawRightXMove();
 
@@ -195,8 +206,9 @@ int GameController::getRightXMove() {
 }
 
 int GameController::getRightYMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int y = getRawRightYMove();
 
@@ -217,69 +229,81 @@ int GameController::getRightTrigger() {
 
 
 int GameController::getRawLeftXMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTX);
 
-	if (x < gamepad_deadzone && x > -gamepad_deadzone)
+	if (x < gamepad_deadzone && x > -gamepad_deadzone) {
 		return 0;
+	}
 
-	if (x < -gamepad_deadzone) //TODO: Give each controller a deadzone setting? Or maybe on a player by player basis? And/or each analog stick its own deadzone setting?
+	if (x < -gamepad_deadzone) { //TODO: Give each controller a deadzone setting? Or maybe on a player by player basis? And/or each analog stick its own deadzone setting?
 		x += gamepad_deadzone;
-	else
+	} else {
 		x -= gamepad_deadzone;
+	}
 
 	return (!gamepad_leftx_invert) ? x : -x;
 }
 
 int GameController::getRawLeftYMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_LEFTY);
 
-	if (y < gamepad_deadzone && y > -gamepad_deadzone)
+	if (y < gamepad_deadzone && y > -gamepad_deadzone) {
 		return 0;
+	}
 
-	if (y < -gamepad_deadzone)
+	if (y < -gamepad_deadzone) {
 		y += gamepad_deadzone;
-	else
+	} else {
 		y -= gamepad_deadzone;
+	}
 
 	return (!gamepad_lefty_invert) ? -y : y;
 }
 
 int GameController::getRawRightXMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int x = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTX);
 
-	if (x < gamepad_deadzone && x > -gamepad_deadzone)
+	if (x < gamepad_deadzone && x > -gamepad_deadzone) {
 		return 0;
+	}
 
-	if (x < -gamepad_deadzone)
+	if (x < -gamepad_deadzone) {
 		x += gamepad_deadzone;
-	else
+	} else {
 		x -= gamepad_deadzone;
+	}
 
 	return (!gamepad_rightx_invert) ? x : -x;
 }
 
 int GameController::getRawRightYMove() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int y = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_RIGHTY);
 
-	if (y < gamepad_deadzone && y > -gamepad_deadzone)
+	if (y < gamepad_deadzone && y > -gamepad_deadzone) {
 		return 0;
+	}
 
-	if (y < -gamepad_deadzone)
+	if (y < -gamepad_deadzone) {
 		y += gamepad_deadzone;
-	else
+	} else {
 		y -= gamepad_deadzone;
+	}
 
 	return (!gamepad_righty_invert) ? y : -y;
 }
@@ -287,13 +311,15 @@ int GameController::getRawRightYMove() {
 
 
 int GameController::getRawLeftTrigger() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERLEFT);
 
-	if (n < gamepad_trigger_deadzone)
+	if (n < gamepad_trigger_deadzone) {
 		return 0;
+	}
 
 	n -= gamepad_trigger_deadzone;
 
@@ -301,13 +327,15 @@ int GameController::getRawLeftTrigger() {
 }
 
 int GameController::getRawRightTrigger() {
-	if (!isActive())
+	if (!isActive()) {
 		return 0;
+	}
 
 	int n = SDL_GameControllerGetAxis(sdl_device, SDL_CONTROLLER_AXIS_TRIGGERRIGHT);
 
-	if (n < gamepad_trigger_deadzone)
+	if (n < gamepad_trigger_deadzone) {
 		return 0;
+	}
 
 	n -= gamepad_trigger_deadzone;
 

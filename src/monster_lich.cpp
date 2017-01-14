@@ -58,12 +58,15 @@ void initLich(Entity *my, Stat *myStats) {
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -143,35 +146,35 @@ void lichDie(Entity *my) {
 		Entity *entity = spawnGib(my);
 		if( entity ) {
 			switch( c ) {
-			case 0:
-				entity->sprite = 230;
-				break;
-			case 1:
-				entity->sprite = 231;
-				break;
-			case 2:
-				entity->sprite = 233;
-				break;
-			case 3:
-				entity->sprite = 235;
-				break;
-			case 4:
-				entity->sprite = 236;
-				break;
-			case 5:
-				entity->sprite = 274;
-				break;
-			case 6:
-				entity->sprite = 275;
-				break;
-			case 7:
-				entity->sprite = 276;
-				break;
-			case 8:
-				entity->sprite = 277;
-				break;
-			default:
-				break;
+				case 0:
+					entity->sprite = 230;
+					break;
+				case 1:
+					entity->sprite = 231;
+					break;
+				case 2:
+					entity->sprite = 233;
+					break;
+				case 3:
+					entity->sprite = 235;
+					break;
+				case 4:
+					entity->sprite = 236;
+					break;
+				case 5:
+					entity->sprite = 274;
+					break;
+				case 6:
+					entity->sprite = 275;
+					break;
+				case 7:
+					entity->sprite = 276;
+					break;
+				case 8:
+					entity->sprite = 277;
+					break;
+				default:
+					break;
 			}
 			serverSpawnGibForClient(entity);
 		}
@@ -181,8 +184,9 @@ void lichDie(Entity *my) {
 		nextnode = node->next;
 		if( node->element != NULL && i >= 2 ) {
 			Entity *entity=(Entity *)node->element;
-			if( entity->light != NULL )
+			if( entity->light != NULL ) {
 				list_RemoveNode(entity->light->node);
+			}
 			entity->light = NULL;
 			list_RemoveNode(entity->mynode);
 		}
@@ -198,14 +202,16 @@ void lichDie(Entity *my) {
 	for( node=map.entities->first; node!=NULL; node=nextnode ) {
 		nextnode = node->next;
 		Entity *entity = (Entity *)node->element;
-		if( entity==my )
+		if( entity==my ) {
 			continue;
+		}
 		if( entity->behavior==&actMonster ) {
 			spawnExplosion(entity->x,entity->y,entity->z);
 			Stat *stats = entity->getStats();
 			if( stats )
-				if( stats->type != HUMAN )
+				if( stats->type != HUMAN ) {
 					stats->HP=0;
+				}
 		}
 	}
 	for( c=0; c<MAXPLAYERS; c++ ) {
@@ -214,8 +220,9 @@ void lichDie(Entity *my) {
 	}
 	if( multiplayer==SERVER ) {
 		for( c=1; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+			if( client_disconnected[c] ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"BDTH");
 			net_packet->address.host = net_clients[c-1].host;
 			net_packet->address.port = net_clients[c-1].port;
@@ -320,8 +327,9 @@ void lichAnimate(Entity *my, double dist) {
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		if( bodypart!=4 )
+		if( bodypart!=4 ) {
 			entity->yaw = my->yaw;
+		}
 		if( bodypart==2 ) {
 			rightarm = entity;
 			if( !MONSTER_ATTACK ) {
@@ -346,60 +354,65 @@ void lichAnimate(Entity *my, double dist) {
 			entity->pitch = rightarm->pitch;
 		}
 		switch( bodypart ) {
-		// right arm
-		case 2:
-			entity->x+=2.75*cos(my->yaw+PI/2);
-			entity->y+=2.75*sin(my->yaw+PI/2);
-			entity->z-=3.25;
-			entity->yaw += MONSTER_WEAPONYAW;
-			break;
-		// left arm
-		case 3:
-			entity->x-=2.75*cos(my->yaw+PI/2);
-			entity->y-=2.75*sin(my->yaw+PI/2);
-			entity->z-=3.25;
-			entity->yaw -= MONSTER_WEAPONYAW;
-			break;
-		// head
-		case 4: {
-			entity->z-=4.25;
-			node_t *tempNode;
-			Entity *playertotrack = NULL;
-			for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
-				Entity *tempEntity = (Entity *)tempNode->element;
-				double lowestdist = 5000;
-				if( tempEntity->behavior == &actPlayer ) {
-					double disttoplayer = entityDist(my,tempEntity);
-					if( disttoplayer < lowestdist ) {
-						playertotrack = tempEntity;
+			// right arm
+			case 2:
+				entity->x+=2.75*cos(my->yaw+PI/2);
+				entity->y+=2.75*sin(my->yaw+PI/2);
+				entity->z-=3.25;
+				entity->yaw += MONSTER_WEAPONYAW;
+				break;
+			// left arm
+			case 3:
+				entity->x-=2.75*cos(my->yaw+PI/2);
+				entity->y-=2.75*sin(my->yaw+PI/2);
+				entity->z-=3.25;
+				entity->yaw -= MONSTER_WEAPONYAW;
+				break;
+			// head
+			case 4: {
+				entity->z-=4.25;
+				node_t *tempNode;
+				Entity *playertotrack = NULL;
+				for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
+					Entity *tempEntity = (Entity *)tempNode->element;
+					double lowestdist = 5000;
+					if( tempEntity->behavior == &actPlayer ) {
+						double disttoplayer = entityDist(my,tempEntity);
+						if( disttoplayer < lowestdist ) {
+							playertotrack = tempEntity;
+						}
 					}
 				}
-			}
-			if( playertotrack && !MONSTER_ATTACK ) {
-				double tangent = atan2( playertotrack->y-entity->y, playertotrack->x-entity->x );
-				double dir = entity->yaw - tangent;
-				while( dir >= PI )
-					dir -= PI*2;
-				while( dir < -PI )
-					dir += PI*2;
-				entity->yaw -= dir/8;
+				if( playertotrack && !MONSTER_ATTACK ) {
+					double tangent = atan2( playertotrack->y-entity->y, playertotrack->x-entity->x );
+					double dir = entity->yaw - tangent;
+					while( dir >= PI ) {
+						dir -= PI*2;
+					}
+					while( dir < -PI ) {
+						dir += PI*2;
+					}
+					entity->yaw -= dir/8;
 
-				double dir2 = my->yaw - tangent;
-				while( dir2 >= PI )
-					dir2 -= PI*2;
-				while( dir2 < -PI )
-					dir2 += PI*2;
-				if( dir2>PI/2 )
-					entity->yaw = my->yaw - PI/2;
-				else if( dir2<-PI/2 )
-					entity->yaw = my->yaw + PI/2;
-			} else {
-				entity->yaw = my->yaw;
+					double dir2 = my->yaw - tangent;
+					while( dir2 >= PI ) {
+						dir2 -= PI*2;
+					}
+					while( dir2 < -PI ) {
+						dir2 += PI*2;
+					}
+					if( dir2>PI/2 ) {
+						entity->yaw = my->yaw - PI/2;
+					} else if( dir2<-PI/2 ) {
+						entity->yaw = my->yaw + PI/2;
+					}
+				} else {
+					entity->yaw = my->yaw;
+				}
+				break;
 			}
-			break;
-		}
-		default:
-			break;
+			default:
+				break;
 		}
 	}
 }

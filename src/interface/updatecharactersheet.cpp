@@ -53,8 +53,9 @@ void updateCharacterSheet() {
 	double ofov = fov;
 	fov = 50;
 	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr) {
-		if (!softwaremode)
+		if (!softwaremode) {
 			glClear(GL_DEPTH_BUFFER_BIT);
+		}
 		//TODO: These two NOT PLAYERSWAP
 		//camera.x=players[clientnum]->x/16.0+.5*cos(players[clientnum]->yaw)-.4*sin(players[clientnum]->yaw);
 		//camera.y=players[clientnum]->y/16.0+.5*sin(players[clientnum]->yaw)+.4*cos(players[clientnum]->yaw);

@@ -86,13 +86,16 @@ pathnode_t **heapRemove(pathnode_t **heap, long *length) {
 		u = v;
 
 		if( (u<<1)+1 <= *length ) {
-			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h )
+			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h ) {
 				v = u<<1;
-			if( heap[(u<<1)+1]->g+heap[(u<<1)+1]->h < heap[v]->g+heap[v]->h )
+			}
+			if( heap[(u<<1)+1]->g+heap[(u<<1)+1]->h < heap[v]->g+heap[v]->h ) {
 				v = (u<<1)+1;
+			}
 		} else if( u<<1 <= *length ) {
-			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h )
+			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h ) {
 				v = u<<1;
+			}
 		}
 
 		if( u != v ) {
@@ -118,8 +121,9 @@ int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
 	int v = std::min(std::max<unsigned int>(0,y>>4),map.height); //TODO: Why are int and long int being compared?
 	int index = v*MAPLAYERS+u*MAPLAYERS*map.height;
 
-	if( map.tiles[OBSTACLELAYER+index] || !map.tiles[index] || lavatiles[map.tiles[index]] )
+	if( map.tiles[OBSTACLELAYER+index] || !map.tiles[index] || lavatiles[map.tiles[index]] ) {
 		return 1;
+	}
 
 	node_t *node;
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -147,8 +151,9 @@ int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
 -------------------------------------------------------------------------------*/
 
 list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target) {
-	if (!my)
+	if (!my) {
 		return NULL;
+	}
 
 	pathnode_t *pathnode, *childnode, *parent;
 	list_t *openList, *closedList;
@@ -172,14 +177,17 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	// get levitation status
 	Stat *stats = my->getStats();
 	if( stats ) {
-		if( stats->EFFECTS[EFF_LEVITATING] == TRUE )
+		if( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
 			levitating=TRUE;
+		}
 		if( stats->ring != NULL )
-			if( stats->ring->type == RING_LEVITATION )
+			if( stats->ring->type == RING_LEVITATION ) {
 				levitating = TRUE;
+			}
 		if( stats->shoes != NULL )
-			if( stats->shoes->type == STEEL_BOOTS_LEVITATION )
+			if( stats->shoes->type == STEEL_BOOTS_LEVITATION ) {
 				levitating = TRUE;
+			}
 	}
 	if( my ) {
 		if( my->behavior == &actItem || my->behavior == &actArrowTrap || my->behavior == &actBoulderTrap ) {
@@ -188,10 +196,11 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	}
 
 	if( !loading ) {
-		if( levitating )
+		if( levitating ) {
 			memcpy(pathMap,pathMapFlying,map.width*map.height*sizeof(int));
-		else
+		} else {
 			memcpy(pathMap,pathMapGrounded,map.width*map.height*sizeof(int));
+		}
 	}
 
 	int myPathMap = pathMap[y1+x1*map.height];
@@ -204,14 +213,18 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 
 	for( entityNode=map.entities->first; entityNode!=NULL; entityNode=entityNode->next ) {
 		Entity *entity = (Entity *)entityNode->element;
-		if( entity->flags[PASSABLE] )
+		if( entity->flags[PASSABLE] ) {
 			continue;
-		if( entity->behavior==&actDoorFrame || entity->behavior==&actDoor )
+		}
+		if( entity->behavior==&actDoorFrame || entity->behavior==&actDoor ) {
 			continue;
-		if( entity==target || entity==my )
+		}
+		if( entity==target || entity==my ) {
 			continue;
-		if ( my->checkFriend(target) )
+		}
+		if ( my->checkFriend(target) ) {
 			continue;
+		}
 		int x = std::min<unsigned int>(std::max<int>(0,entity->x/16),map.width-1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		int y = std::min<unsigned int>(std::max<int>(0,entity->y/16),map.height-1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
 		pathMap[y+x*map.height] = 0;
@@ -276,26 +289,33 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 		// expand search
 		for( y=-1; y<=1; y++ ) {
 			for( x=-1; x<=1; x++ ) {
-				if( x==0 && y==0 )
+				if( x==0 && y==0 ) {
 					continue;
+				}
 				z = 0;
 				if( !loading ) {
-					if( !pathMap[(pathnode->y+y)+(pathnode->x+x)*map.height] )
+					if( !pathMap[(pathnode->y+y)+(pathnode->x+x)*map.height] ) {
 						z++;
+					}
 					if( x&&y ) {
-						if( !pathMap[(pathnode->y)+(pathnode->x+x)*map.height] )
+						if( !pathMap[(pathnode->y)+(pathnode->x+x)*map.height] ) {
 							z++;
-						if( !pathMap[(pathnode->y+y)+(pathnode->x)*map.height] )
+						}
+						if( !pathMap[(pathnode->y+y)+(pathnode->x)*map.height] ) {
 							z++;
+						}
 					}
 				} else {
-					if( pathCheckObstacle(((pathnode->x+x)<<4)+8,((pathnode->y+y)<<4)+8,my,target) )
+					if( pathCheckObstacle(((pathnode->x+x)<<4)+8,((pathnode->y+y)<<4)+8,my,target) ) {
 						z++;
+					}
 					if( x&&y ) {
-						if( pathCheckObstacle(((pathnode->x)<<4)+8,((pathnode->y+y)<<4)+8,my,target) )
+						if( pathCheckObstacle(((pathnode->x)<<4)+8,((pathnode->y+y)<<4)+8,my,target) ) {
 							z++;
-						if( pathCheckObstacle(((pathnode->x+x)<<4)+8,((pathnode->y)<<4)+8,my,target) )
+						}
+						if( pathCheckObstacle(((pathnode->x+x)<<4)+8,((pathnode->y)<<4)+8,my,target) ) {
 							z++;
+						}
 					}
 				}
 				if( !z ) {
@@ -336,10 +356,11 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 							return NULL;
 						}
 						childnode = newPathnode(openList,pathnode->x+x,pathnode->y+y,pathnode,1);
-						if( x&&y )
+						if( x&&y ) {
 							childnode->g = pathnode->g+DIAGONALCOST;
-						else
+						} else {
 							childnode->g = pathnode->g+STRAIGHTCOST;
+						}
 						childnode->h=heuristic(childnode->x,childnode->y,x2,y2);
 						heapAdd(binaryheap,childnode,&heaplength);
 					}
@@ -369,11 +390,13 @@ void fillPathMap(int *pathMap, int x, int y, int zone);
 void generatePathMaps() {
 	int x, y;
 
-	if( pathMapGrounded )
+	if( pathMapGrounded ) {
 		free(pathMapGrounded);
+	}
 	pathMapGrounded = (int *) calloc(map.width*map.height,sizeof(int));
-	if( pathMapFlying )
+	if( pathMapFlying ) {
 		free(pathMapFlying);
+	}
 	pathMapFlying = (int *) calloc(map.width*map.height,sizeof(int));
 
 	pathMapZone = 1;
@@ -419,8 +442,9 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 		}
 	}
 
-	if( obstacle )
+	if( obstacle ) {
 		return;
+	}
 
 	pathMap[y+x*map.height] = zone;
 	bool repeat;

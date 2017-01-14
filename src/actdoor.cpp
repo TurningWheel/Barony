@@ -51,8 +51,9 @@ void actDoor(Entity *my) {
 		DOOR_STARTANG=my->yaw;
 		DOOR_HEALTH=15+rand()%5;
 		DOOR_MAXHEALTH=DOOR_HEALTH;
-		if( rand()%20==0 ) // 5% chance
+		if( rand()%20==0 ) { // 5% chance
 			DOOR_LOCKED=1;
+		}
 		DOOR_OLDSTATUS=DOOR_STATUS;
 		my->scalex = 1.01;
 		my->scaley = 1.01;
@@ -80,17 +81,19 @@ void actDoor(Entity *my) {
 					if( !DOOR_DIR ) {
 						// horizontal door
 						entity->y += -4+rand()%8;
-						if( DOOR_SMACKED )
+						if( DOOR_SMACKED ) {
 							entity->yaw = PI;
-						else
+						} else {
 							entity->yaw = 0;
+						}
 					} else {
 						// vertical door
 						entity->x += -4+rand()%8;
-						if( DOOR_SMACKED )
+						if( DOOR_SMACKED ) {
 							entity->yaw = PI/2;
-						else
+						} else {
 							entity->yaw = 3*PI/2;
+						}
 					}
 					entity->pitch = (rand()%360)*PI/180.0;
 					entity->roll = (rand()%360)*PI/180.0;
@@ -139,22 +142,25 @@ void actDoor(Entity *my) {
 		// door swinging
 		if( !DOOR_STATUS ) {
 			// closing door
-			if( my->yaw > DOOR_STARTANG )
+			if( my->yaw > DOOR_STARTANG ) {
 				my->yaw = std::max(DOOR_STARTANG,my->yaw-0.15);
-			else if( my->yaw < DOOR_STARTANG )
+			} else if( my->yaw < DOOR_STARTANG ) {
 				my->yaw = std::min(DOOR_STARTANG,my->yaw+0.15);
+			}
 		} else {
 			// opening door
 			if( DOOR_STATUS == 1 ) {
-				if( my->yaw > DOOR_STARTANG+PI/2 )
+				if( my->yaw > DOOR_STARTANG+PI/2 ) {
 					my->yaw = std::max(DOOR_STARTANG+PI/2,my->yaw-0.15);
-				else if( my->yaw < DOOR_STARTANG+PI/2 )
+				} else if( my->yaw < DOOR_STARTANG+PI/2 ) {
 					my->yaw = std::min(DOOR_STARTANG+PI/2,my->yaw+0.15);
+				}
 			} else if( DOOR_STATUS == 2 ) {
-				if( my->yaw > DOOR_STARTANG-PI/2 )
+				if( my->yaw > DOOR_STARTANG-PI/2 ) {
 					my->yaw = std::max(DOOR_STARTANG-PI/2,my->yaw-0.15);
-				else if( my->yaw < DOOR_STARTANG-PI/2 )
+				} else if( my->yaw < DOOR_STARTANG-PI/2 ) {
 					my->yaw = std::min(DOOR_STARTANG-PI/2,my->yaw+0.15);
+				}
 			}
 		}
 
@@ -165,8 +171,9 @@ void actDoor(Entity *my) {
 			bool somebodyinside = FALSE;
 			for( node=map.entities->first; node!=NULL; node=node->next ) {
 				Entity *entity = (Entity *)node->element;
-				if( entity==my || entity->flags[PASSABLE] || entity->sprite == 1  )
+				if( entity==my || entity->flags[PASSABLE] || entity->sprite == 1  ) {
 					continue;
+				}
 				if( entityInsideEntity(my,entity) ) {
 					somebodyinside = TRUE;
 					break;
@@ -174,18 +181,20 @@ void actDoor(Entity *my) {
 			}
 			if( !somebodyinside ) {
 				my->focaly = 0;
-				if( DOOR_STARTANG == 0 )
+				if( DOOR_STARTANG == 0 ) {
 					my->y -= 5;
-				else
+				} else {
 					my->x -= 5;
+				}
 				my->flags[PASSABLE] = FALSE;
 			}
 		} else if( my->yaw != DOOR_STARTANG && !my->flags[PASSABLE] ) {
 			my->focaly = -5;
-			if( DOOR_STARTANG == 0 )
+			if( DOOR_STARTANG == 0 ) {
 				my->y += 5;
-			else
+			} else {
 				my->x += 5;
+			}
 			my->flags[PASSABLE] = TRUE;
 		}
 

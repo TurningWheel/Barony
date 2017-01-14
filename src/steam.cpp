@@ -131,13 +131,15 @@ public:
 } *steam_server_wrapper;
 
 void SteamServerWrapper::OnSteamServersConnected(SteamServersConnected_t *pLogonSuccess) {
-	if (cpp_SteamServerWrapper_OnSteamServersConnected)
+	if (cpp_SteamServerWrapper_OnSteamServersConnected) {
 		(*cpp_SteamServerWrapper_OnSteamServersConnected)(pLogonSuccess);
+	}
 }
 
 void SteamServerWrapper::OnSteamServersDisconnected(SteamServersDisconnected_t *pLoggedOff) {
-	if (cpp_SteamServerWrapper_OnSteamServersDisconnected)
+	if (cpp_SteamServerWrapper_OnSteamServersDisconnected) {
 		(*cpp_SteamServerWrapper_OnSteamServersDisconnected)(pLoggedOff);
+	}
 }
 
 void SteamServerWrapper::OnSteamServersConnectFailure(SteamServerConnectFailure_t *pConnectFailure) {
@@ -147,23 +149,27 @@ void SteamServerWrapper::OnSteamServersConnectFailure(SteamServerConnectFailure_
 }
 
 void SteamServerWrapper::OnPolicyResponse(GSPolicyResponse_t *pPolicyResponse) {
-	if (cpp_SteamServerWrapper_OnPolicyResponse)
+	if (cpp_SteamServerWrapper_OnPolicyResponse) {
 		(*cpp_SteamServerWrapper_OnPolicyResponse)(pPolicyResponse);
+	}
 }
 
 void SteamServerWrapper::OnValidateAuthTicketResponse(ValidateAuthTicketResponse_t *pResponse) {
-	if (cpp_SteamServerWrapper_OnValidateAuthTicketResponse)
+	if (cpp_SteamServerWrapper_OnValidateAuthTicketResponse) {
 		(*cpp_SteamServerWrapper_OnValidateAuthTicketResponse)(pResponse);
+	}
 }
 
 void SteamServerWrapper::OnP2PSessionRequest(P2PSessionRequest_t *pCallback) {
-	if (cpp_SteamServerWrapper_OnP2PSessionRequest)
+	if (cpp_SteamServerWrapper_OnP2PSessionRequest) {
 		(*cpp_SteamServerWrapper_OnP2PSessionRequest)(pCallback);
+	}
 }
 
 void SteamServerWrapper::OnP2PSessionConnectFail(P2PSessionConnectFail_t *pCallback) {
-	if (cpp_SteamServerWrapper_OnP2PSessionConnectFail)
+	if (cpp_SteamServerWrapper_OnP2PSessionConnectFail) {
 		(*cpp_SteamServerWrapper_OnP2PSessionConnectFail)(pCallback);
+	}
 }
 
 void cpp_SteamServerWrapper_Instantiate() {
@@ -303,13 +309,15 @@ private:
 
 
 void SteamServerClientWrapper::OnLobbyDataUpdate(LobbyDataUpdate_t *pCallback) {
-	if (cpp_SteamServerClientWrapper_OnLobbyDataUpdate)
+	if (cpp_SteamServerClientWrapper_OnLobbyDataUpdate) {
 		(*cpp_SteamServerClientWrapper_OnLobbyDataUpdate)(pCallback);
+	}
 }
 
 void SteamServerClientWrapper::OnP2PSessionRequest(P2PSessionRequest_t *pCallback) {
-	if (cpp_SteamServerClientWrapper_OnP2PSessionRequest)
+	if (cpp_SteamServerClientWrapper_OnP2PSessionRequest) {
 		(*cpp_SteamServerClientWrapper_OnP2PSessionRequest)(pCallback);
+	}
 }
 
 void c_RetrieveSteamIDFromGameServer( uint32_t m_unServerIP, uint16_t m_usServerPort ) {
@@ -321,38 +329,45 @@ void SteamServerClientWrapper::RetrieveSteamIDFromGameServer( uint32_t m_unServe
 }
 
 void SteamServerClientWrapper::OnLobbyGameCreated(LobbyGameCreated_t *pCallback) {
-	if (cpp_SteamServerClientWrapper_OnLobbyGameCreated)
+	if (cpp_SteamServerClientWrapper_OnLobbyGameCreated) {
 		(*cpp_SteamServerClientWrapper_OnLobbyGameCreated)(pCallback);
+	}
 }
 
 void SteamServerClientWrapper::OnGameJoinRequested(GameLobbyJoinRequested_t *pCallback) {
-	if (cpp_SteamServerClientWrapper_OnGameJoinRequested)
+	if (cpp_SteamServerClientWrapper_OnGameJoinRequested) {
 		(*cpp_SteamServerClientWrapper_OnGameJoinRequested)(pCallback);
+	}
 }
 
 void SteamServerClientWrapper::OnAvatarImageLoaded(AvatarImageLoaded_t *pCallback) {
-	if (cpp_SteamServerClientWrapper_OnAvatarImageLoaded)
+	if (cpp_SteamServerClientWrapper_OnAvatarImageLoaded) {
 		(*cpp_SteamServerClientWrapper_OnAvatarImageLoaded)(pCallback);
+	}
 }
 
 void SteamServerClientWrapper::OnSteamServersConnected(SteamServersConnected_t *callback) {
-	if (cpp_SteamServerClientWrapper_OnSteamServersConnected)
+	if (cpp_SteamServerClientWrapper_OnSteamServersConnected) {
 		(*cpp_SteamServerClientWrapper_OnSteamServersConnected)(callback);
+	}
 }
 
 void SteamServerClientWrapper::OnSteamServersDisconnected(SteamServersDisconnected_t *callback) {
-	if (cpp_SteamServerClientWrapper_OnSteamServersDisconnected)
+	if (cpp_SteamServerClientWrapper_OnSteamServersDisconnected) {
 		(*cpp_SteamServerClientWrapper_OnSteamServersDisconnected)(callback);
+	}
 }
 
 void SteamServerClientWrapper::OnSteamServerConnectFailure(SteamServerConnectFailure_t *callback) {
-	if (cpp_SteamServerClientWrapper_OnSteamServerConnectFailure)
+	if (cpp_SteamServerClientWrapper_OnSteamServerConnectFailure) {
 		(*cpp_SteamServerClientWrapper_OnSteamServerConnectFailure)(callback);
+	}
 }
 
 void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *callback) {
-	if (!callback)
+	if (!callback) {
 		return;
+	}
 
 #ifdef STEAMDEBUG
 	printlog("OnGameOverlayActivated\n");
@@ -371,33 +386,39 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *ca
 }
 
 void SteamServerClientWrapper::OnGameWebCallback(GameWebCallback_t *callback) {
-	if (cpp_SteamServerClientWrapper_OnGameWebCallback)
+	if (cpp_SteamServerClientWrapper_OnGameWebCallback) {
 		(*cpp_SteamServerClientWrapper_OnGameWebCallback)(callback);
+	}
 }
 
 void SteamServerClientWrapper::OnWorkshopItemInstalled(ItemInstalled_t *pParam) {
-	if (cpp_SteamServerClientWrapper_OnWorkshopItemInstalled)
+	if (cpp_SteamServerClientWrapper_OnWorkshopItemInstalled) {
 		(cpp_SteamServerClientWrapper_OnWorkshopItemInstalled)(pParam);
+	}
 }
 
 void SteamServerClientWrapper::OnP2PSessionConnectFail(P2PSessionConnectFail_t *pCallback) {
-	if (cpp_SteamServerClientWrapper_OnP2PSessionConnectFail)
+	if (cpp_SteamServerClientWrapper_OnP2PSessionConnectFail) {
 		(*cpp_SteamServerClientWrapper_OnP2PSessionConnectFail)(pCallback);
+	}
 }
 
 void SteamServerClientWrapper::OnIPCFailure(IPCFailure_t *failure) {
-	if (cpp_SteamServerClientWrapper_OnIPCFailure)
+	if (cpp_SteamServerClientWrapper_OnIPCFailure) {
 		(*cpp_SteamServerClientWrapper_OnIPCFailure)(failure);
+	}
 }
 
 void SteamServerClientWrapper::OnSteamShutdown(SteamShutdown_t *callback) {
-	if (cpp_SteamServerClientWrapper_OnSteamShutdown)
+	if (cpp_SteamServerClientWrapper_OnSteamShutdown) {
 		(*cpp_SteamServerClientWrapper_OnSteamShutdown)(callback);
+	}
 }
 
 void SteamServerClientWrapper::OnLobbyCreated(LobbyCreated_t *pCallback, bool bIOFailure) {
-	if (cpp_SteamServerClientWrapper_OnLobbyCreated)
+	if (cpp_SteamServerClientWrapper_OnLobbyCreated) {
 		(*cpp_SteamServerClientWrapper_OnLobbyCreated)(pCallback, bIOFailure);
+	}
 }
 
 void SteamServerClientWrapper::m_SteamCallResultLobbyCreated_Set(SteamAPICall_t hSteamAPICall) {
@@ -405,8 +426,9 @@ void SteamServerClientWrapper::m_SteamCallResultLobbyCreated_Set(SteamAPICall_t 
 }
 
 void SteamServerClientWrapper::OnLobbyMatchListCallback(LobbyMatchList_t *pCallback, bool bIOFailure) {
-	if (cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)
+	if (cpp_SteamServerClientWrapper_OnLobbyMatchListCallback) {
 		(*cpp_SteamServerClientWrapper_OnLobbyMatchListCallback)(pCallback, bIOFailure);
+	}
 }
 
 void SteamServerClientWrapper::m_SteamCallResultLobbyMatchList_Set(SteamAPICall_t hSteamAPICall) {
@@ -414,8 +436,9 @@ void SteamServerClientWrapper::m_SteamCallResultLobbyMatchList_Set(SteamAPICall_
 }
 
 void SteamServerClientWrapper::OnLobbyEntered(LobbyEnter_t *pCallback, bool bIOFailure) {
-	if (cpp_SteamServerClientWrapper_OnLobbyEntered)
+	if (cpp_SteamServerClientWrapper_OnLobbyEntered) {
 		(*cpp_SteamServerClientWrapper_OnLobbyEntered)(pCallback, bIOFailure);
+	}
 }
 
 void SteamServerClientWrapper::m_SteamCallResultLobbyEntered_Set(SteamAPICall_t hSteamAPICall) {
@@ -423,8 +446,9 @@ void SteamServerClientWrapper::m_SteamCallResultLobbyEntered_Set(SteamAPICall_t 
 }
 
 void SteamServerClientWrapper::OnRequestEncryptedAppTicket(EncryptedAppTicketResponse_t *pEncryptedAppTicketResponse, bool bIOFailure) {
-	if (cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)
+	if (cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket) {
 		(*cpp_SteamServerClientWrapper_OnRequestEncryptedAppTicket)(pEncryptedAppTicketResponse, bIOFailure);
+	}
 }
 
 void SteamServerClientWrapper::m_SteamCallResultEncryptedAppTicket_Set(SteamAPICall_t hSteamAPICall) {
@@ -485,8 +509,9 @@ bool achievementUnlocked(const char *achName) {
 	node_t *node;
 	for( node=steamAchievements.first; node!=NULL; node=node->next ) {
 		char *ach = (char *)node->element;
-		if( !strcmp(ach,achName) )
+		if( !strcmp(ach,achName) ) {
 			return TRUE;
+		}
 	}
 	return FALSE;
 
@@ -531,16 +556,18 @@ void steamAchievement(const char *achName) {
 -------------------------------------------------------------------------------*/
 
 void steamAchievementClient(int player, const char *achName) {
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return;
+	}
 
 	if( player<0 || player>=MAXPLAYERS ) {
 		return;
 	} else if( player==0 ) {
 		steamAchievement(achName);
 	} else {
-		if( client_disconnected[player] || multiplayer==SINGLE )
+		if( client_disconnected[player] || multiplayer==SINGLE ) {
 			return;
+		}
 		strcpy((char *)net_packet->data,"SACH");
 		strcpy((char *)(&net_packet->data[4]),achName);
 		net_packet->address.host = net_clients[player-1].host;
@@ -591,8 +618,9 @@ void* cpp_SteamMatchmaking_GetLobbyByIndex(int iLobby) {
 void steam_OnLobbyMatchListCallback( void *pCallback, bool bIOFailure ) {
 	Uint32 iLobby;
 
-	if( !requestingLobbies )
+	if( !requestingLobbies ) {
 		return;
+	}
 
 	for( iLobby = 0; iLobby < MAX_STEAM_LOBBIES; iLobby++ ) {
 		if( lobbyIDs[iLobby] ) {
@@ -735,8 +763,9 @@ void processLobbyInvite() {
 			buttonOpenCharacterCreationWindow(NULL);
 		} else {
 			printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
-			if( lobbyToConnectTo )
-				cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Bodge this bodge!
+			if( lobbyToConnectTo ) {
+				cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
+			}
 			lobbyToConnectTo = NULL;
 		}
 		stillConnectingToLobby = FALSE;
@@ -783,8 +812,9 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 		settings_window=FALSE;
 		charcreation_step=0;
 		subwindow=0;
-		if ( SDL_IsTextInputActive() )
+		if ( SDL_IsTextInputActive() ) {
 			SDL_StopTextInput();
+		}
 	}
 	list_FreeAll(&button_l);
 	deleteallbuttons=TRUE;
@@ -840,8 +870,9 @@ void steam_OnLobbyEntered( void *pCallback, bool bIOFailure ) {
 	printlog( "OnLobbyEntered\n" );
 #endif
 
-	if ( !connectingToLobby )
+	if ( !connectingToLobby ) {
 		return;
+	}
 
 	if ( static_cast<LobbyEnter_t*>(pCallback)->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess ) {
 		// lobby join failed

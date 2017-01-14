@@ -56,17 +56,21 @@ void initGhoul(Entity *my, Stat *myStats) {
 		myStats->LVL = 7;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -84,8 +88,9 @@ void initGhoul(Entity *my, Stat *myStats) {
 			strcpy(myStats->name,"Coral Grimes");
 			for( c=0; c<3; c++ ) {
 				Entity *entity = summonMonster(GHOUL,my->x,my->y);
-				if( entity )
+				if( entity ) {
 					entity->parent = my->uid;
+				}
 			}
 			myStats->HP *= 3;
 			myStats->MAXHP *= 3;
@@ -94,12 +99,15 @@ void initGhoul(Entity *my, Stat *myStats) {
 			newItem( GEM_GARNET, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
 		}
 
-		if( rand()%20==0 )
+		if( rand()%20==0 ) {
 			newItem( POTION_WATER, SERVICABLE, 2, 1, rand(), FALSE, &myStats->inventory );
-		if( rand()%10==0 )
+		}
+		if( rand()%10==0 ) {
 			newItem( itemCurve(TOOL), DECREPIT, 1, 1, rand(), FALSE, &myStats->inventory );
-		if( rand()%4==0 )
+		}
+		if( rand()%4==0 ) {
 			newItem( FOOD_MEAT, DECREPIT, -1, 1, rand(), FALSE, &myStats->inventory );
+		}
 	}
 
 	// torso
@@ -222,8 +230,9 @@ void ghoulDie(Entity *my) {
 	for( c=0; c<10; c++ ) {
 		Entity *entity = spawnGib(my);
 		if( entity ) {
-			if( c<6 )
+			if( c<6 ) {
 				entity->sprite = 246+c;
+			}
 			serverSpawnGibForClient(entity);
 		}
 	}
@@ -326,8 +335,9 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if( bodypart==3||bodypart==6 ) {
-			if( bodypart==3 )
+			if( bodypart==3 ) {
 				rightbody = (Entity *)node->next->element;
+			}
 			if( bodypart==6 ) {
 				if( MONSTER_ATTACK ) {
 					// vertical chop
@@ -337,8 +347,9 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 						entity->pitch = -3*PI/4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI/2 )
+						if( entity->pitch >= -PI/2 ) {
 							MONSTER_ARMBENDED = 1;
+						}
 						if( entity->pitch >= PI/4 ) {
 							entity->skill[0] = 0;
 							MONSTER_ARMBENDED = 0;
@@ -368,12 +379,14 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += 1/fmax(dist*.1,10.0);
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= 1/fmax(dist*.1,10.0);
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			}
@@ -387,8 +400,9 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 						entity->pitch = -3*PI/4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI/2 )
+						if( entity->pitch >= -PI/2 ) {
 							MONSTER_ARMBENDED = 1;
+						}
 						if( entity->pitch >= PI/4 ) {
 							entity->skill[0] = 0;
 						} else {
@@ -418,59 +432,62 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += (1/fmax(dist*.1,10.0))*.5;
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= (1/fmax(dist*.1,10.0))*.5;
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			}
 		}
 		switch( bodypart ) {
-		// torso
-		case 2:
-			entity->x+=.5*cos(my->yaw);
-			entity->y+=.5*sin(my->yaw);
-			entity->z+=1.5;
-			entity->pitch = PI/16;
-			break;
-		// right leg
-		case 3:
-			entity->x-=.5*cos(my->yaw)-1*cos(my->yaw+PI/2);
-			entity->y-=.5*sin(my->yaw)-1*sin(my->yaw+PI/2);
-			entity->z+=4;
-			entity->yaw += PI/16;
-			break;
-		// left leg
-		case 4:
-			entity->x-=.5*cos(my->yaw)+1*cos(my->yaw+PI/2);
-			entity->y-=.5*sin(my->yaw)+1*sin(my->yaw+PI/2);
-			entity->z+=4;
-			entity->yaw -= PI/4;
-			entity->roll = PI/8;
-			break;
-		// right arm
-		case 5:
-			entity->x+=1*cos(my->yaw)+2*cos(my->yaw+PI/2);
-			entity->y+=1*sin(my->yaw)+2*sin(my->yaw+PI/2);
-			entity->z-=1;
-			entity->yaw -= MONSTER_WEAPONYAW;
-			break;
-		// left arm
-		case 6:
-			entity->x+=1*cos(my->yaw)-2*cos(my->yaw+PI/2);
-			entity->y+=1*sin(my->yaw)-2*sin(my->yaw+PI/2);
-			entity->z-=1;
-			entity->yaw += MONSTER_WEAPONYAW;
-			break;
+			// torso
+			case 2:
+				entity->x+=.5*cos(my->yaw);
+				entity->y+=.5*sin(my->yaw);
+				entity->z+=1.5;
+				entity->pitch = PI/16;
+				break;
+			// right leg
+			case 3:
+				entity->x-=.5*cos(my->yaw)-1*cos(my->yaw+PI/2);
+				entity->y-=.5*sin(my->yaw)-1*sin(my->yaw+PI/2);
+				entity->z+=4;
+				entity->yaw += PI/16;
+				break;
+			// left leg
+			case 4:
+				entity->x-=.5*cos(my->yaw)+1*cos(my->yaw+PI/2);
+				entity->y-=.5*sin(my->yaw)+1*sin(my->yaw+PI/2);
+				entity->z+=4;
+				entity->yaw -= PI/4;
+				entity->roll = PI/8;
+				break;
+			// right arm
+			case 5:
+				entity->x+=1*cos(my->yaw)+2*cos(my->yaw+PI/2);
+				entity->y+=1*sin(my->yaw)+2*sin(my->yaw+PI/2);
+				entity->z-=1;
+				entity->yaw -= MONSTER_WEAPONYAW;
+				break;
+			// left arm
+			case 6:
+				entity->x+=1*cos(my->yaw)-2*cos(my->yaw+PI/2);
+				entity->y+=1*sin(my->yaw)-2*sin(my->yaw+PI/2);
+				entity->z-=1;
+				entity->yaw += MONSTER_WEAPONYAW;
+				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 )
+	if( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
-	else
+	} else {
 		MONSTER_ATTACKTIME=0;
+	}
 	my->x += cos(my->yaw);
 	my->y += sin(my->yaw);
 }

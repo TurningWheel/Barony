@@ -73,8 +73,9 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 		//Draw all the spell GUI slots.
 		node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
 		for (i = 0; i < spellscroll; ++i) {
-			if (node)
+			if (node) {
 				node = node->next;
+			}
 		}
 		for (i = 0; i < numspells; ++i) {
 			if (node) { //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
@@ -143,8 +144,9 @@ void updateMagicGUI() {
 			int i = 0;
 			node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
 			for (i = 0; i < spellscroll; ++i) {
-				if (node)
+				if (node) {
 					node = node->next;
+				}
 			}
 
 			for (i = 0; i < numspells; ++i) {
@@ -168,8 +170,9 @@ void updateMagicGUI() {
 }
 
 void drawSustainedSpells() {
-	if (!channeledSpells[clientnum].first)
-		return; //No use continuing if there are no sustained spells.
+	if (!channeledSpells[clientnum].first) {
+		return;    //No use continuing if there are no sustained spells.
+	}
 
 	SDL_Surface** sprite;
 

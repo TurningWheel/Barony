@@ -35,13 +35,15 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol) {
 	}
 
 
-	if( player<0 || player>=MAXPLAYERS ) //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
+	if( player<0 || player>=MAXPLAYERS ) { //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
 		return NULL;
+	}
 	if( player==clientnum ) {
 		return playSound(snd,vol);
 	} else if( multiplayer==SERVER ) {
-		if( client_disconnected[player] )
+		if( client_disconnected[player] ) {
 			return NULL;
+		}
 		strcpy((char *)net_packet->data,"SNDG");
 		SDLNet_Write32(snd,&net_packet->data[4]);
 		SDLNet_Write32((Uint32)vol,&net_packet->data[8]);
@@ -76,17 +78,21 @@ FMOD_CHANNEL* playSoundPos(double x, double y, Uint32 snd, int vol) {
 	FMOD_CHANNEL *channel;
 	int c;
 
-	if (intro)
+	if (intro) {
 		return NULL;
-	if (snd < 0 || snd >= numsounds)
+	}
+	if (snd < 0 || snd >= numsounds) {
 		return NULL;
-	if (sounds[snd] == NULL || vol == 0)
+	}
+	if (sounds[snd] == NULL || vol == 0) {
 		return NULL;
+	}
 
 	if(multiplayer==SERVER) {
 		for(c=1; c<MAXPLAYERS; c++) {
-			if( client_disconnected[c]==TRUE )
+			if( client_disconnected[c]==TRUE ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"SNDP");
 			SDLNet_Write32(x,&net_packet->data[4]);
 			SDLNet_Write32(y,&net_packet->data[8]);
@@ -99,8 +105,9 @@ FMOD_CHANNEL* playSoundPos(double x, double y, Uint32 snd, int vol) {
 		}
 	}
 
-	if (!fmod_system) //For the client.
+	if (!fmod_system) { //For the client.
 		return NULL;
+	}
 
 	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], TRUE, &channel);
 	if (FMODErrorCheck()) {
@@ -129,15 +136,19 @@ FMOD_CHANNEL* playSoundPosLocal(double x, double y, Uint32 snd, int vol) {
 
 	FMOD_CHANNEL *channel;
 
-	if (intro)
+	if (intro) {
 		return NULL;
-	if (snd < 0 || snd >= numsounds)
+	}
+	if (snd < 0 || snd >= numsounds) {
 		return NULL;
-	if (sounds[snd] == NULL || vol == 0)
+	}
+	if (sounds[snd] == NULL || vol == 0) {
 		return NULL;
+	}
 
-	if (!fmod_system) //For the client.
+	if (!fmod_system) { //For the client.
 		return NULL;
+	}
 
 	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], TRUE, &channel);
 	if (FMODErrorCheck()) {
@@ -169,14 +180,16 @@ FMOD_CHANNEL* playSoundEntity(Entity *entity, Uint32 snd, int vol) {
 		return NULL;
 	}
 
-	if( entity==NULL )
+	if( entity==NULL ) {
 		return NULL;
+	}
 	return playSoundPos(entity->x, entity->y, snd, vol);
 }
 
 FMOD_CHANNEL* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
-	if( entity==NULL )
+	if( entity==NULL ) {
 		return NULL;
+	}
 	return playSoundPosLocal(entity->x, entity->y, snd, vol);
 }
 
@@ -196,10 +209,12 @@ FMOD_CHANNEL* playSound(Uint32 snd, int vol) {
 #ifndef SOUND
 	return NULL;
 #endif
-	if (!fmod_system || snd < 0 || snd >= numsounds || !sound_group)
+	if (!fmod_system || snd < 0 || snd >= numsounds || !sound_group) {
 		return NULL;
-	if (sounds[snd] == NULL || vol == 0)
+	}
+	if (sounds[snd] == NULL || vol == 0) {
 		return NULL;
+	}
 	FMOD_CHANNEL *channel;
 	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], TRUE, &channel);
 	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
@@ -298,8 +313,9 @@ void handleLevelMusic() {
 		int x = (int)players[clientnum]->entity->x/16;
 		int y = (int)players[clientnum]->entity->y/16;
 		if( x>=0 && x<map.width && y>=0 && y<map.height )
-			if( shoparea[y+x*map.height] )
+			if( shoparea[y+x*map.height] ) {
 				inshop=TRUE;
+			}
 	}
 
 	bool devilaround=FALSE;
@@ -323,8 +339,9 @@ void handleLevelMusic() {
 	FMOD_BOOL playing=TRUE;
 	FMOD_Channel_IsPlaying(music_channel,&playing);
 
-	if( currenttrack==-1 )
+	if( currenttrack==-1 ) {
 		currenttrack = rand();
+	}
 
 	if( (!levelmusicplaying || !playing || olddarkmap!=darkmap) && (!combat || !strcmp(map.name,"Hell Boss")) && !inshop && (!activeminotaur || !strcmp(map.name,"Hell Boss")) && !herxaround && !devilaround ) {
 		if( darkmap ) {
@@ -334,40 +351,45 @@ void handleLevelMusic() {
 				currenttrack = 1+rand()%(NUMMINESMUSIC-1);
 			}
 			currenttrack = currenttrack%NUMMINESMUSIC;
-			if( currenttrack==0 )
+			if( currenttrack==0 ) {
 				currenttrack=1;
+			}
 			playmusic(minesmusic[currenttrack], FALSE, TRUE, TRUE);
 		} else if( !strncmp(map.name,"The Swamp",9) ) { // the swamp
 			if( !playing ) {
 				currenttrack = 1+rand()%(NUMSWAMPMUSIC-1);
 			}
 			currenttrack = currenttrack%NUMSWAMPMUSIC;
-			if( currenttrack==0 )
+			if( currenttrack==0 ) {
 				currenttrack=1;
+			}
 			playmusic(swampmusic[currenttrack], FALSE, TRUE, TRUE);
 		} else if( !strncmp(map.name,"The Labyrinth",13) ) { // the labyrinth
 			if( !playing ) {
 				currenttrack = 1+rand()%(NUMLABYRINTHMUSIC-1);
 			}
 			currenttrack = currenttrack%NUMLABYRINTHMUSIC;
-			if( currenttrack==0 )
+			if( currenttrack==0 ) {
 				currenttrack=1;
+			}
 			playmusic(labyrinthmusic[currenttrack], FALSE, TRUE, TRUE);
 		} else if( !strncmp(map.name,"The Ruins",9) ) { // the ruins
 			if( !playing ) {
 				currenttrack = 1+rand()%(NUMRUINSMUSIC-1);
 			}
 			currenttrack = currenttrack%NUMRUINSMUSIC;
-			if( currenttrack==0 )
+			if( currenttrack==0 ) {
 				currenttrack=1;
+			}
 			playmusic(ruinsmusic[currenttrack], FALSE, TRUE, TRUE);
 		} else if( !strncmp(map.name,"Underworld",10) ) { // the underworld
 			if( !playing ) {
 				currenttrack = 1+rand()%(NUMUNDERWORLDMUSIC-1);
 			}
 			currenttrack = currenttrack%NUMUNDERWORLDMUSIC;
-			if( currenttrack==0 )
+			if( currenttrack==0 ) {
 				currenttrack=1;
+			}
 			playmusic(underworldmusic[currenttrack], FALSE, TRUE, TRUE);
 		} else if( !strcmp(map.name,"Minetown") || !strcmp(map.name,"The Gnomish Mines") ) { // minetown & gnomish mines
 			playmusic(minetownmusic, TRUE, TRUE, TRUE);
@@ -384,8 +406,9 @@ void handleLevelMusic() {
 				currenttrack = 1+rand()%(NUMHELLMUSIC-1);
 			}
 			currenttrack = currenttrack%NUMHELLMUSIC;
-			if( currenttrack==0 )
+			if( currenttrack==0 ) {
 				currenttrack=1;
+			}
 			playmusic(hellmusic[currenttrack], FALSE, TRUE, TRUE);
 		} else {
 			playmusic(intermissionmusic, TRUE, TRUE, TRUE);
@@ -481,13 +504,15 @@ void* playSound(Uint32 snd, int vol) {
 void* playSoundPos(double x, double y, Uint32 snd, int vol) {
 	int c;
 
-	if (intro || vol == 0)
+	if (intro || vol == 0) {
 		return nullptr;
+	}
 
 	if(multiplayer==SERVER) {
 		for(c=1; c<MAXPLAYERS; c++) {
-			if( client_disconnected[c]==TRUE )
+			if( client_disconnected[c]==TRUE ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"SNDP");
 			SDLNet_Write32(x,&net_packet->data[4]);
 			SDLNet_Write32(y,&net_packet->data[8]);
@@ -508,26 +533,31 @@ void* playSoundPosLocal(double x, double y, Uint32 snd, int vol) {
 }
 
 void* playSoundEntity(Entity *entity, Uint32 snd, int vol) {
-	if (entity == NULL) return NULL;
+	if (entity == NULL) {
+		return NULL;
+	}
 	return playSoundPos(entity->x, entity->y, snd, vol);
 }
 
 void* playSoundEntityLocal(Entity *entity, Uint32 snd, int vol) {
-	if( entity==NULL )
+	if( entity==NULL ) {
 		return NULL;
+	}
 	return playSoundPosLocal(entity->x, entity->y, snd, vol);
 }
 
 void* playSoundPlayer(int player, Uint32 snd, int vol) {
 	int c;
 
-	if( player<0 || player>=MAXPLAYERS ) //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
+	if( player<0 || player>=MAXPLAYERS ) { //Perhaps this can be reprogrammed to remove MAXPLAYERS, and use a pointer to the player instead of an int?
 		return NULL;
+	}
 	if( player==clientnum ) {
 		return playSound(snd,vol);
 	} else if( multiplayer==SERVER ) {
-		if( client_disconnected[player] )
+		if( client_disconnected[player] ) {
 			return NULL;
+		}
 		strcpy((char *)net_packet->data,"SNDG");
 		SDLNet_Write32(snd,&net_packet->data[4]);
 		SDLNet_Write32((Uint32)vol,&net_packet->data[8]);

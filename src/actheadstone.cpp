@@ -41,11 +41,13 @@ void actHeadstone(Entity *my) {
 			int goldbags=0;
 			for( node=map.entities->first; node!=NULL; node=node->next ) {
 				Entity *entity = (Entity *)node->element;
-				if( entity->sprite == 130 ) // gold bag
+				if( entity->sprite == 130 ) { // gold bag
 					goldbags++;
+				}
 			}
-			if( goldbags>=11 )
+			if( goldbags>=11 ) {
 				return;
+			}
 			my->flags[INVISIBLE] = FALSE;
 			my->flags[PASSABLE] = FALSE;
 			serverUpdateEntityFlag(my,INVISIBLE);
@@ -61,8 +63,9 @@ void actHeadstone(Entity *my) {
 		playSoundEntityLocal( my, 149, 32 );
 	}
 
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return;
+	}
 
 	if( !HEADSTONE_INIT ) {
 		HEADSTONE_INIT = 1;
@@ -96,8 +99,9 @@ void actHeadstone(Entity *my) {
 
 			// make a ghoul
 			Entity *monster = summonMonster(GHOUL,my->x,my->y);
-			if( monster )
+			if( monster ) {
 				monster->z = 13;
+			}
 		}
 	}
 }

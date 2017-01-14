@@ -111,20 +111,23 @@ void actItem(Entity *my) {
 		for ( i = 0; i < MAXPLAYERS; i++) {
 			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my)) {
 				if (inrange[i]) {
-					if (players[i] != nullptr && players[i]->entity != nullptr)
+					if (players[i] != nullptr && players[i]->entity != nullptr) {
 						playSoundEntity( players[i]->entity, 35 + rand()%3, 64 );
+					}
 					Item *item2 = newItemFromEntity(my);
 					if (item2) {
 						item = itemPickup(i, item2);
 						if (item) {
-							if (i == 0)
+							if (i == 0) {
 								free(item2);
+							}
 							int oldcount = item->count;
 							item->count = 1;
 							messagePlayer(i, language[504], item->description());
 							item->count = oldcount;
-							if (i != 0)
+							if (i != 0) {
 								free(item);
+							}
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -134,8 +137,9 @@ void actItem(Entity *my) {
 		}
 	}
 
-	if (ITEM_NOTMOVING)
+	if (ITEM_NOTMOVING) {
 		return;
+	}
 
 	// gravity
 	bool onground=FALSE;

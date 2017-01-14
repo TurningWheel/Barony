@@ -97,27 +97,29 @@ Entity *spawnGib(Entity *parentent) {
 	double vel;
 	int gibsprite=5;
 
-	if( parentent == NULL )
+	if( parentent == NULL ) {
 		return NULL;
+	}
 	if( (parentstats=parentent->getStats())!=NULL ) {
 		switch( gibtype[(int)parentstats->type] ) {
-		case 0:
-			return NULL;
-		case 1:
-			gibsprite = 5;
-			break;
-		case 2:
-			gibsprite = 211;
-			break;
-		case 3:
-			if( parentent->sprite==210 )
+			case 0:
+				return NULL;
+			case 1:
+				gibsprite = 5;
+				break;
+			case 2:
 				gibsprite = 211;
-			else
-				gibsprite = 215;
-			break;
-		default:
-			gibsprite = 5;
-			break;
+				break;
+			case 3:
+				if( parentent->sprite==210 ) {
+					gibsprite = 211;
+				} else {
+					gibsprite = 215;
+				}
+				break;
+			default:
+				gibsprite = 5;
+				break;
 		}
 	}
 
@@ -140,10 +142,12 @@ Entity *spawnGib(Entity *parentent) {
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[UNCLICKABLE] = TRUE;
-	if( !spawn_blood )
+	if( !spawn_blood ) {
 		entity->flags[INVISIBLE] = TRUE;
-	if( multiplayer != CLIENT )
+	}
+	if( multiplayer != CLIENT ) {
 		entity_uids--;
+	}
 	entity->uid = -3;
 
 	return entity;
@@ -176,12 +180,14 @@ Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 
 void serverSpawnGibForClient(Entity *gib) {
 	int c;
-	if( !gib )
+	if( !gib ) {
 		return;
+	}
 	if( multiplayer==SERVER ) {
 		for( c=1; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+			if( client_disconnected[c] ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"SPGB");
 			SDLNet_Write16((Sint16)gib->x,&net_packet->data[4]);
 			SDLNet_Write16((Sint16)gib->y,&net_packet->data[6]);

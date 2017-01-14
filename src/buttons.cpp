@@ -55,8 +55,9 @@ void buttonExit(button_t *my) {
 	button_t *button;
 
 	// this shouldn't work if a window is already open
-	if( subwindow )
+	if( subwindow ) {
 		return;
+	}
 
 	menuVisible = 0;
 	subwindow=1;
@@ -130,10 +131,11 @@ void buttonFill(button_t *my) {
 // File menu
 
 void buttonFile(button_t *my) {
-	if( menuVisible != 1 )
+	if( menuVisible != 1 ) {
 		menuVisible = 1;
-	else
+	} else {
 		menuVisible = 0;
+	}
 }
 
 void buttonNew(button_t *my) {
@@ -202,23 +204,28 @@ void buttonNewConfirm(button_t *my) {
 		for( y=0; y<map.height; y++ ) {
 			for( x=0; x<map.width; x++ ) {
 				if( z==OBSTACLELAYER ) {
-					if(x==0||y==0||x==map.width-1||y==map.height-1)
+					if(x==0||y==0||x==map.width-1||y==map.height-1) {
 						map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 2;
-					else
+					} else {
 						map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 0;
-				} else
+					}
+				} else {
 					map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 1;
+				}
 			}
 		}
 	}
-	if( vismap != NULL )
+	if( vismap != NULL ) {
 		free(vismap);
+	}
 	vismap=(bool *) malloc(sizeof(bool)*map.width*map.height);
-	if( lightmap != NULL )
+	if( lightmap != NULL ) {
 		free(lightmap);
+	}
 	lightmap=(int *) malloc(sizeof(Sint32)*map.width*map.height);
-	for(c=0; c<map.width*map.height; c++ )
+	for(c=0; c<map.width*map.height; c++ ) {
 		lightmap[c]=0;
+	}
 	strcpy(message,"                             Created a new map.");
 	filename[0]=0;
 	oldfilename[0]=0;
@@ -279,8 +286,9 @@ void buttonOpen(button_t *my) {
 	// file list
 	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
-			if( strstr(ent->d_name,".lmp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") )
+			if( strstr(ent->d_name,".lmp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") ) {
 				d_names_length++;
+			}
 		}
 		closedir(dir);
 	} else {
@@ -292,8 +300,9 @@ void buttonOpen(button_t *my) {
 	}
 	if( d_names_length > 0 ) {
 		d_names = (char **) malloc(sizeof(char *)*d_names_length);
-		for( c=0; c<d_names_length; c++ )
+		for( c=0; c<d_names_length; c++ ) {
 			d_names[c] = (char *) malloc(sizeof(char)*FILENAME_MAX);
+		}
 		c=0;
 		if( (dir=opendir("maps/")) != NULL ) {
 			while( (ent=readdir(dir)) != NULL ) {
@@ -315,11 +324,13 @@ void buttonOpenConfirm(button_t *my) {
 	strcpy(oldfilename,filename);
 	strcpy(message,"");
 	for( c=0; c<32; c++ ) {
-		if(filename[c]==0)
+		if(filename[c]==0) {
 			break;
+		}
 	}
-	for( c2=0; c2<32-c; c2++ )
+	for( c2=0; c2<32-c; c2++ ) {
 		strcat(message," ");
+	}
 	printlog("opening map file '%s'...\n",filename);
 	if(loadMap(filename,&map,map.entities)==-1) {
 		strcat(message,"Failed to open ");
@@ -338,16 +349,18 @@ void buttonSave(button_t *my) {
 	menuVisible=0;
 	strcpy(oldfilename,filename);
 	inputstr = filename;
-	if(filename[0]==0)
+	if(filename[0]==0) {
 		buttonSaveAs(my);
-	else {
+	} else {
 		strcpy(message,"");
 		for( c=0; c<32; c++ ) {
-			if(filename[c]==0)
+			if(filename[c]==0) {
 				break;
+			}
 		}
-		for( c2=0; c2<32-c; c2++ )
+		for( c2=0; c2<32-c; c2++ ) {
 			strcat(message," ");
+		}
 		printlog("saving map file '%s'...\n",filename);
 		if(saveMap(filename)) {
 			strcat(message,"Failed to save ");
@@ -414,8 +427,9 @@ void buttonSaveAs(button_t *my) {
 	// file list
 	if( (dir=opendir("maps/")) != NULL ) {
 		while( (ent=readdir(dir)) != NULL ) {
-			if( strstr(ent->d_name,".lmp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") )
+			if( strstr(ent->d_name,".lmp") != NULL || !strcmp(ent->d_name,"..") || !strcmp(ent->d_name,".") ) {
 				d_names_length++;
+			}
 		}
 		closedir(dir);
 	} else {
@@ -427,8 +441,9 @@ void buttonSaveAs(button_t *my) {
 	}
 	if( d_names_length > 0 ) {
 		d_names = (char **) malloc(sizeof(char *)*d_names_length);
-		for( c=0; c<d_names_length; c++ )
+		for( c=0; c<d_names_length; c++ ) {
 			d_names[c] = (char *) malloc(sizeof(char)*FILENAME_MAX);
+		}
 		c=0;
 		if( (dir=opendir("maps/")) != NULL ) {
 			while( (ent=readdir(dir)) != NULL ) {
@@ -447,16 +462,18 @@ void buttonSaveAs(button_t *my) {
 // Edit menu
 
 void buttonEdit(button_t *my) {
-	if( menuVisible != 2 )
+	if( menuVisible != 2 ) {
 		menuVisible = 2;
-	else
+	} else {
 		menuVisible = 0;
+	}
 }
 
 void buttonCut(button_t *my) {
 	menuVisible=0;
-	if( !selectedarea )
+	if( !selectedarea ) {
 		return;
+	}
 	buttonCopy(my);
 	selectedarea = TRUE;
 	buttonDelete(my);
@@ -470,8 +487,9 @@ void buttonCopy(button_t *my) {
 	if(selectedarea && !pasting) {
 		copymap.width = selectedarea_x2-selectedarea_x1+1;
 		copymap.height = selectedarea_y2-selectedarea_y1+1;
-		if( copymap.tiles != NULL )
+		if( copymap.tiles != NULL ) {
 			free(copymap.tiles);
+		}
 		copymap.tiles = (Sint32 *) malloc(sizeof(Sint32)*copymap.width*copymap.height*MAPLAYERS);
 		memset(copymap.tiles,0,sizeof(Sint32)*copymap.width*copymap.height*MAPLAYERS);
 		for( x=0; x<copymap.width; x++ ) {
@@ -539,10 +557,11 @@ void buttonRedo(button_t *my) {
 // View menu
 
 void buttonView(button_t *my) {
-	if( menuVisible != 3 )
+	if( menuVisible != 3 ) {
 		menuVisible = 3;
-	else
+	} else {
 		menuVisible = 0;
+	}
 }
 
 void buttonToolbox(button_t *my) {
@@ -578,10 +597,11 @@ void button3DMode(button_t *my) {
 // Map menu
 
 void buttonMap(button_t *my) {
-	if( menuVisible != 4 )
+	if( menuVisible != 4 ) {
 		menuVisible = 4;
-	else
+	} else {
 		menuVisible = 0;
+	}
 }
 
 void buttonAttributes(button_t *my) {
@@ -660,23 +680,27 @@ void buttonAttributesConfirm(button_t *my) {
 	map.tiles=(int *) malloc(sizeof(int)*MAPLAYERS*map.height*map.width);
 	strcpy(map.name,nametext);
 	strcpy(map.author,authortext);
-	if( vismap != NULL )
+	if( vismap != NULL ) {
 		free(vismap);
+	}
 	vismap=(bool *) malloc(sizeof(bool)*map.width*map.height);
-	if( lightmap != NULL )
+	if( lightmap != NULL ) {
 		free(lightmap);
+	}
 	lightmap=(int *) malloc(sizeof(Sint32)*map.width*map.height);
-	for(c=0; c<map.width*map.height; c++ )
+	for(c=0; c<map.width*map.height; c++ ) {
 		lightmap[c]=0;
+	}
 
 	// transfer data from the new map to the old map and fill extra space with empty data
 	for( z=0; z<MAPLAYERS; z++ ) {
 		for( y=0; y<map.height; y++ ) {
 			for( x=0; x<map.width; x++ ) {
-				if( x >= mapcopy.width || y >= mapcopy.height )
+				if( x >= mapcopy.width || y >= mapcopy.height ) {
 					map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = 0;
-				else
+				} else {
 					map.tiles[z + y*MAPLAYERS + x*MAPLAYERS*map.height] = mapcopy.tiles[z + y*MAPLAYERS + x*MAPLAYERS*mapcopy.height];
+				}
 			}
 		}
 	}
@@ -745,10 +769,11 @@ void buttonClearMapConfirm(button_t *my) {
 // Help menu
 
 void buttonHelp(button_t *my) {
-	if( menuVisible != 5 )
+	if( menuVisible != 5 ) {
 		menuVisible = 5;
-	else
+	} else {
 		menuVisible = 0;
+	}
 }
 
 void buttonAbout(button_t *my) {

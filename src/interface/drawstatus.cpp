@@ -41,10 +41,12 @@ void handleDamageIndicators() {
 		double tangent = atan2( damageIndicator->y/16-camera.y, damageIndicator->x/16-camera.x );
 		double angle = tangent - camera.ang;
 		angle += 3*PI/2;
-		while( angle >= PI )
+		while( angle >= PI ) {
 			angle -= PI*2;
-		while( angle < -PI )
+		}
+		while( angle < -PI ) {
 			angle += PI*2;
+		}
 		SDL_Rect pos;
 		pos.x = xres/2;
 		pos.y = yres/2;
@@ -52,8 +54,9 @@ void handleDamageIndicators() {
 		pos.y += 200*sin(angle);
 		pos.w = damage_bmp->w;
 		pos.h = damage_bmp->h;
-		if( stats[clientnum]->HP>0 )
+		if( stats[clientnum]->HP>0 ) {
 			drawImageRotatedAlpha( damage_bmp, NULL, &pos, angle, (Uint8)(damageIndicator->alpha*255) );
+		}
 
 		damageIndicator->alpha = std::min(damageIndicator->ticks,120)/120.f;
 		if( damageIndicator->alpha <= 0 ) {
@@ -113,8 +116,9 @@ void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint3
 	int player = -1;
 	int c;
 
-	if (!source || !target)
+	if (!source || !target) {
 		return;
+	}
 
 	for (c = 0; c < MAXPLAYERS; c++) {
 		if (source == players[c]->entity) {
@@ -235,18 +239,21 @@ void drawStatus() {
 	c=0;
 	for( node=messages.last; node!=NULL; node=node->prev ) {
 		c++;
-		if( c<=textscroll )
+		if( c<=textscroll ) {
 			continue;
+		}
 		string = (string_t *) node->element;
 		y-=TTF12_HEIGHT*string->lines;
-		if( y<yres-status_bmp->h+4 )
+		if( y<yres-status_bmp->h+4 ) {
 			break;
+		}
 		z=0;
 		for( i=0; i<strlen(string->data); i++ ) {
-			if( string->data[i]!=10 ) // newline
+			if( string->data[i]!=10 ) { // newline
 				z++;
-			else
+			} else {
 				z=0;
+			}
 			if( z==65 ) {
 				if( string->data[i]!=10 ) {
 					char *tempString = (char *) malloc(sizeof(char)*(strlen(string->data)+2));
@@ -276,8 +283,9 @@ void drawStatus() {
 				// text scroll down
 				buttonclick=12;
 				textscroll--;
-				if( textscroll<0 )
+				if( textscroll<0 ) {
 					textscroll=0;
+				}
 				mousestatus[SDL_BUTTON_LEFT]=0;
 			}
 		} else if( omousey>=yres-status_bmp->h+62 && omousey<yres-status_bmp->h+62+31 ) {
@@ -304,8 +312,9 @@ void drawStatus() {
 			if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 				textscroll--;
-				if( textscroll<0 )
+				if( textscroll<0 ) {
 					textscroll=0;
+				}
 			} else if( mousestatus[SDL_BUTTON_WHEELUP] ) {
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
 				textscroll++;
@@ -462,8 +471,9 @@ void drawStatus() {
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						bool badpotion=FALSE;
 						if( itemCategory(item) == POTION && item->identified ) {
-							if( item->type==POTION_SICKNESS || item->type==POTION_CONFUSION || item->type==POTION_BLINDNESS || item->type==POTION_ACID || item->type==POTION_PARALYSIS )
+							if( item->type==POTION_SICKNESS || item->type==POTION_CONFUSION || item->type==POTION_BLINDNESS || item->type==POTION_ACID || item->type==POTION_PARALYSIS ) {
 								badpotion=TRUE;
+							}
 						}
 						if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] ) {
 							identifygui_active = false;
@@ -562,8 +572,9 @@ void drawStatus() {
 						src.w = std::max(13,longestline(item->description()))*TTF12_WIDTH+8;
 						src.h = TTF12_HEIGHT*4+8;
 						if( item->identified )
-							if( itemCategory(item)==WEAPON || itemCategory(item)==ARMOR )
+							if( itemCategory(item)==WEAPON || itemCategory(item)==ARMOR ) {
 								src.h+=TTF12_HEIGHT;
+							}
 						drawTooltip(&src);
 
 						Uint32 color=0xFFFFFFFF;
@@ -582,8 +593,9 @@ void drawStatus() {
 								ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT, color, language[312] );
 							}
 						}
-						if( item->beatitude==0 || !item->identified )
+						if( item->beatitude==0 || !item->identified ) {
 							color=0xFFFFFFFF;
+						}
 						ttfPrintTextFormattedColor( ttf12, src.x+4, src.y+4, color, "%s", item->description());
 						ttfPrintTextFormatted( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*2, language[313], items[item->type].weight*item->count);
 						ttfPrintTextFormatted( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*3, language[314], item->sellValue(clientnum));
@@ -714,8 +726,9 @@ void drawStatus() {
 		if( item ) {
 			bool badpotion=FALSE;
 			if( itemCategory(item) == POTION && item->identified ) {
-				if( item->type==POTION_SICKNESS || item->type==POTION_CONFUSION || item->type==POTION_BLINDNESS || item->type==POTION_ACID || item->type==POTION_PARALYSIS )
+				if( item->type==POTION_SICKNESS || item->type==POTION_CONFUSION || item->type==POTION_BLINDNESS || item->type==POTION_ACID || item->type==POTION_PARALYSIS ) {
 					badpotion=TRUE;
+				}
 			}
 			if( !badpotion ) {
 				useItem(item, clientnum);

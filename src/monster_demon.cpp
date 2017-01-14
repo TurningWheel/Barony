@@ -62,23 +62,28 @@ void initDemon(Entity *my, Stat *myStats) {
 			myStats->LVL = 30;
 			for( c=0; c<3; c++ ) {
 				Entity *entity = summonMonster(DEMON,my->x,my->y);
-				if( entity )
+				if( entity ) {
 					entity->parent = my->uid;
+				}
 			}
 		}
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -90,8 +95,9 @@ void initDemon(Entity *my, Stat *myStats) {
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		if( rand()%2==0 )
+		if( rand()%2==0 ) {
 			myStats->weapon = newItem(SPELLBOOK_FIREBALL,EXCELLENT,0,1,0,FALSE,NULL);
+		}
 	}
 
 	// torso
@@ -331,8 +337,9 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if( bodypart==3||bodypart==6 ) {
-			if( bodypart==3 )
+			if( bodypart==3 ) {
 				rightbody = (Entity *)node->next->element;
+			}
 			if( bodypart==3 || !MONSTER_ATTACK ) {
 				if( dist>0.1 ) {
 					if( !rightbody->skill[0] ) {
@@ -355,12 +362,14 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += 1/fmax(dist*.1,10.0);
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= 1/fmax(dist*.1,10.0);
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			} else {
@@ -371,8 +380,9 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					entity->pitch = -3*PI/4;
 					entity->roll = 0;
 				} else {
-					if( entity->pitch >= -PI/2 )
+					if( entity->pitch >= -PI/2 ) {
 						MONSTER_ARMBENDED = 1;
+					}
 					if( entity->pitch >= PI/4 ) {
 						entity->skill[0] = rightbody->skill[0];
 						MONSTER_WEAPONYAW = 0;
@@ -395,8 +405,9 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 						entity->pitch = -3*PI/4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI/2 )
+						if( entity->pitch >= -PI/2 ) {
 							MONSTER_ARMBENDED = 1;
+						}
 						if( entity->pitch >= PI/4 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
@@ -428,12 +439,14 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += 1/fmax(dist*.1,10.0);
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= 1/fmax(dist*.1,10.0);
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			}
@@ -446,45 +459,46 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		}
 		switch( bodypart ) {
-		// torso
-		case 2:
-			entity->x-=.5*cos(my->yaw);
-			entity->y-=.5*sin(my->yaw);
-			entity->z+=5;
-			break;
-		// right leg
-		case 3:
-			entity->x+=2.25*cos(my->yaw+PI/2)-1.25*cos(my->yaw);
-			entity->y+=2.25*sin(my->yaw+PI/2)-1.25*sin(my->yaw);
-			entity->z+=7.5;
-			break;
-		// left leg
-		case 4:
-			entity->x-=2.25*cos(my->yaw+PI/2)+1.25*cos(my->yaw);
-			entity->y-=2.25*sin(my->yaw+PI/2)+1.25*sin(my->yaw);
-			entity->z+=7.5;
-			break;
-		// right arm
-		case 5:
-			entity->x+=5*cos(my->yaw+PI/2)-1*cos(my->yaw);
-			entity->y+=5*sin(my->yaw+PI/2)-1*sin(my->yaw);
-			entity->z+=2.75;
-			entity->yaw += MONSTER_WEAPONYAW;
-			break;
-		// left arm
-		case 6:
-			entity->x-=5*cos(my->yaw+PI/2)+1*cos(my->yaw);
-			entity->y-=5*sin(my->yaw+PI/2)+1*sin(my->yaw);
-			entity->z+=2.75;
-			break;
-		default:
-			break;
+			// torso
+			case 2:
+				entity->x-=.5*cos(my->yaw);
+				entity->y-=.5*sin(my->yaw);
+				entity->z+=5;
+				break;
+			// right leg
+			case 3:
+				entity->x+=2.25*cos(my->yaw+PI/2)-1.25*cos(my->yaw);
+				entity->y+=2.25*sin(my->yaw+PI/2)-1.25*sin(my->yaw);
+				entity->z+=7.5;
+				break;
+			// left leg
+			case 4:
+				entity->x-=2.25*cos(my->yaw+PI/2)+1.25*cos(my->yaw);
+				entity->y-=2.25*sin(my->yaw+PI/2)+1.25*sin(my->yaw);
+				entity->z+=7.5;
+				break;
+			// right arm
+			case 5:
+				entity->x+=5*cos(my->yaw+PI/2)-1*cos(my->yaw);
+				entity->y+=5*sin(my->yaw+PI/2)-1*sin(my->yaw);
+				entity->z+=2.75;
+				entity->yaw += MONSTER_WEAPONYAW;
+				break;
+			// left arm
+			case 6:
+				entity->x-=5*cos(my->yaw+PI/2)+1*cos(my->yaw);
+				entity->y-=5*sin(my->yaw+PI/2)+1*sin(my->yaw);
+				entity->z+=2.75;
+				break;
+			default:
+				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 )
+	if( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
-	else
+	} else {
 		MONSTER_ATTACKTIME=0;
+	}
 }
 
 void actDemonCeilingBuster(Entity *my) {

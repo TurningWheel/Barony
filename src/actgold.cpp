@@ -38,14 +38,16 @@ void actGoldBag(Entity *my) {
 			node_t *node;
 			for( node=map.entities->first; node!=NULL; node=node->next ) {
 				Entity *entity = (Entity *)node->element;
-				if( entity->sprite == 245 ) // boulder.vox
+				if( entity->sprite == 245 ) { // boulder.vox
 					return;
+				}
 			}
 			my->flags[INVISIBLE] = FALSE;
 			serverUpdateEntityFlag(my,INVISIBLE);
 			if( !strcmp(map.name,"Sokoban") ) {
-				for( i=0; i<MAXPLAYERS; i++ )
+				for( i=0; i<MAXPLAYERS; i++ ) {
 					steamAchievementClient(i,"BARONY_ACH_PUZZLE_MASTER");
+				}
 			}
 		} else {
 			return;
@@ -63,8 +65,9 @@ void actGoldBag(Entity *my) {
 		for(i=0; i<MAXPLAYERS; i++) {
 			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 				if(inrange[i]) {
-					if (players[i] && players[i]->entity)
+					if (players[i] && players[i]->entity) {
 						playSoundEntity(players[i]->entity, 242+rand()%4, 64 );
+					}
 					stats[i]->GOLD += GOLDBAG_AMOUNT;
 					if( i!=0 ) {
 						if( multiplayer==SERVER ) {
@@ -79,10 +82,11 @@ void actGoldBag(Entity *my) {
 					}
 
 					// message for item pickup
-					if( GOLDBAG_AMOUNT==1 )
+					if( GOLDBAG_AMOUNT==1 ) {
 						messagePlayer(i,language[483]);
-					else
+					} else {
 						messagePlayer(i,language[484],GOLDBAG_AMOUNT);
+					}
 
 					// remove gold entity
 					list_RemoveNode(my->mynode);

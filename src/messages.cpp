@@ -51,8 +51,9 @@ void addMessage(Uint32 color, char *content, ...) {
 			i=vsnprintf(str,1023,content,argptr);
 			va_end(argptr);
 			for (c=0; c<i; c++) {
-				if (str[c]==10 || c == i - 1) //Line feed
+				if (str[c]==10 || c == i - 1) { //Line feed
 					lines_needed++;
+				}
 			}
 		} else {
 			lines_needed = 0;
@@ -123,8 +124,9 @@ void addMessage(Uint32 color, char *content, ...) {
 			}
 			memset(new_message->text->data, 0, sizeof(char)*(i+1));
 			for (c=0; c<i; ++c) {
-				if (str[c]==10) //Line feed
+				if (str[c]==10) { //Line feed
 					new_message->text->lines++;
+				}
 			}
 			strncpy(new_message->text->data,str,i);
 
@@ -213,8 +215,9 @@ void updateMessages() {
 				list_RemoveNode(node); // transparent message, deleted message :)
 			} else {
 				current->alpha -= MESSAGE_FADE_RATE; // fade message
-				if( current->alpha < 0 )
+				if( current->alpha < 0 ) {
 					current->alpha = 0;
+				}
 			}
 		}
 	}

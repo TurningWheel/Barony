@@ -70,20 +70,23 @@ void actCampfire(Entity *my) {
 			CAMPFIRE_LIGHTING=(CAMPFIRE_LIGHTING==1)+1;
 
 			if(CAMPFIRE_LIGHTING==1) {
-				if( my->light != NULL )
+				if( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
+				}
 				my->light = lightSphereShadow(my->x/16, my->y/16, 6, 160);
 			} else {
-				if( my->light != NULL )
+				if( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
+				}
 				my->light = lightSphereShadow(my->x/16, my->y/16, 6, 152);
 			}
 			CAMPFIRE_FLICKER=2+rand()%7;
 		}
 	} else {
 		if( my->light )
-			if( my->light->node )
+			if( my->light->node ) {
 				list_RemoveNode(my->light->node);
+			}
 		my->light = NULL;
 		my->flags[BRIGHT] = FALSE;
 	}
@@ -100,8 +103,9 @@ void actCampfire(Entity *my) {
 							serverUpdateEntitySkill(my,3); // extinguish for all clients
 							messagePlayer(i,language[458]);
 							if( my->light )
-								if( my->light->node )
+								if( my->light->node ) {
 									list_RemoveNode(my->light->node);
+								}
 							my->light = NULL;
 						}
 						Item *item = newItem(TOOL_TORCH,WORN,0,1,0,TRUE,NULL);

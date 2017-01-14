@@ -45,16 +45,17 @@ void drawMinimap() {
 	glBindTexture(GL_TEXTURE_2D,0);
 	for( x=0; x<map.width; x++ ) {
 		for( y=0; y<map.height; y++ ) {
-			if( minimap[y][x]==0 )
+			if( minimap[y][x]==0 ) {
 				glColor4f( 32/255.f,  12/255.f, 0/255.f, 1 );
-			else if( minimap[y][x]==1 )
+			} else if( minimap[y][x]==1 ) {
 				glColor4f( 96/255.f,  24/255.f, 0/255.f, 1 );
-			else if( minimap[y][x]==2 )
+			} else if( minimap[y][x]==2 ) {
 				glColor4f( 192/255.f, 64/255.f, 0/255.f, 1 );
-			else if( minimap[y][x]==3 )
+			} else if( minimap[y][x]==3 ) {
 				glColor4f( 32/255.f, 32/255.f, 32/255.f, 1 );
-			else if( minimap[y][x]==4 )
+			} else if( minimap[y][x]==4 ) {
 				glColor4f( 64/255.f, 64/255.f, 64/255.f, 1 );
+			}
 			glBegin(GL_QUADS);
 			glVertex2f(x*MINIMAPSCALE+xres-map.width*MINIMAPSCALE, map.height*MINIMAPSCALE-y*MINIMAPSCALE-MINIMAPSCALE);
 			glVertex2f(x*MINIMAPSCALE+xres-map.width*MINIMAPSCALE+MINIMAPSCALE, map.height*MINIMAPSCALE-y*MINIMAPSCALE-MINIMAPSCALE);
@@ -81,10 +82,11 @@ void drawMinimap() {
 				y = floor(entity->y/16);
 				if( minimap[y][x] ) {
 					if( ticks%40-ticks%20 ) {
-						if( !colorblind )
+						if( !colorblind ) {
 							glColor4f( 1, 0, 0, 1 );
-						else
+						} else {
 							glColor4f( 0, 1, 1, 1 );
+						}
 						glBegin(GL_QUADS);
 						glVertex2f(x*MINIMAPSCALE+xres-map.width*MINIMAPSCALE, map.height*MINIMAPSCALE-y*MINIMAPSCALE-MINIMAPSCALE);
 						glVertex2f(x*MINIMAPSCALE+xres-map.width*MINIMAPSCALE+MINIMAPSCALE, map.height*MINIMAPSCALE-y*MINIMAPSCALE-MINIMAPSCALE);
@@ -132,8 +134,9 @@ void drawMinimap() {
 		bool foundme=FALSE;
 		if( entity->behavior==&actPlayer ) {
 			drawchar=TRUE;
-			if( entity->skill[2]==clientnum )
+			if( entity->skill[2]==clientnum ) {
 				foundme=TRUE;
+			}
 		} else if( entity->behavior==&actMonster ) {
 			node_t *node2;
 			for( node2=stats[clientnum]->FOLLOWERS.first; node2!=NULL; node2=node2->next ) {
@@ -170,14 +173,16 @@ void drawMinimap() {
 			y=0;
 			for( i=0; i<4; i++ ) {
 				// move forward
-				if( cos(entity->yaw)>.4 )
+				if( cos(entity->yaw)>.4 ) {
 					x++;
-				else if( cos(entity->yaw)<-.4 )
+				} else if( cos(entity->yaw)<-.4 ) {
 					x--;
-				if( sin(entity->yaw)>.4 )
+				}
+				if( sin(entity->yaw)>.4 ) {
 					y++;
-				else if( sin(entity->yaw)<-.4 )
+				} else if( sin(entity->yaw)<-.4 ) {
 					y--;
+				}
 
 				// get brighter color shade
 				if( foundme ) {
@@ -200,19 +205,22 @@ void drawMinimap() {
 	}
 
 	// draw minotaur
-	if (players[clientnum] == nullptr)
+	if (players[clientnum] == nullptr) {
 		return;
+	}
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		Entity *entity = (Entity *)node->element;
 		if( entity->sprite == 239 ) {
 			if( ticks%120-ticks%60 ) {
-				if( !minotaur_timer )
+				if( !minotaur_timer ) {
 					playSound(116,64);
+				}
 				minotaur_timer = 1;
-				if( !colorblind )
+				if( !colorblind ) {
 					color = SDL_MapRGB(mainsurface->format,192,0,0);
-				else
+				} else {
 					color = SDL_MapRGB(mainsurface->format,0,192,192);
+				}
 
 				// draw the first pixel
 				x = xres-map.width*MINIMAPSCALE+(int)(entity->x/(16.f/MINIMAPSCALE));
@@ -233,20 +241,23 @@ void drawMinimap() {
 				y=0;
 				for( i=0; i<4; i++ ) {
 					// move forward
-					if( cos(entity->yaw)>.4 )
+					if( cos(entity->yaw)>.4 ) {
 						x++;
-					else if( cos(entity->yaw)<-.4 )
+					} else if( cos(entity->yaw)<-.4 ) {
 						x--;
-					if( sin(entity->yaw)>.4 )
+					}
+					if( sin(entity->yaw)>.4 ) {
 						y++;
-					else if( sin(entity->yaw)<-.4 )
+					} else if( sin(entity->yaw)<-.4 ) {
 						y--;
+					}
 
 					// get brighter color shade
-					if( !colorblind )
+					if( !colorblind ) {
 						color = SDL_MapRGB(mainsurface->format,255,64,64);
-					else
+					} else {
 						color = SDL_MapRGB(mainsurface->format,64,255,255);
+					}
 
 					// draw the pixel
 					if( softwaremode ) {

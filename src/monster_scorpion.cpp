@@ -54,17 +54,21 @@ void initScorpion(Entity *my, Stat *myStats) {
 		myStats->LVL = 7;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -94,8 +98,9 @@ void initScorpion(Entity *my, Stat *myStats) {
 			int c;
 			for( c=0; c<3; c++ ) {
 				Entity *entity = summonMonster(SCORPION,my->x,my->y);
-				if( entity )
+				if( entity ) {
 					entity->parent = my->uid;
+				}
 			}
 		}
 	}
@@ -184,8 +189,9 @@ void actScorpionTail(Entity *my) {
 }
 
 void scorpionAnimate(Entity *my, double dist) {
-	if (!my)
+	if (!my) {
 		return;
+	}
 
 	node_t *node;
 	Entity *entity;

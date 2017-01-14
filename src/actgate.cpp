@@ -28,8 +28,9 @@ void actGate(Entity *my) {
 	int i;
 
 	if( multiplayer!=CLIENT ) {
-		if (!my->skill[28])
-			return; //Gate needs the mechanism powered state variable to be set.
+		if (!my->skill[28]) {
+			return;    //Gate needs the mechanism powered state variable to be set.
+		}
 
 		if (my->skill[28] == 2) {
 			//Raise gate if it's closed.
@@ -106,15 +107,17 @@ void actGate(Entity *my) {
 	if( my->z > GATE_STARTHEIGHT-6 && my->flags[PASSABLE] ) {
 		for( node=map.entities->first; node!=NULL; node=node->next ) {
 			Entity *entity = (Entity *)node->element;
-			if( entity==my || entity->flags[PASSABLE] || entity->sprite == 1 )
+			if( entity==my || entity->flags[PASSABLE] || entity->sprite == 1 ) {
 				continue;
+			}
 			if( entityInsideEntity(my,entity) ) {
 				somebodyinside = TRUE;
 				break;
 			}
 		}
-		if( !somebodyinside )
+		if( !somebodyinside ) {
 			my->flags[PASSABLE] = FALSE;
+		}
 	} else if( my->z < GATE_STARTHEIGHT-9 && !my->flags[PASSABLE] ) {
 		my->flags[PASSABLE] = TRUE;
 	}

@@ -100,8 +100,9 @@ int initGame() {
 		strcpy(filename,"models/creatures/");
 		strcat(filename,monstertypename[c]);
 		strcat(filename,"/limbs.txt");
-		if( (fp=fopen(filename,"r"))==NULL )
+		if( (fp=fopen(filename,"r"))==NULL ) {
 			continue;
+		}
 
 		// read file
 		int line;
@@ -114,8 +115,9 @@ int initGame() {
 			fgets( data, 256, fp );
 
 			// skip blank and comment lines
-			if( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
+			if( data[0] == '\n' || data[0] == '\r' || data[0] == '#' ) {
 				continue;
+			}
 
 			// process line
 			if( sscanf( data, "%d", &limb ) != 1 || limb>=20 || limb<0 ) {
@@ -149,43 +151,56 @@ int initGame() {
 		items[c].name_identified = language[1545+c*2];
 		items[c].name_unidentified = language[1546+c*2];
 		fscanf(fp,"%d",&items[c].index);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		fscanf(fp,"%d",&items[c].fpindex);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		fscanf(fp,"%d",&items[c].variations);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		fscanf(fp,"%s",name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
-		if( !strcmp(name,"WEAPON") )
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
+		if( !strcmp(name,"WEAPON") ) {
 			items[c].category = WEAPON;
-		else if( !strcmp(name,"ARMOR") )
+		} else if( !strcmp(name,"ARMOR") ) {
 			items[c].category = ARMOR;
-		else if( !strcmp(name,"AMULET") )
+		} else if( !strcmp(name,"AMULET") ) {
 			items[c].category = AMULET;
-		else if( !strcmp(name,"POTION") )
+		} else if( !strcmp(name,"POTION") ) {
 			items[c].category = POTION;
-		else if( !strcmp(name,"SCROLL") )
+		} else if( !strcmp(name,"SCROLL") ) {
 			items[c].category = SCROLL;
-		else if( !strcmp(name,"MAGICSTAFF") )
+		} else if( !strcmp(name,"MAGICSTAFF") ) {
 			items[c].category = MAGICSTAFF;
-		else if( !strcmp(name,"RING") )
+		} else if( !strcmp(name,"RING") ) {
 			items[c].category = RING;
-		else if( !strcmp(name,"SPELLBOOK") )
+		} else if( !strcmp(name,"SPELLBOOK") ) {
 			items[c].category = SPELLBOOK;
-		else if( !strcmp(name,"TOOL") )
+		} else if( !strcmp(name,"TOOL") ) {
 			items[c].category = TOOL;
-		else if( !strcmp(name,"FOOD") )
+		} else if( !strcmp(name,"FOOD") ) {
 			items[c].category = FOOD;
-		else if( !strcmp(name,"BOOK") )
+		} else if( !strcmp(name,"BOOK") ) {
 			items[c].category = BOOK;
-		else if( !strcmp(name,"SPELL_CAT") )
+		} else if( !strcmp(name,"SPELL_CAT") ) {
 			items[c].category = SPELL_CAT;
-		else
+		} else {
 			items[c].category = GEM;
+		}
 		fscanf(fp,"%d",&items[c].weight);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		fscanf(fp,"%d",&items[c].value);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		items[c].images.first = NULL;
 		items[c].images.last = NULL;
 		while( 1 ) {
@@ -277,8 +292,9 @@ int initGame() {
 	for (c = 0; c < MAXPLAYERS; c++) {
 		players[c] = new Player();
 		stats[c] = new Stat();
-		if (c > 0)
+		if (c > 0) {
 			client_disconnected[c] = TRUE;
+		}
 		players[c]->entity = nullptr;
 		stats[c]->sex = static_cast<sex_t>(0);
 		stats[c]->appearance = 0;
@@ -291,8 +307,9 @@ int initGame() {
 		stats[c]->clearStats();
 		entitiesToDelete[c].first = nullptr;
 		entitiesToDelete[c].last = nullptr;
-		if (c == 0)
+		if (c == 0) {
 			initClass(c);
+		}
 	}
 
 	// load music
@@ -410,8 +427,9 @@ void deinitGame() {
 		printlog("disconnected from server.\n");
 	} else if(multiplayer==SERVER) {
 		for(x=1; x<MAXPLAYERS; x++) {
-			if( client_disconnected[x]==TRUE )
+			if( client_disconnected[x]==TRUE ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"DISCONNECT");
 			net_packet->data[10] = clientnum;
 			net_packet->address.host = net_clients[x-1].host;
@@ -428,10 +446,11 @@ void deinitGame() {
 	Uint32 timetoshutdown=SDL_GetTicks();
 	while( SDL_GetTicks()-timetoshutdown<500 ) {
 		// handle network messages
-		if( multiplayer==CLIENT )
+		if( multiplayer==CLIENT ) {
 			clientHandleMessages();
-		else if( multiplayer==SERVER )
+		} else if( multiplayer==SERVER ) {
 			serverHandleMessages();
+		}
 		if( !(SDL_GetTicks()%25) && multiplayer ) {
 			int j=0;
 			node_t *node, *nextnode;
@@ -441,11 +460,13 @@ void deinitGame() {
 				packetsend_t *packet = (packetsend_t *)node->element;
 				sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
 				packet->tries++;
-				if( packet->tries >= MAXTRIES )
+				if( packet->tries >= MAXTRIES ) {
 					list_RemoveNode(node);
+				}
 				j++;
-				if( j >= MAXDELETES )
+				if( j >= MAXDELETES ) {
 					break;
+				}
 			}
 		}
 	}
@@ -454,14 +475,18 @@ void deinitGame() {
 	list_FreeAll(&topscores);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
-	if(title_bmp!=NULL)
+	if(title_bmp!=NULL) {
 		SDL_FreeSurface(title_bmp);
-	if(logo_bmp!=NULL)
+	}
+	if(logo_bmp!=NULL) {
 		SDL_FreeSurface(logo_bmp);
-	if(cursor_bmp!=NULL)
+	}
+	if(cursor_bmp!=NULL) {
 		SDL_FreeSurface(cursor_bmp);
-	if(cross_bmp!=NULL)
+	}
+	if(cross_bmp!=NULL) {
 		SDL_FreeSurface(cross_bmp);
+	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);
 	list_FreeAll(&chestInv);
@@ -469,10 +494,12 @@ void deinitGame() {
 	if( books ) {
 		for( c=0; c<numbooks; c++ ) {
 			if( books[c] ) {
-				if( books[c]->text )
+				if( books[c]->text ) {
 					free( books[c]->text );
-				if( books[c]->bookgui_render_title )
+				}
+				if( books[c]->bookgui_render_title ) {
 					free( books[c]->bookgui_render_title );
+				}
 				list_FreeAll( &books[c]->pages );
 				free( books[c] );
 			}
@@ -485,8 +512,9 @@ void deinitGame() {
 	}
 	appraisal_timer=0;
 	appraisal_item=0;
-	for(c=0; c<MAXPLAYERS; c++)
+	for(c=0; c<MAXPLAYERS; c++) {
 		list_FreeAll(&stats[c]->inventory);
+	}
 	if( multiplayer==CLIENT ) {
 		if( shopInv ) {
 			list_FreeAll(shopInv);
@@ -509,8 +537,9 @@ void deinitGame() {
 	list_FreeAll(&command_history);
 
 	list_FreeAll(&safePacketsSent);
-	for( c=0; c<MAXPLAYERS; c++ )
+	for( c=0; c<MAXPLAYERS; c++ ) {
 		list_FreeAll(&safePacketsReceived[c]);
+	}
 #ifdef SOUND
 	FMOD_Channel_Stop(music_channel);
 	FMOD_Channel_Stop(music_channel2);
@@ -526,34 +555,48 @@ void deinitGame() {
 	FMOD_Sound_Release(endgamemusic);
 	FMOD_Sound_Release(escapemusic);
 	FMOD_Sound_Release(devilmusic);
-	for( c=0; c<NUMMINESMUSIC; c++ )
+	for( c=0; c<NUMMINESMUSIC; c++ ) {
 		FMOD_Sound_Release(minesmusic[c]);
-	if( minesmusic )
+	}
+	if( minesmusic ) {
 		free(minesmusic);
-	for( c=0; c<NUMSWAMPMUSIC; c++ )
+	}
+	for( c=0; c<NUMSWAMPMUSIC; c++ ) {
 		FMOD_Sound_Release(swampmusic[c]);
-	if( swampmusic )
+	}
+	if( swampmusic ) {
 		free(swampmusic);
-	for( c=0; c<NUMLABYRINTHMUSIC; c++ )
+	}
+	for( c=0; c<NUMLABYRINTHMUSIC; c++ ) {
 		FMOD_Sound_Release(labyrinthmusic[c]);
-	if( labyrinthmusic )
+	}
+	if( labyrinthmusic ) {
 		free(labyrinthmusic);
-	for( c=0; c<NUMRUINSMUSIC; c++ )
+	}
+	for( c=0; c<NUMRUINSMUSIC; c++ ) {
 		FMOD_Sound_Release(ruinsmusic[c]);
-	if( ruinsmusic )
+	}
+	if( ruinsmusic ) {
 		free(ruinsmusic);
-	for( c=0; c<NUMUNDERWORLDMUSIC; c++ )
+	}
+	for( c=0; c<NUMUNDERWORLDMUSIC; c++ ) {
 		FMOD_Sound_Release(underworldmusic[c]);
-	if( underworldmusic )
+	}
+	if( underworldmusic ) {
 		free(underworldmusic);
-	for( c=0; c<NUMHELLMUSIC; c++ )
+	}
+	for( c=0; c<NUMHELLMUSIC; c++ ) {
 		FMOD_Sound_Release(hellmusic[c]);
-	if( hellmusic )
+	}
+	if( hellmusic ) {
 		free(hellmusic);
-	for( c=0; c<NUMMINOTAURMUSIC; c++ )
+	}
+	for( c=0; c<NUMMINOTAURMUSIC; c++ ) {
 		FMOD_Sound_Release(minotaurmusic[c]);
-	if( minotaurmusic )
+	}
+	if( minotaurmusic ) {
 		free(minotaurmusic);
+	}
 #endif
 
 	// free items
@@ -565,8 +608,9 @@ void deinitGame() {
 			nextnode = node->next;
 			SDL_Surface **surface = (SDL_Surface **)node->element;
 			if( surface )
-				if( *surface )
+				if( *surface ) {
 					SDL_FreeSurface(*surface);
+				}
 		}
 		list_FreeAll(&items[c].surfaces);
 	}
@@ -595,11 +639,13 @@ void deinitGame() {
 	list_FreeAll(&spell_dig.elements);
 
 	// pathmaps
-	if( pathMapGrounded )
+	if( pathMapGrounded ) {
 		free(pathMapGrounded);
+	}
 	pathMapGrounded = NULL;
-	if( pathMapFlying )
+	if( pathMapFlying ) {
 		free(pathMapFlying);
+	}
 	pathMapFlying = NULL;
 
 	// clear steam achievement list

@@ -47,8 +47,9 @@ int initApp(char *title, int fullscreen) {
 	Uint32 x, c;
 
 	// open log file
-	if( !logfile )
+	if( !logfile ) {
 		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
 
 	for (c = 0; c < NUM_JOY_STATUS; ++c) {
 		joystatus[c] = 0;
@@ -137,8 +138,9 @@ int initApp(char *title, int fullscreen) {
 	}
 
 	// hide cursor for game
-	if( game )
+	if( game ) {
 		SDL_ShowCursor(SDL_FALSE);
+	}
 	SDL_StopTextInput();
 
 	// initialize video
@@ -153,34 +155,37 @@ int initApp(char *title, int fullscreen) {
 #ifdef WINDOWS
 	bool noextensions=FALSE;
 	if( !softwaremode ) {
-		if( (SDL_glGenBuffers=(PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers"))==NULL )
+		if( (SDL_glGenBuffers=(PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glBindBuffer=(PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer"))==NULL )
+		} else if( (SDL_glBindBuffer=(PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glBufferData=(PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData"))==NULL )
+		} else if( (SDL_glBufferData=(PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glDeleteBuffers=(PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers"))==NULL )
+		} else if( (SDL_glDeleteBuffers=(PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glGenVertexArrays=(PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays"))==NULL )
+		} else if( (SDL_glGenVertexArrays=(PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glBindVertexArray=(PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray"))==NULL )
+		} else if( (SDL_glBindVertexArray=(PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glDeleteVertexArrays=(PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays"))==NULL )
+		} else if( (SDL_glDeleteVertexArrays=(PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glEnableVertexAttribArray=(PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray"))==NULL )
+		} else if( (SDL_glEnableVertexAttribArray=(PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray"))==NULL ) {
 			noextensions=TRUE;
-		else if( (SDL_glVertexAttribPointer=(PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer"))==NULL )
+		} else if( (SDL_glVertexAttribPointer=(PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer"))==NULL ) {
 			noextensions=TRUE;
+		}
 	}
-	if (softwaremode)
+	if (softwaremode) {
 		printlog("notice: using software rendering.\n");
+	}
 	if( noextensions ) {
 		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
 		disablevbos=TRUE;
 	}
 #else
-	if (softwaremode)
+	if (softwaremode) {
 		printlog("notice: using software rendering.\n");
+	}
 #endif
 
 	// initialize buffers
@@ -190,8 +195,9 @@ int initApp(char *title, int fullscreen) {
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	//vboid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	allsurfaces = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*MAXTEXTURES);
-	for( c=0; c<MAXTEXTURES; c++ )
+	for( c=0; c<MAXTEXTURES; c++ ) {
 		allsurfaces[c]=NULL;
+	}
 	glGenTextures(MAXTEXTURES,texid);
 	//SDL_glGenVertexArrays(MAXBUFFERS, vaoid);
 	//SDL_glGenBuffers(MAXBUFFERS, vboid);
@@ -246,7 +252,9 @@ int initApp(char *title, int fullscreen) {
 	printlog("loading sprites...\n");
 	fp = fopen("images/sprites.txt","r");
 	for( numsprites=0; !feof(fp); numsprites++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 	}
 	fclose(fp);
 	if( numsprites==0 ) {
@@ -257,7 +265,9 @@ int initApp(char *title, int fullscreen) {
 	fp = fopen("images/sprites.txt","r");
 	for( c=0; !feof(fp); c++ ) {
 		fscanf(fp,"%s",name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		sprites[c] = loadImage(name);
 		if( sprites[c] == NULL ) {
 			printlog("warning: failed to load '%s' listed at line %d in sprites.txt\n",name,c+1);
@@ -282,7 +292,9 @@ int initApp(char *title, int fullscreen) {
 	printlog("loading models...\n");
 	fp = fopen("models/models.txt","r");
 	for( nummodels=0; !feof(fp); nummodels++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 	}
 	fclose(fp);
 	if( nummodels==0 ) {
@@ -293,7 +305,9 @@ int initApp(char *title, int fullscreen) {
 	fp = fopen("models/models.txt","r");
 	for( c=0; !feof(fp); c++ ) {
 		fscanf(fp,"%s",name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		models[c] = loadVoxel(name);
 		if( models[c] == NULL ) {
 			printlog("warning: failed to load '%s' listed at line %d in models.txt\n",name,c+1);
@@ -303,8 +317,9 @@ int initApp(char *title, int fullscreen) {
 			}
 		}
 	}
-	if( !softwaremode )
+	if( !softwaremode ) {
 		generatePolyModels();
+	}
 
 	// print a loading message
 	drawClearBuffers();
@@ -320,7 +335,9 @@ int initApp(char *title, int fullscreen) {
 	printlog("loading tiles...\n");
 	fp = fopen("images/tiles.txt","r");
 	for( numtiles=0; !feof(fp); numtiles++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 	}
 	fclose(fp);
 	if( numtiles==0 ) {
@@ -333,7 +350,9 @@ int initApp(char *title, int fullscreen) {
 	fp = fopen("images/tiles.txt","r");
 	for( c=0; !feof(fp); c++ ) {
 		fscanf(fp,"%s",name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = FALSE;
 		lavatiles[c] = FALSE;
@@ -371,7 +390,9 @@ int initApp(char *title, int fullscreen) {
 	printlog("loading sounds...\n");
 	fp = fopen("sound/sounds.txt","r");
 	for( numsounds=0; !feof(fp); numsounds++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 	}
 	fclose(fp);
 	if( numsounds==0 ) {
@@ -382,7 +403,9 @@ int initApp(char *title, int fullscreen) {
 	fp = fopen("sound/sounds.txt","r");
 	for( c=0; !feof(fp); c++ ) {
 		fscanf(fp,"%s",name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) break;
+		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+				break;
+			}
 		//TODO: Might need to malloc the sounds[c]->sound
 		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
 		if (FMODErrorCheck()) {
@@ -412,8 +435,9 @@ int loadLanguage(char *lang) {
 	int c;
 
 	// open log file
-	if( !logfile )
+	if( !logfile ) {
 		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
 
 	// compose filename
 	snprintf(filename,127,"lang/%s.txt",lang);
@@ -449,24 +473,27 @@ int loadLanguage(char *lang) {
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
-	if( ttf8 )
+	if( ttf8 ) {
 		TTF_CloseFont(ttf8);
+	}
 	if((ttf8=TTF_OpenFont(fontName,TTF8_HEIGHT)) == NULL ) {
 		printlog("failed to load size 8 ttf: %s\n",TTF_GetError());
 		return 1;
 	}
 	TTF_SetFontKerning(ttf8, 0);
 	TTF_SetFontHinting(ttf8, TTF_HINTING_MONO);
-	if( ttf12 )
+	if( ttf12 ) {
 		TTF_CloseFont(ttf12);
+	}
 	if((ttf12=TTF_OpenFont(fontName,TTF12_HEIGHT)) == NULL ) {
 		printlog("failed to load size 12 ttf: %s\n",TTF_GetError());
 		return 1;
 	}
 	TTF_SetFontKerning(ttf12, 0);
 	TTF_SetFontHinting(ttf12, TTF_HINTING_MONO);
-	if( ttf16 )
+	if( ttf16 ) {
 		TTF_CloseFont(ttf16);
+	}
 	if((ttf16=TTF_OpenFont(fontName,TTF16_HEIGHT)) == NULL ) {
 		printlog("failed to load size 16 ttf: %s\n",TTF_GetError());
 		return 1;
@@ -533,12 +560,14 @@ int loadLanguage(char *lang) {
 				}
 			}
 		}
-		if( fileEnd )
+		if( fileEnd ) {
 			break;
+		}
 
 		// skip blank and comment lines
-		if( data[0] == '\n' || data[0] == '#' )
+		if( data[0] == '\n' || data[0] == '#' ) {
 			continue;
+		}
 
 		data[i] = 0;
 
@@ -625,8 +654,9 @@ void generatePolyModels() {
 		numquads=0;
 		polymodels[c].numfaces = 0;
 		voxel_t *model = models[c];
-		if( !model )
+		if( !model ) {
 			continue;
+		}
 		indexdown[0] = model->sizez*model->sizey;
 		indexdown[1] = model->sizez;
 		indexdown[2] = 1;
@@ -641,11 +671,12 @@ void generatePolyModels() {
 					newcolor = models[c]->data[index];
 					if( buildingquad==TRUE ) {
 						bool doit=FALSE;
-						if( newcolor != oldcolor )
+						if( newcolor != oldcolor ) {
 							doit=TRUE;
-						else if( x<models[c]->sizex-1 )
-							if( models[c]->data[index+indexdown[0]]>=0 && models[c]->data[index+indexdown[0]]<255 )
+						} else if( x<models[c]->sizex-1 )
+							if( models[c]->data[index+indexdown[0]]>=0 && models[c]->data[index+indexdown[0]]<255 ) {
 								doit=TRUE;
+							}
 						if( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad=FALSE;
@@ -683,10 +714,11 @@ void generatePolyModels() {
 					if( newcolor != oldcolor || !buildingquad ) {
 						if( newcolor != 255 ) {
 							bool doit=FALSE;
-							if( x==models[c]->sizex-1 )
+							if( x==models[c]->sizex-1 ) {
 								doit=TRUE;
-							else if( models[c]->data[index+indexdown[0]]==255 )
+							} else if( models[c]->data[index+indexdown[0]]==255 ) {
 								doit=TRUE;
+							}
 							if( doit ) {
 								// start building a new quad
 								buildingquad=TRUE;
@@ -760,11 +792,12 @@ void generatePolyModels() {
 					newcolor = models[c]->data[index];
 					if( buildingquad==TRUE ) {
 						bool doit=FALSE;
-						if( newcolor != oldcolor )
+						if( newcolor != oldcolor ) {
 							doit=TRUE;
-						else if( x>0 )
-							if( models[c]->data[index-indexdown[0]]>=0 && models[c]->data[index-indexdown[0]]<255 )
+						} else if( x>0 )
+							if( models[c]->data[index-indexdown[0]]>=0 && models[c]->data[index-indexdown[0]]<255 ) {
 								doit=TRUE;
+							}
 						if( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad=FALSE;
@@ -802,10 +835,11 @@ void generatePolyModels() {
 					if( newcolor != oldcolor || !buildingquad ) {
 						if( newcolor != 255 ) {
 							bool doit=FALSE;
-							if( x==0 )
+							if( x==0 ) {
 								doit=TRUE;
-							else if( models[c]->data[index-indexdown[0]]==255 )
+							} else if( models[c]->data[index-indexdown[0]]==255 ) {
 								doit=TRUE;
+							}
 							if( doit ) {
 								// start building a new quad
 								buildingquad=TRUE;
@@ -879,11 +913,12 @@ void generatePolyModels() {
 					newcolor = models[c]->data[index];
 					if( buildingquad==TRUE ) {
 						bool doit=FALSE;
-						if( newcolor != oldcolor )
+						if( newcolor != oldcolor ) {
 							doit=TRUE;
-						else if( y<models[c]->sizey-1 )
-							if( models[c]->data[index+indexdown[1]]>=0 && models[c]->data[index+indexdown[1]]<255 )
+						} else if( y<models[c]->sizey-1 )
+							if( models[c]->data[index+indexdown[1]]>=0 && models[c]->data[index+indexdown[1]]<255 ) {
 								doit=TRUE;
+							}
 						if( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad=FALSE;
@@ -921,10 +956,11 @@ void generatePolyModels() {
 					if( newcolor != oldcolor || !buildingquad ) {
 						if( newcolor != 255 ) {
 							bool doit=FALSE;
-							if( y==models[c]->sizey-1 )
+							if( y==models[c]->sizey-1 ) {
 								doit=TRUE;
-							else if( models[c]->data[index+indexdown[1]]==255 )
+							} else if( models[c]->data[index+indexdown[1]]==255 ) {
 								doit=TRUE;
+							}
 							if( doit ) {
 								// start building a new quad
 								buildingquad=TRUE;
@@ -997,11 +1033,12 @@ void generatePolyModels() {
 					newcolor = models[c]->data[index];
 					if( buildingquad==TRUE ) {
 						bool doit=FALSE;
-						if( newcolor != oldcolor )
+						if( newcolor != oldcolor ) {
 							doit=TRUE;
-						else if( y>0 )
-							if( models[c]->data[index-indexdown[1]]>=0 && models[c]->data[index-indexdown[1]]<255 )
+						} else if( y>0 )
+							if( models[c]->data[index-indexdown[1]]>=0 && models[c]->data[index-indexdown[1]]<255 ) {
 								doit=TRUE;
+							}
 						if( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad=FALSE;
@@ -1039,10 +1076,11 @@ void generatePolyModels() {
 					if( newcolor != oldcolor || !buildingquad ) {
 						if( newcolor != 255 ) {
 							bool doit=FALSE;
-							if( y==0 )
+							if( y==0 ) {
 								doit=TRUE;
-							else if( models[c]->data[index-indexdown[1]]==255 )
+							} else if( models[c]->data[index-indexdown[1]]==255 ) {
 								doit=TRUE;
+							}
 							if( doit ) {
 								// start building a new quad
 								buildingquad=TRUE;
@@ -1115,11 +1153,12 @@ void generatePolyModels() {
 					newcolor = models[c]->data[index];
 					if( buildingquad==TRUE ) {
 						bool doit=FALSE;
-						if( newcolor != oldcolor )
+						if( newcolor != oldcolor ) {
 							doit=TRUE;
-						else if( z<models[c]->sizez-1 )
-							if( models[c]->data[index+indexdown[2]]>=0 && models[c]->data[index+indexdown[2]]<255 )
+						} else if( z<models[c]->sizez-1 )
+							if( models[c]->data[index+indexdown[2]]>=0 && models[c]->data[index+indexdown[2]]<255 ) {
 								doit=TRUE;
+							}
 						if( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad=FALSE;
@@ -1157,10 +1196,11 @@ void generatePolyModels() {
 					if( newcolor != oldcolor || !buildingquad ) {
 						if( newcolor != 255 ) {
 							bool doit=FALSE;
-							if( z==models[c]->sizez-1 )
+							if( z==models[c]->sizez-1 ) {
 								doit=TRUE;
-							else if( models[c]->data[index+indexdown[2]]==255 )
+							} else if( models[c]->data[index+indexdown[2]]==255 ) {
 								doit=TRUE;
+							}
 							if( doit ) {
 								// start building a new quad
 								buildingquad=TRUE;
@@ -1234,11 +1274,12 @@ void generatePolyModels() {
 					newcolor = models[c]->data[index];
 					if( buildingquad==TRUE ) {
 						bool doit=FALSE;
-						if( newcolor != oldcolor )
+						if( newcolor != oldcolor ) {
 							doit=TRUE;
-						else if( z>0 )
-							if( models[c]->data[index-indexdown[2]]>=0 && models[c]->data[index-indexdown[2]]<255 )
+						} else if( z>0 )
+							if( models[c]->data[index-indexdown[2]]>=0 && models[c]->data[index-indexdown[2]]<255 ) {
 								doit=TRUE;
+							}
 						if( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad=FALSE;
@@ -1276,10 +1317,11 @@ void generatePolyModels() {
 					if( newcolor != oldcolor || !buildingquad ) {
 						if( newcolor != 255 ) {
 							bool doit=FALSE;
-							if( z==0 )
+							if( z==0 ) {
 								doit=TRUE;
-							else if( models[c]->data[index-indexdown[2]]==255 )
+							} else if( models[c]->data[index-indexdown[2]]==255 ) {
 								doit=TRUE;
+							}
 							if( doit ) {
 								// start building a new quad
 								buildingquad=TRUE;
@@ -1367,8 +1409,9 @@ void generatePolyModels() {
 	}
 
 	// now store models into VBOs
-	if( !disablevbos )
+	if( !disablevbos ) {
 		generateVBOs();
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -1471,25 +1514,33 @@ int deinitApp() {
 	// close engine
 	printlog("closing engine...\n");
 	printlog("removing engine timer...\n");
-	if( timer )
+	if( timer ) {
 		SDL_RemoveTimer(timer);
+	}
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);
-	if( fancyWindow_bmp )
+	if( fancyWindow_bmp ) {
 		SDL_FreeSurface(fancyWindow_bmp);
-	if( font8x8_bmp )
+	}
+	if( font8x8_bmp ) {
 		SDL_FreeSurface(font8x8_bmp);
-	if( font12x12_bmp )
+	}
+	if( font12x12_bmp ) {
 		SDL_FreeSurface(font12x12_bmp);
-	if( font16x16_bmp )
+	}
+	if( font16x16_bmp ) {
 		SDL_FreeSurface(font16x16_bmp);
-	if( ttf8 )
+	}
+	if( ttf8 ) {
 		TTF_CloseFont(ttf8);
-	if( ttf12 )
+	}
+	if( ttf12 ) {
 		TTF_CloseFont(ttf12);
-	if( ttf16 )
+	}
+	if( ttf16 ) {
 		TTF_CloseFont(ttf16);
+	}
 
 	printlog("freeing map data...\n");
 	if( map.entities != NULL ) {
@@ -1497,12 +1548,15 @@ int deinitApp() {
 		free(map.entities);
 	}
 	list_FreeAll(&light_l);
-	if( map.tiles != NULL )
+	if( map.tiles != NULL ) {
 		free(map.tiles);
-	if( lightmap != NULL )
+	}
+	if( lightmap != NULL ) {
 		free(lightmap);
-	if( vismap != NULL )
+	}
+	if( vismap != NULL ) {
 		free(vismap);
+	}
 
 	for( c=0; c<HASH_SIZE; c++ ) {
 		list_FreeAll(&ttfTextHash[c]);
@@ -1543,8 +1597,9 @@ int deinitApp() {
 	if( models != NULL ) {
 		for( c=0; c<nummodels; c++ ) {
 			if( models[c] != NULL ) {
-				if( models[c]->data )
+				if( models[c]->data ) {
 					free(models[c]->data);
+				}
 				free(models[c]);
 			}
 		}
@@ -1558,12 +1613,15 @@ int deinitApp() {
 		}
 		if( !disablevbos ) {
 			for( c=0; c<nummodels; c++ ) {
-				if( polymodels[c].vbo )
+				if( polymodels[c].vbo ) {
 					SDL_glDeleteBuffers(1, &polymodels[c].vbo);
-				if( polymodels[c].colors )
+				}
+				if( polymodels[c].colors ) {
 					SDL_glDeleteBuffers(1, &polymodels[c].colors);
-				if( polymodels[c].va )
+				}
+				if( polymodels[c].va ) {
 					SDL_glDeleteVertexArrays(1, &polymodels[c].va);
+				}
 			}
 		}
 		free(polymodels);
@@ -1575,8 +1633,9 @@ int deinitApp() {
 	if( sounds != NULL ) {
 		for( c=0; c<numsounds; c++ ) {
 			if(sounds[c] != NULL) {
-				if (sounds[c] != NULL)
-					FMOD_Sound_Release(sounds[c]); //Free the sound's FMOD sound.
+				if (sounds[c] != NULL) {
+					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
+				}
 				//free(sounds[c]); //Then free the sound itself.
 			}
 		}
@@ -1585,8 +1644,9 @@ int deinitApp() {
 #endif
 
 	// delete opengl buffers
-	if( allsurfaces != NULL )
+	if( allsurfaces != NULL ) {
 		free(allsurfaces);
+	}
 	if( texid != NULL ) {
 		glDeleteTextures(MAXTEXTURES,texid);
 		free(texid);
@@ -1636,10 +1696,12 @@ int deinitApp() {
 	SDL_Quit();
 
 	// free video and input buffers
-	if( zbuffer != NULL )
+	if( zbuffer != NULL ) {
 		free(zbuffer);
-	if( clickmap != NULL )
+	}
+	if( clickmap != NULL ) {
 		free(clickmap);
+	}
 
 	// shutdown steamworks
 #ifdef STEAMWORKS
@@ -1686,12 +1748,15 @@ bool initVideo() {
 
 	printlog("setting display mode to %dx%d...\n",xres,yres);
 	Uint32 flags = 0;
-	if( fullscreen )
+	if( fullscreen ) {
 		flags |= SDL_WINDOW_FULLSCREEN;
-	if( !game )
+	}
+	if( !game ) {
 		flags |= SDL_WINDOW_RESIZABLE;
-	if( !softwaremode )
+	}
+	if( !softwaremode ) {
 		flags |= SDL_WINDOW_OPENGL;
+	}
 #ifdef APPLE
 	if( fullscreen ) {
 		flags |= SDL_WINDOW_BORDERLESS;
@@ -1700,8 +1765,9 @@ bool initVideo() {
 	screen = NULL;
 #endif
 	int screen_width = xres;
-	if (splitscreen)
+	if (splitscreen) {
 		screen_width *= 2;
+	}
 	if( !screen ) {
 		if((screen=SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL) {
 			printlog("failed to set video mode.\n");
@@ -1709,10 +1775,11 @@ bool initVideo() {
 		}
 	} else {
 		SDL_SetWindowSize(screen,screen_width,yres);
-		if( fullscreen )
+		if( fullscreen ) {
 			SDL_SetWindowFullscreen(screen,SDL_WINDOW_FULLSCREEN);
-		else
+		} else {
 			SDL_SetWindowFullscreen(screen,0);
+		}
 	}
 	if( !renderer ) {
 #ifdef APPLE
@@ -1815,8 +1882,9 @@ bool changeVideoMode() {
 		yres = 600;
 		fullscreen = 0;
 		printlog("defaulting to safe video mode...\n");
-		if( !initVideo() )
+		if( !initVideo() ) {
 			return FALSE;
+		}
 	}
 
 	// now reload all textures
@@ -1826,8 +1894,9 @@ bool changeVideoMode() {
 	}
 
 	// regenerate vbos
-	if( !disablevbos )
+	if( !disablevbos ) {
 		generateVBOs();
+	}
 
 	// success
 	return TRUE;

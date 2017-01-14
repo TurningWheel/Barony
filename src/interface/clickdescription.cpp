@@ -33,24 +33,30 @@ void clickDescription(int player, Entity *entity) {
 	Uint32 uidnum;
 
 	if( entity==NULL ) {
-		if( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) || shootmode )
+		if( !(*inputPressed(impulses[IN_ATTACK]) || *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) || shootmode ) {
 			return;
+		}
 		//One of either IN_ATTACK or INJOY_MENU_LEFT_CLICK is true, && shootmode == false;
-		if( omousex<camera.winx || omousex>=camera.winx+camera.winw || omousey<camera.winy || omousey>=camera.winy+camera.winh )
+		if( omousex<camera.winx || omousex>=camera.winx+camera.winw || omousey<camera.winy || omousey>=camera.winy+camera.winh ) {
 			return;
+		}
 		if (openedChest[clientnum])
-			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
-				return; //Click falls inside the chest inventory GUI.
+			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h) {
+				return;    //Click falls inside the chest inventory GUI.
+			}
 		if (identifygui_active)
-			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
-				return; //Click falls inside the identify item gui.
+			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h) {
+				return;    //Click falls inside the identify item gui.
+			}
 		if (book_open)
-			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
-				return; //Click falls inside the book GUI.
+			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h)) {
+				return;    //Click falls inside the book GUI.
+			}
 		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP) {
 			if( gui_mode == GUI_MODE_INVENTORY )
-				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
-					return; //Click falls inside the right sidebar.
+				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height)) {
+					return;    //Click falls inside the right sidebar.
+				}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
@@ -61,8 +67,9 @@ void clickDescription(int player, Entity *entity) {
 			if( gui_mode == GUI_MODE_SHOP ) {
 				int x1 = xres/2-SHOPWINDOW_SIZEX/2, x2 = xres/2+SHOPWINDOW_SIZEX/2;
 				int y1 = yres/2-SHOPWINDOW_SIZEY/2, y2 = yres/2+SHOPWINDOW_SIZEY/2;
-				if (mouseInBounds(x1,x2,y1,y2))
+				if (mouseInBounds(x1,x2,y1,y2)) {
 					return;
+				}
 			}
 		} else if (gui_mode == GUI_MODE_MAGIC) {
 			if (magic_GUI_state == 0) {
@@ -78,15 +85,18 @@ void clickDescription(int player, Entity *entity) {
 				height += numspells * spell_list_gui_slot_bmp->h;
 				int spelllist_y = camera.winy + ((camera.winh / 2) - (height / 2)) + magicspell_list_offset_x;
 
-				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
+				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height)) {
 					return;
+				}
 			}
 		}
-		if (mouseInBounds(0,224,0,420)) // character sheet
+		if (mouseInBounds(0,224,0,420)) { // character sheet
 			return;
+		}
 		int x = xres/2-(status_bmp->w/2);
-		if (mouseInBounds(x,x+status_bmp->w,yres-status_bmp->h-hotbar_img->h,yres))
+		if (mouseInBounds(x,x+status_bmp->w,yres-status_bmp->h-hotbar_img->h,yres)) {
 			return;
+		}
 		if ( selectedItem || itemMenuOpen ) {
 			//Will bugger up GUI item interaction if this function continues to run.
 			return;
@@ -133,10 +143,11 @@ void clickDescription(int player, Entity *entity) {
 						free(item);
 					}
 				} else if( entity->behavior==&actGoldBag ) {
-					if( entity->skill[0]==1 )
+					if( entity->skill[0]==1 ) {
 						messagePlayer(player,language[258]);
-					else
+					} else {
 						messagePlayer(player,language[259],entity->skill[0]);
+					}
 				} else if( entity->behavior==&actCampfire) {
 					messagePlayer(player,language[260]);
 				} else if( entity->behavior==&actFountain) {
@@ -162,10 +173,11 @@ void clickDescription(int player, Entity *entity) {
 				} else if( entity->behavior==&actPortal || entity->behavior==&actWinningPortal ) {
 					messagePlayer(player,language[272]);
 				} else if( entity->behavior==&actFurniture ) {
-					if( entity->skill[0] )
+					if( entity->skill[0] ) {
 						messagePlayer(player,language[273]);
-					else
+					} else {
 						messagePlayer(player,language[274]);
+					}
 				}
 			} else {
 				if( !strcmp(stat->name,"") ) {

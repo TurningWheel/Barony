@@ -242,14 +242,18 @@ void updateChestInventory() {
 			if (gui_clickdrag) {
 				chestgui_offset_x = (omousex - dragoffset_x) - (CHEST_INVENTORY_X - chestgui_offset_x);
 				chestgui_offset_y = (omousey - dragoffset_y) - (CHEST_INVENTORY_Y - chestgui_offset_y);
-				if (CHEST_INVENTORY_X <= camera.winx)
+				if (CHEST_INVENTORY_X <= camera.winx) {
 					chestgui_offset_x = camera.winx - (CHEST_INVENTORY_X - chestgui_offset_x);
-				if (CHEST_INVENTORY_X > camera.winx+camera.winw-inventoryChest_bmp->w)
+				}
+				if (CHEST_INVENTORY_X > camera.winx+camera.winw-inventoryChest_bmp->w) {
 					chestgui_offset_x = (camera.winx+camera.winw-inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
-				if (CHEST_INVENTORY_Y <= camera.winy)
+				}
+				if (CHEST_INVENTORY_Y <= camera.winy) {
 					chestgui_offset_y = camera.winy - (CHEST_INVENTORY_Y - chestgui_offset_y);
-				if (CHEST_INVENTORY_Y > camera.winy+camera.winh-inventoryChest_bmp->h)
+				}
+				if (CHEST_INVENTORY_Y > camera.winy+camera.winh-inventoryChest_bmp->h) {
 					chestgui_offset_y = (camera.winy+camera.winh-inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+				}
 			} else {
 				dragging_chestGUI = FALSE;
 			}
@@ -336,12 +340,14 @@ void updateChestInventory() {
 						item = (Item *) node->element;
 						if (item) {
 							c++;
-							if (c <= chestitemscroll)
+							if (c <= chestitemscroll) {
 								continue;
+							}
 							char tempstr[64] = { 0 };
 							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 )
+							if( strlen(tempstr)==46 ) {
 								strcat(tempstr," ...");
+							}
 							ttfPrintText(ttf8,CHEST_INVENTORY_X+36,y,tempstr);
 							pos.x = CHEST_INVENTORY_X + 16;
 							pos.y = CHEST_INVENTORY_Y + 17 + 18 * (c - chestitemscroll - 1);
@@ -349,8 +355,9 @@ void updateChestInventory() {
 							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
 							y += 18;
-							if (c > 3 + chestitemscroll)
+							if (c > 3 + chestitemscroll) {
 								break;
+							}
 						}
 					}
 				}

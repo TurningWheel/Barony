@@ -30,10 +30,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 	chest_opener(skill[5]) {
 	int c;
 	// add the entity to the entity list
-	if (!pos)
+	if (!pos) {
 		mynode = list_AddNodeFirst(entlist);
-	else
+	} else {
 		mynode = list_AddNodeLast(entlist);
+	}
 	mynode->element = this;
 	mynode->deconstructor = &entityDeconstructor;
 	mynode->size = sizeof(Entity);
@@ -77,8 +78,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
-	for (c = 0; c < 16; ++c)
+	for (c = 0; c < 16; ++c) {
 		flags[c] = false;
+	}
 	if (entlist == map.entities) {
 		if (multiplayer != CLIENT || loading) {
 			uid = entity_uids;

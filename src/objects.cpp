@@ -23,8 +23,9 @@
 -------------------------------------------------------------------------------*/
 
 void defaultDeconstructor(void *data) {
-	if(data != NULL)
+	if(data != NULL) {
 		free(data);
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -96,8 +97,9 @@ void lightDeconstructor(void *data) {
 			for(y=0; y<light->radius*2; y++) {
 				for(x=0; x<light->radius*2; x++) {
 					if( x+light->x-light->radius>=0 && x+light->x-light->radius<map.width )
-						if( y+light->y-light->radius>=0 && y+light->y-light->radius<map.height )
+						if( y+light->y-light->radius>=0 && y+light->y-light->radius<map.height ) {
 							lightmap[(y+light->y-light->radius)+(x+light->x-light->radius)*map.height] -= light->tiles[y+x*(light->radius*2+1)];
+						}
 				}
 			}
 			free(light->tiles);
@@ -119,8 +121,9 @@ void mapDeconstructor(void *data) {
 
 	if(data != NULL) {
 		map = (map_t *)data;
-		if(map->tiles != NULL)
+		if(map->tiles != NULL) {
 			free(map->tiles);
+		}
 		if(map->entities != NULL) {
 			list_FreeAll(map->entities);
 			free(map->entities);
@@ -293,8 +296,9 @@ string_t *newString(list_t *list, Uint32 color, char *content, ...) {
 		}
 		memset(string->data,0,sizeof(char)*(i+1));
 		for( c=0; c<i; c++ ) {
-			if( str[c]==10 ) // line feed
+			if( str[c]==10 ) { // line feed
 				string->lines++;
+			}
 		}
 		strncpy(string->data,str,i);
 	} else {
@@ -339,10 +343,11 @@ pathnode_t *newPathnode(list_t *list, Sint32 x, Sint32 y, pathnode_t *parent, Si
 	pathnode->h = 0;
 
 	// add the pathnode to the list
-	if( !pos )
+	if( !pos ) {
 		pathnode->node = list_AddNodeFirst(list);
-	else
+	} else {
 		pathnode->node = list_AddNodeLast(list);
+	}
 	pathnode->node->element = pathnode;
 	pathnode->node->deconstructor = &defaultDeconstructor;
 	pathnode->node->size = sizeof(pathnode_t);

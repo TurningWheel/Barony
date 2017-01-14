@@ -41,12 +41,13 @@ void updateBookGUI() {
 	//Center the book GUI.
 	pos.x = BOOK_GUI_X;
 	pos.y = BOOK_GUI_Y;
-	if (mouseInBounds(BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+	if (mouseInBounds(BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) ) {
 		drawImage(book_highlighted_right_img, NULL, &pos);
-	else if(mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) )
+	} else if(mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_Y + DRAGHEIGHT_BOOK, BOOK_GUI_Y + bookgui_img->h) ) {
 		drawImage(book_highlighted_left_img, NULL, &pos);
-	else
+	} else {
 		drawImage(bookgui_img, NULL, &pos);
+	}
 
 	if ( *inputPressed(joyimpulses[INJOY_MENU_BOOK_NEXT]) ) {
 		*inputPressed(joyimpulses[INJOY_MENU_BOOK_NEXT]) = 0;
@@ -120,14 +121,18 @@ void updateBookGUI() {
 		if (gui_clickdrag) {
 			bookgui_offset_x = (omousex - dragoffset_x) - (BOOK_GUI_X - bookgui_offset_x);
 			bookgui_offset_y = (omousey - dragoffset_y) - (BOOK_GUI_Y - bookgui_offset_y);
-			if (BOOK_GUI_X <= camera.winx)
+			if (BOOK_GUI_X <= camera.winx) {
 				bookgui_offset_x = camera.winx - (BOOK_GUI_X - bookgui_offset_x);
-			if (BOOK_GUI_X > camera.winx + camera.winw - bookgui_img->w)
+			}
+			if (BOOK_GUI_X > camera.winx + camera.winw - bookgui_img->w) {
 				bookgui_offset_x = (camera.winx + camera.winw - bookgui_img->w) - (BOOK_GUI_X - bookgui_offset_x);
-			if (BOOK_GUI_Y <= camera.winy)
+			}
+			if (BOOK_GUI_Y <= camera.winy) {
 				bookgui_offset_y = camera.winy - (BOOK_GUI_Y - bookgui_offset_y);
-			if (BOOK_GUI_Y > camera.winy + camera.winh - bookgui_img->h)
+			}
+			if (BOOK_GUI_Y > camera.winy + camera.winh - bookgui_img->h) {
 				bookgui_offset_y = (camera.winy + camera.winh - bookgui_img->h) - (BOOK_GUI_Y - bookgui_offset_y);
+			}
 		} else {
 			dragging_book_GUI = FALSE;
 		}
@@ -160,8 +165,9 @@ void closeBookGUI() {
 -------------------------------------------------------------------------------*/
 
 void openBook(book_t *book, Item *item) {
-	if (!book || !book->pages.first)
+	if (!book || !book->pages.first) {
 		return;
+	}
 
 	gui_mode = GUI_MODE_INVENTORY; //Yes, this is pretty much the main GUI screen.
 	shootmode = FALSE;
@@ -191,6 +197,7 @@ void openBook(book_t *book, Item *item) {
 	}
 
 	// activate the steam achievement
-	if( list_Size(&booksRead)>=numbooks )
+	if( list_Size(&booksRead)>=numbooks ) {
 		steamAchievement("BARONY_ACH_WELL_READ");
+	}
 }

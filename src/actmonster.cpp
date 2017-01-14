@@ -159,36 +159,44 @@ Entity *summonMonster(Monster creature, long x, long y) {
 			do {
 				entity->x = x;
 				entity->y = y - 16;
-				if(!entityInsideSomething(entity))
-					break; // north
+				if(!entityInsideSomething(entity)) {
+					break;    // north
+				}
 				entity->x = x;
 				entity->y = y + 16;
-				if(!entityInsideSomething(entity))
-					break; // south
+				if(!entityInsideSomething(entity)) {
+					break;    // south
+				}
 				entity->x = x - 16;
 				entity->y = y;
-				if(!entityInsideSomething(entity))
-					break; // west
+				if(!entityInsideSomething(entity)) {
+					break;    // west
+				}
 				entity->x = x + 16;
 				entity->y = y;
-				if(!entityInsideSomething(entity))
-					break; // east
+				if(!entityInsideSomething(entity)) {
+					break;    // east
+				}
 				entity->x = x + 16;
 				entity->y = y - 16;
-				if(!entityInsideSomething(entity))
-					break; // northeast
+				if(!entityInsideSomething(entity)) {
+					break;    // northeast
+				}
 				entity->x = x + 16;
 				entity->y = y + 16;
-				if(!entityInsideSomething(entity))
-					break; // southeast
+				if(!entityInsideSomething(entity)) {
+					break;    // southeast
+				}
 				entity->x = x - 16;
 				entity->y = y - 16;
-				if(!entityInsideSomething(entity))
-					break; // northwest
+				if(!entityInsideSomething(entity)) {
+					break;    // northwest
+				}
 				entity->x = x - 16;
 				entity->y = y + 16;
-				if(!entityInsideSomething(entity))
-					break; // southwest
+				if(!entityInsideSomething(entity)) {
+					break;    // southwest
+				}
 
 				// we can't have monsters in walls...
 				list_RemoveNode(entity->mynode);
@@ -200,118 +208,120 @@ Entity *summonMonster(Monster creature, long x, long y) {
 
 	if( entity ) {
 		switch(creature) {
-		case RAT:
-			entity->focalx = limbs[RAT][0][0]; // 0
-			entity->focaly = limbs[RAT][0][1]; // 0
-			entity->focalz = limbs[RAT][0][2]; // 0
-			break;
-		case SCORPION:
-			entity->focalx = limbs[SCORPION][0][0]; // 0
-			entity->focaly = limbs[SCORPION][0][1]; // 0
-			entity->focalz = limbs[SCORPION][0][2]; // 0
-			break;
-		case HUMAN:
-			entity->z = -1;
-			entity->focalx = limbs[HUMAN][0][0]; // 0
-			entity->focaly = limbs[HUMAN][0][1]; // 0
-			entity->focalz = limbs[HUMAN][0][2]; // -1.5
-			break;
-		case GOBLIN:
-			entity->z = 0;
-			entity->focalx = limbs[GOBLIN][0][0]; // 0
-			entity->focaly = limbs[GOBLIN][0][1]; // 0
-			entity->focalz = limbs[GOBLIN][0][2]; // -1.75
-			break;
-		case SLIME:
-			if( multiplayer!=CLIENT )
-				myStats->LVL = 7;
-			break;
-		case SUCCUBUS:
-			entity->z = -1;
-			entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-			entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-			entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
-			break;
-		case TROLL:
-			entity->z = -1.5;
-			entity->focalx = limbs[TROLL][0][0]; // 1
-			entity->focaly = limbs[TROLL][0][1]; // 0
-			entity->focalz = limbs[TROLL][0][2]; // -2
-			break;
-		case SHOPKEEPER:
-			entity->z = -1;
-			entity->focalx = limbs[SHOPKEEPER][0][0]; // 0
-			entity->focaly = limbs[SHOPKEEPER][0][1]; // 0
-			entity->focalz = limbs[SHOPKEEPER][0][2]; // -1.5
-			break;
-		case SKELETON:
-			entity->z = -.5;
-			entity->focalx = limbs[SKELETON][0][0]; // 0
-			entity->focaly = limbs[SKELETON][0][1]; // 0
-			entity->focalz = limbs[SKELETON][0][2]; // -1.5
-			break;
-		case MINOTAUR:
-			entity->z = -6;
-			entity->focalx = limbs[MINOTAUR][0][0]; // 0
-			entity->focaly = limbs[MINOTAUR][0][1]; // 0
-			entity->focalz = limbs[MINOTAUR][0][2]; // 0
-			break;
-		case GHOUL:
-			entity->z = -.25;
-			entity->focalx = limbs[GHOUL][0][0]; // 0
-			entity->focaly = limbs[GHOUL][0][1]; // 0
-			entity->focalz = limbs[GHOUL][0][2]; // -1.5
-			break;
-		case DEMON:
-			entity->z = -8.5;
-			entity->focalx = limbs[DEMON][0][0]; // -1
-			entity->focaly = limbs[DEMON][0][1]; // 0
-			entity->focalz = limbs[DEMON][0][2]; // -1.25
-			break;
-		case SPIDER:
-			entity->z = 4.5;
-			entity->focalx = limbs[SPIDER][0][0]; // -3
-			entity->focaly = limbs[SPIDER][0][1]; // 0
-			entity->focalz = limbs[SPIDER][0][2]; // -1
-			break;
-		case LICH:
-			entity->focalx = limbs[LICH][0][0]; // -0.75
-			entity->focaly = limbs[LICH][0][1]; // 0
-			entity->focalz = limbs[LICH][0][2]; // 0
-			entity->z = -2;
-			entity->yaw = PI;
-			entity->sprite = 274;
-			entity->skill[29] = 120;
-			break;
-		case CREATURE_IMP:
-			entity->z = -4.5;
-			entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
-			entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
-			entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
-			break;
-		case GNOME:
-			entity->z = 2.25;
-			entity->focalx = limbs[GNOME][0][0]; // 0
-			entity->focaly = limbs[GNOME][0][1]; // 0
-			entity->focalz = limbs[GNOME][0][2]; // -2
-			break;
-		case DEVIL:
-			entity->focalx = limbs[DEVIL][0][0]; // 0
-			entity->focaly = limbs[DEVIL][0][1]; // 0
-			entity->focalz = limbs[DEVIL][0][2]; // 0
-			entity->z = -4;
-			entity->sizex = 20;
-			entity->sizey = 20;
-			entity->yaw = PI;
-			break;
-		default:
-			//Spawn a potato.
-			list_RemoveNode(entity->mynode);
-			return NULL;
-			break;
+			case RAT:
+				entity->focalx = limbs[RAT][0][0]; // 0
+				entity->focaly = limbs[RAT][0][1]; // 0
+				entity->focalz = limbs[RAT][0][2]; // 0
+				break;
+			case SCORPION:
+				entity->focalx = limbs[SCORPION][0][0]; // 0
+				entity->focaly = limbs[SCORPION][0][1]; // 0
+				entity->focalz = limbs[SCORPION][0][2]; // 0
+				break;
+			case HUMAN:
+				entity->z = -1;
+				entity->focalx = limbs[HUMAN][0][0]; // 0
+				entity->focaly = limbs[HUMAN][0][1]; // 0
+				entity->focalz = limbs[HUMAN][0][2]; // -1.5
+				break;
+			case GOBLIN:
+				entity->z = 0;
+				entity->focalx = limbs[GOBLIN][0][0]; // 0
+				entity->focaly = limbs[GOBLIN][0][1]; // 0
+				entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+				break;
+			case SLIME:
+				if( multiplayer!=CLIENT ) {
+					myStats->LVL = 7;
+				}
+				break;
+			case SUCCUBUS:
+				entity->z = -1;
+				entity->focalx = limbs[SUCCUBUS][0][0]; // 0
+				entity->focaly = limbs[SUCCUBUS][0][1]; // 0
+				entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+				break;
+			case TROLL:
+				entity->z = -1.5;
+				entity->focalx = limbs[TROLL][0][0]; // 1
+				entity->focaly = limbs[TROLL][0][1]; // 0
+				entity->focalz = limbs[TROLL][0][2]; // -2
+				break;
+			case SHOPKEEPER:
+				entity->z = -1;
+				entity->focalx = limbs[SHOPKEEPER][0][0]; // 0
+				entity->focaly = limbs[SHOPKEEPER][0][1]; // 0
+				entity->focalz = limbs[SHOPKEEPER][0][2]; // -1.5
+				break;
+			case SKELETON:
+				entity->z = -.5;
+				entity->focalx = limbs[SKELETON][0][0]; // 0
+				entity->focaly = limbs[SKELETON][0][1]; // 0
+				entity->focalz = limbs[SKELETON][0][2]; // -1.5
+				break;
+			case MINOTAUR:
+				entity->z = -6;
+				entity->focalx = limbs[MINOTAUR][0][0]; // 0
+				entity->focaly = limbs[MINOTAUR][0][1]; // 0
+				entity->focalz = limbs[MINOTAUR][0][2]; // 0
+				break;
+			case GHOUL:
+				entity->z = -.25;
+				entity->focalx = limbs[GHOUL][0][0]; // 0
+				entity->focaly = limbs[GHOUL][0][1]; // 0
+				entity->focalz = limbs[GHOUL][0][2]; // -1.5
+				break;
+			case DEMON:
+				entity->z = -8.5;
+				entity->focalx = limbs[DEMON][0][0]; // -1
+				entity->focaly = limbs[DEMON][0][1]; // 0
+				entity->focalz = limbs[DEMON][0][2]; // -1.25
+				break;
+			case SPIDER:
+				entity->z = 4.5;
+				entity->focalx = limbs[SPIDER][0][0]; // -3
+				entity->focaly = limbs[SPIDER][0][1]; // 0
+				entity->focalz = limbs[SPIDER][0][2]; // -1
+				break;
+			case LICH:
+				entity->focalx = limbs[LICH][0][0]; // -0.75
+				entity->focaly = limbs[LICH][0][1]; // 0
+				entity->focalz = limbs[LICH][0][2]; // 0
+				entity->z = -2;
+				entity->yaw = PI;
+				entity->sprite = 274;
+				entity->skill[29] = 120;
+				break;
+			case CREATURE_IMP:
+				entity->z = -4.5;
+				entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
+				entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
+				entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
+				break;
+			case GNOME:
+				entity->z = 2.25;
+				entity->focalx = limbs[GNOME][0][0]; // 0
+				entity->focaly = limbs[GNOME][0][1]; // 0
+				entity->focalz = limbs[GNOME][0][2]; // -2
+				break;
+			case DEVIL:
+				entity->focalx = limbs[DEVIL][0][0]; // 0
+				entity->focaly = limbs[DEVIL][0][1]; // 0
+				entity->focalz = limbs[DEVIL][0][2]; // 0
+				entity->z = -4;
+				entity->sizex = 20;
+				entity->sizey = 20;
+				entity->yaw = PI;
+				break;
+			default:
+				//Spawn a potato.
+				list_RemoveNode(entity->mynode);
+				return NULL;
+				break;
 		}
-		if( entity )
+		if( entity ) {
 			nummonsters++;
+		}
 		if( multiplayer==SERVER ) {
 			strcpy((char *)net_packet->data,"SUMM");
 			SDLNet_Write32((Uint32)creature,&net_packet->data[4]);
@@ -322,8 +332,9 @@ Entity *summonMonster(Monster creature, long x, long y) {
 
 			int c;
 			for( c=0; c<MAXPLAYERS; c++ ) {
-				if( client_disconnected[c] )
+				if( client_disconnected[c] ) {
 					continue;
+				}
 				net_packet->address.host = net_clients[c-1].host;
 				net_packet->address.port = net_clients[c-1].port;
 				sendPacketSafe(net_sock, -1, net_packet, c-1);
@@ -344,8 +355,9 @@ Entity *summonMonster(Monster creature, long x, long y) {
 -------------------------------------------------------------------------------*/
 
 bool monsterMoveAside(Entity *my, Entity *entity) {
-	if( MONSTER_STATE != 0 )
+	if( MONSTER_STATE != 0 ) {
 		return FALSE;
+	}
 
 	int x = 0, y = 0;
 	if( cos(entity->yaw)>.4 ) {
@@ -415,8 +427,9 @@ int devilintro=0;
 //int devilintro=0;
 
 void actMonster(Entity *my) {
-	if (!my)
+	if (!my) {
 		return;
+	}
 
 	int x, y, c, i;
 	double dist, dist2;
@@ -432,8 +445,9 @@ void actMonster(Entity *my) {
 	bool myReflex;
 
 	// deactivate in menu
-	if( intro )
+	if( intro ) {
 		return;
+	}
 
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
@@ -554,10 +568,11 @@ void actMonster(Entity *my) {
 		return;
 	}
 
-	if( ticks%(TICKS_PER_SECOND) == my->uid%(TICKS_PER_SECOND/2) )
+	if( ticks%(TICKS_PER_SECOND) == my->uid%(TICKS_PER_SECOND/2) ) {
 		myReflex = TRUE;
-	else
+	} else {
 		myReflex = FALSE;
+	}
 
 	// init
 	if( MONSTER_INIT<2 ) { // 0 means no initialization, 1 means stats are initialized
@@ -567,74 +582,75 @@ void actMonster(Entity *my) {
 			myStats->monster_sound = NULL;
 			my->flags[BURNABLE]=TRUE;
 			switch( myStats->type ) {
-			case HUMAN:
-				initHuman(my, myStats);
-				break;
-			case RAT:
-				initRat(my, myStats);
-				break;
-			case GOBLIN:
-				initGoblin(my, myStats);
-				break;
-			case SLIME:
-				my->flags[BURNABLE]=FALSE;
-				initSlime(my, myStats);
-				break;
-			case SCORPION:
-				initScorpion(my, myStats);
-				break;
-			case SUCCUBUS:
-				initSuccubus(my, myStats);
-				break;
-			case TROLL:
-				initTroll(my, myStats);
-				break;
-			case SHOPKEEPER:
-				initShopkeeper(my, myStats);
-				break;
-			case SKELETON:
-				my->flags[BURNABLE]=FALSE;
-				initSkeleton(my, myStats);
-				break;
-			case MINOTAUR:
-				initMinotaur(my, myStats);
-				break;
-			case GHOUL:
-				initGhoul(my, myStats);
-				break;
-			case DEMON:
-				my->flags[BURNABLE]=FALSE;
-				initDemon(my, myStats);
-				break;
-			case SPIDER:
-				initSpider(my, myStats);
-				break;
-			case LICH:
-				my->flags[BURNABLE]=FALSE;
-				initLich(my, myStats);
-				break;
-			case CREATURE_IMP:
-				my->flags[BURNABLE]=FALSE;
-				initImp(my, myStats);
-				break;
-			case GNOME:
-				initGnome(my, myStats);
-				break;
-			case DEVIL:
-				my->flags[BURNABLE]=FALSE;
-				devilstate=0;
-				devilacted=0;
-				initDevil(my, myStats);
-				break;
-			default:
-				break; //This should never be reached.
+				case HUMAN:
+					initHuman(my, myStats);
+					break;
+				case RAT:
+					initRat(my, myStats);
+					break;
+				case GOBLIN:
+					initGoblin(my, myStats);
+					break;
+				case SLIME:
+					my->flags[BURNABLE]=FALSE;
+					initSlime(my, myStats);
+					break;
+				case SCORPION:
+					initScorpion(my, myStats);
+					break;
+				case SUCCUBUS:
+					initSuccubus(my, myStats);
+					break;
+				case TROLL:
+					initTroll(my, myStats);
+					break;
+				case SHOPKEEPER:
+					initShopkeeper(my, myStats);
+					break;
+				case SKELETON:
+					my->flags[BURNABLE]=FALSE;
+					initSkeleton(my, myStats);
+					break;
+				case MINOTAUR:
+					initMinotaur(my, myStats);
+					break;
+				case GHOUL:
+					initGhoul(my, myStats);
+					break;
+				case DEMON:
+					my->flags[BURNABLE]=FALSE;
+					initDemon(my, myStats);
+					break;
+				case SPIDER:
+					initSpider(my, myStats);
+					break;
+				case LICH:
+					my->flags[BURNABLE]=FALSE;
+					initLich(my, myStats);
+					break;
+				case CREATURE_IMP:
+					my->flags[BURNABLE]=FALSE;
+					initImp(my, myStats);
+					break;
+				case GNOME:
+					initGnome(my, myStats);
+					break;
+				case DEVIL:
+					my->flags[BURNABLE]=FALSE;
+					devilstate=0;
+					devilacted=0;
+					initDevil(my, myStats);
+					break;
+				default:
+					break; //This should never be reached.
 			}
 		}
 		MONSTER_INIT=2;
-		if( myStats->type != LICH && myStats->type != DEVIL )
+		if( myStats->type != LICH && myStats->type != DEVIL ) {
 			MONSTER_LOOKDIR=(rand()%360)*PI/180;
-		else
+		} else {
 			MONSTER_LOOKDIR=PI;
+		}
 		MONSTER_LOOKTIME = rand()%120;
 		MONSTER_MOVETIME = rand()%10;
 		MONSTER_SOUND = NULL;
@@ -677,14 +693,17 @@ void actMonster(Entity *my) {
 
 	// levitation
 	bool levitating = FALSE;
-	if( myStats->EFFECTS[EFF_LEVITATING] == TRUE )
+	if( myStats->EFFECTS[EFF_LEVITATING] == TRUE ) {
 		levitating=TRUE;
+	}
 	if( myStats->ring != NULL )
-		if( myStats->ring->type == RING_LEVITATION )
+		if( myStats->ring->type == RING_LEVITATION ) {
 			levitating = TRUE;
+		}
 	if( myStats->shoes != NULL )
-		if( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
+		if( myStats->shoes->type == STEEL_BOOTS_LEVITATION ) {
 			levitating = TRUE;
+		}
 
 	if( myStats->type == MINOTAUR ) {
 		int c;
@@ -718,8 +737,9 @@ void actMonster(Entity *my) {
 			}
 			if( foundlights ) {
 #ifdef HAVE_FMOD
-				if( MONSTER_SOUND )
+				if( MONSTER_SOUND ) {
 					FMOD_Channel_Stop(MONSTER_SOUND);
+				}
 #endif
 				int c;
 				for( c=0; c<MAXPLAYERS; c++ ) {
@@ -742,59 +762,71 @@ void actMonster(Entity *my) {
 	}
 
 	// hunger, regaining hp/mp, poison, etc.
-	if( !intro )
+	if( !intro ) {
 		my->handleEffects(myStats);
+	}
 	if( myStats->HP <= 0 && MONSTER_STATE != 7 && MONSTER_STATE != 8 ) {
 		// drop all equipment
 		entity = dropItemMonster(myStats->helmet, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->helmet = NULL;
 		entity = dropItemMonster(myStats->breastplate, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->breastplate = NULL;
 		entity = dropItemMonster(myStats->gloves, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->gloves = NULL;
 		entity = dropItemMonster(myStats->shoes, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->shoes = NULL;
 		entity = dropItemMonster(myStats->shield, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->shield = NULL;
 		if( myStats->weapon ) {
 			if( itemCategory(myStats->weapon)!=SPELLBOOK ) {
 				entity = dropItemMonster(myStats->weapon, my, myStats);
-				if( entity )
+				if( entity ) {
 					entity->flags[USERFLAG1] = TRUE;
+				}
 			} else {
 				// spellbooks are not dropped
-				if( myStats->weapon->node )
+				if( myStats->weapon->node ) {
 					list_RemoveNode(myStats->weapon->node);
-				else
+				} else {
 					free(myStats->weapon);
+				}
 			}
 			myStats->weapon = NULL;
 		}
 		entity = dropItemMonster(myStats->cloak, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->cloak = NULL;
 		entity = dropItemMonster(myStats->amulet, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->amulet = NULL;
 		entity = dropItemMonster(myStats->ring, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->ring = NULL;
 		entity = dropItemMonster(myStats->mask, my, myStats);
-		if( entity )
+		if( entity ) {
 			entity->flags[USERFLAG1] = TRUE;
+		}
 		myStats->mask = NULL;
 		node_t *nextnode=NULL;
 		for( node=myStats->inventory.first; node!=NULL; node=nextnode ) {
@@ -802,8 +834,9 @@ void actMonster(Entity *my) {
 			Item *item = (Item *)node->element;
 			for( c=item->count; c>0; c-- ) {
 				entity = dropItemMonster(item, my, myStats);
-				if( entity )
-					entity->flags[USERFLAG1] = TRUE; // makes items passable, improves performance
+				if( entity ) {
+					entity->flags[USERFLAG1] = TRUE;    // makes items passable, improves performance
+				}
 			}
 		}
 
@@ -819,8 +852,9 @@ void actMonster(Entity *my) {
 		}
 		if( playerFollower<MAXPLAYERS ) {
 			for( c=0; c<MAXPLAYERS; c++ ) {
-				if( client_disconnected[c] )
+				if( client_disconnected[c] ) {
 					continue;
+				}
 				char whatever[256];
 				if( strcmp(myStats->name,"") ) {
 					snprintf(whatever,255,"%s %s",myStats->name,myStats->obituary);
@@ -854,78 +888,79 @@ void actMonster(Entity *my) {
 
 		// die
 #ifdef HAVE_FMOD
-		if( MONSTER_SOUND )
+		if( MONSTER_SOUND ) {
 			FMOD_Channel_Stop(MONSTER_SOUND);
+		}
 #endif
 		myStats = my->getStats();
 		switch( myStats->type ) {
-		case HUMAN:
-			humanDie(my);
-			break;
-		case RAT:
-			ratDie(my);
-			break;
-		case GOBLIN:
-			goblinDie(my);
-			break;
-		case SLIME:
-			slimeDie(my);
-			break;
-		case SCORPION:
-			scorpionDie(my);
-			break;
-		case SUCCUBUS:
-			succubusDie(my);
-			break;
-		case TROLL:
-			trollDie(my);
-			break;
-		case SHOPKEEPER:
-			shopkeeperDie(my);
-			break;
-		case SKELETON:
-			skeletonDie(my);
-			break;
-		case MINOTAUR:
-			minotaurDie(my);
-			break;
-		case GHOUL:
-			ghoulDie(my);
-			break;
-		case DEMON:
-			demonDie(my);
-			break;
-		case SPIDER:
-			spiderDie(my);
-			break;
-		case LICH:
-			my->flags[PASSABLE] = TRUE; // so I can't take any more hits
-			MONSTER_STATE = 7; // lich death state
-			MONSTER_SPECIAL = 0;
-			MONSTER_ATTACK = 0;
-			MONSTER_ATTACKTIME = 0;
-			serverUpdateEntitySkill(my,8);
-			serverUpdateEntitySkill(my,9);
-			break;
-		case CREATURE_IMP:
-			impDie(my);
-			break;
-		case GNOME:
-			gnomeDie(my);
-			break;
-		case DEVIL:
-			my->flags[PASSABLE] = TRUE; // so I can't take any more hits
-			MONSTER_STATE = 8; // devil death state
-			MONSTER_SPECIAL = 0;
-			MONSTER_ATTACK = 0;
-			MONSTER_ATTACKTIME = 0;
-			MONSTER_ARMBENDED = 0;
-			serverUpdateEntitySkill(my,8);
-			serverUpdateEntitySkill(my,9);
-			serverUpdateEntitySkill(my,10);
-			break;
-		default:
-			break; //This should never be reached.
+			case HUMAN:
+				humanDie(my);
+				break;
+			case RAT:
+				ratDie(my);
+				break;
+			case GOBLIN:
+				goblinDie(my);
+				break;
+			case SLIME:
+				slimeDie(my);
+				break;
+			case SCORPION:
+				scorpionDie(my);
+				break;
+			case SUCCUBUS:
+				succubusDie(my);
+				break;
+			case TROLL:
+				trollDie(my);
+				break;
+			case SHOPKEEPER:
+				shopkeeperDie(my);
+				break;
+			case SKELETON:
+				skeletonDie(my);
+				break;
+			case MINOTAUR:
+				minotaurDie(my);
+				break;
+			case GHOUL:
+				ghoulDie(my);
+				break;
+			case DEMON:
+				demonDie(my);
+				break;
+			case SPIDER:
+				spiderDie(my);
+				break;
+			case LICH:
+				my->flags[PASSABLE] = TRUE; // so I can't take any more hits
+				MONSTER_STATE = 7; // lich death state
+				MONSTER_SPECIAL = 0;
+				MONSTER_ATTACK = 0;
+				MONSTER_ATTACKTIME = 0;
+				serverUpdateEntitySkill(my,8);
+				serverUpdateEntitySkill(my,9);
+				break;
+			case CREATURE_IMP:
+				impDie(my);
+				break;
+			case GNOME:
+				gnomeDie(my);
+				break;
+			case DEVIL:
+				my->flags[PASSABLE] = TRUE; // so I can't take any more hits
+				MONSTER_STATE = 8; // devil death state
+				MONSTER_SPECIAL = 0;
+				MONSTER_ATTACK = 0;
+				MONSTER_ATTACKTIME = 0;
+				MONSTER_ARMBENDED = 0;
+				serverUpdateEntitySkill(my,8);
+				serverUpdateEntitySkill(my,9);
+				serverUpdateEntitySkill(my,10);
+				break;
+			default:
+				break; //This should never be reached.
 		}
 		return;
 	}
@@ -938,15 +973,15 @@ void actMonster(Entity *my) {
 	if( !strcmp(myStats->name,"") ) {
 		// only for monsters that have no name
 		switch ( myStats->type ) {
-		case GOBLIN:
-			//messagePlayer(0, "BLARG.");
-			my->checkBetterEquipment(myStats);
-			break;
-		case HUMAN:
-			my->checkBetterEquipment(myStats);
-			break;
-		default:
-			break;
+			case GOBLIN:
+				//messagePlayer(0, "BLARG.");
+				my->checkBetterEquipment(myStats);
+				break;
+			case HUMAN:
+				my->checkBetterEquipment(myStats);
+				break;
+			default:
+				break;
 		}
 	}
 
@@ -1038,26 +1073,36 @@ void actMonster(Entity *my) {
 
 	// calculate weight
 	Sint32 weight=0;
-	if( myStats->helmet != NULL )
+	if( myStats->helmet != NULL ) {
 		weight += items[myStats->helmet->type].weight*myStats->helmet->count;
-	if( myStats->breastplate != NULL )
+	}
+	if( myStats->breastplate != NULL ) {
 		weight += items[myStats->breastplate->type].weight*myStats->breastplate->count;
-	if( myStats->gloves != NULL )
+	}
+	if( myStats->gloves != NULL ) {
 		weight += items[myStats->gloves->type].weight*myStats->gloves->count;
-	if( myStats->shoes != NULL )
+	}
+	if( myStats->shoes != NULL ) {
 		weight += items[myStats->shoes->type].weight*myStats->shoes->count;
-	if( myStats->shield != NULL )
+	}
+	if( myStats->shield != NULL ) {
 		weight += items[myStats->shield->type].weight*myStats->shield->count;
-	if( myStats->weapon != NULL )
+	}
+	if( myStats->weapon != NULL ) {
 		weight += items[myStats->weapon->type].weight*myStats->weapon->count;
-	if( myStats->cloak != NULL )
+	}
+	if( myStats->cloak != NULL ) {
 		weight += items[myStats->cloak->type].weight*myStats->cloak->count;
-	if( myStats->amulet != NULL )
+	}
+	if( myStats->amulet != NULL ) {
 		weight += items[myStats->amulet->type].weight*myStats->amulet->count;
-	if( myStats->ring != NULL )
+	}
+	if( myStats->ring != NULL ) {
 		weight += items[myStats->ring->type].weight*myStats->ring->count;
-	if( myStats->mask != NULL )
+	}
+	if( myStats->mask != NULL ) {
 		weight += items[myStats->mask->type].weight*myStats->mask->count;
+	}
 	weight+=myStats->GOLD/100;
 	weight/=2; // on monsters weight shouldn't matter so much
 	double weightratio = (1000+my->getSTR()*100-weight)/(double)(1000+my->getSTR()*100);
@@ -1065,18 +1110,19 @@ void actMonster(Entity *my) {
 
 	// determine if I have a ranged weapon or not
 	if( myStats->weapon != NULL ) {
-		if( myStats->weapon->type == SLING )
+		if( myStats->weapon->type == SLING ) {
 			hasrangedweapon = TRUE;
-		else if( myStats->weapon->type == SHORTBOW )
+		} else if( myStats->weapon->type == SHORTBOW ) {
 			hasrangedweapon = TRUE;
-		else if( myStats->weapon->type == CROSSBOW )
+		} else if( myStats->weapon->type == CROSSBOW ) {
 			hasrangedweapon = TRUE;
-		else if( myStats->weapon->type == ARTIFACT_BOW )
+		} else if( myStats->weapon->type == ARTIFACT_BOW ) {
 			hasrangedweapon = TRUE;
-		else if( itemCategory(myStats->weapon) == MAGICSTAFF )
+		} else if( itemCategory(myStats->weapon) == MAGICSTAFF ) {
 			hasrangedweapon = TRUE;
-		else if( itemCategory(myStats->weapon) == SPELLBOOK )
+		} else if( itemCategory(myStats->weapon) == SPELLBOOK ) {
 			hasrangedweapon = TRUE;
+		}
 	}
 
 	// effect of a ring of conflict
@@ -1100,14 +1146,14 @@ void actMonster(Entity *my) {
 	// invisibility
 	bool handleinvisible=TRUE;
 	switch( myStats->type ) {
-	case HUMAN:
-	case GOBLIN:
-	case SKELETON:
-	case GNOME:
-		handleinvisible=FALSE;
-		break;
-	default:
-		break;
+		case HUMAN:
+		case GOBLIN:
+		case SKELETON:
+		case GNOME:
+			handleinvisible=FALSE;
+			break;
+		default:
+			break;
 	}
 	if( handleinvisible ) {
 		if( myStats->EFFECTS[EFF_INVISIBLE] ) {
@@ -1154,23 +1200,23 @@ void actMonster(Entity *my) {
 		} else {
 			if (MONSTER_TARGET == players[monsterclicked]->entity->uid && MONSTER_STATE != 4) {
 				switch (myStats->type) {
-				case SHOPKEEPER:
-				case HUMAN:
-					messagePlayer(monsterclicked, language[516 + rand()%4], namesays);
-					break;
-				default:
-					break;
+					case SHOPKEEPER:
+					case HUMAN:
+						messagePlayer(monsterclicked, language[516 + rand()%4], namesays);
+						break;
+					default:
+						break;
 				}
 			} else if (MONSTER_STATE == 4) {
 				if (MONSTER_TARGET != players[monsterclicked]->entity->uid) {
 					switch (myStats->type) {
-					case SHOPKEEPER:
-					case HUMAN:
-						messagePlayer(monsterclicked, language[520 + rand()%4], namesays);
-						break;
-					default:
-						messagePlayer(monsterclicked, language[524], namesays);
-						break;
+						case SHOPKEEPER:
+						case HUMAN:
+							messagePlayer(monsterclicked, language[520 + rand()%4], namesays);
+							break;
+						default:
+							messagePlayer(monsterclicked, language[524], namesays);
+							break;
 					}
 				}
 			} else {
@@ -1212,15 +1258,17 @@ void actMonster(Entity *my) {
 								}
 							} else {
 								if (myStats->leader_uid == players[monsterclicked]->entity->uid) {
-									if (my->getINT() > -2)
+									if (my->getINT() > -2) {
 										messagePlayer(monsterclicked, language[535], namesays, stats[monsterclicked]->name);
-									else
+									} else {
 										messagePlayer(monsterclicked, language[534], namesays);
+									}
 								} else {
-									if (my->getINT() > -2)
+									if (my->getINT() > -2) {
 										messagePlayer(monsterclicked, language[536], namesays, stats[monsterclicked]->name);
-									else
+									} else {
 										messagePlayer(monsterclicked, language[534], namesays);
+									}
 								}
 								// move aside
 								monsterMoveAside(my, players[monsterclicked]->entity);
@@ -1242,8 +1290,9 @@ void actMonster(Entity *my) {
 		if( myStats->type==GHOUL ) {
 			if( my->z > -.25 ) {
 				my->z -= .25;
-				if( my->z < -.25 )
+				if( my->z < -.25 ) {
 					my->z = -.25;
+				}
 				ghoulMoveBodyparts(my, myStats, 0);
 				return;
 			}
@@ -1252,10 +1301,12 @@ void actMonster(Entity *my) {
 		// being bumped by someone friendly
 		for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {
 			entity = (Entity *)node2->element;
-			if( entity==my )
+			if( entity==my ) {
 				continue;
-			if( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame )
+			}
+			if( entity->behavior != &actMonster && entity->behavior != &actPlayer && entity->behavior != &actDoorFrame ) {
 				continue;
+			}
 			if( entityInsideEntity(my,entity) ) {
 				if( entity->behavior!=&actDoorFrame ) {
 					double tangent = atan2(my->y-entity->y,my->x-entity->x);
@@ -1300,17 +1351,20 @@ void actMonster(Entity *my) {
 			if( myReflex ) {
 				for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {
 					entity = (Entity *)node2->element;
-					if( entity==my || entity->flags[PASSABLE] )
+					if( entity==my || entity->flags[PASSABLE] ) {
 						continue;
+					}
 					hitstats = entity->getStats();
 					if( hitstats != NULL ) {
 						if( (my->checkEnemy(entity) || MONSTER_TARGET==entity->uid || ringconflict) ) {
 							tangent = atan2( entity->y-my->y, entity->x-my->x );
 							dir = my->yaw - tangent;
-							while( dir >= PI )
+							while( dir >= PI ) {
 								dir -= PI*2;
-							while( dir < -PI )
+							}
+							while( dir < -PI ) {
 								dir += PI*2;
+							}
 
 							// skip if light level is too low and distance is too high
 							int light = entity->entityLight();
@@ -1328,36 +1382,44 @@ void actMonster(Entity *my) {
 							} else {
 								light = TOUCHRANGE;
 							}
-							if( myStats->type >= LICH )
+							if( myStats->type >= LICH ) {
 								light = 1000;
+							}
 							double targetdist = sqrt( pow(my->x-entity->x,2) + pow(my->y-entity->y,2) );
-							if( targetdist > sightranges[myStats->type] )
+							if( targetdist > sightranges[myStats->type] ) {
 								continue;
+							}
 							if( targetdist > TOUCHRANGE && targetdist > light ) {
-								if( !levitating )
+								if( !levitating ) {
 									lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,TRUE);
-								else
+								} else {
 									lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,FALSE);
+								}
 								if( hit.entity == entity )
-									if( rand()%100==0 )
+									if( rand()%100==0 ) {
 										entity->increaseSkill(PRO_STEALTH);
+									}
 								continue;
 							}
 							bool visiontest=FALSE;
 							if( myStats->type != SPIDER ) {
-								if( dir >= -7*PI/16 && dir <= 7*PI/16 )
+								if( dir >= -7*PI/16 && dir <= 7*PI/16 ) {
 									visiontest=TRUE;
+								}
 							} else {
-								if( dir >= -13*PI/16 && dir <= 13*PI/16 )
+								if( dir >= -13*PI/16 && dir <= 13*PI/16 ) {
 									visiontest=TRUE;
+								}
 							}
 							if( visiontest ) { // vision cone
-								if( myStats->type >= LICH )
+								if( myStats->type >= LICH ) {
 									lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,FALSE);
-								else
+								} else {
 									lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],IGNORE_ENTITIES,FALSE);
-								if( !hit.entity )
+								}
+								if( !hit.entity ) {
 									lineTrace(my,my->x,my->y,tangent,TOUCHRANGE,0,FALSE);
+								}
 								if( hit.entity == entity ) {
 									MONSTER_STATE = 1; // charge state
 									MONSTER_TARGET = hit.entity->uid;
@@ -1369,17 +1431,19 @@ void actMonster(Entity *my) {
 										} else {
 											int c;
 											for( c=0; c<MAXPLAYERS; c++ ) {
-												if( c==0 )
+												if( c==0 ) {
 													MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR, 128 );
-												else
+												} else {
 													playSoundPlayer( c, MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR, 128 );
+												}
 											}
 										}
 									}
 
 									if( entity != NULL )
-										if( entity->behavior == &actPlayer )
-											assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
+										if( entity->behavior == &actPlayer ) {
+											assailant[entity->skill[2]]=TRUE;    // as long as this is active, combat music doesn't turn off
+										}
 
 									// alert other monsters of this enemy's presence
 									for( node=map.entities->first; node!=NULL; node=node->next ) {
@@ -1459,12 +1523,14 @@ void actMonster(Entity *my) {
 									break;
 								}
 							}
-							if( foundplace )
+							if( foundplace ) {
 								break;
+							}
 						}
 						path = generatePath( (int)floor(my->x/16), (int)floor(my->y/16), x, y, my, leader );
-						if( my->children.first != NULL )
+						if( my->children.first != NULL ) {
 							list_RemoveNode(my->children.first);
+						}
 						node = list_AddNodeFirst(&my->children);
 						node->element = path;
 						node->deconstructor = &listDeconstructor;
@@ -1488,12 +1554,14 @@ void actMonster(Entity *my) {
 										break;
 									}
 								}
-								if( foundplace )
+								if( foundplace ) {
 									break;
+								}
 							}
 							path = generatePath( (int)floor(my->x/16), (int)floor(my->y/16), x, y, my, leader );
-							if( my->children.first != NULL )
+							if( my->children.first != NULL ) {
 								list_RemoveNode(my->children.first);
+							}
 							node = list_AddNodeFirst(&my->children);
 							node->element = path;
 							node->deconstructor = &listDeconstructor;
@@ -1509,8 +1577,9 @@ void actMonster(Entity *my) {
 			if( MONSTER_LOOKTIME >= 120 && myStats->type != LICH && myStats->type != DEVIL ) {
 				MONSTER_LOOKTIME = 0;
 				MONSTER_MOVETIME--;
-				if( myStats->type != GHOUL && myStats->type != SPIDER )
+				if( myStats->type != GHOUL && myStats->type != SPIDER ) {
 					MONSTER_LOOKDIR=(rand()%360)*PI/180;
+				}
 				if( rand()%3==0 ) {
 					if( !MONSTER_SOUND ) {
 						if( myStats->type != MINOTAUR ) {
@@ -1518,10 +1587,11 @@ void actMonster(Entity *my) {
 						} else {
 							int c;
 							for( c=0; c<MAXPLAYERS; c++ ) {
-								if( c==0 )
+								if( c==0 ) {
 									MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR, 128 );
-								else
+								} else {
 									playSoundPlayer( c, MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR, 128 );
+								}
 							}
 						}
 					}
@@ -1533,16 +1603,18 @@ void actMonster(Entity *my) {
 				if( myStats->type != SHOPKEEPER ) {
 					for( x=0; x<map.width; x++ ) {
 						for( y=0; y<map.height; y++ ) {
-							if( !checkObstacle(x<<4,y<<4,my,NULL) )
+							if( !checkObstacle(x<<4,y<<4,my,NULL) ) {
 								goodspots++;
+							}
 						}
 					}
 				} else {
 					for( x=0; x<map.width; x++ ) {
 						for( y=0; y<map.height; y++ ) {
 							if( x<<4 >= MONSTER_SHOPXS && x<<4 <= MONSTER_SHOPXE && y<<4 >= MONSTER_SHOPYS && y<<4 <= MONSTER_SHOPYE )
-								if( !checkObstacle(x<<4,y<<4,my,NULL) )
+								if( !checkObstacle(x<<4,y<<4,my,NULL) ) {
 									goodspots++;
+								}
 						}
 					}
 				}
@@ -1564,8 +1636,9 @@ void actMonster(Entity *my) {
 									}
 								}
 							}
-							if( foundit )
+							if( foundit ) {
 								break;
+							}
 						}
 					} else {
 						for( x=0; x<map.width; x++ ) {
@@ -1581,13 +1654,15 @@ void actMonster(Entity *my) {
 									}
 								}
 							}
-							if( foundit )
+							if( foundit ) {
 								break;
+							}
 						}
 					}
 					path = generatePath( (int)floor(my->x/16), (int)floor(my->y/16), x, y, my, NULL );
-					if( my->children.first != NULL )
+					if( my->children.first != NULL ) {
 						list_RemoveNode(my->children.first);
+					}
 					node = list_AddNodeFirst(&my->children);
 					node->element = path;
 					node->deconstructor = &listDeconstructor;
@@ -1597,15 +1672,19 @@ void actMonster(Entity *my) {
 
 			// rotate monster
 			dir = my->yaw - MONSTER_LOOKDIR;
-			while( dir >= PI )
+			while( dir >= PI ) {
 				dir -= PI*2;
-			while( dir < -PI )
+			}
+			while( dir < -PI ) {
 				dir += PI*2;
+			}
 			my->yaw -= dir/2;
-			while( my->yaw < 0 )
+			while( my->yaw < 0 ) {
 				my->yaw += 2*PI;
-			while( my->yaw >= 2*PI )
+			}
+			while( my->yaw >= 2*PI ) {
 				my->yaw -= 2*PI;
+			}
 		} else if( MONSTER_STATE == 1 ) { // charge state
 			if( uidToEntity(MONSTER_TARGET) == NULL ) {
 				MONSTER_STATE = 0;
@@ -1613,8 +1692,9 @@ void actMonster(Entity *my) {
 			}
 			entity = uidToEntity(MONSTER_TARGET);
 			if( entity != NULL )
-				if( entity->behavior == &actPlayer )
-					assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
+				if( entity->behavior == &actPlayer ) {
+					assailant[entity->skill[2]]=TRUE;    // as long as this is active, combat music doesn't turn off
+				}
 			MONSTER_TARGETX = entity->x;
 			MONSTER_TARGETY = entity->y;
 			hitstats = entity->getStats();
@@ -1649,8 +1729,9 @@ void actMonster(Entity *my) {
 				} else {
 					light = TOUCHRANGE;
 				}
-				if( myStats->type >= LICH )
+				if( myStats->type >= LICH ) {
 					light = 1000;
+				}
 				double targetdist = sqrt( pow(my->x-entity->x,2) + pow(my->y-entity->y,2) );
 				if( targetdist > sightranges[myStats->type] ) {
 					if( myStats->HP <= myStats->MAXHP/3 && my->getCHR()>=-2 ) {
@@ -1662,13 +1743,15 @@ void actMonster(Entity *my) {
 				} else {
 					if( targetdist > TOUCHRANGE && targetdist > light && myReflex ) {
 						tangent = atan2( MONSTER_TARGETY-my->y, MONSTER_TARGETX-my->x );
-						if( !levitating )
+						if( !levitating ) {
 							lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,TRUE);
-						else
+						} else {
 							lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,FALSE);
+						}
 						if( hit.entity == entity )
-							if( rand()%100==0 )
+							if( rand()%100==0 ) {
 								entity->increaseSkill(PRO_STEALTH);
+							}
 						if( myStats->HP <= myStats->MAXHP/3 && my->getCHR()>=-2 ) {
 							MONSTER_MOVETIME = 0;
 							MONSTER_STATE = 0; // wait state
@@ -1678,10 +1761,11 @@ void actMonster(Entity *my) {
 					} else {
 						if( myReflex ) {
 							tangent = atan2( MONSTER_TARGETY-my->y, MONSTER_TARGETX-my->x );
-							if( !levitating )
+							if( !levitating ) {
 								dist = lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,TRUE);
-							else
+							} else {
 								dist = lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,FALSE);
+							}
 						} else {
 							dist = sqrt( pow(my->x-entity->x,2) + pow(my->y-entity->y,2) );
 						}
@@ -1760,15 +1844,17 @@ timeToGoAgain:
 												MONSTER_ATTACK=(rand()%3)+1; // random attack motion
 												MONSTER_HITTIME = 0;
 												hit.entity->skill[4]--; // decrease door health
-												if( myStats->type == MINOTAUR )
-													hit.entity->skill[4] = 0; // minotaurs smash doors instantly
+												if( myStats->type == MINOTAUR ) {
+													hit.entity->skill[4] = 0;    // minotaurs smash doors instantly
+												}
 												playSoundEntity(hit.entity,28,64);
 												if( hit.entity->skill[4] <= 0 ) {
 													// set direction of splinters
-													if( !hit.entity->skill[0] )
+													if( !hit.entity->skill[0] ) {
 														hit.entity->skill[6] = (my->x > hit.entity->x);
-													else
+													} else {
 														hit.entity->skill[6] = (my->y < hit.entity->y);
+													}
 												}
 											}
 										}
@@ -1805,8 +1891,9 @@ timeToGoAgain:
 								MONSTER_HITTIME++;
 								int bow = 1;
 								if( hasrangedweapon )
-									if( myStats->weapon->type==SLING || myStats->weapon->type==SHORTBOW || myStats->weapon->type==ARTIFACT_BOW )
+									if( myStats->weapon->type==SLING || myStats->weapon->type==SHORTBOW || myStats->weapon->type==ARTIFACT_BOW ) {
 										bow = 2;
+									}
 								if( (MONSTER_HITTIME >= HITRATE*bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) ) {
 									if( myStats->type==LICH ) {
 										MONSTER_SPECIAL++;
@@ -1820,10 +1907,11 @@ timeToGoAgain:
 									}
 									MONSTER_HITTIME = 0;
 									int tracedist;
-									if (hasrangedweapon)
+									if (hasrangedweapon) {
 										tracedist = 160;
-									else
+									} else {
 										tracedist = STRIKERANGE;
+									}
 									double newTangent = atan2(entity->y - my->y, entity->x - my->x);
 									lineTrace(my, my->x, my->y, newTangent, tracedist, 0, FALSE);
 									if (hit.entity != nullptr) {
@@ -1843,14 +1931,15 @@ timeToGoAgain:
 										if( hit.entity->getStats()!=NULL ) {
 											int pose = 0;
 											if( myStats->weapon ) {
-												if( itemCategory(myStats->weapon)==MAGICSTAFF )
-													pose=3; // jab
-												else if( itemCategory(myStats->weapon)==SPELLBOOK )
-													pose=1; // vertical swing
-												else if( hasrangedweapon )
+												if( itemCategory(myStats->weapon)==MAGICSTAFF ) {
+													pose=3;    // jab
+												} else if( itemCategory(myStats->weapon)==SPELLBOOK ) {
+													pose=1;    // vertical swing
+												} else if( hasrangedweapon ) {
 													pose=0;
-												else
+												} else {
 													pose=rand()%3+1;
+												}
 											}
 											double oYaw = my->yaw;
 											my->yaw = newTangent;
@@ -1870,19 +1959,24 @@ timeToGoAgain:
 							}*/
 
 							// rotate monster
-							if( (hasrangedweapon && dist<100) || (myStats->HP <= myStats->MAXHP/3 && my->getCHR()>=-2) )
+							if( (hasrangedweapon && dist<100) || (myStats->HP <= myStats->MAXHP/3 && my->getCHR()>=-2) ) {
 								dir = my->yaw - atan2( -MONSTER_VELY, -MONSTER_VELX );
-							else
+							} else {
 								dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
-							while( dir >= PI )
+							}
+							while( dir >= PI ) {
 								dir -= PI*2;
-							while( dir < -PI )
+							}
+							while( dir < -PI ) {
 								dir += PI*2;
+							}
 							my->yaw -= dir/2;
-							while( my->yaw < 0 )
+							while( my->yaw < 0 ) {
 								my->yaw += 2*PI;
-							while( my->yaw >= 2*PI )
+							}
+							while( my->yaw >= 2*PI ) {
 								my->yaw -= 2*PI;
+							}
 						}
 					}
 				}
@@ -1894,8 +1988,9 @@ timeToGoAgain:
 						if( !devilstate ) {
 							if( !MONSTER_ATTACK ) {
 								int c;
-								for( c=0; c<MAXPLAYERS; c++ )
+								for( c=0; c<MAXPLAYERS; c++ ) {
 									playSoundPlayer(c,204,64);
+								}
 								playSoundEntity(my,204,128);
 								MONSTER_ATTACK = 4;
 								MONSTER_ATTACKTIME = 0;
@@ -1909,15 +2004,15 @@ timeToGoAgain:
 						} else {
 							if( !devilacted ) {
 								switch( devilstate ) {
-								case 72:
-									MONSTER_STATE=11; // devil summoning state
-									break;
-								case 73:
-									MONSTER_ATTACK=5+rand()%2; // fireballs
-									break;
-								case 74:
-									MONSTER_STATE=12; // devil boulder drop
-									break;
+									case 72:
+										MONSTER_STATE=11; // devil summoning state
+										break;
+									case 73:
+										MONSTER_ATTACK=5+rand()%2; // fireballs
+										break;
+									case 74:
+										MONSTER_STATE=12; // devil boulder drop
+										break;
 								}
 								devilacted=1;
 							} else {
@@ -1942,15 +2037,19 @@ timeToGoAgain:
 				MONSTER_VELX = cos(tangent);
 				MONSTER_VELY = sin(tangent);
 				dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
-				while( dir >= PI )
+				while( dir >= PI ) {
 					dir -= PI*2;
-				while( dir < -PI )
+				}
+				while( dir < -PI ) {
 					dir += PI*2;
+				}
 				my->yaw -= dir/2;
-				while( my->yaw < 0 )
+				while( my->yaw < 0 ) {
 					my->yaw += 2*PI;
-				while( my->yaw >= 2*PI )
+				}
+				while( my->yaw >= 2*PI ) {
 					my->yaw -= 2*PI;
+				}
 			}
 		} else if( MONSTER_STATE == 2 ) { // path state
 			if( myStats->type==DEVIL ) {
@@ -1964,13 +2063,15 @@ timeToGoAgain:
 			}
 			entity = uidToEntity(MONSTER_TARGET);
 			if( entity != NULL )
-				if( entity->behavior == &actPlayer )
-					assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
+				if( entity->behavior == &actPlayer ) {
+					assailant[entity->skill[2]]=TRUE;    // as long as this is active, combat music doesn't turn off
+				}
 			x = ((int)floor(MONSTER_TARGETX))>>4;
 			y = ((int)floor(MONSTER_TARGETY))>>4;
 			path = generatePath( (int)floor(my->x/16), (int)floor(my->y/16), x, y, my, uidToEntity(MONSTER_TARGET) );
-			if( my->children.first != NULL )
+			if( my->children.first != NULL ) {
 				list_RemoveNode(my->children.first);
+			}
 			node = list_AddNodeFirst(&my->children);
 			node->element = path;
 			node->deconstructor = &listDeconstructor;
@@ -1979,17 +2080,20 @@ timeToGoAgain:
 			if( myReflex && (myStats->type != LICH || MONSTER_SPECIAL<=0) ) {
 				for( node2=map.entities->first; node2!=NULL; node2=node2->next ) {
 					entity = (Entity *)node2->element;
-					if( entity==my || entity->flags[PASSABLE] )
+					if( entity==my || entity->flags[PASSABLE] ) {
 						continue;
+					}
 					hitstats = entity->getStats();
 					if( hitstats != NULL ) {
 						if( (my->checkEnemy(entity) || MONSTER_TARGET==entity->uid || ringconflict) ) {
 							tangent = atan2( entity->y-my->y, entity->x-my->x );
 							dir = my->yaw - tangent;
-							while( dir >= PI )
+							while( dir >= PI ) {
 								dir -= PI*2;
-							while( dir < -PI )
+							}
+							while( dir < -PI ) {
 								dir += PI*2;
+							}
 
 							// skip if light level is too low and distance is too high
 							int light = entity->entityLight();
@@ -2007,28 +2111,34 @@ timeToGoAgain:
 							} else {
 								light = TOUCHRANGE;
 							}
-							if( myStats->type >= LICH )
+							if( myStats->type >= LICH ) {
 								light = 1000;
+							}
 							double targetdist = sqrt( pow(my->x-entity->x,2) + pow(my->y-entity->y,2) );
-							if( targetdist > sightranges[myStats->type] )
+							if( targetdist > sightranges[myStats->type] ) {
 								continue;
+							}
 							if( targetdist > TOUCHRANGE && targetdist > light ) {
-								if( !levitating )
+								if( !levitating ) {
 									lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,TRUE);
-								else
+								} else {
 									lineTrace(my,my->x,my->y,tangent,sightranges[myStats->type],0,FALSE);
+								}
 								if( hit.entity == entity )
-									if( rand()%100==0 )
+									if( rand()%100==0 ) {
 										entity->increaseSkill(PRO_STEALTH);
+									}
 								continue;
 							}
 							bool visiontest=FALSE;
 							if( myStats->type != SPIDER ) {
-								if( dir >= -7*PI/16 && dir <= 7*PI/16 )
+								if( dir >= -7*PI/16 && dir <= 7*PI/16 ) {
 									visiontest=TRUE;
+								}
 							} else {
-								if( dir >= -13*PI/16 && dir <= 13*PI/16 )
+								if( dir >= -13*PI/16 && dir <= 13*PI/16 ) {
 									visiontest=TRUE;
+								}
 							}
 							if( visiontest ) { // vision cone
 								lineTrace(my,my->x+1,my->y,tangent,sightranges[myStats->type],0,(levitating==FALSE));
@@ -2045,22 +2155,25 @@ timeToGoAgain:
 												MONSTER_TARGETY = hit.entity->y;
 												if( MONSTER_SOUND==NULL ) {
 													if( myStats->type != MINOTAUR ) {
-														if( myStats->type != LICH || rand()%3==0 )
+														if( myStats->type != LICH || rand()%3==0 ) {
 															MONSTER_SOUND = playSoundEntity(my,MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR,128);
+														}
 													} else {
 														int c;
 														for( c=0; c<MAXPLAYERS; c++ ) {
-															if( c==0 )
+															if( c==0 ) {
 																MONSTER_SOUND = playSoundPlayer( c, MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR, 128 );
-															else
+															} else {
 																playSoundPlayer( c, MONSTER_SPOTSND+rand()%MONSTER_SPOTVAR, 128 );
+															}
 														}
 													}
 												}
 
 												if( entity != NULL )
-													if( entity->behavior == &actPlayer )
-														assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
+													if( entity->behavior == &actPlayer ) {
+														assailant[entity->skill[2]]=TRUE;    // as long as this is active, combat music doesn't turn off
+													}
 												break;
 											}
 										}
@@ -2136,12 +2249,14 @@ timeToGoAgain:
 									break;
 								}
 							}
-							if( foundplace )
+							if( foundplace ) {
 								break;
+							}
 						}
 						path = generatePath( (int)floor(my->x/16), (int)floor(my->y/16), x, y, my, leader );
-						if( my->children.first != NULL )
+						if( my->children.first != NULL ) {
 							list_RemoveNode(my->children.first);
+						}
 						node = list_AddNodeFirst(&my->children);
 						node->element = path;
 						node->deconstructor = &listDeconstructor;
@@ -2166,12 +2281,14 @@ timeToGoAgain:
 										break;
 									}
 								}
-								if( foundplace )
+								if( foundplace ) {
 									break;
+								}
 							}
 							path = generatePath( (int)floor(my->x/16), (int)floor(my->y/16), x, y, my, leader );
-							if( my->children.first != NULL )
+							if( my->children.first != NULL ) {
 								list_RemoveNode(my->children.first);
+							}
 							node = list_AddNodeFirst(&my->children);
 							node->element = path;
 							node->deconstructor = &listDeconstructor;
@@ -2185,8 +2302,9 @@ timeToGoAgain:
 
 			entity = uidToEntity(MONSTER_TARGET);
 			if( entity != NULL )
-				if( entity->behavior == &actPlayer )
-					assailant[entity->skill[2]]=TRUE; // as long as this is active, combat music doesn't turn off
+				if( entity->behavior == &actPlayer ) {
+					assailant[entity->skill[2]]=TRUE;    // as long as this is active, combat music doesn't turn off
+				}
 			if( my->children.first != NULL ) {
 				if( my->children.first->element != NULL ) {
 					path = (list_t *)my->children.first->element;
@@ -2202,10 +2320,11 @@ timeToGoAgain:
 									} else {
 										int c;
 										for( c=0; c<MAXPLAYERS; c++ ) {
-											if( c==0 )
+											if( c==0 ) {
 												MONSTER_SOUND = playSoundPlayer( c, MONSTER_IDLESND+(rand()%MONSTER_IDLEVAR), 128 );
-											else
+											} else {
 												playSoundPlayer( c, MONSTER_IDLESND+(rand()%MONSTER_IDLEVAR), 128 );
+											}
 										}
 									}
 								}
@@ -2234,15 +2353,17 @@ timeToGoAgain:
 											MONSTER_ATTACK=(rand()%3)+1; // random attack motion
 											MONSTER_HITTIME = 0;
 											hit.entity->skill[4]--; // decrease door health
-											if( myStats->type == MINOTAUR )
-												hit.entity->skill[4] = 0; // minotaurs smash doors instantly
+											if( myStats->type == MINOTAUR ) {
+												hit.entity->skill[4] = 0;    // minotaurs smash doors instantly
+											}
 											playSoundEntity(hit.entity,28,64);
 											if( hit.entity->skill[4] <= 0 ) {
 												// set direction of splinters
-												if( !hit.entity->skill[0] )
+												if( !hit.entity->skill[0] ) {
 													hit.entity->skill[6] = (my->x > hit.entity->x);
-												else
+												} else {
 													hit.entity->skill[6] = (my->y < hit.entity->y);
+												}
 											}
 										}
 									}
@@ -2253,8 +2374,9 @@ timeToGoAgain:
 									} else if( yourStats ) {
 										if( my->checkFriend(hit.entity) ) {
 											// would you kindly move out of the way, sir?
-											if( !monsterMoveAside(hit.entity,my) )
-												MONSTER_STATE = 2; // try something else and remake path
+											if( !monsterMoveAside(hit.entity,my) ) {
+												MONSTER_STATE = 2;    // try something else and remake path
+											}
 										} else if( my->checkEnemy(hit.entity) ) {
 											MONSTER_TARGET = hit.entity->uid;
 											MONSTER_TARGETX = hit.entity->x;
@@ -2275,21 +2397,26 @@ timeToGoAgain:
 									MONSTER_STATE = 2; // remake path
 								}
 							} else {
-								if( dist2<=0.1 )
-									MONSTER_STATE = 2; // remake path
+								if( dist2<=0.1 ) {
+									MONSTER_STATE = 2;    // remake path
+								}
 							}
 
 							// rotate monster
 							dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
-							while( dir >= PI )
+							while( dir >= PI ) {
 								dir -= PI*2;
-							while( dir < -PI )
+							}
+							while( dir < -PI ) {
 								dir += PI*2;
+							}
 							my->yaw -= dir/2;
-							while( my->yaw < 0 )
+							while( my->yaw < 0 ) {
 								my->yaw += 2*PI;
-							while( my->yaw >= 2*PI )
+							}
+							while( my->yaw >= 2*PI ) {
 								my->yaw -= 2*PI;
+							}
 						}
 					} else {
 						Entity *target = uidToEntity(MONSTER_TARGET);
@@ -2329,23 +2456,28 @@ timeToGoAgain:
 			Entity *target = uidToEntity(MONSTER_TARGET);
 			if( target != NULL ) {
 				dir = my->yaw - atan2( target->y-my->y, target->x-my->x );
-				while( dir >= PI )
+				while( dir >= PI ) {
 					dir -= PI*2;
-				while( dir < -PI )
+				}
+				while( dir < -PI ) {
 					dir += PI*2;
+				}
 				my->yaw -= dir/2;
-				while( my->yaw < 0 )
+				while( my->yaw < 0 ) {
 					my->yaw += 2*PI;
-				while( my->yaw >= 2*PI )
+				}
+				while( my->yaw >= 2*PI ) {
 					my->yaw -= 2*PI;
+				}
 
 				// abandon conversation if distance is too great
 				if( sqrt( pow(my->x-target->x,2) + pow(my->y-target->y,2) ) > TOUCHRANGE ) {
 					MONSTER_STATE = 0;
 					MONSTER_TARGET = 0;
 					int player = -1;
-					if( target->behavior == &actPlayer )
+					if( target->behavior == &actPlayer ) {
 						player = target->skill[2];
+					}
 					if( player==0 ) {
 						shootmode = FALSE;
 						gui_mode = GUI_MODE_INVENTORY;
@@ -2397,32 +2529,35 @@ timeToGoAgain:
 
 				Monster creature=NOTHING;
 				switch( rand()%5 ) {
-				case 0:
-				case 1:
-					creature = CREATURE_IMP;
-					break;
-				case 2:
-				case 3:
-				case 4:
-					creature = DEMON;
-					break;
+					case 0:
+					case 1:
+						creature = CREATURE_IMP;
+						break;
+					case 2:
+					case 3:
+					case 4:
+						creature = DEMON;
+						break;
 				}
-				if( creature!=DEMON )
+				if( creature!=DEMON ) {
 					summonMonster(creature,((int)(my->x/16))*16+8,((int)(my->y/16))*16+8);
+				}
 				summonMonster(creature,((int)(my->x/16))*16+8,((int)(my->y/16))*16+8);
 			}
 		} else if( MONSTER_STATE == 7 ) { // lich death state
 			my->yaw += .5; // rotate
-			if( my->yaw >= PI*2 )
+			if( my->yaw >= PI*2 ) {
 				my->yaw -= PI*2;
+			}
 			MONSTER_ATTACK = 1;
 			MONSTER_ATTACKTIME = 0;
 			if( MONSTER_SPECIAL==0 ) {
 				serverUpdateEntitySkill(my,8);
 				serverUpdateEntitySkill(my,9);
 				int c;
-				for( c=0; c<MAXPLAYERS; c++ )
+				for( c=0; c<MAXPLAYERS; c++ ) {
 					playSoundPlayer(c,186,128);
+				}
 			}
 			if( MONSTER_SPECIAL%10==0 ) {
 				spawnExplosion(my->x-8+rand()%16,my->y-8+rand()%16,-4+rand()%8);
@@ -2462,8 +2597,9 @@ timeToGoAgain:
 		} else if( MONSTER_STATE == 9 ) { // devil teleport state
 			my->flags[PASSABLE] = TRUE;
 			my->yaw += .1; // rotate
-			if( my->yaw >= PI*2 )
+			if( my->yaw >= PI*2 ) {
 				my->yaw -= PI*2;
+			}
 			my->z = std::min<int>(my->z+1,64); // descend
 			MONSTER_ATTACK = 4;
 			MONSTER_ATTACKTIME = 0;
@@ -2480,23 +2616,27 @@ timeToGoAgain:
 				for( node=map.entities->first; node!=NULL; node=node->next ) {
 					Entity *entity = (Entity *)node->element;
 					if( entity->behavior==&actDevilTeleport ) {
-						if( entity->x==my->x && entity->y==my->y )
+						if( entity->x==my->x && entity->y==my->y ) {
 							continue;
+						}
 						switch( entity->sprite ) {
-						case 72:
-							if( devilstate==74 )
-								c++;
-							continue;
-						case 73:
-							if( devilstate==0 || devilstate==72 )
-								c++;
-							continue;
-						case 74:
-							if( devilstate==73 )
-								c++;
-							continue;
-						default:
-							continue;
+							case 72:
+								if( devilstate==74 ) {
+									c++;
+								}
+								continue;
+							case 73:
+								if( devilstate==0 || devilstate==72 ) {
+									c++;
+								}
+								continue;
+							case 74:
+								if( devilstate==73 ) {
+									c++;
+								}
+								continue;
+							default:
+								continue;
 						}
 					}
 				}
@@ -2506,41 +2646,42 @@ timeToGoAgain:
 					for( node=map.entities->first; node!=NULL; node=node->next ) {
 						Entity *entity = (Entity *)node->element;
 						if( entity->behavior==&actDevilTeleport ) {
-							if( entity->x==my->x && entity->y==my->y )
+							if( entity->x==my->x && entity->y==my->y ) {
 								continue;
+							}
 							switch( entity->sprite ) {
-							case 72:
-								if( devilstate==74 ) {
-									if( c==i ) {
-										break;
-									} else {
-										c++;
-										continue;
+								case 72:
+									if( devilstate==74 ) {
+										if( c==i ) {
+											break;
+										} else {
+											c++;
+											continue;
+										}
 									}
-								}
-								continue;
-							case 73:
-								if( devilstate==0 || devilstate==72 ) {
-									if( c==i ) {
-										break;
-									} else {
-										c++;
-										continue;
+									continue;
+								case 73:
+									if( devilstate==0 || devilstate==72 ) {
+										if( c==i ) {
+											break;
+										} else {
+											c++;
+											continue;
+										}
 									}
-								}
-								continue;
-							case 74:
-								if( devilstate==73 ) {
-									if( c==i ) {
-										break;
-									} else {
-										c++;
-										continue;
+									continue;
+								case 74:
+									if( devilstate==73 ) {
+										if( c==i ) {
+											break;
+										} else {
+											c++;
+											continue;
+										}
 									}
-								}
-								continue;
-							default:
-								continue;
+									continue;
+								default:
+									continue;
 							}
 							my->x = entity->x;
 							my->y = entity->y;
@@ -2559,18 +2700,21 @@ timeToGoAgain:
 			} else {
 				MONSTER_SPECIAL--;
 				if( MONSTER_SPECIAL<=0 ) {
-					if( myStats->HP>0 )
+					if( myStats->HP>0 ) {
 						my->flags[PASSABLE] = FALSE;
+					}
 					node_t *node;
 					for( node=map.entities->first; node!=NULL; node=node->next ) {
 						Entity *entity = (Entity *)node->element;
-						if( entity==my )
+						if( entity==my ) {
 							continue;
+						}
 						if( entityInsideEntity(my,entity) ) {
 							Stat *stats = entity->getStats();
 							if( stats )
-								if( stats->HP>0 )
+								if( stats->HP>0 ) {
 									stats->HP = 0;
+								}
 						}
 					}
 				}
@@ -2579,8 +2723,9 @@ timeToGoAgain:
 				if( my->z<=-4 ) {
 					int j = rand()%5;
 					int c;
-					for( c=0; c<MAXPLAYERS; c++ )
+					for( c=0; c<MAXPLAYERS; c++ ) {
 						playSoundPlayer(c,204+j,64);
+					}
 					playSoundEntity(my,204+j,128);
 					devilroar=1;
 					MONSTER_ATTACK = 4;
@@ -2591,8 +2736,9 @@ timeToGoAgain:
 					serverUpdateEntitySkill(my,10);
 				} else {
 					my->yaw += .1; // rotate
-					if( my->yaw >= PI*2 )
+					if( my->yaw >= PI*2 ) {
 						my->yaw -= PI*2;
+					}
 				}
 			} else {
 				node_t *tempNode;
@@ -2620,15 +2766,19 @@ timeToGoAgain:
 
 				// rotate monster
 				dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
-				while( dir >= PI )
+				while( dir >= PI ) {
 					dir -= PI*2;
-				while( dir < -PI )
+				}
+				while( dir < -PI ) {
 					dir += PI*2;
+				}
 				my->yaw -= dir/2;
-				while( my->yaw < 0 )
+				while( my->yaw < 0 ) {
 					my->yaw += 2*PI;
-				while( my->yaw >= 2*PI )
+				}
+				while( my->yaw >= 2*PI ) {
 					my->yaw -= 2*PI;
+				}
 
 				if( MONSTER_ATTACKTIME>60 ) {
 					MONSTER_STATE = 1;
@@ -2687,15 +2837,15 @@ timeToGoAgain:
 
 					Monster creature=NOTHING;
 					switch( rand()%5 ) {
-					case 0:
-					case 1:
-						creature = CREATURE_IMP;
-						break;
-					case 2:
-					case 3:
-					case 4:
-						creature = DEMON;
-						break;
+						case 0:
+						case 1:
+							creature = CREATURE_IMP;
+							break;
+						case 2:
+						case 3:
+						case 4:
+							creature = DEMON;
+							break;
 					}
 					summonMonster(creature,((int)(my->x/16))*16+8,((int)(my->y/16))*16+8);
 				}
@@ -2704,14 +2854,15 @@ timeToGoAgain:
 			}
 		} else if( MONSTER_STATE == 12 ) { // devil boulder spawn state
 			int angle=-1;
-			if( (int)(my->x/16)==14 && (int)(my->y/16)==32 )
+			if( (int)(my->x/16)==14 && (int)(my->y/16)==32 ) {
 				angle=0;
-			else if( (int)(my->x/16)==32 && (int)(my->y/16)==14 )
+			} else if( (int)(my->x/16)==32 && (int)(my->y/16)==14 ) {
 				angle=1;
-			else if( (int)(my->x/16)==50 && (int)(my->y/16)==32 )
+			} else if( (int)(my->x/16)==50 && (int)(my->y/16)==32 ) {
 				angle=2;
-			else if( (int)(my->x/16)==32 && (int)(my->y/16)==50 )
+			} else if( (int)(my->x/16)==32 && (int)(my->y/16)==50 ) {
 				angle=3;
+			}
 			my->yaw = angle*PI/2;
 			MONSTER_SPECIAL++;
 			if( MONSTER_SPECIAL==30 ) {

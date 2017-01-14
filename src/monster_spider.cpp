@@ -54,17 +54,21 @@ void initSpider(Entity *my, Stat *myStats) {
 		myStats->LVL = 5;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -95,8 +99,9 @@ void initSpider(Entity *my, Stat *myStats) {
 			int c;
 			for( c=0; c<3; c++ ) {
 				Entity *entity = summonMonster(SPIDER,my->x,my->y);
-				if( entity )
+				if( entity ) {
 					entity->parent = my->uid;
+				}
 			}
 		}
 	}
@@ -304,183 +309,183 @@ void spiderMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->roll = my->roll;
 
 		switch( bodypart ) {
-		// right pedipalp
-		case 2:
-			entity->x += cos(my->yaw)*2 + cos(my->yaw+PI/2)*2;
-			entity->y += sin(my->yaw)*2 + sin(my->yaw+PI/2)*2;
-			entity->yaw += PI/10;
-			entity->pitch -= PI/8;
-			break;
-		// left pedipalp
-		case 3:
-			entity->x += cos(my->yaw)*2 - cos(my->yaw+PI/2)*2;
-			entity->y += sin(my->yaw)*2 - sin(my->yaw+PI/2)*2;
-			entity->yaw -= PI/10;
-			entity->pitch -= PI/8;
-			break;
+			// right pedipalp
+			case 2:
+				entity->x += cos(my->yaw)*2 + cos(my->yaw+PI/2)*2;
+				entity->y += sin(my->yaw)*2 + sin(my->yaw+PI/2)*2;
+				entity->yaw += PI/10;
+				entity->pitch -= PI/8;
+				break;
+			// left pedipalp
+			case 3:
+				entity->x += cos(my->yaw)*2 - cos(my->yaw+PI/2)*2;
+				entity->y += sin(my->yaw)*2 - sin(my->yaw+PI/2)*2;
+				entity->yaw -= PI/10;
+				entity->pitch -= PI/8;
+				break;
 
-		// 1st/5th leg:
-		// thigh
-		case 4:
-		case 12:
-			entity->x += cos(my->yaw)*1 + cos(my->yaw+PI/2)*2.5 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*1 + sin(my->yaw+PI/2)*2.5 * (1 - 2*(bodypart>11));
-			if( dist>0.1 ) {
-				if( !entity->skill[4] ) {
-					entity->fskill[2] += .1;
-					if( entity->fskill[2]>=1 ) {
-						entity->fskill[2]=1;
-						entity->skill[4]=1;
-					}
-				} else {
-					entity->fskill[2] -= .1;
-					if( entity->fskill[2]<=0 ) {
-						entity->fskill[2]=0;
-						entity->skill[4]=0;
+			// 1st/5th leg:
+			// thigh
+			case 4:
+			case 12:
+				entity->x += cos(my->yaw)*1 + cos(my->yaw+PI/2)*2.5 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*1 + sin(my->yaw+PI/2)*2.5 * (1 - 2*(bodypart>11));
+				if( dist>0.1 ) {
+					if( !entity->skill[4] ) {
+						entity->fskill[2] += .1;
+						if( entity->fskill[2]>=1 ) {
+							entity->fskill[2]=1;
+							entity->skill[4]=1;
+						}
+					} else {
+						entity->fskill[2] -= .1;
+						if( entity->fskill[2]<=0 ) {
+							entity->fskill[2]=0;
+							entity->skill[4]=0;
+						}
 					}
 				}
-			}
-			entity->z += entity->fskill[2];
-			entity->yaw += PI/6 * (1 - 2*(bodypart>11));
-			entity->pitch += PI/4;
-			break;
-		// shin
-		case 5:
-		case 13:
-			entity->x = previous->x;
-			entity->y = previous->y;
-			entity->z = previous->z;
-			entity->yaw = previous->yaw;
-			entity->pitch = previous->pitch;
-			entity->x += cos(my->yaw)*3 + cos(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*3 + sin(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
-			entity->z += .5;
-			entity->pitch += PI/6-PI/4;
-			entity->pitch -= (PI/10) * (previous->z-my->z);
-			break;
+				entity->z += entity->fskill[2];
+				entity->yaw += PI/6 * (1 - 2*(bodypart>11));
+				entity->pitch += PI/4;
+				break;
+			// shin
+			case 5:
+			case 13:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw)*3 + cos(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*3 + sin(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
+				entity->z += .5;
+				entity->pitch += PI/6-PI/4;
+				entity->pitch -= (PI/10) * (previous->z-my->z);
+				break;
 
-		// 2nd/6th leg:
-		// thigh
-		case 6:
-		case 14:
-			entity->x += cos(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
-			if( dist>0.1 ) {
-				if( !entity->skill[4] ) {
-					entity->fskill[2] += .1;
-					if( entity->fskill[2]>=1 ) {
-						entity->fskill[2]=1;
-						entity->skill[4]=1;
-					}
-				} else {
-					entity->fskill[2] -= .1;
-					if( entity->fskill[2]<=0 ) {
-						entity->fskill[2]=0;
-						entity->skill[4]=0;
+			// 2nd/6th leg:
+			// thigh
+			case 6:
+			case 14:
+				entity->x += cos(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
+				if( dist>0.1 ) {
+					if( !entity->skill[4] ) {
+						entity->fskill[2] += .1;
+						if( entity->fskill[2]>=1 ) {
+							entity->fskill[2]=1;
+							entity->skill[4]=1;
+						}
+					} else {
+						entity->fskill[2] -= .1;
+						if( entity->fskill[2]<=0 ) {
+							entity->fskill[2]=0;
+							entity->skill[4]=0;
+						}
 					}
 				}
-			}
-			entity->z += entity->fskill[2];
-			entity->yaw += PI/3 * (1 - 2*(bodypart>11));
-			entity->pitch += PI/4;
-			break;
-		// shin
-		case 7:
-		case 15:
-			entity->x = previous->x;
-			entity->y = previous->y;
-			entity->z = previous->z;
-			entity->yaw = previous->yaw;
-			entity->pitch = previous->pitch;
-			entity->x += cos(my->yaw)*1.75 + cos(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*1.75 + sin(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
-			entity->z += .5;
-			entity->pitch += PI/6-PI/4;
-			entity->pitch -= (PI/10) * (previous->z-my->z);
-			break;
+				entity->z += entity->fskill[2];
+				entity->yaw += PI/3 * (1 - 2*(bodypart>11));
+				entity->pitch += PI/4;
+				break;
+			// shin
+			case 7:
+			case 15:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw)*1.75 + cos(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*1.75 + sin(my->yaw+PI/2)*3 * (1 - 2*(bodypart>11));
+				entity->z += .5;
+				entity->pitch += PI/6-PI/4;
+				entity->pitch -= (PI/10) * (previous->z-my->z);
+				break;
 
-		// 3rd/7th leg:
-		// thigh
-		case 8:
-		case 16:
-			entity->x += cos(my->yaw)*-.5 + cos(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*-.5 + sin(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
-			if( dist>0.1 ) {
-				if( !entity->skill[4] ) {
-					entity->fskill[2] += .1;
-					if( entity->fskill[2]>=1 ) {
-						entity->fskill[2]=1;
-						entity->skill[4]=1;
-					}
-				} else {
-					entity->fskill[2] -= .1;
-					if( entity->fskill[2]<=0 ) {
-						entity->fskill[2]=0;
-						entity->skill[4]=0;
+			// 3rd/7th leg:
+			// thigh
+			case 8:
+			case 16:
+				entity->x += cos(my->yaw)*-.5 + cos(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*-.5 + sin(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
+				if( dist>0.1 ) {
+					if( !entity->skill[4] ) {
+						entity->fskill[2] += .1;
+						if( entity->fskill[2]>=1 ) {
+							entity->fskill[2]=1;
+							entity->skill[4]=1;
+						}
+					} else {
+						entity->fskill[2] -= .1;
+						if( entity->fskill[2]<=0 ) {
+							entity->fskill[2]=0;
+							entity->skill[4]=0;
+						}
 					}
 				}
-			}
-			entity->z += entity->fskill[2];
-			entity->yaw += (PI/2 + PI/8) * (1 - 2*(bodypart>11));
-			entity->pitch += PI/4;
-			break;
-		// shin
-		case 9:
-		case 17:
-			entity->x = previous->x;
-			entity->y = previous->y;
-			entity->z = previous->z;
-			entity->yaw = previous->yaw;
-			entity->pitch = previous->pitch;
-			entity->x += cos(my->yaw)*-1.25 + cos(my->yaw+PI/2)*3.25 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*-1.25 + sin(my->yaw+PI/2)*3.25 * (1 - 2*(bodypart>11));
-			entity->z += .5;
-			entity->pitch += PI/6-PI/4;
-			entity->pitch -= (PI/10) * (previous->z-my->z);
-			break;
+				entity->z += entity->fskill[2];
+				entity->yaw += (PI/2 + PI/8) * (1 - 2*(bodypart>11));
+				entity->pitch += PI/4;
+				break;
+			// shin
+			case 9:
+			case 17:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw)*-1.25 + cos(my->yaw+PI/2)*3.25 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*-1.25 + sin(my->yaw+PI/2)*3.25 * (1 - 2*(bodypart>11));
+				entity->z += .5;
+				entity->pitch += PI/6-PI/4;
+				entity->pitch -= (PI/10) * (previous->z-my->z);
+				break;
 
-		// 4th/8th leg:
-		// thigh
-		case 10:
-		case 18:
-			entity->x += cos(my->yaw)*-.5 + cos(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*-.5 + sin(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
-			if( dist>0.1 ) {
-				if( !entity->skill[4] ) {
-					entity->fskill[2] += .1;
-					if( entity->fskill[2]>=1 ) {
-						entity->fskill[2]=1;
-						entity->skill[4]=1;
-					}
-				} else {
-					entity->fskill[2] -= .1;
-					if( entity->fskill[2]<=0 ) {
-						entity->fskill[2]=0;
-						entity->skill[4]=0;
+			// 4th/8th leg:
+			// thigh
+			case 10:
+			case 18:
+				entity->x += cos(my->yaw)*-.5 + cos(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*-.5 + sin(my->yaw+PI/2)*2 * (1 - 2*(bodypart>11));
+				if( dist>0.1 ) {
+					if( !entity->skill[4] ) {
+						entity->fskill[2] += .1;
+						if( entity->fskill[2]>=1 ) {
+							entity->fskill[2]=1;
+							entity->skill[4]=1;
+						}
+					} else {
+						entity->fskill[2] -= .1;
+						if( entity->fskill[2]<=0 ) {
+							entity->fskill[2]=0;
+							entity->skill[4]=0;
+						}
 					}
 				}
-			}
-			entity->z += entity->fskill[2];
-			entity->yaw += (PI/2 + PI/3) * (1 - 2*(bodypart>11));
-			entity->pitch += PI/4;
-			break;
-		// shin
-		case 11:
-		case 19:
-			entity->x = previous->x;
-			entity->y = previous->y;
-			entity->z = previous->z;
-			entity->yaw = previous->yaw;
-			entity->pitch = previous->pitch;
-			entity->x += cos(my->yaw)*-3 + cos(my->yaw+PI/2)*1.75 * (1 - 2*(bodypart>11));
-			entity->y += sin(my->yaw)*-3 + sin(my->yaw+PI/2)*1.75 * (1 - 2*(bodypart>11));
-			entity->z += .5;
-			entity->pitch += PI/6-PI/4;
-			entity->pitch += (PI/10) * (previous->z-my->z);
-			break;
-		default:
-			entity->flags[INVISIBLE] = TRUE; // for debugging
-			break;
+				entity->z += entity->fskill[2];
+				entity->yaw += (PI/2 + PI/3) * (1 - 2*(bodypart>11));
+				entity->pitch += PI/4;
+				break;
+			// shin
+			case 11:
+			case 19:
+				entity->x = previous->x;
+				entity->y = previous->y;
+				entity->z = previous->z;
+				entity->yaw = previous->yaw;
+				entity->pitch = previous->pitch;
+				entity->x += cos(my->yaw)*-3 + cos(my->yaw+PI/2)*1.75 * (1 - 2*(bodypart>11));
+				entity->y += sin(my->yaw)*-3 + sin(my->yaw+PI/2)*1.75 * (1 - 2*(bodypart>11));
+				entity->z += .5;
+				entity->pitch += PI/6-PI/4;
+				entity->pitch += (PI/10) * (previous->z-my->z);
+				break;
+			default:
+				entity->flags[INVISIBLE] = TRUE; // for debugging
+				break;
 		}
 	}
 }

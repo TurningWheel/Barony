@@ -48,31 +48,35 @@ void actLadder(Entity *my) {
 			if ((i == 0 && selectedEntity == my) || (client_selected[i] == my)) {
 				if (inrange[i]) {
 					for (c = 0; c < MAXPLAYERS; c++) {
-						if (client_disconnected[c] || players[c] == nullptr || players[c]->entity == nullptr)
+						if (client_disconnected[c] || players[c] == nullptr || players[c]->entity == nullptr) {
 							continue;
-						else
+						} else {
 							playercount++;
+						}
 						dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 						if (dist > TOUCHRANGE) {
 							messagePlayer(i, language[505]);
 							return;
 						}
 					}
-					if (playercount == 1)
+					if (playercount == 1) {
 						messagePlayer(i, language[506]);
-					else
+					} else {
 						messagePlayer(i, language[507]);
+					}
 					loadnextlevel = TRUE;
 					if (secretlevel) {
 						switch (currentlevel) {
-						case 3:
-							for (c = 0; c < MAXPLAYERS; c++)
-								steamAchievementClient(c, "BARONY_ACH_THUNDERGNOME");
-							break;
+							case 3:
+								for (c = 0; c < MAXPLAYERS; c++) {
+									steamAchievementClient(c, "BARONY_ACH_THUNDERGNOME");
+								}
+								break;
 						}
 					}
-					if (LADDER_SECRET)
-						secretlevel = (secretlevel == FALSE); // toggle level lists
+					if (LADDER_SECRET) {
+						secretlevel = (secretlevel == FALSE);    // toggle level lists
+					}
 					return;
 				}
 			}
@@ -125,55 +129,61 @@ void actPortal(Entity *my) {
 	my->yaw += 0.01; // rotate slowly on my axis
 	my->sprite = 254+(my->ticks/20)%4; // animate
 
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return;
+	}
 
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++) {
 		if ((i == 0 && selectedEntity == my) || (client_selected[i] == my)) {
 			if (inrange[i]) {
 				for (c = 0; c < MAXPLAYERS; c++) {
-					if (client_disconnected[c] || players[c] == nullptr || players[c]->entity == nullptr)
+					if (client_disconnected[c] || players[c] == nullptr || players[c]->entity == nullptr) {
 						continue;
-					else
+					} else {
 						playercount++;
+					}
 					dist = sqrt(pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE) {
 						messagePlayer(i, language[505]);
 						return;
 					}
 				}
-				if (playercount == 1)
+				if (playercount == 1) {
 					messagePlayer(i, language[510]);
-				else
+				} else {
 					messagePlayer(i, language[511]);
+				}
 				loadnextlevel = TRUE;
 				if( secretlevel ) {
 					switch( currentlevel ) {
-					case 9: {
-						;
-						bool visiblegrave=FALSE;
-						node_t *node;
-						for( node=map.entities->first; node!=NULL; node=node->next ) {
-							Entity *entity = (Entity *)node->element;
-							if( entity->sprite==224 && !entity->flags[INVISIBLE] ) {
-								visiblegrave=TRUE;
-								break;
+						case 9: {
+							;
+							bool visiblegrave=FALSE;
+							node_t *node;
+							for( node=map.entities->first; node!=NULL; node=node->next ) {
+								Entity *entity = (Entity *)node->element;
+								if( entity->sprite==224 && !entity->flags[INVISIBLE] ) {
+									visiblegrave=TRUE;
+									break;
+								}
 							}
+							if( visiblegrave )
+								for( c=0; c<MAXPLAYERS; c++ ) {
+									steamAchievementClient(c,"BARONY_ACH_ROBBING_THE_CRADLE");
+								}
+							break;
 						}
-						if( visiblegrave )
-							for( c=0; c<MAXPLAYERS; c++ )
-								steamAchievementClient(c,"BARONY_ACH_ROBBING_THE_CRADLE");
-						break;
-					}
-					case 14:
-						for( c=0; c<MAXPLAYERS; c++ )
-							steamAchievementClient(c,"BARONY_ACH_THESEUS_LEGACY");
-						break;
+						case 14:
+							for( c=0; c<MAXPLAYERS; c++ ) {
+								steamAchievementClient(c,"BARONY_ACH_THESEUS_LEGACY");
+							}
+							break;
 					}
 				}
-				if( !PORTAL_NOTSECRET )
-					secretlevel = (secretlevel==FALSE); // toggle level lists
+				if( !PORTAL_NOTSECRET ) {
+					secretlevel = (secretlevel==FALSE);    // toggle level lists
+				}
 				return;
 			}
 		}
@@ -204,8 +214,9 @@ void actWinningPortal(Entity *my) {
 			my->flags[INVISIBLE] = FALSE;
 		}
 	} else {
-		if( my->flags[INVISIBLE] )
+		if( my->flags[INVISIBLE] ) {
 			return;
+		}
 	}
 
 	if( !PORTAL_INIT ) {
@@ -222,18 +233,20 @@ void actWinningPortal(Entity *my) {
 	my->yaw += 0.01; // rotate slowly on my axis
 	my->sprite = 278+(my->ticks/20)%4; // animate
 
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return;
+	}
 
 	// step through portal
 	for (i = 0; i < MAXPLAYERS; i++) {
 		if ((i == 0 && selectedEntity == my) || (client_selected[i] == my)) {
 			if (inrange[i]) {
 				for (c = 0; c < MAXPLAYERS; c++) {
-					if (client_disconnected[c] || players[c] == nullptr || players[c]->entity == nullptr)
+					if (client_disconnected[c] || players[c] == nullptr || players[c]->entity == nullptr) {
 						continue;
-					else
+					} else {
 						playercount++;
+					}
 					dist = sqrt( pow(my->x - players[c]->entity->x, 2) + pow(my->y - players[c]->entity->y, 2));
 					if (dist > TOUCHRANGE) {
 						messagePlayer(i, language[509]);
@@ -243,8 +256,9 @@ void actWinningPortal(Entity *my) {
 				victory = PORTAL_VICTORYTYPE;
 				if( multiplayer==SERVER ) {
 					for( c=0; c<MAXPLAYERS; c++ ) {
-						if( client_disconnected[c]==TRUE )
+						if( client_disconnected[c]==TRUE ) {
 							continue;
+						}
 						strcpy((char *)net_packet->data,"WING");
 						net_packet->data[4] = victory;
 						net_packet->address.host = net_clients[c-1].host;
@@ -256,8 +270,9 @@ void actWinningPortal(Entity *my) {
 				subwindow=0;
 				introstage=5; // prepares win game sequence
 				fadeout=TRUE;
-				if( !intro )
+				if( !intro ) {
 					pauseGame(2,FALSE);
+				}
 				return;
 			}
 		}

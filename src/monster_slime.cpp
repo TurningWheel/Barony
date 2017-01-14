@@ -25,10 +25,11 @@ void initSlime(Entity *my, Stat *myStats) {
 	my->flags[INVISIBLE]=FALSE;
 
 	if( multiplayer!=CLIENT ) {
-		if( myStats->LVL == 7 )
-			my->sprite = 189; // blue slime model
-		else
-			my->sprite = 210; // green slime model
+		if( myStats->LVL == 7 ) {
+			my->sprite = 189;    // blue slime model
+		} else {
+			my->sprite = 210;    // green slime model
+		}
 		MONSTER_SPOTSND = 68;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
@@ -62,17 +63,21 @@ void initSlime(Entity *my, Stat *myStats) {
 		myStats->EXP = 0;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -124,10 +129,11 @@ void slimeDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0,my->y/16),map.height-1);
 		if( map.tiles[y*MAPLAYERS+x*MAPLAYERS*map.height] ) {
 			if( !checkObstacle(my->x,my->y,my,NULL) ) {
-				if( my->sprite == 210 )
+				if( my->sprite == 210 ) {
 					entity = newEntity(212,1,map.entities);
-				else
+				} else {
 					entity = newEntity(214,1,map.entities);
+				}
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4+(rand()%20)/100.f;

@@ -74,77 +74,78 @@ void addSpell(int spell, int player) {
 	node_t *node = NULL;
 
 	// this is a local function
-	if( player != clientnum )
+	if( player != clientnum ) {
 		return;
+	}
 
 	spell_t *new_spell = NULL;
 
 	switch( spell ) {
-	case SPELL_FORCEBOLT:
-		new_spell = copySpell(&spell_forcebolt);
-		break;
-	case SPELL_MAGICMISSILE:
-		new_spell = copySpell(&spell_magicmissile);
-		break;
-	case SPELL_COLD:
-		new_spell = copySpell(&spell_cold);
-		break;
-	case SPELL_FIREBALL:
-		new_spell = copySpell(&spell_fireball);
-		break;
-	case SPELL_LIGHTNING:
-		new_spell = copySpell(&spell_lightning);
-		break;
-	case SPELL_REMOVECURSE:
-		new_spell = copySpell(&spell_removecurse);
-		break;
-	case SPELL_LIGHT:
-		new_spell = copySpell(&spell_light);
-		break;
-	case SPELL_IDENTIFY:
-		new_spell = copySpell(&spell_identify);
-		break;
-	case SPELL_MAGICMAPPING:
-		new_spell = copySpell(&spell_magicmapping);
-		break;
-	case SPELL_SLEEP:
-		new_spell = copySpell(&spell_sleep);
-		break;
-	case SPELL_CONFUSE:
-		new_spell = copySpell(&spell_confuse);
-		break;
-	case SPELL_SLOW:
-		new_spell = copySpell(&spell_slow);
-		break;
-	case SPELL_OPENING:
-		new_spell = copySpell(&spell_opening);
-		break;
-	case SPELL_LOCKING:
-		new_spell = copySpell(&spell_locking);
-		break;
-	case SPELL_LEVITATION:
-		new_spell = copySpell(&spell_levitation);
-		break;
-	case SPELL_INVISIBILITY:
-		new_spell = copySpell(&spell_invisibility);
-		break;
-	case SPELL_TELEPORTATION:
-		new_spell = copySpell(&spell_teleportation);
-		break;
-	case SPELL_HEALING:
-		new_spell = copySpell(&spell_healing);
-		break;
-	case SPELL_EXTRAHEALING:
-		new_spell = copySpell(&spell_extrahealing);
-		break;
-	case SPELL_CUREAILMENT:
-		new_spell = copySpell(&spell_cureailment);
-		break;
-	case SPELL_DIG:
-		new_spell = copySpell(&spell_dig);
-		break;
-	default:
-		return;
+		case SPELL_FORCEBOLT:
+			new_spell = copySpell(&spell_forcebolt);
+			break;
+		case SPELL_MAGICMISSILE:
+			new_spell = copySpell(&spell_magicmissile);
+			break;
+		case SPELL_COLD:
+			new_spell = copySpell(&spell_cold);
+			break;
+		case SPELL_FIREBALL:
+			new_spell = copySpell(&spell_fireball);
+			break;
+		case SPELL_LIGHTNING:
+			new_spell = copySpell(&spell_lightning);
+			break;
+		case SPELL_REMOVECURSE:
+			new_spell = copySpell(&spell_removecurse);
+			break;
+		case SPELL_LIGHT:
+			new_spell = copySpell(&spell_light);
+			break;
+		case SPELL_IDENTIFY:
+			new_spell = copySpell(&spell_identify);
+			break;
+		case SPELL_MAGICMAPPING:
+			new_spell = copySpell(&spell_magicmapping);
+			break;
+		case SPELL_SLEEP:
+			new_spell = copySpell(&spell_sleep);
+			break;
+		case SPELL_CONFUSE:
+			new_spell = copySpell(&spell_confuse);
+			break;
+		case SPELL_SLOW:
+			new_spell = copySpell(&spell_slow);
+			break;
+		case SPELL_OPENING:
+			new_spell = copySpell(&spell_opening);
+			break;
+		case SPELL_LOCKING:
+			new_spell = copySpell(&spell_locking);
+			break;
+		case SPELL_LEVITATION:
+			new_spell = copySpell(&spell_levitation);
+			break;
+		case SPELL_INVISIBILITY:
+			new_spell = copySpell(&spell_invisibility);
+			break;
+		case SPELL_TELEPORTATION:
+			new_spell = copySpell(&spell_teleportation);
+			break;
+		case SPELL_HEALING:
+			new_spell = copySpell(&spell_healing);
+			break;
+		case SPELL_EXTRAHEALING:
+			new_spell = copySpell(&spell_extrahealing);
+			break;
+		case SPELL_CUREAILMENT:
+			new_spell = copySpell(&spell_cureailment);
+			break;
+		case SPELL_DIG:
+			new_spell = copySpell(&spell_dig);
+			break;
+		default:
+			return;
 	}
 	if( spellInList(&spellList, new_spell) ) {
 		messagePlayer(player, language[439],new_spell->name);
@@ -316,8 +317,9 @@ bool spell_isChanneled(spell_t *spell) {
 
 	for( node=spell->elements.first; node!=NULL; node=node->next ) {
 		spellElement_t *spellElement = (spellElement_t *)node->element;
-		if( spellElement_isChanneled(spellElement) )
+		if( spellElement_isChanneled(spellElement) ) {
 			return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -326,12 +328,14 @@ bool spell_isChanneled(spell_t *spell) {
 bool spellElement_isChanneled(spellElement_t *spellElement) {
 	node_t *node = NULL;
 
-	if( spellElement->channeled )
+	if( spellElement->channeled ) {
 		return TRUE;
+	}
 	for( node=spellElement->elements.first; node!=NULL; node=node->next ) {
 		spellElement_t *tempElement = (spellElement_t *)node->element;
-		if( spellElement_isChanneled(tempElement) )
+		if( spellElement_isChanneled(tempElement) ) {
 			return TRUE;
+		}
 	}
 
 	return FALSE;
@@ -348,72 +352,72 @@ spell_t *getSpellFromID(int ID) {
 	spell_t *spell = NULL;
 
 	switch (ID) {
-	case SPELL_FORCEBOLT:
-		spell = &spell_forcebolt;
-		break;
-	case SPELL_MAGICMISSILE:
-		spell = &spell_magicmissile;
-		break;
-	case SPELL_COLD:
-		spell = &spell_cold;
-		break;
-	case SPELL_FIREBALL:
-		spell = &spell_fireball;
-		break;
-	case SPELL_LIGHTNING:
-		spell = &spell_lightning;
-		break;
-	case SPELL_REMOVECURSE:
-		spell = &spell_removecurse;
-		break;
-	case SPELL_LIGHT:
-		spell = &spell_light;
-		break;
-	case SPELL_IDENTIFY:
-		spell = &spell_identify;
-		break;
-	case SPELL_MAGICMAPPING:
-		spell = &spell_magicmapping;
-		break;
-	case SPELL_SLEEP:
-		spell = &spell_sleep;
-		break;
-	case SPELL_CONFUSE:
-		spell = &spell_confuse;
-		break;
-	case SPELL_SLOW:
-		spell = &spell_slow;
-		break;
-	case SPELL_OPENING:
-		spell = &spell_opening;
-		break;
-	case SPELL_LOCKING:
-		spell = &spell_locking;
-		break;
-	case SPELL_LEVITATION:
-		spell = &spell_levitation;
-		break;
-	case SPELL_INVISIBILITY:
-		spell = &spell_invisibility;
-		break;
-	case SPELL_TELEPORTATION:
-		spell = &spell_teleportation;
-		break;
-	case SPELL_HEALING:
-		spell = &spell_healing;
-		break;
-	case SPELL_EXTRAHEALING:
-		spell = &spell_extrahealing;
-		break;
-	/*case SPELL_RESTOREABILITY:
-		spell = &spell_restoreability;
-		break;*/
-	case SPELL_CUREAILMENT:
-		spell = &spell_cureailment;
-		break;
-	case SPELL_DIG:
-		spell = &spell_dig;
-		break;
+		case SPELL_FORCEBOLT:
+			spell = &spell_forcebolt;
+			break;
+		case SPELL_MAGICMISSILE:
+			spell = &spell_magicmissile;
+			break;
+		case SPELL_COLD:
+			spell = &spell_cold;
+			break;
+		case SPELL_FIREBALL:
+			spell = &spell_fireball;
+			break;
+		case SPELL_LIGHTNING:
+			spell = &spell_lightning;
+			break;
+		case SPELL_REMOVECURSE:
+			spell = &spell_removecurse;
+			break;
+		case SPELL_LIGHT:
+			spell = &spell_light;
+			break;
+		case SPELL_IDENTIFY:
+			spell = &spell_identify;
+			break;
+		case SPELL_MAGICMAPPING:
+			spell = &spell_magicmapping;
+			break;
+		case SPELL_SLEEP:
+			spell = &spell_sleep;
+			break;
+		case SPELL_CONFUSE:
+			spell = &spell_confuse;
+			break;
+		case SPELL_SLOW:
+			spell = &spell_slow;
+			break;
+		case SPELL_OPENING:
+			spell = &spell_opening;
+			break;
+		case SPELL_LOCKING:
+			spell = &spell_locking;
+			break;
+		case SPELL_LEVITATION:
+			spell = &spell_levitation;
+			break;
+		case SPELL_INVISIBILITY:
+			spell = &spell_invisibility;
+			break;
+		case SPELL_TELEPORTATION:
+			spell = &spell_teleportation;
+			break;
+		case SPELL_HEALING:
+			spell = &spell_healing;
+			break;
+		case SPELL_EXTRAHEALING:
+			spell = &spell_extrahealing;
+			break;
+		/*case SPELL_RESTOREABILITY:
+			spell = &spell_restoreability;
+			break;*/
+		case SPELL_CUREAILMENT:
+			spell = &spell_cureailment;
+			break;
+		case SPELL_DIG:
+			spell = &spell_dig;
+			break;
 	}
 
 	return spell;
@@ -434,16 +438,18 @@ bool spellInList(list_t *list, spell_t *spell) {
 }
 
 void spell_changeHealth(Entity *entity, int amount) {
-	if (!entity)
+	if (!entity) {
 		return;
+	}
 
 	entity->modHP(amount);
 
 	int player = -1;
 	int i = 0;
 	for (i = 0; i < 4; ++i) {
-		if (entity == players[i]->entity)
+		if (entity == players[i]->entity) {
 			player = i;
+		}
 	}
 
 	if (player > -1 && player <= 4) {
@@ -477,8 +483,9 @@ spell_t *getSpellFromItem(Item *item) {
 	for (node = spellList.first; node; node = node->next) {
 		if (node->element) {
 			spell = (spell_t *) node->element;
-			if (spell->ID == item->appearance)
-				return spell; //Found the spell.
+			if (spell->ID == item->appearance) {
+				return spell;    //Found the spell.
+			}
 		}
 	}
 

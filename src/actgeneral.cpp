@@ -60,15 +60,17 @@ void actRotate(Entity *my) {
 	if( keystatus[SDL_SCANCODE_HOME] ) {
 		keystatus[SDL_SCANCODE_HOME] = 0;
 		my->sprite++;
-		if( my->sprite >= nummodels )
+		if( my->sprite >= nummodels ) {
 			my->sprite = 0;
+		}
 		messagePlayer(clientnum,"test sprite: %d",my->sprite);
 	}
 	if( keystatus[SDL_SCANCODE_END] ) {
 		keystatus[SDL_SCANCODE_END] = 0;
 		my->sprite += 10;
-		if( my->sprite >= nummodels )
+		if( my->sprite >= nummodels ) {
 			my->sprite = 0;
+		}
 		messagePlayer(clientnum,"test sprite: %d",my->sprite);
 	}
 #endif
@@ -134,10 +136,11 @@ void actEmpty(Entity *my) {
 void actFurniture(Entity *my) {
 	if( !FURNITURE_INIT ) {
 		FURNITURE_INIT=1;
-		if( !FURNITURE_TYPE )
+		if( !FURNITURE_TYPE ) {
 			FURNITURE_HEALTH=15+rand()%5;
-		else
+		} else {
 			FURNITURE_HEALTH=4+rand()%4;
+		}
 		FURNITURE_MAXHEALTH=FURNITURE_HEALTH;
 		my->flags[BURNABLE]=TRUE;
 	} else {
@@ -185,10 +188,11 @@ void actFurniture(Entity *my) {
 			for(i=0; i<MAXPLAYERS; i++) {
 				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
 					if(inrange[i]) {
-						if( FURNITURE_TYPE )
+						if( FURNITURE_TYPE ) {
 							messagePlayer(i,language[476]);
-						else
+						} else {
 							messagePlayer(i,language[477]);
+						}
 					}
 				}
 			}
@@ -201,8 +205,9 @@ void actFurniture(Entity *my) {
 
 void actMCaxe(Entity *my) {
 	my->yaw += .05;
-	if( my->yaw > PI*2 )
+	if( my->yaw > PI*2 ) {
 		my->yaw -= PI*2;
+	}
 	if( !MCAXE_USED ) {
 		if( multiplayer!=CLIENT ) {
 			// use
@@ -221,8 +226,9 @@ void actMCaxe(Entity *my) {
 		// bob
 		my->z -= sin(my->fskill[0]*PI/180.f);
 		my->fskill[0] += 6;
-		if( my->fskill[0] >= 360 )
+		if( my->fskill[0] >= 360 ) {
 			my->fskill[0] -= 360;
+		}
 		my->z += sin(my->fskill[0]*PI/180.f);
 	} else {
 		my->z += 1;

@@ -157,15 +157,15 @@ SDL_Cursor *newCursor(char *image[]) {
 				data[i] = mask[i] = 0;
 			}
 			switch(image[4+row][col]) {
-			case '.':
-				data[i] |= 0x01;
-				mask[i] |= 0x01;
-				break;
-			case 'X':
-				mask[i] |= 0x01;
-				break;
-			case ' ':
-				break;
+				case '.':
+					data[i] |= 0x01;
+					mask[i] |= 0x01;
+					break;
+				case 'X':
+					mask[i] |= 0x01;
+					break;
+				case ' ':
+					break;
 			}
 		}
 	}

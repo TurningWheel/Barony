@@ -231,101 +231,139 @@ bool loadInterfaceResources() {
 void freeInterfaceResources() {
 	//int c;
 
-	if(font12x12_small_bmp)
+	if(font12x12_small_bmp) {
 		SDL_FreeSurface(font12x12_small_bmp);
-	if(backdrop_bmp)
+	}
+	if(backdrop_bmp) {
 		SDL_FreeSurface(backdrop_bmp);
-	if(status_bmp)
+	}
+	if(status_bmp) {
 		SDL_FreeSurface(status_bmp);
-	if(character_bmp)
+	}
+	if(character_bmp) {
 		SDL_FreeSurface(character_bmp);
-	if(hunger_bmp)
+	}
+	if(hunger_bmp) {
 		SDL_FreeSurface(hunger_bmp);
+	}
 	//if(textup_bmp)
 	//SDL_FreeSurface(textup_bmp);
 	//if(textdown_bmp)
 	//SDL_FreeSurface(textdown_bmp);
-	if(attributesleft_bmp)
+	if(attributesleft_bmp) {
 		SDL_FreeSurface(attributesleft_bmp);
-	if(attributesright_bmp)
+	}
+	if(attributesright_bmp) {
 		SDL_FreeSurface(attributesright_bmp);
-	if(attributesleftunclicked_bmp)
+	}
+	if(attributesleftunclicked_bmp) {
 		SDL_FreeSurface(attributesleftunclicked_bmp);
-	if(attributesrightunclicked_bmp)
+	}
+	if(attributesrightunclicked_bmp) {
 		SDL_FreeSurface(attributesrightunclicked_bmp);
-	if(magicspellList_bmp)
+	}
+	if(magicspellList_bmp) {
 		SDL_FreeSurface(magicspellList_bmp);
-	if(spell_list_titlebar_bmp)
+	}
+	if(spell_list_titlebar_bmp) {
 		SDL_FreeSurface(spell_list_titlebar_bmp);
-	if(spell_list_gui_slot_bmp)
+	}
+	if(spell_list_gui_slot_bmp) {
 		SDL_FreeSurface(spell_list_gui_slot_bmp);
-	if(spell_list_gui_slot_highlighted_bmp)
+	}
+	if(spell_list_gui_slot_highlighted_bmp) {
 		SDL_FreeSurface(spell_list_gui_slot_highlighted_bmp);
-	if (sustained_spell_generic_icon)
+	}
+	if (sustained_spell_generic_icon) {
 		SDL_FreeSurface(sustained_spell_generic_icon);
-	if(invup_bmp!=NULL)
+	}
+	if(invup_bmp!=NULL) {
 		SDL_FreeSurface(invup_bmp);
-	if(invdown_bmp!=NULL)
+	}
+	if(invdown_bmp!=NULL) {
 		SDL_FreeSurface(invdown_bmp);
-	if(inventory_bmp!=NULL)
+	}
+	if(inventory_bmp!=NULL) {
 		SDL_FreeSurface(inventory_bmp);
-	if(inventoryoption_bmp!=NULL)
+	}
+	if(inventoryoption_bmp!=NULL) {
 		SDL_FreeSurface(inventoryoption_bmp);
-	if (inventory_mode_item_img)
+	}
+	if (inventory_mode_item_img) {
 		SDL_FreeSurface(inventory_mode_item_img);
-	if (inventory_mode_item_highlighted_img)
+	}
+	if (inventory_mode_item_highlighted_img) {
 		SDL_FreeSurface(inventory_mode_item_highlighted_img);
-	if (inventory_mode_spell_img)
+	}
+	if (inventory_mode_spell_img) {
 		SDL_FreeSurface(inventory_mode_spell_img);
-	if (inventory_mode_spell_highlighted_img)
+	}
+	if (inventory_mode_spell_highlighted_img) {
 		SDL_FreeSurface(inventory_mode_spell_highlighted_img);
-	if(button_bmp!=NULL)
+	}
+	if(button_bmp!=NULL) {
 		SDL_FreeSurface(button_bmp);
-	if(smallbutton_bmp!=NULL)
+	}
+	if(smallbutton_bmp!=NULL) {
 		SDL_FreeSurface(smallbutton_bmp);
-	if(equipped_bmp!=NULL)
+	}
+	if(equipped_bmp!=NULL) {
 		SDL_FreeSurface(equipped_bmp);
-	if(inventoryChest_bmp != NULL)
+	}
+	if(inventoryChest_bmp != NULL) {
 		SDL_FreeSurface(inventoryChest_bmp);
-	if(invclose_bmp != NULL)
+	}
+	if(invclose_bmp != NULL) {
 		SDL_FreeSurface(invclose_bmp);
-	if(invgraball_bmp != NULL)
+	}
+	if(invgraball_bmp != NULL) {
 		SDL_FreeSurface(invgraball_bmp);
-	if(inventoryoptionChest_bmp != NULL)
+	}
+	if(inventoryoptionChest_bmp != NULL) {
 		SDL_FreeSurface(inventoryoptionChest_bmp);
-	if(shopkeeper_bmp != NULL)
+	}
+	if(shopkeeper_bmp != NULL) {
 		SDL_FreeSurface(shopkeeper_bmp);
-	if(damage_bmp != NULL)
+	}
+	if(damage_bmp != NULL) {
 		SDL_FreeSurface(damage_bmp);
+	}
 	//for( c=0; c<NUMCATEGORIES; c++ )
 	//if(category_bmp[c]!=NULL)
 	//SDL_FreeSurface(category_bmp[c]);
-	if(identifyGUI_img != NULL)
+	if(identifyGUI_img != NULL) {
 		SDL_FreeSurface(identifyGUI_img);
+	}
 	/*if (rightsidebar_titlebar_img)
 		SDL_FreeSurface(rightsidebar_titlebar_img);
 	if (rightsidebar_slot_img)
 		SDL_FreeSurface(rightsidebar_slot_img);
 	if (rightsidebar_slot_highlighted_img)
 		SDL_FreeSurface(rightsidebar_slot_highlighted_img);*/
-	if (rightsidebar_slot_grayedout_img)
+	if (rightsidebar_slot_grayedout_img) {
 		SDL_FreeSurface(rightsidebar_slot_grayedout_img);
-	if (bookgui_img)
+	}
+	if (bookgui_img) {
 		SDL_FreeSurface(bookgui_img);
+	}
 	//if (nextpage_img)
 	//SDL_FreeSurface(nextpage_img);
 	//if (previouspage_img)
 	//SDL_FreeSurface(previouspage_img);
 	//if (bookclose_img)
 	//SDL_FreeSurface(bookclose_img);
-	if (book_highlighted_left_img)
+	if (book_highlighted_left_img) {
 		SDL_FreeSurface(book_highlighted_left_img);
-	if (book_highlighted_right_img)
+	}
+	if (book_highlighted_right_img) {
 		SDL_FreeSurface(book_highlighted_right_img);
-	if (hotbar_img)
+	}
+	if (hotbar_img) {
 		SDL_FreeSurface(hotbar_img);
-	if (hotbar_spell_img)
+	}
+	if (hotbar_spell_img) {
 		SDL_FreeSurface(hotbar_spell_img);
+	}
 	list_FreeAll(&damageIndicators);
 }
 
@@ -559,8 +597,9 @@ int loadConfig(char *filename) {
 		}
 	}
 	fclose(fp);
-	if( mallocd )
+	if( mallocd ) {
 		free(filename);
+	}
 	return 0;
 }
 
@@ -606,27 +645,36 @@ int saveConfig(char *filename) {
 	fprintf(fp,"/gamma %3.3f\n",vidgamma);
 	fprintf(fp,"/fov %d\n",fov);
 	fprintf(fp,"/svflags %d\n",svFlags);
-	if( lastname != "" )
+	if( lastname != "" ) {
 		fprintf(fp,"/lastname %s\n",lastname.c_str());
-	if( smoothlighting )
+	}
+	if( smoothlighting ) {
 		fprintf(fp,"/smoothlighting\n");
-	if( fullscreen )
+	}
+	if( fullscreen ) {
 		fprintf(fp,"/fullscreen\n");
-	if( shaking )
+	}
+	if( shaking ) {
 		fprintf(fp,"/shaking\n");
-	if( bobbing )
+	}
+	if( bobbing ) {
 		fprintf(fp,"/bobbing\n");
+	}
 	fprintf(fp,"/sfxvolume %d\n",sfxvolume);
 	fprintf(fp,"/musvolume %d\n",musvolume);
-	for (c = 0; c < NUMIMPULSES; c++)
+	for (c = 0; c < NUMIMPULSES; c++) {
 		fprintf(fp, "/bind %d IN_%s\n", impulses[c], impulsenames[c]);
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
+	}
+	for (c = 0; c < NUM_JOY_IMPULSES; c++) {
 		fprintf(fp, "/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
+	}
 	fprintf(fp,"/mousespeed %d\n",(int)(mousespeed));
-	if( reversemouse )
+	if( reversemouse ) {
 		fprintf(fp,"/reversemouse\n");
-	if( smoothmouse )
+	}
+	if( smoothmouse ) {
 		fprintf(fp,"/smoothmouse\n");
+	}
 	if (last_ip[0]) {
 		fprintf(fp, "/ip %s\n", last_ip);
 	}
@@ -695,8 +743,9 @@ int saveConfig(char *filename) {
 	fprintf(fp, "/skipintro\n");
 
 	fclose(fp);
-	if( mallocd )
+	if( mallocd ) {
 		free(filename);
+	}
 	return 0;
 }
 
@@ -711,8 +760,9 @@ int saveConfig(char *filename) {
 
 bool mouseInBounds(int x1, int x2, int y1, int y2) {
 	if (omousey >= y1 && omousey < y2)
-		if (omousex >= x1 && omousex < x2)
+		if (omousex >= x1 && omousex < x2) {
 			return TRUE;
+		}
 
 	return FALSE;
 }
@@ -739,49 +789,49 @@ const char *getInputName(Uint32 scancode) {
 		return SDL_GetKeyName(SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode)));
 	} else if( scancode<299 ) {
 		switch( scancode ) {
-		case 283:
-			return "Mouse 0";
-		case 284:
-			return "Mouse 1";
-		case 285:
-			return "Mouse 2";
-		case 286:
-			return "Mouse 3";
-		case 287:
-			return "Wheel up";
-		case 288:
-			return "Wheel down";
-		case 289:
-			return "Mouse 6";
-		case 290:
-			return "Mouse 7";
-		case 291:
-			return "Mouse 8";
-		case 292:
-			return "Mouse 9";
-		case 293:
-			return "Mouse 10";
-		case 294:
-			return "Mouse 11";
-		case 295:
-			return "Mouse 12";
-		case 296:
-			return "Mouse 13";
-		case 297:
-			return "Mouse 14";
-		case 298:
-			return "Mouse 15";
-		default:
-			return "Unknown key";
+			case 283:
+				return "Mouse 0";
+			case 284:
+				return "Mouse 1";
+			case 285:
+				return "Mouse 2";
+			case 286:
+				return "Mouse 3";
+			case 287:
+				return "Wheel up";
+			case 288:
+				return "Wheel down";
+			case 289:
+				return "Mouse 6";
+			case 290:
+				return "Mouse 7";
+			case 291:
+				return "Mouse 8";
+			case 292:
+				return "Mouse 9";
+			case 293:
+				return "Mouse 10";
+			case 294:
+				return "Mouse 11";
+			case 295:
+				return "Mouse 12";
+			case 296:
+				return "Mouse 13";
+			case 297:
+				return "Mouse 14";
+			case 298:
+				return "Mouse 15";
+			default:
+				return "Unknown key";
 		}
 	} else if( scancode<301 ) { //Game Controller triggers.
 		switch( scancode ) {
-		case 299:
-			return "Left Trigger";
-		case 300:
-			return "Right Trigger";
-		default:
-			return "Unknown trigger";
+			case 299:
+				return "Left Trigger";
+			case 300:
+				return "Right Trigger";
+			default:
+				return "Unknown trigger";
 		}
 	} else if( scancode<317 ) { //Game controller buttons.
 		return SDL_GameControllerGetStringForButton(static_cast<SDL_GameControllerButton>(scancode - 301));
@@ -823,10 +873,12 @@ Sint8 *inputPressed(Uint32 scancode) {
 }
 
 void selectHotbarSlot(int slot) {
-	if (slot < 0)
+	if (slot < 0) {
 		slot = NUM_HOTBAR_SLOTS - 1;
-	if (slot >= NUM_HOTBAR_SLOTS)
+	}
+	if (slot >= NUM_HOTBAR_SLOTS) {
 		slot = 0;
+	}
 
 	current_hotbar = slot;
 }

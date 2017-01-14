@@ -65,17 +65,21 @@ void initMinotaur(Entity *my, Stat *myStats) {
 		myStats->LVL = 20;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -94,18 +98,18 @@ void initMinotaur(Entity *my, Stat *myStats) {
 
 		ItemType gemtype = GEM_RUBY;
 		switch( rand()%4 ) {
-		case 0:
-			gemtype = GEM_RUBY;
-			break;
-		case 1:
-			gemtype = GEM_EMERALD;
-			break;
-		case 2:
-			gemtype = GEM_SAPPHIRE;
-			break;
-		case 3:
-			gemtype = GEM_DIAMOND;
-			break;
+			case 0:
+				gemtype = GEM_RUBY;
+				break;
+			case 1:
+				gemtype = GEM_EMERALD;
+				break;
+			case 2:
+				gemtype = GEM_SAPPHIRE;
+				break;
+			case 3:
+				gemtype = GEM_DIAMOND;
+				break;
 		}
 		newItem( gemtype, EXCELLENT, 0, 1, rand(), TRUE, &myStats->inventory );
 	}
@@ -269,8 +273,9 @@ void minotaurDie(Entity *my) {
 			}
 		}
 	}
-	for( c=0; c<MAXPLAYERS; c++ )
+	for( c=0; c<MAXPLAYERS; c++ ) {
 		playSoundPlayer(c, 114, 128);
+	}
 	int i = 0;
 	for (node=my->children.first; node!=NULL; node=nextnode) {
 		nextnode=node->next;
@@ -355,8 +360,9 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			chest = entity;
 		}
 		if( bodypart==4||bodypart==7 ) {
-			if( bodypart==4 )
+			if( bodypart==4 ) {
 				rightbody = (Entity *)node->next->element;
+			}
 			if( dist>0.1 ) {
 				if( !rightbody->skill[0] ) {
 					entity->pitch -= dist*MINOTAURWALKSPEED;
@@ -378,12 +384,14 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			} else {
 				if( entity->pitch < 0 ) {
 					entity->pitch += 1/fmax(dist*.1,10.0);
-					if( entity->pitch > 0 )
+					if( entity->pitch > 0 ) {
 						entity->pitch=0;
+					}
 				} else if( entity->pitch > 0 ) {
 					entity->pitch -= 1/fmax(dist*.1,10.0);
-					if( entity->pitch < 0 )
+					if( entity->pitch < 0 ) {
 						entity->pitch=0;
+					}
 				}
 			}
 		} else if( bodypart==5||bodypart==6 ) {
@@ -396,8 +404,9 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 						entity->pitch = -3*PI/4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI/2 )
+						if( entity->pitch >= -PI/2 ) {
 							MONSTER_ARMBENDED = 1;
+						}
 						if( entity->pitch >= PI/4 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
@@ -470,12 +479,14 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += 1/fmax(dist*.1,10.0);
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= 1/fmax(dist*.1,10.0);
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			}
@@ -490,41 +501,42 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		}
 		switch( bodypart ) {
-		// head
-		case 2:
-			entity->z-=11;
-			break;
-		// chest
-		case 3:
-			entity->z-=4.5;
-			break;
-		// right leg
-		case 4:
-			entity->x+=2.5*cos(my->yaw+PI/2)-.5*cos(my->yaw);
-			entity->y+=2.5*sin(my->yaw+PI/2)-.5*sin(my->yaw);
-			entity->z+=2.5;
-			break;
-		// left leg
-		case 5:
-			entity->x-=2.5*cos(my->yaw+PI/2)+.5*cos(my->yaw);
-			entity->y-=2.5*sin(my->yaw+PI/2)+.5*sin(my->yaw);
-			entity->z+=2.5;
-			break;
-		// right arm
-		case 6:
-			entity->z-=6;
-			entity->yaw += MONSTER_WEAPONYAW;
-			break;
-		// left arm
-		case 7:
-			entity->z-=6;
-			break;
+			// head
+			case 2:
+				entity->z-=11;
+				break;
+			// chest
+			case 3:
+				entity->z-=4.5;
+				break;
+			// right leg
+			case 4:
+				entity->x+=2.5*cos(my->yaw+PI/2)-.5*cos(my->yaw);
+				entity->y+=2.5*sin(my->yaw+PI/2)-.5*sin(my->yaw);
+				entity->z+=2.5;
+				break;
+			// left leg
+			case 5:
+				entity->x-=2.5*cos(my->yaw+PI/2)+.5*cos(my->yaw);
+				entity->y-=2.5*sin(my->yaw+PI/2)+.5*sin(my->yaw);
+				entity->z+=2.5;
+				break;
+			// right arm
+			case 6:
+				entity->z-=6;
+				entity->yaw += MONSTER_WEAPONYAW;
+				break;
+			// left arm
+			case 7:
+				entity->z-=6;
+				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 )
+	if( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
-	else
+	} else {
 		MONSTER_ATTACKTIME=0;
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -539,8 +551,9 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 #define MINOTAURTRAP_FIRED my->skill[0]
 
 void actMinotaurTrap(Entity *my) {
-	if( !my->skill[28] )
+	if( !my->skill[28] ) {
 		return;
+	}
 
 	// received on signal
 	if( my->skill[28] == 2) {
@@ -646,8 +659,9 @@ void actMinotaurCeilingBuster(Entity *my) {
 			entity->flags[NOUPDATE] = TRUE;
 			entity->flags[UNCLICKABLE] = TRUE;
 			entity->behavior = &actMagicParticle;
-			if( multiplayer != CLIENT )
+			if( multiplayer != CLIENT ) {
 				entity_uids--;
+			}
 			entity->uid = -3;
 		}
 	}

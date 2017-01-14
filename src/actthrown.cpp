@@ -85,8 +85,9 @@ void actThrown(Entity *my) {
 		free(item);
 	}
 
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return;
+	}
 
 	// gravity
 	if( my->z < 7.5-models[my->sprite]->sizey*.25 ) {
@@ -185,77 +186,78 @@ void actThrown(Entity *my) {
 				if( hitstats ) {
 					if( hitstats->type < LICH || hitstats->type >= SHOPKEEPER ) { // this makes it impossible to bork the end boss :)
 						switch( item->type ) {
-						case POTION_WATER:
-							item_PotionWater(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_BOOZE:
-							item_PotionBooze(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_JUICE:
-							item_PotionJuice(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_SICKNESS:
-							item_PotionSickness(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_CONFUSION:
-							item_PotionConfusion(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_EXTRAHEALING:
-							item_PotionExtraHealing(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_HEALING:
-							item_PotionHealing(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_CUREAILMENT:
-							item_PotionCureAilment(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_BLINDNESS:
-							item_PotionBlindness(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_RESTOREMAGIC:
-							item_PotionRestoreMagic(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_INVISIBILITY:
-							item_PotionInvisibility(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_LEVITATION:
-							item_PotionLevitation(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_SPEED:
-							item_PotionSpeed(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_ACID:
-							item_PotionAcid(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						case POTION_PARALYSIS:
-							item_PotionParalysis(item, hit.entity);
-							usedpotion=TRUE;
-							break;
-						default:
-							break;
+							case POTION_WATER:
+								item_PotionWater(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_BOOZE:
+								item_PotionBooze(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_JUICE:
+								item_PotionJuice(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_SICKNESS:
+								item_PotionSickness(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_CONFUSION:
+								item_PotionConfusion(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_EXTRAHEALING:
+								item_PotionExtraHealing(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_HEALING:
+								item_PotionHealing(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_CUREAILMENT:
+								item_PotionCureAilment(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_BLINDNESS:
+								item_PotionBlindness(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_RESTOREMAGIC:
+								item_PotionRestoreMagic(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_INVISIBILITY:
+								item_PotionInvisibility(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_LEVITATION:
+								item_PotionLevitation(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_SPEED:
+								item_PotionSpeed(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_ACID:
+								item_PotionAcid(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							case POTION_PARALYSIS:
+								item_PotionParalysis(item, hit.entity);
+								usedpotion=TRUE;
+								break;
+							default:
+								break;
 						}
 					}
 				}
 
 				// update enemy bar for attacker
-				if( !strcmp(hitstats->name,"") )
+				if( !strcmp(hitstats->name,"") ) {
 					updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-				else
+				} else {
 					updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
+				}
 
 				if( damage>0 ) {
 					Entity *gib = spawnGib(hit.entity);
@@ -275,8 +277,9 @@ void actThrown(Entity *my) {
 							sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2]-1);
 						}
 					}
-					if( rand()%10==0 && parent != NULL )
+					if( rand()%10==0 && parent != NULL ) {
 						parent->increaseSkill(PRO_RANGED);
+					}
 				}
 				if( hitstats->HP <= 0 && parent) {
 					parent->awardXP( hit.entity, TRUE, TRUE );
@@ -315,31 +318,35 @@ void actThrown(Entity *my) {
 					if( parent->behavior == &actPlayer ) {
 						if( !strcmp(hitstats->name,"") ) {
 							messagePlayerColor(parent->skill[2],color,language[690],language[90+hitstats->type]);
-							if( damage==0 )
+							if( damage==0 ) {
 								messagePlayer(parent->skill[2],language[447]);
+							}
 						} else {
 							messagePlayerColor(parent->skill[2],color,language[694],hitstats->name);
 							if( damage==0 ) {
-								if( hitstats->sex )
+								if( hitstats->sex ) {
 									messagePlayer(parent->skill[2],language[449]);
-								else
+								} else {
 									messagePlayer(parent->skill[2],language[450]);
+								}
 							}
 						}
 					}
 				} else if( hit.entity->behavior == &actPlayer ) {
 					Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
 					messagePlayerColor(hit.entity->skill[2],color,language[588],itemname);
-					if( damage==0 )
+					if( damage==0 ) {
 						messagePlayer(hit.entity->skill[2],language[452]);
+					}
 				}
 			}
 		}
 		if( cat==POTION ) {
 			// potions shatter on impact
 			playSoundEntity(my,162,64);
-			if( !usedpotion )
+			if( !usedpotion ) {
 				free(item);
+			}
 			list_RemoveNode(my->mynode);
 			return;
 		} else {

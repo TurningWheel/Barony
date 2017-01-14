@@ -157,8 +157,9 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 	if( filename2 != NULL && strcmp(filename2,"") ) {
 		c=0;
 		while(1) {
-			if(filename2[c]==0)
+			if(filename2[c]==0) {
 				break;
+			}
 			c++;
 		}
 		filename = (char *) malloc(sizeof(char)*256);
@@ -167,8 +168,9 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 
 		if( strcmp(filename,"..") && strcmp(filename,".") ) {
 			// add extension if missing
-			if( strstr(filename,".lmp") == NULL )
+			if( strstr(filename,".lmp") == NULL ) {
 				strcat(filename,".lmp");
+			}
 
 			// load the file!
 			if((fp = fopen(filename, "rb")) == NULL) {
@@ -205,8 +207,9 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			// remove old lights
 			list_FreeAll(&light_l);
 		}
-		if( destmap->tiles != NULL )
+		if( destmap->tiles != NULL ) {
 			free(destmap->tiles);
+		}
 		fread(destmap->name, sizeof(char), 32, fp); // map name
 		fread(destmap->author, sizeof(char), 32, fp); // map author
 		fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
@@ -230,31 +233,37 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			minotaurlevel=0;
 
 #ifdef HAVE_FMOD
-			if( strcmp(oldmapname,map.name) )
+			if( strcmp(oldmapname,map.name) ) {
 				levelmusicplaying=FALSE;
+			}
 #endif
 
 			// create new lightmap
-			if(lightmap!=NULL)
+			if(lightmap!=NULL) {
 				free(lightmap);
+			}
 			lightmap=(int *) malloc(sizeof(Sint32)*destmap->width*destmap->height);
 			if( strncmp(map.name, "Hell", 4) ) {
-				for(c=0; c<destmap->width*destmap->height; c++ )
+				for(c=0; c<destmap->width*destmap->height; c++ ) {
 					lightmap[c]=0;
+				}
 			} else {
-				for(c=0; c<destmap->width*destmap->height; c++ )
+				for(c=0; c<destmap->width*destmap->height; c++ ) {
 					lightmap[c]=32;
+				}
 			}
 
 			// create a new vismap
-			if(vismap!=NULL)
+			if(vismap!=NULL) {
 				free(vismap);
+			}
 			vismap=(bool *) calloc(destmap->width*destmap->height,sizeof(bool));
 
 			// reset minimap
 			for( x=0; x<64; x++ )
-				for( y=0; y<64; y++ )
+				for( y=0; y<64; y++ ) {
 					minimap[y][x]=0;
+				}
 
 			// reset camera
 			if( game ) {
@@ -272,16 +281,19 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			}
 
 			// shoparea
-			if( shoparea )
+			if( shoparea ) {
 				free(shoparea);
+			}
 			shoparea=(bool *) malloc(sizeof(bool)*destmap->width*destmap->height);
 			for( x=0; x<destmap->width; x++ )
-				for( y=0; y<destmap->height; y++ )
+				for( y=0; y<destmap->height; y++ ) {
 					shoparea[y+x*destmap->height] = FALSE;
+				}
 		}
 
-		for( c=0; c<512; c++ )
+		for( c=0; c<512; c++ ) {
 			keystatus[c] = 0;
+		}
 
 		return numentities;
 	} else {
@@ -310,8 +322,9 @@ int saveMap(char *filename2) {
 		strcpy(filename,"maps/");
 		strcat(filename,filename2);
 
-		if( strstr(filename,".lmp") == NULL )
+		if( strstr(filename,".lmp") == NULL ) {
 			strcat(filename,".lmp");
+		}
 		if((fp = fopen(filename, "wb")) == NULL) {
 			printlog("warning: failed to open file '%s' for map saving!\n",filename);
 			return 1;
@@ -323,8 +336,9 @@ int saveMap(char *filename2) {
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
 		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
 		fwrite(map.tiles, sizeof(Sint32), map.width*map.height*MAPLAYERS, fp);
-		for(node=map.entities->first; node!=NULL; node=node->next)
+		for(node=map.entities->first; node!=NULL; node=node->next) {
 			numentities++;
+		}
 		fwrite(&numentities,sizeof(Uint32), 1, fp); // number of entities on the map
 		for(node=map.entities->first; node!=NULL; node=node->next) {
 			entity = (Entity *) node->element;
@@ -337,8 +351,9 @@ int saveMap(char *filename2) {
 		fclose(fp);
 		free(filename);
 		return 0;
-	} else
+	} else {
 		return 1;
+	}
 }
 
 /*-------------------------------------------------------------------------------

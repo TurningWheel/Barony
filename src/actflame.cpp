@@ -52,8 +52,9 @@ Entity *spawnFlame(Entity *parentent) {
 	double vel;
 
 	entity = newEntity(13, 1, map.entities); // flame particle
-	if( intro )
+	if( intro ) {
 		entity->uid = 0;
+	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
@@ -73,8 +74,9 @@ Entity *spawnFlame(Entity *parentent) {
 	entity->flags[BRIGHT]=TRUE;
 	entity->flags[UNCLICKABLE]=TRUE;
 	entity->behavior=&actFlame;
-	if( multiplayer != CLIENT )
+	if( multiplayer != CLIENT ) {
 		entity_uids--;
+	}
 	entity->uid = -3;
 
 	return entity;

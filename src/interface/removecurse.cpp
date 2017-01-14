@@ -79,14 +79,18 @@ void updateRemoveCurseGUI() {
 			if (gui_clickdrag) {
 				removecursegui_offset_x = (omousex - dragoffset_x) - (REMOVECURSE_GUI_X - removecursegui_offset_x);
 				removecursegui_offset_y = (omousey - dragoffset_y) - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
-				if (REMOVECURSE_GUI_X <= camera.winx)
+				if (REMOVECURSE_GUI_X <= camera.winx) {
 					removecursegui_offset_x = camera.winx - (REMOVECURSE_GUI_X - removecursegui_offset_x);
-				if (REMOVECURSE_GUI_X > camera.winx + camera.winw - identifyGUI_img->w)
+				}
+				if (REMOVECURSE_GUI_X > camera.winx + camera.winw - identifyGUI_img->w) {
 					removecursegui_offset_x = (camera.winx + camera.winw - identifyGUI_img->w) - (REMOVECURSE_GUI_X - removecursegui_offset_x);
-				if (REMOVECURSE_GUI_Y <= camera.winy)
+				}
+				if (REMOVECURSE_GUI_Y <= camera.winy) {
 					removecursegui_offset_y = camera.winy - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
-				if (REMOVECURSE_GUI_Y > camera.winy + camera.winh - identifyGUI_img->h)
+				}
+				if (REMOVECURSE_GUI_Y > camera.winy + camera.winh - identifyGUI_img->h) {
 					removecursegui_offset_y = (camera.winy + camera.winh - identifyGUI_img->h) - (REMOVECURSE_GUI_Y - removecursegui_offset_y);
+				}
 			} else {
 				dragging_removecurseGUI = FALSE;
 			}
@@ -170,8 +174,9 @@ void updateRemoveCurseGUI() {
 			if (removecurse_inventory) {
 				for (node = removecurse_inventory->first; node != NULL; node = node->next) {
 					item = (Item *) node->element;
-					if (item && item->identified && item->beatitude < 0)
+					if (item && item->identified && item->beatitude < 0) {
 						c++;
+					}
 				}
 				removecursescroll = std::max(0, std::min(removecursescroll, c - 4));
 				for (c = 0; c < 4; ++c) {
@@ -185,13 +190,15 @@ void updateRemoveCurseGUI() {
 						item = (Item *) node->element;
 						if (item && item->identified && item->beatitude < 0) { //Skip over all unidentified or uncursed items.
 							c++;
-							if (c <= removecursescroll)
+							if (c <= removecursescroll) {
 								continue;
+							}
 							removecurse_items[c - removecursescroll - 1] = item;
 							char tempstr[64] = { 0 };
 							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 )
+							if( strlen(tempstr)==46 ) {
 								strcat(tempstr," ...");
+							}
 							ttfPrintText(ttf8,REMOVECURSE_GUI_X+36,y,tempstr);
 							pos.x = REMOVECURSE_GUI_X + 16;
 							pos.y = REMOVECURSE_GUI_Y + 17 + 18 * (c - removecursescroll - 1);
@@ -199,8 +206,9 @@ void updateRemoveCurseGUI() {
 							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
 							y += 18;
-							if (c > 3 + removecursescroll)
+							if (c > 3 + removecursescroll) {
 								break;
+							}
 						}
 					}
 				}
@@ -210,8 +218,9 @@ void updateRemoveCurseGUI() {
 } //updateRemoveCurseGUI()
 
 void removecurseGUIRemoveCurse(Item *item) {
-	if (!item)
+	if (!item) {
 		return;
+	}
 	if (item->beatitude >= 0) {
 		messagePlayer(clientnum, language[347],item->getName());
 		return;
@@ -223,26 +232,27 @@ void removecurseGUIRemoveCurse(Item *item) {
 	if( multiplayer==CLIENT && itemIsEquipped(item,clientnum) ) {
 		// the client needs to inform the server that their equipment was uncursed.
 		int armornum = 0;
-		if( item == stats[clientnum]->helmet )
+		if( item == stats[clientnum]->helmet ) {
 			armornum = 0;
-		else if( item == stats[clientnum]->breastplate )
+		} else if( item == stats[clientnum]->breastplate ) {
 			armornum = 1;
-		else if( item == stats[clientnum]->gloves )
+		} else if( item == stats[clientnum]->gloves ) {
 			armornum = 2;
-		else if( item == stats[clientnum]->shoes )
+		} else if( item == stats[clientnum]->shoes ) {
 			armornum = 3;
-		else if( item == stats[clientnum]->shield )
+		} else if( item == stats[clientnum]->shield ) {
 			armornum = 4;
-		else if( item == stats[clientnum]->weapon )
+		} else if( item == stats[clientnum]->weapon ) {
 			armornum = 5;
-		else if( item == stats[clientnum]->cloak )
+		} else if( item == stats[clientnum]->cloak ) {
 			armornum = 6;
-		else if( item == stats[clientnum]->amulet )
+		} else if( item == stats[clientnum]->amulet ) {
 			armornum = 7;
-		else if( item == stats[clientnum]->ring )
+		} else if( item == stats[clientnum]->ring ) {
 			armornum = 8;
-		else if( item == stats[clientnum]->mask )
+		} else if( item == stats[clientnum]->mask ) {
 			armornum = 9;
+		}
 		strcpy((char *)net_packet->data,"RCUR");
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = armornum;

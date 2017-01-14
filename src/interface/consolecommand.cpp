@@ -37,8 +37,9 @@ void consoleCommand(char *command_str) {
 	char name[64];
 	int c;
 
-	if( !command_str )
+	if( !command_str ) {
 		return;
+	}
 
 	if( !strncmp(command_str,"/ping",5) ) {
 		if( multiplayer != CLIENT ) {
@@ -70,8 +71,9 @@ void consoleCommand(char *command_str) {
 
 				int c;
 				for( c=1; c<MAXPLAYERS; c++ ) {
-					if( client_disconnected[c] )
+					if( client_disconnected[c] ) {
 						continue;
+					}
 					net_packet->address.host = net_clients[c-1].host;
 					net_packet->address.port = net_clients[c-1].port;
 					sendPacketSafe(net_sock, -1, net_packet, c-1);
@@ -188,10 +190,11 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,language[287]);
 		} else {
 			noclip=(noclip==FALSE);
-			if( noclip )
+			if( noclip ) {
 				messagePlayer(clientnum,language[288]);
-			else
+			} else {
 				messagePlayer(clientnum,language[289]);
+			}
 		}
 	} else if( !strncmp(command_str,"/god",4) ) {
 		if ( !(svFlags&SV_FLAG_CHEATS) ) {
@@ -202,20 +205,22 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum,language[290]);
 		} else {
 			godmode=(godmode==FALSE);
-			if( godmode )
+			if( godmode ) {
 				messagePlayer(clientnum,language[291]);
-			else
+			} else {
 				messagePlayer(clientnum,language[292]);
+			}
 		}
 	} else if( !strncmp(command_str,"/buddha",7) ) {
 		if( multiplayer!=SINGLE ) {
 			messagePlayer(clientnum,language[293]);
 		} else {
 			buddhamode=(buddhamode==FALSE);
-			if( buddhamode )
+			if( buddhamode ) {
 				messagePlayer(clientnum,language[294]);
-			else
+			} else {
 				messagePlayer(clientnum,language[295]);
+			}
 		}
 	} else if( !strncmp(command_str,"/friendly",9) ) {
 		if( !(svFlags&SV_FLAG_CHEATS) ) {
@@ -227,10 +232,11 @@ void consoleCommand(char *command_str) {
 			return;
 		}
 		everybodyfriendly=(everybodyfriendly==FALSE);
-		if( everybodyfriendly )
+		if( everybodyfriendly ) {
 			messagePlayer(clientnum,language[296]);
-		else
+		} else {
 			messagePlayer(clientnum,language[297]);
+		}
 	} else if( !strncmp(command_str,"/dowse",6) ) {
 		if( !(svFlags&SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum,language[277]);
@@ -238,8 +244,9 @@ void consoleCommand(char *command_str) {
 		}
 		for( node=map.entities->first; node!=NULL; node=node->next ) {
 			entity = (Entity *)node->element;
-			if( entity->behavior == &actLadder )
+			if( entity->behavior == &actLadder ) {
 				messagePlayer(clientnum,language[298],(int)(entity->x/16),(int)(entity->y/16));
+			}
 		}
 	} else if (!strncmp(command_str, "/thirdperson", 12)) {
 		if (!(svFlags&SV_FLAG_CHEATS)) {
@@ -248,10 +255,11 @@ void consoleCommand(char *command_str) {
 		}
 		if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr) {
 			players[clientnum]->entity->skill[3] = (players[clientnum]->entity->skill[3] == 0);
-			if (players[clientnum]->entity->skill[3] == 1)
+			if (players[clientnum]->entity->skill[3] == 1) {
 				messagePlayer(clientnum, "thirdperson ON");
-			else
+			} else {
 				messagePlayer(clientnum, "thirdperson OFF");
+			}
 		}
 	} else if( !strncmp(command_str,"/res ",5) ) {
 		xres = atoi(&command_str[5]);
@@ -467,16 +475,18 @@ void consoleCommand(char *command_str) {
 		capture_mouse = (capture_mouse==FALSE);
 	} else if (!strncmp(command_str, "/levelup", 8)) {
 		if (multiplayer == SINGLE) {
-			if (players[clientnum] && players[clientnum]->entity)
+			if (players[clientnum] && players[clientnum]->entity) {
 				players[clientnum]->entity->getStats()->EXP += 100;
+			}
 		} else {
 			messagePlayer(clientnum,language[299]);
 		}
 	} else if (!strncmp(command_str, "/maxout", 7)) {
 		if( multiplayer==SINGLE ) {
 			int c;
-			for( c=0; c<14; c++ )
+			for( c=0; c<14; c++ ) {
 				consoleCommand("/levelup");
+			}
 			consoleCommand("/spawnitem steel breastpiece");
 			consoleCommand("/spawnitem steel boots");
 			consoleCommand("/spawnitem steel gauntlets");
@@ -495,8 +505,9 @@ void consoleCommand(char *command_str) {
 	} else if (!strncmp(command_str, "/hunger", 7)) {
 		if (multiplayer == SINGLE) {
 			Stat *tempStats = players[clientnum]->entity->getStats();
-			if (tempStats)
+			if (tempStats) {
 				tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
+			}
 		} else {
 			messagePlayer(clientnum, language[299]);
 		}

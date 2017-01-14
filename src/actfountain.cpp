@@ -76,14 +76,16 @@ void actFountain(Entity *my) {
 	}
 
 	// the rest of the function is server-side.
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return;
+	}
 
 	// makes the fountain stop spraying water on clients
-	if( my->skill[0] <= 0 )
+	if( my->skill[0] <= 0 ) {
 		my->skill[2] = 1;
-	else
+	} else {
 		my->skill[2] = 0;
+	}
 
 	//Using the fountain (TODO: Monsters using it?).
 	int i;
@@ -98,70 +100,81 @@ void actFountain(Entity *my) {
 					if (players[i]->entity->flags[BURNING]) {
 						messagePlayer(i, language[468]);
 						players[i]->entity->flags[BURNING] = FALSE;
-						if (i > 0)
+						if (i > 0) {
 							serverUpdateEntityFlag(players[i]->entity, BURNING);
+						}
 					}
 					switch (my->skill[1]) {
-					case 0: {
-						playSoundEntity(players[i]->entity, 52, 64);
+						case 0: {
+							playSoundEntity(players[i]->entity, 52, 64);
 
-						//Spawn succubus.
-						Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
-						messagePlayerColor(i, color, language[469]);
-						summonMonster(SUCCUBUS, my->x, my->y);
-						break;
-					}
-					case 1:
-						messagePlayer(i, language[470]);
-						messagePlayer(i, language[471]);
-						playSoundEntity(players[i]->entity, 52, 64);
-						stats[i]->HUNGER += 50;
-						break;
-					case 2: {
-						//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
-						messagePlayer(i, language[470]);
-						Item *item = newItem(static_cast<ItemType>(POTION_WATER+my->skill[3]), static_cast<Status>(4), 0,1,0,FALSE,NULL);
-						useItem(item,i);
-						// Long live the mystical fountain of TODO.
-						break;
-					}
-					case 3: {
-						// bless equipment
-						playSoundEntity(players[i]->entity, 52, 64);
-						Uint32 textcolor = SDL_MapRGB(mainsurface->format,0,255,255);
-						messagePlayerColor(i, textcolor, language[471]);
-						messagePlayer(i, language[473]);
-						if( stats[i]->helmet )
-							stats[i]->helmet->beatitude++;
-						if( stats[i]->breastplate )
-							stats[i]->breastplate->beatitude++;
-						if( stats[i]->gloves )
-							stats[i]->gloves->beatitude++;
-						if( stats[i]->shoes )
-							stats[i]->shoes->beatitude++;
-						if( stats[i]->shield )
-							stats[i]->shield->beatitude++;
-						if( stats[i]->weapon )
-							stats[i]->weapon->beatitude++;
-						if( stats[i]->cloak )
-							stats[i]->cloak->beatitude++;
-						if( stats[i]->amulet )
-							stats[i]->amulet->beatitude++;
-						if( stats[i]->ring )
-							stats[i]->ring->beatitude++;
-						if( stats[i]->mask )
-							stats[i]->mask->beatitude++;
-						if( multiplayer==SERVER && i>0 ) {
-							strcpy((char *)net_packet->data,"BLES");
-							net_packet->address.host = net_clients[i-1].host;
-							net_packet->address.port = net_clients[i-1].port;
-							net_packet->len = 4;
-							sendPacketSafe(net_sock, -1, net_packet, i-1);
+							//Spawn succubus.
+							Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
+							messagePlayerColor(i, color, language[469]);
+							summonMonster(SUCCUBUS, my->x, my->y);
+							break;
 						}
-						break;
-					}
-					default:
-						break;
+						case 1:
+							messagePlayer(i, language[470]);
+							messagePlayer(i, language[471]);
+							playSoundEntity(players[i]->entity, 52, 64);
+							stats[i]->HUNGER += 50;
+							break;
+						case 2: {
+							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
+							messagePlayer(i, language[470]);
+							Item *item = newItem(static_cast<ItemType>(POTION_WATER+my->skill[3]), static_cast<Status>(4), 0,1,0,FALSE,NULL);
+							useItem(item,i);
+							// Long live the mystical fountain of TODO.
+							break;
+						}
+						case 3: {
+							// bless equipment
+							playSoundEntity(players[i]->entity, 52, 64);
+							Uint32 textcolor = SDL_MapRGB(mainsurface->format,0,255,255);
+							messagePlayerColor(i, textcolor, language[471]);
+							messagePlayer(i, language[473]);
+							if( stats[i]->helmet ) {
+								stats[i]->helmet->beatitude++;
+							}
+							if( stats[i]->breastplate ) {
+								stats[i]->breastplate->beatitude++;
+							}
+							if( stats[i]->gloves ) {
+								stats[i]->gloves->beatitude++;
+							}
+							if( stats[i]->shoes ) {
+								stats[i]->shoes->beatitude++;
+							}
+							if( stats[i]->shield ) {
+								stats[i]->shield->beatitude++;
+							}
+							if( stats[i]->weapon ) {
+								stats[i]->weapon->beatitude++;
+							}
+							if( stats[i]->cloak ) {
+								stats[i]->cloak->beatitude++;
+							}
+							if( stats[i]->amulet ) {
+								stats[i]->amulet->beatitude++;
+							}
+							if( stats[i]->ring ) {
+								stats[i]->ring->beatitude++;
+							}
+							if( stats[i]->mask ) {
+								stats[i]->mask->beatitude++;
+							}
+							if( multiplayer==SERVER && i>0 ) {
+								strcpy((char *)net_packet->data,"BLES");
+								net_packet->address.host = net_clients[i-1].host;
+								net_packet->address.port = net_clients[i-1].port;
+								net_packet->len = 4;
+								sendPacketSafe(net_sock, -1, net_packet, i-1);
+							}
+							break;
+						}
+						default:
+							break;
 					}
 					messagePlayer(i, language[474]);
 					my->skill[0] = 0; //Dry up fountain.

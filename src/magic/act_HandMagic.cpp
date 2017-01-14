@@ -95,10 +95,12 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t *a
 	animation_manager->stage = 0;
 
 	//Make the hands invisible (should probably fall away or something, but whatever. That's another project for another day)
-	if( magicLeftHand )
+	if( magicLeftHand ) {
 		magicLeftHand->flags[INVISIBLE] = TRUE;
-	if( magicRightHand )
+	}
+	if( magicRightHand ) {
 		magicRightHand->flags[INVISIBLE] = TRUE;
+	}
 }
 
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t *animation_manager) {
@@ -186,74 +188,79 @@ void actLeftHandMagic(Entity *my) {
 
 	//Select model
 	if (stats[clientnum]->ring != NULL)
-		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
+		if (stats[clientnum]->ring->type == RING_INVISIBILITY) {
 			wearingring = TRUE;
+		}
 	if (stats[clientnum]->cloak != NULL)
-		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
+		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY) {
 			wearingring = TRUE;
+		}
 	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
 		my->flags[INVISIBLE] = TRUE;
 	}
 
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
-		case CIRCLE:
-			if(ticks%5==0) {
-				Entity *entity = spawnGib(my);
-				entity->flags[INVISIBLE] = FALSE;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
-				entity->flags[UPDATENEEDED] = FALSE;
-				entity->flags[OVERDRAW] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
-				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
-				entity->scaley = 0.25f;
-				entity->scalez = 0.25f;
-				entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-				entity->yaw = ((rand()%6)*60)*PI/180.0;
-				entity->pitch = (rand()%360)*PI/180.0;
-				entity->roll = (rand()%360)*PI/180.0;
-				entity->vel_x = cos(entity->yaw)*.1;
-				entity->vel_y = sin(entity->yaw)*.1;
-				entity->vel_z = -.15;
-				entity->fskill[3] = 0.01;
-			}
-			cast_animation.consume_timer--;
-			if (cast_animation.consume_timer < 0 && cast_animation.mana_left > 0) {
-				//Time to consume mana and reset the ticker!
-				cast_animation.consume_timer = cast_animation.consume_interval;
-				if (multiplayer == SINGLE) {
-					players[clientnum]->entity->drainMP(1);
+			case CIRCLE:
+				if(ticks%5==0) {
+					Entity *entity = spawnGib(my);
+					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[SPRITE] = TRUE;
+					entity->flags[NOUPDATE] = TRUE;
+					entity->flags[UPDATENEEDED] = FALSE;
+					entity->flags[OVERDRAW] = TRUE;
+					entity->flags[BRIGHT] = TRUE;
+					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+					entity->scaley = 0.25f;
+					entity->scalez = 0.25f;
+					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					entity->yaw = ((rand()%6)*60)*PI/180.0;
+					entity->pitch = (rand()%360)*PI/180.0;
+					entity->roll = (rand()%360)*PI/180.0;
+					entity->vel_x = cos(entity->yaw)*.1;
+					entity->vel_y = sin(entity->yaw)*.1;
+					entity->vel_z = -.15;
+					entity->fskill[3] = 0.01;
 				}
-				cast_animation.mana_left--;
-			}
+				cast_animation.consume_timer--;
+				if (cast_animation.consume_timer < 0 && cast_animation.mana_left > 0) {
+					//Time to consume mana and reset the ticker!
+					cast_animation.consume_timer = cast_animation.consume_interval;
+					if (multiplayer == SINGLE) {
+						players[clientnum]->entity->drainMP(1);
+					}
+					cast_animation.mana_left--;
+				}
 
-			cast_animation.lefthand_angle += HANDMAGIC_CIRCLE_SPEED;
-			cast_animation.lefthand_movex = cos(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
-			cast_animation.lefthand_movey = sin(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
-			if (cast_animation.lefthand_angle >= 2 * PI) { //Completed one loop.
-				cast_animation.lefthand_angle = 0;
-				cast_animation.circle_count++;
-				if (cast_animation.circle_count >= cast_animation.times_to_circle)
-					//Finished circling. Time to move on!
-					cast_animation.stage++;
-			}
-			break;
-		case THROW:
-			//messagePlayer(clientnum, "IN THROW");
-			//TODO: Throw animation! Or something.
-			cast_animation.stage++;
-			break;
-		default:
-			//messagePlayer(clientnum, "DEFAULT CASE");
-			spellcastingAnimationManager_completeSpell(&cast_animation);
-			break;
+				cast_animation.lefthand_angle += HANDMAGIC_CIRCLE_SPEED;
+				cast_animation.lefthand_movex = cos(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
+				cast_animation.lefthand_movey = sin(cast_animation.lefthand_angle) * HANDMAGIC_CIRCLE_RADIUS;
+				if (cast_animation.lefthand_angle >= 2 * PI) { //Completed one loop.
+					cast_animation.lefthand_angle = 0;
+					cast_animation.circle_count++;
+					if (cast_animation.circle_count >= cast_animation.times_to_circle)
+						//Finished circling. Time to move on!
+					{
+						cast_animation.stage++;
+					}
+				}
+				break;
+			case THROW:
+				//messagePlayer(clientnum, "IN THROW");
+				//TODO: Throw animation! Or something.
+				cast_animation.stage++;
+				break;
+			default:
+				//messagePlayer(clientnum, "DEFAULT CASE");
+				spellcastingAnimationManager_completeSpell(&cast_animation);
+				break;
 		}
 	}
 
 	//Final position code.
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr) {
 		return;
+	}
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
@@ -339,52 +346,55 @@ void actRightHandMagic(Entity *my) {
 
 	//Select model
 	if (stats[clientnum]->ring != NULL)
-		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
+		if (stats[clientnum]->ring->type == RING_INVISIBILITY) {
 			wearingring = TRUE;
+		}
 	if (stats[clientnum]->cloak != NULL)
-		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
+		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY) {
 			wearingring = TRUE;
+		}
 	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring ) { // debug cam or player invisible
 		my->flags[INVISIBLE] = TRUE;
 	}
 
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
-		case CIRCLE:
-			if (ticks%5==0) {
-				//messagePlayer(0, "Pingas!");
-				Entity *entity = spawnGib(my);
-				entity->flags[INVISIBLE] = FALSE;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
-				entity->flags[UPDATENEEDED] = FALSE;
-				entity->flags[OVERDRAW] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
-				//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
-				//entity->sizey = 1;
-				entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
-				entity->scaley = 0.25f;
-				entity->scalez = 0.25f;
-				entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-				entity->yaw = ((rand()%6)*60)*PI/180.0;
-				entity->pitch = (rand()%360)*PI/180.0;
-				entity->roll = (rand()%360)*PI/180.0;
-				entity->vel_x = cos(entity->yaw)*.1;
-				entity->vel_y = sin(entity->yaw)*.1;
-				entity->vel_z = -.15;
-				entity->fskill[3] = 0.01;
-			}
-			break;
-		case THROW:
-			break;
-		default:
-			break;
+			case CIRCLE:
+				if (ticks%5==0) {
+					//messagePlayer(0, "Pingas!");
+					Entity *entity = spawnGib(my);
+					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[SPRITE] = TRUE;
+					entity->flags[NOUPDATE] = TRUE;
+					entity->flags[UPDATENEEDED] = FALSE;
+					entity->flags[OVERDRAW] = TRUE;
+					entity->flags[BRIGHT] = TRUE;
+					//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
+					//entity->sizey = 1;
+					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
+					entity->scaley = 0.25f;
+					entity->scalez = 0.25f;
+					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
+					entity->yaw = ((rand()%6)*60)*PI/180.0;
+					entity->pitch = (rand()%360)*PI/180.0;
+					entity->roll = (rand()%360)*PI/180.0;
+					entity->vel_x = cos(entity->yaw)*.1;
+					entity->vel_y = sin(entity->yaw)*.1;
+					entity->vel_z = -.15;
+					entity->fskill[3] = 0.01;
+				}
+				break;
+			case THROW:
+				break;
+			default:
+				break;
 		}
 	}
 
 	//Final position code.
-	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr)
+	if (players[clientnum] == nullptr || players[clientnum]->entity == nullptr) {
 		return;
+	}
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);

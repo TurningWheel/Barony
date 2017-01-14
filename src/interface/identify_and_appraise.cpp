@@ -39,8 +39,9 @@ void rebuildIdentifyGUIInventory() {
 		//Count the number of items in the identify GUI "inventory".
 		for (node = identify_inventory->first; node != NULL; node = node->next) {
 			item = (Item *) node->element;
-			if (item && !item->identified)
+			if (item && !item->identified) {
 				c++;
+			}
 		}
 		identifyscroll = std::max(0, std::min(identifyscroll, c - 4));
 		for (c = 0; c < 4; ++c) {
@@ -54,11 +55,13 @@ void rebuildIdentifyGUIInventory() {
 				item = (Item *) node->element;
 				if (item && !item->identified) { //Skip over all identified items.
 					c++;
-					if (c <= identifyscroll)
+					if (c <= identifyscroll) {
 						continue;
+					}
 					identify_items[c - identifyscroll - 1] = item;
-					if (c > 3 + identifyscroll)
+					if (c > 3 + identifyscroll) {
 						break;
+					}
 				}
 			}
 		}
@@ -130,14 +133,18 @@ void updateIdentifyGUI() {
 			if (gui_clickdrag) {
 				identifygui_offset_x = (omousex - dragoffset_x) - (IDENTIFY_GUI_X - identifygui_offset_x);
 				identifygui_offset_y = (omousey - dragoffset_y) - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				if (IDENTIFY_GUI_X <= camera.winx)
+				if (IDENTIFY_GUI_X <= camera.winx) {
 					identifygui_offset_x = camera.winx - (IDENTIFY_GUI_X - identifygui_offset_x);
-				if (IDENTIFY_GUI_X > camera.winx + camera.winw - identifyGUI_img->w)
+				}
+				if (IDENTIFY_GUI_X > camera.winx + camera.winw - identifyGUI_img->w) {
 					identifygui_offset_x = (camera.winx + camera.winw - identifyGUI_img->w) - (IDENTIFY_GUI_X - identifygui_offset_x);
-				if (IDENTIFY_GUI_Y <= camera.winy)
+				}
+				if (IDENTIFY_GUI_Y <= camera.winy) {
 					identifygui_offset_y = camera.winy - (IDENTIFY_GUI_Y - identifygui_offset_y);
-				if (IDENTIFY_GUI_Y > camera.winy + camera.winh - identifyGUI_img->h)
+				}
+				if (IDENTIFY_GUI_Y > camera.winy + camera.winh - identifyGUI_img->h) {
 					identifygui_offset_y = (camera.winy + camera.winh - identifyGUI_img->h) - (IDENTIFY_GUI_Y - identifygui_offset_y);
+				}
 			} else {
 				dragging_identifyGUI = FALSE;
 			}
@@ -152,10 +159,11 @@ void updateIdentifyGUI() {
 			//char *window_name = (char*)malloc(sizeof(char));
 			//strcpy(window_name, "Identify Item");
 			char *window_name;
-			if (identifygui_appraising)
+			if (identifygui_appraising) {
 				window_name = language[317];
-			else
+			} else {
 				window_name = language[318];
+			}
 			ttfPrintText(ttf8, (IDENTIFY_GUI_X + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), IDENTIFY_GUI_Y + 4, window_name);
 
 			//Identify GUI up button.
@@ -244,12 +252,14 @@ void updateIdentifyGUI() {
 						item = (Item *) node->element;
 						if (item && !item->identified) { //Skip over all identified items.
 							c++;
-							if (c <= identifyscroll)
+							if (c <= identifyscroll) {
 								continue;
+							}
 							char tempstr[64] = { 0 };
 							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 )
+							if( strlen(tempstr)==46 ) {
 								strcat(tempstr," ...");
+							}
 							ttfPrintText(ttf8,IDENTIFY_GUI_X+36,y,tempstr);
 							pos.x = IDENTIFY_GUI_X + 16;
 							pos.y = IDENTIFY_GUI_Y + 17 + 18 * (c - identifyscroll - 1);
@@ -257,8 +267,9 @@ void updateIdentifyGUI() {
 							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
 							y += 18;
-							if (c > 3 + identifyscroll)
+							if (c > 3 + identifyscroll) {
 								break;
+							}
 						}
 					}
 				}
@@ -268,8 +279,9 @@ void updateIdentifyGUI() {
 } //updateIdentifyGUI()
 
 void identifyGUIIdentify(Item *item) {
-	if (!item)
+	if (!item) {
 		return;
+	}
 	if (item->identified) {
 		messagePlayer(clientnum, language[319],item->getName());
 		return;
@@ -304,10 +316,11 @@ void identifyGUIIdentify(Item *item) {
 
 int getAppraisalTime(Item *item) {
 	int appraisal_time;
-	if( item->type!=GEM_GLASS )
-		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised
-	else
-		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1); // time in ticks until item is appraised+-
+	if( item->type!=GEM_GLASS ) {
+		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
+	} else {
+		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
+	}
 	appraisal_time = std::min(std::max(1,appraisal_time),36000);
 	return appraisal_time;
 }

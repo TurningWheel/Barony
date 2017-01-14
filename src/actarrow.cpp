@@ -108,10 +108,11 @@ void actArrow(Entity *my) {
 					}
 
 					// update enemy bar for attacker
-					if( !strcmp(hitstats->name,"") )
+					if( !strcmp(hitstats->name,"") ) {
 						updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-					else
+					} else {
 						updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
+					}
 
 					if( damage>0 ) {
 						Entity *gib = spawnGib(hit.entity);
@@ -131,8 +132,9 @@ void actArrow(Entity *my) {
 								sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2]-1);
 							}
 						}
-						if( rand()%10==0 && parent )
+						if( rand()%10==0 && parent ) {
 							parent->increaseSkill(PRO_RANGED);
+						}
 					}
 					if( hitstats->HP <= 0 && parent) {
 						parent->awardXP( hit.entity, TRUE, TRUE );
@@ -174,24 +176,27 @@ void actArrow(Entity *my) {
 							if( !strcmp(hitstats->name,"") ) {
 								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
 								messagePlayerColor(parent->skill[2],color,language[446],language[90+hitstats->type]);
-								if( damage==0 )
+								if( damage==0 ) {
 									messagePlayer(parent->skill[2],language[447]);
+								}
 							} else {
 								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
 								messagePlayerColor(parent->skill[2],color,language[448],hitstats->name);
 								if( damage==0 ) {
-									if( hitstats->sex )
+									if( hitstats->sex ) {
 										messagePlayer(parent->skill[2],language[449]);
-									else
+									} else {
 										messagePlayer(parent->skill[2],language[450]);
+									}
 								}
 							}
 						}
 					} else if( hit.entity->behavior == &actPlayer ) {
 						Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
 						messagePlayerColor(hit.entity->skill[2],color,language[451]);
-						if( damage==0 )
+						if( damage==0 ) {
 							messagePlayer(hit.entity->skill[2],language[452]);
+						}
 					}
 					if( ARROW_POISON && damage>0 ) {
 						hitstats->poisonKiller = my->parent;

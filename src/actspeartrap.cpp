@@ -41,8 +41,9 @@ void actSpearTrap(Entity *my) {
 	}
 
 	if( multiplayer!=CLIENT ) {
-		if (!my->skill[28])
+		if (!my->skill[28]) {
 			return;
+		}
 
 		if (my->skill[28] == 2) {
 			// shoot out the spears
@@ -57,8 +58,9 @@ void actSpearTrap(Entity *my) {
 			// retract the spears
 			if( SPEARTRAP_STATUS ) {
 				SPEARTRAP_STATUS = 0;
-				if( SPEARTRAP_OUTTIME<=60 )
+				if( SPEARTRAP_OUTTIME<=60 ) {
 					playSoundEntity(my, 82, 64);
+				}
 				SPEARTRAP_OUTTIME = 0;
 				serverUpdateEntitySkill(my,3);
 				serverUpdateEntitySkill(my,4);

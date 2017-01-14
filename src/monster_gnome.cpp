@@ -58,17 +58,21 @@ void initGnome(Entity *my, Stat *myStats) {
 		myStats->LVL = 5;
 		myStats->GOLD = 40+rand()%20;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->PROFICIENCIES[PRO_SWORD]=35;
 		myStats->PROFICIENCIES[PRO_MACE]=50;
@@ -92,16 +96,19 @@ void initGnome(Entity *my, Stat *myStats) {
 			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800+rand()%1800;
 		}
 
-		if( rand()%3==0 )
+		if( rand()%3==0 ) {
 			newItem( FOOD_FISH, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
+		}
 
-		if( rand()%50==0 )
+		if( rand()%50==0 ) {
 			newItem( READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), FALSE, &myStats->inventory );
+		}
 
 		if( rand()%10==0 ) {
 			int i = 1+rand()%4;
-			for( c=0; c<i; c++ )
+			for( c=0; c<i; c++ ) {
 				newItem( static_cast<ItemType>(GEM_GARNET+rand()%15), static_cast<Status>(1+rand()%4), 0, 1, rand(), FALSE, &myStats->inventory );
+			}
 		}
 
 		if( rand()%50==0 && !my->flags[USERFLAG2] ) {
@@ -112,8 +119,9 @@ void initGnome(Entity *my, Stat *myStats) {
 			int c;
 			for( c=0; c<3; c++ ) {
 				Entity *entity = summonMonster(GNOME,my->x,my->y);
-				if( entity )
+				if( entity ) {
 					entity->parent = my->uid;
+				}
 			}
 		}
 	}
@@ -269,62 +277,63 @@ void initGnome(Entity *my, Stat *myStats) {
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity *);
 
-	if( multiplayer==CLIENT || MONSTER_INIT )
+	if( multiplayer==CLIENT || MONSTER_INIT ) {
 		return;
+	}
 
 	// give shield
 	switch( rand()%10 ) {
-	case 0:
-	case 1:
-		myStats->shield = newItem(TOOL_LANTERN,EXCELLENT,-1+rand()%3,1,rand(),FALSE,NULL);
-		break;
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-	case 6:
-		break;
-	case 7:
-	case 8:
-	case 9:
-		myStats->shield = newItem(WOODEN_SHIELD,static_cast<Status>(WORN+rand()%2),-1+rand()%3,1,rand(),FALSE,NULL);
-		break;
+		case 0:
+		case 1:
+			myStats->shield = newItem(TOOL_LANTERN,EXCELLENT,-1+rand()%3,1,rand(),FALSE,NULL);
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+			break;
+		case 7:
+		case 8:
+		case 9:
+			myStats->shield = newItem(WOODEN_SHIELD,static_cast<Status>(WORN+rand()%2),-1+rand()%3,1,rand(),FALSE,NULL);
+			break;
 	}
 
 	// give weapon
 	switch( rand()%10 ) {
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-		myStats->weapon = newItem(TOOL_PICKAXE,EXCELLENT,-1+rand()%3,1,rand(),FALSE,NULL);
-		break;
-	case 5:
-	case 6:
-	case 7:
-	case 8:
-	case 9:
-		myStats->GOLD += 100;
-		myStats->weapon = newItem(MAGICSTAFF_LIGHTNING,EXCELLENT,-1+rand()%3,1,rand(),FALSE,NULL);
-		break;
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+			myStats->weapon = newItem(TOOL_PICKAXE,EXCELLENT,-1+rand()%3,1,rand(),FALSE,NULL);
+			break;
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+			myStats->GOLD += 100;
+			myStats->weapon = newItem(MAGICSTAFF_LIGHTNING,EXCELLENT,-1+rand()%3,1,rand(),FALSE,NULL);
+			break;
 	}
 
 	// give cloak
 	switch( rand()%10 ) {
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-		break;
-	case 6:
-	case 7:
-	case 8:
-	case 9:
-		myStats->cloak = newItem(CLOAK,SERVICABLE,-1+rand()%3,1,rand(),FALSE,NULL);
-		break;
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			break;
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+			myStats->cloak = newItem(CLOAK,SERVICABLE,-1+rand()%3,1,rand(),FALSE,NULL);
+			break;
 	}
 }
 
@@ -372,8 +381,9 @@ void gnomeDie(Entity *my) {
 	int c;
 	for( c=0; c<6; c++ ) {
 		Entity *entity = spawnGib(my);
-		if( entity )
+		if( entity ) {
 			serverSpawnGibForClient(entity);
+		}
 	}
 	if (spawn_blood) {
 		int x, y;
@@ -399,8 +409,9 @@ void gnomeDie(Entity *my) {
 		nextnode = node->next;
 		if( node->element != NULL && i >= 2 ) {
 			Entity *entity=(Entity *)node->element;
-			if( entity->light != NULL )
+			if( entity->light != NULL ) {
 				list_RemoveNode(entity->light->node);
+			}
 			entity->light = NULL;
 			list_RemoveNode(entity->mynode);
 		}
@@ -425,11 +436,13 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	// set invisibility
 	if( multiplayer != CLIENT ) {
 		if( myStats->ring != NULL )
-			if( myStats->ring->type == RING_INVISIBILITY )
+			if( myStats->ring->type == RING_INVISIBILITY ) {
 				wearingring = TRUE;
+			}
 		if( myStats->cloak != NULL )
-			if( myStats->cloak->type == CLOAK_INVISIBILITY )
+			if( myStats->cloak->type == CLOAK_INVISIBILITY ) {
 				wearingring = TRUE;
+			}
 		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring==TRUE ) {
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
@@ -491,8 +504,9 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if( bodypart==3||bodypart==6 ) {
-			if( bodypart==3 )
+			if( bodypart==3 ) {
 				rightbody = (Entity *)node->next->element;
+			}
 			node_t *shieldNode = list_Node(&my->children,7);
 			if( shieldNode ) {
 				Entity *shield = (Entity *)shieldNode->element;
@@ -503,8 +517,9 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 							entity->pitch = -PI/4.0;
 							if(bodypart==3) {
 								entity->skill[0]=1;
-								if( dist>.4 )
+								if( dist>.4 ) {
 									playSoundEntityLocal(my,rand()%7,32);
+								}
 							}
 						}
 					} else {
@@ -513,20 +528,23 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 							entity->pitch = PI/4.0;
 							if(bodypart==3) {
 								entity->skill[0]=0;
-								if( dist>.4 )
+								if( dist>.4 ) {
 									playSoundEntityLocal(my,rand()%7,32);
+								}
 							}
 						}
 					}
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += 1/fmax(dist*.1,10.0);
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= 1/fmax(dist*.1,10.0);
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			}
@@ -541,8 +559,9 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 						entity->pitch = -3*PI/4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI/2 )
+						if( entity->pitch >= -PI/2 ) {
 							MONSTER_ARMBENDED = 1;
+						}
 						if( entity->pitch >= PI/4 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
@@ -617,12 +636,14 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				} else {
 					if( entity->pitch < 0 ) {
 						entity->pitch += 1/fmax(dist*.1,10.0);
-						if( entity->pitch > 0 )
+						if( entity->pitch > 0 ) {
 							entity->pitch=0;
+						}
 					} else if( entity->pitch > 0 ) {
 						entity->pitch -= 1/fmax(dist*.1,10.0);
-						if( entity->pitch < 0 )
+						if( entity->pitch < 0 ) {
 							entity->pitch=0;
+						}
 					}
 				}
 			}
@@ -633,229 +654,232 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 		}
 		switch( bodypart ) {
-		// torso
-		case 2:
-			entity->x-=.25*cos(my->yaw);
-			entity->y-=.25*sin(my->yaw);
-			entity->z+=1.25;
-			break;
-		// right leg
-		case 3:
-			entity->x+=1.25*cos(my->yaw+PI/2);
-			entity->y+=1.25*sin(my->yaw+PI/2);
-			entity->z+=2.75;
-			if( my->z >= 3.9 && my->z <= 4.1 ) {
-				entity->yaw += PI/8;
-				entity->pitch = -PI/2;
-			}
-			break;
-		// left leg
-		case 4:
-			entity->x-=1.25*cos(my->yaw+PI/2);
-			entity->y-=1.25*sin(my->yaw+PI/2);
-			entity->z+=2.75;
-			if( my->z >= 3.9 && my->z <= 4.1 ) {
-				entity->yaw -= PI/8;
-				entity->pitch = -PI/2;
-			}
-			break;
-		// right arm
-		case 5: {
-			;
-			node_t *weaponNode = list_Node(&my->children,7);
-			if( weaponNode ) {
-				Entity *weapon = (Entity *)weaponNode->element;
-				if( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED ) {
-					entity->focalx = limbs[GNOME][4][0]; // 0
-					entity->focaly = limbs[GNOME][4][1]; // 0
-					entity->focalz = limbs[GNOME][4][2]; // 2
-					entity->sprite = 299;
-				} else {
-					entity->focalx = limbs[GNOME][4][0] + 1; // 1
-					entity->focaly = limbs[GNOME][4][1]; // 0
-					entity->focalz = limbs[GNOME][4][2] - 1; // 1
-					entity->sprite = 300;
+			// torso
+			case 2:
+				entity->x-=.25*cos(my->yaw);
+				entity->y-=.25*sin(my->yaw);
+				entity->z+=1.25;
+				break;
+			// right leg
+			case 3:
+				entity->x+=1.25*cos(my->yaw+PI/2);
+				entity->y+=1.25*sin(my->yaw+PI/2);
+				entity->z+=2.75;
+				if( my->z >= 3.9 && my->z <= 4.1 ) {
+					entity->yaw += PI/8;
+					entity->pitch = -PI/2;
 				}
-			}
-			entity->x+=2.5*cos(my->yaw+PI/2)-.75*cos(my->yaw);
-			entity->y+=2.5*sin(my->yaw+PI/2)-.75*sin(my->yaw);
-			entity->z-=.25;
-			entity->yaw += MONSTER_WEAPONYAW;
-			if( my->z >= 3.9 && my->z <= 4.1 ) {
-				entity->pitch = 0;
-			}
-			break;
-			// left arm
-		}
-		case 6: {
-			;
-			node_t *shieldNode = list_Node(&my->children,8);
-			if( shieldNode ) {
-				Entity *shield = (Entity *)shieldNode->element;
-				if( shield->flags[INVISIBLE] ) {
-					entity->focalx = limbs[GNOME][5][0]; // 0
-					entity->focaly = limbs[GNOME][5][1]; // 0
-					entity->focalz = limbs[GNOME][5][2]; // 2
-					entity->sprite=301;
-				} else {
-					entity->focalx = limbs[GNOME][5][0] + 1; // 1
-					entity->focaly = limbs[GNOME][5][1]; // 0
-					entity->focalz = limbs[GNOME][5][2] - 1; // 1
-					entity->sprite=302;
+				break;
+			// left leg
+			case 4:
+				entity->x-=1.25*cos(my->yaw+PI/2);
+				entity->y-=1.25*sin(my->yaw+PI/2);
+				entity->z+=2.75;
+				if( my->z >= 3.9 && my->z <= 4.1 ) {
+					entity->yaw -= PI/8;
+					entity->pitch = -PI/2;
 				}
-			}
-			entity->x-=2.5*cos(my->yaw+PI/2)+.75*cos(my->yaw);
-			entity->y-=2.5*sin(my->yaw+PI/2)+.75*sin(my->yaw);
-			entity->z-=.25;
-			if( my->z >= 3.9 && my->z <= 4.1 ) {
-				entity->pitch = 0;
-			}
-			break;
-		}
-		// weapon
-		case 7:
-			if( multiplayer!=CLIENT ) {
-				if( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) {
-					entity->flags[INVISIBLE]=TRUE;
-				} else {
-					entity->sprite = itemModel(myStats->weapon);
-					if( itemCategory(myStats->weapon) == SPELLBOOK )
-						entity->flags[INVISIBLE]=TRUE;
-					else
-						entity->flags[INVISIBLE]=FALSE;
-				}
-				if( multiplayer==SERVER ) {
-					// update sprites for clients
-					if( entity->skill[10]!=entity->sprite ) {
-						entity->skill[10]=entity->sprite;
-						serverUpdateEntityBodypart(my,bodypart);
-					}
-					if( entity->skill[11] != entity->flags[INVISIBLE] ) {
-						entity->skill[11] = entity->flags[INVISIBLE];
-						serverUpdateEntityBodypart(my,bodypart);
-					}
-					if( entity->uid%(TICKS_PER_SECOND*10) == ticks%(TICKS_PER_SECOND*10) ) {
-						serverUpdateEntityBodypart(my,bodypart);
-					}
-				}
-			}
-			if( weaponarm != NULL ) {
-				if( entity->flags[INVISIBLE] != TRUE ) {
-					if( entity->sprite == items[SHORTBOW].index ) {
-						entity->x=weaponarm->x-.5*cos(weaponarm->yaw);
-						entity->y=weaponarm->y-.5*sin(weaponarm->yaw);
-						entity->z=weaponarm->z+1;
-						entity->pitch=weaponarm->pitch+.25;
-					} else if( entity->sprite == items[ARTIFACT_BOW].index ) {
-						entity->x=weaponarm->x-1.5*cos(weaponarm->yaw);
-						entity->y=weaponarm->y-1.5*sin(weaponarm->yaw);
-						entity->z=weaponarm->z+2;
-						entity->pitch=weaponarm->pitch+.25;
-					} else if( entity->sprite == items[CROSSBOW].index ) {
-						entity->x=weaponarm->x;
-						entity->y=weaponarm->y;
-						entity->z=weaponarm->z+1;
-						entity->pitch=weaponarm->pitch;
+				break;
+			// right arm
+			case 5: {
+				;
+				node_t *weaponNode = list_Node(&my->children,7);
+				if( weaponNode ) {
+					Entity *weapon = (Entity *)weaponNode->element;
+					if( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED ) {
+						entity->focalx = limbs[GNOME][4][0]; // 0
+						entity->focaly = limbs[GNOME][4][1]; // 0
+						entity->focalz = limbs[GNOME][4][2]; // 2
+						entity->sprite = 299;
 					} else {
-						entity->x=weaponarm->x+.5*cos(weaponarm->yaw)*(MONSTER_ATTACK==0);
-						entity->y=weaponarm->y+.5*sin(weaponarm->yaw)*(MONSTER_ATTACK==0);
-						entity->z=weaponarm->z-.5*(MONSTER_ATTACK==0);
-						entity->pitch=weaponarm->pitch+.25*(MONSTER_ATTACK==0);
+						entity->focalx = limbs[GNOME][4][0] + 1; // 1
+						entity->focaly = limbs[GNOME][4][1]; // 0
+						entity->focalz = limbs[GNOME][4][2] - 1; // 1
+						entity->sprite = 300;
 					}
 				}
-				entity->yaw=weaponarm->yaw;
-				entity->roll=weaponarm->roll;
-				if( !MONSTER_ARMBENDED ) {
-					entity->focalx=limbs[GNOME][6][0];
-					if( entity->sprite == items[CROSSBOW].index )
-						entity->focalx+=2;
-					entity->focaly=limbs[GNOME][6][1];
-					entity->focalz=limbs[GNOME][6][2];
-				} else {
-					entity->focalx=limbs[GNOME][6][0]+1;
-					entity->focaly=limbs[GNOME][6][1];
-					entity->focalz=limbs[GNOME][6][2]-2;
-					entity->yaw -= sin(weaponarm->roll)*PI/2;
-					entity->pitch += cos(weaponarm->roll)*PI/2;
+				entity->x+=2.5*cos(my->yaw+PI/2)-.75*cos(my->yaw);
+				entity->y+=2.5*sin(my->yaw+PI/2)-.75*sin(my->yaw);
+				entity->z-=.25;
+				entity->yaw += MONSTER_WEAPONYAW;
+				if( my->z >= 3.9 && my->z <= 4.1 ) {
+					entity->pitch = 0;
 				}
+				break;
+				// left arm
 			}
-			break;
-		// shield
-		case 8:
-			if( multiplayer!=CLIENT ) {
-				if( myStats->shield == NULL ) {
-					entity->flags[INVISIBLE]=TRUE;
-					entity->sprite = 0;
-				} else {
-					entity->flags[INVISIBLE]=FALSE;
-					entity->sprite = itemModel(myStats->shield);
-				}
-				if( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) {
-					entity->flags[INVISIBLE]=TRUE;
-				}
-				if( multiplayer==SERVER ) {
-					// update sprites for clients
-					if( entity->skill[10]!=entity->sprite ) {
-						entity->skill[10]=entity->sprite;
-						serverUpdateEntityBodypart(my,bodypart);
-					}
-					if( entity->skill[11] != entity->flags[INVISIBLE] ) {
-						entity->skill[11] = entity->flags[INVISIBLE];
-						serverUpdateEntityBodypart(my,bodypart);
-					}
-					if( entity->uid%(TICKS_PER_SECOND*10) == ticks%(TICKS_PER_SECOND*10) ) {
-						serverUpdateEntityBodypart(my,bodypart);
+			case 6: {
+				;
+				node_t *shieldNode = list_Node(&my->children,8);
+				if( shieldNode ) {
+					Entity *shield = (Entity *)shieldNode->element;
+					if( shield->flags[INVISIBLE] ) {
+						entity->focalx = limbs[GNOME][5][0]; // 0
+						entity->focaly = limbs[GNOME][5][1]; // 0
+						entity->focalz = limbs[GNOME][5][2]; // 2
+						entity->sprite=301;
+					} else {
+						entity->focalx = limbs[GNOME][5][0] + 1; // 1
+						entity->focaly = limbs[GNOME][5][1]; // 0
+						entity->focalz = limbs[GNOME][5][2] - 1; // 1
+						entity->sprite=302;
 					}
 				}
+				entity->x-=2.5*cos(my->yaw+PI/2)+.75*cos(my->yaw);
+				entity->y-=2.5*sin(my->yaw+PI/2)+.75*sin(my->yaw);
+				entity->z-=.25;
+				if( my->z >= 3.9 && my->z <= 4.1 ) {
+					entity->pitch = 0;
+				}
+				break;
 			}
-			entity->x-=2.5*cos(my->yaw+PI/2)+.20*cos(my->yaw);
-			entity->y-=2.5*sin(my->yaw+PI/2)+.20*sin(my->yaw);
-			entity->z+=1;
-			if( entity->sprite == items[TOOL_TORCH].index ) {
-				entity2 = spawnFlame(entity);
-				entity2->x += 2*cos(my->yaw);
-				entity2->y += 2*sin(my->yaw);
-				entity2->z -= 2;
-			} else if( entity->sprite == items[TOOL_LANTERN].index ) {
-				entity->z += 2;
-				entity2 = spawnFlame(entity);
-				entity2->x += 2*cos(my->yaw);
-				entity2->y += 2*sin(my->yaw);
-				entity2->z += 1;
-			}
-			break;
-		// cloak
-		case 9:
-			if( multiplayer!=CLIENT ) {
-				if( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) {
-					entity->flags[INVISIBLE]=TRUE;
-				} else {
-					entity->flags[INVISIBLE]=FALSE;
-					entity->sprite = itemModel(myStats->cloak);
-				}
-				if( multiplayer==SERVER ) {
-					// update sprites for clients
-					if( entity->skill[10]!=entity->sprite ) {
-						entity->skill[10]=entity->sprite;
-						serverUpdateEntityBodypart(my,bodypart);
+			// weapon
+			case 7:
+				if( multiplayer!=CLIENT ) {
+					if( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) {
+						entity->flags[INVISIBLE]=TRUE;
+					} else {
+						entity->sprite = itemModel(myStats->weapon);
+						if( itemCategory(myStats->weapon) == SPELLBOOK ) {
+							entity->flags[INVISIBLE]=TRUE;
+						} else {
+							entity->flags[INVISIBLE]=FALSE;
+						}
 					}
-					if( entity->skill[11] != entity->flags[INVISIBLE] ) {
-						entity->skill[11] = entity->flags[INVISIBLE];
-						serverUpdateEntityBodypart(my,bodypart);
-					}
-					if( entity->uid%(TICKS_PER_SECOND*10) == ticks%(TICKS_PER_SECOND*10) ) {
-						serverUpdateEntityBodypart(my,bodypart);
+					if( multiplayer==SERVER ) {
+						// update sprites for clients
+						if( entity->skill[10]!=entity->sprite ) {
+							entity->skill[10]=entity->sprite;
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+						if( entity->skill[11] != entity->flags[INVISIBLE] ) {
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+						if( entity->uid%(TICKS_PER_SECOND*10) == ticks%(TICKS_PER_SECOND*10) ) {
+							serverUpdateEntityBodypart(my,bodypart);
+						}
 					}
 				}
-			}
-			entity->x-=cos(my->yaw)*1.5;
-			entity->y-=sin(my->yaw)*1.5;
-			entity->yaw+=PI/2;
-			break;
+				if( weaponarm != NULL ) {
+					if( entity->flags[INVISIBLE] != TRUE ) {
+						if( entity->sprite == items[SHORTBOW].index ) {
+							entity->x=weaponarm->x-.5*cos(weaponarm->yaw);
+							entity->y=weaponarm->y-.5*sin(weaponarm->yaw);
+							entity->z=weaponarm->z+1;
+							entity->pitch=weaponarm->pitch+.25;
+						} else if( entity->sprite == items[ARTIFACT_BOW].index ) {
+							entity->x=weaponarm->x-1.5*cos(weaponarm->yaw);
+							entity->y=weaponarm->y-1.5*sin(weaponarm->yaw);
+							entity->z=weaponarm->z+2;
+							entity->pitch=weaponarm->pitch+.25;
+						} else if( entity->sprite == items[CROSSBOW].index ) {
+							entity->x=weaponarm->x;
+							entity->y=weaponarm->y;
+							entity->z=weaponarm->z+1;
+							entity->pitch=weaponarm->pitch;
+						} else {
+							entity->x=weaponarm->x+.5*cos(weaponarm->yaw)*(MONSTER_ATTACK==0);
+							entity->y=weaponarm->y+.5*sin(weaponarm->yaw)*(MONSTER_ATTACK==0);
+							entity->z=weaponarm->z-.5*(MONSTER_ATTACK==0);
+							entity->pitch=weaponarm->pitch+.25*(MONSTER_ATTACK==0);
+						}
+					}
+					entity->yaw=weaponarm->yaw;
+					entity->roll=weaponarm->roll;
+					if( !MONSTER_ARMBENDED ) {
+						entity->focalx=limbs[GNOME][6][0];
+						if( entity->sprite == items[CROSSBOW].index ) {
+							entity->focalx+=2;
+						}
+						entity->focaly=limbs[GNOME][6][1];
+						entity->focalz=limbs[GNOME][6][2];
+					} else {
+						entity->focalx=limbs[GNOME][6][0]+1;
+						entity->focaly=limbs[GNOME][6][1];
+						entity->focalz=limbs[GNOME][6][2]-2;
+						entity->yaw -= sin(weaponarm->roll)*PI/2;
+						entity->pitch += cos(weaponarm->roll)*PI/2;
+					}
+				}
+				break;
+			// shield
+			case 8:
+				if( multiplayer!=CLIENT ) {
+					if( myStats->shield == NULL ) {
+						entity->flags[INVISIBLE]=TRUE;
+						entity->sprite = 0;
+					} else {
+						entity->flags[INVISIBLE]=FALSE;
+						entity->sprite = itemModel(myStats->shield);
+					}
+					if( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) {
+						entity->flags[INVISIBLE]=TRUE;
+					}
+					if( multiplayer==SERVER ) {
+						// update sprites for clients
+						if( entity->skill[10]!=entity->sprite ) {
+							entity->skill[10]=entity->sprite;
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+						if( entity->skill[11] != entity->flags[INVISIBLE] ) {
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+						if( entity->uid%(TICKS_PER_SECOND*10) == ticks%(TICKS_PER_SECOND*10) ) {
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+					}
+				}
+				entity->x-=2.5*cos(my->yaw+PI/2)+.20*cos(my->yaw);
+				entity->y-=2.5*sin(my->yaw+PI/2)+.20*sin(my->yaw);
+				entity->z+=1;
+				if( entity->sprite == items[TOOL_TORCH].index ) {
+					entity2 = spawnFlame(entity);
+					entity2->x += 2*cos(my->yaw);
+					entity2->y += 2*sin(my->yaw);
+					entity2->z -= 2;
+				} else if( entity->sprite == items[TOOL_LANTERN].index ) {
+					entity->z += 2;
+					entity2 = spawnFlame(entity);
+					entity2->x += 2*cos(my->yaw);
+					entity2->y += 2*sin(my->yaw);
+					entity2->z += 1;
+				}
+				break;
+			// cloak
+			case 9:
+				if( multiplayer!=CLIENT ) {
+					if( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) {
+						entity->flags[INVISIBLE]=TRUE;
+					} else {
+						entity->flags[INVISIBLE]=FALSE;
+						entity->sprite = itemModel(myStats->cloak);
+					}
+					if( multiplayer==SERVER ) {
+						// update sprites for clients
+						if( entity->skill[10]!=entity->sprite ) {
+							entity->skill[10]=entity->sprite;
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+						if( entity->skill[11] != entity->flags[INVISIBLE] ) {
+							entity->skill[11] = entity->flags[INVISIBLE];
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+						if( entity->uid%(TICKS_PER_SECOND*10) == ticks%(TICKS_PER_SECOND*10) ) {
+							serverUpdateEntityBodypart(my,bodypart);
+						}
+					}
+				}
+				entity->x-=cos(my->yaw)*1.5;
+				entity->y-=sin(my->yaw)*1.5;
+				entity->yaw+=PI/2;
+				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 )
+	if( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
-	else
+	} else {
 		MONSTER_ATTACKTIME=0;
+	}
 }

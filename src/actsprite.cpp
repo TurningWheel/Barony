@@ -61,8 +61,9 @@ Entity *spawnBang(Sint16 x, Sint16 y, Sint16 z) {
 	int c;
 	if( multiplayer==SERVER ) {
 		for( c=1; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+			if( client_disconnected[c] ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"BANG");
 			SDLNet_Write16(x,&net_packet->data[4]);
 			SDLNet_Write16(y,&net_packet->data[6]);
@@ -89,8 +90,9 @@ Entity *spawnBang(Sint16 x, Sint16 y, Sint16 z) {
 	entity->skill[1] = 4;
 	entity->skill[2] = 4;
 	playSoundEntityLocal(entity,66,64);
-	if( multiplayer != CLIENT )
+	if( multiplayer != CLIENT ) {
 		entity_uids--;
+	}
 	entity->uid = -3;
 	return entity;
 }
@@ -99,8 +101,9 @@ Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 	int c, i;
 	if( multiplayer==SERVER ) {
 		for( c=1; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+			if( client_disconnected[c] ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"EXPL");
 			SDLNet_Write16(x,&net_packet->data[4]);
 			SDLNet_Write16(y,&net_packet->data[6]);
@@ -150,8 +153,9 @@ Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 		entity->vel_z = (-40+rand()%81)/8.f;
 		entity->skill[0] = 15+rand()%10;
 	}
-	if( multiplayer != CLIENT )
+	if( multiplayer != CLIENT ) {
 		entity_uids--;
+	}
 	entity->uid = -3;
 	return explosion;
 }
@@ -183,8 +187,9 @@ Entity *spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
 
 	if( multiplayer==SERVER ) {
 		for( c=1; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+			if( client_disconnected[c] ) {
 				continue;
+			}
 			strcpy((char *)net_packet->data,"SLEZ");
 			SDLNet_Write16(x,&net_packet->data[4]);
 			SDLNet_Write16(y,&net_packet->data[6]);
@@ -211,8 +216,9 @@ Entity *spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
 	entity->scalez = 0.05;
 	entity->sizex = 1;
 	entity->sizey = 1;
-	if( multiplayer != CLIENT )
+	if( multiplayer != CLIENT ) {
 		entity_uids--;
+	}
 	entity->uid = -3;
 
 	return entity;

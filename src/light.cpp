@@ -32,8 +32,9 @@ light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) 
 	bool wallhit;
 	int index, z;
 
-	if( intensity==0 )
+	if( intensity==0 ) {
 		return NULL;
+	}
 	light = newLight(x,y,radius,intensity);
 	intensity = std::min(std::max(-255,intensity),255);
 
@@ -56,8 +57,9 @@ light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) 
 						break;
 					}
 				}
-				if( wallhit==TRUE )
+				if( wallhit==TRUE ) {
 					continue;
+				}
 				if( dxabs >= dyabs ) { // the line is more horizontal than vertical
 					for( i=0; i<dxabs; i++ ) {
 						u2 -= sgn(dx);
@@ -115,8 +117,9 @@ light_t *lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
 	Sint32 u, v;
 	Sint32 dx, dy;
 
-	if( intensity==0 )
+	if( intensity==0 ) {
 		return NULL;
+	}
 	light = newLight(x,y,radius,intensity);
 	intensity = std::min(std::max(-255,intensity),255);
 

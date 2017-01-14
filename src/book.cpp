@@ -30,8 +30,9 @@ list_t *discoveredbooks = NULL;
 int getBook(char *booktitle) {
 	int c;
 	for( c=0; c<numbooks; c++ ) {
-		if( !strcmp(booktitle,books[c]->name) )
+		if( !strcmp(booktitle,books[c]->name) ) {
 			return c;
+		}
 	}
 	return 0;
 }
@@ -97,98 +98,105 @@ void createBooks() {
 
 bool isLetter(char character) {
 	switch (tolower(character)) {
-	case 'a':
-		return TRUE;
-	case 'b':
-		return TRUE;
-	case 'c':
-		return TRUE;
-	case 'd':
-		return TRUE;
-	case 'e':
-		return TRUE;
-	case 'f':
-		return TRUE;
-	case 'g':
-		return TRUE;
-	case 'h':
-		return TRUE;
-	case 'i':
-		return TRUE;
-	case 'j':
-		return TRUE;
-	case 'k':
-		return TRUE;
-	case 'l':
-		return TRUE;
-	case 'm':
-		return TRUE;
-	case 'n':
-		return TRUE;
-	case 'o':
-		return TRUE;
-	case 'p':
-		return TRUE;
-	case 'q':
-		return TRUE;
-	case 'r':
-		return TRUE;
-	case 's':
-		return TRUE;
-	case 't':
-		return TRUE;
-	case 'u':
-		return TRUE;
-	case 'v':
-		return TRUE;
-	case 'w':
-		return TRUE;
-	case 'x':
-		return TRUE;
-	case 'y':
-		return TRUE;
-	case 'z':
-		return TRUE;
-	default:
-		return FALSE;
+		case 'a':
+			return TRUE;
+		case 'b':
+			return TRUE;
+		case 'c':
+			return TRUE;
+		case 'd':
+			return TRUE;
+		case 'e':
+			return TRUE;
+		case 'f':
+			return TRUE;
+		case 'g':
+			return TRUE;
+		case 'h':
+			return TRUE;
+		case 'i':
+			return TRUE;
+		case 'j':
+			return TRUE;
+		case 'k':
+			return TRUE;
+		case 'l':
+			return TRUE;
+		case 'm':
+			return TRUE;
+		case 'n':
+			return TRUE;
+		case 'o':
+			return TRUE;
+		case 'p':
+			return TRUE;
+		case 'q':
+			return TRUE;
+		case 'r':
+			return TRUE;
+		case 's':
+			return TRUE;
+		case 't':
+			return TRUE;
+		case 'u':
+			return TRUE;
+		case 'v':
+			return TRUE;
+		case 'w':
+			return TRUE;
+		case 'x':
+			return TRUE;
+		case 'y':
+			return TRUE;
+		case 'z':
+			return TRUE;
+		default:
+			return FALSE;
 	}
 	return FALSE;
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
 bool isCharacterPartOfWord(char *text, int index) {
-	if (!text)
+	if (!text) {
 		return FALSE;
-	if (index < 0 || index > strlen(text))
+	}
+	if (index < 0 || index > strlen(text)) {
 		return FALSE;
+	}
 
-	if (isLetter(text[index]))
-		return TRUE; //It's a character. Return true because no use continuing this function.
+	if (isLetter(text[index])) {
+		return TRUE;    //It's a character. Return true because no use continuing this function.
+	}
 
 	switch (text[index]) {
-	case '\'':
-		if (isLetter(text[index - 1]) && isLetter(text[index + 1])) //An apostrophe needs to be surrounded by letters to qualify as part of a word.
-			return TRUE;
-		return FALSE;
-	default:
-		return FALSE;
+		case '\'':
+			if (isLetter(text[index - 1]) && isLetter(text[index + 1])) { //An apostrophe needs to be surrounded by letters to qualify as part of a word.
+				return TRUE;
+			}
+			return FALSE;
+		default:
+			return FALSE;
 	}
 
 	return FALSE;
 }
 
 int moveToStartOfWord(char *text, int index) {
-	if (!text)
+	if (!text) {
 		return index;
-	if (index < 0 || index > strlen(text))
+	}
+	if (index < 0 || index > strlen(text)) {
 		return index;
+	}
 
 	int i = index;
 
 	//Keep running backwards until it finds a non-letter character (which would be the character before the start of the word).
 	for (; i - 1 > 0; --i) {
-		if (!isCharacterPartOfWord(text, i - 1))
+		if (!isCharacterPartOfWord(text, i - 1)) {
 			return i;
+		}
 	}
 
 	return i;
@@ -196,33 +204,39 @@ int moveToStartOfWord(char *text, int index) {
 
 //Returns 0 on error. Returns 0 if index not on a word. Returns length of word otherwise. If nonletter character at the current index, it keeps looking until it finds the start of the next word.
 int lengthOfCurrentWord(char *text, int index) {
-	if (!text) //Can't do this without text.
+	if (!text) { //Can't do this without text.
 		return 0;
-	if (index < 0 || index > strlen(text)) //Index has to be in bounds.
+	}
+	if (index < 0 || index > strlen(text)) { //Index has to be in bounds.
 		return 0;
+	}
 
 	int length = 0;
 	int i = index;
 
 	if (!isCharacterPartOfWord(text, i)) //The current character is not part of a word.
 		//i = moveToNextWord(text, index); //Find the start of the next word.
-		return 0; //Not our problem. Tell it the current word is length 0.
-	else if (i > 0 && isCharacterPartOfWord(text, i)) //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
-		i = moveToStartOfWord(text, i); //Move to the start of the current word.
+	{
+		return 0;    //Not our problem. Tell it the current word is length 0.
+	} else if (i > 0 && isCharacterPartOfWord(text, i)) { //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
+		i = moveToStartOfWord(text, i);    //Move to the start of the current word.
+	}
 
 	for(; i < strlen(text); ++i) {
-		if (isCharacterPartOfWord(text, i))
-			length++; //The current character is part of the word.
-		else
-			return length; //Reached the end of the word. Return the length.
+		if (isCharacterPartOfWord(text, i)) {
+			length++;    //The current character is part of the word.
+		} else {
+			return length;    //Reached the end of the word. Return the length.
+		}
 	}
 
 	return length;
 }
 
 void createBook(book_t *book) {
-	if (!book)
+	if (!book) {
 		return;
+	}
 
 	//Load in the text from a file.
 	strcpy(tempstr, "books/");
@@ -299,13 +313,15 @@ void createBook(book_t *book) {
 			}
 			//Bugger the tab away if it hit the end of the line.
 			if (tab > 0) {
-				if (tab < TAB_WIDTH)
-					i--; //Do this too? Or i++? I don't know.
+				if (tab < TAB_WIDTH) {
+					i--;    //Do this too? Or i++? I don't know.
+				}
 				tab = 0;
 			}
 			// no spaces at the start of a line
-			if( character_to_record==' ' )
+			if( character_to_record==' ' ) {
 				continue;
+			}
 		} else if (tab > 0) {
 			character_to_record = ' ';
 		}
@@ -378,8 +394,9 @@ void createBook(book_t *book) {
 			}
 
 			if (tab > 0) {
-				if (tab < TAB_WIDTH)
-					i--; //To make sure it doesn't bugger the character.
+				if (tab < TAB_WIDTH) {
+					i--;    //To make sure it doesn't bugger the character.
+				}
 				tab--;
 			}
 		}

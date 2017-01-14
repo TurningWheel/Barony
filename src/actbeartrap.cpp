@@ -72,8 +72,9 @@ void actBeartrap(Entity *my) {
 	node_t *node;
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		Entity *entity = (Entity *)node->element;
-		if( my->parent==entity->uid )
+		if( my->parent==entity->uid ) {
 			continue;
+		}
 		if( entity->behavior==&actMonster || entity->behavior==&actPlayer ) {
 			Stat *stat = entity->getStats();
 			if( stat ) {
@@ -89,15 +90,17 @@ void actBeartrap(Entity *my) {
 
 					if( stat->HP<=0 ) {
 						Entity *parent = uidToEntity(my->parent);
-						if( parent )
+						if( parent ) {
 							parent->awardXP( entity, TRUE, TRUE );
+						}
 					}
 					if( entity->behavior==&actPlayer ) {
 						int player = entity->skill[2];
 						Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
 						messagePlayerColor(player,color,language[454]);
-						if( player>0 )
+						if( player>0 ) {
 							serverUpdateEffects(player);
+						}
 						if( player==clientnum ) {
 							camera_shakex += .1;
 							camera_shakey += 10;

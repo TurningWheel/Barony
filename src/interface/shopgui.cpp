@@ -23,52 +23,57 @@ void rebuildShopInventory() {
 	node_t *node = nullptr;
 	for( node=shopInv->first; node!=NULL; node=node->next ) {
 		Item *item = (Item *) node->element;
-		if( shopinventorycategory==0 && itemCategory(item)!=WEAPON )
+		if( shopinventorycategory==0 && itemCategory(item)!=WEAPON ) {
 			continue;
-		else if( shopinventorycategory==1 && itemCategory(item)!=ARMOR )
+		} else if( shopinventorycategory==1 && itemCategory(item)!=ARMOR ) {
 			continue;
-		else if( shopinventorycategory==2 && itemCategory(item)!=AMULET && itemCategory(item)!=RING )
+		} else if( shopinventorycategory==2 && itemCategory(item)!=AMULET && itemCategory(item)!=RING ) {
 			continue;
-		else if( shopinventorycategory==3 && itemCategory(item)!=SPELLBOOK && itemCategory(item)!=MAGICSTAFF && itemCategory(item)!=SCROLL )
+		} else if( shopinventorycategory==3 && itemCategory(item)!=SPELLBOOK && itemCategory(item)!=MAGICSTAFF && itemCategory(item)!=SCROLL ) {
 			continue;
-		else if( shopinventorycategory==4 && itemCategory(item)!=GEM )
+		} else if( shopinventorycategory==4 && itemCategory(item)!=GEM ) {
 			continue;
-		else if( shopinventorycategory==5 && itemCategory(item)!=FOOD && itemCategory(item)!=POTION )
+		} else if( shopinventorycategory==5 && itemCategory(item)!=FOOD && itemCategory(item)!=POTION ) {
 			continue;
-		else if( shopinventorycategory==6 && itemCategory(item)!=TOOL && itemCategory(item)!=BOOK )
+		} else if( shopinventorycategory==6 && itemCategory(item)!=TOOL && itemCategory(item)!=BOOK ) {
 			continue;
+		}
 		c++;
 	}
 	//Sanitize item scroll.
 	shopitemscroll=std::max(0,std::min(shopitemscroll,c-4));
 	//Clear out currently displayed items.
-	for( c=0; c<4; c++ )
+	for( c=0; c<4; c++ ) {
 		shopinvitems[c]=NULL;
+	}
 	//Display the items.
 	c=0;
 	for( node=shopInv->first; node!=NULL; node=node->next ) {
 		Item *item = (Item *) node->element;
 		if (item) {
-			if( shopinventorycategory==0 && itemCategory(item)!=WEAPON )
+			if( shopinventorycategory==0 && itemCategory(item)!=WEAPON ) {
 				continue;
-			else if( shopinventorycategory==1 && itemCategory(item)!=ARMOR )
+			} else if( shopinventorycategory==1 && itemCategory(item)!=ARMOR ) {
 				continue;
-			else if( shopinventorycategory==2 && itemCategory(item)!=AMULET && itemCategory(item)!=RING )
+			} else if( shopinventorycategory==2 && itemCategory(item)!=AMULET && itemCategory(item)!=RING ) {
 				continue;
-			else if( shopinventorycategory==3 && itemCategory(item)!=SPELLBOOK && itemCategory(item)!=MAGICSTAFF && itemCategory(item)!=SCROLL )
+			} else if( shopinventorycategory==3 && itemCategory(item)!=SPELLBOOK && itemCategory(item)!=MAGICSTAFF && itemCategory(item)!=SCROLL ) {
 				continue;
-			else if( shopinventorycategory==4 && itemCategory(item)!=GEM )
+			} else if( shopinventorycategory==4 && itemCategory(item)!=GEM ) {
 				continue;
-			else if( shopinventorycategory==5 && itemCategory(item)!=FOOD && itemCategory(item)!=POTION )
+			} else if( shopinventorycategory==5 && itemCategory(item)!=FOOD && itemCategory(item)!=POTION ) {
 				continue;
-			else if( shopinventorycategory==6 && itemCategory(item)!=TOOL && itemCategory(item)!=BOOK )
+			} else if( shopinventorycategory==6 && itemCategory(item)!=TOOL && itemCategory(item)!=BOOK ) {
 				continue;
+			}
 			c++;
-			if( c<=shopitemscroll )
+			if( c<=shopitemscroll ) {
 				continue;
+			}
 			shopinvitems[c-shopitemscroll-1]=item;
-			if( c>3+shopitemscroll )
+			if( c>3+shopitemscroll ) {
 				break;
+			}
 		}
 	}
 }
@@ -249,10 +254,11 @@ void updateShopWindow() {
 	pos.y=y;
 	pos.w=0;
 	pos.h=0;
-	if( shopinventorycategory <= 6 )
+	if( shopinventorycategory <= 6 ) {
 		drawImage(button_bmp, NULL, &pos);
-	else
+	} else {
 		drawImage(smallbutton_bmp, NULL, &pos);
+	}
 
 	// inventory category labels
 	ttfPrintText(ttf8,x+14,y+4,language[349]);
@@ -275,27 +281,30 @@ void updateShopWindow() {
 	for( node=shopInv->first; node!=NULL; node=node->next ) {
 		Item *item = (Item *) node->element;
 		if (item) {
-			if( shopinventorycategory==0 && itemCategory(item)!=WEAPON )
+			if( shopinventorycategory==0 && itemCategory(item)!=WEAPON ) {
 				continue;
-			else if( shopinventorycategory==1 && itemCategory(item)!=ARMOR )
+			} else if( shopinventorycategory==1 && itemCategory(item)!=ARMOR ) {
 				continue;
-			else if( shopinventorycategory==2 && itemCategory(item)!=AMULET && itemCategory(item)!=RING )
+			} else if( shopinventorycategory==2 && itemCategory(item)!=AMULET && itemCategory(item)!=RING ) {
 				continue;
-			else if( shopinventorycategory==3 && itemCategory(item)!=SPELLBOOK && itemCategory(item)!=MAGICSTAFF && itemCategory(item)!=SCROLL )
+			} else if( shopinventorycategory==3 && itemCategory(item)!=SPELLBOOK && itemCategory(item)!=MAGICSTAFF && itemCategory(item)!=SCROLL ) {
 				continue;
-			else if( shopinventorycategory==4 && itemCategory(item)!=GEM )
+			} else if( shopinventorycategory==4 && itemCategory(item)!=GEM ) {
 				continue;
-			else if( shopinventorycategory==5 && itemCategory(item)!=FOOD && itemCategory(item)!=POTION )
+			} else if( shopinventorycategory==5 && itemCategory(item)!=FOOD && itemCategory(item)!=POTION ) {
 				continue;
-			else if( shopinventorycategory==6 && itemCategory(item)!=TOOL && itemCategory(item)!=BOOK )
+			} else if( shopinventorycategory==6 && itemCategory(item)!=TOOL && itemCategory(item)!=BOOK ) {
 				continue;
+			}
 			c++;
-			if( c<=shopitemscroll )
+			if( c<=shopitemscroll ) {
 				continue;
+			}
 			char tempstr[64] = { 0 };
 			strncpy(tempstr,item->description(),42);
-			if( strlen(tempstr)==42 )
+			if( strlen(tempstr)==42 ) {
 				strcat(tempstr," ...");
+			}
 			ttfPrintText(ttf8,x+12+36,y3,tempstr);
 			ttfPrintTextFormatted(ttf8,x+12+348,y3,"%7dG",item->buyValue(clientnum));
 			pos.x=x+12+16;
@@ -304,8 +313,9 @@ void updateShopWindow() {
 			pos.h=16;
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			y3+=18;
-			if( c>3+shopitemscroll )
+			if( c>3+shopitemscroll ) {
 				break;
+			}
 		}
 	}
 
@@ -319,10 +329,11 @@ void updateShopWindow() {
 	}
 
 	// draw speech
-	if (sellitem)
+	if (sellitem) {
 		ttfPrintTextFormatted( ttf16, x1+16+160+16, y1+32, shopspeech, sellitem->sellValue(clientnum) );
-	else
+	} else {
 		ttfPrintTextFormatted( ttf16, x1+16+160+16, y1+32, shopspeech, 0 );
+	}
 	if( !strcmp(shopspeech,language[194]) || !strcmp(shopspeech,language[195]) || !strcmp(shopspeech,language[196]) ) {
 		ttfPrintTextFormatted( ttf16, x1+16+160+16, y1+64, language[358], shopkeepername, language[184+shopkeepertype] );
 	}

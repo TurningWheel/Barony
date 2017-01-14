@@ -55,8 +55,9 @@ score_t *scoreConstructor() {
 
 	// set all data elements
 	int c;
-	for( c=0; c<NUMMONSTERS; c++ )
+	for( c=0; c<NUMMONSTERS; c++ ) {
 		score->kills[c] = kills[c];
+	}
 	score->stats->type = stats[clientnum]->type;
 	score->stats->sex = stats[clientnum]->sex;
 	score->stats->appearance = stats[clientnum]->appearance;
@@ -245,10 +246,11 @@ int totalScore(score_t *score) {
 		amount += score->stats->PROFICIENCIES[c];
 	}
 	for( c=0; c<NUMMONSTERS; c++ ) {
-		if( c != HUMAN )
+		if( c != HUMAN ) {
 			amount += score->kills[c]*100;
-		else
+		} else {
 			amount -= score->kills[c]*100;
+		}
 	}
 
 	amount += score->dungeonlevel*500;
@@ -260,8 +262,9 @@ int totalScore(score_t *score) {
 		amount += score->conductVegetarian*5000;
 		amount += score->conductIlliterate*5000;
 	}
-	if( amount<0 )
+	if( amount<0 ) {
 		amount = 0;
+	}
 
 	return amount;
 }
@@ -277,14 +280,16 @@ int totalScore(score_t *score) {
 
 void loadScore(int scorenum) {
 	node_t *node = list_Node(&topscores,scorenum);
-	if( !node )
+	if( !node ) {
 		return;
+	}
 	score_t *score = (score_t *)node->element;
 	stats[0]->clearStats();
 
 	int c;
-	for( c=0; c<NUMMONSTERS; c++ )
+	for( c=0; c<NUMMONSTERS; c++ ) {
 		kills[c] = score->kills[c];
+	}
 	stats[0]->type = score->stats->type;
 	stats[0]->sex = score->stats->sex;
 	stats[0]->appearance = score->stats->appearance;
@@ -404,8 +409,9 @@ void saveAllScores() {
 		fwrite(&c, sizeof(Uint32), 1, fp);
 		fputs(book,fp);
 	}
-	for( c=0; c<10; c++ )
+	for( c=0; c<10; c++ ) {
 		fwrite(&usedClass[c], sizeof(bool), 1, fp);
+	}
 
 	// score list
 	c = list_Size(&topscores);
@@ -588,8 +594,9 @@ void loadAllScores() {
 		node->size = sizeof(char)*(strlen(tempstr)+1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-	for( c=0; c<10; c++ )
+	for( c=0; c<10; c++ ) {
 		fread(&usedClass[c], sizeof(bool), 1, fp);
+	}
 
 	// read scores
 	Uint32 numscores=0;
@@ -677,64 +684,74 @@ void loadAllScores() {
 		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->helmet=(Item *)node->element;
-		else
+		} else {
 			score->stats->helmet=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->breastplate=(Item *)node->element;
-		else
+		} else {
 			score->stats->breastplate=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->gloves=(Item *)node->element;
-		else
+		} else {
 			score->stats->gloves=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->shoes=(Item *)node->element;
-		else
+		} else {
 			score->stats->shoes=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->shield=(Item *)node->element;
-		else
+		} else {
 			score->stats->shield=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->weapon=(Item *)node->element;
-		else
+		} else {
 			score->stats->weapon=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->cloak=(Item *)node->element;
-		else
+		} else {
 			score->stats->cloak=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->amulet=(Item *)node->element;
-		else
+		} else {
 			score->stats->amulet=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->ring=(Item *)node->element;
-		else
+		} else {
 			score->stats->ring=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&score->stats->inventory,c);
-		if( node )
+		if( node ) {
 			score->stats->mask=(Item *)node->element;
-		else
+		} else {
 			score->stats->mask=NULL;
+		}
 
 		score->stats->monster_sound = NULL;
 		score->stats->monster_idlevar = 0;
@@ -759,8 +776,9 @@ int saveGame() {
 	Sint32 c;
 
 	// open file
-	if( !intro )
+	if( !intro ) {
 		messagePlayer(clientnum,language[1121]);
+	}
 	if( (fp = fopen(SAVEGAMEFILE,"wb")) == NULL ) {
 		printlog("warning: failed to save '%s'!\n",SAVEGAMEFILE);
 		return 1;
@@ -791,8 +809,9 @@ int saveGame() {
 	for( c=0; c<NUM_HOTBAR_SLOTS; c++ ) {
 		int index = list_Size(&stats[clientnum]->inventory);
 		Item *item = uidToItem(hotbar[c].item);
-		if( item )
+		if( item ) {
 			index = list_Index(item->node);
+		}
 		fwrite(&index, sizeof(Uint32), 1, fp);
 	}
 
@@ -1052,8 +1071,9 @@ int saveGame() {
 	fclose(fp);
 
 	// clients don't save follower info
-	if( multiplayer==CLIENT )
+	if( multiplayer==CLIENT ) {
 		return 0;
+	}
 
 	// now we save the follower information
 	if( (fp = fopen(SAVEGAMEFILE2,"wb")) == NULL ) {
@@ -1445,64 +1465,74 @@ int loadGame(int player) {
 		// equipment
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->helmet=(Item *)node->element;
-		else
+		} else {
 			stats[player]->helmet=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->breastplate=(Item *)node->element;
-		else
+		} else {
 			stats[player]->breastplate=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->gloves=(Item *)node->element;
-		else
+		} else {
 			stats[player]->gloves=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->shoes=(Item *)node->element;
-		else
+		} else {
 			stats[player]->shoes=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->shield=(Item *)node->element;
-		else
+		} else {
 			stats[player]->shield=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->weapon=(Item *)node->element;
-		else
+		} else {
 			stats[player]->weapon=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->cloak=(Item *)node->element;
-		else
+		} else {
 			stats[player]->cloak=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->amulet=(Item *)node->element;
-		else
+		} else {
 			stats[player]->amulet=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->ring=(Item *)node->element;
-		else
+		} else {
 			stats[player]->ring=NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
 		node = list_Node(&stats[player]->inventory,c);
-		if( node )
+		if( node ) {
 			stats[player]->mask=(Item *)node->element;
-		else
+		} else {
 			stats[player]->mask=NULL;
+		}
 	} else {
 		stats[player]->inventory.first=NULL;
 		stats[player]->inventory.last=NULL;
@@ -1537,36 +1567,36 @@ int loadGame(int player) {
 					Item *item = newItem(type,status,beatitude,count,appearance,identified,NULL);
 
 					switch( c ) {
-					case 0:
-						stats[player]->helmet = item;
-						break;
-					case 1:
-						stats[player]->breastplate = item;
-						break;
-					case 2:
-						stats[player]->gloves = item;
-						break;
-					case 3:
-						stats[player]->shoes = item;
-						break;
-					case 4:
-						stats[player]->shield = item;
-						break;
-					case 5:
-						stats[player]->weapon = item;
-						break;
-					case 6:
-						stats[player]->cloak = item;
-						break;
-					case 7:
-						stats[player]->amulet = item;
-						break;
-					case 8:
-						stats[player]->ring = item;
-						break;
-					case 9:
-						stats[player]->mask = item;
-						break;
+						case 0:
+							stats[player]->helmet = item;
+							break;
+						case 1:
+							stats[player]->breastplate = item;
+							break;
+						case 2:
+							stats[player]->gloves = item;
+							break;
+						case 3:
+							stats[player]->shoes = item;
+							break;
+						case 4:
+							stats[player]->shield = item;
+							break;
+						case 5:
+							stats[player]->weapon = item;
+							break;
+						case 6:
+							stats[player]->cloak = item;
+							break;
+						case 7:
+							stats[player]->amulet = item;
+							break;
+						case 8:
+							stats[player]->ring = item;
+							break;
+						case 9:
+							stats[player]->mask = item;
+							break;
 					}
 				}
 			}
@@ -1732,36 +1762,36 @@ list_t *loadGameFollowers() {
 					Item *item = newItem(type,status,beatitude,count,appearance,identified,NULL);
 
 					switch( b ) {
-					case 0:
-						followerStats->helmet = item;
-						break;
-					case 1:
-						followerStats->breastplate = item;
-						break;
-					case 2:
-						followerStats->gloves = item;
-						break;
-					case 3:
-						followerStats->shoes = item;
-						break;
-					case 4:
-						followerStats->shield = item;
-						break;
-					case 5:
-						followerStats->weapon = item;
-						break;
-					case 6:
-						followerStats->cloak = item;
-						break;
-					case 7:
-						followerStats->amulet = item;
-						break;
-					case 8:
-						followerStats->ring = item;
-						break;
-					case 9:
-						followerStats->mask = item;
-						break;
+						case 0:
+							followerStats->helmet = item;
+							break;
+						case 1:
+							followerStats->breastplate = item;
+							break;
+						case 2:
+							followerStats->gloves = item;
+							break;
+						case 3:
+							followerStats->shoes = item;
+							break;
+						case 4:
+							followerStats->shield = item;
+							break;
+						case 5:
+							followerStats->weapon = item;
+							break;
+						case 6:
+							followerStats->cloak = item;
+							break;
+						case 7:
+							followerStats->amulet = item;
+							break;
+						case 8:
+							followerStats->ring = item;
+							break;
+						case 9:
+							followerStats->mask = item;
+							break;
 					}
 				}
 			}

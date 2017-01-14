@@ -49,8 +49,9 @@ void actTorch(Entity *my) {
 
 	// check wall
 	if( !checkObstacle( my->x-cos(my->yaw)*8, my->y-sin(my->yaw)*8, my, NULL ) ) {
-		if( my->light != NULL )
+		if( my->light != NULL ) {
 			list_RemoveNode(my->light->node);
+		}
 		my->light = NULL;
 		list_RemoveNode(my->mynode);
 		return;
@@ -66,12 +67,14 @@ void actTorch(Entity *my) {
 		TORCH_LIGHTING=(TORCH_LIGHTING==1)+1;
 
 		if(TORCH_LIGHTING==1) {
-			if( my->light != NULL )
+			if( my->light != NULL ) {
 				list_RemoveNode(my->light->node);
+			}
 			my->light = lightSphereShadow(my->x/16, my->y/16, 7, 192);
 		} else {
-			if( my->light != NULL )
+			if( my->light != NULL ) {
 				list_RemoveNode(my->light->node);
+			}
 			my->light = lightSphereShadow(my->x/16, my->y/16, 7, 174);
 		}
 		TORCH_FLICKER=2+rand()%7;

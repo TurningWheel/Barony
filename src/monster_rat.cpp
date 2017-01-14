@@ -54,17 +54,21 @@ void initRat(Entity *my, Stat *myStats) {
 		myStats->LVL = 1;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid )
+		if( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
+		}
 		myStats->FOLLOWERS.first=NULL;
 		myStats->FOLLOWERS.last=NULL;
 		for( c=0; c<std::max(NUMPROFICIENCIES,NUMEFFECTS); c++ ) {
-			if( c<NUMPROFICIENCIES )
+			if( c<NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c]=0;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS[c]=FALSE;
-			if( c<NUMEFFECTS )
+			}
+			if( c<NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c]=0;
+			}
 		}
 		myStats->helmet = NULL;
 		myStats->breastplate = NULL;
@@ -78,10 +82,11 @@ void initRat(Entity *my, Stat *myStats) {
 		myStats->mask = NULL;
 
 		if( rand()%4 ) {
-			if( rand()%2 )
+			if( rand()%2 ) {
 				newItem( FOOD_MEAT, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
-			else
+			} else {
 				newItem( FOOD_CHEESE, DECREPIT, 0, 1, rand(), FALSE, &myStats->inventory );
+			}
 		}
 
 		if( rand()%50==0 && !my->flags[USERFLAG2] ) {
@@ -101,8 +106,9 @@ void initRat(Entity *my, Stat *myStats) {
 			int c;
 			for( c=0; c<6; c++ ) {
 				Entity *entity = summonMonster(RAT,my->x,my->y);
-				if( entity )
+				if( entity ) {
 					entity->parent = my->uid;
+				}
 			}
 		}
 	}

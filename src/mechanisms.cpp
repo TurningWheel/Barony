@@ -52,10 +52,11 @@ void Entity::updateCircuitNeighbors() {
 				Entity *powerable = (Entity *)(node->element);
 
 				if (powerable) {
-					if (powerable->behavior == actCircuit)
+					if (powerable->behavior == actCircuit) {
 						(circuit_status > 1) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
-					else
+					} else {
 						(circuit_status > 1) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+					}
 				}
 			}
 		}
@@ -79,13 +80,15 @@ void Entity::updateCircuitNeighbors() {
 //Hence, no actMechanism(). Each individual entity will handle that in its own act() function.
 
 void Entity::mechanismPowerOn() {
-	if (skill)
-		circuit_status = CIRCUIT_ON; //Power on.
+	if (skill) {
+		circuit_status = CIRCUIT_ON;    //Power on.
+	}
 }
 
 void Entity::mechanismPowerOff() {
-	if (skill)
-		circuit_status = CIRCUIT_OFF; //Power off.
+	if (skill) {
+		circuit_status = CIRCUIT_OFF;    //Power off.
+	}
 }
 
 
@@ -246,10 +249,11 @@ void Entity::toggleSwitch() {
 				Entity *powerable = (Entity *)(node->element);
 
 				if (powerable) {
-					if (powerable->behavior == actCircuit)
+					if (powerable->behavior == actCircuit) {
 						(switch_power) ? powerable->circuitPowerOn() : powerable->circuitPowerOff();
-					else
+					} else {
 						(switch_power) ? powerable->mechanismPowerOn() : powerable->mechanismPowerOff();
+					}
 				}
 			}
 		}
@@ -270,10 +274,11 @@ void Entity::switchUpdateNeighbors() {
 
 				if (powerable) {
 					if (powerable->circuit_status != CIRCUIT_ON) {
-						if (powerable->behavior == actCircuit)
+						if (powerable->behavior == actCircuit) {
 							powerable->circuitPowerOn();
-						else
+						} else {
 							powerable->mechanismPowerOn();
+						}
 					}
 				}
 			}
@@ -294,7 +299,9 @@ void getPowerablesOnTile(int x, int y, list_t **list) {
 	list_t *entities = NULL;
 	entities = checkTileForEntity(x, y);
 
-	if (!entities) return; //No use continuing, got no entities.
+	if (!entities) {
+		return;    //No use continuing, got no entities.
+	}
 
 	node_t *node = NULL;
 	node_t *node2 = NULL;

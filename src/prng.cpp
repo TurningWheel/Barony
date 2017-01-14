@@ -71,10 +71,11 @@ static int seeded;
 void
 prng_seed_time (void) {
 	static time_t t;
-	if (t == 0)
+	if (t == 0) {
 		t = time (NULL);
-	else
+	} else {
 		t++;
+	}
 
 	prng_seed_bytes (&t, sizeof t);
 }
@@ -86,9 +87,9 @@ prng_seed_time (void) {
 static unsigned char
 get_octet (const void *bytes_, size_t n_bytes, size_t octet_idx) {
 	const unsigned char *bytes = static_cast<const unsigned char* >(bytes_);
-	if (CHAR_BIT == 8)
+	if (CHAR_BIT == 8) {
 		return bytes[octet_idx % n_bytes];
-	else {
+	} else {
 		size_t first_byte = octet_idx * 8 / CHAR_BIT % n_bytes;
 		size_t start_bit = octet_idx * 8 % CHAR_BIT;
 		unsigned char c = (bytes[first_byte] >> start_bit) & 255;
@@ -114,8 +115,9 @@ prng_seed_bytes (const void *key, size_t size) {
 
 	assert (key != NULL && size > 0);
 
-	for (i = 0; i < 256; i++)
+	for (i = 0; i < 256; i++) {
 		s[i] = i;
+	}
 	for (i = j = 0; i < 256; i++) {
 		j = (j + s[i] + get_octet (key, size, i)) & 255;
 		SWAP_BYTE (s + i, s + j);
@@ -128,8 +130,9 @@ prng_seed_bytes (const void *key, size_t size) {
 /* Returns a pseudo-random integer in the range [0, 255]. */
 unsigned char
 prng_get_octet (void) {
-	if (!seeded)
+	if (!seeded) {
 		prng_seed_time ();
+	}
 
 	s_i = (s_i + 1) & 255;
 	s_j = (s_j + s[s_i]) & 255;
@@ -145,8 +148,9 @@ prng_get_byte (void) {
 	Sint32 bits;
 
 	byte = prng_get_octet ();
-	for (bits = 8; bits < CHAR_BIT; bits += 8)
+	for (bits = 8; bits < CHAR_BIT; bits += 8) {
 		byte = (byte << 8) | prng_get_octet ();
+	}
 	return byte;
 }
 
@@ -155,8 +159,9 @@ void
 prng_get_bytes (void *buf_, size_t size) {
 	unsigned char *buf;
 
-	for (buf = static_cast<unsigned char* >(buf_); size-- > 0; buf++)
+	for (buf = static_cast<unsigned char* >(buf_); size-- > 0; buf++) {
 		*buf = prng_get_byte ();
+	}
 }
 
 /* Returns a pseudo-random unsigned long in the range [0,
@@ -167,8 +172,9 @@ prng_get_ulong (void) {
 	size_t bits;
 
 	ulng = prng_get_octet ();
-	for (bits = 8; bits < CHAR_BIT * sizeof ulng; bits += 8)
+	for (bits = 8; bits < CHAR_BIT * sizeof ulng; bits += 8) {
 		ulng = (ulng << 8) | prng_get_octet ();
+	}
 	return ulng;
 }
 
@@ -186,8 +192,9 @@ prng_get_uint (void) {
 	size_t bits;
 
 	uint = prng_get_octet ();
-	for (bits = 8; bits < CHAR_BIT * sizeof uint; bits += 8)
+	for (bits = 8; bits < CHAR_BIT * sizeof uint; bits += 8) {
 		uint = (uint << 8) | prng_get_octet ();
+	}
 	return uint;
 }
 
@@ -203,8 +210,9 @@ double
 prng_get_double (void) {
 	for (;;) {
 		double dbl = prng_get_ulong () / (ULONG_MAX + 1.0);
-		if (dbl >= 0.0 && dbl < 1.0)
+		if (dbl >= 0.0 && dbl < 1.0) {
 			return dbl;
+		}
 	}
 }
 
@@ -227,8 +235,9 @@ prng_get_double_normal (void) {
 		static double limit;
 		double v1, v2, s;
 
-		if (limit == 0.0)
+		if (limit == 0.0) {
 			limit = log (DBL_MAX / 2) / (DBL_MAX / 2);
+		}
 
 		for (;;) {
 			double u1 = prng_get_double ();
@@ -236,8 +245,9 @@ prng_get_double_normal (void) {
 			v1 = 2.0 * u1 - 1.0;
 			v2 = 2.0 * u2 - 1.0;
 			s = v1 * v1 + v2 * v2;
-			if (s > limit && s < 1)
+			if (s > limit && s < 1) {
 				break;
+			}
 		}
 
 		this_normal = v1 * sqrt (-2. * log (s) / s);

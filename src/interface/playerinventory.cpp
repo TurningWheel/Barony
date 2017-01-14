@@ -49,93 +49,105 @@ void warpMouseToSelectedInventorySlot() {
 
 char *itemUseString(const Item *item) {
 	if( itemCategory(item)==WEAPON ) {
-		if( itemIsEquipped(item,clientnum) )
+		if( itemIsEquipped(item,clientnum) ) {
 			return language[323];
-		else
+		} else {
 			return language[324];
+		}
 	} else if( itemCategory(item)==ARMOR ) {
 		switch( item->type ) {
-		case WOODEN_SHIELD:
-		case BRONZE_SHIELD:
-		case IRON_SHIELD:
-		case STEEL_SHIELD:
-		case STEEL_SHIELD_RESISTANCE:
-			if( itemIsEquipped(item,clientnum) )
-				return language[325];
-			else
-				return language[326];
-		default:
-			break;
+			case WOODEN_SHIELD:
+			case BRONZE_SHIELD:
+			case IRON_SHIELD:
+			case STEEL_SHIELD:
+			case STEEL_SHIELD_RESISTANCE:
+				if( itemIsEquipped(item,clientnum) ) {
+					return language[325];
+				} else {
+					return language[326];
+				}
+			default:
+				break;
 		}
-		if( itemIsEquipped(item,clientnum) )
+		if( itemIsEquipped(item,clientnum) ) {
 			return language[327];
-		else
+		} else {
 			return language[328];
+		}
 	} else if( itemCategory(item)==AMULET ) {
-		if( itemIsEquipped(item,clientnum) )
+		if( itemIsEquipped(item,clientnum) ) {
 			return language[327];
-		else
+		} else {
 			return language[328];
+		}
 	} else if( itemCategory(item)==POTION ) {
 		return language[329];
 	} else if( itemCategory(item)==SCROLL ) {
 		return language[330];
 	} else if( itemCategory(item)==MAGICSTAFF ) {
-		if( itemIsEquipped(item,clientnum) )
+		if( itemIsEquipped(item,clientnum) ) {
 			return language[323];
-		else
+		} else {
 			return language[324];
+		}
 	} else if( itemCategory(item)==RING ) {
-		if( itemIsEquipped(item,clientnum) )
+		if( itemIsEquipped(item,clientnum) ) {
 			return language[327];
-		else
+		} else {
 			return language[331];
+		}
 	} else if( itemCategory(item)==SPELLBOOK ) {
 		return language[330];
 	} else if( itemCategory(item)==GEM ) {
-		if( itemIsEquipped(item,clientnum) )
+		if( itemIsEquipped(item,clientnum) ) {
 			return language[323];
-		else
+		} else {
 			return language[324];
+		}
 	} else if( itemCategory(item)==TOOL ) {
 		switch( item->type ) {
-		case TOOL_PICKAXE:
-			if( itemIsEquipped(item,clientnum) )
-				return language[323];
-			else
-				return language[324];
-		case TOOL_TINOPENER:
-			return language[1881];
-		case TOOL_MIRROR:
-			return language[332];
-		case TOOL_LOCKPICK:
-		case TOOL_SKELETONKEY:
-			if( itemIsEquipped(item,clientnum) )
-				return language[333];
-			else
-				return language[334];
-		case TOOL_TORCH:
-		case TOOL_LANTERN:
-			if( itemIsEquipped(item,clientnum) )
-				return language[335];
-			else
-				return language[336];
-		case TOOL_BLINDFOLD:
-			if( itemIsEquipped(item,clientnum) )
-				return language[327];
-			else
-				return language[328];
-		case TOOL_TOWEL:
-			return language[332];
-		case TOOL_GLASSES:
-			if( itemIsEquipped(item,clientnum) )
-				return language[327];
-			else
-				return language[331];
-		case TOOL_BEARTRAP:
-			return language[337];
-		default:
-			break;
+			case TOOL_PICKAXE:
+				if( itemIsEquipped(item,clientnum) ) {
+					return language[323];
+				} else {
+					return language[324];
+				}
+			case TOOL_TINOPENER:
+				return language[1881];
+			case TOOL_MIRROR:
+				return language[332];
+			case TOOL_LOCKPICK:
+			case TOOL_SKELETONKEY:
+				if( itemIsEquipped(item,clientnum) ) {
+					return language[333];
+				} else {
+					return language[334];
+				}
+			case TOOL_TORCH:
+			case TOOL_LANTERN:
+				if( itemIsEquipped(item,clientnum) ) {
+					return language[335];
+				} else {
+					return language[336];
+				}
+			case TOOL_BLINDFOLD:
+				if( itemIsEquipped(item,clientnum) ) {
+					return language[327];
+				} else {
+					return language[328];
+				}
+			case TOOL_TOWEL:
+				return language[332];
+			case TOOL_GLASSES:
+				if( itemIsEquipped(item,clientnum) ) {
+					return language[327];
+				} else {
+					return language[331];
+				}
+			case TOOL_BEARTRAP:
+				return language[337];
+			default:
+				break;
 		}
 	} else if( itemCategory(item)==FOOD ) {
 		return language[338];
@@ -360,8 +372,9 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 				        node = nextnode) {
 					nextnode = node->next;
 					Item* tempItem = (Item*) (node->element);
-					if (tempItem == selectedItem)
+					if (tempItem == selectedItem) {
 						continue;
+					}
 
 					toggleclick = FALSE;
 					if (tempItem->x == selectedItem->x
@@ -382,8 +395,9 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 						}
 					}
 				}
-				if (!toggleclick)
+				if (!toggleclick) {
 					selectedItem = NULL;
+				}
 
 				playSound(139, 64); // click sound
 			} else if (itemCategory(selectedItem) == SPELL_CAT) {
@@ -459,8 +473,9 @@ void cycleInventoryTab() {
  */
 bool mouseInBoundsRealtimeCoords(int x1, int x2, int y1, int y2) {
 	if (mousey >= y1 && mousey < y2)
-		if (mousex >= x1 && mousex < x2)
+		if (mousex >= x1 && mousex < x2) {
 			return TRUE;
+		}
 
 	return FALSE;
 }
@@ -631,12 +646,14 @@ void updatePlayerInventory() {
 		pos.y = y+item->y*INVENTORY_SLOTSIZE+4;
 		pos.w = 32;
 		pos.h = 32;
-		if( itemSprite(item) )
+		if( itemSprite(item) ) {
 			drawImageScaled(itemSprite(item), NULL, &pos);
+		}
 
 		// item count
-		if( item->count>1 )
+		if( item->count>1 ) {
 			printTextFormatted(font8x8_bmp,pos.x+24,pos.y+24,"%d",item->count);
+		}
 
 		// item equipped
 		if( itemCategory(item)!=SPELL_CAT ) {
@@ -723,8 +740,9 @@ void updatePlayerInventory() {
 
 				if( omousex>=pos.x && omousey>=pos.y && omousex<pos.x+pos.w && omousey<pos.y+pos.h ) {
 					// tooltip
-					if ((inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT))
-						continue; //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
+					if ((inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT)) {
+						continue;    //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
+					}
 					if( !itemMenuOpen ) {
 						SDL_Rect src;
 						src.x = mousex+16;
@@ -748,8 +766,9 @@ void updatePlayerInventory() {
 							src.w = std::max(13,longestline(item->description()))*TTF12_WIDTH+8;
 							src.h = TTF12_HEIGHT*4+8;
 							if( item->identified )
-								if( itemCategory(item)==WEAPON || itemCategory(item)==ARMOR )
+								if( itemCategory(item)==WEAPON || itemCategory(item)==ARMOR ) {
 									src.h+=TTF12_HEIGHT;
+								}
 							drawTooltip(&src);
 
 							Uint32 color=0xFFFFFFFF;
@@ -776,8 +795,9 @@ void updatePlayerInventory() {
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 								}
 							}
-							if( item->beatitude==0 || !item->identified )
+							if( item->beatitude==0 || !item->identified ) {
 								color=0xFFFFFFFF;
+							}
 							ttfPrintTextFormattedColor( ttf12, src.x+4, src.y+4, color, "%s", item->description());
 							ttfPrintTextFormatted( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*2, language[313], items[item->type].weight*item->count);
 							ttfPrintTextFormatted( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*3, language[314], item->sellValue(clientnum));
@@ -802,8 +822,9 @@ void updatePlayerInventory() {
 						}
 					}
 
-					if( stats[clientnum]->HP<=0 )
+					if( stats[clientnum]->HP<=0 ) {
 						break;
+					}
 
 					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) {
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
@@ -948,8 +969,9 @@ inline void drawOptionDrop(int x, int y) {
  * Helper function to itemContextMenu(). Draws a spell's options.
  */
 inline void drawItemMenuOptionSpell(const Item &item, int x, int y) {
-	if (itemCategory(&item) != SPELL_CAT)
+	if (itemCategory(&item) != SPELL_CAT) {
 		return;
+	}
 
 	int width = 0;
 
@@ -961,8 +983,9 @@ inline void drawItemMenuOptionSpell(const Item &item, int x, int y) {
  * Helper function to itemContextMenu(). Draws a potion's options.
  */
 inline void drawItemMenuOptionPotion(const Item &item, int x, int y, int height, bool is_potion_bad = false) {
-	if (itemCategory(&item) != POTION)
+	if (itemCategory(&item) != POTION) {
 		return;
+	}
 
 	int width = 0;
 
@@ -1205,8 +1228,9 @@ void itemContextMenu() {
 	}
 
 	bool is_potion_bad = false;
-	if (current_item->identified)
+	if (current_item->identified) {
 		is_potion_bad = isPotionBad(*current_item);
+	}
 
 	const int slot_width = 100;
 	const int slot_height = 20;
@@ -1241,20 +1265,20 @@ void itemContextMenu() {
 
 	if (activateSelection) {
 		switch (itemMenuSelected) {
-		case 0:
-			executeItemMenuOption0(current_item, is_potion_bad);
-			break;
-		case 1:
-			executeItemMenuOption1(current_item, is_potion_bad);
-			break;
-		case 2:
-			executeItemMenuOption2(current_item);
-			break;
-		case 3:
-			executeItemMenuOption3(current_item);
-			break;
-		default:
-			break;
+			case 0:
+				executeItemMenuOption0(current_item, is_potion_bad);
+				break;
+			case 1:
+				executeItemMenuOption1(current_item, is_potion_bad);
+				break;
+			case 2:
+				executeItemMenuOption2(current_item);
+				break;
+			case 3:
+				executeItemMenuOption3(current_item);
+				break;
+			default:
+				break;
 		}
 
 		//Close the menu.

@@ -29,27 +29,28 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y) {
 	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
 	switch(bpp) {
-	case 1:
-		return *p;
-		break;
+		case 1:
+			return *p;
+			break;
 
-	case 2:
-		return *(Uint16 *)p;
-		break;
+		case 2:
+			return *(Uint16 *)p;
+			break;
 
-	case 3:
-		if(SDL_BYTEORDER == SDL_BIG_ENDIAN)
-			return p[0] << 16 | p[1] << 8 | p[2];
-		else
-			return p[0] | p[1] << 8 | p[2] << 16;
-		break;
+		case 3:
+			if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+				return p[0] << 16 | p[1] << 8 | p[2];
+			} else {
+				return p[0] | p[1] << 8 | p[2] << 16;
+			}
+			break;
 
-	case 4:
-		return *(Uint32 *)p;
-		break;
+		case 4:
+			return *(Uint32 *)p;
+			break;
 
-	default:
-		return 0;	   /* shouldn't happen, but avoids warnings */
+		default:
+			return 0;	   /* shouldn't happen, but avoids warnings */
 	}
 }
 
@@ -68,29 +69,29 @@ void putPixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
 	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
 
 	switch(bpp) {
-	case 1:
-		*p = pixel;
-		break;
+		case 1:
+			*p = pixel;
+			break;
 
-	case 2:
-		*(Uint16 *)p = pixel;
-		break;
+		case 2:
+			*(Uint16 *)p = pixel;
+			break;
 
-	case 3:
-		if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
-			p[0] = (pixel >> 16) & 0xff;
-			p[1] = (pixel >> 8) & 0xff;
-			p[2] = pixel & 0xff;
-		} else {
-			p[0] = pixel & 0xff;
-			p[1] = (pixel >> 8) & 0xff;
-			p[2] = (pixel >> 16) & 0xff;
-		}
-		break;
+		case 3:
+			if(SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+				p[0] = (pixel >> 16) & 0xff;
+				p[1] = (pixel >> 8) & 0xff;
+				p[2] = pixel & 0xff;
+			} else {
+				p[0] = pixel & 0xff;
+				p[1] = (pixel >> 8) & 0xff;
+				p[2] = (pixel >> 16) & 0xff;
+			}
+			break;
 
-	case 4:
-		*(Uint32 *)p = pixel;
-		break;
+		case 4:
+			*(Uint32 *)p = pixel;
+			break;
 	}
 }
 
@@ -536,8 +537,9 @@ void drawImage( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 void drawImageScaled( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 	SDL_Rect secondsrc;
 
-	if( !image )
+	if( !image ) {
 		return;
+	}
 
 	// update projection
 	glPushMatrix();
@@ -587,8 +589,9 @@ void drawImageScaled( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
 	Sint32 x,y,o_x,o_y;
 
-	if(!Surface || !Width || !Height)
+	if(!Surface || !Width || !Height) {
 		return NULL;
+	}
 
 	SDL_Surface *_ret = SDL_CreateRGBSurface(Surface->flags, Width, Height, Surface->format->BitsPerPixel, Surface->format->Rmask, Surface->format->Gmask, Surface->format->Bmask, Surface->format->Amask);
 
@@ -598,8 +601,9 @@ SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
 	for(y = 0; y < Surface->h; y++)
 		for(x = 0; x < Surface->w; x++)
 			for(o_y = 0; o_y < _stretch_factor_y; ++o_y)
-				for(o_x = 0; o_x < _stretch_factor_x; ++o_x)
+				for(o_x = 0; o_x < _stretch_factor_x; ++o_x) {
 					putPixel(_ret, (Sint32)(_stretch_factor_x * x) + o_x, (Sint32)(_stretch_factor_y * y) + o_y, getPixel(Surface, x, y));
+				}
 
 	free(Surface);
 	return _ret;
@@ -617,8 +621,9 @@ SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
 void drawImageFancy( SDL_Surface *image, Uint32 color, double angle, SDL_Rect *src, SDL_Rect *pos ) {
 	SDL_Rect secondsrc;
 
-	if( !image )
+	if( !image ) {
 		return;
+	}
 
 	// update projection
 	glPushMatrix();
@@ -737,10 +742,11 @@ void drawLayer(long camx, long camy, int z, map_t *map) {
 				pos.w = TEXTURESIZE;
 				pos.h = TEXTURESIZE;
 				if( index>=0 && index<numtiles ) {
-					if( tiles[index] != NULL )
+					if( tiles[index] != NULL ) {
 						drawImageScaled(tiles[index], NULL, &pos);
-					else
+					} else {
 						drawImageScaled(sprites[0], NULL, &pos);
+					}
 				} else {
 					drawImageScaled(sprites[0], NULL, &pos);
 				}
@@ -751,14 +757,16 @@ void drawLayer(long camx, long camy, int z, map_t *map) {
 
 void drawBackground(long camx, long camy) {
 	long z;
-	for( z=0; z<OBSTACLELAYER; z++ )
+	for( z=0; z<OBSTACLELAYER; z++ ) {
 		drawLayer(camx,camy,z,&map);
+	}
 }
 
 void drawForeground(long camx, long camy) {
 	long z;
-	for( z=OBSTACLELAYER; z<MAPLAYERS; z++ )
+	for( z=OBSTACLELAYER; z<MAPLAYERS; z++ ) {
 		drawLayer(camx,camy,z,&map);
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -779,8 +787,9 @@ void drawClearBuffers() {
 	}
 	if( vismap != NULL ) {
 		int c, i = map.width*map.height;
-		for( c=0; c<i; c++ )
+		for( c=0; c<i; c++ ) {
 			vismap[c] = FALSE;
+		}
 	}
 
 	// clear the screen
@@ -824,8 +833,9 @@ void raycast(view_t *camera, int mode) {
 	rx = cos(camera->ang - wfov/2.f);
 	ry = sin(camera->ang - wfov/2.f);
 
-	if( posx>=0 && posy>=0 && posx<map.width && posy<map.height )
+	if( posx>=0 && posy>=0 && posx<map.width && posy<map.height ) {
 		vismap[posy+posx*map.height]=TRUE;
+	}
 	for( sx=0; sx<camera->winw; sx++ ) { // for every column of the screen
 		inx=posx;
 		iny=posy;
@@ -833,9 +843,13 @@ void raycast(view_t *camera, int mode) {
 		iny2=iny;
 
 		arx=0;
-		if(rx) arx = 1.0/fabs(rx);  // distance increments
+		if(rx) {
+			arx = 1.0/fabs(rx);    // distance increments
+		}
 		ary=0;
-		if(ry) ary = 1.0/fabs(ry);
+		if(ry) {
+			ary = 1.0/fabs(ry);
+		}
 
 		// dval0=dend+1 is there to prevent infinite loops when ray is parallel to axis
 		dincx=0;
@@ -888,8 +902,9 @@ void raycast(view_t *camera, int mode) {
 
 						// collect light information
 						if( inx2>=0 && iny2>=0 && inx2<map.width && iny2<map.height ) {
-							if( map.tiles[z+iny2*MAPLAYERS+inx2*MAPLAYERS*map.height] )
+							if( map.tiles[z+iny2*MAPLAYERS+inx2*MAPLAYERS*map.height] ) {
 								continue;
+							}
 							light = std::min(std::max(0,lightmap[iny2+inx2*map.height]),255);
 						} else {
 							light = 128;
@@ -898,28 +913,33 @@ void raycast(view_t *camera, int mode) {
 						// update minimap
 						if( mode==REALCOLORS )
 							if( d<16 && z==OBSTACLELAYER )
-								if( light>0 )
-									minimap[iny][inx]=2; // wall space
+								if( light>0 ) {
+									minimap[iny][inx]=2;    // wall space
+								}
 					} else if( z==OBSTACLELAYER && mode==REALCOLORS ) {
 						// update minimap to show empty region
-						if( inx>=0 && iny>=0 && inx<map.width && iny<map.height )
+						if( inx>=0 && iny>=0 && inx<map.width && iny<map.height ) {
 							light = std::min(std::max(0,lightmap[iny+inx*map.height]),255);
-						else
+						} else {
 							light = 128;
+						}
 						if( d<16 ) {
-							if( light>0 && map.tiles[iny*MAPLAYERS+inx*MAPLAYERS*map.height] )
-								minimap[iny][inx]=1; // walkable space
-							else if( map.tiles[z+iny*MAPLAYERS+inx*MAPLAYERS*map.height] )
-								minimap[iny][inx]=0; // no floor
+							if( light>0 && map.tiles[iny*MAPLAYERS+inx*MAPLAYERS*map.height] ) {
+								minimap[iny][inx]=1;    // walkable space
+							} else if( map.tiles[z+iny*MAPLAYERS+inx*MAPLAYERS*map.height] ) {
+								minimap[iny][inx]=0;    // no floor
+							}
 						}
 					}
 				}
 				wallhit=TRUE;
 				for( z=0; z<MAPLAYERS; z++ )
-					if( zhit[z]==FALSE )
+					if( zhit[z]==FALSE ) {
 						wallhit=FALSE;
-				if( wallhit==TRUE )
+					}
+				if( wallhit==TRUE ) {
 					break;
+				}
 			}
 		} while(d<dend);
 
@@ -942,20 +962,24 @@ void drawEntities3D(view_t *camera, int mode) {
 	Entity *entity;
 	long x, y;
 
-	if( map.entities->first == NULL )
+	if( map.entities->first == NULL ) {
 		return;
+	}
 
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		entity = (Entity *)node->element;
-		if( entity->flags[INVISIBLE] )
+		if( entity->flags[INVISIBLE] ) {
 			continue;
-		if( entity->flags[UNCLICKABLE] && mode==ENTITYUIDS )
+		}
+		if( entity->flags[UNCLICKABLE] && mode==ENTITYUIDS ) {
 			continue;
+		}
 		if( entity->flags[GENIUS] ) {
 			// genius entities are not drawn when the camera is inside their bounding box
 			if( camera->x >= (entity->x-entity->sizex)/16 && camera->x <= (entity->x+entity->sizex)/16 )
-				if( camera->y >= (entity->y-entity->sizey)/16 && camera->y <= (entity->y+entity->sizey)/16 )
+				if( camera->y >= (entity->y-entity->sizey)/16 && camera->y <= (entity->y+entity->sizey)/16 ) {
 					continue;
+				}
 		}
 		x = entity->x/16;
 		y = entity->y/16;
@@ -991,14 +1015,16 @@ void drawEntities2D(long camx, long camy) {
 	Entity *entity;
 	SDL_Rect pos, box;
 
-	if( map.entities->first == NULL )
+	if( map.entities->first == NULL ) {
 		return;
+	}
 
 	// draw entities
 	for( node=map.entities->first; node!=NULL; node=node->next ) {
 		entity = (Entity *)node->element;
-		if( entity->flags[INVISIBLE] )
+		if( entity->flags[INVISIBLE] ) {
 			continue;
+		}
 		pos.x = entity->x*(TEXTURESIZE/16)-camx;
 		pos.y = entity->y*(TEXTURESIZE/16)-camy;
 		pos.w = TEXTURESIZE;
@@ -1108,8 +1134,9 @@ void drawEditormap(long camx, long camy) {
 	}
 
 	// clip at right edge
-	if( src.x+src.w > xres-8 )
+	if( src.x+src.w > xres-8 ) {
 		src.w = xres-8-src.x;
+	}
 
 	// clip at top edge
 	if( src.y < 24 ) {
@@ -1118,8 +1145,9 @@ void drawEditormap(long camx, long camy) {
 	}
 
 	// clip at bottom edge
-	if( src.y+src.h > 136 )
+	if( src.y+src.h > 136 ) {
 		src.h = 136-src.y;
+	}
 
 	osrc.x = src.x+1;
 	osrc.y = src.y+1;
@@ -1243,8 +1271,9 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 	SDL_Surface *surf;
 	int c;
 
-	if( !str )
+	if( !str ) {
 		return errorRect;
+	}
 
 	char newStr[1024] = { 0 };
 	strcpy(newStr,str);
@@ -1253,8 +1282,9 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 	for( c=0; c<strlen(newStr)+1; c++ ) {
 		if( newStr[c]=='\n' || newStr[c]=='\r' ) {
 			int offY = 0;
-			if( newStr[c]=='\n' )
+			if( newStr[c]=='\n' ) {
 				offY = TTF_FontHeight(font);
+			}
 			newStr[c]=0;
 			ttfPrintTextColor(font,x,y+offY,color,outline,(char *)&newStr[c+1]);
 			break;
@@ -1341,8 +1371,9 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 }
 
 SDL_Rect ttfPrintText( TTF_Font *font, int x, int y, const char *str ) {
-	if( !str )
+	if( !str ) {
 		return errorRect;
+	}
 	return ttfPrintTextColor(font,x,y,0xFFFFFFFF,TRUE,str);
 }
 
@@ -1358,8 +1389,9 @@ SDL_Rect ttfPrintText( TTF_Font *font, int x, int y, const char *str ) {
 SDL_Rect ttfPrintTextFormattedColor( TTF_Font *font, int x, int y, Uint32 color, char *fmt, ... ) {
 	char str[1024] = { 0 };
 
-	if( !fmt )
+	if( !fmt ) {
 		return errorRect;
+	}
 
 	// format the string
 	va_list argptr;
@@ -1374,8 +1406,9 @@ SDL_Rect ttfPrintTextFormattedColor( TTF_Font *font, int x, int y, Uint32 color,
 SDL_Rect ttfPrintTextFormatted( TTF_Font *font, int x, int y, char *fmt, ... ) {
 	char str[1024] = { 0 };
 
-	if( !fmt )
+	if( !fmt ) {
 		return errorRect;
+	}
 
 	// format the string
 	va_list argptr;
