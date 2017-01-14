@@ -49,7 +49,7 @@ void takeScreenshot() {
 	SDL_FreeSurface( temp2 );
 	SDL_SavePNG( temp, filename );
 	SDL_FreeSurface( temp );
-	if( !intro ) {
+	if ( !intro ) {
 		messagePlayer(clientnum, "%s", filename);
 	} else {
 		printlog("%s", filename);

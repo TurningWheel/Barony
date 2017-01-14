@@ -74,13 +74,13 @@ void addSpell(int spell, int player) {
 	node_t *node = NULL;
 
 	// this is a local function
-	if( player != clientnum ) {
+	if ( player != clientnum ) {
 		return;
 	}
 
 	spell_t *new_spell = NULL;
 
-	switch( spell ) {
+	switch ( spell ) {
 		case SPELL_FORCEBOLT:
 			new_spell = copySpell(&spell_forcebolt);
 			break;
@@ -147,12 +147,12 @@ void addSpell(int spell, int player) {
 		default:
 			return;
 	}
-	if( spellInList(&spellList, new_spell) ) {
+	if ( spellInList(&spellList, new_spell) ) {
 		messagePlayer(player, language[439], new_spell->name);
 		spellDeconstructor((void *)new_spell);
 		return;
 	}
-	if( stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty ) {
+	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty ) {
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void *)new_spell);
 		return;
@@ -193,11 +193,11 @@ void spellConstructor(spell_t *spell) {
 void spellDeconstructor(void *data) {
 	spell_t *spell;
 
-	if( data != NULL ) {
+	if ( data != NULL ) {
 		spell = (spell_t *) data;
 
-		if( spell_isChanneled(spell) ) {
-			if( spell->sustain_node ) {
+		if ( spell_isChanneled(spell) ) {
+			if ( spell->sustain_node ) {
 				list_RemoveNode(spell->sustain_node);
 			}
 		}
@@ -248,7 +248,7 @@ spell_t *copySpell(spell_t *spell) {
 	result->elements.first = NULL;
 	result->elements.last = NULL;
 
-	for( node = spell->elements.first; node != NULL; node = node->next ) {
+	for ( node = spell->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *tempElement = (spellElement_t *) node->element;
 
 		node_t *tempNode = list_AddNodeLast(&result->elements);
@@ -273,7 +273,7 @@ spellElement_t *copySpellElement(spellElement_t *spellElement) {
 	result->elements.first = NULL;
 	result->elements.last = NULL;
 
-	for( node = spellElement->elements.first; node != NULL; node = node->next ) {
+	for ( node = spellElement->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *tempElement = (spellElement_t *) node->element;
 
 		node_t *tempNode = list_AddNodeLast(&result->elements);
@@ -292,7 +292,7 @@ int getCostOfSpell(spell_t *spell) {
 	int cost = 0;
 
 	node_t *node;
-	for( node = spell->elements.first; node != NULL; node = node->next ) {
+	for ( node = spell->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *spellElement = (spellElement_t *)node->element;
 		cost += getCostOfSpellElement(spellElement);
 	}
@@ -304,7 +304,7 @@ int getCostOfSpellElement(spellElement_t *spellElement) {
 	int cost = spellElement->mana;
 
 	node_t *node;
-	for( node = spellElement->elements.first; node != NULL; node = node->next ) {
+	for ( node = spellElement->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *spellElement2 = (spellElement_t *)node->element;
 		cost += getCostOfSpellElement(spellElement2);
 	}
@@ -315,9 +315,9 @@ int getCostOfSpellElement(spellElement_t *spellElement) {
 bool spell_isChanneled(spell_t *spell) {
 	node_t *node = NULL;
 
-	for( node = spell->elements.first; node != NULL; node = node->next ) {
+	for ( node = spell->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *spellElement = (spellElement_t *)node->element;
-		if( spellElement_isChanneled(spellElement) ) {
+		if ( spellElement_isChanneled(spellElement) ) {
 			return TRUE;
 		}
 	}
@@ -328,12 +328,12 @@ bool spell_isChanneled(spell_t *spell) {
 bool spellElement_isChanneled(spellElement_t *spellElement) {
 	node_t *node = NULL;
 
-	if( spellElement->channeled ) {
+	if ( spellElement->channeled ) {
 		return TRUE;
 	}
-	for( node = spellElement->elements.first; node != NULL; node = node->next ) {
+	for ( node = spellElement->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *tempElement = (spellElement_t *)node->element;
-		if( spellElement_isChanneled(tempElement) ) {
+		if ( spellElement_isChanneled(tempElement) ) {
 			return TRUE;
 		}
 	}
@@ -342,7 +342,7 @@ bool spellElement_isChanneled(spellElement_t *spellElement) {
 }
 
 void equipSpell(spell_t *spell, int playernum) {
-	if( playernum == clientnum ) {
+	if ( playernum == clientnum ) {
 		selected_spell = spell;
 		messagePlayer(playernum, language[442], spell->name);
 	}
@@ -425,7 +425,7 @@ spell_t *getSpellFromID(int ID) {
 
 bool spellInList(list_t *list, spell_t *spell) {
 	node_t *node;
-	for( node = list->first; node != NULL; node = node->next ) {
+	for ( node = list->first; node != NULL; node = node->next ) {
 		spell_t *current = (spell_t*)node->element;
 		if (current) {
 			if (current->ID == spell->ID) {

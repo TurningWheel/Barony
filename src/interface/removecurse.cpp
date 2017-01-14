@@ -30,7 +30,7 @@ void updateRemoveCurseGUI() {
 		drawImage(identifyGUI_img, NULL, &pos);
 
 		//Buttons
-		if( mousestatus[SDL_BUTTON_LEFT] ) {
+		if ( mousestatus[SDL_BUTTON_LEFT] ) {
 			//Remove Curse GUI scroll up button.
 			if (omousey >= REMOVECURSE_GUI_Y + 16 && omousey < REMOVECURSE_GUI_Y + 52) {
 				if (omousex >= REMOVECURSE_GUI_X + (identifyGUI_img->w - 28) && omousex < REMOVECURSE_GUI_X + (identifyGUI_img->w - 12)) {
@@ -63,12 +63,12 @@ void updateRemoveCurseGUI() {
 		}
 
 		// mousewheel
-		if( omousex >= REMOVECURSE_GUI_X + 12 && omousex < REMOVECURSE_GUI_X + (identifyGUI_img->w - 28) ) {
-			if( omousey >= REMOVECURSE_GUI_Y + 16 && omousey < REMOVECURSE_GUI_Y + (identifyGUI_img->h - 8) ) {
-				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
+		if ( omousex >= REMOVECURSE_GUI_X + 12 && omousex < REMOVECURSE_GUI_X + (identifyGUI_img->w - 28) ) {
+			if ( omousey >= REMOVECURSE_GUI_Y + 16 && omousey < REMOVECURSE_GUI_Y + (identifyGUI_img->h - 8) ) {
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					removecursescroll++;
-				} else if( mousestatus[SDL_BUTTON_WHEELUP] ) {
+				} else if ( mousestatus[SDL_BUTTON_WHEELUP] ) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
 					removecursescroll--;
 				}
@@ -154,14 +154,14 @@ void updateRemoveCurseGUI() {
 				} else if (omousey >= REMOVECURSE_GUI_Y + 52 && omousey < REMOVECURSE_GUI_Y + 70 ) {
 					pos.y = REMOVECURSE_GUI_Y + 52;
 					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
+					if ( mousestatus[SDL_BUTTON_LEFT] ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						removecurseGUIRemoveCurse(removecurse_items[2]);
 					}
 				} else if (omousey >= REMOVECURSE_GUI_Y + 70 && omousey < REMOVECURSE_GUI_Y + 88) {
 					pos.y = REMOVECURSE_GUI_Y + 70;
 					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
+					if ( mousestatus[SDL_BUTTON_LEFT] ) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						removecurseGUIRemoveCurse(removecurse_items[3]);
 					}
@@ -196,7 +196,7 @@ void updateRemoveCurseGUI() {
 							removecurse_items[c - removecursescroll - 1] = item;
 							char tempstr[64] = { 0 };
 							strncpy(tempstr, item->description(), 46);
-							if( strlen(tempstr) == 46 ) {
+							if ( strlen(tempstr) == 46 ) {
 								strcat(tempstr, " ...");
 							}
 							ttfPrintText(ttf8, REMOVECURSE_GUI_X + 36, y, tempstr);
@@ -229,28 +229,28 @@ void removecurseGUIRemoveCurse(Item *item) {
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
 	messagePlayer(clientnum, language[348], item->description());
 	removecursegui_active = FALSE;
-	if( multiplayer == CLIENT && itemIsEquipped(item, clientnum) ) {
+	if ( multiplayer == CLIENT && itemIsEquipped(item, clientnum) ) {
 		// the client needs to inform the server that their equipment was uncursed.
 		int armornum = 0;
-		if( item == stats[clientnum]->helmet ) {
+		if ( item == stats[clientnum]->helmet ) {
 			armornum = 0;
-		} else if( item == stats[clientnum]->breastplate ) {
+		} else if ( item == stats[clientnum]->breastplate ) {
 			armornum = 1;
-		} else if( item == stats[clientnum]->gloves ) {
+		} else if ( item == stats[clientnum]->gloves ) {
 			armornum = 2;
-		} else if( item == stats[clientnum]->shoes ) {
+		} else if ( item == stats[clientnum]->shoes ) {
 			armornum = 3;
-		} else if( item == stats[clientnum]->shield ) {
+		} else if ( item == stats[clientnum]->shield ) {
 			armornum = 4;
-		} else if( item == stats[clientnum]->weapon ) {
+		} else if ( item == stats[clientnum]->weapon ) {
 			armornum = 5;
-		} else if( item == stats[clientnum]->cloak ) {
+		} else if ( item == stats[clientnum]->cloak ) {
 			armornum = 6;
-		} else if( item == stats[clientnum]->amulet ) {
+		} else if ( item == stats[clientnum]->amulet ) {
 			armornum = 7;
-		} else if( item == stats[clientnum]->ring ) {
+		} else if ( item == stats[clientnum]->ring ) {
 			armornum = 8;
-		} else if( item == stats[clientnum]->mask ) {
+		} else if ( item == stats[clientnum]->mask ) {
 			armornum = 9;
 		}
 		strcpy((char *)net_packet->data, "RCUR");

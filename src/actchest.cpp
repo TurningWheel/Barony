@@ -49,12 +49,12 @@ void actChest(Entity *my) {
 	}
 
 	CHEST_AMBIENCE--;
-	if( CHEST_AMBIENCE <= 0 ) {
+	if ( CHEST_AMBIENCE <= 0 ) {
 		CHEST_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}
 
-	if( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT ) {
 		return;
 	}
 
@@ -79,7 +79,7 @@ void actChest(Entity *my) {
 		int itemcount = 0;
 
 		int chesttype = 0;
-		if( strcmp(map.name, "The Mystic Library") ) {
+		if ( strcmp(map.name, "The Mystic Library") ) {
 			chesttype = rand() % 8;
 		} else {
 			chesttype = 6; // magic chest
@@ -120,7 +120,7 @@ void actChest(Entity *my) {
 				//Treasures, jewelry, gems 'n stuff.
 				itemcount = (rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i) {
-					if( rand() % 4 ) {
+					if ( rand() % 4 ) {
 						newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 					} else {
 						newItem(GEM_GLASS, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
@@ -335,20 +335,20 @@ void actChest(Entity *my) {
 	node_t *node = NULL;
 	Item *item = NULL;
 
-	if( CHEST_HEALTH <= 0 ) {
+	if ( CHEST_HEALTH <= 0 ) {
 		// the chest busts open, drops some items randomly, then destroys itself.
 		node_t *nextnode;
-		for( node = inventory->first; node != NULL; node = nextnode ) {
+		for ( node = inventory->first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
 			item = (Item *)node->element;
-			if( rand() % 2 == 0 ) {
+			if ( rand() % 2 == 0 ) {
 				dropItemMonster(item, my, NULL);
 			}
 		}
 
 		// wood chunk particles
 		int c;
-		for( c = 0; c < 10; c++ ) {
+		for ( c = 0; c < 10; c++ ) {
 			Entity *entity = spawnGib(my);
 			entity->flags[INVISIBLE] = FALSE;
 			entity->sprite = 187; // Splinter.vox
@@ -368,7 +368,7 @@ void actChest(Entity *my) {
 
 		// remove chest entities
 		Entity *parent = uidToEntity(my->parent);
-		if( parent ) {
+		if ( parent ) {
 			list_RemoveNode(parent->mynode);    // remove lid
 		}
 		list_RemoveNode(my->mynode); // remove me
@@ -395,11 +395,11 @@ void actChest(Entity *my) {
 			}
 		}
 	}
-	if( CHEST_LIDCLICKED ) {
+	if ( CHEST_LIDCLICKED ) {
 		chestclicked = CHEST_LIDCLICKED - 1;
 		CHEST_LIDCLICKED = 0;
 	}
-	if( chestclicked >= 0 ) {
+	if ( chestclicked >= 0 ) {
 		if (!CHEST_LOCKED && !openedChest[chestclicked]) {
 			if (!CHEST_STATUS) {
 				messagePlayer(chestclicked, language[459]);
@@ -456,7 +456,7 @@ void actChest(Entity *my) {
 				}
 				my->closeChestServer();
 			}
-		} else if( CHEST_LOCKED ) {
+		} else if ( CHEST_LOCKED ) {
 			messagePlayer(chestclicked, language[462]);
 			playSoundEntity(my, 152, 64);
 		}
@@ -467,15 +467,15 @@ void actChestLid(Entity *my) {
 	int i;
 
 	Entity *parent = uidToEntity(my->parent);
-	if( !parent ) {
+	if ( !parent ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	if( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT ) {
 		my->skill[1] = parent->skill[1];
-		if( multiplayer == SERVER ) {
-			if( my->skill[3] != my->skill[1] ) {
+		if ( multiplayer == SERVER ) {
+			if ( my->skill[3] != my->skill[1] ) {
 				my->skill[3] = my->skill[1];
 				serverUpdateEntitySkill(my, 1);
 			}
@@ -490,36 +490,36 @@ void actChestLid(Entity *my) {
 		}
 	}
 
-	if( my->skill[1] ) {
+	if ( my->skill[1] ) {
 		// chest is open
-		if( !my->skill[0] ) {
+		if ( !my->skill[0] ) {
 			my->skill[0] = 1;
-			if( multiplayer != CLIENT ) {
+			if ( multiplayer != CLIENT ) {
 				playSoundEntity(my, 21, 64);
 			}
 			my->fskill[0] = 0.25;
 		}
-		if( my->pitch > -PI / 2 ) {
+		if ( my->pitch > -PI / 2 ) {
 			my->pitch -= my->fskill[0];
 			my->fskill[0] -= 0.02;
-			if( my->pitch <= -PI / 2 ) {
+			if ( my->pitch <= -PI / 2 ) {
 				my->pitch = -PI / 2;
 				my->fskill[0] = 0;
 			}
 		}
 	} else {
 		// chest is closed
-		if( my->skill[0] ) {
+		if ( my->skill[0] ) {
 			my->skill[0] = 0;
-			if( multiplayer != CLIENT ) {
+			if ( multiplayer != CLIENT ) {
 				playSoundEntity(my, 22, 64);
 			}
 			my->fskill[0] = 0.025;
 		}
-		if( my->pitch < 0 ) {
+		if ( my->pitch < 0 ) {
 			my->pitch += my->fskill[0];
 			my->fskill[0] += 0.025;
-			if( my->pitch >= 0 ) {
+			if ( my->pitch >= 0 ) {
 				my->pitch = 0;
 				my->fskill[0] = 0;
 			}
@@ -638,7 +638,7 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 		return;
 	}
 
-	if( itemIsEquipped(item, player) == TRUE && !item->canUnequip() ) {
+	if ( itemIsEquipped(item, player) == TRUE && !item->canUnequip() ) {
 		messagePlayer(player, language[1087]);
 		item->identified = TRUE;
 		return;
@@ -659,17 +659,17 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 	newitem->identified = item->identified;
 
 	// unequip the item
-	if( item->count <= 1 || all) {
+	if ( item->count <= 1 || all) {
 		Item **slot = itemSlot(stats[player], item);
-		if( slot != NULL ) {
+		if ( slot != NULL ) {
 			*slot = NULL;
 		}
 	}
-	if( item->node != NULL ) {
-		if( item->node->list == &stats[player]->inventory ) {
+	if ( item->node != NULL ) {
+		if ( item->node->list == &stats[player]->inventory ) {
 			if (!all) {
 				item->count--;
-				if( item->count <= 0 ) {
+				if ( item->count <= 0 ) {
 					list_RemoveNode(item->node);
 				}
 			} else {
@@ -679,7 +679,7 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 		}
 	} else {
 		item->count--;
-		if( item->count <= 0 ) {
+		if ( item->count <= 0 ) {
 			free(item);
 		}
 	}
@@ -697,7 +697,7 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 	 */
 	Item *newitem = NULL;
 
-	if( item == NULL ) {
+	if ( item == NULL ) {
 		return NULL;
 	}
 
@@ -766,7 +766,7 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 		newitem->count = 1;
 		if (!getInfoOnly ) {
 			item->count -= 1;
-			if( item->count <= 0 ) {
+			if ( item->count <= 0 ) {
 				list_RemoveNode(item->node);
 			}
 		}
@@ -879,7 +879,7 @@ void Entity::removeItemFromChestServer(Item *item, int count) {
 				//Grab only one item from the chest.
 				int oldcount = item2->count;
 				item2->count = oldcount - count;
-				if( item2->count <= 0 ) {
+				if ( item2->count <= 0 ) {
 					list_RemoveNode(item2->node);
 				}
 			} else {

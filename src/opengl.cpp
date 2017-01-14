@@ -34,7 +34,7 @@ PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
 -------------------------------------------------------------------------------*/
 
 double getLightForEntity(double x, double y) {
-	if( x < 0 || y < 0 || x >= map.width || y >= map.height ) {
+	if ( x < 0 || y < 0 || x >= map.width || y >= map.height ) {
 		return 1.f;
 	}
 	int u = x;
@@ -65,8 +65,8 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 	//GLuint uidcolor;
 
 	// assign model
-	if( entity->sprite >= 0 && entity->sprite < nummodels ) {
-		if( models[entity->sprite] != NULL ) {
+	if ( entity->sprite >= 0 && entity->sprite < nummodels ) {
+		if ( models[entity->sprite] != NULL ) {
 			model = models[entity->sprite];
 		} else {
 			model = models[0];
@@ -90,7 +90,7 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	gluPerspective(fov, (double)camera->winw / (double)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
-	if( !entity->flags[OVERDRAW] ) {
+	if ( !entity->flags[OVERDRAW] ) {
 		rotx = camera->vang * 180 / PI; // get x rotation
 		roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		rotz = 0; // get z rotation
@@ -115,34 +115,34 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 	glRotatef(rotx, 1, 0, 0); // rotate roll
 	glTranslatef(entity->focalx * 2, -entity->focalz * 2, entity->focaly * 2);
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
-	if( mode == REALCOLORS ) {
+	if ( mode == REALCOLORS ) {
 		glEnable(GL_BLEND);
 	} else {
 		glDisable(GL_BLEND);
 	}
 
-	if( entity->flags[OVERDRAW] ) {
+	if ( entity->flags[OVERDRAW] ) {
 		glDepthRange(0, 0.1);
 	}
 
 	// get shade factor
-	if(!entity->flags[BRIGHT]) {
-		if(!entity->flags[OVERDRAW]) {
+	if (!entity->flags[BRIGHT]) {
+		if (!entity->flags[OVERDRAW]) {
 			s = getLightForEntity(entity->x / 16, entity->y / 16);
 		} else {
 			s = getLightForEntity(camera->x, camera->y);
 		}
 	}
 
-	if( wholevoxels ) {
-		for( index = 0, voxX = 0; voxX < model->sizex; voxX++ ) {
-			for( voxY = 0; voxY < model->sizey; voxY++ ) {
-				for( voxZ = 0; voxZ < model->sizez; voxZ++, index++ ) {
+	if ( wholevoxels ) {
+		for ( index = 0, voxX = 0; voxX < model->sizex; voxX++ ) {
+			for ( voxY = 0; voxY < model->sizey; voxY++ ) {
+				for ( voxZ = 0; voxZ < model->sizez; voxZ++, index++ ) {
 					// get the bit color
-					if( model->data[index] == 255 || model->data[index] == 0 ) {
+					if ( model->data[index] == 255 || model->data[index] == 0 ) {
 						continue;
 					}
-					if( mode == REALCOLORS ) {
+					if ( mode == REALCOLORS ) {
 						glColor3f((model->palette[model->data[index]][0] / 255.0)*s, (model->palette[model->data[index]][1] / 255.0)*s, (model->palette[model->data[index]][2] / 255.0)*s );
 					} else {
 						glColor4ub((Uint8)(entity->uid), (Uint8)(entity->uid >> 8), (Uint8)(entity->uid >> 16), (Uint8)(entity->uid >> 24));
@@ -155,12 +155,12 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 					// draw front of cube
 					bool drawFront = FALSE;
-					if( voxX == model->sizex - 1 ) {
+					if ( voxX == model->sizex - 1 ) {
 						drawFront = TRUE;
-					} else if( model->data[index + indexdown[0]] == 255 ) {
+					} else if ( model->data[index + indexdown[0]] == 255 ) {
 						drawFront = TRUE;
 					}
-					if( drawFront ) {
+					if ( drawFront ) {
 						glBegin( GL_QUADS );
 						glVertex3f(dx + 1, dz + 0, dy + 1);
 						glVertex3f(dx + 1, dz + 0, dy + 0);
@@ -171,12 +171,12 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 					// draw back of cube
 					bool drawBack = FALSE;
-					if( voxX == 0 ) {
+					if ( voxX == 0 ) {
 						drawBack = TRUE;
-					} else if( model->data[index - indexdown[0]] == 255 ) {
+					} else if ( model->data[index - indexdown[0]] == 255 ) {
 						drawBack = TRUE;
 					}
-					if( drawBack ) {
+					if ( drawBack ) {
 						glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 1);
 						glVertex3f(dx + 0, dz + 1, dy + 1);
@@ -187,12 +187,12 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 					// draw right side of cube
 					bool drawRight = FALSE;
-					if( voxY == model->sizey - 1 ) {
+					if ( voxY == model->sizey - 1 ) {
 						drawRight = TRUE;
-					} else if( model->data[index + indexdown[1]] == 255 ) {
+					} else if ( model->data[index + indexdown[1]] == 255 ) {
 						drawRight = TRUE;
 					}
-					if( drawRight ) {
+					if ( drawRight ) {
 						glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 1);
 						glVertex3f(dx + 1, dz + 0, dy + 1);
@@ -203,12 +203,12 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 					// draw left side of cube
 					bool drawLeft = FALSE;
-					if( voxY == 0 ) {
+					if ( voxY == 0 ) {
 						drawLeft = TRUE;
-					} else if( model->data[index - indexdown[1]] == 255 ) {
+					} else if ( model->data[index - indexdown[1]] == 255 ) {
 						drawLeft = TRUE;
 					}
-					if( drawLeft ) {
+					if ( drawLeft ) {
 						glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 0);
 						glVertex3f(dx + 0, dz + 1, dy + 0);
@@ -219,12 +219,12 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 					// draw bottom of cube
 					bool drawBottom = FALSE;
-					if( voxZ == model->sizez - 1 ) {
+					if ( voxZ == model->sizez - 1 ) {
 						drawBottom = TRUE;
-					} else if( model->data[index + indexdown[2]] == 255 ) {
+					} else if ( model->data[index + indexdown[2]] == 255 ) {
 						drawBottom = TRUE;
 					}
-					if( drawBottom ) {
+					if ( drawBottom ) {
 						glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 0);
 						glVertex3f(dx + 1, dz + 0, dy + 0);
@@ -235,12 +235,12 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 					// draw top of cube
 					bool drawTop = FALSE;
-					if( voxZ == 0 ) {
+					if ( voxZ == 0 ) {
 						drawTop = TRUE;
-					} else if( model->data[index - indexdown[2]] == 255 ) {
+					} else if ( model->data[index - indexdown[2]] == 255 ) {
 						drawTop = TRUE;
 					}
-					if( drawTop ) {
+					if ( drawTop ) {
 						glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 1, dy + 0);
 						glVertex3f(dx + 0, dz + 1, dy + 1);
@@ -252,10 +252,10 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 			}
 		}
 	} else {
-		if( disablevbos ) {
-			for( index = 0; index < polymodels[modelindex].numfaces; index++ ) {
-				if( mode == REALCOLORS ) {
-					if( entity->flags[USERFLAG2] ) {
+		if ( disablevbos ) {
+			for ( index = 0; index < polymodels[modelindex].numfaces; index++ ) {
+				if ( mode == REALCOLORS ) {
+					if ( entity->flags[USERFLAG2] ) {
 						glColor3f((polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s, (polymodels[modelindex].faces[index].b / 255.f)*s );
 					} else {
 						glColor3f((polymodels[modelindex].faces[index].b / 255.f)*s, (polymodels[modelindex].faces[index].r / 255.f)*s, (polymodels[modelindex].faces[index].g / 255.f)*s );
@@ -277,9 +277,9 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 			SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
 			glVertexPointer( 3, GL_FLOAT, 0, (char *) NULL ); // Set The Vertex Pointer To The Vertex Buffer
 			glEnableClientState(GL_VERTEX_ARRAY); // enable the vertex array on the client side
-			if( mode == REALCOLORS ) {
+			if ( mode == REALCOLORS ) {
 				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
-				if( entity->flags[USERFLAG2] ) {
+				if ( entity->flags[USERFLAG2] ) {
 					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors_shifted);
 				} else {
 					SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].colors);
@@ -298,7 +298,7 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 				glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
 			}
 			glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
-			if( mode == REALCOLORS ) {
+			if ( mode == REALCOLORS ) {
 				glDisable(GL_COLOR_MATERIAL);
 				glDisable(GL_LIGHTING);
 				glDisableClientState(GL_COLOR_ARRAY); // disable the color array on the client side
@@ -329,7 +329,7 @@ void glDrawSprite(view_t *camera, Entity *entity, int mode) {
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
 	gluPerspective(fov, (double)camera->winw / (double)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
-	if(!entity->flags[OVERDRAW]) {
+	if (!entity->flags[OVERDRAW]) {
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		GLfloat rotz = 0; // get z rotation
@@ -346,15 +346,15 @@ void glDrawSprite(view_t *camera, Entity *entity, int mode) {
 	glMatrixMode( GL_MODELVIEW );
 	glLoadIdentity();
 	glPushMatrix();
-	if( mode == REALCOLORS ) {
+	if ( mode == REALCOLORS ) {
 		glEnable(GL_BLEND);
 	} else {
 		glDisable(GL_BLEND);
 	}
 
 	// assign texture
-	if( entity->sprite >= 0 && entity->sprite < numsprites ) {
-		if( sprites[entity->sprite] != NULL ) {
+	if ( entity->sprite >= 0 && entity->sprite < numsprites ) {
+		if ( sprites[entity->sprite] != NULL ) {
 			sprite = sprites[entity->sprite];
 		} else {
 			sprite = sprites[0];
@@ -362,7 +362,7 @@ void glDrawSprite(view_t *camera, Entity *entity, int mode) {
 	} else {
 		sprite = sprites[0];
 	}
-	if( mode == REALCOLORS ) {
+	if ( mode == REALCOLORS ) {
 		glBindTexture(GL_TEXTURE_2D, texid[sprite->refcount]);
 	} else {
 		glBindTexture(GL_TEXTURE_2D, 0);
@@ -371,7 +371,7 @@ void glDrawSprite(view_t *camera, Entity *entity, int mode) {
 	// translate sprite and rotate towards camera
 	//double tangent = atan2( entity->y-camera->y*16, camera->x*16-entity->x ) * (180/PI);
 	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
-	if(!entity->flags[OVERDRAW]) {
+	if (!entity->flags[OVERDRAW]) {
 		double tangent = 180 - camera->ang * (180 / PI);
 		glRotatef(tangent, 0, 1, 0);
 	} else {
@@ -380,14 +380,14 @@ void glDrawSprite(view_t *camera, Entity *entity, int mode) {
 	}
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
 
-	if( entity->flags[OVERDRAW] ) {
+	if ( entity->flags[OVERDRAW] ) {
 		glDepthRange(0, 0.1);
 	}
 
 	// get shade factor
-	if( mode == REALCOLORS ) {
-		if(!entity->flags[BRIGHT]) {
-			if(!entity->flags[OVERDRAW]) {
+	if ( mode == REALCOLORS ) {
+		if (!entity->flags[BRIGHT]) {
+			if (!entity->flags[OVERDRAW]) {
 				s = getLightForEntity(entity->x / 16, entity->y / 16);
 			} else {
 				s = getLightForEntity(camera->x, camera->y);
@@ -427,9 +427,9 @@ double getLightAt(int x, int y) {
 	double l = 0;
 	int u, v;
 
-	for( u = x - 1; u < x + 1; u++ ) {
-		for( v = y - 1; v < y + 1; v++ ) {
-			if( u >= 0 && u < map.width && v >= 0 && v < map.height ) {
+	for ( u = x - 1; u < x + 1; u++ ) {
+		for ( v = y - 1; v < y + 1; v++ ) {
+			if ( u >= 0 && u < map.width && v >= 0 && v < map.height ) {
 				l += std::min(std::max(0, lightmap[v + u * map.height]), 255) / 255.0;
 			}
 		}
@@ -451,15 +451,15 @@ void glDrawWorld(view_t *camera, int mode) {
 	double s;
 	bool clouds = FALSE;
 
-	if( softwaremode == TRUE ) {
+	if ( softwaremode == TRUE ) {
 		return;
 	}
 
-	if( !strncmp(map.name, "Hell", 4) && smoothlighting ) {
+	if ( !strncmp(map.name, "Hell", 4) && smoothlighting ) {
 		clouds = TRUE;
 	}
 
-	if( clouds && mode == REALCOLORS ) {
+	if ( clouds && mode == REALCOLORS ) {
 		// draw sky "box"
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
@@ -528,30 +528,30 @@ void glDrawWorld(view_t *camera, int mode) {
 	glLoadIdentity();
 	glEnable( GL_DEPTH_TEST );
 	glDepthMask(GL_TRUE);
-	if( mode == REALCOLORS ) {
+	if ( mode == REALCOLORS ) {
 		glEnable(GL_BLEND);
 	} else {
 		glDisable(GL_BLEND);
 	}
 
-	for( x = 0; x < map.width; x++ ) {
-		for( y = 0; y < map.height; y++ ) {
-			if( x >= (int)camera->x - 3 && x <= (int)camera->x + 3 && y >= (int)camera->y - 3 && y <= (int)camera->y + 3 ) {
+	for ( x = 0; x < map.width; x++ ) {
+		for ( y = 0; y < map.height; y++ ) {
+			if ( x >= (int)camera->x - 3 && x <= (int)camera->x + 3 && y >= (int)camera->y - 3 && y <= (int)camera->y + 3 ) {
 				vismap[y + x * map.height] = TRUE;
 			}
-			if( vismap[y + x * map.height] ) {
-				for( z = 0; z < MAPLAYERS + 1; z++ ) {
+			if ( vismap[y + x * map.height] ) {
+				for ( z = 0; z < MAPLAYERS + 1; z++ ) {
 					index = z + y * MAPLAYERS + x * MAPLAYERS * map.height;
 
-					if( z >= 0 && z < MAPLAYERS ) {
+					if ( z >= 0 && z < MAPLAYERS ) {
 						// skip "air" tiles
-						if( map.tiles[index] == 0 ) {
+						if ( map.tiles[index] == 0 ) {
 							continue;
 						}
 
 						// bind texture
-						if( mode == REALCOLORS ) {
-							if( map.tiles[index] < 0 || map.tiles[index] >= numtiles ) {
+						if ( mode == REALCOLORS ) {
+							if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles ) {
 								glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
 							} else {
 								glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
@@ -561,10 +561,10 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 
 						// draw east wall
-						if( x == map.width - 1 || !map.tiles[index + MAPLAYERS * map.height] ) {
-							if( smoothlighting && mode == REALCOLORS ) {
+						if ( x == map.width - 1 || !map.tiles[index + MAPLAYERS * map.height] ) {
+							if ( smoothlighting && mode == REALCOLORS ) {
 								glBegin( GL_QUADS );
-								if( z ) {
+								if ( z ) {
 									s = getLightAt(x + 1, y + 1);
 									glColor3f(s, s, s);
 									glTexCoord2f(0, 0);
@@ -595,8 +595,8 @@ void glDrawWorld(view_t *camera, int mode) {
 								}
 								glEnd();
 							} else {
-								if( mode == REALCOLORS ) {
-									if( x < map.width - 1 ) {
+								if ( mode == REALCOLORS ) {
+									if ( x < map.width - 1 ) {
 										s = std::min(std::max(0, lightmap[y + (x + 1) * map.height]), 255) / 255.0;
 									} else {
 										s = .5;
@@ -605,7 +605,7 @@ void glDrawWorld(view_t *camera, int mode) {
 								} else {
 									glColor4ub(0, 0, 0, 0);
 								}
-								if( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] ) {
+								if ( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] ) {
 									glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
@@ -621,10 +621,10 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 
 						// draw south wall
-						if( y == map.height - 1 || !map.tiles[index + MAPLAYERS] ) {
-							if( smoothlighting && mode == REALCOLORS ) {
+						if ( y == map.height - 1 || !map.tiles[index + MAPLAYERS] ) {
+							if ( smoothlighting && mode == REALCOLORS ) {
 								glBegin( GL_QUADS );
-								if( z ) {
+								if ( z ) {
 									s = getLightAt(x, y + 1);
 									glColor3f(s, s, s);
 									glTexCoord2f(0, 0);
@@ -655,15 +655,15 @@ void glDrawWorld(view_t *camera, int mode) {
 								}
 								glEnd();
 							} else {
-								if( mode == REALCOLORS ) {
-									if( y < map.height - 1 ) {
+								if ( mode == REALCOLORS ) {
+									if ( y < map.height - 1 ) {
 										s = std::min(std::max(0, lightmap[(y + 1) + x * map.height]), 255) / 255.0;
 									} else {
 										s = .5;
 									}
 									glColor3f(s, s, s);
 								}
-								if( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] ) {
+								if ( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] ) {
 									glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
@@ -679,10 +679,10 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 
 						// draw west wall
-						if( x == 0 || !map.tiles[index - MAPLAYERS * map.height] ) {
-							if( smoothlighting && mode == REALCOLORS ) {
+						if ( x == 0 || !map.tiles[index - MAPLAYERS * map.height] ) {
+							if ( smoothlighting && mode == REALCOLORS ) {
 								glBegin( GL_QUADS );
-								if( z ) {
+								if ( z ) {
 									s = getLightAt(x, y);
 									glColor3f(s, s, s);
 									glTexCoord2f(0, 0);
@@ -713,15 +713,15 @@ void glDrawWorld(view_t *camera, int mode) {
 								}
 								glEnd();
 							} else {
-								if( mode == REALCOLORS ) {
-									if( x > 0 ) {
+								if ( mode == REALCOLORS ) {
+									if ( x > 0 ) {
 										s = std::min(std::max(0, lightmap[y + (x - 1) * map.height]), 255) / 255.0;
 									} else {
 										s = .5;
 									}
 									glColor3f(s, s, s);
 								}
-								if( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] ) {
+								if ( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] ) {
 									glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
@@ -737,10 +737,10 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 
 						// draw north wall
-						if( y == 0 || !map.tiles[index - MAPLAYERS] ) {
-							if( smoothlighting && mode == REALCOLORS ) {
+						if ( y == 0 || !map.tiles[index - MAPLAYERS] ) {
+							if ( smoothlighting && mode == REALCOLORS ) {
 								glBegin( GL_QUADS );
-								if( z ) {
+								if ( z ) {
 									s = getLightAt(x + 1, y);
 									glColor3f(s, s, s);
 									glTexCoord2f(0, 0);
@@ -771,15 +771,15 @@ void glDrawWorld(view_t *camera, int mode) {
 								}
 								glEnd();
 							} else {
-								if( mode == REALCOLORS ) {
-									if( y > 0 ) {
+								if ( mode == REALCOLORS ) {
+									if ( y > 0 ) {
 										s = std::min(std::max(0, lightmap[(y - 1) + x * map.height]), 255) / 255.0;
 									} else {
 										s = .5;
 									}
 									glColor3f(s, s, s);
 								}
-								if( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] ) {
+								if ( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] ) {
 									glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
@@ -795,17 +795,17 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 					} else {
 						// bind texture
-						if( mode == REALCOLORS ) {
+						if ( mode == REALCOLORS ) {
 							glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
 						} else {
 							continue;
 						}
 					}
 
-					if( smoothlighting && mode == REALCOLORS ) {
+					if ( smoothlighting && mode == REALCOLORS ) {
 						// draw floor
-						if( z < OBSTACLELAYER ) {
-							if( !map.tiles[index + 1] ) {
+						if ( z < OBSTACLELAYER ) {
+							if ( !map.tiles[index + 1] ) {
 								glBegin( GL_QUADS );
 								s = getLightAt(x, y);
 								glColor3f(s, s, s);
@@ -828,8 +828,8 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 
 						// draw ceiling
-						else if( z > OBSTACLELAYER && (!clouds || z < MAPLAYERS) ) {
-							if( !map.tiles[index - 1] ) {
+						else if ( z > OBSTACLELAYER && (!clouds || z < MAPLAYERS) ) {
+							if ( !map.tiles[index - 1] ) {
 								glBegin( GL_QUADS );
 								s = getLightAt(x, y);
 								glColor3f(s, s, s);
@@ -852,14 +852,14 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 					} else {
 						// unsmooth lighting
-						if( mode == REALCOLORS ) {
+						if ( mode == REALCOLORS ) {
 							s = std::min(std::max(0, lightmap[y + x * map.height]), 255) / 255.0;
 							glColor3f(s, s, s);
 						}
 
 						// draw floor
-						if( z < OBSTACLELAYER ) {
-							if( !map.tiles[index + 1] ) {
+						if ( z < OBSTACLELAYER ) {
+							if ( !map.tiles[index + 1] ) {
 								glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
@@ -874,8 +874,8 @@ void glDrawWorld(view_t *camera, int mode) {
 						}
 
 						// draw ceiling
-						else if( z > OBSTACLELAYER ) {
-							if( !map.tiles[index - 1] ) {
+						else if ( z > OBSTACLELAYER ) {
+							if ( !map.tiles[index - 1] ) {
 								glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);

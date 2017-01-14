@@ -21,7 +21,7 @@
 
 void list_FreeAll(list_t *list) {
 	node_t *node, *nextnode;
-	for( node = list->first; node != NULL; node = nextnode ) {
+	for ( node = list->first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		list_RemoveNode(node);
 	}
@@ -38,11 +38,11 @@ void list_FreeAll(list_t *list) {
 -------------------------------------------------------------------------------*/
 
 void list_RemoveNode(node_t *node) {
-	if( node->list && node->list->first ) {
+	if ( node->list && node->list->first ) {
 		// if this is the first node...
-		if( node == node->list->first ) {
+		if ( node == node->list->first ) {
 			// is it also the last node?
-			if( node->list->last == node ) {
+			if ( node->list->last == node ) {
 				node->list->first = NULL;
 				node->list->last = NULL;
 			}
@@ -55,7 +55,7 @@ void list_RemoveNode(node_t *node) {
 		}
 
 		// if this is the last node, but not the first...
-		else if( node == node->list->last ) {
+		else if ( node == node->list->last ) {
 			node->prev->next = NULL;
 			node->list->last = node->prev; // the "last" pointer needs to point to the previous node
 		}
@@ -73,7 +73,7 @@ void list_RemoveNode(node_t *node) {
 	if (*node->deconstructor) {
 		(*node->deconstructor)(node->element);
 	} else {
-		delete(node->element);
+		delete (node->element);
 	}
 	free(node);
 }
@@ -92,7 +92,7 @@ node_t *list_AddNodeFirst(list_t *list) {
 	node_t *node;
 
 	// allocate memory for node
-	if( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
+	if ( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
 		printlog( "failed to allocate memory for new node!\n" );
 		exit(1);
 	}
@@ -105,7 +105,7 @@ node_t *list_AddNodeFirst(list_t *list) {
 
 	// integrate it into the list
 	node->list = list;
-	if( list->first != NULL ) {
+	if ( list->first != NULL ) {
 		// there are prior nodes in the list
 		node->next = list->first;
 		list->first->prev = node;
@@ -133,7 +133,7 @@ node_t *list_AddNodeLast(list_t *list) {
 	node_t *node;
 
 	// allocate memory for node
-	if( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
+	if ( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
 		printlog( "failed to allocate memory for new node!\n" );
 		exit(1);
 	}
@@ -146,7 +146,7 @@ node_t *list_AddNodeLast(list_t *list) {
 
 	// integrate it into the list
 	node->list = list;
-	if( list->last != NULL ) {
+	if ( list->last != NULL ) {
 		// there are prior nodes in the list
 		node->prev = list->last;
 		list->last->next = node;
@@ -173,12 +173,12 @@ node_t *list_AddNodeLast(list_t *list) {
 
 node_t *list_AddNode(list_t *list, int index) {
 	node_t *node;
-	if( index < 0 || index > list_Size(list)) {
+	if ( index < 0 || index > list_Size(list)) {
 		return NULL;
 	}
 
 	// allocate memory for node
-	if( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
+	if ( (node = (node_t *) malloc(sizeof(node_t))) == NULL ) {
 		printlog( "failed to allocate memory for new node!\n" );
 		exit(1);
 	}
@@ -193,11 +193,11 @@ node_t *list_AddNode(list_t *list, int index) {
 	// integrate it into the list
 	node->list = list;
 	node_t *oldnode = list_Node(list, index);
-	if( oldnode ) {
+	if ( oldnode ) {
 		// inserting at the beginning or middle of a list
 		node->prev = oldnode->prev;
 		node->next = oldnode;
-		if( list->first == oldnode ) {
+		if ( list->first == oldnode ) {
 			// inserting at the beginning
 			list->first = node;
 		} else {
@@ -206,7 +206,7 @@ node_t *list_AddNode(list_t *list, int index) {
 		}
 		oldnode->prev = node;
 	} else {
-		if( list_Size(list) ) {
+		if ( list_Size(list) ) {
 			// inserting at the end of a list
 			node->prev = list->last;
 			node->next = NULL;
@@ -236,7 +236,7 @@ Uint32 list_Size(list_t *list) {
 	node_t *node;
 	int c;
 
-	for( c = 0, node = list->first; node != NULL; node = node->next, c++ );
+	for ( c = 0, node = list->first; node != NULL; node = node->next, c++ );
 	return c;
 }
 
@@ -251,8 +251,8 @@ Uint32 list_Size(list_t *list) {
 
 list_t *list_Copy(list_t *destlist, list_t *srclist) {
 	node_t *node;
-	for( node = srclist->first; node != NULL; node = node->next ) {
-		if( node->size == 0 ) {
+	for ( node = srclist->first; node != NULL; node = node->next ) {
+		if ( node->size == 0 ) {
 			printlog("error: attempted copy of node with size 0! Node not copied\n");
 			continue;
 		}
@@ -276,11 +276,11 @@ list_t *list_Copy(list_t *destlist, list_t *srclist) {
 -------------------------------------------------------------------------------*/
 
 list_t *list_CopyNew(list_t *srclist) {
-	if( !srclist ) {
+	if ( !srclist ) {
 		return NULL;
 	}
 	list_t *destlist = (list_t *) malloc(sizeof(list_t));
-	if( !destlist ) {
+	if ( !destlist ) {
 		printlog("critical error: list_CopyNew() failed to allocate memory for new list!\n");
 		return NULL;
 	}
@@ -288,8 +288,8 @@ list_t *list_CopyNew(list_t *srclist) {
 	destlist->last = NULL;
 
 	node_t *node;
-	for( node = srclist->first; node != NULL; node = node->next ) {
-		if( node->size == 0 ) {
+	for ( node = srclist->first; node != NULL; node = node->next ) {
+		if ( node->size == 0 ) {
 			printlog("error: attempted copy of node with size 0! Node not copied\n");
 			continue;
 		}
@@ -315,8 +315,8 @@ Uint32 list_Index(node_t *node) {
 	node_t *tempnode;
 	int i;
 
-	for( i = 0, tempnode = node->list->first; tempnode != NULL; tempnode = tempnode->next, i++ ) {
-		if( tempnode == node ) {
+	for ( i = 0, tempnode = node->list->first; tempnode != NULL; tempnode = tempnode->next, i++ ) {
+		if ( tempnode == node ) {
 			break;
 		}
 	}
@@ -333,13 +333,13 @@ Uint32 list_Index(node_t *node) {
 -------------------------------------------------------------------------------*/
 
 node_t *list_Node(list_t *list, int index) {
-	if( index < 0 || index >= list_Size(list) ) {
+	if ( index < 0 || index >= list_Size(list) ) {
 		return NULL;
 	}
 
 	int i;
 	node_t *node = list->first;
 
-	for( i = 0; i != index; node = node->next, i++ );
+	for ( i = 0; i != index; node = node->next, i++ );
 	return node;
 }

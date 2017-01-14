@@ -181,7 +181,7 @@ void updateChestInventory() {
 		drawImage(inventoryChest_bmp, NULL, &pos);
 
 		// buttons
-		if( mousestatus[SDL_BUTTON_LEFT] && !selectedItem ) {
+		if ( mousestatus[SDL_BUTTON_LEFT] && !selectedItem ) {
 			if (openedChest[clientnum]) {
 				//Chest inventory scroll up button.
 				if (omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + 52) {
@@ -226,12 +226,12 @@ void updateChestInventory() {
 		}
 
 		// mousewheel
-		if( omousex >= CHEST_INVENTORY_X + 12 && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) ) {
-			if( omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + (inventoryChest_bmp->h - 8) ) {
-				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
+		if ( omousex >= CHEST_INVENTORY_X + 12 && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) ) {
+			if ( omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + (inventoryChest_bmp->h - 8) ) {
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					chestitemscroll++;
-				} else if( mousestatus[SDL_BUTTON_WHEELUP] ) {
+				} else if ( mousestatus[SDL_BUTTON_WHEELUP] ) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
 					chestitemscroll--;
 				}
@@ -312,7 +312,7 @@ void updateChestInventory() {
 					nextnode = node->next;
 					if (node->element && openedChest[clientnum]) {
 						item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), TRUE);
-						if( item != NULL ) {
+						if ( item != NULL ) {
 							messagePlayer(clientnum, language[374], item->description());
 							itemPickup(clientnum, item);
 							playSound(35 + rand() % 3, 64);
@@ -345,7 +345,7 @@ void updateChestInventory() {
 							}
 							char tempstr[64] = { 0 };
 							strncpy(tempstr, item->description(), 46);
-							if( strlen(tempstr) == 46 ) {
+							if ( strlen(tempstr) == 46 ) {
 								strcat(tempstr, " ...");
 							}
 							ttfPrintText(ttf8, CHEST_INVENTORY_X + 36, y, tempstr);

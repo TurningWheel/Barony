@@ -87,9 +87,9 @@ int initGame() {
 
 	// load model offsets
 	printlog( "loading model offsets...\n");
-	for( c = 1; c < NUMMONSTERS; c++ ) {
+	for ( c = 1; c < NUMMONSTERS; c++ ) {
 		// initialize all offsets to zero
-		for( x = 0; x < 20; x++ ) {
+		for ( x = 0; x < 20; x++ ) {
 			limbs[c][x][0] = 0;
 			limbs[c][x][1] = 0;
 			limbs[c][x][2] = 0;
@@ -100,13 +100,13 @@ int initGame() {
 		strcpy(filename, "models/creatures/");
 		strcat(filename, monstertypename[c]);
 		strcat(filename, "/limbs.txt");
-		if( (fp = fopen(filename, "r")) == NULL ) {
+		if ( (fp = fopen(filename, "r")) == NULL ) {
 			continue;
 		}
 
 		// read file
 		int line;
-		for( line = 1; feof(fp) == 0; line++ ) {
+		for ( line = 1; feof(fp) == 0; line++ ) {
 			char data[256];
 			int limb = 20;
 			int dummy;
@@ -115,16 +115,16 @@ int initGame() {
 			fgets( data, 256, fp );
 
 			// skip blank and comment lines
-			if( data[0] == '\n' || data[0] == '\r' || data[0] == '#' ) {
+			if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' ) {
 				continue;
 			}
 
 			// process line
-			if( sscanf( data, "%d", &limb ) != 1 || limb >= 20 || limb < 0 ) {
+			if ( sscanf( data, "%d", &limb ) != 1 || limb >= 20 || limb < 0 ) {
 				printlog( "warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
 				continue;
 			}
-			if( sscanf( data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2] ) != 4 ) {
+			if ( sscanf( data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2] ) != 4 ) {
 				printlog( "warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
 				continue;
 			}
@@ -147,63 +147,63 @@ int initGame() {
 	// load item types
 	printlog( "loading items...\n");
 	fp = fopen("items/items.txt", "r");
-	for( c = 0; !feof(fp); c++ ) {
+	for ( c = 0; !feof(fp); c++ ) {
 		items[c].name_identified = language[1545 + c * 2];
 		items[c].name_unidentified = language[1546 + c * 2];
 		fscanf(fp, "%d", &items[c].index);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		fscanf(fp, "%d", &items[c].fpindex);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		fscanf(fp, "%d", &items[c].variations);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		fscanf(fp, "%s", name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
-		if( !strcmp(name, "WEAPON") ) {
+		if ( !strcmp(name, "WEAPON") ) {
 			items[c].category = WEAPON;
-		} else if( !strcmp(name, "ARMOR") ) {
+		} else if ( !strcmp(name, "ARMOR") ) {
 			items[c].category = ARMOR;
-		} else if( !strcmp(name, "AMULET") ) {
+		} else if ( !strcmp(name, "AMULET") ) {
 			items[c].category = AMULET;
-		} else if( !strcmp(name, "POTION") ) {
+		} else if ( !strcmp(name, "POTION") ) {
 			items[c].category = POTION;
-		} else if( !strcmp(name, "SCROLL") ) {
+		} else if ( !strcmp(name, "SCROLL") ) {
 			items[c].category = SCROLL;
-		} else if( !strcmp(name, "MAGICSTAFF") ) {
+		} else if ( !strcmp(name, "MAGICSTAFF") ) {
 			items[c].category = MAGICSTAFF;
-		} else if( !strcmp(name, "RING") ) {
+		} else if ( !strcmp(name, "RING") ) {
 			items[c].category = RING;
-		} else if( !strcmp(name, "SPELLBOOK") ) {
+		} else if ( !strcmp(name, "SPELLBOOK") ) {
 			items[c].category = SPELLBOOK;
-		} else if( !strcmp(name, "TOOL") ) {
+		} else if ( !strcmp(name, "TOOL") ) {
 			items[c].category = TOOL;
-		} else if( !strcmp(name, "FOOD") ) {
+		} else if ( !strcmp(name, "FOOD") ) {
 			items[c].category = FOOD;
-		} else if( !strcmp(name, "BOOK") ) {
+		} else if ( !strcmp(name, "BOOK") ) {
 			items[c].category = BOOK;
-		} else if( !strcmp(name, "SPELL_CAT") ) {
+		} else if ( !strcmp(name, "SPELL_CAT") ) {
 			items[c].category = SPELL_CAT;
 		} else {
 			items[c].category = GEM;
 		}
 		fscanf(fp, "%d", &items[c].weight);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		fscanf(fp, "%d", &items[c].value);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		items[c].images.first = NULL;
 		items[c].images.last = NULL;
-		while( 1 ) {
+		while ( 1 ) {
 			string_t *string = (string_t *) malloc(sizeof(string_t));
 			string->data = (char *) malloc(sizeof(char) * 64);
 			string->lines = 1;
@@ -216,24 +216,24 @@ int initGame() {
 
 			x = 0;
 			bool fileend = FALSE;
-			while( (string->data[x] = fgetc(fp)) != '\n' ) {
-				if( feof(fp) ) {
+			while ( (string->data[x] = fgetc(fp)) != '\n' ) {
+				if ( feof(fp) ) {
 					fileend = TRUE;
 					break;
 				}
 				x++;
 			}
-			if( x == 0 || fileend ) {
+			if ( x == 0 || fileend ) {
 				list_RemoveNode(node);
 				break;
 			}
 			string->data[x] = 0;
 		}
 	}
-	for( c = 0; c < NUMITEMS; c++ ) {
+	for ( c = 0; c < NUMITEMS; c++ ) {
 		items[c].surfaces.first = NULL;
 		items[c].surfaces.last = NULL;
-		for( x = 0; x < list_Size(&items[c].images); x++ ) {
+		for ( x = 0; x < list_Size(&items[c].images); x++ ) {
 			SDL_Surface **surface = (SDL_Surface **) malloc(sizeof(SDL_Surface *));
 			node_t *node = list_AddNodeLast(&items[c].surfaces);
 			node->element = surface;
@@ -267,7 +267,7 @@ int initGame() {
 	removedEntities.last = NULL;
 	safePacketsSent.first = NULL;
 	safePacketsSent.last = NULL;
-	for( c = 0; c < MAXPLAYERS; c++ ) {
+	for ( c = 0; c < MAXPLAYERS; c++ ) {
 		safePacketsReceived[c].first = NULL;
 		safePacketsReceived[c].last = NULL;
 	}
@@ -279,7 +279,7 @@ int initGame() {
 	chestInv.last = NULL;
 	command_history.first = NULL;
 	command_history.last = NULL;
-	for( c = 0; c < 4; c++ ) {
+	for ( c = 0; c < 4; c++ ) {
 		invitems[c] = NULL;
 		invitemschest[c] = NULL;
 		openedChest[c] = NULL;
@@ -329,51 +329,51 @@ int initGame() {
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
 	//fmod_result = FMOD_System_CreateStream(fmod_system, "music/story.ogg", FMOD_SOFTWARE, NULL, &storymusic);
 
-	if( NUMMINESMUSIC > 0 ) {
+	if ( NUMMINESMUSIC > 0 ) {
 		minesmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMMINESMUSIC);
-		for( c = 0; c < NUMMINESMUSIC; c++ ) {
+		for ( c = 0; c < NUMMINESMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minesmusic[c]);
 		}
 	}
-	if( NUMSWAMPMUSIC > 0 ) {
+	if ( NUMSWAMPMUSIC > 0 ) {
 		swampmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMSWAMPMUSIC);
-		for( c = 0; c < NUMSWAMPMUSIC; c++ ) {
+		for ( c = 0; c < NUMSWAMPMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &swampmusic[c]);
 		}
 	}
-	if( NUMLABYRINTHMUSIC > 0 ) {
+	if ( NUMLABYRINTHMUSIC > 0 ) {
 		labyrinthmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMLABYRINTHMUSIC);
-		for( c = 0; c < NUMLABYRINTHMUSIC; c++ ) {
+		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &labyrinthmusic[c]);
 		}
 	}
-	if( NUMRUINSMUSIC > 0 ) {
+	if ( NUMRUINSMUSIC > 0 ) {
 		ruinsmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMRUINSMUSIC);
-		for( c = 0; c < NUMRUINSMUSIC; c++ ) {
+		for ( c = 0; c < NUMRUINSMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &ruinsmusic[c]);
 		}
 	}
-	if( NUMUNDERWORLDMUSIC > 0 ) {
+	if ( NUMUNDERWORLDMUSIC > 0 ) {
 		underworldmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMUNDERWORLDMUSIC);
-		for( c = 0; c < NUMUNDERWORLDMUSIC; c++ ) {
+		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &underworldmusic[c]);
 		}
 	}
-	if( NUMHELLMUSIC > 0 ) {
+	if ( NUMHELLMUSIC > 0 ) {
 		hellmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMHELLMUSIC);
-		for( c = 0; c < NUMHELLMUSIC; c++ ) {
+		for ( c = 0; c < NUMHELLMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &hellmusic[c]);
 		}
 	}
-	if( NUMMINOTAURMUSIC > 0 ) {
+	if ( NUMMINOTAURMUSIC > 0 ) {
 		minotaurmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMMINOTAURMUSIC);
-		for( c = 0; c < NUMMINOTAURMUSIC; c++ ) {
+		for ( c = 0; c < NUMMINOTAURMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
 		}
@@ -417,7 +417,7 @@ void deinitGame() {
 	int c, x;
 
 	// send disconnect messages
-	if(multiplayer == CLIENT) {
+	if (multiplayer == CLIENT) {
 		strcpy((char *)net_packet->data, "DISCONNECT");
 		net_packet->data[10] = clientnum;
 		net_packet->address.host = net_server.host;
@@ -425,9 +425,9 @@ void deinitGame() {
 		net_packet->len = 11;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		printlog("disconnected from server.\n");
-	} else if(multiplayer == SERVER) {
-		for(x = 1; x < MAXPLAYERS; x++) {
-			if( client_disconnected[x] == TRUE ) {
+	} else if (multiplayer == SERVER) {
+		for (x = 1; x < MAXPLAYERS; x++) {
+			if ( client_disconnected[x] == TRUE ) {
 				continue;
 			}
 			strcpy((char *)net_packet->data, "DISCONNECT");
@@ -444,27 +444,27 @@ void deinitGame() {
 
 	// this short delay makes sure that the disconnect message gets out
 	Uint32 timetoshutdown = SDL_GetTicks();
-	while( SDL_GetTicks() - timetoshutdown < 500 ) {
+	while ( SDL_GetTicks() - timetoshutdown < 500 ) {
 		// handle network messages
-		if( multiplayer == CLIENT ) {
+		if ( multiplayer == CLIENT ) {
 			clientHandleMessages();
-		} else if( multiplayer == SERVER ) {
+		} else if ( multiplayer == SERVER ) {
 			serverHandleMessages();
 		}
-		if( !(SDL_GetTicks() % 25) && multiplayer ) {
+		if ( !(SDL_GetTicks() % 25) && multiplayer ) {
 			int j = 0;
 			node_t *node, *nextnode;
-			for( node = safePacketsSent.first; node != NULL; node = nextnode ) {
+			for ( node = safePacketsSent.first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
 
 				packetsend_t *packet = (packetsend_t *)node->element;
 				sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
 				packet->tries++;
-				if( packet->tries >= MAXTRIES ) {
+				if ( packet->tries >= MAXTRIES ) {
 					list_RemoveNode(node);
 				}
 				j++;
-				if( j >= MAXDELETES ) {
+				if ( j >= MAXDELETES ) {
 					break;
 				}
 			}
@@ -475,29 +475,29 @@ void deinitGame() {
 	list_FreeAll(&topscores);
 	deleteAllNotificationMessages();
 	list_FreeAll(&removedEntities);
-	if(title_bmp != NULL) {
+	if (title_bmp != NULL) {
 		SDL_FreeSurface(title_bmp);
 	}
-	if(logo_bmp != NULL) {
+	if (logo_bmp != NULL) {
 		SDL_FreeSurface(logo_bmp);
 	}
-	if(cursor_bmp != NULL) {
+	if (cursor_bmp != NULL) {
 		SDL_FreeSurface(cursor_bmp);
 	}
-	if(cross_bmp != NULL) {
+	if (cross_bmp != NULL) {
 		SDL_FreeSurface(cross_bmp);
 	}
 	//if(sky_bmp!=NULL)
 	//	SDL_FreeSurface(sky_bmp);
 	list_FreeAll(&chestInv);
 	freeInterfaceResources();
-	if( books ) {
-		for( c = 0; c < numbooks; c++ ) {
-			if( books[c] ) {
-				if( books[c]->text ) {
+	if ( books ) {
+		for ( c = 0; c < numbooks; c++ ) {
+			if ( books[c] ) {
+				if ( books[c]->text ) {
 					free( books[c]->text );
 				}
-				if( books[c]->bookgui_render_title ) {
+				if ( books[c]->bookgui_render_title ) {
 					free( books[c]->bookgui_render_title );
 				}
 				list_FreeAll( &books[c]->pages );
@@ -506,17 +506,17 @@ void deinitGame() {
 		}
 		free( books );
 	}
-	if( discoveredbooks ) {
+	if ( discoveredbooks ) {
 		list_FreeAll(discoveredbooks);
 		free(discoveredbooks);
 	}
 	appraisal_timer = 0;
 	appraisal_item = 0;
-	for(c = 0; c < MAXPLAYERS; c++) {
+	for (c = 0; c < MAXPLAYERS; c++) {
 		list_FreeAll(&stats[c]->inventory);
 	}
-	if( multiplayer == CLIENT ) {
-		if( shopInv ) {
+	if ( multiplayer == CLIENT ) {
+		if ( shopInv ) {
 			list_FreeAll(shopInv);
 			free(shopInv);
 			shopInv = NULL;
@@ -537,7 +537,7 @@ void deinitGame() {
 	list_FreeAll(&command_history);
 
 	list_FreeAll(&safePacketsSent);
-	for( c = 0; c < MAXPLAYERS; c++ ) {
+	for ( c = 0; c < MAXPLAYERS; c++ ) {
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
@@ -555,60 +555,60 @@ void deinitGame() {
 	FMOD_Sound_Release(endgamemusic);
 	FMOD_Sound_Release(escapemusic);
 	FMOD_Sound_Release(devilmusic);
-	for( c = 0; c < NUMMINESMUSIC; c++ ) {
+	for ( c = 0; c < NUMMINESMUSIC; c++ ) {
 		FMOD_Sound_Release(minesmusic[c]);
 	}
-	if( minesmusic ) {
+	if ( minesmusic ) {
 		free(minesmusic);
 	}
-	for( c = 0; c < NUMSWAMPMUSIC; c++ ) {
+	for ( c = 0; c < NUMSWAMPMUSIC; c++ ) {
 		FMOD_Sound_Release(swampmusic[c]);
 	}
-	if( swampmusic ) {
+	if ( swampmusic ) {
 		free(swampmusic);
 	}
-	for( c = 0; c < NUMLABYRINTHMUSIC; c++ ) {
+	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ ) {
 		FMOD_Sound_Release(labyrinthmusic[c]);
 	}
-	if( labyrinthmusic ) {
+	if ( labyrinthmusic ) {
 		free(labyrinthmusic);
 	}
-	for( c = 0; c < NUMRUINSMUSIC; c++ ) {
+	for ( c = 0; c < NUMRUINSMUSIC; c++ ) {
 		FMOD_Sound_Release(ruinsmusic[c]);
 	}
-	if( ruinsmusic ) {
+	if ( ruinsmusic ) {
 		free(ruinsmusic);
 	}
-	for( c = 0; c < NUMUNDERWORLDMUSIC; c++ ) {
+	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ ) {
 		FMOD_Sound_Release(underworldmusic[c]);
 	}
-	if( underworldmusic ) {
+	if ( underworldmusic ) {
 		free(underworldmusic);
 	}
-	for( c = 0; c < NUMHELLMUSIC; c++ ) {
+	for ( c = 0; c < NUMHELLMUSIC; c++ ) {
 		FMOD_Sound_Release(hellmusic[c]);
 	}
-	if( hellmusic ) {
+	if ( hellmusic ) {
 		free(hellmusic);
 	}
-	for( c = 0; c < NUMMINOTAURMUSIC; c++ ) {
+	for ( c = 0; c < NUMMINOTAURMUSIC; c++ ) {
 		FMOD_Sound_Release(minotaurmusic[c]);
 	}
-	if( minotaurmusic ) {
+	if ( minotaurmusic ) {
 		free(minotaurmusic);
 	}
 #endif
 
 	// free items
 	printlog( "freeing item data...\n");
-	for( c = 0; c < NUMITEMS; c++ ) {
+	for ( c = 0; c < NUMITEMS; c++ ) {
 		list_FreeAll(&items[c].images);
 		node_t *node, *nextnode;
-		for( node = items[c].surfaces.first; node != NULL; node = nextnode ) {
+		for ( node = items[c].surfaces.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
 			SDL_Surface **surface = (SDL_Surface **)node->element;
-			if( surface )
-				if( *surface ) {
+			if ( surface )
+				if ( *surface ) {
 					SDL_FreeSurface(*surface);
 				}
 		}
@@ -639,11 +639,11 @@ void deinitGame() {
 	list_FreeAll(&spell_dig.elements);
 
 	// pathmaps
-	if( pathMapGrounded ) {
+	if ( pathMapGrounded ) {
 		free(pathMapGrounded);
 	}
 	pathMapGrounded = NULL;
-	if( pathMapFlying ) {
+	if ( pathMapFlying ) {
 		free(pathMapFlying);
 	}
 	pathMapFlying = NULL;

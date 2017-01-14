@@ -47,7 +47,7 @@ int initApp(char *title, int fullscreen) {
 	Uint32 x, c;
 
 	// open log file
-	if( !logfile ) {
+	if ( !logfile ) {
 		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
 	}
 
@@ -65,7 +65,7 @@ int initApp(char *title, int fullscreen) {
 	light_l.last = NULL;
 	entitiesdeleted.first = NULL;
 	entitiesdeleted.last = NULL;
-	for( c = 0; c < HASH_SIZE; c++ ) {
+	for ( c = 0; c < HASH_SIZE; c++ ) {
 		ttfTextHash[c].first = NULL;
 		ttfTextHash[c].last = NULL;
 	}
@@ -75,7 +75,7 @@ int initApp(char *title, int fullscreen) {
 	// init steamworks
 #ifdef STEAMWORKS
 	SteamAPI_RestartAppIfNecessary(STEAM_APPID);
-	if( !SteamAPI_Init() ) {
+	if ( !SteamAPI_Init() ) {
 		printlog("error: failed to initialize Steamworks!\n");
 		printlog(" make sure your steam client is running before attempting to start again.\n");
 		return 1;
@@ -85,7 +85,7 @@ int initApp(char *title, int fullscreen) {
 
 	window_title = title;
 	printlog("initializing SDL...\n");
-	if( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER ) == -1 ) {
+	if ( SDL_Init( SDL_INIT_VIDEO | SDL_INIT_TIMER | SDL_INIT_EVENTS | SDL_INIT_JOYSTICK | SDL_INIT_GAMECONTROLLER ) == -1 ) {
 		printlog("failed to initialize SDL: %s\n", SDL_GetError());
 		return 1;
 	}
@@ -127,24 +127,24 @@ int initApp(char *title, int fullscreen) {
 	}
 #endif
 	printlog("initializing SDL_net...\n");
-	if( SDLNet_Init() < 0 ) {
+	if ( SDLNet_Init() < 0 ) {
 		printlog("failed to initialize SDL_net: %s\n", SDLNet_GetError());
 		return 2;
 	}
 	printlog("initializing SDL_image...\n");
-	if( IMG_Init(IMG_INIT_PNG) != (IMG_INIT_PNG) ) {
+	if ( IMG_Init(IMG_INIT_PNG) != (IMG_INIT_PNG) ) {
 		printlog("failed to initialize SDL_image: %s\n", IMG_GetError());
 		return 2;
 	}
 
 	// hide cursor for game
-	if( game ) {
+	if ( game ) {
 		SDL_ShowCursor(SDL_FALSE);
 	}
 	SDL_StopTextInput();
 
 	// initialize video
-	if( !initVideo() ) {
+	if ( !initVideo() ) {
 		return 3;
 	}
 	//SDL_EnableUNICODE(1);
@@ -154,31 +154,31 @@ int initApp(char *title, int fullscreen) {
 	// get pointers to opengl extensions
 #ifdef WINDOWS
 	bool noextensions = FALSE;
-	if( !softwaremode ) {
-		if( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL ) {
+	if ( !softwaremode ) {
+		if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL ) {
+		} else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL ) {
+		} else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL ) {
+		} else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL ) {
+		} else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL ) {
+		} else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL ) {
+		} else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL ) {
+		} else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL ) {
 			noextensions = TRUE;
-		} else if( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL ) {
+		} else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL ) {
 			noextensions = TRUE;
 		}
 	}
 	if (softwaremode) {
 		printlog("notice: using software rendering.\n");
 	}
-	if( noextensions ) {
+	if ( noextensions ) {
 		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
 		disablevbos = TRUE;
 	}
@@ -195,7 +195,7 @@ int initApp(char *title, int fullscreen) {
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	//vboid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	allsurfaces = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*MAXTEXTURES);
-	for( c = 0; c < MAXTEXTURES; c++ ) {
+	for ( c = 0; c < MAXTEXTURES; c++ ) {
 		allsurfaces[c] = NULL;
 	}
 	glGenTextures(MAXTEXTURES, texid);
@@ -207,10 +207,10 @@ int initApp(char *title, int fullscreen) {
 #if defined(WINDOWS) && defined(GCL_HICON)
 	HINSTANCE handle = GetModuleHandle(NULL);
 	HICON icon = LoadIcon(handle, "id");
-	if( icon != NULL ) {
+	if ( icon != NULL ) {
 		SDL_SysWMinfo wminfo;
 		SDL_VERSION( &wminfo.version );
-		if( SDL_GetWindowWMInfo(screen, &wminfo) == SDL_TRUE ) {
+		if ( SDL_GetWindowWMInfo(screen, &wminfo) == SDL_TRUE ) {
 			HWND hwnd = wminfo.info.win.window;
 			SetClassLong(hwnd, GCL_HICON, (LONG)icon);
 		}
@@ -220,19 +220,19 @@ int initApp(char *title, int fullscreen) {
 
 	// load resources
 	printlog("loading engine resources...\n");
-	if((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL) {
+	if ((fancyWindow_bmp = loadImage("images/system/fancyWindow.png")) == NULL) {
 		printlog("failed to load fancyWindow.png\n");
 		return 5;
 	}
-	if((font8x8_bmp = loadImage("images/system/font8x8.png")) == NULL) {
+	if ((font8x8_bmp = loadImage("images/system/font8x8.png")) == NULL) {
 		printlog("failed to load font8x8.png\n");
 		return 5;
 	}
-	if((font12x12_bmp = loadImage("images/system/font12x12.png")) == NULL) {
+	if ((font12x12_bmp = loadImage("images/system/font12x12.png")) == NULL) {
 		printlog("failed to load font12x12.png\n");
 		return 5;
 	}
-	if((font16x16_bmp = loadImage("images/system/font16x16.png")) == NULL) {
+	if ((font16x16_bmp = loadImage("images/system/font16x16.png")) == NULL) {
 		printlog("failed to load font16x16.png\n");
 		return 5;
 	}
@@ -251,27 +251,27 @@ int initApp(char *title, int fullscreen) {
 	// load sprites
 	printlog("loading sprites...\n");
 	fp = fopen("images/sprites.txt", "r");
-	for( numsprites = 0; !feof(fp); numsprites++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+	for ( numsprites = 0; !feof(fp); numsprites++ ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 	}
 	fclose(fp);
-	if( numsprites == 0 ) {
+	if ( numsprites == 0 ) {
 		printlog("failed to identify any sprites in sprites.txt\n");
 		return 6;
 	}
 	sprites = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numsprites);
 	fp = fopen("images/sprites.txt", "r");
-	for( c = 0; !feof(fp); c++ ) {
+	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		sprites[c] = loadImage(name);
-		if( sprites[c] == NULL ) {
+		if ( sprites[c] == NULL ) {
 			printlog("warning: failed to load '%s' listed at line %d in sprites.txt\n", name, c + 1);
-			if( c == 0 ) {
+			if ( c == 0 ) {
 				printlog("sprite 0 cannot be NULL!\n");
 				return 7;
 			}
@@ -291,33 +291,33 @@ int initApp(char *title, int fullscreen) {
 	// load models
 	printlog("loading models...\n");
 	fp = fopen("models/models.txt", "r");
-	for( nummodels = 0; !feof(fp); nummodels++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+	for ( nummodels = 0; !feof(fp); nummodels++ ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 	}
 	fclose(fp);
-	if( nummodels == 0 ) {
+	if ( nummodels == 0 ) {
 		printlog("failed to identify any models in models.txt\n");
 		return 11;
 	}
 	models = (voxel_t **) malloc(sizeof(voxel_t *)*nummodels);
 	fp = fopen("models/models.txt", "r");
-	for( c = 0; !feof(fp); c++ ) {
+	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		models[c] = loadVoxel(name);
-		if( models[c] == NULL ) {
+		if ( models[c] == NULL ) {
 			printlog("warning: failed to load '%s' listed at line %d in models.txt\n", name, c + 1);
-			if( c == 0 ) {
+			if ( c == 0 ) {
 				printlog("model 0 cannot be NULL!\n");
 				return 12;
 			}
 		}
 	}
-	if( !softwaremode ) {
+	if ( !softwaremode ) {
 		generatePolyModels();
 	}
 
@@ -334,13 +334,13 @@ int initApp(char *title, int fullscreen) {
 	// load tiles
 	printlog("loading tiles...\n");
 	fp = fopen("images/tiles.txt", "r");
-	for( numtiles = 0; !feof(fp); numtiles++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+	for ( numtiles = 0; !feof(fp); numtiles++ ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 	}
 	fclose(fp);
-	if( numtiles == 0 ) {
+	if ( numtiles == 0 ) {
 		printlog("failed to identify any tiles in tiles.txt\n");
 		return 8;
 	}
@@ -348,27 +348,27 @@ int initApp(char *title, int fullscreen) {
 	animatedtiles = (bool *) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool *) malloc(sizeof(bool) * numtiles);
 	fp = fopen("images/tiles.txt", "r");
-	for( c = 0; !feof(fp); c++ ) {
+	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = FALSE;
 		lavatiles[c] = FALSE;
-		if( tiles[c] != NULL ) {
-			for(x = 0; x < strlen(name); x++) {
-				if( name[x] >= 48 && name[x] < 58 ) {
+		if ( tiles[c] != NULL ) {
+			for (x = 0; x < strlen(name); x++) {
+				if ( name[x] >= 48 && name[x] < 58 ) {
 					animatedtiles[c] = TRUE;
 					break;
 				}
 			}
-			if( strstr(name, "Lava") || strstr(name, "lava") ) {
+			if ( strstr(name, "Lava") || strstr(name, "lava") ) {
 				lavatiles[c] = TRUE;
 			}
 		} else {
 			printlog("warning: failed to load '%s' listed at line %d in tiles.txt\n", name, c + 1);
-			if( c == 0 ) {
+			if ( c == 0 ) {
 				printlog("tile 0 cannot be NULL!\n");
 				return 9;
 			}
@@ -389,21 +389,21 @@ int initApp(char *title, int fullscreen) {
 #ifdef HAVE_FMOD
 	printlog("loading sounds...\n");
 	fp = fopen("sound/sounds.txt", "r");
-	for( numsounds = 0; !feof(fp); numsounds++ ) {
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+	for ( numsounds = 0; !feof(fp); numsounds++ ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 	}
 	fclose(fp);
-	if( numsounds == 0 ) {
+	if ( numsounds == 0 ) {
 		printlog("failed to identify any sounds in sounds.txt\n");
 		return 10;
 	}
 	sounds = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*numsounds);
 	fp = fopen("sound/sounds.txt", "r");
-	for( c = 0; !feof(fp); c++ ) {
+	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
-		while( fgetc(fp) != '\n' ) if( feof(fp) ) {
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) ) {
 				break;
 			}
 		//TODO: Might need to malloc the sounds[c]->sound
@@ -435,7 +435,7 @@ int loadLanguage(char *lang) {
 	int c;
 
 	// open log file
-	if( !logfile ) {
+	if ( !logfile ) {
 		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
 	}
 
@@ -443,21 +443,21 @@ int loadLanguage(char *lang) {
 	snprintf(filename, 127, "lang/%s.txt", lang);
 
 	// check if language file is valid
-	if( access( filename, F_OK ) == -1 ) {
+	if ( access( filename, F_OK ) == -1 ) {
 		// language file doesn't exist
 		printlog("error: unable to locate language file: '%s'", filename);
 		return 1;
 	}
 
 	// check if we've loaded this language already
-	if( !strcmp(languageCode, lang) ) {
+	if ( !strcmp(languageCode, lang) ) {
 		printlog("info: language '%s' already loaded", lang);
 		return 1;
 	}
 
 	// init SDL_TTF
-	if( !TTF_WasInit() ) {
-		if( TTF_Init() == -1 ) {
+	if ( !TTF_WasInit() ) {
+		if ( TTF_Init() == -1 ) {
 			printlog("failed to initialize SDL_ttf.\n");
 			return 1;
 		}
@@ -466,35 +466,35 @@ int loadLanguage(char *lang) {
 	// load fonts
 	char fontName[64] = { 0 };
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
-	if( access(fontName, F_OK) == -1 ) {
+	if ( access(fontName, F_OK) == -1 ) {
 		snprintf(fontName, 63, "lang/en.ttf");
 	}
-	if( access(fontName, F_OK) == -1 ) {
+	if ( access(fontName, F_OK) == -1 ) {
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
-	if( ttf8 ) {
+	if ( ttf8 ) {
 		TTF_CloseFont(ttf8);
 	}
-	if((ttf8 = TTF_OpenFont(fontName, TTF8_HEIGHT)) == NULL ) {
+	if ((ttf8 = TTF_OpenFont(fontName, TTF8_HEIGHT)) == NULL ) {
 		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
 		return 1;
 	}
 	TTF_SetFontKerning(ttf8, 0);
 	TTF_SetFontHinting(ttf8, TTF_HINTING_MONO);
-	if( ttf12 ) {
+	if ( ttf12 ) {
 		TTF_CloseFont(ttf12);
 	}
-	if((ttf12 = TTF_OpenFont(fontName, TTF12_HEIGHT)) == NULL ) {
+	if ((ttf12 = TTF_OpenFont(fontName, TTF12_HEIGHT)) == NULL ) {
 		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
 		return 1;
 	}
 	TTF_SetFontKerning(ttf12, 0);
 	TTF_SetFontHinting(ttf12, TTF_HINTING_MONO);
-	if( ttf16 ) {
+	if ( ttf16 ) {
 		TTF_CloseFont(ttf16);
 	}
-	if((ttf16 = TTF_OpenFont(fontName, TTF16_HEIGHT)) == NULL ) {
+	if ((ttf16 = TTF_OpenFont(fontName, TTF16_HEIGHT)) == NULL ) {
 		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
 		return 1;
 	}
@@ -502,16 +502,16 @@ int loadLanguage(char *lang) {
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if( (fp = fopen(filename, "r")) == NULL ) {
+	if ( (fp = fopen(filename, "r")) == NULL ) {
 		printlog("error: unable to load language file: '%s'", filename);
 		return 1;
 	}
 
 	// free currently loaded language if any
-	if( language ) {
-		for( c = 0; c < NUMLANGENTRIES; c++ ) {
+	if ( language ) {
+		for ( c = 0; c < NUMLANGENTRIES; c++ ) {
 			char *entry = language[c];
-			if( entry ) {
+			if ( entry ) {
 				free(entry);
 			}
 		}
@@ -531,7 +531,7 @@ int loadLanguage(char *lang) {
 
 	// read file
 	Uint32 line;
-	for( line = 1; !feof(fp); ) {
+	for ( line = 1; !feof(fp); ) {
 		//printlog( "loading line %d...\n", line);
 		char data[1024];
 		int entry = NUMLANGENTRIES;
@@ -540,49 +540,49 @@ int loadLanguage(char *lang) {
 		// read line from file
 		int i;
 		bool fileEnd = FALSE;
-		for( i = 0; ; i++ ) {
+		for ( i = 0; ; i++ ) {
 			data[i] = fgetc(fp);
-			if( feof(fp) ) {
+			if ( feof(fp) ) {
 				fileEnd = TRUE;
 				break;
 			}
 
 			// blank or comment lines stop reading at a newline
-			if( data[i] == '\n' ) {
+			if ( data[i] == '\n' ) {
 				line++;
-				if( data[0] == '\n' || data[0] == '#' ) {
+				if ( data[0] == '\n' || data[0] == '#' ) {
 					break;
 				}
 			}
-			if( data[i] == '#' ) {
-				if( data[0] != '\n' && data[0] != '#' ) {
+			if ( data[i] == '#' ) {
+				if ( data[0] != '\n' && data[0] != '#' ) {
 					break;
 				}
 			}
 		}
-		if( fileEnd ) {
+		if ( fileEnd ) {
 			break;
 		}
 
 		// skip blank and comment lines
-		if( data[0] == '\n' || data[0] == '#' ) {
+		if ( data[0] == '\n' || data[0] == '#' ) {
 			continue;
 		}
 
 		data[i] = 0;
 
 		// process line
-		if( (entry = atoi(data)) == 0 ) {
+		if ( (entry = atoi(data)) == 0 ) {
 			printlog( "warning: syntax error in '%s':%d\n bad syntax!\n", filename, line);
 			continue;
-		} else if( entry >= NUMLANGENTRIES || entry < 0 ) {
+		} else if ( entry >= NUMLANGENTRIES || entry < 0 ) {
 			printlog( "warning: syntax error in '%s':%d\n invalid language entry!\n", filename, line);
 			continue;
 		}
 		//printlog( "loading entry %d...\n", entry);
 		char entryText[16] = { 0 };
 		snprintf(entryText, 15, "%d", entry);
-		if( language[entry][0] ) {
+		if ( language[entry][0] ) {
 			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, filename, line);
 			free(language[entry]);
 		}
@@ -636,7 +636,7 @@ void generatePolyModels() {
 
 	printlog("generating poly models...\n");
 	polymodels = (polymodel_t *) malloc(sizeof(polymodel_t) * nummodels);
-	for( c = 0; c < nummodels; ++c ) {
+	for ( c = 0; c < nummodels; ++c ) {
 		char loadText[128];
 		snprintf(loadText, 127, language[745], c, nummodels);
 
@@ -654,7 +654,7 @@ void generatePolyModels() {
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t *model = models[c];
-		if( !model ) {
+		if ( !model ) {
 			continue;
 		}
 		indexdown[0] = model->sizez * model->sizey;
@@ -662,22 +662,22 @@ void generatePolyModels() {
 		indexdown[2] = 1;
 
 		// find front faces
-		for( x = models[c]->sizex - 1; x >= 0; x-- ) {
-			for( z = 0; z < models[c]->sizez; z++ ) {
+		for ( x = models[c]->sizex - 1; x >= 0; x-- ) {
+			for ( z = 0; z < models[c]->sizez; z++ ) {
 				oldcolor = 255;
 				buildingquad = FALSE;
-				for( y = 0; y < models[c]->sizey; y++ ) {
+				for ( y = 0; y < models[c]->sizey; y++ ) {
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if( buildingquad == TRUE ) {
+					if ( buildingquad == TRUE ) {
 						bool doit = FALSE;
-						if( newcolor != oldcolor ) {
+						if ( newcolor != oldcolor ) {
 							doit = TRUE;
-						} else if( x < models[c]->sizex - 1 )
-							if( models[c]->data[index + indexdown[0]] >= 0 && models[c]->data[index + indexdown[0]] < 255 ) {
+						} else if ( x < models[c]->sizex - 1 )
+							if ( models[c]->data[index + indexdown[0]] >= 0 && models[c]->data[index + indexdown[0]] < 255 ) {
 								doit = TRUE;
 							}
-						if( doit ) {
+						if ( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
@@ -692,12 +692,12 @@ void generatePolyModels() {
 
 							// optimize quad
 							node_t *node;
-							for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 								quad2 = (polyquad_t *)node->element;
-								if( quad1->side == quad2->side ) {
-									if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-										if( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
-											if( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
+								if ( quad1->side == quad2->side ) {
+									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
+											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
 												quad2->vertex[2].z++;
 												quad2->vertex[3].z++;
 												list_RemoveNode(currentNode);
@@ -711,15 +711,15 @@ void generatePolyModels() {
 							}
 						}
 					}
-					if( newcolor != oldcolor || !buildingquad ) {
-						if( newcolor != 255 ) {
+					if ( newcolor != oldcolor || !buildingquad ) {
+						if ( newcolor != 255 ) {
 							bool doit = FALSE;
-							if( x == models[c]->sizex - 1 ) {
+							if ( x == models[c]->sizex - 1 ) {
 								doit = TRUE;
-							} else if( models[c]->data[index + indexdown[0]] == 255 ) {
+							} else if ( models[c]->data[index + indexdown[0]] == 255 ) {
 								doit = TRUE;
 							}
-							if( doit ) {
+							if ( doit ) {
 								// start building a new quad
 								buildingquad = TRUE;
 								numquads++;
@@ -746,7 +746,7 @@ void generatePolyModels() {
 					}
 					oldcolor = newcolor;
 				}
-				if( buildingquad == TRUE ) {
+				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
@@ -761,12 +761,12 @@ void generatePolyModels() {
 
 					// optimize quad
 					node_t *node;
-					for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 						quad2 = (polyquad_t *)node->element;
-						if( quad1->side == quad2->side ) {
-							if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-								if( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
-									if( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
+						if ( quad1->side == quad2->side ) {
+							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
+									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
 										quad2->vertex[2].z++;
 										quad2->vertex[3].z++;
 										list_RemoveNode(currentNode);
@@ -783,22 +783,22 @@ void generatePolyModels() {
 		}
 
 		// find back faces
-		for( x = 0; x < models[c]->sizex; x++ ) {
-			for( z = 0; z < models[c]->sizez; z++ ) {
+		for ( x = 0; x < models[c]->sizex; x++ ) {
+			for ( z = 0; z < models[c]->sizez; z++ ) {
 				oldcolor = 255;
 				buildingquad = FALSE;
-				for( y = 0; y < models[c]->sizey; y++ ) {
+				for ( y = 0; y < models[c]->sizey; y++ ) {
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if( buildingquad == TRUE ) {
+					if ( buildingquad == TRUE ) {
 						bool doit = FALSE;
-						if( newcolor != oldcolor ) {
+						if ( newcolor != oldcolor ) {
 							doit = TRUE;
-						} else if( x > 0 )
-							if( models[c]->data[index - indexdown[0]] >= 0 && models[c]->data[index - indexdown[0]] < 255 ) {
+						} else if ( x > 0 )
+							if ( models[c]->data[index - indexdown[0]] >= 0 && models[c]->data[index - indexdown[0]] < 255 ) {
 								doit = TRUE;
 							}
-						if( doit ) {
+						if ( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
@@ -813,12 +813,12 @@ void generatePolyModels() {
 
 							// optimize quad
 							node_t *node;
-							for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 								quad2 = (polyquad_t *)node->element;
-								if( quad1->side == quad2->side ) {
-									if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-										if( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
-											if( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
+								if ( quad1->side == quad2->side ) {
+									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
+											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
 												quad2->vertex[0].z++;
 												quad2->vertex[1].z++;
 												list_RemoveNode(currentNode);
@@ -832,15 +832,15 @@ void generatePolyModels() {
 							}
 						}
 					}
-					if( newcolor != oldcolor || !buildingquad ) {
-						if( newcolor != 255 ) {
+					if ( newcolor != oldcolor || !buildingquad ) {
+						if ( newcolor != 255 ) {
 							bool doit = FALSE;
-							if( x == 0 ) {
+							if ( x == 0 ) {
 								doit = TRUE;
-							} else if( models[c]->data[index - indexdown[0]] == 255 ) {
+							} else if ( models[c]->data[index - indexdown[0]] == 255 ) {
 								doit = TRUE;
 							}
-							if( doit ) {
+							if ( doit ) {
 								// start building a new quad
 								buildingquad = TRUE;
 								numquads++;
@@ -867,7 +867,7 @@ void generatePolyModels() {
 					}
 					oldcolor = newcolor;
 				}
-				if( buildingquad == TRUE ) {
+				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
@@ -882,12 +882,12 @@ void generatePolyModels() {
 
 					// optimize quad
 					node_t *node;
-					for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 						quad2 = (polyquad_t *)node->element;
-						if( quad1->side == quad2->side ) {
-							if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-								if( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
-									if( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
+						if ( quad1->side == quad2->side ) {
+							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
+									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
 										quad2->vertex[0].z++;
 										quad2->vertex[1].z++;
 										list_RemoveNode(currentNode);
@@ -904,22 +904,22 @@ void generatePolyModels() {
 		}
 
 		// find right faces
-		for( y = models[c]->sizey - 1; y >= 0; y-- ) {
-			for( z = 0; z < models[c]->sizez; z++ ) {
+		for ( y = models[c]->sizey - 1; y >= 0; y-- ) {
+			for ( z = 0; z < models[c]->sizez; z++ ) {
 				oldcolor = 255;
 				buildingquad = FALSE;
-				for( x = 0; x < models[c]->sizex; x++ ) {
+				for ( x = 0; x < models[c]->sizex; x++ ) {
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if( buildingquad == TRUE ) {
+					if ( buildingquad == TRUE ) {
 						bool doit = FALSE;
-						if( newcolor != oldcolor ) {
+						if ( newcolor != oldcolor ) {
 							doit = TRUE;
-						} else if( y < models[c]->sizey - 1 )
-							if( models[c]->data[index + indexdown[1]] >= 0 && models[c]->data[index + indexdown[1]] < 255 ) {
+						} else if ( y < models[c]->sizey - 1 )
+							if ( models[c]->data[index + indexdown[1]] >= 0 && models[c]->data[index + indexdown[1]] < 255 ) {
 								doit = TRUE;
 							}
-						if( doit ) {
+						if ( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
@@ -934,12 +934,12 @@ void generatePolyModels() {
 
 							// optimize quad
 							node_t *node;
-							for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 								quad2 = (polyquad_t *)node->element;
-								if( quad1->side == quad2->side ) {
-									if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-										if( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
-											if( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
+								if ( quad1->side == quad2->side ) {
+									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
+											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
 												quad2->vertex[0].z++;
 												quad2->vertex[1].z++;
 												list_RemoveNode(currentNode);
@@ -953,15 +953,15 @@ void generatePolyModels() {
 							}
 						}
 					}
-					if( newcolor != oldcolor || !buildingquad ) {
-						if( newcolor != 255 ) {
+					if ( newcolor != oldcolor || !buildingquad ) {
+						if ( newcolor != 255 ) {
 							bool doit = FALSE;
-							if( y == models[c]->sizey - 1 ) {
+							if ( y == models[c]->sizey - 1 ) {
 								doit = TRUE;
-							} else if( models[c]->data[index + indexdown[1]] == 255 ) {
+							} else if ( models[c]->data[index + indexdown[1]] == 255 ) {
 								doit = TRUE;
 							}
-							if( doit ) {
+							if ( doit ) {
 								// start building a new quad
 								buildingquad = TRUE;
 								numquads++;
@@ -988,7 +988,7 @@ void generatePolyModels() {
 					}
 					oldcolor = newcolor;
 				}
-				if( buildingquad == TRUE ) {
+				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 					node_t *currentNode = quads.last;
@@ -1002,12 +1002,12 @@ void generatePolyModels() {
 
 					// optimize quad
 					node_t *node;
-					for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 						quad2 = (polyquad_t *)node->element;
-						if( quad1->side == quad2->side ) {
-							if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-								if( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
-									if( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
+						if ( quad1->side == quad2->side ) {
+							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
+									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
 										quad2->vertex[0].z++;
 										quad2->vertex[1].z++;
 										list_RemoveNode(currentNode);
@@ -1024,22 +1024,22 @@ void generatePolyModels() {
 		}
 
 		// find left faces
-		for( y = 0; y < models[c]->sizey; y++ ) {
-			for( z = 0; z < models[c]->sizez; z++ ) {
+		for ( y = 0; y < models[c]->sizey; y++ ) {
+			for ( z = 0; z < models[c]->sizez; z++ ) {
 				oldcolor = 255;
 				buildingquad = FALSE;
-				for( x = 0; x < models[c]->sizex; x++ ) {
+				for ( x = 0; x < models[c]->sizex; x++ ) {
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if( buildingquad == TRUE ) {
+					if ( buildingquad == TRUE ) {
 						bool doit = FALSE;
-						if( newcolor != oldcolor ) {
+						if ( newcolor != oldcolor ) {
 							doit = TRUE;
-						} else if( y > 0 )
-							if( models[c]->data[index - indexdown[1]] >= 0 && models[c]->data[index - indexdown[1]] < 255 ) {
+						} else if ( y > 0 )
+							if ( models[c]->data[index - indexdown[1]] >= 0 && models[c]->data[index - indexdown[1]] < 255 ) {
 								doit = TRUE;
 							}
-						if( doit ) {
+						if ( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
@@ -1054,12 +1054,12 @@ void generatePolyModels() {
 
 							// optimize quad
 							node_t *node;
-							for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 								quad2 = (polyquad_t *)node->element;
-								if( quad1->side == quad2->side ) {
-									if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-										if( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
-											if( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
+								if ( quad1->side == quad2->side ) {
+									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
+											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
 												quad2->vertex[2].z++;
 												quad2->vertex[3].z++;
 												list_RemoveNode(currentNode);
@@ -1073,15 +1073,15 @@ void generatePolyModels() {
 							}
 						}
 					}
-					if( newcolor != oldcolor || !buildingquad ) {
-						if( newcolor != 255 ) {
+					if ( newcolor != oldcolor || !buildingquad ) {
+						if ( newcolor != 255 ) {
 							bool doit = FALSE;
-							if( y == 0 ) {
+							if ( y == 0 ) {
 								doit = TRUE;
-							} else if( models[c]->data[index - indexdown[1]] == 255 ) {
+							} else if ( models[c]->data[index - indexdown[1]] == 255 ) {
 								doit = TRUE;
 							}
-							if( doit ) {
+							if ( doit ) {
 								// start building a new quad
 								buildingquad = TRUE;
 								numquads++;
@@ -1108,7 +1108,7 @@ void generatePolyModels() {
 					}
 					oldcolor = newcolor;
 				}
-				if( buildingquad == TRUE ) {
+				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 					node_t *currentNode = quads.last;
@@ -1122,12 +1122,12 @@ void generatePolyModels() {
 
 					// optimize quad
 					node_t *node;
-					for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 						quad2 = (polyquad_t *)node->element;
-						if( quad1->side == quad2->side ) {
-							if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-								if( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
-									if( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
+						if ( quad1->side == quad2->side ) {
+							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
+									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
 										quad2->vertex[2].z++;
 										quad2->vertex[3].z++;
 										list_RemoveNode(currentNode);
@@ -1144,22 +1144,22 @@ void generatePolyModels() {
 		}
 
 		// find bottom faces
-		for( z = models[c]->sizez - 1; z >= 0; z-- ) {
-			for( y = 0; y < models[c]->sizey; y++ ) {
+		for ( z = models[c]->sizez - 1; z >= 0; z-- ) {
+			for ( y = 0; y < models[c]->sizey; y++ ) {
 				oldcolor = 255;
 				buildingquad = FALSE;
-				for( x = 0; x < models[c]->sizex; x++ ) {
+				for ( x = 0; x < models[c]->sizex; x++ ) {
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if( buildingquad == TRUE ) {
+					if ( buildingquad == TRUE ) {
 						bool doit = FALSE;
-						if( newcolor != oldcolor ) {
+						if ( newcolor != oldcolor ) {
 							doit = TRUE;
-						} else if( z < models[c]->sizez - 1 )
-							if( models[c]->data[index + indexdown[2]] >= 0 && models[c]->data[index + indexdown[2]] < 255 ) {
+						} else if ( z < models[c]->sizez - 1 )
+							if ( models[c]->data[index + indexdown[2]] >= 0 && models[c]->data[index + indexdown[2]] < 255 ) {
 								doit = TRUE;
 							}
-						if( doit ) {
+						if ( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
@@ -1174,12 +1174,12 @@ void generatePolyModels() {
 
 							// optimize quad
 							node_t *node;
-							for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 								quad2 = (polyquad_t *)node->element;
-								if( quad1->side == quad2->side ) {
-									if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-										if( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
-											if( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
+								if ( quad1->side == quad2->side ) {
+									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
+											if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
 												quad2->vertex[2].y++;
 												quad2->vertex[3].y++;
 												list_RemoveNode(currentNode);
@@ -1193,15 +1193,15 @@ void generatePolyModels() {
 							}
 						}
 					}
-					if( newcolor != oldcolor || !buildingquad ) {
-						if( newcolor != 255 ) {
+					if ( newcolor != oldcolor || !buildingquad ) {
+						if ( newcolor != 255 ) {
 							bool doit = FALSE;
-							if( z == models[c]->sizez - 1 ) {
+							if ( z == models[c]->sizez - 1 ) {
 								doit = TRUE;
-							} else if( models[c]->data[index + indexdown[2]] == 255 ) {
+							} else if ( models[c]->data[index + indexdown[2]] == 255 ) {
 								doit = TRUE;
 							}
-							if( doit ) {
+							if ( doit ) {
 								// start building a new quad
 								buildingquad = TRUE;
 								numquads++;
@@ -1228,7 +1228,7 @@ void generatePolyModels() {
 					}
 					oldcolor = newcolor;
 				}
-				if( buildingquad == TRUE ) {
+				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
@@ -1243,12 +1243,12 @@ void generatePolyModels() {
 
 					// optimize quad
 					node_t *node;
-					for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 						quad2 = (polyquad_t *)node->element;
-						if( quad1->side == quad2->side ) {
-							if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-								if( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
-									if( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
+						if ( quad1->side == quad2->side ) {
+							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
+									if ( quad2->vertex[2].x == quad1->vertex[1].x && quad2->vertex[2].y == quad1->vertex[1].y && quad2->vertex[2].z == quad1->vertex[1].z ) {
 										quad2->vertex[2].y++;
 										quad2->vertex[3].y++;
 										list_RemoveNode(currentNode);
@@ -1265,22 +1265,22 @@ void generatePolyModels() {
 		}
 
 		// find top faces
-		for( z = 0; z < models[c]->sizez; z++ ) {
-			for( y = 0; y < models[c]->sizey; y++ ) {
+		for ( z = 0; z < models[c]->sizez; z++ ) {
+			for ( y = 0; y < models[c]->sizey; y++ ) {
 				oldcolor = 255;
 				buildingquad = FALSE;
-				for( x = 0; x < models[c]->sizex; x++ ) {
+				for ( x = 0; x < models[c]->sizex; x++ ) {
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if( buildingquad == TRUE ) {
+					if ( buildingquad == TRUE ) {
 						bool doit = FALSE;
-						if( newcolor != oldcolor ) {
+						if ( newcolor != oldcolor ) {
 							doit = TRUE;
-						} else if( z > 0 )
-							if( models[c]->data[index - indexdown[2]] >= 0 && models[c]->data[index - indexdown[2]] < 255 ) {
+						} else if ( z > 0 )
+							if ( models[c]->data[index - indexdown[2]] >= 0 && models[c]->data[index - indexdown[2]] < 255 ) {
 								doit = TRUE;
 							}
-						if( doit ) {
+						if ( doit ) {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
@@ -1295,12 +1295,12 @@ void generatePolyModels() {
 
 							// optimize quad
 							node_t *node;
-							for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 								quad2 = (polyquad_t *)node->element;
-								if( quad1->side == quad2->side ) {
-									if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-										if( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
-											if( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
+								if ( quad1->side == quad2->side ) {
+									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
+											if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
 												quad2->vertex[0].y++;
 												quad2->vertex[1].y++;
 												list_RemoveNode(currentNode);
@@ -1314,15 +1314,15 @@ void generatePolyModels() {
 							}
 						}
 					}
-					if( newcolor != oldcolor || !buildingquad ) {
-						if( newcolor != 255 ) {
+					if ( newcolor != oldcolor || !buildingquad ) {
+						if ( newcolor != 255 ) {
 							bool doit = FALSE;
-							if( z == 0 ) {
+							if ( z == 0 ) {
 								doit = TRUE;
-							} else if( models[c]->data[index - indexdown[2]] == 255 ) {
+							} else if ( models[c]->data[index - indexdown[2]] == 255 ) {
 								doit = TRUE;
 							}
-							if( doit ) {
+							if ( doit ) {
 								// start building a new quad
 								buildingquad = TRUE;
 								numquads++;
@@ -1349,7 +1349,7 @@ void generatePolyModels() {
 					}
 					oldcolor = newcolor;
 				}
-				if( buildingquad == TRUE ) {
+				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
@@ -1364,12 +1364,12 @@ void generatePolyModels() {
 
 					// optimize quad
 					node_t *node;
-					for( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
+					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
 						quad2 = (polyquad_t *)node->element;
-						if( quad1->side == quad2->side ) {
-							if( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
-								if( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
-									if( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
+						if ( quad1->side == quad2->side ) {
+							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
+								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
+									if ( quad2->vertex[1].x == quad1->vertex[2].x && quad2->vertex[1].y == quad1->vertex[2].y && quad2->vertex[1].z == quad1->vertex[2].z ) {
 										quad2->vertex[0].y++;
 										quad2->vertex[1].y++;
 										list_RemoveNode(currentNode);
@@ -1387,13 +1387,13 @@ void generatePolyModels() {
 
 		// translate quads into triangles
 		polymodels[c].faces = (polytriangle_t *) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
-		for( i = 0; i < polymodels[c].numfaces; i++ ) {
+		for ( i = 0; i < polymodels[c].numfaces; i++ ) {
 			node_t *node = list_Node(&quads, i / 2);
 			polyquad_t *quad = (polyquad_t *)node->element;
 			polymodels[c].faces[i].r = quad->r;
 			polymodels[c].faces[i].g = quad->g;
 			polymodels[c].faces[i].b = quad->b;
-			if( i % 2 ) {
+			if ( i % 2 ) {
 				polymodels[c].faces[i].vertex[0] = quad->vertex[0];
 				polymodels[c].faces[i].vertex[1] = quad->vertex[1];
 				polymodels[c].faces[i].vertex[2] = quad->vertex[2];
@@ -1409,7 +1409,7 @@ void generatePolyModels() {
 	}
 
 	// now store models into VBOs
-	if( !disablevbos ) {
+	if ( !disablevbos ) {
 		generateVBOs();
 	}
 }
@@ -1425,13 +1425,13 @@ void generatePolyModels() {
 void generateVBOs() {
 	int i, c;
 
-	for( c = 0; c < nummodels; ++c ) {
+	for ( c = 0; c < nummodels; ++c ) {
 		/*if( c>0 )
 			break;*/
 		GLfloat *points = (GLfloat *) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
 		GLfloat *colors = (GLfloat *) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
 		GLfloat *colors_shifted = (GLfloat *) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		for( i = 0; i < polymodels[c].numfaces; i++ ) {
+		for ( i = 0; i < polymodels[c].numfaces; i++ ) {
 			points[i * 9] = polymodels[c].faces[i].vertex[0].x;
 			colors[i * 9] = polymodels[c].faces[i].r / 255.f;
 			colors_shifted[i * 9] = polymodels[c].faces[i].b / 255.f;
@@ -1514,78 +1514,78 @@ int deinitApp() {
 	// close engine
 	printlog("closing engine...\n");
 	printlog("removing engine timer...\n");
-	if( timer ) {
+	if ( timer ) {
 		SDL_RemoveTimer(timer);
 	}
 	printlog("freeing engine resources...\n");
 	list_FreeAll(&button_l);
 	list_FreeAll(&entitiesdeleted);
-	if( fancyWindow_bmp ) {
+	if ( fancyWindow_bmp ) {
 		SDL_FreeSurface(fancyWindow_bmp);
 	}
-	if( font8x8_bmp ) {
+	if ( font8x8_bmp ) {
 		SDL_FreeSurface(font8x8_bmp);
 	}
-	if( font12x12_bmp ) {
+	if ( font12x12_bmp ) {
 		SDL_FreeSurface(font12x12_bmp);
 	}
-	if( font16x16_bmp ) {
+	if ( font16x16_bmp ) {
 		SDL_FreeSurface(font16x16_bmp);
 	}
-	if( ttf8 ) {
+	if ( ttf8 ) {
 		TTF_CloseFont(ttf8);
 	}
-	if( ttf12 ) {
+	if ( ttf12 ) {
 		TTF_CloseFont(ttf12);
 	}
-	if( ttf16 ) {
+	if ( ttf16 ) {
 		TTF_CloseFont(ttf16);
 	}
 
 	printlog("freeing map data...\n");
-	if( map.entities != NULL ) {
+	if ( map.entities != NULL ) {
 		list_FreeAll(map.entities);
 		free(map.entities);
 	}
 	list_FreeAll(&light_l);
-	if( map.tiles != NULL ) {
+	if ( map.tiles != NULL ) {
 		free(map.tiles);
 	}
-	if( lightmap != NULL ) {
+	if ( lightmap != NULL ) {
 		free(lightmap);
 	}
-	if( vismap != NULL ) {
+	if ( vismap != NULL ) {
 		free(vismap);
 	}
 
-	for( c = 0; c < HASH_SIZE; c++ ) {
+	for ( c = 0; c < HASH_SIZE; c++ ) {
 		list_FreeAll(&ttfTextHash[c]);
 	}
 
 	// free textures
 	printlog("freeing textures...\n");
-	if( tiles != NULL ) {
-		for( c = 0; c < numtiles; c++ ) {
-			if( tiles[c] ) {
+	if ( tiles != NULL ) {
+		for ( c = 0; c < numtiles; c++ ) {
+			if ( tiles[c] ) {
 				SDL_FreeSurface(tiles[c]);
 			}
 		}
 		free(tiles);
 	}
-	if( animatedtiles ) {
+	if ( animatedtiles ) {
 		free(animatedtiles);
 		animatedtiles = NULL;
 	}
-	if( lavatiles ) {
+	if ( lavatiles ) {
 		free(lavatiles);
 		lavatiles = NULL;
 	}
 
 	// free sprites
 	printlog("freeing sprites...\n");
-	if( sprites != NULL ) {
-		for( c = 0; c < numsprites; c++ ) {
-			if( sprites[c] ) {
+	if ( sprites != NULL ) {
+		for ( c = 0; c < numsprites; c++ ) {
+			if ( sprites[c] ) {
 				SDL_FreeSurface(sprites[c]);
 			}
 		}
@@ -1594,10 +1594,10 @@ int deinitApp() {
 
 	// free models
 	printlog("freeing models...\n");
-	if( models != NULL ) {
-		for( c = 0; c < nummodels; c++ ) {
-			if( models[c] != NULL ) {
-				if( models[c]->data ) {
+	if ( models != NULL ) {
+		for ( c = 0; c < nummodels; c++ ) {
+			if ( models[c] != NULL ) {
+				if ( models[c]->data ) {
 					free(models[c]->data);
 				}
 				free(models[c]);
@@ -1605,21 +1605,21 @@ int deinitApp() {
 		}
 		free(models);
 	}
-	if( polymodels != NULL ) {
-		for( c = 0; c < nummodels; c++ ) {
-			if( polymodels[c].faces ) {
+	if ( polymodels != NULL ) {
+		for ( c = 0; c < nummodels; c++ ) {
+			if ( polymodels[c].faces ) {
 				free(polymodels[c].faces);
 			}
 		}
-		if( !disablevbos ) {
-			for( c = 0; c < nummodels; c++ ) {
-				if( polymodels[c].vbo ) {
+		if ( !disablevbos ) {
+			for ( c = 0; c < nummodels; c++ ) {
+				if ( polymodels[c].vbo ) {
 					SDL_glDeleteBuffers(1, &polymodels[c].vbo);
 				}
-				if( polymodels[c].colors ) {
+				if ( polymodels[c].colors ) {
 					SDL_glDeleteBuffers(1, &polymodels[c].colors);
 				}
-				if( polymodels[c].va ) {
+				if ( polymodels[c].va ) {
 					SDL_glDeleteVertexArrays(1, &polymodels[c].va);
 				}
 			}
@@ -1630,9 +1630,9 @@ int deinitApp() {
 	// free sounds
 #ifdef HAVE_FMOD
 	printlog("freeing sounds...\n");
-	if( sounds != NULL ) {
-		for( c = 0; c < numsounds; c++ ) {
-			if(sounds[c] != NULL) {
+	if ( sounds != NULL ) {
+		for ( c = 0; c < numsounds; c++ ) {
+			if (sounds[c] != NULL) {
 				if (sounds[c] != NULL) {
 					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
 				}
@@ -1644,10 +1644,10 @@ int deinitApp() {
 #endif
 
 	// delete opengl buffers
-	if( allsurfaces != NULL ) {
+	if ( allsurfaces != NULL ) {
 		free(allsurfaces);
 	}
-	if( texid != NULL ) {
+	if ( texid != NULL ) {
 		glDeleteTextures(MAXTEXTURES, texid);
 		free(texid);
 	}
@@ -1670,17 +1670,17 @@ int deinitApp() {
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
 #ifdef HAVE_FMOD
-	if( fmod_system ) {
+	if ( fmod_system ) {
 		FMOD_System_Close(fmod_system);
 		FMOD_System_Release(fmod_system);
 		fmod_system = NULL;
 	}
 #endif
-	if( screen ) {
+	if ( screen ) {
 		SDL_DestroyWindow(screen);
 		screen = NULL;
 	}
-	if( renderer ) {
+	if ( renderer ) {
 #ifdef APPLE
 		SDL_DestroyRenderer(renderer);
 #else
@@ -1688,7 +1688,7 @@ int deinitApp() {
 #endif
 		renderer = NULL;
 	}
-	if( mainsurface ) {
+	if ( mainsurface ) {
 		SDL_FreeSurface(mainsurface);
 		mainsurface = NULL;
 	}
@@ -1696,16 +1696,16 @@ int deinitApp() {
 	SDL_Quit();
 
 	// free video and input buffers
-	if( zbuffer != NULL ) {
+	if ( zbuffer != NULL ) {
 		free(zbuffer);
 	}
-	if( clickmap != NULL ) {
+	if ( clickmap != NULL ) {
 		free(clickmap);
 	}
 
 	// shutdown steamworks
 #ifdef STEAMWORKS
-	if( steam_init ) {
+	if ( steam_init ) {
 		printlog("storing user stats to Steam...\n");
 		SteamUserStats()->StoreStats();
 		SteamAPI_Shutdown();
@@ -1713,10 +1713,10 @@ int deinitApp() {
 #endif
 
 	// free currently loaded language if any
-	if( language ) {
-		for( c = 0; c < NUMLANGENTRIES; c++ ) {
+	if ( language ) {
+		for ( c = 0; c < NUMLANGENTRIES; c++ ) {
 			char *entry = language[c];
-			if( entry ) {
+			if ( entry ) {
 				free(entry);
 			}
 		}
@@ -1748,17 +1748,17 @@ bool initVideo() {
 
 	printlog("setting display mode to %dx%d...\n", xres, yres);
 	Uint32 flags = 0;
-	if( fullscreen ) {
+	if ( fullscreen ) {
 		flags |= SDL_WINDOW_FULLSCREEN;
 	}
-	if( !game ) {
+	if ( !game ) {
 		flags |= SDL_WINDOW_RESIZABLE;
 	}
-	if( !softwaremode ) {
+	if ( !softwaremode ) {
 		flags |= SDL_WINDOW_OPENGL;
 	}
 #ifdef APPLE
-	if( fullscreen ) {
+	if ( fullscreen ) {
 		flags |= SDL_WINDOW_BORDERLESS;
 	}
 	SDL_DestroyWindow(screen);
@@ -1768,24 +1768,24 @@ bool initVideo() {
 	if (splitscreen) {
 		screen_width *= 2;
 	}
-	if( !screen ) {
-		if((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL) {
+	if ( !screen ) {
+		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL) {
 			printlog("failed to set video mode.\n");
 			return FALSE;
 		}
 	} else {
 		SDL_SetWindowSize(screen, screen_width, yres);
-		if( fullscreen ) {
+		if ( fullscreen ) {
 			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
 		} else {
 			SDL_SetWindowFullscreen(screen, 0);
 		}
 	}
-	if( !renderer ) {
+	if ( !renderer ) {
 #ifdef APPLE
-		if((renderer = SDL_CreateRenderer(screen, -1, 0)) == NULL) {
+		if ((renderer = SDL_CreateRenderer(screen, -1, 0)) == NULL) {
 #else
-		if((renderer = SDL_GL_CreateContext(screen)) == NULL) {
+		if ((renderer = SDL_GL_CreateContext(screen)) == NULL) {
 #endif
 			printlog("failed to create SDL renderer. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
@@ -1806,11 +1806,11 @@ bool initVideo() {
 	Uint32 bmask = 0x00ff0000;
 	Uint32 amask = 0xff000000;
 #endif
-	if((mainsurface = SDL_CreateRGBSurface(0, xres, yres, 32, rmask, gmask, bmask, amask)) == NULL) {
+	if ((mainsurface = SDL_CreateRGBSurface(0, xres, yres, 32, rmask, gmask, bmask, amask)) == NULL) {
 		printlog("failed to create main window surface.\n");
 		return FALSE;
 	}
-	if( !softwaremode ) {
+	if ( !softwaremode ) {
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
@@ -1824,7 +1824,7 @@ bool initVideo() {
 		glLoadIdentity();
 		glClearColor( 0, 0, 0, 0 );
 	}
-	if( SDL_SetWindowBrightness(screen, vidgamma) < 0 ) {
+	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 ) {
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
 		return FALSE;
 	}
@@ -1850,8 +1850,8 @@ bool changeVideoMode() {
 	glDeleteTextures(MAXTEXTURES, texid);
 
 	// delete vertex data
-	if( !disablevbos ) {
-		for( c = 0; c < nummodels; c++ ) {
+	if ( !disablevbos ) {
+		for ( c = 0; c < nummodels; c++ ) {
 			SDL_glDeleteBuffers(1, &polymodels[c].vbo);
 			SDL_glDeleteBuffers(1, &polymodels[c].colors);
 			SDL_glDeleteVertexArrays(1, &polymodels[c].va);
@@ -1862,7 +1862,7 @@ bool changeVideoMode() {
 		SDL_DestroyWindow(screen);
 		screen = NULL;
 	}*/
-	if( renderer ) {
+	if ( renderer ) {
 #ifdef APPLE
 		SDL_DestroyRenderer(renderer);
 #else
@@ -1870,31 +1870,31 @@ bool changeVideoMode() {
 #endif
 		renderer = NULL;
 	}
-	if( mainsurface ) {
+	if ( mainsurface ) {
 		SDL_FreeSurface(mainsurface);
 		mainsurface = NULL;
 	}
 
 	// set video mode
 	int result = initVideo();
-	if( !result ) {
+	if ( !result ) {
 		xres = 960;
 		yres = 600;
 		fullscreen = 0;
 		printlog("defaulting to safe video mode...\n");
-		if( !initVideo() ) {
+		if ( !initVideo() ) {
 			return FALSE;
 		}
 	}
 
 	// now reload all textures
 	glGenTextures(MAXTEXTURES, texid);
-	for( c = 1; c < imgref; c++ ) {
+	for ( c = 1; c < imgref; c++ ) {
 		glLoadTexture(allsurfaces[c], c);
 	}
 
 	// regenerate vbos
-	if( !disablevbos ) {
+	if ( !disablevbos ) {
 		generateVBOs();
 	}
 

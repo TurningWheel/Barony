@@ -50,10 +50,10 @@ void actFountain(Entity *my) {
 	//TODO: Sounds.
 
 	// spray water
-	if( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) ) {
+	if ( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) ) {
 #define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
-		if( FOUNTAIN_AMBIENCE <= 0 ) {
+		if ( FOUNTAIN_AMBIENCE <= 0 ) {
 			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND * 6;
 			playSoundEntityLocal(my, 135, 32 );
 		}
@@ -76,12 +76,12 @@ void actFountain(Entity *my) {
 	}
 
 	// the rest of the function is server-side.
-	if( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT ) {
 		return;
 	}
 
 	// makes the fountain stop spraying water on clients
-	if( my->skill[0] <= 0 ) {
+	if ( my->skill[0] <= 0 ) {
 		my->skill[2] = 1;
 	} else {
 		my->skill[2] = 0;
@@ -134,37 +134,37 @@ void actFountain(Entity *my) {
 							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayer(i, language[473]);
-							if( stats[i]->helmet ) {
+							if ( stats[i]->helmet ) {
 								stats[i]->helmet->beatitude++;
 							}
-							if( stats[i]->breastplate ) {
+							if ( stats[i]->breastplate ) {
 								stats[i]->breastplate->beatitude++;
 							}
-							if( stats[i]->gloves ) {
+							if ( stats[i]->gloves ) {
 								stats[i]->gloves->beatitude++;
 							}
-							if( stats[i]->shoes ) {
+							if ( stats[i]->shoes ) {
 								stats[i]->shoes->beatitude++;
 							}
-							if( stats[i]->shield ) {
+							if ( stats[i]->shield ) {
 								stats[i]->shield->beatitude++;
 							}
-							if( stats[i]->weapon ) {
+							if ( stats[i]->weapon ) {
 								stats[i]->weapon->beatitude++;
 							}
-							if( stats[i]->cloak ) {
+							if ( stats[i]->cloak ) {
 								stats[i]->cloak->beatitude++;
 							}
-							if( stats[i]->amulet ) {
+							if ( stats[i]->amulet ) {
 								stats[i]->amulet->beatitude++;
 							}
-							if( stats[i]->ring ) {
+							if ( stats[i]->ring ) {
 								stats[i]->ring->beatitude++;
 							}
-							if( stats[i]->mask ) {
+							if ( stats[i]->mask ) {
 								stats[i]->mask->beatitude++;
 							}
-							if( multiplayer == SERVER && i > 0 ) {
+							if ( multiplayer == SERVER && i > 0 ) {
 								strcpy((char *)net_packet->data, "BLES");
 								net_packet->address.host = net_clients[i - 1].host;
 								net_packet->address.port = net_clients[i - 1].port;

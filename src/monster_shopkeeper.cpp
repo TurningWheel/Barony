@@ -30,19 +30,19 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 	my->flags[BLOCKSIGHT] = TRUE;
 	my->flags[INVISIBLE] = FALSE;
 
-	if( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT ) {
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if( multiplayer != CLIENT && !MONSTER_INIT ) {
-		if( myStats ) {
-			for( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
-				if( c < NUMPROFICIENCIES ) {
+	if ( multiplayer != CLIENT && !MONSTER_INIT ) {
+		if ( myStats ) {
+			for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
+				if ( c < NUMPROFICIENCIES ) {
 					myStats->PROFICIENCIES[c] = 0;
 				}
-				if( c < NUMEFFECTS ) {
+				if ( c < NUMEFFECTS ) {
 					myStats->EFFECTS[c] = FALSE;
 					myStats->EFFECTS_TIMERS[c] = 0;
 				}
@@ -54,37 +54,37 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 		MONSTER_SHOPXE = my->x / 16;
 		MONSTER_SHOPYS = my->y / 16;
 		MONSTER_SHOPYE = my->y / 16;
-		for( x = my->x; x >= 0; x -= 16 ) {
-			if( !checkObstacle(x, my->y, my, NULL) ) {
+		for ( x = my->x; x >= 0; x -= 16 ) {
+			if ( !checkObstacle(x, my->y, my, NULL) ) {
 				MONSTER_SHOPXS = x;
 			} else {
 				break;
 			}
 		}
-		for( x = my->x; x < map.width << 4; x += 16 ) {
-			if( !checkObstacle(x, my->y, my, NULL) ) {
+		for ( x = my->x; x < map.width << 4; x += 16 ) {
+			if ( !checkObstacle(x, my->y, my, NULL) ) {
 				MONSTER_SHOPXE = x;
 			} else {
 				break;
 			}
 		}
-		for( y = my->y; y >= 0; y -= 16 ) {
-			if( !checkObstacle(my->x, y, my, NULL) ) {
+		for ( y = my->y; y >= 0; y -= 16 ) {
+			if ( !checkObstacle(my->x, y, my, NULL) ) {
 				MONSTER_SHOPYS = y;
 			} else {
 				break;
 			}
 		}
-		for( y = my->y; y < map.height << 4; y += 16 ) {
-			if( !checkObstacle(my->x, y, my, NULL) ) {
+		for ( y = my->y; y < map.height << 4; y += 16 ) {
+			if ( !checkObstacle(my->x, y, my, NULL) ) {
 				MONSTER_SHOPYE = y;
 			} else {
 				break;
 			}
 		}
-		for( x = MONSTER_SHOPXS - 16; x <= MONSTER_SHOPXE + 16; x += 16 ) {
-			for( y = MONSTER_SHOPYS - 16; y <= MONSTER_SHOPYE + 16; y += 16 ) {
-				if( x / 16 >= 0 && x / 16 < map.width && y / 16 >= 0 && y / 16 < map.height ) {
+		for ( x = MONSTER_SHOPXS - 16; x <= MONSTER_SHOPXE + 16; x += 16 ) {
+			for ( y = MONSTER_SHOPYS - 16; y <= MONSTER_SHOPYE + 16; y += 16 ) {
+				if ( x / 16 >= 0 && x / 16 < map.width && y / 16 >= 0 && y / 16 < map.height ) {
 					shoparea[y / 16 + (x / 16)*map.height] = TRUE;
 				}
 			}
@@ -110,7 +110,7 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 		myStats->LVL = 10;
 		myStats->GOLD = 300 + rand() % 200;
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid ) {
+		if ( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
 		}
 		myStats->FOLLOWERS.first = NULL;
@@ -131,26 +131,26 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 		myStats->mask = NULL;
 		myStats->weapon = newItem(SPELLBOOK_MAGICMISSILE, EXCELLENT, 0, 1, 0, FALSE, NULL);
 
-		if( rand() % 20 == 0 ) {
+		if ( rand() % 20 == 0 ) {
 			myStats->EFFECTS[EFF_ASLEEP] = TRUE;
 			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
 		}
 
 		// give shopkeeper items
 		MONSTER_STORETYPE = rand() % 9;
-		if( MONSTER_STORETYPE == 8 ) {
+		if ( MONSTER_STORETYPE == 8 ) {
 			MONSTER_STORETYPE++;
 		}
 		int numitems = 10 + rand() % 5;
-		switch( MONSTER_STORETYPE ) {
+		switch ( MONSTER_STORETYPE ) {
 			case 0:
 				// arms & armor store
-				for( c = 0; c < numitems; c++ ) {
-					if( rand() % 2 ) {
+				for ( c = 0; c < numitems; c++ ) {
+					if ( rand() % 2 ) {
 						newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), FALSE, &myStats->inventory );
 					} else {
 						int i = rand() % 21;
-						if( i < 18 ) {
+						if ( i < 18 ) {
 							newItem( static_cast<ItemType>(GLOVES + i), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), FALSE, &myStats->inventory );
 						} else {
 							newItem( static_cast<ItemType>(GLOVES + i + 4), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), FALSE, &myStats->inventory );
@@ -160,14 +160,14 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 				break;
 			case 1:
 				// hat store
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(HAT_PHRYGIAN + rand() % 7), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), FALSE, &myStats->inventory );
 				}
 				break;
 			case 2:
 				// jewelry store
-				for( c = 0; c < numitems; c++ ) {
-					switch( rand() % 3 ) {
+				for ( c = 0; c < numitems; c++ ) {
+					switch ( rand() % 3 ) {
 						case 0:
 							newItem( static_cast<ItemType>(AMULET_SEXCHANGE + rand() % 6), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), FALSE, &myStats->inventory );
 							break;
@@ -182,8 +182,8 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 				break;
 			case 3:
 				// bookstore
-				for( c = 0; c < numitems; c++ ) {
-					switch( rand() % 3 ) {
+				for ( c = 0; c < numitems; c++ ) {
+					switch ( rand() % 3 ) {
 						case 0:
 							newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), TRUE, &myStats->inventory );
 							break;
@@ -198,37 +198,37 @@ void initShopkeeper(Entity *my, Stat *myStats) {
 				break;
 			case 4:
 				// apothecary
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(POTION_WATER + rand() % 15), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 5, rand(), TRUE, &myStats->inventory );
 				}
 				break;
 			case 5:
 				// staff shop
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, 1, TRUE, &myStats->inventory );
 				}
 				break;
 			case 6:
 				// food store
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(FOOD_BREAD + rand() % 7), static_cast<Status>(SERVICABLE + rand() % 2), 0, 1 + rand() % 3, rand(), FALSE, &myStats->inventory );
 				}
 				break;
 			case 7:
 				// hardware store
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), FALSE, &myStats->inventory );
 				}
 				break;
 			case 8:
 				// lighting store
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(TOOL_TORCH + rand() % 2), EXCELLENT, 0, 1, 7, FALSE, &myStats->inventory );
 				}
 				break;
 			case 9:
 				// general store
-				for( c = 0; c < numitems; c++ ) {
+				for ( c = 0; c < numitems; c++ ) {
 					newItem( static_cast<ItemType>(rand() % (NUMITEMS - (NUMITEMS - SPELL_ITEM))), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), FALSE, &myStats->inventory );
 				}
 				break;
@@ -330,17 +330,17 @@ void actShopkeeperLimb(Entity *my) {
 	int i;
 
 	Entity *parent = NULL;
-	if( (parent = uidToEntity(my->skill[2])) == NULL ) {
+	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	if( multiplayer != CLIENT ) {
-		for( i = 0; i < MAXPLAYERS; i++ ) {
-			if( inrange[i] ) {
-				if( i == 0 && selectedEntity == my ) {
+	if ( multiplayer != CLIENT ) {
+		for ( i = 0; i < MAXPLAYERS; i++ ) {
+			if ( inrange[i] ) {
+				if ( i == 0 && selectedEntity == my ) {
 					parent->skill[13] = i + 1;
-				} else if( client_selected[i] == my ) {
+				} else if ( client_selected[i] == my ) {
 					parent->skill[13] = i + 1;
 				}
 			}
@@ -353,7 +353,7 @@ void shopkeeperDie(Entity *my) {
 	node_t *node, *nextnode;
 
 	int c;
-	for( c = 0; c < 5; c++ ) {
+	for ( c = 0; c < 5; c++ ) {
 		Entity *gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
@@ -361,8 +361,8 @@ void shopkeeperDie(Entity *my) {
 		int x, y;
 		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-			if( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
+			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
 				Entity *entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
@@ -400,21 +400,21 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	int bodypart;
 
 	// set invisibility
-	if( multiplayer != CLIENT ) {
-		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
+	if ( multiplayer != CLIENT ) {
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
 			bodypart = 0;
-			for(node = my->children.first; node != NULL; node = node->next) {
-				if( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next) {
+				if ( bodypart < 2 ) {
 					bodypart++;
 					continue;
 				}
-				if( bodypart >= 7 ) {
+				if ( bodypart >= 7 ) {
 					break;
 				}
 				entity = (Entity *)node->element;
-				if( !entity->flags[INVISIBLE] ) {
+				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -424,16 +424,16 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			my->flags[INVISIBLE] = FALSE;
 			my->flags[BLOCKSIGHT] = TRUE;
 			bodypart = 0;
-			for(node = my->children.first; node != NULL; node = node->next) {
-				if( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next) {
+				if ( bodypart < 2 ) {
 					bodypart++;
 					continue;
 				}
-				if( bodypart >= 7 ) {
+				if ( bodypart >= 7 ) {
 					break;
 				}
 				entity = (Entity *)node->element;
-				if( entity->flags[INVISIBLE] ) {
+				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -442,7 +442,7 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		}
 
 		// sleeping
-		if( myStats->EFFECTS[EFF_ASLEEP] ) {
+		if ( myStats->EFFECTS[EFF_ASLEEP] ) {
 			my->z = 1.5;
 			my->pitch = PI / 4;
 		} else {
@@ -452,8 +452,8 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	}
 
 	//Move bodyparts
-	for(bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
-		if( bodypart < 2 ) {
+	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
+		if ( bodypart < 2 ) {
 			continue;
 		}
 		entity = (Entity *)node->element;
@@ -461,61 +461,61 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if( bodypart == 3 || bodypart == 6 ) {
-			if( bodypart == 3 ) {
+		if ( bodypart == 3 || bodypart == 6 ) {
+			if ( bodypart == 3 ) {
 				rightbody = (Entity *)node->next->element;
 			}
-			if( dist > 0.1 && bodypart != 6 ) {
-				if( !rightbody->skill[0] ) {
+			if ( dist > 0.1 && bodypart != 6 ) {
+				if ( !rightbody->skill[0] ) {
 					entity->pitch -= dist * SHOPKEEPERWALKSPEED;
-					if( entity->pitch < -PI / 4.0 ) {
+					if ( entity->pitch < -PI / 4.0 ) {
 						entity->pitch = -PI / 4.0;
-						if(bodypart == 3) {
+						if (bodypart == 3) {
 							entity->skill[0] = 1;
-							if( dist > .4 ) {
+							if ( dist > .4 ) {
 								playSoundEntityLocal(my, rand() % 7, 32);
 							}
 						}
 					}
 				} else {
 					entity->pitch += dist * SHOPKEEPERWALKSPEED;
-					if( entity->pitch > PI / 4.0 ) {
+					if ( entity->pitch > PI / 4.0 ) {
 						entity->pitch = PI / 4.0;
-						if(bodypart == 3) {
+						if (bodypart == 3) {
 							entity->skill[0] = 0;
-							if( dist > .4 ) {
+							if ( dist > .4 ) {
 								playSoundEntityLocal(my, rand() % 7, 32);
 							}
 						}
 					}
 				}
 			} else {
-				if( entity->pitch < 0 ) {
+				if ( entity->pitch < 0 ) {
 					entity->pitch += 1 / fmax(dist * .1, 10.0);
-					if( entity->pitch > 0 ) {
+					if ( entity->pitch > 0 ) {
 						entity->pitch = 0;
 					}
-				} else if( entity->pitch > 0 ) {
+				} else if ( entity->pitch > 0 ) {
 					entity->pitch -= 1 / fmax(dist * .1, 10.0);
-					if( entity->pitch < 0 ) {
+					if ( entity->pitch < 0 ) {
 						entity->pitch = 0;
 					}
 				}
 			}
-		} else if( bodypart == 4 || bodypart == 5 ) {
-			if( bodypart == 5 ) {
-				if( MONSTER_ATTACK == 1 ) {
+		} else if ( bodypart == 4 || bodypart == 5 ) {
+			if ( bodypart == 5 ) {
+				if ( MONSTER_ATTACK == 1 ) {
 					// vertical chop
-					if( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 ) {
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = -3 * PI / 4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI / 2 ) {
+						if ( entity->pitch >= -PI / 2 ) {
 							MONSTER_ARMBENDED = 1;
 						}
-						if( entity->pitch >= PI / 4 ) {
+						if ( entity->pitch >= PI / 4 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
@@ -526,15 +526,15 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 							entity->pitch += .25;
 						}
 					}
-				} else if( MONSTER_ATTACK == 2 ) {
+				} else if ( MONSTER_ATTACK == 2 ) {
 					// horizontal chop
-					if( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 ) {
 						MONSTER_ARMBENDED = 1;
 						MONSTER_WEAPONYAW = -3 * PI / 4;
 						entity->pitch = 0;
 						entity->roll = -PI / 2;
 					} else {
-						if( MONSTER_WEAPONYAW >= PI / 8 ) {
+						if ( MONSTER_WEAPONYAW >= PI / 8 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
@@ -545,19 +545,19 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 							MONSTER_WEAPONYAW += .25;
 						}
 					}
-				} else if( MONSTER_ATTACK == 3 ) {
+				} else if ( MONSTER_ATTACK == 3 ) {
 					// stab
-					if( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 ) {
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = 2 * PI / 3;
 						entity->roll = 0;
 					} else {
-						if( MONSTER_ATTACKTIME >= 5 ) {
+						if ( MONSTER_ATTACKTIME >= 5 ) {
 							MONSTER_ARMBENDED = 1;
 							entity->pitch = -PI / 6;
 						}
-						if( MONSTER_ATTACKTIME >= 10 ) {
+						if ( MONSTER_ATTACKTIME >= 10 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
@@ -569,37 +569,37 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				}
 			}
 
-			if( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) ) {
-				if( dist > 0.1 ) {
-					if( entity->skill[0] ) {
+			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) ) {
+				if ( dist > 0.1 ) {
+					if ( entity->skill[0] ) {
 						entity->pitch -= dist * SHOPKEEPERWALKSPEED;
-						if( entity->pitch < -PI / 4.0 ) {
+						if ( entity->pitch < -PI / 4.0 ) {
 							entity->skill[0] = 0;
 							entity->pitch = -PI / 4.0;
 						}
 					} else {
 						entity->pitch += dist * SHOPKEEPERWALKSPEED;
-						if( entity->pitch > PI / 4.0 ) {
+						if ( entity->pitch > PI / 4.0 ) {
 							entity->skill[0] = 1;
 							entity->pitch = PI / 4.0;
 						}
 					}
 				} else {
-					if( entity->pitch < 0 ) {
+					if ( entity->pitch < 0 ) {
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if( entity->pitch > 0 ) {
+						if ( entity->pitch > 0 ) {
 							entity->pitch = 0;
 						}
-					} else if( entity->pitch > 0 ) {
+					} else if ( entity->pitch > 0 ) {
 						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if( entity->pitch < 0 ) {
+						if ( entity->pitch < 0 ) {
 							entity->pitch = 0;
 						}
 					}
 				}
 			}
 		}
-		switch( bodypart ) {
+		switch ( bodypart ) {
 			// torso
 			case 2:
 				entity->x -= .25 * cos(my->yaw);
@@ -611,7 +611,7 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 5;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 ) {
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
@@ -621,7 +621,7 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 5;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 ) {
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
 				}
@@ -635,7 +635,7 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				entity->focaly = limbs[SHOPKEEPER][4][1]; // 0
 				entity->focalz = limbs[SHOPKEEPER][4][2]; // 1.5
 				entity->yaw += MONSTER_WEAPONYAW;
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 ) {
 					entity->pitch = 0;
 				}
 				break;
@@ -647,13 +647,13 @@ void shopkeeperMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				entity->focalx = limbs[SHOPKEEPER][5][0]; // 0
 				entity->focaly = limbs[SHOPKEEPER][5][1]; // 0
 				entity->focalz = limbs[SHOPKEEPER][5][2]; // 1.5
-				if( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 ) {
 					entity->pitch = 0;
 				}
 				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 ) {
+	if ( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
 	} else {
 		MONSTER_ATTACKTIME = 0;

@@ -34,13 +34,13 @@
 
 void actGib(Entity *my) {
 	// don't update gibs that have no velocity
-	if( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 ) {
+	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	// remove gibs that have exceeded their life span
-	if( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN ) {
+	if ( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -53,13 +53,13 @@ void actGib(Entity *my) {
 	GIB_VELY = GIB_VELY * .95;
 
 	// gravity
-	if( my->z < 8 ) {
+	if ( my->z < 8 ) {
 		GIB_VELZ += GIB_GRAVITY;
 		my->z += GIB_VELZ;
 		my->roll += 0.1;
 	} else {
-		if( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 ) {
-			if( !map.tiles[(int)(floor(my->y / 16)*MAPLAYERS + floor(my->x / 16)*MAPLAYERS * map.height)] ) {
+		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 ) {
+			if ( !map.tiles[(int)(floor(my->y / 16)*MAPLAYERS + floor(my->x / 16)*MAPLAYERS * map.height)] ) {
 				GIB_VELZ += GIB_GRAVITY;
 				my->z += GIB_VELZ;
 				my->roll += 0.1;
@@ -76,7 +76,7 @@ void actGib(Entity *my) {
 	}
 
 	// gibs disappear after falling to a certain point
-	if( my->z > 128 ) {
+	if ( my->z > 128 ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -97,11 +97,11 @@ Entity *spawnGib(Entity *parentent) {
 	double vel;
 	int gibsprite = 5;
 
-	if( parentent == NULL ) {
+	if ( parentent == NULL ) {
 		return NULL;
 	}
-	if( (parentstats = parentent->getStats()) != NULL ) {
-		switch( gibtype[(int)parentstats->type] ) {
+	if ( (parentstats = parentent->getStats()) != NULL ) {
+		switch ( gibtype[(int)parentstats->type] ) {
 			case 0:
 				return NULL;
 			case 1:
@@ -111,7 +111,7 @@ Entity *spawnGib(Entity *parentent) {
 				gibsprite = 211;
 				break;
 			case 3:
-				if( parentent->sprite == 210 ) {
+				if ( parentent->sprite == 210 ) {
 					gibsprite = 211;
 				} else {
 					gibsprite = 215;
@@ -142,10 +142,10 @@ Entity *spawnGib(Entity *parentent) {
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[UNCLICKABLE] = TRUE;
-	if( !spawn_blood ) {
+	if ( !spawn_blood ) {
 		entity->flags[INVISIBLE] = TRUE;
 	}
-	if( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT ) {
 		entity_uids--;
 	}
 	entity->uid = -3;
@@ -180,12 +180,12 @@ Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 
 void serverSpawnGibForClient(Entity *gib) {
 	int c;
-	if( !gib ) {
+	if ( !gib ) {
 		return;
 	}
-	if( multiplayer == SERVER ) {
-		for( c = 1; c < MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] ) {
+	if ( multiplayer == SERVER ) {
+		for ( c = 1; c < MAXPLAYERS; c++ ) {
+			if ( client_disconnected[c] ) {
 				continue;
 			}
 			strcpy((char *)net_packet->data, "SPGB");

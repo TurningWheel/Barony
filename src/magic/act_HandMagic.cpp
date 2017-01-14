@@ -95,10 +95,10 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t *a
 	animation_manager->stage = 0;
 
 	//Make the hands invisible (should probably fall away or something, but whatever. That's another project for another day)
-	if( magicLeftHand ) {
+	if ( magicLeftHand ) {
 		magicLeftHand->flags[INVISIBLE] = TRUE;
 	}
-	if( magicRightHand ) {
+	if ( magicRightHand ) {
 		magicRightHand->flags[INVISIBLE] = TRUE;
 	}
 }
@@ -149,34 +149,34 @@ void actLeftHandMagic(Entity *my) {
 
 	//Sprite
 	bool noGloves = FALSE;
-	if( stats[clientnum]->gloves == NULL ) {
+	if ( stats[clientnum]->gloves == NULL ) {
 		noGloves = TRUE;
 	} else {
-		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
 			my->sprite = 136 + stats[clientnum]->sex;
-		} else if( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
+		} else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
 			my->sprite = 327 + stats[clientnum]->sex;
-		} else if( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
+		} else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
 			my->sprite = 144 + stats[clientnum]->sex;
 		} else {
 			noGloves = TRUE;
 		}
 	}
-	if( noGloves ) {
-		if( stats[clientnum]->appearance / 6 == 0 ) {
-			if( stats[clientnum]->sex == FEMALE ) {
+	if ( noGloves ) {
+		if ( stats[clientnum]->appearance / 6 == 0 ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 122;
 			} else {
 				my->sprite = 110;
 			}
-		} else if( stats[clientnum]->appearance / 6 == 1 ) {
-			if( stats[clientnum]->sex == FEMALE ) {
+		} else if ( stats[clientnum]->appearance / 6 == 1 ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 351;
 			} else {
 				my->sprite = 338;
 			}
 		} else {
-			if( stats[clientnum]->sex == FEMALE ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 377;
 			} else {
 				my->sprite = 364;
@@ -202,7 +202,7 @@ void actLeftHandMagic(Entity *my) {
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
 			case CIRCLE:
-				if(ticks % 5 == 0) {
+				if (ticks % 5 == 0) {
 					Entity *entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
 					entity->flags[SPRITE] = TRUE;
@@ -285,7 +285,7 @@ void actRightHandMagic(Entity *my) {
 	}
 
 	//Initialize
-	if( !HANDMAGIC_INIT ) {
+	if ( !HANDMAGIC_INIT ) {
 		HANDMAGIC_INIT = 1;
 		my->focalz = -1.5;
 	}
@@ -307,34 +307,34 @@ void actRightHandMagic(Entity *my) {
 
 	//Sprite
 	bool noGloves = FALSE;
-	if( stats[clientnum]->gloves == NULL ) {
+	if ( stats[clientnum]->gloves == NULL ) {
 		noGloves = TRUE;
 	} else {
-		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
 			my->sprite = 132 + stats[clientnum]->sex;
-		} else if( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
+		} else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
 			my->sprite = 323 + stats[clientnum]->sex;
-		} else if( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
+		} else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
 			my->sprite = 140 + stats[clientnum]->sex;
 		} else {
 			noGloves = TRUE;
 		}
 	}
-	if( noGloves ) {
-		if( stats[clientnum]->appearance / 6 == 0 ) {
-			if( stats[clientnum]->sex == FEMALE ) {
+	if ( noGloves ) {
+		if ( stats[clientnum]->appearance / 6 == 0 ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 121;
 			} else {
 				my->sprite = 109;
 			}
-		} else if( stats[clientnum]->appearance / 6 == 1 ) {
-			if( stats[clientnum]->sex == FEMALE ) {
+		} else if ( stats[clientnum]->appearance / 6 == 1 ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 350;
 			} else {
 				my->sprite = 337;
 			}
 		} else {
-			if( stats[clientnum]->sex == FEMALE ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 376;
 			} else {
 				my->sprite = 363;

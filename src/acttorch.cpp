@@ -36,7 +36,7 @@ void actTorch(Entity *my) {
 
 	// ambient noises (yeah, torches can make these...)
 	TORCH_FIRE--;
-	if( TORCH_FIRE <= 0 ) {
+	if ( TORCH_FIRE <= 0 ) {
 		TORCH_FIRE = 480;
 		playSoundEntityLocal( my, 133, 32 );
 	}
@@ -48,8 +48,8 @@ void actTorch(Entity *my) {
 	entity->uid = -3;
 
 	// check wall
-	if( !checkObstacle( my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL ) ) {
-		if( my->light != NULL ) {
+	if ( !checkObstacle( my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL ) ) {
+		if ( my->light != NULL ) {
 			list_RemoveNode(my->light->node);
 		}
 		my->light = NULL;
@@ -58,21 +58,21 @@ void actTorch(Entity *my) {
 	}
 
 	// lighting
-	if( !TORCH_LIGHTING ) {
+	if ( !TORCH_LIGHTING ) {
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
 		TORCH_LIGHTING = 1;
 	}
 	TORCH_FLICKER--;
-	if(TORCH_FLICKER <= 0) {
+	if (TORCH_FLICKER <= 0) {
 		TORCH_LIGHTING = (TORCH_LIGHTING == 1) + 1;
 
-		if(TORCH_LIGHTING == 1) {
-			if( my->light != NULL ) {
+		if (TORCH_LIGHTING == 1) {
+			if ( my->light != NULL ) {
 				list_RemoveNode(my->light->node);
 			}
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
 		} else {
-			if( my->light != NULL ) {
+			if ( my->light != NULL ) {
 				list_RemoveNode(my->light->node);
 			}
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 174);
@@ -81,10 +81,10 @@ void actTorch(Entity *my) {
 	}
 
 	// using
-	if( multiplayer != CLIENT ) {
-		for(i = 0; i < MAXPLAYERS; i++) {
-			if( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
-				if(inrange[i]) {
+	if ( multiplayer != CLIENT ) {
+		for (i = 0; i < MAXPLAYERS; i++) {
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
+				if (inrange[i]) {
 					messagePlayer(i, language[589]);
 					list_RemoveNode(my->light->node);
 					list_RemoveNode(my->mynode);

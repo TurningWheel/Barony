@@ -50,14 +50,14 @@ Entity *entityClicked() {
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
-	if( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) ) {
+	if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) ) {
 		return NULL;
 	}
-	if( !shootmode ) {
-		if( itemMenuOpen ) {
+	if ( !shootmode ) {
+		if ( itemMenuOpen ) {
 			return NULL;
 		}
-		if( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh ) {
+		if ( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh ) {
 			return NULL;
 		}
 		if (openedChest[clientnum])
@@ -73,18 +73,18 @@ Entity *entityClicked() {
 				return NULL;    //Click falls inside the book GUI.
 			}
 		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP) {
-			if( gui_mode == GUI_MODE_INVENTORY )
+			if ( gui_mode == GUI_MODE_INVENTORY )
 				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height)) {
 					return NULL;    //Click falls inside the right sidebar.
 				}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
-			if( mouseInBounds(INVENTORY_STARTX, INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE, INVENTORY_STARTY, INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) ) {
+			if ( mouseInBounds(INVENTORY_STARTX, INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE, INVENTORY_STARTY, INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) ) {
 				// clicked in inventory
 				return NULL;
 			}
-			if( gui_mode == GUI_MODE_SHOP ) {
+			if ( gui_mode == GUI_MODE_SHOP ) {
 				int x1 = xres / 2 - SHOPWINDOW_SIZEX / 2, x2 = xres / 2 + SHOPWINDOW_SIZEX / 2;
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
 				if (mouseInBounds(x1, x2, y1, y2)) {
@@ -119,7 +119,7 @@ Entity *entityClicked() {
 		}
 		*inputPressed(impulses[IN_USE]) = 0;
 		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
-		if( softwaremode ) {
+		if ( softwaremode ) {
 			return clickmap[omousey + omousex * yres];
 		} else {
 			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
@@ -127,7 +127,7 @@ Entity *entityClicked() {
 	} else {
 		*inputPressed(impulses[IN_USE]) = 0;
 		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
-		if( softwaremode ) {
+		if ( softwaremode ) {
 			return clickmap[(yres / 2) + (xres / 2) * yres];
 		} else {
 			glReadPixels(xres / 2, yres / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
@@ -135,7 +135,7 @@ Entity *entityClicked() {
 	}
 
 	// pixel processing (opengl only)
-	if( softwaremode == FALSE) {
+	if ( softwaremode == FALSE) {
 		uidnum = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
 		return uidToEntity(uidnum);
 	} else {
@@ -152,27 +152,27 @@ Entity *entityClicked() {
 -------------------------------------------------------------------------------*/
 
 bool entityInsideTile(Entity *entity, int x, int y, int z) {
-	if( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS ) {
+	if ( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS ) {
 		return FALSE;
 	}
-	if( entity->x + entity->sizex >= x << 4 ) {
-		if( entity->x - entity->sizex < (x + 1) << 4 ) {
-			if( entity->y + entity->sizey >= y << 4 ) {
-				if( entity->y - entity->sizey < (y + 1) << 4 ) {
-					if( z == OBSTACLELAYER ) {
-						if( map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
+	if ( entity->x + entity->sizex >= x << 4 ) {
+		if ( entity->x - entity->sizex < (x + 1) << 4 ) {
+			if ( entity->y + entity->sizey >= y << 4 ) {
+				if ( entity->y - entity->sizey < (y + 1) << 4 ) {
+					if ( z == OBSTACLELAYER ) {
+						if ( map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 							return TRUE;
 						}
-					} else if( z == 0 ) {
-						if( !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
+					} else if ( z == 0 ) {
+						if ( !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 							return TRUE;
 						}
 						bool isMonster = FALSE;
-						if( entity )
-							if( entity->behavior == &actMonster ) {
+						if ( entity )
+							if ( entity->behavior == &actMonster ) {
 								isMonster = TRUE;
 							}
-						if( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster ) {
+						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster ) {
 							return TRUE;
 						}
 					}
@@ -192,10 +192,10 @@ bool entityInsideTile(Entity *entity, int x, int y, int z) {
 -------------------------------------------------------------------------------*/
 
 bool entityInsideEntity(Entity *entity1, Entity *entity2) {
-	if( entity1->x + entity1->sizex > entity2->x - entity2->sizex ) {
-		if( entity1->x - entity1->sizex < entity2->x + entity2->sizex ) {
-			if( entity1->y + entity1->sizey > entity2->y - entity2->sizey ) {
-				if( entity1->y - entity1->sizey < entity2->y + entity2->sizey ) {
+	if ( entity1->x + entity1->sizex > entity2->x - entity2->sizex ) {
+		if ( entity1->x - entity1->sizex < entity2->x + entity2->sizex ) {
+			if ( entity1->y + entity1->sizey > entity2->y - entity2->sizey ) {
+				if ( entity1->y - entity1->sizey < entity2->y + entity2->sizey ) {
 					return TRUE;
 				}
 			}
@@ -217,18 +217,18 @@ bool entityInsideSomething(Entity *entity) {
 	int z;
 
 	// test against the map
-	for( z = 0; z < MAPLAYERS; z++ )
-		if( entityInsideTile(entity, entity->x / 16, entity->y / 16, z) ) {
+	for ( z = 0; z < MAPLAYERS; z++ )
+		if ( entityInsideTile(entity, entity->x / 16, entity->y / 16, z) ) {
 			return TRUE;
 		}
 
 	// test against entities
-	for( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next ) {
 		Entity *testEntity = (Entity *)node->element;
-		if( testEntity == entity || testEntity->flags[PASSABLE] ) {
+		if ( testEntity == entity || testEntity->flags[PASSABLE] ) {
 			continue;
 		}
-		if( entityInsideEntity(entity, testEntity) ) {
+		if ( entityInsideEntity(entity, testEntity) ) {
 			return TRUE;
 		}
 	}
@@ -255,12 +255,12 @@ int barony_clear(double tx, double ty, Entity *my) {
 	Entity *entity;
 	bool levitating = FALSE;
 
-	for( ty2 = ty - my->sizey; ty2 <= ty + my->sizey; ty2++ ) {
-		for( tx2 = tx - my->sizex; tx2 <= tx + my->sizex; tx2++ ) {
+	for ( ty2 = ty - my->sizey; ty2 <= ty + my->sizey; ty2++ ) {
+		for ( tx2 = tx - my->sizex; tx2 <= tx + my->sizex; tx2++ ) {
 			x = (long)floor(tx2 / 16);
 			y = (long)floor(ty2 / 16);
-			if( x >= 0 && y >= 0 && x < map.width && y < map.height ) {
-				if(map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height]) {
+			if ( x >= 0 && y >= 0 && x < map.width && y < map.height ) {
+				if (map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height]) {
 					// hit a wall
 					hit.x = x * 16 + 8;
 					hit.y = y * 16 + 8;
@@ -270,33 +270,33 @@ int barony_clear(double tx, double ty, Entity *my) {
 					return 0;
 				}
 				Stat *stats;
-				if( (stats = my->getStats()) != NULL ) {
-					if( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
+				if ( (stats = my->getStats()) != NULL ) {
+					if ( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
 						levitating = TRUE;
 					}
-					if( stats->ring != NULL )
-						if( stats->ring->type == RING_LEVITATION ) {
+					if ( stats->ring != NULL )
+						if ( stats->ring->type == RING_LEVITATION ) {
 							levitating = TRUE;
 						}
-					if( stats->shoes != NULL )
-						if( stats->shoes->type == STEEL_BOOTS_LEVITATION ) {
+					if ( stats->shoes != NULL )
+						if ( stats->shoes->type == STEEL_BOOTS_LEVITATION ) {
 							levitating = TRUE;
 						}
 				}
 				bool isMonster = FALSE;
-				if( my )
-					if( my->behavior == &actMonster ) {
+				if ( my )
+					if ( my->behavior == &actMonster ) {
 						isMonster = TRUE;
 					}
-				if( isMonster && multiplayer == CLIENT )
-					if( my->sprite == 289 || my->sprite == 274 ) { // imp and lich
+				if ( isMonster && multiplayer == CLIENT )
+					if ( my->sprite == 289 || my->sprite == 274 ) { // imp and lich
 						levitating = TRUE;
 					}
-				if( my )
-					if( my->behavior != &actPlayer && my->behavior != &actMonster ) {
+				if ( my )
+					if ( my->behavior != &actPlayer && my->behavior != &actMonster ) {
 						levitating = TRUE;
 					}
-				if( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) ) {
+				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) ) {
 					// no floor
 					hit.x = x * 16 + 8;
 					hit.y = y * 16 + 8;
@@ -306,33 +306,33 @@ int barony_clear(double tx, double ty, Entity *my) {
 					return 0;
 				}
 			}
-			for(node = map.entities->first; node != NULL; node = node->next) {
+			for (node = map.entities->first; node != NULL; node = node->next) {
 				entity = (Entity *)node->element;
-				if( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid ) {
+				if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid ) {
 					continue;
 				}
-				if( my->behavior == &actMonster && entity->behavior == &actDoorFrame ) {
+				if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame ) {
 					continue;    // monsters don't have hard collision with door frames
 				}
 				Stat *myStats = my->getStats();
 				Stat *yourStats = entity->getStats();
-				if( myStats && yourStats ) {
-					if( yourStats->leader_uid == my->uid ) {
+				if ( myStats && yourStats ) {
+					if ( yourStats->leader_uid == my->uid ) {
 						continue;
 					}
-					if( myStats->leader_uid == entity->uid ) {
+					if ( myStats->leader_uid == entity->uid ) {
 						continue;
 					}
-					if( monsterally[myStats->type][yourStats->type] ) {
+					if ( monsterally[myStats->type][yourStats->type] ) {
 						continue;
 					}
-					if( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) ) {
+					if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) ) {
 						continue;
 					}
 				}
-				if( multiplayer == CLIENT ) {
+				if ( multiplayer == CLIENT ) {
 					// fixes bug where clients can't move through humans
-					if( (entity->sprite >= 113 && entity->sprite < 118) ||
+					if ( (entity->sprite >= 113 && entity->sprite < 118) ||
 					        (entity->sprite >= 125 && entity->sprite < 130) ||
 					        (entity->sprite >= 332 && entity->sprite < 334) ||
 					        (entity->sprite >= 341 && entity->sprite < 347) ||
@@ -341,48 +341,48 @@ int barony_clear(double tx, double ty, Entity *my) {
 					        (entity->sprite >= 380 && entity->sprite < 386) ||
 					        entity->sprite == 217 ) { // human heads
 						continue;
-					} else if( my->behavior == &actPlayer && entity->flags[USERFLAG2] ) {
+					} else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] ) {
 						continue; // fix clients not being able to walk through friendly monsters
 					}
 				}
-				if( tx2 >= entity->x - entity->sizex && tx2 < entity->x + entity->sizex ) {
-					if( ty2 >= entity->y - entity->sizey && ty2 < entity->y + entity->sizey ) {
+				if ( tx2 >= entity->x - entity->sizex && tx2 < entity->x + entity->sizex ) {
+					if ( ty2 >= entity->y - entity->sizey && ty2 < entity->y + entity->sizey ) {
 						hit.x = tx2;
 						hit.y = ty2;
 						hit.mapx = entity->x / 16;
 						hit.mapy = entity->y / 16;
 						hit.entity = entity;
-						if( multiplayer != CLIENT ) {
-							if( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] ) {
+						if ( multiplayer != CLIENT ) {
+							if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] ) {
 								bool dyrnwyn = FALSE;
 								Stat *stats = hit.entity->getStats();
-								if( stats )
-									if( stats->weapon )
-										if( stats->weapon->type == ARTIFACT_SWORD ) {
+								if ( stats )
+									if ( stats->weapon )
+										if ( stats->weapon->type == ARTIFACT_SWORD ) {
 											dyrnwyn = TRUE;
 										}
-								if( !dyrnwyn ) {
+								if ( !dyrnwyn ) {
 									hit.entity->flags[BURNING] = TRUE;
-									if( hit.entity->behavior == &actPlayer) {
+									if ( hit.entity->behavior == &actPlayer) {
 										messagePlayer(hit.entity->skill[2], language[590]);
-										if( hit.entity->skill[2] > 0 ) {
+										if ( hit.entity->skill[2] > 0 ) {
 											serverUpdateEntityFlag(hit.entity, BURNING);
 										}
 									}
 								}
-							} else if( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] ) {
+							} else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] ) {
 								bool dyrnwyn = FALSE;
 								Stat *stats = my->getStats();
-								if( stats )
-									if( stats->weapon )
-										if( stats->weapon->type == ARTIFACT_SWORD ) {
+								if ( stats )
+									if ( stats->weapon )
+										if ( stats->weapon->type == ARTIFACT_SWORD ) {
 											dyrnwyn = TRUE;
 										}
-								if( !dyrnwyn ) {
+								if ( !dyrnwyn ) {
 									my->flags[BURNING] = TRUE;
-									if( my->behavior == &actPlayer) {
+									if ( my->behavior == &actPlayer) {
 										messagePlayer(my->skill[2], language[590]);
-										if( my->skill[2] > 0 ) {
+										if ( my->skill[2] > 0 ) {
 											serverUpdateEntityFlag(my, BURNING);
 										}
 									}
@@ -415,7 +415,7 @@ double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
 	// move x and y
 	tx = *x + vx;
 	ty = *y + vy;
-	if(barony_clear(tx, ty, my)) {
+	if (barony_clear(tx, ty, my)) {
 		*x = tx;
 		*y = ty;
 		hit.side = 0;
@@ -425,7 +425,7 @@ double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
 	// only move x
 	tx = *x + vx;
 	ty = *y;
-	if(barony_clear(tx, ty, my)) {
+	if (barony_clear(tx, ty, my)) {
 		*x = tx;
 		*y = ty;
 		hit.side = VERTICAL;
@@ -435,7 +435,7 @@ double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
 	// only move y
 	tx = *x;
 	ty = *y + vy;
-	if(barony_clear(tx, ty, my)) {
+	if (barony_clear(tx, ty, my)) {
 		*x = tx;
 		*y = ty;
 		hit.side = HORIZONTAL;
@@ -461,42 +461,42 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 	double lowestDist = 9999;
 	int quadrant = 0;
 
-	while( angle >= PI * 2 ) {
+	while ( angle >= PI * 2 ) {
 		angle -= PI * 2;
 	}
-	while( angle < 0 ) {
+	while ( angle < 0 ) {
 		angle += PI * 2;
 	}
 
-	if( angle >= PI / 2 && angle < PI ) {
+	if ( angle >= PI / 2 && angle < PI ) {
 		quadrant = 1;
-	} else if( angle >= 0 && angle < PI / 2 ) {
+	} else if ( angle >= 0 && angle < PI / 2 ) {
 		quadrant = 2;
-	} else if( angle >= 3 * (PI / 2) && angle < PI * 2 ) {
+	} else if ( angle >= 3 * (PI / 2) && angle < PI * 2 ) {
 		quadrant = 3;
 	} else {
 		quadrant = 4;
 	}
 
 	bool adjust = FALSE;
-	if( angle >= PI / 2 && angle < 3 * (PI / 2) ) {
+	if ( angle >= PI / 2 && angle < 3 * (PI / 2) ) {
 		adjust = TRUE;
 	} else {
-		while( angle >= PI ) {
+		while ( angle >= PI ) {
 			angle -= PI * 2;
 		}
-		while( angle < -PI ) {
+		while ( angle < -PI ) {
 			angle += PI * 2;
 		}
 	}
 
-	for( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next ) {
 		Entity *entity = (Entity *)node->element;
-		if( (entity != target && target != NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) ) {
+		if ( (entity != target && target != NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) ) {
 			continue;
 		}
 
-		if( quadrant == 2 || quadrant == 4 ) {
+		if ( quadrant == 2 || quadrant == 4 ) {
 			// upper right and lower left
 			double upperX = entity->x + entity->sizex;
 			double upperY = entity->y - entity->sizey;
@@ -504,28 +504,28 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 			double lowerY = entity->y + entity->sizey;
 			double upperTan = atan2(upperY - y1, upperX - x1);
 			double lowerTan = atan2(lowerY - y1, lowerX - x1);
-			if( adjust ) {
-				if( upperTan < 0 ) {
+			if ( adjust ) {
+				if ( upperTan < 0 ) {
 					upperTan += PI * 2;
 				}
-				if( lowerTan < 0 ) {
+				if ( lowerTan < 0 ) {
 					lowerTan += PI * 2;
 				}
 			}
 
 			// determine whether line intersects entity
-			if( quadrant == 2 ) {
-				if( angle >= upperTan && angle <= lowerTan ) {
+			if ( quadrant == 2 ) {
+				if ( angle >= upperTan && angle <= lowerTan ) {
 					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if( dist < lowestDist ) {
+					if ( dist < lowestDist ) {
 						lowestDist = dist;
 						result = entity;
 					}
 				}
 			} else {
-				if( angle <= upperTan && angle >= lowerTan ) {
+				if ( angle <= upperTan && angle >= lowerTan ) {
 					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if( dist < lowestDist ) {
+					if ( dist < lowestDist ) {
 						lowestDist = dist;
 						result = entity;
 					}
@@ -539,28 +539,28 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 			double lowerY = entity->y + entity->sizey;
 			double upperTan = atan2(upperY - y1, upperX - x1);
 			double lowerTan = atan2(lowerY - y1, lowerX - x1);
-			if( adjust ) {
-				if( upperTan < 0 ) {
+			if ( adjust ) {
+				if ( upperTan < 0 ) {
 					upperTan += PI * 2;
 				}
-				if( lowerTan < 0 ) {
+				if ( lowerTan < 0 ) {
 					lowerTan += PI * 2;
 				}
 			}
 
 			// determine whether line intersects entity
-			if( quadrant == 3 ) {
-				if( angle >= upperTan && angle <= lowerTan ) {
+			if ( quadrant == 3 ) {
+				if ( angle >= upperTan && angle <= lowerTan ) {
 					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if( dist < lowestDist ) {
+					if ( dist < lowestDist ) {
 						lowestDist = dist;
 						result = entity;
 					}
 				}
 			} else {
-				if( angle <= upperTan && angle >= lowerTan ) {
+				if ( angle <= upperTan && angle >= lowerTan ) {
 					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
-					if( dist < lowestDist ) {
+					if ( dist < lowestDist ) {
 						lowestDist = dist;
 						result = entity;
 					}
@@ -630,10 +630,10 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 	}
 	d = 0;
 
-	if( my ) {
+	if ( my ) {
 		Stat *stats = my->getStats();
-		if( stats ) {
-			if( stats->type == DEVIL ) {
+		if ( stats ) {
+			if ( stats->type == DEVIL ) {
 				ground = FALSE;
 			}
 		}
@@ -642,8 +642,8 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 	Entity *entity = findEntityInLine(my, x1, y1, angle, entities, NULL);
 
 	// trace the line
-	while( d < range ) {
-		if( dval1 > dval0 ) {
+	while ( d < range ) {
+		if ( dval1 > dval0 ) {
 			inx += dincx;
 			d = dval0;
 			dval0 += arx;
@@ -654,7 +654,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 			dval1 += ary;
 			hit.side = VERTICAL;
 		}
-		if( inx < 0 || iny < 0 || (inx >> 4) >= map.width || (iny >> 4) >= map.height ) {
+		if ( inx < 0 || iny < 0 || (inx >> 4) >= map.width || (iny >> 4) >= map.height ) {
 			break;
 		}
 
@@ -663,7 +663,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 
 		// check against the map
 		int index = (iny >> 4) * MAPLAYERS + (inx >> 4) * MAPLAYERS * map.height;
-		if( map.tiles[OBSTACLELAYER + index] ) {
+		if ( map.tiles[OBSTACLELAYER + index] ) {
 			hit.x = ix;
 			hit.y = iy;
 			hit.mapx = inx >> 4;
@@ -671,13 +671,13 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 			hit.entity = NULL;
 			return d;
 		}
-		if( ground ) {
+		if ( ground ) {
 			bool isMonster = FALSE;
-			if( my )
-				if( my->behavior == &actMonster ) {
+			if ( my )
+				if ( my->behavior == &actMonster ) {
 					isMonster = TRUE;
 				}
-			if( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) ) {
+			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) ) {
 				hit.x = ix;
 				hit.y = iy;
 				hit.mapx = inx >> 4;
@@ -688,9 +688,9 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 		}
 
 		// check against entity
-		if( entity ) {
-			if( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex ) {
-				if( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey ) {
+		if ( entity ) {
+			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex ) {
+				if ( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey ) {
 					hit.x = ix;
 					hit.y = iy;
 					hit.mapx = entity->x / 16;
@@ -762,8 +762,8 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 	Entity *entity = findEntityInLine(my, x1, y1, angle, entities, target);
 
 	// trace the line
-	while( d < range ) {
-		if( dval1 > dval0 ) {
+	while ( d < range ) {
+		if ( dval1 > dval0 ) {
 			inx += dincx;
 			d = dval0;
 			dval0 += arx;
@@ -774,7 +774,7 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 			dval1 += ary;
 			hit.side = VERTICAL;
 		}
-		if( inx < 0 || iny < 0 || (inx >> 4) >= map.width || (iny >> 4) >= map.height ) {
+		if ( inx < 0 || iny < 0 || (inx >> 4) >= map.width || (iny >> 4) >= map.height ) {
 			break;
 		}
 
@@ -783,7 +783,7 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 
 		// check against the map
 		int index = (iny >> 4) * MAPLAYERS + (inx >> 4) * MAPLAYERS * map.height;
-		if( map.tiles[OBSTACLELAYER + index] ) {
+		if ( map.tiles[OBSTACLELAYER + index] ) {
 			hit.x = ix;
 			hit.y = iy;
 			hit.mapx = inx >> 4;
@@ -791,13 +791,13 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 			hit.entity = NULL;
 			return d;
 		}
-		if( ground ) {
+		if ( ground ) {
 			bool isMonster = FALSE;
-			if( my )
-				if( my->behavior == &actMonster ) {
+			if ( my )
+				if ( my->behavior == &actMonster ) {
 					isMonster = TRUE;
 				}
-			if( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) ) {
+			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) ) {
 				hit.x = ix;
 				hit.y = iy;
 				hit.mapx = inx >> 4;
@@ -808,9 +808,9 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 		}
 
 		// check against entity
-		if( entity ) {
-			if( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex ) {
-				if( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey ) {
+		if ( entity ) {
+			if ( ix >= entity->x - entity->sizex && ix <= entity->x + entity->sizex ) {
+				if ( iy >= entity->y - entity->sizey && iy <= entity->y + entity->sizey ) {
 					hit.x = ix;
 					hit.y = iy;
 					hit.mapx = entity->x / 16;
@@ -846,52 +846,52 @@ int checkObstacle(long x, long y, Entity *my, Entity *target) {
 	bool levitating = FALSE;
 
 	// get levitation status
-	if( (my && (stats = my->getStats())) != NULL ) {
-		if( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
+	if ( (my && (stats = my->getStats())) != NULL ) {
+		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
 			levitating = TRUE;
 		}
-		if( stats->ring != NULL ) {
-			if( stats->ring->type == RING_LEVITATION ) {
+		if ( stats->ring != NULL ) {
+			if ( stats->ring->type == RING_LEVITATION ) {
 				levitating = TRUE;
 			}
 		}
-		if( stats->shoes != NULL ) {
-			if( stats->shoes->type == STEEL_BOOTS_LEVITATION ) {
+		if ( stats->shoes != NULL ) {
+			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION ) {
 				levitating = TRUE;
 			}
 		}
 	}
-	if( my ) {
-		if( my->behavior != &actPlayer && my->behavior != &actMonster && my->behavior != &actLadder && my->behavior != &actPortal ) {
+	if ( my ) {
+		if ( my->behavior != &actPlayer && my->behavior != &actMonster && my->behavior != &actLadder && my->behavior != &actPortal ) {
 			levitating = TRUE;
 		}
 	}
 
 	// collision detection
-	if( x >= 0 && x < map.width << 4 ) {
-		if( y >= 0 && y < map.height << 4 ) {
-			for( node = map.entities->first; node != NULL; node = node->next ) {
+	if ( x >= 0 && x < map.width << 4 ) {
+		if ( y >= 0 && y < map.height << 4 ) {
+			for ( node = map.entities->first; node != NULL; node = node->next ) {
 				entity = (Entity *)node->element;
-				if( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor ) {
+				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor ) {
 					continue;
 				}
-				if( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) ) {
-					if( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) ) {
+				if ( x >= (int)(entity->x - entity->sizex) && x <= (int)(entity->x + entity->sizex) ) {
+					if ( y >= (int)(entity->y - entity->sizey) && y <= (int)(entity->y + entity->sizey) ) {
 						return 1;
 					}
 				}
 			}
 			int index = (y >> 4) * MAPLAYERS + (x >> 4) * MAPLAYERS * map.height;
-			if(map.tiles[OBSTACLELAYER + index]) { // wall
+			if (map.tiles[OBSTACLELAYER + index]) { // wall
 				return 1;
 			}
 			bool isMonster = FALSE;
-			if( my ) {
-				if( my->behavior == &actMonster ) {
+			if ( my ) {
+				if ( my->behavior == &actMonster ) {
 					isMonster = TRUE;
 				}
 			}
-			if( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) ) { // no floor
+			if ( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) ) { // no floor
 				return 1;
 			}
 		}

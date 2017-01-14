@@ -48,19 +48,19 @@ view_t camera_vel;
 
 void mainLogic(void) {
 	// messages
-	if( messagetime > 0 ) {
+	if ( messagetime > 0 ) {
 		messagetime--;
 	}
 
 	// basic editing functions are not available under these cases
-	if( subwindow || tilepalette || spritepalette ) {
+	if ( subwindow || tilepalette || spritepalette ) {
 		return;
 	}
 
 	// scroll camera on minimap
-	if( mousestatus[SDL_BUTTON_LEFT] && toolbox ) {
-		if( omousex >= xres - 120 && omousex < xres - 8 ) {
-			if( omousey >= 24 && omousey < 136 ) {
+	if ( mousestatus[SDL_BUTTON_LEFT] && toolbox ) {
+		if ( omousex >= xres - 120 && omousex < xres - 8 ) {
+			if ( omousey >= 24 && omousey < 136 ) {
 				camx = ((long)map.width << TEXTUREPOWER) * (double)(mousex - xres + 120) / 112 - xres / 2;
 				camy = ((long)map.height << TEXTUREPOWER) * (double)(mousey - 24) / 112 - yres / 2;
 			}
@@ -68,7 +68,7 @@ void mainLogic(void) {
 	}
 
 	// basic editor functions
-	if( mode3d == FALSE ) {
+	if ( mode3d == FALSE ) {
 		camx += (keystatus[SDL_SCANCODE_RIGHT] - keystatus[SDL_SCANCODE_LEFT]) * TEXTURESIZE;
 		camy += (keystatus[SDL_SCANCODE_DOWN] - keystatus[SDL_SCANCODE_UP]) * TEXTURESIZE;
 	} else {
@@ -83,10 +83,10 @@ void mainLogic(void) {
 		camera.y += camera_vel.y;
 		camera.z += camera_vel.z;
 		camera.ang += camera_vel.ang;
-		while( camera.ang >= PI * 2 ) {
+		while ( camera.ang >= PI * 2 ) {
 			camera.ang -= PI * 2;
 		}
-		while( camera.ang < 0 ) {
+		while ( camera.ang < 0 ) {
 			camera.ang += PI * 2;
 		}
 
@@ -96,29 +96,29 @@ void mainLogic(void) {
 		camera_vel.z *= .65;
 		camera_vel.ang *= .5;
 	}
-	if( camx < -xres / 2 ) {
+	if ( camx < -xres / 2 ) {
 		camx = -xres / 2;
 	}
-	if( camx > ((long)map.width << TEXTUREPOWER) - ((long)xres / 2) ) {
+	if ( camx > ((long)map.width << TEXTUREPOWER) - ((long)xres / 2) ) {
 		camx = ((long)map.width << TEXTUREPOWER) - ((long)xres / 2);
 	}
-	if( camy < -yres / 2 ) {
+	if ( camy < -yres / 2 ) {
 		camy = -yres / 2;
 	}
-	if( camy > ((long)map.height << TEXTUREPOWER) - ((long)yres / 2) ) {
+	if ( camy > ((long)map.height << TEXTUREPOWER) - ((long)yres / 2) ) {
 		camy = ((long)map.height << TEXTUREPOWER) - ((long)yres / 2);
 	}
 
-	if(scroll < 0) { // mousewheel up
+	if (scroll < 0) { // mousewheel up
 		drawlayer = std::min(drawlayer + 1, MAPLAYERS - 1);
 		scroll = 0;
 	}
-	if(scroll > 0) { // mousewheel down
+	if (scroll > 0) { // mousewheel down
 		drawlayer = std::max(drawlayer - 1, 0);
 		scroll = 0;
 	}
 
-	switch( drawlayer ) {
+	switch ( drawlayer ) {
 		case 0:
 			strcpy(layerstatus, "FLOOR");
 			break;
@@ -149,55 +149,55 @@ void handleButtons(void) {
 	int w, h;
 
 	// handle buttons
-	for( node = button_l.first; node != NULL; node = nextnode ) {
+	for ( node = button_l.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		button = (button_t *)node->element;
-		if( !subwindow && button->focused ) {
+		if ( !subwindow && button->focused ) {
 			list_RemoveNode(button->node);
 			continue;
 		}
-		if( button->visible == 0 ) {
+		if ( button->visible == 0 ) {
 			continue;    // invisible buttons are not processed
 		}
 		w = strlen(button->label) * 8;
 		h = 8;
-		if( subwindow && !button->focused ) {
+		if ( subwindow && !button->focused ) {
 			// unfocused buttons do not work when a subwindow is active
 			drawWindow(button->x, button->y, button->x + button->sizex, button->y + button->sizey);
 			printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 		} else {
-			if( omousex >= button->x && omousex < button->x + button->sizex ) {
-				if( omousey >= button->y && omousey < button->y + button->sizey ) {
-					if( button == butFile && menuVisible ) {
+			if ( omousex >= button->x && omousex < button->x + button->sizex ) {
+				if ( omousey >= button->y && omousey < button->y + button->sizey ) {
+					if ( button == butFile && menuVisible ) {
 						menuVisible = 1;
 					}
-					if( button == butEdit && menuVisible ) {
+					if ( button == butEdit && menuVisible ) {
 						menuVisible = 2;
 					}
-					if( button == butView && menuVisible ) {
+					if ( button == butView && menuVisible ) {
 						menuVisible = 3;
 					}
-					if( button == butMap && menuVisible ) {
+					if ( button == butMap && menuVisible ) {
 						menuVisible = 4;
 					}
-					if( button == butHelp && menuVisible ) {
+					if ( button == butHelp && menuVisible ) {
 						menuVisible = 5;
 					}
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
+					if ( mousestatus[SDL_BUTTON_LEFT] ) {
 						button->pressed = TRUE;
 					}
 				}
 			}
-			if( button->pressed ) {
-				if( omousex >= button->x && omousex < button->x + button->sizex && mousex >= button->x && mousex < button->x + button->sizex ) {
-					if( omousey >= button->y && omousey < button->y + button->sizey && mousey >= button->y && mousey < button->y + button->sizey ) {
+			if ( button->pressed ) {
+				if ( omousex >= button->x && omousex < button->x + button->sizex && mousex >= button->x && mousex < button->x + button->sizex ) {
+					if ( omousey >= button->y && omousey < button->y + button->sizey && mousey >= button->y && mousey < button->y + button->sizey ) {
 						drawDepressed(button->x, button->y, button->x + button->sizex, button->y + button->sizey);
 						printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
-						if( !mousestatus[SDL_BUTTON_LEFT] ) { // releasing the mouse over the button
+						if ( !mousestatus[SDL_BUTTON_LEFT] ) { // releasing the mouse over the button
 							button->pressed = FALSE;
-							if( button->action != NULL ) {
+							if ( button->action != NULL ) {
 								(*button->action)(button); // run the button's assigned action
-								if( !subwindow && button->focused ) {
+								if ( !subwindow && button->focused ) {
 									list_RemoveNode(button->node);
 								}
 							}
@@ -205,19 +205,19 @@ void handleButtons(void) {
 					} else {
 						drawWindow(button->x, button->y, button->x + button->sizex, button->y + button->sizey);
 						printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
-						if( !mousestatus[SDL_BUTTON_LEFT] ) { // releasing the mouse over nothing
+						if ( !mousestatus[SDL_BUTTON_LEFT] ) { // releasing the mouse over nothing
 							button->pressed = FALSE;
 						}
 					}
 				} else {
 					drawWindow(button->x, button->y, button->x + button->sizex, button->y + button->sizey);
 					printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
-					if( !mousestatus[SDL_BUTTON_LEFT] ) { // releasing the mouse over nothing
+					if ( !mousestatus[SDL_BUTTON_LEFT] ) { // releasing the mouse over nothing
 						button->pressed = FALSE;
 					}
 				}
 			} else {
-				if( (button != butFile || menuVisible != 1) && (button != butEdit || menuVisible != 2) && (button != butView || menuVisible != 3) && (button != butMap || menuVisible != 4) && (button != butHelp || menuVisible != 5) ) {
+				if ( (button != butFile || menuVisible != 1) && (button != butEdit || menuVisible != 2) && (button != butView || menuVisible != 3) && (button != butMap || menuVisible != 4) && (button != butHelp || menuVisible != 5) ) {
 					drawWindow(button->x, button->y, button->x + button->sizex, button->y + button->sizey);
 					printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 				} else {
@@ -247,40 +247,40 @@ void handleEvents(void) {
 	ot = t;
 
 	// calculate fps
-	if( timesync != 0 ) {
+	if ( timesync != 0 ) {
 		frameval[cycles & (AVERAGEFRAMES - 1)] = 1.0 / timesync;
 	} else {
 		frameval[cycles & (AVERAGEFRAMES - 1)] = 1.0;
 	}
 	d = frameval[0];
-	for(j = 1; j < AVERAGEFRAMES; j++) {
+	for (j = 1; j < AVERAGEFRAMES; j++) {
 		d += frameval[j];
 	}
 	fps = d / AVERAGEFRAMES * 1000;
 
-	while( SDL_PollEvent(&event) ) { // poll SDL events
+	while ( SDL_PollEvent(&event) ) { // poll SDL events
 		// Global events
-		switch( event.type ) {
+		switch ( event.type ) {
 			case SDL_QUIT: // if SDL receives the shutdown signal
 				buttonExit(NULL);
 				break;
 			case SDL_KEYDOWN: // if a key is pressed...
-				if( SDL_IsTextInputActive() ) {
+				if ( SDL_IsTextInputActive() ) {
 #ifdef APPLE
 					if ( (event.key.keysym.sym == SDLK_DELETE || event.key.keysym.sym == SDLK_BACKSPACE) && strlen(inputstr) > 0 ) {
 						inputstr[strlen(inputstr) - 1] = 0;
 						cursorflash = ticks;
 					}
 #else
-					if( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 ) {
+					if ( event.key.keysym.sym == SDLK_BACKSPACE && strlen(inputstr) > 0 ) {
 						inputstr[strlen(inputstr) - 1] = 0;
 						cursorflash = ticks;
 					}
 #endif
-					else if( event.key.keysym.sym == SDLK_c && SDL_GetModState()&KMOD_CTRL ) {
+					else if ( event.key.keysym.sym == SDLK_c && SDL_GetModState()&KMOD_CTRL ) {
 						SDL_SetClipboardText(inputstr);
 						cursorflash = ticks;
-					} else if( event.key.keysym.sym == SDLK_v && SDL_GetModState()&KMOD_CTRL ) {
+					} else if ( event.key.keysym.sym == SDLK_v && SDL_GetModState()&KMOD_CTRL ) {
 						strncpy(inputstr, SDL_GetClipboardText(), inputlen);
 						cursorflash = ticks;
 					}
@@ -292,8 +292,8 @@ void handleEvents(void) {
 				keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
 				break;
 			case SDL_TEXTINPUT:
-				if( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) ) {
-					if( (event.text.text[0] != 'v' && event.text.text[0] != 'V') || !(SDL_GetModState()&KMOD_CTRL) ) {
+				if ( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) ) {
+					if ( (event.text.text[0] != 'v' && event.text.text[0] != 'V') || !(SDL_GetModState()&KMOD_CTRL) ) {
 						strncat(inputstr, event.text.text, std::max<size_t>(0, inputlen - strlen(inputstr)));
 						cursorflash = ticks;
 					}
@@ -312,14 +312,14 @@ void handleEvents(void) {
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				break;
 			case SDL_MOUSEWHEEL:
-				if( event.wheel.y > 0 ) {
+				if ( event.wheel.y > 0 ) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 1;
-				} else if( event.wheel.y < 0 ) {
+				} else if ( event.wheel.y < 0 ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 1;
 				}
-				if(mousestatus[4]) {
+				if (mousestatus[4]) {
 					scroll = 1;
-				} else if(mousestatus[5]) {
+				} else if (mousestatus[5]) {
 					scroll = -1;
 				}
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
@@ -331,25 +331,25 @@ void handleEvents(void) {
 				mouseyrel = 0;
 				break;
 			case SDL_WINDOWEVENT: // if the window is resized
-				if( event.window.event == SDL_WINDOWEVENT_RESIZED ) {
-					if(fullscreen || ticks == 0) {
+				if ( event.window.event == SDL_WINDOWEVENT_RESIZED ) {
+					if (fullscreen || ticks == 0) {
 						break;
 					}
 					xres = std::max(event.window.data1, 100);
 					yres = std::max(event.window.data2, 75);
-					if( zbuffer != NULL ) {
+					if ( zbuffer != NULL ) {
 						free(zbuffer);
 					}
 					zbuffer = (double *) malloc(sizeof(double) * xres * yres);
-					if( clickmap != NULL ) {
+					if ( clickmap != NULL ) {
 						free(clickmap);
 					}
 					clickmap = (Entity **) malloc(sizeof(Entity *)*xres * yres);
-					if(palette != NULL) {
+					if (palette != NULL) {
 						free(palette);
 					}
 					palette = (int *) malloc(sizeof(unsigned int) * xres * yres);
-					if( !changeVideoMode() ) {
+					if ( !changeVideoMode() ) {
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
 					}
@@ -357,7 +357,7 @@ void handleEvents(void) {
 				break;
 		}
 	}
-	if(!mousestatus[SDL_BUTTON_LEFT]) {
+	if (!mousestatus[SDL_BUTTON_LEFT]) {
 		omousex = mousex;
 		omousey = mousey;
 		ocamx = camx;
@@ -387,7 +387,7 @@ Uint32 timerCallback(Uint32 interval, void *param) {
 
 	ticks++;
 	SDL_PushEvent(&event);
-	return(interval);
+	return (interval);
 }
 
 /*-------------------------------------------------------------------------------
@@ -402,38 +402,38 @@ void editFill(int x, int y, int layer, int type) {
 	int repeat = 1;
 	int fillspot;
 
-	if( type == map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
+	if ( type == map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 		return;
 	}
 
 	fillspot = map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height];
 	map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] = type + numtiles;
 
-	while( repeat ) {
+	while ( repeat ) {
 		repeat = 0;
-		for( x = 0; x < map.width; x++ ) {
-			for( y = 0; y < map.height; y++ ) {
-				if( map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] == type + numtiles ) {
-					if( x < map.width - 1 ) {
-						if( map.tiles[layer + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] == fillspot ) {
+		for ( x = 0; x < map.width; x++ ) {
+			for ( y = 0; y < map.height; y++ ) {
+				if ( map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] == type + numtiles ) {
+					if ( x < map.width - 1 ) {
+						if ( map.tiles[layer + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] == fillspot ) {
 							map.tiles[layer + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] = type + numtiles;
 							repeat = 1;
 						}
 					}
-					if( x > 0 ) {
-						if( map.tiles[layer + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] == fillspot ) {
+					if ( x > 0 ) {
+						if ( map.tiles[layer + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] == fillspot ) {
 							map.tiles[layer + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] = type + numtiles;
 							repeat = 1;
 						}
 					}
-					if( y < map.height - 1 ) {
-						if( map.tiles[layer + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] == fillspot ) {
+					if ( y < map.height - 1 ) {
+						if ( map.tiles[layer + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] == fillspot ) {
 							map.tiles[layer + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] = type + numtiles;
 							repeat = 1;
 						}
 					}
-					if( y > 0 ) {
-						if( map.tiles[layer + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] == fillspot ) {
+					if ( y > 0 ) {
+						if ( map.tiles[layer + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] == fillspot ) {
 							map.tiles[layer + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] = type + numtiles;
 							repeat = 1;
 						}
@@ -443,9 +443,9 @@ void editFill(int x, int y, int layer, int type) {
 		}
 	}
 
-	for( x = 0; x < map.width; x++ ) {
-		for( y = 0; y < map.height; y++ ) {
-			if( map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] == type + numtiles ) {
+	for ( x = 0; x < map.width; x++ ) {
+		for ( y = 0; y < map.height; y++ ) {
+			if ( map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] == type + numtiles ) {
 				map.tiles[layer + y * MAPLAYERS + x * MAPLAYERS * map.height] = type;
 			}
 		}
@@ -469,13 +469,13 @@ void makeUndo() {
 	node_t *node, *nextnode;
 
 	// eliminate any undo nodes beyond the one we are currently on
-	if( undospot != NULL ) {
-		for( node = undospot->next; node != NULL; node = nextnode ) {
+	if ( undospot != NULL ) {
+		for ( node = undospot->next; node != NULL; node = nextnode ) {
 			nextnode = node->next;
 			list_RemoveNode(node);
 		}
 	} else {
-		if( redospot ) {
+		if ( redospot ) {
 			list_FreeAll(&undolist);
 		}
 	}
@@ -491,7 +491,7 @@ void makeUndo() {
 	undomap->entities = (list_t *) malloc(sizeof(list_t));
 	undomap->entities->first = NULL;
 	undomap->entities->last = NULL;
-	for( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next ) {
 		Entity *entity = newEntity(((Entity *)node->element)->sprite, 1, undomap->entities);
 		entity->x = ((Entity *)node->element)->x;
 		entity->y = ((Entity *)node->element)->y;
@@ -501,7 +501,7 @@ void makeUndo() {
 	node = list_AddNodeLast(&undolist);
 	node->element = undomap;
 	node->deconstructor = &mapDeconstructor;
-	if( list_Size(&undolist) > MAXUNDOS + 1 ) {
+	if ( list_Size(&undolist) > MAXUNDOS + 1 ) {
 		list_RemoveNode(undolist.first);
 	}
 	undospot = node;
@@ -525,11 +525,11 @@ void clearUndos() {
 void undo() {
 	node_t *node;
 
-	if( undospot == NULL ) {
+	if ( undospot == NULL ) {
 		return;
 	}
 	selectedEntity = NULL;
-	if( undospot == undolist.last ) {
+	if ( undospot == undolist.last ) {
 		node_t *tempnode = undospot;
 		makeUndo();
 		undospot = tempnode;
@@ -541,12 +541,12 @@ void undo() {
 	map.tiles = (Sint32 *) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
-	for( node = undomap->entities->first; node != NULL; node = node->next ) {
+	for ( node = undomap->entities->first; node != NULL; node = node->next ) {
 		Entity *entity = newEntity(((Entity *)node->element)->sprite, 1, map.entities);
 		entity->x = ((Entity *)node->element)->x;
 		entity->y = ((Entity *)node->element)->y;
 	}
-	if( redospot != NULL ) {
+	if ( redospot != NULL ) {
 		redospot = redospot->prev;
 	} else {
 		redospot = undospot->next;
@@ -557,7 +557,7 @@ void undo() {
 void redo() {
 	node_t *node;
 
-	if( redospot == NULL ) {
+	if ( redospot == NULL ) {
 		return;
 	}
 	selectedEntity = NULL;
@@ -568,12 +568,12 @@ void redo() {
 	map.tiles = (Sint32 *) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
-	for( node = undomap->entities->first; node != NULL; node = node->next ) {
+	for ( node = undomap->entities->first; node != NULL; node = node->next ) {
 		Entity *entity = newEntity(((Entity *)node->element)->sprite, 1, map.entities);
 		entity->x = ((Entity *)node->element)->x;
 		entity->y = ((Entity *)node->element)->y;
 	}
-	if( undospot != NULL ) {
+	if ( undospot != NULL ) {
 		undospot = undospot->next;
 	} else {
 		undospot = redospot->prev;
@@ -657,12 +657,12 @@ int main(int argc, char **argv) {
 	processCommandLine(argc, argv);
 
 	// load default language file (english)
-	if( loadLanguage("en") ) {
+	if ( loadLanguage("en") ) {
 		exit(1);
 	}
 
 	// initialize
-	if( (x = initApp("Barony Editor", fullscreen)) ) {
+	if ( (x = initApp("Barony Editor", fullscreen)) ) {
 		printlog("Critical error: %d\n", x);
 		SDL_ShowSimpleMessageBox(SDL_MESSAGEBOX_ERROR, "Uh oh",
 		                         "Barony Editor has encountered a critical error and cannot start.\n\n"
@@ -697,11 +697,11 @@ int main(int argc, char **argv) {
 	map.tiles = (int *) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
-	for( z = 0; z < MAPLAYERS; z++ ) {
-		for( y = 0; y < map.height; y++ ) {
-			for( x = 0; x < map.width; x++ ) {
-				if(z == OBSTACLELAYER) {
-					if(x == 0 || y == 0 || x == map.width - 1 || y == map.height - 1) {
+	for ( z = 0; z < MAPLAYERS; z++ ) {
+		for ( y = 0; y < map.height; y++ ) {
+			for ( x = 0; x < map.width; x++ ) {
+				if (z == OBSTACLELAYER) {
+					if (x == 0 || y == 0 || x == map.width - 1 || y == map.height - 1) {
 						map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] = 2;
 					} else {
 						map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
@@ -714,7 +714,7 @@ int main(int argc, char **argv) {
 	}
 	vismap = (bool *) malloc(sizeof(bool) * map.width * map.height);
 	lightmap = (int *) malloc(sizeof(Sint32) * map.width * map.height);
-	for(c = 0; c < map.width * map.height; c++ ) {
+	for (c = 0; c < map.width * map.height; c++ ) {
 		lightmap[c] = 0;
 	}
 
@@ -1042,7 +1042,7 @@ int main(int argc, char **argv) {
 
 	// main loop
 	printlog( "running main loop.\n");
-	while(mainloop) {
+	while (mainloop) {
 		// game logic
 		handleEvents();
 
@@ -1063,45 +1063,45 @@ int main(int argc, char **argv) {
 		butSelect->x = xres - 96;
 		butFill->x = xres - 96;
 
-		if( !spritepalette && !tilepalette ) {
+		if ( !spritepalette && !tilepalette ) {
 			allowediting = 1;
-			if( (omousex >= xres - 128 && toolbox) || omousey < 16 || (omousey >= yres - 16 && statusbar) || subwindow || menuVisible ) {
+			if ( (omousex >= xres - 128 && toolbox) || omousey < 16 || (omousey >= yres - 16 && statusbar) || subwindow || menuVisible ) {
 				allowediting = 0;
 			}
-			if( mode3d ) {
+			if ( mode3d ) {
 				allowediting = 0;
 			}
-			if( menuVisible == 1 ) {
-				if((omousex > 16 + butNew->sizex || omousey > 96 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
+			if ( menuVisible == 1 ) {
+				if ((omousex > 16 + butNew->sizex || omousey > 96 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible = 0;
 					menuDisappear = 1;
 				}
-			} else if( menuVisible == 2 ) {
-				if((omousex > 56 + butCut->sizex || omousex < 40 || omousey > 128 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
+			} else if ( menuVisible == 2 ) {
+				if ((omousex > 56 + butCut->sizex || omousex < 40 || omousey > 128 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible = 0;
 					menuDisappear = 1;
 				}
-			} else if( menuVisible == 3 ) {
-				if((omousex > 96 + butToolbox->sizex || omousex < 80 || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
+			} else if ( menuVisible == 3 ) {
+				if ((omousex > 96 + butToolbox->sizex || omousex < 80 || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible = 0;
 					menuDisappear = 1;
 				}
-			} else if( menuVisible == 4 ) {
-				if((omousex > 136 + butClearMap->sizex || omousex < 120 || omousey > 48 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
+			} else if ( menuVisible == 4 ) {
+				if ((omousex > 136 + butClearMap->sizex || omousex < 120 || omousey > 48 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible = 0;
 					menuDisappear = 1;
 				}
-			} else if( menuVisible == 5 ) {
-				if((omousex > 168 + butAbout->sizex || omousex < 152 || omousey > 32 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
+			} else if ( menuVisible == 5 ) {
+				if ((omousex > 168 + butAbout->sizex || omousex < 152 || omousey > 32 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT]) {
 					menuVisible = 0;
 					menuDisappear = 1;
 				}
 			}
-			if( !mousestatus[SDL_BUTTON_LEFT] ) {
+			if ( !mousestatus[SDL_BUTTON_LEFT] ) {
 				menuDisappear = 0;
 			}
 
-			if( allowediting && !menuDisappear ) {
+			if ( allowediting && !menuDisappear ) {
 				// MAIN LEVEL EDITING
 				drawx = (mousex + camx) >> TEXTUREPOWER;
 				drawy = (mousey + camy) >> TEXTUREPOWER;
@@ -1109,7 +1109,7 @@ int main(int argc, char **argv) {
 				odrawy = (omousey + ocamy) >> TEXTUREPOWER;
 
 				// set the cursor
-				switch( selectedTool ) {
+				switch ( selectedTool ) {
 					case 0:
 						SDL_SetCursor(cursorPencil);
 						break;
@@ -1128,16 +1128,16 @@ int main(int argc, char **argv) {
 				}
 
 				// move entities
-				if( map.entities->first != NULL && viewsprites && allowediting ) {
-					for( node = map.entities->first; node != NULL; node = nextnode ) {
+				if ( map.entities->first != NULL && viewsprites && allowediting ) {
+					for ( node = map.entities->first; node != NULL; node = nextnode ) {
 						nextnode = node->next;
 						entity = (Entity *)node->element;
-						if( entity == selectedEntity ) {
-							if( mousestatus[SDL_BUTTON_LEFT] ) {
+						if ( entity == selectedEntity ) {
+							if ( mousestatus[SDL_BUTTON_LEFT] ) {
 								mousestatus[SDL_BUTTON_LEFT] = 0;
 								selectedEntity = NULL;
 								break;
-							} else if( mousestatus[SDL_BUTTON_RIGHT] ) {
+							} else if ( mousestatus[SDL_BUTTON_RIGHT] ) {
 								makeUndo();
 								selectedEntity = newEntity(entity->sprite, 0, map.entities);
 								selectedEntity->x = entity->x;
@@ -1148,13 +1148,13 @@ int main(int argc, char **argv) {
 							entity->x = (long)(drawx << 4);
 							entity->y = (long)(drawy << 4);
 						} else {
-							if( (omousex + camx) >> TEXTUREPOWER == entity->x / 16 && (omousey + camy) >> TEXTUREPOWER == entity->y / 16 ) {
-								if( mousestatus[SDL_BUTTON_LEFT] ) {
+							if ( (omousex + camx) >> TEXTUREPOWER == entity->x / 16 && (omousey + camy) >> TEXTUREPOWER == entity->y / 16 ) {
+								if ( mousestatus[SDL_BUTTON_LEFT] ) {
 									// select sprite
 									makeUndo();
 									selectedEntity = entity;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
-								} else if( mousestatus[SDL_BUTTON_RIGHT] ) {
+								} else if ( mousestatus[SDL_BUTTON_RIGHT] ) {
 									// duplicate sprite
 									makeUndo();
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
@@ -1168,27 +1168,27 @@ int main(int argc, char **argv) {
 				}
 
 				// modify world
-				if( mousestatus[SDL_BUTTON_LEFT] && selectedEntity == NULL ) {
-					if( allowediting ) {
-						if( !savedundo ) {
+				if ( mousestatus[SDL_BUTTON_LEFT] && selectedEntity == NULL ) {
+					if ( allowediting ) {
+						if ( !savedundo ) {
 							savedundo = TRUE;
 							makeUndo();
 						}
-						if( !pasting ) { // not pasting, normal editing mode
-							if( selectedTool == 0 ) { // point draw
-								if( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
+						if ( !pasting ) { // not pasting, normal editing mode
+							if ( selectedTool == 0 ) { // point draw
+								if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
 									map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height] = selectedTile;
 								}
-							} else if( selectedTool == 1 ) { // brush tool
-								for(x = drawx - 1; x <= drawx + 1; x++)
-									for(y = drawy - 1; y <= drawy + 1; y++)
-										if( (x != drawx - 1 || y != drawy - 1) && (x != drawx + 1 || y != drawy - 1) && (x != drawx - 1 || y != drawy + 1) && (x != drawx + 1 || y != drawy + 1) )
-											if( x >= 0 && x < map.width && y >= 0 && y < map.height ) {
+							} else if ( selectedTool == 1 ) { // brush tool
+								for (x = drawx - 1; x <= drawx + 1; x++)
+									for (y = drawy - 1; y <= drawy + 1; y++)
+										if ( (x != drawx - 1 || y != drawy - 1) && (x != drawx + 1 || y != drawy - 1) && (x != drawx - 1 || y != drawy + 1) && (x != drawx + 1 || y != drawy + 1) )
+											if ( x >= 0 && x < map.width && y >= 0 && y < map.height ) {
 												map.tiles[drawlayer + y * MAPLAYERS + x * MAPLAYERS * map.height] = selectedTile;
 											}
-							} else if( selectedTool == 2 ) { // select tool
-								if( selectingspace == FALSE ) {
-									if( drawx >= 0 && drawy >= 0 && drawx < map.width && drawy < map.height ) {
+							} else if ( selectedTool == 2 ) { // select tool
+								if ( selectingspace == FALSE ) {
+									if ( drawx >= 0 && drawy >= 0 && drawx < map.width && drawy < map.height ) {
 										selectingspace = TRUE;
 										selectedarea_x1 = drawx;
 										selectedarea_x2 = drawx;
@@ -1199,14 +1199,14 @@ int main(int argc, char **argv) {
 										selectedarea = FALSE;
 									}
 								} else {
-									if( drawx < odrawx ) {
+									if ( drawx < odrawx ) {
 										selectedarea_x1 = std::min<unsigned int>(std::max(0, drawx), map.width - 1); //TODO: Why are int and unsigned int being compared?
 										selectedarea_x2 = std::min<unsigned int>(std::max(0, odrawx), map.width - 1); //TODO: Why are int and unsigned int being compared?
 									} else {
 										selectedarea_x1 = std::min<unsigned int>(std::max(0, odrawx), map.width - 1); //TODO: Why are int and unsigned int being compared?
 										selectedarea_x2 = std::min<unsigned int>(std::max(0, drawx), map.width - 1); //TODO: Why are int and unsigned int being compared?
 									}
-									if( drawy < odrawy ) {
+									if ( drawy < odrawy ) {
 										selectedarea_y1 = std::min<unsigned int>(std::max(0, drawy), map.height - 1); //TODO: Why are int and unsigned int being compared?
 										selectedarea_y2 = std::min<unsigned int>(std::max(0, odrawy), map.height - 1); //TODO: Why are int and unsigned int being compared?
 									} else {
@@ -1214,19 +1214,19 @@ int main(int argc, char **argv) {
 										selectedarea_y2 = std::min<unsigned int>(std::max(0, drawy), map.height - 1); //TODO: Why are int and unsigned int being compared?
 									}
 								}
-							} else if( selectedTool == 3 ) { // fill tool
-								if( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
+							} else if ( selectedTool == 3 ) { // fill tool
+								if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
 									editFill(drawx, drawy, drawlayer, selectedTile);
 								}
 							}
 						} else {
 							// pasting from copymap
 							mousestatus[SDL_BUTTON_LEFT] = FALSE;
-							for( x = 0; x < copymap.width; x++ ) {
-								for( y = 0; y < copymap.height; y++ ) {
-									if( drawx + x >= 0 && drawx + x < map.width && drawy + y >= 0 && drawy + y < map.height ) {
+							for ( x = 0; x < copymap.width; x++ ) {
+								for ( y = 0; y < copymap.height; y++ ) {
+									if ( drawx + x >= 0 && drawx + x < map.width && drawy + y >= 0 && drawy + y < map.height ) {
 										z = copymap.name[0] + y * MAPLAYERS + x * MAPLAYERS * copymap.height;
-										if( copymap.tiles[z] ) {
+										if ( copymap.tiles[z] ) {
 											map.tiles[drawlayer + (drawy + y)*MAPLAYERS + (drawx + x)*MAPLAYERS * map.height] = copymap.tiles[z];
 										}
 									}
@@ -1235,13 +1235,13 @@ int main(int argc, char **argv) {
 							pasting = FALSE;
 						}
 					}
-				} else if( !mousestatus[SDL_BUTTON_LEFT] ) {
+				} else if ( !mousestatus[SDL_BUTTON_LEFT] ) {
 					selectingspace = FALSE;
 					savedundo = FALSE;
 				}
-				if( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL ) {
-					if( selectedTool != 2 ) {
-						if( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
+				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL ) {
+					if ( selectedTool != 2 ) {
+						if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
 							selectedTile = map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height];
 						}
 					} else {
@@ -1254,27 +1254,27 @@ int main(int argc, char **argv) {
 
 			// main drawing
 			drawClearBuffers();
-			if( mode3d == FALSE ) {
-				if( alllayers )
-					for(c = 0; c <= drawlayer; c++) {
+			if ( mode3d == FALSE ) {
+				if ( alllayers )
+					for (c = 0; c <= drawlayer; c++) {
 						drawLayer(camx, camy, c, &map);
 					} else {
 					drawLayer(camx, camy, drawlayer, &map);
 				}
-				if( pasting ) {
+				if ( pasting ) {
 					drawLayer(camx - (drawx << TEXTUREPOWER), camy - (drawy << TEXTUREPOWER), copymap.name[0], &copymap);
 				}
-				if( selectedarea ) {
+				if ( selectedarea ) {
 					pos.x = (selectedarea_x1 << TEXTUREPOWER) - camx;
 					pos.y = (selectedarea_y1 << TEXTUREPOWER) - camy;
 					pos.w = (selectedarea_x2 - selectedarea_x1 + 1) << TEXTUREPOWER;
 					pos.h = (selectedarea_y2 - selectedarea_y1 + 1) << TEXTUREPOWER;
 					drawRect(&pos, SDL_MapRGB(mainsurface->format, 255, 255, 255), 127);
 				}
-				if( viewsprites ) {
+				if ( viewsprites ) {
 					drawEntities2D(camx, camy);
 				}
-				if( showgrid ) {
+				if ( showgrid ) {
 					drawGrid(camx, camy);
 				}
 			} else {
@@ -1283,7 +1283,7 @@ int main(int argc, char **argv) {
 				camera.winw = xres - 128;
 				camera.winh = yres - 32;
 				light = lightSphere(camera.x, camera.y, 16, 255);
-				for( node = map.entities->first; node != NULL; node = node->next ) {
+				for ( node = map.entities->first; node != NULL; node = node->next ) {
 					entity = (Entity *)node->element;
 					entity->flags[SPRITE] = TRUE; // all entities rendered as SPRITES in the editor
 					entity->x += 8;
@@ -1295,7 +1295,7 @@ int main(int argc, char **argv) {
 				drawEntities3D(&camera, REALCOLORS);
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
-				for( node = map.entities->first; node != NULL; node = node->next ) {
+				for ( node = map.entities->first; node != NULL; node = node->next ) {
 					entity = (Entity *)node->element;
 					entity->x -= 8;
 					entity->y -= 8;
@@ -1304,8 +1304,8 @@ int main(int argc, char **argv) {
 
 			// primary interface
 			drawWindowFancy(0, 0, xres, 16);
-			if( toolbox ) {
-				if( statusbar ) {
+			if ( toolbox ) {
+				if ( statusbar ) {
 					drawWindowFancy(xres - 128, 16, xres, yres - 16);
 				} else {
 					drawWindowFancy(xres - 128, 16, xres, yres);
@@ -1317,8 +1317,8 @@ int main(int argc, char **argv) {
 				pos.y = 320;
 				pos.w = 0;
 				pos.h = 0;
-				if( selectedTile >= 0 && selectedTile < numtiles ) {
-					if( tiles[selectedTile] != NULL ) {
+				if ( selectedTile >= 0 && selectedTile < numtiles ) {
+					if ( tiles[selectedTile] != NULL ) {
 						drawImage(tiles[selectedTile], NULL, &pos);
 					} else {
 						drawImage(sprites[0], NULL, &pos);
@@ -1330,10 +1330,10 @@ int main(int argc, char **argv) {
 				pos.y = 360;
 				pos.w = 0;
 				pos.h = 0;
-				if( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
+				if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height ) {
 					c = map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height];
-					if( c >= 0 && c < numtiles ) {
-						if( tiles[c] != NULL ) {
+					if ( c >= 0 && c < numtiles ) {
+						if ( tiles[c] != NULL ) {
 							drawImage(tiles[c], NULL, &pos);
 						} else {
 							drawImage(sprites[0], NULL, &pos);
@@ -1348,7 +1348,7 @@ int main(int argc, char **argv) {
 				printText(font8x8_bmp, xres - 124, 372, "   Above:");
 
 				// print selected tool
-				switch( selectedTool ) {
+				switch ( selectedTool ) {
 					case 0:
 						printText(font8x8_bmp, xres - 84, 276, "POINT");
 						break;
@@ -1363,16 +1363,16 @@ int main(int argc, char **argv) {
 						break;
 				}
 			}
-			if( statusbar ) {
+			if ( statusbar ) {
 				drawWindowFancy(0, yres - 16, xres, yres);
 				printTextFormatted(font8x8_bmp, 4, yres - 12, "X: %4d Y: %4d Z: %d %s", drawx, drawy, drawlayer + 1, layerstatus);
-				if( messagetime ) {
+				if ( messagetime ) {
 					printText(font8x8_bmp, xres - 384, yres - 12, message);
 				}
 			}
 
 			// handle main menus
-			if( menuVisible == 1 ) {
+			if ( menuVisible == 1 ) {
 				drawWindowFancy(0, 16, 16, 96);
 				butNew->visible = 1;
 				butOpen->visible = 1;
@@ -1386,7 +1386,7 @@ int main(int argc, char **argv) {
 				butSaveAs->visible = 0;
 				butExit->visible = 0;
 			}
-			if( menuVisible == 2 ) {
+			if ( menuVisible == 2 ) {
 				drawWindowFancy(40, 16, 56, 128);
 				butPaste->visible = 1;
 				butCut->visible = 1;
@@ -1404,7 +1404,7 @@ int main(int argc, char **argv) {
 				butUndo->visible = 0;
 				butRedo->visible = 0;
 			}
-			if( menuVisible == 3 ) {
+			if ( menuVisible == 3 ) {
 				drawWindowFancy(80, 16, 96, 112);
 				butToolbox->visible = 1;
 				butStatusBar->visible = 1;
@@ -1412,22 +1412,22 @@ int main(int argc, char **argv) {
 				butViewSprites->visible = 1;
 				butGrid->visible = 1;
 				but3DMode->visible = 1;
-				if( statusbar ) {
+				if ( statusbar ) {
 					printText(font8x8_bmp, 84, 20, "x");
 				}
-				if( toolbox ) {
+				if ( toolbox ) {
 					printText(font8x8_bmp, 84, 36, "x");
 				}
-				if( alllayers ) {
+				if ( alllayers ) {
 					printText(font8x8_bmp, 84, 52, "x");
 				}
-				if( viewsprites ) {
+				if ( viewsprites ) {
 					printText(font8x8_bmp, 84, 68, "x");
 				}
-				if( showgrid ) {
+				if ( showgrid ) {
 					printText(font8x8_bmp, 84, 84, "x");
 				}
-				if( mode3d ) {
+				if ( mode3d ) {
 					printText(font8x8_bmp, 84, 100, "x");
 				}
 			} else {
@@ -1438,7 +1438,7 @@ int main(int argc, char **argv) {
 				butGrid->visible = 0;
 				but3DMode->visible = 0;
 			}
-			if( menuVisible == 4 ) {
+			if ( menuVisible == 4 ) {
 				drawWindowFancy(120, 16, 136, 48);
 				butAttributes->visible = 1;
 				butClearMap->visible = 1;
@@ -1446,7 +1446,7 @@ int main(int argc, char **argv) {
 				butAttributes->visible = 0;
 				butClearMap->visible = 0;
 			}
-			if( menuVisible == 5 ) {
+			if ( menuVisible == 5 ) {
 				drawWindowFancy(152, 16, 168, 32);
 				butAbout->visible = 1;
 			} else {
@@ -1454,14 +1454,14 @@ int main(int argc, char **argv) {
 			}
 
 			// subwindows
-			if( subwindow ) {
+			if ( subwindow ) {
 				drawWindowFancy(subx1, suby1, subx2, suby2);
-				if( subtext != NULL ) {
+				if ( subtext != NULL ) {
 					printText(font8x8_bmp, subx1 + 8, suby1 + 8, subtext);
 				}
 
 				// open and save windows
-				if( (openwindow || savewindow) && d_names != NULL ) {
+				if ( (openwindow || savewindow) && d_names != NULL ) {
 					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 52);
 					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 52);
 					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((double)d_names_length / 20)); //TODO: Why are int and double being compared?
@@ -1470,7 +1470,7 @@ int main(int argc, char **argv) {
 
 					// directory list offset from slider
 					y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
-					if( scroll ) {
+					if ( scroll ) {
 						slidery -= 8 * scroll;
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
 						y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
@@ -1479,7 +1479,7 @@ int main(int argc, char **argv) {
 						inputstr = filename;
 						scroll = 0;
 					}
-					if( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 52 ) {
+					if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= suby1 + 20 && omousey < suby2 - 52 ) {
 						slidery = oslidery + mousey - omousey;
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
 						y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
@@ -1492,8 +1492,8 @@ int main(int argc, char **argv) {
 					}
 
 					// select a file
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
-						if( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 ) {
+					if ( mousestatus[SDL_BUTTON_LEFT] ) {
+						if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 ) {
 							selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
 							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(d_names_length - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 							strcpy(filename, d_names[selectedFile]);
@@ -1510,7 +1510,7 @@ int main(int argc, char **argv) {
 					x = subx1 + 8;
 					y = suby1 + 24;
 					c = std::min<long unsigned int>(d_names_length, 20 + y2); //TODO: Why are long unsigned int and int being compared?
-					for(z = y2; z < c; z++) {
+					for (z = y2; z < c; z++) {
 						printText(font8x8_bmp, x, y, d_names[z]);
 						y += 8;
 					}
@@ -1520,19 +1520,19 @@ int main(int argc, char **argv) {
 					printText(font8x8_bmp, subx1 + 8, suby2 - 44, filename);
 
 					// enter filename
-					if( !SDL_IsTextInputActive() ) {
+					if ( !SDL_IsTextInputActive() ) {
 						SDL_StartTextInput();
 						inputstr = filename;
 					}
 					//strncpy(filename,inputstr,28);
 					inputlen = 28;
-					if( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+					if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
 						printText(font8x8_bmp, subx1 + 8 + strlen(filename) * 8, suby2 - 44, "\26");
 					}
 				}
 
 				// new map and attributes windows
-				if( newwindow ) {
+				if ( newwindow ) {
 					printText(font8x8_bmp, subx1 + 8, suby1 + 28, "Map name:");
 					drawDepressed(subx1 + 4, suby1 + 40, subx2 - 4, suby1 + 56);
 					printText(font8x8_bmp, subx1 + 8, suby1 + 44, nametext);
@@ -1546,14 +1546,14 @@ int main(int argc, char **argv) {
 					drawDepressed(subx1 + 104, suby2 - 24, subx1 + 168, suby2 - 8);
 					printText(font8x8_bmp, subx1 + 108, suby2 - 20, heighttext);
 
-					if( keystatus[SDL_SCANCODE_TAB] ) {
+					if ( keystatus[SDL_SCANCODE_TAB] ) {
 						keystatus[SDL_SCANCODE_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if( editproperty == 4 ) {
+						if ( editproperty == 4 ) {
 							editproperty = 0;
 						}
-						switch( editproperty ) {
+						switch ( editproperty ) {
 							case 0:
 								inputstr = nametext;
 								break;
@@ -1570,206 +1570,206 @@ int main(int argc, char **argv) {
 					}
 
 					// select a textbox
-					if( mousestatus[SDL_BUTTON_LEFT] ) {
-						if( omousex >= subx1 + 4 && omousey >= suby1 + 40 && omousex < subx2 - 4 && omousey < suby1 + 56 ) {
+					if ( mousestatus[SDL_BUTTON_LEFT] ) {
+						if ( omousex >= subx1 + 4 && omousey >= suby1 + 40 && omousex < subx2 - 4 && omousey < suby1 + 56 ) {
 							inputstr = nametext;
 							editproperty = 0;
 							cursorflash = ticks;
 						}
-						if( omousex >= subx1 + 4 && omousey >= suby1 + 76 && omousex < subx2 - 4 && omousey < suby1 + 92 ) {
+						if ( omousex >= subx1 + 4 && omousey >= suby1 + 76 && omousex < subx2 - 4 && omousey < suby1 + 92 ) {
 							inputstr = authortext;
 							editproperty = 1;
 							cursorflash = ticks;
 						}
-						if( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 ) {
+						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 ) {
 							inputstr = widthtext;
 							editproperty = 2;
 							cursorflash = ticks;
 						}
-						if( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 ) {
+						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 ) {
 							inputstr = heighttext;
 							editproperty = 3;
 							cursorflash = ticks;
 						}
 					}
 
-					if( editproperty == 0 ) { // edit map name
-						if( !SDL_IsTextInputActive() ) {
+					if ( editproperty == 0 ) { // edit map name
+						if ( !SDL_IsTextInputActive() ) {
 							SDL_StartTextInput();
 							inputstr = nametext;
 						}
 						//strncpy(nametext,inputstr,31);
 						inputlen = 31;
-						if( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
 							printText(font8x8_bmp, subx1 + 8 + strlen(nametext) * 8, suby1 + 44, "\26");
 						}
 					}
-					if( editproperty == 1 ) { // edit author name
-						if( !SDL_IsTextInputActive() ) {
+					if ( editproperty == 1 ) { // edit author name
+						if ( !SDL_IsTextInputActive() ) {
 							SDL_StartTextInput();
 							inputstr = authortext;
 						}
 						//strncpy(authortext,inputstr,31);
 						inputlen = 31;
-						if( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
 							printText(font8x8_bmp, subx1 + 8 + strlen(authortext) * 8, suby1 + 80, "\26");
 						}
 					}
-					if( editproperty == 2 ) { // edit map width
-						if( !SDL_IsTextInputActive() ) {
+					if ( editproperty == 2 ) { // edit map width
+						if ( !SDL_IsTextInputActive() ) {
 							SDL_StartTextInput();
 							inputstr = widthtext;
 						}
 						//strncpy(widthtext,inputstr,3);
 						inputlen = 3;
-						if( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if( editproperty == 3 ) { // edit map height
-						if( !SDL_IsTextInputActive() ) {
+					if ( editproperty == 3 ) { // edit map height
+						if ( !SDL_IsTextInputActive() ) {
 							SDL_StartTextInput();
 							inputstr = heighttext;
 						}
 						//strncpy(heighttext,inputstr,3);
 						inputlen = 3;
-						if( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 ) {
 							printText(font8x8_bmp, subx1 + 108 + strlen(heighttext) * 8, suby2 - 20, "\26");
 						}
 					}
 				}
 			} else {
 				// handle hotkeys
-				if( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] ) {
-					if( keystatus[SDL_SCANCODE_N] && !keystatus[SDL_SCANCODE_LSHIFT] && !keystatus[SDL_SCANCODE_RSHIFT] ) {
+				if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] ) {
+					if ( keystatus[SDL_SCANCODE_N] && !keystatus[SDL_SCANCODE_LSHIFT] && !keystatus[SDL_SCANCODE_RSHIFT] ) {
 						keystatus[SDL_SCANCODE_N] = 0;
 						buttonNew(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_S] ) {
+					if ( keystatus[SDL_SCANCODE_S] ) {
 						keystatus[SDL_SCANCODE_S] = 0;
 						buttonSave(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_O] ) {
+					if ( keystatus[SDL_SCANCODE_O] ) {
 						keystatus[SDL_SCANCODE_O] = 0;
 						buttonOpen(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_X] ) {
+					if ( keystatus[SDL_SCANCODE_X] ) {
 						keystatus[SDL_SCANCODE_X] = 0;
 						buttonCut(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_C] ) {
+					if ( keystatus[SDL_SCANCODE_C] ) {
 						keystatus[SDL_SCANCODE_C] = 0;
 						buttonCopy(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_V] ) {
+					if ( keystatus[SDL_SCANCODE_V] ) {
 						keystatus[SDL_SCANCODE_V] = 0;
 						buttonPaste(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_A] ) {
+					if ( keystatus[SDL_SCANCODE_A] ) {
 						keystatus[SDL_SCANCODE_A] = 0;
 						buttonSelectAll(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_Z] ) {
+					if ( keystatus[SDL_SCANCODE_Z] ) {
 						keystatus[SDL_SCANCODE_Z] = 0;
 						buttonUndo(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_Y] ) {
+					if ( keystatus[SDL_SCANCODE_Y] ) {
 						keystatus[SDL_SCANCODE_Y] = 0;
 						buttonRedo(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_G] ) {
+					if ( keystatus[SDL_SCANCODE_G] ) {
 						keystatus[SDL_SCANCODE_G] = 0;
 						buttonGrid(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_T] ) {
+					if ( keystatus[SDL_SCANCODE_T] ) {
 						keystatus[SDL_SCANCODE_T] = 0;
 						buttonToolbox(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_E] ) {
+					if ( keystatus[SDL_SCANCODE_E] ) {
 						keystatus[SDL_SCANCODE_E] = 0;
 						buttonViewSprites(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_L] ) {
+					if ( keystatus[SDL_SCANCODE_L] ) {
 						keystatus[SDL_SCANCODE_L] = 0;
 						buttonAllLayers(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_I] ) {
+					if ( keystatus[SDL_SCANCODE_I] ) {
 						keystatus[SDL_SCANCODE_I] = 0;
 						buttonStatusBar(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_F] ) {
+					if ( keystatus[SDL_SCANCODE_F] ) {
 						keystatus[SDL_SCANCODE_F] = 0;
 						button3DMode(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_M] ) {
+					if ( keystatus[SDL_SCANCODE_M] ) {
 						keystatus[SDL_SCANCODE_M] = 0;
 						buttonAttributes(NULL);
 					}
-					if( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
-						if( keystatus[SDL_SCANCODE_N] ) {
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+						if ( keystatus[SDL_SCANCODE_N] ) {
 							keystatus[SDL_SCANCODE_N] = 0;
 							buttonClearMap(NULL);
 						}
 				} else {
-					if( keystatus[SDL_SCANCODE_S] ) {
+					if ( keystatus[SDL_SCANCODE_S] ) {
 						keystatus[SDL_SCANCODE_S] = 0;
 						spritepalette = 1;
 					}
-					if( keystatus[SDL_SCANCODE_T] ) {
+					if ( keystatus[SDL_SCANCODE_T] ) {
 						keystatus[SDL_SCANCODE_T] = 0;
 						tilepalette = 1;
 					}
 				}
-				if( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] ) {
-					if( keystatus[SDL_SCANCODE_F] ) {
+				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] ) {
+					if ( keystatus[SDL_SCANCODE_F] ) {
 						keystatus[SDL_SCANCODE_F] = 0;
 						menuVisible = 1;
 					}
-					if( keystatus[SDL_SCANCODE_E] ) {
+					if ( keystatus[SDL_SCANCODE_E] ) {
 						keystatus[SDL_SCANCODE_E] = 0;
 						menuVisible = 2;
 					}
-					if( keystatus[SDL_SCANCODE_V] ) {
+					if ( keystatus[SDL_SCANCODE_V] ) {
 						keystatus[SDL_SCANCODE_V] = 0;
 						menuVisible = 3;
 					}
-					if( keystatus[SDL_SCANCODE_M] ) {
+					if ( keystatus[SDL_SCANCODE_M] ) {
 						keystatus[SDL_SCANCODE_M] = 0;
 						menuVisible = 4;
 					}
-					if( keystatus[SDL_SCANCODE_H] ) {
+					if ( keystatus[SDL_SCANCODE_H] ) {
 						keystatus[SDL_SCANCODE_H] = 0;
 						menuVisible = 5;
 					}
-					if( keystatus[SDL_SCANCODE_F4] ) {
+					if ( keystatus[SDL_SCANCODE_F4] ) {
 						keystatus[SDL_SCANCODE_F4] = 0;
 						buttonExit(NULL);
 					}
 				}
-				if( keystatus[SDL_SCANCODE_DELETE] ) {
+				if ( keystatus[SDL_SCANCODE_DELETE] ) {
 					keystatus[SDL_SCANCODE_DELETE] = 0;
 					buttonDelete(NULL);
 				}
-				if( keystatus[SDL_SCANCODE_F1] ) {
+				if ( keystatus[SDL_SCANCODE_F1] ) {
 					keystatus[SDL_SCANCODE_F1] = 0;
 					buttonAbout(NULL);
 				}
-				if( keystatus[SDL_SCANCODE_1] ) {
+				if ( keystatus[SDL_SCANCODE_1] ) {
 					keystatus[SDL_SCANCODE_1] = 0;
 					selectedTool = 0;
 					selectedarea = FALSE;
 				}
-				if( keystatus[SDL_SCANCODE_2] ) {
+				if ( keystatus[SDL_SCANCODE_2] ) {
 					keystatus[SDL_SCANCODE_2] = 0;
 					selectedTool = 1;
 					selectedarea = FALSE;
 				}
-				if( keystatus[SDL_SCANCODE_3] ) {
+				if ( keystatus[SDL_SCANCODE_3] ) {
 					keystatus[SDL_SCANCODE_3] = 0;
 					selectedTool = 2;
 					selectedarea = FALSE;
 				}
-				if( keystatus[SDL_SCANCODE_4] ) {
+				if ( keystatus[SDL_SCANCODE_4] ) {
 					keystatus[SDL_SCANCODE_4] = 0;
 					selectedTool = 3;
 					selectedarea = FALSE;
@@ -1779,38 +1779,38 @@ int main(int argc, char **argv) {
 			handleButtons();
 		}
 
-		if( spritepalette ) {
+		if ( spritepalette ) {
 			x = 0;
 			y = 0;
 			z = 0;
 			drawRect( NULL, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255 ); // wipe screen
-			for( c = 0; c < xres * yres; c++ ) {
+			for ( c = 0; c < xres * yres; c++ ) {
 				palette[c] = -1;
 			}
-			for( c = 0; c < numsprites; c++ ) {
-				if( sprites[c] != NULL ) {
+			for ( c = 0; c < numsprites; c++ ) {
+				if ( sprites[c] != NULL ) {
 					pos.x = x;
 					pos.y = y;
 					pos.w = sprites[c]->w * 2;
 					pos.h = sprites[c]->h * 2;
 					drawImageScaled(sprites[c], NULL, &pos);
-					for( x2 = x; x2 < x + sprites[c]->w * 2; x2++ ) {
-						for( y2 = y; y2 < y + sprites[c]->h * 2; y2++ ) {
-							if( x2 < xres && y2 < yres ) {
+					for ( x2 = x; x2 < x + sprites[c]->w * 2; x2++ ) {
+						for ( y2 = y; y2 < y + sprites[c]->h * 2; y2++ ) {
+							if ( x2 < xres && y2 < yres ) {
 								palette[y2 + x2 * yres] = c;
 							}
 						}
 					}
 					x += sprites[c]->w * 2;
 					z = std::max(z, sprites[c]->h * 2);
-					if( c < numsprites - 1 ) {
-						if( sprites[c + 1] != NULL ) {
-							if( x + sprites[c + 1]->w * 2 > xres ) {
+					if ( c < numsprites - 1 ) {
+						if ( sprites[c + 1] != NULL ) {
+							if ( x + sprites[c + 1]->w * 2 > xres ) {
 								x = 0;
 								y += z;
 							}
 						} else {
-							if( x + sprites[0]->w * 2 > xres ) {
+							if ( x + sprites[0]->w * 2 > xres ) {
 								x = 0;
 								y += z;
 							}
@@ -1824,14 +1824,14 @@ int main(int argc, char **argv) {
 					drawImageScaled(sprites[0], NULL, &pos);
 					x += sprites[0]->w * 2;
 					z = std::max(z, sprites[0]->h * 2);
-					if( c < numsprites - 1 ) {
-						if( sprites[c + 1] != NULL ) {
-							if( x + sprites[c + 1]->w * 2 > xres ) {
+					if ( c < numsprites - 1 ) {
+						if ( sprites[c + 1] != NULL ) {
+							if ( x + sprites[c + 1]->w * 2 > xres ) {
 								x = 0;
 								y += z;
 							}
 						} else {
-							if( x + sprites[0]->w * 2 > xres ) {
+							if ( x + sprites[0]->w * 2 > xres ) {
 								x = 0;
 								y += z;
 							}
@@ -1839,12 +1839,12 @@ int main(int argc, char **argv) {
 					}
 				}
 			}
-			if(mousestatus[SDL_BUTTON_LEFT]) {
+			if (mousestatus[SDL_BUTTON_LEFT]) {
 				mclick = 1;
 			}
-			if(!mousestatus[SDL_BUTTON_LEFT] && mclick) {
+			if (!mousestatus[SDL_BUTTON_LEFT] && mclick) {
 				// create a new object
-				if(palette[mousey + mousex * yres] >= 0) {
+				if (palette[mousey + mousex * yres] >= 0) {
 					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities);
 					selectedEntity = entity;
 				}
@@ -1852,7 +1852,7 @@ int main(int argc, char **argv) {
 				mclick = 0;
 				spritepalette = 0;
 			}
-			if(keystatus[SDL_SCANCODE_ESCAPE]) {
+			if (keystatus[SDL_SCANCODE_ESCAPE]) {
 				mclick = 0;
 				spritepalette = 0;
 			}
@@ -1864,35 +1864,35 @@ int main(int argc, char **argv) {
 				case 75:	strcpy(action,"TROLL"); break;
 				default:	strcpy(action,"STATIC"); break;
 			}*/
-			if( palette[mousey + mousex * yres] >= 0 ) {
+			if ( palette[mousey + mousex * yres] >= 0 ) {
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
 			} else {
 				printText(font8x8_bmp, 0, yres - 8, "Click to cancel");
 			}
 		}
-		if( tilepalette ) {
+		if ( tilepalette ) {
 			x = 0;
 			y = 0;
 			drawRect( NULL, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255 ); // wipe screen
-			for( c = 0; c < xres * yres; c++ ) {
+			for ( c = 0; c < xres * yres; c++ ) {
 				palette[c] = -1;
 			}
-			for( c = 0; c < numtiles; c++ ) {
+			for ( c = 0; c < numtiles; c++ ) {
 				pos.x = x;
 				pos.y = y;
 				pos.w = TEXTURESIZE;
 				pos.h = TEXTURESIZE;
-				if( tiles[c] != NULL ) {
+				if ( tiles[c] != NULL ) {
 					drawImageScaled(tiles[c], NULL, &pos);
-					for( x2 = x; x2 < x + TEXTURESIZE; x2++ )
-						for( y2 = y; y2 < y + TEXTURESIZE; y2++ ) {
-							if( x2 < xres && y2 < yres ) {
+					for ( x2 = x; x2 < x + TEXTURESIZE; x2++ )
+						for ( y2 = y; y2 < y + TEXTURESIZE; y2++ ) {
+							if ( x2 < xres && y2 < yres ) {
 								palette[y2 + x2 * yres] = c;
 							}
 						}
 					x += TEXTURESIZE;
-					if( c < numtiles - 1 ) {
-						if( x + TEXTURESIZE > xres ) {
+					if ( c < numtiles - 1 ) {
+						if ( x + TEXTURESIZE > xres ) {
 							x = 0;
 							y += TEXTURESIZE;
 						}
@@ -1900,30 +1900,30 @@ int main(int argc, char **argv) {
 				} else {
 					drawImageScaled(sprites[0], NULL, &pos);
 					x += TEXTURESIZE;
-					if( c < numtiles - 1 ) {
-						if( x + TEXTURESIZE > xres ) {
+					if ( c < numtiles - 1 ) {
+						if ( x + TEXTURESIZE > xres ) {
 							x = 0;
 							y += TEXTURESIZE;
 						}
 					}
 				}
 			}
-			if(mousestatus[SDL_BUTTON_LEFT]) {
+			if (mousestatus[SDL_BUTTON_LEFT]) {
 				mclick = 1;
 			}
-			if(!mousestatus[SDL_BUTTON_LEFT] && mclick) {
+			if (!mousestatus[SDL_BUTTON_LEFT] && mclick) {
 				// select the tile under the mouse
-				if(palette[mousey + mousex * yres] >= 0) {
+				if (palette[mousey + mousex * yres] >= 0) {
 					selectedTile = palette[mousey + mousex * yres];
 				}
 				mclick = 0;
 				tilepalette = 0;
 			}
-			if(keystatus[SDL_SCANCODE_ESCAPE]) {
+			if (keystatus[SDL_SCANCODE_ESCAPE]) {
 				mclick = 0;
 				tilepalette = 0;
 			}
-			if( palette[mousey + mousex * yres] >= 0 ) {
+			if ( palette[mousey + mousex * yres] >= 0 ) {
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Tile index:%5d", palette[mousey + mousex * yres]);
 			} else {
 				printText(font8x8_bmp, 0, yres - 8, "Click to cancel");
@@ -1940,10 +1940,10 @@ int main(int argc, char **argv) {
 	SDL_FreeCursor(cursorPencil);
 	SDL_FreeCursor(cursorBrush);
 	SDL_FreeCursor(cursorFill);
-	if( palette != NULL ) {
+	if ( palette != NULL ) {
 		free(palette);
 	}
-	if( copymap.tiles != NULL ) {
+	if ( copymap.tiles != NULL ) {
 		free(copymap.tiles);
 	}
 	list_FreeAll(&undolist);

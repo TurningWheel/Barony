@@ -76,7 +76,7 @@ void updateRightSidebar() {
 	if (!spellList.first) {
 		//Grayed out. No spells.
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos);
-	} else if(mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h)) {
+	} else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h)) {
 		drawImage(rightsidebar_slot_highlighted_img, NULL, &pos);
 		if (mousestatus[SDL_BUTTON_LEFT]) {
 			mousestatus[SDL_BUTTON_LEFT] = 0;

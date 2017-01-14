@@ -507,9 +507,9 @@ bool achievementUnlocked(const char *achName) {
 
 	// check internal achievement record
 	node_t *node;
-	for( node = steamAchievements.first; node != NULL; node = node->next ) {
+	for ( node = steamAchievements.first; node != NULL; node = node->next ) {
 		char *ach = (char *)node->element;
-		if( !strcmp(ach, achName) ) {
+		if ( !strcmp(ach, achName) ) {
 			return TRUE;
 		}
 	}
@@ -531,7 +531,7 @@ void steamAchievement(const char *achName) {
 	return;
 #else
 
-	if( !achievementUnlocked(achName) ) {
+	if ( !achievementUnlocked(achName) ) {
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
 		SteamUserStats()->SetAchievement(achName);
 		SteamUserStats()->StoreStats();
@@ -556,16 +556,16 @@ void steamAchievement(const char *achName) {
 -------------------------------------------------------------------------------*/
 
 void steamAchievementClient(int player, const char *achName) {
-	if( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT ) {
 		return;
 	}
 
-	if( player < 0 || player >= MAXPLAYERS ) {
+	if ( player < 0 || player >= MAXPLAYERS ) {
 		return;
-	} else if( player == 0 ) {
+	} else if ( player == 0 ) {
 		steamAchievement(achName);
 	} else {
-		if( client_disconnected[player] || multiplayer == SINGLE ) {
+		if ( client_disconnected[player] || multiplayer == SINGLE ) {
 			return;
 		}
 		strcpy((char *)net_packet->data, "SACH");
@@ -618,26 +618,26 @@ void* cpp_SteamMatchmaking_GetLobbyByIndex(int iLobby) {
 void steam_OnLobbyMatchListCallback( void *pCallback, bool bIOFailure ) {
 	Uint32 iLobby;
 
-	if( !requestingLobbies ) {
+	if ( !requestingLobbies ) {
 		return;
 	}
 
-	for( iLobby = 0; iLobby < MAX_STEAM_LOBBIES; iLobby++ ) {
-		if( lobbyIDs[iLobby] ) {
+	for ( iLobby = 0; iLobby < MAX_STEAM_LOBBIES; iLobby++ ) {
+		if ( lobbyIDs[iLobby] ) {
 			cpp_Free_CSteamID(lobbyIDs[iLobby]); //TODO: This is an utter bodge. Make it not a list of void pointers and then just directly delete the ID.
 			lobbyIDs[iLobby] = NULL;
 		}
 	}
 	requestingLobbies = FALSE;
 
-	if( bIOFailure ) {
+	if ( bIOFailure ) {
 		// we had a Steam I/O failure - we probably timed out talking to the Steam back-end servers
 		// doesn't matter in this case, we can just act if no lobbies were received
 	}
 
 	// lobbies are returned in order of closeness to the user, so add them to the list in that order
 	numSteamLobbies = std::min<uint32>(static_cast<LobbyMatchList_t*>(pCallback)->m_nLobbiesMatching, MAX_STEAM_LOBBIES);
-	for( iLobby = 0; iLobby < numSteamLobbies; iLobby++ ) {
+	for ( iLobby = 0; iLobby < numSteamLobbies; iLobby++ ) {
 		void *steamIDLobby = cpp_SteamMatchmaking_GetLobbyByIndex( iLobby ); //TODO: Bugger this void pointer!
 
 		// add the lobby to the list
@@ -647,7 +647,7 @@ void steam_OnLobbyMatchListCallback( void *pCallback, bool bIOFailure ) {
 		const char *lobbyName = SteamMatchmaking()->GetLobbyData(*static_cast<CSteamID*>(steamIDLobby), "name"); //TODO: Again with the void pointers.
 		int numPlayers = SteamMatchmaking()->GetNumLobbyMembers(*static_cast<CSteamID*>(steamIDLobby)); //TODO MORE VOID POINTERS.
 
-		if( lobbyName && lobbyName[0] && numPlayers ) {
+		if ( lobbyName && lobbyName[0] && numPlayers ) {
 			// set the lobby data
 			snprintf( lobbyText[iLobby], 31, "%s", lobbyName );
 			lobbyPlayers[iLobby] = numPlayers;
@@ -695,7 +695,7 @@ void steam_OnLobbyDataUpdatedCallback( void *pCallback ) {
 
 			// get the server flags
 			const char *svFlagsChar = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "svFlags" );
-			if( svFlagsChar ) {
+			if ( svFlagsChar ) {
 				svFlags = atoi(svFlagsChar);
 			}
 		}
@@ -763,7 +763,7 @@ void processLobbyInvite() {
 			buttonOpenCharacterCreationWindow(NULL);
 		} else {
 			printlog("warning: received invitation to lobby with which you have an incompatible save game.\n");
-			if( lobbyToConnectTo ) {
+			if ( lobbyToConnectTo ) {
 				cpp_Free_CSteamID(lobbyToConnectTo);    //TODO: Bodge this bodge!
 			}
 			lobbyToConnectTo = NULL;
@@ -829,7 +829,7 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 //Helper func. //TODO: Bugger.
 void cpp_SteamMatchmaking_JoinLobbyPCH(const char *pchLobbyID) {
 	CSteamID steamIDLobby( (uint64)atoll( pchLobbyID ) );
-	if( steamIDLobby.IsValid() ) {
+	if ( steamIDLobby.IsValid() ) {
 		SteamAPICall_t steamAPICall = SteamMatchmaking()->JoinLobby(steamIDLobby);
 		steam_server_client_wrapper->m_SteamCallResultLobbyEntered_Set(steamAPICall);
 	}
@@ -853,7 +853,7 @@ void steam_ConnectToLobby() {
 	}
 
 	// join lobby
-	if(  pchLobbyID ) {
+	if (  pchLobbyID ) {
 		//c_SteamMatchmaking_JoinLobbyPCH( pchLobbyID, &steam_OnLobbyEntered );
 		cpp_SteamMatchmaking_JoinLobbyPCH( pchLobbyID);
 	}

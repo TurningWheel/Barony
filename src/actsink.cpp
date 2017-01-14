@@ -33,12 +33,12 @@
 
 void actSink(Entity *my) {
 	SINK_AMBIENCE--;
-	if( SINK_AMBIENCE <= 0 ) {
+	if ( SINK_AMBIENCE <= 0 ) {
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 128 );
 	}
 
-	if( my->skill[2] > 0 ) {
+	if ( my->skill[2] > 0 ) {
 		Entity *entity = spawnGib(my);
 		entity->flags[INVISIBLE] = FALSE;
 		entity->x += .5;
@@ -56,12 +56,12 @@ void actSink(Entity *my) {
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
 
-		if( multiplayer != CLIENT ) {
+		if ( multiplayer != CLIENT ) {
 			my->skill[2]--;
 		}
 	}
 
-	if( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT ) {
 		return;
 	}
 
@@ -122,7 +122,7 @@ void actSink(Entity *my) {
 
 							// spawn slime
 							Entity *monster = summonMonster(SLIME, my->x, my->y);
-							if( monster ) {
+							if ( monster ) {
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 								messagePlayerColor(i, color, language[582]);
 								Stat *monsterStats = monster->getStats();

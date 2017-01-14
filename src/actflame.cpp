@@ -29,7 +29,7 @@
 #define FLAME_VELZ my->vel_z
 
 void actFlame(Entity *my) {
-	if( FLAME_LIFE <= 0 ) {
+	if ( FLAME_LIFE <= 0 ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -52,7 +52,7 @@ Entity *spawnFlame(Entity *parentent) {
 	double vel;
 
 	entity = newEntity(13, 1, map.entities); // flame particle
-	if( intro ) {
+	if ( intro ) {
 		entity->uid = 0;
 	}
 	entity->x = parentent->x;
@@ -74,7 +74,7 @@ Entity *spawnFlame(Entity *parentent) {
 	entity->flags[BRIGHT] = TRUE;
 	entity->flags[UNCLICKABLE] = TRUE;
 	entity->behavior = &actFlame;
-	if( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT ) {
 		entity_uids--;
 	}
 	entity->uid = -3;

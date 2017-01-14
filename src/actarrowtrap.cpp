@@ -33,27 +33,27 @@ void actArrowTrap(Entity *my) {
 	int c;
 
 	// eliminate arrow traps that have been destroyed.
-	if( !checkObstacle(my->x, my->y, my, NULL) ) {
+	if ( !checkObstacle(my->x, my->y, my, NULL) ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	ARROWTRAP_AMBIENCE--;
-	if( ARROWTRAP_AMBIENCE <= 0 ) {
+	if ( ARROWTRAP_AMBIENCE <= 0 ) {
 		ARROWTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntity( my, 149, 128 );
 	}
 
-	if( !my->skill[28] ) {
+	if ( !my->skill[28] ) {
 		return;
 	}
 
 	// received on signal
-	if( my->skill[28] == 2) {
-		if( !ARROWTRAP_FIRED ) {
+	if ( my->skill[28] == 2) {
+		if ( !ARROWTRAP_FIRED ) {
 			ARROWTRAP_FIRED = 1;
-			for( c = 0; c < 4; c++ ) {
-				switch( c ) {
+			for ( c = 0; c < 4; c++ ) {
+				switch ( c ) {
 					case 0:
 						x = 12;
 						y = 0;
@@ -71,7 +71,7 @@ void actArrowTrap(Entity *my) {
 						y = -12;
 						break;
 				}
-				if( !checkObstacle(my->x + x, my->y + y, my, NULL) ) {
+				if ( !checkObstacle(my->x + x, my->y + y, my, NULL) ) {
 					Entity *entity = newEntity(166, 1, map.entities); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
 					entity->parent = my->uid;

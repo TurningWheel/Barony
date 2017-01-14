@@ -29,7 +29,7 @@ void removeLastMessage() {
 }
 
 void messageDeconstructor(void *data) {
-	if(data != NULL) {
+	if (data != NULL) {
 		Message *message = (Message *)data;
 		stringDeconstructor((void *)message->text);
 		free(data);
@@ -196,14 +196,14 @@ void updateMessages() {
 	// limit the number of onscreen messages to reduce spam
 	int c = 0;
 	node_t *tempNode = notification_messages.last;
-	while( list_Size(&notification_messages) - c > 10 ) {
+	while ( list_Size(&notification_messages) - c > 10 ) {
 		current = (Message *)tempNode->element;
 		current->time_displayed = MESSAGE_PREFADE_TIME;
 		tempNode = tempNode->prev;
 		c++;
 	}
 
-	for( node = notification_messages.first; node != NULL; node = nextnode ) {
+	for ( node = notification_messages.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		current = (Message* )node->element;
 		if (current->time_displayed < MESSAGE_PREFADE_TIME) {
@@ -215,7 +215,7 @@ void updateMessages() {
 				list_RemoveNode(node); // transparent message, deleted message :)
 			} else {
 				current->alpha -= MESSAGE_FADE_RATE; // fade message
-				if( current->alpha < 0 ) {
+				if ( current->alpha < 0 ) {
 					current->alpha = 0;
 				}
 			}
@@ -227,7 +227,7 @@ void drawMessages() {
 	node_t *node;
 	Message *current;
 
-	for( node = notification_messages.first; node != NULL; node = node->next ) {
+	for ( node = notification_messages.first; node != NULL; node = node->next ) {
 		current = (Message*)node->element;
 
 		Uint32 color = current->text->color ^ mainsurface->format->Amask;

@@ -84,7 +84,7 @@ void updateIdentifyGUI() {
 		drawImage(identifyGUI_img, NULL, &pos);
 
 		//Buttons
-		if( mousestatus[SDL_BUTTON_LEFT] ) {
+		if ( mousestatus[SDL_BUTTON_LEFT] ) {
 			//Identify GUI scroll up button.
 			if (omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + 52) {
 				if (omousex >= IDENTIFY_GUI_X + (identifyGUI_img->w - 28) && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 12)) {
@@ -117,12 +117,12 @@ void updateIdentifyGUI() {
 		}
 
 		// mousewheel
-		if( omousex >= IDENTIFY_GUI_X + 12 && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 28) ) {
-			if( omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + (identifyGUI_img->h - 8) ) {
-				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
+		if ( omousex >= IDENTIFY_GUI_X + 12 && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 28) ) {
+			if ( omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + (identifyGUI_img->h - 8) ) {
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					identifyscroll++;
-				} else if( mousestatus[SDL_BUTTON_WHEELUP] ) {
+				} else if ( mousestatus[SDL_BUTTON_WHEELUP] ) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
 					identifyscroll--;
 				}
@@ -257,7 +257,7 @@ void updateIdentifyGUI() {
 							}
 							char tempstr[64] = { 0 };
 							strncpy(tempstr, item->description(), 46);
-							if( strlen(tempstr) == 46 ) {
+							if ( strlen(tempstr) == 46 ) {
 								strcat(tempstr, " ...");
 							}
 							ttfPrintText(ttf8, IDENTIFY_GUI_X + 36, y, tempstr);
@@ -316,7 +316,7 @@ void identifyGUIIdentify(Item *item) {
 
 int getAppraisalTime(Item *item) {
 	int appraisal_time;
-	if( item->type != GEM_GLASS ) {
+	if ( item->type != GEM_GLASS ) {
 		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
 	} else {
 		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-

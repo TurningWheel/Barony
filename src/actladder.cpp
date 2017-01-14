@@ -88,16 +88,16 @@ void actLadderUp(Entity *my) {
 	int i;
 
 	LADDER_AMBIENCE--;
-	if( LADDER_AMBIENCE <= 0 ) {
+	if ( LADDER_AMBIENCE <= 0 ) {
 		LADDER_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}
 
 	// use ladder
-	if( multiplayer != CLIENT ) {
-		for(i = 0; i < MAXPLAYERS; i++) {
-			if( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
-				if(inrange[i]) {
+	if ( multiplayer != CLIENT ) {
+		for (i = 0; i < MAXPLAYERS; i++) {
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
+				if (inrange[i]) {
 					messagePlayer(i, language[508]);
 					return;
 				}
@@ -115,13 +115,13 @@ void actPortal(Entity *my) {
 	double dist;
 	int i, c;
 
-	if( !PORTAL_INIT ) {
+	if ( !PORTAL_INIT ) {
 		PORTAL_INIT = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
 	}
 
 	PORTAL_AMBIENCE--;
-	if( PORTAL_AMBIENCE <= 0 ) {
+	if ( PORTAL_AMBIENCE <= 0 ) {
 		PORTAL_AMBIENCE = TICKS_PER_SECOND * 2;
 		playSoundEntityLocal( my, 154, 128 );
 	}
@@ -129,7 +129,7 @@ void actPortal(Entity *my) {
 	my->yaw += 0.01; // rotate slowly on my axis
 	my->sprite = 254 + (my->ticks / 20) % 4; // animate
 
-	if( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT ) {
 		return;
 	}
 
@@ -155,33 +155,33 @@ void actPortal(Entity *my) {
 					messagePlayer(i, language[511]);
 				}
 				loadnextlevel = TRUE;
-				if( secretlevel ) {
-					switch( currentlevel ) {
+				if ( secretlevel ) {
+					switch ( currentlevel ) {
 						case 9: {
 							;
 							bool visiblegrave = FALSE;
 							node_t *node;
-							for( node = map.entities->first; node != NULL; node = node->next ) {
+							for ( node = map.entities->first; node != NULL; node = node->next ) {
 								Entity *entity = (Entity *)node->element;
-								if( entity->sprite == 224 && !entity->flags[INVISIBLE] ) {
+								if ( entity->sprite == 224 && !entity->flags[INVISIBLE] ) {
 									visiblegrave = TRUE;
 									break;
 								}
 							}
-							if( visiblegrave )
-								for( c = 0; c < MAXPLAYERS; c++ ) {
+							if ( visiblegrave )
+								for ( c = 0; c < MAXPLAYERS; c++ ) {
 									steamAchievementClient(c, "BARONY_ACH_ROBBING_THE_CRADLE");
 								}
 							break;
 						}
 						case 14:
-							for( c = 0; c < MAXPLAYERS; c++ ) {
+							for ( c = 0; c < MAXPLAYERS; c++ ) {
 								steamAchievementClient(c, "BARONY_ACH_THESEUS_LEGACY");
 							}
 							break;
 					}
 				}
-				if( !PORTAL_NOTSECRET ) {
+				if ( !PORTAL_NOTSECRET ) {
 					secretlevel = (secretlevel == FALSE);  // toggle level lists
 				}
 				return;
@@ -197,15 +197,15 @@ void actWinningPortal(Entity *my) {
 	double dist;
 	int i, c;
 
-	if( multiplayer != CLIENT ) {
-		if( my->flags[INVISIBLE] ) {
+	if ( multiplayer != CLIENT ) {
+		if ( my->flags[INVISIBLE] ) {
 			node_t *node;
-			for( node = map.entities->first; node != NULL; node = node->next ) {
+			for ( node = map.entities->first; node != NULL; node = node->next ) {
 				Entity *entity = (Entity *)node->element;
-				if( entity->behavior == &actMonster ) {
+				if ( entity->behavior == &actMonster ) {
 					Stat *stats = entity->getStats();
-					if( stats ) {
-						if( stats->type == LICH || stats->type == DEVIL ) {
+					if ( stats ) {
+						if ( stats->type == LICH || stats->type == DEVIL ) {
 							return;
 						}
 					}
@@ -214,18 +214,18 @@ void actWinningPortal(Entity *my) {
 			my->flags[INVISIBLE] = FALSE;
 		}
 	} else {
-		if( my->flags[INVISIBLE] ) {
+		if ( my->flags[INVISIBLE] ) {
 			return;
 		}
 	}
 
-	if( !PORTAL_INIT ) {
+	if ( !PORTAL_INIT ) {
 		PORTAL_INIT = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
 	}
 
 	PORTAL_AMBIENCE--;
-	if( PORTAL_AMBIENCE <= 0 ) {
+	if ( PORTAL_AMBIENCE <= 0 ) {
 		PORTAL_AMBIENCE = TICKS_PER_SECOND * 2;
 		playSoundEntityLocal( my, 154, 128 );
 	}
@@ -233,7 +233,7 @@ void actWinningPortal(Entity *my) {
 	my->yaw += 0.01; // rotate slowly on my axis
 	my->sprite = 278 + (my->ticks / 20) % 4; // animate
 
-	if( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT ) {
 		return;
 	}
 
@@ -254,9 +254,9 @@ void actWinningPortal(Entity *my) {
 					}
 				}
 				victory = PORTAL_VICTORYTYPE;
-				if( multiplayer == SERVER ) {
-					for( c = 0; c < MAXPLAYERS; c++ ) {
-						if( client_disconnected[c] == TRUE ) {
+				if ( multiplayer == SERVER ) {
+					for ( c = 0; c < MAXPLAYERS; c++ ) {
+						if ( client_disconnected[c] == TRUE ) {
 							continue;
 						}
 						strcpy((char *)net_packet->data, "WING");
@@ -270,7 +270,7 @@ void actWinningPortal(Entity *my) {
 				subwindow = 0;
 				introstage = 5; // prepares win game sequence
 				fadeout = TRUE;
-				if( !intro ) {
+				if ( !intro ) {
 					pauseGame(2, FALSE);
 				}
 				return;

@@ -241,8 +241,8 @@ hit_t hit;
 
 int longestline(char *str) {
 	int c, x = 0, result = 0;
-	for( c = 0; c < strlen(str); c++ ) {
-		if( str[c] == 10 ) {
+	for ( c = 0; c < strlen(str); c++ ) {
+		if ( str[c] == 10 ) {
 			x = 0;
 			continue;
 		}
@@ -324,7 +324,7 @@ void printlog(char *str, ...) {
 	strftime( buffer, 32, "%H-%M-%S", tm_info );
 
 	// print to the log
-	if( newstr[strlen(newstr) - 1] != '\n' ) {
+	if ( newstr[strlen(newstr) - 1] != '\n' ) {
 		int c = strlen(newstr);
 		newstr[c] = '\n';
 		newstr[c + 1] = 0;

@@ -21,21 +21,21 @@ void rebuildShopInventory() {
 	//Count number of items.
 	int c = 0;
 	node_t *node = nullptr;
-	for( node = shopInv->first; node != NULL; node = node->next ) {
+	for ( node = shopInv->first; node != NULL; node = node->next ) {
 		Item *item = (Item *) node->element;
-		if( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
+		if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
 			continue;
-		} else if( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
+		} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
 			continue;
-		} else if( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
+		} else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
 			continue;
-		} else if( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
+		} else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
 			continue;
-		} else if( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
+		} else if ( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
 			continue;
-		} else if( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
+		} else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
 			continue;
-		} else if( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
+		} else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
 			continue;
 		}
 		c++;
@@ -43,35 +43,35 @@ void rebuildShopInventory() {
 	//Sanitize item scroll.
 	shopitemscroll = std::max(0, std::min(shopitemscroll, c - 4));
 	//Clear out currently displayed items.
-	for( c = 0; c < 4; c++ ) {
+	for ( c = 0; c < 4; c++ ) {
 		shopinvitems[c] = NULL;
 	}
 	//Display the items.
 	c = 0;
-	for( node = shopInv->first; node != NULL; node = node->next ) {
+	for ( node = shopInv->first; node != NULL; node = node->next ) {
 		Item *item = (Item *) node->element;
 		if (item) {
-			if( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
+			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
 				continue;
-			} else if( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
+			} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
 				continue;
-			} else if( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
+			} else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
 				continue;
-			} else if( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
+			} else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
 				continue;
-			} else if( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
+			} else if ( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
 				continue;
-			} else if( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
+			} else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
 				continue;
-			} else if( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
+			} else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
 				continue;
 			}
 			c++;
-			if( c <= shopitemscroll ) {
+			if ( c <= shopitemscroll ) {
 				continue;
 			}
 			shopinvitems[c - shopitemscroll - 1] = item;
-			if( c > 3 + shopitemscroll ) {
+			if ( c > 3 + shopitemscroll ) {
 				break;
 			}
 		}
@@ -181,7 +181,7 @@ void updateShopWindow() {
 	node_t *node;
 	int c;
 
-	if( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT ) {
 		Entity *entity = uidToEntity(shopkeeper);
 		if (entity) {
 			Stat *stats = entity->getStats();
@@ -200,20 +200,20 @@ void updateShopWindow() {
 	pos.x = x;
 	pos.y = y;
 	drawImage(inventory_bmp, NULL, &pos);
-	if( mousestatus[SDL_BUTTON_LEFT] ) {
-		if( omousey >= y && omousey < y + 16 ) {
-			if( omousex >= x + 12 && omousex < x + inventory_bmp->w - 12 ) {
+	if ( mousestatus[SDL_BUTTON_LEFT] ) {
+		if ( omousey >= y && omousey < y + 16 ) {
+			if ( omousex >= x + 12 && omousex < x + inventory_bmp->w - 12 ) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				shopinventorycategory = (omousex - x - 12) / button_bmp->w;
 			}
-		} else if( omousey >= y + 16 && omousey < y + 52 ) {
-			if( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 ) {
+		} else if ( omousey >= y + 16 && omousey < y + 52 ) {
+			if ( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 ) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				buttonclick = 10;
 				shopitemscroll--;
 			}
-		} else if( omousey >= y + 52 && omousey < y + 88 ) {
-			if( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 ) {
+		} else if ( omousey >= y + 52 && omousey < y + 88 ) {
+			if ( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 ) {
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				buttonclick = 11;
 				shopitemscroll++;
@@ -222,12 +222,12 @@ void updateShopWindow() {
 	}
 
 	// mousewheel
-	if( omousex >= x + 12 && omousex < x + inventory_bmp->w - 28 ) {
-		if( omousey >= 16 && omousey < y + inventory_bmp->h - 8 ) {
-			if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
+	if ( omousex >= x + 12 && omousex < x + inventory_bmp->w - 28 ) {
+		if ( omousey >= 16 && omousey < y + inventory_bmp->h - 8 ) {
+			if ( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 				shopitemscroll++;
-			} else if( mousestatus[SDL_BUTTON_WHEELUP] ) {
+			} else if ( mousestatus[SDL_BUTTON_WHEELUP] ) {
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
 				shopitemscroll--;
 			}
@@ -235,7 +235,7 @@ void updateShopWindow() {
 	}
 
 	// inventory up button
-	if( buttonclick == 10 ) {
+	if ( buttonclick == 10 ) {
 		pos.x = x + inventory_bmp->w - 28;
 		pos.y = y + 16;
 		pos.w = 0;
@@ -243,7 +243,7 @@ void updateShopWindow() {
 		drawImage(invup_bmp, NULL, &pos);
 	}
 	// inventory down button
-	if( buttonclick == 11 ) {
+	if ( buttonclick == 11 ) {
 		pos.x = x + inventory_bmp->w - 28;
 		pos.y = y + 52;
 		pos.w = 0;
@@ -254,7 +254,7 @@ void updateShopWindow() {
 	pos.y = y;
 	pos.w = 0;
 	pos.h = 0;
-	if( shopinventorycategory <= 6 ) {
+	if ( shopinventorycategory <= 6 ) {
 		drawImage(button_bmp, NULL, &pos);
 	} else {
 		drawImage(smallbutton_bmp, NULL, &pos);
@@ -278,31 +278,31 @@ void updateShopWindow() {
 
 	int y3 = y + 22;
 	c = 0;
-	for( node = shopInv->first; node != NULL; node = node->next ) {
+	for ( node = shopInv->first; node != NULL; node = node->next ) {
 		Item *item = (Item *) node->element;
 		if (item) {
-			if( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
+			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
 				continue;
-			} else if( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
+			} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
 				continue;
-			} else if( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
+			} else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
 				continue;
-			} else if( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
+			} else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
 				continue;
-			} else if( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
+			} else if ( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
 				continue;
-			} else if( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
+			} else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
 				continue;
-			} else if( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
+			} else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
 				continue;
 			}
 			c++;
-			if( c <= shopitemscroll ) {
+			if ( c <= shopitemscroll ) {
 				continue;
 			}
 			char tempstr[64] = { 0 };
 			strncpy(tempstr, item->description(), 42);
-			if( strlen(tempstr) == 42 ) {
+			if ( strlen(tempstr) == 42 ) {
 				strcat(tempstr, " ...");
 			}
 			ttfPrintText(ttf8, x + 12 + 36, y3, tempstr);
@@ -313,7 +313,7 @@ void updateShopWindow() {
 			pos.h = 16;
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			y3 += 18;
-			if( c > 3 + shopitemscroll ) {
+			if ( c > 3 + shopitemscroll ) {
 				break;
 			}
 		}
@@ -323,7 +323,7 @@ void updateShopWindow() {
 	ttfPrintTextFormatted( ttf16, x1 + 16, y2 - 32, language[357], stats[clientnum]->GOLD );
 
 	// chitchat
-	if( (ticks - shoptimer) % 600 == 0 ) {
+	if ( (ticks - shoptimer) % 600 == 0 ) {
 		shopspeech = language[216 + rand() % NUMCHITCHAT];
 		shoptimer--;
 	}
@@ -334,7 +334,7 @@ void updateShopWindow() {
 	} else {
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 32, shopspeech, 0 );
 	}
-	if( !strcmp(shopspeech, language[194]) || !strcmp(shopspeech, language[195]) || !strcmp(shopspeech, language[196]) ) {
+	if ( !strcmp(shopspeech, language[194]) || !strcmp(shopspeech, language[195]) || !strcmp(shopspeech, language[196]) ) {
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 64, language[358], shopkeepername, language[184 + shopkeepertype] );
 	}
 
@@ -346,9 +346,9 @@ void updateShopWindow() {
 	drawRect(&pos, 0, 255);
 
 	// draw shopkeeper
-	if( uidToEntity(shopkeeper) ) {
+	if ( uidToEntity(shopkeeper) ) {
 		Entity *entity = uidToEntity(shopkeeper);
-		if( !entity->flags[INVISIBLE] ) {
+		if ( !entity->flags[INVISIBLE] ) {
 			pos.x = x1 + 16;
 			pos.y = y1 + 16;
 			pos.w = 160;

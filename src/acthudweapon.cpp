@@ -61,31 +61,31 @@ void actHudArm(Entity *my) {
 	if (stats[clientnum]->gloves == nullptr) {
 		noGloves = TRUE;
 	} else {
-		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
 			my->sprite = 132 + stats[clientnum]->sex;
-		} else if( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
+		} else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION ) {
 			my->sprite = 323 + stats[clientnum]->sex;
-		} else if( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
+		} else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH ) {
 			my->sprite = 140 + stats[clientnum]->sex;
 		} else {
 			noGloves = TRUE;
 		}
 	}
-	if( noGloves ) {
-		if( stats[clientnum]->appearance / 6 == 0 ) {
-			if( stats[clientnum]->sex == FEMALE ) {
+	if ( noGloves ) {
+		if ( stats[clientnum]->appearance / 6 == 0 ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 121;
 			} else {
 				my->sprite = 109;
 			}
-		} else if( stats[clientnum]->appearance / 6 == 1 ) {
-			if( stats[clientnum]->sex == FEMALE ) {
+		} else if ( stats[clientnum]->appearance / 6 == 1 ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 350;
 			} else {
 				my->sprite = 337;
 			}
 		} else {
-			if( stats[clientnum]->sex == FEMALE ) {
+			if ( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 376;
 			} else {
 				my->sprite = 363;
@@ -143,13 +143,13 @@ void actHudWeapon(Entity *my) {
 	Entity *parent = hudarm;
 
 	// isn't active during intro/menu sequence
-	if( intro == TRUE ) {
+	if ( intro == TRUE ) {
 		my->flags[INVISIBLE] = TRUE;
 		return;
 	}
 
-	if( multiplayer == CLIENT ) {
-		if( stats[clientnum]->HP <= 0 ) {
+	if ( multiplayer == CLIENT ) {
+		if ( stats[clientnum]->HP <= 0 ) {
 			my->flags[INVISIBLE] = TRUE;
 			return;
 		}
@@ -179,28 +179,28 @@ void actHudWeapon(Entity *my) {
 	}
 
 	// reduce throwGimpTimer (allows player to throw items again)
-	if( throwGimpTimer > 0 ) {
+	if ( throwGimpTimer > 0 ) {
 		throwGimpTimer--;
 	}
 
 	// check levitating value
 	bool levitating = FALSE;
-	if( stats[clientnum]->EFFECTS[EFF_LEVITATING] == TRUE ) {
+	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == TRUE ) {
 		levitating = TRUE;
 	}
-	if( stats[clientnum]->ring != NULL )
-		if( stats[clientnum]->ring->type == RING_LEVITATION ) {
+	if ( stats[clientnum]->ring != NULL )
+		if ( stats[clientnum]->ring->type == RING_LEVITATION ) {
 			levitating = TRUE;
 		}
-	if( stats[clientnum]->shoes != NULL )
-		if( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION ) {
+	if ( stats[clientnum]->shoes != NULL )
+		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION ) {
 			levitating = TRUE;
 		}
 
 	// water walking boots
 	bool waterwalkingboots = FALSE;
 	if (stats[clientnum]->shoes != nullptr)
-		if( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING ) {
+		if ( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING ) {
 			waterwalkingboots = TRUE;
 		}
 
@@ -240,8 +240,8 @@ void actHudWeapon(Entity *my) {
 				parent->flags[INVISIBLE] = FALSE;
 			}
 		} else {
-			if( stats[clientnum]->weapon ) {
-				if( itemModelFirstperson(stats[clientnum]->weapon) != itemModel(stats[clientnum]->weapon) ) {
+			if ( stats[clientnum]->weapon ) {
+				if ( itemModelFirstperson(stats[clientnum]->weapon) != itemModel(stats[clientnum]->weapon) ) {
 					my->scalex = 0.5f;
 					my->scaley = 0.5f;
 					my->scalez = 0.5f;
@@ -253,12 +253,12 @@ void actHudWeapon(Entity *my) {
 			}
 			my->sprite = itemModelFirstperson(stats[clientnum]->weapon);
 #ifdef SOUND
-			if( bowDrawingSoundPlaying && bowDrawingSound ) {
+			if ( bowDrawingSoundPlaying && bowDrawingSound ) {
 				unsigned int position = 0;
 				FMOD_Channel_GetPosition(bowDrawingSound, &position, FMOD_TIMEUNIT_MS);
 				unsigned int length = 0;
 				FMOD_Sound_GetLength(sounds[246], &length, FMOD_TIMEUNIT_MS);
-				if( position >= length / 4 ) {
+				if ( position >= length / 4 ) {
 					my->sprite++;
 				}
 			}
@@ -271,14 +271,14 @@ void actHudWeapon(Entity *my) {
 				}
 			}
 #endif
-			if( itemCategory(stats[clientnum]->weapon) == SPELLBOOK ) {
+			if ( itemCategory(stats[clientnum]->weapon) == SPELLBOOK ) {
 				my->flags[INVISIBLE] = TRUE;
-				if( parent != NULL ) {
+				if ( parent != NULL ) {
 					parent->flags[INVISIBLE] = FALSE;
 				}
 			} else {
 				my->flags[INVISIBLE] = FALSE;
-				if( parent != NULL ) {
+				if ( parent != NULL ) {
 					parent->flags[INVISIBLE] = TRUE;
 				}
 			}
@@ -293,14 +293,14 @@ void actHudWeapon(Entity *my) {
 	}
 
 	bool rangedweapon = FALSE;
-	if( stats[clientnum]->weapon ) {
-		if( stats[clientnum]->weapon->type == SLING ) {
+	if ( stats[clientnum]->weapon ) {
+		if ( stats[clientnum]->weapon->type == SLING ) {
 			rangedweapon = TRUE;
-		} else if( stats[clientnum]->weapon->type == SHORTBOW ) {
+		} else if ( stats[clientnum]->weapon->type == SHORTBOW ) {
 			rangedweapon = TRUE;
-		} else if( stats[clientnum]->weapon->type == CROSSBOW ) {
+		} else if ( stats[clientnum]->weapon->type == CROSSBOW ) {
 			rangedweapon = TRUE;
-		} else if( stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
+		} else if ( stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
 			rangedweapon = TRUE;
 		}
 	}
@@ -311,9 +311,9 @@ void actHudWeapon(Entity *my) {
 	}
 
 	// weapon switch animation
-	if( weaponSwitch ) {
+	if ( weaponSwitch ) {
 		weaponSwitch = FALSE;
-		if( !HUDWEAPON_CHOP ) {
+		if ( !HUDWEAPON_CHOP ) {
 			HUDWEAPON_MOVEZ = 2;
 			HUDWEAPON_MOVEX = -.5;
 			HUDWEAPON_ROLL = -PI / 2;
@@ -322,12 +322,12 @@ void actHudWeapon(Entity *my) {
 
 	// bow drawing sound check
 #ifdef SOUND
-	if( bowDrawingSound ) {
+	if ( bowDrawingSound ) {
 		FMOD_BOOL tempBool = bowDrawingSoundPlaying;
 		FMOD_Channel_IsPlaying(bowDrawingSound, &bowDrawingSoundPlaying);
-		if( tempBool && !bowDrawingSoundPlaying ) {
+		if ( tempBool && !bowDrawingSoundPlaying ) {
 			bowFire = TRUE;
-		} else if( !tempBool ) {
+		} else if ( !tempBool ) {
 			bowFire = FALSE;
 		}
 	} else {
@@ -335,12 +335,12 @@ void actHudWeapon(Entity *my) {
 		bowFire = FALSE;
 	}
 #else
-	if( bowDrawingSound ) {
+	if ( bowDrawingSound ) {
 		bool tempBool = bowDrawingSoundPlaying;
 		bowDrawingSoundPlaying = (SDL_GetTicks() - bowDrawingStart) < bowDrawingLength;
-		if( tempBool && !bowDrawingSoundPlaying ) {
+		if ( tempBool && !bowDrawingSoundPlaying ) {
 			bowFire = TRUE;
-		} else if( !tempBool ) {
+		} else if ( !tempBool ) {
 			bowFire = FALSE;
 		}
 	} else {
@@ -350,21 +350,21 @@ void actHudWeapon(Entity *my) {
 #endif
 
 	// main animation
-	if( HUDWEAPON_CHOP == 0 ) {
-		if( swingweapon ) {
+	if ( HUDWEAPON_CHOP == 0 ) {
+		if ( swingweapon ) {
 			if (cast_animation.active) {
 				messagePlayer(clientnum, language[1301]);
 				spellcastingAnimationManager_deactivate(&cast_animation);
 			}
-			if( stats[clientnum]->weapon == NULL ) {
+			if ( stats[clientnum]->weapon == NULL ) {
 				HUDWEAPON_CHOP = 7; // punch
 			} else {
-				if( itemCategory(stats[clientnum]->weapon) == WEAPON || stats[clientnum]->weapon->type == TOOL_PICKAXE ) {
-					if( stats[clientnum]->weapon->type == IRON_SPEAR || stats[clientnum]->weapon->type == ARTIFACT_SPEAR ) {
+				if ( itemCategory(stats[clientnum]->weapon) == WEAPON || stats[clientnum]->weapon->type == TOOL_PICKAXE ) {
+					if ( stats[clientnum]->weapon->type == IRON_SPEAR || stats[clientnum]->weapon->type == ARTIFACT_SPEAR ) {
 						HUDWEAPON_CHOP = 7; // spear lunges
-					} else if( rangedweapon ) {
-						if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
-							if( !stats[clientnum]->defending && !throwGimpTimer ) {
+					} else if ( rangedweapon ) {
+						if ( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
+							if ( !stats[clientnum]->defending && !throwGimpTimer ) {
 								// bows need to be drawn back
 								if (!bowDrawingSoundPlaying) {
 									if (bowFire) {
@@ -381,34 +381,34 @@ void actHudWeapon(Entity *my) {
 #endif
 									}
 								}
-								if( HUDWEAPON_MOVEX > 0 ) {
+								if ( HUDWEAPON_MOVEX > 0 ) {
 									HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX - 1, 0.0);
-								} else if( HUDWEAPON_MOVEX < 0 ) {
+								} else if ( HUDWEAPON_MOVEX < 0 ) {
 									HUDWEAPON_MOVEX = std::min(HUDWEAPON_MOVEX + 1, 0.0);
 								}
-								if( HUDWEAPON_MOVEY > -1 ) {
+								if ( HUDWEAPON_MOVEY > -1 ) {
 									HUDWEAPON_MOVEY = std::max(HUDWEAPON_MOVEY - 1, -1.0);
-								} else if( HUDWEAPON_MOVEY < -1 ) {
+								} else if ( HUDWEAPON_MOVEY < -1 ) {
 									HUDWEAPON_MOVEY = std::min(HUDWEAPON_MOVEY + 1, -1.0);
 								}
-								if( HUDWEAPON_MOVEZ > 0 ) {
+								if ( HUDWEAPON_MOVEZ > 0 ) {
 									HUDWEAPON_MOVEZ = std::max(HUDWEAPON_MOVEZ - 1, 0.0);
-								} else if( HUDWEAPON_MOVEZ < 0 ) {
+								} else if ( HUDWEAPON_MOVEZ < 0 ) {
 									HUDWEAPON_MOVEZ = std::min(HUDWEAPON_MOVEZ + 1, 0.0);
 								}
-								if( HUDWEAPON_YAW > -.1 ) {
+								if ( HUDWEAPON_YAW > -.1 ) {
 									HUDWEAPON_YAW = std::max(HUDWEAPON_YAW - .1, -.1);
-								} else if( HUDWEAPON_YAW < -.1 ) {
+								} else if ( HUDWEAPON_YAW < -.1 ) {
 									HUDWEAPON_YAW = std::min(HUDWEAPON_YAW + .1, -.1);
 								}
-								if( HUDWEAPON_PITCH > 0 ) {
+								if ( HUDWEAPON_PITCH > 0 ) {
 									HUDWEAPON_PITCH = std::max(HUDWEAPON_PITCH - .1, 0.0);
-								} else if( HUDWEAPON_PITCH < 0 ) {
+								} else if ( HUDWEAPON_PITCH < 0 ) {
 									HUDWEAPON_PITCH = std::min(HUDWEAPON_PITCH + .1, 0.0);
 								}
-								if( HUDWEAPON_ROLL > 0 ) {
+								if ( HUDWEAPON_ROLL > 0 ) {
 									HUDWEAPON_ROLL = std::max(HUDWEAPON_ROLL - .1, 0.0);
-								} else if( HUDWEAPON_ROLL < 0 ) {
+								} else if ( HUDWEAPON_ROLL < 0 ) {
 									HUDWEAPON_ROLL = std::min(HUDWEAPON_ROLL + .1, 0.0);
 								}
 							}
@@ -461,145 +461,145 @@ void actHudWeapon(Entity *my) {
 				}
 			}
 		} else {
-			if( !stats[clientnum]->defending ) {
-				if( stats[clientnum]->weapon ) {
-					if( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
+			if ( !stats[clientnum]->defending ) {
+				if ( stats[clientnum]->weapon ) {
+					if ( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW ) {
 #ifdef SOUND
-						if( bowDrawingSoundPlaying && bowDrawingSound ) {
+						if ( bowDrawingSoundPlaying && bowDrawingSound ) {
 							FMOD_Channel_Stop(bowDrawingSound);
 							bowDrawingSoundPlaying = 0;
 							bowDrawingSound = NULL;
 						}
 #else
-						if( bowDrawingSoundPlaying && bowDrawingSound ) {
+						if ( bowDrawingSoundPlaying && bowDrawingSound ) {
 							bowDrawingSoundPlaying = FALSE;
 							bowDrawingSound = FALSE;
 						}
 
 #endif
-						if( HUDWEAPON_MOVEX > 0 ) {
+						if ( HUDWEAPON_MOVEX > 0 ) {
 							HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX - 1, 0.0);
-						} else if( HUDWEAPON_MOVEX < 0 ) {
+						} else if ( HUDWEAPON_MOVEX < 0 ) {
 							HUDWEAPON_MOVEX = std::min(HUDWEAPON_MOVEX + 1, 0.0);
 						}
-						if( HUDWEAPON_MOVEY > 1 ) {
+						if ( HUDWEAPON_MOVEY > 1 ) {
 							HUDWEAPON_MOVEY = std::max(HUDWEAPON_MOVEY - 1, 1.0);
-						} else if( HUDWEAPON_MOVEY < 1 ) {
+						} else if ( HUDWEAPON_MOVEY < 1 ) {
 							HUDWEAPON_MOVEY = std::min(HUDWEAPON_MOVEY + 1, 1.0);
 						}
-						if( HUDWEAPON_MOVEZ > 0 ) {
+						if ( HUDWEAPON_MOVEZ > 0 ) {
 							HUDWEAPON_MOVEZ = std::max(HUDWEAPON_MOVEZ - 1, 0.0);
-						} else if( HUDWEAPON_MOVEZ < 0 ) {
+						} else if ( HUDWEAPON_MOVEZ < 0 ) {
 							HUDWEAPON_MOVEZ = std::min(HUDWEAPON_MOVEZ + 1, 0.0);
 						}
-						if( HUDWEAPON_YAW > -.1 ) {
+						if ( HUDWEAPON_YAW > -.1 ) {
 							HUDWEAPON_YAW = std::max(HUDWEAPON_YAW - .1, -.1);
-						} else if( HUDWEAPON_YAW < -.1 ) {
+						} else if ( HUDWEAPON_YAW < -.1 ) {
 							HUDWEAPON_YAW = std::min(HUDWEAPON_YAW + .1, -.1);
 						}
-						if( HUDWEAPON_PITCH > 0 ) {
+						if ( HUDWEAPON_PITCH > 0 ) {
 							HUDWEAPON_PITCH = std::max(HUDWEAPON_PITCH - .1, 0.0);
-						} else if( HUDWEAPON_PITCH < 0 ) {
+						} else if ( HUDWEAPON_PITCH < 0 ) {
 							HUDWEAPON_PITCH = std::min(HUDWEAPON_PITCH + .1, 0.0);
 						}
-						if( HUDWEAPON_ROLL > -PI / 3 ) {
+						if ( HUDWEAPON_ROLL > -PI / 3 ) {
 							HUDWEAPON_ROLL = std::max(HUDWEAPON_ROLL - .1, -PI / 3);
-						} else if( HUDWEAPON_ROLL < -PI / 3 ) {
+						} else if ( HUDWEAPON_ROLL < -PI / 3 ) {
 							HUDWEAPON_ROLL = std::min(HUDWEAPON_ROLL + .1, -PI / 3);
 						}
 					} else {
-						if( HUDWEAPON_MOVEX > 0 ) {
+						if ( HUDWEAPON_MOVEX > 0 ) {
 							HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX - 1, 0.0);
-						} else if( HUDWEAPON_MOVEX < 0 ) {
+						} else if ( HUDWEAPON_MOVEX < 0 ) {
 							HUDWEAPON_MOVEX = std::min(HUDWEAPON_MOVEX + 1, 0.0);
 						}
-						if( HUDWEAPON_MOVEY > 0 ) {
+						if ( HUDWEAPON_MOVEY > 0 ) {
 							HUDWEAPON_MOVEY = std::max(HUDWEAPON_MOVEY - 1, 0.0);
-						} else if( HUDWEAPON_MOVEY < 0 ) {
+						} else if ( HUDWEAPON_MOVEY < 0 ) {
 							HUDWEAPON_MOVEY = std::min(HUDWEAPON_MOVEY + 1, 0.0);
 						}
-						if( HUDWEAPON_MOVEZ > 0 ) {
+						if ( HUDWEAPON_MOVEZ > 0 ) {
 							HUDWEAPON_MOVEZ = std::max(HUDWEAPON_MOVEZ - 1, 0.0);
-						} else if( HUDWEAPON_MOVEZ < 0 ) {
+						} else if ( HUDWEAPON_MOVEZ < 0 ) {
 							HUDWEAPON_MOVEZ = std::min(HUDWEAPON_MOVEZ + 1, 0.0);
 						}
-						if( HUDWEAPON_YAW > -.1 ) {
+						if ( HUDWEAPON_YAW > -.1 ) {
 							HUDWEAPON_YAW = std::max(HUDWEAPON_YAW - .1, -.1);
-						} else if( HUDWEAPON_YAW < -.1 ) {
+						} else if ( HUDWEAPON_YAW < -.1 ) {
 							HUDWEAPON_YAW = std::min(HUDWEAPON_YAW + .1, -.1);
 						}
-						if( HUDWEAPON_PITCH > 0 ) {
+						if ( HUDWEAPON_PITCH > 0 ) {
 							HUDWEAPON_PITCH = std::max(HUDWEAPON_PITCH - .1, 0.0);
-						} else if( HUDWEAPON_PITCH < 0 ) {
+						} else if ( HUDWEAPON_PITCH < 0 ) {
 							HUDWEAPON_PITCH = std::min(HUDWEAPON_PITCH + .1, 0.0);
 						}
-						if( HUDWEAPON_ROLL > 0 ) {
+						if ( HUDWEAPON_ROLL > 0 ) {
 							HUDWEAPON_ROLL = std::max(HUDWEAPON_ROLL - .1, 0.0);
-						} else if( HUDWEAPON_ROLL < 0 ) {
+						} else if ( HUDWEAPON_ROLL < 0 ) {
 							HUDWEAPON_ROLL = std::min(HUDWEAPON_ROLL + .1, 0.0);
 						}
 					}
 				}
 			} else {
-				if( HUDWEAPON_MOVEX > 0 ) {
+				if ( HUDWEAPON_MOVEX > 0 ) {
 					HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX - 1, 0.0);
-				} else if( HUDWEAPON_MOVEX < 0 ) {
+				} else if ( HUDWEAPON_MOVEX < 0 ) {
 					HUDWEAPON_MOVEX = std::min(HUDWEAPON_MOVEX + 1, 0.0);
 				}
-				if( HUDWEAPON_MOVEY > 1 ) {
+				if ( HUDWEAPON_MOVEY > 1 ) {
 					HUDWEAPON_MOVEY = std::max(HUDWEAPON_MOVEY - 1, 1.0);
-				} else if( HUDWEAPON_MOVEY < 1 ) {
+				} else if ( HUDWEAPON_MOVEY < 1 ) {
 					HUDWEAPON_MOVEY = std::min(HUDWEAPON_MOVEY + 1, 1.0);
 				}
-				if( HUDWEAPON_MOVEZ > 1 ) {
+				if ( HUDWEAPON_MOVEZ > 1 ) {
 					HUDWEAPON_MOVEZ = std::max(HUDWEAPON_MOVEZ - 1, 1.0);
-				} else if( HUDWEAPON_MOVEZ < 1 ) {
+				} else if ( HUDWEAPON_MOVEZ < 1 ) {
 					HUDWEAPON_MOVEZ = std::min(HUDWEAPON_MOVEZ + 1, 1.0);
 				}
-				if( HUDWEAPON_YAW > .1 ) {
+				if ( HUDWEAPON_YAW > .1 ) {
 					HUDWEAPON_YAW = std::max(HUDWEAPON_YAW - .1, .1);
-				} else if( HUDWEAPON_YAW < .1 ) {
+				} else if ( HUDWEAPON_YAW < .1 ) {
 					HUDWEAPON_YAW = std::min(HUDWEAPON_YAW + .1, .1);
 				}
-				if( HUDWEAPON_PITCH > PI / 6 ) {
+				if ( HUDWEAPON_PITCH > PI / 6 ) {
 					HUDWEAPON_PITCH = std::max(HUDWEAPON_PITCH - .1, PI / 6);
-				} else if( HUDWEAPON_PITCH < PI / 6 ) {
+				} else if ( HUDWEAPON_PITCH < PI / 6 ) {
 					HUDWEAPON_PITCH = std::min(HUDWEAPON_PITCH + .1, PI / 6);
 				}
-				if( HUDWEAPON_ROLL > PI / 6 ) {
+				if ( HUDWEAPON_ROLL > PI / 6 ) {
 					HUDWEAPON_ROLL = std::max(HUDWEAPON_ROLL - .1, PI / 6);
-				} else if( HUDWEAPON_ROLL < PI / 6 ) {
+				} else if ( HUDWEAPON_ROLL < PI / 6 ) {
 					HUDWEAPON_ROLL = std::min(HUDWEAPON_ROLL + .1, PI / 6);
 				}
 			}
 		}
-	} else if( HUDWEAPON_CHOP == 1 ) { // prepare for first swing
+	} else if ( HUDWEAPON_CHOP == 1 ) { // prepare for first swing
 		HUDWEAPON_YAW -= .25;
-		if( HUDWEAPON_YAW < 0 ) {
+		if ( HUDWEAPON_YAW < 0 ) {
 			HUDWEAPON_YAW = 0;
 		}
 		HUDWEAPON_PITCH -= .1;
-		if( HUDWEAPON_PITCH < -PI / 4) {
+		if ( HUDWEAPON_PITCH < -PI / 4) {
 			result = -PI / 4;
 			HUDWEAPON_PITCH = result;
 		}
 		HUDWEAPON_ROLL += .25;
-		if( HUDWEAPON_ROLL > 0 ) {
+		if ( HUDWEAPON_ROLL > 0 ) {
 			HUDWEAPON_ROLL = 0;
 		}
 		HUDWEAPON_MOVEX -= .35;
-		if( HUDWEAPON_MOVEX < -1 ) {
+		if ( HUDWEAPON_MOVEX < -1 ) {
 			HUDWEAPON_MOVEX = -1;
 		}
 		HUDWEAPON_MOVEY -= .45;
-		if( HUDWEAPON_MOVEY < -2 ) {
+		if ( HUDWEAPON_MOVEY < -2 ) {
 			HUDWEAPON_MOVEY = -2;
 		}
 		HUDWEAPON_MOVEZ -= .65;
 		if (HUDWEAPON_MOVEZ < -6) {
 			HUDWEAPON_MOVEZ = -6;
 			if (HUDWEAPON_PITCH == result && HUDWEAPON_ROLL == 0 && HUDWEAPON_YAW == 0 && HUDWEAPON_MOVEX == -1 && HUDWEAPON_MOVEY == -2) {
-				if( !swingweapon ) {
+				if ( !swingweapon ) {
 					HUDWEAPON_CHOP++;
 					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE);
 					HUDWEAPON_CHARGE = 0;
@@ -612,27 +612,27 @@ void actHudWeapon(Entity *my) {
 				}
 			}
 		}
-	} else if( HUDWEAPON_CHOP == 2 ) { // first swing
+	} else if ( HUDWEAPON_CHOP == 2 ) { // first swing
 		HUDWEAPON_PITCH += .75;
-		if( HUDWEAPON_PITCH >= (PI * 3) / 4 ) {
+		if ( HUDWEAPON_PITCH >= (PI * 3) / 4 ) {
 			HUDWEAPON_PITCH = (PI * 3) / 4;
 		}
 		HUDWEAPON_MOVEX += 1;
-		if( HUDWEAPON_MOVEX > 4 ) {
+		if ( HUDWEAPON_MOVEX > 4 ) {
 			HUDWEAPON_MOVEX = 4;
 		}
 		HUDWEAPON_MOVEZ += .8;
-		if( HUDWEAPON_MOVEZ > 0 ) {
+		if ( HUDWEAPON_MOVEZ > 0 ) {
 			HUDWEAPON_MOVEZ = 0;
 			HUDWEAPON_CHOP++;
 		}
-	} else if( HUDWEAPON_CHOP == 3 ) { // return from first swing
-		if( swingweapon ) {
+	} else if ( HUDWEAPON_CHOP == 3 ) { // return from first swing
+		if ( swingweapon ) {
 			// another swing...
 			Item *item = stats[clientnum]->weapon;
-			if( item ) {
-				if( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM ) {
-					if( stats[clientnum]->weapon->type != TOOL_PICKAXE ) {
+			if ( item ) {
+				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM ) {
+					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE ) {
 						HUDWEAPON_CHOP = 4;
 					} else {
 						HUDWEAPON_CHOP = 1;
@@ -650,81 +650,81 @@ void actHudWeapon(Entity *my) {
 			}
 		}
 
-		if( stats[clientnum]->weapon != NULL ) {
-			if( rangedweapon ) {
-				if( HUDWEAPON_MOVEX > 0 ) {
+		if ( stats[clientnum]->weapon != NULL ) {
+			if ( rangedweapon ) {
+				if ( HUDWEAPON_MOVEX > 0 ) {
 					HUDWEAPON_MOVEX = std::max(HUDWEAPON_MOVEX - 1, 0.0);
-				} else if( HUDWEAPON_MOVEX < 0 ) {
+				} else if ( HUDWEAPON_MOVEX < 0 ) {
 					HUDWEAPON_MOVEX = std::min(HUDWEAPON_MOVEX + .1, 0.0);
 				}
-				if( HUDWEAPON_MOVEY > 0 ) {
+				if ( HUDWEAPON_MOVEY > 0 ) {
 					HUDWEAPON_MOVEY = std::max(HUDWEAPON_MOVEY - 1, 0.0);
-				} else if( HUDWEAPON_MOVEY < 0 ) {
+				} else if ( HUDWEAPON_MOVEY < 0 ) {
 					HUDWEAPON_MOVEY = std::min(HUDWEAPON_MOVEY + 1, 0.0);
 				}
-				if( HUDWEAPON_MOVEZ > 0 ) {
+				if ( HUDWEAPON_MOVEZ > 0 ) {
 					HUDWEAPON_MOVEZ = std::max(HUDWEAPON_MOVEZ - 1, 0.0);
-				} else if( HUDWEAPON_MOVEZ < 0 ) {
+				} else if ( HUDWEAPON_MOVEZ < 0 ) {
 					HUDWEAPON_MOVEZ = std::min(HUDWEAPON_MOVEZ + 1, 0.0);
 				}
-				if( HUDWEAPON_YAW > -.1 ) {
+				if ( HUDWEAPON_YAW > -.1 ) {
 					HUDWEAPON_YAW = std::max(HUDWEAPON_YAW - .1, -.1);
-				} else if( HUDWEAPON_YAW < -.1 ) {
+				} else if ( HUDWEAPON_YAW < -.1 ) {
 					HUDWEAPON_YAW = std::min(HUDWEAPON_YAW + .1, -.1);
 				}
-				if( HUDWEAPON_PITCH > 0 ) {
+				if ( HUDWEAPON_PITCH > 0 ) {
 					HUDWEAPON_PITCH = std::max(HUDWEAPON_PITCH - .1, 0.0);
-				} else if( HUDWEAPON_PITCH < 0 ) {
+				} else if ( HUDWEAPON_PITCH < 0 ) {
 					HUDWEAPON_PITCH = std::min(HUDWEAPON_PITCH + .1, 0.0);
 				}
-				if( HUDWEAPON_ROLL > 0 ) {
+				if ( HUDWEAPON_ROLL > 0 ) {
 					HUDWEAPON_ROLL = std::max(HUDWEAPON_ROLL - .1, 0.0);
-				} else if( HUDWEAPON_ROLL < 0 ) {
+				} else if ( HUDWEAPON_ROLL < 0 ) {
 					HUDWEAPON_ROLL = std::min(HUDWEAPON_ROLL + .1, 0.0);
 				}
 			} else {
 				HUDWEAPON_MOVEX -= .25;
-				if( HUDWEAPON_MOVEX < 0 ) {
+				if ( HUDWEAPON_MOVEX < 0 ) {
 					HUDWEAPON_MOVEX = 0;
 				}
 			}
 		} else {
 			HUDWEAPON_MOVEX -= .25;
-			if( HUDWEAPON_MOVEX < 0 ) {
+			if ( HUDWEAPON_MOVEX < 0 ) {
 				HUDWEAPON_MOVEX = 0;
 			}
 		}
 		HUDWEAPON_PITCH -= .15;
-		if( HUDWEAPON_PITCH < 0 ) {
+		if ( HUDWEAPON_PITCH < 0 ) {
 			HUDWEAPON_PITCH = 0;
 		}
 		HUDWEAPON_MOVEY += .45;
-		if( HUDWEAPON_MOVEY > 0 ) {
+		if ( HUDWEAPON_MOVEY > 0 ) {
 			HUDWEAPON_MOVEY = 0;
 		}
 		HUDWEAPON_MOVEZ -= .35;
-		if( HUDWEAPON_MOVEZ < 0 ) {
+		if ( HUDWEAPON_MOVEZ < 0 ) {
 			HUDWEAPON_MOVEZ = 0;
-			if( HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 ) {
+			if ( HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 ) {
 				HUDWEAPON_CHOP = 0;
 			}
 		}
-	} else if( HUDWEAPON_CHOP == 4 ) { // prepare for second swing
+	} else if ( HUDWEAPON_CHOP == 4 ) { // prepare for second swing
 		HUDWEAPON_YAW = 0;
 		HUDWEAPON_PITCH -= .25;
-		if( HUDWEAPON_PITCH < 0 ) {
+		if ( HUDWEAPON_PITCH < 0 ) {
 			HUDWEAPON_PITCH = 0;
 		}
 		HUDWEAPON_MOVEX -= .35;
-		if( HUDWEAPON_MOVEX < 0 ) {
+		if ( HUDWEAPON_MOVEX < 0 ) {
 			HUDWEAPON_MOVEX = 0;
 		}
 		HUDWEAPON_MOVEZ -= .75;
-		if( HUDWEAPON_MOVEZ < -4 ) {
+		if ( HUDWEAPON_MOVEZ < -4 ) {
 			HUDWEAPON_MOVEZ = -4;
 		}
 		HUDWEAPON_MOVEY -= .75;
-		if( HUDWEAPON_MOVEY < -6 ) {
+		if ( HUDWEAPON_MOVEY < -6 ) {
 			HUDWEAPON_MOVEY = -6;
 		}
 		HUDWEAPON_ROLL -= .25;
@@ -753,11 +753,11 @@ void actHudWeapon(Entity *my) {
 			HUDWEAPON_CHOP++;
 		}
 	} else if (HUDWEAPON_CHOP == 6) { // return from second swing
-		if( swingweapon ) {
+		if ( swingweapon ) {
 			// one more swing...
-			if( stats[clientnum]->weapon ) {
+			if ( stats[clientnum]->weapon ) {
 				type = stats[clientnum]->weapon->type;
-				if( type == BRONZE_SWORD || type == IRON_SWORD || type == STEEL_SWORD || type == ARTIFACT_SWORD || type == STEEL_HALBERD ) {
+				if ( type == BRONZE_SWORD || type == IRON_SWORD || type == STEEL_SWORD || type == ARTIFACT_SWORD || type == STEEL_HALBERD ) {
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				} else {
 					HUDWEAPON_CHOP = 1;  // everything else can't
@@ -765,48 +765,48 @@ void actHudWeapon(Entity *my) {
 			}
 		}
 		HUDWEAPON_MOVEX -= .25;
-		if( HUDWEAPON_MOVEX < 0 ) {
+		if ( HUDWEAPON_MOVEX < 0 ) {
 			HUDWEAPON_MOVEX = 0;
 		}
 		HUDWEAPON_MOVEY -= .25;
-		if( HUDWEAPON_MOVEY < 0 ) {
+		if ( HUDWEAPON_MOVEY < 0 ) {
 			HUDWEAPON_MOVEY = 0;
 		}
 		HUDWEAPON_MOVEZ += .35;
-		if( HUDWEAPON_MOVEZ > 0 ) {
+		if ( HUDWEAPON_MOVEZ > 0 ) {
 			HUDWEAPON_MOVEZ = 0;
 		}
 		HUDWEAPON_YAW -= .25;
-		if( HUDWEAPON_YAW < -.1 ) {
+		if ( HUDWEAPON_YAW < -.1 ) {
 			HUDWEAPON_YAW = -.1;
 		}
 		HUDWEAPON_ROLL += .25;
-		if( HUDWEAPON_ROLL > 0 ) {
+		if ( HUDWEAPON_ROLL > 0 ) {
 			HUDWEAPON_ROLL = 0;
-			if( HUDWEAPON_YAW == -.1 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 ) {
+			if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 ) {
 				HUDWEAPON_CHOP = 0;
 			}
 		}
-	} else if( HUDWEAPON_CHOP == 7 ) { // prepare for third swing
+	} else if ( HUDWEAPON_CHOP == 7 ) { // prepare for third swing
 		HUDWEAPON_MOVEX -= .35;
-		if( HUDWEAPON_MOVEX < 0 ) {
+		if ( HUDWEAPON_MOVEX < 0 ) {
 			HUDWEAPON_MOVEX = 0;
 		}
 		HUDWEAPON_MOVEY -= .45;
-		if( HUDWEAPON_MOVEY < -1 ) {
+		if ( HUDWEAPON_MOVEY < -1 ) {
 			HUDWEAPON_MOVEY = -1;
 		}
 		HUDWEAPON_MOVEZ -= .25;
-		if( HUDWEAPON_MOVEZ < -2 ) {
+		if ( HUDWEAPON_MOVEZ < -2 ) {
 			HUDWEAPON_MOVEZ = -2;
 		}
 		HUDWEAPON_YAW -= .15;
-		if( HUDWEAPON_YAW < 2 * PI / 5 ) {
+		if ( HUDWEAPON_YAW < 2 * PI / 5 ) {
 			result = 2 * PI / 5;
 			HUDWEAPON_YAW = result;
 		}
 		HUDWEAPON_PITCH -= .05;
-		if( HUDWEAPON_PITCH < .2) {
+		if ( HUDWEAPON_PITCH < .2) {
 			HUDWEAPON_PITCH = .2;
 		}
 		HUDWEAPON_ROLL -= .15;
@@ -827,32 +827,32 @@ void actHudWeapon(Entity *my) {
 				}
 			}
 		}
-	} else if( HUDWEAPON_CHOP == 8 ) { // third swing
+	} else if ( HUDWEAPON_CHOP == 8 ) { // third swing
 		HUDWEAPON_MOVEX += 2;
-		if( HUDWEAPON_MOVEX > 4 ) {
+		if ( HUDWEAPON_MOVEX > 4 ) {
 			HUDWEAPON_MOVEX = 4;
 			HUDWEAPON_CHOP++;
 		}
-	} else if( HUDWEAPON_CHOP == 9 ) { // return from third swing
+	} else if ( HUDWEAPON_CHOP == 9 ) { // return from third swing
 		HUDWEAPON_MOVEX -= .5;
-		if( HUDWEAPON_MOVEX < 0 ) {
+		if ( HUDWEAPON_MOVEX < 0 ) {
 			HUDWEAPON_MOVEX = 0;
 		}
 		HUDWEAPON_MOVEY += .25;
-		if( HUDWEAPON_MOVEY > 0 ) {
+		if ( HUDWEAPON_MOVEY > 0 ) {
 			HUDWEAPON_MOVEY = 0;
 		}
 		HUDWEAPON_MOVEZ += .35;
-		if( HUDWEAPON_MOVEZ > 0 ) {
+		if ( HUDWEAPON_MOVEZ > 0 ) {
 			HUDWEAPON_MOVEZ = 0;
 		}
-		if( HUDWEAPON_MOVEX == 0 ) {
-			if( swingweapon ) {
+		if ( HUDWEAPON_MOVEX == 0 ) {
+			if ( swingweapon ) {
 				// restart the combo...
-				if( stats[clientnum]->weapon == NULL ) {
+				if ( stats[clientnum]->weapon == NULL ) {
 					HUDWEAPON_CHOP = 7;
 				} else {
-					if( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR ) {
+					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR ) {
 						HUDWEAPON_CHOP = 1;
 					} else {
 						HUDWEAPON_CHOP = 7;
@@ -860,25 +860,25 @@ void actHudWeapon(Entity *my) {
 				}
 			}
 			HUDWEAPON_YAW -= .25;
-			if( HUDWEAPON_YAW < -.1 ) {
+			if ( HUDWEAPON_YAW < -.1 ) {
 				HUDWEAPON_YAW = -.1;
 			}
 			HUDWEAPON_PITCH += .05;
-			if( HUDWEAPON_PITCH > 0) {
+			if ( HUDWEAPON_PITCH > 0) {
 				HUDWEAPON_PITCH = 0;
 			}
 			HUDWEAPON_ROLL += .25;
-			if( HUDWEAPON_ROLL > 0 ) {
+			if ( HUDWEAPON_ROLL > 0 ) {
 				HUDWEAPON_ROLL = 0;
-				if( HUDWEAPON_YAW == -.1 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 ) {
+				if ( HUDWEAPON_YAW == -.1 && HUDWEAPON_PITCH == 0 && HUDWEAPON_MOVEZ == 0 && HUDWEAPON_MOVEY == 0 && HUDWEAPON_MOVEX == 0 ) {
 					HUDWEAPON_CHOP = 0;
 				}
 			}
 		}
 	}
 
-	if( HUDWEAPON_CHARGE == MAXCHARGE ) {
-		if( ticks % 2 == 0 ) {
+	if ( HUDWEAPON_CHARGE == MAXCHARGE ) {
+		if ( ticks % 2 == 0 ) {
 			// charge vibration
 			HUDWEAPON_MOVEX -= HUDWEAPON_OLDVIBRATEX;
 			HUDWEAPON_MOVEY -= HUDWEAPON_OLDVIBRATEY;
@@ -969,15 +969,15 @@ void actHudShield(Entity *my) {
 
 	// check levitating value
 	bool levitating = FALSE;
-	if( stats[clientnum]->EFFECTS[EFF_LEVITATING] == TRUE ) {
+	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == TRUE ) {
 		levitating = TRUE;
 	}
-	if( stats[clientnum]->ring != NULL )
-		if( stats[clientnum]->ring->type == RING_LEVITATION ) {
+	if ( stats[clientnum]->ring != NULL )
+		if ( stats[clientnum]->ring->type == RING_LEVITATION ) {
 			levitating = TRUE;
 		}
-	if( stats[clientnum]->shoes != NULL )
-		if( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION ) {
+	if ( stats[clientnum]->shoes != NULL )
+		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION ) {
 			levitating = TRUE;
 		}
 
@@ -1070,9 +1070,9 @@ void actHudShield(Entity *my) {
 	HUDSHIELD_DEFEND = defending;
 
 	// shield switching animation
-	if( shieldSwitch ) {
+	if ( shieldSwitch ) {
 		shieldSwitch = FALSE;
-		if( !defending ) {
+		if ( !defending ) {
 			HUDSHIELD_MOVEY = -6;
 			HUDSHIELD_MOVEZ = 2;
 			HUDSHIELD_MOVEX = -2;
@@ -1080,70 +1080,70 @@ void actHudShield(Entity *my) {
 	}
 
 	// main animation
-	if( defending ) {
-		if( HUDSHIELD_MOVEY < 3 ) {
+	if ( defending ) {
+		if ( HUDSHIELD_MOVEY < 3 ) {
 			HUDSHIELD_MOVEY += .5;
-			if( HUDSHIELD_MOVEY > 3 ) {
+			if ( HUDSHIELD_MOVEY > 3 ) {
 				HUDSHIELD_MOVEY = 3;
 			}
 		}
-		if( HUDSHIELD_MOVEZ > -1 ) {
+		if ( HUDSHIELD_MOVEZ > -1 ) {
 			HUDSHIELD_MOVEZ -= .2;
-			if( HUDSHIELD_MOVEZ < -1 ) {
+			if ( HUDSHIELD_MOVEZ < -1 ) {
 				HUDSHIELD_MOVEZ = -1;
 			}
 		}
-		if( HUDSHIELD_YAW < PI / 3 ) {
+		if ( HUDSHIELD_YAW < PI / 3 ) {
 			HUDSHIELD_YAW += .15;
-			if( HUDSHIELD_YAW > PI / 3 ) {
+			if ( HUDSHIELD_YAW > PI / 3 ) {
 				HUDSHIELD_YAW = PI / 3;
 			}
 		}
-		if( stats[clientnum]->shield ) {
-			if( stats[clientnum]->shield->type == TOOL_TORCH ) {
-				if( HUDSHIELD_MOVEX < 1.5 ) {
+		if ( stats[clientnum]->shield ) {
+			if ( stats[clientnum]->shield->type == TOOL_TORCH ) {
+				if ( HUDSHIELD_MOVEX < 1.5 ) {
 					HUDSHIELD_MOVEX += .5;
-					if( HUDSHIELD_MOVEX > 1.5 ) {
+					if ( HUDSHIELD_MOVEX > 1.5 ) {
 						HUDSHIELD_MOVEX = 1.5;
 					}
 				}
-				if( HUDSHIELD_ROLL < PI / 5 ) {
+				if ( HUDSHIELD_ROLL < PI / 5 ) {
 					HUDSHIELD_ROLL += .15;
-					if( HUDSHIELD_ROLL > PI / 5 ) {
+					if ( HUDSHIELD_ROLL > PI / 5 ) {
 						HUDSHIELD_ROLL = PI / 5;
 					}
 				}
 			}
 		}
 	} else {
-		if( HUDSHIELD_MOVEX > 0 ) {
+		if ( HUDSHIELD_MOVEX > 0 ) {
 			HUDSHIELD_MOVEX = std::max(HUDSHIELD_MOVEX - .5, 0.0);
-		} else if( HUDSHIELD_MOVEX < 0 ) {
+		} else if ( HUDSHIELD_MOVEX < 0 ) {
 			HUDSHIELD_MOVEX = std::min(HUDSHIELD_MOVEX + .5, 0.0);
 		}
-		if( HUDSHIELD_MOVEY > 0 ) {
+		if ( HUDSHIELD_MOVEY > 0 ) {
 			HUDSHIELD_MOVEY = std::max(HUDSHIELD_MOVEY - .5, 0.0);
-		} else if( HUDSHIELD_MOVEY < 0 ) {
+		} else if ( HUDSHIELD_MOVEY < 0 ) {
 			HUDSHIELD_MOVEY = std::min(HUDSHIELD_MOVEY + .5, 0.0);
 		}
-		if( HUDSHIELD_MOVEZ > 0 ) {
+		if ( HUDSHIELD_MOVEZ > 0 ) {
 			HUDSHIELD_MOVEZ = std::max(HUDSHIELD_MOVEZ - .2, 0.0);
-		} else if( HUDSHIELD_MOVEZ < 0 ) {
+		} else if ( HUDSHIELD_MOVEZ < 0 ) {
 			HUDSHIELD_MOVEZ = std::min(HUDSHIELD_MOVEZ + .2, 0.0);
 		}
-		if( HUDSHIELD_YAW > 0 ) {
+		if ( HUDSHIELD_YAW > 0 ) {
 			HUDSHIELD_YAW = std::max(HUDSHIELD_YAW - .15, 0.0);
-		} else if( HUDSHIELD_YAW < 0 ) {
+		} else if ( HUDSHIELD_YAW < 0 ) {
 			HUDSHIELD_YAW = std::min(HUDSHIELD_YAW + .15, 0.0);
 		}
-		if( HUDSHIELD_PITCH > 0 ) {
+		if ( HUDSHIELD_PITCH > 0 ) {
 			HUDSHIELD_PITCH = std::max(HUDSHIELD_PITCH - .15, 0.0);
-		} else if( HUDSHIELD_PITCH < 0 ) {
+		} else if ( HUDSHIELD_PITCH < 0 ) {
 			HUDSHIELD_PITCH = std::min(HUDSHIELD_PITCH + .15, 0.0);
 		}
-		if( HUDSHIELD_ROLL > 0 ) {
+		if ( HUDSHIELD_ROLL > 0 ) {
 			HUDSHIELD_ROLL = std::max<double>(HUDSHIELD_ROLL - .15, 0);
-		} else if( HUDSHIELD_ROLL < 0 ) {
+		} else if ( HUDSHIELD_ROLL < 0 ) {
 			HUDSHIELD_ROLL = std::min<double>(HUDSHIELD_ROLL + .15, 0);
 		}
 	}

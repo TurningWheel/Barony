@@ -192,7 +192,7 @@ void drawSustainedSpells() {
 
 	int count = 0; //This is just for debugging purposes.
 	node_t *node = channeledSpells[clientnum].first;
-	for(; node; node = node->next, count++) {
+	for (; node; node = node->next, count++) {
 		spell_t *spell = (spell_t*)node->element;
 		if (!spell) {
 			break;

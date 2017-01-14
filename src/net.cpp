@@ -60,11 +60,11 @@ void packetDeconstructor(void *data) {
 -------------------------------------------------------------------------------*/
 
 int sendPacket(UDPsocket sock, int channel, UDPpacket *packet, int hostnum) {
-	if( directConnect ) {
+	if ( directConnect ) {
 		return SDLNet_UDP_Send(sock, channel, packet);
 	} else {
 #ifdef STEAMWORKS
-		if( steamIDRemote[hostnum] && !client_disconnected[hostnum] ) {
+		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] ) {
 			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packet->data, packet->len, k_EP2PSendUnreliable, 0);
 		} else {
 			return 0;
@@ -90,7 +90,7 @@ int sendPacket(UDPsocket sock, int channel, UDPpacket *packet, int hostnum) {
 Uint32 packetnum = 0;
 int sendPacketSafe(UDPsocket sock, int channel, UDPpacket *packet, int hostnum) {
 	packetsend_t *packetsend = (packetsend_t *) malloc(sizeof(packetsend_t));
-	if(!(packetsend->packet = SDLNet_AllocPacket(NET_PACKET_SIZE))) {
+	if (!(packetsend->packet = SDLNet_AllocPacket(NET_PACKET_SIZE))) {
 		printlog("warning: packet allocation failed: %s\n", SDLNet_GetError());
 		return 0;
 	}
@@ -104,7 +104,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket *packet, int hostnum) 
 	packetsend->packet->address.host = packet->address.host;
 	packetsend->packet->address.port = packet->address.port;
 	strcpy((char *)packetsend->packet->data, "SAFE");
-	if( receivedclientnum || multiplayer != CLIENT ) {
+	if ( receivedclientnum || multiplayer != CLIENT ) {
 		packetsend->packet->data[4] = clientnum;
 	} else {
 		packetsend->packet->data[4] = MAXPLAYERS;
@@ -118,11 +118,11 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket *packet, int hostnum) 
 	node->element = packetsend;
 	node->deconstructor = &packetDeconstructor;
 
-	if( directConnect ) {
+	if ( directConnect ) {
 		return SDLNet_UDP_Send(sock, channel, packetsend->packet);
 	} else {
 #ifdef STEAMWORKS
-		if( steamIDRemote[hostnum] && !client_disconnected[hostnum] ) {
+		if ( steamIDRemote[hostnum] && !client_disconnected[hostnum] ) {
 			return SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[hostnum]), packetsend->packet->data, packetsend->packet->len, k_EP2PSendReliable, 0);
 		} else {
 			return 0;
@@ -143,7 +143,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket *packet, int hostnum) 
 
 int power(int a, int b) {
 	int c, result = 1;
-	for( c = 0; c < b; c++ ) {
+	for ( c = 0; c < b; c++ ) {
 		result *= a;
 	}
 	return result;
@@ -182,10 +182,10 @@ void messagePlayerColor(int player, Uint32 color, char *message, ...) {
 	char str[256] = { 0 };
 	va_list argptr;
 
-	if( message == NULL ) {
+	if ( message == NULL ) {
 		return;
 	}
-	if( player < 0 || player >= MAXPLAYERS ) {
+	if ( player < 0 || player >= MAXPLAYERS ) {
 		return;
 	}
 
@@ -200,13 +200,13 @@ void messagePlayerColor(int player, Uint32 color, char *message, ...) {
 		return;
 	}
 
-	if( player == clientnum ) {
+	if ( player == clientnum ) {
 		newString(&messages, color, str);
-		if( !disable_messages ) {
+		if ( !disable_messages ) {
 			addMessage(color, str);
 		}
 		printlog("%s\n", str);
-	} else if( multiplayer == SERVER ) {
+	} else if ( multiplayer == SERVER ) {
 		strcpy((char *)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
 		strcpy((char *)(&net_packet->data[8]), str);
@@ -218,12 +218,12 @@ void messagePlayerColor(int player, Uint32 color, char *message, ...) {
 
 	int c;
 	char tempstr[256];
-	for( c = 0; c < MAXPLAYERS; c++ ) {
-		if( client_disconnected[c] ) {
+	for ( c = 0; c < MAXPLAYERS; c++ ) {
+		if ( client_disconnected[c] ) {
 			continue;
 		}
 		snprintf(tempstr, 256, language[697], stats[c]->name);
-		if( !strcmp(str, tempstr) ) {
+		if ( !strcmp(str, tempstr) ) {
 			steamAchievementClient(player, "BARONY_ACH_NOT_A_TEAM_PLAYER");
 		}
 	}
@@ -240,10 +240,10 @@ void messagePlayerColor(int player, Uint32 color, char *message, ...) {
 void sendEntityTCP(Entity *entity, int c) {
 	int j;
 
-	if( entity == NULL ) {
+	if ( entity == NULL ) {
 		return;
 	}
-	if( client_disconnected[c] == TRUE ) {
+	if ( client_disconnected[c] == TRUE ) {
 		return;
 	}
 
@@ -268,8 +268,8 @@ void sendEntityTCP(Entity *entity, int c) {
 	SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
 	net_packet->data[34] = 0;
 	net_packet->data[35] = 0;
-	for(j = 0; j < 16; j++) {
-		if( entity->flags[j] ) {
+	for (j = 0; j < 16; j++) {
+		if ( entity->flags[j] ) {
 			net_packet->data[34 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
@@ -280,7 +280,7 @@ void sendEntityTCP(Entity *entity, int c) {
 	net_packet->address.host = net_clients[c - 1].host;
 	net_packet->address.port = net_clients[c - 1].port;
 	net_packet->len = ENTITY_PACKET_LENGTH;
-	if( directConnect ) {
+	if ( directConnect ) {
 		SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
 	} else {
 #ifdef STEAMWORKS
@@ -293,10 +293,10 @@ void sendEntityTCP(Entity *entity, int c) {
 void sendEntityUDP(Entity *entity, int c, bool guarantee) {
 	int j;
 
-	if( entity == NULL ) {
+	if ( entity == NULL ) {
 		return;
 	}
-	if( client_disconnected[c] == TRUE ) {
+	if ( client_disconnected[c] == TRUE ) {
 		return;
 	}
 
@@ -321,8 +321,8 @@ void sendEntityUDP(Entity *entity, int c, bool guarantee) {
 	SDLNet_Write32(entity->skill[2], &net_packet->data[30]);
 	net_packet->data[34] = 0;
 	net_packet->data[35] = 0;
-	for(j = 0; j < 16; j++) {
-		if( entity->flags[j] ) {
+	for (j = 0; j < 16; j++) {
+		if ( entity->flags[j] ) {
 			net_packet->data[34 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
@@ -335,7 +335,7 @@ void sendEntityUDP(Entity *entity, int c, bool guarantee) {
 	net_packet->len = ENTITY_PACKET_LENGTH;
 
 	// sometimes you want more insurance that the entity update arrives
-	if( guarantee ) {
+	if ( guarantee ) {
 		sendPacketSafe(net_sock, -1, net_packet, c - 1);
 	} else {
 		sendPacket(net_sock, -1, net_packet, c - 1);
@@ -351,7 +351,7 @@ void sendEntityUDP(Entity *entity, int c, bool guarantee) {
 -------------------------------------------------------------------------------*/
 
 void sendMapSeedTCP(int c) {
-	if( client_disconnected[c] == TRUE ) {
+	if ( client_disconnected[c] == TRUE ) {
 		return;
 	}
 
@@ -359,7 +359,7 @@ void sendMapSeedTCP(int c) {
 	net_packet->address.host = net_clients[c - 1].host;
 	net_packet->address.port = net_clients[c - 1].port;
 	net_packet->len = 4;
-	if( directConnect ) {
+	if ( directConnect ) {
 		SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
 	} else {
 #ifdef STEAMWORKS
@@ -380,20 +380,20 @@ void sendMapSeedTCP(int c) {
 void sendMapTCP(int c) {
 	Uint32 x, y, z;
 
-	if( client_disconnected[c] == TRUE ) {
+	if ( client_disconnected[c] == TRUE ) {
 		return;
 	}
 
 	// send all the map data to the client
-	for( z = 0; z < MAPLAYERS; z++ ) {
-		for( y = 0; y < map.height; y++ ) {
-			for( x = 0; x < map.width; x++ ) {
+	for ( z = 0; z < MAPLAYERS; z++ ) {
+		for ( y = 0; y < map.height; y++ ) {
+			for ( x = 0; x < map.width; x++ ) {
 				net_packet->data[x] = map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height];
 			}
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = map.width;
-			if( directConnect ) {
+			if ( directConnect ) {
 				SDLNet_TCP_Send(net_tcpclients[c - 1], net_packet->data, net_packet->len);
 			} else {
 #ifdef STEAMWORKS
@@ -415,21 +415,21 @@ void sendMapTCP(int c) {
 
 void serverUpdateBodypartIDs(Entity *entity) {
 	int c;
-	if( multiplayer != SERVER ) {
+	if ( multiplayer != SERVER ) {
 		return;
 	}
-	for( c = 1; c < MAXPLAYERS; c++ ) {
-		if( !client_disconnected[c] ) {
+	for ( c = 1; c < MAXPLAYERS; c++ ) {
+		if ( !client_disconnected[c] ) {
 			strcpy((char *)net_packet->data, "BDYI");
 			SDLNet_Write32(entity->uid, &net_packet->data[4]);
 			node_t *node;
 			int i;
-			for( i = 0, node = entity->children.first; node != NULL; node = node->next, i++ ) {
-				if( i < 1 || (i < 2 && entity->behavior == &actMonster) ) {
+			for ( i = 0, node = entity->children.first; node != NULL; node = node->next, i++ ) {
+				if ( i < 1 || (i < 2 && entity->behavior == &actMonster) ) {
 					continue;
 				}
 				Entity *tempEntity = (Entity *)node->element;
-				if( entity->behavior == &actMonster ) {
+				if ( entity->behavior == &actMonster ) {
 					SDLNet_Write32(tempEntity->uid, &net_packet->data[8 + 4 * (i - 2)]);
 				} else {
 					SDLNet_Write32(tempEntity->uid, &net_packet->data[8 + 4 * (i - 1)]);
@@ -453,16 +453,16 @@ void serverUpdateBodypartIDs(Entity *entity) {
 
 void serverUpdateEntityBodypart(Entity *entity, int bodypart) {
 	int c;
-	if( multiplayer != SERVER ) {
+	if ( multiplayer != SERVER ) {
 		return;
 	}
-	for( c = 1; c < MAXPLAYERS; c++ ) {
-		if( !client_disconnected[c] ) {
+	for ( c = 1; c < MAXPLAYERS; c++ ) {
+		if ( !client_disconnected[c] ) {
 			strcpy((char *)net_packet->data, "ENTB");
 			SDLNet_Write32(entity->uid, &net_packet->data[4]);
 			net_packet->data[8] = bodypart;
 			node_t *node = list_Node(&entity->children, bodypart);
-			if( node ) {
+			if ( node ) {
 				Entity *tempEntity = (Entity *)node->element;
 				SDLNet_Write32(tempEntity->sprite, &net_packet->data[9]);
 				net_packet->data[13] = tempEntity->flags[INVISIBLE];
@@ -485,11 +485,11 @@ void serverUpdateEntityBodypart(Entity *entity, int bodypart) {
 
 void serverUpdateEntitySprite(Entity *entity) {
 	int c;
-	if( multiplayer != SERVER ) {
+	if ( multiplayer != SERVER ) {
 		return;
 	}
-	for( c = 1; c < MAXPLAYERS; c++ ) {
-		if( !client_disconnected[c] ) {
+	for ( c = 1; c < MAXPLAYERS; c++ ) {
+		if ( !client_disconnected[c] ) {
 			strcpy((char *)net_packet->data, "ENTA");
 			SDLNet_Write32(entity->uid, &net_packet->data[4]);
 			SDLNet_Write32(entity->sprite, &net_packet->data[8]);
@@ -511,11 +511,11 @@ void serverUpdateEntitySprite(Entity *entity) {
 
 void serverUpdateEntitySkill(Entity *entity, int skill) {
 	int c;
-	if( multiplayer != SERVER ) {
+	if ( multiplayer != SERVER ) {
 		return;
 	}
-	for( c = 1; c < MAXPLAYERS; c++ ) {
-		if( !client_disconnected[c] ) {
+	for ( c = 1; c < MAXPLAYERS; c++ ) {
+		if ( !client_disconnected[c] ) {
 			strcpy((char *)net_packet->data, "ENTS");
 			SDLNet_Write32(entity->uid, &net_packet->data[4]);
 			net_packet->data[8] = skill;
@@ -538,11 +538,11 @@ void serverUpdateEntitySkill(Entity *entity, int skill) {
 
 void serverUpdateEntityFlag(Entity *entity, int flag) {
 	int c;
-	if( multiplayer != SERVER ) {
+	if ( multiplayer != SERVER ) {
 		return;
 	}
-	for( c = 1; c < MAXPLAYERS; c++ ) {
-		if( !client_disconnected[c] ) {
+	for ( c = 1; c < MAXPLAYERS; c++ ) {
+		if ( !client_disconnected[c] ) {
 			strcpy((char *)net_packet->data, "ENTF");
 			SDLNet_Write32(entity->uid, &net_packet->data[4]);
 			net_packet->data[8] = flag;
@@ -567,13 +567,13 @@ void serverUpdateEntityFlag(Entity *entity, int flag) {
 void serverUpdateEffects(int player) {
 	int j;
 
-	if( multiplayer != SERVER || clientnum == player ) {
+	if ( multiplayer != SERVER || clientnum == player ) {
 		return;
 	}
-	if( player < 0 || player >= MAXPLAYERS ) {
+	if ( player < 0 || player >= MAXPLAYERS ) {
 		return;
 	}
-	if( client_disconnected[player] == TRUE ) {
+	if ( client_disconnected[player] == TRUE ) {
 		return;
 	}
 
@@ -581,8 +581,8 @@ void serverUpdateEffects(int player) {
 	net_packet->data[4] = 0;
 	net_packet->data[5] = 0;
 	net_packet->data[6] = 0;
-	for(j = 0; j < NUMEFFECTS; j++) {
-		if( stats[player]->EFFECTS[j] == TRUE ) {
+	for (j = 0; j < NUMEFFECTS; j++) {
+		if ( stats[player]->EFFECTS[j] == TRUE ) {
 			net_packet->data[4 + j / 8] |= power(2, j - (j / 8) * 8);
 		}
 	}
@@ -601,13 +601,13 @@ void serverUpdateEffects(int player) {
 -------------------------------------------------------------------------------*/
 
 void serverUpdateHunger(int player) {
-	if( multiplayer != SERVER || clientnum == player ) {
+	if ( multiplayer != SERVER || clientnum == player ) {
 		return;
 	}
-	if( player < 0 || player >= MAXPLAYERS ) {
+	if ( player < 0 || player >= MAXPLAYERS ) {
 		return;
 	}
-	if( client_disconnected[player] == TRUE ) {
+	if ( client_disconnected[player] == TRUE ) {
 		return;
 	}
 
@@ -631,7 +631,7 @@ Entity *receiveEntity(Entity *entity) {
 	bool newentity = FALSE;
 	int c;
 
-	if( entity == NULL ) {
+	if ( entity == NULL ) {
 		newentity = TRUE;
 		entity = newEntity((int)SDLNet_Read16(&net_packet->data[8]), 0, map.entities);
 	} else {
@@ -651,7 +651,7 @@ Entity *receiveEntity(Entity *entity) {
 	entity->new_yaw = ((Sint16)SDLNet_Read16(&net_packet->data[21])) / 256.0;
 	entity->new_pitch = ((Sint16)SDLNet_Read16(&net_packet->data[23])) / 256.0;
 	entity->new_roll = ((Sint16)SDLNet_Read16(&net_packet->data[25])) / 256.0;
-	if( newentity ) {
+	if ( newentity ) {
 		entity->x = entity->new_x;
 		entity->y = entity->new_y;
 		entity->z = entity->new_z;
@@ -662,8 +662,8 @@ Entity *receiveEntity(Entity *entity) {
 	entity->focalx = ((char)net_packet->data[27]) / 8.0;
 	entity->focaly = ((char)net_packet->data[28]) / 8.0;
 	entity->focalz = ((char)net_packet->data[29]) / 8.0;
-	for(c = 0; c < 16; c++) {
-		if( net_packet->data[34 + c / 8]&power(2, c - (c / 8) * 8) ) {
+	for (c = 0; c < 16; c++) {
+		if ( net_packet->data[34 + c / 8]&power(2, c - (c / 8) * 8) ) {
 			entity->flags[c] = TRUE;
 		}
 	}
@@ -686,7 +686,7 @@ void clientActions(Entity *entity) {
 	int playernum;
 
 	// this code assigns behaviors based on the sprite (model) number
-	switch( entity->sprite ) {
+	switch ( entity->sprite ) {
 		case 1:
 			entity->behavior = &actDoorFrame;
 			break;
@@ -735,7 +735,7 @@ void clientActions(Entity *entity) {
 		case 385:
 			// these are all human heads
 			playernum = SDLNet_Read32(&net_packet->data[30]);
-			if( playernum >= 0 && playernum < MAXPLAYERS ) {
+			if ( playernum >= 0 && playernum < MAXPLAYERS ) {
 				players[playernum]->entity = entity;
 				entity->skill[2] = playernum;
 				entity->behavior = &actPlayer;
@@ -793,10 +793,10 @@ void clientActions(Entity *entity) {
 	}
 
 	// if the above method failed, we check the value of skill[2] (stored in net_packet->data[30]) and assign an action based on that
-	if( entity->behavior == NULL ) {
+	if ( entity->behavior == NULL ) {
 		int c = (int)SDLNet_Read32(&net_packet->data[30]);
-		if( c < 0 ) {
-			switch( c ) {
+		if ( c < 0 ) {
+			switch ( c ) {
 				case -4:
 					entity->behavior = &actMonster;
 					break;
@@ -1337,7 +1337,7 @@ void clientHandlePacket() {
 				if ( itemCategory(item) == SPELL_CAT ) {
 					continue;    // don't drop spells on death, stupid!
 				}
-				if( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) ) {
 					Item **slot = itemSlot(stats[clientnum], item);
 					if ( slot != NULL ) {
 						*slot = NULL;
@@ -2059,7 +2059,7 @@ void clientHandlePacket() {
 		subwindow = 0;
 		introstage = 5; // prepares win game sequence
 		fadeout = TRUE;
-		if( !intro ) {
+		if ( !intro ) {
 			pauseGame(2, FALSE);
 		}
 		return;
@@ -2532,7 +2532,7 @@ void serverHandlePacket() {
 	}
 
 	// equip item (as a weapon)
-	else if(!strncmp((char *)net_packet->data, "EQUI", 4)) {
+	else if (!strncmp((char *)net_packet->data, "EQUI", 4)) {
 		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25]);
 		return;
@@ -2708,9 +2708,9 @@ void serverHandleMessages() {
 	} else {
 		//Direct-connect goes here.
 
-		while(SDLNet_UDP_Recv(net_sock, net_packet)) {
+		while (SDLNet_UDP_Recv(net_sock, net_packet)) {
 			// filter out broken packets
-			if( !net_packet->data[0] ) {
+			if ( !net_packet->data[0] ) {
 				continue;
 			}
 
@@ -2734,11 +2734,11 @@ bool handleSafePacket() {
 	int c, j;
 
 	// safe packet
-	if(!strncmp((char *)net_packet->data, "SAFE", 4)) {
-		if( net_packet->data[4] != MAXPLAYERS ) {
-			for( node = safePacketsReceived[net_packet->data[4]].first; node != NULL; node = node->next ) {
+	if (!strncmp((char *)net_packet->data, "SAFE", 4)) {
+		if ( net_packet->data[4] != MAXPLAYERS ) {
+			for ( node = safePacketsReceived[net_packet->data[4]].first; node != NULL; node = node->next ) {
 				packet = (packetsend_t *)node->element;
-				if( packet->num == SDLNet_Read32(&net_packet->data[5]) ) {
+				if ( packet->num == SDLNet_Read32(&net_packet->data[5]) ) {
 					return TRUE;
 				}
 			}
@@ -2752,7 +2752,7 @@ bool handleSafePacket() {
 			j = net_packet->data[4];
 			net_packet->data[4] = clientnum;
 			strcpy((char *)net_packet->data, "GOTP");
-			if( multiplayer == CLIENT ) {
+			if ( multiplayer == CLIENT ) {
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 			} else {
@@ -2761,7 +2761,7 @@ bool handleSafePacket() {
 			}
 			c = net_packet->len;
 			net_packet->len = 9;
-			if( multiplayer == CLIENT ) {
+			if ( multiplayer == CLIENT ) {
 				sendPacket(net_sock, -1, net_packet, 0);
 			} else {
 				sendPacket(net_sock, -1, net_packet, j - 1);
@@ -2774,10 +2774,10 @@ bool handleSafePacket() {
 	}
 
 	// they got the safe packet
-	else if(!strncmp((char *)net_packet->data, "GOTP", 4)) {
-		for( node = safePacketsSent.first; node != NULL; node = node->next ) {
+	else if (!strncmp((char *)net_packet->data, "GOTP", 4)) {
+		for ( node = safePacketsSent.first; node != NULL; node = node->next ) {
 			packetsend_t *packet = (packetsend_t *)node->element;
-			if( packet->num == SDLNet_Read32(&net_packet->data[5]) ) {
+			if ( packet->num == SDLNet_Read32(&net_packet->data[5]) ) {
 				list_RemoveNode(node);
 				break;
 			}

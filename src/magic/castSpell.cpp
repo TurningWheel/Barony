@@ -53,7 +53,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 	}
 
 	if (player > -1) {
-		if( stats[player]->defending ) {
+		if ( stats[player]->defending ) {
 			messagePlayer(player, language[407]);
 			return;
 		}
@@ -90,7 +90,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 	//node_t *node = spell->elements->first;
 
 	Stat *stat = caster->getStats();
-	if( !stat ) {
+	if ( !stat ) {
 		return;
 	}
 
@@ -168,7 +168,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	}
 
 	bool newbie = FALSE;
-	if( !using_magicstaff && !trap) {
+	if ( !using_magicstaff && !trap) {
 		if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER) {
 			newbie = TRUE; //The caster has lower spellcasting skill. Cue happy fun times.
 		}
@@ -318,7 +318,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			channeled_spell = (spell_t*)(spellnode->element);
 			spellnode->size = sizeof(spell_t);
 			((spell_t *)spellnode->element)->caster = caster->uid;
-			if( using_magicstaff ) {
+			if ( using_magicstaff ) {
 				((spell_t *)spellnode->element)->magicstaff = TRUE;
 			}
 			spellnode->deconstructor = &spellDeconstructor;
@@ -482,12 +482,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					spell_changeHealth(players[i]->entity, amount);
 					playSoundEntity(caster, 168, 128);
 
-					for(node = map.entities->first; node->next; node = node->next) {
+					for (node = map.entities->first; node->next; node = node->next) {
 						entity = (Entity *)(node->element);
 						if ( !entity ||  entity == caster ) {
 							continue;
 						}
-						if( entity->behavior != &actPlayer && entity->behavior != &actMonster ) {
+						if ( entity->behavior != &actPlayer && entity->behavior != &actMonster ) {
 							continue;
 						}
 
@@ -520,25 +520,25 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
 
-					for(node = map.entities->first; node->next; node = node->next) {
+					for (node = map.entities->first; node->next; node = node->next) {
 						entity = (Entity *)(node->element);
-						if( !entity || entity == caster ) {
+						if ( !entity || entity == caster ) {
 							continue;
 						}
-						if( entity->behavior != &actPlayer && entity->behavior != &actMonster ) {
+						if ( entity->behavior != &actPlayer && entity->behavior != &actMonster ) {
 							continue;
 						}
 						Stat *target_stat = entity->getStats();
-						if( target_stat ) {
+						if ( target_stat ) {
 							if (entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster)) {
 								for (c = 0; c < NUMEFFECTS; ++c) { //This does a whole lot more than just cure ailments.
 									target_stat->EFFECTS[c] = FALSE;
 									target_stat->EFFECTS_TIMERS[c] = 0;
 								}
-								if( entity->behavior == &actPlayer ) {
+								if ( entity->behavior == &actPlayer ) {
 									serverUpdateEffects(entity->skill[2]);
 								}
-								if( entity->flags[BURNING] ) {
+								if ( entity->flags[BURNING] ) {
 									entity->flags[BURNING] = false;
 									serverUpdateEntityFlag(entity, BURNING);
 								}
@@ -581,11 +581,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
-			if( !strcmp(spell->name, spell_fireball.name) ) {
+			if ( !strcmp(spell->name, spell_fireball.name) ) {
 				playSoundEntity(entity, 164, 128 );
-			} else if( !strcmp(spell->name, spell_lightning.name) ) {
+			} else if ( !strcmp(spell->name, spell_lightning.name) ) {
 				playSoundEntity(entity, 171, 128 );
-			} else if( !strcmp(spell->name, spell_cold.name) ) {
+			} else if ( !strcmp(spell->name, spell_cold.name) ) {
 				playSoundEntity(entity, 172, 128 );
 			} else {
 				playSoundEntity(entity, 169, 128 );
@@ -607,7 +607,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 		//TODO: Add the status/conditional elements/modifiers (probably best as elements) too. Like onCollision or something.
 		//element = (spellElement_t *)element->elements->first->element;
 		node = element->elements.first;
-		if( node ) {
+		if ( node ) {
 			element = (spellElement_t *)node->element;
 			if (!strcmp(element->name, spellElement_force.name)) {
 				//Give the spell force properties.
@@ -694,10 +694,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	}
 
 	//Random chance to level up spellcasting skill.
-	if(rand() % 4 == 0) {
+	if (rand() % 4 == 0) {
 		caster->increaseSkill(PRO_SPELLCASTING);
 	}
-	if(rand() % 5 == 0) {
+	if (rand() % 5 == 0) {
 		caster->increaseSkill(PRO_MAGIC); // otherwise you will basically never be able to learn all the spells in the game...
 	}
 

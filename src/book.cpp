@@ -29,8 +29,8 @@ list_t *discoveredbooks = NULL;
 
 int getBook(char *booktitle) {
 	int c;
-	for( c = 0; c < numbooks; c++ ) {
-		if( !strcmp(booktitle, books[c]->name) ) {
+	for ( c = 0; c < numbooks; c++ ) {
+		if ( !strcmp(booktitle, books[c]->name) ) {
 			return c;
 		}
 	}
@@ -56,11 +56,11 @@ void createBooks() {
 			// sort books alphabetically (bubblesort)
 			do {
 				unsorted = FALSE;
-				for(node = discoveredbooks->first; node != NULL; node = node->next) {
-					if( node->next != NULL ) {
+				for (node = discoveredbooks->first; node != NULL; node = node->next) {
+					if ( node->next != NULL ) {
 						string_t *firststring = (string_t *)node->element;
 						string_t *secondstring = (string_t *)node->next->element;
-						if( strcmp(firststring->data, secondstring->data) > 0 ) {
+						if ( strcmp(firststring->data, secondstring->data) > 0 ) {
 							unsorted = TRUE;
 							node->element = secondstring;
 							node->next->element = firststring;
@@ -71,10 +71,10 @@ void createBooks() {
 						break;
 					}
 				}
-			} while( unsorted );
+			} while ( unsorted );
 
 			// create books
-			for(node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i) {
+			for (node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i) {
 				books[i] = (book_t *) malloc(sizeof(book_t));
 				books[i]->text = NULL;
 				name = (string_t *)node->element;
@@ -222,7 +222,7 @@ int lengthOfCurrentWord(char *text, int index) {
 		i = moveToStartOfWord(text, i);    //Move to the start of the current word.
 	}
 
-	for(; i < strlen(text); ++i) {
+	for (; i < strlen(text); ++i) {
 		if (isCharacterPartOfWord(text, i)) {
 			length++;    //The current character is part of the word.
 		} else {
@@ -319,7 +319,7 @@ void createBook(book_t *book) {
 				tab = 0;
 			}
 			// no spaces at the start of a line
-			if( character_to_record == ' ' ) {
+			if ( character_to_record == ' ' ) {
 				continue;
 			}
 		} else if (tab > 0) {

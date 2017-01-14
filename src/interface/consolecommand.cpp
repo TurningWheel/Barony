@@ -37,12 +37,12 @@ void consoleCommand(char *command_str) {
 	char name[64];
 	int c;
 
-	if( !command_str ) {
+	if ( !command_str ) {
 		return;
 	}
 
-	if( !strncmp(command_str, "/ping", 5) ) {
-		if( multiplayer != CLIENT ) {
+	if ( !strncmp(command_str, "/ping", 5) ) {
+		if ( multiplayer != CLIENT ) {
 			messagePlayer(clientnum, language[1117], 0);
 		} else {
 			strcpy((char *)net_packet->data, "PING");
@@ -57,21 +57,21 @@ void consoleCommand(char *command_str) {
 		fov = atoi(&command_str[5]);
 		fov = std::min(std::max<Uint32>(40, fov), 100u);
 	} else if (!strncmp(command_str, "/svflags ", 9)) {
-		if( multiplayer == CLIENT ) {
+		if ( multiplayer == CLIENT ) {
 			messagePlayer(clientnum, language[275]);
 		} else {
 			svFlags = atoi(&command_str[9]);
 			messagePlayer(clientnum, language[276]);
 
-			if( multiplayer == SERVER ) {
+			if ( multiplayer == SERVER ) {
 				// update client flags
 				strcpy((char *)net_packet->data, "SVFL");
 				SDLNet_Write32(svFlags, &net_packet->data[4]);
 				net_packet->len = 8;
 
 				int c;
-				for( c = 1; c < MAXPLAYERS; c++ ) {
-					if( client_disconnected[c] ) {
+				for ( c = 1; c < MAXPLAYERS; c++ ) {
+					if ( client_disconnected[c] ) {
 						continue;
 					}
 					net_packet->address.host = net_clients[c - 1].host;
@@ -85,41 +85,41 @@ void consoleCommand(char *command_str) {
 		strcpy(name, command_str + 10);
 		lastname = (string)name;
 		lastname = lastname.substr(0, lastname.size() - 1);
-	} else if( !strncmp(command_str, "/spawnitem ", 11) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/spawnitem ", 11) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
 		strcpy(name, command_str + 11);
-		for( c = 0; c < NUMITEMS; c++ ) {
-			if( strstr(items[c].name_identified, name) ) {
+		for ( c = 0; c < NUMITEMS; c++ ) {
+			if ( strstr(items[c].name_identified, name) ) {
 				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), TRUE, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
-		if( c == NUMITEMS ) {
+		if ( c == NUMITEMS ) {
 			messagePlayer(clientnum, language[278], name);
 		}
-	} else if( !strncmp(command_str, "/spawncursed ", 13) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/spawncursed ", 13) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
 		strcpy(name, command_str + 13);
-		for( c = 0; c < NUMITEMS; c++ ) {
-			if( strstr(items[c].name_identified, name) ) {
+		for ( c = 0; c < NUMITEMS; c++ ) {
+			if ( strstr(items[c].name_identified, name) ) {
 				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), FALSE, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
-		if( c == NUMITEMS ) {
+		if ( c == NUMITEMS ) {
 			messagePlayer(clientnum, language[278], name);
 		}
-	} else if( !strncmp(command_str, "/kick ", 6) ) {
+	} else if ( !strncmp(command_str, "/kick ", 6) ) {
 		strcpy(name, command_str + 6);
-		if( multiplayer == SERVER ) {
-			for( c = 1; c < MAXPLAYERS; c++ ) {
-				if( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) ) {
+		if ( multiplayer == SERVER ) {
+			for ( c = 1; c < MAXPLAYERS; c++ ) {
+				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) ) {
 					client_disconnected[c] = TRUE;
 					strcpy((char *)net_packet->data, "KICK");
 					net_packet->address.host = net_clients[c - 1].host;
@@ -127,50 +127,50 @@ void consoleCommand(char *command_str) {
 					net_packet->len = 4;
 					sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					int i;
-					for( i = 0; i < MAXPLAYERS; i++ ) {
+					for ( i = 0; i < MAXPLAYERS; i++ ) {
 						messagePlayer(i, language[279], c, stats[c]->name);
 					}
 					break;
 				}
 			}
-			if( c == MAXPLAYERS ) {
+			if ( c == MAXPLAYERS ) {
 				messagePlayer(clientnum, language[280]);
 			}
-		} else if( multiplayer == CLIENT ) {
+		} else if ( multiplayer == CLIENT ) {
 			messagePlayer(clientnum, language[281]);
 		} else {
 			messagePlayer(clientnum, language[282]);
 		}
-	} else if( !strncmp(command_str, "/spawnbook ", 11) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/spawnbook ", 11) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
 		strcpy(name, command_str + 11);
 		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), TRUE, &stats[clientnum]->inventory), 0);
-	} else if( !strncmp(command_str, "/savemap ", 9) ) {
-		if( command_str[9] != 0 ) {
+	} else if ( !strncmp(command_str, "/savemap ", 9) ) {
+		if ( command_str[9] != 0 ) {
 			saveMap(command_str + 9);
 			messagePlayer(clientnum, language[283], command_str + 9);
 		}
-	} else if( !strncmp(command_str, "/nextlevel", 10) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/nextlevel", 10) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if( multiplayer == CLIENT ) {
+		if ( multiplayer == CLIENT ) {
 			messagePlayer(clientnum, language[284]);
 		} else {
 			messagePlayer(clientnum, language[285]);
 			loadnextlevel = TRUE;
 		}
-	} else if( !strncmp(command_str, "/pos", 4) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/pos", 4) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
 		messagePlayer(clientnum, language[286], (int)camera.x, (int)camera.y, (int)camera.z, camera.ang, camera.vang);
-	} else if( !strncmp(command_str, "/pathmap", 4) ) {
+	} else if ( !strncmp(command_str, "/pathmap", 4) ) {
 		if (!(svFlags & SV_FLAG_CHEATS)) {
 			messagePlayer(clientnum, language[277]);
 			return;
@@ -181,70 +181,70 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum, "pathMapGrounded value: %d", pathMapGrounded[y + x * map.height]);
 			messagePlayer(clientnum, "pathMapFlying value: %d", pathMapFlying[y + x * map.height]);
 		}
-	} else if( !strncmp(command_str, "/exit", 5) ) {
+	} else if ( !strncmp(command_str, "/exit", 5) ) {
 		mainloop = 0;
-	} else if( !strncmp(command_str, "/showfps", 8) ) {
+	} else if ( !strncmp(command_str, "/showfps", 8) ) {
 		showfps = (showfps == FALSE);
-	} else if( !strncmp(command_str, "/noclip", 7) ) {
-		if( multiplayer != SINGLE ) {
+	} else if ( !strncmp(command_str, "/noclip", 7) ) {
+		if ( multiplayer != SINGLE ) {
 			messagePlayer(clientnum, language[287]);
 		} else {
 			noclip = (noclip == FALSE);
-			if( noclip ) {
+			if ( noclip ) {
 				messagePlayer(clientnum, language[288]);
 			} else {
 				messagePlayer(clientnum, language[289]);
 			}
 		}
-	} else if( !strncmp(command_str, "/god", 4) ) {
+	} else if ( !strncmp(command_str, "/god", 4) ) {
 		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if( multiplayer != SINGLE ) {
+		if ( multiplayer != SINGLE ) {
 			messagePlayer(clientnum, language[290]);
 		} else {
 			godmode = (godmode == FALSE);
-			if( godmode ) {
+			if ( godmode ) {
 				messagePlayer(clientnum, language[291]);
 			} else {
 				messagePlayer(clientnum, language[292]);
 			}
 		}
-	} else if( !strncmp(command_str, "/buddha", 7) ) {
-		if( multiplayer != SINGLE ) {
+	} else if ( !strncmp(command_str, "/buddha", 7) ) {
+		if ( multiplayer != SINGLE ) {
 			messagePlayer(clientnum, language[293]);
 		} else {
 			buddhamode = (buddhamode == FALSE);
-			if( buddhamode ) {
+			if ( buddhamode ) {
 				messagePlayer(clientnum, language[294]);
 			} else {
 				messagePlayer(clientnum, language[295]);
 			}
 		}
-	} else if( !strncmp(command_str, "/friendly", 9) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/friendly", 9) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if( multiplayer == CLIENT ) {
+		if ( multiplayer == CLIENT ) {
 			messagePlayer(clientnum, language[284]);
 			return;
 		}
 		everybodyfriendly = (everybodyfriendly == FALSE);
-		if( everybodyfriendly ) {
+		if ( everybodyfriendly ) {
 			messagePlayer(clientnum, language[296]);
 		} else {
 			messagePlayer(clientnum, language[297]);
 		}
-	} else if( !strncmp(command_str, "/dowse", 6) ) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+	} else if ( !strncmp(command_str, "/dowse", 6) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		for( node = map.entities->first; node != NULL; node = node->next ) {
+		for ( node = map.entities->first; node != NULL; node = node->next ) {
 			entity = (Entity *)node->element;
-			if( entity->behavior == &actLadder ) {
+			if ( entity->behavior == &actLadder ) {
 				messagePlayer(clientnum, language[298], (int)(entity->x / 16), (int)(entity->y / 16));
 			}
 		}
@@ -261,60 +261,60 @@ void consoleCommand(char *command_str) {
 				messagePlayer(clientnum, "thirdperson OFF");
 			}
 		}
-	} else if( !strncmp(command_str, "/res ", 5) ) {
+	} else if ( !strncmp(command_str, "/res ", 5) ) {
 		xres = atoi(&command_str[5]);
-		for( c = 0; c < strlen(command_str); c++ ) {
-			if( command_str[c] == 'x' ) {
+		for ( c = 0; c < strlen(command_str); c++ ) {
+			if ( command_str[c] == 'x' ) {
 				yres = atoi(&command_str[c + 1]);
 				break;
 			}
 		}
-	} else if( !strncmp(command_str, "/rscale", 7) ) {
+	} else if ( !strncmp(command_str, "/rscale", 7) ) {
 		rscale = atoi(&command_str[8]);
-	} else if( !strncmp(command_str, "/smoothlighting", 15) ) {
+	} else if ( !strncmp(command_str, "/smoothlighting", 15) ) {
 		smoothlighting = (smoothlighting == 0);
-	} else if( !strncmp(command_str, "/fullscreen", 11) ) {
+	} else if ( !strncmp(command_str, "/fullscreen", 11) ) {
 		fullscreen = (fullscreen == 0);
-	} else if( !strncmp(command_str, "/shaking", 8) ) {
+	} else if ( !strncmp(command_str, "/shaking", 8) ) {
 		shaking = (shaking == 0);
-	} else if( !strncmp(command_str, "/bobbing", 8) ) {
+	} else if ( !strncmp(command_str, "/bobbing", 8) ) {
 		bobbing = (bobbing == 0);
-	} else if( !strncmp(command_str, "/sfxvolume", 10) ) {
+	} else if ( !strncmp(command_str, "/sfxvolume", 10) ) {
 		sfxvolume = atoi(&command_str[11]);
-	} else if( !strncmp(command_str, "/musvolume", 10) ) {
+	} else if ( !strncmp(command_str, "/musvolume", 10) ) {
 		musvolume = atoi(&command_str[11]);
-	} else if( !strncmp(command_str, "/bind", 5) ) {
-		if( strstr(command_str, "IN_FORWARD") ) {
+	} else if ( !strncmp(command_str, "/bind", 5) ) {
+		if ( strstr(command_str, "IN_FORWARD") ) {
 			impulses[IN_FORWARD] = atoi(&command_str[6]);
 			printlog("Bound IN_FORWARD: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_LEFT") ) {
+		} else if ( strstr(command_str, "IN_LEFT") ) {
 			impulses[IN_LEFT] = atoi(&command_str[6]);
 			printlog("Bound IN_LEFT: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_BACK") ) {
+		} else if ( strstr(command_str, "IN_BACK") ) {
 			impulses[IN_BACK] = atoi(&command_str[6]);
 			printlog("Bound IN_BACK: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_RIGHT") ) {
+		} else if ( strstr(command_str, "IN_RIGHT") ) {
 			impulses[IN_RIGHT] = atoi(&command_str[6]);
 			printlog("Bound IN_RIGHT: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_TURNL") ) {
+		} else if ( strstr(command_str, "IN_TURNL") ) {
 			impulses[IN_TURNL] = atoi(&command_str[6]);
 			printlog("Bound IN_TURNL: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_TURNR") ) {
+		} else if ( strstr(command_str, "IN_TURNR") ) {
 			impulses[IN_TURNR] = atoi(&command_str[6]);
 			printlog("Bound IN_TURNR: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_UP") ) {
+		} else if ( strstr(command_str, "IN_UP") ) {
 			impulses[IN_UP] = atoi(&command_str[6]);
 			printlog("Bound IN_UP: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_DOWN") ) {
+		} else if ( strstr(command_str, "IN_DOWN") ) {
 			impulses[IN_DOWN] = atoi(&command_str[6]);
 			printlog("Bound IN_DOWN: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_CHAT") ) {
+		} else if ( strstr(command_str, "IN_CHAT") ) {
 			impulses[IN_CHAT] = atoi(&command_str[6]);
 			printlog("Bound IN_CHAT: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_COMMAND") ) {
+		} else if ( strstr(command_str, "IN_COMMAND") ) {
 			impulses[IN_COMMAND] = atoi(&command_str[6]);
 			printlog("Bound IN_COMMAND: %d\n", atoi(&command_str[6]));
-		} else if( strstr(command_str, "IN_STATUS") ) {
+		} else if ( strstr(command_str, "IN_STATUS") ) {
 			impulses[IN_STATUS] = atoi(&command_str[6]);
 			printlog("Bound IN_STATUS: %d\n", atoi(&command_str[6]));
 		} else if (strstr(command_str, "IN_SPELL_LIST")) {
@@ -435,26 +435,26 @@ void consoleCommand(char *command_str) {
 		} else {
 			messagePlayer(clientnum, "Invalid binding.");
 		}
-	} else if( !strncmp(command_str, "/mousespeed", 11) ) {
+	} else if ( !strncmp(command_str, "/mousespeed", 11) ) {
 		mousespeed = atoi(&command_str[12]);
-	} else if( !strncmp(command_str, "/reversemouse", 13) ) {
+	} else if ( !strncmp(command_str, "/reversemouse", 13) ) {
 		reversemouse = (reversemouse == 0);
-	} else if( !strncmp(command_str, "/smoothmouse", 12) ) {
+	} else if ( !strncmp(command_str, "/smoothmouse", 12) ) {
 		smoothmouse = (smoothmouse == FALSE);
-	} else if( !strncmp(command_str, "/mana", 4) ) {
-		if( multiplayer == SINGLE ) {
+	} else if ( !strncmp(command_str, "/mana", 4) ) {
+		if ( multiplayer == SINGLE ) {
 			stats[clientnum]->MP = stats[clientnum]->MAXMP;
 		} else {
 			messagePlayer(clientnum, language[299]);
 		}
-	} else if( !strncmp(command_str, "/heal", 4) ) {
-		if( multiplayer == SINGLE ) {
+	} else if ( !strncmp(command_str, "/heal", 4) ) {
+		if ( multiplayer == SINGLE ) {
 			stats[clientnum]->HP = stats[clientnum]->MAXHP;
 		} else {
 			messagePlayer(clientnum, language[299]);
 		}
 	} else if (!strncmp(command_str, "/ip ", 4)) {
-		if( command_str[4] != 0 ) {
+		if ( command_str[4] != 0 ) {
 			strcpy(last_ip, command_str + 4);
 			last_ip[strlen(last_ip) - 1] = 0;
 		}
@@ -465,7 +465,7 @@ void consoleCommand(char *command_str) {
 		}
 	} else if (!strncmp(command_str, "/noblood", 8)) {
 		spawn_blood = (spawn_blood == FALSE);
-	} else if(!strncmp(command_str, "/colorblind", 11)) {
+	} else if (!strncmp(command_str, "/colorblind", 11)) {
 		colorblind = (colorblind == FALSE);
 	} else if (!strncmp(command_str, "/gamma", 6)) {
 		std::stringstream ss;
@@ -482,9 +482,9 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum, language[299]);
 		}
 	} else if (!strncmp(command_str, "/maxout", 7)) {
-		if( multiplayer == SINGLE ) {
+		if ( multiplayer == SINGLE ) {
 			int c;
-			for( c = 0; c < 14; c++ ) {
+			for ( c = 0; c < 14; c++ ) {
 				consoleCommand("/levelup");
 			}
 			consoleCommand("/spawnitem steel breastpiece");
@@ -496,7 +496,7 @@ void consoleCommand(char *command_str) {
 			consoleCommand("/spawnitem steel sword");
 			consoleCommand("/spawnitem crossbow");
 			consoleCommand("/spawnitem magicstaff of lightning");
-			for( c = 0; c < NUMPROFICIENCIES; c++ ) {
+			for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 				stats[clientnum]->PROFICIENCIES[c] = 100;
 			}
 		} else {
@@ -532,19 +532,19 @@ void consoleCommand(char *command_str) {
 	} else if (!strncmp(command_str, "/numentities", 12)) {
 		messagePlayer(clientnum, language[300], list_Size(map.entities));
 	} else if (!strncmp(command_str, "/killmonsters", 13)) {
-		if( !(svFlags & SV_FLAG_CHEATS) ) {
+		if ( !(svFlags & SV_FLAG_CHEATS) ) {
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if( multiplayer == CLIENT ) {
+		if ( multiplayer == CLIENT ) {
 			messagePlayer(clientnum, language[284]);
 		} else {
 			int c = 0;
 			node_t *node, *nextnode;
-			for( node = map.entities->first; node != NULL; node = nextnode ) {
+			for ( node = map.entities->first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
 				Entity *entity = (Entity *)node->element;
-				if( entity->behavior == &actMonster ) {
+				if ( entity->behavior == &actMonster ) {
 					entity->setHP(0);
 					c++;
 				}

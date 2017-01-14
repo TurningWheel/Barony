@@ -30,13 +30,13 @@ void initImp(Entity *my, Stat *myStats) {
 	my->flags[BLOCKSIGHT] = TRUE;
 	my->flags[INVISIBLE] = FALSE;
 
-	if( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT ) {
 		MONSTER_SPOTSND = 198;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 201;
 		MONSTER_IDLEVAR = 3;
 	}
-	if( multiplayer != CLIENT && !MONSTER_INIT ) {
+	if ( multiplayer != CLIENT && !MONSTER_INIT ) {
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
 		strcpy(myStats->name, "");
@@ -55,25 +55,25 @@ void initImp(Entity *my, Stat *myStats) {
 		myStats->CHR = -3;
 		myStats->EXP = 0;
 		myStats->LVL = 14;
-		if( rand() % 10 ) {
+		if ( rand() % 10 ) {
 			myStats->GOLD = 0;
 		} else {
 			myStats->GOLD = 20 + rand() % 20;
 		}
 		myStats->HUNGER = 900;
-		if( !myStats->leader_uid ) {
+		if ( !myStats->leader_uid ) {
 			myStats->leader_uid = 0;
 		}
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
-			if( c < NUMPROFICIENCIES ) {
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
+			if ( c < NUMPROFICIENCIES ) {
 				myStats->PROFICIENCIES[c] = 0;
 			}
-			if( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS ) {
 				myStats->EFFECTS[c] = FALSE;
 			}
-			if( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS ) {
 				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
@@ -91,12 +91,12 @@ void initImp(Entity *my, Stat *myStats) {
 		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-		if( rand() % 4 == 0 ) {
+		if ( rand() % 4 == 0 ) {
 			myStats->EFFECTS[EFF_ASLEEP] = TRUE;
 			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
 		}
 
-		if( rand() % 4 == 0 ) {
+		if ( rand() % 4 == 0 ) {
 			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), FALSE, &myStats->inventory );
 		}
 	}
@@ -233,17 +233,17 @@ void actImpLimb(Entity *my) {
 	int i;
 
 	Entity *parent = NULL;
-	if( (parent = uidToEntity(my->skill[2])) == NULL ) {
+	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	if( multiplayer != CLIENT ) {
-		for( i = 0; i < MAXPLAYERS; i++ ) {
-			if( inrange[i] ) {
-				if( i == 0 && selectedEntity == my ) {
+	if ( multiplayer != CLIENT ) {
+		for ( i = 0; i < MAXPLAYERS; i++ ) {
+			if ( inrange[i] ) {
+				if ( i == 0 && selectedEntity == my ) {
 					parent->skill[13] = i + 1;
-				} else if( client_selected[i] == my ) {
+				} else if ( client_selected[i] == my ) {
 					parent->skill[13] = i + 1;
 				}
 			}
@@ -256,7 +256,7 @@ void impDie(Entity *my) {
 	node_t *node, *nextnode;
 
 	int c;
-	for( c = 0; c < 5; c++ ) {
+	for ( c = 0; c < 5; c++ ) {
 		Entity *gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
@@ -264,8 +264,8 @@ void impDie(Entity *my) {
 		int x, y;
 		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-			if( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
+			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
 				Entity *entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
@@ -304,21 +304,21 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	int bodypart;
 
 	// set invisibility
-	if( multiplayer != CLIENT ) {
-		if( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
+	if ( multiplayer != CLIENT ) {
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
 			bodypart = 0;
-			for(node = my->children.first; node != NULL; node = node->next) {
-				if( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next) {
+				if ( bodypart < 2 ) {
 					bodypart++;
 					continue;
 				}
-				if( bodypart >= 7 ) {
+				if ( bodypart >= 7 ) {
 					break;
 				}
 				entity = (Entity *)node->element;
-				if( !entity->flags[INVISIBLE] ) {
+				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -328,16 +328,16 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			my->flags[INVISIBLE] = FALSE;
 			my->flags[BLOCKSIGHT] = TRUE;
 			bodypart = 0;
-			for(node = my->children.first; node != NULL; node = node->next) {
-				if( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next) {
+				if ( bodypart < 2 ) {
 					bodypart++;
 					continue;
 				}
-				if( bodypart >= 7 ) {
+				if ( bodypart >= 7 ) {
 					break;
 				}
 				entity = (Entity *)node->element;
-				if( entity->flags[INVISIBLE] ) {
+				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -346,7 +346,7 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		}
 
 		// sleeping
-		if( myStats->EFFECTS[EFF_ASLEEP] ) {
+		if ( myStats->EFFECTS[EFF_ASLEEP] ) {
 			my->pitch = PI / 4;
 		} else {
 			my->pitch = 0;
@@ -358,8 +358,8 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	}
 
 	//Move bodyparts
-	for(bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
-		if( bodypart < 2 ) {
+	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
+		if ( bodypart < 2 ) {
 			continue;
 		}
 		entity = (Entity *)node->element;
@@ -367,40 +367,40 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if( bodypart == 3 || bodypart == 6 ) {
-			if( bodypart == 3 ) {
+		if ( bodypart == 3 || bodypart == 6 ) {
+			if ( bodypart == 3 ) {
 				rightbody = (Entity *)node->next->element;
 			}
-			if( bodypart == 3 || !MONSTER_ATTACK ) {
-				if( !rightbody->skill[0] ) {
+			if ( bodypart == 3 || !MONSTER_ATTACK ) {
+				if ( !rightbody->skill[0] ) {
 					entity->pitch -= IMPWALKSPEED;
-					if( entity->pitch < -PI / 8.0 ) {
+					if ( entity->pitch < -PI / 8.0 ) {
 						entity->pitch = -PI / 8.0;
-						if(bodypart == 3) {
+						if (bodypart == 3) {
 							entity->skill[0] = 1;
 						}
 					}
 				} else {
 					entity->pitch += IMPWALKSPEED;
-					if( entity->pitch > PI / 8.0 ) {
+					if ( entity->pitch > PI / 8.0 ) {
 						entity->pitch = PI / 8.0;
-						if(bodypart == 3) {
+						if (bodypart == 3) {
 							entity->skill[0] = 0;
 						}
 					}
 				}
 			} else {
 				// vertical chop
-				if( MONSTER_ATTACKTIME == 0 ) {
+				if ( MONSTER_ATTACKTIME == 0 ) {
 					MONSTER_ARMBENDED = 0;
 					MONSTER_WEAPONYAW = 0;
 					entity->pitch = -3 * PI / 4;
 					entity->roll = 0;
 				} else {
-					if( entity->pitch >= -PI / 2 ) {
+					if ( entity->pitch >= -PI / 2 ) {
 						MONSTER_ARMBENDED = 1;
 					}
-					if( entity->pitch >= PI / 4 ) {
+					if ( entity->pitch >= PI / 4 ) {
 						entity->skill[0] = rightbody->skill[0];
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = rightbody->pitch;
@@ -412,20 +412,20 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					}
 				}
 			}
-		} else if( bodypart == 4 || bodypart == 5 ) {
-			if( bodypart == 5 ) {
-				if( MONSTER_ATTACK ) {
+		} else if ( bodypart == 4 || bodypart == 5 ) {
+			if ( bodypart == 5 ) {
+				if ( MONSTER_ATTACK ) {
 					// vertical chop
-					if( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 ) {
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = -3 * PI / 4;
 						entity->roll = 0;
 					} else {
-						if( entity->pitch >= -PI / 2 ) {
+						if ( entity->pitch >= -PI / 2 ) {
 							MONSTER_ARMBENDED = 1;
 						}
-						if( entity->pitch >= PI / 4 ) {
+						if ( entity->pitch >= PI / 4 ) {
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
@@ -438,28 +438,28 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				}
 			}
 
-			if( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) ) {
-				if( entity->skill[0] ) {
+			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) ) {
+				if ( entity->skill[0] ) {
 					entity->pitch -= IMPWALKSPEED;
-					if( entity->pitch < -PI / 8.0 ) {
+					if ( entity->pitch < -PI / 8.0 ) {
 						entity->skill[0] = 0;
 						entity->pitch = -PI / 8.0;
 					}
 				} else {
 					entity->pitch += IMPWALKSPEED;
-					if( entity->pitch > PI / 8.0 ) {
+					if ( entity->pitch > PI / 8.0 ) {
 						entity->skill[0] = 1;
 						entity->pitch = PI / 8.0;
 					}
 				}
 			}
-		} else if( bodypart == 7 || bodypart == 8 ) {
+		} else if ( bodypart == 7 || bodypart == 8 ) {
 			entity->fskill[1] += .1;
-			if( entity->fskill[1] >= PI * 2 ) {
+			if ( entity->fskill[1] >= PI * 2 ) {
 				entity->fskill[1] -= PI * 2;
 			}
 		}
-		switch( bodypart ) {
+		switch ( bodypart ) {
 			// torso
 			case 2:
 				entity->x -= 2 * cos(my->yaw);
@@ -507,7 +507,7 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				break;
 		}
 	}
-	if( MONSTER_ATTACK != 0 ) {
+	if ( MONSTER_ATTACK != 0 ) {
 		MONSTER_ATTACKTIME++;
 	} else {
 		MONSTER_ATTACKTIME = 0;
