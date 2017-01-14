@@ -39,8 +39,8 @@ void actArrowTrap(Entity *my) {
 	}
 
 	ARROWTRAP_AMBIENCE--;
-	if( ARROWTRAP_AMBIENCE<=0 ) {
-		ARROWTRAP_AMBIENCE = TICKS_PER_SECOND*30;
+	if( ARROWTRAP_AMBIENCE <= 0 ) {
+		ARROWTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntity( my, 149, 128 );
 	}
 
@@ -52,7 +52,7 @@ void actArrowTrap(Entity *my) {
 	if( my->skill[28] == 2) {
 		if( !ARROWTRAP_FIRED ) {
 			ARROWTRAP_FIRED = 1;
-			for( c=0; c<4; c++ ) {
+			for( c = 0; c < 4; c++ ) {
 				switch( c ) {
 					case 0:
 						x = 12;
@@ -71,14 +71,14 @@ void actArrowTrap(Entity *my) {
 						y = -12;
 						break;
 				}
-				if( !checkObstacle(my->x+x, my->y+y, my, NULL) ) {
+				if( !checkObstacle(my->x + x, my->y + y, my, NULL) ) {
 					Entity *entity = newEntity(166, 1, map.entities); // arrow
-					playSoundEntity(my, 239+rand()%3, 96);
+					playSoundEntity(my, 239 + rand() % 3, 96);
 					entity->parent = my->uid;
-					entity->x = my->x+x;
-					entity->y = my->y+y;
+					entity->x = my->x + x;
+					entity->y = my->y + y;
 					entity->z = my->z;
-					entity->yaw = c*(PI/2.f);
+					entity->yaw = c * (PI / 2.f);
 					entity->sizex = 1;
 					entity->sizey = 1;
 					entity->behavior = &actArrow;

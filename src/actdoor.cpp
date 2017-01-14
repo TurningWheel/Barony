@@ -47,40 +47,40 @@ void actDoor(Entity *my) {
 	int i, c;
 
 	if( !DOOR_INIT ) {
-		DOOR_INIT=1;
-		DOOR_STARTANG=my->yaw;
-		DOOR_HEALTH=15+rand()%5;
-		DOOR_MAXHEALTH=DOOR_HEALTH;
-		if( rand()%20==0 ) { // 5% chance
-			DOOR_LOCKED=1;
+		DOOR_INIT = 1;
+		DOOR_STARTANG = my->yaw;
+		DOOR_HEALTH = 15 + rand() % 5;
+		DOOR_MAXHEALTH = DOOR_HEALTH;
+		if( rand() % 20 == 0 ) { // 5% chance
+			DOOR_LOCKED = 1;
 		}
-		DOOR_OLDSTATUS=DOOR_STATUS;
+		DOOR_OLDSTATUS = DOOR_STATUS;
 		my->scalex = 1.01;
 		my->scaley = 1.01;
 		my->scalez = 1.01;
-		my->flags[BURNABLE]=TRUE;
+		my->flags[BURNABLE] = TRUE;
 	} else {
-		if( multiplayer!=CLIENT ) {
+		if( multiplayer != CLIENT ) {
 			// burning
 			if( my->flags[BURNING] ) {
-				if( ticks%30==0 ) {
+				if( ticks % 30 == 0 ) {
 					DOOR_HEALTH--;
 				}
 			}
 
 			// door mortality :p
-			if( DOOR_HEALTH<=0 ) {
-				for( c=0; c<5; c++ ) {
+			if( DOOR_HEALTH <= 0 ) {
+				for( c = 0; c < 5; c++ ) {
 					entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
 					entity->sprite = 187; // Splinter.vox
-					entity->x = floor(my->x/16)*16+8;
-					entity->y = floor(my->y/16)*16+8;
+					entity->x = floor(my->x / 16) * 16 + 8;
+					entity->y = floor(my->y / 16) * 16 + 8;
 					entity->z = 0;
-					entity->z += -7+rand()%14;
+					entity->z += -7 + rand() % 14;
 					if( !DOOR_DIR ) {
 						// horizontal door
-						entity->y += -4+rand()%8;
+						entity->y += -4 + rand() % 8;
 						if( DOOR_SMACKED ) {
 							entity->yaw = PI;
 						} else {
@@ -88,50 +88,50 @@ void actDoor(Entity *my) {
 						}
 					} else {
 						// vertical door
-						entity->x += -4+rand()%8;
+						entity->x += -4 + rand() % 8;
 						if( DOOR_SMACKED ) {
-							entity->yaw = PI/2;
+							entity->yaw = PI / 2;
 						} else {
-							entity->yaw = 3*PI/2;
+							entity->yaw = 3 * PI / 2;
 						}
 					}
-					entity->pitch = (rand()%360)*PI/180.0;
-					entity->roll = (rand()%360)*PI/180.0;
-					entity->vel_x = cos(entity->yaw)*(1.2+(rand()%10)/50.0);
-					entity->vel_y = sin(entity->yaw)*(1.2+(rand()%10)/50.0);
+					entity->pitch = (rand() % 360) * PI / 180.0;
+					entity->roll = (rand() % 360) * PI / 180.0;
+					entity->vel_x = cos(entity->yaw) * (1.2 + (rand() % 10) / 50.0);
+					entity->vel_y = sin(entity->yaw) * (1.2 + (rand() % 10) / 50.0);
 					entity->vel_z = -.25;
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
 				}
-				playSoundEntity(my,177,64);
+				playSoundEntity(my, 177, 64);
 				list_RemoveNode(my->mynode);
 				return;
 			}
 
 			// using door
-			for(i=0; i<MAXPLAYERS; i++) {
-				if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+			for(i = 0; i < MAXPLAYERS; i++) {
+				if( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 					if(inrange[i]) {
 						if( !DOOR_LOCKED ) { // door unlocked
 							if( !DOOR_DIR && !DOOR_STATUS ) {
 								// open door
-								DOOR_STATUS = 1+(players[i]->entity->x>my->x);
-								playSoundEntity(my,21,96);
-								messagePlayer(i,language[464]);
+								DOOR_STATUS = 1 + (players[i]->entity->x > my->x);
+								playSoundEntity(my, 21, 96);
+								messagePlayer(i, language[464]);
 							} else if( DOOR_DIR && !DOOR_STATUS ) {
 								// open door
-								DOOR_STATUS = 1+(players[i]->entity->y<my->y);
-								playSoundEntity(my,21,96);
-								messagePlayer(i,language[464]);
+								DOOR_STATUS = 1 + (players[i]->entity->y < my->y);
+								playSoundEntity(my, 21, 96);
+								messagePlayer(i, language[464]);
 							} else {
 								// close door
 								DOOR_STATUS = 0;
-								playSoundEntity(my,22,96);
-								messagePlayer(i,language[465]);
+								playSoundEntity(my, 22, 96);
+								messagePlayer(i, language[465]);
 							}
 						} else {
 							// door locked
-							messagePlayer(i,language[466]);
+							messagePlayer(i, language[466]);
 							playSoundEntity(my, 152, 64);
 						}
 					}
@@ -143,23 +143,23 @@ void actDoor(Entity *my) {
 		if( !DOOR_STATUS ) {
 			// closing door
 			if( my->yaw > DOOR_STARTANG ) {
-				my->yaw = std::max(DOOR_STARTANG,my->yaw-0.15);
+				my->yaw = std::max(DOOR_STARTANG, my->yaw - 0.15);
 			} else if( my->yaw < DOOR_STARTANG ) {
-				my->yaw = std::min(DOOR_STARTANG,my->yaw+0.15);
+				my->yaw = std::min(DOOR_STARTANG, my->yaw + 0.15);
 			}
 		} else {
 			// opening door
 			if( DOOR_STATUS == 1 ) {
-				if( my->yaw > DOOR_STARTANG+PI/2 ) {
-					my->yaw = std::max(DOOR_STARTANG+PI/2,my->yaw-0.15);
-				} else if( my->yaw < DOOR_STARTANG+PI/2 ) {
-					my->yaw = std::min(DOOR_STARTANG+PI/2,my->yaw+0.15);
+				if( my->yaw > DOOR_STARTANG + PI / 2 ) {
+					my->yaw = std::max(DOOR_STARTANG + PI / 2, my->yaw - 0.15);
+				} else if( my->yaw < DOOR_STARTANG + PI / 2 ) {
+					my->yaw = std::min(DOOR_STARTANG + PI / 2, my->yaw + 0.15);
 				}
 			} else if( DOOR_STATUS == 2 ) {
-				if( my->yaw > DOOR_STARTANG-PI/2 ) {
-					my->yaw = std::max(DOOR_STARTANG-PI/2,my->yaw-0.15);
-				} else if( my->yaw < DOOR_STARTANG-PI/2 ) {
-					my->yaw = std::min(DOOR_STARTANG-PI/2,my->yaw+0.15);
+				if( my->yaw > DOOR_STARTANG - PI / 2 ) {
+					my->yaw = std::max(DOOR_STARTANG - PI / 2, my->yaw - 0.15);
+				} else if( my->yaw < DOOR_STARTANG - PI / 2 ) {
+					my->yaw = std::min(DOOR_STARTANG - PI / 2, my->yaw + 0.15);
 				}
 			}
 		}
@@ -169,12 +169,12 @@ void actDoor(Entity *my) {
 			// don't set impassable if someone's inside, otherwise do
 			node_t *node;
 			bool somebodyinside = FALSE;
-			for( node=map.entities->first; node!=NULL; node=node->next ) {
+			for( node = map.entities->first; node != NULL; node = node->next ) {
 				Entity *entity = (Entity *)node->element;
-				if( entity==my || entity->flags[PASSABLE] || entity->sprite == 1  ) {
+				if( entity == my || entity->flags[PASSABLE] || entity->sprite == 1  ) {
 					continue;
 				}
-				if( entityInsideEntity(my,entity) ) {
+				if( entityInsideEntity(my, entity) ) {
 					somebodyinside = TRUE;
 					break;
 				}
@@ -199,10 +199,10 @@ void actDoor(Entity *my) {
 		}
 
 		// update for clients
-		if( multiplayer==SERVER ) {
-			if( DOOR_OLDSTATUS!=DOOR_STATUS ) {
-				DOOR_OLDSTATUS=DOOR_STATUS;
-				serverUpdateEntitySkill(my,3);
+		if( multiplayer == SERVER ) {
+			if( DOOR_OLDSTATUS != DOOR_STATUS ) {
+				DOOR_OLDSTATUS = DOOR_STATUS;
+				serverUpdateEntitySkill(my, 3);
 			}
 		}
 	}
@@ -213,7 +213,7 @@ void actDoorFrame(Entity *my) {
 	// intended to make it easier
 	// to determine whether an entity
 	// is part of a door frame
-	if( my->sprite==1 && my->flags[INVISIBLE]==FALSE ) {
-		my->flags[PASSABLE]=TRUE; // the actual frame should ALWAYS be passable
+	if( my->sprite == 1 && my->flags[INVISIBLE] == FALSE ) {
+		my->flags[PASSABLE] = TRUE; // the actual frame should ALWAYS be passable
 	}
 }

@@ -48,7 +48,7 @@ FMOD_SOUND *endgamemusic = NULL;
 FMOD_SOUND *devilmusic = NULL;
 FMOD_SOUND *escapemusic = NULL;
 FMOD_SOUND *introductionmusic = NULL;
-bool levelmusicplaying=FALSE;
+bool levelmusicplaying = FALSE;
 
 FMOD_CHANNEL *music_channel = NULL;
 FMOD_CHANNEL *music_channel2 = NULL;
@@ -84,7 +84,7 @@ void sound_update() {
 
 	FMOD_VECTOR position, forward, up;
 	position.x = -camera.y;
-	position.y = -camera.z/32;
+	position.y = -camera.z / 32;
 	position.z = -camera.x;
 
 	/*double cosroll = cos(0);
@@ -98,9 +98,9 @@ void sound_update() {
 	double ry = sinroll*cosyaw + cosroll*sinpitch*sinyaw;
 	double rz = cosroll*cospitch;*/
 
-	forward.x = 1*sin(camera.ang);
+	forward.x = 1 * sin(camera.ang);
 	forward.y = 0;
-	forward.z = 1*cos(camera.ang);
+	forward.z = 1 * cos(camera.ang);
 	/*forward.x = rx;
 	forward.y = ry;
 	forward.z = rz;*/
@@ -128,7 +128,7 @@ void sound_update() {
 			FMOD_Channel_GetVolume(music_channel, &volume);
 
 			if (volume < 1.0f) {
-				volume += fadein_increment*2;
+				volume += fadein_increment * 2;
 				if (volume > 1.0f) {
 					volume = 1.0f;
 				}
@@ -147,7 +147,7 @@ void sound_update() {
 			if (volume > 0.0f) {
 				//volume -= 0.001f;
 				//volume -= 0.005f;
-				volume -= fadeout_increment*2;
+				volume -= fadeout_increment * 2;
 				if (volume < 0.0f) {
 					volume = 0.0f;
 				}

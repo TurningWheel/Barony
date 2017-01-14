@@ -139,7 +139,7 @@ int SDL_SavePNG_RW(SDL_Surface *surface, SDL_RWops *dst, int freedst) {
 	/* Write everything */
 	png_write_info(png_ptr, info_ptr);
 #ifdef USE_ROW_POINTERS
-	row_pointers = (png_bytep*) malloc(sizeof(png_bytep)*surface->h);
+	row_pointers = (png_bytep*) malloc(sizeof(png_bytep) * surface->h);
 	for (i = 0; i < surface->h; i++) {
 		row_pointers[i] = (png_bytep)(Uint8*)surface->pixels + i * surface->pitch;
 	}

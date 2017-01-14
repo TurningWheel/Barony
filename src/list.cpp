@@ -21,7 +21,7 @@
 
 void list_FreeAll(list_t *list) {
 	node_t *node, *nextnode;
-	for( node=list->first; node!=NULL; node=nextnode ) {
+	for( node = list->first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		list_RemoveNode(node);
 	}
@@ -173,7 +173,7 @@ node_t *list_AddNodeLast(list_t *list) {
 
 node_t *list_AddNode(list_t *list, int index) {
 	node_t *node;
-	if( index<0 || index>list_Size(list)) {
+	if( index < 0 || index > list_Size(list)) {
 		return NULL;
 	}
 
@@ -192,7 +192,7 @@ node_t *list_AddNode(list_t *list, int index) {
 
 	// integrate it into the list
 	node->list = list;
-	node_t *oldnode = list_Node(list,index);
+	node_t *oldnode = list_Node(list, index);
 	if( oldnode ) {
 		// inserting at the beginning or middle of a list
 		node->prev = oldnode->prev;
@@ -236,7 +236,7 @@ Uint32 list_Size(list_t *list) {
 	node_t *node;
 	int c;
 
-	for( c=0, node=list->first; node!=NULL; node=node->next, c++ );
+	for( c = 0, node = list->first; node != NULL; node = node->next, c++ );
 	return c;
 }
 
@@ -251,7 +251,7 @@ Uint32 list_Size(list_t *list) {
 
 list_t *list_Copy(list_t *destlist, list_t *srclist) {
 	node_t *node;
-	for( node=srclist->first; node!=NULL; node=node->next ) {
+	for( node = srclist->first; node != NULL; node = node->next ) {
 		if( node->size == 0 ) {
 			printlog("error: attempted copy of node with size 0! Node not copied\n");
 			continue;
@@ -260,7 +260,7 @@ list_t *list_Copy(list_t *destlist, list_t *srclist) {
 		newnode->deconstructor = node->deconstructor;
 		newnode->element = malloc(node->size);
 		newnode->size = node->size;
-		memcpy(newnode->element,node->element,node->size);
+		memcpy(newnode->element, node->element, node->size);
 	}
 
 	return destlist;
@@ -288,7 +288,7 @@ list_t *list_CopyNew(list_t *srclist) {
 	destlist->last = NULL;
 
 	node_t *node;
-	for( node=srclist->first; node!=NULL; node=node->next ) {
+	for( node = srclist->first; node != NULL; node = node->next ) {
 		if( node->size == 0 ) {
 			printlog("error: attempted copy of node with size 0! Node not copied\n");
 			continue;
@@ -297,7 +297,7 @@ list_t *list_CopyNew(list_t *srclist) {
 		newnode->deconstructor = node->deconstructor;
 		newnode->element = malloc(node->size);
 		newnode->size = node->size;
-		memcpy(newnode->element,node->element,node->size);
+		memcpy(newnode->element, node->element, node->size);
 	}
 
 	return destlist;
@@ -315,8 +315,8 @@ Uint32 list_Index(node_t *node) {
 	node_t *tempnode;
 	int i;
 
-	for( i=0, tempnode=node->list->first; tempnode!=NULL; tempnode=tempnode->next, i++ ) {
-		if( tempnode==node ) {
+	for( i = 0, tempnode = node->list->first; tempnode != NULL; tempnode = tempnode->next, i++ ) {
+		if( tempnode == node ) {
 			break;
 		}
 	}
@@ -333,13 +333,13 @@ Uint32 list_Index(node_t *node) {
 -------------------------------------------------------------------------------*/
 
 node_t *list_Node(list_t *list, int index) {
-	if( index<0 || index>=list_Size(list) ) {
+	if( index < 0 || index >= list_Size(list) ) {
 		return NULL;
 	}
 
 	int i;
-	node_t *node=list->first;
+	node_t *node = list->first;
 
-	for( i=0; i!=index; node=node->next, i++ );
+	for( i = 0; i != index; node = node->next, i++ );
 	return node;
 }

@@ -60,50 +60,50 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 	mynode->size = sizeof(Entity);
 
 	// now reset all of my data elements
-	lastupdate=0;
-	lastupdateserver=0;
-	ticks=0;
-	x=0;
-	y=0;
-	z=0;
-	new_x=0;
-	new_y=0;
-	new_z=0;
-	focalx=0;
-	focaly=0;
-	focalz=0;
-	scalex=1;
-	scaley=1;
-	scalez=1;
-	vel_x=0;
-	vel_y=0;
-	vel_z=0;
-	sizex=0;
-	sizey=0;
-	yaw=0;
-	pitch=0;
-	roll=0;
-	new_yaw=0;
-	new_pitch=0;
-	new_roll=0;
+	lastupdate = 0;
+	lastupdateserver = 0;
+	ticks = 0;
+	x = 0;
+	y = 0;
+	z = 0;
+	new_x = 0;
+	new_y = 0;
+	new_z = 0;
+	focalx = 0;
+	focaly = 0;
+	focalz = 0;
+	scalex = 1;
+	scaley = 1;
+	scalez = 1;
+	vel_x = 0;
+	vel_y = 0;
+	vel_z = 0;
+	sizex = 0;
+	sizey = 0;
+	yaw = 0;
+	pitch = 0;
+	roll = 0;
+	new_yaw = 0;
+	new_pitch = 0;
+	new_roll = 0;
 	sprite = in_sprite;
-	light=NULL;
-	string=NULL;
-	children.first=NULL;
-	children.last=NULL;
+	light = NULL;
+	string = NULL;
+	children.first = NULL;
+	children.last = NULL;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
-	for( c=0; c<30; c++ ) {
-		skill[c]=0;
-		fskill[c]=0;
+	for( c = 0; c < 30; c++ ) {
+		skill[c] = 0;
+		fskill[c] = 0;
 	}
-	skill[2]=-1;
-	for( c=0; c<16; c++ ) {
-		flags[c]=FALSE;
+	skill[2] = -1;
+	for( c = 0; c < 16; c++ ) {
+		flags[c] = FALSE;
 	}
-	if( entlist==map.entities ) {
-		if( multiplayer!=CLIENT || loading ) {
-			uid=entity_uids;
+	if( entlist == map.entities ) {
+		if( multiplayer != CLIENT || loading ) {
+			uid = entity_uids;
 			entity_uids++;
 		} else {
 			uid = -2;
@@ -111,8 +111,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 	} else {
 		uid = -2;
 	}
-	behavior=NULL;
-	ranbehavior=FALSE;
+	behavior = NULL;
+	ranbehavior = FALSE;
 	parent = 0;
 	path = NULL;
 }
@@ -144,10 +144,10 @@ Entity::~Entity() {
 	}*/
 
 	// alert clients of the entity's deletion
-	if (multiplayer==SERVER && !loading) {
-		if (mynode->list == map.entities && uid!=0 && flags[NOUPDATE]==FALSE) {
-			for (i=1; i<MAXPLAYERS; i++) {
-				if ( client_disconnected[i]==TRUE ) {
+	if (multiplayer == SERVER && !loading) {
+		if (mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == FALSE) {
+			for (i = 1; i < MAXPLAYERS; i++) {
+				if ( client_disconnected[i] == TRUE ) {
 					continue;
 				}
 
@@ -160,10 +160,10 @@ Entity::~Entity() {
 				node->deconstructor = &defaultDeconstructor;*/
 
 				// send the delete entity command to the client
-				strcpy((char *)net_packet->data,"ENTD");
-				SDLNet_Write32((Uint32)uid,&net_packet->data[4]);
-				net_packet->address.host = net_clients[i-1].host;
-				net_packet->address.port = net_clients[i-1].port;
+				strcpy((char *)net_packet->data, "ENTD");
+				SDLNet_Write32((Uint32)uid, &net_packet->data[4]);
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 8;
 				/*if ( directConnect ) {
 					SDLNet_UDP_Send(net_sock,-1,net_packet);
@@ -203,7 +203,7 @@ void Entity::setObituary(char *obituary) {
 	if( !tempStats ) {
 		return;
 	}
-	strncpy(tempStats->obituary,obituary,127);
+	strncpy(tempStats->obituary, obituary, 127);
 }
 
 /*-------------------------------------------------------------------------------
@@ -224,11 +224,11 @@ void Entity::killedByMonsterObituary(Entity *victim) {
 		return;
 	}
 
-	if( myStats->type==hitstats->type ) {
-		if( hitstats->sex==MALE ) {
-			snprintf(tempstr,256,language[1509],language[90+hitstats->type]);
+	if( myStats->type == hitstats->type ) {
+		if( hitstats->sex == MALE ) {
+			snprintf(tempstr, 256, language[1509], language[90 + hitstats->type]);
 		} else {
-			snprintf(tempstr,256,language[1510],language[90+hitstats->type]);
+			snprintf(tempstr, 256, language[1510], language[90 + hitstats->type]);
 		}
 		victim->setObituary(tempstr);
 	} else {
@@ -303,12 +303,12 @@ int Entity::entityLight() {
 	if( this->flags[BRIGHT] ) {
 		return 255;
 	}
-	if( this->x < 0 || this->y < 0 || this->x >= map.width<<4 || this->y >= map.height<<4 ) {
+	if( this->x < 0 || this->y < 0 || this->x >= map.width << 4 || this->y >= map.height << 4 ) {
 		return 255;
 	}
-	int light_x = (int)this->x/16;
-	int light_y = (int)this->y/16;
-	return lightmap[light_y+light_x*map.height];
+	int light_x = (int)this->x / 16;
+	int light_y = (int)this->y / 16;
+	return lightmap[light_y + light_x * map.height];
 }
 
 /*-------------------------------------------------------------------------------
@@ -326,7 +326,7 @@ void Entity::effectTimes() {
 	node_t *node = NULL;
 	int count = 0;
 
-	if( myStats==NULL ) {
+	if( myStats == NULL ) {
 		return;
 	}
 	if( this->behavior == &actPlayer ) {
@@ -355,10 +355,10 @@ void Entity::effectTimes() {
 				strcpy( (char *)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
 				SDLNet_Write32(spell->ID, &net_packet->data[5]);
-				net_packet->address.host = net_clients[player-1].host;
-				net_packet->address.port = net_clients[player-1].port;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
 				net_packet->len = 9;
-				sendPacketSafe(net_sock, -1, net_packet, player-1);
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
 			list_RemoveNode(node); //Bugger the spell.
 			node = temp;
@@ -420,26 +420,26 @@ void Entity::effectTimes() {
 
 	bool dissipate = TRUE;
 
-	for( c=0; c<NUMEFFECTS; c++ ) {
+	for( c = 0; c < NUMEFFECTS; c++ ) {
 		if( myStats->EFFECTS_TIMERS[c] > 0 ) {
 			myStats->EFFECTS_TIMERS[c]--;
-			if( myStats->EFFECTS_TIMERS[c]==0 ) {
-				myStats->EFFECTS[c]=FALSE;
+			if( myStats->EFFECTS_TIMERS[c] == 0 ) {
+				myStats->EFFECTS[c] = FALSE;
 				switch( c ) {
 					case EFF_ASLEEP:
-						messagePlayer(player,language[593]);
+						messagePlayer(player, language[593]);
 						break;
 					case EFF_POISONED:
-						messagePlayer(player,language[594]);
+						messagePlayer(player, language[594]);
 						break;
 					case EFF_STUNNED:
-						messagePlayer(player,language[595]);
+						messagePlayer(player, language[595]);
 						break;
 					case EFF_CONFUSED:
-						messagePlayer(player,language[596]);
+						messagePlayer(player, language[596]);
 						break;
 					case EFF_DRUNK:
-						messagePlayer(player,language[597]);
+						messagePlayer(player, language[597]);
 						break;
 					case EFF_INVISIBLE:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
@@ -471,28 +471,28 @@ void Entity::effectTimes() {
 						}
 						if (dissipate) {
 							if( !this->isBlind() ) {
-								messagePlayer(player,language[599]);
+								messagePlayer(player, language[599]);
 							}
 						}
 						break;
 					case EFF_BLIND:
 						if( !this->isBlind()) {
-							messagePlayer(player,language[600]);
+							messagePlayer(player, language[600]);
 						} else {
-							messagePlayer(player,language[601]);
+							messagePlayer(player, language[601]);
 						}
 						break;
 					case EFF_GREASY:
-						messagePlayer(player,language[602]);
+						messagePlayer(player, language[602]);
 						break;
 					case EFF_MESSY:
-						messagePlayer(player,language[603]);
+						messagePlayer(player, language[603]);
 						break;
 					case EFF_FAST:
-						messagePlayer(player,language[604]);
+						messagePlayer(player, language[604]);
 						break;
 					case EFF_PARALYZED:
-						messagePlayer(player,language[605]);
+						messagePlayer(player, language[605]);
 						break;
 					case EFF_LEVITATING:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
@@ -522,36 +522,36 @@ void Entity::effectTimes() {
 							}
 						}
 						if (dissipate) {
-							messagePlayer(player,language[607]);
+							messagePlayer(player, language[607]);
 						}
 						break;
 					case EFF_TELEPATH:
-						messagePlayer(player,language[608]);
+						messagePlayer(player, language[608]);
 						break;
 					case EFF_VOMITING:
-						messagePlayer(player,language[609]);
+						messagePlayer(player, language[609]);
 						if( myStats->HUNGER > 1500 ) {
-							messagePlayer(player,language[610]);
+							messagePlayer(player, language[610]);
 						} else if( myStats->HUNGER > 150 && myStats->HUNGER <= 250 ) {
-							messagePlayer(player,language[611]);
+							messagePlayer(player, language[611]);
 							playSoundPlayer(player, 32, 128);
 						} else if( myStats->HUNGER > 50 ) {
-							messagePlayer(player,language[612]);
+							messagePlayer(player, language[612]);
 							playSoundPlayer(player, 32, 128);
 						} else {
 							myStats->HUNGER = 50;
-							messagePlayer(player,language[613]);
+							messagePlayer(player, language[613]);
 							playSoundPlayer(player, 32, 128);
 						}
 						serverUpdateHunger(player);
 						break;
 					case EFF_BLEEDING:
-						messagePlayer(player,language[614]);
+						messagePlayer(player, language[614]);
 						break;
 					default:
 						break;
 				}
-				if( player>0 && multiplayer==SERVER ) {
+				if( player > 0 && multiplayer == SERVER ) {
 					serverUpdateEffects(player);
 				}
 			}
@@ -569,70 +569,70 @@ void Entity::effectTimes() {
 
 void Entity::increaseSkill(int skill) {
 	Stat *myStats = this->getStats();
-	int player=-1;
+	int player = -1;
 
-	if( myStats==NULL ) {
+	if( myStats == NULL ) {
 		return;
 	}
 	if( this->behavior == &actPlayer ) {
 		player = this->skill[2];
 	}
 
-	Uint32 color = SDL_MapRGB(mainsurface->format,255,255,0);
+	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 	if( myStats->PROFICIENCIES[skill] < 100 ) {
 		myStats->PROFICIENCIES[skill]++;
-		messagePlayerColor(player, color, language[615], language[236+skill]);
+		messagePlayerColor(player, color, language[615], language[236 + skill]);
 		switch( myStats->PROFICIENCIES[skill] ) {
 			case 20:
-				messagePlayerColor(player, color, language[616], language[236+skill]);
+				messagePlayerColor(player, color, language[616], language[236 + skill]);
 				break;
 			case 40:
-				messagePlayerColor(player, color, language[617], language[236+skill]);
+				messagePlayerColor(player, color, language[617], language[236 + skill]);
 				break;
 			case 60:
-				messagePlayerColor(player, color, language[618], language[236+skill]);
+				messagePlayerColor(player, color, language[618], language[236 + skill]);
 				break;
 			case 80:
-				messagePlayerColor(player, color, language[619], language[236+skill]);
+				messagePlayerColor(player, color, language[619], language[236 + skill]);
 				break;
 			case 100:
-				messagePlayerColor(player, color, language[620], language[236+skill]);
+				messagePlayerColor(player, color, language[620], language[236 + skill]);
 				break;
 			default:
 				break;
 		}
 	}
 	myStats->EXP += 2;
-	if( player>0 && multiplayer==SERVER ) {
+	if( player > 0 && multiplayer == SERVER ) {
 		// update SKILL
-		strcpy((char *)net_packet->data,"SKIL");
-		net_packet->data[4]=clientnum;
-		net_packet->data[5]=skill;
-		net_packet->data[6]=myStats->PROFICIENCIES[skill];
-		net_packet->address.host = net_clients[player-1].host;
-		net_packet->address.port = net_clients[player-1].port;
+		strcpy((char *)net_packet->data, "SKIL");
+		net_packet->data[4] = clientnum;
+		net_packet->data[5] = skill;
+		net_packet->data[6] = myStats->PROFICIENCIES[skill];
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 7;
-		sendPacketSafe(net_sock, -1, net_packet, player-1);
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		// update EXP
-		strcpy((char *)net_packet->data,"ATTR");
-		net_packet->data[4]=clientnum;
-		net_packet->data[5]=(Sint8)myStats->STR;
-		net_packet->data[6]=(Sint8)myStats->DEX;
-		net_packet->data[7]=(Sint8)myStats->CON;
-		net_packet->data[8]=(Sint8)myStats->INT;
-		net_packet->data[9]=(Sint8)myStats->PER;
-		net_packet->data[10]=(Sint8)myStats->CHR;
-		net_packet->data[11]=(Sint8)myStats->EXP;
-		net_packet->data[12]=(Sint8)myStats->LVL;
-		SDLNet_Write16((Sint16)myStats->HP,&net_packet->data[13]);
-		SDLNet_Write16((Sint16)myStats->MAXHP,&net_packet->data[15]);
-		SDLNet_Write16((Sint16)myStats->MP,&net_packet->data[17]);
-		SDLNet_Write16((Sint16)myStats->MAXMP,&net_packet->data[19]);
-		net_packet->address.host = net_clients[player-1].host;
-		net_packet->address.port = net_clients[player-1].port;
+		strcpy((char *)net_packet->data, "ATTR");
+		net_packet->data[4] = clientnum;
+		net_packet->data[5] = (Sint8)myStats->STR;
+		net_packet->data[6] = (Sint8)myStats->DEX;
+		net_packet->data[7] = (Sint8)myStats->CON;
+		net_packet->data[8] = (Sint8)myStats->INT;
+		net_packet->data[9] = (Sint8)myStats->PER;
+		net_packet->data[10] = (Sint8)myStats->CHR;
+		net_packet->data[11] = (Sint8)myStats->EXP;
+		net_packet->data[12] = (Sint8)myStats->LVL;
+		SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
+		SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
+		SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
+		SDLNet_Write16((Sint16)myStats->MAXMP, &net_packet->data[19]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 21;
-		sendPacketSafe(net_sock, -1, net_packet, player-1);
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
 
@@ -679,7 +679,7 @@ void Entity::checkBetterEquipment(Stat *myStats) {
 	int tx = x / 16;
 	int ty = y / 16;
 	getItemsOnTile(tx, ty, &items); //Check the tile the goblin is on for items.
-	getItemsOnTile(tx -1, ty, &items); //Check tile to the left.
+	getItemsOnTile(tx - 1, ty, &items); //Check tile to the left.
 	getItemsOnTile(tx + 1, ty, &items); //Check tile to the right.
 	getItemsOnTile(tx, ty - 1, &items); //Check tile up.
 	getItemsOnTile(tx, ty + 1, &items); //Check tile down.
@@ -692,9 +692,9 @@ void Entity::checkBetterEquipment(Stat *myStats) {
 
 	node_t *node = NULL;
 
-	bool glovesandshoes=FALSE;
-	if( myStats->type==HUMAN ) {
-		glovesandshoes=TRUE;
+	bool glovesandshoes = FALSE;
+	if( myStats->type == HUMAN ) {
+		glovesandshoes = TRUE;
 	}
 
 	if (items) {
@@ -919,9 +919,9 @@ Entity *uidToEntity(Uint32 uidnum) {
 	node_t *node;
 	Entity *entity;
 
-	for( node=map.entities->first; node!=NULL; node=node->next ) {
+	for( node = map.entities->first; node != NULL; node = node->next ) {
 		entity = (Entity *) node->element;
-		if( uidnum==entity->uid ) {
+		if( uidnum == entity->uid ) {
 			return entity;
 		}
 	}
@@ -956,10 +956,10 @@ void Entity::setHP(int amount) {
 				strcpy((char *)net_packet->data, "UPHP");
 				SDLNet_Write32((Uint32)entitystats->HP, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)NOTHING, &net_packet->data[8]);
-				net_packet->address.host = net_clients[i-1].host;
-				net_packet->address.port = net_clients[i-1].port;
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 12;
-				sendPacketSafe(net_sock, -1, net_packet, i-1);
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 		}
 	}
@@ -976,14 +976,14 @@ void Entity::setHP(int amount) {
 void Entity::modHP(int amount) {
 	Stat* entitystats = this->getStats();
 
-	if( this->behavior==&actPlayer && godmode && amount<0 ) {
-		amount=0;
+	if( this->behavior == &actPlayer && godmode && amount < 0 ) {
+		amount = 0;
 	}
-	if( !entitystats || amount==0 ) {
+	if( !entitystats || amount == 0 ) {
 		return;
 	}
 
-	this->setHP(entitystats->HP+amount);
+	this->setHP(entitystats->HP + amount);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1010,12 +1010,12 @@ void Entity::setMP(int amount) {
 		for (i = 1; i < numplayers; i++) {
 			if (this == players[i]->entity) {
 				// tell the client its MP just changed
-				strcpy((char *)net_packet->data,"UPMP");
+				strcpy((char *)net_packet->data, "UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[4]);
-				net_packet->address.host = net_clients[i-1].host;
-				net_packet->address.port = net_clients[i-1].port;
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 8;
-				sendPacketSafe(net_sock, -1, net_packet, i-1);
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 		}
 	}
@@ -1032,14 +1032,14 @@ void Entity::setMP(int amount) {
 void Entity::modMP(int amount) {
 	Stat* entitystats = this->getStats();
 
-	if( this->behavior==&actPlayer && godmode && amount<0 ) {
-		amount=0;
+	if( this->behavior == &actPlayer && godmode && amount < 0 ) {
+		amount = 0;
 	}
-	if( !entitystats || amount==0 ) {
+	if( !entitystats || amount == 0 ) {
 		return;
 	}
 
-	this->setMP(entitystats->MP+amount);
+	this->setMP(entitystats->MP + amount);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1081,10 +1081,10 @@ void Entity::drainMP(int amount) {
 				strcpy((char *)net_packet->data, "UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)stats[i]->type, &net_packet->data[8]);
-				net_packet->address.host = net_clients[i-1].host;
-				net_packet->address.port = net_clients[i-1].port;
+				net_packet->address.host = net_clients[i - 1].host;
+				net_packet->address.port = net_clients[i - 1].port;
 				net_packet->len = 12;
-				sendPacketSafe(net_sock, -1, net_packet, i-1);
+				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 		}
 	} else if (clientnum != 0 && multiplayer == CLIENT) {
@@ -1103,13 +1103,13 @@ void Entity::drainMP(int amount) {
 
 	if (overdrawn < 0) {
 		if (player >= 0) {
-			Uint32 color = SDL_MapRGB(mainsurface->format,255,255,0);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 			messagePlayerColor(player, color, language[621]);
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
 		Stat *tempStats = this->getStats();
 		if( tempStats ) {
-			if( tempStats->sex==MALE ) {
+			if( tempStats->sex == MALE ) {
 				this->setObituary(language[1528]);
 			} else {
 				this->setObituary(language[1529]);
@@ -1156,7 +1156,7 @@ bool Entity::safeConsumeMP(int amount) {
 void Entity::handleEffects(Stat *myStats) {
 	int increasestat[3];
 	int i, c;
-	int player=-1;
+	int player = -1;
 
 	if( this->behavior == &actPlayer ) {
 		player = this->skill[2];
@@ -1166,37 +1166,37 @@ void Entity::handleEffects(Stat *myStats) {
 			myStats->HP = myStats->MAXHP;
 			myStats->MP = myStats->MAXMP;
 		} else if( buddhamode ) {
-			if( myStats->HP<=0 ) {
+			if( myStats->HP <= 0 ) {
 				myStats->HP = 1;
 			}
 		}
 	}
 
 	// sleep Zs
-	if( myStats->EFFECTS[EFF_ASLEEP] && ticks%30==0 ) {
-		spawnSleepZ(this->x+cos(this->yaw)*2,this->y+sin(this->yaw)*2,this->z);
+	if( myStats->EFFECTS[EFF_ASLEEP] && ticks % 30 == 0 ) {
+		spawnSleepZ(this->x + cos(this->yaw) * 2, this->y + sin(this->yaw) * 2, this->z);
 	}
 
 	// level ups
 	if( myStats->EXP >= 100 ) {
 		myStats->EXP -= 100;
 		myStats->LVL++;
-		Uint32 color = SDL_MapRGB(mainsurface->format,255,255,0);
-		messagePlayerColor(player,color,language[622]);
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+		messagePlayerColor(player, color, language[622]);
 		playSoundPlayer(player, 97, 128);
 
 		// increase MAXHP/MAXMP
 		myStats->HP += HP_MOD;
 		myStats->MAXHP += HP_MOD;
-		myStats->HP = std::min(myStats->HP,myStats->MAXHP);
+		myStats->HP = std::min(myStats->HP, myStats->MAXHP);
 		myStats->MP += MP_MOD;
 		myStats->MAXMP += MP_MOD;
-		myStats->MP = std::min(myStats->MP,myStats->MAXMP);
+		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 
 		// now pick three attributes to increase
-		increasestat[0] = rand()%6;
-		increasestat[1] = rand()%5;
-		increasestat[2] = rand()%4;
+		increasestat[0] = rand() % 6;
+		increasestat[1] = rand() % 5;
+		increasestat[2] = rand() % 4;
 		if( increasestat[1] >= increasestat[0] ) {
 			increasestat[1]++;
 		}
@@ -1206,8 +1206,8 @@ void Entity::handleEffects(Stat *myStats) {
 		if( increasestat[2] >= increasestat[1] ) {
 			increasestat[2]++;
 		}
-		for( i=0; i<3; i++ ) {
-			messagePlayerColor(player,color,language[623+increasestat[i]]);
+		for( i = 0; i < 3; i++ ) {
+			messagePlayerColor(player, color, language[623 + increasestat[i]]);
 			switch( increasestat[i] ) {
 				case 0: // STR
 					myStats->STR++;
@@ -1231,30 +1231,30 @@ void Entity::handleEffects(Stat *myStats) {
 		}
 
 		// inform clients of stat changes
-		if( multiplayer==SERVER && player>0 ) {
-			strcpy((char *)net_packet->data,"ATTR");
-			net_packet->data[4]=clientnum;
-			net_packet->data[5]=(Sint8)myStats->STR;
-			net_packet->data[6]=(Sint8)myStats->DEX;
-			net_packet->data[7]=(Sint8)myStats->CON;
-			net_packet->data[8]=(Sint8)myStats->INT;
-			net_packet->data[9]=(Sint8)myStats->PER;
-			net_packet->data[10]=(Sint8)myStats->CHR;
-			net_packet->data[11]=(Sint8)myStats->EXP;
-			net_packet->data[12]=(Sint8)myStats->LVL;
-			SDLNet_Write16((Sint16)myStats->HP,&net_packet->data[13]);
-			SDLNet_Write16((Sint16)myStats->MAXHP,&net_packet->data[15]);
-			SDLNet_Write16((Sint16)myStats->MP,&net_packet->data[17]);
-			SDLNet_Write16((Sint16)myStats->MAXMP,&net_packet->data[19]);
-			net_packet->address.host = net_clients[player-1].host;
-			net_packet->address.port = net_clients[player-1].port;
+		if( multiplayer == SERVER && player > 0 ) {
+			strcpy((char *)net_packet->data, "ATTR");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = (Sint8)myStats->STR;
+			net_packet->data[6] = (Sint8)myStats->DEX;
+			net_packet->data[7] = (Sint8)myStats->CON;
+			net_packet->data[8] = (Sint8)myStats->INT;
+			net_packet->data[9] = (Sint8)myStats->PER;
+			net_packet->data[10] = (Sint8)myStats->CHR;
+			net_packet->data[11] = (Sint8)myStats->EXP;
+			net_packet->data[12] = (Sint8)myStats->LVL;
+			SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
+			SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
+			SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
+			SDLNet_Write16((Sint16)myStats->MAXMP, &net_packet->data[19]);
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 21;
-			sendPacketSafe(net_sock, -1, net_packet, player-1);
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	}
 
 	// hunger
-	int hungerring=0;
+	int hungerring = 0;
 	if( myStats->ring != NULL ) {
 		if( myStats->ring->type == RING_SLOWDIGESTION ) {
 			if( myStats->ring->beatitude >= 0 ) {
@@ -1264,9 +1264,9 @@ void Entity::handleEffects(Stat *myStats) {
 			}
 		}
 	}
-	if( (ticks%30==0 && !hungerring) || (ticks%15==0 && hungerring<0) || (ticks%120==0 && hungerring>0) ) {
-		if( myStats->HUNGER>0 ) {
-			if( svFlags&SV_FLAG_HUNGER ) {
+	if( (ticks % 30 == 0 && !hungerring) || (ticks % 15 == 0 && hungerring < 0) || (ticks % 120 == 0 && hungerring > 0) ) {
+		if( myStats->HUNGER > 0 ) {
+			if( svFlags & SV_FLAG_HUNGER ) {
 				myStats->HUNGER--;
 			} else if( myStats->HUNGER != 800 ) {
 				myStats->HUNGER = 800;
@@ -1274,37 +1274,37 @@ void Entity::handleEffects(Stat *myStats) {
 			}
 			if( myStats->HUNGER == 1500 ) {
 				if( !myStats->EFFECTS[EFF_VOMITING] ) {
-					messagePlayer(player,language[629]);
+					messagePlayer(player, language[629]);
 				}
 				serverUpdateHunger(player);
 			} else if( myStats->HUNGER == 250 ) {
 				if( !myStats->EFFECTS[EFF_VOMITING] ) {
-					messagePlayer(player,language[630]);
+					messagePlayer(player, language[630]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
 			} else if( myStats->HUNGER == 150 ) {
 				if( !myStats->EFFECTS[EFF_VOMITING] ) {
-					messagePlayer(player,language[631]);
+					messagePlayer(player, language[631]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
 			} else if( myStats->HUNGER == 50 ) {
 				if( !myStats->EFFECTS[EFF_VOMITING] ) {
-					messagePlayer(player,language[632]);
+					messagePlayer(player, language[632]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
 			}
 		} else {
-			myStats->HUNGER=0;
-			if( !myStats->EFFECTS[EFF_VOMITING] && ticks%120==0 ) {
+			myStats->HUNGER = 0;
+			if( !myStats->EFFECTS[EFF_VOMITING] && ticks % 120 == 0 ) {
 				serverUpdateHunger(player);
-				if( player>=0 ) { // bad guys don't starve. Sorry.
+				if( player >= 0 ) { // bad guys don't starve. Sorry.
 					this->modHP(-4);
 				}
 				if( myStats->HP > 0 ) {
-					messagePlayer(player,language[633]);
+					messagePlayer(player, language[633]);
 				}
 				this->setObituary(language[1530]);
 			}
@@ -1313,51 +1313,51 @@ void Entity::handleEffects(Stat *myStats) {
 
 	// "random" vomiting
 	if( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] ) {
-		if( myStats->HUNGER > 1500 && rand()%1000==0 ) {
+		if( myStats->HUNGER > 1500 && rand() % 1000 == 0 ) {
 			// oversatiation
-			messagePlayer(player,language[634]);
-			this->char_gonnavomit = 140+rand()%60;
-		} else if( ticks%60==0 && rand()%200==0 && myStats->EFFECTS[EFF_DRUNK] ) {
+			messagePlayer(player, language[634]);
+			this->char_gonnavomit = 140 + rand() % 60;
+		} else if( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] ) {
 			// drunkenness
-			messagePlayer(player,language[634]);
-			this->char_gonnavomit = 140+rand()%60;
+			messagePlayer(player, language[634]);
+			this->char_gonnavomit = 140 + rand() % 60;
 		}
 	}
 	if( this->char_gonnavomit > 0 ) {
 		this->char_gonnavomit--;
-		if( this->char_gonnavomit==0 ) {
-			messagePlayer(player,language[635]);
+		if( this->char_gonnavomit == 0 ) {
+			messagePlayer(player, language[635]);
 			myStats->EFFECTS[EFF_VOMITING] = TRUE;
-			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50+rand()%20;
+			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + rand() % 20;
 			serverUpdateEffects(player);
-			if( player==clientnum ) {
+			if( player == clientnum ) {
 				camera_shakey += 9;
-			} else if( player>0 && multiplayer==SERVER ) {
-				strcpy((char *)net_packet->data,"SHAK");
-				net_packet->data[4]=0; // turns into 0
-				net_packet->data[5]=9;
-				net_packet->address.host = net_clients[player-1].host;
-				net_packet->address.port = net_clients[player-1].port;
+			} else if( player > 0 && multiplayer == SERVER ) {
+				strcpy((char *)net_packet->data, "SHAK");
+				net_packet->data[4] = 0; // turns into 0
+				net_packet->data[5] = 9;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
 				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player-1);
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			playSoundEntity(this,78,96);
+			playSoundEntity(this, 78, 96);
 		}
 	}
 
 	// vomiting
-	if( myStats->EFFECTS[EFF_VOMITING] && ticks%2==0 ) {
+	if( myStats->EFFECTS[EFF_VOMITING] && ticks % 2 == 0 ) {
 		Entity *entity = spawnGib(this);
 		entity->sprite = 29;
 		entity->flags[SPRITE] = TRUE;
 		entity->flags[GENIUS] = TRUE;
 		entity->flags[INVISIBLE] = FALSE;
-		entity->yaw = this->yaw-0.1+(rand()%20)*0.01;
-		entity->pitch = (rand()%360)*PI/180.0;
-		entity->roll = (rand()%360)*PI/180.0;
-		double vel = (rand()%15)/10.f;
-		entity->vel_x = vel*cos(entity->yaw);
-		entity->vel_y = vel*sin(entity->yaw);
+		entity->yaw = this->yaw - 0.1 + (rand() % 20) * 0.01;
+		entity->pitch = (rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
+		double vel = (rand() % 15) / 10.f;
+		entity->vel_x = vel * cos(entity->yaw);
+		entity->vel_y = vel * sin(entity->yaw);
 		entity->vel_z = -.5;
 		myStats->HUNGER -= 40;
 		if( myStats->HUNGER <= 50 ) {
@@ -1368,7 +1368,7 @@ void Entity::handleEffects(Stat *myStats) {
 	}
 
 	// healing over time
-	int healring=0;
+	int healring = 0;
 	if( myStats->ring != NULL ) {
 		if( myStats->ring->type == RING_REGENERATION ) {
 			if( myStats->ring->beatitude >= 0 ) {
@@ -1378,51 +1378,51 @@ void Entity::handleEffects(Stat *myStats) {
 			}
 		}
 	}
-	if( myStats->HP<myStats->MAXHP ) {
+	if( myStats->HP < myStats->MAXHP ) {
 		this->char_heal++;
-		if( healring>0 || svFlags&SV_FLAG_HUNGER ) {
-			if( (this->char_heal>=HEAL_TIME && !healring) || (this->char_heal>=HEAL_TIME*4 && healring<0) || (this->char_heal>=HEAL_TIME/8 && healring>0) ) {
-				this->char_heal=0;
+		if( healring > 0 || svFlags & SV_FLAG_HUNGER ) {
+			if( (this->char_heal >= HEAL_TIME && !healring) || (this->char_heal >= HEAL_TIME * 4 && healring < 0) || (this->char_heal >= HEAL_TIME / 8 && healring > 0) ) {
+				this->char_heal = 0;
 				this->modHP(1);
 			}
 		}
 	} else {
-		this->char_heal=0;
+		this->char_heal = 0;
 	}
 
 	// random teleportation
 	if( myStats->ring != NULL ) {
 		if( myStats->ring->type == RING_TELEPORTATION ) {
-			if( rand()%1000==0 ) { // .1% chance every frame
+			if( rand() % 1000 == 0 ) { // .1% chance every frame
 				teleportRandom();
 			}
 		}
 	}
 
 	// regaining energy over time
-	if( myStats->MP<myStats->MAXMP ) {
+	if( myStats->MP < myStats->MAXMP ) {
 		this->char_energize++;
-		if( this->char_energize>=MAGIC_REGEN_TIME ) {
-			this->char_energize=0;
+		if( this->char_energize >= MAGIC_REGEN_TIME ) {
+			this->char_energize = 0;
 			this->modMP(1);
 		}
 	} else {
-		this->char_energize=0;
+		this->char_energize = 0;
 	}
 
 	// effects of greasy fingers
-	if( myStats->EFFECTS[EFF_GREASY]==TRUE ) {
+	if( myStats->EFFECTS[EFF_GREASY] == TRUE ) {
 		if( myStats->weapon != NULL ) {
-			messagePlayer(player,language[636]);
-			if( player>=0 ) {
-				dropItem(myStats->weapon,player);
-				if( player>0 && multiplayer==SERVER ) {
-					strcpy((char *)net_packet->data,"DROP");
+			messagePlayer(player, language[636]);
+			if( player >= 0 ) {
+				dropItem(myStats->weapon, player);
+				if( player > 0 && multiplayer == SERVER ) {
+					strcpy((char *)net_packet->data, "DROP");
 					net_packet->data[4] = 5;
-					net_packet->address.host = net_clients[player-1].host;
-					net_packet->address.port = net_clients[player-1].port;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 5;
-					sendPacketSafe(net_sock, -1, net_packet, player-1);
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 			} else {
 				dropItemMonster(myStats->weapon, this, myStats);
@@ -1435,28 +1435,28 @@ void Entity::handleEffects(Stat *myStats) {
 	if( myStats->shield != NULL ) {
 		if( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN ) {
 			this->char_torchtime++;
-			if( (this->char_torchtime>=7200 && myStats->shield->type == TOOL_TORCH) || this->char_torchtime>=10260 ) {
-				this->char_torchtime=0;
-				if( player==clientnum ) {
-					if( myStats->shield->count>1 ) {
-						newItem(myStats->shield->type,myStats->shield->status,myStats->shield->beatitude,myStats->shield->count-1,myStats->shield->appearance,myStats->shield->identified,&myStats->inventory);
+			if( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || this->char_torchtime >= 10260 ) {
+				this->char_torchtime = 0;
+				if( player == clientnum ) {
+					if( myStats->shield->count > 1 ) {
+						newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, myStats->shield->appearance, myStats->shield->identified, &myStats->inventory);
 					}
 				}
-				myStats->shield->count=1;
+				myStats->shield->count = 1;
 				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
 				if( myStats->shield->status > BROKEN ) {
-					messagePlayer(player,language[637],myStats->shield->getName());
+					messagePlayer(player, language[637], myStats->shield->getName());
 				} else {
-					messagePlayer(player,language[638],myStats->shield->getName());
+					messagePlayer(player, language[638], myStats->shield->getName());
 				}
-				if( multiplayer==SERVER && player > 0 ) {
-					strcpy((char *)net_packet->data,"ARMR");
-					net_packet->data[4]=4;
-					net_packet->data[5]=myStats->shield->status;
-					net_packet->address.host = net_clients[player-1].host;
-					net_packet->address.port = net_clients[player-1].port;
+				if( multiplayer == SERVER && player > 0 ) {
+					strcpy((char *)net_packet->data, "ARMR");
+					net_packet->data[4] = 4;
+					net_packet->data[5] = myStats->shield->status;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player-1);
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 			}
 		}
@@ -1466,10 +1466,10 @@ void Entity::handleEffects(Stat *myStats) {
 	if( myStats->EFFECTS[EFF_POISONED] ) {
 		if( myStats->amulet != NULL ) {
 			if( myStats->amulet->type == AMULET_POISONRESISTANCE ) {
-				messagePlayer(player,language[639]);
-				messagePlayer(player,language[640]);
-				myStats->EFFECTS_TIMERS[EFF_POISONED]=0;
-				myStats->EFFECTS[EFF_POISONED]=FALSE;
+				messagePlayer(player, language[639]);
+				messagePlayer(player, language[640]);
+				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+				myStats->EFFECTS[EFF_POISONED] = FALSE;
 				serverUpdateEffects(player);
 				this->char_poison = 0;
 			}
@@ -1477,32 +1477,32 @@ void Entity::handleEffects(Stat *myStats) {
 		this->char_poison++;
 		if( this->char_poison > 180 ) { // three seconds
 			this->char_poison = 0;
-			int poisonhurt = std::max(1+rand()%4-myStats->CON,3);
+			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
 			this->modHP(-poisonhurt);
-			if( myStats->HP<=0 ) {
+			if( myStats->HP <= 0 ) {
 				Entity *killer = uidToEntity( myStats->poisonKiller );
 				if( killer ) {
 					killer->awardXP( this, TRUE, TRUE );
 				}
 			}
 			this->setObituary(language[1531]);
-			playSoundEntity(this,28,64);
-			if( player==clientnum ) {
+			playSoundEntity(this, 28, 64);
+			if( player == clientnum ) {
 				camera_shakex += .1;
 				camera_shakey += 10;
-			} else if( player>0 && multiplayer==SERVER ) {
-				strcpy((char *)net_packet->data,"SHAK");
-				net_packet->data[4]=10; // turns into .1
-				net_packet->data[5]=10;
-				net_packet->address.host = net_clients[player-1].host;
-				net_packet->address.port = net_clients[player-1].port;
+			} else if( player > 0 && multiplayer == SERVER ) {
+				strcpy((char *)net_packet->data, "SHAK");
+				net_packet->data[4] = 10; // turns into .1
+				net_packet->data[5] = 10;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
 				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player-1);
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			if( rand()%5==0 ) {
-				messagePlayer(player,language[641]);
-				myStats->EFFECTS_TIMERS[EFF_POISONED]=0;
-				myStats->EFFECTS[EFF_POISONED]=FALSE;
+			if( rand() % 5 == 0 ) {
+				messagePlayer(player, language[641]);
+				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
+				myStats->EFFECTS[EFF_POISONED] = FALSE;
 				serverUpdateEffects(player);
 			}
 		}
@@ -1512,49 +1512,49 @@ void Entity::handleEffects(Stat *myStats) {
 
 	// bleeding
 	if( myStats->EFFECTS[EFF_BLEEDING] ) {
-		if( ticks%120==0 ) {
+		if( ticks % 120 == 0 ) {
 			if( myStats->HP > 5 ) {
 				int bleedhurt = 1;
 				this->modHP(-bleedhurt);
 				this->setObituary(language[1532]);
 				Entity *gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
-				if( player==clientnum ) {
+				if( player == clientnum ) {
 					camera_shakex -= .03;
 					camera_shakey += 3;
-				} else if( player>0 && multiplayer==SERVER ) {
-					strcpy((char *)net_packet->data,"SHAK");
-					net_packet->data[4]=-3; // turns into -.03
-					net_packet->data[5]=3;
-					net_packet->address.host = net_clients[player-1].host;
-					net_packet->address.port = net_clients[player-1].port;
+				} else if( player > 0 && multiplayer == SERVER ) {
+					strcpy((char *)net_packet->data, "SHAK");
+					net_packet->data[4] = -3; // turns into -.03
+					net_packet->data[5] = 3;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player-1);
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
-				messagePlayer(player,language[642]);
+				messagePlayer(player, language[642]);
 				if( spawn_blood ) {
 					Entity *entity = NULL;
 					if( gibtype[myStats->type] == 1 ) {
-						entity = newEntity(203,1,map.entities);
+						entity = newEntity(203, 1, map.entities);
 					} else if( gibtype[myStats->type] == 2 ) {
-						entity = newEntity(213,1,map.entities);
+						entity = newEntity(213, 1, map.entities);
 					}
 					if( entity != NULL ) {
 						entity->x = this->x;
 						entity->y = this->y;
-						entity->z = 7.4+(rand()%20)/100.f;
+						entity->z = 7.4 + (rand() % 20) / 100.f;
 						entity->parent = this->uid;
 						entity->sizex = 2;
 						entity->sizey = 2;
-						entity->yaw = (rand()%360)*PI/180.0;
+						entity->yaw = (rand() % 360) * PI / 180.0;
 						entity->flags[UPDATENEEDED] = TRUE;
 						entity->flags[PASSABLE] = TRUE;
 					}
 				}
 			} else {
-				messagePlayer(player,language[643]);
-				myStats->EFFECTS[EFF_BLEEDING]=FALSE;
-				myStats->EFFECTS_TIMERS[EFF_BLEEDING]=0;
+				messagePlayer(player, language[643]);
+				myStats->EFFECTS[EFF_BLEEDING] = FALSE;
+				myStats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 				serverUpdateEffects(player);
 			}
 		}
@@ -1562,58 +1562,58 @@ void Entity::handleEffects(Stat *myStats) {
 
 	// burning
 	if( this->flags[BURNING] ) {
-		if( ticks%30==0 ) {
-			this->modHP(-2-rand()%3);
-			if( myStats->HP<=0 ) {
+		if( ticks % 30 == 0 ) {
+			this->modHP(-2 - rand() % 3);
+			if( myStats->HP <= 0 ) {
 				Entity *killer = uidToEntity( myStats->poisonKiller );
 				if( killer ) {
 					killer->awardXP( this, TRUE, TRUE );
 				}
 			}
 			this->setObituary(language[1533]);
-			messagePlayer(player,language[644]);
-			playSoundEntity(this,28,64);
-			if( player==clientnum ) {
+			messagePlayer(player, language[644]);
+			playSoundEntity(this, 28, 64);
+			if( player == clientnum ) {
 				camera_shakey += 3;
-			} else if( player>0 && multiplayer==SERVER ) {
-				strcpy((char *)net_packet->data,"SHAK");
-				net_packet->data[4]=0; // turns into 0
-				net_packet->data[5]=3;
-				net_packet->address.host = net_clients[player-1].host;
-				net_packet->address.port = net_clients[player-1].port;
+			} else if( player > 0 && multiplayer == SERVER ) {
+				strcpy((char *)net_packet->data, "SHAK");
+				net_packet->data[4] = 0; // turns into 0
+				net_packet->data[5] = 3;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
 				net_packet->len = 6;
-				sendPacketSafe(net_sock, -1, net_packet, player-1);
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			if( rand()%10==0 ) {
+			if( rand() % 10 == 0 ) {
 				if( myStats->cloak != NULL ) {
-					if( player==clientnum ) {
-						if( myStats->cloak->count>1 ) {
-							newItem(myStats->cloak->type,myStats->cloak->status,myStats->cloak->beatitude,myStats->cloak->count-1,myStats->cloak->appearance,myStats->cloak->identified,&myStats->inventory);
+					if( player == clientnum ) {
+						if( myStats->cloak->count > 1 ) {
+							newItem(myStats->cloak->type, myStats->cloak->status, myStats->cloak->beatitude, myStats->cloak->count - 1, myStats->cloak->appearance, myStats->cloak->identified, &myStats->inventory);
 						}
 					}
 					myStats->cloak->count = 1;
 					myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
 					if( myStats->cloak->status != BROKEN ) {
-						messagePlayer(player,language[645],myStats->cloak->getName());
+						messagePlayer(player, language[645], myStats->cloak->getName());
 					} else {
-						messagePlayer(player,language[646],myStats->cloak->getName());
+						messagePlayer(player, language[646], myStats->cloak->getName());
 					}
-					if( player>0 && multiplayer==SERVER ) {
-						strcpy((char *)net_packet->data,"ARMR");
-						net_packet->data[4]=6;
-						net_packet->data[5]=myStats->cloak->status;
-						net_packet->address.host = net_clients[player-1].host;
-						net_packet->address.port = net_clients[player-1].port;
+					if( player > 0 && multiplayer == SERVER ) {
+						strcpy((char *)net_packet->data, "ARMR");
+						net_packet->data[4] = 6;
+						net_packet->data[5] = myStats->cloak->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
 						net_packet->len = 6;
-						sendPacketSafe(net_sock, -1, net_packet, player-1);
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
 			}
-			if( rand()%10==0 ) {
+			if( rand() % 10 == 0 ) {
 				this->flags[BURNING] = FALSE;
-				messagePlayer(player,language[647]);
-				if( player>0 && multiplayer==SERVER ) {
-					serverUpdateEntityFlag(this,BURNING);
+				messagePlayer(player, language[647]);
+				if( player > 0 && multiplayer == SERVER ) {
+					serverUpdateEntityFlag(this, BURNING);
 				}
 			}
 		}
@@ -1623,62 +1623,62 @@ void Entity::handleEffects(Stat *myStats) {
 	if( myStats->amulet != NULL ) {
 		// strangulation
 		if( myStats->amulet->type == AMULET_STRANGULATION ) {
-			if( ticks%60==0 ) {
-				if( rand()%25 ) {
+			if( ticks % 60 == 0 ) {
+				if( rand() % 25 ) {
 					messagePlayer(player, language[648]);
-					this->modHP(-(2+rand()%3));
+					this->modHP(-(2 + rand() % 3));
 					this->setObituary(language[1534]);
 					if( myStats->HP <= 0 ) {
-						if( player<=0 ) {
+						if( player <= 0 ) {
 							Item *item = myStats->amulet;
-							if( item->count>1 ) {
-								newItem(item->type,item->status,item->beatitude,item->count-1,item->appearance,item->identified,&myStats->inventory);
+							if( item->count > 1 ) {
+								newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &myStats->inventory);
 							}
 						}
 						myStats->amulet->count = 1;
 						myStats->amulet->status = BROKEN;
-						playSoundEntity(this,76,64);
-						if( player>0 && multiplayer==SERVER ) {
-							strcpy((char *)net_packet->data,"ARMR");
-							net_packet->data[4]=7;
-							net_packet->data[5]=myStats->amulet->status;
-							net_packet->address.host = net_clients[player-1].host;
-							net_packet->address.port = net_clients[player-1].port;
+						playSoundEntity(this, 76, 64);
+						if( player > 0 && multiplayer == SERVER ) {
+							strcpy((char *)net_packet->data, "ARMR");
+							net_packet->data[4] = 7;
+							net_packet->data[5] = myStats->amulet->status;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player-1);
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					if( player==clientnum ) {
+					if( player == clientnum ) {
 						camera_shakey += 8;
-					} else if( player>0 && multiplayer==SERVER ) {
-						strcpy((char *)net_packet->data,"SHAK");
-						net_packet->data[4]=0; // turns into 0
-						net_packet->data[5]=8;
-						net_packet->address.host = net_clients[player-1].host;
-						net_packet->address.port = net_clients[player-1].port;
+					} else if( player > 0 && multiplayer == SERVER ) {
+						strcpy((char *)net_packet->data, "SHAK");
+						net_packet->data[4] = 0; // turns into 0
+						net_packet->data[5] = 8;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
 						net_packet->len = 6;
-						sendPacketSafe(net_sock, -1, net_packet, player-1);
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				} else {
 					messagePlayer(player, language[649]);
 					messagePlayer(player, language[650]);
-					if( player<=0 ) {
+					if( player <= 0 ) {
 						Item *item = myStats->amulet;
-						if( item->count>1 ) {
-							newItem(item->type,item->status,item->beatitude,item->count-1,item->appearance,item->identified,&myStats->inventory);
+						if( item->count > 1 ) {
+							newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &myStats->inventory);
 						}
 					}
 					myStats->amulet->count = 1;
 					myStats->amulet->status = BROKEN;
-					playSoundEntity(this,76,64);
-					if( player>0 && multiplayer==SERVER ) {
-						strcpy((char *)net_packet->data,"ARMR");
-						net_packet->data[4]=7;
-						net_packet->data[5]=myStats->amulet->status;
-						net_packet->address.host = net_clients[player-1].host;
-						net_packet->address.port = net_clients[player-1].port;
+					playSoundEntity(this, 76, 64);
+					if( player > 0 && multiplayer == SERVER ) {
+						strcpy((char *)net_packet->data, "ARMR");
+						net_packet->data[4] = 7;
+						net_packet->data[5] = myStats->amulet->status;
+						net_packet->address.host = net_clients[player - 1].host;
+						net_packet->address.port = net_clients[player - 1].port;
 						net_packet->len = 6;
-						sendPacketSafe(net_sock, -1, net_packet, player-1);
+						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
 				}
 			}
@@ -1687,7 +1687,7 @@ void Entity::handleEffects(Stat *myStats) {
 		if( myStats->amulet->type == AMULET_LIFESAVING ) { //TODO: Doesn't save against boulder traps.
 			if( myStats->HP <= 0 ) {
 				if( myStats->HUNGER > 0 ) {
-					messagePlayer(player,language[651]);
+					messagePlayer(player, language[651]);
 				}
 				if( !this->isBlind()) {
 					messagePlayer(player, language[652]);
@@ -1695,55 +1695,55 @@ void Entity::handleEffects(Stat *myStats) {
 					messagePlayer(player, language[653]);
 				}
 				if( myStats->amulet->beatitude >= 0 ) {
-					messagePlayer(player,language[654]);
-					messagePlayer(player,language[655]);
-					steamAchievementClient(player,"BARONY_ACH_BORN_AGAIN");
+					messagePlayer(player, language[654]);
+					messagePlayer(player, language[655]);
+					steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
 					myStats->HUNGER = 800;
-					if( myStats->MAXHP<10 ) {
+					if( myStats->MAXHP < 10 ) {
 						myStats->MAXHP = 10;
-						if( player>0 && multiplayer==SERVER ) {
-							strcpy((char *)net_packet->data,"ATTR");
-							net_packet->data[4]=clientnum;
-							net_packet->data[5]=(Sint8)myStats->STR;
-							net_packet->data[6]=(Sint8)myStats->DEX;
-							net_packet->data[7]=(Sint8)myStats->CON;
-							net_packet->data[8]=(Sint8)myStats->INT;
-							net_packet->data[9]=(Sint8)myStats->PER;
-							net_packet->data[10]=(Sint8)myStats->CHR;
-							net_packet->data[11]=(Sint8)myStats->EXP;
-							net_packet->data[12]=(Sint8)myStats->LVL;
-							SDLNet_Write16((Sint16)myStats->HP,&net_packet->data[13]);
-							SDLNet_Write16((Sint16)myStats->MAXHP,&net_packet->data[15]);
-							SDLNet_Write16((Sint16)myStats->MP,&net_packet->data[17]);
-							SDLNet_Write16((Sint16)myStats->MAXMP,&net_packet->data[19]);
-							net_packet->address.host = net_clients[player-1].host;
-							net_packet->address.port = net_clients[player-1].port;
+						if( player > 0 && multiplayer == SERVER ) {
+							strcpy((char *)net_packet->data, "ATTR");
+							net_packet->data[4] = clientnum;
+							net_packet->data[5] = (Sint8)myStats->STR;
+							net_packet->data[6] = (Sint8)myStats->DEX;
+							net_packet->data[7] = (Sint8)myStats->CON;
+							net_packet->data[8] = (Sint8)myStats->INT;
+							net_packet->data[9] = (Sint8)myStats->PER;
+							net_packet->data[10] = (Sint8)myStats->CHR;
+							net_packet->data[11] = (Sint8)myStats->EXP;
+							net_packet->data[12] = (Sint8)myStats->LVL;
+							SDLNet_Write16((Sint16)myStats->HP, &net_packet->data[13]);
+							SDLNet_Write16((Sint16)myStats->MAXHP, &net_packet->data[15]);
+							SDLNet_Write16((Sint16)myStats->MP, &net_packet->data[17]);
+							SDLNet_Write16((Sint16)myStats->MAXMP, &net_packet->data[19]);
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 21;
-							sendPacketSafe(net_sock, -1, net_packet, player-1);
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					this->setHP(std::max(myStats->MAXHP,10));
-					for( c=0; c<NUMEFFECTS; c++ ) {
+					this->setHP(std::max(myStats->MAXHP, 10));
+					for( c = 0; c < NUMEFFECTS; c++ ) {
 						myStats->EFFECTS[c] = FALSE;
 						myStats->EFFECTS_TIMERS[c] = 0;
 					}
 					this->flags[BURNING] = FALSE;
-					serverUpdateEntityFlag(this,BURNING);
+					serverUpdateEntityFlag(this, BURNING);
 					serverUpdateEffects(player);
 				} else {
-					messagePlayer(player,language[656]);
-					messagePlayer(player,language[657]);
+					messagePlayer(player, language[656]);
+					messagePlayer(player, language[657]);
 				}
 				myStats->amulet->status = BROKEN;
-				playSoundEntity(this,76,64);
-				if( player>0 && multiplayer==SERVER ) {
-					strcpy((char *)net_packet->data,"ARMR");
-					net_packet->data[4]=7;
-					net_packet->data[5]=myStats->amulet->status;
-					net_packet->address.host = net_clients[player-1].host;
-					net_packet->address.port = net_clients[player-1].port;
+				playSoundEntity(this, 76, 64);
+				if( player > 0 && multiplayer == SERVER ) {
+					strcpy((char *)net_packet->data, "ARMR");
+					net_packet->data[4] = 7;
+					net_packet->data[5] = myStats->amulet->status;
+					net_packet->address.host = net_clients[player - 1].host;
+					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 6;
-					sendPacketSafe(net_sock, -1, net_packet, player-1);
+					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 				myStats->amulet = NULL;
 			}
@@ -1758,7 +1758,7 @@ void Entity::handleEffects(Stat *myStats) {
 
 	// wake up
 	if( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || myStats->type >= LICH) ) {
-		messagePlayer(player,language[658]);
+		messagePlayer(player, language[658]);
 		myStats->EFFECTS[EFF_ASLEEP] = FALSE;
 		myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
 		serverUpdateEffects(player);
@@ -1777,9 +1777,9 @@ void Entity::handleEffects(Stat *myStats) {
 
 Sint32 Entity::getAttack() {
 	Stat* entitystats;
-	Sint32 attack=0;
+	Sint32 attack = 0;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 
@@ -1803,7 +1803,7 @@ Sint32 Entity::getAttack() {
 Sint32 Entity::getSTR() {
 	Stat* entitystats;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 	return statGetSTR(entitystats);
@@ -1852,7 +1852,7 @@ Sint32 statGetSTR(Stat *entitystats) {
 Sint32 Entity::getDEX() {
 	Stat* entitystats;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 	return statGetDEX(entitystats);
@@ -1871,10 +1871,10 @@ Sint32 statGetDEX(Stat *entitystats) {
 
 	DEX = entitystats->DEX;
 	if( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] ) {
-		DEX+=10;
+		DEX += 10;
 	}
 	if( entitystats->EFFECTS[EFF_STUNNED] ) {
-		DEX-=5;
+		DEX -= 5;
 	}
 	if( entitystats->HUNGER >= 1500 ) {
 		DEX--;
@@ -1886,7 +1886,7 @@ Sint32 statGetDEX(Stat *entitystats) {
 		DEX--;
 	}
 	if( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] ) {
-		DEX=std::min(DEX-3,-2);
+		DEX = std::min(DEX - 3, -2);
 	}
 	if( entitystats->shoes != NULL )
 		if( entitystats->shoes->type == LEATHER_BOOTS_SPEED ) {
@@ -1913,7 +1913,7 @@ Sint32 statGetDEX(Stat *entitystats) {
 Sint32 Entity::getCON() {
 	Stat* entitystats;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 	return statGetCON(entitystats);
@@ -1955,7 +1955,7 @@ Sint32 statGetCON(Stat *entitystats) {
 Sint32 Entity::getINT() {
 	Stat* entitystats;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 	return statGetINT(entitystats);
@@ -1986,7 +1986,7 @@ Sint32 statGetINT(Stat *entitystats) {
 Sint32 Entity::getPER() {
 	Stat* entitystats;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 	return statGetPER(entitystats);
@@ -2000,7 +2000,7 @@ Sint32 statGetPER(Stat *entitystats) {
 		PER--;
 	}
 	if( entitystats->mask )
-		if( entitystats->mask->type==TOOL_GLASSES ) {
+		if( entitystats->mask->type == TOOL_GLASSES ) {
 			PER++;
 		}
 	return PER;
@@ -2017,7 +2017,7 @@ Sint32 statGetPER(Stat *entitystats) {
 Sint32 Entity::getCHR() {
 	Stat* entitystats;
 
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return 0;
 	}
 	return statGetCHR(entitystats);
@@ -2052,7 +2052,7 @@ Sint32 statGetCHR(Stat *entitystats) {
 
 bool Entity::isBlind() {
 	Stat* entitystats;
-	if( (entitystats=this->getStats()) == NULL ) {
+	if( (entitystats = this->getStats()) == NULL ) {
 		return false;
 	}
 
@@ -2091,7 +2091,7 @@ bool Entity::isBlind() {
 
 bool Entity::isInvisible() {
 	Stat* entitystats;
-	if( (entitystats=getStats()) == NULL ) {
+	if( (entitystats = getStats()) == NULL ) {
 		return false;
 	}
 
@@ -2159,15 +2159,15 @@ list_t *checkTileForEntity(int x, int y) {
 	//Traverse map.entities...
 	node_t *node = NULL;
 	node_t *node2 = NULL;
-	for( node=map.entities->first; node!=NULL; node=node->next ) {
+	for( node = map.entities->first; node != NULL; node = node->next ) {
 		if (node->element) {
 			Entity *entity = (Entity *)node->element;
 			if (entity && (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y) { //Check if the current entity is on the tile.
 				//Right. So. Create the list if it doesn't exist.
 				if (!return_val) {
 					return_val = (list_t *) malloc(sizeof(list_t));
-					return_val->first=NULL;
-					return_val->last=NULL;
+					return_val->first = NULL;
+					return_val->last = NULL;
 				}
 
 				//And add the current entity to it.
@@ -2247,19 +2247,19 @@ void Entity::attack(int pose, int charge) {
 	Stat *hitstats = NULL;
 	Stat *myStats;
 	Entity *entity;
-	int player, playerhit=-1;
+	int player, playerhit = -1;
 	double dist;
 	int c, i;
-	int weaponskill=-1;
+	int weaponskill = -1;
 	node_t *node;
 	double tangent;
 
-	if( (myStats = getStats())==NULL ) {
+	if( (myStats = getStats()) == NULL ) {
 		return;
 	}
 
 	// get the player number, if applicable
-	if (behavior==&actPlayer) {
+	if (behavior == &actPlayer) {
 		player = skill[2];
 	} else {
 		player = -1;    // not a player
@@ -2294,8 +2294,8 @@ void Entity::attack(int pose, int charge) {
 
 		if( myStats->weapon != NULL ) {
 			// magical weapons
-			if( itemCategory(myStats->weapon)==SPELLBOOK || itemCategory(myStats->weapon)==MAGICSTAFF ) {
-				if( itemCategory(myStats->weapon)==MAGICSTAFF ) {
+			if( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF ) {
+				if( itemCategory(myStats->weapon) == MAGICSTAFF ) {
 					switch( myStats->weapon->type ) {
 						case MAGICSTAFF_LIGHT:
 							castSpell(uid, &spell_light, TRUE, FALSE);
@@ -2328,32 +2328,32 @@ void Entity::attack(int pose, int charge) {
 							castSpell(uid, &spell_sleep, TRUE, FALSE);
 							break;
 						default:
-							messagePlayer(player,"This is my wish stick! Wishy wishy wish!");
+							messagePlayer(player, "This is my wish stick! Wishy wishy wish!");
 							break;
 					}
 
 					// magicstaffs deplete themselves for each use
-					if( rand()%3==0 ) {
-						if( player==clientnum ) {
-							if( myStats->weapon->count>1 ) {
-								newItem(myStats->weapon->type,myStats->weapon->status,myStats->weapon->beatitude,myStats->weapon->count-1,myStats->weapon->appearance,myStats->weapon->identified,&myStats->inventory);
+					if( rand() % 3 == 0 ) {
+						if( player == clientnum ) {
+							if( myStats->weapon->count > 1 ) {
+								newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
 							}
 						}
 						myStats->weapon->count = 1;
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 						if( myStats->weapon->status != BROKEN ) {
-							messagePlayer(player,language[659]);
+							messagePlayer(player, language[659]);
 						} else {
-							messagePlayer(player,language[660]);
+							messagePlayer(player, language[660]);
 						}
-						if( player>0 && multiplayer==SERVER ) {
-							strcpy((char *)net_packet->data,"ARMR");
-							net_packet->data[4]=5;
-							net_packet->data[5]=myStats->weapon->status;
-							net_packet->address.host = net_clients[player-1].host;
-							net_packet->address.port = net_clients[player-1].port;
+						if( player > 0 && multiplayer == SERVER ) {
+							strcpy((char *)net_packet->data, "ARMR");
+							net_packet->data[4] = 5;
+							net_packet->data[5] = myStats->weapon->status;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player-1);
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
 				} else {
@@ -2414,41 +2414,41 @@ void Entity::attack(int pose, int charge) {
 			// ranged weapons (bows)
 			else if( myStats->weapon->type == SHORTBOW || myStats->weapon->type == CROSSBOW || myStats->weapon->type == SLING || myStats->weapon->type == ARTIFACT_BOW ) {
 				// damage weapon if applicable
-				if( rand()%50==0 && myStats->weapon->type != ARTIFACT_BOW ) {
+				if( rand() % 50 == 0 && myStats->weapon->type != ARTIFACT_BOW ) {
 					if( myStats->weapon != NULL ) {
-						if( player==clientnum ) {
-							if( myStats->weapon->count>1 ) {
-								newItem(myStats->weapon->type,myStats->weapon->status,myStats->weapon->beatitude,myStats->weapon->count-1,myStats->weapon->appearance,myStats->weapon->identified,&myStats->inventory);
+						if( player == clientnum ) {
+							if( myStats->weapon->count > 1 ) {
+								newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
 							}
 						}
 						myStats->weapon->count = 1;
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 						if( myStats->weapon->status != BROKEN ) {
-							messagePlayer(player,language[661],myStats->weapon->getName());
+							messagePlayer(player, language[661], myStats->weapon->getName());
 						} else {
-							playSoundEntity(this,76,64);
-							messagePlayer(player,language[662],myStats->weapon->getName());
+							playSoundEntity(this, 76, 64);
+							messagePlayer(player, language[662], myStats->weapon->getName());
 						}
-						if( player>0 && multiplayer==SERVER ) {
-							strcpy((char *)net_packet->data,"ARMR");
-							net_packet->data[4]=5;
-							net_packet->data[5]=myStats->weapon->status;
-							net_packet->address.host = net_clients[player-1].host;
-							net_packet->address.port = net_clients[player-1].port;
+						if( player > 0 && multiplayer == SERVER ) {
+							strcpy((char *)net_packet->data, "ARMR");
+							net_packet->data[4] = 5;
+							net_packet->data[5] = myStats->weapon->status;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, player-1);
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
 				}
 				if( myStats->weapon->type == SLING ) {
 					entity = newEntity(78, 1, map.entities); // rock
-					playSoundEntity(this, 239+rand()%3, 96);
+					playSoundEntity(this, 239 + rand() % 3, 96);
 				} else if( myStats->weapon->type == CROSSBOW ) {
 					entity = newEntity(167, 1, map.entities); // bolt
-					playSoundEntity(this, 239+rand()%3, 96);
+					playSoundEntity(this, 239 + rand() % 3, 96);
 				} else {
 					entity = newEntity(166, 1, map.entities); // arrow
-					playSoundEntity(this, 239+rand()%3, 96);
+					playSoundEntity(this, 239 + rand() % 3, 96);
 				}
 				entity->parent = uid;
 				entity->x = x;
@@ -2462,7 +2462,7 @@ void Entity::attack(int pose, int charge) {
 				entity->flags[PASSABLE] = TRUE;
 
 				// arrow power
-				entity->skill[3] = getAttack() - 1 + myStats->PROFICIENCIES[PRO_RANGED]/20;
+				entity->skill[3] = getAttack() - 1 + myStats->PROFICIENCIES[PRO_RANGED] / 20;
 
 				// poison arrow
 				if( myStats->weapon->type == ARTIFACT_BOW ) {
@@ -2472,8 +2472,8 @@ void Entity::attack(int pose, int charge) {
 			}
 
 			// potions and gems (throwing)
-			if( itemCategory(myStats->weapon)==POTION || itemCategory(myStats->weapon)==GEM ) {
-				playSoundEntity(this,75,64);
+			if( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM ) {
+				playSoundEntity(this, 75, 64);
 				entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
 				entity->parent = uid;
 				entity->x = x;
@@ -2496,23 +2496,23 @@ void Entity::attack(int pose, int charge) {
 				entity->vel_z = -.5;
 
 				myStats->weapon->count--;
-				if( myStats->weapon->count<=0 ) {
+				if( myStats->weapon->count <= 0 ) {
 					if( myStats->weapon->node ) {
 						list_RemoveNode(myStats->weapon->node);
 					} else {
 						free(myStats->weapon);
 					}
-					myStats->weapon=NULL;
+					myStats->weapon = NULL;
 				}
 				return;
 			}
 		}
 
 		// normal attacks
-		playSoundEntity(this,23+rand()%5,128); // whoosh noise
-		dist = lineTrace(this,x,y,yaw,STRIKERANGE,0,FALSE);
+		playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
+		dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, FALSE);
 		if( hit.entity != NULL ) {
-			if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+			if( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 				// test for friendly fire
 				if( checkFriend(hit.entity) ) {
 					return;
@@ -2523,22 +2523,22 @@ void Entity::attack(int pose, int charge) {
 				if( myStats->weapon != NULL ) {
 					if( myStats->weapon->type == TOOL_PICKAXE ) {
 						// spawn several rock items
-						int i = 8+rand()%4;
+						int i = 8 + rand() % 4;
 
 						int c;
-						for( c=0; c<i; c++ ) {
-							Entity *entity = newEntity(-1,1,map.entities);
-							entity->flags[INVISIBLE]=TRUE;
-							entity->flags[UPDATENEEDED]=TRUE;
-							entity->x = hit.entity->x - 4 + rand()%8;
-							entity->y = hit.entity->y - 4 + rand()%8;
-							entity->z = -6+rand()%12;
+						for( c = 0; c < i; c++ ) {
+							Entity *entity = newEntity(-1, 1, map.entities);
+							entity->flags[INVISIBLE] = TRUE;
+							entity->flags[UPDATENEEDED] = TRUE;
+							entity->x = hit.entity->x - 4 + rand() % 8;
+							entity->y = hit.entity->y - 4 + rand() % 8;
+							entity->z = -6 + rand() % 12;
 							entity->sizex = 4;
 							entity->sizey = 4;
-							entity->yaw = rand()%360 * PI/180;
-							entity->vel_x = (rand()%20-10)/10.0;
-							entity->vel_y = (rand()%20-10)/10.0;
-							entity->vel_z = -.25 - (rand()%5)/10.0;
+							entity->yaw = rand() % 360 * PI / 180;
+							entity->vel_x = (rand() % 20 - 10) / 10.0;
+							entity->vel_y = (rand() % 20 - 10) / 10.0;
+							entity->vel_z = -.25 - (rand() % 5) / 10.0;
 							entity->flags[PASSABLE] = TRUE;
 							entity->behavior = &actItem;
 							entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
@@ -2554,45 +2554,45 @@ void Entity::attack(int pose, int charge) {
 						double oy = hit.entity->y;
 
 						// destroy the boulder
-						playSoundEntity(hit.entity,67,128);
+						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
-						messagePlayer(player,language[663]);
-						if( rand()%2 ) {
+						messagePlayer(player, language[663]);
+						if( rand() % 2 ) {
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-							if( myStats->weapon->status==BROKEN ) {
-								messagePlayer(player,language[664]);
-								playSoundEntity(this,76,64);
+							if( myStats->weapon->status == BROKEN ) {
+								messagePlayer(player, language[664]);
+								playSoundEntity(this, 76, 64);
 							} else {
-								messagePlayer(player,language[665]);
+								messagePlayer(player, language[665]);
 							}
-							if( player>0 && multiplayer==SERVER ) {
-								strcpy((char *)net_packet->data,"ARMR");
-								net_packet->data[4]=5;
-								net_packet->data[5]=myStats->weapon->status;
-								net_packet->address.host = net_clients[player-1].host;
-								net_packet->address.port = net_clients[player-1].port;
+							if( player > 0 && multiplayer == SERVER ) {
+								strcpy((char *)net_packet->data, "ARMR");
+								net_packet->data[4] = 5;
+								net_packet->data[5] = myStats->weapon->status;
+								net_packet->address.host = net_clients[player - 1].host;
+								net_packet->address.port = net_clients[player - 1].port;
 								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, player-1);
+								sendPacketSafe(net_sock, -1, net_packet, player - 1);
 							}
 						}
 
 						// on sokoban, destroying boulders spawns scorpions
-						if( !strcmp(map.name,"Sokoban") ) {
-							Entity *monster = summonMonster(SCORPION,ox,oy);
+						if( !strcmp(map.name, "Sokoban") ) {
+							Entity *monster = summonMonster(SCORPION, ox, oy);
 							if( monster ) {
 								int c;
-								for( c=0; c<MAXPLAYERS; c++ ) {
-									Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
-									messagePlayerColor(c,color,language[406]);
+								for( c = 0; c < MAXPLAYERS; c++ ) {
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+									messagePlayerColor(c, color, language[406]);
 								}
 							}
 						}
 					} else {
-						spawnBang(hit.x - cos(yaw)*2,hit.y - sin(yaw)*2,0);
+						spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 					}
 				} else {
 					//spawnBang(hit.x - cos(my->yaw)*2,hit.y - sin(my->yaw)*2,0);
-					playSoundPos(hit.x,hit.y,183,64);
+					playSoundPos(hit.x, hit.y, 183, 64);
 				}
 			} else if( hit.entity->behavior == &actMonster ) {
 				if( hit.entity->children.first != NULL ) {
@@ -2600,27 +2600,27 @@ void Entity::attack(int pose, int charge) {
 						hitstats = (Stat *)hit.entity->children.first->next->element;
 
 						// alert the monster!
-						if( hit.entity->skill[0]!=1 && (hitstats->type<LICH || hitstats->type>=SHOPKEEPER) ) {
+						if( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) ) {
 							//hit.entity->skill[0]=0;
 							//hit.entity->skill[4]=0;
 							//hit.entity->fskill[4]=atan2(my->y-hit.entity->y,my->x-hit.entity->x);
-							hit.entity->skill[0]=2;
-							hit.entity->skill[1]=uid;
-							hit.entity->fskill[2]=x;
-							hit.entity->fskill[3]=y;
+							hit.entity->skill[0] = 2;
+							hit.entity->skill[1] = uid;
+							hit.entity->fskill[2] = x;
+							hit.entity->fskill[3] = y;
 						}
 
 						// alert other monsters too
 						Entity *ohitentity = hit.entity;
-						for( node=map.entities->first; node!=NULL; node=node->next ) {
+						for( node = map.entities->first; node != NULL; node = node->next ) {
 							entity = (Entity *)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
 								Stat *buddystats = entity->getStats();
 								if( buddystats != NULL ) {
 									if( entity->checkFriend(hit.entity) ) {
 										if( entity->skill[0] == 0 ) { // monster is waiting
-											tangent = atan2( entity->y-ohitentity->y, entity->x-ohitentity->x );
-											lineTrace(ohitentity,ohitentity->x,ohitentity->y,tangent,1024,0,FALSE);
+											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
+											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, FALSE);
 											if( hit.entity == entity ) {
 												entity->skill[0] = 2; // path state
 												entity->skill[1] = uid;
@@ -2640,7 +2640,7 @@ void Entity::attack(int pose, int charge) {
 				playerhit = hit.entity->skill[2];
 
 				// alert the player's followers!
-				for( node=hitstats->FOLLOWERS.first; node!=NULL; node=node->next ) {
+				for( node = hitstats->FOLLOWERS.first; node != NULL; node = node->next ) {
 					Uint32 *c = (Uint32 *)node->element;
 					entity = uidToEntity(*c);
 					Entity *ohitentity = hit.entity;
@@ -2658,33 +2658,33 @@ void Entity::attack(int pose, int charge) {
 					hit.entity = ohitentity;
 				}
 			} else if( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &actChest ) {
-				int axe=0;
+				int axe = 0;
 				if( myStats->weapon ) {
 					if( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE ) {
-						axe=1; // axes do extra damage to doors :)
+						axe = 1; // axes do extra damage to doors :)
 					}
 				}
 				if( hit.entity->behavior != &actChest ) {
-					if( charge<MAXCHARGE/2 ) {
-						hit.entity->skill[4] -= 1+axe; // decrease door/furniture health
+					if( charge < MAXCHARGE / 2 ) {
+						hit.entity->skill[4] -= 1 + axe; // decrease door/furniture health
 					} else {
-						hit.entity->skill[4] -= 2+axe; // decrease door/furniture health extra
+						hit.entity->skill[4] -= 2 + axe; // decrease door/furniture health extra
 					}
 				} else {
-					if( charge<MAXCHARGE/2 ) {
-						hit.entity->skill[3] -= 1+axe; // decrease chest health
+					if( charge < MAXCHARGE / 2 ) {
+						hit.entity->skill[3] -= 1 + axe; // decrease chest health
 					} else {
-						hit.entity->skill[3] -= 2+axe; // decrease chest health extra
+						hit.entity->skill[3] -= 2 + axe; // decrease chest health extra
 					}
 				}
-				playSoundEntity(hit.entity,28,64);
-				if( (hit.entity->behavior!=&actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior==&actChest && hit.entity->skill[3] > 0) ) {
+				playSoundEntity(hit.entity, 28, 64);
+				if( (hit.entity->behavior != &actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &actChest && hit.entity->skill[3] > 0) ) {
 					if( hit.entity->behavior == &actDoor ) {
 						messagePlayer(player, language[666]);
-					} else if( hit.entity->behavior==&actChest ) {
+					} else if( hit.entity->behavior == &actChest ) {
 						messagePlayer(player, language[667]);
-					} else if( hit.entity->behavior==&actFurniture ) {
-						if( hit.entity->skill[0]==0 ) {
+					} else if( hit.entity->behavior == &actFurniture ) {
+						if( hit.entity->skill[0] == 0 ) {
 							messagePlayer(player, language[668]);
 						} else {
 							messagePlayer(player, language[669]);
@@ -2702,35 +2702,35 @@ void Entity::attack(int pose, int charge) {
 					} else if( hit.entity->behavior == &actChest ) {
 						messagePlayer(player, language[671]);
 					} else if( hit.entity->behavior == &actFurniture ) {
-						if( hit.entity->skill[0]==0 ) {
+						if( hit.entity->skill[0] == 0 ) {
 							messagePlayer(player, language[672]);
 						} else {
 							messagePlayer(player, language[673]);
 						}
 					}
 				}
-				if( hit.entity->behavior==&actDoor ) {
-					updateEnemyBar(this,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
-				} else if( hit.entity->behavior==&actChest ) {
-					updateEnemyBar(this,hit.entity,language[675],hit.entity->skill[3],hit.entity->skill[8]);
-				} else if( hit.entity->behavior==&actFurniture ) {
-					if( hit.entity->skill[0]==0 ) {
-						updateEnemyBar(this,hit.entity,language[676],hit.entity->skill[4],hit.entity->skill[9]);
+				if( hit.entity->behavior == &actDoor ) {
+					updateEnemyBar(this, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
+				} else if( hit.entity->behavior == &actChest ) {
+					updateEnemyBar(this, hit.entity, language[675], hit.entity->skill[3], hit.entity->skill[8]);
+				} else if( hit.entity->behavior == &actFurniture ) {
+					if( hit.entity->skill[0] == 0 ) {
+						updateEnemyBar(this, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
 					} else {
-						updateEnemyBar(this,hit.entity,language[677],hit.entity->skill[4],hit.entity->skill[9]);
+						updateEnemyBar(this, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
 					}
 				}
 			} else if( hit.entity->behavior == &actSink ) {
-				playSoundEntity(hit.entity,28,64);
-				playSoundEntity(hit.entity,140+rand(),64);
+				playSoundEntity(hit.entity, 28, 64);
+				playSoundEntity(hit.entity, 140 + rand(), 64);
 				messagePlayer(player, language[678]);
 				if (hit.entity->skill[0] > 0) {
 					hit.entity->skill[0]--; //Deplete one usage.
 
 					//50% chance spawn a slime.
-					if (rand()%2 == 0) {
+					if (rand() % 2 == 0) {
 						// spawn slime
-						Entity *monster = summonMonster(SLIME,x,y);
+						Entity *monster = summonMonster(SLIME, x, y);
 						if( monster ) {
 							messagePlayer(player, language[582]);
 							Stat *monsterStats = monster->getStats();
@@ -2746,9 +2746,9 @@ void Entity::attack(int pose, int charge) {
 			} else {
 				if( myStats->weapon ) {
 					// bang
-					spawnBang(hit.x - cos(yaw)*2,hit.y - sin(yaw)*2,0);
+					spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 				} else {
-					playSoundPos(hit.x,hit.y,183,64);
+					playSoundPos(hit.x, hit.y, 183, 64);
 				}
 			}
 
@@ -2783,17 +2783,17 @@ void Entity::attack(int pose, int charge) {
 				}
 				if( hitsuccess )*/ {
 					// skill increase
-					if( weaponskill>=0 )
-						if( rand()%10==0 ) {
+					if( weaponskill >= 0 )
+						if( rand() % 10 == 0 ) {
 							this->increaseSkill(weaponskill);
 						}
 
 					// calculate and perform damage to opponent
 					int damage = 0;
-					if( weaponskill>=0 ) {
-						damage = std::max(0,getAttack()-AC(hitstats))*damagetables[hitstats->type][weaponskill-PRO_SWORD];
+					if( weaponskill >= 0 ) {
+						damage = std::max(0, getAttack() - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
 					} else {
-						damage = std::max(0,getAttack()-AC(hitstats));
+						damage = std::max(0, getAttack() - AC(hitstats));
 					}
 					if( weaponskill == PRO_AXE ) {
 						damage++;
@@ -2802,26 +2802,26 @@ void Entity::attack(int pose, int charge) {
 					bool gungnir = FALSE;
 					if( myStats->weapon )
 						if( myStats->weapon->type == ARTIFACT_SPEAR ) {
-							gungnir=TRUE;
+							gungnir = TRUE;
 						}
-					if( weaponskill>=PRO_SWORD && weaponskill<PRO_SHIELD && !gungnir ) {
-						int chance=0;
-						if( weaponskill==PRO_POLEARM ) {
-							chance = (damage/3) * (100-myStats->PROFICIENCIES[weaponskill])/100.f;
+					if( weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir ) {
+						int chance = 0;
+						if( weaponskill == PRO_POLEARM ) {
+							chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
 						} else {
-							chance = (damage/2) * (100-myStats->PROFICIENCIES[weaponskill])/100.f;
+							chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
 						}
-						if( chance>0 ) {
-							damage = (damage-chance) + (rand()%chance) + 1;
+						if( chance > 0 ) {
+							damage = (damage - chance) + (rand() % chance) + 1;
 						}
 					}
 
-					int olddamage=damage;
-					damage *= std::max(charge,MAXCHARGE/2)/((double)(MAXCHARGE/2));
+					int olddamage = damage;
+					damage *= std::max(charge, MAXCHARGE / 2) / ((double)(MAXCHARGE / 2));
 
 					if( myStats->weapon )
 						if( myStats->weapon->type == ARTIFACT_AXE )
-							if( rand()%3==0 ) {
+							if( rand() % 3 == 0 ) {
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
 					hit.entity->modHP(-damage); // do the damage
@@ -2830,14 +2830,14 @@ void Entity::attack(int pose, int charge) {
 					killedByMonsterObituary(hit.entity);
 
 					// update enemy bar for attacker
-					if( !strcmp(hitstats->name,"") ) {
-						updateEnemyBar(this,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
+					if( !strcmp(hitstats->name, "") ) {
+						updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
 					} else {
-						updateEnemyBar(this,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
+						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
 
 					// damage weapon if applicable
-					if( (rand()%4==0 && damage==0) || (rand()%50==0 && damage>0) ) {
+					if( (rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0) ) {
 						if( myStats->weapon != NULL ) {
 							bool artifactWeapon = FALSE;
 							if( myStats->weapon->type == ARTIFACT_AXE ) {
@@ -2853,99 +2853,99 @@ void Entity::attack(int pose, int charge) {
 								artifactWeapon = TRUE;
 							}
 							if( !artifactWeapon ) {
-								if( player==clientnum || player<0 ) {
-									if( myStats->weapon->count>1 ) {
-										newItem(myStats->weapon->type,myStats->weapon->status,myStats->weapon->beatitude,myStats->weapon->count-1,myStats->weapon->appearance,myStats->weapon->identified,&myStats->inventory);
+								if( player == clientnum || player < 0 ) {
+									if( myStats->weapon->count > 1 ) {
+										newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
 									}
 								}
 								myStats->weapon->count = 1;
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
 								if( myStats->weapon->status != BROKEN ) {
-									messagePlayer(player,language[679]);
+									messagePlayer(player, language[679]);
 								} else {
-									playSoundEntity(this,76,64);
-									messagePlayer(player,language[680]);
+									playSoundEntity(this, 76, 64);
+									messagePlayer(player, language[680]);
 								}
-								if( player>0 && multiplayer==SERVER ) {
-									strcpy((char *)net_packet->data,"ARMR");
-									net_packet->data[4]=5;
-									net_packet->data[5]=myStats->weapon->status;
-									net_packet->address.host = net_clients[player-1].host;
-									net_packet->address.port = net_clients[player-1].port;
+								if( player > 0 && multiplayer == SERVER ) {
+									strcpy((char *)net_packet->data, "ARMR");
+									net_packet->data[4] = 5;
+									net_packet->data[5] = myStats->weapon->status;
+									net_packet->address.host = net_clients[player - 1].host;
+									net_packet->address.port = net_clients[player - 1].port;
 									net_packet->len = 6;
-									sendPacketSafe(net_sock, -1, net_packet, player-1);
+									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
 							}
 						}
 					}
 
 					// damage opponent armor if applicable
-					Item *armor=NULL;
-					int armornum=0;
-					if( damage>0 && ((rand()%25==0 && weaponskill!=PRO_MACE) || (rand()%10==0 && weaponskill==PRO_MACE)) ) {
-						switch( rand()%6 ) {
+					Item *armor = NULL;
+					int armornum = 0;
+					if( damage > 0 && ((rand() % 25 == 0 && weaponskill != PRO_MACE) || (rand() % 10 == 0 && weaponskill == PRO_MACE)) ) {
+						switch( rand() % 6 ) {
 							case 0:
 								armor = hitstats->helmet;
-								armornum=0;
+								armornum = 0;
 								break;
 							case 1:
 								armor = hitstats->breastplate;
-								armornum=1;
+								armornum = 1;
 								break;
 							case 2:
 								armor = hitstats->gloves;
-								armornum=2;
+								armornum = 2;
 								break;
 							case 3:
 								armor = hitstats->shoes;
-								armornum=3;
+								armornum = 3;
 								break;
 							case 4:
 								armor = hitstats->shield;
-								armornum=4;
+								armornum = 4;
 								break;
 							case 5:
 								armor = hitstats->cloak;
-								armornum=6;
+								armornum = 6;
 								break;
 							default:
 								break;
 						}
 					} else {
 						if( hitstats->shield != NULL ) {
-							if( itemCategory(hitstats->shield)==ARMOR ) {
-								if( (rand()%10==0 && damage>0) || (damage==0 && rand()%3==0) ) {
+							if( itemCategory(hitstats->shield) == ARMOR ) {
+								if( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) ) {
 									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 								}
 							}
 						}
 					}
-					if( hitstats->defending && rand()%10==0 && !armor ) {
+					if( hitstats->defending && rand() % 10 == 0 && !armor ) {
 						armor = hitstats->shield;
 						armornum = 4;
 					}
 					if( armor != NULL ) {
-						if( playerhit==clientnum || playerhit<0 ) {
-							if( armor->count>1 ) {
-								newItem(armor->type,armor->status,armor->beatitude,armor->count-1,armor->appearance,armor->identified,&hitstats->inventory);
+						if( playerhit == clientnum || playerhit < 0 ) {
+							if( armor->count > 1 ) {
+								newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
 							}
 						}
 						armor->count = 1;
 						armor->status = static_cast<Status>(armor->status - 1);
 						if( armor->status > BROKEN ) {
-							messagePlayer(playerhit,language[681],armor->getName());
+							messagePlayer(playerhit, language[681], armor->getName());
 						} else {
-							playSoundEntity(hit.entity,76,64);
-							messagePlayer(playerhit,language[682],armor->getName());
+							playSoundEntity(hit.entity, 76, 64);
+							messagePlayer(playerhit, language[682], armor->getName());
 						}
-						if( playerhit>0 && multiplayer==SERVER ) {
-							strcpy((char *)net_packet->data,"ARMR");
-							net_packet->data[4]=armornum;
-							net_packet->data[5]=armor->status;
-							net_packet->address.host = net_clients[playerhit-1].host;
-							net_packet->address.port = net_clients[playerhit-1].port;
+						if( playerhit > 0 && multiplayer == SERVER ) {
+							strcpy((char *)net_packet->data, "ARMR");
+							net_packet->data[4] = armornum;
+							net_packet->data[5] = armor->status;
+							net_packet->address.host = net_clients[playerhit - 1].host;
+							net_packet->address.port = net_clients[playerhit - 1].port;
 							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, playerhit-1);
+							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 						}
 					}
 
@@ -2957,85 +2957,85 @@ void Entity::attack(int pose, int charge) {
 									hitstats->poisonKiller = uid;
 								}
 								hit.entity->flags[BURNING] = TRUE;
-								if( playerhit>0 && multiplayer==SERVER ) {
-									messagePlayer(playerhit,language[683]);
-									serverUpdateEntityFlag(hit.entity,BURNING);
+								if( playerhit > 0 && multiplayer == SERVER ) {
+									messagePlayer(playerhit, language[683]);
+									serverUpdateEntityFlag(hit.entity, BURNING);
 								}
 							}
 						}
 					}
 
 					// special monster effects
-					if( damage>0 && rand()%4==0 ) {
-						int armornum=0;
-						Item *armor=NULL;
-						int armorstolen = rand()%9;
+					if( damage > 0 && rand() % 4 == 0 ) {
+						int armornum = 0;
+						Item *armor = NULL;
+						int armorstolen = rand() % 9;
 						switch( myStats->type ) {
 							case SCORPION:
 								hitstats->EFFECTS[EFF_PARALYZED] = TRUE;
 								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = 120;
-								messagePlayer(playerhit,language[684]);
-								messagePlayer(playerhit,language[685]);
+								messagePlayer(playerhit, language[684]);
+								messagePlayer(playerhit, language[685]);
 								serverUpdateEffects(playerhit);
 								break;
 							case SPIDER:
 								hitstats->EFFECTS[EFF_POISONED] = TRUE;
 								hitstats->EFFECTS_TIMERS[EFF_POISONED] = 600;
-								messagePlayer(playerhit,language[686]);
-								messagePlayer(playerhit,language[687]);
+								messagePlayer(playerhit, language[686]);
+								messagePlayer(playerhit, language[687]);
 								serverUpdateEffects(playerhit);
 								break;
 							case SUCCUBUS:
 								switch( armorstolen ) {
 									case 0:
 										armor = hitstats->helmet;
-										armornum=0;
+										armornum = 0;
 										break;
 									case 1:
 										armor = hitstats->breastplate;
-										armornum=1;
+										armornum = 1;
 										break;
 									case 2:
 										armor = hitstats->gloves;
-										armornum=2;
+										armornum = 2;
 										break;
 									case 3:
 										armor = hitstats->shoes;
-										armornum=3;
+										armornum = 3;
 										break;
 									case 4:
 										armor = hitstats->shield;
-										armornum=4;
+										armornum = 4;
 										break;
 									case 5:
 										armor = hitstats->cloak;
-										armornum=6;
+										armornum = 6;
 										break;
 									case 6:
 										armor = hitstats->amulet;
-										armornum=7;
+										armornum = 7;
 										break;
 									case 7:
 										armor = hitstats->ring;
-										armornum=8;
+										armornum = 8;
 										break;
 									case 8:
 										armor = hitstats->mask;
-										armornum=9;
+										armornum = 9;
 										break;
 									default:
 										break;
 								}
 								if( armor != NULL ) {
-									if( playerhit==clientnum || playerhit<0 ) {
-										if( armor->count>1 ) {
-											newItem(armor->type,armor->status,armor->beatitude,armor->count-1,armor->appearance,armor->identified,&hitstats->inventory);
+									if( playerhit == clientnum || playerhit < 0 ) {
+										if( armor->count > 1 ) {
+											newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
 										}
 									}
 									armor->count = 1;
-									messagePlayer(playerhit,language[688],armor->getName());
-									newItem(armor->type,armor->status,armor->beatitude,armor->count,armor->appearance,armor->identified,&myStats->inventory);
-									Item **slot = itemSlot(hitstats,armor);
+									messagePlayer(playerhit, language[688], armor->getName());
+									newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
+									Item **slot = itemSlot(hitstats, armor);
 									if( slot ) {
 										*slot = NULL;
 									}
@@ -3044,13 +3044,13 @@ void Entity::attack(int pose, int charge) {
 									} else {
 										free(armor);
 									}
-									if( playerhit>0 && multiplayer==SERVER ) {
-										strcpy((char *)net_packet->data,"STLA");
-										net_packet->data[4]=armornum;
-										net_packet->address.host = net_clients[playerhit-1].host;
-										net_packet->address.port = net_clients[playerhit-1].port;
+									if( playerhit > 0 && multiplayer == SERVER ) {
+										strcpy((char *)net_packet->data, "STLA");
+										net_packet->data[4] = armornum;
+										net_packet->address.host = net_clients[playerhit - 1].host;
+										net_packet->address.port = net_clients[playerhit - 1].port;
 										net_packet->len = 5;
-										sendPacketSafe(net_sock, -1, net_packet, playerhit-1);
+										sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 									}
 									teleportRandom();
 
@@ -3065,55 +3065,55 @@ void Entity::attack(int pose, int charge) {
 					}
 
 					// send messages
-					if( !strcmp(hitstats->name,"") ) {
+					if( !strcmp(hitstats->name, "") ) {
 						if( hitstats->HP > 0 ) {
-							if( damage>olddamage ) {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								messagePlayerColor(player,color,language[689],language[90+hitstats->type]);
+							if( damage > olddamage ) {
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(player, color, language[689], language[90 + hitstats->type]);
 							} else {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								messagePlayerColor(player,color,language[690],language[90+hitstats->type]);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(player, color, language[690], language[90 + hitstats->type]);
 							}
-							if( damage==0 ) {
-								messagePlayer(player,language[691]);
+							if( damage == 0 ) {
+								messagePlayer(player, language[691]);
 							}
 						} else {
-							Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-							messagePlayerColor(player,color,language[692],language[90+hitstats->type]);
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							messagePlayerColor(player, color, language[692], language[90 + hitstats->type]);
 							awardXP( hit.entity, TRUE, TRUE );
 						}
 					} else {
 						if( hitstats->HP > 0 ) {
-							if( damage>olddamage ) {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								messagePlayerColor(player,color,language[693],hitstats->name);
+							if( damage > olddamage ) {
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(player, color, language[693], hitstats->name);
 							} else {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								messagePlayerColor(player,color,language[694],hitstats->name);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								messagePlayerColor(player, color, language[694], hitstats->name);
 							}
-							if( damage==0 ) {
+							if( damage == 0 ) {
 								if( hitstats->sex ) {
-									messagePlayer(player,language[695]);
+									messagePlayer(player, language[695]);
 								} else {
-									messagePlayer(player,language[696]);
+									messagePlayer(player, language[696]);
 								}
 							}
 						} else {
-							Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-							messagePlayerColor(player,color,language[697],hitstats->name);
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							messagePlayerColor(player, color, language[697], hitstats->name);
 							awardXP( hit.entity, TRUE, TRUE );
 						}
 					}
-					if( playerhit > 0 && multiplayer==SERVER ) {
-						strcpy((char *)net_packet->data,"UPHP");
-						SDLNet_Write32((Uint32)hitstats->HP,&net_packet->data[4]);
-						SDLNet_Write32((Uint32)myStats->type,&net_packet->data[8]);
-						net_packet->address.host = net_clients[playerhit-1].host;
-						net_packet->address.port = net_clients[playerhit-1].port;
+					if( playerhit > 0 && multiplayer == SERVER ) {
+						strcpy((char *)net_packet->data, "UPHP");
+						SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
+						net_packet->address.host = net_clients[playerhit - 1].host;
+						net_packet->address.port = net_clients[playerhit - 1].port;
 						net_packet->len = 12;
-						sendPacketSafe(net_sock, -1, net_packet, playerhit-1);
+						sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 					} else if( playerhit == 0 ) {
-						if( damage>0 ) {
+						if( damage > 0 ) {
 							camera_shakex += .1;
 							camera_shakey += 10;
 						} else {
@@ -3121,39 +3121,39 @@ void Entity::attack(int pose, int charge) {
 							camera_shakey += 5;
 						}
 					}
-					if( !strcmp(myStats->name,"") ) {
-						Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-						messagePlayerColor(playerhit,color,language[698],language[90+myStats->type],language[132+myStats->type]);
+					if( !strcmp(myStats->name, "") ) {
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
 					} else {
-						Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-						messagePlayerColor(playerhit,color,language[699],myStats->name,language[132+myStats->type]);
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
 					}
-					if( damage>0 ) {
+					if( damage > 0 ) {
 						Entity *gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
 					} else {
-						messagePlayer(playerhit,language[700]);
+						messagePlayer(playerhit, language[700]);
 					}
-					playSoundEntity(hit.entity,28,64);
+					playSoundEntity(hit.entity, 28, 64);
 
 					// chance of bleeding
 					if( gibtype[(int)hitstats->type] == 1 ) {
 						if( hitstats->HP > 5 && damage > 0 && !hitstats->EFFECTS[EFF_BLEEDING] ) {
-							if( (rand()%20==0 && weaponskill!=PRO_SWORD) || (rand()%10==0 && weaponskill==PRO_SWORD) ) {
-								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480+rand()%360-hit.entity->getCON()*100,120);
+							if( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || (rand() % 10 == 0 && weaponskill == PRO_SWORD) ) {
+								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120);
 								hitstats->EFFECTS[EFF_BLEEDING] = TRUE;
-								if( player>0 && multiplayer==SERVER ) {
+								if( player > 0 && multiplayer == SERVER ) {
 									serverUpdateEffects(player);
 								}
-								if( playerhit>=0 ) {
-									Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-									messagePlayerColor(playerhit,color,language[701]);
+								if( playerhit >= 0 ) {
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									messagePlayerColor(playerhit, color, language[701]);
 								} else {
-									Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-									if( !strcmp(hitstats->name,"") ) {
-										messagePlayerColor(player,color,language[702],language[90+hitstats->type]);
+									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									if( !strcmp(hitstats->name, "") ) {
+										messagePlayerColor(player, color, language[702], language[90 + hitstats->type]);
 									} else {
-										messagePlayerColor(player,color,language[703],hitstats->name);
+										messagePlayerColor(player, color, language[703], hitstats->name);
 									}
 								}
 							}
@@ -3166,24 +3166,24 @@ void Entity::attack(int pose, int charge) {
 				// hit a wall
 				if( myStats->weapon != NULL ) {
 					if( myStats->weapon->type == TOOL_PICKAXE ) {
-						if( hit.mapx>=1 && hit.mapx<map.width-1 && hit.mapy>=1 && hit.mapy<map.height-1 ) {
-							playSoundPos(hit.x,hit.y,67,128);
+						if( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 ) {
+							playSoundPos(hit.x, hit.y, 67, 128);
 
 							// spawn several rock items
-							i = 8+rand()%4;
-							for( c=0; c<i; c++ ) {
-								entity = newEntity(-1,1,map.entities);
-								entity->flags[INVISIBLE]=TRUE;
-								entity->flags[UPDATENEEDED]=TRUE;
-								entity->x = hit.mapx*16 + 4 + rand()%8;
-								entity->y = hit.mapy*16 + 4 + rand()%8;
-								entity->z = -6+rand()%12;
+							i = 8 + rand() % 4;
+							for( c = 0; c < i; c++ ) {
+								entity = newEntity(-1, 1, map.entities);
+								entity->flags[INVISIBLE] = TRUE;
+								entity->flags[UPDATENEEDED] = TRUE;
+								entity->x = hit.mapx * 16 + 4 + rand() % 8;
+								entity->y = hit.mapy * 16 + 4 + rand() % 8;
+								entity->z = -6 + rand() % 12;
 								entity->sizex = 4;
 								entity->sizey = 4;
-								entity->yaw = rand()%360 * PI/180;
-								entity->vel_x = (rand()%20-10)/10.0;
-								entity->vel_y = (rand()%20-10)/10.0;
-								entity->vel_z = -.25 - (rand()%5)/10.0;
+								entity->yaw = rand() % 360 * PI / 180;
+								entity->vel_x = (rand() % 20 - 10) / 10.0;
+								entity->vel_y = (rand() % 20 - 10) / 10.0;
+								entity->vel_z = -.25 - (rand() % 5) / 10.0;
 								entity->flags[PASSABLE] = TRUE;
 								entity->behavior = &actItem;
 								entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
@@ -3195,66 +3195,66 @@ void Entity::attack(int pose, int charge) {
 								entity->skill[15] = FALSE;       // identified
 							}
 
-							map.tiles[OBSTACLELAYER+hit.mapy*MAPLAYERS+hit.mapx*MAPLAYERS*map.height]=0;
+							map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
 							// send wall destroy info to clients
-							if( multiplayer==SERVER ) {
-								for( c=0; c<MAXPLAYERS; c++ ) {
-									if( client_disconnected[c]==TRUE ) {
+							if( multiplayer == SERVER ) {
+								for( c = 0; c < MAXPLAYERS; c++ ) {
+									if( client_disconnected[c] == TRUE ) {
 										continue;
 									}
-									strcpy((char *)net_packet->data,"WALD");
-									SDLNet_Write16((Uint16)hit.mapx,&net_packet->data[4]);
-									SDLNet_Write16((Uint16)hit.mapy,&net_packet->data[6]);
-									net_packet->address.host = net_clients[c-1].host;
-									net_packet->address.port = net_clients[c-1].port;
+									strcpy((char *)net_packet->data, "WALD");
+									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+									net_packet->address.host = net_clients[c - 1].host;
+									net_packet->address.port = net_clients[c - 1].port;
 									net_packet->len = 8;
-									sendPacketSafe(net_sock, -1, net_packet, c-1);
+									sendPacketSafe(net_sock, -1, net_packet, c - 1);
 								}
 							}
-							if( rand()%2 ) {
+							if( rand() % 2 ) {
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-								if( myStats->weapon->status==BROKEN ) {
-									messagePlayer(player,language[704]);
-									playSoundEntity(this,76,64);
+								if( myStats->weapon->status == BROKEN ) {
+									messagePlayer(player, language[704]);
+									playSoundEntity(this, 76, 64);
 								} else {
-									messagePlayer(player,language[705]);
+									messagePlayer(player, language[705]);
 								}
-								if( player>0 && multiplayer==SERVER ) {
-									strcpy((char *)net_packet->data,"ARMR");
-									net_packet->data[4]=5;
-									net_packet->data[5]=myStats->weapon->status;
-									net_packet->address.host = net_clients[player-1].host;
-									net_packet->address.port = net_clients[player-1].port;
+								if( player > 0 && multiplayer == SERVER ) {
+									strcpy((char *)net_packet->data, "ARMR");
+									net_packet->data[4] = 5;
+									net_packet->data[5] = myStats->weapon->status;
+									net_packet->address.host = net_clients[player - 1].host;
+									net_packet->address.port = net_clients[player - 1].port;
 									net_packet->len = 6;
-									sendPacketSafe(net_sock, -1, net_packet, player-1);
+									sendPacketSafe(net_sock, -1, net_packet, player - 1);
 								}
 							}
 
 							// Update the paths so that monsters know they can walk through it
 							generatePathMaps();
 						} else {
-							spawnBang(hit.x - cos(yaw)*2,hit.y - sin(yaw)*2,0);
-							messagePlayer(player,language[706]);
+							spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
+							messagePlayer(player, language[706]);
 						}
 					} else {
 						// bang
-						spawnBang(hit.x - cos(yaw)*2,hit.y - sin(yaw)*2,0);
+						spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 					}
 				} else {
 					// bang
 					//spawnBang(hit.x - cos(my->yaw)*2,hit.y - sin(my->yaw)*2,0);
-					playSoundPos(hit.x,hit.y,183,64);
+					playSoundPos(hit.x, hit.y, 183, 64);
 				}
 			}
 		}
 	} else {
-		if( player==-1 ) {
+		if( player == -1 ) {
 			return;    // clients are NOT supposed to invoke monster attacks in the gamestate!
 		}
-		strcpy((char *)net_packet->data,"ATAK");
-		net_packet->data[4]=player;
-		net_packet->data[5]=pose;
-		net_packet->data[6]=charge;
+		strcpy((char *)net_packet->data, "ATAK");
+		net_packet->data[4] = player;
+		net_packet->data[5] = pose;
+		net_packet->data[6] = charge;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		net_packet->len = 7;
@@ -3275,7 +3275,7 @@ int AC(Stat *stat) {
 		return 0;
 	}
 
-	int armor=stat->CON;
+	int armor = stat->CON;
 
 	if (stat->helmet) {
 		armor += stat->helmet->armorGetAC();
@@ -3300,10 +3300,10 @@ int AC(Stat *stat) {
 	}
 
 	if( stat->shield ) {
-		int shieldskill = stat->PROFICIENCIES[PRO_SHIELD]/25;
+		int shieldskill = stat->PROFICIENCIES[PRO_SHIELD] / 25;
 		armor += shieldskill;
 		if( stat->defending ) {
-			armor += 5+stat->PROFICIENCIES[PRO_SHIELD]/5;
+			armor += 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5;
 		}
 	}
 
@@ -3320,45 +3320,45 @@ int AC(Stat *stat) {
 -------------------------------------------------------------------------------*/
 
 void Entity::teleport(int tele_x, int tele_y) {
-	int player=-1;
+	int player = -1;
 
 	if (behavior == &actPlayer) {
 		player = skill[2];
 	}
 
-	if( strstr(map.name,"Minotaur") || checkObstacle((tele_x<<4)+8,(tele_y<<4)+8,this,NULL) ) {
+	if( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) ) {
 		messagePlayer(player, language[707]);
 		return;
 	}
 
 	// play sound effect
-	playSoundEntity(this,77,64);
+	playSoundEntity(this, 77, 64);
 
 	// relocate entity
 	double oldx = x;
 	double oldy = y;
-	x = (tele_x<<4)+8;
-	y = (tele_y<<4)+8;
+	x = (tele_x << 4) + 8;
+	y = (tele_y << 4) + 8;
 	if( entityInsideSomething(this) ) {
 		x = oldx;
 		y = oldy;
-		if( multiplayer==SERVER && player>0 ) {
+		if( multiplayer == SERVER && player > 0 ) {
 			messagePlayer(player, language[707]);
 		}
 		return;
 	}
-	if( player>0 && multiplayer==SERVER ) {
-		strcpy((char *)net_packet->data,"TELE");
-		net_packet->data[4]=x;
-		net_packet->data[5]=y;
-		net_packet->address.host = net_clients[player-1].host;
-		net_packet->address.port = net_clients[player-1].port;
+	if( player > 0 && multiplayer == SERVER ) {
+		strcpy((char *)net_packet->data, "TELE");
+		net_packet->data[4] = x;
+		net_packet->data[5] = y;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 6;
-		sendPacketSafe(net_sock, -1, net_packet, player-1);
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
 	// play second sound effect
-	playSoundEntity(this,77,64);
+	playSoundEntity(this, 77, 64);
 }
 
 /*-------------------------------------------------------------------------------
@@ -3370,31 +3370,31 @@ void Entity::teleport(int tele_x, int tele_y) {
 -------------------------------------------------------------------------------*/
 
 void Entity::teleportRandom() {
-	int numlocations=0;
+	int numlocations = 0;
 	int pickedlocation;
-	int player=-1;
+	int player = -1;
 
 	if (behavior == &actPlayer ) {
 		player = skill[2];
 	}
-	for (int iy=0; iy<map.height; ++iy ) {
-		for (int ix=0; ix<map.width; ++ix ) {
-			if ( !checkObstacle((ix<<4)+8,(iy<<4)+8,this,NULL) ) {
+	for (int iy = 0; iy < map.height; ++iy ) {
+		for (int ix = 0; ix < map.width; ++ix ) {
+			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) ) {
 				numlocations++;
 			}
 		}
 	}
-	if ( numlocations==0 ) {
+	if ( numlocations == 0 ) {
 		messagePlayer(player, language[708]);
 		return;
 	}
-	pickedlocation = rand()%numlocations;
-	numlocations=0;
-	for (int iy=0; iy<map.height; iy++ ) {
-		for(int ix=0; ix<map.width; ix++ ) {
-			if( !checkObstacle((ix<<4)+8,(iy<<4)+8,this,NULL) ) {
-				if( numlocations==pickedlocation ) {
-					teleport(ix,iy);
+	pickedlocation = rand() % numlocations;
+	numlocations = 0;
+	for (int iy = 0; iy < map.height; iy++ ) {
+		for(int ix = 0; ix < map.width; ix++ ) {
+			if( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) ) {
+				if( numlocations == pickedlocation ) {
+					teleport(ix, iy);
 					return;
 				}
 				numlocations++;
@@ -3423,13 +3423,13 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 		return;
 	}
 
-	int player=-1;
-	if ( behavior==&actPlayer ) {
+	int player = -1;
+	if ( behavior == &actPlayer ) {
 		player = skill[2];
 	}
 
 	// calculate XP gain
-	int xpGain = 10 + rand()%10 + std::max(0,srcStats->LVL-destStats->LVL)*10;
+	int xpGain = 10 + rand() % 10 + std::max(0, srcStats->LVL - destStats->LVL) * 10;
 
 	// save hit struct
 	hit_t tempHit;
@@ -3441,30 +3441,30 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 	tempHit.y = hit.y;
 
 	// divide shares
-	if( player>=0 ) {
-		int numshares=0;
+	if( player >= 0 ) {
+		int numshares = 0;
 		Entity *shares[MAXPLAYERS];
 		int c;
 
-		for( c=0; c<MAXPLAYERS; c++ ) {
+		for( c = 0; c < MAXPLAYERS; c++ ) {
 			shares[c] = NULL;
 		}
 
 		// find other players to divide shares with
 		node_t *node;
-		for( node=map.entities->first; node!=NULL; node=node->next ) {
+		for( node = map.entities->first; node != NULL; node = node->next ) {
 			Entity *entity = (Entity *)node->element;
-			if( entity==this ) {
+			if( entity == this ) {
 				continue;
 			}
-			if( entity->behavior==&actPlayer ) {
-				double tangent = atan2( entity->y-src->y, entity->x-src->x );
-				lineTrace(src,src->x,src->y,tangent,XPSHARERANGE,0,FALSE);
+			if( entity->behavior == &actPlayer ) {
+				double tangent = atan2( entity->y - src->y, entity->x - src->x );
+				lineTrace(src, src->x, src->y, tangent, XPSHARERANGE, 0, FALSE);
 
-				if( hit.entity==entity ) {
+				if( hit.entity == entity ) {
 					numshares++;
 					shares[numshares] = entity;
-					if( numshares==MAXPLAYERS-1 ) {
+					if( numshares == MAXPLAYERS - 1 ) {
 						break;
 					}
 				}
@@ -3478,9 +3478,9 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 
 		// award XP to everyone else in the group
 		if( share ) {
-			for( c=0; c<MAXPLAYERS; c++ ) {
+			for( c = 0; c < MAXPLAYERS; c++ ) {
 				if( shares[c] ) {
-					shares[c]->awardXP(src,FALSE,FALSE);
+					shares[c]->awardXP(src, FALSE, FALSE);
 				}
 			}
 		}
@@ -3490,45 +3490,45 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 	destStats->EXP += xpGain;
 
 	// award bonus XP and update kill counters
-	if( player>=0 ) {
-		if( player==0 ) {
+	if( player >= 0 ) {
+		if( player == 0 ) {
 			kills[srcStats->type]++;
-		} else if( multiplayer==SERVER && player > 0 ) {
+		} else if( multiplayer == SERVER && player > 0 ) {
 			// inform client of kill
-			strcpy((char *)net_packet->data,"MKIL");
-			net_packet->data[4]=srcStats->type;
-			net_packet->address.host = net_clients[player-1].host;
-			net_packet->address.port = net_clients[player-1].port;
+			strcpy((char *)net_packet->data, "MKIL");
+			net_packet->data[4] = srcStats->type;
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 5;
-			sendPacketSafe(net_sock, -1, net_packet, player-1);
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 			// update client attributes
-			strcpy((char *)net_packet->data,"ATTR");
-			net_packet->data[4]=clientnum;
-			net_packet->data[5]=(Sint8)destStats->STR;
-			net_packet->data[6]=(Sint8)destStats->DEX;
-			net_packet->data[7]=(Sint8)destStats->CON;
-			net_packet->data[8]=(Sint8)destStats->INT;
-			net_packet->data[9]=(Sint8)destStats->PER;
-			net_packet->data[10]=(Sint8)destStats->CHR;
-			net_packet->data[11]=(Sint8)destStats->EXP;
-			net_packet->data[12]=(Sint8)destStats->LVL;
-			SDLNet_Write16((Sint16)destStats->HP,&net_packet->data[13]);
-			SDLNet_Write16((Sint16)destStats->MAXHP,&net_packet->data[15]);
-			SDLNet_Write16((Sint16)destStats->MP,&net_packet->data[17]);
-			SDLNet_Write16((Sint16)destStats->MAXMP,&net_packet->data[19]);
-			net_packet->address.host = net_clients[player-1].host;
-			net_packet->address.port = net_clients[player-1].port;
+			strcpy((char *)net_packet->data, "ATTR");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = (Sint8)destStats->STR;
+			net_packet->data[6] = (Sint8)destStats->DEX;
+			net_packet->data[7] = (Sint8)destStats->CON;
+			net_packet->data[8] = (Sint8)destStats->INT;
+			net_packet->data[9] = (Sint8)destStats->PER;
+			net_packet->data[10] = (Sint8)destStats->CHR;
+			net_packet->data[11] = (Sint8)destStats->EXP;
+			net_packet->data[12] = (Sint8)destStats->LVL;
+			SDLNet_Write16((Sint16)destStats->HP, &net_packet->data[13]);
+			SDLNet_Write16((Sint16)destStats->MAXHP, &net_packet->data[15]);
+			SDLNet_Write16((Sint16)destStats->MP, &net_packet->data[17]);
+			SDLNet_Write16((Sint16)destStats->MAXMP, &net_packet->data[19]);
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 21;
-			sendPacketSafe(net_sock, -1, net_packet, player-1);
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	} else {
 		Entity *leader;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
-		if( (leader=uidToEntity(destStats->leader_uid))!=NULL ) {
+		if( (leader = uidToEntity(destStats->leader_uid)) != NULL ) {
 			leader->increaseSkill(PRO_LEADERSHIP);
-			leader->awardXP(src,TRUE,FALSE);
+			leader->awardXP(src, TRUE, FALSE);
 		}
 	}
 
@@ -3568,19 +3568,19 @@ bool Entity::checkEnemy(Entity *your) {
 		return FALSE;
 	}
 
-	if( (your->behavior==&actPlayer || your->behavior==&actPlayerLimb) && (behavior==&actPlayer || behavior==&actPlayerLimb) ) {
+	if( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) ) {
 		return FALSE;
 	}
 
 	// if you have a leader, check whether we are enemies instead
-	Entity *yourLeader=NULL;
+	Entity *yourLeader = NULL;
 	if( yourStats->leader_uid ) {
-		yourLeader=uidToEntity(yourStats->leader_uid);
+		yourLeader = uidToEntity(yourStats->leader_uid);
 	}
 	if( yourLeader ) {
 		Stat *yourLeaderStats = yourLeader->getStats();
 		if( yourLeaderStats ) {
-			if( yourLeader==this ) {
+			if( yourLeader == this ) {
 				return FALSE;
 			} else {
 				return checkEnemy(yourLeader);
@@ -3589,14 +3589,14 @@ bool Entity::checkEnemy(Entity *your) {
 	}
 
 	// first find out if I have a leader
-	Entity *myLeader=NULL;
+	Entity *myLeader = NULL;
 	if( myStats->leader_uid ) {
 		myLeader = uidToEntity(myStats->leader_uid);
 	}
 	if( myLeader ) {
 		Stat *myLeaderStats = myLeader->getStats();
 		if( myLeaderStats ) {
-			if( myLeader==your ) {
+			if( myLeader == your ) {
 				result = FALSE;
 			} else {
 				return myLeader->checkEnemy(your);
@@ -3607,11 +3607,11 @@ bool Entity::checkEnemy(Entity *your) {
 		}
 	} else {
 		node_t *t_node;
-		bool foundFollower=FALSE;
-		for( t_node=myStats->FOLLOWERS.first; t_node!=NULL; t_node=t_node->next ) {
+		bool foundFollower = FALSE;
+		for( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next ) {
 			Uint32 *uid = (Uint32 *)t_node->element;
-			if( *uid==your->uid ) {
-				foundFollower=TRUE;
+			if( *uid == your->uid ) {
+				foundFollower = TRUE;
 				result = FALSE;
 				break;
 			}
@@ -3624,7 +3624,7 @@ bool Entity::checkEnemy(Entity *your) {
 
 	// confused monsters mistake their allegiances
 	if( myStats->EFFECTS[EFF_CONFUSED] ) {
-		result = (result==FALSE);
+		result = (result == FALSE);
 	}
 
 	return result;
@@ -3652,19 +3652,19 @@ bool Entity::checkFriend(Entity *your) {
 		return FALSE;
 	}
 
-	if( (your->behavior==&actPlayer || your->behavior==&actPlayerLimb) && (behavior==&actPlayer || behavior==&actPlayerLimb) ) {
+	if( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) ) {
 		return TRUE;
 	}
 
 	// if you have a leader, check whether we are friends instead
-	Entity *yourLeader=NULL;
+	Entity *yourLeader = NULL;
 	if( yourStats->leader_uid ) {
-		yourLeader=uidToEntity(yourStats->leader_uid);
+		yourLeader = uidToEntity(yourStats->leader_uid);
 	}
 	if( yourLeader ) {
 		Stat *yourLeaderStats = yourLeader->getStats();
 		if( yourLeaderStats ) {
-			if( yourLeader==this ) {
+			if( yourLeader == this ) {
 				return TRUE;
 			} else {
 				return checkFriend(yourLeader);
@@ -3673,14 +3673,14 @@ bool Entity::checkFriend(Entity *your) {
 	}
 
 	// first find out if I have a leader
-	Entity *myLeader=NULL;
+	Entity *myLeader = NULL;
 	if( myStats->leader_uid ) {
 		myLeader = uidToEntity(myStats->leader_uid);
 	}
 	if( myLeader ) {
 		Stat *myLeaderStats = myLeader->getStats();
 		if( myLeaderStats ) {
-			if( myLeader==your ) {
+			if( myLeader == your ) {
 				result = TRUE;
 			} else {
 				return myLeader->checkFriend(your);
@@ -3691,11 +3691,11 @@ bool Entity::checkFriend(Entity *your) {
 		}
 	} else {
 		node_t *t_node;
-		bool foundFollower=FALSE;
-		for( t_node=myStats->FOLLOWERS.first; t_node!=NULL; t_node = t_node->next ) {
+		bool foundFollower = FALSE;
+		for( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next ) {
 			Uint32 *uid = (Uint32 *)t_node->element;
-			if( *uid==your->uid ) {
-				foundFollower=TRUE;
+			if( *uid == your->uid ) {
+				foundFollower = TRUE;
 				result = TRUE;
 				break;
 			}

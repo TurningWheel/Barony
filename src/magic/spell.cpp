@@ -148,16 +148,16 @@ void addSpell(int spell, int player) {
 			return;
 	}
 	if( spellInList(&spellList, new_spell) ) {
-		messagePlayer(player, language[439],new_spell->name);
+		messagePlayer(player, language[439], new_spell->name);
 		spellDeconstructor((void *)new_spell);
 		return;
 	}
-	if( stats[player]->PROFICIENCIES[PRO_MAGIC]+statGetINT(stats[player]) < new_spell->difficulty ) {
+	if( stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty ) {
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void *)new_spell);
 		return;
 	}
-	messagePlayer(player,language[441],new_spell->name);
+	messagePlayer(player, language[441], new_spell->name);
 	node = list_AddNodeLast(&spellList);
 	node->element = new_spell;
 	node->size = sizeof(spell_t);
@@ -248,7 +248,7 @@ spell_t *copySpell(spell_t *spell) {
 	result->elements.first = NULL;
 	result->elements.last = NULL;
 
-	for( node=spell->elements.first; node!=NULL; node=node->next ) {
+	for( node = spell->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *tempElement = (spellElement_t *) node->element;
 
 		node_t *tempNode = list_AddNodeLast(&result->elements);
@@ -273,7 +273,7 @@ spellElement_t *copySpellElement(spellElement_t *spellElement) {
 	result->elements.first = NULL;
 	result->elements.last = NULL;
 
-	for( node=spellElement->elements.first; node!=NULL; node=node->next ) {
+	for( node = spellElement->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *tempElement = (spellElement_t *) node->element;
 
 		node_t *tempNode = list_AddNodeLast(&result->elements);
@@ -292,7 +292,7 @@ int getCostOfSpell(spell_t *spell) {
 	int cost = 0;
 
 	node_t *node;
-	for( node=spell->elements.first; node!=NULL; node=node->next ) {
+	for( node = spell->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *spellElement = (spellElement_t *)node->element;
 		cost += getCostOfSpellElement(spellElement);
 	}
@@ -304,7 +304,7 @@ int getCostOfSpellElement(spellElement_t *spellElement) {
 	int cost = spellElement->mana;
 
 	node_t *node;
-	for( node=spellElement->elements.first; node!=NULL; node=node->next ) {
+	for( node = spellElement->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *spellElement2 = (spellElement_t *)node->element;
 		cost += getCostOfSpellElement(spellElement2);
 	}
@@ -315,7 +315,7 @@ int getCostOfSpellElement(spellElement_t *spellElement) {
 bool spell_isChanneled(spell_t *spell) {
 	node_t *node = NULL;
 
-	for( node=spell->elements.first; node!=NULL; node=node->next ) {
+	for( node = spell->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *spellElement = (spellElement_t *)node->element;
 		if( spellElement_isChanneled(spellElement) ) {
 			return TRUE;
@@ -331,7 +331,7 @@ bool spellElement_isChanneled(spellElement_t *spellElement) {
 	if( spellElement->channeled ) {
 		return TRUE;
 	}
-	for( node=spellElement->elements.first; node!=NULL; node=node->next ) {
+	for( node = spellElement->elements.first; node != NULL; node = node->next ) {
 		spellElement_t *tempElement = (spellElement_t *)node->element;
 		if( spellElement_isChanneled(tempElement) ) {
 			return TRUE;
@@ -425,7 +425,7 @@ spell_t *getSpellFromID(int ID) {
 
 bool spellInList(list_t *list, spell_t *spell) {
 	node_t *node;
-	for( node=list->first; node != NULL; node = node->next ) {
+	for( node = list->first; node != NULL; node = node->next ) {
 		spell_t *current = (spell_t*)node->element;
 		if (current) {
 			if (current->ID == spell->ID) {
@@ -454,10 +454,10 @@ void spell_changeHealth(Entity *entity, int amount) {
 
 	if (player > -1 && player <= 4) {
 		if (amount > 0) {
-			Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 			messagePlayerColor(player, color, language[443]);
 		} else {
-			Uint32 color = SDL_MapRGB(mainsurface->format,255,255,0);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 			if (amount == 0) {
 				messagePlayerColor(player, color, language[444]);
 			} else {
@@ -466,13 +466,13 @@ void spell_changeHealth(Entity *entity, int amount) {
 		}
 
 		if (multiplayer == SERVER) {
-			strcpy((char *)net_packet->data,"UPHP");
+			strcpy((char *)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);
 			SDLNet_Write32(0, &net_packet->data[8]);
-			net_packet->address.host = net_clients[player-1].host;
-			net_packet->address.port = net_clients[player-1].port;
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 12;
-			sendPacketSafe(net_sock, net_packet->channel, net_packet, player-1);
+			sendPacketSafe(net_sock, net_packet->channel, net_packet, player - 1);
 		}
 	}
 }

@@ -27,7 +27,7 @@
 void actGate(Entity *my) {
 	int i;
 
-	if( multiplayer!=CLIENT ) {
+	if( multiplayer != CLIENT ) {
 		if (!my->skill[28]) {
 			return;    //Gate needs the mechanism powered state variable to be set.
 		}
@@ -37,14 +37,14 @@ void actGate(Entity *my) {
 			if (!GATE_STATUS) {
 				GATE_STATUS = 1;
 				playSoundEntity(my, 81, 64);
-				serverUpdateEntitySkill(my,3);
+				serverUpdateEntitySkill(my, 3);
 			}
 		} else {
 			//Close gate if it's open.
 			if (GATE_STATUS) {
 				GATE_STATUS = 0;
 				playSoundEntity(my, 82, 64);
-				serverUpdateEntitySkill(my,3);
+				serverUpdateEntitySkill(my, 3);
 			}
 		}
 	} else {
@@ -59,11 +59,11 @@ void actGate(Entity *my) {
 	}
 
 	// rightclick message
-	if( multiplayer!=CLIENT ) {
-		for(i=0; i<MAXPLAYERS; i++) {
-			if( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+	if( multiplayer != CLIENT ) {
+		for(i = 0; i < MAXPLAYERS; i++) {
+			if( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 				if(inrange[i]) {
-					messagePlayer(i,language[475]);
+					messagePlayer(i, language[475]);
 				}
 			}
 		}
@@ -79,11 +79,11 @@ void actGate(Entity *my) {
 		}
 	} else {
 		//Opening gate.
-		if( my->z > GATE_STARTHEIGHT-12 ) {
-			my->z = std::max(GATE_STARTHEIGHT-12, my->z - 0.25);
+		if( my->z > GATE_STARTHEIGHT - 12 ) {
+			my->z = std::max(GATE_STARTHEIGHT - 12, my->z - 0.25);
 
 			// rattle the gate
-			GATE_RATTLE = (GATE_RATTLE==0);
+			GATE_RATTLE = (GATE_RATTLE == 0);
 			if( GATE_RATTLE ) {
 				my->x += .05;
 				my->y += .05;
@@ -104,13 +104,13 @@ void actGate(Entity *my) {
 	//Setting collision
 	node_t *node;
 	bool somebodyinside = FALSE;
-	if( my->z > GATE_STARTHEIGHT-6 && my->flags[PASSABLE] ) {
-		for( node=map.entities->first; node!=NULL; node=node->next ) {
+	if( my->z > GATE_STARTHEIGHT - 6 && my->flags[PASSABLE] ) {
+		for( node = map.entities->first; node != NULL; node = node->next ) {
 			Entity *entity = (Entity *)node->element;
-			if( entity==my || entity->flags[PASSABLE] || entity->sprite == 1 ) {
+			if( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 ) {
 				continue;
 			}
-			if( entityInsideEntity(my,entity) ) {
+			if( entityInsideEntity(my, entity) ) {
 				somebodyinside = TRUE;
 				break;
 			}
@@ -118,7 +118,7 @@ void actGate(Entity *my) {
 		if( !somebodyinside ) {
 			my->flags[PASSABLE] = FALSE;
 		}
-	} else if( my->z < GATE_STARTHEIGHT-9 && !my->flags[PASSABLE] ) {
+	} else if( my->z < GATE_STARTHEIGHT - 9 && !my->flags[PASSABLE] ) {
 		my->flags[PASSABLE] = TRUE;
 	}
 }

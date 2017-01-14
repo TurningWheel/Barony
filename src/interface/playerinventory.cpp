@@ -35,7 +35,7 @@ int inventory_mode = INVENTORY_MODE_ITEM;
 selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
 
 void warpMouseToSelectedInventorySlot() {
-	SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+	SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selected_inventory_slot_y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 }
 
 /*-------------------------------------------------------------------------------
@@ -48,20 +48,20 @@ void warpMouseToSelectedInventorySlot() {
 -------------------------------------------------------------------------------*/
 
 char *itemUseString(const Item *item) {
-	if( itemCategory(item)==WEAPON ) {
-		if( itemIsEquipped(item,clientnum) ) {
+	if( itemCategory(item) == WEAPON ) {
+		if( itemIsEquipped(item, clientnum) ) {
 			return language[323];
 		} else {
 			return language[324];
 		}
-	} else if( itemCategory(item)==ARMOR ) {
+	} else if( itemCategory(item) == ARMOR ) {
 		switch( item->type ) {
 			case WOODEN_SHIELD:
 			case BRONZE_SHIELD:
 			case IRON_SHIELD:
 			case STEEL_SHIELD:
 			case STEEL_SHIELD_RESISTANCE:
-				if( itemIsEquipped(item,clientnum) ) {
+				if( itemIsEquipped(item, clientnum) ) {
 					return language[325];
 				} else {
 					return language[326];
@@ -69,45 +69,45 @@ char *itemUseString(const Item *item) {
 			default:
 				break;
 		}
-		if( itemIsEquipped(item,clientnum) ) {
+		if( itemIsEquipped(item, clientnum) ) {
 			return language[327];
 		} else {
 			return language[328];
 		}
-	} else if( itemCategory(item)==AMULET ) {
-		if( itemIsEquipped(item,clientnum) ) {
+	} else if( itemCategory(item) == AMULET ) {
+		if( itemIsEquipped(item, clientnum) ) {
 			return language[327];
 		} else {
 			return language[328];
 		}
-	} else if( itemCategory(item)==POTION ) {
+	} else if( itemCategory(item) == POTION ) {
 		return language[329];
-	} else if( itemCategory(item)==SCROLL ) {
+	} else if( itemCategory(item) == SCROLL ) {
 		return language[330];
-	} else if( itemCategory(item)==MAGICSTAFF ) {
-		if( itemIsEquipped(item,clientnum) ) {
+	} else if( itemCategory(item) == MAGICSTAFF ) {
+		if( itemIsEquipped(item, clientnum) ) {
 			return language[323];
 		} else {
 			return language[324];
 		}
-	} else if( itemCategory(item)==RING ) {
-		if( itemIsEquipped(item,clientnum) ) {
+	} else if( itemCategory(item) == RING ) {
+		if( itemIsEquipped(item, clientnum) ) {
 			return language[327];
 		} else {
 			return language[331];
 		}
-	} else if( itemCategory(item)==SPELLBOOK ) {
+	} else if( itemCategory(item) == SPELLBOOK ) {
 		return language[330];
-	} else if( itemCategory(item)==GEM ) {
-		if( itemIsEquipped(item,clientnum) ) {
+	} else if( itemCategory(item) == GEM ) {
+		if( itemIsEquipped(item, clientnum) ) {
 			return language[323];
 		} else {
 			return language[324];
 		}
-	} else if( itemCategory(item)==TOOL ) {
+	} else if( itemCategory(item) == TOOL ) {
 		switch( item->type ) {
 			case TOOL_PICKAXE:
-				if( itemIsEquipped(item,clientnum) ) {
+				if( itemIsEquipped(item, clientnum) ) {
 					return language[323];
 				} else {
 					return language[324];
@@ -118,20 +118,20 @@ char *itemUseString(const Item *item) {
 				return language[332];
 			case TOOL_LOCKPICK:
 			case TOOL_SKELETONKEY:
-				if( itemIsEquipped(item,clientnum) ) {
+				if( itemIsEquipped(item, clientnum) ) {
 					return language[333];
 				} else {
 					return language[334];
 				}
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
-				if( itemIsEquipped(item,clientnum) ) {
+				if( itemIsEquipped(item, clientnum) ) {
 					return language[335];
 				} else {
 					return language[336];
 				}
 			case TOOL_BLINDFOLD:
-				if( itemIsEquipped(item,clientnum) ) {
+				if( itemIsEquipped(item, clientnum) ) {
 					return language[327];
 				} else {
 					return language[328];
@@ -139,7 +139,7 @@ char *itemUseString(const Item *item) {
 			case TOOL_TOWEL:
 				return language[332];
 			case TOOL_GLASSES:
-				if( itemIsEquipped(item,clientnum) ) {
+				if( itemIsEquipped(item, clientnum) ) {
 					return language[327];
 				} else {
 					return language[331];
@@ -149,11 +149,11 @@ char *itemUseString(const Item *item) {
 			default:
 				break;
 		}
-	} else if( itemCategory(item)==FOOD ) {
+	} else if( itemCategory(item) == FOOD ) {
 		return language[338];
-	} else if( itemCategory(item)==BOOK ) {
+	} else if( itemCategory(item) == BOOK ) {
 		return language[330];
-	} else if( itemCategory(item)==SPELL_CAT ) {
+	} else if( itemCategory(item) == SPELL_CAT ) {
 		return language[339];
 	}
 	return language[332];
@@ -176,36 +176,36 @@ void updateAppraisalItemBox() {
 	y = INVENTORY_STARTY;
 
 	// appraisal item box
-	if( (item=uidToItem(appraisal_item))!=NULL && appraisal_timer>0 ) {
+	if( (item = uidToItem(appraisal_item)) != NULL && appraisal_timer > 0 ) {
 		if( !shootmode ) {
-			pos.x = x+16;
-			pos.y = y+INVENTORY_SIZEY*INVENTORY_SLOTSIZE+16;
+			pos.x = x + 16;
+			pos.y = y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE + 16;
 		} else {
 			pos.x = 16;
 			pos.y = 16;
 		}
 		int w1, w2;
-		TTF_SizeUTF8(ttf12,language[340],&w1,NULL);
-		TTF_SizeUTF8(ttf12,item->getName(),&w2,NULL);
+		TTF_SizeUTF8(ttf12, language[340], &w1, NULL);
+		TTF_SizeUTF8(ttf12, item->getName(), &w2, NULL);
 		w2 += 48;
-		pos.w = std::max(w1,w2)+8;
+		pos.w = std::max(w1, w2) + 8;
 		pos.h = 68;
 		drawTooltip(&pos);
 
 		char tempstr[64] = { 0 };
-		snprintf(tempstr, 63, language[341], (((double)(appraisal_timermax-appraisal_timer))/((double)appraisal_timermax))*100);
-		ttfPrintText( ttf12, pos.x+8, pos.y+8, tempstr );
+		snprintf(tempstr, 63, language[341], (((double)(appraisal_timermax - appraisal_timer)) / ((double)appraisal_timermax)) * 100);
+		ttfPrintText( ttf12, pos.x + 8, pos.y + 8, tempstr );
 		if( !shootmode ) {
-			pos.x = x+24;
-			pos.y = y+INVENTORY_SIZEY*INVENTORY_SLOTSIZE+16+24;
+			pos.x = x + 24;
+			pos.y = y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE + 16 + 24;
 		} else {
 			pos.x = 24;
-			pos.y = 16+24;
+			pos.y = 16 + 24;
 		}
-		ttfPrintText( ttf12, pos.x+40, pos.y+8, item->getName() );
+		ttfPrintText( ttf12, pos.x + 40, pos.y + 8, item->getName() );
 		pos.w = 32;
 		pos.h = 32;
-		drawImageScaled(itemSprite(item),NULL,&pos);
+		drawImageScaled(itemSprite(item), NULL, &pos);
 	}
 }
 
@@ -326,11 +326,11 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL])) {
 		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS) {
 			//Warp cursor back into hotbar, for gamepad convenience.
-			SDL_WarpMouseInWindow(screen, (STATUS_X) + (selectedItemFromHotbar*hotbar_img->w) + (hotbar_img->w / 2), (STATUS_Y) - (hotbar_img->h / 2));
+			SDL_WarpMouseInWindow(screen, (STATUS_X) + (selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2), (STATUS_Y) - (hotbar_img->h / 2));
 			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
 		} else {
 			//Warp cursor back into inventory, for gamepad convenience.
-			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selectedItem->x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selectedItem->y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selectedItem->x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selectedItem->y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 		}
 
 		selectedItem = nullptr;
@@ -482,8 +482,8 @@ bool mouseInBoundsRealtimeCoords(int x1, int x2, int y1, int y2) {
 
 void drawBlueInventoryBorder(const Item& item, int x, int y) {
 	SDL_Rect pos;
-	pos.x = x + item.x*INVENTORY_SLOTSIZE + 2;
-	pos.y = y + item.y*INVENTORY_SLOTSIZE + 1;
+	pos.x = x + item.x * INVENTORY_SLOTSIZE + 2;
+	pos.y = y + item.y * INVENTORY_SLOTSIZE + 1;
 	pos.w = INVENTORY_SLOTSIZE;
 	pos.h = INVENTORY_SLOTSIZE;
 
@@ -502,9 +502,9 @@ void updatePlayerInventory() {
 	// draw translucent box
 	pos.x = x;
 	pos.y = y;
-	pos.w = INVENTORY_SIZEX*INVENTORY_SLOTSIZE;
-	pos.h = INVENTORY_SIZEY*INVENTORY_SLOTSIZE;
-	drawRect(&pos,0,224);
+	pos.w = INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
+	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
+	drawRect(&pos, 0, 224);
 
 	if (game_controller) {
 		if ( gui_mode == GUI_MODE_SHOP ) {
@@ -555,15 +555,15 @@ void updatePlayerInventory() {
 	// draw grid
 	pos.x = x;
 	pos.y = y;
-	pos.w = INVENTORY_SIZEX*INVENTORY_SLOTSIZE;
-	pos.h = INVENTORY_SIZEY*INVENTORY_SLOTSIZE;
-	drawLine(pos.x,pos.y,pos.x,pos.y+pos.h,SDL_MapRGB(mainsurface->format,150,150,150),255);
-	drawLine(pos.x,pos.y,pos.x+pos.w,pos.y,SDL_MapRGB(mainsurface->format,150,150,150),255);
-	for( x=0; x<=INVENTORY_SIZEX; x++ ) {
-		drawLine(pos.x+x*INVENTORY_SLOTSIZE,pos.y,pos.x+x*INVENTORY_SLOTSIZE,pos.y+pos.h,SDL_MapRGB(mainsurface->format,150,150,150),255);
+	pos.w = INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
+	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
+	drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+	drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
+	for( x = 0; x <= INVENTORY_SIZEX; x++ ) {
+		drawLine(pos.x + x * INVENTORY_SLOTSIZE, pos.y, pos.x + x * INVENTORY_SLOTSIZE, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	}
-	for( y=0; y<=INVENTORY_SIZEY; y++ ) {
-		drawLine(pos.x,pos.y+y*INVENTORY_SLOTSIZE,pos.x+pos.w,pos.y+y*INVENTORY_SLOTSIZE,SDL_MapRGB(mainsurface->format,150,150,150),255);
+	for( y = 0; y <= INVENTORY_SIZEY; y++ ) {
+		drawLine(pos.x, pos.y + y * INVENTORY_SLOTSIZE, pos.x + pos.w, pos.y + y * INVENTORY_SLOTSIZE, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	}
 
 	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) {
@@ -573,8 +573,8 @@ void updatePlayerInventory() {
 		pos.h = INVENTORY_SLOTSIZE;
 		for (x = 0; x < INVENTORY_SIZEX; ++x) {
 			for (y = 0; y < INVENTORY_SIZEY; ++y) {
-				pos.x = INVENTORY_STARTX + x*INVENTORY_SLOTSIZE;
-				pos.y = INVENTORY_STARTY + y*INVENTORY_SLOTSIZE;
+				pos.x = INVENTORY_STARTX + x * INVENTORY_SLOTSIZE;
+				pos.y = INVENTORY_STARTY + y * INVENTORY_SLOTSIZE;
 
 				//Cursor moved over this slot, highlight it.
 				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h)) {
@@ -594,7 +594,7 @@ void updatePlayerInventory() {
 	// draw contents of each slot
 	x = INVENTORY_STARTX;
 	y = INVENTORY_STARTY;
-	for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
+	for( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		Item *item = (Item *)node->element;
 
@@ -611,22 +611,22 @@ void updatePlayerInventory() {
 
 		if (!item->identified) {
 			// give it a yellow background if it is unidentified
-			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
+			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
 			pos.w = 38;
 			pos.h = 38;
 			drawRect(&pos, 31875, 125);
 		} else if (item->beatitude < 0) {
 			// give it a red background if cursed
-			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
+			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
 			pos.w = 38;
 			pos.h = 38;
 			drawRect(&pos, 125, 125);
 		} else if (item->beatitude > 0) {
 			// give it a green background if blessed (light blue if colorblind mode)
-			pos.x = x + item->x*INVENTORY_SLOTSIZE + 2;
-			pos.y = y + item->y*INVENTORY_SLOTSIZE + 1;
+			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
 			pos.w = 38;
 			pos.h = 38;
 			if (colorblind) {
@@ -642,8 +642,8 @@ void updatePlayerInventory() {
 		}
 
 		// draw item
-		pos.x = x+item->x*INVENTORY_SLOTSIZE+4;
-		pos.y = y+item->y*INVENTORY_SLOTSIZE+4;
+		pos.x = x + item->x * INVENTORY_SLOTSIZE + 4;
+		pos.y = y + item->y * INVENTORY_SLOTSIZE + 4;
 		pos.w = 32;
 		pos.h = 32;
 		if( itemSprite(item) ) {
@@ -651,15 +651,15 @@ void updatePlayerInventory() {
 		}
 
 		// item count
-		if( item->count>1 ) {
-			printTextFormatted(font8x8_bmp,pos.x+24,pos.y+24,"%d",item->count);
+		if( item->count > 1 ) {
+			printTextFormatted(font8x8_bmp, pos.x + 24, pos.y + 24, "%d", item->count);
 		}
 
 		// item equipped
-		if( itemCategory(item)!=SPELL_CAT ) {
-			if( itemIsEquipped(item,clientnum) ) {
-				pos.x = x+item->x*INVENTORY_SLOTSIZE+2;
-				pos.y = y+item->y*INVENTORY_SLOTSIZE+22;
+		if( itemCategory(item) != SPELL_CAT ) {
+			if( itemIsEquipped(item, clientnum) ) {
+				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
 				pos.w = 16;
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
@@ -667,8 +667,8 @@ void updatePlayerInventory() {
 		} else {
 			spell_t *spell = getSpellFromItem(item);
 			if( selected_spell == spell ) {
-				pos.x = x+item->x*INVENTORY_SLOTSIZE+2;
-				pos.y = y+item->y*INVENTORY_SLOTSIZE+22;
+				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
+				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
 				pos.w = 16;
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
@@ -677,8 +677,8 @@ void updatePlayerInventory() {
 	}
 
 	// do inventory mode buttons
-	mode_pos.x = x + INVENTORY_SIZEX*INVENTORY_SLOTSIZE;
-	mode_pos.y = y+60;
+	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
+	mode_pos.y = y + 60;
 	mode_pos.w = 0;
 	mode_pos.h = 0;
 	bool mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
@@ -687,12 +687,12 @@ void updatePlayerInventory() {
 
 		// tooltip
 		SDL_Rect src;
-		src.x = mousex+16;
-		src.y = mousey+8;
-		src.h = TTF12_HEIGHT+8;
-		src.w = longestline(language[342])*TTF12_WIDTH+8;
+		src.x = mousex + 16;
+		src.y = mousey + 8;
+		src.h = TTF12_HEIGHT + 8;
+		src.w = longestline(language[342]) * TTF12_WIDTH + 8;
 		drawTooltip(&src);
-		ttfPrintText(ttf12, src.x+4, src.y+4, language[342]);
+		ttfPrintText(ttf12, src.x + 4, src.y + 4, language[342]);
 
 		if (mousestatus[SDL_BUTTON_LEFT]) {
 			mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -701,7 +701,7 @@ void updatePlayerInventory() {
 	} else {
 		drawImage(inventory_mode_spell_img, NULL, &mode_pos);
 	}
-	mode_pos.x = x + INVENTORY_SIZEX*INVENTORY_SLOTSIZE;
+	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
 	mode_pos.y = y;
 	mode_pos.w = 0;
 	mode_pos.h = 0;
@@ -711,12 +711,12 @@ void updatePlayerInventory() {
 
 		// tooltip
 		SDL_Rect src;
-		src.x = mousex+16;
-		src.y = mousey+8;
-		src.h = TTF12_HEIGHT+8;
-		src.w = longestline(language[343])*TTF12_WIDTH+8;
+		src.x = mousex + 16;
+		src.y = mousey + 8;
+		src.h = TTF12_HEIGHT + 8;
+		src.w = longestline(language[343]) * TTF12_WIDTH + 8;
 		drawTooltip(&src);
-		ttfPrintText(ttf12, src.x+4, src.y+4, language[343]);
+		ttfPrintText(ttf12, src.x + 4, src.y + 4, language[343]);
 
 		if (mousestatus[SDL_BUTTON_LEFT]) {
 			mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -728,101 +728,101 @@ void updatePlayerInventory() {
 
 	// mouse interactions
 	if( !selectedItem ) {
-		for( node=stats[clientnum]->inventory.first; node!=NULL; node=nextnode ) {
+		for( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
 			Item *item = (Item *)node->element; //I don't like that there's not a check that either are null.
 
 			if (item) {
-				pos.x = x+item->x*INVENTORY_SLOTSIZE+4;
-				pos.y = y+item->y*INVENTORY_SLOTSIZE+4;
+				pos.x = x + item->x * INVENTORY_SLOTSIZE + 4;
+				pos.y = y + item->y * INVENTORY_SLOTSIZE + 4;
 				pos.w = 32;
 				pos.h = 32;
 
-				if( omousex>=pos.x && omousey>=pos.y && omousex<pos.x+pos.w && omousey<pos.y+pos.h ) {
+				if( omousex >= pos.x && omousey >= pos.y && omousex < pos.x + pos.w && omousey < pos.y + pos.h ) {
 					// tooltip
 					if ((inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT)) {
 						continue;    //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
 					}
 					if( !itemMenuOpen ) {
 						SDL_Rect src;
-						src.x = mousex+16;
-						src.y = mousey+8;
+						src.x = mousex + 16;
+						src.y = mousey + 8;
 						if (itemCategory(item) == SPELL_CAT) {
 							spell_t *spell = getSpellFromItem(item);
 							if (spell) {
 								char tempstr[32];
 								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
-								src.w = std::max(longestline(spell->name),longestline(tempstr))*TTF12_WIDTH+8;
-								src.h = TTF12_HEIGHT*2+8;
+								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
+								src.h = TTF12_HEIGHT * 2 + 8;
 								drawTooltip(&src);
-								ttfPrintTextFormatted( ttf12, src.x+4, src.y+4, "%s\n%s", spell->name, tempstr);
+								ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
 							} else {
-								src.w = longestline("Error: Spell doesn't exist!")*TTF12_WIDTH+8;
-								src.h = TTF12_HEIGHT+8;
+								src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
+								src.h = TTF12_HEIGHT + 8;
 								drawTooltip(&src);
-								ttfPrintText( ttf12, src.x+4, src.y+4, "Error: Spell doesn't exist!");
+								ttfPrintText( ttf12, src.x + 4, src.y + 4, "Error: Spell doesn't exist!");
 							}
 						} else {
-							src.w = std::max(13,longestline(item->description()))*TTF12_WIDTH+8;
-							src.h = TTF12_HEIGHT*4+8;
+							src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
+							src.h = TTF12_HEIGHT * 4 + 8;
 							if( item->identified )
-								if( itemCategory(item)==WEAPON || itemCategory(item)==ARMOR ) {
-									src.h+=TTF12_HEIGHT;
+								if( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR ) {
+									src.h += TTF12_HEIGHT;
 								}
 							drawTooltip(&src);
 
-							Uint32 color=0xFFFFFFFF;
+							Uint32 color = 0xFFFFFFFF;
 							if( !item->identified ) {
-								color = SDL_MapRGB(mainsurface->format,255,255,0);
-								ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT, color, language[309] );
+								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309] );
 							} else {
 								if (item->beatitude < 0) {
 									//Red if cursed
-									color = SDL_MapRGB(mainsurface->format,255,0,0);
+									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
 								} else if (item->beatitude == 0) {
 									//White if normal item.
-									color=0xFFFFFFFF;
-									ttfPrintTextFormattedColor(ttf12, src.x+4+TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
+									color = 0xFFFFFFFF;
+									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
 								} else {
 									//Green if blessed.
 									if (colorblind) {
 										color = SDL_MapRGB(mainsurface->format, 100, 245, 255); //Light blue if colorblind
 									} else {
-										color = SDL_MapRGB(mainsurface->format,0, 255, 0);
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 									}
 
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 								}
 							}
-							if( item->beatitude==0 || !item->identified ) {
-								color=0xFFFFFFFF;
+							if( item->beatitude == 0 || !item->identified ) {
+								color = 0xFFFFFFFF;
 							}
-							ttfPrintTextFormattedColor( ttf12, src.x+4, src.y+4, color, "%s", item->description());
-							ttfPrintTextFormatted( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*2, language[313], items[item->type].weight*item->count);
-							ttfPrintTextFormatted( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*3, language[314], item->sellValue(clientnum));
+							ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
+							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
+							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
 
 							if( item->identified ) {
-								if( itemCategory(item)==WEAPON ) {
-									if( item->weaponGetAttack()>=0 ) {
-										color = SDL_MapRGB(mainsurface->format,0,255,255);
+								if( itemCategory(item) == WEAPON ) {
+									if( item->weaponGetAttack() >= 0 ) {
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									} else {
-										color = SDL_MapRGB(mainsurface->format,255,0,0);
+										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
-									ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*4, color, language[315], item->weaponGetAttack());
-								} else if( itemCategory(item)==ARMOR ) {
-									if( item->armorGetAC()>=0 ) {
-										color = SDL_MapRGB(mainsurface->format,0,255,255);
+									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
+								} else if( itemCategory(item) == ARMOR ) {
+									if( item->armorGetAC() >= 0 ) {
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 									} else {
-										color = SDL_MapRGB(mainsurface->format,255,0,0);
+										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
-									ttfPrintTextFormattedColor( ttf12, src.x+4+TTF12_WIDTH, src.y+4+TTF12_HEIGHT*4, color, language[316], item->armorGetAC());
+									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
 								}
 							}
 						}
 					}
 
-					if( stats[clientnum]->HP<=0 ) {
+					if( stats[clientnum]->HP <= 0 ) {
 						break;
 					}
 
@@ -838,7 +838,7 @@ void updatePlayerInventory() {
 						} else {
 							selectedItem = item;
 							//itemSelectBehavior = BEHAVIOR_MOUSE;
-							playSound(139,64); // click sound
+							playSound(139, 64); // click sound
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
@@ -856,17 +856,17 @@ void updatePlayerInventory() {
 							identifygui_active = false;
 							identifygui_appraising = true;
 							identifyGUIIdentify(item);
-							mousestatus[SDL_BUTTON_RIGHT]=0;
+							mousestatus[SDL_BUTTON_RIGHT] = 0;
 
 							//Cleanup identify GUI gamecontroller code here.
 							selectedIdentifySlot = -1;
 						} else {
 							// open a drop-down menu of options for "using" the item
 							itemMenuOpen = true;
-							itemMenuX=mousex+8;
-							itemMenuY=mousey;
-							itemMenuSelected=0;
-							itemMenuItem=item->uid;
+							itemMenuX = mousex + 8;
+							itemMenuY = mousey;
+							itemMenuSelected = 0;
+							itemMenuItem = item->uid;
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
@@ -880,7 +880,7 @@ void updatePlayerInventory() {
 				}
 			}
 		}
-	} else if( stats[clientnum]->HP>0 ) {
+	} else if( stats[clientnum]->HP > 0 ) {
 		// releasing items
 		releaseItem(x, y);
 	}
@@ -927,13 +927,13 @@ inline void drawItemMenuSlots(const Item &item, int slot_width, int slot_height)
 inline void drawOptionStoreInChest(int x, int y) {
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[344], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[344]);
+	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[344]);
 }
 
 inline void drawOptionSell(int x, int y) {
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[345], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[345]);
+	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[345]);
 }
 
 inline void drawOptionUse(const Item &item, int x, int y) {
@@ -944,25 +944,25 @@ inline void drawOptionUse(const Item &item, int x, int y) {
 inline void drawOptionUnwield(int x, int y) {
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[323], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[323]);
+	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[323]);
 }
 
 inline void drawOptionWield(int x, int y) {
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[324], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[324]);
+	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[324]);
 }
 
 inline void drawOptionAppraise(int x, int y) {
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[1161], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[1161]);
+	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1161]);
 }
 
 inline void drawOptionDrop(int x, int y) {
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[1162], &width, nullptr);
-	ttfPrintText(ttf12, x + 50 - width/2, y + 4, language[1162]);
+	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1162]);
 }
 
 /*
@@ -1215,7 +1215,7 @@ void itemContextMenu() {
 		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
-		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (uidToItem(itemMenuItem)->x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (uidToItem(itemMenuItem)->y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (uidToItem(itemMenuItem)->x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (uidToItem(itemMenuItem)->y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 		return;
 	}
 
@@ -1260,7 +1260,7 @@ void itemContextMenu() {
 		*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 		activateSelection = true;
 		//Warp cursor back into inventory, for gamepad convenience.
-		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2), INVENTORY_STARTY + (selected_inventory_slot_y*INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE/2));
+		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selected_inventory_slot_y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 	}
 
 	if (activateSelection) {

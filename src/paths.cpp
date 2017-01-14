@@ -37,7 +37,7 @@ int pathMapZone = 1;
 
 Uint32 heuristic(int x1, int y1, int x2, int y2) {
 	Uint32 h;
-	h = (abs(x2-x1)+abs(y2-y1))*STRAIGHTCOST;
+	h = (abs(x2 - x1) + abs(y2 - y1)) * STRAIGHTCOST;
 	return h;
 }
 
@@ -53,14 +53,14 @@ pathnode_t **heapAdd(pathnode_t **heap, pathnode_t *pathnode, long *length) {
 	long x;
 
 	*length += 1;
-	heap[*length]=pathnode;
-	for( x=*length; x>1; x=x>>1 ) {
-		if( heap[x>>1]->g+heap[x>>1]->h > pathnode->g+pathnode->h ) {
-			pathnode=heap[x];
-			heap[x]=heap[x>>1];
-			heap[x>>1]=pathnode;
+	heap[*length] = pathnode;
+	for( x = *length; x > 1; x = x >> 1 ) {
+		if( heap[x >> 1]->g + heap[x >> 1]->h > pathnode->g + pathnode->h ) {
+			pathnode = heap[x];
+			heap[x] = heap[x >> 1];
+			heap[x >> 1] = pathnode;
 		} else {
-			heap[x]=pathnode;
+			heap[x] = pathnode;
 			break;
 		}
 	}
@@ -77,24 +77,24 @@ pathnode_t **heapAdd(pathnode_t **heap, pathnode_t *pathnode, long *length) {
 -------------------------------------------------------------------------------*/
 
 pathnode_t **heapRemove(pathnode_t **heap, long *length) {
-	long u, v=1;
+	long u, v = 1;
 	pathnode_t *pathnode;
 
-	heap[1]=heap[*length];
+	heap[1] = heap[*length];
 	*length -= 1;
 	while( 1 ) {
 		u = v;
 
-		if( (u<<1)+1 <= *length ) {
-			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h ) {
-				v = u<<1;
+		if( (u << 1) + 1 <= *length ) {
+			if( heap[u << 1]->g + heap[u << 1]->h < heap[u]->g + heap[u]->h ) {
+				v = u << 1;
 			}
-			if( heap[(u<<1)+1]->g+heap[(u<<1)+1]->h < heap[v]->g+heap[v]->h ) {
-				v = (u<<1)+1;
+			if( heap[(u << 1) + 1]->g + heap[(u << 1) + 1]->h < heap[v]->g + heap[v]->h ) {
+				v = (u << 1) + 1;
 			}
-		} else if( u<<1 <= *length ) {
-			if( heap[u<<1]->g+heap[u<<1]->h < heap[u]->g+heap[u]->h ) {
-				v = u<<1;
+		} else if( u << 1 <= *length ) {
+			if( heap[u << 1]->g + heap[u << 1]->h < heap[u]->g + heap[u]->h ) {
+				v = u << 1;
 			}
 		}
 
@@ -117,19 +117,19 @@ pathnode_t **heapRemove(pathnode_t **heap, long *length) {
 -------------------------------------------------------------------------------*/
 
 int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
-	int u = std::min(std::max<unsigned int>(0,x>>4),map.width);
-	int v = std::min(std::max<unsigned int>(0,y>>4),map.height); //TODO: Why are int and long int being compared?
-	int index = v*MAPLAYERS+u*MAPLAYERS*map.height;
+	int u = std::min(std::max<unsigned int>(0, x >> 4), map.width);
+	int v = std::min(std::max<unsigned int>(0, y >> 4), map.height); //TODO: Why are int and long int being compared?
+	int index = v * MAPLAYERS + u * MAPLAYERS * map.height;
 
-	if( map.tiles[OBSTACLELAYER+index] || !map.tiles[index] || lavatiles[map.tiles[index]] ) {
+	if( map.tiles[OBSTACLELAYER + index] || !map.tiles[index] || lavatiles[map.tiles[index]] ) {
 		return 1;
 	}
 
 	node_t *node;
-	for( node=map.entities->first; node!=NULL; node=node->next ) {
+	for( node = map.entities->first; node != NULL; node = node->next ) {
 		Entity *entity = (Entity *)node->element;
-		if( entity->sprite==14 || entity->sprite==15 || entity->sprite==19 || entity->sprite==20 || entity->sprite==39 || entity->sprite==44 ) {
-			if( (int)floor(entity->x/16)==u && (int)floor(entity->y/16)==v ) {
+		if( entity->sprite == 14 || entity->sprite == 15 || entity->sprite == 19 || entity->sprite == 20 || entity->sprite == 39 || entity->sprite == 44 ) {
+			if( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v ) {
 				return 1;
 			}
 		}
@@ -162,23 +162,23 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	bool alreadyadded;
 	Sint32 x, y, z, h, g;
 	pathnode_t **binaryheap;
-	long heaplength=0;
+	long heaplength = 0;
 	node_t *entityNode = NULL;
 
-	int *pathMap = (int *) calloc(map.width*map.height,sizeof(int));
+	int *pathMap = (int *) calloc(map.width * map.height, sizeof(int));
 
-	bool levitating=FALSE;
+	bool levitating = FALSE;
 
-	x1 = std::min<unsigned int>(std::max(0,x1),map.width-1);
-	y1 = std::min<unsigned int>(std::max(0,y1),map.height-1);
-	x2 = std::min<unsigned int>(std::max(0,x2),map.width-1);
-	y2 = std::min<unsigned int>(std::max(0,y2),map.height-1); //TODO: Why are int and unsigned int being compared?
+	x1 = std::min<unsigned int>(std::max(0, x1), map.width - 1);
+	y1 = std::min<unsigned int>(std::max(0, y1), map.height - 1);
+	x2 = std::min<unsigned int>(std::max(0, x2), map.width - 1);
+	y2 = std::min<unsigned int>(std::max(0, y2), map.height - 1); //TODO: Why are int and unsigned int being compared?
 
 	// get levitation status
 	Stat *stats = my->getStats();
 	if( stats ) {
 		if( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
-			levitating=TRUE;
+			levitating = TRUE;
 		}
 		if( stats->ring != NULL )
 			if( stats->ring->type == RING_LEVITATION ) {
@@ -197,37 +197,37 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 
 	if( !loading ) {
 		if( levitating ) {
-			memcpy(pathMap,pathMapFlying,map.width*map.height*sizeof(int));
+			memcpy(pathMap, pathMapFlying, map.width * map.height * sizeof(int));
 		} else {
-			memcpy(pathMap,pathMapGrounded,map.width*map.height*sizeof(int));
+			memcpy(pathMap, pathMapGrounded, map.width * map.height * sizeof(int));
 		}
 	}
 
-	int myPathMap = pathMap[y1+x1*map.height];
+	int myPathMap = pathMap[y1 + x1 * map.height];
 	if( !loading ) {
-		if( !myPathMap || myPathMap!=pathMap[y2+x2*map.height] || !pathMap[y2+x2*map.height] || (x1==x2 && y1==y2) ) {
+		if( !myPathMap || myPathMap != pathMap[y2 + x2 * map.height] || !pathMap[y2 + x2 * map.height] || (x1 == x2 && y1 == y2) ) {
 			free(pathMap);
 			return NULL;
 		}
 	}
 
-	for( entityNode=map.entities->first; entityNode!=NULL; entityNode=entityNode->next ) {
+	for( entityNode = map.entities->first; entityNode != NULL; entityNode = entityNode->next ) {
 		Entity *entity = (Entity *)entityNode->element;
 		if( entity->flags[PASSABLE] ) {
 			continue;
 		}
-		if( entity->behavior==&actDoorFrame || entity->behavior==&actDoor ) {
+		if( entity->behavior == &actDoorFrame || entity->behavior == &actDoor ) {
 			continue;
 		}
-		if( entity==target || entity==my ) {
+		if( entity == target || entity == my ) {
 			continue;
 		}
 		if ( my->checkFriend(target) ) {
 			continue;
 		}
-		int x = std::min<unsigned int>(std::max<int>(0,entity->x/16),map.width-1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
-		int y = std::min<unsigned int>(std::max<int>(0,entity->y/16),map.height-1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
-		pathMap[y+x*map.height] = 0;
+		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
+		int y = std::min<unsigned int>(std::max<int>(0, entity->y / 16), map.height - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
+		pathMap[y + x * map.height] = 0;
 	}
 
 	openList = (list_t *) malloc(sizeof(list_t));
@@ -236,14 +236,14 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	closedList = (list_t *) malloc(sizeof(list_t));
 	closedList->first = NULL;
 	closedList->last = NULL;
-	binaryheap = (pathnode_t **) malloc(sizeof(pathnode_t *)*map.width*map.height);
+	binaryheap = (pathnode_t **) malloc(sizeof(pathnode_t *)*map.width * map.height);
 	binaryheap[0] = NULL;
 
 	// create starting node in list
-	pathnode = newPathnode(openList,x1,y1,NULL,1);
-	pathnode->g=0;
-	pathnode->h=heuristic(x1,y1,x2,y2);
-	heapAdd(binaryheap,pathnode,&heaplength);
+	pathnode = newPathnode(openList, x1, y1, NULL, 1);
+	pathnode->g = 0;
+	pathnode->h = heuristic(x1, y1, x2, y2);
+	heapAdd(binaryheap, pathnode, &heaplength);
 
 	while( openList->first != NULL ) {
 		/*pathnode = (pathnode_t *)openList->first->element;
@@ -260,8 +260,8 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 		g = pathnode->g;
 		parent = pathnode->parent;
 		list_RemoveNode(pathnode->node);
-		heapRemove(binaryheap,&heaplength);
-		pathnode = newPathnode(closedList,x,y,parent,1);
+		heapRemove(binaryheap, &heaplength);
+		pathnode = newPathnode(closedList, x, y, parent, 1);
 		pathnode->h = h;
 		pathnode->g = g;
 		if( pathnode->x == x2 && pathnode->y == y2 ) {
@@ -271,13 +271,13 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 			path->last = NULL;
 			list_FreeAll(openList);
 			free(openList);
-			for( childnode=pathnode; childnode!=NULL; childnode=pathnode->parent ) {
-				if( childnode->parent==NULL ) {
-					parent->parent=NULL;
+			for( childnode = pathnode; childnode != NULL; childnode = pathnode->parent ) {
+				if( childnode->parent == NULL ) {
+					parent->parent = NULL;
 					break;
 				}
-				parent = newPathnode(path,childnode->x,childnode->y,childnode->parent,0);
-				pathnode=pathnode->parent;
+				parent = newPathnode(path, childnode->x, childnode->y, childnode->parent, 0);
+				pathnode = pathnode->parent;
 			}
 			list_FreeAll(closedList);
 			free(closedList);
@@ -287,66 +287,66 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 		}
 
 		// expand search
-		for( y=-1; y<=1; y++ ) {
-			for( x=-1; x<=1; x++ ) {
-				if( x==0 && y==0 ) {
+		for( y = -1; y <= 1; y++ ) {
+			for( x = -1; x <= 1; x++ ) {
+				if( x == 0 && y == 0 ) {
 					continue;
 				}
 				z = 0;
 				if( !loading ) {
-					if( !pathMap[(pathnode->y+y)+(pathnode->x+x)*map.height] ) {
+					if( !pathMap[(pathnode->y + y) + (pathnode->x + x)*map.height] ) {
 						z++;
 					}
-					if( x&&y ) {
-						if( !pathMap[(pathnode->y)+(pathnode->x+x)*map.height] ) {
+					if( x && y ) {
+						if( !pathMap[(pathnode->y) + (pathnode->x + x)*map.height] ) {
 							z++;
 						}
-						if( !pathMap[(pathnode->y+y)+(pathnode->x)*map.height] ) {
+						if( !pathMap[(pathnode->y + y) + (pathnode->x)*map.height] ) {
 							z++;
 						}
 					}
 				} else {
-					if( pathCheckObstacle(((pathnode->x+x)<<4)+8,((pathnode->y+y)<<4)+8,my,target) ) {
+					if( pathCheckObstacle(((pathnode->x + x) << 4) + 8, ((pathnode->y + y) << 4) + 8, my, target) ) {
 						z++;
 					}
-					if( x&&y ) {
-						if( pathCheckObstacle(((pathnode->x)<<4)+8,((pathnode->y+y)<<4)+8,my,target) ) {
+					if( x && y ) {
+						if( pathCheckObstacle(((pathnode->x) << 4) + 8, ((pathnode->y + y) << 4) + 8, my, target) ) {
 							z++;
 						}
-						if( pathCheckObstacle(((pathnode->x+x)<<4)+8,((pathnode->y)<<4)+8,my,target) ) {
+						if( pathCheckObstacle(((pathnode->x + x) << 4) + 8, ((pathnode->y) << 4) + 8, my, target) ) {
 							z++;
 						}
 					}
 				}
 				if( !z ) {
-					alreadyadded=FALSE;
-					for( node=closedList->first; node!=NULL; node=node->next ) {
+					alreadyadded = FALSE;
+					for( node = closedList->first; node != NULL; node = node->next ) {
 						childnode = (pathnode_t *)node->element;
-						if( childnode->x==pathnode->x+x && childnode->y==pathnode->y+y ) {
-							alreadyadded=TRUE;
+						if( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y ) {
+							alreadyadded = TRUE;
 							break;
 						}
 					}
-					for( node=openList->first; node!=NULL; node=node->next ) {
+					for( node = openList->first; node != NULL; node = node->next ) {
 						childnode = (pathnode_t *)node->element;
-						if( childnode->x==pathnode->x+x && childnode->y==pathnode->y+y ) {
-							alreadyadded=TRUE;
-							if( x&&y ) {
-								if( childnode->g > pathnode->g+DIAGONALCOST ) {
-									childnode->parent=pathnode;
-									childnode->g=pathnode->g+DIAGONALCOST;
+						if( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y ) {
+							alreadyadded = TRUE;
+							if( x && y ) {
+								if( childnode->g > pathnode->g + DIAGONALCOST ) {
+									childnode->parent = pathnode;
+									childnode->g = pathnode->g + DIAGONALCOST;
 								}
 							} else {
-								if( childnode->g > pathnode->g+STRAIGHTCOST ) {
-									childnode->parent=pathnode;
-									childnode->g=pathnode->g+STRAIGHTCOST;
+								if( childnode->g > pathnode->g + STRAIGHTCOST ) {
+									childnode->parent = pathnode;
+									childnode->g = pathnode->g + STRAIGHTCOST;
 								}
 							}
 							break;
 						}
 					}
-					if( alreadyadded==FALSE ) {
-						if( list_Size(openList)>=1000 ) {
+					if( alreadyadded == FALSE ) {
+						if( list_Size(openList) >= 1000 ) {
 							list_FreeAll(openList);
 							list_FreeAll(closedList);
 							free(openList);
@@ -355,14 +355,14 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 							free(pathMap);
 							return NULL;
 						}
-						childnode = newPathnode(openList,pathnode->x+x,pathnode->y+y,pathnode,1);
-						if( x&&y ) {
-							childnode->g = pathnode->g+DIAGONALCOST;
+						childnode = newPathnode(openList, pathnode->x + x, pathnode->y + y, pathnode, 1);
+						if( x && y ) {
+							childnode->g = pathnode->g + DIAGONALCOST;
 						} else {
-							childnode->g = pathnode->g+STRAIGHTCOST;
+							childnode->g = pathnode->g + STRAIGHTCOST;
 						}
-						childnode->h=heuristic(childnode->x,childnode->y,x2,y2);
-						heapAdd(binaryheap,childnode,&heaplength);
+						childnode->h = heuristic(childnode->x, childnode->y, x2, y2);
+						heapAdd(binaryheap, childnode, &heaplength);
 					}
 				}
 			}
@@ -393,20 +393,20 @@ void generatePathMaps() {
 	if( pathMapGrounded ) {
 		free(pathMapGrounded);
 	}
-	pathMapGrounded = (int *) calloc(map.width*map.height,sizeof(int));
+	pathMapGrounded = (int *) calloc(map.width * map.height, sizeof(int));
 	if( pathMapFlying ) {
 		free(pathMapFlying);
 	}
-	pathMapFlying = (int *) calloc(map.width*map.height,sizeof(int));
+	pathMapFlying = (int *) calloc(map.width * map.height, sizeof(int));
 
 	pathMapZone = 1;
-	for( y=0; y<map.height; y++ ) {
-		for( x=0; x<map.width; x++ ) {
-			if( !pathMapGrounded[y+x*map.height] ) {
-				fillPathMap(pathMapGrounded,x,y,pathMapZone);
+	for( y = 0; y < map.height; y++ ) {
+		for( x = 0; x < map.width; x++ ) {
+			if( !pathMapGrounded[y + x * map.height] ) {
+				fillPathMap(pathMapGrounded, x, y, pathMapZone);
 			}
-			if( !pathMapFlying[y+x*map.height] ) {
-				fillPathMap(pathMapFlying,x,y,pathMapZone);
+			if( !pathMapFlying[y + x * map.height] ) {
+				fillPathMap(pathMapFlying, x, y, pathMapZone);
 			}
 		}
 	}
@@ -415,23 +415,23 @@ void generatePathMaps() {
 void fillPathMap(int *pathMap, int x, int y, int zone) {
 	bool obstacle = TRUE;
 
-	int index = y*MAPLAYERS+x*MAPLAYERS*map.height;
-	if( !map.tiles[OBSTACLELAYER+index] && map.tiles[index] && !animatedtiles[map.tiles[index]] ) {
+	int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
+	if( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] && !animatedtiles[map.tiles[index]] ) {
 		obstacle = FALSE;
-	} else if( pathMap==pathMapFlying && !map.tiles[OBSTACLELAYER+index] ) {
+	} else if( pathMap == pathMapFlying && !map.tiles[OBSTACLELAYER + index] ) {
 		obstacle = FALSE;
 	}
-	if( obstacle==FALSE ) {
+	if( obstacle == FALSE ) {
 		node_t *node;
-		list_t *list = checkTileForEntity(x,y);
+		list_t *list = checkTileForEntity(x, y);
 		if( list ) {
-			for( node=list->first; node!=NULL; node=node->next ) {
+			for( node = list->first; node != NULL; node = node->next ) {
 				Entity *entity = (Entity *)node->element;
 				if( entity ) {
-					if( entity->behavior==&actHeadstone || entity->behavior==&actSink || entity->behavior==&actFountain ) {
+					if( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
 						obstacle = TRUE;
 						break;
-					} else if( entity->behavior==&actWallBuilder || entity->behavior==&actWallBuster ) {
+					} else if( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster ) {
 						obstacle = FALSE;
 						break;
 					}
@@ -446,150 +446,150 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 		return;
 	}
 
-	pathMap[y+x*map.height] = zone;
+	pathMap[y + x * map.height] = zone;
 	bool repeat;
 	do {
 		repeat = FALSE;
 
 		int u, v;
-		for( u=0; u<map.width; u++ ) {
-			for( v=0; v<map.height; v++ ) {
-				if( pathMap[v+u*map.height]==zone ) {
-					if( u < map.width-1 ) {
-						if( !pathMap[v+(u+1)*map.height] ) {
-							bool foundObstacle=FALSE;
-							bool foundWallModifier=FALSE;
-							list_t *list = checkTileForEntity(u+1,v);
+		for( u = 0; u < map.width; u++ ) {
+			for( v = 0; v < map.height; v++ ) {
+				if( pathMap[v + u * map.height] == zone ) {
+					if( u < map.width - 1 ) {
+						if( !pathMap[v + (u + 1)*map.height] ) {
+							bool foundObstacle = FALSE;
+							bool foundWallModifier = FALSE;
+							list_t *list = checkTileForEntity(u + 1, v);
 							if( list ) {
 								node_t *node;
-								for( node=list->first; node!=NULL; node=node->next ) {
+								for( node = list->first; node != NULL; node = node->next ) {
 									Entity *entity = (Entity *)node->element;
 									if( entity ) {
-										if( entity->behavior==&actHeadstone || entity->behavior==&actSink || entity->behavior==&actFountain ) {
-											foundObstacle=TRUE;
+										if( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
+											foundObstacle = TRUE;
 											break;
-										} else if( entity->behavior==&actWallBuilder || entity->behavior==&actWallBuster ) {
-											foundWallModifier=TRUE;
+										} else if( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster ) {
+											foundWallModifier = TRUE;
 											break;
 										}
 									}
 								}
 								if( foundWallModifier ) {
-									pathMap[v+(u+1)*map.height] = zone;
+									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = TRUE;
 								}
 								list_FreeAll(list);
 								free(list);
 							}
 							if( !foundWallModifier && !foundObstacle ) {
-								int index = v*MAPLAYERS+(u+1)*MAPLAYERS*map.height;
-								if( !map.tiles[OBSTACLELAYER+index] && (pathMap==pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
-									pathMap[v+(u+1)*map.height] = zone;
+								int index = v * MAPLAYERS + (u + 1) * MAPLAYERS * map.height;
+								if( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
+									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = TRUE;
 								}
 							}
 						}
 					}
 					if( u > 0 ) {
-						if( !pathMap[v+(u-1)*map.height] ) {
-							bool foundObstacle=FALSE;
-							bool foundWallModifier=FALSE;
-							list_t *list = checkTileForEntity(u-1,v);
+						if( !pathMap[v + (u - 1)*map.height] ) {
+							bool foundObstacle = FALSE;
+							bool foundWallModifier = FALSE;
+							list_t *list = checkTileForEntity(u - 1, v);
 							if( list ) {
 								node_t *node;
-								for( node=list->first; node!=NULL; node=node->next ) {
+								for( node = list->first; node != NULL; node = node->next ) {
 									Entity *entity = (Entity *)node->element;
 									if( entity ) {
-										if( entity->behavior==&actHeadstone || entity->behavior==&actSink || entity->behavior==&actFountain ) {
-											foundObstacle=TRUE;
+										if( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
+											foundObstacle = TRUE;
 											break;
-										} else if( entity->behavior==&actWallBuilder || entity->behavior==&actWallBuster ) {
-											foundWallModifier=TRUE;
+										} else if( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster ) {
+											foundWallModifier = TRUE;
 											break;
 										}
 									}
 								}
 								if( foundWallModifier ) {
-									pathMap[v+(u-1)*map.height] = zone;
+									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = TRUE;
 								}
 								list_FreeAll(list);
 								free(list);
 							}
 							if( !foundWallModifier && !foundObstacle ) {
-								int index = v*MAPLAYERS+(u-1)*MAPLAYERS*map.height;
-								if( !map.tiles[OBSTACLELAYER+index] && (pathMap==pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
-									pathMap[v+(u-1)*map.height] = zone;
+								int index = v * MAPLAYERS + (u - 1) * MAPLAYERS * map.height;
+								if( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
+									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = TRUE;
 								}
 							}
 						}
 					}
-					if( v < map.height-1 ) {
-						if( !pathMap[(v+1)+u*map.height] ) {
-							bool foundObstacle=FALSE;
-							bool foundWallModifier=FALSE;
-							list_t *list = checkTileForEntity(u,v+1);
+					if( v < map.height - 1 ) {
+						if( !pathMap[(v + 1) + u * map.height] ) {
+							bool foundObstacle = FALSE;
+							bool foundWallModifier = FALSE;
+							list_t *list = checkTileForEntity(u, v + 1);
 							if( list ) {
 								node_t *node;
-								for( node=list->first; node!=NULL; node=node->next ) {
+								for( node = list->first; node != NULL; node = node->next ) {
 									Entity *entity = (Entity *)node->element;
 									if( entity ) {
-										if( entity->behavior==&actHeadstone || entity->behavior==&actSink || entity->behavior==&actFountain ) {
-											foundObstacle=TRUE;
+										if( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
+											foundObstacle = TRUE;
 											break;
-										} else if( entity->behavior==&actWallBuilder || entity->behavior==&actWallBuster ) {
-											foundWallModifier=TRUE;
+										} else if( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster ) {
+											foundWallModifier = TRUE;
 											break;
 										}
 									}
 								}
 								if( foundWallModifier ) {
-									pathMap[(v+1)+u*map.height] = zone;
+									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = TRUE;
 								}
 								list_FreeAll(list);
 								free(list);
 							}
 							if( !foundWallModifier && !foundObstacle ) {
-								int index = (v+1)*MAPLAYERS+u*MAPLAYERS*map.height;
-								if( !map.tiles[OBSTACLELAYER+index] && (pathMap==pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
-									pathMap[(v+1)+u*map.height] = zone;
+								int index = (v + 1) * MAPLAYERS + u * MAPLAYERS * map.height;
+								if( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
+									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = TRUE;
 								}
 							}
 						}
 					}
 					if( v > 0 ) {
-						if( !pathMap[(v-1)+u*map.height] ) {
-							bool foundObstacle=FALSE;
-							bool foundWallModifier=FALSE;
-							list_t *list = checkTileForEntity(u,v-1);
+						if( !pathMap[(v - 1) + u * map.height] ) {
+							bool foundObstacle = FALSE;
+							bool foundWallModifier = FALSE;
+							list_t *list = checkTileForEntity(u, v - 1);
 							if( list ) {
 								node_t *node;
-								for( node=list->first; node!=NULL; node=node->next ) {
+								for( node = list->first; node != NULL; node = node->next ) {
 									Entity *entity = (Entity *)node->element;
 									if( entity ) {
-										if( entity->behavior==&actHeadstone || entity->behavior==&actSink || entity->behavior==&actFountain ) {
-											foundObstacle=TRUE;
+										if( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
+											foundObstacle = TRUE;
 											break;
-										} else if( entity->behavior==&actWallBuilder || entity->behavior==&actWallBuster ) {
-											foundWallModifier=TRUE;
+										} else if( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster ) {
+											foundWallModifier = TRUE;
 											break;
 										}
 									}
 								}
 								if( foundWallModifier ) {
-									pathMap[(v-1)+u*map.height] = zone;
+									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = TRUE;
 								}
 								list_FreeAll(list);
 								free(list);
 							}
 							if( !foundWallModifier && !foundObstacle ) {
-								int index = (v-1)*MAPLAYERS+u*MAPLAYERS*map.height;
-								if( !map.tiles[OBSTACLELAYER+index] && (pathMap==pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
-									pathMap[(v-1)+u*map.height] = zone;
+								int index = (v - 1) * MAPLAYERS + u * MAPLAYERS * map.height;
+								if( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) ) {
+									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = TRUE;
 								}
 							}

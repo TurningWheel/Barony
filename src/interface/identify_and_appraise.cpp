@@ -117,8 +117,8 @@ void updateIdentifyGUI() {
 		}
 
 		// mousewheel
-		if( omousex>=IDENTIFY_GUI_X+12 && omousex<IDENTIFY_GUI_X+(identifyGUI_img->w-28) ) {
-			if( omousey>=IDENTIFY_GUI_Y+16 && omousey<IDENTIFY_GUI_Y+(identifyGUI_img->h-8) ) {
+		if( omousex >= IDENTIFY_GUI_X + 12 && omousex < IDENTIFY_GUI_X + (identifyGUI_img->w - 28) ) {
+			if( omousey >= IDENTIFY_GUI_Y + 16 && omousey < IDENTIFY_GUI_Y + (identifyGUI_img->h - 8) ) {
 				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					identifyscroll++;
@@ -256,11 +256,11 @@ void updateIdentifyGUI() {
 								continue;
 							}
 							char tempstr[64] = { 0 };
-							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 ) {
-								strcat(tempstr," ...");
+							strncpy(tempstr, item->description(), 46);
+							if( strlen(tempstr) == 46 ) {
+								strcat(tempstr, " ...");
 							}
-							ttfPrintText(ttf8,IDENTIFY_GUI_X+36,y,tempstr);
+							ttfPrintText(ttf8, IDENTIFY_GUI_X + 36, y, tempstr);
 							pos.x = IDENTIFY_GUI_X + 16;
 							pos.y = IDENTIFY_GUI_Y + 17 + 18 * (c - identifyscroll - 1);
 							pos.w = 16;
@@ -283,7 +283,7 @@ void identifyGUIIdentify(Item *item) {
 		return;
 	}
 	if (item->identified) {
-		messagePlayer(clientnum, language[319],item->getName());
+		messagePlayer(clientnum, language[319], item->getName());
 		return;
 	}
 
@@ -316,12 +316,12 @@ void identifyGUIIdentify(Item *item) {
 
 int getAppraisalTime(Item *item) {
 	int appraisal_time;
-	if( item->type!=GEM_GLASS ) {
+	if( item->type != GEM_GLASS ) {
 		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
 	} else {
 		appraisal_time = (1000 * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised+-
 	}
-	appraisal_time = std::min(std::max(1,appraisal_time),36000);
+	appraisal_time = std::min(std::max(1, appraisal_time), 36000);
 	return appraisal_time;
 }
 

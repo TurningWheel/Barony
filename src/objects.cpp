@@ -94,11 +94,11 @@ void lightDeconstructor(void *data) {
 	if( data != NULL) {
 		light = (light_t *)data;
 		if( light->tiles != NULL ) {
-			for(y=0; y<light->radius*2; y++) {
-				for(x=0; x<light->radius*2; x++) {
-					if( x+light->x-light->radius>=0 && x+light->x-light->radius<map.width )
-						if( y+light->y-light->radius>=0 && y+light->y-light->radius<map.height ) {
-							lightmap[(y+light->y-light->radius)+(x+light->x-light->radius)*map.height] -= light->tiles[y+x*(light->radius*2+1)];
+			for(y = 0; y < light->radius * 2; y++) {
+				for(x = 0; x < light->radius * 2; x++) {
+					if( x + light->x - light->radius >= 0 && x + light->x - light->radius < map.width )
+						if( y + light->y - light->radius >= 0 && y + light->y - light->radius < map.height ) {
+							lightmap[(y + light->y - light->radius) + (x + light->x - light->radius)*map.height] -= light->tiles[y + x * (light->radius * 2 + 1)];
 						}
 				}
 			}
@@ -188,7 +188,7 @@ button_t *newButton(void) {
 	button_t *button;
 
 	// allocate memory for button
-	if( (button = (button_t *) malloc(sizeof(button_t)))==NULL ) {
+	if( (button = (button_t *) malloc(sizeof(button_t))) == NULL ) {
 		printlog( "failed to allocate memory for new button!\n" );
 		exit(1);
 	}
@@ -200,18 +200,18 @@ button_t *newButton(void) {
 	button->node->size = sizeof(button_t);
 
 	// now set all of my data elements to ZERO or NULL
-	button->x=0;
-	button->y=0;
-	button->sizex=0;
-	button->sizey=0;
-	button->visible=1;
-	button->focused=0;
-	button->key=0;
+	button->x = 0;
+	button->y = 0;
+	button->sizex = 0;
+	button->sizey = 0;
+	button->visible = 1;
+	button->focused = 0;
+	button->key = 0;
 	button->joykey = -1;
-	button->pressed=FALSE;
-	button->needclick=TRUE;
-	button->action=NULL;
-	strcpy(button->label,"nodef");
+	button->pressed = FALSE;
+	button->needclick = TRUE;
+	button->action = NULL;
+	strcpy(button->label, "nodef");
 
 	button->outline = false;
 
@@ -230,7 +230,7 @@ light_t *newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
 	light_t *light;
 
 	// allocate memory for light
-	if( (light = (light_t *) malloc(sizeof(light_t)))==NULL ) {
+	if( (light = (light_t *) malloc(sizeof(light_t))) == NULL ) {
 		printlog( "failed to allocate memory for new light!\n" );
 		exit(1);
 	}
@@ -242,13 +242,13 @@ light_t *newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
 	light->node->size = sizeof(light_t);
 
 	// now set all of my data elements to ZERO or NULL
-	light->x=x;
-	light->y=y;
-	light->radius=radius;
-	light->intensity=intensity;
+	light->x = x;
+	light->y = y;
+	light->radius = radius;
+	light->intensity = intensity;
 	if( light->radius > 0 ) {
-		light->tiles = (Sint32 *) malloc(sizeof(Sint32)*(radius*2+1)*(radius*2+1));
-		memset(light->tiles,0,sizeof(Sint32)*(radius*2+1)*(radius*2+1));
+		light->tiles = (Sint32 *) malloc(sizeof(Sint32) * (radius * 2 + 1) * (radius * 2 + 1));
+		memset(light->tiles, 0, sizeof(Sint32) * (radius * 2 + 1) * (radius * 2 + 1));
 	} else {
 		light->tiles = NULL;
 	}
@@ -270,7 +270,7 @@ string_t *newString(list_t *list, Uint32 color, char *content, ...) {
 	int c, i;
 
 	// allocate memory for string
-	if( (string = (string_t *) malloc(sizeof(string_t)))==NULL ) {
+	if( (string = (string_t *) malloc(sizeof(string_t))) == NULL ) {
 		printlog( "failed to allocate memory for new string!\n" );
 		exit(1);
 	}
@@ -282,25 +282,25 @@ string_t *newString(list_t *list, Uint32 color, char *content, ...) {
 		}
 	}
 
-	string->color=color;
-	string->lines=1;
+	string->color = color;
+	string->lines = 1;
 	if( content != NULL ) {
 		// format the content
 		va_start( argptr, content );
-		i=vsnprintf(str,1023,content,argptr);
+		i = vsnprintf(str, 1023, content, argptr);
 		va_end( argptr );
-		string->data = (char *) malloc(sizeof(char)*(i+1));
+		string->data = (char *) malloc(sizeof(char) * (i + 1));
 		if( !string->data ) {
 			printlog( "error creating new string: couldn't allocate string data.\n" );
 			exit(1);
 		}
-		memset(string->data,0,sizeof(char)*(i+1));
-		for( c=0; c<i; c++ ) {
-			if( str[c]==10 ) { // line feed
+		memset(string->data, 0, sizeof(char) * (i + 1));
+		for( c = 0; c < i; c++ ) {
+			if( str[c] == 10 ) { // line feed
 				string->lines++;
 			}
 		}
-		strncpy(string->data,str,i);
+		strncpy(string->data, str, i);
 	} else {
 		string->data = NULL;
 	}
@@ -330,7 +330,7 @@ pathnode_t *newPathnode(list_t *list, Sint32 x, Sint32 y, pathnode_t *parent, Si
 	pathnode_t *pathnode;
 
 	// allocate memory for pathnode
-	if( (pathnode = (pathnode_t *) malloc(sizeof(pathnode_t)))==NULL ) {
+	if( (pathnode = (pathnode_t *) malloc(sizeof(pathnode_t))) == NULL ) {
 		printlog( "failed to allocate memory for new pathnode!\n" );
 		exit(1);
 	}

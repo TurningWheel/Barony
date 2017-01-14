@@ -114,10 +114,10 @@ void actSwitch(Entity *my) {
 	//So then when that second switch's actSwitch() comes up, and if it's on, it'll repower the entire network -- which will stay powered until ALL connected switches go off.
 	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
 
-	if( multiplayer!=CLIENT ) {
+	if( multiplayer != CLIENT ) {
 		int i = 0;
 		for (i = 0; i < MAXPLAYERS; ++i) {
-			if ( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 				if (inrange[i]) { //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 					messagePlayer(i, language[1110]);
 					playSoundEntity(my, 56, 64);
@@ -137,16 +137,16 @@ void actSwitch(Entity *my) {
 
 	// Rotate the switch when it is on/off.
 	if( my->skill[0] ) {
-		if( my->roll > -PI/4 ) {
-			my->roll -= std::max((my->roll+PI/4)/2,.05);
+		if( my->roll > -PI / 4 ) {
+			my->roll -= std::max((my->roll + PI / 4) / 2, .05);
 		} else {
-			my->roll = -PI/4;
+			my->roll = -PI / 4;
 		}
 	} else {
-		if( my->roll < PI/4 ) {
-			my->roll += std::max(-(my->roll-PI/4)/2,.05);
+		if( my->roll < PI / 4 ) {
+			my->roll += std::max(-(my->roll - PI / 4) / 2, .05);
 		} else {
-			my->roll = PI/4;
+			my->roll = PI / 4;
 		}
 	}
 
@@ -177,10 +177,10 @@ void actTrap(Entity *my) {
 		my->switchUpdateNeighbors();
 	}
 
-	for( node=map.entities->first; node!=NULL; node=node->next ) {
+	for( node = map.entities->first; node != NULL; node = node->next ) {
 		entity = (Entity *)node->element;
 		if( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder ) {
-			if( floor(entity->x/16) == floor(my->x/16) && floor(entity->y/16) == floor(my->y/16) ) {
+			if( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) ) {
 				somebodyonme = TRUE;
 				if( !TRAP_ON ) {
 					my->toggleSwitch();
@@ -205,11 +205,11 @@ void actTrapPermanent(Entity *my) {
 	Entity *entity;
 	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
 
-	if( !strcmp(map.name,"Boss") ) {
-		for( node=map.entities->first; node!=NULL; node=node->next ) {
+	if( !strcmp(map.name, "Boss") ) {
+		for( node = map.entities->first; node != NULL; node = node->next ) {
 			entity = (Entity *)node->element;
-			if( entity->behavior==&actPlayer ) {
-				if( entity->x < 26*16 || entity->y < 6*16 || entity->y >= 26*16 ) { // hardcoded, I know...
+			if( entity->behavior == &actPlayer ) {
+				if( entity->x < 26 * 16 || entity->y < 6 * 16 || entity->y >= 26 * 16 ) { // hardcoded, I know...
 					return;
 				}
 			}
@@ -219,10 +219,10 @@ void actTrapPermanent(Entity *my) {
 	if( TRAPPERMANENT_ON ) {
 		my->switchUpdateNeighbors();
 	} else {
-		for( node=map.entities->first; node!=NULL; node=node->next ) {
+		for( node = map.entities->first; node != NULL; node = node->next ) {
 			entity = (Entity *)node->element;
 			if( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder ) {
-				if( floor(entity->x/16) == floor(my->x/16) && floor(entity->y/16) == floor(my->y/16) ) {
+				if( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) ) {
 					my->toggleSwitch();
 					TRAPPERMANENT_ON = 1;
 				}

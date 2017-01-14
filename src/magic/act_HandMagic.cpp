@@ -77,9 +77,9 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->times_to_circle = (getCostOfSpell(spell) / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = getCostOfSpell(spell);
 	if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER) { //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
-		int chance = rand()%10;
-		if (chance >= stat->PROFICIENCIES[PRO_SPELLCASTING]/15) {
-			int amount = (rand()%50)/std::max(stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat),1);
+		int chance = rand() % 10;
+		if (chance >= stat->PROFICIENCIES[PRO_SPELLCASTING] / 15) {
+			int amount = (rand() % 50) / std::max(stat->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(stat), 1);
 			amount = std::min(amount, CASTING_EXTRA_TIMES_CAP);
 			animation_manager->times_to_circle += amount;
 		}
@@ -140,17 +140,17 @@ void actLeftHandMagic(Entity *my) {
 	//Set the initial values. (For the particle spray)
 	my->x = 8;
 	my->y = -3;
-	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
+	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	double defaultpitch = (0-6.f) / PI;
+	double defaultpitch = (0 - 6.f) / PI;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
 
 	//Sprite
-	bool noGloves=FALSE;
+	bool noGloves = FALSE;
 	if( stats[clientnum]->gloves == NULL ) {
-		noGloves=TRUE;
+		noGloves = TRUE;
 	} else {
 		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
 			my->sprite = 136 + stats[clientnum]->sex;
@@ -163,20 +163,20 @@ void actLeftHandMagic(Entity *my) {
 		}
 	}
 	if( noGloves ) {
-		if( stats[clientnum]->appearance/6==0 ) {
-			if( stats[clientnum]->sex==FEMALE ) {
+		if( stats[clientnum]->appearance / 6 == 0 ) {
+			if( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 122;
 			} else {
 				my->sprite = 110;
 			}
-		} else if( stats[clientnum]->appearance/6==1 ) {
-			if( stats[clientnum]->sex==FEMALE ) {
+		} else if( stats[clientnum]->appearance / 6 == 1 ) {
+			if( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 351;
 			} else {
 				my->sprite = 338;
 			}
 		} else {
-			if( stats[clientnum]->sex==FEMALE ) {
+			if( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 377;
 			} else {
 				my->sprite = 364;
@@ -202,7 +202,7 @@ void actLeftHandMagic(Entity *my) {
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
 			case CIRCLE:
-				if(ticks%5==0) {
+				if(ticks % 5 == 0) {
 					Entity *entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
 					entity->flags[SPRITE] = TRUE;
@@ -214,11 +214,11 @@ void actLeftHandMagic(Entity *my) {
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
 					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-					entity->yaw = ((rand()%6)*60)*PI/180.0;
-					entity->pitch = (rand()%360)*PI/180.0;
-					entity->roll = (rand()%360)*PI/180.0;
-					entity->vel_x = cos(entity->yaw)*.1;
-					entity->vel_y = sin(entity->yaw)*.1;
+					entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
+					entity->pitch = (rand() % 360) * PI / 180.0;
+					entity->roll = (rand() % 360) * PI / 180.0;
+					entity->vel_x = cos(entity->yaw) * .1;
+					entity->vel_y = sin(entity->yaw) * .1;
 					entity->vel_z = -.15;
 					entity->fskill[3] = 0.01;
 				}
@@ -264,14 +264,14 @@ void actLeftHandMagic(Entity *my) {
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
-	defaultpitch = (0-6.f) / PI;
+	defaultpitch = (0 - 6.f) / PI;
 	//my->x = 6 + HUDWEAPON_MOVEX;
 	my->x += cast_animation.lefthand_movex;
 	//my->y = 3 + HUDWEAPON_MOVEY;
 	my->y = -3;
 	my->y += cast_animation.lefthand_movey;
 	//my->z = (camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a PLAYERSWAP
-	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
+	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
@@ -286,7 +286,7 @@ void actRightHandMagic(Entity *my) {
 
 	//Initialize
 	if( !HANDMAGIC_INIT ) {
-		HANDMAGIC_INIT=1;
+		HANDMAGIC_INIT = 1;
 		my->focalz = -1.5;
 	}
 
@@ -298,17 +298,17 @@ void actRightHandMagic(Entity *my) {
 
 	my->x = 8;
 	my->y = 3;
-	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
+	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
-	double defaultpitch = (0-6.f) / PI;
+	double defaultpitch = (0 - 6.f) / PI;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;
 	my->roll = HANDMAGIC_ROLL;
 
 	//Sprite
-	bool noGloves=FALSE;
+	bool noGloves = FALSE;
 	if( stats[clientnum]->gloves == NULL ) {
-		noGloves=TRUE;
+		noGloves = TRUE;
 	} else {
 		if( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY ) {
 			my->sprite = 132 + stats[clientnum]->sex;
@@ -321,20 +321,20 @@ void actRightHandMagic(Entity *my) {
 		}
 	}
 	if( noGloves ) {
-		if( stats[clientnum]->appearance/6==0 ) {
-			if( stats[clientnum]->sex==FEMALE ) {
+		if( stats[clientnum]->appearance / 6 == 0 ) {
+			if( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 121;
 			} else {
 				my->sprite = 109;
 			}
-		} else if( stats[clientnum]->appearance/6==1 ) {
-			if( stats[clientnum]->sex==FEMALE ) {
+		} else if( stats[clientnum]->appearance / 6 == 1 ) {
+			if( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 350;
 			} else {
 				my->sprite = 337;
 			}
 		} else {
-			if( stats[clientnum]->sex==FEMALE ) {
+			if( stats[clientnum]->sex == FEMALE ) {
 				my->sprite = 376;
 			} else {
 				my->sprite = 363;
@@ -360,7 +360,7 @@ void actRightHandMagic(Entity *my) {
 	if (cast_animation.active) {
 		switch (cast_animation.stage) {
 			case CIRCLE:
-				if (ticks%5==0) {
+				if (ticks % 5 == 0) {
 					//messagePlayer(0, "Pingas!");
 					Entity *entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
@@ -375,11 +375,11 @@ void actRightHandMagic(Entity *my) {
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
 					entity->sprite = 16; //TODO: Originally. 22. 16 -- spark sprite instead?
-					entity->yaw = ((rand()%6)*60)*PI/180.0;
-					entity->pitch = (rand()%360)*PI/180.0;
-					entity->roll = (rand()%360)*PI/180.0;
-					entity->vel_x = cos(entity->yaw)*.1;
-					entity->vel_y = sin(entity->yaw)*.1;
+					entity->yaw = ((rand() % 6) * 60) * PI / 180.0;
+					entity->pitch = (rand() % 360) * PI / 180.0;
+					entity->roll = (rand() % 360) * PI / 180.0;
+					entity->vel_x = cos(entity->yaw) * .1;
+					entity->vel_y = sin(entity->yaw) * .1;
 					entity->vel_z = -.15;
 					entity->fskill[3] = 0.01;
 				}
@@ -398,7 +398,7 @@ void actRightHandMagic(Entity *my) {
 	//double defaultpitch = PI / 8.f;
 	//double defaultpitch = 0;
 	//double defaultpitch = PI / (0-4.f);
-	defaultpitch = (0-6.f) / PI;
+	defaultpitch = (0 - 6.f) / PI;
 	//my->x = 6 + HUDWEAPON_MOVEX;
 	my->x = 8;
 	my->x += cast_animation.lefthand_movex;
@@ -406,7 +406,7 @@ void actRightHandMagic(Entity *my) {
 	my->y = 3;
 	my->y -= cast_animation.lefthand_movey;
 	//my->z = (camera.z*.5-players[clientnum]->z)+7+HUDWEAPON_MOVEZ; //TODO: NOT a playerswap
-	my->z = (camera.z *.5 - players[clientnum]->entity->z) + 7;
+	my->z = (camera.z * .5 - players[clientnum]->entity->z) + 7;
 	my->z -= 4;
 	my->yaw = HANDMAGIC_YAW - camera_shakex2;
 	my->pitch = defaultpitch + HANDMAGIC_PITCH - camera_shakey2 / 200.f;

@@ -37,21 +37,21 @@ void takeScreenshot() {
 	strcat( filename, buffer );
 	strcat( filename, ".png" );
 
-	temp = SDL_CreateRGBSurface(0,xres,yres,32,0,0,0,0);
+	temp = SDL_CreateRGBSurface(0, xres, yres, 32, 0, 0, 0, 0);
 	SDL_LockSurface(temp);
-	glReadPixels(0,0,xres,yres,GL_BGRA,GL_UNSIGNED_BYTE,temp->pixels);
+	glReadPixels(0, 0, xres, yres, GL_BGRA, GL_UNSIGNED_BYTE, temp->pixels);
 	SDL_UnlockSurface(temp);
 	temp2 = flipSurface( temp, FLIP_VERTICAL );
 	SDL_FreeSurface( temp );
-	temp = SDL_CreateRGBSurface(0,xres,yres,24,0,0,0,0);
-	SDL_FillRect(temp,NULL,0);
-	SDL_BlitSurface(temp2,NULL,temp,NULL);
+	temp = SDL_CreateRGBSurface(0, xres, yres, 24, 0, 0, 0, 0);
+	SDL_FillRect(temp, NULL, 0);
+	SDL_BlitSurface(temp2, NULL, temp, NULL);
 	SDL_FreeSurface( temp2 );
 	SDL_SavePNG( temp, filename );
 	SDL_FreeSurface( temp );
 	if( !intro ) {
-		messagePlayer(clientnum,"%s",filename);
+		messagePlayer(clientnum, "%s", filename);
 	} else {
-		printlog("%s",filename);
+		printlog("%s", filename);
 	}
 }

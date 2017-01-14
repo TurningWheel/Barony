@@ -63,8 +63,8 @@ void updateRemoveCurseGUI() {
 		}
 
 		// mousewheel
-		if( omousex>=REMOVECURSE_GUI_X+12 && omousex<REMOVECURSE_GUI_X+(identifyGUI_img->w-28) ) {
-			if( omousey>=REMOVECURSE_GUI_Y+16 && omousey<REMOVECURSE_GUI_Y+(identifyGUI_img->h-8) ) {
+		if( omousex >= REMOVECURSE_GUI_X + 12 && omousex < REMOVECURSE_GUI_X + (identifyGUI_img->w - 28) ) {
+			if( omousey >= REMOVECURSE_GUI_Y + 16 && omousey < REMOVECURSE_GUI_Y + (identifyGUI_img->h - 8) ) {
 				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					removecursescroll++;
@@ -148,21 +148,21 @@ void updateRemoveCurseGUI() {
 					pos.y = REMOVECURSE_GUI_Y + 34;
 					drawImage(inventoryoptionChest_bmp, NULL, &pos);
 					if (mousestatus[SDL_BUTTON_LEFT]) {
-						mousestatus[SDL_BUTTON_LEFT]=0;
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 						removecurseGUIRemoveCurse(removecurse_items[1]);
 					}
 				} else if (omousey >= REMOVECURSE_GUI_Y + 52 && omousey < REMOVECURSE_GUI_Y + 70 ) {
 					pos.y = REMOVECURSE_GUI_Y + 52;
 					drawImage(inventoryoptionChest_bmp, NULL, &pos);
 					if( mousestatus[SDL_BUTTON_LEFT] ) {
-						mousestatus[SDL_BUTTON_LEFT]=0;
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 						removecurseGUIRemoveCurse(removecurse_items[2]);
 					}
 				} else if (omousey >= REMOVECURSE_GUI_Y + 70 && omousey < REMOVECURSE_GUI_Y + 88) {
 					pos.y = REMOVECURSE_GUI_Y + 70;
 					drawImage(inventoryoptionChest_bmp, NULL, &pos);
 					if( mousestatus[SDL_BUTTON_LEFT] ) {
-						mousestatus[SDL_BUTTON_LEFT]=0;
+						mousestatus[SDL_BUTTON_LEFT] = 0;
 						removecurseGUIRemoveCurse(removecurse_items[3]);
 					}
 				}
@@ -195,11 +195,11 @@ void updateRemoveCurseGUI() {
 							}
 							removecurse_items[c - removecursescroll - 1] = item;
 							char tempstr[64] = { 0 };
-							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 ) {
-								strcat(tempstr," ...");
+							strncpy(tempstr, item->description(), 46);
+							if( strlen(tempstr) == 46 ) {
+								strcat(tempstr, " ...");
 							}
-							ttfPrintText(ttf8,REMOVECURSE_GUI_X+36,y,tempstr);
+							ttfPrintText(ttf8, REMOVECURSE_GUI_X + 36, y, tempstr);
 							pos.x = REMOVECURSE_GUI_X + 16;
 							pos.y = REMOVECURSE_GUI_Y + 17 + 18 * (c - removecursescroll - 1);
 							pos.w = 16;
@@ -222,14 +222,14 @@ void removecurseGUIRemoveCurse(Item *item) {
 		return;
 	}
 	if (item->beatitude >= 0) {
-		messagePlayer(clientnum, language[347],item->getName());
+		messagePlayer(clientnum, language[347], item->getName());
 		return;
 	}
 
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
 	messagePlayer(clientnum, language[348], item->description());
 	removecursegui_active = FALSE;
-	if( multiplayer==CLIENT && itemIsEquipped(item,clientnum) ) {
+	if( multiplayer == CLIENT && itemIsEquipped(item, clientnum) ) {
 		// the client needs to inform the server that their equipment was uncursed.
 		int armornum = 0;
 		if( item == stats[clientnum]->helmet ) {
@@ -253,7 +253,7 @@ void removecurseGUIRemoveCurse(Item *item) {
 		} else if( item == stats[clientnum]->mask ) {
 			armornum = 9;
 		}
-		strcpy((char *)net_packet->data,"RCUR");
+		strcpy((char *)net_packet->data, "RCUR");
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = armornum;
 		net_packet->address.host = net_server.host;

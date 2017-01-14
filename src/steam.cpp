@@ -31,21 +31,21 @@ char lobbyText[MAX_STEAM_LOBBIES][32];
 void *lobbyIDs[MAX_STEAM_LOBBIES] = { NULL };
 int lobbyPlayers[MAX_STEAM_LOBBIES] = { 0 };
 
-void *steamIDRemote[MAXPLAYERS]= {NULL,NULL,NULL,NULL};
+void *steamIDRemote[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
 
 char currentLobbyName[32] = { 0 };
-Uint32 currentSvFlags=0;
+Uint32 currentSvFlags = 0;
 #ifdef STEAMWORKS
 ELobbyType currentLobbyType = k_ELobbyTypePrivate;
 #endif
-bool stillConnectingToLobby=FALSE;
+bool stillConnectingToLobby = FALSE;
 
 bool serverLoadingSaveGame = FALSE; // determines whether lobbyToConnectTo is loading a savegame or not
 void *currentLobby = NULL; // CSteamID to the current game lobby
 void *lobbyToConnectTo = NULL; // CSteamID of the game lobby that user has been invited to
 void *steamIDGameServer = NULL; // CSteamID to the current game server
-uint32_t steamServerIP=0; // ipv4 address for the current game server
-uint16_t steamServerPort=0; // port number for the current game server
+uint32_t steamServerIP = 0; // ipv4 address for the current game server
+uint16_t steamServerPort = 0; // port number for the current game server
 char pchCmdLine[1024] = { 0 }; // for game join requests
 
 // menu stuff
@@ -374,7 +374,7 @@ void SteamServerClientWrapper::OnGameOverlayActivated(GameOverlayActivated_t *ca
 #endif
 
 	if (callback->m_bActive) {
-		pauseGame(2,MAXPLAYERS);
+		pauseGame(2, MAXPLAYERS);
 		SDL_SetRelativeMouseMode(SDL_FALSE); //Uncapture mouse. (Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
 		SDL_ShowCursor(SDL_TRUE); //(Workaround for OSX Steam's inability to display a mouse in the game overlay UI)
 	} else {
@@ -507,9 +507,9 @@ bool achievementUnlocked(const char *achName) {
 
 	// check internal achievement record
 	node_t *node;
-	for( node=steamAchievements.first; node!=NULL; node=node->next ) {
+	for( node = steamAchievements.first; node != NULL; node = node->next ) {
 		char *ach = (char *)node->element;
-		if( !strcmp(ach,achName) ) {
+		if( !strcmp(ach, achName) ) {
 			return TRUE;
 		}
 	}
@@ -536,11 +536,11 @@ void steamAchievement(const char *achName) {
 		SteamUserStats()->SetAchievement(achName);
 		SteamUserStats()->StoreStats();
 
-		char *ach = (char *) malloc(sizeof(char)*(strlen(achName)+1));
-		strcpy(ach,achName);
+		char *ach = (char *) malloc(sizeof(char) * (strlen(achName) + 1));
+		strcpy(ach, achName);
 		node_t *node = list_AddNodeFirst(&steamAchievements);
 		node->element = ach;
-		node->size = sizeof(char)*(strlen(achName)+1);
+		node->size = sizeof(char) * (strlen(achName) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
 
@@ -556,24 +556,24 @@ void steamAchievement(const char *achName) {
 -------------------------------------------------------------------------------*/
 
 void steamAchievementClient(int player, const char *achName) {
-	if( multiplayer==CLIENT ) {
+	if( multiplayer == CLIENT ) {
 		return;
 	}
 
-	if( player<0 || player>=MAXPLAYERS ) {
+	if( player < 0 || player >= MAXPLAYERS ) {
 		return;
-	} else if( player==0 ) {
+	} else if( player == 0 ) {
 		steamAchievement(achName);
 	} else {
-		if( client_disconnected[player] || multiplayer==SINGLE ) {
+		if( client_disconnected[player] || multiplayer == SINGLE ) {
 			return;
 		}
-		strcpy((char *)net_packet->data,"SACH");
-		strcpy((char *)(&net_packet->data[4]),achName);
-		net_packet->address.host = net_clients[player-1].host;
-		net_packet->address.port = net_clients[player-1].port;
-		net_packet->len = 4+strlen(achName)+1;
-		sendPacketSafe(net_sock, -1, net_packet, player-1);
+		strcpy((char *)net_packet->data, "SACH");
+		strcpy((char *)(&net_packet->data[4]), achName);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 4 + strlen(achName) + 1;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 }
 
@@ -728,12 +728,12 @@ void steam_OnLobbyCreated( void *pCallback, bool bIOFailure ) {
 
 		// set lobby server flags
 		char svFlagsChar[16];
-		snprintf(svFlagsChar,15,"%d",svFlags);
+		snprintf(svFlagsChar, 15, "%d", svFlags);
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "svFlags", svFlagsChar); //TODO: Bugger void pointer!
 
 		// set load game status on lobby
 		char loadingsavegameChar[16];
-		snprintf(loadingsavegameChar,15,"%d",loadingsavegame);
+		snprintf(loadingsavegameChar, 15, "%d", loadingsavegame);
 		SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "loadingsavegame", loadingsavegameChar); //TODO: Bugger void pointer!
 	} else {
 		printlog( "warning: failed to create steam lobby.\n");
@@ -755,7 +755,7 @@ void processLobbyInvite() {
 	if ( loadingSaveGameChar && loadingSaveGameChar[0] ) {
 		Uint32 temp32 = atoi(loadingSaveGameChar);
 		Uint32 gameKey = getSaveGameUniqueGameKey();
-		if ( temp32 && temp32==gameKey ) {
+		if ( temp32 && temp32 == gameKey ) {
 			loadingsavegame = temp32;
 			buttonLoadGame(NULL);
 		} else if ( !temp32 ) {
@@ -791,7 +791,7 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 	// return to a state where we can join the lobby
 	if ( !intro ) {
 		buttonEndGameConfirm(NULL);
-	} else if ( multiplayer!=SINGLE ) {
+	} else if ( multiplayer != SINGLE ) {
 		buttonDisconnect(NULL);
 	}
 
@@ -799,25 +799,25 @@ void steam_OnGameJoinRequested( void *pCallback ) {
 	if ( subwindow ) {
 		if ( score_window ) {
 			// reset class loadout
-			stats[0]->sex=static_cast<sex_t>(0);
-			stats[0]->appearance=0;
-			strcpy(stats[0]->name,"");
+			stats[0]->sex = static_cast<sex_t>(0);
+			stats[0]->appearance = 0;
+			strcpy(stats[0]->name, "");
 			stats[0]->type = HUMAN;
 			client_classes[0] = 0;
 			stats[0]->clearStats();
 			initClass(0);
 		}
-		score_window=0;
-		lobby_window=FALSE;
-		settings_window=FALSE;
-		charcreation_step=0;
-		subwindow=0;
+		score_window = 0;
+		lobby_window = FALSE;
+		settings_window = FALSE;
+		charcreation_step = 0;
+		subwindow = 0;
 		if ( SDL_IsTextInputActive() ) {
 			SDL_StopTextInput();
 		}
 	}
 	list_FreeAll(&button_l);
-	deleteallbuttons=TRUE;
+	deleteallbuttons = TRUE;
 
 	if ( lobbyToConnectTo ) {
 		cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Utter bodge.

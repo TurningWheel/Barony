@@ -530,7 +530,7 @@ void listDeconstructor(void *data);
 Entity *newEntity(Sint32 sprite, Uint32 pos, list_t *entlist);
 button_t *newButton(void);
 light_t *newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-string_t *newString(list_t *list, Uint32 color, char *content,...);
+string_t *newString(list_t *list, Uint32 color, char *content, ...);
 pathnode_t *newPathnode(list_t *list, Sint32 x, Sint32 y, pathnode_t *parent, Sint8 pos);
 
 // function prototypes for draw.c:

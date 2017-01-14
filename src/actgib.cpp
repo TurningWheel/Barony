@@ -34,23 +34,23 @@
 
 void actGib(Entity *my) {
 	// don't update gibs that have no velocity
-	if( my->z==8 && fabs(GIB_VELX)<.01 && fabs(GIB_VELY)<.01 ) {
+	if( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	// remove gibs that have exceeded their life span
-	if( my->ticks>GIB_LIFESPAN && GIB_LIFESPAN ) {
+	if( my->ticks > GIB_LIFESPAN && GIB_LIFESPAN ) {
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	// horizontal motion
-	my->yaw += sqrt(GIB_VELX*GIB_VELX + GIB_VELY*GIB_VELY)*.05;
+	my->yaw += sqrt(GIB_VELX * GIB_VELX + GIB_VELY * GIB_VELY) * .05;
 	my->x += GIB_VELX;
 	my->y += GIB_VELY;
-	GIB_VELX = GIB_VELX*.95;
-	GIB_VELY = GIB_VELY*.95;
+	GIB_VELX = GIB_VELX * .95;
+	GIB_VELY = GIB_VELY * .95;
 
 	// gravity
 	if( my->z < 8 ) {
@@ -58,15 +58,15 @@ void actGib(Entity *my) {
 		my->z += GIB_VELZ;
 		my->roll += 0.1;
 	} else {
-		if( my->x >= 0 && my->y >= 0 && my->x < map.width<<4 && my->y < map.height<<4 ) {
-			if( !map.tiles[(int)(floor(my->y/16)*MAPLAYERS+floor(my->x/16)*MAPLAYERS*map.height)] ) {
+		if( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 ) {
+			if( !map.tiles[(int)(floor(my->y / 16)*MAPLAYERS + floor(my->x / 16)*MAPLAYERS * map.height)] ) {
 				GIB_VELZ += GIB_GRAVITY;
 				my->z += GIB_VELZ;
 				my->roll += 0.1;
 			} else {
-				GIB_VELZ=0;
+				GIB_VELZ = 0;
 				my->z = 8;
-				my->roll = PI/2.0;
+				my->roll = PI / 2.0;
 			}
 		} else {
 			GIB_VELZ += GIB_GRAVITY;
@@ -95,12 +95,12 @@ Entity *spawnGib(Entity *parentent) {
 	Entity *entity;
 	Stat *parentstats;
 	double vel;
-	int gibsprite=5;
+	int gibsprite = 5;
 
 	if( parentent == NULL ) {
 		return NULL;
 	}
-	if( (parentstats=parentent->getStats())!=NULL ) {
+	if( (parentstats = parentent->getStats()) != NULL ) {
 		switch( gibtype[(int)parentstats->type] ) {
 			case 0:
 				return NULL;
@@ -111,7 +111,7 @@ Entity *spawnGib(Entity *parentent) {
 				gibsprite = 211;
 				break;
 			case 3:
-				if( parentent->sprite==210 ) {
+				if( parentent->sprite == 210 ) {
 					gibsprite = 211;
 				} else {
 					gibsprite = 215;
@@ -123,19 +123,19 @@ Entity *spawnGib(Entity *parentent) {
 		}
 	}
 
-	entity = newEntity(gibsprite,1,map.entities);
+	entity = newEntity(gibsprite, 1, map.entities);
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
 	entity->parent = parentent->uid;
 	entity->sizex = 2;
 	entity->sizey = 2;
-	entity->yaw = (rand()%360)*PI/180.0;
-	entity->pitch = (rand()%360)*PI/180.0;
-	entity->roll = (rand()%360)*PI/180.0;
-	vel = (rand()%10)/10.f;
-	entity->vel_x = vel*cos(entity->yaw);
-	entity->vel_y = vel*sin(entity->yaw);
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->pitch = (rand() % 360) * PI / 180.0;
+	entity->roll = (rand() % 360) * PI / 180.0;
+	vel = (rand() % 10) / 10.f;
+	entity->vel_x = vel * cos(entity->yaw);
+	entity->vel_y = vel * sin(entity->yaw);
 	entity->vel_z = -.5;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actGib;
@@ -156,18 +156,18 @@ Entity *spawnGib(Entity *parentent) {
 Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 	double vel;
 
-	Entity *entity = newEntity(sprite,1,map.entities);
+	Entity *entity = newEntity(sprite, 1, map.entities);
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
 	entity->sizex = 2;
 	entity->sizey = 2;
-	entity->yaw = (rand()%360)*PI/180.0;
-	entity->pitch = (rand()%360)*PI/180.0;
-	entity->roll = (rand()%360)*PI/180.0;
-	vel = (rand()%10)/10.f;
-	entity->vel_x = vel*cos(entity->yaw);
-	entity->vel_y = vel*sin(entity->yaw);
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->pitch = (rand() % 360) * PI / 180.0;
+	entity->roll = (rand() % 360) * PI / 180.0;
+	vel = (rand() % 10) / 10.f;
+	entity->vel_x = vel * cos(entity->yaw);
+	entity->vel_y = vel * sin(entity->yaw);
 	entity->vel_z = -.5;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actGib;
@@ -183,21 +183,21 @@ void serverSpawnGibForClient(Entity *gib) {
 	if( !gib ) {
 		return;
 	}
-	if( multiplayer==SERVER ) {
-		for( c=1; c<MAXPLAYERS; c++ ) {
+	if( multiplayer == SERVER ) {
+		for( c = 1; c < MAXPLAYERS; c++ ) {
 			if( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data,"SPGB");
-			SDLNet_Write16((Sint16)gib->x,&net_packet->data[4]);
-			SDLNet_Write16((Sint16)gib->y,&net_packet->data[6]);
-			SDLNet_Write16((Sint16)gib->z,&net_packet->data[8]);
-			SDLNet_Write16((Sint16)gib->sprite,&net_packet->data[10]);
+			strcpy((char *)net_packet->data, "SPGB");
+			SDLNet_Write16((Sint16)gib->x, &net_packet->data[4]);
+			SDLNet_Write16((Sint16)gib->y, &net_packet->data[6]);
+			SDLNet_Write16((Sint16)gib->z, &net_packet->data[8]);
+			SDLNet_Write16((Sint16)gib->sprite, &net_packet->data[10]);
 			net_packet->data[12] = gib->flags[SPRITE];
-			net_packet->address.host = net_clients[c-1].host;
-			net_packet->address.port = net_clients[c-1].port;
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 13;
-			sendPacketSafe(net_sock, -1, net_packet, c-1);
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
 }

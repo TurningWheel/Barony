@@ -53,8 +53,8 @@ void actFountain(Entity *my) {
 	if( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) ) {
 #define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
-		if( FOUNTAIN_AMBIENCE<=0 ) {
-			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND*6;
+		if( FOUNTAIN_AMBIENCE <= 0 ) {
+			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND * 6;
 			playSoundEntityLocal(my, 135, 32 );
 		}
 		entity = spawnGib(my);
@@ -66,9 +66,9 @@ void actFountain(Entity *my) {
 		entity->flags[UPDATENEEDED] = FALSE;
 		entity->skill[4] = 7;
 		entity->sprite = 4;
-		entity->yaw = (rand()%360)*PI/180.0;
-		entity->pitch = (rand()%360)*PI/180.0;
-		entity->roll = (rand()%360)*PI/180.0;
+		entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->pitch = (rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
 		entity->vel_x = 0;
 		entity->vel_y = 0;
 		entity->vel_z = .25;
@@ -76,7 +76,7 @@ void actFountain(Entity *my) {
 	}
 
 	// the rest of the function is server-side.
-	if( multiplayer==CLIENT ) {
+	if( multiplayer == CLIENT ) {
 		return;
 	}
 
@@ -90,7 +90,7 @@ void actFountain(Entity *my) {
 	//Using the fountain (TODO: Monsters using it?).
 	int i;
 	for (i = 0; i < MAXPLAYERS; ++i) {
-		if ( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 			if (inrange[i]) { //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 				//First check that it's not depleted.
 				if (my->skill[0] == 0) {
@@ -109,7 +109,7 @@ void actFountain(Entity *my) {
 							playSoundEntity(players[i]->entity, 52, 64);
 
 							//Spawn succubus.
-							Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 							messagePlayerColor(i, color, language[469]);
 							summonMonster(SUCCUBUS, my->x, my->y);
 							break;
@@ -123,15 +123,15 @@ void actFountain(Entity *my) {
 						case 2: {
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
 							messagePlayer(i, language[470]);
-							Item *item = newItem(static_cast<ItemType>(POTION_WATER+my->skill[3]), static_cast<Status>(4), 0,1,0,FALSE,NULL);
-							useItem(item,i);
+							Item *item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, FALSE, NULL);
+							useItem(item, i);
 							// Long live the mystical fountain of TODO.
 							break;
 						}
 						case 3: {
 							// bless equipment
 							playSoundEntity(players[i]->entity, 52, 64);
-							Uint32 textcolor = SDL_MapRGB(mainsurface->format,0,255,255);
+							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayer(i, language[473]);
 							if( stats[i]->helmet ) {
@@ -164,12 +164,12 @@ void actFountain(Entity *my) {
 							if( stats[i]->mask ) {
 								stats[i]->mask->beatitude++;
 							}
-							if( multiplayer==SERVER && i>0 ) {
-								strcpy((char *)net_packet->data,"BLES");
-								net_packet->address.host = net_clients[i-1].host;
-								net_packet->address.port = net_clients[i-1].port;
+							if( multiplayer == SERVER && i > 0 ) {
+								strcpy((char *)net_packet->data, "BLES");
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
 								net_packet->len = 4;
-								sendPacketSafe(net_sock, -1, net_packet, i-1);
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
 							}
 							break;
 						}

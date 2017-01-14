@@ -33,8 +33,8 @@ int textscroll = 0;
 int attributespage = 0;
 Item *invitems[4];
 Item *invitemschest[4];
-int inventorycategory=7; // inventory window defaults to wildcard
-int itemscroll=0;
+int inventorycategory = 7; // inventory window defaults to wildcard
+int itemscroll = 0;
 view_t camera_charsheet;
 
 SDL_Surface *font12x12_small_bmp = NULL;
@@ -133,12 +133,12 @@ bool auto_appraise_new_items = FALSE;
 
 bool loadInterfaceResources() {
 	//General GUI images.
-	font12x12_small_bmp=loadImage("images/system/font12x12_small.png");
-	backdrop_bmp=loadImage("images/system/backdrop.png");
-	button_bmp=loadImage("images/system/ButtonHighlighted.png");
-	smallbutton_bmp=loadImage("images/system/SmallButtonHighlighted.png");
-	invup_bmp=loadImage("images/system/InventoryUpHighlighted.png");
-	invdown_bmp=loadImage("images/system/InventoryDownHighlighted.png");
+	font12x12_small_bmp = loadImage("images/system/font12x12_small.png");
+	backdrop_bmp = loadImage("images/system/backdrop.png");
+	button_bmp = loadImage("images/system/ButtonHighlighted.png");
+	smallbutton_bmp = loadImage("images/system/SmallButtonHighlighted.png");
+	invup_bmp = loadImage("images/system/InventoryUpHighlighted.png");
+	invdown_bmp = loadImage("images/system/InventoryDownHighlighted.png");
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
@@ -157,13 +157,13 @@ bool loadInterfaceResources() {
 	spell_list_gui_slot_bmp = loadImage("images/system/spellListSlot.png");
 	spell_list_gui_slot_highlighted_bmp = loadImage("images/system/spellListSlotHighlighted.png");
 	sustained_spell_generic_icon = loadImage("images/system/magic/channeled_spell.png");
-	inventory_bmp=loadImage("images/system/Inventory.png");
-	inventoryoption_bmp=loadImage("images/system/InventoryOption.png");
+	inventory_bmp = loadImage("images/system/Inventory.png");
+	inventoryoption_bmp = loadImage("images/system/InventoryOption.png");
 	inventory_mode_item_img = loadImage("images/system/inventory_mode_item.png");
 	inventory_mode_item_highlighted_img = loadImage("images/system/inventory_mode_item_highlighted.png");
 	inventory_mode_spell_img = loadImage("images/system/inventory_mode_spell.png");
 	inventory_mode_spell_highlighted_img = loadImage("images/system/inventory_mode_spell_highlighted.png");
-	equipped_bmp=loadImage("images/system/Equipped.png");
+	equipped_bmp = loadImage("images/system/Equipped.png");
 	//sky_bmp=scaleSurface(loadImage("images/system/sky.png"), 1280*(xres/320.0),468*(xres/320.0));
 	/*category_bmp[0]=loadImage("images/system/Weapon.png");
 	category_bmp[1]=loadImage("images/system/Armor.png");
@@ -277,16 +277,16 @@ void freeInterfaceResources() {
 	if (sustained_spell_generic_icon) {
 		SDL_FreeSurface(sustained_spell_generic_icon);
 	}
-	if(invup_bmp!=NULL) {
+	if(invup_bmp != NULL) {
 		SDL_FreeSurface(invup_bmp);
 	}
-	if(invdown_bmp!=NULL) {
+	if(invdown_bmp != NULL) {
 		SDL_FreeSurface(invdown_bmp);
 	}
-	if(inventory_bmp!=NULL) {
+	if(inventory_bmp != NULL) {
 		SDL_FreeSurface(inventory_bmp);
 	}
-	if(inventoryoption_bmp!=NULL) {
+	if(inventoryoption_bmp != NULL) {
 		SDL_FreeSurface(inventoryoption_bmp);
 	}
 	if (inventory_mode_item_img) {
@@ -301,13 +301,13 @@ void freeInterfaceResources() {
 	if (inventory_mode_spell_highlighted_img) {
 		SDL_FreeSurface(inventory_mode_spell_highlighted_img);
 	}
-	if(button_bmp!=NULL) {
+	if(button_bmp != NULL) {
 		SDL_FreeSurface(button_bmp);
 	}
-	if(smallbutton_bmp!=NULL) {
+	if(smallbutton_bmp != NULL) {
 		SDL_FreeSurface(smallbutton_bmp);
 	}
-	if(equipped_bmp!=NULL) {
+	if(equipped_bmp != NULL) {
 		SDL_FreeSurface(equipped_bmp);
 	}
 	if(inventoryChest_bmp != NULL) {
@@ -553,7 +553,7 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 -------------------------------------------------------------------------------*/
 
 void saveCommand(char *content) {
-	newString(&command_history,0xFFFFFFFF,content);
+	newString(&command_history, 0xFFFFFFFF, content);
 }
 
 /*-------------------------------------------------------------------------------
@@ -572,26 +572,26 @@ int loadConfig(char *filename) {
 	FILE *fp;
 	bool mallocd = FALSE;
 
-	printlog("Loading config '%s'...\n",filename);
+	printlog("Loading config '%s'...\n", filename);
 
-	if( strstr(filename,".cfg") == NULL ) {
+	if( strstr(filename, ".cfg") == NULL ) {
 		char *filename2 = filename;
-		filename = (char *) malloc(sizeof(char)*256);
-		strcpy(filename,filename2);
+		filename = (char *) malloc(sizeof(char) * 256);
+		strcpy(filename, filename2);
 		mallocd = TRUE;
-		strcat(filename,".cfg");
+		strcat(filename, ".cfg");
 	}
 
 	// open the config file
-	if( (fp = fopen(filename,"rb")) == NULL ) {
+	if( (fp = fopen(filename, "rb")) == NULL ) {
 		printlog("warning: config file '%s' does not exist!\n", filename);
 		defaultConfig(); //Set up the game with the default config.
 		return 0;
 	}
 
 	// read commands from it
-	while( fgets(str,1024,fp) != NULL ) {
-		if( str[0] != '#' && str[0]!='\n' && str[0]!='\r' ) { // if this line is not white space or a comment
+	while( fgets(str, 1024, fp) != NULL ) {
+		if( str[0] != '#' && str[0] != '\n' && str[0] != '\r' ) { // if this line is not white space or a comment
 			// execute command
 			consoleCommand(str);
 		}
@@ -619,61 +619,61 @@ int saveConfig(char *filename) {
 	int c;
 	bool mallocd = FALSE;
 
-	printlog("Saving config '%s'...\n",filename);
+	printlog("Saving config '%s'...\n", filename);
 
-	if( strstr(filename,".cfg") == NULL ) {
+	if( strstr(filename, ".cfg") == NULL ) {
 		char *filename2 = filename;
-		filename = (char *) malloc(sizeof(char)*256);
-		strcpy(filename,filename2);
+		filename = (char *) malloc(sizeof(char) * 256);
+		strcpy(filename, filename2);
 		mallocd = TRUE;
-		strcat(filename,".cfg");
+		strcat(filename, ".cfg");
 	}
 
 	// open the config file
-	if( (fp = fopen(filename,"wb")) == NULL ) {
+	if( (fp = fopen(filename, "wb")) == NULL ) {
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
 		return 1;
 	}
 
 	// write config header
-	fprintf(fp,"# %s\n",filename);
-	fprintf(fp,"# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n",tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
+	fprintf(fp, "# %s\n", filename);
+	fprintf(fp, "# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
 
 	// write contents of config
-	fprintf(fp,"/lang %s\n",languageCode);
-	fprintf(fp,"/res %dx%d\n",xres,yres);
-	fprintf(fp,"/gamma %3.3f\n",vidgamma);
-	fprintf(fp,"/fov %d\n",fov);
-	fprintf(fp,"/svflags %d\n",svFlags);
+	fprintf(fp, "/lang %s\n", languageCode);
+	fprintf(fp, "/res %dx%d\n", xres, yres);
+	fprintf(fp, "/gamma %3.3f\n", vidgamma);
+	fprintf(fp, "/fov %d\n", fov);
+	fprintf(fp, "/svflags %d\n", svFlags);
 	if( lastname != "" ) {
-		fprintf(fp,"/lastname %s\n",lastname.c_str());
+		fprintf(fp, "/lastname %s\n", lastname.c_str());
 	}
 	if( smoothlighting ) {
-		fprintf(fp,"/smoothlighting\n");
+		fprintf(fp, "/smoothlighting\n");
 	}
 	if( fullscreen ) {
-		fprintf(fp,"/fullscreen\n");
+		fprintf(fp, "/fullscreen\n");
 	}
 	if( shaking ) {
-		fprintf(fp,"/shaking\n");
+		fprintf(fp, "/shaking\n");
 	}
 	if( bobbing ) {
-		fprintf(fp,"/bobbing\n");
+		fprintf(fp, "/bobbing\n");
 	}
-	fprintf(fp,"/sfxvolume %d\n",sfxvolume);
-	fprintf(fp,"/musvolume %d\n",musvolume);
+	fprintf(fp, "/sfxvolume %d\n", sfxvolume);
+	fprintf(fp, "/musvolume %d\n", musvolume);
 	for (c = 0; c < NUMIMPULSES; c++) {
 		fprintf(fp, "/bind %d IN_%s\n", impulses[c], impulsenames[c]);
 	}
 	for (c = 0; c < NUM_JOY_IMPULSES; c++) {
 		fprintf(fp, "/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
 	}
-	fprintf(fp,"/mousespeed %d\n",(int)(mousespeed));
+	fprintf(fp, "/mousespeed %d\n", (int)(mousespeed));
 	if( reversemouse ) {
-		fprintf(fp,"/reversemouse\n");
+		fprintf(fp, "/reversemouse\n");
 	}
 	if( smoothmouse ) {
-		fprintf(fp,"/smoothmouse\n");
+		fprintf(fp, "/smoothmouse\n");
 	}
 	if (last_ip[0]) {
 		fprintf(fp, "/ip %s\n", last_ip);
@@ -785,9 +785,9 @@ hotbar_slot_t *getHotbar(int x, int y) {
 -------------------------------------------------------------------------------*/
 
 const char *getInputName(Uint32 scancode) {
-	if( scancode>=0 && scancode<283 ) {
+	if( scancode >= 0 && scancode < 283 ) {
 		return SDL_GetKeyName(SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode)));
-	} else if( scancode<299 ) {
+	} else if( scancode < 299 ) {
 		switch( scancode ) {
 			case 283:
 				return "Mouse 0";
@@ -824,7 +824,7 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown key";
 		}
-	} else if( scancode<301 ) { //Game Controller triggers.
+	} else if( scancode < 301 ) { //Game Controller triggers.
 		switch( scancode ) {
 			case 299:
 				return "Left Trigger";
@@ -833,7 +833,7 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown trigger";
 		}
-	} else if( scancode<317 ) { //Game controller buttons.
+	} else if( scancode < 317 ) { //Game controller buttons.
 		return SDL_GameControllerGetStringForButton(static_cast<SDL_GameControllerButton>(scancode - 301));
 	} else {
 		return "Unknown key";

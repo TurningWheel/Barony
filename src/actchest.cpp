@@ -49,12 +49,12 @@ void actChest(Entity *my) {
 	}
 
 	CHEST_AMBIENCE--;
-	if( CHEST_AMBIENCE<=0 ) {
-		CHEST_AMBIENCE = TICKS_PER_SECOND*30;
+	if( CHEST_AMBIENCE <= 0 ) {
+		CHEST_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 64 );
 	}
 
-	if( multiplayer==CLIENT ) {
+	if( multiplayer == CLIENT ) {
 		return;
 	}
 
@@ -62,10 +62,10 @@ void actChest(Entity *my) {
 
 	if (!CHEST_INIT) {
 		CHEST_INIT = 1;
-		CHEST_HEALTH = 90+rand()%20;
+		CHEST_HEALTH = 90 + rand() % 20;
 		CHEST_MAXHEALTH = CHEST_HEALTH;
-		if (rand()%10 == 0) { // 10% chance
-			CHEST_LOCKED=1;
+		if (rand() % 10 == 0) { // 10% chance
+			CHEST_LOCKED = 1;
 		}
 
 		node_t *node = NULL;
@@ -79,8 +79,8 @@ void actChest(Entity *my) {
 		int itemcount = 0;
 
 		int chesttype = 0;
-		if( strcmp(map.name,"The Mystic Library") ) {
-			chesttype = rand()%8;
+		if( strcmp(map.name, "The Mystic Library") ) {
+			chesttype = rand() % 8;
 		} else {
 			chesttype = 6; // magic chest
 		}
@@ -89,51 +89,51 @@ void actChest(Entity *my) {
 			//TODO: Make all applicable item additions work on a category based search?
 			case 0:
 				//Completely random.
-				itemcount = (rand()%5) + 1;
+				itemcount = (rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i) {
 					//And add the current entity to it.
 					int itemnum = rand() % NUMITEMS;
 					while (itemnum == SPELL_ITEM) {
 						itemnum = rand() % NUMITEMS;    //Keep trying until you don't get a spell.
 					}
-					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(static_cast<ItemType>(itemnum), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			case 1:
 				//Garbage chest
-				if (rand()%2) {
+				if (rand() % 2) {
 					//Empty.
 				} else {
 					//Some worthless garbage. Like a rock. //TODO: Sometimes spawn item 139, worthless piece of glass. Maybe go a step further and have a random amount of items, say 1 - 5, and they can be either rock or the worthless piece of glass or any other garbage.
-					newItem(GEM_ROCK, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(GEM_ROCK, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			case 2:
 				//Food.
 				//Items 152 - 158 are all food.
-				itemcount = (rand()%5) + 1;
+				itemcount = (rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i) {
-					newItem(static_cast<ItemType>(FOOD_BREAD + (rand()%7)), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(static_cast<ItemType>(FOOD_BREAD + (rand() % 7)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			case 3:
 				//Treasures, jewelry, gems 'n stuff.
-				itemcount = (rand()%5) + 1;
+				itemcount = (rand() % 5) + 1;
 				for (i = 0; i < itemcount; ++i) {
-					if( rand()%4 ) {
-						newItem(static_cast<ItemType>(GEM_GARNET + rand()%15), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					if( rand() % 4 ) {
+						newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 					} else {
-						newItem(GEM_GLASS, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+						newItem(GEM_GLASS, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 					}
 				}
 				//Random chance to spawn a ring or an amulet or some other jewelry.
-				if (rand()%2) {
-					if (rand()%2) {
+				if (rand() % 2) {
+					if (rand() % 2) {
 						//Spawn a ring.
-						newItem(static_cast<ItemType>(RING_ADORNMENT + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+						newItem(static_cast<ItemType>(RING_ADORNMENT + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 					} else {
 						//Spawn an amulet.
-						newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rand()%6), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+						newItem(static_cast<ItemType>(AMULET_SEXCHANGE + rand() % 6), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 					}
 				}
 				break;
@@ -141,20 +141,20 @@ void actChest(Entity *my) {
 				//Weapons, armor, stuff.
 				//Further break this down into either spawning only weapon(s), only armor(s), or a combo, like a set.
 
-				switch (rand()%3) { //TODO: Note, switch to rand()%4 if/when case 3 is implemented.
+				switch (rand() % 3) { //TODO: Note, switch to rand()%4 if/when case 3 is implemented.
 					case 0:
 						//Only a weapon. Items 0 - 16.
 					{
-						int item = rand()%18;
+						int item = rand() % 18;
 						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
 						if (item < 16)
 							//Almost every weapon.
 						{
-							newItem(static_cast<ItemType>(rand()%17), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else
 							//Crossbow.
 						{
-							newItem(CROSSBOW, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 					}
 					break;
@@ -167,39 +167,39 @@ void actChest(Entity *my) {
 						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						 * 16 - 19 are the hats & helmets, items 40 - 43
 						 */
-						int item = rand()%20;
+						int item = rand() % 20;
 						if (item <= 1)
 							//Steel shields. Items 17 & 18.
 						{
-							newItem(static_cast<ItemType>(17 + rand()%2), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(17 + rand() % 2), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else if (item <= 5)
 							//Gauntlets. Items 20 - 23.
 						{
-							newItem(static_cast<ItemType>(20 + rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else if (item <= 15)
 							//Boots & shirts. Items 28 - 37.
 						{
-							newItem(static_cast<ItemType>(28 + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else if (item <= 10)
 							//Hats & helmets. Items 40 - 43.
 						{
-							newItem(static_cast<ItemType>(40+rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 					}
 					break;
 					case 2:
 						//A weapon and an armor.
 					{
-						int item = rand()%18;
+						int item = rand() % 18;
 						//Since the weapons are not a continuous set, check to see if the weapon is part of the continuous set. If it is not, move on to the next block. In this case, there's only one weapon that is not part of the continous set: the crossbow.
 						if (item < 16)
 							//Almost every weapon.
 						{
-							newItem(static_cast<ItemType>(rand()%17), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else
 							//Crossbow.
 						{
-							newItem(static_cast<ItemType>(19), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(19), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 
 						/*
@@ -208,23 +208,23 @@ void actChest(Entity *my) {
 						 * 6 - 15 are the boots & shirts (as in, breastplates and all variants), items 28 - 37.
 						 * 16 - 19 are the hats & helmets, items 40 - 43
 						 */
-						item = rand()%20;
+						item = rand() % 20;
 						if (item <= 1)
 							//Steel shields. Items 17 & 18.
 						{
-							newItem(static_cast<ItemType>(17 + rand()%2), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(17 + rand() % 2), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else if (item <= 5)
 							//Gauntlets. Items 20 - 23.
 						{
-							newItem(static_cast<ItemType>(20 + rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(20 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else if (item <= 15)
 							//Boots & shirts. Items 28 - 37.
 						{
-							newItem(static_cast<ItemType>(28 + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(28 + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						} else if (item <= 10)
 							//Hats & helmets. Items 40 - 43.
 						{
-							newItem(static_cast<ItemType>(40+rand()%4), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(40 + rand() % 4), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 					}
 					break;
@@ -235,9 +235,9 @@ void actChest(Entity *my) {
 				break;
 			case 5:
 				//Tools.
-				itemcount = 1 + rand()%2;
+				itemcount = 1 + rand() % 2;
 				for (i = 0; i < itemcount; ++i) {
-					newItem(static_cast<ItemType>(TOOL_PICKAXE+rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(static_cast<ItemType>(TOOL_PICKAXE + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			case 6:
@@ -251,64 +251,64 @@ void actChest(Entity *my) {
 				 * * Staff chest. Staff or 2.
 				 * * Wizard's chest, which will contain 1-2 scrolls, a magic book, a staff, and either a wizard/magician/whatever implement of some sort or a piece of armor.
 				 */
-				int magic_type = rand()%4;
+				int magic_type = rand() % 4;
 
 				switch (magic_type) {
 					case 0:
 						//Have 3-5 scrolls.
-						itemcount = 3 + (rand()%3);
+						itemcount = 3 + (rand() % 3);
 						for (i = 0; i < itemcount; ++i) {
-							newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 						break;
 					case 1:
 						//Have 1-3 books.
-						itemcount = 1 + (rand()%3);
+						itemcount = 1 + (rand() % 3);
 						for (i = 0; i < itemcount; ++i) {
-							newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand()%22), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 						break;
 					case 2:
 						//A staff.
-						newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+						newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						break;
 					case 3:
 						//So spawn several items at once. A wizard's chest!
 
 						//First the scrolls (1 - 2).
-						itemcount = 1 + rand()%2;
+						itemcount = 1 + rand() % 2;
 						for (i = 0; i < itemcount; ++i) {
-							newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand()%12), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+							newItem(static_cast<ItemType>(SCROLL_IDENTIFY + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 						}
 
-						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand()%22), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 
-						newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand()%10), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+						newItem(static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 
-						switch (rand()%6) {
+						switch (rand() % 6) {
 							case 0:
 								//A cloak. Item 24.
-								newItem(CLOAK, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+								newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 								break;
 							case 1:
 								//A cloak of magic resistance. Item 25.
-								newItem(CLOAK_MAGICREFLECTION, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+								newItem(CLOAK_MAGICREFLECTION, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 								break;
 							case 2:
 								//A cloak of invisibility. Item 26.
-								newItem(CLOAK_INVISIBILITY, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+								newItem(CLOAK_INVISIBILITY, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 								break;
 							case 3:
 								//A cloak of protection. Item 27.
-								newItem(CLOAK_PROTECTION, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+								newItem(CLOAK_PROTECTION, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 								break;
 							case 4:
 								//A phyregian's hat. Item 38.
-								newItem(HAT_PHRYGIAN, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+								newItem(HAT_PHRYGIAN, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 								break;
 							case 5:
 								//A wizard's hat. Item 39.
-								newItem(HAT_WIZARD, static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+								newItem(HAT_WIZARD, static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 								break;
 						}
 						break;
@@ -318,9 +318,9 @@ void actChest(Entity *my) {
 			case 7:
 				//Potions.
 				//Items 50 - 64 are potions.
-				itemcount = (rand()%3) + 1;
+				itemcount = (rand() % 3) + 1;
 				for (i = 0; i < itemcount; ++i) {
-					newItem(static_cast<ItemType>(POTION_WATER + (rand()%15)), static_cast<Status>(WORN+rand()%3), 0, 1, rand(), FALSE, inventory);
+					newItem(static_cast<ItemType>(POTION_WATER + (rand() % 15)), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), FALSE, inventory);
 				}
 				break;
 			default:
@@ -335,36 +335,36 @@ void actChest(Entity *my) {
 	node_t *node = NULL;
 	Item *item = NULL;
 
-	if( CHEST_HEALTH<=0 ) {
+	if( CHEST_HEALTH <= 0 ) {
 		// the chest busts open, drops some items randomly, then destroys itself.
 		node_t *nextnode;
-		for( node=inventory->first; node!=NULL; node=nextnode ) {
+		for( node = inventory->first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
 			item = (Item *)node->element;
-			if( rand()%2==0 ) {
+			if( rand() % 2 == 0 ) {
 				dropItemMonster(item, my, NULL);
 			}
 		}
 
 		// wood chunk particles
 		int c;
-		for( c=0; c<10; c++ ) {
+		for( c = 0; c < 10; c++ ) {
 			Entity *entity = spawnGib(my);
 			entity->flags[INVISIBLE] = FALSE;
 			entity->sprite = 187; // Splinter.vox
-			entity->x = floor(my->x/16)*16+8;
-			entity->y = floor(my->y/16)*16+8;
-			entity->z = -7+rand()%14;
-			entity->yaw = (rand()%360)*PI/180.0;
-			entity->pitch = (rand()%360)*PI/180.0;
-			entity->roll = (rand()%360)*PI/180.0;
-			entity->vel_x = cos(entity->yaw)*(0.5+(rand()%100)/100.f);
-			entity->vel_y = sin(entity->yaw)*(0.5+(rand()%100)/100.f);
+			entity->x = floor(my->x / 16) * 16 + 8;
+			entity->y = floor(my->y / 16) * 16 + 8;
+			entity->z = -7 + rand() % 14;
+			entity->yaw = (rand() % 360) * PI / 180.0;
+			entity->pitch = (rand() % 360) * PI / 180.0;
+			entity->roll = (rand() % 360) * PI / 180.0;
+			entity->vel_x = cos(entity->yaw) * (0.5 + (rand() % 100) / 100.f);
+			entity->vel_y = sin(entity->yaw) * (0.5 + (rand() % 100) / 100.f);
 			entity->vel_z = -.25;
 			entity->fskill[3] = 0.04;
 			serverSpawnGibForClient(entity);
 		}
-		playSoundEntity(my,177,64);
+		playSoundEntity(my, 177, 64);
 
 		// remove chest entities
 		Entity *parent = uidToEntity(my->parent);
@@ -387,16 +387,16 @@ void actChest(Entity *my) {
 	}
 
 	//Using the chest (TODO: Monsters using it?).
-	int chestclicked=-1;
+	int chestclicked = -1;
 	for (i = 0; i < MAXPLAYERS; ++i) {
-		if ( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 			if (inrange[i]) {
 				chestclicked = i;
 			}
 		}
 	}
 	if( CHEST_LIDCLICKED ) {
-		chestclicked = CHEST_LIDCLICKED-1;
+		chestclicked = CHEST_LIDCLICKED - 1;
 		CHEST_LIDCLICKED = 0;
 	}
 	if( chestclicked >= 0 ) {
@@ -413,20 +413,20 @@ void actChest(Entity *my) {
 					net_packet->address.host = net_clients[chestclicked - 1].host;
 					net_packet->address.port = net_clients[chestclicked - 1].port;
 					net_packet->len = 8;
-					sendPacketSafe(net_sock, -1, net_packet, chestclicked-1);
+					sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 					for (node = inventory->first; node != NULL; node = node->next) {
 						item = (Item *) node->element;
-						strcpy((char *)net_packet->data,"CITM"); //Chest item.
-						SDLNet_Write32((Uint32)item->type,&net_packet->data[4]);
-						SDLNet_Write32((Uint32)item->status,&net_packet->data[8]);
-						SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[12]);
-						SDLNet_Write32((Uint32)item->count,&net_packet->data[16]);
-						SDLNet_Write32((Uint32)item->appearance,&net_packet->data[20]);
+						strcpy((char *)net_packet->data, "CITM"); //Chest item.
+						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+						SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+						SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 						net_packet->data[24] = item->identified;
-						net_packet->address.host = net_clients[chestclicked-1].host;
-						net_packet->address.port = net_clients[chestclicked-1].port;
+						net_packet->address.host = net_clients[chestclicked - 1].host;
+						net_packet->address.port = net_clients[chestclicked - 1].port;
 						net_packet->len = 25;
-						sendPacketSafe(net_sock, -1, net_packet, chestclicked-1);
+						sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 					}
 				} else {
 					shootmode = FALSE;
@@ -443,11 +443,11 @@ void actChest(Entity *my) {
 			} else {
 				messagePlayer(chestclicked, language[460]);
 				if (CHEST_OPENER != 0) {
-					strcpy((char *)net_packet->data,"CCLS"); //Chest close.
-					net_packet->address.host = net_clients[CHEST_OPENER-1].host;
-					net_packet->address.port = net_clients[CHEST_OPENER-1].port;
+					strcpy((char *)net_packet->data, "CCLS"); //Chest close.
+					net_packet->address.host = net_clients[CHEST_OPENER - 1].host;
+					net_packet->address.port = net_clients[CHEST_OPENER - 1].port;
 					net_packet->len = 4;
-					sendPacketSafe(net_sock, -1, net_packet, CHEST_OPENER-1);
+					sendPacketSafe(net_sock, -1, net_packet, CHEST_OPENER - 1);
 				} else {
 					chestitemscroll = 0;
 				}
@@ -472,19 +472,19 @@ void actChestLid(Entity *my) {
 		return;
 	}
 
-	if( multiplayer!=CLIENT ) {
+	if( multiplayer != CLIENT ) {
 		my->skill[1] = parent->skill[1];
-		if( multiplayer==SERVER ) {
+		if( multiplayer == SERVER ) {
 			if( my->skill[3] != my->skill[1] ) {
 				my->skill[3] = my->skill[1];
-				serverUpdateEntitySkill(my,1);
+				serverUpdateEntitySkill(my, 1);
 			}
 		}
 
 		for (i = 0; i < MAXPLAYERS; ++i) {
-			if ( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 				if (inrange[i]) {
-					parent->skill[6] = i+1;
+					parent->skill[6] = i + 1;
 				}
 			}
 		}
@@ -494,16 +494,16 @@ void actChestLid(Entity *my) {
 		// chest is open
 		if( !my->skill[0] ) {
 			my->skill[0] = 1;
-			if( multiplayer!=CLIENT ) {
-				playSoundEntity(my,21,64);
+			if( multiplayer != CLIENT ) {
+				playSoundEntity(my, 21, 64);
 			}
 			my->fskill[0] = 0.25;
 		}
-		if( my->pitch > -PI/2 ) {
+		if( my->pitch > -PI / 2 ) {
 			my->pitch -= my->fskill[0];
 			my->fskill[0] -= 0.02;
-			if( my->pitch <= -PI/2 ) {
-				my->pitch = -PI/2;
+			if( my->pitch <= -PI / 2 ) {
+				my->pitch = -PI / 2;
 				my->fskill[0] = 0;
 			}
 		}
@@ -511,8 +511,8 @@ void actChestLid(Entity *my) {
 		// chest is closed
 		if( my->skill[0] ) {
 			my->skill[0] = 0;
-			if( multiplayer!=CLIENT ) {
-				playSoundEntity(my,22,64);
+			if( multiplayer != CLIENT ) {
+				playSoundEntity(my, 22, 64);
 			}
 			my->fskill[0] = 0.025;
 		}
@@ -551,7 +551,7 @@ void Entity::closeChest() {
 		openedChest[chest_opener] = NULL;
 		if (chest_opener != 0 && multiplayer == SERVER) {
 			//Tell the client that the chest got closed.
-			strcpy((char *)net_packet->data,"CCLS"); //Chest close.
+			strcpy((char *)net_packet->data, "CCLS"); //Chest close.
 			net_packet->address.host = net_clients[chest_opener - 1].host;
 			net_packet->address.port = net_clients[chest_opener - 1].port;
 			net_packet->len = 4;
@@ -582,11 +582,11 @@ void Entity::addItemToChest(Item *item) {
 		net_packet->data[4] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
-		SDLNet_Write32((Uint32)item->type,&net_packet->data[5]);
-		SDLNet_Write32((Uint32)item->status,&net_packet->data[9]);
-		SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[13]);
-		SDLNet_Write32((Uint32)item->count,&net_packet->data[17]);
-		SDLNet_Write32((Uint32)item->appearance,&net_packet->data[21]);
+		SDLNet_Write32((Uint32)item->type, &net_packet->data[5]);
+		SDLNet_Write32((Uint32)item->status, &net_packet->data[9]);
+		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[13]);
+		SDLNet_Write32((Uint32)item->count, &net_packet->data[17]);
+		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[21]);
 		net_packet->data[25] = item->identified;
 		net_packet->len = 26;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
@@ -615,12 +615,12 @@ void Entity::addItemToChest(Item *item) {
 	item->node->deconstructor = &defaultDeconstructor;
 
 	if (chest_opener != 0 && multiplayer == SERVER) {
-		strcpy((char *)net_packet->data,"CITM");
-		SDLNet_Write32((Uint32)item->type,&net_packet->data[4]);
-		SDLNet_Write32((Uint32)item->status,&net_packet->data[8]);
-		SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[12]);
-		SDLNet_Write32((Uint32)item->count,&net_packet->data[16]);
-		SDLNet_Write32((Uint32)item->appearance,&net_packet->data[20]);
+		strcpy((char *)net_packet->data, "CITM");
+		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
+		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
+		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
+		SDLNet_Write32((Uint32)item->count, &net_packet->data[16]);
+		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
 		net_packet->data[24] = item->identified;
 		net_packet->address.host = net_clients[chest_opener - 1].host;
 		net_packet->address.port = net_clients[chest_opener - 1].port;
@@ -639,11 +639,11 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 	}
 
 	if( itemIsEquipped(item, player) == TRUE && !item->canUnequip() ) {
-		messagePlayer(player,language[1087]);
-		item->identified=TRUE;
+		messagePlayer(player, language[1087]);
+		item->identified = TRUE;
 		return;
 	}
-	playSoundPlayer(player,47+rand()%3,64);
+	playSoundPlayer(player, 47 + rand() % 3, 64);
 
 	Item *newitem = NULL;
 	if ( (newitem = (Item *) malloc(sizeof(Item))) == NULL) {
@@ -660,13 +660,13 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 
 	// unequip the item
 	if( item->count <= 1 || all) {
-		Item **slot = itemSlot(stats[player],item);
+		Item **slot = itemSlot(stats[player], item);
 		if( slot != NULL ) {
 			*slot = NULL;
 		}
 	}
 	if( item->node != NULL ) {
-		if( item->node->list==&stats[player]->inventory ) {
+		if( item->node->list == &stats[player]->inventory ) {
 			if (!all) {
 				item->count--;
 				if( item->count <= 0 ) {
@@ -724,15 +724,15 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
-			SDLNet_Write32((Uint32)item->type,&net_packet->data[5]);
-			SDLNet_Write32((Uint32)item->status,&net_packet->data[9]);
-			SDLNet_Write32((Uint32)item->beatitude,&net_packet->data[13]);
+			SDLNet_Write32((Uint32)item->type, &net_packet->data[5]);
+			SDLNet_Write32((Uint32)item->status, &net_packet->data[9]);
+			SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[13]);
 			int count = 1;
 			if (all) {
 				count = item->count;
 			}
-			SDLNet_Write32((Uint32)count,&net_packet->data[17]);
-			SDLNet_Write32((Uint32)item->appearance,&net_packet->data[21]);
+			SDLNet_Write32((Uint32)count, &net_packet->data[17]);
+			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[21]);
 			net_packet->data[25] = item->identified;
 			net_packet->len = 26;
 			sendPacketSafe(net_sock, -1, net_packet, 0);
@@ -763,9 +763,9 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 
 	if (!all) {
 		//Grab only one item from the chest.
-		newitem->count=1;
+		newitem->count = 1;
 		if (!getInfoOnly ) {
-			item->count-=1;
+			item->count -= 1;
 			if( item->count <= 0 ) {
 				list_RemoveNode(item->node);
 			}

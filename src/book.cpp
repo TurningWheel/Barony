@@ -29,8 +29,8 @@ list_t *discoveredbooks = NULL;
 
 int getBook(char *booktitle) {
 	int c;
-	for( c=0; c<numbooks; c++ ) {
-		if( !strcmp(booktitle,books[c]->name) ) {
+	for( c = 0; c < numbooks; c++ ) {
+		if( !strcmp(booktitle, books[c]->name) ) {
 			return c;
 		}
 	}
@@ -60,7 +60,7 @@ void createBooks() {
 					if( node->next != NULL ) {
 						string_t *firststring = (string_t *)node->element;
 						string_t *secondstring = (string_t *)node->next->element;
-						if( strcmp(firststring->data, secondstring->data)>0 ) {
+						if( strcmp(firststring->data, secondstring->data) > 0 ) {
 							unsorted = TRUE;
 							node->element = secondstring;
 							node->next->element = firststring;
@@ -86,7 +86,7 @@ void createBooks() {
 				books[i]->pages.last = NULL;
 				//formatTitle(books[i]);
 				createBook(books[i]);
-				books[i]->name[strlen(books[i]->name)-4] = 0;
+				books[i]->name[strlen(books[i]->name) - 4] = 0;
 			}
 		} else {
 			printlog( "Warning: discoveredbooks->first and last do not exist. No books in /books/ directory?\n");
@@ -254,10 +254,10 @@ void createBook(book_t *book) {
 	book->pages.first = NULL;
 	book->pages.last = NULL;
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format,0,0,0,255);
-	string_t *string = newString(&book->pages,color,NULL);
-	string->data = (char *) malloc(sizeof(char)*(max_characters+1));
-	memset(string->data,0,sizeof(char)*(max_characters+1));
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
+	string_t *string = newString(&book->pages, color, NULL);
+	string->data = (char *) malloc(sizeof(char) * (max_characters + 1));
+	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
 	int i; // current character in the book's entire text
 	int p = 0; // current character in the page's text
@@ -299,9 +299,9 @@ void createBook(book_t *book) {
 			x = 0; //Reset x since it's back to the beginning of the line.
 			if (y + 1 >= book_characterspace_y) {
 				//Create the next page. Do not record the character if it's a newline.
-				string = newString(&book->pages,color,NULL);
-				string->data = (char *) malloc(sizeof(char)*(max_characters+1));
-				memset(string->data,0,sizeof(char)*(max_characters+1));
+				string = newString(&book->pages, color, NULL);
+				string->data = (char *) malloc(sizeof(char) * (max_characters + 1));
+				memset(string->data, 0, sizeof(char) * (max_characters + 1));
 				p = 0;
 				y = 0;
 			} else {
@@ -319,7 +319,7 @@ void createBook(book_t *book) {
 				tab = 0;
 			}
 			// no spaces at the start of a line
-			if( character_to_record==' ' ) {
+			if( character_to_record == ' ' ) {
 				continue;
 			}
 		} else if (tab > 0) {
@@ -344,9 +344,9 @@ void createBook(book_t *book) {
 							x = 0; //Reset x, since it's writing out a new line and x gets reset when we do that.
 							if (y + 1 >= book_characterspace_y) { //Check if it hit the end of the page.
 								//It does indeed go off the page. Start a new page.
-								string = newString(&book->pages,color,NULL);
-								string->data = (char *) malloc(sizeof(char)*(max_characters+1));
-								memset(string->data,0,sizeof(char)*(max_characters+1));
+								string = newString(&book->pages, color, NULL);
+								string->data = (char *) malloc(sizeof(char) * (max_characters + 1));
+								memset(string->data, 0, sizeof(char) * (max_characters + 1));
 								p = 0;
 								y = 0;
 							} else {

@@ -115,14 +115,14 @@ inline void drawChestSlots() {
 						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], false);
 						messagePlayer(clientnum, language[374], item->description());
 						itemPickup(clientnum, item);
-						playSound(35 + rand()%3, 64);
+						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					} else if ( mousestatus[SDL_BUTTON_RIGHT] && openedChest[clientnum] ) {
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], true);
 						messagePlayer(clientnum, language[374], item->description());
 						itemPickup(clientnum, item); //Grab all of that item from the chest.
-						playSound(35 + rand()%3, 64);
+						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					}
 
@@ -226,8 +226,8 @@ void updateChestInventory() {
 		}
 
 		// mousewheel
-		if( omousex>=CHEST_INVENTORY_X+12 && omousex<CHEST_INVENTORY_X+(inventoryChest_bmp->w-28) ) {
-			if( omousey>=CHEST_INVENTORY_Y+16 && omousey<CHEST_INVENTORY_Y+(inventoryChest_bmp->h-8) ) {
+		if( omousex >= CHEST_INVENTORY_X + 12 && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) ) {
+			if( omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + (inventoryChest_bmp->h - 8) ) {
 				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					chestitemscroll++;
@@ -245,14 +245,14 @@ void updateChestInventory() {
 				if (CHEST_INVENTORY_X <= camera.winx) {
 					chestgui_offset_x = camera.winx - (CHEST_INVENTORY_X - chestgui_offset_x);
 				}
-				if (CHEST_INVENTORY_X > camera.winx+camera.winw-inventoryChest_bmp->w) {
-					chestgui_offset_x = (camera.winx+camera.winw-inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
+				if (CHEST_INVENTORY_X > camera.winx + camera.winw - inventoryChest_bmp->w) {
+					chestgui_offset_x = (camera.winx + camera.winw - inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
 				}
 				if (CHEST_INVENTORY_Y <= camera.winy) {
 					chestgui_offset_y = camera.winy - (CHEST_INVENTORY_Y - chestgui_offset_y);
 				}
-				if (CHEST_INVENTORY_Y > camera.winy+camera.winh-inventoryChest_bmp->h) {
-					chestgui_offset_y = (camera.winy+camera.winh-inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+				if (CHEST_INVENTORY_Y > camera.winy + camera.winh - inventoryChest_bmp->h) {
+					chestgui_offset_y = (camera.winy + camera.winh - inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
 				}
 			} else {
 				dragging_chestGUI = FALSE;
@@ -278,24 +278,24 @@ void updateChestInventory() {
 			if (chest_buttonclick == 7) {
 				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
 				pos.y = CHEST_INVENTORY_Y + 16;
-				pos.w=0;
-				pos.h=0;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invup_bmp, NULL, &pos);
 			}
 			//Chest inventory down button.
 			if (chest_buttonclick == 8) {
 				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
 				pos.y = CHEST_INVENTORY_Y + 52;
-				pos.w=0;
-				pos.h=0;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invdown_bmp, NULL, &pos);
 			}
 			//Chest inventory close button.
 			if (chest_buttonclick == 9) {
 				pos.x = CHEST_INVENTORY_X + 393;
 				pos.y = CHEST_INVENTORY_Y;
-				pos.w=0;
-				pos.h=0;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
 				if (openedChest[clientnum]) {
 					openedChest[clientnum]->closeChest();
@@ -305,17 +305,17 @@ void updateChestInventory() {
 			if (chest_buttonclick == 10) {
 				pos.x = CHEST_INVENTORY_X + 376;
 				pos.y = CHEST_INVENTORY_Y;
-				pos.w=0;
-				pos.h=0;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invgraball_bmp, NULL, &pos);
-				for (node = chest_inventory->first; node != NULL; node=nextnode) {
-					nextnode=node->next;
+				for (node = chest_inventory->first; node != NULL; node = nextnode) {
+					nextnode = node->next;
 					if (node->element && openedChest[clientnum]) {
 						item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), TRUE);
 						if( item != NULL ) {
 							messagePlayer(clientnum, language[374], item->description());
 							itemPickup(clientnum, item);
-							playSound(35+rand()%3,64);
+							playSound(35 + rand() % 3, 64);
 						}
 					}
 				}
@@ -344,11 +344,11 @@ void updateChestInventory() {
 								continue;
 							}
 							char tempstr[64] = { 0 };
-							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 ) {
-								strcat(tempstr," ...");
+							strncpy(tempstr, item->description(), 46);
+							if( strlen(tempstr) == 46 ) {
+								strcat(tempstr, " ...");
 							}
-							ttfPrintText(ttf8,CHEST_INVENTORY_X+36,y,tempstr);
+							ttfPrintText(ttf8, CHEST_INVENTORY_X + 36, y, tempstr);
 							pos.x = CHEST_INVENTORY_X + 16;
 							pos.y = CHEST_INVENTORY_Y + 17 + 18 * (c - chestitemscroll - 1);
 							pos.w = 16;

@@ -96,7 +96,7 @@ extern bool draw_cursor; //True if the gamepad's d-pad has been used to navigate
 void takeScreenshot();
 bool loadInterfaceResources();
 void freeInterfaceResources();
-void clickDescription(int player,Entity *entity);
+void clickDescription(int player, Entity *entity);
 void consoleCommand(char *command);
 void drawMinimap();
 void handleDamageIndicators();

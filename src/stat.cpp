@@ -44,10 +44,10 @@ Stat::Stat() {
 	this->defending = FALSE;
 
 	int c;
-	for (c = 0; c<NUMPROFICIENCIES; c++) {
+	for (c = 0; c < NUMPROFICIENCIES; c++) {
 		this->PROFICIENCIES[c] = 0;
 	}
-	for (c = 0; c<NUMEFFECTS; c++) {
+	for (c = 0; c < NUMEFFECTS; c++) {
 		this->EFFECTS[c] = 0;
 		this->EFFECTS_TIMERS[c] = 0;
 	}
@@ -194,11 +194,11 @@ void Stat::clearStats() {
 	this->LVL = 1;
 	this->EXP = 0;
 	list_FreeAll(&this->FOLLOWERS);
-	for (x = 0; x<std::max(NUMPROFICIENCIES, NUMEFFECTS); x++) {
-		if (x<NUMPROFICIENCIES) {
+	for (x = 0; x < std::max(NUMPROFICIENCIES, NUMEFFECTS); x++) {
+		if (x < NUMPROFICIENCIES) {
 			this->PROFICIENCIES[x] = 0;
 		}
-		if (x<NUMEFFECTS) {
+		if (x < NUMEFFECTS) {
 			this->EFFECTS[x] = FALSE;
 			this->EFFECTS_TIMERS[x] = 0;
 		}
