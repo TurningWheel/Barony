@@ -57,6 +57,7 @@ extern SDL_Surface* backdrop_bmp;
 extern SDL_Surface* status_bmp;
 extern SDL_Surface* character_bmp;
 extern SDL_Surface* hunger_bmp;
+extern SDL_Surface* minotaur_bmp;
 extern SDL_Surface* textup_bmp;
 extern SDL_Surface* textdown_bmp;
 extern SDL_Surface* attributesleft_bmp, *attributesleftunclicked_bmp;

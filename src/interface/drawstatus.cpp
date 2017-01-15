@@ -232,6 +232,15 @@ void drawStatus()
 		drawImageScaled(hunger_bmp, NULL, &pos);
 	}
 
+	if ( minotaurlevel && (ticks % 50) - (ticks % 25) )
+	{
+		pos.x = 128;
+		pos.y = yres - 160 + 64 + 2;
+		pos.w = 64;
+		pos.h = 64;
+		drawImageScaled(minotaur_bmp, nullptr, &pos);
+	}
+
 	// enemy health
 	if ( ticks - enemy_timer < 120 && enemy_timer )
 	{
