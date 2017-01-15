@@ -29,6 +29,7 @@ SDL_Surface* backdrop_bmp = NULL;
 SDL_Surface* status_bmp = NULL;
 SDL_Surface* character_bmp = NULL;
 SDL_Surface* hunger_bmp = NULL;
+SDL_Surface* minotaur_bmp = nullptr;
 int textscroll = 0;
 int attributespage = 0;
 Item* invitems[4];
@@ -131,6 +132,7 @@ bool disable_messages = FALSE;
 bool right_click_protect = FALSE;
 bool auto_appraise_new_items = FALSE;
 
+
 bool loadInterfaceResources()
 {
 	//General GUI images.
@@ -143,6 +145,7 @@ bool loadInterfaceResources()
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
+	minotaur_bmp = loadImage("images/system/minotaur.png");
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
 	attributesleft_bmp = loadImage("images/system/AttributesLeftHighlighted.png");
@@ -253,6 +256,10 @@ void freeInterfaceResources()
 	if (hunger_bmp)
 	{
 		SDL_FreeSurface(hunger_bmp);
+	}
+	if ( minotaur_bmp )
+	{
+		SDL_FreeSurface(minotaur_bmp);
 	}
 	//if(textup_bmp)
 	//SDL_FreeSurface(textup_bmp);
