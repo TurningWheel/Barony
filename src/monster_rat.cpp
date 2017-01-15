@@ -19,7 +19,8 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initRat(Entity* my, Stat* myStats) {
+void initRat(Entity* my, Stat* myStats)
+{
 	int c;
 
 	my->sprite = 131; // rat model
@@ -27,13 +28,15 @@ void initRat(Entity* my, Stat* myStats) {
 	my->flags[UPDATENEEDED] = TRUE;
 	my->flags[INVISIBLE] = FALSE;
 
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		MONSTER_SPOTSND = 29;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = 29;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT ) {
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
 		strcpy(myStats->name, "");
@@ -54,19 +57,24 @@ void initRat(Entity* my, Stat* myStats) {
 		myStats->LVL = 1;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid ) {
+		if ( !myStats->leader_uid )
+		{
 			myStats->leader_uid = 0;
 		}
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
-			if ( c < NUMPROFICIENCIES ) {
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
+			{
 				myStats->PROFICIENCIES[c] = 0;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS[c] = FALSE;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
@@ -81,15 +89,20 @@ void initRat(Entity* my, Stat* myStats) {
 		myStats->ring = NULL;
 		myStats->mask = NULL;
 
-		if ( rand() % 4 ) {
-			if ( rand() % 2 ) {
+		if ( rand() % 4 )
+		{
+			if ( rand() % 2 )
+			{
 				newItem( FOOD_MEAT, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
-			} else {
+			}
+			else
+			{
 				newItem( FOOD_CHEESE, DECREPIT, 0, 1, rand(), FALSE, &myStats->inventory );
 			}
 		}
 
-		if ( rand() % 50 == 0 && !my->flags[USERFLAG2] ) {
+		if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+		{
 			strcpy(myStats->name, "Algernon");
 			myStats->HP = 60;
 			myStats->MAXHP = 60;
@@ -104,9 +117,11 @@ void initRat(Entity* my, Stat* myStats) {
 			newItem(GEM_EMERALD, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), TRUE, &myStats->inventory );
 
 			int c;
-			for ( c = 0; c < 6; c++ ) {
+			for ( c = 0; c < 6; c++ )
+			{
 				Entity* entity = summonMonster(RAT, my->x, my->y);
-				if ( entity ) {
+				if ( entity )
+				{
 					entity->parent = my->uid;
 				}
 			}
@@ -114,30 +129,40 @@ void initRat(Entity* my, Stat* myStats) {
 	}
 }
 
-void ratAnimate(Entity* my, double dist) {
+void ratAnimate(Entity* my, double dist)
+{
 	// move legs
-	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME != MONSTER_ATTACK) ) {
+	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME != MONSTER_ATTACK) )
+	{
 		MONSTER_ATTACKTIME = MONSTER_ATTACK;
-		if ( my->sprite == 131 ) {
+		if ( my->sprite == 131 )
+		{
 			my->sprite = 265;
-		} else {
+		}
+		else
+		{
 			my->sprite = 131;
 		}
 	}
 }
 
-void ratDie(Entity* my) {
+void ratDie(Entity* my)
+{
 	int c = 0;
-	for ( c = 0; c < 5; c++ ) {
+	for ( c = 0; c < 5; c++ )
+	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood) {
+	if (spawn_blood)
+	{
 		int x, y;
 		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		{
+			if ( !checkObstacle(my->x, my->y, my, NULL) )
+			{
 				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;

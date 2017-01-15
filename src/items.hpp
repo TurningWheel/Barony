@@ -19,7 +19,8 @@ extern bool weaponSwitch;
 extern bool shieldSwitch;
 
 // items
-typedef enum ItemType {
+typedef enum ItemType
+{
 	WOODEN_SHIELD,
 	QUARTERSTAFF,
 	BRONZE_SWORD,
@@ -192,7 +193,8 @@ typedef enum ItemType {
 const int NUMITEMS = 168;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
-typedef enum Category {
+typedef enum Category
+{
 	WEAPON,
 	ARMOR,
 	AMULET,
@@ -208,7 +210,8 @@ typedef enum Category {
 	SPELL_CAT
 } Category;
 
-typedef enum Status {
+typedef enum Status
+{
 	BROKEN,
 	DECREPIT,
 	WORN,
@@ -216,7 +219,8 @@ typedef enum Status {
 	EXCELLENT
 } Status;
 
-class SummonProperties {
+class SummonProperties
+{
 	//TODO: Store monster stats.
 public:
 	SummonProperties();
@@ -224,7 +228,8 @@ public:
 };
 
 // inventory item structure
-class Item {
+class Item
+{
 public:
 	ItemType type;
 	Status status;
@@ -271,7 +276,8 @@ static const int INVENTORY_STARTY = 10;
 extern Item* selectedItem;
 
 // item generic
-class ItemGeneric {
+class ItemGeneric
+{
 public:
 	char* name_identified;      // identified item name
 	char* name_unidentified;    // unidentified item name

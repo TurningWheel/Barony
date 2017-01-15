@@ -16,7 +16,8 @@
 
 class Item;
 
-typedef struct damageIndicator_t {
+typedef struct damageIndicator_t
+{
 	double x, y;  // x and y of the attacker in world coordinates
 	double alpha; // alpha value of the indicator
 	node_t* node; // node in the damageIndicator list
@@ -140,7 +141,8 @@ extern int inventory_mode;
  *		BEHAVIOR_MOUSE = press left button to pick up, release left button to drop,
  *		BEHAVIOR_GAMEPAD = press mapped button (x by default) to select/"grab" item, press again to drop.
  */
-enum selectBehavior_t {
+enum selectBehavior_t
+{
 	BEHAVIOR_MOUSE = 0,
 	BEHAVIOR_GAMEPAD = 1,
 	ENUM_LEN = 2
@@ -305,7 +307,8 @@ extern Entity* hudweapon; //A pointer to the hudweapon entity.
  */
 
 //NOTE: Each hotbar slot is "constructed" in loadInterfaceResources() in interface.c. If you add anything, make sure to initialize it there.
-typedef struct hotbar_slot_t {
+typedef struct hotbar_slot_t
+{
 	/*
 	 * This is an item's ID. It just resolves to NULL if an item is no longer valid.
 	 */

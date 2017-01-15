@@ -12,7 +12,8 @@
 #pragma once
 
 #define NUMLABELS 25
-static char scroll_label[NUMLABELS][512] = {
+static char scroll_label[NUMLABELS][512] =
+{
 	"ZELGO MER",
 	"JUYED AWK YACC",
 	"NR 9",

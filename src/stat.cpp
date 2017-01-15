@@ -19,7 +19,8 @@
 Stat* stats[MAXPLAYERS];
 
 // Constructor
-Stat::Stat() {
+Stat::Stat()
+{
 	this->type = NOTHING;
 	this->sex = static_cast<sex_t>(rand() % 2);
 	this->appearance = 0;
@@ -44,10 +45,12 @@ Stat::Stat() {
 	this->defending = FALSE;
 
 	int c;
-	for (c = 0; c < NUMPROFICIENCIES; c++) {
+	for (c = 0; c < NUMPROFICIENCIES; c++)
+	{
 		this->PROFICIENCIES[c] = 0;
 	}
-	for (c = 0; c < NUMEFFECTS; c++) {
+	for (c = 0; c < NUMEFFECTS; c++)
+	{
 		this->EFFECTS[c] = 0;
 		this->EFFECTS_TIMERS[c] = 0;
 	}
@@ -79,83 +82,124 @@ Stat::Stat() {
 }
 
 //Destructor
-Stat::~Stat() {
-	if (this->helmet != NULL) {
-		if (this->helmet->node == NULL) {
+Stat::~Stat()
+{
+	if (this->helmet != NULL)
+	{
+		if (this->helmet->node == NULL)
+		{
 			free(this->helmet);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->helmet->node);
 		}
 		this->helmet = NULL;
 	}
-	if (this->breastplate != NULL) {
-		if (this->breastplate->node == NULL) {
+	if (this->breastplate != NULL)
+	{
+		if (this->breastplate->node == NULL)
+		{
 			free(this->breastplate);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->breastplate->node);
 		}
 		this->breastplate = NULL;
 	}
-	if (this->gloves != NULL) {
-		if (this->gloves->node == NULL) {
+	if (this->gloves != NULL)
+	{
+		if (this->gloves->node == NULL)
+		{
 			free(this->gloves);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->gloves->node);
 		}
 		this->gloves = NULL;
 	}
-	if (this->shoes != NULL) {
-		if (this->shoes->node == NULL) {
+	if (this->shoes != NULL)
+	{
+		if (this->shoes->node == NULL)
+		{
 			free(this->shoes);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->shoes->node);
 		}
 		this->shoes = NULL;
 	}
-	if (this->shield != NULL) {
-		if (this->shield->node == NULL) {
+	if (this->shield != NULL)
+	{
+		if (this->shield->node == NULL)
+		{
 			free(this->shield);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->shield->node);
 		}
 		this->shield = NULL;
 	}
-	if (this->weapon != NULL) {
-		if (this->weapon->node == NULL) {
+	if (this->weapon != NULL)
+	{
+		if (this->weapon->node == NULL)
+		{
 			free(this->weapon);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->weapon->node);
 		}
 		this->weapon = NULL;
 	}
-	if (this->cloak != NULL) {
-		if (this->cloak->node == NULL) {
+	if (this->cloak != NULL)
+	{
+		if (this->cloak->node == NULL)
+		{
 			free(this->cloak);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->cloak->node);
 		}
 		this->cloak = NULL;
 	}
-	if (this->amulet != NULL) {
-		if (this->amulet->node == NULL) {
+	if (this->amulet != NULL)
+	{
+		if (this->amulet->node == NULL)
+		{
 			free(this->amulet);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->amulet->node);
 		}
 		this->amulet = NULL;
 	}
-	if (this->ring != NULL) {
-		if (this->ring->node == NULL) {
+	if (this->ring != NULL)
+	{
+		if (this->ring->node == NULL)
+		{
 			free(this->ring);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->ring->node);
 		}
 		this->ring = NULL;
 	}
-	if (this->mask != NULL) {
-		if (this->mask->node == NULL) {
+	if (this->mask != NULL)
+	{
+		if (this->mask->node == NULL)
+		{
 			free(this->mask);
-		} else {
+		}
+		else
+		{
 			list_RemoveNode(this->mask->node);
 		}
 		this->mask = NULL;
@@ -163,7 +207,8 @@ Stat::~Stat() {
 	//Free memory for magic effects.
 	node_t* spellnode;
 	spellnode = this->magic_effects.first;
-	while (spellnode) {
+	while (spellnode)
+	{
 		node_t* oldnode = spellnode;
 		spellnode = spellnode->next;
 		spell_t* spell = (spell_t*)oldnode->element;
@@ -173,7 +218,8 @@ Stat::~Stat() {
 	list_FreeAll(&this->inventory);
 }
 
-void Stat::clearStats() {
+void Stat::clearStats()
+{
 	int x;
 
 	strcpy(this->obituary, language[1500]);
@@ -194,11 +240,14 @@ void Stat::clearStats() {
 	this->LVL = 1;
 	this->EXP = 0;
 	list_FreeAll(&this->FOLLOWERS);
-	for (x = 0; x < std::max(NUMPROFICIENCIES, NUMEFFECTS); x++) {
-		if (x < NUMPROFICIENCIES) {
+	for (x = 0; x < std::max(NUMPROFICIENCIES, NUMEFFECTS); x++)
+	{
+		if (x < NUMPROFICIENCIES)
+		{
 			this->PROFICIENCIES[x] = 0;
 		}
-		if (x < NUMEFFECTS) {
+		if (x < NUMEFFECTS)
+		{
 			this->EFFECTS[x] = FALSE;
 			this->EFFECTS_TIMERS[x] = 0;
 		}
@@ -224,83 +273,124 @@ frees all the malloc'd data for the given player's equipment
 
 -------------------------------------------------------------------------------*/
 
-void Stat::freePlayerEquipment() {
-	if (this->helmet != NULL) {
-		if (this->helmet->node) {
+void Stat::freePlayerEquipment()
+{
+	if (this->helmet != NULL)
+	{
+		if (this->helmet->node)
+		{
 			list_RemoveNode(this->helmet->node);
-		} else {
+		}
+		else
+		{
 			free(this->helmet);
 		}
 		this->helmet = NULL;
 	}
-	if (this->breastplate != NULL) {
-		if (this->breastplate->node) {
+	if (this->breastplate != NULL)
+	{
+		if (this->breastplate->node)
+		{
 			list_RemoveNode(this->breastplate->node);
-		} else {
+		}
+		else
+		{
 			free(this->breastplate);
 		}
 		this->breastplate = NULL;
 	}
-	if (this->gloves != NULL) {
-		if (this->gloves->node) {
+	if (this->gloves != NULL)
+	{
+		if (this->gloves->node)
+		{
 			list_RemoveNode(this->gloves->node);
-		} else {
+		}
+		else
+		{
 			free(this->gloves);
 		}
 		this->gloves = NULL;
 	}
-	if (this->shoes != NULL) {
-		if (this->shoes->node) {
+	if (this->shoes != NULL)
+	{
+		if (this->shoes->node)
+		{
 			list_RemoveNode(this->shoes->node);
-		} else {
+		}
+		else
+		{
 			free(this->shoes);
 		}
 		this->shoes = NULL;
 	}
-	if (this->shield != NULL) {
-		if (this->shield->node) {
+	if (this->shield != NULL)
+	{
+		if (this->shield->node)
+		{
 			list_RemoveNode(this->shield->node);
-		} else {
+		}
+		else
+		{
 			free(this->shield);
 		}
 		this->shield = NULL;
 	}
-	if (this->weapon != NULL) {
-		if (this->weapon->node) {
+	if (this->weapon != NULL)
+	{
+		if (this->weapon->node)
+		{
 			list_RemoveNode(this->weapon->node);
-		} else {
+		}
+		else
+		{
 			free(this->weapon);
 		}
 		this->weapon = NULL;
 	}
-	if (this->cloak != NULL) {
-		if (this->cloak->node) {
+	if (this->cloak != NULL)
+	{
+		if (this->cloak->node)
+		{
 			list_RemoveNode(this->cloak->node);
-		} else {
+		}
+		else
+		{
 			free(this->cloak);
 		}
 		this->cloak = NULL;
 	}
-	if (this->amulet != NULL) {
-		if (this->amulet->node) {
+	if (this->amulet != NULL)
+	{
+		if (this->amulet->node)
+		{
 			list_RemoveNode(this->amulet->node);
-		} else {
+		}
+		else
+		{
 			free(this->amulet);
 		}
 		this->amulet = NULL;
 	}
-	if (this->ring != NULL) {
-		if (this->ring->node) {
+	if (this->ring != NULL)
+	{
+		if (this->ring->node)
+		{
 			list_RemoveNode(this->ring->node);
-		} else {
+		}
+		else
+		{
 			free(this->ring);
 		}
 		this->ring = NULL;
 	}
-	if (this->mask != NULL) {
-		if (this->mask->node) {
+	if (this->mask != NULL)
+	{
+		if (this->mask->node)
+		{
 			list_RemoveNode(this->mask->node);
-		} else {
+		}
+		else
+		{
 			free(this->mask);
 		}
 		this->mask = NULL;
@@ -316,7 +406,8 @@ Returns a pointer to a new instance of the Stats class
 
 -------------------------------------------------------------------------------*/
 
-Stat* Stat::copyStats() {
+Stat* Stat::copyStats()
+{
 	node_t* node;
 	int c;
 
@@ -344,10 +435,12 @@ Stat* Stat::copyStats() {
 	newStat->GOLD = this->GOLD;
 	newStat->HUNGER = this->HUNGER;
 
-	for (c = 0; c < NUMPROFICIENCIES; c++) {
+	for (c = 0; c < NUMPROFICIENCIES; c++)
+	{
 		newStat->PROFICIENCIES[c] = this->PROFICIENCIES[c];
 	}
-	for (c = 0; c < NUMEFFECTS; c++) {
+	for (c = 0; c < NUMEFFECTS; c++)
+	{
 		newStat->EFFECTS[c] = this->EFFECTS[c];
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
@@ -365,119 +458,180 @@ Stat* Stat::copyStats() {
 	newStat->inventory.first = NULL;
 	newStat->inventory.last = NULL;
 	list_Copy(&newStat->inventory, &this->inventory);
-	for (node = newStat->inventory.first; node != NULL; node = node->next) {
+	for (node = newStat->inventory.first; node != NULL; node = node->next)
+	{
 		Item* item = (Item*)node->element;
 		item->node = node;
 	}
 
-	if (this->helmet) {
-		if (this->helmet->node) {
+	if (this->helmet)
+	{
+		if (this->helmet->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->helmet->node));
 			newStat->helmet = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->helmet = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->helmet, this->helmet, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->helmet = NULL;
 	}
-	if (this->breastplate) {
-		if (this->breastplate->node) {
+	if (this->breastplate)
+	{
+		if (this->breastplate->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->breastplate->node));
 			newStat->breastplate = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->breastplate = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->breastplate, this->breastplate, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->breastplate = NULL;
 	}
-	if (this->gloves) {
-		if (this->gloves->node) {
+	if (this->gloves)
+	{
+		if (this->gloves->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->gloves->node));
 			newStat->gloves = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->gloves = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->gloves, this->gloves, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->gloves = NULL;
 	}
-	if (this->shoes) {
-		if (this->shoes->node) {
+	if (this->shoes)
+	{
+		if (this->shoes->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->shoes->node));
 			newStat->shoes = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->shoes = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->shoes, this->shoes, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->shoes = NULL;
 	}
-	if (this->shield) {
-		if (this->shield->node) {
+	if (this->shield)
+	{
+		if (this->shield->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->shield->node));
 			newStat->shield = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->shield = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->shield, this->shield, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->shield = NULL;
 	}
-	if (this->weapon) {
-		if (this->weapon->node) {
+	if (this->weapon)
+	{
+		if (this->weapon->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->weapon->node));
 			newStat->weapon = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->weapon = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->weapon, this->weapon, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->weapon = NULL;
 	}
-	if (this->cloak) {
-		if (this->cloak->node) {
+	if (this->cloak)
+	{
+		if (this->cloak->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->cloak->node));
 			newStat->cloak = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->cloak = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->cloak, this->cloak, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->cloak = NULL;
 	}
-	if (this->amulet) {
-		if (this->amulet->node) {
+	if (this->amulet)
+	{
+		if (this->amulet->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->amulet->node));
 			newStat->amulet = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->amulet = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->amulet, this->amulet, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->amulet = NULL;
 	}
-	if (this->ring) {
-		if (this->ring->node) {
+	if (this->ring)
+	{
+		if (this->ring->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->ring->node));
 			newStat->ring = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->ring = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->ring, this->ring, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->ring = NULL;
 	}
-	if (this->mask) {
-		if (this->mask->node) {
+	if (this->mask)
+	{
+		if (this->mask->node)
+		{
 			node_t* node = list_Node(&newStat->inventory, list_Index(this->mask->node));
 			newStat->mask = (Item*)node->element;
-		} else {
+		}
+		else
+		{
 			newStat->mask = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->mask, this->mask, sizeof(Item));
 		}
-	} else {
+	}
+	else
+	{
 		newStat->mask = NULL;
 	}
 
@@ -491,7 +645,8 @@ Stat* Stat::copyStats() {
 	return newStat;
 }
 
-void Stat::printStats() {
+void Stat::printStats()
+{
 	printlog("type = %d\n", this->type);
 	printlog("sex = %d\n", this->sex);
 	printlog("appearance = %d\n", this->appearance);
@@ -512,12 +667,14 @@ void Stat::printStats() {
 	printlog("HUNGER = %d\n", this->HUNGER);
 
 	printlog("Proficiencies:");
-	for (int i = 0; i < NUMPROFICIENCIES; ++i) {
+	for (int i = 0; i < NUMPROFICIENCIES; ++i)
+	{
 		printlog("[%d] = %d%s", i, this->PROFICIENCIES[i], ((i == NUMPROFICIENCIES - 1) ? "\n" : ", "));
 	}
 
 	printlog("Effects & timers: ");
-	for (int i = 0; i < NUMEFFECTS; ++i) {
+	for (int i = 0; i < NUMEFFECTS; ++i)
+	{
 		printlog("[%d] = %s. timer[%d] = %d", i, (this->EFFECTS[i]) ? "true" : "false", i, this->EFFECTS_TIMERS[i]);
 	}
 }

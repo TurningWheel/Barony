@@ -24,7 +24,8 @@
 
 -------------------------------------------------------------------------------*/
 
-void renderMagicGUI(int winx, int winy, int winw, int winh) {
+void renderMagicGUI(int winx, int winy, int winw, int winh)
+{
 	/*if (!spellList) { //I woke up with this commented out for some reason. TODO: Look into it.
 		return; //Can't continue without a spell list!
 	}*/
@@ -35,7 +36,8 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 	pos.w = 0;
 	pos.h = 0;
 
-	if (magic_GUI_state == 0) { //TODO: use defines, not numbers.
+	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
+	{
 		//drawImage(magicspellList_bmp, NULL, &pos);
 		//TODO: Assemble the interface.
 		//First off, calculate how big the end shebang is gonna be.
@@ -51,7 +53,8 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 		int height = spell_list_titlebar_bmp->h;
 		int numspells = 0;
 		node_t* node;
-		for (node = spellList.first; node != NULL; node = node->next) { //TODO: Create spellList. -- Done?
+		for (node = spellList.first; node != NULL; node = node->next)   //TODO: Create spellList. -- Done?
+		{
 			numspells++;
 		}
 		int maxSpellsOnscreen = winh / spell_list_gui_slot_bmp->h;
@@ -72,19 +75,27 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 		int i = 0;
 		//Draw all the spell GUI slots.
 		node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
-		for (i = 0; i < spellscroll; ++i) {
-			if (node) {
+		for (i = 0; i < spellscroll; ++i)
+		{
+			if (node)
+			{
 				node = node->next;
 			}
 		}
-		for (i = 0; i < numspells; ++i) {
-			if (node) { //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
+		for (i = 0; i < numspells; ++i)
+		{
+			if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
+			{
 				spell_t* spell = (spell_t*)node->element;
-				if (spell) {
+				if (spell)
+				{
 					//If the mouse is over the slot, then draw the highlighted version.
-					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h)) {
+					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
+					{
 						drawImage(spell_list_gui_slot_highlighted_bmp, NULL, &pos);
-					} else {
+					}
+					else
+					{
 						drawImage(spell_list_gui_slot_bmp, NULL, &pos);
 					}
 
@@ -98,7 +109,9 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 				}
 			}
 		}
-	} else if (magic_GUI_state == 1) {
+	}
+	else if (magic_GUI_state == 1)
+	{
 		//TODO: Spell editor.
 	}
 }
@@ -114,21 +127,25 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 
 -------------------------------------------------------------------------------*/
 
-void updateMagicGUI() {
+void updateMagicGUI()
+{
 	/*if (!spellList) { //I woke up with this commented out for some reason. TODO: Look into it.
 		return; //Can't continue without a spell list!
 	}*/
 	SDL_Rect pos;
 
 	renderMagicGUI(camera.winx, camera.winy, camera.winw, camera.winh);
-	if (magic_GUI_state == 0) { //TODO: use defines, not numbers.
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+	if (magic_GUI_state == 0)   //TODO: use defines, not numbers.
+	{
+		if (mousestatus[SDL_BUTTON_LEFT])
+		{
 			//TODO: Check if a spell was clicked on.
 			//TODO: Loop through all spells then run the if check below.
 			int height = spell_list_titlebar_bmp->h;
 			int numspells = 0;
 			node_t* node;
-			for (node = spellList.first; node != NULL; node = node->next) {
+			for (node = spellList.first; node != NULL; node = node->next)
+			{
 				numspells++;
 			}
 			int maxSpellsOnscreen = camera.winh / spell_list_gui_slot_bmp->h;
@@ -143,18 +160,24 @@ void updateMagicGUI() {
 			pos.y += spell_list_titlebar_bmp->h;
 			int i = 0;
 			node = spellList.first; //This will be needed to grab the name of the spell when its slot is drawn.
-			for (i = 0; i < spellscroll; ++i) {
-				if (node) {
+			for (i = 0; i < spellscroll; ++i)
+			{
+				if (node)
+				{
 					node = node->next;
 				}
 			}
 
-			for (i = 0; i < numspells; ++i) {
-				if (node) { //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
-					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h)) {
+			for (i = 0; i < numspells; ++i)
+			{
+				if (node)   //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
+				{
+					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h))
+					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						spell_t* spell = (spell_t*)node->element;
-						if (spell) {
+						if (spell)
+						{
 							equipSpell(spell, clientnum);
 							//selected_spell = spell;
 						}
@@ -164,13 +187,17 @@ void updateMagicGUI() {
 				}
 			}
 		}
-	} else if (magic_GUI_state == 1) {
+	}
+	else if (magic_GUI_state == 1)
+	{
 		//TODO: Spell editor.
 	}
 }
 
-void drawSustainedSpells() {
-	if (!channeledSpells[clientnum].first) {
+void drawSustainedSpells()
+{
+	if (!channeledSpells[clientnum].first)
+	{
 		return;    //No use continuing if there are no sustained spells.
 	}
 
@@ -178,11 +205,13 @@ void drawSustainedSpells() {
 
 	SDL_Rect pos;
 	pos.x = SUST_SPELLS_X;
-	if (SUST_SPELLS_RIGHT_ALIGN) {
+	if (SUST_SPELLS_RIGHT_ALIGN)
+	{
 		//Alright, so, the list should be right-aligned.
 		//Meaning, it draws alongside the right side of the screen.
 		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, 1); //Use any old sprite icon as a reference to calculate the position.
-		if (!node) {
+		if (!node)
+		{
 			return;
 		}
 		SDL_Surface** surface = (SDL_Surface**)node->element;
@@ -192,23 +221,29 @@ void drawSustainedSpells() {
 
 	int count = 0; //This is just for debugging purposes.
 	node_t* node = channeledSpells[clientnum].first;
-	for (; node; node = node->next, count++) {
+	for (; node; node = node->next, count++)
+	{
 		spell_t* spell = (spell_t*)node->element;
-		if (!spell) {
+		if (!spell)
+		{
 			break;
 		}
 		//Grab the sprite/
 		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
-		if (!node) {
+		if (!node)
+		{
 			break;
 		}
 		sprite = (SDL_Surface**)node->element;
 
 		drawImage(*sprite, NULL, &pos);
 
-		if (SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN) {
+		if (SUST_SPELLS_DIRECTION == SUST_DIR_HORZ && !SUST_SPELLS_RIGHT_ALIGN)
+		{
 			pos.x += sustained_spell_generic_icon->w;
-		} else {
+		}
+		else
+		{
 			//Vertical.
 			pos.y += (*sprite)->h;
 		}

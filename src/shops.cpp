@@ -41,23 +41,29 @@ int selectedShopSlot = -1;
 
 -------------------------------------------------------------------------------*/
 
-void startTradingServer(Entity* entity, int player) {
-	if (!entity) {
+void startTradingServer(Entity* entity, int player)
+{
+	if (!entity)
+	{
 		return;
 	}
-	if ( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT )
+	{
 		return;
 	}
-	if (!players[player] || !players[player]->entity) {
+	if (!players[player] || !players[player]->entity)
+	{
 		return;
 	}
 
 	Stat* stats = entity->getStats();
-	if ( stats == NULL ) {
+	if ( stats == NULL )
+	{
 		return;
 	}
 
-	if ( player == 0 ) {
+	if ( player == 0 )
+	{
 		shootmode = FALSE;
 		gui_mode = GUI_MODE_SHOP;
 		shopInv = &stats->inventory;
@@ -73,13 +79,18 @@ void startTradingServer(Entity* entity, int player) {
 		identifygui_active = false;
 
 		//Initialize shop gamepad code here.
-		if ( shopinvitems[0] != nullptr ) {
+		if ( shopinvitems[0] != nullptr )
+		{
 			selectedShopSlot = 0;
 			warpMouseToSelectedShopSlot();
-		} else {
+		}
+		else
+		{
 			selectedShopSlot = -1;
 		}
-	} else if ( multiplayer == SERVER ) {
+	}
+	else if ( multiplayer == SERVER )
+	{
 		// open shop on client
 		Stat* entitystats = entity->getStats();
 		strcpy((char*)net_packet->data, "SHOP");
@@ -94,7 +105,8 @@ void startTradingServer(Entity* entity, int player) {
 
 		// fill client's shop inventory with items
 		node_t* node;
-		for ( node = entitystats->inventory.first; node != NULL; node = node->next ) {
+		for ( node = entitystats->inventory.first; node != NULL; node = node->next )
+		{
 			Item* item = (Item*)node->element;
 			strcpy((char*)net_packet->data, "SHPI");
 			SDLNet_Write32(item->type, &net_packet->data[4]);
@@ -102,9 +114,12 @@ void startTradingServer(Entity* entity, int player) {
 			net_packet->data[9] = (char)item->beatitude;
 			net_packet->data[10] = (unsigned char)item->count;
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[11]);
-			if ( item->identified ) {
+			if ( item->identified )
+			{
 				net_packet->data[15] = 1;
-			} else {
+			}
+			else
+			{
 				net_packet->data[15] = 0;
 			}
 			net_packet->address.host = net_clients[player - 1].host;
@@ -126,15 +141,21 @@ void startTradingServer(Entity* entity, int player) {
 
 -------------------------------------------------------------------------------*/
 
-void buyItemFromShop(Item* item) {
-	if ( !item ) {
+void buyItemFromShop(Item* item)
+{
+	if ( !item )
+	{
 		return;
 	}
 
-	if ( stats[clientnum]->GOLD >= item->buyValue(clientnum) ) {
-		if ( items[item->type].value * 1.5 >= item->buyValue(clientnum) ) {
+	if ( stats[clientnum]->GOLD >= item->buyValue(clientnum) )
+	{
+		if ( items[item->type].value * 1.5 >= item->buyValue(clientnum) )
+		{
 			shopspeech = language[200 + rand() % 3];
-		} else {
+		}
+		else
+		{
 			shopspeech = language[197 + rand() % 3];
 		}
 		shoptimer = ticks - 1;
@@ -145,16 +166,21 @@ void buyItemFromShop(Item* item) {
 		item->count = 1;
 		messagePlayer(clientnum, language[1123], item->description(), item->buyValue(clientnum));
 		item->count = ocount;
-		if ( multiplayer != CLIENT ) {
+		if ( multiplayer != CLIENT )
+		{
 			Entity* entity = uidToEntity(shopkeeper);
-			if (entity) {
+			if (entity)
+			{
 				Stat* shopstats = entity->getStats();
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
-			if ( rand() % 2 ) {
+			if ( rand() % 2 )
+			{
 				players[clientnum]->entity->increaseSkill(PRO_TRADING);
 			}
-		} else {
+		}
+		else
+		{
 			strcpy((char*)net_packet->data, "SHPB");
 			SDLNet_Write32(shopkeeper, &net_packet->data[4]);
 
@@ -163,9 +189,12 @@ void buyItemFromShop(Item* item) {
 			SDLNet_Write32(item->status, &net_packet->data[12]);
 			SDLNet_Write32(item->beatitude, &net_packet->data[16]);
 			SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-			if ( item->identified ) {
+			if ( item->identified )
+			{
 				net_packet->data[24] = 1;
-			} else {
+			}
+			else
+			{
 				net_packet->data[24] = 0;
 			}
 			net_packet->data[25] = clientnum;
@@ -175,7 +204,9 @@ void buyItemFromShop(Item* item) {
 			sendPacketSafe(net_sock, -1, net_packet, 0);
 		}
 		consumeItem(item);
-	} else {
+	}
+	else
+	{
 		shopspeech = language[203 + rand() % 3];
 		shoptimer = ticks - 1;
 		playSound(90, 64);
@@ -190,72 +221,88 @@ void buyItemFromShop(Item* item) {
 
 -------------------------------------------------------------------------------*/
 
-void sellItemToShop(Item* item) {
-	if ( !item ) {
+void sellItemToShop(Item* item)
+{
+	if ( !item )
+	{
 		return;
 	}
-	if ( item->beatitude < 0 && itemIsEquipped(item, clientnum) ) {
+	if ( item->beatitude < 0 && itemIsEquipped(item, clientnum) )
+	{
 		messagePlayer(clientnum, language[1124], item->getName());
 		playSound(90, 64);
 		return;
 	}
 
 	bool deal = TRUE;
-	switch ( shopkeepertype ) {
+	switch ( shopkeepertype )
+	{
 		case 0: // arms & armor
-			if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR ) {
+			if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 1: // hats
-			if ( itemCategory(item) != ARMOR ) {
+			if ( itemCategory(item) != ARMOR )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 2: // jewelry
-			if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM ) {
+			if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 3: // bookstore
-			if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK ) {
+			if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 4: // potion shop
-			if ( itemCategory(item) != POTION ) {
+			if ( itemCategory(item) != POTION )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 5: // magicstaffs
-			if ( itemCategory(item) != MAGICSTAFF ) {
+			if ( itemCategory(item) != MAGICSTAFF )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 6: // food
-			if ( itemCategory(item) != FOOD ) {
+			if ( itemCategory(item) != FOOD )
+			{
 				deal = FALSE;
 			}
 			break;
 		case 7: // tools
 		case 8: // lights
-			if ( itemCategory(item) != TOOL ) {
+			if ( itemCategory(item) != TOOL )
+			{
 				deal = FALSE;
 			}
 			break;
 		default:
 			break;
 	}
-	if ( !deal ) {
+	if ( !deal )
+	{
 		shopspeech = language[212 + rand() % 3];
 		shoptimer = ticks - 1;
 		playSound(90, 64);
 		return;
 	}
 
-	if ( items[item->type].value * .75 <= item->sellValue(clientnum) ) {
+	if ( items[item->type].value * .75 <= item->sellValue(clientnum) )
+	{
 		shopspeech = language[209 + rand() % 3];
-	} else {
+	}
+	else
+	{
 		shopspeech = language[206 + rand() % 3];
 	}
 	shoptimer = ticks - 1;
@@ -266,11 +313,15 @@ void sellItemToShop(Item* item) {
 	item->count = 1;
 	messagePlayer(clientnum, language[1125], item->description(), item->sellValue(clientnum));
 	item->count = ocount;
-	if ( multiplayer != CLIENT ) {
-		if ( rand() % 2 ) {
+	if ( multiplayer != CLIENT )
+	{
+		if ( rand() % 2 )
+		{
 			players[clientnum]->entity->increaseSkill(PRO_TRADING);
 		}
-	} else {
+	}
+	else
+	{
 		strcpy((char*)net_packet->data, "SHPS");
 		SDLNet_Write32(shopkeeper, &net_packet->data[4]);
 
@@ -279,9 +330,12 @@ void sellItemToShop(Item* item) {
 		SDLNet_Write32(item->status, &net_packet->data[12]);
 		SDLNet_Write32(item->beatitude, &net_packet->data[16]);
 		SDLNet_Write32((Uint32)item->appearance, &net_packet->data[20]);
-		if ( item->identified ) {
+		if ( item->identified )
+		{
 			net_packet->data[24] = 1;
-		} else {
+		}
+		else
+		{
 			net_packet->data[24] = 0;
 		}
 		net_packet->data[25] = clientnum;

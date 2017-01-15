@@ -11,7 +11,8 @@
 
 #pragma once
 
-static char monstertypename[][11] = {
+static char monstertypename[][11] =
+{
 	"nothing",
 	"human",
 	"rat",
@@ -42,7 +43,8 @@ extern float limbs[NUMMONSTERS][20][3];
 // 1: red blood
 // 2: green blood
 // 3: slime
-static char gibtype[NUMMONSTERS] = {
+static char gibtype[NUMMONSTERS] =
+{
 	0,
 	1,
 	1,
@@ -69,7 +71,8 @@ static char gibtype[NUMMONSTERS] = {
 // columns go like this:
 // sword, mace, axe, polearm, ranged, magic
 // lower number means less effective, higher number means more effective
-static double damagetables[NUMMONSTERS][6] = {
+static double damagetables[NUMMONSTERS][6] =
+{
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // nothing
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // human
 	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f }, // rat

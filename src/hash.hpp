@@ -13,7 +13,8 @@
 
 #define HASH_SIZE 256
 
-typedef struct ttfTextHash_t {
+typedef struct ttfTextHash_t
+{
 	char* str;
 	SDL_Surface* surf;
 	TTF_Font* font;

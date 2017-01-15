@@ -20,7 +20,8 @@ class Item;
 //enum Status;
 //enum Category;
 
-typedef enum {
+typedef enum
+{
 	NOTHING,
 	HUMAN,
 	RAT,
@@ -84,12 +85,14 @@ const int NUMPROFICIENCIES = 14;
 
 #define NUMCATEGORIES 13
 
-typedef enum {
+typedef enum
+{
 	MALE,
 	FEMALE
 } sex_t;
 
-class Stat {
+class Stat
+{
 public:
 	Monster type;
 	sex_t sex;

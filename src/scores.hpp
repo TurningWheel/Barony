@@ -15,7 +15,8 @@
 
 // game score structure
 #define MAXTOPSCORES 10
-typedef struct score_t {
+typedef struct score_t
+{
 	Sint32 kills[NUMMONSTERS];
 	Stat* stats;
 	Sint32 classnum;

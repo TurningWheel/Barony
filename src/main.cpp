@@ -239,10 +239,13 @@ hit_t hit;
 
 -------------------------------------------------------------------------------*/
 
-int longestline(char* str) {
+int longestline(char* str)
+{
 	int c, x = 0, result = 0;
-	for ( c = 0; c < strlen(str); c++ ) {
-		if ( str[c] == 10 ) {
+	for ( c = 0; c < strlen(str); c++ )
+	{
+		if ( str[c] == 10 )
+		{
 			x = 0;
 			continue;
 		}
@@ -261,7 +264,8 @@ int longestline(char* str) {
 
 -------------------------------------------------------------------------------*/
 
-int concatedStringLength(char* str, ...) {
+int concatedStringLength(char* str, ...)
+{
 	va_list argptr;
 	char newstr[1024] = { 0 };
 
@@ -282,7 +286,8 @@ int concatedStringLength(char* str, ...) {
 
 -------------------------------------------------------------------------------*/
 
-int sgn(double x) {
+int sgn(double x)
+{
 	return (x > 0) - (x < 0);
 }
 
@@ -294,7 +299,8 @@ int sgn(double x) {
 
 -------------------------------------------------------------------------------*/
 
-int numdigits_sint16(Sint16 x) {
+int numdigits_sint16(Sint16 x)
+{
 	return snprintf(NULL, 0, "%d", x);
 }
 
@@ -306,7 +312,8 @@ int numdigits_sint16(Sint16 x) {
 
 -------------------------------------------------------------------------------*/
 
-void printlog(char* str, ...) {
+void printlog(char* str, ...)
+{
 	char newstr[1024] = { 0 };
 	va_list argptr;
 
@@ -324,7 +331,8 @@ void printlog(char* str, ...) {
 	strftime( buffer, 32, "%H-%M-%S", tm_info );
 
 	// print to the log
-	if ( newstr[strlen(newstr) - 1] != '\n' ) {
+	if ( newstr[strlen(newstr) - 1] != '\n' )
+	{
 		int c = strlen(newstr);
 		newstr[c] = '\n';
 		newstr[c + 1] = 0;

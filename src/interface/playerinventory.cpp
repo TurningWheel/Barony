@@ -34,7 +34,8 @@ int inventory_mode = INVENTORY_MODE_ITEM;
 
 selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
 
-void warpMouseToSelectedInventorySlot() {
+void warpMouseToSelectedInventorySlot()
+{
 	SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selected_inventory_slot_y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 }
 
@@ -47,69 +48,115 @@ void warpMouseToSelectedInventorySlot() {
 
 -------------------------------------------------------------------------------*/
 
-char* itemUseString(const Item* item) {
-	if ( itemCategory(item) == WEAPON ) {
-		if ( itemIsEquipped(item, clientnum) ) {
+char* itemUseString(const Item* item)
+{
+	if ( itemCategory(item) == WEAPON )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
 			return language[323];
-		} else {
+		}
+		else
+		{
 			return language[324];
 		}
-	} else if ( itemCategory(item) == ARMOR ) {
-		switch ( item->type ) {
+	}
+	else if ( itemCategory(item) == ARMOR )
+	{
+		switch ( item->type )
+		{
 			case WOODEN_SHIELD:
 			case BRONZE_SHIELD:
 			case IRON_SHIELD:
 			case STEEL_SHIELD:
 			case STEEL_SHIELD_RESISTANCE:
-				if ( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) )
+				{
 					return language[325];
-				} else {
+				}
+				else
+				{
 					return language[326];
 				}
 			default:
 				break;
 		}
-		if ( itemIsEquipped(item, clientnum) ) {
+		if ( itemIsEquipped(item, clientnum) )
+		{
 			return language[327];
-		} else {
+		}
+		else
+		{
 			return language[328];
 		}
-	} else if ( itemCategory(item) == AMULET ) {
-		if ( itemIsEquipped(item, clientnum) ) {
+	}
+	else if ( itemCategory(item) == AMULET )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
 			return language[327];
-		} else {
+		}
+		else
+		{
 			return language[328];
 		}
-	} else if ( itemCategory(item) == POTION ) {
+	}
+	else if ( itemCategory(item) == POTION )
+	{
 		return language[329];
-	} else if ( itemCategory(item) == SCROLL ) {
+	}
+	else if ( itemCategory(item) == SCROLL )
+	{
 		return language[330];
-	} else if ( itemCategory(item) == MAGICSTAFF ) {
-		if ( itemIsEquipped(item, clientnum) ) {
+	}
+	else if ( itemCategory(item) == MAGICSTAFF )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
 			return language[323];
-		} else {
+		}
+		else
+		{
 			return language[324];
 		}
-	} else if ( itemCategory(item) == RING ) {
-		if ( itemIsEquipped(item, clientnum) ) {
+	}
+	else if ( itemCategory(item) == RING )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
 			return language[327];
-		} else {
+		}
+		else
+		{
 			return language[331];
 		}
-	} else if ( itemCategory(item) == SPELLBOOK ) {
+	}
+	else if ( itemCategory(item) == SPELLBOOK )
+	{
 		return language[330];
-	} else if ( itemCategory(item) == GEM ) {
-		if ( itemIsEquipped(item, clientnum) ) {
+	}
+	else if ( itemCategory(item) == GEM )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
 			return language[323];
-		} else {
+		}
+		else
+		{
 			return language[324];
 		}
-	} else if ( itemCategory(item) == TOOL ) {
-		switch ( item->type ) {
+	}
+	else if ( itemCategory(item) == TOOL )
+	{
+		switch ( item->type )
+		{
 			case TOOL_PICKAXE:
-				if ( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) )
+				{
 					return language[323];
-				} else {
+				}
+				else
+				{
 					return language[324];
 				}
 			case TOOL_TINOPENER:
@@ -118,30 +165,42 @@ char* itemUseString(const Item* item) {
 				return language[332];
 			case TOOL_LOCKPICK:
 			case TOOL_SKELETONKEY:
-				if ( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) )
+				{
 					return language[333];
-				} else {
+				}
+				else
+				{
 					return language[334];
 				}
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
-				if ( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) )
+				{
 					return language[335];
-				} else {
+				}
+				else
+				{
 					return language[336];
 				}
 			case TOOL_BLINDFOLD:
-				if ( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) )
+				{
 					return language[327];
-				} else {
+				}
+				else
+				{
 					return language[328];
 				}
 			case TOOL_TOWEL:
 				return language[332];
 			case TOOL_GLASSES:
-				if ( itemIsEquipped(item, clientnum) ) {
+				if ( itemIsEquipped(item, clientnum) )
+				{
 					return language[327];
-				} else {
+				}
+				else
+				{
 					return language[331];
 				}
 			case TOOL_BEARTRAP:
@@ -149,11 +208,17 @@ char* itemUseString(const Item* item) {
 			default:
 				break;
 		}
-	} else if ( itemCategory(item) == FOOD ) {
+	}
+	else if ( itemCategory(item) == FOOD )
+	{
 		return language[338];
-	} else if ( itemCategory(item) == BOOK ) {
+	}
+	else if ( itemCategory(item) == BOOK )
+	{
 		return language[330];
-	} else if ( itemCategory(item) == SPELL_CAT ) {
+	}
+	else if ( itemCategory(item) == SPELL_CAT )
+	{
 		return language[339];
 	}
 	return language[332];
@@ -167,7 +232,8 @@ char* itemUseString(const Item* item) {
 
 -------------------------------------------------------------------------------*/
 
-void updateAppraisalItemBox() {
+void updateAppraisalItemBox()
+{
 	SDL_Rect pos;
 	Item* item;
 	int x, y;
@@ -176,11 +242,15 @@ void updateAppraisalItemBox() {
 	y = INVENTORY_STARTY;
 
 	// appraisal item box
-	if ( (item = uidToItem(appraisal_item)) != NULL && appraisal_timer > 0 ) {
-		if ( !shootmode ) {
+	if ( (item = uidToItem(appraisal_item)) != NULL && appraisal_timer > 0 )
+	{
+		if ( !shootmode )
+		{
 			pos.x = x + 16;
 			pos.y = y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE + 16;
-		} else {
+		}
+		else
+		{
 			pos.x = 16;
 			pos.y = 16;
 		}
@@ -195,10 +265,13 @@ void updateAppraisalItemBox() {
 		char tempstr[64] = { 0 };
 		snprintf(tempstr, 63, language[341], (((double)(appraisal_timermax - appraisal_timer)) / ((double)appraisal_timermax)) * 100);
 		ttfPrintText( ttf12, pos.x + 8, pos.y + 8, tempstr );
-		if ( !shootmode ) {
+		if ( !shootmode )
+		{
 			pos.x = x + 24;
 			pos.y = y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE + 16 + 24;
-		} else {
+		}
+		else
+		{
 			pos.x = 24;
 			pos.y = 16 + 24;
 		}
@@ -209,53 +282,67 @@ void updateAppraisalItemBox() {
 	}
 }
 
-void select_inventory_slot(int x, int y) {
-	if ( x < 0 ) { //Wrap around left boundary.
+void select_inventory_slot(int x, int y)
+{
+	if ( x < 0 )   //Wrap around left boundary.
+	{
 		x = INVENTORY_SIZEX - 1;
 	}
-	if ( x >= INVENTORY_SIZEX ) { //Wrap around right boundary.
+	if ( x >= INVENTORY_SIZEX )   //Wrap around right boundary.
+	{
 		x = 0;
 	}
 
 	bool warpInv = true;
 
-	if ( y < 0 ) { //Wrap around top.
+	if ( y < 0 )   //Wrap around top.
+	{
 		y = INVENTORY_SIZEY - 1;
 	}
-	if ( y >= INVENTORY_SIZEY ) { //Hit bottom. Wrap around or go to shop/chest?
-		if ( openedChest[clientnum] ) {
+	if ( y >= INVENTORY_SIZEY )   //Hit bottom. Wrap around or go to shop/chest?
+	{
+		if ( openedChest[clientnum] )
+		{
 			//Do not want to wrap around if opened chest or shop.
 			warpInv = false;
 			y = INVENTORY_SIZEY - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
-			if ( numItemsInChest() > 0 ) { //If chest even has an item...
+			if ( numItemsInChest() > 0 )   //If chest even has an item...
+			{
 				//Then warp cursor to chest.
 				selectedChestSlot = 0; //Warp to first chest slot.
 				int warpX = CHEST_INVENTORY_X + (inventoryoptionChest_bmp->w / 2);
 				int warpY = CHEST_INVENTORY_Y + (inventoryoptionChest_bmp->h / 2)  + 16;
 				SDL_WarpMouseInWindow(screen, warpX, warpY);
 			}
-		} else if ( gui_mode == GUI_MODE_SHOP ) {
+		}
+		else if ( gui_mode == GUI_MODE_SHOP )
+		{
 			warpInv = false;
 			y = INVENTORY_SIZEY - 1; //Keeps the selected slot within the inventory, to warp back to later.
 
 			//Warp into shop inventory if shopkeep has any items.
-			if ( shopinvitems[0] ) {
+			if ( shopinvitems[0] )
+			{
 				selectedShopSlot = 0;
 				warpMouseToSelectedShopSlot();
 			}
-		} else if ( identifygui_active ) {
+		}
+		else if ( identifygui_active )
+		{
 			warpInv = false;
 			y = INVENTORY_SIZEY - 1;
 
 			//Warp into identify GUI "inventory"...if there is anything there.
-			if ( identify_items[0] ) {
+			if ( identify_items[0] )
+			{
 				selectedIdentifySlot = 0;
 				warpMouseToSelectedIdentifySlot();
 			}
 		}
 
-		if ( warpInv ) { //Wrap around to top.
+		if ( warpInv )   //Wrap around to top.
+		{
 			y = 0;
 		}
 	}
@@ -315,20 +402,26 @@ Uint32 itemMenuItem = 0;
 	}
 }*/
 
-void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflict with inventory context menu?
-	if ( !selectedItem ) {
+void releaseItem(int x, int y)   //TODO: This function uses toggleclick. Conflict with inventory context menu?
+{
+	if ( !selectedItem )
+	{
 		return;
 	}
 
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL])) {
-		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS) {
+	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]))
+	{
+		if (selectedItemFromHotbar >= -1 && selectedItemFromHotbar < NUM_HOTBAR_SLOTS)
+		{
 			//Warp cursor back into hotbar, for gamepad convenience.
 			SDL_WarpMouseInWindow(screen, (STATUS_X) + (selectedItemFromHotbar * hotbar_img->w) + (hotbar_img->w / 2), (STATUS_Y) - (hotbar_img->h / 2));
 			hotbar[selectedItemFromHotbar].item = selectedItem->uid;
-		} else {
+		}
+		else
+		{
 			//Warp cursor back into inventory, for gamepad convenience.
 			SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selectedItem->x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selectedItem->y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 		}
@@ -341,17 +434,23 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 	//TODO: Do proper refactoring.
 
 	// releasing items
-	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) ) {
+	if ( (!mousestatus[SDL_BUTTON_LEFT] && !toggleclick) || (mousestatus[SDL_BUTTON_LEFT] && toggleclick) || ( (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && toggleclick) )
+	{
 		*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
-		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT) {
+		if (openedChest[clientnum] && itemCategory(selectedItem) != SPELL_CAT)
+		{
 			if (mousex >= CHEST_INVENTORY_X && mousey >= CHEST_INVENTORY_Y
 			        && mousex < CHEST_INVENTORY_X + inventoryChest_bmp->w
-			        && mousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h) {
-				if (selectedItem->count > 1) {
+			        && mousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
+			{
+				if (selectedItem->count > 1)
+				{
 					openedChest[clientnum]->addItemToChestFromInventory(
 					    clientnum, selectedItem, FALSE);
 					toggleclick = TRUE;
-				} else {
+				}
+				else
+				{
 					openedChest[clientnum]->addItemToChestFromInventory(
 					    clientnum, selectedItem, FALSE);
 					selectedItem = NULL;
@@ -359,33 +458,43 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 				}
 			}
 		}
-		if (selectedItem) {
+		if (selectedItem)
+		{
 			if (mousex >= x && mousey >= y
 			        && mousex < x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE
-			        && mousey < y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) {
+			        && mousey < y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE)
+			{
 				// within inventory
 				int oldx = selectedItem->x;
 				int oldy = selectedItem->y;
 				selectedItem->x = (mousex - x) / INVENTORY_SLOTSIZE;
 				selectedItem->y = (mousey - y) / INVENTORY_SLOTSIZE;
 				for (node = stats[clientnum]->inventory.first; node != NULL;
-				        node = nextnode) {
+				        node = nextnode)
+				{
 					nextnode = node->next;
 					Item* tempItem = (Item*) (node->element);
-					if (tempItem == selectedItem) {
+					if (tempItem == selectedItem)
+					{
 						continue;
 					}
 
 					toggleclick = FALSE;
 					if (tempItem->x == selectedItem->x
-					        && tempItem->y == selectedItem->y) {
+					        && tempItem->y == selectedItem->y)
+					{
 						if (itemCategory(selectedItem) != SPELL_CAT
-						        && itemCategory(tempItem) == SPELL_CAT) {
+						        && itemCategory(tempItem) == SPELL_CAT)
+						{
 							//It's alright, the item can go here. The item sharing this x is just a spell, but the item being moved isn't a spell.
-						} else if (itemCategory(selectedItem) == SPELL_CAT
-						           && itemCategory(tempItem) != SPELL_CAT) {
+						}
+						else if (itemCategory(selectedItem) == SPELL_CAT
+						         && itemCategory(tempItem) != SPELL_CAT)
+						{
 							//It's alright, the item can go here. The item sharing this x isn't a spell, but the item being moved is a spell.
-						} else {
+						}
+						else
+						{
 							//The player just dropped an item onto another item.
 							tempItem->x = oldx;
 							tempItem->y = oldy;
@@ -395,51 +504,71 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 						}
 					}
 				}
-				if (!toggleclick) {
+				if (!toggleclick)
+				{
 					selectedItem = NULL;
 				}
 
 				playSound(139, 64); // click sound
-			} else if (itemCategory(selectedItem) == SPELL_CAT) {
+			}
+			else if (itemCategory(selectedItem) == SPELL_CAT)
+			{
 				//Outside inventory. Spells can't be dropped.
 				hotbar_slot_t* slot = getHotbar(mousex, mousey);
-				if (slot) {
+				if (slot)
+				{
 					//Add spell to hotbar.
 					Item* tempItem = uidToItem(slot->item);
-					if (tempItem) {
+					if (tempItem)
+					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
 						toggleclick = TRUE;
-					} else {
+					}
+					else
+					{
 						slot->item = selectedItem->uid;
 						selectedItem = NULL;
 						toggleclick = FALSE;
 					}
 					playSound(139, 64); // click sound
-				} else {
+				}
+				else
+				{
 					selectedItem = NULL;
 				}
-			} else {
+			}
+			else
+			{
 				// outside inventory
 				hotbar_slot_t* slot = getHotbar(mousex, mousey);
-				if (slot) {
+				if (slot)
+				{
 					//Add item to hotbar.
 					Item* tempItem = uidToItem(slot->item);
-					if (tempItem) {
+					if (tempItem)
+					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
 						toggleclick = TRUE;
-					} else {
+					}
+					else
+					{
 						slot->item = selectedItem->uid;
 						selectedItem = NULL;
 						toggleclick = FALSE;
 					}
 					playSound(139, 64); // click sound
-				} else {
-					if (selectedItem->count > 1) {
+				}
+				else
+				{
+					if (selectedItem->count > 1)
+					{
 						dropItem(selectedItem, clientnum);
 						toggleclick = TRUE;
-					} else {
+					}
+					else
+					{
 						dropItem(selectedItem, clientnum);
 						selectedItem = NULL;
 						toggleclick = FALSE;
@@ -447,16 +576,21 @@ void releaseItem(int x, int y) { //TODO: This function uses toggleclick. Conflic
 				}
 			}
 		}
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+		if (mousestatus[SDL_BUTTON_LEFT])
+		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 		}
 	}
 }
 
-void cycleInventoryTab() {
-	if ( inventory_mode == INVENTORY_MODE_ITEM) {
+void cycleInventoryTab()
+{
+	if ( inventory_mode == INVENTORY_MODE_ITEM)
+	{
 		inventory_mode = INVENTORY_MODE_SPELL;
-	} else {
+	}
+	else
+	{
 		//inventory_mode == INVENTORY_MODE_SPELL
 		inventory_mode = INVENTORY_MODE_ITEM;
 	}
@@ -471,16 +605,19 @@ void cycleInventoryTab() {
  * * Here. In updatePlayerInventory(), where it draws the gold borders around the inventory tile the mouse is hovering over.
  * * drawstatus.cpp: drawing the gold borders around the hotbar slot the mouse is hovering over
  */
-bool mouseInBoundsRealtimeCoords(int x1, int x2, int y1, int y2) {
+bool mouseInBoundsRealtimeCoords(int x1, int x2, int y1, int y2)
+{
 	if (mousey >= y1 && mousey < y2)
-		if (mousex >= x1 && mousex < x2) {
+		if (mousex >= x1 && mousex < x2)
+		{
 			return TRUE;
 		}
 
 	return FALSE;
 }
 
-void drawBlueInventoryBorder(const Item& item, int x, int y) {
+void drawBlueInventoryBorder(const Item& item, int x, int y)
+{
 	SDL_Rect pos;
 	pos.x = x + item.x * INVENTORY_SLOTSIZE + 2;
 	pos.y = y + item.y * INVENTORY_SLOTSIZE + 1;
@@ -491,7 +628,8 @@ void drawBlueInventoryBorder(const Item& item, int x, int y) {
 	drawBox(&pos, color, 127);
 }
 
-void updatePlayerInventory() {
+void updatePlayerInventory()
+{
 	SDL_Rect pos, mode_pos;
 	node_t* node, *nextnode;
 	int x, y;
@@ -506,47 +644,65 @@ void updatePlayerInventory() {
 	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
 	drawRect(&pos, 0, 224);
 
-	if (game_controller) {
-		if ( gui_mode == GUI_MODE_SHOP ) {
-			if ( *inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT]) ) {
+	if (game_controller)
+	{
+		if ( gui_mode == GUI_MODE_SHOP )
+		{
+			if ( *inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT]) )
+			{
 				*inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT]) = 0;
 				cycleShopCategories(-1);
 			}
-			if ( *inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT]) ) {
+			if ( *inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT]) )
+			{
 				*inputPressed(joyimpulses[INJOY_MENU_CYCLE_SHOP_RIGHT]) = 0;
 				cycleShopCategories(1);
 			}
 		}
 
-		if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() ) {
-			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) { //This second check prevents the extra mouse warp.
+		if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && !itemMenuOpen && game_controller->handleInventoryMovement() )
+		{
+			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 )   //This second check prevents the extra mouse warp.
+			{
 				warpMouseToSelectedInventorySlot();
 			}
-		} else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controller->handleChestMovement() ) {
-			if ( selectedChestSlot < 0 ) {
+		}
+		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controller->handleChestMovement() )
+		{
+			if ( selectedChestSlot < 0 )
+			{
 				//Move out of chest. Warp cursor back to selected inventory slot.
 				warpMouseToSelectedInventorySlot();
 			}
-		} else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controller->handleShopMovement() ) {
-			if ( selectedShopSlot < 0 ) {
+		}
+		else if ( selectedShopSlot >= 0 && !itemMenuOpen && game_controller->handleShopMovement() )
+		{
+			if ( selectedShopSlot < 0 )
+			{
 				warpMouseToSelectedInventorySlot();
 			}
-		} else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controller->handleIdentifyMovement() ) {
-			if ( selectedIdentifySlot < 0 ) {
+		}
+		else if ( selectedIdentifySlot >= 0 && !itemMenuOpen && game_controller->handleIdentifyMovement() )
+		{
+			if ( selectedIdentifySlot < 0 )
+			{
 				warpMouseToSelectedInventorySlot();
 			}
 		}
 
-		if ( *inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) ) {
+		if ( *inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) )
+		{
 			*inputPressed(joyimpulses[INJOY_MENU_INVENTORY_TAB]) = 0;
 			cycleInventoryTab();
 		}
 
-		if ( lastkeypressed == 300 ) {
+		if ( lastkeypressed == 300 )
+		{
 			lastkeypressed = 0;
 		}
 
-		if ( *inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) ) {
+		if ( *inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) )
+		{
 			*inputPressed(joyimpulses[INJOY_MENU_MAGIC_TAB]) = 0;
 			cycleInventoryTab();
 		}
@@ -559,30 +715,37 @@ void updatePlayerInventory() {
 	pos.h = INVENTORY_SIZEY * INVENTORY_SLOTSIZE;
 	drawLine(pos.x, pos.y, pos.x, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	drawLine(pos.x, pos.y, pos.x + pos.w, pos.y, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
-	for ( x = 0; x <= INVENTORY_SIZEX; x++ ) {
+	for ( x = 0; x <= INVENTORY_SIZEX; x++ )
+	{
 		drawLine(pos.x + x * INVENTORY_SLOTSIZE, pos.y, pos.x + x * INVENTORY_SLOTSIZE, pos.y + pos.h, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	}
-	for ( y = 0; y <= INVENTORY_SIZEY; y++ ) {
+	for ( y = 0; y <= INVENTORY_SIZEY; y++ )
+	{
 		drawLine(pos.x, pos.y + y * INVENTORY_SLOTSIZE, pos.x + pos.w, pos.y + y * INVENTORY_SLOTSIZE, SDL_MapRGB(mainsurface->format, 150, 150, 150), 255);
 	}
 
-	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) {
+	if ( !itemMenuOpen && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 )
+	{
 		//Highlight (draw a gold border) currently selected inventory slot (for gamepad).
 		//Only if item menu is not open, no chest slot is selected, no shop slot is selected, and no Identify GUI slot is selected.
 		pos.w = INVENTORY_SLOTSIZE;
 		pos.h = INVENTORY_SLOTSIZE;
-		for (x = 0; x < INVENTORY_SIZEX; ++x) {
-			for (y = 0; y < INVENTORY_SIZEY; ++y) {
+		for (x = 0; x < INVENTORY_SIZEX; ++x)
+		{
+			for (y = 0; y < INVENTORY_SIZEY; ++y)
+			{
 				pos.x = INVENTORY_STARTX + x * INVENTORY_SLOTSIZE;
 				pos.y = INVENTORY_STARTY + y * INVENTORY_SLOTSIZE;
 
 				//Cursor moved over this slot, highlight it.
-				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h)) {
+				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + pos.w, pos.y, pos.y + pos.h))
+				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
 				}
 
-				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y ) {
+				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y )
+				{
 					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
 					drawBox(&pos, color, 127);
 				}
@@ -594,14 +757,18 @@ void updatePlayerInventory() {
 	// draw contents of each slot
 	x = INVENTORY_STARTX;
 	y = INVENTORY_STARTY;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
+	for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+	{
 		nextnode = node->next;
 		Item* item = (Item*)node->element;
 
-		if ( item == selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) ) {
+		if ( item == selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+		{
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
-			if ( !(inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) ) {
-				if ( item == selectedItem ) {
+			if ( !(inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) )
+			{
+				if ( item == selectedItem )
+				{
 					//Draw blue border around the slot if it's the currently grabbed item.
 					drawBlueInventoryBorder(*item, x, y);
 				}
@@ -609,34 +776,43 @@ void updatePlayerInventory() {
 			continue;
 		}
 
-		if (!item->identified) {
+		if (!item->identified)
+		{
 			// give it a yellow background if it is unidentified
 			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
 			pos.w = 38;
 			pos.h = 38;
 			drawRect(&pos, 31875, 125);
-		} else if (item->beatitude < 0) {
+		}
+		else if (item->beatitude < 0)
+		{
 			// give it a red background if cursed
 			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
 			pos.w = 38;
 			pos.h = 38;
 			drawRect(&pos, 125, 125);
-		} else if (item->beatitude > 0) {
+		}
+		else if (item->beatitude > 0)
+		{
 			// give it a green background if blessed (light blue if colorblind mode)
 			pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 			pos.y = y + item->y * INVENTORY_SLOTSIZE + 1;
 			pos.w = 38;
 			pos.h = 38;
-			if (colorblind) {
+			if (colorblind)
+			{
 				drawRect(&pos, SDL_MapRGB(mainsurface->format, 100, 245, 255), 65);
-			} else {
+			}
+			else
+			{
 				drawRect(&pos, 65280, 65);
 			}
 		}
 
-		if ( itemMenuOpen && item == uidToItem(itemMenuItem) ) {
+		if ( itemMenuOpen && item == uidToItem(itemMenuItem) )
+		{
 			//Draw blue border around the slot if it's the currently context menu'd item.
 			drawBlueInventoryBorder(*item, x, y);
 		}
@@ -646,27 +822,34 @@ void updatePlayerInventory() {
 		pos.y = y + item->y * INVENTORY_SLOTSIZE + 4;
 		pos.w = 32;
 		pos.h = 32;
-		if ( itemSprite(item) ) {
+		if ( itemSprite(item) )
+		{
 			drawImageScaled(itemSprite(item), NULL, &pos);
 		}
 
 		// item count
-		if ( item->count > 1 ) {
+		if ( item->count > 1 )
+		{
 			printTextFormatted(font8x8_bmp, pos.x + 24, pos.y + 24, "%d", item->count);
 		}
 
 		// item equipped
-		if ( itemCategory(item) != SPELL_CAT ) {
-			if ( itemIsEquipped(item, clientnum) ) {
+		if ( itemCategory(item) != SPELL_CAT )
+		{
+			if ( itemIsEquipped(item, clientnum) )
+			{
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
 				pos.w = 16;
 				pos.h = 16;
 				drawImage(equipped_bmp, NULL, &pos);
 			}
-		} else {
+		}
+		else
+		{
 			spell_t* spell = getSpellFromItem(item);
-			if ( selected_spell == spell ) {
+			if ( selected_spell == spell )
+			{
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
 				pos.w = 16;
@@ -682,7 +865,8 @@ void updatePlayerInventory() {
 	mode_pos.w = 0;
 	mode_pos.h = 0;
 	bool mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_spell_img->w, mode_pos.y, mode_pos.y + inventory_mode_spell_img->h);
-	if (mouse_in_bounds) {
+	if (mouse_in_bounds)
+	{
 		drawImage(inventory_mode_spell_highlighted_img, NULL, &mode_pos);
 
 		// tooltip
@@ -694,11 +878,14 @@ void updatePlayerInventory() {
 		drawTooltip(&src);
 		ttfPrintText(ttf12, src.x + 4, src.y + 4, language[342]);
 
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+		if (mousestatus[SDL_BUTTON_LEFT])
+		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			inventory_mode = INVENTORY_MODE_SPELL;
 		}
-	} else {
+	}
+	else
+	{
 		drawImage(inventory_mode_spell_img, NULL, &mode_pos);
 	}
 	mode_pos.x = x + INVENTORY_SIZEX * INVENTORY_SLOTSIZE;
@@ -706,7 +893,8 @@ void updatePlayerInventory() {
 	mode_pos.w = 0;
 	mode_pos.h = 0;
 	mouse_in_bounds = mouseInBounds(mode_pos.x, mode_pos.x + inventory_mode_item_img->w, mode_pos.y, mode_pos.y + inventory_mode_item_img->h);
-	if (mouse_in_bounds) {
+	if (mouse_in_bounds)
+	{
 		drawImage(inventory_mode_item_highlighted_img, NULL, &mode_pos);
 
 		// tooltip
@@ -718,102 +906,140 @@ void updatePlayerInventory() {
 		drawTooltip(&src);
 		ttfPrintText(ttf12, src.x + 4, src.y + 4, language[343]);
 
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+		if (mousestatus[SDL_BUTTON_LEFT])
+		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			inventory_mode = INVENTORY_MODE_ITEM;
 		}
-	} else {
+	}
+	else
+	{
 		drawImage(inventory_mode_item_img, NULL, &mode_pos);
 	}
 
 	// mouse interactions
-	if ( !selectedItem ) {
-		for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
+	if ( !selectedItem )
+	{
+		for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
+		{
 			nextnode = node->next;
 			Item* item = (Item*)node->element;  //I don't like that there's not a check that either are null.
 
-			if (item) {
+			if (item)
+			{
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 4;
 				pos.y = y + item->y * INVENTORY_SLOTSIZE + 4;
 				pos.w = 32;
 				pos.h = 32;
 
-				if ( omousex >= pos.x && omousey >= pos.y && omousex < pos.x + pos.w && omousey < pos.y + pos.h ) {
+				if ( omousex >= pos.x && omousey >= pos.y && omousex < pos.x + pos.w && omousey < pos.y + pos.h )
+				{
 					// tooltip
-					if ((inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT)) {
+					if ((inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT))
+					{
 						continue;    //Skip over this items since the filter is blocking it (eg spell in normal inventory or vice versa).
 					}
-					if ( !itemMenuOpen ) {
+					if ( !itemMenuOpen )
+					{
 						SDL_Rect src;
 						src.x = mousex + 16;
 						src.y = mousey + 8;
-						if (itemCategory(item) == SPELL_CAT) {
+						if (itemCategory(item) == SPELL_CAT)
+						{
 							spell_t* spell = getSpellFromItem(item);
-							if (spell) {
+							if (spell)
+							{
 								char tempstr[32];
 								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
 								src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 								src.h = TTF12_HEIGHT * 2 + 8;
 								drawTooltip(&src);
 								ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
-							} else {
+							}
+							else
+							{
 								src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
 								src.h = TTF12_HEIGHT + 8;
 								drawTooltip(&src);
 								ttfPrintText( ttf12, src.x + 4, src.y + 4, "Error: Spell doesn't exist!");
 							}
-						} else {
+						}
+						else
+						{
 							src.w = std::max(13, longestline(item->description())) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 4 + 8;
 							if ( item->identified )
-								if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR ) {
+								if ( itemCategory(item) == WEAPON || itemCategory(item) == ARMOR )
+								{
 									src.h += TTF12_HEIGHT;
 								}
 							drawTooltip(&src);
 
 							Uint32 color = 0xFFFFFFFF;
-							if ( !item->identified ) {
+							if ( !item->identified )
+							{
 								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309] );
-							} else {
-								if (item->beatitude < 0) {
+							}
+							else
+							{
+								if (item->beatitude < 0)
+								{
 									//Red if cursed
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
-								} else if (item->beatitude == 0) {
+								}
+								else if (item->beatitude == 0)
+								{
 									//White if normal item.
 									color = 0xFFFFFFFF;
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
-								} else {
+								}
+								else
+								{
 									//Green if blessed.
-									if (colorblind) {
+									if (colorblind)
+									{
 										color = SDL_MapRGB(mainsurface->format, 100, 245, 255); //Light blue if colorblind
-									} else {
+									}
+									else
+									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 									}
 
 									ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 								}
 							}
-							if ( item->beatitude == 0 || !item->identified ) {
+							if ( item->beatitude == 0 || !item->identified )
+							{
 								color = 0xFFFFFFFF;
 							}
 							ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
 							ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
 
-							if ( item->identified ) {
-								if ( itemCategory(item) == WEAPON ) {
-									if ( item->weaponGetAttack() >= 0 ) {
+							if ( item->identified )
+							{
+								if ( itemCategory(item) == WEAPON )
+								{
+									if ( item->weaponGetAttack() >= 0 )
+									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-									} else {
+									}
+									else
+									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
-								} else if ( itemCategory(item) == ARMOR ) {
-									if ( item->armorGetAC() >= 0 ) {
+								}
+								else if ( itemCategory(item) == ARMOR )
+								{
+									if ( item->armorGetAC() >= 0 )
+									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 255);
-									} else {
+									}
+									else
+									{
 										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									}
 									ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
@@ -822,27 +1048,34 @@ void updatePlayerInventory() {
 						}
 					}
 
-					if ( stats[clientnum]->HP <= 0 ) {
+					if ( stats[clientnum]->HP <= 0 )
+					{
 						break;
 					}
 
-					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 ) {
+					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 )
+					{
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0)) && !selectedItem && !itemMenuOpen ) {
-						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) ) {
+					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0)) && !selectedItem && !itemMenuOpen )
+					{
+						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
+						{
 							dropItem(item, clientnum); // Quick item drop
-						} else {
+						}
+						else
+						{
 							selectedItem = item;
 							//itemSelectBehavior = BEHAVIOR_MOUSE;
 							playSound(139, 64); // click sound
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) ) {
+							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) )
+							{
 								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
 								toggleclick = true;
@@ -850,8 +1083,11 @@ void updatePlayerInventory() {
 								//TODO: Change the mouse cursor to THE HAND.
 							}
 						}
-					} else if ( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0)) && !itemMenuOpen && !selectedItem ) {
-						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) {
+					}
+					else if ( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0)) && !itemMenuOpen && !selectedItem )
+					{
+						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) )
+						{
 							// auto-appraise the item
 							identifygui_active = false;
 							identifygui_appraising = true;
@@ -860,7 +1096,9 @@ void updatePlayerInventory() {
 
 							//Cleanup identify GUI gamecontroller code here.
 							selectedIdentifySlot = -1;
-						} else {
+						}
+						else
+						{
 							// open a drop-down menu of options for "using" the item
 							itemMenuOpen = true;
 							itemMenuX = mousex + 8;
@@ -870,7 +1108,8 @@ void updatePlayerInventory() {
 
 							toggleclick = false; //Default reset. Otherwise will break mouse support after using gamepad once to trigger a context menu.
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
+							if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+							{
 								*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 								toggleclick = true;
 							}
@@ -880,7 +1119,9 @@ void updatePlayerInventory() {
 				}
 			}
 		}
-	} else if ( stats[clientnum]->HP > 0 ) {
+	}
+	else if ( stats[clientnum]->HP > 0 )
+	{
 		// releasing items
 		releaseItem(x, y);
 	}
@@ -891,10 +1132,14 @@ void updatePlayerInventory() {
 /*
  * Helper function to drawItemMenuSlots. Draws the empty window for an individual item context menu slot.
  */
-inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected = false) {
-	if (selected) {
+inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected = false)
+{
+	if (selected)
+	{
 		drawDepressed(x, y, x + width, y + height);
-	} else {
+	}
+	else
+	{
 		drawWindow(x, y, x + width, y + height);
 	}
 }
@@ -902,19 +1147,22 @@ inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected 
 /*
  * Helper function to itemContextMenu(). Draws the context menu slots.
  */
-inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height) {
+inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
+{
 	//Draw the action select boxes. "Appraise", "Use, "Equip", etc.
 	int current_x = itemMenuX;
 	int current_y = itemMenuY;
 	drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 0); //Option 0 => Store in chest, sell, use.
-	if (itemCategory(&item) != SPELL_CAT) {
+	if (itemCategory(&item) != SPELL_CAT)
+	{
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 1); //Option 1 => wield, unwield, use, appraise
 
 		current_y += slot_height;
 		drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 2); //Option 2 => appraise, drop
 
-		if (itemCategory(&item) == POTION) {
+		if (itemCategory(&item) == POTION)
+		{
 			current_y += slot_height;
 			drawItemMenuSlot(current_x, current_y, slot_width, slot_height, itemMenuSelected == 3); //Option 3 => drop
 		}
@@ -924,42 +1172,49 @@ inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height)
 /*
  * drawOptionX() - renders the specified option in the given item option menu slot.
  */
-inline void drawOptionStoreInChest(int x, int y) {
+inline void drawOptionStoreInChest(int x, int y)
+{
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[344], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[344]);
 }
 
-inline void drawOptionSell(int x, int y) {
+inline void drawOptionSell(int x, int y)
+{
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[345], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[345]);
 }
 
-inline void drawOptionUse(const Item& item, int x, int y) {
+inline void drawOptionUse(const Item& item, int x, int y)
+{
 	int width = 0;
 	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(&item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(&item));
 }
 
-inline void drawOptionUnwield(int x, int y) {
+inline void drawOptionUnwield(int x, int y)
+{
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[323], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[323]);
 }
 
-inline void drawOptionWield(int x, int y) {
+inline void drawOptionWield(int x, int y)
+{
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[324], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[324]);
 }
 
-inline void drawOptionAppraise(int x, int y) {
+inline void drawOptionAppraise(int x, int y)
+{
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[1161], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1161]);
 }
 
-inline void drawOptionDrop(int x, int y) {
+inline void drawOptionDrop(int x, int y)
+{
 	int width = 0;
 	TTF_SizeUTF8(ttf12, language[1162], &width, nullptr);
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[1162]);
@@ -968,8 +1223,10 @@ inline void drawOptionDrop(int x, int y) {
 /*
  * Helper function to itemContextMenu(). Draws a spell's options.
  */
-inline void drawItemMenuOptionSpell(const Item& item, int x, int y) {
-	if (itemCategory(&item) != SPELL_CAT) {
+inline void drawItemMenuOptionSpell(const Item& item, int x, int y)
+{
+	if (itemCategory(&item) != SPELL_CAT)
+	{
 		return;
 	}
 
@@ -982,25 +1239,38 @@ inline void drawItemMenuOptionSpell(const Item& item, int x, int y) {
 /*
  * Helper function to itemContextMenu(). Draws a potion's options.
  */
-inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false) {
-	if (itemCategory(&item) != POTION) {
+inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false)
+{
+	if (itemCategory(&item) != POTION)
+	{
 		return;
 	}
 
 	int width = 0;
 
 	//Option 0.
-	if (openedChest[clientnum]) {
+	if (openedChest[clientnum])
+	{
 		drawOptionStoreInChest(x, y);
-	} else if (gui_mode == GUI_MODE_SHOP) {
+	}
+	else if (gui_mode == GUI_MODE_SHOP)
+	{
 		drawOptionSell(x, y);
-	} else {
-		if (!is_potion_bad) {
+	}
+	else
+	{
+		if (!is_potion_bad)
+		{
 			drawOptionUse(item, x, y);
-		} else {
-			if (itemIsEquipped(&item, clientnum)) {
+		}
+		else
+		{
+			if (itemIsEquipped(&item, clientnum))
+			{
 				drawOptionUnwield(x, y);
-			} else {
+			}
+			else
+			{
 				drawOptionWield(x, y);
 			}
 		}
@@ -1008,13 +1278,19 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 	y += height;
 
 	//Option 1.
-	if (!is_potion_bad) {
-		if (itemIsEquipped(&item, clientnum)) {
+	if (!is_potion_bad)
+	{
+		if (itemIsEquipped(&item, clientnum))
+		{
 			drawOptionUnwield(x, y);
-		} else {
+		}
+		else
+		{
 			drawOptionWield(x, y);
 		}
-	} else {
+	}
+	else
+	{
 		drawOptionUse(item, x, y);
 	}
 	y += height;
@@ -1030,19 +1306,26 @@ inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height,
 /*
  * Helper function to itemContextMenu(). Draws all other items's options.
  */
-inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height) {
-	if (itemCategory(&item) == SPELL_CAT || itemCategory(&item) == POTION) {
+inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height)
+{
+	if (itemCategory(&item) == SPELL_CAT || itemCategory(&item) == POTION)
+	{
 		return;
 	}
 
 	int width = 0;
 
 	//Option 0.
-	if (openedChest[clientnum]) {
+	if (openedChest[clientnum])
+	{
 		drawOptionStoreInChest(x, y);
-	} else if (gui_mode == GUI_MODE_SHOP) {
+	}
+	else if (gui_mode == GUI_MODE_SHOP)
+	{
 		drawOptionSell(x, y);
-	} else {
+	}
+	else
+	{
 		drawOptionUse(item, x, y);
 	}
 	y += height;
@@ -1059,42 +1342,53 @@ inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height
 /*
  * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
  */
-inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, int slot_height) {
+inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, int slot_height)
+{
 	int current_x = itemMenuX;
 	int current_y = itemMenuY;
 
-	if (mousey < current_y - slot_height) { //Check if out of bounds above.
+	if (mousey < current_y - slot_height)   //Check if out of bounds above.
+	{
 		itemMenuSelected = -1; //For canceling out.
 	}
-	if (mousey >= current_y - 2 && mousey < current_y + slot_height) {
+	if (mousey >= current_y - 2 && mousey < current_y + slot_height)
+	{
 		itemMenuSelected = 0;
 	}
-	if (itemCategory(&item) != SPELL_CAT) {
+	if (itemCategory(&item) != SPELL_CAT)
+	{
 		current_y += slot_height;
-		if (mousey >= current_y && mousey < current_y + slot_height) {
+		if (mousey >= current_y && mousey < current_y + slot_height)
+		{
 			itemMenuSelected = 1;
 		}
 		current_y += slot_height;
-		if (mousey >= current_y && mousey < current_y + slot_height) {
+		if (mousey >= current_y && mousey < current_y + slot_height)
+		{
 			itemMenuSelected = 2;
 		}
 		current_y += slot_height;
-		if (itemCategory(&item) == POTION) {
-			if (mousey >= current_y && mousey < current_y + slot_height) {
+		if (itemCategory(&item) == POTION)
+		{
+			if (mousey >= current_y && mousey < current_y + slot_height)
+			{
 				itemMenuSelected = 3;
 			}
 			current_y += slot_height;
 		}
 	}
 
-	if (mousey >= current_y + slot_height) { //Check if out of bounds below.
+	if (mousey >= current_y + slot_height)   //Check if out of bounds below.
+	{
 		itemMenuSelected = -1; //For canceling out.
 	}
 
-	if (mousex >= current_x + slot_width) { //Check if out of bounds to the right.
+	if (mousex >= current_x + slot_width)   //Check if out of bounds to the right.
+	{
 		itemMenuSelected = -1; //For canceling out.
 	}
-	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && settings_right_click_protect) ) { //Check if out of bounds to the left.
+	if ( mousex < itemMenuX - 10 || (mousex < itemMenuX && settings_right_click_protect) )   //Check if out of bounds to the left.
+	{
 		itemMenuSelected = -1; //For canceling out.
 	}
 }
@@ -1102,24 +1396,35 @@ inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, i
 /*
  * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
  */
-inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false) {
-	if (!item) {
+inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false)
+{
+	if (!item)
+	{
 		return;
 	}
 
-	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT) {
+	if (openedChest[clientnum] && itemCategory(item) != SPELL_CAT)
+	{
 		//Option 0 = store in chest.
 		openedChest[clientnum]->addItemToChestFromInventory(clientnum, item, false);
-	} else if (gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT) {
+	}
+	else if (gui_mode == GUI_MODE_SHOP && itemCategory(item) != SPELL_CAT)
+	{
 		//Option 0 = sell.
 		sellItemToShop(item);
-	} else {
-		if (!is_potion_bad) {
+	}
+	else
+	{
+		if (!is_potion_bad)
+		{
 			//Option 0 = use.
 			useItem(item, clientnum);
-		} else {
+		}
+		else
+		{
 			//Option 0 = equip.
-			if (multiplayer == CLIENT) {
+			if (multiplayer == CLIENT)
+			{
 				strcpy((char*)net_packet->data, "EQUI");
 				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
@@ -1138,12 +1443,15 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false) {
 	}
 }
 
-inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false) {
-	if (!item || itemCategory(item) == SPELL_CAT) {
+inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
+{
+	if (!item || itemCategory(item) == SPELL_CAT)
+	{
 		return;
 	}
 
-	if (itemCategory(item) != POTION) {
+	if (itemCategory(item) != POTION)
+	{
 		//Option 1 = appraise.
 		identifygui_active = false;
 		identifygui_appraising = true;
@@ -1152,10 +1460,14 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false) {
 		selectedIdentifySlot = -1;
 
 		identifyGUIIdentify(item);
-	} else {
-		if (!is_potion_bad) {
+	}
+	else
+	{
+		if (!is_potion_bad)
+		{
 			//Option 1 = equip.
-			if (multiplayer == CLIENT) {
+			if (multiplayer == CLIENT)
+			{
 				strcpy((char*)net_packet->data, "EQUI");
 				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
@@ -1170,22 +1482,29 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false) {
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
 			equipItem(item, &stats[clientnum]->weapon, clientnum);
-		} else {
+		}
+		else
+		{
 			//Option 1 = drink/use/whatever.
 			useItem(item, clientnum);
 		}
 	}
 }
 
-inline void executeItemMenuOption2(Item* item) {
-	if (!item || itemCategory(item) == SPELL_CAT) {
+inline void executeItemMenuOption2(Item* item)
+{
+	if (!item || itemCategory(item) == SPELL_CAT)
+	{
 		return;
 	}
 
-	if (itemCategory(item) != POTION) {
+	if (itemCategory(item) != POTION)
+	{
 		//Option 2 = drop.
 		dropItem(item, clientnum);
-	} else {
+	}
+	else
+	{
 		//Option 2 = appraise.
 		identifygui_active = false;
 		identifygui_appraising = true;
@@ -1197,8 +1516,10 @@ inline void executeItemMenuOption2(Item* item) {
 	}
 }
 
-inline void executeItemMenuOption3(Item* item) {
-	if (!item || itemCategory(item) != POTION) {
+inline void executeItemMenuOption3(Item* item)
+{
+	if (!item || itemCategory(item) != POTION)
+	{
 		return;
 	}
 
@@ -1206,12 +1527,15 @@ inline void executeItemMenuOption3(Item* item) {
 	dropItem(item, clientnum);
 }
 
-void itemContextMenu() {
-	if (!itemMenuOpen) {
+void itemContextMenu()
+{
+	if (!itemMenuOpen)
+	{
 		return;
 	}
 
-	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) ) {
+	if ( *inputPressed(joyimpulses[INJOY_MENU_CANCEL]) )
+	{
 		*inputPressed(joyimpulses[INJOY_MENU_CANCEL]) = 0;
 		itemMenuOpen = false;
 		//Warp cursor back into inventory, for gamepad convenience.
@@ -1222,31 +1546,40 @@ void itemContextMenu() {
 	//Item *item = uidToItem(itemMenuItem);
 
 	Item* current_item = uidToItem(itemMenuItem);
-	if (!current_item) {
+	if (!current_item)
+	{
 		itemMenuOpen = false;
 		return;
 	}
 
 	bool is_potion_bad = false;
-	if (current_item->identified) {
+	if (current_item->identified)
+	{
 		is_potion_bad = isPotionBad(*current_item);
 	}
 
 	const int slot_width = 100;
 	const int slot_height = 20;
 
-	if ( game_controller->handleItemContextMenu(*current_item) ) {
+	if ( game_controller->handleItemContextMenu(*current_item) )
+	{
 		SDL_WarpMouseInWindow(screen, itemMenuX + (slot_width / 2), itemMenuY + (itemMenuSelected * slot_height) + (slot_height / 2));
 	}
 
 	drawItemMenuSlots(*current_item, slot_width, slot_height);
 
-	if (itemCategory(current_item) == SPELL_CAT) {
+	if (itemCategory(current_item) == SPELL_CAT)
+	{
 		drawItemMenuOptionSpell(*current_item, itemMenuX, itemMenuY);
-	} else {
-		if (itemCategory(current_item) == POTION) {
+	}
+	else
+	{
+		if (itemCategory(current_item) == POTION)
+		{
 			drawItemMenuOptionPotion(*current_item, itemMenuX, itemMenuY, slot_height, is_potion_bad);
-		} else {
+		}
+		else
+		{
 			drawItemMenuOptionGeneric(*current_item, itemMenuX, itemMenuY, slot_height); //Every other item besides potions and spells.
 		}
 	}
@@ -1254,17 +1587,22 @@ void itemContextMenu() {
 	selectItemMenuSlot(*current_item, itemMenuX, itemMenuY, slot_width, slot_height);
 
 	bool activateSelection = false;
-	if (!mousestatus[SDL_BUTTON_RIGHT] && !toggleclick) {
+	if (!mousestatus[SDL_BUTTON_RIGHT] && !toggleclick)
+	{
 		activateSelection = true;
-	} else if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
+	}
+	else if ( *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+	{
 		*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 		activateSelection = true;
 		//Warp cursor back into inventory, for gamepad convenience.
 		SDL_WarpMouseInWindow(screen, INVENTORY_STARTX + (selected_inventory_slot_x * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2), INVENTORY_STARTY + (selected_inventory_slot_y * INVENTORY_SLOTSIZE) + (INVENTORY_SLOTSIZE / 2));
 	}
 
-	if (activateSelection) {
-		switch (itemMenuSelected) {
+	if (activateSelection)
+	{
+		switch (itemMenuSelected)
+		{
 			case 0:
 				executeItemMenuOption0(current_item, is_potion_bad);
 				break;
@@ -1287,13 +1625,16 @@ void itemContextMenu() {
 	}
 }
 
-int numItemMenuSlots(const Item& item) {
+int numItemMenuSlots(const Item& item)
+{
 	int numSlots = 1; //Option 0 => store in chest, sell, use.
 
-	if (itemCategory(&item) != SPELL_CAT) {
+	if (itemCategory(&item) != SPELL_CAT)
+	{
 		numSlots += 2; //Option 1 => wield, unwield, use, appraise. & Option 2 => appraise, drop
 
-		if (itemCategory(&item) == POTION) {
+		if (itemCategory(&item) == POTION)
+		{
 			numSlots += 1; //Option 3 => drop.
 		}
 	}
@@ -1302,11 +1643,14 @@ int numItemMenuSlots(const Item& item) {
 }
 
 //Used by the gamepad, primarily. Dpad buttons changes selection.
-void selectItemMenuSlot(const Item& item, int entry) {
-	if (entry > numItemMenuSlots(item)) {
+void selectItemMenuSlot(const Item& item, int entry)
+{
+	if (entry > numItemMenuSlots(item))
+	{
 		entry = 0;
 	}
-	if (entry < 0) {
+	if (entry < 0)
+	{
 		entry = numItemMenuSlots(item);
 	}
 

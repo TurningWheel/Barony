@@ -35,13 +35,17 @@
 #define BEARTRAP_APPEARANCE my->skill[14]
 #define BEARTRAP_IDENTIFIED my->skill[15]
 
-void actBeartrap(Entity* my) {
+void actBeartrap(Entity* my)
+{
 	int i;
 
 	// undo beartrap
-	for (i = 0; i < MAXPLAYERS; i++) {
-		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
-			if (inrange[i]) {
+	for (i = 0; i < MAXPLAYERS; i++)
+	{
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		{
+			if (inrange[i])
+			{
 				Entity* entity = newEntity(-1, 1, map.entities);
 				entity->flags[INVISIBLE] = TRUE;
 				entity->flags[UPDATENEEDED] = TRUE;
@@ -70,15 +74,20 @@ void actBeartrap(Entity* my) {
 
 	// launch beartrap
 	node_t* node;
-	for ( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
 		Entity* entity = (Entity*)node->element;
-		if ( my->parent == entity->uid ) {
+		if ( my->parent == entity->uid )
+		{
 			continue;
 		}
-		if ( entity->behavior == &actMonster || entity->behavior == &actPlayer ) {
+		if ( entity->behavior == &actMonster || entity->behavior == &actPlayer )
+		{
 			Stat* stat = entity->getStats();
-			if ( stat ) {
-				if ( entityDist(my, entity) < 6.5 ) {
+			if ( stat )
+			{
+				if ( entityDist(my, entity) < 6.5 )
+				{
 					stat->EFFECTS[EFF_PARALYZED] = TRUE;
 					stat->EFFECTS_TIMERS[EFF_PARALYZED] = 200;
 					stat->EFFECTS[EFF_BLEEDING] = TRUE;
@@ -88,23 +97,30 @@ void actBeartrap(Entity* my) {
 					// set obituary
 					entity->setObituary(language[1504]);
 
-					if ( stat->HP <= 0 ) {
+					if ( stat->HP <= 0 )
+					{
 						Entity* parent = uidToEntity(my->parent);
-						if ( parent ) {
+						if ( parent )
+						{
 							parent->awardXP( entity, TRUE, TRUE );
 						}
 					}
-					if ( entity->behavior == &actPlayer ) {
+					if ( entity->behavior == &actPlayer )
+					{
 						int player = entity->skill[2];
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(player, color, language[454]);
-						if ( player > 0 ) {
+						if ( player > 0 )
+						{
 							serverUpdateEffects(player);
 						}
-						if ( player == clientnum ) {
+						if ( player == clientnum )
+						{
 							camera_shakex += .1;
 							camera_shakey += 10;
-						} else if ( player > 0 && multiplayer == SERVER ) {
+						}
+						else if ( player > 0 && multiplayer == SERVER )
+						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
 							net_packet->data[5] = 10;
@@ -152,8 +168,10 @@ void actBeartrap(Entity* my) {
 	}
 }
 
-void actBeartrapLaunched(Entity* my) {
-	if ( my->ticks >= 200 ) {
+void actBeartrapLaunched(Entity* my)
+{
+	if ( my->ticks >= 200 )
+	{
 		list_RemoveNode(my->mynode);
 		return;
 	}

@@ -47,12 +47,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chest_status(skill[1]),
-	chest_opener(skill[5]) {
+	chest_opener(skill[5])
+{
 	int c;
 	// add the entity to the entity list
-	if (!pos) {
+	if (!pos)
+	{
 		mynode = list_AddNodeFirst(entlist);
-	} else {
+	}
+	else
+	{
 		mynode = list_AddNodeLast(entlist);
 	}
 	mynode->element = this;
@@ -93,22 +97,30 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	children.last = NULL;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
-	for ( c = 0; c < 30; c++ ) {
+	for ( c = 0; c < 30; c++ )
+	{
 		skill[c] = 0;
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
-	for ( c = 0; c < 16; c++ ) {
+	for ( c = 0; c < 16; c++ )
+	{
 		flags[c] = FALSE;
 	}
-	if ( entlist == map.entities ) {
-		if ( multiplayer != CLIENT || loading ) {
+	if ( entlist == map.entities )
+	{
+		if ( multiplayer != CLIENT || loading )
+		{
 			uid = entity_uids;
 			entity_uids++;
-		} else {
+		}
+		else
+		{
 			uid = -2;
 		}
-	} else {
+	}
+	else
+	{
 		uid = -2;
 	}
 	behavior = NULL;
@@ -125,7 +137,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 
 -------------------------------------------------------------------------------*/
 
-Entity::~Entity() {
+Entity::~Entity()
+{
 	node_t* node;
 	//node_t *node2;
 	int i;
@@ -144,10 +157,14 @@ Entity::~Entity() {
 	}*/
 
 	// alert clients of the entity's deletion
-	if (multiplayer == SERVER && !loading) {
-		if (mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == FALSE) {
-			for (i = 1; i < MAXPLAYERS; i++) {
-				if ( client_disconnected[i] == TRUE ) {
+	if (multiplayer == SERVER && !loading)
+	{
+		if (mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == FALSE)
+		{
+			for (i = 1; i < MAXPLAYERS; i++)
+			{
+				if ( client_disconnected[i] == TRUE )
+				{
 					continue;
 				}
 
@@ -179,7 +196,8 @@ Entity::~Entity() {
 
 	// set appropriate player pointer to NULL
 	for (i = 0; i < MAXPLAYERS; i++)
-		if (this == players[i]->entity) {
+		if (this == players[i]->entity)
+		{
 			players[i]->entity = nullptr;    //TODO: PLAYERSWAP VERIFY. Should this do anything to the player itself?
 		}
 	// destroy my children
@@ -198,9 +216,11 @@ Entity::~Entity() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setObituary(char* obituary) {
+void Entity::setObituary(char* obituary)
+{
 	Stat* tempStats = this->getStats();
-	if ( !tempStats ) {
+	if ( !tempStats )
+	{
 		return;
 	}
 	strncpy(tempStats->obituary, obituary, 127);
@@ -214,25 +234,35 @@ void Entity::setObituary(char* obituary) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::killedByMonsterObituary(Entity* victim) {
-	if ( !victim ) {
+void Entity::killedByMonsterObituary(Entity* victim)
+{
+	if ( !victim )
+	{
 		return;
 	}
 	Stat* hitstats = victim->getStats();
 	Stat* myStats = this->getStats();
-	if ( !hitstats || !myStats ) {
+	if ( !hitstats || !myStats )
+	{
 		return;
 	}
 
-	if ( myStats->type == hitstats->type ) {
-		if ( hitstats->sex == MALE ) {
+	if ( myStats->type == hitstats->type )
+	{
+		if ( hitstats->sex == MALE )
+		{
 			snprintf(tempstr, 256, language[1509], language[90 + hitstats->type]);
-		} else {
+		}
+		else
+		{
 			snprintf(tempstr, 256, language[1510], language[90 + hitstats->type]);
 		}
 		victim->setObituary(tempstr);
-	} else {
-		switch ( myStats->type ) {
+	}
+	else
+	{
+		switch ( myStats->type )
+		{
 			case HUMAN:
 				victim->setObituary(language[1511]);
 				break;
@@ -299,11 +329,14 @@ void Entity::killedByMonsterObituary(Entity* victim) {
 
 -------------------------------------------------------------------------------*/
 
-int Entity::entityLight() {
-	if ( this->flags[BRIGHT] ) {
+int Entity::entityLight()
+{
+	if ( this->flags[BRIGHT] )
+	{
 		return 255;
 	}
-	if ( this->x < 0 || this->y < 0 || this->x >= map.width << 4 || this->y >= map.height << 4 ) {
+	if ( this->x < 0 || this->y < 0 || this->x >= map.width << 4 || this->y >= map.height << 4 )
+	{
 		return 255;
 	}
 	int light_x = (int)this->x / 16;
@@ -319,19 +352,24 @@ int Entity::entityLight() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::effectTimes() {
+void Entity::effectTimes()
+{
 	Stat* myStats = this->getStats();
 	int player, c;
 	spell_t* spell = NULL;
 	node_t* node = NULL;
 	int count = 0;
 
-	if ( myStats == NULL ) {
+	if ( myStats == NULL )
+	{
 		return;
 	}
-	if ( this->behavior == &actPlayer ) {
+	if ( this->behavior == &actPlayer )
+	{
 		player = this->skill[2];
-	} else {
+	}
+	else
+	{
 		player = -1;
 	}
 
@@ -339,19 +377,25 @@ void Entity::effectTimes() {
 	spell_t* invisibility_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things.
 	spell_t* levitation_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
 	//Handle magic effects (like invisibility)
-	for (node = myStats->magic_effects.first; node; node = node->next, ++count) {
+	for (node = myStats->magic_effects.first; node; node = node->next, ++count)
+	{
 		//printlog( "%s\n", "Potato.");
 		//Handle magic effects.
 		spell = (spell_t*) node->element;
-		if (!spell->sustain) {
+		if (!spell->sustain)
+		{
 			node_t* temp = NULL;
-			if (node->prev) {
+			if (node->prev)
+			{
 				temp = node->prev;
-			} else if (node->next) {
+			}
+			else if (node->next)
+			{
 				temp = node->next;
 			}
 			spell->magic_effects_node = NULL; //To prevent recursive removal, which results in a crash.
-			if (player > -1 && multiplayer == SERVER) {
+			if (player > -1 && multiplayer == SERVER)
+			{
 				strcpy( (char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
 				SDLNet_Write32(spell->ID, &net_packet->data[5]);
@@ -362,24 +406,32 @@ void Entity::effectTimes() {
 			}
 			list_RemoveNode(node); //Bugger the spell.
 			node = temp;
-			if (!node) {
+			if (!node)
+			{
 				break;    //Done with list. Stop.
 			}
 			continue; //Skip this spell.
 		}
-		switch (spell->ID) {
+		switch (spell->ID)
+		{
 			case SPELL_INVISIBILITY:
 				invisibility_hijacked = spell;
-				if (!myStats->EFFECTS[EFF_INVISIBLE]) {
-					for (c = 0; c < numplayers; ++c) {
-						if (players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr) {
+				if (!myStats->EFFECTS[EFF_INVISIBLE])
+				{
+					for (c = 0; c < numplayers; ++c)
+					{
+						if (players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr)
+						{
 							messagePlayer(c, language[591]);    //If cure ailments or somesuch bombs the status effects.
 						}
 					}
 					node_t* temp = nullptr;
-					if (node->prev) {
+					if (node->prev)
+					{
 						temp = node->prev;
-					} else if (node->next) {
+					}
+					else if (node->next)
+					{
 						temp = node->next;
 					}
 					list_RemoveNode(node); //Remove this here node.
@@ -388,16 +440,22 @@ void Entity::effectTimes() {
 				break;
 			case SPELL_LEVITATION:
 				levitation_hijacked = spell;
-				if (!myStats->EFFECTS[EFF_LEVITATING]) {
-					for (c = 0; c < numplayers; ++c) {
-						if (players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr) {
+				if (!myStats->EFFECTS[EFF_LEVITATING])
+				{
+					for (c = 0; c < numplayers; ++c)
+					{
+						if (players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr)
+						{
 							messagePlayer(c, language[592]);
 						}
 					}
 					node_t* temp = nullptr;
-					if (node->prev) {
+					if (node->prev)
+					{
 						temp = node->prev;
-					} else if (node->next) {
+					}
+					else if (node->next)
+					{
 						temp = node->next;
 					}
 					list_RemoveNode(node); //Remove this here node.
@@ -410,22 +468,28 @@ void Entity::effectTimes() {
 				list_RemoveNode(node);
 		}
 
-		if (!node) {
+		if (!node)
+		{
 			break;    //BREAK OUT. YEAAAAAH. Because otherwise it crashes.
 		}
 	}
-	if (count) {
+	if (count)
+	{
 		//printlog( "Number of magic effects spells: %d\n", count); //Debugging output.
 	}
 
 	bool dissipate = TRUE;
 
-	for ( c = 0; c < NUMEFFECTS; c++ ) {
-		if ( myStats->EFFECTS_TIMERS[c] > 0 ) {
+	for ( c = 0; c < NUMEFFECTS; c++ )
+	{
+		if ( myStats->EFFECTS_TIMERS[c] > 0 )
+		{
 			myStats->EFFECTS_TIMERS[c]--;
-			if ( myStats->EFFECTS_TIMERS[c] == 0 ) {
+			if ( myStats->EFFECTS_TIMERS[c] == 0 )
+			{
 				myStats->EFFECTS[c] = FALSE;
-				switch ( c ) {
+				switch ( c )
+				{
 					case EFF_ASLEEP:
 						messagePlayer(player, language[593]);
 						break;
@@ -444,20 +508,27 @@ void Entity::effectTimes() {
 					case EFF_INVISIBLE:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
 						dissipate = TRUE; //Remove the effect by default.
-						if (invisibility_hijacked) {
+						if (invisibility_hijacked)
+						{
 							bool sustained = FALSE;
 							Entity* caster = uidToEntity(invisibility_hijacked->caster);
-							if (caster) {
+							if (caster)
+							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
-								if (deducted) {
+								if (deducted)
+								{
 									sustained = TRUE;
 									myStats->EFFECTS[c] = TRUE;
 									myStats->EFFECTS_TIMERS[c] = invisibility_hijacked->channel_duration / getCostOfSpell(invisibility_hijacked);
-								} else {
+								}
+								else
+								{
 									int i = 0;
-									for (i = 0; i < 4; ++i) {
-										if (players[i]->entity == caster) {
+									for (i = 0; i < 4; ++i)
+									{
+										if (players[i]->entity == caster)
+										{
 											messagePlayer(i, language[598]);    //TODO: Unhardcode name?
 										}
 									}
@@ -465,20 +536,26 @@ void Entity::effectTimes() {
 									//list_RemoveNode(invisibility_hijacked->sustain_node); //Remove it from the channeled spells list.
 								}
 							}
-							if (sustained) {
+							if (sustained)
+							{
 								dissipate = FALSE;    //Sustained the spell, so do not stop being invisible.
 							}
 						}
-						if (dissipate) {
-							if ( !this->isBlind() ) {
+						if (dissipate)
+						{
+							if ( !this->isBlind() )
+							{
 								messagePlayer(player, language[599]);
 							}
 						}
 						break;
 					case EFF_BLIND:
-						if ( !this->isBlind()) {
+						if ( !this->isBlind())
+						{
 							messagePlayer(player, language[600]);
-						} else {
+						}
+						else
+						{
 							messagePlayer(player, language[601]);
 						}
 						break;
@@ -497,31 +574,40 @@ void Entity::effectTimes() {
 					case EFF_LEVITATING:
 						; //To make the compiler shut up: "error: a label can only be part of a statement and a declaration is not a statement"
 						dissipate = TRUE; //Remove the effect by default.
-						if (levitation_hijacked) {
+						if (levitation_hijacked)
+						{
 							bool sustained = FALSE;
 							Entity* caster = uidToEntity(levitation_hijacked->caster);
-							if (caster) {
+							if (caster)
+							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
-								if (deducted) {
+								if (deducted)
+								{
 									sustained = TRUE;
 									myStats->EFFECTS[c] = TRUE;
 									myStats->EFFECTS_TIMERS[c] = levitation_hijacked->channel_duration / getCostOfSpell(levitation_hijacked);
-								} else {
+								}
+								else
+								{
 									int i = 0;
-									for (i = 0; i < 4; ++i) {
-										if (players[i]->entity == caster) {
+									for (i = 0; i < 4; ++i)
+									{
+										if (players[i]->entity == caster)
+										{
 											messagePlayer(i, language[606]);    //TODO: Unhardcode name?
 										}
 									}
 									list_RemoveNode(levitation_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
 								}
 							}
-							if (sustained) {
+							if (sustained)
+							{
 								dissipate = FALSE;    //Sustained the spell, so do not stop levitating.
 							}
 						}
-						if (dissipate) {
+						if (dissipate)
+						{
 							messagePlayer(player, language[607]);
 						}
 						break;
@@ -530,15 +616,22 @@ void Entity::effectTimes() {
 						break;
 					case EFF_VOMITING:
 						messagePlayer(player, language[609]);
-						if ( myStats->HUNGER > 1500 ) {
+						if ( myStats->HUNGER > 1500 )
+						{
 							messagePlayer(player, language[610]);
-						} else if ( myStats->HUNGER > 150 && myStats->HUNGER <= 250 ) {
+						}
+						else if ( myStats->HUNGER > 150 && myStats->HUNGER <= 250 )
+						{
 							messagePlayer(player, language[611]);
 							playSoundPlayer(player, 32, 128);
-						} else if ( myStats->HUNGER > 50 ) {
+						}
+						else if ( myStats->HUNGER > 50 )
+						{
 							messagePlayer(player, language[612]);
 							playSoundPlayer(player, 32, 128);
-						} else {
+						}
+						else
+						{
 							myStats->HUNGER = 50;
 							messagePlayer(player, language[613]);
 							playSoundPlayer(player, 32, 128);
@@ -551,7 +644,8 @@ void Entity::effectTimes() {
 					default:
 						break;
 				}
-				if ( player > 0 && multiplayer == SERVER ) {
+				if ( player > 0 && multiplayer == SERVER )
+				{
 					serverUpdateEffects(player);
 				}
 			}
@@ -567,22 +661,27 @@ void Entity::effectTimes() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::increaseSkill(int skill) {
+void Entity::increaseSkill(int skill)
+{
 	Stat* myStats = this->getStats();
 	int player = -1;
 
-	if ( myStats == NULL ) {
+	if ( myStats == NULL )
+	{
 		return;
 	}
-	if ( this->behavior == &actPlayer ) {
+	if ( this->behavior == &actPlayer )
+	{
 		player = this->skill[2];
 	}
 
 	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-	if ( myStats->PROFICIENCIES[skill] < 100 ) {
+	if ( myStats->PROFICIENCIES[skill] < 100 )
+	{
 		myStats->PROFICIENCIES[skill]++;
 		messagePlayerColor(player, color, language[615], language[236 + skill]);
-		switch ( myStats->PROFICIENCIES[skill] ) {
+		switch ( myStats->PROFICIENCIES[skill] )
+		{
 			case 20:
 				messagePlayerColor(player, color, language[616], language[236 + skill]);
 				break;
@@ -603,7 +702,8 @@ void Entity::increaseSkill(int skill) {
 		}
 	}
 	myStats->EXP += 2;
-	if ( player > 0 && multiplayer == SERVER ) {
+	if ( player > 0 && multiplayer == SERVER )
+	{
 		// update SKILL
 		strcpy((char*)net_packet->data, "SKIL");
 		net_packet->data[4] = clientnum;
@@ -644,16 +744,24 @@ void Entity::increaseSkill(int skill) {
 
 -------------------------------------------------------------------------------*/
 
-Stat* Entity::getStats() {
-	if (this->behavior == &actMonster) { // monsters
-		if (this->children.first != nullptr) {
-			if (this->children.first->next != nullptr) {
+Stat* Entity::getStats()
+{
+	if (this->behavior == &actMonster)   // monsters
+	{
+		if (this->children.first != nullptr)
+		{
+			if (this->children.first->next != nullptr)
+			{
 				return (Stat*)this->children.first->next->element;
 			}
 		}
-	} else if (this->behavior == &actPlayer) { // players
+	}
+	else if (this->behavior == &actPlayer)     // players
+	{
 		return stats[this->skill[2]];
-	} else if (this->behavior == &actPlayerLimb) { // player bodyparts
+	}
+	else if (this->behavior == &actPlayerLimb)     // player bodyparts
+	{
 		return stats[this->skill[2]];
 	}
 
@@ -669,8 +777,10 @@ Stat* Entity::getStats() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::checkBetterEquipment(Stat* myStats) {
-	if (!myStats) {
+void Entity::checkBetterEquipment(Stat* myStats)
+{
+	if (!myStats)
+	{
 		return;    //Can't continue without these.
 	}
 
@@ -693,42 +803,54 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 	node_t* node = NULL;
 
 	bool glovesandshoes = FALSE;
-	if ( myStats->type == HUMAN ) {
+	if ( myStats->type == HUMAN )
+	{
 		glovesandshoes = TRUE;
 	}
 
-	if (items) {
+	if (items)
+	{
 		/*
 		 * Rundown of the function:
 		 * Loop through all items.
 		 * Check the monster's item. Compare and grab the best item.
 		 */
 
-		for (node = items->first; node != NULL; node = node->next) {
+		for (node = items->first; node != NULL; node = node->next)
+		{
 			//Turn the entity into an item.
-			if (node->element) {
+			if (node->element)
+			{
 				Entity* entity = (Entity*)node->element;
 				Item* item = NULL;
-				if (entity != NULL) {
+				if (entity != NULL)
+				{
 					item = newItemFromEntity( entity );
 				}
 
-				if (item != NULL) {
+				if (item != NULL)
+				{
 					//If weapon.
-					if (itemCategory(item) == WEAPON) {
-						if (myStats->weapon == NULL) { //Not currently holding a weapon.
+					if (itemCategory(item) == WEAPON)
+					{
+						if (myStats->weapon == NULL)   //Not currently holding a weapon.
+						{
 							myStats->weapon = item; //Assign the monster's weapon.
 							item = NULL;
 							list_RemoveNode(entity->mynode);
-						} else {
+						}
+						else
+						{
 							//Ok, the monster has a weapon already. First check if the monster's weapon is cursed. Can't drop it if it is.
-							if (myStats->weapon->beatitude >= 0 && itemCategory(myStats->weapon) != MAGICSTAFF) {
+							if (myStats->weapon->beatitude >= 0 && itemCategory(myStats->weapon) != MAGICSTAFF)
+							{
 								//Next compare the two weapons. If the item on the ground is better, drop the weapon it's carrying and equip that one.
 								int weapon_tohit = myStats->weapon->weaponGetAttack();
 								int new_weapon_tohit = item->weaponGetAttack();
 
 								//If the new weapon does more damage than the current weapon.
-								if (new_weapon_tohit > weapon_tohit) {
+								if (new_weapon_tohit > weapon_tohit)
+								{
 									dropItemMonster(myStats->weapon, this, myStats);
 									myStats->weapon = item;
 									item = NULL;
@@ -736,21 +858,31 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 								}
 							}
 						}
-					} else if ( itemCategory(item) == ARMOR ) {
-						if ( item->type == HAT_PHRYGIAN || item->type == HAT_WIZARD || item->type == HAT_JESTER || item->type == HAT_HOOD ) { // hats
-							if (myStats->helmet == NULL) { // nothing on head currently
+					}
+					else if ( itemCategory(item) == ARMOR )
+					{
+						if ( item->type == HAT_PHRYGIAN || item->type == HAT_WIZARD || item->type == HAT_JESTER || item->type == HAT_HOOD )   // hats
+						{
+							if (myStats->helmet == NULL)   // nothing on head currently
+							{
 								// goblins love hats.
 								myStats->helmet = item; // pick up the hat.
 								item = NULL;
 								list_RemoveNode(entity->mynode);
 							}
-						} else if ( item->type == LEATHER_HELM || item->type == IRON_HELM || item->type == STEEL_HELM ) { // helmets
-							if (myStats->helmet == NULL) { // nothing on head currently
+						}
+						else if ( item->type == LEATHER_HELM || item->type == IRON_HELM || item->type == STEEL_HELM )     // helmets
+						{
+							if (myStats->helmet == NULL)   // nothing on head currently
+							{
 								myStats->helmet = item; // pick up the helmet.
 								item = NULL;
 								list_RemoveNode(entity->mynode);
-							} else {
-								if (myStats->helmet->beatitude >= 0) { // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+							}
+							else
+							{
+								if (myStats->helmet->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								{
 									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 									currentAC = AC(myStats);
@@ -760,7 +892,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									myStats->helmet = oldarmor;
 
 									//If the new armor is better than the current armor.
-									if (newAC > currentAC) {
+									if (newAC > currentAC)
+									{
 										dropItemMonster(myStats->helmet, this, myStats);
 										myStats->helmet = item;
 										item = NULL;
@@ -768,13 +901,19 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									}
 								}
 							}
-						} else if ( item->type == WOODEN_SHIELD || item->type == BRONZE_SHIELD || item->type == IRON_SHIELD || item->type == STEEL_SHIELD || item->type == STEEL_SHIELD_RESISTANCE || item->type == TOOL_TORCH || item->type == TOOL_LANTERN ) { // shields
-							if (myStats->shield == NULL) { // nothing in left hand currently
+						}
+						else if ( item->type == WOODEN_SHIELD || item->type == BRONZE_SHIELD || item->type == IRON_SHIELD || item->type == STEEL_SHIELD || item->type == STEEL_SHIELD_RESISTANCE || item->type == TOOL_TORCH || item->type == TOOL_LANTERN )     // shields
+						{
+							if (myStats->shield == NULL)   // nothing in left hand currently
+							{
 								myStats->shield = item; // pick up the shield.
 								item = NULL;
 								list_RemoveNode(entity->mynode);
-							} else {
-								if (myStats->shield->beatitude >= 0) { // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+							}
+							else
+							{
+								if (myStats->shield->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								{
 									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 									currentAC = AC(myStats);
@@ -784,7 +923,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									myStats->shield = oldarmor;
 
 									//If the new armor is better than the current armor (OR we're not carrying anything)
-									if (newAC > currentAC || !myStats->shield ) {
+									if (newAC > currentAC || !myStats->shield )
+									{
 										dropItemMonster(myStats->shield, this, myStats);
 										myStats->shield = item;
 										item = NULL;
@@ -792,13 +932,19 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									}
 								}
 							}
-						} else if ( item->type == LEATHER_BREASTPIECE || item->type == IRON_BREASTPIECE || item->type == STEEL_BREASTPIECE ) { // breastpieces
-							if (myStats->breastplate == NULL) { // nothing on torso currently
+						}
+						else if ( item->type == LEATHER_BREASTPIECE || item->type == IRON_BREASTPIECE || item->type == STEEL_BREASTPIECE )     // breastpieces
+						{
+							if (myStats->breastplate == NULL)   // nothing on torso currently
+							{
 								myStats->breastplate = item; // pick up the armor.
 								item = NULL;
 								list_RemoveNode(entity->mynode);
-							} else {
-								if (myStats->breastplate->beatitude >= 0) { // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+							}
+							else
+							{
+								if (myStats->breastplate->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								{
 									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 									currentAC = AC(myStats);
@@ -808,7 +954,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									myStats->breastplate = oldarmor;
 
 									//If the new armor is better than the current armor.
-									if (newAC > currentAC) {
+									if (newAC > currentAC)
+									{
 										dropItemMonster(myStats->breastplate, this, myStats);
 										myStats->breastplate = item;
 										item = NULL;
@@ -816,13 +963,19 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									}
 								}
 							}
-						} else if ( item->type == CLOAK || item->type == CLOAK_MAGICREFLECTION || item->type == CLOAK_INVISIBILITY || item->type == CLOAK_PROTECTION ) { // cloaks
-							if (myStats->cloak == NULL) { // nothing on back currently
+						}
+						else if ( item->type == CLOAK || item->type == CLOAK_MAGICREFLECTION || item->type == CLOAK_INVISIBILITY || item->type == CLOAK_PROTECTION )     // cloaks
+						{
+							if (myStats->cloak == NULL)   // nothing on back currently
+							{
 								myStats->cloak = item; // pick up the armor.
 								item = NULL;
 								list_RemoveNode(entity->mynode);
-							} else {
-								if (myStats->cloak->beatitude >= 0) { // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+							}
+							else
+							{
+								if (myStats->cloak->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								{
 									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 									currentAC = AC(myStats);
@@ -832,7 +985,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 									myStats->cloak = oldarmor;
 
 									//If the new armor is better than the current armor.
-									if (newAC > currentAC) {
+									if (newAC > currentAC)
+									{
 										dropItemMonster(myStats->cloak, this, myStats);
 										myStats->cloak = item;
 										item = NULL;
@@ -841,14 +995,20 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 								}
 							}
 						}
-						if ( glovesandshoes && item != NULL ) {
-							if ( item->type >= LEATHER_BOOTS && item->type <= STEEL_BOOTS_FEATHER ) { // boots
-								if (myStats->shoes == NULL) {
+						if ( glovesandshoes && item != NULL )
+						{
+							if ( item->type >= LEATHER_BOOTS && item->type <= STEEL_BOOTS_FEATHER )   // boots
+							{
+								if (myStats->shoes == NULL)
+								{
 									myStats->shoes = item; // pick up the armor
 									item = NULL;
 									list_RemoveNode(entity->mynode);
-								} else {
-									if (myStats->shoes->beatitude >= 0) { // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								}
+								else
+								{
+									if (myStats->shoes->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+									{
 										// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 										// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 										currentAC = AC(myStats);
@@ -858,7 +1018,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 										myStats->shoes = oldarmor;
 
 										//If the new armor is better than the current armor.
-										if (newAC > currentAC) {
+										if (newAC > currentAC)
+										{
 											dropItemMonster(myStats->shoes, this, myStats);
 											myStats->shoes = item;
 											item = NULL;
@@ -866,13 +1027,19 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 										}
 									}
 								}
-							} else if ( item->type >= GLOVES && item->type <= GAUNTLETS_STRENGTH ) {
-								if (myStats->gloves == NULL) {
+							}
+							else if ( item->type >= GLOVES && item->type <= GAUNTLETS_STRENGTH )
+							{
+								if (myStats->gloves == NULL)
+								{
 									myStats->gloves = item; // pick up the armor
 									item = NULL;
 									list_RemoveNode(entity->mynode);
-								} else {
-									if (myStats->gloves->beatitude >= 0) { // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								}
+								else
+								{
+									if (myStats->gloves->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+									{
 										// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 										// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 										currentAC = AC(myStats);
@@ -882,7 +1049,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 										myStats->gloves = oldarmor;
 
 										//If the new armor is better than the current armor.
-										if (newAC > currentAC) {
+										if (newAC > currentAC)
+										{
 											dropItemMonster(myStats->gloves, this, myStats);
 											myStats->gloves = item;
 											item = NULL;
@@ -895,7 +1063,8 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 					}
 				}
 
-				if (item != NULL) {
+				if (item != NULL)
+				{
 					free(item);
 				}
 			}
@@ -915,13 +1084,16 @@ void Entity::checkBetterEquipment(Stat* myStats) {
 
 -------------------------------------------------------------------------------*/
 
-Entity* uidToEntity(Uint32 uidnum) {
+Entity* uidToEntity(Uint32 uidnum)
+{
 	node_t* node;
 	Entity* entity;
 
-	for ( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
 		entity = (Entity*) node->element;
-		if ( uidnum == entity->uid ) {
+		if ( uidnum == entity->uid )
+		{
 			return entity;
 		}
 	}
@@ -936,22 +1108,28 @@ Entity* uidToEntity(Uint32 uidnum) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setHP(int amount) {
+void Entity::setHP(int amount)
+{
 	Stat* entitystats = this->getStats();
 
-	if (this->behavior == &actPlayer && godmode) {
+	if (this->behavior == &actPlayer && godmode)
+	{
 		amount = entitystats->MAXHP;
 	}
-	if (!entitystats || amount == entitystats->HP) {
+	if (!entitystats || amount == entitystats->HP)
+	{
 		return;
 	}
 	entitystats->HP = std::min(std::max(0, amount), entitystats->MAXHP);
 	strncpy(entitystats->obituary, language[1500], 127);
 
 	int i = 0;
-	if (multiplayer == SERVER) {
-		for (i = 1; i < numplayers; i++) {
-			if (this == players[i]->entity) {
+	if (multiplayer == SERVER)
+	{
+		for (i = 1; i < numplayers; i++)
+		{
+			if (this == players[i]->entity)
+			{
 				// tell the client its HP changed
 				strcpy((char*)net_packet->data, "UPHP");
 				SDLNet_Write32((Uint32)entitystats->HP, &net_packet->data[4]);
@@ -973,13 +1151,16 @@ void Entity::setHP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::modHP(int amount) {
+void Entity::modHP(int amount)
+{
 	Stat* entitystats = this->getStats();
 
-	if ( this->behavior == &actPlayer && godmode && amount < 0 ) {
+	if ( this->behavior == &actPlayer && godmode && amount < 0 )
+	{
 		amount = 0;
 	}
-	if ( !entitystats || amount == 0 ) {
+	if ( !entitystats || amount == 0 )
+	{
 		return;
 	}
 
@@ -994,21 +1175,27 @@ void Entity::modHP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setMP(int amount) {
+void Entity::setMP(int amount)
+{
 	Stat* entitystats = this->getStats();
 
-	if (this->behavior == &actPlayer && godmode) {
+	if (this->behavior == &actPlayer && godmode)
+	{
 		amount = entitystats->MAXMP;
 	}
-	if (!entitystats || amount == entitystats->MP) {
+	if (!entitystats || amount == entitystats->MP)
+	{
 		return;
 	}
 	entitystats->MP = std::min(std::max(0, amount), entitystats->MAXMP);
 
 	int i = 0;
-	if (multiplayer == SERVER) {
-		for (i = 1; i < numplayers; i++) {
-			if (this == players[i]->entity) {
+	if (multiplayer == SERVER)
+	{
+		for (i = 1; i < numplayers; i++)
+		{
+			if (this == players[i]->entity)
+			{
 				// tell the client its MP just changed
 				strcpy((char*)net_packet->data, "UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[4]);
@@ -1029,13 +1216,16 @@ void Entity::setMP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::modMP(int amount) {
+void Entity::modMP(int amount)
+{
 	Stat* entitystats = this->getStats();
 
-	if ( this->behavior == &actPlayer && godmode && amount < 0 ) {
+	if ( this->behavior == &actPlayer && godmode && amount < 0 )
+	{
 		amount = 0;
 	}
-	if ( !entitystats || amount == 0 ) {
+	if ( !entitystats || amount == 0 )
+	{
 		return;
 	}
 
@@ -1050,12 +1240,14 @@ void Entity::modMP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::drainMP(int amount) {
+void Entity::drainMP(int amount)
+{
 	//A pointer to the entity's stats.
 	Stat* entitystats = this->getStats();
 
 	//Check if no stats found.
-	if (entitystats == NULL || amount == 0) {
+	if (entitystats == NULL || amount == 0)
+	{
 		return;
 	}
 
@@ -1063,20 +1255,26 @@ void Entity::drainMP(int amount) {
 	entitystats->MP -= amount;
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < numplayers; ++i) {
-		if (this == players[i]->entity) {
+	for (i = 0; i < numplayers; ++i)
+	{
+		if (this == players[i]->entity)
+		{
 			player = i; //Set the player.
 		}
 	}
-	if (entitystats->MP < 0) {
+	if (entitystats->MP < 0)
+	{
 		//Overdrew. Take that extra and flow it over into HP.
 		overdrawn = entitystats->MP;
 		entitystats->MP = 0;
 	}
-	if (multiplayer == SERVER) {
+	if (multiplayer == SERVER)
+	{
 		//First check if the entity is the player.
-		for (i = 1; i < numplayers; ++i) {
-			if (this == players[i]->entity) {
+		for (i = 1; i < numplayers; ++i)
+		{
+			if (this == players[i]->entity)
+			{
 				//It is. Tell the client its MP just changed.
 				strcpy((char*)net_packet->data, "UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[4]);
@@ -1087,8 +1285,11 @@ void Entity::drainMP(int amount) {
 				sendPacketSafe(net_sock, -1, net_packet, i - 1);
 			}
 		}
-	} else if (clientnum != 0 && multiplayer == CLIENT) {
-		if (this == players[clientnum]->entity) {
+	}
+	else if (clientnum != 0 && multiplayer == CLIENT)
+	{
+		if (this == players[clientnum]->entity)
+		{
 			//It's the player entity. Tell the server its MP changed.
 			strcpy((char*)net_packet->data, "UPMP");
 			net_packet->data[4] = clientnum;
@@ -1101,17 +1302,23 @@ void Entity::drainMP(int amount) {
 		}
 	}
 
-	if (overdrawn < 0) {
-		if (player >= 0) {
+	if (overdrawn < 0)
+	{
+		if (player >= 0)
+		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 			messagePlayerColor(player, color, language[621]);
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
 		Stat* tempStats = this->getStats();
-		if ( tempStats ) {
-			if ( tempStats->sex == MALE ) {
+		if ( tempStats )
+		{
+			if ( tempStats->sex == MALE )
+			{
 				this->setObituary(language[1528]);
-			} else {
+			}
+			else
+			{
 				this->setObituary(language[1529]);
 			}
 		}
@@ -1126,17 +1333,22 @@ void Entity::drainMP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::safeConsumeMP(int amount) {
+bool Entity::safeConsumeMP(int amount)
+{
 	Stat* stat = this->getStats();
 
 	//Check if no stats found.
-	if (!stat) {
+	if (!stat)
+	{
 		return FALSE;
 	}
 
-	if (amount > stat->MP) {
+	if (amount > stat->MP)
+	{
 		return FALSE;    //Not enough mana.
-	} else {
+	}
+	else
+	{
 		this->modMP(-amount);
 		return TRUE;
 	}
@@ -1153,32 +1365,40 @@ bool Entity::safeConsumeMP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::handleEffects(Stat* myStats) {
+void Entity::handleEffects(Stat* myStats)
+{
 	int increasestat[3];
 	int i, c;
 	int player = -1;
 
-	if ( this->behavior == &actPlayer ) {
+	if ( this->behavior == &actPlayer )
+	{
 		player = this->skill[2];
 
 		// god mode and buddha mode
-		if ( godmode ) {
+		if ( godmode )
+		{
 			myStats->HP = myStats->MAXHP;
 			myStats->MP = myStats->MAXMP;
-		} else if ( buddhamode ) {
-			if ( myStats->HP <= 0 ) {
+		}
+		else if ( buddhamode )
+		{
+			if ( myStats->HP <= 0 )
+			{
 				myStats->HP = 1;
 			}
 		}
 	}
 
 	// sleep Zs
-	if ( myStats->EFFECTS[EFF_ASLEEP] && ticks % 30 == 0 ) {
+	if ( myStats->EFFECTS[EFF_ASLEEP] && ticks % 30 == 0 )
+	{
 		spawnSleepZ(this->x + cos(this->yaw) * 2, this->y + sin(this->yaw) * 2, this->z);
 	}
 
 	// level ups
-	if ( myStats->EXP >= 100 ) {
+	if ( myStats->EXP >= 100 )
+	{
 		myStats->EXP -= 100;
 		myStats->LVL++;
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
@@ -1197,18 +1417,23 @@ void Entity::handleEffects(Stat* myStats) {
 		increasestat[0] = rand() % 6;
 		increasestat[1] = rand() % 5;
 		increasestat[2] = rand() % 4;
-		if ( increasestat[1] >= increasestat[0] ) {
+		if ( increasestat[1] >= increasestat[0] )
+		{
 			increasestat[1]++;
 		}
-		if ( increasestat[2] >= increasestat[0] ) {
+		if ( increasestat[2] >= increasestat[0] )
+		{
 			increasestat[2]++;
 		}
-		if ( increasestat[2] >= increasestat[1] ) {
+		if ( increasestat[2] >= increasestat[1] )
+		{
 			increasestat[2]++;
 		}
-		for ( i = 0; i < 3; i++ ) {
+		for ( i = 0; i < 3; i++ )
+		{
 			messagePlayerColor(player, color, language[623 + increasestat[i]]);
-			switch ( increasestat[i] ) {
+			switch ( increasestat[i] )
+			{
 				case 0: // STR
 					myStats->STR++;
 					break;
@@ -1231,7 +1456,8 @@ void Entity::handleEffects(Stat* myStats) {
 		}
 
 		// inform clients of stat changes
-		if ( multiplayer == SERVER && player > 0 ) {
+		if ( multiplayer == SERVER && player > 0 )
+		{
 			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = (Sint8)myStats->STR;
@@ -1255,55 +1481,81 @@ void Entity::handleEffects(Stat* myStats) {
 
 	// hunger
 	int hungerring = 0;
-	if ( myStats->ring != NULL ) {
-		if ( myStats->ring->type == RING_SLOWDIGESTION ) {
-			if ( myStats->ring->beatitude >= 0 ) {
+	if ( myStats->ring != NULL )
+	{
+		if ( myStats->ring->type == RING_SLOWDIGESTION )
+		{
+			if ( myStats->ring->beatitude >= 0 )
+			{
 				hungerring = 1;
-			} else {
+			}
+			else
+			{
 				hungerring = -1;
 			}
 		}
 	}
-	if ( (ticks % 30 == 0 && !hungerring) || (ticks % 15 == 0 && hungerring < 0) || (ticks % 120 == 0 && hungerring > 0) ) {
-		if ( myStats->HUNGER > 0 ) {
-			if ( svFlags & SV_FLAG_HUNGER ) {
+	if ( (ticks % 30 == 0 && !hungerring) || (ticks % 15 == 0 && hungerring < 0) || (ticks % 120 == 0 && hungerring > 0) )
+	{
+		if ( myStats->HUNGER > 0 )
+		{
+			if ( svFlags & SV_FLAG_HUNGER )
+			{
 				myStats->HUNGER--;
-			} else if ( myStats->HUNGER != 800 ) {
+			}
+			else if ( myStats->HUNGER != 800 )
+			{
 				myStats->HUNGER = 800;
 				serverUpdateHunger(player);
 			}
-			if ( myStats->HUNGER == 1500 ) {
-				if ( !myStats->EFFECTS[EFF_VOMITING] ) {
+			if ( myStats->HUNGER == 1500 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				{
 					messagePlayer(player, language[629]);
 				}
 				serverUpdateHunger(player);
-			} else if ( myStats->HUNGER == 250 ) {
-				if ( !myStats->EFFECTS[EFF_VOMITING] ) {
+			}
+			else if ( myStats->HUNGER == 250 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				{
 					messagePlayer(player, language[630]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
-			} else if ( myStats->HUNGER == 150 ) {
-				if ( !myStats->EFFECTS[EFF_VOMITING] ) {
+			}
+			else if ( myStats->HUNGER == 150 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				{
 					messagePlayer(player, language[631]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
-			} else if ( myStats->HUNGER == 50 ) {
-				if ( !myStats->EFFECTS[EFF_VOMITING] ) {
+			}
+			else if ( myStats->HUNGER == 50 )
+			{
+				if ( !myStats->EFFECTS[EFF_VOMITING] )
+				{
 					messagePlayer(player, language[632]);
 					playSoundPlayer(player, 32, 128);
 				}
 				serverUpdateHunger(player);
 			}
-		} else {
+		}
+		else
+		{
 			myStats->HUNGER = 0;
-			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 120 == 0 ) {
+			if ( !myStats->EFFECTS[EFF_VOMITING] && ticks % 120 == 0 )
+			{
 				serverUpdateHunger(player);
-				if ( player >= 0 ) { // bad guys don't starve. Sorry.
+				if ( player >= 0 )   // bad guys don't starve. Sorry.
+				{
 					this->modHP(-4);
 				}
-				if ( myStats->HP > 0 ) {
+				if ( myStats->HP > 0 )
+				{
 					messagePlayer(player, language[633]);
 				}
 				this->setObituary(language[1530]);
@@ -1312,27 +1564,36 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// "random" vomiting
-	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] ) {
-		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 ) {
+	if ( !this->char_gonnavomit && !myStats->EFFECTS[EFF_VOMITING] )
+	{
+		if ( myStats->HUNGER > 1500 && rand() % 1000 == 0 )
+		{
 			// oversatiation
 			messagePlayer(player, language[634]);
 			this->char_gonnavomit = 140 + rand() % 60;
-		} else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] ) {
+		}
+		else if ( ticks % 60 == 0 && rand() % 200 == 0 && myStats->EFFECTS[EFF_DRUNK] )
+		{
 			// drunkenness
 			messagePlayer(player, language[634]);
 			this->char_gonnavomit = 140 + rand() % 60;
 		}
 	}
-	if ( this->char_gonnavomit > 0 ) {
+	if ( this->char_gonnavomit > 0 )
+	{
 		this->char_gonnavomit--;
-		if ( this->char_gonnavomit == 0 ) {
+		if ( this->char_gonnavomit == 0 )
+		{
 			messagePlayer(player, language[635]);
 			myStats->EFFECTS[EFF_VOMITING] = TRUE;
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 50 + rand() % 20;
 			serverUpdateEffects(player);
-			if ( player == clientnum ) {
+			if ( player == clientnum )
+			{
 				camera_shakey += 9;
-			} else if ( player > 0 && multiplayer == SERVER ) {
+			}
+			else if ( player > 0 && multiplayer == SERVER )
+			{
 				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 0; // turns into 0
 				net_packet->data[5] = 9;
@@ -1346,7 +1607,8 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// vomiting
-	if ( myStats->EFFECTS[EFF_VOMITING] && ticks % 2 == 0 ) {
+	if ( myStats->EFFECTS[EFF_VOMITING] && ticks % 2 == 0 )
+	{
 		Entity* entity = spawnGib(this);
 		entity->sprite = 29;
 		entity->flags[SPRITE] = TRUE;
@@ -1360,7 +1622,8 @@ void Entity::handleEffects(Stat* myStats) {
 		entity->vel_y = vel * sin(entity->yaw);
 		entity->vel_z = -.5;
 		myStats->HUNGER -= 40;
-		if ( myStats->HUNGER <= 50 ) {
+		if ( myStats->HUNGER <= 50 )
+		{
 			myStats->HUNGER = 50;
 			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
 		}
@@ -1369,54 +1632,75 @@ void Entity::handleEffects(Stat* myStats) {
 
 	// healing over time
 	int healring = 0;
-	if ( myStats->ring != NULL ) {
-		if ( myStats->ring->type == RING_REGENERATION ) {
-			if ( myStats->ring->beatitude >= 0 ) {
+	if ( myStats->ring != NULL )
+	{
+		if ( myStats->ring->type == RING_REGENERATION )
+		{
+			if ( myStats->ring->beatitude >= 0 )
+			{
 				healring = 1;
-			} else {
+			}
+			else
+			{
 				healring = -1;
 			}
 		}
 	}
-	if ( myStats->HP < myStats->MAXHP ) {
+	if ( myStats->HP < myStats->MAXHP )
+	{
 		this->char_heal++;
-		if ( healring > 0 || svFlags & SV_FLAG_HUNGER ) {
-			if ( (this->char_heal >= HEAL_TIME && !healring) || (this->char_heal >= HEAL_TIME * 4 && healring < 0) || (this->char_heal >= HEAL_TIME / 8 && healring > 0) ) {
+		if ( healring > 0 || svFlags & SV_FLAG_HUNGER )
+		{
+			if ( (this->char_heal >= HEAL_TIME && !healring) || (this->char_heal >= HEAL_TIME * 4 && healring < 0) || (this->char_heal >= HEAL_TIME / 8 && healring > 0) )
+			{
 				this->char_heal = 0;
 				this->modHP(1);
 			}
 		}
-	} else {
+	}
+	else
+	{
 		this->char_heal = 0;
 	}
 
 	// random teleportation
-	if ( myStats->ring != NULL ) {
-		if ( myStats->ring->type == RING_TELEPORTATION ) {
-			if ( rand() % 1000 == 0 ) { // .1% chance every frame
+	if ( myStats->ring != NULL )
+	{
+		if ( myStats->ring->type == RING_TELEPORTATION )
+		{
+			if ( rand() % 1000 == 0 )   // .1% chance every frame
+			{
 				teleportRandom();
 			}
 		}
 	}
 
 	// regaining energy over time
-	if ( myStats->MP < myStats->MAXMP ) {
+	if ( myStats->MP < myStats->MAXMP )
+	{
 		this->char_energize++;
-		if ( this->char_energize >= MAGIC_REGEN_TIME ) {
+		if ( this->char_energize >= MAGIC_REGEN_TIME )
+		{
 			this->char_energize = 0;
 			this->modMP(1);
 		}
-	} else {
+	}
+	else
+	{
 		this->char_energize = 0;
 	}
 
 	// effects of greasy fingers
-	if ( myStats->EFFECTS[EFF_GREASY] == TRUE ) {
-		if ( myStats->weapon != NULL ) {
+	if ( myStats->EFFECTS[EFF_GREASY] == TRUE )
+	{
+		if ( myStats->weapon != NULL )
+		{
 			messagePlayer(player, language[636]);
-			if ( player >= 0 ) {
+			if ( player >= 0 )
+			{
 				dropItem(myStats->weapon, player);
-				if ( player > 0 && multiplayer == SERVER ) {
+				if ( player > 0 && multiplayer == SERVER )
+				{
 					strcpy((char*)net_packet->data, "DROP");
 					net_packet->data[4] = 5;
 					net_packet->address.host = net_clients[player - 1].host;
@@ -1424,7 +1708,9 @@ void Entity::handleEffects(Stat* myStats) {
 					net_packet->len = 5;
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
-			} else {
+			}
+			else
+			{
 				dropItemMonster(myStats->weapon, this, myStats);
 			}
 			myStats->weapon = NULL;
@@ -1432,24 +1718,33 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// torches/lamps burn down
-	if ( myStats->shield != NULL ) {
-		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN ) {
+	if ( myStats->shield != NULL )
+	{
+		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
+		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || this->char_torchtime >= 10260 ) {
+			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || this->char_torchtime >= 10260 )
+			{
 				this->char_torchtime = 0;
-				if ( player == clientnum ) {
-					if ( myStats->shield->count > 1 ) {
+				if ( player == clientnum )
+				{
+					if ( myStats->shield->count > 1 )
+					{
 						newItem(myStats->shield->type, myStats->shield->status, myStats->shield->beatitude, myStats->shield->count - 1, myStats->shield->appearance, myStats->shield->identified, &myStats->inventory);
 					}
 				}
 				myStats->shield->count = 1;
 				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
-				if ( myStats->shield->status > BROKEN ) {
+				if ( myStats->shield->status > BROKEN )
+				{
 					messagePlayer(player, language[637], myStats->shield->getName());
-				} else {
+				}
+				else
+				{
 					messagePlayer(player, language[638], myStats->shield->getName());
 				}
-				if ( multiplayer == SERVER && player > 0 ) {
+				if ( multiplayer == SERVER && player > 0 )
+				{
 					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 4;
 					net_packet->data[5] = myStats->shield->status;
@@ -1463,9 +1758,12 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// effects of being poisoned
-	if ( myStats->EFFECTS[EFF_POISONED] ) {
-		if ( myStats->amulet != NULL ) {
-			if ( myStats->amulet->type == AMULET_POISONRESISTANCE ) {
+	if ( myStats->EFFECTS[EFF_POISONED] )
+	{
+		if ( myStats->amulet != NULL )
+		{
+			if ( myStats->amulet->type == AMULET_POISONRESISTANCE )
+			{
 				messagePlayer(player, language[639]);
 				messagePlayer(player, language[640]);
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
@@ -1475,22 +1773,28 @@ void Entity::handleEffects(Stat* myStats) {
 			}
 		}
 		this->char_poison++;
-		if ( this->char_poison > 180 ) { // three seconds
+		if ( this->char_poison > 180 )   // three seconds
+		{
 			this->char_poison = 0;
 			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
 			this->modHP(-poisonhurt);
-			if ( myStats->HP <= 0 ) {
+			if ( myStats->HP <= 0 )
+			{
 				Entity* killer = uidToEntity( myStats->poisonKiller );
-				if ( killer ) {
+				if ( killer )
+				{
 					killer->awardXP( this, TRUE, TRUE );
 				}
 			}
 			this->setObituary(language[1531]);
 			playSoundEntity(this, 28, 64);
-			if ( player == clientnum ) {
+			if ( player == clientnum )
+			{
 				camera_shakex += .1;
 				camera_shakey += 10;
-			} else if ( player > 0 && multiplayer == SERVER ) {
+			}
+			else if ( player > 0 && multiplayer == SERVER )
+			{
 				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 10; // turns into .1
 				net_packet->data[5] = 10;
@@ -1499,30 +1803,39 @@ void Entity::handleEffects(Stat* myStats) {
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			if ( rand() % 5 == 0 ) {
+			if ( rand() % 5 == 0 )
+			{
 				messagePlayer(player, language[641]);
 				myStats->EFFECTS_TIMERS[EFF_POISONED] = 0;
 				myStats->EFFECTS[EFF_POISONED] = FALSE;
 				serverUpdateEffects(player);
 			}
 		}
-	} else {
+	}
+	else
+	{
 		this->char_poison = 0;
 	}
 
 	// bleeding
-	if ( myStats->EFFECTS[EFF_BLEEDING] ) {
-		if ( ticks % 120 == 0 ) {
-			if ( myStats->HP > 5 ) {
+	if ( myStats->EFFECTS[EFF_BLEEDING] )
+	{
+		if ( ticks % 120 == 0 )
+		{
+			if ( myStats->HP > 5 )
+			{
 				int bleedhurt = 1;
 				this->modHP(-bleedhurt);
 				this->setObituary(language[1532]);
 				Entity* gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
-				if ( player == clientnum ) {
+				if ( player == clientnum )
+				{
 					camera_shakex -= .03;
 					camera_shakey += 3;
-				} else if ( player > 0 && multiplayer == SERVER ) {
+				}
+				else if ( player > 0 && multiplayer == SERVER )
+				{
 					strcpy((char*)net_packet->data, "SHAK");
 					net_packet->data[4] = -3; // turns into -.03
 					net_packet->data[5] = 3;
@@ -1532,14 +1845,19 @@ void Entity::handleEffects(Stat* myStats) {
 					sendPacketSafe(net_sock, -1, net_packet, player - 1);
 				}
 				messagePlayer(player, language[642]);
-				if ( spawn_blood ) {
+				if ( spawn_blood )
+				{
 					Entity* entity = NULL;
-					if ( gibtype[myStats->type] == 1 ) {
+					if ( gibtype[myStats->type] == 1 )
+					{
 						entity = newEntity(203, 1, map.entities);
-					} else if ( gibtype[myStats->type] == 2 ) {
+					}
+					else if ( gibtype[myStats->type] == 2 )
+					{
 						entity = newEntity(213, 1, map.entities);
 					}
-					if ( entity != NULL ) {
+					if ( entity != NULL )
+					{
 						entity->x = this->x;
 						entity->y = this->y;
 						entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -1551,7 +1869,9 @@ void Entity::handleEffects(Stat* myStats) {
 						entity->flags[PASSABLE] = TRUE;
 					}
 				}
-			} else {
+			}
+			else
+			{
 				messagePlayer(player, language[643]);
 				myStats->EFFECTS[EFF_BLEEDING] = FALSE;
 				myStats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
@@ -1561,21 +1881,28 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// burning
-	if ( this->flags[BURNING] ) {
-		if ( ticks % 30 == 0 ) {
+	if ( this->flags[BURNING] )
+	{
+		if ( ticks % 30 == 0 )
+		{
 			this->modHP(-2 - rand() % 3);
-			if ( myStats->HP <= 0 ) {
+			if ( myStats->HP <= 0 )
+			{
 				Entity* killer = uidToEntity( myStats->poisonKiller );
-				if ( killer ) {
+				if ( killer )
+				{
 					killer->awardXP( this, TRUE, TRUE );
 				}
 			}
 			this->setObituary(language[1533]);
 			messagePlayer(player, language[644]);
 			playSoundEntity(this, 28, 64);
-			if ( player == clientnum ) {
+			if ( player == clientnum )
+			{
 				camera_shakey += 3;
-			} else if ( player > 0 && multiplayer == SERVER ) {
+			}
+			else if ( player > 0 && multiplayer == SERVER )
+			{
 				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 0; // turns into 0
 				net_packet->data[5] = 3;
@@ -1584,21 +1911,29 @@ void Entity::handleEffects(Stat* myStats) {
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			if ( rand() % 10 == 0 ) {
-				if ( myStats->cloak != NULL ) {
-					if ( player == clientnum ) {
-						if ( myStats->cloak->count > 1 ) {
+			if ( rand() % 10 == 0 )
+			{
+				if ( myStats->cloak != NULL )
+				{
+					if ( player == clientnum )
+					{
+						if ( myStats->cloak->count > 1 )
+						{
 							newItem(myStats->cloak->type, myStats->cloak->status, myStats->cloak->beatitude, myStats->cloak->count - 1, myStats->cloak->appearance, myStats->cloak->identified, &myStats->inventory);
 						}
 					}
 					myStats->cloak->count = 1;
 					myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
-					if ( myStats->cloak->status != BROKEN ) {
+					if ( myStats->cloak->status != BROKEN )
+					{
 						messagePlayer(player, language[645], myStats->cloak->getName());
-					} else {
+					}
+					else
+					{
 						messagePlayer(player, language[646], myStats->cloak->getName());
 					}
-					if ( player > 0 && multiplayer == SERVER ) {
+					if ( player > 0 && multiplayer == SERVER )
+					{
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 6;
 						net_packet->data[5] = myStats->cloak->status;
@@ -1609,10 +1944,12 @@ void Entity::handleEffects(Stat* myStats) {
 					}
 				}
 			}
-			if ( rand() % 10 == 0 ) {
+			if ( rand() % 10 == 0 )
+			{
 				this->flags[BURNING] = FALSE;
 				messagePlayer(player, language[647]);
-				if ( player > 0 && multiplayer == SERVER ) {
+				if ( player > 0 && multiplayer == SERVER )
+				{
 					serverUpdateEntityFlag(this, BURNING);
 				}
 			}
@@ -1620,25 +1957,33 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// amulet effects
-	if ( myStats->amulet != NULL ) {
+	if ( myStats->amulet != NULL )
+	{
 		// strangulation
-		if ( myStats->amulet->type == AMULET_STRANGULATION ) {
-			if ( ticks % 60 == 0 ) {
-				if ( rand() % 25 ) {
+		if ( myStats->amulet->type == AMULET_STRANGULATION )
+		{
+			if ( ticks % 60 == 0 )
+			{
+				if ( rand() % 25 )
+				{
 					messagePlayer(player, language[648]);
 					this->modHP(-(2 + rand() % 3));
 					this->setObituary(language[1534]);
-					if ( myStats->HP <= 0 ) {
-						if ( player <= 0 ) {
+					if ( myStats->HP <= 0 )
+					{
+						if ( player <= 0 )
+						{
 							Item* item = myStats->amulet;
-							if ( item->count > 1 ) {
+							if ( item->count > 1 )
+							{
 								newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &myStats->inventory);
 							}
 						}
 						myStats->amulet->count = 1;
 						myStats->amulet->status = BROKEN;
 						playSoundEntity(this, 76, 64);
-						if ( player > 0 && multiplayer == SERVER ) {
+						if ( player > 0 && multiplayer == SERVER )
+						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 7;
 							net_packet->data[5] = myStats->amulet->status;
@@ -1648,9 +1993,12 @@ void Entity::handleEffects(Stat* myStats) {
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-					if ( player == clientnum ) {
+					if ( player == clientnum )
+					{
 						camera_shakey += 8;
-					} else if ( player > 0 && multiplayer == SERVER ) {
+					}
+					else if ( player > 0 && multiplayer == SERVER )
+					{
 						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 0; // turns into 0
 						net_packet->data[5] = 8;
@@ -1659,19 +2007,24 @@ void Entity::handleEffects(Stat* myStats) {
 						net_packet->len = 6;
 						sendPacketSafe(net_sock, -1, net_packet, player - 1);
 					}
-				} else {
+				}
+				else
+				{
 					messagePlayer(player, language[649]);
 					messagePlayer(player, language[650]);
-					if ( player <= 0 ) {
+					if ( player <= 0 )
+					{
 						Item* item = myStats->amulet;
-						if ( item->count > 1 ) {
+						if ( item->count > 1 )
+						{
 							newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &myStats->inventory);
 						}
 					}
 					myStats->amulet->count = 1;
 					myStats->amulet->status = BROKEN;
 					playSoundEntity(this, 76, 64);
-					if ( player > 0 && multiplayer == SERVER ) {
+					if ( player > 0 && multiplayer == SERVER )
+					{
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 7;
 						net_packet->data[5] = myStats->amulet->status;
@@ -1684,24 +2037,33 @@ void Entity::handleEffects(Stat* myStats) {
 			}
 		}
 		// life saving
-		if ( myStats->amulet->type == AMULET_LIFESAVING ) { //TODO: Doesn't save against boulder traps.
-			if ( myStats->HP <= 0 ) {
-				if ( myStats->HUNGER > 0 ) {
+		if ( myStats->amulet->type == AMULET_LIFESAVING )   //TODO: Doesn't save against boulder traps.
+		{
+			if ( myStats->HP <= 0 )
+			{
+				if ( myStats->HUNGER > 0 )
+				{
 					messagePlayer(player, language[651]);
 				}
-				if ( !this->isBlind()) {
+				if ( !this->isBlind())
+				{
 					messagePlayer(player, language[652]);
-				} else {
+				}
+				else
+				{
 					messagePlayer(player, language[653]);
 				}
-				if ( myStats->amulet->beatitude >= 0 ) {
+				if ( myStats->amulet->beatitude >= 0 )
+				{
 					messagePlayer(player, language[654]);
 					messagePlayer(player, language[655]);
 					steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
 					myStats->HUNGER = 800;
-					if ( myStats->MAXHP < 10 ) {
+					if ( myStats->MAXHP < 10 )
+					{
 						myStats->MAXHP = 10;
-						if ( player > 0 && multiplayer == SERVER ) {
+						if ( player > 0 && multiplayer == SERVER )
+						{
 							strcpy((char*)net_packet->data, "ATTR");
 							net_packet->data[4] = clientnum;
 							net_packet->data[5] = (Sint8)myStats->STR;
@@ -1723,20 +2085,24 @@ void Entity::handleEffects(Stat* myStats) {
 						}
 					}
 					this->setHP(std::max(myStats->MAXHP, 10));
-					for ( c = 0; c < NUMEFFECTS; c++ ) {
+					for ( c = 0; c < NUMEFFECTS; c++ )
+					{
 						myStats->EFFECTS[c] = FALSE;
 						myStats->EFFECTS_TIMERS[c] = 0;
 					}
 					this->flags[BURNING] = FALSE;
 					serverUpdateEntityFlag(this, BURNING);
 					serverUpdateEffects(player);
-				} else {
+				}
+				else
+				{
 					messagePlayer(player, language[656]);
 					messagePlayer(player, language[657]);
 				}
 				myStats->amulet->status = BROKEN;
 				playSoundEntity(this, 76, 64);
-				if ( player > 0 && multiplayer == SERVER ) {
+				if ( player > 0 && multiplayer == SERVER )
+				{
 					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 7;
 					net_packet->data[5] = myStats->amulet->status;
@@ -1751,13 +2117,15 @@ void Entity::handleEffects(Stat* myStats) {
 	}
 
 	// unparalyze certain boss characters
-	if ( myStats->EFFECTS[EFF_PARALYZED] && myStats->type >= LICH ) {
+	if ( myStats->EFFECTS[EFF_PARALYZED] && myStats->type >= LICH )
+	{
 		myStats->EFFECTS[EFF_PARALYZED] = FALSE;
 		myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 0;
 	}
 
 	// wake up
-	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || myStats->type >= LICH) ) {
+	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || myStats->type >= LICH) )
+	{
 		messagePlayer(player, language[658]);
 		myStats->EFFECTS[EFF_ASLEEP] = FALSE;
 		myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 0;
@@ -1775,16 +2143,19 @@ void Entity::handleEffects(Stat* myStats) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getAttack() {
+Sint32 Entity::getAttack()
+{
 	Stat* entitystats;
 	Sint32 attack = 0;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 
 	attack = 8; // base attack strength
-	if ( entitystats->weapon != NULL) {
+	if ( entitystats->weapon != NULL)
+	{
 		attack += entitystats->weapon->weaponGetAttack();
 	}
 	attack += this->getSTR();
@@ -1800,42 +2171,55 @@ Sint32 Entity::getAttack() {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getSTR() {
+Sint32 Entity::getSTR()
+{
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 	return statGetSTR(entitystats);
 }
 
-Sint32 statGetSTR(Stat* entitystats) {
+Sint32 statGetSTR(Stat* entitystats)
+{
 	Sint32 STR;
 
 	STR = entitystats->STR;
-	if ( entitystats->HUNGER >= 1500 ) {
+	if ( entitystats->HUNGER >= 1500 )
+	{
 		STR--;
 	}
-	if ( entitystats->HUNGER <= 150 ) {
+	if ( entitystats->HUNGER <= 150 )
+	{
 		STR--;
 	}
-	if ( entitystats->HUNGER <= 50 ) {
+	if ( entitystats->HUNGER <= 50 )
+	{
 		STR--;
 	}
 	if ( entitystats->gloves != NULL )
-		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH ) {
+		if ( entitystats->gloves->type == GAUNTLETS_STRENGTH )
+		{
 			STR++;
 		}
-	if ( entitystats->ring != NULL ) {
-		if ( entitystats->ring->type == RING_STRENGTH ) {
-			if ( entitystats->ring->beatitude >= 0 ) {
+	if ( entitystats->ring != NULL )
+	{
+		if ( entitystats->ring->type == RING_STRENGTH )
+		{
+			if ( entitystats->ring->beatitude >= 0 )
+			{
 				STR++;
-			} else {
+			}
+			else
+			{
 				STR--;
 			}
 		}
 	}
-	if ( entitystats->EFFECTS[EFF_DRUNK] ) {
+	if ( entitystats->EFFECTS[EFF_DRUNK] )
+	{
 		STR++;
 	}
 	return STR;
@@ -1849,54 +2233,68 @@ Sint32 statGetSTR(Stat* entitystats) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getDEX() {
+Sint32 Entity::getDEX()
+{
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 	return statGetDEX(entitystats);
 }
 
-Sint32 statGetDEX(Stat* entitystats) {
+Sint32 statGetDEX(Stat* entitystats)
+{
 	Sint32 DEX;
 
 	// paralyzed
-	if ( entitystats->EFFECTS[EFF_PARALYZED] ) {
+	if ( entitystats->EFFECTS[EFF_PARALYZED] )
+	{
 		return -10;
 	}
-	if ( entitystats->EFFECTS[EFF_ASLEEP] ) {
+	if ( entitystats->EFFECTS[EFF_ASLEEP] )
+	{
 		return -10;
 	}
 
 	DEX = entitystats->DEX;
-	if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] ) {
+	if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
+	{
 		DEX += 10;
 	}
-	if ( entitystats->EFFECTS[EFF_STUNNED] ) {
+	if ( entitystats->EFFECTS[EFF_STUNNED] )
+	{
 		DEX -= 5;
 	}
-	if ( entitystats->HUNGER >= 1500 ) {
+	if ( entitystats->HUNGER >= 1500 )
+	{
 		DEX--;
 	}
-	if ( entitystats->HUNGER <= 150 ) {
+	if ( entitystats->HUNGER <= 150 )
+	{
 		DEX--;
 	}
-	if ( entitystats->HUNGER <= 50 ) {
+	if ( entitystats->HUNGER <= 50 )
+	{
 		DEX--;
 	}
-	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] ) {
+	if ( !entitystats->EFFECTS[EFF_FAST] && entitystats->EFFECTS[EFF_SLOW] )
+	{
 		DEX = std::min(DEX - 3, -2);
 	}
 	if ( entitystats->shoes != NULL )
-		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED ) {
+		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
+		{
 			DEX++;
 		}
 	if ( entitystats->gloves != NULL )
-		if ( entitystats->gloves->type == GLOVES_DEXTERITY ) {
+		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
+		{
 			DEX++;
 		}
-	if ( entitystats->EFFECTS[EFF_DRUNK] ) {
+	if ( entitystats->EFFECTS[EFF_DRUNK] )
+	{
 		DEX--;
 	}
 	return DEX;
@@ -1910,33 +2308,46 @@ Sint32 statGetDEX(Stat* entitystats) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getCON() {
+Sint32 Entity::getCON()
+{
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 	return statGetCON(entitystats);
 }
 
-Sint32 statGetCON(Stat* entitystats) {
+Sint32 statGetCON(Stat* entitystats)
+{
 	Sint32 CON;
 
 	CON = entitystats->CON;
-	if ( entitystats->ring != NULL ) {
-		if ( entitystats->ring->type == RING_CONSTITUTION ) {
-			if ( entitystats->ring->beatitude >= 0 ) {
+	if ( entitystats->ring != NULL )
+	{
+		if ( entitystats->ring->type == RING_CONSTITUTION )
+		{
+			if ( entitystats->ring->beatitude >= 0 )
+			{
 				CON++;
-			} else {
+			}
+			else
+			{
 				CON--;
 			}
 		}
 	}
-	if ( entitystats->gloves != NULL ) {
-		if ( entitystats->gloves->type == BRACERS_CONSTITUTION ) {
-			if ( entitystats->gloves->beatitude >= 0 ) {
+	if ( entitystats->gloves != NULL )
+	{
+		if ( entitystats->gloves->type == BRACERS_CONSTITUTION )
+		{
+			if ( entitystats->gloves->beatitude >= 0 )
+			{
 				CON++;
-			} else {
+			}
+			else
+			{
 				CON--;
 			}
 		}
@@ -1952,24 +2363,29 @@ Sint32 statGetCON(Stat* entitystats) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getINT() {
+Sint32 Entity::getINT()
+{
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 	return statGetINT(entitystats);
 }
 
-Sint32 statGetINT(Stat* entitystats) {
+Sint32 statGetINT(Stat* entitystats)
+{
 	Sint32 INT;
 
 	INT = entitystats->INT;
-	if ( entitystats->HUNGER <= 50 ) {
+	if ( entitystats->HUNGER <= 50 )
+	{
 		INT--;
 	}
 	if ( entitystats->helmet != NULL )
-		if ( entitystats->helmet->type == HAT_WIZARD ) {
+		if ( entitystats->helmet->type == HAT_WIZARD )
+		{
 			INT++;
 		}
 	return INT;
@@ -1983,24 +2399,29 @@ Sint32 statGetINT(Stat* entitystats) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getPER() {
+Sint32 Entity::getPER()
+{
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 	return statGetPER(entitystats);
 }
 
-Sint32 statGetPER(Stat* entitystats) {
+Sint32 statGetPER(Stat* entitystats)
+{
 	Sint32 PER;
 
 	PER = entitystats->PER;
-	if ( entitystats->HUNGER <= 50 ) {
+	if ( entitystats->HUNGER <= 50 )
+	{
 		PER--;
 	}
 	if ( entitystats->mask )
-		if ( entitystats->mask->type == TOOL_GLASSES ) {
+		if ( entitystats->mask->type == TOOL_GLASSES )
+		{
 			PER++;
 		}
 	return PER;
@@ -2014,28 +2435,36 @@ Sint32 statGetPER(Stat* entitystats) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Entity::getCHR() {
+Sint32 Entity::getCHR()
+{
 	Stat* entitystats;
 
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return 0;
 	}
 	return statGetCHR(entitystats);
 }
 
-Sint32 statGetCHR(Stat* entitystats) {
+Sint32 statGetCHR(Stat* entitystats)
+{
 	Sint32 CHR;
 
 	CHR = entitystats->CHR;
 	if ( entitystats->helmet != NULL )
-		if ( entitystats->helmet->type == HAT_JESTER ) {
+		if ( entitystats->helmet->type == HAT_JESTER )
+		{
 			CHR++;
 		}
 	if ( entitystats->ring != NULL )
-		if ( entitystats->ring->type == RING_ADORNMENT ) {
-			if ( entitystats->ring->beatitude >= 0 ) {
+		if ( entitystats->ring->type == RING_ADORNMENT )
+		{
+			if ( entitystats->ring->beatitude >= 0 )
+			{
 				CHR++;
-			} else {
+			}
+			else
+			{
 				CHR--;
 			}
 		}
@@ -2050,30 +2479,36 @@ Sint32 statGetCHR(Stat* entitystats) {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::isBlind() {
+bool Entity::isBlind()
+{
 	Stat* entitystats;
-	if ( (entitystats = this->getStats()) == NULL ) {
+	if ( (entitystats = this->getStats()) == NULL )
+	{
 		return false;
 	}
 
 	// being blind
-	if ( entitystats->EFFECTS[EFF_BLIND] == true ) {
+	if ( entitystats->EFFECTS[EFF_BLIND] == true )
+	{
 		return true;
 	}
 
 	// asleep
-	if ( entitystats->EFFECTS[EFF_ASLEEP] == true ) {
+	if ( entitystats->EFFECTS[EFF_ASLEEP] == true )
+	{
 		return true;
 	}
 
 	// messy face
-	if ( entitystats->EFFECTS[EFF_MESSY] == true ) {
+	if ( entitystats->EFFECTS[EFF_MESSY] == true )
+	{
 		return true;
 	}
 
 	// wearing blindfolds
 	if ( entitystats->mask != NULL )
-		if ( entitystats->mask->type == TOOL_BLINDFOLD ) {
+		if ( entitystats->mask->type == TOOL_BLINDFOLD )
+		{
 			return true;
 		}
 
@@ -2089,26 +2524,31 @@ bool Entity::isBlind() {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::isInvisible() {
+bool Entity::isInvisible()
+{
 	Stat* entitystats;
-	if ( (entitystats = getStats()) == NULL ) {
+	if ( (entitystats = getStats()) == NULL )
+	{
 		return false;
 	}
 
 	// being invisible
-	if ( entitystats->EFFECTS[EFF_INVISIBLE] == true ) {
+	if ( entitystats->EFFECTS[EFF_INVISIBLE] == true )
+	{
 		return true;
 	}
 
 	// wearing invisibility cloaks
 	if ( entitystats->cloak != NULL )
-		if ( entitystats->cloak->type == CLOAK_INVISIBILITY ) {
+		if ( entitystats->cloak->type == CLOAK_INVISIBILITY )
+		{
 			return true;
 		}
 
 	// wearing invisibility ring
 	if ( entitystats->ring != NULL )
-		if ( entitystats->ring->type == RING_INVISIBILITY ) {
+		if ( entitystats->ring->type == RING_INVISIBILITY )
+		{
 			return true;
 		}
 
@@ -2123,19 +2563,23 @@ bool Entity::isInvisible() {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::isMobile() {
+bool Entity::isMobile()
+{
 	Stat* entitystats;
-	if ( (entitystats = getStats()) == NULL ) {
+	if ( (entitystats = getStats()) == NULL )
+	{
 		return true;
 	}
 
 	// paralyzed
-	if ( entitystats->EFFECTS[EFF_PARALYZED] ) {
+	if ( entitystats->EFFECTS[EFF_PARALYZED] )
+	{
 		return false;
 	}
 
 	// asleep
-	if ( entitystats->EFFECTS[EFF_ASLEEP] ) {
+	if ( entitystats->EFFECTS[EFF_ASLEEP] )
+	{
 		return false;
 	}
 
@@ -2151,7 +2595,8 @@ bool Entity::isMobile() {
 
 -------------------------------------------------------------------------------*/
 
-list_t* checkTileForEntity(int x, int y) {
+list_t* checkTileForEntity(int x, int y)
+{
 	list_t* return_val = NULL;
 
 	//Loop through the list.
@@ -2159,12 +2604,16 @@ list_t* checkTileForEntity(int x, int y) {
 	//Traverse map.entities...
 	node_t* node = NULL;
 	node_t* node2 = NULL;
-	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		if (node->element) {
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
+		if (node->element)
+		{
 			Entity* entity = (Entity*)node->element;
-			if (entity && (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y) { //Check if the current entity is on the tile.
+			if (entity && (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y)   //Check if the current entity is on the tile.
+			{
 				//Right. So. Create the list if it doesn't exist.
-				if (!return_val) {
+				if (!return_val)
+				{
 					return_val = (list_t*) malloc(sizeof(list_t));
 					return_val->first = NULL;
 					return_val->last = NULL;
@@ -2190,7 +2639,8 @@ list_t* checkTileForEntity(int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-void getItemsOnTile(int x, int y, list_t** list) {
+void getItemsOnTile(int x, int y, list_t** list)
+{
 
 	//Take the return value of checkTileForEntity() and sort that list for items.
 	//if( entity->behavior == &actItem )
@@ -2200,20 +2650,25 @@ void getItemsOnTile(int x, int y, list_t** list) {
 	list_t* entities = NULL;
 	entities = checkTileForEntity(x, y);
 
-	if (!entities) {
+	if (!entities)
+	{
 		return;    //No use continuing of got no entities.
 	}
 
 	node_t* node = NULL;
 	node_t* node2 = NULL;
 	//Loop through the list of entities.
-	for (node = entities->first; node != NULL; node = node->next) {
-		if (node->element) {
+	for (node = entities->first; node != NULL; node = node->next)
+	{
+		if (node->element)
+		{
 			Entity* entity = (Entity*) node->element;
 			//Check if the entity is an item.
-			if (entity && entity->behavior == &actItem) {
+			if (entity && entity->behavior == &actItem)
+			{
 				//If this is the first item found, the list needs to be created.
-				if (!(*list)) {
+				if (!(*list))
+				{
 					*list = (list_t*) malloc(sizeof(list_t));
 					(*list)->first = NULL;
 					(*list)->last = NULL;
@@ -2227,7 +2682,8 @@ void getItemsOnTile(int x, int y, list_t** list) {
 		}
 	}
 
-	if (entities) {
+	if (entities)
+	{
 		list_FreeAll(entities);
 		free(entities);
 	}
@@ -2243,7 +2699,8 @@ void getItemsOnTile(int x, int y, list_t** list) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::attack(int pose, int charge) {
+void Entity::attack(int pose, int charge)
+{
 	Stat* hitstats = NULL;
 	Stat* myStats;
 	Entity* entity;
@@ -2254,49 +2711,71 @@ void Entity::attack(int pose, int charge) {
 	node_t* node;
 	double tangent;
 
-	if ( (myStats = getStats()) == NULL ) {
+	if ( (myStats = getStats()) == NULL )
+	{
 		return;
 	}
 
 	// get the player number, if applicable
-	if (behavior == &actPlayer) {
+	if (behavior == &actPlayer)
+	{
 		player = skill[2];
-	} else {
+	}
+	else
+	{
 		player = -1;    // not a player
 	}
 
-	if (multiplayer != CLIENT) {
+	if (multiplayer != CLIENT)
+	{
 		// animation
-		if (player >= 0) {
-			if (stats[player]->weapon != nullptr) {
+		if (player >= 0)
+		{
+			if (stats[player]->weapon != nullptr)
+			{
 				players[player]->entity->skill[9] = pose;    // PLAYER_ATTACK
-			} else {
+			}
+			else
+			{
 				players[player]->entity->skill[9] = 1;    // special case for punch to eliminate spanking motion :p
 			}
 			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
-		} else {
-			if (myStats->weapon != nullptr) {
+		}
+		else
+		{
+			if (myStats->weapon != nullptr)
+			{
 				monster_attack = pose;
-			} else {
+			}
+			else
+			{
 				monster_attack = 1;    // punching
 			}
 			monster_attacktime = 0;
 		}
-		if (multiplayer == SERVER) {
-			if (player >= 0 && player < MAXPLAYERS) {
+		if (multiplayer == SERVER)
+		{
+			if (player >= 0 && player < MAXPLAYERS)
+			{
 				serverUpdateEntitySkill(players[player]->entity, 9);
 				serverUpdateEntitySkill(players[player]->entity, 10);
-			} else {
+			}
+			else
+			{
 				serverUpdateEntitySkill(this, 8);
 				serverUpdateEntitySkill(this, 9);
 			}
 		}
 
-		if ( myStats->weapon != NULL ) {
+		if ( myStats->weapon != NULL )
+		{
 			// magical weapons
-			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF ) {
-				if ( itemCategory(myStats->weapon) == MAGICSTAFF ) {
-					switch ( myStats->weapon->type ) {
+			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
+			{
+				if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+				{
+					switch ( myStats->weapon->type )
+					{
 						case MAGICSTAFF_LIGHT:
 							castSpell(uid, &spell_light, TRUE, FALSE);
 							break;
@@ -2333,20 +2812,27 @@ void Entity::attack(int pose, int charge) {
 					}
 
 					// magicstaffs deplete themselves for each use
-					if ( rand() % 3 == 0 ) {
-						if ( player == clientnum ) {
-							if ( myStats->weapon->count > 1 ) {
+					if ( rand() % 3 == 0 )
+					{
+						if ( player == clientnum )
+						{
+							if ( myStats->weapon->count > 1 )
+							{
 								newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
 							}
 						}
 						myStats->weapon->count = 1;
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-						if ( myStats->weapon->status != BROKEN ) {
+						if ( myStats->weapon->status != BROKEN )
+						{
 							messagePlayer(player, language[659]);
-						} else {
+						}
+						else
+						{
 							messagePlayer(player, language[660]);
 						}
-						if ( player > 0 && multiplayer == SERVER ) {
+						if ( player > 0 && multiplayer == SERVER )
+						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = myStats->weapon->status;
@@ -2356,9 +2842,12 @@ void Entity::attack(int pose, int charge) {
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
 					}
-				} else {
+				}
+				else
+				{
 					// this is mostly used for monsters that "cast" spells
-					switch ( myStats->weapon->type ) {
+					switch ( myStats->weapon->type )
+					{
 						case SPELLBOOK_FORCEBOLT:
 							castSpell(uid, &spell_forcebolt, TRUE, FALSE);
 							break;
@@ -2412,24 +2901,33 @@ void Entity::attack(int pose, int charge) {
 			}
 
 			// ranged weapons (bows)
-			else if ( myStats->weapon->type == SHORTBOW || myStats->weapon->type == CROSSBOW || myStats->weapon->type == SLING || myStats->weapon->type == ARTIFACT_BOW ) {
+			else if ( myStats->weapon->type == SHORTBOW || myStats->weapon->type == CROSSBOW || myStats->weapon->type == SLING || myStats->weapon->type == ARTIFACT_BOW )
+			{
 				// damage weapon if applicable
-				if ( rand() % 50 == 0 && myStats->weapon->type != ARTIFACT_BOW ) {
-					if ( myStats->weapon != NULL ) {
-						if ( player == clientnum ) {
-							if ( myStats->weapon->count > 1 ) {
+				if ( rand() % 50 == 0 && myStats->weapon->type != ARTIFACT_BOW )
+				{
+					if ( myStats->weapon != NULL )
+					{
+						if ( player == clientnum )
+						{
+							if ( myStats->weapon->count > 1 )
+							{
 								newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
 							}
 						}
 						myStats->weapon->count = 1;
 						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-						if ( myStats->weapon->status != BROKEN ) {
+						if ( myStats->weapon->status != BROKEN )
+						{
 							messagePlayer(player, language[661], myStats->weapon->getName());
-						} else {
+						}
+						else
+						{
 							playSoundEntity(this, 76, 64);
 							messagePlayer(player, language[662], myStats->weapon->getName());
 						}
-						if ( player > 0 && multiplayer == SERVER ) {
+						if ( player > 0 && multiplayer == SERVER )
+						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = myStats->weapon->status;
@@ -2440,13 +2938,18 @@ void Entity::attack(int pose, int charge) {
 						}
 					}
 				}
-				if ( myStats->weapon->type == SLING ) {
+				if ( myStats->weapon->type == SLING )
+				{
 					entity = newEntity(78, 1, map.entities); // rock
 					playSoundEntity(this, 239 + rand() % 3, 96);
-				} else if ( myStats->weapon->type == CROSSBOW ) {
+				}
+				else if ( myStats->weapon->type == CROSSBOW )
+				{
 					entity = newEntity(167, 1, map.entities); // bolt
 					playSoundEntity(this, 239 + rand() % 3, 96);
-				} else {
+				}
+				else
+				{
 					entity = newEntity(166, 1, map.entities); // arrow
 					playSoundEntity(this, 239 + rand() % 3, 96);
 				}
@@ -2465,14 +2968,16 @@ void Entity::attack(int pose, int charge) {
 				entity->skill[3] = getAttack() - 1 + myStats->PROFICIENCIES[PRO_RANGED] / 20;
 
 				// poison arrow
-				if ( myStats->weapon->type == ARTIFACT_BOW ) {
+				if ( myStats->weapon->type == ARTIFACT_BOW )
+				{
 					entity->skill[4] = 540;    // 9 seconds of poison
 				}
 				return;
 			}
 
 			// potions and gems (throwing)
-			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM ) {
+			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM )
+			{
 				playSoundEntity(this, 75, 64);
 				entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
 				entity->parent = uid;
@@ -2496,10 +3001,14 @@ void Entity::attack(int pose, int charge) {
 				entity->vel_z = -.5;
 
 				myStats->weapon->count--;
-				if ( myStats->weapon->count <= 0 ) {
-					if ( myStats->weapon->node ) {
+				if ( myStats->weapon->count <= 0 )
+				{
+					if ( myStats->weapon->node )
+					{
 						list_RemoveNode(myStats->weapon->node);
-					} else {
+					}
+					else
+					{
 						free(myStats->weapon);
 					}
 					myStats->weapon = NULL;
@@ -2511,22 +3020,29 @@ void Entity::attack(int pose, int charge) {
 		// normal attacks
 		playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
 		dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, FALSE);
-		if ( hit.entity != NULL ) {
-			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
+		if ( hit.entity != NULL )
+		{
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
 				// test for friendly fire
-				if ( checkFriend(hit.entity) ) {
+				if ( checkFriend(hit.entity) )
+				{
 					return;
 				}
 			}
 
-			if ( hit.entity->behavior == &actBoulder ) {
-				if ( myStats->weapon != NULL ) {
-					if ( myStats->weapon->type == TOOL_PICKAXE ) {
+			if ( hit.entity->behavior == &actBoulder )
+			{
+				if ( myStats->weapon != NULL )
+				{
+					if ( myStats->weapon->type == TOOL_PICKAXE )
+					{
 						// spawn several rock items
 						int i = 8 + rand() % 4;
 
 						int c;
-						for ( c = 0; c < i; c++ ) {
+						for ( c = 0; c < i; c++ )
+						{
 							Entity* entity = newEntity(-1, 1, map.entities);
 							entity->flags[INVISIBLE] = TRUE;
 							entity->flags[UPDATENEEDED] = TRUE;
@@ -2557,15 +3073,20 @@ void Entity::attack(int pose, int charge) {
 						playSoundEntity(hit.entity, 67, 128);
 						list_RemoveNode(hit.entity->mynode);
 						messagePlayer(player, language[663]);
-						if ( rand() % 2 ) {
+						if ( rand() % 2 )
+						{
 							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-							if ( myStats->weapon->status == BROKEN ) {
+							if ( myStats->weapon->status == BROKEN )
+							{
 								messagePlayer(player, language[664]);
 								playSoundEntity(this, 76, 64);
-							} else {
+							}
+							else
+							{
 								messagePlayer(player, language[665]);
 							}
-							if ( player > 0 && multiplayer == SERVER ) {
+							if ( player > 0 && multiplayer == SERVER )
+							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
 								net_packet->data[5] = myStats->weapon->status;
@@ -2577,30 +3098,42 @@ void Entity::attack(int pose, int charge) {
 						}
 
 						// on sokoban, destroying boulders spawns scorpions
-						if ( !strcmp(map.name, "Sokoban") ) {
+						if ( !strcmp(map.name, "Sokoban") )
+						{
 							Entity* monster = summonMonster(SCORPION, ox, oy);
-							if ( monster ) {
+							if ( monster )
+							{
 								int c;
-								for ( c = 0; c < MAXPLAYERS; c++ ) {
+								for ( c = 0; c < MAXPLAYERS; c++ )
+								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 									messagePlayerColor(c, color, language[406]);
 								}
 							}
 						}
-					} else {
+					}
+					else
+					{
 						spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 					}
-				} else {
+				}
+				else
+				{
 					//spawnBang(hit.x - cos(my->yaw)*2,hit.y - sin(my->yaw)*2,0);
 					playSoundPos(hit.x, hit.y, 183, 64);
 				}
-			} else if ( hit.entity->behavior == &actMonster ) {
-				if ( hit.entity->children.first != NULL ) {
-					if ( hit.entity->children.first->next != NULL ) {
+			}
+			else if ( hit.entity->behavior == &actMonster )
+			{
+				if ( hit.entity->children.first != NULL )
+				{
+					if ( hit.entity->children.first->next != NULL )
+					{
 						hitstats = (Stat*)hit.entity->children.first->next->element;
 
 						// alert the monster!
-						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) ) {
+						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+						{
 							//hit.entity->skill[0]=0;
 							//hit.entity->skill[4]=0;
 							//hit.entity->fskill[4]=atan2(my->y-hit.entity->y,my->x-hit.entity->x);
@@ -2612,16 +3145,22 @@ void Entity::attack(int pose, int charge) {
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != NULL; node = node->next ) {
+						for ( node = map.entities->first; node != NULL; node = node->next )
+						{
 							entity = (Entity*)node->element;
-							if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
+							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
+							{
 								Stat* buddystats = entity->getStats();
-								if ( buddystats != NULL ) {
-									if ( entity->checkFriend(hit.entity) ) {
-										if ( entity->skill[0] == 0 ) { // monster is waiting
+								if ( buddystats != NULL )
+								{
+									if ( entity->checkFriend(hit.entity) )
+									{
+										if ( entity->skill[0] == 0 )   // monster is waiting
+										{
 											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, FALSE);
-											if ( hit.entity == entity ) {
+											if ( hit.entity == entity )
+											{
 												entity->skill[0] = 2; // path state
 												entity->skill[1] = uid;
 												entity->fskill[2] = x;
@@ -2635,19 +3174,25 @@ void Entity::attack(int pose, int charge) {
 						hit.entity = ohitentity;
 					}
 				}
-			} else if ( hit.entity->behavior == &actPlayer ) {
+			}
+			else if ( hit.entity->behavior == &actPlayer )
+			{
 				hitstats = stats[hit.entity->skill[2]];
 				playerhit = hit.entity->skill[2];
 
 				// alert the player's followers!
-				for ( node = hitstats->FOLLOWERS.first; node != NULL; node = node->next ) {
+				for ( node = hitstats->FOLLOWERS.first; node != NULL; node = node->next )
+				{
 					Uint32* c = (Uint32*)node->element;
 					entity = uidToEntity(*c);
 					Entity* ohitentity = hit.entity;
-					if ( entity ) {
+					if ( entity )
+					{
 						Stat* buddystats = entity->getStats();
-						if ( buddystats != NULL ) {
-							if ( entity->skill[0] == 0 || (entity->skill[0] == 3 && entity->skill[1] != uid) ) { // monster is waiting or hunting
+						if ( buddystats != NULL )
+						{
+							if ( entity->skill[0] == 0 || (entity->skill[0] == 3 && entity->skill[1] != uid) )   // monster is waiting or hunting
+							{
 								entity->skill[0] = 2; // path state
 								entity->skill[1] = uid;
 								entity->fskill[2] = x;
@@ -2657,115 +3202,175 @@ void Entity::attack(int pose, int charge) {
 					}
 					hit.entity = ohitentity;
 				}
-			} else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &actChest ) {
+			}
+			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &actChest )
+			{
 				int axe = 0;
-				if ( myStats->weapon ) {
-					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE ) {
+				if ( myStats->weapon )
+				{
+					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE )
+					{
 						axe = 1; // axes do extra damage to doors :)
 					}
 				}
-				if ( hit.entity->behavior != &actChest ) {
-					if ( charge < MAXCHARGE / 2 ) {
+				if ( hit.entity->behavior != &actChest )
+				{
+					if ( charge < MAXCHARGE / 2 )
+					{
 						hit.entity->skill[4] -= 1 + axe; // decrease door/furniture health
-					} else {
+					}
+					else
+					{
 						hit.entity->skill[4] -= 2 + axe; // decrease door/furniture health extra
 					}
-				} else {
-					if ( charge < MAXCHARGE / 2 ) {
+				}
+				else
+				{
+					if ( charge < MAXCHARGE / 2 )
+					{
 						hit.entity->skill[3] -= 1 + axe; // decrease chest health
-					} else {
+					}
+					else
+					{
 						hit.entity->skill[3] -= 2 + axe; // decrease chest health extra
 					}
 				}
 				playSoundEntity(hit.entity, 28, 64);
-				if ( (hit.entity->behavior != &actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &actChest && hit.entity->skill[3] > 0) ) {
-					if ( hit.entity->behavior == &actDoor ) {
+				if ( (hit.entity->behavior != &actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &actChest && hit.entity->skill[3] > 0) )
+				{
+					if ( hit.entity->behavior == &actDoor )
+					{
 						messagePlayer(player, language[666]);
-					} else if ( hit.entity->behavior == &actChest ) {
+					}
+					else if ( hit.entity->behavior == &actChest )
+					{
 						messagePlayer(player, language[667]);
-					} else if ( hit.entity->behavior == &actFurniture ) {
-						if ( hit.entity->skill[0] == 0 ) {
+					}
+					else if ( hit.entity->behavior == &actFurniture )
+					{
+						if ( hit.entity->skill[0] == 0 )
+						{
 							messagePlayer(player, language[668]);
-						} else {
+						}
+						else
+						{
 							messagePlayer(player, language[669]);
 						}
 					}
-				} else {
+				}
+				else
+				{
 					hit.entity->skill[4] = 0;
-					if ( hit.entity->behavior == &actDoor ) {
+					if ( hit.entity->behavior == &actDoor )
+					{
 						messagePlayer(player, language[670]);
-						if ( !hit.entity->skill[0] ) {
+						if ( !hit.entity->skill[0] )
+						{
 							hit.entity->skill[6] = (x > hit.entity->x);
-						} else {
+						}
+						else
+						{
 							hit.entity->skill[6] = (y < hit.entity->y);
 						}
-					} else if ( hit.entity->behavior == &actChest ) {
+					}
+					else if ( hit.entity->behavior == &actChest )
+					{
 						messagePlayer(player, language[671]);
-					} else if ( hit.entity->behavior == &actFurniture ) {
-						if ( hit.entity->skill[0] == 0 ) {
+					}
+					else if ( hit.entity->behavior == &actFurniture )
+					{
+						if ( hit.entity->skill[0] == 0 )
+						{
 							messagePlayer(player, language[672]);
-						} else {
+						}
+						else
+						{
 							messagePlayer(player, language[673]);
 						}
 					}
 				}
-				if ( hit.entity->behavior == &actDoor ) {
+				if ( hit.entity->behavior == &actDoor )
+				{
 					updateEnemyBar(this, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
-				} else if ( hit.entity->behavior == &actChest ) {
+				}
+				else if ( hit.entity->behavior == &actChest )
+				{
 					updateEnemyBar(this, hit.entity, language[675], hit.entity->skill[3], hit.entity->skill[8]);
-				} else if ( hit.entity->behavior == &actFurniture ) {
-					if ( hit.entity->skill[0] == 0 ) {
+				}
+				else if ( hit.entity->behavior == &actFurniture )
+				{
+					if ( hit.entity->skill[0] == 0 )
+					{
 						updateEnemyBar(this, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
-					} else {
+					}
+					else
+					{
 						updateEnemyBar(this, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
 					}
 				}
-			} else if ( hit.entity->behavior == &actSink ) {
+			}
+			else if ( hit.entity->behavior == &actSink )
+			{
 				playSoundEntity(hit.entity, 28, 64);
 				playSoundEntity(hit.entity, 140 + rand(), 64);
 				messagePlayer(player, language[678]);
-				if (hit.entity->skill[0] > 0) {
+				if (hit.entity->skill[0] > 0)
+				{
 					hit.entity->skill[0]--; //Deplete one usage.
 
 					//50% chance spawn a slime.
-					if (rand() % 2 == 0) {
+					if (rand() % 2 == 0)
+					{
 						// spawn slime
 						Entity* monster = summonMonster(SLIME, x, y);
-						if ( monster ) {
+						if ( monster )
+						{
 							messagePlayer(player, language[582]);
 							Stat* monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
 						}
 					}
 
-					if (hit.entity->skill[0] == 0) { //Depleted.
+					if (hit.entity->skill[0] == 0)   //Depleted.
+					{
 						messagePlayer(player, language[585]); //TODO: Alert all players that see (or otherwise in range) it?
 						playSoundEntity(hit.entity, 132, 64);
 					}
 				}
-			} else {
-				if ( myStats->weapon ) {
+			}
+			else
+			{
+				if ( myStats->weapon )
+				{
 					// bang
 					spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
-				} else {
+				}
+				else
+				{
 					playSoundPos(hit.x, hit.y, 183, 64);
 				}
 			}
 
-			if ( hitstats != NULL ) {
+			if ( hitstats != NULL )
+			{
 				// hit chance
 				//int hitskill=5; // for unarmed combat
-				if ( myStats->weapon != NULL ) {
-					if ( myStats->weapon->type == QUARTERSTAFF || myStats->weapon->type == IRON_SPEAR || myStats->weapon->type == STEEL_HALBERD || myStats->weapon->type == ARTIFACT_SPEAR ) {
+				if ( myStats->weapon != NULL )
+				{
+					if ( myStats->weapon->type == QUARTERSTAFF || myStats->weapon->type == IRON_SPEAR || myStats->weapon->type == STEEL_HALBERD || myStats->weapon->type == ARTIFACT_SPEAR )
+					{
 						weaponskill = PRO_POLEARM;
 					}
-					if ( myStats->weapon->type == BRONZE_SWORD || myStats->weapon->type == IRON_SWORD || myStats->weapon->type == STEEL_SWORD || myStats->weapon->type == ARTIFACT_SWORD ) {
+					if ( myStats->weapon->type == BRONZE_SWORD || myStats->weapon->type == IRON_SWORD || myStats->weapon->type == STEEL_SWORD || myStats->weapon->type == ARTIFACT_SWORD )
+					{
 						weaponskill = PRO_SWORD;
 					}
-					if ( myStats->weapon->type == BRONZE_MACE || myStats->weapon->type == IRON_MACE || myStats->weapon->type == STEEL_MACE || myStats->weapon->type == ARTIFACT_MACE ) {
+					if ( myStats->weapon->type == BRONZE_MACE || myStats->weapon->type == IRON_MACE || myStats->weapon->type == STEEL_MACE || myStats->weapon->type == ARTIFACT_MACE )
+					{
 						weaponskill = PRO_MACE;
 					}
-					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE || myStats->weapon->type == ARTIFACT_AXE ) {
+					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE || myStats->weapon->type == ARTIFACT_AXE )
+					{
 						weaponskill = PRO_AXE;
 					}
 				}
@@ -2781,37 +3386,49 @@ void Entity::attack(int pose, int charge) {
 				if( c > 10+std::min(std::max(-3,hit.entity->getDEX()-my->getDEX()),3) ) {
 					hitsuccess=TRUE;
 				}
-				if( hitsuccess )*/ {
+				if( hitsuccess )*/
+				{
 					// skill increase
 					if ( weaponskill >= 0 )
-						if ( rand() % 10 == 0 ) {
+						if ( rand() % 10 == 0 )
+						{
 							this->increaseSkill(weaponskill);
 						}
 
 					// calculate and perform damage to opponent
 					int damage = 0;
-					if ( weaponskill >= 0 ) {
+					if ( weaponskill >= 0 )
+					{
 						damage = std::max(0, getAttack() - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
-					} else {
+					}
+					else
+					{
 						damage = std::max(0, getAttack() - AC(hitstats));
 					}
-					if ( weaponskill == PRO_AXE ) {
+					if ( weaponskill == PRO_AXE )
+					{
 						damage++;
 					}
 
 					bool gungnir = FALSE;
 					if ( myStats->weapon )
-						if ( myStats->weapon->type == ARTIFACT_SPEAR ) {
+						if ( myStats->weapon->type == ARTIFACT_SPEAR )
+						{
 							gungnir = TRUE;
 						}
-					if ( weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir ) {
+					if ( weaponskill >= PRO_SWORD && weaponskill < PRO_SHIELD && !gungnir )
+					{
 						int chance = 0;
-						if ( weaponskill == PRO_POLEARM ) {
+						if ( weaponskill == PRO_POLEARM )
+						{
 							chance = (damage / 3) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
-						} else {
+						}
+						else
+						{
 							chance = (damage / 2) * (100 - myStats->PROFICIENCIES[weaponskill]) / 100.f;
 						}
-						if ( chance > 0 ) {
+						if ( chance > 0 )
+						{
 							damage = (damage - chance) + (rand() % chance) + 1;
 						}
 					}
@@ -2821,7 +3438,8 @@ void Entity::attack(int pose, int charge) {
 
 					if ( myStats->weapon )
 						if ( myStats->weapon->type == ARTIFACT_AXE )
-							if ( rand() % 3 == 0 ) {
+							if ( rand() % 3 == 0 )
+							{
 								damage *= 2;    // Parashu sometimes doubles damage
 							}
 					hit.entity->modHP(-damage); // do the damage
@@ -2830,43 +3448,59 @@ void Entity::attack(int pose, int charge) {
 					killedByMonsterObituary(hit.entity);
 
 					// update enemy bar for attacker
-					if ( !strcmp(hitstats->name, "") ) {
+					if ( !strcmp(hitstats->name, "") )
+					{
 						updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
-					} else {
+					}
+					else
+					{
 						updateEnemyBar(this, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 					}
 
 					// damage weapon if applicable
-					if ( (rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0) ) {
-						if ( myStats->weapon != NULL ) {
+					if ( (rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0) )
+					{
+						if ( myStats->weapon != NULL )
+						{
 							bool artifactWeapon = FALSE;
-							if ( myStats->weapon->type == ARTIFACT_AXE ) {
+							if ( myStats->weapon->type == ARTIFACT_AXE )
+							{
 								artifactWeapon = TRUE;
 							}
-							if ( myStats->weapon->type == ARTIFACT_MACE ) {
+							if ( myStats->weapon->type == ARTIFACT_MACE )
+							{
 								artifactWeapon = TRUE;
 							}
-							if ( myStats->weapon->type == ARTIFACT_SPEAR ) {
+							if ( myStats->weapon->type == ARTIFACT_SPEAR )
+							{
 								artifactWeapon = TRUE;
 							}
-							if ( myStats->weapon->type == ARTIFACT_SWORD ) {
+							if ( myStats->weapon->type == ARTIFACT_SWORD )
+							{
 								artifactWeapon = TRUE;
 							}
-							if ( !artifactWeapon ) {
-								if ( player == clientnum || player < 0 ) {
-									if ( myStats->weapon->count > 1 ) {
+							if ( !artifactWeapon )
+							{
+								if ( player == clientnum || player < 0 )
+								{
+									if ( myStats->weapon->count > 1 )
+									{
 										newItem(myStats->weapon->type, myStats->weapon->status, myStats->weapon->beatitude, myStats->weapon->count - 1, myStats->weapon->appearance, myStats->weapon->identified, &myStats->inventory);
 									}
 								}
 								myStats->weapon->count = 1;
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-								if ( myStats->weapon->status != BROKEN ) {
+								if ( myStats->weapon->status != BROKEN )
+								{
 									messagePlayer(player, language[679]);
-								} else {
+								}
+								else
+								{
 									playSoundEntity(this, 76, 64);
 									messagePlayer(player, language[680]);
 								}
-								if ( player > 0 && multiplayer == SERVER ) {
+								if ( player > 0 && multiplayer == SERVER )
+								{
 									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
 									net_packet->data[5] = myStats->weapon->status;
@@ -2882,8 +3516,10 @@ void Entity::attack(int pose, int charge) {
 					// damage opponent armor if applicable
 					Item* armor = NULL;
 					int armornum = 0;
-					if ( damage > 0 && ((rand() % 25 == 0 && weaponskill != PRO_MACE) || (rand() % 10 == 0 && weaponskill == PRO_MACE)) ) {
-						switch ( rand() % 6 ) {
+					if ( damage > 0 && ((rand() % 25 == 0 && weaponskill != PRO_MACE) || (rand() % 10 == 0 && weaponskill == PRO_MACE)) )
+					{
+						switch ( rand() % 6 )
+						{
 							case 0:
 								armor = hitstats->helmet;
 								armornum = 0;
@@ -2911,34 +3547,47 @@ void Entity::attack(int pose, int charge) {
 							default:
 								break;
 						}
-					} else {
-						if ( hitstats->shield != NULL ) {
-							if ( itemCategory(hitstats->shield) == ARMOR ) {
-								if ( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) ) {
+					}
+					else
+					{
+						if ( hitstats->shield != NULL )
+						{
+							if ( itemCategory(hitstats->shield) == ARMOR )
+							{
+								if ( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) )
+								{
 									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 								}
 							}
 						}
 					}
-					if ( hitstats->defending && rand() % 10 == 0 && !armor ) {
+					if ( hitstats->defending && rand() % 10 == 0 && !armor )
+					{
 						armor = hitstats->shield;
 						armornum = 4;
 					}
-					if ( armor != NULL ) {
-						if ( playerhit == clientnum || playerhit < 0 ) {
-							if ( armor->count > 1 ) {
+					if ( armor != NULL )
+					{
+						if ( playerhit == clientnum || playerhit < 0 )
+						{
+							if ( armor->count > 1 )
+							{
 								newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
 							}
 						}
 						armor->count = 1;
 						armor->status = static_cast<Status>(armor->status - 1);
-						if ( armor->status > BROKEN ) {
+						if ( armor->status > BROKEN )
+						{
 							messagePlayer(playerhit, language[681], armor->getName());
-						} else {
+						}
+						else
+						{
 							playSoundEntity(hit.entity, 76, 64);
 							messagePlayer(playerhit, language[682], armor->getName());
 						}
-						if ( playerhit > 0 && multiplayer == SERVER ) {
+						if ( playerhit > 0 && multiplayer == SERVER )
+						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
 							net_packet->data[5] = armor->status;
@@ -2950,14 +3599,19 @@ void Entity::attack(int pose, int charge) {
 					}
 
 					// special weapon effects
-					if ( myStats->weapon ) {
-						if ( myStats->weapon->type == ARTIFACT_SWORD ) {
-							if ( hit.entity->flags[BURNABLE] ) {
-								if ( hitstats ) {
+					if ( myStats->weapon )
+					{
+						if ( myStats->weapon->type == ARTIFACT_SWORD )
+						{
+							if ( hit.entity->flags[BURNABLE] )
+							{
+								if ( hitstats )
+								{
 									hitstats->poisonKiller = uid;
 								}
 								hit.entity->flags[BURNING] = TRUE;
-								if ( playerhit > 0 && multiplayer == SERVER ) {
+								if ( playerhit > 0 && multiplayer == SERVER )
+								{
 									messagePlayer(playerhit, language[683]);
 									serverUpdateEntityFlag(hit.entity, BURNING);
 								}
@@ -2966,11 +3620,13 @@ void Entity::attack(int pose, int charge) {
 					}
 
 					// special monster effects
-					if ( damage > 0 && rand() % 4 == 0 ) {
+					if ( damage > 0 && rand() % 4 == 0 )
+					{
 						int armornum = 0;
 						Item* armor = NULL;
 						int armorstolen = rand() % 9;
-						switch ( myStats->type ) {
+						switch ( myStats->type )
+						{
 							case SCORPION:
 								hitstats->EFFECTS[EFF_PARALYZED] = TRUE;
 								hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = 120;
@@ -2986,7 +3642,8 @@ void Entity::attack(int pose, int charge) {
 								serverUpdateEffects(playerhit);
 								break;
 							case SUCCUBUS:
-								switch ( armorstolen ) {
+								switch ( armorstolen )
+								{
 									case 0:
 										armor = hitstats->helmet;
 										armornum = 0;
@@ -3026,9 +3683,12 @@ void Entity::attack(int pose, int charge) {
 									default:
 										break;
 								}
-								if ( armor != NULL ) {
-									if ( playerhit == clientnum || playerhit < 0 ) {
-										if ( armor->count > 1 ) {
+								if ( armor != NULL )
+								{
+									if ( playerhit == clientnum || playerhit < 0 )
+									{
+										if ( armor->count > 1 )
+										{
 											newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
 										}
 									}
@@ -3036,15 +3696,20 @@ void Entity::attack(int pose, int charge) {
 									messagePlayer(playerhit, language[688], armor->getName());
 									newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
 									Item** slot = itemSlot(hitstats, armor);
-									if ( slot ) {
+									if ( slot )
+									{
 										*slot = NULL;
 									}
-									if ( armor->node ) {
+									if ( armor->node )
+									{
 										list_RemoveNode(armor->node);
-									} else {
+									}
+									else
+									{
 										free(armor);
 									}
-									if ( playerhit > 0 && multiplayer == SERVER ) {
+									if ( playerhit > 0 && multiplayer == SERVER )
+									{
 										strcpy((char*)net_packet->data, "STLA");
 										net_packet->data[4] = armornum;
 										net_packet->address.host = net_clients[playerhit - 1].host;
@@ -3065,46 +3730,67 @@ void Entity::attack(int pose, int charge) {
 					}
 
 					// send messages
-					if ( !strcmp(hitstats->name, "") ) {
-						if ( hitstats->HP > 0 ) {
-							if ( damage > olddamage ) {
+					if ( !strcmp(hitstats->name, "") )
+					{
+						if ( hitstats->HP > 0 )
+						{
+							if ( damage > olddamage )
+							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								messagePlayerColor(player, color, language[689], language[90 + hitstats->type]);
-							} else {
+							}
+							else
+							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								messagePlayerColor(player, color, language[690], language[90 + hitstats->type]);
 							}
-							if ( damage == 0 ) {
+							if ( damage == 0 )
+							{
 								messagePlayer(player, language[691]);
 							}
-						} else {
+						}
+						else
+						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerColor(player, color, language[692], language[90 + hitstats->type]);
 							awardXP( hit.entity, TRUE, TRUE );
 						}
-					} else {
-						if ( hitstats->HP > 0 ) {
-							if ( damage > olddamage ) {
+					}
+					else
+					{
+						if ( hitstats->HP > 0 )
+						{
+							if ( damage > olddamage )
+							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								messagePlayerColor(player, color, language[693], hitstats->name);
-							} else {
+							}
+							else
+							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								messagePlayerColor(player, color, language[694], hitstats->name);
 							}
-							if ( damage == 0 ) {
-								if ( hitstats->sex ) {
+							if ( damage == 0 )
+							{
+								if ( hitstats->sex )
+								{
 									messagePlayer(player, language[695]);
-								} else {
+								}
+								else
+								{
 									messagePlayer(player, language[696]);
 								}
 							}
-						} else {
+						}
+						else
+						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							messagePlayerColor(player, color, language[697], hitstats->name);
 							awardXP( hit.entity, TRUE, TRUE );
 						}
 					}
-					if ( playerhit > 0 && multiplayer == SERVER ) {
+					if ( playerhit > 0 && multiplayer == SERVER )
+					{
 						strcpy((char*)net_packet->data, "UPHP");
 						SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
 						SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
@@ -3112,47 +3798,68 @@ void Entity::attack(int pose, int charge) {
 						net_packet->address.port = net_clients[playerhit - 1].port;
 						net_packet->len = 12;
 						sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
-					} else if ( playerhit == 0 ) {
-						if ( damage > 0 ) {
+					}
+					else if ( playerhit == 0 )
+					{
+						if ( damage > 0 )
+						{
 							camera_shakex += .1;
 							camera_shakey += 10;
-						} else {
+						}
+						else
+						{
 							camera_shakex += .05;
 							camera_shakey += 5;
 						}
 					}
-					if ( !strcmp(myStats->name, "") ) {
+					if ( !strcmp(myStats->name, "") )
+					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
-					} else {
+					}
+					else
+					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
 					}
-					if ( damage > 0 ) {
+					if ( damage > 0 )
+					{
 						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
-					} else {
+					}
+					else
+					{
 						messagePlayer(playerhit, language[700]);
 					}
 					playSoundEntity(hit.entity, 28, 64);
 
 					// chance of bleeding
-					if ( gibtype[(int)hitstats->type] == 1 ) {
-						if ( hitstats->HP > 5 && damage > 0 && !hitstats->EFFECTS[EFF_BLEEDING] ) {
-							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || (rand() % 10 == 0 && weaponskill == PRO_SWORD) ) {
+					if ( gibtype[(int)hitstats->type] == 1 )
+					{
+						if ( hitstats->HP > 5 && damage > 0 && !hitstats->EFFECTS[EFF_BLEEDING] )
+						{
+							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || (rand() % 10 == 0 && weaponskill == PRO_SWORD) )
+							{
 								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120);
 								hitstats->EFFECTS[EFF_BLEEDING] = TRUE;
-								if ( player > 0 && multiplayer == SERVER ) {
+								if ( player > 0 && multiplayer == SERVER )
+								{
 									serverUpdateEffects(player);
 								}
-								if ( playerhit >= 0 ) {
+								if ( playerhit >= 0 )
+								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									messagePlayerColor(playerhit, color, language[701]);
-								} else {
+								}
+								else
+								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-									if ( !strcmp(hitstats->name, "") ) {
+									if ( !strcmp(hitstats->name, "") )
+									{
 										messagePlayerColor(player, color, language[702], language[90 + hitstats->type]);
-									} else {
+									}
+									else
+									{
 										messagePlayerColor(player, color, language[703], hitstats->name);
 									}
 								}
@@ -3161,17 +3868,24 @@ void Entity::attack(int pose, int charge) {
 					}
 				}
 			}
-		} else {
-			if ( dist != STRIKERANGE ) {
+		}
+		else
+		{
+			if ( dist != STRIKERANGE )
+			{
 				// hit a wall
-				if ( myStats->weapon != NULL ) {
-					if ( myStats->weapon->type == TOOL_PICKAXE ) {
-						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 ) {
+				if ( myStats->weapon != NULL )
+				{
+					if ( myStats->weapon->type == TOOL_PICKAXE )
+					{
+						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
+						{
 							playSoundPos(hit.x, hit.y, 67, 128);
 
 							// spawn several rock items
 							i = 8 + rand() % 4;
-							for ( c = 0; c < i; c++ ) {
+							for ( c = 0; c < i; c++ )
+							{
 								entity = newEntity(-1, 1, map.entities);
 								entity->flags[INVISIBLE] = TRUE;
 								entity->flags[UPDATENEEDED] = TRUE;
@@ -3197,9 +3911,12 @@ void Entity::attack(int pose, int charge) {
 
 							map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
 							// send wall destroy info to clients
-							if ( multiplayer == SERVER ) {
-								for ( c = 0; c < MAXPLAYERS; c++ ) {
-									if ( client_disconnected[c] == TRUE ) {
+							if ( multiplayer == SERVER )
+							{
+								for ( c = 0; c < MAXPLAYERS; c++ )
+								{
+									if ( client_disconnected[c] == TRUE )
+									{
 										continue;
 									}
 									strcpy((char*)net_packet->data, "WALD");
@@ -3211,15 +3928,20 @@ void Entity::attack(int pose, int charge) {
 									sendPacketSafe(net_sock, -1, net_packet, c - 1);
 								}
 							}
-							if ( rand() % 2 ) {
+							if ( rand() % 2 )
+							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
-								if ( myStats->weapon->status == BROKEN ) {
+								if ( myStats->weapon->status == BROKEN )
+								{
 									messagePlayer(player, language[704]);
 									playSoundEntity(this, 76, 64);
-								} else {
+								}
+								else
+								{
 									messagePlayer(player, language[705]);
 								}
-								if ( player > 0 && multiplayer == SERVER ) {
+								if ( player > 0 && multiplayer == SERVER )
+								{
 									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
 									net_packet->data[5] = myStats->weapon->status;
@@ -3232,23 +3954,32 @@ void Entity::attack(int pose, int charge) {
 
 							// Update the paths so that monsters know they can walk through it
 							generatePathMaps();
-						} else {
+						}
+						else
+						{
 							spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 							messagePlayer(player, language[706]);
 						}
-					} else {
+					}
+					else
+					{
 						// bang
 						spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 					}
-				} else {
+				}
+				else
+				{
 					// bang
 					//spawnBang(hit.x - cos(my->yaw)*2,hit.y - sin(my->yaw)*2,0);
 					playSoundPos(hit.x, hit.y, 183, 64);
 				}
 			}
 		}
-	} else {
-		if ( player == -1 ) {
+	}
+	else
+	{
+		if ( player == -1 )
+		{
 			return;    // clients are NOT supposed to invoke monster attacks in the gamestate!
 		}
 		strcpy((char*)net_packet->data, "ATAK");
@@ -3270,39 +4001,50 @@ void Entity::attack(int pose, int charge) {
 
 -------------------------------------------------------------------------------*/
 
-int AC(Stat* stat) {
-	if (!stat) {
+int AC(Stat* stat)
+{
+	if (!stat)
+	{
 		return 0;
 	}
 
 	int armor = stat->CON;
 
-	if (stat->helmet) {
+	if (stat->helmet)
+	{
 		armor += stat->helmet->armorGetAC();
 	}
-	if (stat->breastplate) {
+	if (stat->breastplate)
+	{
 		armor += stat->breastplate->armorGetAC();
 	}
-	if (stat->gloves) {
+	if (stat->gloves)
+	{
 		armor += stat->gloves->armorGetAC();
 	}
-	if (stat->shoes) {
+	if (stat->shoes)
+	{
 		armor += stat->shoes->armorGetAC();
 	}
-	if (stat->shield) {
+	if (stat->shield)
+	{
 		armor += stat->shield->armorGetAC();
 	}
-	if (stat->cloak) {
+	if (stat->cloak)
+	{
 		armor += stat->cloak->armorGetAC();
 	}
-	if (stat->ring) {
+	if (stat->ring)
+	{
 		armor += stat->ring->armorGetAC();
 	}
 
-	if ( stat->shield ) {
+	if ( stat->shield )
+	{
 		int shieldskill = stat->PROFICIENCIES[PRO_SHIELD] / 25;
 		armor += shieldskill;
-		if ( stat->defending ) {
+		if ( stat->defending )
+		{
 			armor += 5 + stat->PROFICIENCIES[PRO_SHIELD] / 5;
 		}
 	}
@@ -3319,14 +4061,17 @@ int AC(Stat* stat) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::teleport(int tele_x, int tele_y) {
+void Entity::teleport(int tele_x, int tele_y)
+{
 	int player = -1;
 
-	if (behavior == &actPlayer) {
+	if (behavior == &actPlayer)
+	{
 		player = skill[2];
 	}
 
-	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) ) {
+	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
+	{
 		messagePlayer(player, language[707]);
 		return;
 	}
@@ -3339,15 +4084,18 @@ void Entity::teleport(int tele_x, int tele_y) {
 	double oldy = y;
 	x = (tele_x << 4) + 8;
 	y = (tele_y << 4) + 8;
-	if ( entityInsideSomething(this) ) {
+	if ( entityInsideSomething(this) )
+	{
 		x = oldx;
 		y = oldy;
-		if ( multiplayer == SERVER && player > 0 ) {
+		if ( multiplayer == SERVER && player > 0 )
+		{
 			messagePlayer(player, language[707]);
 		}
 		return;
 	}
-	if ( player > 0 && multiplayer == SERVER ) {
+	if ( player > 0 && multiplayer == SERVER )
+	{
 		strcpy((char*)net_packet->data, "TELE");
 		net_packet->data[4] = x;
 		net_packet->data[5] = y;
@@ -3369,31 +4117,41 @@ void Entity::teleport(int tele_x, int tele_y) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::teleportRandom() {
+void Entity::teleportRandom()
+{
 	int numlocations = 0;
 	int pickedlocation;
 	int player = -1;
 
-	if (behavior == &actPlayer ) {
+	if (behavior == &actPlayer )
+	{
 		player = skill[2];
 	}
-	for (int iy = 0; iy < map.height; ++iy ) {
-		for (int ix = 0; ix < map.width; ++ix ) {
-			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) ) {
+	for (int iy = 0; iy < map.height; ++iy )
+	{
+		for (int ix = 0; ix < map.width; ++ix )
+		{
+			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
+			{
 				numlocations++;
 			}
 		}
 	}
-	if ( numlocations == 0 ) {
+	if ( numlocations == 0 )
+	{
 		messagePlayer(player, language[708]);
 		return;
 	}
 	pickedlocation = rand() % numlocations;
 	numlocations = 0;
-	for (int iy = 0; iy < map.height; iy++ ) {
-		for (int ix = 0; ix < map.width; ix++ ) {
-			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) ) {
-				if ( numlocations == pickedlocation ) {
+	for (int iy = 0; iy < map.height; iy++ )
+	{
+		for (int ix = 0; ix < map.width; ix++ )
+		{
+			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
+			{
+				if ( numlocations == pickedlocation )
+				{
 					teleport(ix, iy);
 					return;
 				}
@@ -3411,20 +4169,24 @@ void Entity::teleportRandom() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::awardXP(Entity* src, bool share, bool root) {
-	if ( !src ) {
+void Entity::awardXP(Entity* src, bool share, bool root)
+{
+	if ( !src )
+	{
 		return;
 	}
 
 	Stat* destStats = getStats();
 	Stat* srcStats = src->getStats();
 
-	if ( !destStats || !srcStats ) {
+	if ( !destStats || !srcStats )
+	{
 		return;
 	}
 
 	int player = -1;
-	if ( behavior == &actPlayer ) {
+	if ( behavior == &actPlayer )
+	{
 		player = skill[2];
 	}
 
@@ -3441,30 +4203,37 @@ void Entity::awardXP(Entity* src, bool share, bool root) {
 	tempHit.y = hit.y;
 
 	// divide shares
-	if ( player >= 0 ) {
+	if ( player >= 0 )
+	{
 		int numshares = 0;
 		Entity* shares[MAXPLAYERS];
 		int c;
 
-		for ( c = 0; c < MAXPLAYERS; c++ ) {
+		for ( c = 0; c < MAXPLAYERS; c++ )
+		{
 			shares[c] = NULL;
 		}
 
 		// find other players to divide shares with
 		node_t* node;
-		for ( node = map.entities->first; node != NULL; node = node->next ) {
+		for ( node = map.entities->first; node != NULL; node = node->next )
+		{
 			Entity* entity = (Entity*)node->element;
-			if ( entity == this ) {
+			if ( entity == this )
+			{
 				continue;
 			}
-			if ( entity->behavior == &actPlayer ) {
+			if ( entity->behavior == &actPlayer )
+			{
 				double tangent = atan2( entity->y - src->y, entity->x - src->x );
 				lineTrace(src, src->x, src->y, tangent, XPSHARERANGE, 0, FALSE);
 
-				if ( hit.entity == entity ) {
+				if ( hit.entity == entity )
+				{
 					numshares++;
 					shares[numshares] = entity;
-					if ( numshares == MAXPLAYERS - 1 ) {
+					if ( numshares == MAXPLAYERS - 1 )
+					{
 						break;
 					}
 				}
@@ -3472,14 +4241,18 @@ void Entity::awardXP(Entity* src, bool share, bool root) {
 		}
 
 		// divide value of each share
-		if ( numshares ) {
+		if ( numshares )
+		{
 			xpGain /= numshares;
 		}
 
 		// award XP to everyone else in the group
-		if ( share ) {
-			for ( c = 0; c < MAXPLAYERS; c++ ) {
-				if ( shares[c] ) {
+		if ( share )
+		{
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				if ( shares[c] )
+				{
 					shares[c]->awardXP(src, FALSE, FALSE);
 				}
 			}
@@ -3490,10 +4263,14 @@ void Entity::awardXP(Entity* src, bool share, bool root) {
 	destStats->EXP += xpGain;
 
 	// award bonus XP and update kill counters
-	if ( player >= 0 ) {
-		if ( player == 0 ) {
+	if ( player >= 0 )
+	{
+		if ( player == 0 )
+		{
 			kills[srcStats->type]++;
-		} else if ( multiplayer == SERVER && player > 0 ) {
+		}
+		else if ( multiplayer == SERVER && player > 0 )
+		{
 			// inform client of kill
 			strcpy((char*)net_packet->data, "MKIL");
 			net_packet->data[4] = srcStats->type;
@@ -3522,18 +4299,22 @@ void Entity::awardXP(Entity* src, bool share, bool root) {
 			net_packet->len = 21;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
-	} else {
+	}
+	else
+	{
 		Entity* leader;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
-		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL ) {
+		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL )
+		{
 			leader->increaseSkill(PRO_LEADERSHIP);
 			leader->awardXP(src, TRUE, FALSE);
 		}
 	}
 
 	// restore hit struct
-	if ( root ) {
+	if ( root )
+	{
 		hit.entity = tempHit.entity;
 		hit.mapx = tempHit.mapx;
 		hit.mapy = tempHit.mapy;
@@ -3551,8 +4332,10 @@ void Entity::awardXP(Entity* src, bool share, bool root) {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::checkEnemy(Entity* your) {
-	if (!your) {
+bool Entity::checkEnemy(Entity* your)
+{
+	if (!your)
+	{
 		return false;
 	}
 
@@ -3561,28 +4344,37 @@ bool Entity::checkEnemy(Entity* your) {
 	Stat* myStats = getStats();
 	Stat* yourStats = your->getStats();
 
-	if ( !myStats || !yourStats ) {
+	if ( !myStats || !yourStats )
+	{
 		return FALSE;
 	}
-	if ( everybodyfriendly ) { // friendly monsters mode
+	if ( everybodyfriendly )   // friendly monsters mode
+	{
 		return FALSE;
 	}
 
-	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) ) {
+	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) )
+	{
 		return FALSE;
 	}
 
 	// if you have a leader, check whether we are enemies instead
 	Entity* yourLeader = NULL;
-	if ( yourStats->leader_uid ) {
+	if ( yourStats->leader_uid )
+	{
 		yourLeader = uidToEntity(yourStats->leader_uid);
 	}
-	if ( yourLeader ) {
+	if ( yourLeader )
+	{
 		Stat* yourLeaderStats = yourLeader->getStats();
-		if ( yourLeaderStats ) {
-			if ( yourLeader == this ) {
+		if ( yourLeaderStats )
+		{
+			if ( yourLeader == this )
+			{
 				return FALSE;
-			} else {
+			}
+			else
+			{
 				return checkEnemy(yourLeader);
 			}
 		}
@@ -3590,40 +4382,54 @@ bool Entity::checkEnemy(Entity* your) {
 
 	// first find out if I have a leader
 	Entity* myLeader = NULL;
-	if ( myStats->leader_uid ) {
+	if ( myStats->leader_uid )
+	{
 		myLeader = uidToEntity(myStats->leader_uid);
 	}
-	if ( myLeader ) {
+	if ( myLeader )
+	{
 		Stat* myLeaderStats = myLeader->getStats();
-		if ( myLeaderStats ) {
-			if ( myLeader == your ) {
+		if ( myLeaderStats )
+		{
+			if ( myLeader == your )
+			{
 				result = FALSE;
-			} else {
+			}
+			else
+			{
 				return myLeader->checkEnemy(your);
 			}
-		} else {
+		}
+		else
+		{
 			// invalid leader, default to allegiance table
 			result = swornenemies[myStats->type][yourStats->type];
 		}
-	} else {
+	}
+	else
+	{
 		node_t* t_node;
 		bool foundFollower = FALSE;
-		for ( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next ) {
+		for ( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next )
+		{
 			Uint32* uid = (Uint32*)t_node->element;
-			if ( *uid == your->uid ) {
+			if ( *uid == your->uid )
+			{
 				foundFollower = TRUE;
 				result = FALSE;
 				break;
 			}
 		}
-		if ( !foundFollower ) {
+		if ( !foundFollower )
+		{
 			// no leader, default to allegiance table
 			result = swornenemies[myStats->type][yourStats->type];
 		}
 	}
 
 	// confused monsters mistake their allegiances
-	if ( myStats->EFFECTS[EFF_CONFUSED] ) {
+	if ( myStats->EFFECTS[EFF_CONFUSED] )
+	{
 		result = (result == FALSE);
 	}
 
@@ -3638,35 +4444,45 @@ bool Entity::checkEnemy(Entity* your) {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::checkFriend(Entity* your) {
+bool Entity::checkFriend(Entity* your)
+{
 	bool result;
 
-	if (!your) {
+	if (!your)
+	{
 		return false;    //Equivalent to if (!myStats || !yourStats)
 	}
 
 	Stat* myStats = getStats();
 	Stat* yourStats = your->getStats();
 
-	if ( !myStats || !yourStats ) {
+	if ( !myStats || !yourStats )
+	{
 		return FALSE;
 	}
 
-	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) ) {
+	if ( (your->behavior == &actPlayer || your->behavior == &actPlayerLimb) && (behavior == &actPlayer || behavior == &actPlayerLimb) )
+	{
 		return TRUE;
 	}
 
 	// if you have a leader, check whether we are friends instead
 	Entity* yourLeader = NULL;
-	if ( yourStats->leader_uid ) {
+	if ( yourStats->leader_uid )
+	{
 		yourLeader = uidToEntity(yourStats->leader_uid);
 	}
-	if ( yourLeader ) {
+	if ( yourLeader )
+	{
 		Stat* yourLeaderStats = yourLeader->getStats();
-		if ( yourLeaderStats ) {
-			if ( yourLeader == this ) {
+		if ( yourLeaderStats )
+		{
+			if ( yourLeader == this )
+			{
 				return TRUE;
-			} else {
+			}
+			else
+			{
 				return checkFriend(yourLeader);
 			}
 		}
@@ -3674,33 +4490,46 @@ bool Entity::checkFriend(Entity* your) {
 
 	// first find out if I have a leader
 	Entity* myLeader = NULL;
-	if ( myStats->leader_uid ) {
+	if ( myStats->leader_uid )
+	{
 		myLeader = uidToEntity(myStats->leader_uid);
 	}
-	if ( myLeader ) {
+	if ( myLeader )
+	{
 		Stat* myLeaderStats = myLeader->getStats();
-		if ( myLeaderStats ) {
-			if ( myLeader == your ) {
+		if ( myLeaderStats )
+		{
+			if ( myLeader == your )
+			{
 				result = TRUE;
-			} else {
+			}
+			else
+			{
 				return myLeader->checkFriend(your);
 			}
-		} else {
+		}
+		else
+		{
 			// invalid leader, default to allegiance table
 			result = monsterally[myStats->type][yourStats->type];
 		}
-	} else {
+	}
+	else
+	{
 		node_t* t_node;
 		bool foundFollower = FALSE;
-		for ( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next ) {
+		for ( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next )
+		{
 			Uint32* uid = (Uint32*)t_node->element;
-			if ( *uid == your->uid ) {
+			if ( *uid == your->uid )
+			{
 				foundFollower = TRUE;
 				result = TRUE;
 				break;
 			}
 		}
-		if ( !foundFollower ) {
+		if ( !foundFollower )
+		{
 			// no leader, default to allegiance table
 			result = monsterally[myStats->type][yourStats->type];
 		}

@@ -87,7 +87,8 @@ typedef struct spellElement_t spellElement_t;
 //TODO: Give spellElements/spells a property that makes it so players don't know they exist/can't use them. Sorta like "You have no idea on the inner workings of this spell. It is beyond your comprehension."
 //TODO: Channeling spells. Or spells that otherwise impose a constant drain until you cancel them. NEED THIS ASAP I SAY.
 //TODO: Don't re-invent the wheel with lists here.
-typedef struct spellElement_t {
+typedef struct spellElement_t
+{
 	int mana, base_mana;
 	int overload_multiplier; // what does this do?
 	int damage;
@@ -276,7 +277,8 @@ extern spellElement_t spellElement_removecurse;
  * Spells give you discounts. So it's more expensive to cast 5 fireball spells than a single spell which creates 5 fireballs.
  */
 //TODO: Here's a good question: How do we determine spell casting times? By the total mana you need to amass & magic skills?
-typedef struct spell_t {
+typedef struct spell_t
+{
 	int ID;
 	char name[64];
 	//spellElement_t *elements;
@@ -372,7 +374,8 @@ void spell_changeHealth(Entity* entity, int amount); //This function changes an 
 void actLeftHandMagic(Entity* my);
 void actRightHandMagic(Entity* my);
 
-typedef struct spellcastingAnimationManager {
+typedef struct spellcastingAnimationManager
+{
 	//The data to pass on to the castSpell function.
 	spell_t* spell;
 	Uint32 caster;

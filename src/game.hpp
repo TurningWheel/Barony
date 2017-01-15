@@ -40,7 +40,8 @@ extern int camera_shakey;
 extern int camera_shakey2;
 
 // net packet send
-typedef struct packetsend_t {
+typedef struct packetsend_t
+{
 	UDPsocket sock;
 	int channel;
 	UDPpacket* packet;

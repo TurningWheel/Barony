@@ -52,7 +52,8 @@ extern bool gamepad_menuy_invert;
 //TODO: Joystick support?
 //extern SDL_GameController* game_controller;
 
-class GameController {
+class GameController
+{
 	SDL_GameController* sdl_device;
 	int id;
 
@@ -153,7 +154,8 @@ extern GameController* game_controller;
 
 void initGameControllers();
 
-class Player {
+class Player
+{
 	//Splitscreen support. Every player gets their own screen.
 	//Except in multiplayer. In that case, this is just a big old dummy class.
 	SDL_Surface* screen;

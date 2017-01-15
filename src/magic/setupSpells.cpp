@@ -14,7 +14,8 @@
 #include "../stat.hpp"
 #include "magic.hpp"
 
-void setupSpells() { ///TODO: Verify this function.
+void setupSpells()   ///TODO: Verify this function.
+{
 	node_t* node = NULL;
 	spellElement_t* element = NULL;
 

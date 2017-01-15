@@ -32,7 +32,8 @@
 #define USERFLAG2 15
 
 // entity class
-class Entity {
+class Entity
+{
 	Sint32& char_gonnavomit;
 	Sint32& char_heal;
 	Sint32& char_energize;

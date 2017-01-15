@@ -27,12 +27,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chest_status(skill[1]),
-	chest_opener(skill[5]) {
+	chest_opener(skill[5])
+{
 	int c;
 	// add the entity to the entity list
-	if (!pos) {
+	if (!pos)
+	{
 		mynode = list_AddNodeFirst(entlist);
-	} else {
+	}
+	else
+	{
 		mynode = list_AddNodeLast(entlist);
 	}
 	mynode->element = this;
@@ -73,22 +77,30 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	children.last = nullptr;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
-	for (c = 0; c < 30; ++c) {
+	for (c = 0; c < 30; ++c)
+	{
 		skill[c] = 0;
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
-	for (c = 0; c < 16; ++c) {
+	for (c = 0; c < 16; ++c)
+	{
 		flags[c] = false;
 	}
-	if (entlist == map.entities) {
-		if (multiplayer != CLIENT || loading) {
+	if (entlist == map.entities)
+	{
+		if (multiplayer != CLIENT || loading)
+		{
 			uid = entity_uids;
 			entity_uids++;
-		} else {
+		}
+		else
+		{
 			uid = -2;
 		}
-	} else {
+	}
+	else
+	{
 		uid = -2;
 	}
 	behavior = nullptr;

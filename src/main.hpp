@@ -209,7 +209,8 @@ extern bool stop;
 #define indev_displaytime 7000
 
 // view structure
-typedef struct view_t {
+typedef struct view_t
+{
 	double x, y, z;
 	double ang;
 	double vang;
@@ -221,7 +222,8 @@ extern view_t camera;
 class Entity; //TODO: Bugger?
 
 // node structure
-typedef struct node_t {
+typedef struct node_t
+{
 	struct node_t* next;
 	struct node_t* prev;
 	struct list_t* list;
@@ -231,7 +233,8 @@ typedef struct node_t {
 } node_t;
 
 // list structure
-typedef struct list_t {
+typedef struct list_t
+{
 	node_t* first;
 	node_t* last;
 } list_t;
@@ -239,7 +242,8 @@ extern list_t button_l;
 extern list_t light_l;
 
 // game world structure
-typedef struct map_t {
+typedef struct map_t
+{
 	char name[32];   // name of the map
 	char author[32]; // author of the map
 	unsigned int width, height;  // size of the map
@@ -251,7 +255,8 @@ typedef struct map_t {
 #define OBSTACLELAYER 1 // obstacle layer in map
 
 // light structure
-typedef struct light_t {
+typedef struct light_t
+{
 	Sint32 x, y;
 	Sint32 radius;
 	Sint32 intensity;
@@ -262,7 +267,8 @@ typedef struct light_t {
 } light_t;
 
 // delete entity structure
-typedef struct deleteent_t {
+typedef struct deleteent_t
+{
 	Uint32 uid;
 	Uint32 tries;
 } deleteent_t;
@@ -270,7 +276,8 @@ typedef struct deleteent_t {
 #define MAXDELETES 2 // max number of packets resent in a frame
 
 // pathnode struct
-typedef struct pathnode_t {
+typedef struct pathnode_t
+{
 	struct pathnode_t* parent;
 	Sint32 x, y;
 	Uint32 g, h;
@@ -280,7 +287,8 @@ typedef struct pathnode_t {
 // hit structure
 #define HORIZONTAL 1
 #define VERTICAL 2
-typedef struct hit_t {
+typedef struct hit_t
+{
 	double x, y;
 	int mapx, mapy;
 	Entity* entity;
@@ -289,7 +297,8 @@ typedef struct hit_t {
 extern hit_t hit;
 
 // button structure
-typedef struct button_t {
+typedef struct button_t
+{
 	char label[32];      // button label
 	Sint32 x, y;         // onscreen position
 	Uint32 sizex, sizey; // size of the button
@@ -308,32 +317,37 @@ typedef struct button_t {
 } button_t;
 
 // voxel structure
-typedef struct voxel_t {
+typedef struct voxel_t
+{
 	Sint32 sizex, sizey, sizez;
 	Uint8* data;
 	Uint8 palette[256][3];
 } voxel_t;
 
 // vertex structure
-typedef struct vertex_t {
+typedef struct vertex_t
+{
 	double x, y, z;
 } vertex_t;
 
 // quad structure
-typedef struct polyquad_t {
+typedef struct polyquad_t
+{
 	vertex_t vertex[4];
 	Uint8 r, g, b;
 	int side;
 } polyquad_t;
 
 // triangle structure
-typedef struct polytriangle_t {
+typedef struct polytriangle_t
+{
 	vertex_t vertex[3];
 	Uint8 r, g, b;
 } polytriangle_t;
 
 // polymodel structure
-typedef struct polymodel_t {
+typedef struct polymodel_t
+{
 	polytriangle_t* faces;
 	Uint32 numfaces;
 	GLuint vbo;
@@ -343,7 +357,8 @@ typedef struct polymodel_t {
 } polymodel_t;
 
 // string structure
-typedef struct string_t {
+typedef struct string_t
+{
 	Uint32 lines;
 	char* data;
 	node_t* node;
@@ -351,7 +366,8 @@ typedef struct string_t {
 } string_t;
 
 // door structure (used for map generation)
-typedef struct door_t {
+typedef struct door_t
+{
 	Sint32 x, y;
 	Sint32 dir; // 0: east, 1: south, 2: west, 3: north
 } door_t;
