@@ -36,10 +36,10 @@
 #define MAGICTRAP_SPELL my->skill[1]
 #define MAGICTRAP_DIRECTION my->skill[3]
 
-void actMagicTrap(Entity *my) {
-	if( !MAGICTRAP_INIT ) {
+void actMagicTrap(Entity* my) {
+	if ( !MAGICTRAP_INIT ) {
 		MAGICTRAP_INIT = 1;
-		switch( rand()%8 ) {
+		switch ( rand() % 8 ) {
 			case 0:
 				MAGICTRAP_SPELL = SPELL_FORCEBOLT;
 				break;
@@ -68,12 +68,12 @@ void actMagicTrap(Entity *my) {
 				MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
 				break;
 		}
-		my->light = lightSphere(my->x/16,my->y/16,3,192);
+		my->light = lightSphere(my->x / 16, my->y / 16, 3, 192);
 	}
 
 	// eliminate traps that have been destroyed.
-	if( !checkObstacle(my->x, my->y, my, NULL) ) {
-		if( my->light ) {
+	if ( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( my->light ) {
 			list_RemoveNode(my->light->node);
 			my->light = NULL;
 		}
@@ -81,12 +81,13 @@ void actMagicTrap(Entity *my) {
 		return;
 	}
 
-	if( multiplayer==CLIENT )
+	if ( multiplayer == CLIENT ) {
 		return;
+	}
 
-	if (my->ticks%TICKS_PER_SECOND == 0) {
-		int oldir=0;
-		int x=0, y=0;
+	if (my->ticks % TICKS_PER_SECOND == 0) {
+		int oldir = 0;
+		int x = 0, y = 0;
 		switch (MAGICTRAP_DIRECTION) {
 			case 0:
 				x = 12;
@@ -113,23 +114,23 @@ void actMagicTrap(Entity *my) {
 				MAGICTRAP_DIRECTION = 0;
 				break;
 		}
-		int u = std::min<int>(std::max(0.0,(my->x+x)/16),map.width-1);
-		int v = std::min<int>(std::max(0.0,(my->y+y)/16),map.height-1);
-		if( !map.tiles[OBSTACLELAYER+v*MAPLAYERS+u*MAPLAYERS*map.height] ) {
-			Entity *entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
-			entity->x = my->x+x;
-			entity->y = my->y+y;
+		int u = std::min<int>(std::max(0.0, (my->x + x) / 16), map.width - 1);
+		int v = std::min<int>(std::max(0.0, (my->y + y) / 16), map.height - 1);
+		if ( !map.tiles[OBSTACLELAYER + v * MAPLAYERS + u * MAPLAYERS * map.height] ) {
+			Entity* entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
+			entity->x = my->x + x;
+			entity->y = my->y + y;
 			entity->z = my->z;
-			entity->yaw = oldir*(PI/2.f);
-			double missile_speed = 4 * ((double)(((spellElement_t *)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t *)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
+			entity->yaw = oldir * (PI / 2.f);
+			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 		}
 	}
 }
 
-void actMagiclightBall(Entity *my) {
-	Entity *caster = NULL;
+void actMagiclightBall(Entity* my) {
+	Entity* caster = NULL;
 	if (!my) {
 		return;
 	}
@@ -137,27 +138,28 @@ void actMagiclightBall(Entity *my) {
 	my->skill[2] = -10; // so the client sets the behavior of this entity
 
 	if (clientnum != 0 && multiplayer == CLIENT) {
-		if( my->light != NULL ) {
+		if ( my->light != NULL ) {
 			list_RemoveNode(my->light->node);
 			my->light = NULL;
 		}
 
 		//Light up the area.
-		my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 		lightball_flicker++;
 
 		if (lightball_flicker > 5) {
 			lightball_lighting = (lightball_lighting == 1) + 1;
 
-			if(lightball_lighting == 1) {
-				if( my->light != NULL )
+			if (lightball_lighting == 1) {
+				if ( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
-				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-			}
-			else {
-				if( my->light != NULL )
+				}
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+			} else {
+				if ( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
-				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
+				}
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 			}
 			lightball_flicker = 0;
 		}
@@ -167,15 +169,16 @@ void actMagiclightBall(Entity *my) {
 	}
 
 	my->yaw += .01;
-	if( my->yaw >= PI*2 )
-		my->yaw -= PI*2;
+	if ( my->yaw >= PI * 2 ) {
+		my->yaw -= PI * 2;
+	}
 
 	/*if (!my->parent) { //This means that it doesn't have a caster. In other words, magic light staff.
 		return;
 	})*/
 
 	//list_t *path = NULL;
-	pathnode_t *pathnode = NULL;
+	pathnode_t* pathnode = NULL;
 
 	//TODO: Follow player around (at a distance -- and delay before starting to follow).
 	//TODO: Circle around player's head if they stand still for a little bit. Continue circling even if the player walks away -- until the player is far enough to trigger move (or if the player moved for a bit and then stopped, then update position).
@@ -190,11 +193,11 @@ void actMagiclightBall(Entity *my) {
 		list_RemoveNode(my->mynode); //Delete the light spell.C
 		return;
 	}
-	node_t *node = NULL;
+	node_t* node = NULL;
 
-	spell_t *spell = NULL;
+	spell_t* spell = NULL;
 	node = my->children.first;
-	spell = (spell_t *)node->element;
+	spell = (spell_t*)node->element;
 	if (!spell) {
 		list_RemoveNode(my->mynode);
 		return; //We need the source spell!
@@ -202,10 +205,10 @@ void actMagiclightBall(Entity *my) {
 
 	caster = uidToEntity(spell->caster);
 	if (caster) {
-		Stat *stats = caster->getStats();
+		Stat* stats = caster->getStats();
 		if (stats) {
 			if (stats->HP <= 0) {
-				if( my->light != NULL ) {
+				if ( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
 					my->light = NULL;
 				}
@@ -214,7 +217,7 @@ void actMagiclightBall(Entity *my) {
 			}
 		}
 	} else if (spell->caster >= 1) { //So no caster...but uidToEntity returns NULL if entity is already dead, right? And if the uid is supposed to point to an entity, but it doesn't...it means the caster has died.
-		if( my->light != NULL ) {
+		if ( my->light != NULL ) {
 			list_RemoveNode(my->light->node);
 			my->light = NULL;
 		}
@@ -223,37 +226,39 @@ void actMagiclightBall(Entity *my) {
 	}
 
 	// if the spell has been unsustained, remove it
-	if( !spell->magicstaff && !spell->sustain ) {
+	if ( !spell->magicstaff && !spell->sustain ) {
 		int i = 0;
 		int player = -1;
 		for (i = 0; i < 4; ++i) {
-			if (players[i]->entity == caster)
+			if (players[i]->entity == caster) {
 				player = i;
+			}
 		}
 		if (player > -1 && multiplayer == SERVER) {
-			strcpy( (char *)net_packet->data, "UNCH");
+			strcpy( (char*)net_packet->data, "UNCH");
 			net_packet->data[4] = player;
 			SDLNet_Write32(spell->ID, &net_packet->data[5]);
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 9;
-			sendPacketSafe(net_sock, -1, net_packet, player-1);
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
-		if( my->light )
+		if ( my->light ) {
 			list_RemoveNode(my->light->node);
+		}
 		my->light = NULL;
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	if (magic_init) {
-		if( my->light != NULL ) {
+		if ( my->light != NULL ) {
 			list_RemoveNode(my->light->node);
 			my->light = NULL;
 		}
 
 		if (lightball_timer <= 0) {
-			if( spell->sustain ) {
+			if ( spell->sustain ) {
 				//Attempt to sustain the magic light.
 				if (caster) {
 					//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
@@ -264,20 +269,22 @@ void actMagiclightBall(Entity *my) {
 						int i = 0;
 						int player = -1;
 						for (i = 0; i < 4; ++i) {
-							if (players[i]->entity == caster)
+							if (players[i]->entity == caster) {
 								player = i;
+							}
 						}
 						if (player > -1 && multiplayer == SERVER) {
-							strcpy( (char *)net_packet->data, "UNCH");
+							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = player;
 							SDLNet_Write32(spell->ID, &net_packet->data[5]);
 							net_packet->address.host = net_clients[player - 1].host;
 							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 9;
-							sendPacketSafe(net_sock, -1, net_packet, player-1);
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
-						if( my->light )
+						if ( my->light ) {
 							list_RemoveNode(my->light->node);
+						}
 						my->light = NULL;
 						list_RemoveNode(my->mynode);
 						return;
@@ -302,9 +309,10 @@ void actMagiclightBall(Entity *my) {
 
 		//Lightball moving.
 		//messagePlayer(0, "*");
-		Entity *parent = uidToEntity(my->parent);
-		if( !parent )
+		Entity* parent = uidToEntity(my->parent);
+		if ( !parent ) {
 			return;
+		}
 		double distance = sqrt(pow(my->x - parent->x, 2) + pow(my->y - parent->y, 2));
 		if ( distance > MAGICLIGHT_BALL_FOLLOW_DISTANCE || my->path) {
 			lightball_player_lastmove_timer = 0;
@@ -324,7 +332,7 @@ void actMagiclightBall(Entity *my) {
 					my->vel_y = sin(tangent) * ((distance - MAGICLIGHT_BALL_FOLLOW_DISTANCE) / MAGICLIGHTBALL_DIVIDE_CONSTANT);
 					my->x += (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
 					my->y += (my->vel_y < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_y : MAGIC_LIGHTBALL_SPEEDLIMIT;
-				//} else if (!map.tiles[(int)(OBSTACLELAYER + (my->y / 16) * MAPLAYERS + (my->x / 16) * MAPLAYERS * map.height)]) { //If not in wall..
+					//} else if (!map.tiles[(int)(OBSTACLELAYER + (my->y / 16) * MAPLAYERS + (my->x / 16) * MAPLAYERS * map.height)]) { //If not in wall..
 				} else {
 					//messagePlayer(0, "******Pathfinding.");
 					//Caster is not in line of sight. Calculate a move path.
@@ -334,8 +342,8 @@ void actMagiclightBall(Entity *my) {
 					}*/
 					if (!my->path) {
 						//messagePlayer(0, "[Light ball] Generating path.");
-						list_t *path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
-						if( path != NULL ) {
+						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
+						if ( path != NULL ) {
 							my->path = path;
 						} else {
 							//messagePlayer(0, "[Light ball] Failed to generate path (%s line %d).", __FILE__, __LINE__);
@@ -349,7 +357,7 @@ void actMagiclightBall(Entity *my) {
 						if (my->path != NULL) {
 							for (node = my->path->first; node != NULL; node = node->next) {
 								if (node->element) {
-									pathnode = (pathnode_t *)node->element;
+									pathnode = (pathnode_t*)node->element;
 									//total_distance += sqrt(pow(pathnode->y - prevy, 2) + pow(pathnode->x - prevx, 2) );
 									total_distance += sqrt(pow(prevx - pathnode->x, 2) + pow(prevy - pathnode->y, 2) );
 									prevx = pathnode->x;
@@ -364,7 +372,7 @@ void actMagiclightBall(Entity *my) {
 
 						if (my->path != NULL) {
 							if (my->path->first != NULL) {
-								pathnode = (pathnode_t *)my->path->first->element;
+								pathnode = (pathnode_t*)my->path->first->element;
 								//double distance = sqrt(pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
 								//double distance = sqrt(pow((my->y) - ((pathnode->y + 8) * 16), 2) + pow((my->x) - ((pathnode->x + 8) * 16), 2));
 								double distance = sqrt(pow(((pathnode->y * 16) + 8) - (my->y), 2) + pow(((pathnode->x * 16) + 8) - (my->x), 2));
@@ -376,10 +384,11 @@ void actMagiclightBall(Entity *my) {
 									}
 								} else {
 									double target_tangent = atan2((pathnode->y * 16) + 8 - my->y, (pathnode->x * 16) + 8 - my->x);
-									if (target_tangent > my->yaw) //TODO: Do this yaw thing for all movement.
+									if (target_tangent > my->yaw) { //TODO: Do this yaw thing for all movement.
 										my->yaw = (target_tangent >= my->yaw + MAGIC_LIGHTBALL_TURNSPEED) ? my->yaw + MAGIC_LIGHTBALL_TURNSPEED : target_tangent;
-									else if (target_tangent < my->yaw)
+									} else if (target_tangent < my->yaw) {
 										my->yaw = (target_tangent <= my->yaw - MAGIC_LIGHTBALL_TURNSPEED) ? my->yaw - MAGIC_LIGHTBALL_TURNSPEED : target_tangent;
+									}
 									my->vel_x = cos(my->yaw) * (total_distance / MAGICLIGHTBALL_DIVIDE_CONSTANT);
 									my->vel_y = sin(my->yaw) * (total_distance / MAGICLIGHTBALL_DIVIDE_CONSTANT);
 									my->x += (my->vel_x < MAGIC_LIGHTBALL_SPEEDLIMIT) ? my->vel_x : MAGIC_LIGHTBALL_SPEEDLIMIT;
@@ -431,21 +440,22 @@ void actMagiclightBall(Entity *my) {
 		}
 
 		//Light up the area.
-		my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
+		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 		lightball_flicker++;
 
 		if (lightball_flicker > 5) {
 			lightball_lighting = (lightball_lighting == 1) + 1;
 
-			if(lightball_lighting == 1) {
-				if( my->light != NULL )
+			if (lightball_lighting == 1) {
+				if ( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
-				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-			}
-			else {
-				if( my->light != NULL )
+				}
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+			} else {
+				if ( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
-				my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
+				}
+				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 			}
 			lightball_flicker = 0;
 		}
@@ -455,8 +465,8 @@ void actMagiclightBall(Entity *my) {
 		//Init the lightball. That is, shoot out from the player.
 
 		//Move out from the player.
-		my->vel_x = cos(my->yaw)*4;
-		my->vel_y = sin(my->yaw)*4;
+		my->vel_x = cos(my->yaw) * 4;
+		my->vel_y = sin(my->yaw) * 4;
 		double dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
 
 		unsigned int distance = sqrt(pow(my->x - lightball_player_startx, 2) + pow(my->y - lightball_player_starty, 2));
@@ -469,25 +479,26 @@ void actMagiclightBall(Entity *my) {
 	}
 }
 
-void actMagicMissile(Entity *my) { //TODO: Verify this function.
+void actMagicMissile(Entity* my) { //TODO: Verify this function.
 	if (!my || !my->children.first || !my->children.first->element) {
 		return;
 	}
-	spell_t *spell = (spell_t *)my->children.first->element;
+	spell_t* spell = (spell_t*)my->children.first->element;
 	if (!spell) {
 		return;
 	}
 	//node_t *node = NULL;
-	spellElement_t *element = NULL;
-	node_t *node = NULL;
-	int i = 0; int c = 0;
-	Entity *entity = NULL;
+	spellElement_t* element = NULL;
+	node_t* node = NULL;
+	int i = 0;
+	int c = 0;
+	Entity* entity = NULL;
 	double tangent;
 
-	Entity *parent = uidToEntity(my->parent);
+	Entity* parent = uidToEntity(my->parent);
 
 	if (magic_init) {
-		if( my->light != NULL ) {
+		if ( my->light != NULL ) {
 			list_RemoveNode(my->light->node);
 			my->light = NULL;
 		}
@@ -503,57 +514,58 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 			node = spell->elements.first;
 			//element = (spellElement_t *) spell->elements->first->element;
-			element = (spellElement_t *)node->element;
+			element = (spellElement_t*)node->element;
 
 			double dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
 
-			if( dist != sqrt(my->vel_x*my->vel_x+my->vel_y*my->vel_y) ) {
+			if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) ) {
 				node = element->elements.first;
 				//element = (spellElement_t *) element->elements->first->element;
-				element = (spellElement_t *)node->element;
+				element = (spellElement_t*)node->element;
 				//if (hit.entity != NULL) {
-				Stat *hitstats = NULL;
-				int player=-1;
+				Stat* hitstats = NULL;
+				int player = -1;
 				if (hit.entity) {
 					hitstats = hit.entity->getStats();
-					if( hit.entity->behavior==&actPlayer ) {
-						player=hit.entity->skill[2];
-						Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-						messagePlayerColor(player,color,language[376]);
+					if ( hit.entity->behavior == &actPlayer ) {
+						player = hit.entity->skill[2];
+						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(player, color, language[376]);
 					}
-					if( parent && hitstats ) {
-						if( parent->behavior==&actPlayer ) {
-							Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-							if( strcmp(hitstats->name,"") )
-								messagePlayerColor(parent->skill[2],color,language[377],hitstats->name);
-							else
-								messagePlayerColor(parent->skill[2],color,language[378],language[90+hitstats->type]);
+					if ( parent && hitstats ) {
+						if ( parent->behavior == &actPlayer ) {
+							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							if ( strcmp(hitstats->name, "") ) {
+								messagePlayerColor(parent->skill[2], color, language[377], hitstats->name);
+							} else {
+								messagePlayerColor(parent->skill[2], color, language[378], language[90 + hitstats->type]);
+							}
 						}
 					}
 				}
 
 				if (hit.entity) {
 					// alert the hit entity if it was a monster
-					if( hit.entity->behavior == &actMonster && parent != NULL ) {
-						if( hit.entity->skill[0]!=1 && (hitstats->type<LICH || hitstats->type>=SHOPKEEPER) ) {
-							hit.entity->skill[0]=2;
-							hit.entity->skill[1]=parent->uid;
-							hit.entity->fskill[2]=parent->x;
-							hit.entity->fskill[3]=parent->y;
+					if ( hit.entity->behavior == &actMonster && parent != NULL ) {
+						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) ) {
+							hit.entity->skill[0] = 2;
+							hit.entity->skill[1] = parent->uid;
+							hit.entity->fskill[2] = parent->x;
+							hit.entity->fskill[3] = parent->y;
 						}
-							
+
 						// alert other monsters too
-						Entity *ohitentity = hit.entity;
-						for( node=map.entities->first; node!=NULL; node=node->next ) {
-							entity = (Entity *)node->element;
-							if( entity->behavior == &actMonster && entity != ohitentity ) {
-								Stat *buddystats = entity->getStats();
-								if( buddystats != NULL ) {
-									if( hit.entity && hit.entity->checkFriend(entity) ) { //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
-										if( entity->skill[0] == 0 ) { // monster is waiting
-											tangent = atan2( entity->y-ohitentity->y, entity->x-ohitentity->x );
-											lineTrace(ohitentity,ohitentity->x,ohitentity->y,tangent,1024,0,FALSE);
-											if( hit.entity == entity ) {
+						Entity* ohitentity = hit.entity;
+						for ( node = map.entities->first; node != NULL; node = node->next ) {
+							entity = (Entity*)node->element;
+							if ( entity->behavior == &actMonster && entity != ohitentity ) {
+								Stat* buddystats = entity->getStats();
+								if ( buddystats != NULL ) {
+									if ( hit.entity && hit.entity->checkFriend(entity) ) { //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
+										if ( entity->skill[0] == 0 ) { // monster is waiting
+											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
+											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, FALSE);
+											if ( hit.entity == entity ) {
 												entity->skill[0] = 2; // path state
 												entity->skill[1] = parent->uid;
 												entity->fskill[2] = parent->x;
@@ -569,118 +581,121 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				}
 
 				// check for magic reflection...
-				int reflection=0;
-				if( hitstats ) {
-					if( !strcmp(map.name,"Hell Boss") && hit.entity->behavior==&actPlayer ) {
-						bool founddevil=FALSE;
-						node_t *tempNode;
-						for( tempNode=map.entities->first; tempNode!=NULL; tempNode=tempNode->next ) {
-							Entity *tempEntity = (Entity *)tempNode->element;
-							if( tempEntity->behavior==&actMonster ) {
-								Stat *stats = tempEntity->getStats();
-								if( stats ) {
-									if( stats->type==DEVIL ) {
-										founddevil=TRUE;
+				int reflection = 0;
+				if ( hitstats ) {
+					if ( !strcmp(map.name, "Hell Boss") && hit.entity->behavior == &actPlayer ) {
+						bool founddevil = FALSE;
+						node_t* tempNode;
+						for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
+							Entity* tempEntity = (Entity*)tempNode->element;
+							if ( tempEntity->behavior == &actMonster ) {
+								Stat* stats = tempEntity->getStats();
+								if ( stats ) {
+									if ( stats->type == DEVIL ) {
+										founddevil = TRUE;
 										break;
 									}
 								}
 							}
 						}
-						if( !founddevil )
+						if ( !founddevil ) {
 							reflection = 3;
+						}
 					}
-					if( !reflection ) {
-						if (hitstats->amulet)
-						{
-							if (hitstats->amulet->type == AMULET_MAGICREFLECTION)
+					if ( !reflection ) {
+						if (hitstats->amulet) {
+							if (hitstats->amulet->type == AMULET_MAGICREFLECTION) {
 								reflection = 2;
+							}
 						}
-						if (hitstats->cloak)
-						{
-							if (hitstats->cloak->type == CLOAK_MAGICREFLECTION)
+						if (hitstats->cloak) {
+							if (hitstats->cloak->type == CLOAK_MAGICREFLECTION) {
 								reflection = 1;
+							}
 						}
-						if (hitstats->shield)
-						{
-							if (hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending)
+						if (hitstats->shield) {
+							if (hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending) {
 								reflection = 3;
+							}
 						}
 					}
 				}
-				if( reflection ) {
+				if ( reflection ) {
 					if (hit.entity) {
-						if( hit.entity->behavior==&actPlayer ) {
-							messagePlayer(player,language[379]);
+						if ( hit.entity->behavior == &actPlayer ) {
+							messagePlayer(player, language[379]);
 						}
 					}
-					if( parent ) {
-						if( parent->behavior==&actPlayer ) {
-							messagePlayer(parent->skill[2],language[379]);
+					if ( parent ) {
+						if ( parent->behavior == &actPlayer ) {
+							messagePlayer(parent->skill[2], language[379]);
 						}
 					}
-					if( hit.side==HORIZONTAL )
+					if ( hit.side == HORIZONTAL ) {
 						my->vel_x *= -1;
-					else if( hit.side==VERTICAL )
+					} else if ( hit.side == VERTICAL ) {
 						my->vel_y *= -1;
-					if (hit.entity)
+					}
+					if (hit.entity) {
 						my->parent = hit.entity->uid;
-					if( rand()%2==0 && hitstats && reflection<3 ) {
-						int armornum=5+reflection;
-						if( player==clientnum || player<0 ) {
-							if( reflection==1 ) {
-								if( hitstats->cloak->count>1 ) {
-									newItem(hitstats->cloak->type,hitstats->cloak->status,hitstats->cloak->beatitude,hitstats->cloak->count-1,hitstats->cloak->appearance,hitstats->cloak->identified,&hitstats->inventory);
+					}
+					if ( rand() % 2 == 0 && hitstats && reflection < 3 ) {
+						int armornum = 5 + reflection;
+						if ( player == clientnum || player < 0 ) {
+							if ( reflection == 1 ) {
+								if ( hitstats->cloak->count > 1 ) {
+									newItem(hitstats->cloak->type, hitstats->cloak->status, hitstats->cloak->beatitude, hitstats->cloak->count - 1, hitstats->cloak->appearance, hitstats->cloak->identified, &hitstats->inventory);
 								}
-							} else if( reflection==2 ) {
-								if( hitstats->amulet->count>1 ) {
-									newItem(hitstats->amulet->type,hitstats->amulet->status,hitstats->amulet->beatitude,hitstats->amulet->count-1,hitstats->amulet->appearance,hitstats->amulet->identified,&hitstats->inventory);
+							} else if ( reflection == 2 ) {
+								if ( hitstats->amulet->count > 1 ) {
+									newItem(hitstats->amulet->type, hitstats->amulet->status, hitstats->amulet->beatitude, hitstats->amulet->count - 1, hitstats->amulet->appearance, hitstats->amulet->identified, &hitstats->inventory);
 								}
-							} else if( reflection==-1 ) {
-								if( hitstats->shield->count>1 ) {
-									newItem(hitstats->shield->type,hitstats->shield->status,hitstats->shield->beatitude,hitstats->shield->count-1,hitstats->shield->appearance,hitstats->shield->identified,&hitstats->inventory);
+							} else if ( reflection == -1 ) {
+								if ( hitstats->shield->count > 1 ) {
+									newItem(hitstats->shield->type, hitstats->shield->status, hitstats->shield->beatitude, hitstats->shield->count - 1, hitstats->shield->appearance, hitstats->shield->identified, &hitstats->inventory);
 								}
 							}
 						}
-						if( reflection==1 ) {
+						if ( reflection == 1 ) {
 							hitstats->cloak->count = 1;
 							hitstats->cloak->status = static_cast<Status>(hitstats->cloak->status - 1);
-							if( hitstats->cloak->status != BROKEN ) {
-								messagePlayer(player,language[380]);
+							if ( hitstats->cloak->status != BROKEN ) {
+								messagePlayer(player, language[380]);
 							} else {
-								messagePlayer(player,language[381]);
-								playSoundEntity(hit.entity,76,64);
+								messagePlayer(player, language[381]);
+								playSoundEntity(hit.entity, 76, 64);
 							}
-						} else if( reflection==2 ) {
+						} else if ( reflection == 2 ) {
 							hitstats->amulet->count = 1;
 							hitstats->amulet->status = static_cast<Status>(hitstats->amulet->status - 1);
-							if( hitstats->amulet->status != BROKEN ) {
-								messagePlayer(player,language[382]);
+							if ( hitstats->amulet->status != BROKEN ) {
+								messagePlayer(player, language[382]);
 							} else {
-								messagePlayer(player,language[383]);
-								playSoundEntity(hit.entity,76,64);
+								messagePlayer(player, language[383]);
+								playSoundEntity(hit.entity, 76, 64);
 							}
-						} else if( reflection==-1 ) {
+						} else if ( reflection == -1 ) {
 							hitstats->shield->count = 1;
 							hitstats->shield->status = static_cast<Status>(hitstats->shield->status - 1);
-							if( hitstats->shield->status != BROKEN ) {
-								messagePlayer(player,language[384]);
+							if ( hitstats->shield->status != BROKEN ) {
+								messagePlayer(player, language[384]);
 							} else {
-								messagePlayer(player,language[385]);
-								playSoundEntity(hit.entity,76,64);
+								messagePlayer(player, language[385]);
+								playSoundEntity(hit.entity, 76, 64);
 							}
 						}
-						if (player > 0 && multiplayer == SERVER)
-						{
-							strcpy((char *)net_packet->data,"ARMR");
+						if (player > 0 && multiplayer == SERVER) {
+							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
-							if (reflection == 1)
+							if (reflection == 1) {
 								net_packet->data[5] = hitstats->cloak->status;
-							else if (reflection == 2)
+							} else if (reflection == 2) {
 								net_packet->data[5] = hitstats->amulet->status;
-							else
+							} else {
 								net_packet->data[5] = hitstats->shield->status;
-							net_packet->address.host = net_clients[player-1].host;
-							net_packet->address.port = net_clients[player-1].port;
+							}
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 6;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
@@ -689,21 +704,23 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				}
 
 				// check for magic resistance...
-				bool resistance=FALSE;
-				if( hitstats ) {
-					if( hitstats->shield ) {
-						if( hitstats->shield->type == STEEL_SHIELD_RESISTANCE )
-							resistance=TRUE;
+				bool resistance = FALSE;
+				if ( hitstats ) {
+					if ( hitstats->shield ) {
+						if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE ) {
+							resistance = TRUE;
+						}
 					}
-					if( hitstats->ring ) {
-						if( hitstats->ring->type == RING_MAGICRESISTANCE )
-							resistance=TRUE;
+					if ( hitstats->ring ) {
+						if ( hitstats->ring->type == RING_MAGICRESISTANCE ) {
+							resistance = TRUE;
+						}
 					}
 				}
-				if( resistance ) {
-					if( parent ) {
-						if( parent->behavior==&actPlayer ) {
-							messagePlayer(parent->skill[2],language[386]);
+				if ( resistance ) {
+					if ( parent ) {
+						if ( parent->behavior == &actPlayer ) {
+							messagePlayer(parent->skill[2], language[386]);
 						}
 					}
 				}
@@ -711,8 +728,8 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				if (!strcmp(element->name, spellElement_force.name)) {
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							Entity *parent = uidToEntity(my->parent);
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							Entity* parent = uidToEntity(my->parent);
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
 									list_RemoveNode(my->mynode);
@@ -723,25 +740,27 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
 							damage *= damagetables[hitstats->type][5];
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
 								spawnGib(hit.entity);
 							}
 
-							if (parent)
+							if (parent) {
 								parent->killedByMonsterObituary(hit.entity);
+							}
 
 							// update enemy bar for attacker
-							if( !strcmp(hitstats->name,"") )
-								updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-							else
-								updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
+							if ( !strcmp(hitstats->name, "") ) {
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							} else {
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
 
-							if( hitstats->HP <= 0 && parent) {
+							if ( hitstats->HP <= 0 && parent) {
 								parent->awardXP( hit.entity, TRUE, TRUE );
 							}
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -749,67 +768,69 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							return;
 						} else if (hit.entity->behavior == &actDoor) {
 							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
-							if( hit.entity->skill[4] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
+							if ( hit.entity->skill[4] < 0 )
+								if ( parent )
+									if ( parent->behavior == &actPlayer ) {
+										messagePlayer(parent->skill[2], language[387]);
+									}
 							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
+							if ( !hit.entity->skill[0] ) {
 								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
+							} else {
 								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
+							}
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
+							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 )
+									if( parent )
+										if( parent->behavior == &actPlayer )
+											messagePlayer(parent->skill[2],language[387]);
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->skill[4] -= damage;
-							if( hit.entity->skill[4] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										if( hit.entity->skill[0] ) {
+							if ( hit.entity->skill[4] < 0 ) {
+								if ( parent ) {
+									if ( parent->behavior == &actPlayer ) {
+										if ( hit.entity->skill[0] ) {
 											// chair
-											messagePlayer(parent->skill[2],language[388]);
-											updateEnemyBar(parent,hit.entity,language[677],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
 										} else {
 											// table
-											messagePlayer(parent->skill[2],language[389]);
-											updateEnemyBar(parent,hit.entity,language[676],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
 										}
 									}
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -821,11 +842,11 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							Entity *parent = uidToEntity(my->parent);
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							Entity* parent = uidToEntity(my->parent);
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent &&  parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -837,26 +858,28 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
 							damage *= damagetables[hitstats->type][5];
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
 								spawnGib(hit.entity);
 							}
 
 							// write the obituary
-							if (parent)
+							if (parent) {
 								parent->killedByMonsterObituary(hit.entity);
+							}
 
 							// update enemy bar for attacker
-							if( !strcmp(hitstats->name,"") )
-								updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-							else
-								updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
+							if ( !strcmp(hitstats->name, "") ) {
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							} else {
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
 
-							if( hitstats->HP <= 0 && parent) {
+							if ( hitstats->HP <= 0 && parent) {
 								parent->awardXP( hit.entity, TRUE, TRUE );
 							}
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -865,70 +888,72 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						} else if (hit.entity->behavior == &actDoor) {
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
-							if( hit.entity->skill[4] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
+							if ( hit.entity->skill[4] < 0 )
+								if ( parent )
+									if ( parent->behavior == &actPlayer ) {
+										messagePlayer(parent->skill[2], language[387]);
+									}
 							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
+							if ( !hit.entity->skill[0] ) {
 								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
+							} else {
 								hit.entity->skill[6] = (my->y < hit.entity->y);
+							}
 
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
+							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 )
+									if( parent )
+										if( parent->behavior == &actPlayer )
+											messagePlayer(parent->skill[2],language[387]);
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
 
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->skill[4] -= damage;
-							if( hit.entity->skill[4] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										if( hit.entity->skill[0] ) {
+							if ( hit.entity->skill[4] < 0 ) {
+								if ( parent ) {
+									if ( parent->behavior == &actPlayer ) {
+										if ( hit.entity->skill[0] ) {
 											// chair
-											messagePlayer(parent->skill[2],language[388]);
-											updateEnemyBar(parent,hit.entity,language[677],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
 										} else {
 											// table
-											messagePlayer(parent->skill[2],language[389]);
-											updateEnemyBar(parent,hit.entity,language[676],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
 										}
 									}
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -939,14 +964,15 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				} else if (!strcmp(element->name, spellElement_fire.name)) {
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity) {
-						if( hit.entity->flags[BURNABLE] )
-							if( !hit.entity->flags[BURNING] )
+						if ( hit.entity->flags[BURNABLE] )
+							if ( !hit.entity->flags[BURNING] ) {
 								hit.entity->flags[BURNING] = TRUE;
+							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -960,26 +986,28 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
 							damage *= damagetables[hitstats->type][5];
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
-								spawnGib(hit.entity);
+							spawnGib(hit.entity);
 							//}
 
 							// write the obituary
 							hit.entity->setObituary(language[1501]);
-							if( hitstats )
+							if ( hitstats ) {
 								hitstats->poisonKiller = my->parent;
+							}
 
 							// update enemy bar for attacker
-							if( !strcmp(hitstats->name,"") )
-								updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-							else
-								updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
-							if( hitstats->HP <= 0 && parent) {
+							if ( !strcmp(hitstats->name, "") ) {
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							} else {
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
+							if ( hitstats->HP <= 0 && parent) {
 								parent->awardXP( hit.entity, TRUE, TRUE );
 							}
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -987,67 +1015,69 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							return;
 						} else if (hit.entity->behavior == &actDoor) {
 							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
-							if( hit.entity->skill[4] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
+							if ( hit.entity->skill[4] < 0 )
+								if ( parent )
+									if ( parent->behavior == &actPlayer ) {
+										messagePlayer(parent->skill[2], language[387]);
+									}
 							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
+							if ( !hit.entity->skill[0] ) {
 								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
+							} else {
 								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
+							}
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
+							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 )
-								if( parent )
-									if( parent->behavior == &actPlayer )
-										messagePlayer(parent->skill[2],language[387]);
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 )
+									if( parent )
+										if( parent->behavior == &actPlayer )
+											messagePlayer(parent->skill[2],language[387]);
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->skill[4] -= damage;
-							if( hit.entity->skill[4] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										if( hit.entity->skill[0] ) {
+							if ( hit.entity->skill[4] < 0 ) {
+								if ( parent ) {
+									if ( parent->behavior == &actPlayer ) {
+										if ( hit.entity->skill[0] ) {
 											// chair
-											messagePlayer(parent->skill[2],language[388]);
-											updateEnemyBar(parent,hit.entity,language[677],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
 										} else {
 											// table
-											messagePlayer(parent->skill[2],language[389]);
-											updateEnemyBar(parent,hit.entity,language[676],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
 										}
 									}
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -1058,10 +1088,10 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				} else if (!strcmp(element->name, spellElement_confuse.name)) {
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -1072,38 +1102,39 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_CONFUSED] = TRUE;
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1+(int)resistance);
+							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
 							hit.entity->skill[1] = 0; //Remove the monster's target.
-							if( parent ) {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								if( parent->behavior==&actPlayer ) {
-									if( strcmp(hitstats->name,"") ) {
-										messagePlayerColor(parent->skill[2],color,language[390],hitstats->name);
+							if ( parent ) {
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer ) {
+									if ( strcmp(hitstats->name, "") ) {
+										messagePlayerColor(parent->skill[2], color, language[390], hitstats->name);
 									} else {
-										messagePlayerColor(parent->skill[2],color,language[391],language[90+hitstats->type]);
+										messagePlayerColor(parent->skill[2], color, language[391], language[90 + hitstats->type]);
 									}
 								}
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-							if( player>=0 )
-								messagePlayerColor(player,color,language[392]);
-							if( my->light != NULL ) {
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 ) {
+								messagePlayerColor(player, color, language[392]);
+							}
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							spawnMagicEffectParticles(hit.entity->x,hit.entity->y,hit.entity->z,my->sprite);
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
 						}
 					}
 				} else if (!strcmp(element->name, spellElement_cold.name)) {
-					playSoundEntity(my,197,128);
+					playSoundEntity(my, 197, 128);
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -1114,11 +1145,11 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							playSoundEntity(hit.entity, 172, 64);
 							hitstats->EFFECTS[EFF_SLOW] = TRUE;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1+(int)resistance);
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
 							damage *= damagetables[hitstats->type][5];
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							spawnGib(hit.entity);
 
@@ -1126,23 +1157,26 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							hit.entity->setObituary(language[1502]);
 
 							// update enemy bar for attacker
-							if( !strcmp(hitstats->name,"") )
-								updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-							else
-								updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
-							if( parent ) {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								if( parent->behavior==&actPlayer ) {
-									if( strcmp(hitstats->name,"") )
-										messagePlayerColor(parent->skill[2],color,language[393],hitstats->name);
-									else
-										messagePlayerColor(parent->skill[2],color,language[394],language[90+hitstats->type]);
+							if ( !strcmp(hitstats->name, "") ) {
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							} else {
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
+							if ( parent ) {
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer ) {
+									if ( strcmp(hitstats->name, "") ) {
+										messagePlayerColor(parent->skill[2], color, language[393], hitstats->name);
+									} else {
+										messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
+									}
 								}
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-							if( player>=0 )
-								messagePlayerColor(player,color,language[395]);
-							if( my->light != NULL ) {
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 ) {
+								messagePlayerColor(player, color, language[395]);
+							}
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -1153,10 +1187,10 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				} else if (!strcmp(element->name, spellElement_slow.name)) {
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -1167,25 +1201,27 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							playSoundEntity(hit.entity, 172, 64); //TODO: Slow spell sound.
 							hitstats->EFFECTS[EFF_SLOW] = TRUE;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1+(int)resistance);
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							// update enemy bar for attacker
-							if( parent ) {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								if( parent->behavior==&actPlayer ) {
-									if( strcmp(hitstats->name,"") )
-										messagePlayerColor(parent->skill[2],color,language[393],hitstats->name);
-									else
-										messagePlayerColor(parent->skill[2],color,language[394],language[90+hitstats->type]);
+							if ( parent ) {
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer ) {
+									if ( strcmp(hitstats->name, "") ) {
+										messagePlayerColor(parent->skill[2], color, language[393], hitstats->name);
+									} else {
+										messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
+									}
 								}
 							}
-							Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-							if( player>=0 )
-								messagePlayerColor(player,color,language[395]);
-							if( my->light != NULL ) {
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 ) {
+								messagePlayerColor(player, color, language[395]);
+							}
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							spawnMagicEffectParticles(hit.entity->x,hit.entity->y,hit.entity->z,my->sprite);
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1193,10 +1229,10 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				} else if (!strcmp(element->name, spellElement_sleep.name)) {
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -1206,42 +1242,42 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_ASLEEP] = TRUE;
-							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 600+rand()%300;
-							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] /= (1+(int)resistance);
+							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 600 + rand() % 300;
+							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] /= (1 + (int)resistance);
 							hitstats->OLDHP = hitstats->HP;
-							if( hit.entity->behavior==&actPlayer ) {
+							if ( hit.entity->behavior == &actPlayer ) {
 								serverUpdateEffects(hit.entity->skill[2]);
-								Uint32 color = SDL_MapRGB(mainsurface->format,255,0,0);
-								messagePlayerColor(hit.entity->skill[2],color,language[396]);
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(hit.entity->skill[2], color, language[396]);
 							}
-							if( parent ) {
-								Uint32 color = SDL_MapRGB(mainsurface->format,0,255,0);
-								if( parent->behavior==&actPlayer ) {
-									if( strcmp(hitstats->name,"") ) {
-										messagePlayerColor(parent->skill[2],color,language[397],hitstats->name);
+							if ( parent ) {
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer ) {
+									if ( strcmp(hitstats->name, "") ) {
+										messagePlayerColor(parent->skill[2], color, language[397], hitstats->name);
 									} else {
-										messagePlayerColor(parent->skill[2],color,language[398],language[90+hitstats->type]);
+										messagePlayerColor(parent->skill[2], color, language[398], language[90 + hitstats->type]);
 									}
 								}
 							}
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							spawnMagicEffectParticles(hit.entity->x,hit.entity->y,hit.entity->z,my->sprite);
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
 						}
 					}
 				} else if (!strcmp(element->name, spellElement_lightning.name)) {
-					playSoundEntity(my,173,128);
+					playSoundEntity(my, 173, 128);
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							Entity *parent = uidToEntity(my->parent);
-							if( !(svFlags&SV_FLAG_FRIENDLYFIRE) ) {
+							Entity* parent = uidToEntity(my->parent);
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
-									if( my->light != NULL ) {
+									if ( my->light != NULL ) {
 										list_RemoveNode(my->light->node);
 										my->light = NULL;
 									}
@@ -1254,22 +1290,24 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
 							damage *= damagetables[hitstats->type][5];
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 
 							// write the obituary
-							if (parent)
+							if (parent) {
 								parent->killedByMonsterObituary(hit.entity);
+							}
 
 							// update enemy bar for attacker
-							if( !strcmp(hitstats->name,"") )
-								updateEnemyBar(parent,hit.entity,language[90+hitstats->type],hitstats->HP,hitstats->MAXHP);
-							else
-								updateEnemyBar(parent,hit.entity,hitstats->name,hitstats->HP,hitstats->MAXHP);
-							if( hitstats->HP <= 0 && parent) {
+							if ( !strcmp(hitstats->name, "") ) {
+								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+							} else {
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
+							if ( hitstats->HP <= 0 && parent) {
 								parent->awardXP( hit.entity, TRUE, TRUE );
 							}
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -1278,74 +1316,75 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						} else if (hit.entity->behavior == &actDoor) {
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
-							if( hit.entity->skill[4] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										messagePlayer(parent->skill[2],language[387]);
+							if ( hit.entity->skill[4] < 0 ) {
+								if ( parent ) {
+									if ( parent->behavior == &actPlayer ) {
+										messagePlayer(parent->skill[2], language[387]);
 									}
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
+							if ( !hit.entity->skill[0] ) {
 								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
+							} else {
 								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
+							}
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[4],hit.entity->skill[9]);
+							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
-						/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
-							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
-							damage /= (1+(int)resistance);
+							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
+								int damage = element->damage;
+								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								damage /= (1+(int)resistance);
 
-							hit.entity->skill[3] -= damage; //Decrease chest health.
-							if( hit.entity->skill[3] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										messagePlayer(parent->skill[2],language[387]);
+								hit.entity->skill[3] -= damage; //Decrease chest health.
+								if( hit.entity->skill[3] < 0 ) {
+									if( parent ) {
+										if( parent->behavior == &actPlayer ) {
+											messagePlayer(parent->skill[2],language[387]);
+										}
 									}
 								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
-							if( !hit.entity->skill[0] )
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							else
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							if( my->light != NULL ) {
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
-							list_RemoveNode(my->mynode);
-							return;*/
+								playSoundEntity(hit.entity, 28, 128);
+								if( !hit.entity->skill[0] )
+									hit.entity->skill[6] = (my->x > hit.entity->x);
+								else
+									hit.entity->skill[6] = (my->y < hit.entity->y);
+								if( my->light != NULL ) {
+									list_RemoveNode(my->light->node);
+									my->light = NULL;
+								}
+								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
+								list_RemoveNode(my->mynode);
+								return;*/
 						} else if (hit.entity->behavior == &actFurniture ) {
 							int damage = element->damage;
-							damage /= (1+(int)resistance);
+							damage /= (1 + (int)resistance);
 							hit.entity->skill[4] -= damage;
-							if( hit.entity->skill[4] < 0 ) {
-								if( parent ) {
-									if( parent->behavior == &actPlayer ) {
-										if( hit.entity->skill[0] ) {
+							if ( hit.entity->skill[4] < 0 ) {
+								if ( parent ) {
+									if ( parent->behavior == &actPlayer ) {
+										if ( hit.entity->skill[0] ) {
 											// chair
-											messagePlayer(parent->skill[2],language[388]);
-											updateEnemyBar(parent,hit.entity,language[677],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[388]);
+											updateEnemyBar(parent, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
 										} else {
 											// table
-											messagePlayer(parent->skill[2],language[389]);
-											updateEnemyBar(parent,hit.entity,language[676],hit.entity->skill[4],hit.entity->skill[9]);
+											messagePlayer(parent->skill[2], language[389]);
+											updateEnemyBar(parent, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
 										}
 									}
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if( my->light != NULL ) {
+							if ( my->light != NULL ) {
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
@@ -1354,30 +1393,34 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						}
 					}
 				} else if (!strcmp(element->name, spellElement_locking.name)) {
-					if( hit.entity ) {
+					if ( hit.entity ) {
 						if (hit.entity->behavior == &actDoor) {
 							playSoundEntity(hit.entity, 92, 64);
 							hit.entity->skill[5] = 1; //Lock the door.
-							if( parent )
-								if( parent->behavior==&actPlayer )
-									messagePlayer(parent->skill[2],language[399]);
+							if ( parent )
+								if ( parent->behavior == &actPlayer ) {
+									messagePlayer(parent->skill[2], language[399]);
+								}
 						} else if (hit.entity->behavior == &actChest) {
 							//Lock chest
 							playSoundEntity(hit.entity, 92, 64);
-							if( !hit.entity->skill[4] ) {
+							if ( !hit.entity->skill[4] ) {
 								hit.entity->skill[4] = 1;
-								if( parent )
-									if( parent->behavior==&actPlayer )
-										messagePlayer(parent->skill[2],language[400]);
+								if ( parent )
+									if ( parent->behavior == &actPlayer ) {
+										messagePlayer(parent->skill[2], language[400]);
+									}
 							}
 						} else {
-							if( parent )
-								if( parent->behavior==&actPlayer )
-									messagePlayer(parent->skill[2],language[401]);
-							if( player>=0 )
-								messagePlayer(player,language[402]);
+							if ( parent )
+								if ( parent->behavior == &actPlayer ) {
+									messagePlayer(parent->skill[2], language[401]);
+								}
+							if ( player >= 0 ) {
+								messagePlayer(player, language[402]);
+							}
 						}
-						spawnMagicEffectParticles(hit.entity->x,hit.entity->y,hit.entity->z,my->sprite);
+						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						if (my->light != NULL) {
 							list_RemoveNode(my->light->node);
 							my->light = NULL;
@@ -1390,40 +1433,45 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						if (hit.entity->behavior == &actDoor) {
 							//Open door
 							if (!hit.entity->skill[0] && !hit.entity->skill[3]) {
-								hit.entity->skill[3] = 1+(my->x>hit.entity->x);
-								playSoundEntity(hit.entity,21,96);
+								hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
+								playSoundEntity(hit.entity, 21, 96);
 							} else if (hit.entity->skill[0] && !hit.entity->skill[3]) {
-								hit.entity->skill[3] = 1+(my->x<hit.entity->x);
-								playSoundEntity(hit.entity,21,96);
+								hit.entity->skill[3] = 1 + (my->x < hit.entity->x);
+								playSoundEntity(hit.entity, 21, 96);
 							}
-							if( parent )
-								if( parent->behavior==&actPlayer)
-									messagePlayer(parent->skill[2],language[402]);
+							if ( parent )
+								if ( parent->behavior == &actPlayer) {
+									messagePlayer(parent->skill[2], language[402]);
+								}
 						} else if (hit.entity->behavior == &actGate) {
 							//Open gate
-							if( hit.entity->skill[28] != 2 ) {
+							if ( hit.entity->skill[28] != 2 ) {
 								hit.entity->skill[28] = 2; // power it
-								if( parent )
-									if( parent->behavior==&actPlayer)
-										messagePlayer(parent->skill[2],language[403]);
+								if ( parent )
+									if ( parent->behavior == &actPlayer) {
+										messagePlayer(parent->skill[2], language[403]);
+									}
 							}
 						} else if (hit.entity->behavior == &actChest) {
 							//Unlock chest
-							if( hit.entity->skill[4] ) {
+							if ( hit.entity->skill[4] ) {
 								playSoundEntity(hit.entity, 91, 64);
 								hit.entity->skill[4] = 0;
-								if( parent )
-									if( parent->behavior==&actPlayer)
-										messagePlayer(parent->skill[2],language[404]);
+								if ( parent )
+									if ( parent->behavior == &actPlayer) {
+										messagePlayer(parent->skill[2], language[404]);
+									}
 							}
 						} else {
-							if( parent )
-								if( parent->behavior==&actPlayer )
-									messagePlayer(parent->skill[2],language[401]);
-							if( player>=0 )
-								messagePlayer(player,language[401]);
+							if ( parent )
+								if ( parent->behavior == &actPlayer ) {
+									messagePlayer(parent->skill[2], language[401]);
+								}
+							if ( player >= 0 ) {
+								messagePlayer(player, language[401]);
+							}
 						}
-						spawnMagicEffectParticles(hit.entity->x,hit.entity->y,hit.entity->z,my->sprite);
+						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						if (my->light != NULL) {
 							list_RemoveNode(my->light->node);
 							my->light = NULL;
@@ -1432,27 +1480,27 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						return;
 					}
 				} else if (!strcmp(element->name, spellElement_dig.name)) {
-					if( !hit.entity ) {
-						if( hit.mapx >= 1 && hit.mapx < map.width-1 && hit.mapy >= 1 && hit.mapy < map.height-1 ) {
-							if( map.tiles[(int)(OBSTACLELAYER+hit.mapy*MAPLAYERS+hit.mapx*MAPLAYERS*map.height)]!=0 ) {
-								playSoundEntity(my,66,128);
-								playSoundEntity(my,67,128);
+					if ( !hit.entity ) {
+						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 ) {
+							if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 ) {
+								playSoundEntity(my, 66, 128);
+								playSoundEntity(my, 67, 128);
 
 								// spawn several rock items //TODO: This should really be its own function.
-								i = 8+rand()%4;
-								for( c=0; c<i; c++ ) {
-									entity = newEntity(-1,1,map.entities);
-									entity->flags[INVISIBLE]=TRUE;
-									entity->flags[UPDATENEEDED]=TRUE;
-									entity->x = hit.mapx*16 + 4 + rand()%8;
-									entity->y = hit.mapy*16 + 4 + rand()%8;
-									entity->z = -6+rand()%12;
+								i = 8 + rand() % 4;
+								for ( c = 0; c < i; c++ ) {
+									entity = newEntity(-1, 1, map.entities);
+									entity->flags[INVISIBLE] = TRUE;
+									entity->flags[UPDATENEEDED] = TRUE;
+									entity->x = hit.mapx * 16 + 4 + rand() % 8;
+									entity->y = hit.mapy * 16 + 4 + rand() % 8;
+									entity->z = -6 + rand() % 12;
 									entity->sizex = 4;
 									entity->sizey = 4;
-									entity->yaw = rand()%360 * PI/180;
-									entity->vel_x = (rand()%20-10)/10.0;
-									entity->vel_y = (rand()%20-10)/10.0;
-									entity->vel_z = -.25 - (rand()%5)/10.0;
+									entity->yaw = rand() % 360 * PI / 180;
+									entity->vel_x = (rand() % 20 - 10) / 10.0;
+									entity->vel_y = (rand() % 20 - 10) / 10.0;
+									entity->vel_z = -.25 - (rand() % 5) / 10.0;
 									entity->flags[PASSABLE] = TRUE;
 									entity->behavior = &actItem;
 									entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
@@ -1464,39 +1512,40 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 									entity->skill[15] = FALSE;       // identified
 								}
 
-								map.tiles[(int)(OBSTACLELAYER+hit.mapy*MAPLAYERS+hit.mapx*MAPLAYERS*map.height)]=0;
+								map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
 								// send wall destroy info to clients
-								for( c=1; c<MAXPLAYERS; c++ ) {
-									if( client_disconnected[c]==TRUE )
+								for ( c = 1; c < MAXPLAYERS; c++ ) {
+									if ( client_disconnected[c] == TRUE ) {
 										continue;
-									strcpy((char *)net_packet->data,"WALD");
-									SDLNet_Write16((Uint16)hit.mapx,&net_packet->data[4]);
-									SDLNet_Write16((Uint16)hit.mapy,&net_packet->data[6]);
-									net_packet->address.host = net_clients[c-1].host;
-									net_packet->address.port = net_clients[c-1].port;
+									}
+									strcpy((char*)net_packet->data, "WALD");
+									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+									net_packet->address.host = net_clients[c - 1].host;
+									net_packet->address.port = net_clients[c - 1].port;
 									net_packet->len = 8;
-									sendPacketSafe(net_sock, -1, net_packet, c-1);
+									sendPacketSafe(net_sock, -1, net_packet, c - 1);
 								}
 							}
 						}
 					} else {
-						if( hit.entity->behavior == &actBoulder ) {
-							int i = 8+rand()%4;
-					
+						if ( hit.entity->behavior == &actBoulder ) {
+							int i = 8 + rand() % 4;
+
 							int c;
-							for( c=0; c<i; c++ ) {
-								Entity *entity = newEntity(-1,1,map.entities);
-								entity->flags[INVISIBLE]=TRUE;
-								entity->flags[UPDATENEEDED]=TRUE;
-								entity->x = hit.entity->x - 4 + rand()%8;
-								entity->y = hit.entity->y - 4 + rand()%8;
-								entity->z = -6+rand()%12;
+							for ( c = 0; c < i; c++ ) {
+								Entity* entity = newEntity(-1, 1, map.entities);
+								entity->flags[INVISIBLE] = TRUE;
+								entity->flags[UPDATENEEDED] = TRUE;
+								entity->x = hit.entity->x - 4 + rand() % 8;
+								entity->y = hit.entity->y - 4 + rand() % 8;
+								entity->z = -6 + rand() % 12;
 								entity->sizex = 4;
 								entity->sizey = 4;
-								entity->yaw = rand()%360 * PI/180;
-								entity->vel_x = (rand()%20-10)/10.0;
-								entity->vel_y = (rand()%20-10)/10.0;
-								entity->vel_z = -.25 - (rand()%5)/10.0;
+								entity->yaw = rand() % 360 * PI / 180;
+								entity->vel_x = (rand() % 20 - 10) / 10.0;
+								entity->vel_y = (rand() % 20 - 10) / 10.0;
+								entity->vel_z = -.25 - (rand() % 5) / 10.0;
 								entity->flags[PASSABLE] = TRUE;
 								entity->behavior = &actItem;
 								entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
@@ -1510,35 +1559,38 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 							double ox = hit.entity->x;
 							double oy = hit.entity->y;
-						
+
 							// destroy the boulder
-							playSoundEntity(hit.entity,67,128);
+							playSoundEntity(hit.entity, 67, 128);
 							list_RemoveNode(hit.entity->mynode);
-							if( parent )
-								if( parent->behavior == &actPlayer )
-									messagePlayer(parent->skill[2],language[405]);
+							if ( parent )
+								if ( parent->behavior == &actPlayer ) {
+									messagePlayer(parent->skill[2], language[405]);
+								}
 
 							// on sokoban, destroying boulders spawns scorpions
-							if( !strcmp(map.name,"Sokoban") ) {
-								Entity *monster = summonMonster(SCORPION,ox,oy);
-								if( monster ) {
+							if ( !strcmp(map.name, "Sokoban") ) {
+								Entity* monster = summonMonster(SCORPION, ox, oy);
+								if ( monster ) {
 									int c;
-									for( c=0; c<MAXPLAYERS; c++ ) {
-										Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
-										messagePlayerColor(c,color,language[406]);
+									for ( c = 0; c < MAXPLAYERS; c++ ) {
+										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+										messagePlayerColor(c, color, language[406]);
 									}
 								}
 							}
 						} else {
-							if( parent )
-								if( parent->behavior==&actPlayer )
-									messagePlayer(parent->skill[2],language[401]);
-							if( player>=0 )
-								messagePlayer(player,language[401]);
+							if ( parent )
+								if ( parent->behavior == &actPlayer ) {
+									messagePlayer(parent->skill[2], language[401]);
+								}
+							if ( player >= 0 ) {
+								messagePlayer(player, language[401]);
+							}
 						}
 					}
 				}
-				if( my->light != NULL ) {
+				if ( my->light != NULL ) {
 					list_RemoveNode(my->light->node);
 					my->light = NULL;
 				}
@@ -1549,29 +1601,30 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 		//Go down two levels to the next element. This will need to get re-written shortly.
 		node = spell->elements.first;
-		element = (spellElement_t *)node->element;
+		element = (spellElement_t*)node->element;
 		//element = (spellElement_t *)spell->elements->first->element;
 		//element = (spellElement_t *)element->elements->first->element; //Go down two levels to the second element.
 		node = element->elements.first;
-		element = (spellElement_t *)node->element;
+		element = (spellElement_t*)node->element;
 		if (!strcmp(element->name, spellElement_fire.name) || !strcmp(element->name, spellElement_lightning.name)) {
 			//Make the ball light up stuff as it travels.
-			my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 			lightball_flicker++;
 			my->skill[2] = -11; // so clients know to create a light field
 
 			if (lightball_flicker > 5) {
 				lightball_lighting = (lightball_lighting == 1) + 1;
 
-				if(lightball_lighting == 1) {
-					if( my->light != NULL )
+				if (lightball_lighting == 1) {
+					if ( my->light != NULL ) {
 						list_RemoveNode(my->light->node);
-					my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-				}
-				else {
-					if( my->light != NULL )
+					}
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+				} else {
+					if ( my->light != NULL ) {
 						list_RemoveNode(my->light->node);
-					my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
+					}
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 				}
 				lightball_flicker = 0;
 			}
@@ -1588,27 +1641,28 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 	}
 }
 
-void actMagicClient(Entity *my) {
-	if( my->light != NULL ) {
+void actMagicClient(Entity* my) {
+	if ( my->light != NULL ) {
 		list_RemoveNode(my->light->node);
 		my->light = NULL;
 	}
-	my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
+	my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 	lightball_flicker++;
 	my->skill[2] = -11; // so clients know to create a light field
 
 	if (lightball_flicker > 5) {
 		lightball_lighting = (lightball_lighting == 1) + 1;
 
-		if(lightball_lighting == 1) {
-			if( my->light != NULL )
+		if (lightball_lighting == 1) {
+			if ( my->light != NULL ) {
 				list_RemoveNode(my->light->node);
-			my->light = lightSphereShadow(my->x/16, my->y/16, 8, 192);
-		}
-		else {
-			if( my->light != NULL )
+			}
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
+		} else {
+			if ( my->light != NULL ) {
 				list_RemoveNode(my->light->node);
-			my->light = lightSphereShadow(my->x/16, my->y/16, 8, 174);
+			}
+			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 		}
 		lightball_flicker = 0;
 	}
@@ -1617,18 +1671,18 @@ void actMagicClient(Entity *my) {
 	spawnMagicParticle(my);
 }
 
-void actMagicClientNoLight(Entity *my) {
+void actMagicClientNoLight(Entity* my) {
 	spawnMagicParticle(my); // simply spawn particles
 }
 
-void actMagicParticle(Entity *my) {
+void actMagicParticle(Entity* my) {
 	my->x += my->vel_x;
 	my->y += my->vel_y;
 	my->z += my->vel_z;
 	my->scalex -= 0.05;
 	my->scaley -= 0.05;
 	my->scalez -= 0.05;
-	if( my->scalex <= 0 ) {
+	if ( my->scalex <= 0 ) {
 		my->scalex = 0;
 		my->scaley = 0;
 		my->scalez = 0;
@@ -1637,13 +1691,13 @@ void actMagicParticle(Entity *my) {
 	}
 }
 
-Entity *spawnMagicParticle(Entity *parentent) {
-	Entity *entity;
+Entity* spawnMagicParticle(Entity* parentent) {
+	Entity* entity;
 
 	entity = newEntity(parentent->sprite, 1, map.entities);
-	entity->x = parentent->x+(rand()%50-25)/20.f;
-	entity->y = parentent->y+(rand()%50-25)/20.f;
-	entity->z = parentent->z+(rand()%50-25)/20.f;
+	entity->x = parentent->x + (rand() % 50 - 25) / 20.f;
+	entity->y = parentent->y + (rand() % 50 - 25) / 20.f;
+	entity->z = parentent->z + (rand() % 50 - 25) / 20.f;
 	entity->scalex = 0.7;
 	entity->scaley = 0.7;
 	entity->scalez = 0.7;
@@ -1652,58 +1706,61 @@ Entity *spawnMagicParticle(Entity *parentent) {
 	entity->yaw = parentent->yaw;
 	entity->pitch = parentent->pitch;
 	entity->roll = parentent->roll;
-	entity->flags[NOUPDATE]=TRUE;
-	entity->flags[PASSABLE]=TRUE;
-	entity->flags[BRIGHT]=TRUE;
-	entity->flags[UNCLICKABLE]=TRUE;
-	entity->flags[NOUPDATE]=TRUE;
-	entity->flags[UPDATENEEDED]=FALSE;
-	entity->behavior=&actMagicParticle;
-	if( multiplayer != CLIENT )
+	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = TRUE;
+	entity->flags[BRIGHT] = TRUE;
+	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[UPDATENEEDED] = FALSE;
+	entity->behavior = &actMagicParticle;
+	if ( multiplayer != CLIENT ) {
 		entity_uids--;
+	}
 	entity->uid = -3;
-	
+
 	return entity;
 }
 
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite) {
 	int c;
-	if( multiplayer==SERVER ) {
-		for( c=1; c<MAXPLAYERS; c++ ) {
-			if( client_disconnected[c] )
+	if ( multiplayer == SERVER ) {
+		for ( c = 1; c < MAXPLAYERS; c++ ) {
+			if ( client_disconnected[c] ) {
 				continue;
-			strcpy((char *)net_packet->data,"MAGE");
-			SDLNet_Write16(x,&net_packet->data[4]);
-			SDLNet_Write16(y,&net_packet->data[6]);
-			SDLNet_Write16(z,&net_packet->data[8]);
-			SDLNet_Write32(sprite,&net_packet->data[10]);
-			net_packet->address.host = net_clients[c-1].host;
-			net_packet->address.port = net_clients[c-1].port;
+			}
+			strcpy((char*)net_packet->data, "MAGE");
+			SDLNet_Write16(x, &net_packet->data[4]);
+			SDLNet_Write16(y, &net_packet->data[6]);
+			SDLNet_Write16(z, &net_packet->data[8]);
+			SDLNet_Write32(sprite, &net_packet->data[10]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 14;
-			sendPacketSafe(net_sock, -1, net_packet, c-1);
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
 
 	// boosty boost
-	for( c=0; c<10; c++ ) {
-		Entity *entity = newEntity(sprite,1,map.entities);
-		entity->x = x-5+rand()%11;
-		entity->y = y-5+rand()%11;
-		entity->z = z-10+rand()%21;
+	for ( c = 0; c < 10; c++ ) {
+		Entity* entity = newEntity(sprite, 1, map.entities);
+		entity->x = x - 5 + rand() % 11;
+		entity->y = y - 5 + rand() % 11;
+		entity->z = z - 10 + rand() % 21;
 		entity->scalex = 0.7;
 		entity->scaley = 0.7;
 		entity->scalez = 0.7;
 		entity->sizex = 1;
 		entity->sizey = 1;
-		entity->yaw = (rand()%360) * PI / 180.f;
+		entity->yaw = (rand() % 360) * PI / 180.f;
 		entity->flags[PASSABLE] = TRUE;
 		entity->flags[BRIGHT] = TRUE;
 		entity->flags[NOUPDATE] = TRUE;
 		entity->flags[UNCLICKABLE] = TRUE;
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
-		if( multiplayer != CLIENT )
+		if ( multiplayer != CLIENT ) {
 			entity_uids--;
+		}
 		entity->uid = -3;
 	}
 }

@@ -23,8 +23,10 @@ void updateRightSidebar() {
 
 	SDL_Rect pos;
 	//pos.x = MAGICSPELL_LIST_X; pos.y = MAGICSPELL_LIST_Y;
-	pos.x = 0; pos.y = 0;
-	pos.w = 0; pos.h = 0;
+	pos.x = 0;
+	pos.y = 0;
+	pos.w = 0;
+	pos.h = 0;
 
 	int height = rightsidebar_titlebar_img->h;
 	int numitems = 2; //Just two for now: The appraisal skill & the spell list.
@@ -74,7 +76,7 @@ void updateRightSidebar() {
 	if (!spellList.first) {
 		//Grayed out. No spells.
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos);
-	} else if(mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h)) {
+	} else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h)) {
 		drawImage(rightsidebar_slot_highlighted_img, NULL, &pos);
 		if (mousestatus[SDL_BUTTON_LEFT]) {
 			mousestatus[SDL_BUTTON_LEFT] = 0;

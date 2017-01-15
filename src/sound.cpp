@@ -18,7 +18,7 @@
 #endif
 
 #ifdef HAVE_FMOD
-FMOD_SYSTEM *fmod_system = NULL;
+FMOD_SYSTEM* fmod_system = NULL;
 
 FMOD_RESULT fmod_result;
 
@@ -26,36 +26,36 @@ int fmod_maxchannels = 100;
 int fmod_flags;
 void* fmod_extdriverdata;
 
-FMOD_SOUND **sounds = NULL;
+FMOD_SOUND** sounds = NULL;
 Uint32 numsounds = 0;
-FMOD_SOUND **minesmusic = NULL;
-FMOD_SOUND **swampmusic = NULL;
-FMOD_SOUND **labyrinthmusic = NULL;
-FMOD_SOUND **ruinsmusic = NULL;
-FMOD_SOUND **underworldmusic = NULL;
-FMOD_SOUND **hellmusic = NULL;
-FMOD_SOUND *intromusic = NULL;
-FMOD_SOUND *intermissionmusic = NULL;
-FMOD_SOUND *minetownmusic = NULL;
-FMOD_SOUND *splashmusic = NULL;
-FMOD_SOUND *librarymusic = NULL;
-FMOD_SOUND *shopmusic = NULL;
-FMOD_SOUND *storymusic = NULL;
-FMOD_SOUND **minotaurmusic = NULL;
-FMOD_SOUND *herxmusic = NULL;
-FMOD_SOUND *templemusic = NULL;
-FMOD_SOUND *endgamemusic = NULL;
-FMOD_SOUND *devilmusic = NULL;
-FMOD_SOUND *escapemusic = NULL;
-FMOD_SOUND *introductionmusic = NULL;
-bool levelmusicplaying=FALSE;
+FMOD_SOUND** minesmusic = NULL;
+FMOD_SOUND** swampmusic = NULL;
+FMOD_SOUND** labyrinthmusic = NULL;
+FMOD_SOUND** ruinsmusic = NULL;
+FMOD_SOUND** underworldmusic = NULL;
+FMOD_SOUND** hellmusic = NULL;
+FMOD_SOUND* intromusic = NULL;
+FMOD_SOUND* intermissionmusic = NULL;
+FMOD_SOUND* minetownmusic = NULL;
+FMOD_SOUND* splashmusic = NULL;
+FMOD_SOUND* librarymusic = NULL;
+FMOD_SOUND* shopmusic = NULL;
+FMOD_SOUND* storymusic = NULL;
+FMOD_SOUND** minotaurmusic = NULL;
+FMOD_SOUND* herxmusic = NULL;
+FMOD_SOUND* templemusic = NULL;
+FMOD_SOUND* endgamemusic = NULL;
+FMOD_SOUND* devilmusic = NULL;
+FMOD_SOUND* escapemusic = NULL;
+FMOD_SOUND* introductionmusic = NULL;
+bool levelmusicplaying = FALSE;
 
-FMOD_CHANNEL *music_channel = NULL;
-FMOD_CHANNEL *music_channel2 = NULL;
-FMOD_CHANNEL *music_resume = NULL;
+FMOD_CHANNEL* music_channel = NULL;
+FMOD_CHANNEL* music_channel2 = NULL;
+FMOD_CHANNEL* music_resume = NULL;
 
-FMOD_CHANNELGROUP *sound_group = NULL;
-FMOD_CHANNELGROUP *music_group = NULL;
+FMOD_CHANNELGROUP* sound_group = NULL;
+FMOD_CHANNELGROUP* music_group = NULL;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
@@ -84,7 +84,7 @@ void sound_update() {
 
 	FMOD_VECTOR position, forward, up;
 	position.x = -camera.y;
-	position.y = -camera.z/32;
+	position.y = -camera.z / 32;
 	position.z = -camera.x;
 
 	/*double cosroll = cos(0);
@@ -98,9 +98,9 @@ void sound_update() {
 	double ry = sinroll*cosyaw + cosroll*sinpitch*sinyaw;
 	double rz = cosroll*cospitch;*/
 
-	forward.x = 1*sin(camera.ang);
+	forward.x = 1 * sin(camera.ang);
 	forward.y = 0;
-	forward.z = 1*cos(camera.ang);
+	forward.z = 1 * cos(camera.ang);
 	/*forward.x = rx;
 	forward.y = ry;
 	forward.z = rz;*/
@@ -128,9 +128,10 @@ void sound_update() {
 			FMOD_Channel_GetVolume(music_channel, &volume);
 
 			if (volume < 1.0f) {
-				volume += fadein_increment*2;
-				if (volume > 1.0f)
+				volume += fadein_increment * 2;
+				if (volume > 1.0f) {
 					volume = 1.0f;
+				}
 				FMOD_Channel_SetVolume(music_channel, volume);
 			}
 		}
@@ -146,7 +147,7 @@ void sound_update() {
 			if (volume > 0.0f) {
 				//volume -= 0.001f;
 				//volume -= 0.005f;
-				volume -= fadeout_increment*2;
+				volume -= fadeout_increment * 2;
 				if (volume < 0.0f) {
 					volume = 0.0f;
 				}

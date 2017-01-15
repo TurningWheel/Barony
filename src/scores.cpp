@@ -39,29 +39,30 @@ Uint32 loadingsavegame = 0;
 
 -------------------------------------------------------------------------------*/
 
-score_t *scoreConstructor() {
-	node_t *node;
+score_t* scoreConstructor() {
+	node_t* node;
 
-	score_t *score = (score_t *) malloc(sizeof(score_t));
-	if( !score ) {
+	score_t* score = (score_t*) malloc(sizeof(score_t));
+	if ( !score ) {
 		printlog( "failed to allocate memory for new score!\n" );
 		exit(1);
 	}
 	score->stats = new Stat();
-	if( !score->stats ) {
+	if ( !score->stats ) {
 		printlog( "failed to allocate memory for new stat!\n" );
 		exit(1);
 	}
 
 	// set all data elements
 	int c;
-	for( c=0; c<NUMMONSTERS; c++ )
+	for ( c = 0; c < NUMMONSTERS; c++ ) {
 		score->kills[c] = kills[c];
+	}
 	score->stats->type = stats[clientnum]->type;
 	score->stats->sex = stats[clientnum]->sex;
 	score->stats->appearance = stats[clientnum]->appearance;
-	strcpy(score->stats->name,stats[clientnum]->name);
-	strcpy(score->stats->obituary,stats[clientnum]->obituary);
+	strcpy(score->stats->name, stats[clientnum]->name);
+	strcpy(score->stats->obituary, stats[clientnum]->obituary);
 	score->victory = victory;
 	score->dungeonlevel = currentlevel;
 	score->classnum = client_classes[clientnum];
@@ -79,10 +80,10 @@ score_t *scoreConstructor() {
 	score->stats->LVL = stats[clientnum]->LVL;
 	score->stats->GOLD = stats[clientnum]->GOLD;
 	score->stats->HUNGER = stats[clientnum]->HUNGER;
-	for( c=0; c<NUMPROFICIENCIES; c++ ) {
+	for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 		score->stats->PROFICIENCIES[c] = stats[clientnum]->PROFICIENCIES[c];
 	}
-	for( c=0; c<NUMEFFECTS; c++ ) {
+	for ( c = 0; c < NUMEFFECTS; c++ ) {
 		score->stats->EFFECTS[c] = stats[clientnum]->EFFECTS[c];
 		score->stats->EFFECTS_TIMERS[c] = stats[clientnum]->EFFECTS_TIMERS[c];
 	}
@@ -105,61 +106,52 @@ score_t *scoreConstructor() {
 	score->stats->amulet = NULL;
 	score->stats->ring = NULL;
 	score->stats->mask = NULL;
-	list_Copy(&score->stats->inventory,&stats[clientnum]->inventory);
-	for( node=score->stats->inventory.first; node!=NULL; node=node->next ) {
-		Item *item = (Item *)node->element;
+	list_Copy(&score->stats->inventory, &stats[clientnum]->inventory);
+	for ( node = score->stats->inventory.first; node != NULL; node = node->next ) {
+		Item* item = (Item*)node->element;
 		item->node = node;
 	}
-	for( c=0, node=stats[clientnum]->inventory.first; node!=NULL; node=node->next, c++ ) {
-		Item *item = (Item *)node->element;
-		if( stats[clientnum]->helmet == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+	for ( c = 0, node = stats[clientnum]->inventory.first; node != NULL; node = node->next, c++ ) {
+		Item* item = (Item*)node->element;
+		if ( stats[clientnum]->helmet == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->helmet = item2;
-		}
-		else if( stats[clientnum]->breastplate == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->breastplate == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->breastplate = item2;
-		}
-		else if( stats[clientnum]->gloves == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->gloves == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->gloves = item2;
-		}
-		else if( stats[clientnum]->shoes == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->shoes == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->shoes = item2;
-		}
-		else if( stats[clientnum]->shield == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->shield == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->shield = item2;
-		}
-		else if( stats[clientnum]->weapon == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->weapon == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->weapon = item2;
-		}
-		else if( stats[clientnum]->cloak == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->cloak == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->cloak = item2;
-		}
-		else if( stats[clientnum]->amulet == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->amulet == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->amulet = item2;
-		}
-		else if( stats[clientnum]->ring == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->ring == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->ring = item2;
-		}
-		else if( stats[clientnum]->mask == item ) {
-			node_t *node2 = list_Node(&score->stats->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( stats[clientnum]->mask == item ) {
+			node_t* node2 = list_Node(&score->stats->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			score->stats->mask = item2;
 		}
 	}
@@ -183,9 +175,9 @@ score_t *scoreConstructor() {
 
 -------------------------------------------------------------------------------*/
 
-void scoreDeconstructor(void *data) {
-	if( data ) {
-		score_t *score = (score_t *)data;
+void scoreDeconstructor(void* data) {
+	if ( data ) {
+		score_t* score = (score_t*)data;
 		score->stats->~Stat();
 		free(data);
 	}
@@ -201,25 +193,25 @@ void scoreDeconstructor(void *data) {
 -------------------------------------------------------------------------------*/
 
 int saveScore() {
-	node_t *node;
+	node_t* node;
 	int c;
 
-	score_t *currentscore = scoreConstructor();
-	for( c=0, node=topscores.first; node!=NULL; node=node->next, c++ ) {
-		score_t *score = (score_t *)node->element;
-		if( totalScore(score) <= totalScore(currentscore) ) {
-			node_t *newNode = list_AddNode(&topscores,c);
+	score_t* currentscore = scoreConstructor();
+	for ( c = 0, node = topscores.first; node != NULL; node = node->next, c++ ) {
+		score_t* score = (score_t*)node->element;
+		if ( totalScore(score) <= totalScore(currentscore) ) {
+			node_t* newNode = list_AddNode(&topscores, c);
 			newNode->element = currentscore;
 			newNode->deconstructor = &scoreDeconstructor;
 			newNode->size = sizeof(score_t);
-			while( list_Size(&topscores)>MAXTOPSCORES ) {
+			while ( list_Size(&topscores) > MAXTOPSCORES ) {
 				list_RemoveNode(topscores.last);
 			}
 			return c;
 		}
 	}
-	if( c==MAXTOPSCORES ) {
-		scoreDeconstructor((void *)currentscore);
+	if ( c == MAXTOPSCORES ) {
+		scoreDeconstructor((void*)currentscore);
 		return -1; // do not save the score
 	}
 	node = list_AddNodeLast(&topscores);
@@ -237,40 +229,42 @@ int saveScore() {
 
 -------------------------------------------------------------------------------*/
 
-int totalScore(score_t *score) {
-	int amount=0;
+int totalScore(score_t* score) {
+	int amount = 0;
 
-	node_t *node;
-	for( node=score->stats->inventory.first; node!=NULL; node=node->next ) {
-		Item *item = (Item *)node->element;
+	node_t* node;
+	for ( node = score->stats->inventory.first; node != NULL; node = node->next ) {
+		Item* item = (Item*)node->element;
 		amount += items[item->type].value;
 	}
 	amount += score->stats->GOLD;
 	amount += score->stats->EXP;
-	amount += score->stats->LVL*500;
+	amount += score->stats->LVL * 500;
 
 	int c;
-	for( c=0; c<NUMPROFICIENCIES; c++ ) {
+	for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 		amount += score->stats->PROFICIENCIES[c];
 	}
-	for( c=0; c<NUMMONSTERS; c++ ) {
-		if( c != HUMAN )
-			amount += score->kills[c]*100;
-		else
-			amount -= score->kills[c]*100;
+	for ( c = 0; c < NUMMONSTERS; c++ ) {
+		if ( c != HUMAN ) {
+			amount += score->kills[c] * 100;
+		} else {
+			amount -= score->kills[c] * 100;
+		}
 	}
 
-	amount += score->dungeonlevel*500;
-	amount += score->victory*10000;
-	amount -= score->completionTime/TICKS_PER_SECOND;
-	if( score->victory ) {
-		amount += score->conductPenniless*5000;
-		amount += score->conductFoodless*5000;
-		amount += score->conductVegetarian*5000;
-		amount += score->conductIlliterate*5000;
+	amount += score->dungeonlevel * 500;
+	amount += score->victory * 10000;
+	amount -= score->completionTime / TICKS_PER_SECOND;
+	if ( score->victory ) {
+		amount += score->conductPenniless * 5000;
+		amount += score->conductFoodless * 5000;
+		amount += score->conductVegetarian * 5000;
+		amount += score->conductIlliterate * 5000;
 	}
-	if( amount<0 )
+	if ( amount < 0 ) {
 		amount = 0;
+	}
 
 	return amount;
 }
@@ -285,19 +279,21 @@ int totalScore(score_t *score) {
 -------------------------------------------------------------------------------*/
 
 void loadScore(int scorenum) {
-	node_t *node = list_Node(&topscores,scorenum);
-	if( !node )
+	node_t* node = list_Node(&topscores, scorenum);
+	if ( !node ) {
 		return;
-	score_t *score = (score_t *)node->element;
+	}
+	score_t* score = (score_t*)node->element;
 	stats[0]->clearStats();
 
 	int c;
-	for( c=0; c<NUMMONSTERS; c++ )
+	for ( c = 0; c < NUMMONSTERS; c++ ) {
 		kills[c] = score->kills[c];
+	}
 	stats[0]->type = score->stats->type;
 	stats[0]->sex = score->stats->sex;
 	stats[0]->appearance = score->stats->appearance;
-	strcpy(stats[0]->name,score->stats->name);
+	strcpy(stats[0]->name, score->stats->name);
 	client_classes[0] = score->classnum;
 	victory = score->victory;
 	currentlevel = score->dungeonlevel;
@@ -322,69 +318,60 @@ void loadScore(int scorenum) {
 	stats[0]->LVL = score->stats->LVL;
 	stats[0]->GOLD = score->stats->GOLD;
 	stats[0]->HUNGER = score->stats->HUNGER;
-	for( c=0; c<NUMPROFICIENCIES; c++ ) {
+	for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 		stats[0]->PROFICIENCIES[c] = score->stats->PROFICIENCIES[c];
 	}
-	for( c=0; c<NUMEFFECTS; c++ ) {
+	for ( c = 0; c < NUMEFFECTS; c++ ) {
 		stats[0]->EFFECTS[c] = score->stats->EFFECTS[c];
 		stats[0]->EFFECTS_TIMERS[c] = score->stats->EFFECTS_TIMERS[c];
 	}
 	list_FreeAll(&stats[0]->inventory);
-	list_Copy(&stats[0]->inventory,&score->stats->inventory);
-	for( node=stats[0]->inventory.first; node!=NULL; node=node->next ) {
-		Item *item = (Item *)node->element;
+	list_Copy(&stats[0]->inventory, &score->stats->inventory);
+	for ( node = stats[0]->inventory.first; node != NULL; node = node->next ) {
+		Item* item = (Item*)node->element;
 		item->node = node;
 	}
-	for( c=0, node=score->stats->inventory.first; node!=NULL; node=node->next, c++ ) {
-		Item *item = (Item *)node->element;
-		if( score->stats->helmet == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+	for ( c = 0, node = score->stats->inventory.first; node != NULL; node = node->next, c++ ) {
+		Item* item = (Item*)node->element;
+		if ( score->stats->helmet == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->helmet = item2;
-		}
-		else if( score->stats->breastplate == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->breastplate == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->breastplate = item2;
-		}
-		else if( score->stats->gloves == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->gloves == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->gloves = item2;
-		}
-		else if( score->stats->shoes == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->shoes == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->shoes = item2;
-		}
-		else if( score->stats->shield == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->shield == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->shield = item2;
-		}
-		else if( score->stats->weapon == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->weapon == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->weapon = item2;
-		}
-		else if( score->stats->cloak == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->cloak == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->cloak = item2;
-		}
-		else if( score->stats->amulet == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->amulet == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->amulet = item2;
-		}
-		else if( score->stats->ring == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->ring == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->ring = item2;
-		}
-		else if( score->stats->mask == item ) {
-			node_t *node2 = list_Node(&stats[0]->inventory,c);
-			Item *item2 = (Item *)node2->element;
+		} else if ( score->stats->mask == item ) {
+			node_t* node2 = list_Node(&stats[0]->inventory, c);
+			Item* item2 = (Item*)node2->element;
 			stats[0]->mask = item2;
 		}
 	}
@@ -399,12 +386,12 @@ void loadScore(int scorenum) {
 -------------------------------------------------------------------------------*/
 
 void saveAllScores() {
-	node_t *node;
-	FILE *fp;
+	node_t* node;
+	FILE* fp;
 	int c;
 
 	// open file
-	if( (fp = fopen(SCORESFILE,"wb")) == NULL ) {
+	if ( (fp = fopen(SCORESFILE, "wb")) == NULL ) {
 		printlog("error: failed to save '%s!'\n", SCORESFILE);
 		return;
 	}
@@ -416,21 +403,22 @@ void saveAllScores() {
 	// header info
 	c = list_Size(&booksRead);
 	fwrite(&c, sizeof(Uint32), 1, fp);
-	for( node=booksRead.first; node!=NULL; node=node->next ) {
-		char *book = (char *)node->element;
+	for ( node = booksRead.first; node != NULL; node = node->next ) {
+		char* book = (char*)node->element;
 		c = strlen(book);
 		fwrite(&c, sizeof(Uint32), 1, fp);
-		fputs(book,fp);
+		fputs(book, fp);
 	}
-	for( c=0; c<10; c++ )
+	for ( c = 0; c < 10; c++ ) {
 		fwrite(&usedClass[c], sizeof(bool), 1, fp);
+	}
 
 	// score list
 	c = list_Size(&topscores);
 	fwrite(&c, sizeof(Uint32), 1, fp);
-	for( node=topscores.first; node!=NULL; node=node->next ) {
-		score_t *score = (score_t *)node->element;
-		for( c=0; c<NUMMONSTERS; c++ ) {
+	for ( node = topscores.first; node != NULL; node = node->next ) {
+		score_t* score = (score_t*)node->element;
+		for ( c = 0; c < NUMMONSTERS; c++ ) {
 			fwrite(&score->kills[c], sizeof(Sint32), 1, fp);
 		}
 		fwrite(&score->completionTime, sizeof(Uint32), 1, fp);
@@ -459,20 +447,20 @@ void saveAllScores() {
 		fwrite(&score->stats->LVL, sizeof(Sint32), 1, fp);
 		fwrite(&score->stats->GOLD, sizeof(Sint32), 1, fp);
 		fwrite(&score->stats->HUNGER, sizeof(Sint32), 1, fp);
-		for( c=0; c<NUMPROFICIENCIES; c++ ) {
+		for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 			fwrite(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
 		}
-		for( c=0; c<NUMEFFECTS; c++ ) {
+		for ( c = 0; c < NUMEFFECTS; c++ ) {
 			fwrite(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
 			fwrite(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
 		}
 
 		// inventory
-		node_t *node2;
+		node_t* node2;
 		c = list_Size(&score->stats->inventory);
 		fwrite(&c, sizeof(ItemType), 1, fp);
-		for( node2=score->stats->inventory.first; node2!=NULL; node2=node2->next ) {
-			Item *item = (Item *)node2->element;
+		for ( node2 = score->stats->inventory.first; node2 != NULL; node2 = node2->next ) {
+			Item* item = (Item*)node2->element;
 			fwrite(&item->type, sizeof(ItemType), 1, fp);
 			fwrite(&item->status, sizeof(Status), 1, fp);
 			fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -480,70 +468,70 @@ void saveAllScores() {
 			fwrite(&item->appearance, sizeof(Uint32), 1, fp);
 			fwrite(&item->identified, sizeof(bool), 1, fp);
 		}
-		if( score->stats->helmet ) {
+		if ( score->stats->helmet ) {
 			c = list_Index(score->stats->helmet->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->breastplate ) {
+		if ( score->stats->breastplate ) {
 			c = list_Index(score->stats->breastplate->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->gloves ) {
+		if ( score->stats->gloves ) {
 			c = list_Index(score->stats->gloves->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->shoes ) {
+		if ( score->stats->shoes ) {
 			c = list_Index(score->stats->shoes->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->shield ) {
+		if ( score->stats->shield ) {
 			c = list_Index(score->stats->shield->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->weapon ) {
+		if ( score->stats->weapon ) {
 			c = list_Index(score->stats->weapon->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->cloak ) {
+		if ( score->stats->cloak ) {
 			c = list_Index(score->stats->cloak->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->amulet ) {
+		if ( score->stats->amulet ) {
 			c = list_Index(score->stats->amulet->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->ring ) {
+		if ( score->stats->ring ) {
 			c = list_Index(score->stats->ring->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
 			c = list_Size(&score->stats->inventory);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		}
-		if( score->stats->mask ) {
+		if ( score->stats->mask ) {
 			c = list_Index(score->stats->mask->node);
 			fwrite(&c, sizeof(ItemType), 1, fp);
 		} else {
@@ -564,27 +552,27 @@ void saveAllScores() {
 -------------------------------------------------------------------------------*/
 
 void loadAllScores() {
-	FILE *fp;
+	FILE* fp;
 	Uint32 c, i;
 
 	// clear top scores
 	list_FreeAll(&topscores);
 
 	// open file
-	if( (fp = fopen(SCORESFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SCORESFILE, "rb")) == NULL ) {
 		return;
 	}
 
 	// magic number
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSCORES"), fp);
-	if( strncmp(checkstr,"BARONYSCORES",strlen("BARONYSCORES")) ) {
+	if ( strncmp(checkstr, "BARONYSCORES", strlen("BARONYSCORES")) ) {
 		printlog("error: '%s' is corrupt!\n", SCORESFILE);
 		fclose(fp);
 		return;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SCORESFILE);
 		fclose(fp);
 		return;
@@ -593,34 +581,35 @@ void loadAllScores() {
 	// header info
 	list_FreeAll(&booksRead);
 	fread(&c, sizeof(Uint32), 1, fp);
-	for( i=0; i<c; i++ ) {
-		Uint32 booknamelen=0;
+	for ( i = 0; i < c; i++ ) {
+		Uint32 booknamelen = 0;
 		fread(&booknamelen, sizeof(Uint32), 1, fp);
-		fgets(tempstr, booknamelen+1, fp);
+		fgets(tempstr, booknamelen + 1, fp);
 
-		char *book = (char *) malloc(sizeof(char)*(strlen(tempstr)+1));
+		char* book = (char*) malloc(sizeof(char) * (strlen(tempstr) + 1));
 		strcpy(book, tempstr);
 
-		node_t *node = list_AddNodeLast(&booksRead);
+		node_t* node = list_AddNodeLast(&booksRead);
 		node->element = book;
-		node->size = sizeof(char)*(strlen(tempstr)+1);
+		node->size = sizeof(char) * (strlen(tempstr) + 1);
 		node->deconstructor = &defaultDeconstructor;
 	}
-	for( c=0; c<10; c++ )
+	for ( c = 0; c < 10; c++ ) {
 		fread(&usedClass[c], sizeof(bool), 1, fp);
+	}
 
 	// read scores
-	Uint32 numscores=0;
+	Uint32 numscores = 0;
 	fread(&numscores, sizeof(Uint32), 1, fp);
-	for( i=0; i<numscores; i++ ) {
-		node_t *node = list_AddNodeLast(&topscores);
-		score_t *score = (score_t *) malloc(sizeof(score_t));
-		if( !score ) {
+	for ( i = 0; i < numscores; i++ ) {
+		node_t* node = list_AddNodeLast(&topscores);
+		score_t* score = (score_t*) malloc(sizeof(score_t));
+		if ( !score ) {
 			printlog( "failed to allocate memory for new score!\n" );
 			exit(1);
 		}
 		score->stats = new Stat();
-		if( !score->stats ) {
+		if ( !score->stats ) {
 			printlog( "failed to allocate memory for new stat!\n" );
 			exit(1);
 		}
@@ -628,7 +617,7 @@ void loadAllScores() {
 		node->deconstructor = &scoreDeconstructor;
 		node->size = sizeof(score_t);
 
-		for( c=0; c<NUMMONSTERS; c++ ) {
+		for ( c = 0; c < NUMMONSTERS; c++ ) {
 			fread(&score->kills[c], sizeof(Sint32), 1, fp);
 		}
 		fread(&score->completionTime, sizeof(Uint32), 1, fp);
@@ -657,28 +646,28 @@ void loadAllScores() {
 		fread(&score->stats->LVL, sizeof(Sint32), 1, fp);
 		fread(&score->stats->GOLD, sizeof(Sint32), 1, fp);
 		fread(&score->stats->HUNGER, sizeof(Sint32), 1, fp);
-		for( c=0; c<NUMPROFICIENCIES; c++ ) {
+		for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 			fread(&score->stats->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
 		}
-		for( c=0; c<NUMEFFECTS; c++ ) {
+		for ( c = 0; c < NUMEFFECTS; c++ ) {
 			fread(&score->stats->EFFECTS[c], sizeof(bool), 1, fp);
 			fread(&score->stats->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
 		}
 
-		score->stats->leader_uid=0;
-		score->stats->FOLLOWERS.first=NULL;
-		score->stats->FOLLOWERS.last=NULL;
-		score->stats->stache_x1=0;
-		score->stats->stache_x2=0;
-		score->stats->stache_y1=0;
-		score->stats->stache_y2=0;
+		score->stats->leader_uid = 0;
+		score->stats->FOLLOWERS.first = NULL;
+		score->stats->FOLLOWERS.last = NULL;
+		score->stats->stache_x1 = 0;
+		score->stats->stache_x2 = 0;
+		score->stats->stache_y1 = 0;
+		score->stats->stache_y2 = 0;
 
 		// inventory
 		int numitems = 0;
 		fread(&numitems, sizeof(Uint32), 1, fp);
-		score->stats->inventory.first=NULL;
-		score->stats->inventory.last=NULL;
-		for( c=0; c<numitems; c++ ) {
+		score->stats->inventory.first = NULL;
+		score->stats->inventory.last = NULL;
+		for ( c = 0; c < numitems; c++ ) {
 			ItemType type;
 			Status status;
 			Sint16 beatitude;
@@ -691,68 +680,78 @@ void loadAllScores() {
 			fread(&count, sizeof(Sint16), 1, fp);
 			fread(&appearance, sizeof(Uint32), 1, fp);
 			fread(&identified, sizeof(bool), 1, fp);
-			newItem(type,status,beatitude,count,appearance,identified,&score->stats->inventory);
+			newItem(type, status, beatitude, count, appearance, identified, &score->stats->inventory);
 		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->helmet=(Item *)node->element;
-		else
-			score->stats->helmet=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->helmet = (Item*)node->element;
+		} else {
+			score->stats->helmet = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->breastplate=(Item *)node->element;
-		else
-			score->stats->breastplate=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->breastplate = (Item*)node->element;
+		} else {
+			score->stats->breastplate = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->gloves=(Item *)node->element;
-		else
-			score->stats->gloves=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->gloves = (Item*)node->element;
+		} else {
+			score->stats->gloves = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->shoes=(Item *)node->element;
-		else
-			score->stats->shoes=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->shoes = (Item*)node->element;
+		} else {
+			score->stats->shoes = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->shield=(Item *)node->element;
-		else
-			score->stats->shield=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->shield = (Item*)node->element;
+		} else {
+			score->stats->shield = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->weapon=(Item *)node->element;
-		else
-			score->stats->weapon=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->weapon = (Item*)node->element;
+		} else {
+			score->stats->weapon = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->cloak=(Item *)node->element;
-		else
-			score->stats->cloak=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->cloak = (Item*)node->element;
+		} else {
+			score->stats->cloak = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->amulet=(Item *)node->element;
-		else
-			score->stats->amulet=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->amulet = (Item*)node->element;
+		} else {
+			score->stats->amulet = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->ring=(Item *)node->element;
-		else
-			score->stats->ring=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->ring = (Item*)node->element;
+		} else {
+			score->stats->ring = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&score->stats->inventory,c);
-		if( node )
-			score->stats->mask=(Item *)node->element;
-		else
-			score->stats->mask=NULL;
+		node = list_Node(&score->stats->inventory, c);
+		if ( node ) {
+			score->stats->mask = (Item*)node->element;
+		} else {
+			score->stats->mask = NULL;
+		}
 
 		score->stats->monster_sound = NULL;
 		score->stats->monster_idlevar = 0;
@@ -772,15 +771,16 @@ void loadAllScores() {
 
 int saveGame() {
 	int player;
-	node_t *node;
-	FILE *fp;
+	node_t* node;
+	FILE* fp;
 	Sint32 c;
 
 	// open file
-	if( !intro )
-		messagePlayer(clientnum,language[1121]);
-	if( (fp = fopen(SAVEGAMEFILE,"wb")) == NULL ) {
-		printlog("warning: failed to save '%s'!\n",SAVEGAMEFILE);
+	if ( !intro ) {
+		messagePlayer(clientnum, language[1121]);
+	}
+	if ( (fp = fopen(SAVEGAMEFILE, "wb")) == NULL ) {
+		printlog("warning: failed to save '%s'!\n", SAVEGAMEFILE);
 		return 1;
 	}
 
@@ -788,10 +788,10 @@ int saveGame() {
 	fprintf(fp, "BARONYSAVEGAME");
 	fprintf(fp, VERSION);
 	fwrite(&uniqueGameKey, sizeof(Uint32), 1, fp);
-	if( multiplayer>SINGLE && directConnect) {
-		multiplayer+=2;
+	if ( multiplayer > SINGLE && directConnect) {
+		multiplayer += 2;
 		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
-		multiplayer-=2;
+		multiplayer -= 2;
 	} else {
 		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
 	}
@@ -806,26 +806,27 @@ int saveGame() {
 	fwrite(&conductIlliterate, sizeof(bool), 1, fp);
 
 	// write hotbar items
-	for( c=0; c<NUM_HOTBAR_SLOTS; c++ ) {
+	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ ) {
 		int index = list_Size(&stats[clientnum]->inventory);
-		Item *item = uidToItem(hotbar[c].item);
-		if( item )
+		Item* item = uidToItem(hotbar[c].item);
+		if ( item ) {
 			index = list_Index(item->node);
+		}
 		fwrite(&index, sizeof(Uint32), 1, fp);
 	}
 
 	// write spells
 	Uint32 numspells = list_Size(&spellList);
 	fwrite(&numspells, sizeof(Uint32), 1, fp);
-	for( node=spellList.first; node!=NULL; node=node->next ) {
-		spell_t *spell = (spell_t *)node->element;
+	for ( node = spellList.first; node != NULL; node = node->next ) {
+		spell_t* spell = (spell_t*)node->element;
 		fwrite(&spell->ID, sizeof(Uint32), 1, fp);
 	}
 
 	// player data
-	for( player=0; player<MAXPLAYERS; player++ ) {
+	for ( player = 0; player < MAXPLAYERS; player++ ) {
 		fwrite(&client_classes[player], sizeof(Uint32), 1, fp);
-		for( c=0; c<NUMMONSTERS; c++ ) {
+		for ( c = 0; c < NUMMONSTERS; c++ ) {
 			fwrite(&kills[c], sizeof(Sint32), 1, fp);
 		}
 		fwrite(&stats[player]->type, sizeof(Monster), 1, fp);
@@ -846,20 +847,20 @@ int saveGame() {
 		fwrite(&stats[player]->LVL, sizeof(Sint32), 1, fp);
 		fwrite(&stats[player]->GOLD, sizeof(Sint32), 1, fp);
 		fwrite(&stats[player]->HUNGER, sizeof(Sint32), 1, fp);
-		for( c=0; c<NUMPROFICIENCIES; c++ ) {
+		for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 			fwrite(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
 		}
-		for( c=0; c<NUMEFFECTS; c++ ) {
+		for ( c = 0; c < NUMEFFECTS; c++ ) {
 			fwrite(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
 			fwrite(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
 		}
 
 		// inventory
-		if( player==clientnum ) {
+		if ( player == clientnum ) {
 			c = list_Size(&stats[player]->inventory);
 			fwrite(&c, sizeof(Uint32), 1, fp);
-			for( node=stats[player]->inventory.first; node!=NULL; node=node->next ) {
-				Item *item = (Item *)node->element;
+			for ( node = stats[player]->inventory.first; node != NULL; node = node->next ) {
+				Item* item = (Item*)node->element;
 				fwrite(&item->type, sizeof(ItemType), 1, fp);
 				fwrite(&item->status, sizeof(Status), 1, fp);
 				fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -869,70 +870,70 @@ int saveGame() {
 				fwrite(&item->x, sizeof(Sint32), 1, fp);
 				fwrite(&item->y, sizeof(Sint32), 1, fp);
 			}
-			if( stats[player]->helmet ) {
+			if ( stats[player]->helmet ) {
 				c = list_Index(stats[player]->helmet->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->breastplate ) {
+			if ( stats[player]->breastplate ) {
 				c = list_Index(stats[player]->breastplate->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->gloves ) {
+			if ( stats[player]->gloves ) {
 				c = list_Index(stats[player]->gloves->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->shoes ) {
+			if ( stats[player]->shoes ) {
 				c = list_Index(stats[player]->shoes->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->shield ) {
+			if ( stats[player]->shield ) {
 				c = list_Index(stats[player]->shield->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->weapon ) {
+			if ( stats[player]->weapon ) {
 				c = list_Index(stats[player]->weapon->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->cloak ) {
+			if ( stats[player]->cloak ) {
 				c = list_Index(stats[player]->cloak->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->amulet ) {
+			if ( stats[player]->amulet ) {
 				c = list_Index(stats[player]->amulet->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->ring ) {
+			if ( stats[player]->ring ) {
 				c = list_Index(stats[player]->ring->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
 				c = list_Size(&stats[player]->inventory);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
-			if( stats[player]->mask ) {
+			if ( stats[player]->mask ) {
 				c = list_Index(stats[player]->mask->node);
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			} else {
@@ -940,9 +941,9 @@ int saveGame() {
 				fwrite(&c, sizeof(Uint32), 1, fp);
 			}
 		} else {
-			if( multiplayer==SERVER ) {
-				if( stats[player]->helmet ) {
-					Item *item = stats[player]->helmet;
+			if ( multiplayer == SERVER ) {
+				if ( stats[player]->helmet ) {
+					Item* item = stats[player]->helmet;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -953,8 +954,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->breastplate ) {
-					Item *item = stats[player]->breastplate;
+				if ( stats[player]->breastplate ) {
+					Item* item = stats[player]->breastplate;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -965,8 +966,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->gloves ) {
-					Item *item = stats[player]->gloves;
+				if ( stats[player]->gloves ) {
+					Item* item = stats[player]->gloves;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -977,8 +978,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->shoes ) {
-					Item *item = stats[player]->shoes;
+				if ( stats[player]->shoes ) {
+					Item* item = stats[player]->shoes;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -989,8 +990,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->shield ) {
-					Item *item = stats[player]->shield;
+				if ( stats[player]->shield ) {
+					Item* item = stats[player]->shield;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1001,8 +1002,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->weapon ) {
-					Item *item = stats[player]->weapon;
+				if ( stats[player]->weapon ) {
+					Item* item = stats[player]->weapon;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1013,8 +1014,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->cloak ) {
-					Item *item = stats[player]->cloak;
+				if ( stats[player]->cloak ) {
+					Item* item = stats[player]->cloak;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1025,8 +1026,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->amulet ) {
-					Item *item = stats[player]->amulet;
+				if ( stats[player]->amulet ) {
+					Item* item = stats[player]->amulet;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1037,8 +1038,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->ring ) {
-					Item *item = stats[player]->ring;
+				if ( stats[player]->ring ) {
+					Item* item = stats[player]->ring;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1049,8 +1050,8 @@ int saveGame() {
 					c = NUMITEMS;
 					fwrite(&c, sizeof(ItemType), 1, fp);
 				}
-				if( stats[player]->mask ) {
-					Item *item = stats[player]->mask;
+				if ( stats[player]->mask ) {
+					Item* item = stats[player]->mask;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
 					fwrite(&item->status, sizeof(Status), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1070,31 +1071,32 @@ int saveGame() {
 	fclose(fp);
 
 	// clients don't save follower info
-	if( multiplayer==CLIENT )
+	if ( multiplayer == CLIENT ) {
 		return 0;
+	}
 
 	// now we save the follower information
-	if( (fp = fopen(SAVEGAMEFILE2,"wb")) == NULL ) {
-		printlog("warning: failed to save '%s'!\n",SAVEGAMEFILE2);
+	if ( (fp = fopen(SAVEGAMEFILE2, "wb")) == NULL ) {
+		printlog("warning: failed to save '%s'!\n", SAVEGAMEFILE2);
 		return 1;
 	}
 	fprintf(fp, "BARONYSAVEGAMEFOLLOWERS");
 	fprintf(fp, VERSION);
 
 	// write follower information
-	for( c=0; c<MAXPLAYERS; c++ ) {
+	for ( c = 0; c < MAXPLAYERS; c++ ) {
 		// record number of followers for this player
 		Uint32 size = list_Size(&stats[c]->FOLLOWERS);
 		fwrite(&size, sizeof(Uint32), 1, fp);
 
 		// get followerStats
 		int i;
-		for( i=0; i<size; i++ ) {
-			node_t *node = list_Node(&stats[c]->FOLLOWERS,i);
-			if( node ) {
-				Entity *follower = uidToEntity(*((Uint32 *)node->element));
-				Stat *followerStats = (follower) ? follower->getStats() : NULL;
-				if( followerStats ) {
+		for ( i = 0; i < size; i++ ) {
+			node_t* node = list_Node(&stats[c]->FOLLOWERS, i);
+			if ( node ) {
+				Entity* follower = uidToEntity(*((Uint32*)node->element));
+				Stat* followerStats = (follower) ? follower->getStats() : NULL;
+				if ( followerStats ) {
 					// record follower stats
 					fwrite(&followerStats->type, sizeof(Monster), 1, fp);
 					fwrite(&followerStats->sex, sizeof(sex_t), 1, fp);
@@ -1116,10 +1118,10 @@ int saveGame() {
 					fwrite(&followerStats->HUNGER, sizeof(Sint32), 1, fp);
 
 					int j;
-					for( j=0; j<NUMPROFICIENCIES; j++ ) {
+					for ( j = 0; j < NUMPROFICIENCIES; j++ ) {
 						fwrite(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1, fp);
 					}
-					for( j=0; j<NUMEFFECTS; j++ ) {
+					for ( j = 0; j < NUMEFFECTS; j++ ) {
 						fwrite(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
 						fwrite(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
 					}
@@ -1127,8 +1129,8 @@ int saveGame() {
 					// record follower inventory
 					Uint32 invSize = list_Size(&followerStats->inventory);
 					fwrite(&invSize, sizeof(Uint32), 1, fp);
-					for( node=followerStats->inventory.first; node!=NULL; node=node->next ) {
-						Item *item = (Item *)node->element;
+					for ( node = followerStats->inventory.first; node != NULL; node = node->next ) {
+						Item* item = (Item*)node->element;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1140,8 +1142,8 @@ int saveGame() {
 					}
 
 					// record follower equipment (since NPCs never store equipment as inventory)
-					if( followerStats->helmet ) {
-						Item *item = followerStats->helmet;
+					if ( followerStats->helmet ) {
+						Item* item = followerStats->helmet;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1152,8 +1154,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->breastplate ) {
-						Item *item = followerStats->breastplate;
+					if ( followerStats->breastplate ) {
+						Item* item = followerStats->breastplate;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1164,8 +1166,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->gloves ) {
-						Item *item = followerStats->gloves;
+					if ( followerStats->gloves ) {
+						Item* item = followerStats->gloves;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1176,8 +1178,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->shoes ) {
-						Item *item = followerStats->shoes;
+					if ( followerStats->shoes ) {
+						Item* item = followerStats->shoes;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1188,8 +1190,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->shield ) {
-						Item *item = followerStats->shield;
+					if ( followerStats->shield ) {
+						Item* item = followerStats->shield;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1200,8 +1202,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->weapon ) {
-						Item *item = followerStats->weapon;
+					if ( followerStats->weapon ) {
+						Item* item = followerStats->weapon;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1212,8 +1214,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->cloak ) {
-						Item *item = followerStats->cloak;
+					if ( followerStats->cloak ) {
+						Item* item = followerStats->cloak;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1224,8 +1226,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->amulet ) {
-						Item *item = followerStats->amulet;
+					if ( followerStats->amulet ) {
+						Item* item = followerStats->amulet;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1236,8 +1238,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->ring ) {
-						Item *item = followerStats->ring;
+					if ( followerStats->ring ) {
+						Item* item = followerStats->ring;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1248,8 +1250,8 @@ int saveGame() {
 						ItemType tempItem = static_cast<ItemType>(NUMITEMS);
 						fwrite(&tempItem, sizeof(ItemType), 1, fp);
 					}
-					if( followerStats->mask ) {
-						Item *item = followerStats->mask;
+					if ( followerStats->mask ) {
+						Item* item = followerStats->mask;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
 						fwrite(&item->status, sizeof(Status), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
@@ -1280,12 +1282,12 @@ int saveGame() {
 
 int loadGame(int player) {
 	Sint32 mul;
-	node_t *node;
-	FILE *fp;
+	node_t* node;
+	FILE* fp;
 	int c;
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 		printlog("error: failed to load '%s'!\n", SAVEGAMEFILE);
 		return 1;
 	}
@@ -1293,13 +1295,13 @@ int loadGame(int player) {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 1;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 1;
@@ -1320,7 +1322,7 @@ int loadGame(int player) {
 
 	// read hotbar item offsets
 	Uint32 temp_hotbar[NUM_HOTBAR_SLOTS];
-	for( c=0; c<NUM_HOTBAR_SLOTS; c++ ) {
+	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ ) {
 		fread(&temp_hotbar[c], sizeof(Uint32), 1, fp);
 	}
 
@@ -1328,10 +1330,10 @@ int loadGame(int player) {
 	list_FreeAll(&spellList);
 	Uint32 numspells = 0;
 	fread(&numspells, sizeof(Uint32), 1, fp);
-	for( c=0; c<numspells; c++ ) {
+	for ( c = 0; c < numspells; c++ ) {
 		int spellnum = 0;
 		fread(&spellnum, sizeof(Uint32), 1, fp);
-		spell_t *spell = copySpell(getSpellFromID(spellnum));
+		spell_t* spell = copySpell(getSpellFromID(spellnum));
 
 		node = list_AddNodeLast(&spellList);
 		node->element = spell;
@@ -1340,13 +1342,13 @@ int loadGame(int player) {
 	}
 
 	// skip through other player data until you get to the correct player
-	for( c=0; c<player; c++ ) {
+	for ( c = 0; c < player; c++ ) {
 		fseek(fp, sizeof(Uint32), SEEK_CUR);
-		fseek(fp, NUMMONSTERS*sizeof(Sint32), SEEK_CUR);
+		fseek(fp, NUMMONSTERS * sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Monster), SEEK_CUR);
 		fseek(fp, sizeof(sex_t), SEEK_CUR);
 		fseek(fp, sizeof(Uint32), SEEK_CUR);
-		fseek(fp, sizeof(char)*32, SEEK_CUR);
+		fseek(fp, sizeof(char) * 32, SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
@@ -1365,13 +1367,13 @@ int loadGame(int player) {
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
 
-		if( clientnum==0 && c!=0 ) {
+		if ( clientnum == 0 && c != 0 ) {
 			// server needs to skip past other players' equipment
 			int i;
-			for( i=0; i<10; i++ ) {
+			for ( i = 0; i < 10; i++ ) {
 				int itemtype = NUMITEMS;
 				fread(&itemtype, sizeof(ItemType), 1, fp);
-				if( itemtype<NUMITEMS ) {
+				if ( itemtype < NUMITEMS ) {
 					fseek(fp, sizeof(Status), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
@@ -1380,7 +1382,7 @@ int loadGame(int player) {
 				}
 			}
 		} else {
-			if( clientnum!=0 ) {
+			if ( clientnum != 0 ) {
 				// client needs to skip the dummy byte
 				fseek(fp, sizeof(Status), SEEK_CUR);
 			} else {
@@ -1389,7 +1391,7 @@ int loadGame(int player) {
 				fread(&numitems, sizeof(Uint32), 1, fp);
 
 				int i;
-				for( i=0; i<numitems; i++ ) {
+				for ( i = 0; i < numitems; i++ ) {
 					fseek(fp, sizeof(ItemType), SEEK_CUR);
 					fseek(fp, sizeof(Status), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
@@ -1399,7 +1401,7 @@ int loadGame(int player) {
 					fseek(fp, sizeof(Sint32), SEEK_CUR);
 					fseek(fp, sizeof(Sint32), SEEK_CUR);
 				}
-				fseek(fp, sizeof(Uint32)*10, SEEK_CUR); // equipment slots
+				fseek(fp, sizeof(Uint32) * 10, SEEK_CUR); // equipment slots
 			}
 		}
 	}
@@ -1407,7 +1409,7 @@ int loadGame(int player) {
 	// read in player data
 	stats[player]->clearStats();
 	fread(&client_classes[player], sizeof(Uint32), 1, fp);
-	for( c=0; c<NUMMONSTERS; c++ ) {
+	for ( c = 0; c < NUMMONSTERS; c++ ) {
 		fread(&kills[c], sizeof(Sint32), 1, fp);
 	}
 	fread(&stats[player]->type, sizeof(Monster), 1, fp);
@@ -1428,21 +1430,21 @@ int loadGame(int player) {
 	fread(&stats[player]->LVL, sizeof(Sint32), 1, fp);
 	fread(&stats[player]->GOLD, sizeof(Sint32), 1, fp);
 	fread(&stats[player]->HUNGER, sizeof(Sint32), 1, fp);
-	for( c=0; c<NUMPROFICIENCIES; c++ ) {
+	for ( c = 0; c < NUMPROFICIENCIES; c++ ) {
 		fread(&stats[player]->PROFICIENCIES[c], sizeof(Sint32), 1, fp);
 	}
-	for( c=0; c<NUMEFFECTS; c++ ) {
+	for ( c = 0; c < NUMEFFECTS; c++ ) {
 		fread(&stats[player]->EFFECTS[c], sizeof(bool), 1, fp);
 		fread(&stats[player]->EFFECTS_TIMERS[c], sizeof(Sint32), 1, fp);
 	}
 
-	if( player==clientnum ) {
+	if ( player == clientnum ) {
 		// inventory
 		int numitems = 0;
 		fread(&numitems, sizeof(Uint32), 1, fp);
-		stats[player]->inventory.first=NULL;
-		stats[player]->inventory.last=NULL;
-		for( c=0; c<numitems; c++ ) {
+		stats[player]->inventory.first = NULL;
+		stats[player]->inventory.last = NULL;
+		for ( c = 0; c < numitems; c++ ) {
 			ItemType type;
 			Status status;
 			Sint16 beatitude;
@@ -1455,88 +1457,98 @@ int loadGame(int player) {
 			fread(&count, sizeof(Sint16), 1, fp);
 			fread(&appearance, sizeof(Uint32), 1, fp);
 			fread(&identified, sizeof(bool), 1, fp);
-			Item *item = newItem(type,status,beatitude,count,appearance,identified,&stats[player]->inventory);
+			Item* item = newItem(type, status, beatitude, count, appearance, identified, &stats[player]->inventory);
 			fread(&item->x, sizeof(Sint32), 1, fp);
 			fread(&item->y, sizeof(Sint32), 1, fp);
 		}
 
 		// equipment
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->helmet=(Item *)node->element;
-		else
-			stats[player]->helmet=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->helmet = (Item*)node->element;
+		} else {
+			stats[player]->helmet = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->breastplate=(Item *)node->element;
-		else
-			stats[player]->breastplate=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->breastplate = (Item*)node->element;
+		} else {
+			stats[player]->breastplate = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->gloves=(Item *)node->element;
-		else
-			stats[player]->gloves=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->gloves = (Item*)node->element;
+		} else {
+			stats[player]->gloves = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->shoes=(Item *)node->element;
-		else
-			stats[player]->shoes=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->shoes = (Item*)node->element;
+		} else {
+			stats[player]->shoes = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->shield=(Item *)node->element;
-		else
-			stats[player]->shield=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->shield = (Item*)node->element;
+		} else {
+			stats[player]->shield = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->weapon=(Item *)node->element;
-		else
-			stats[player]->weapon=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->weapon = (Item*)node->element;
+		} else {
+			stats[player]->weapon = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->cloak=(Item *)node->element;
-		else
-			stats[player]->cloak=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->cloak = (Item*)node->element;
+		} else {
+			stats[player]->cloak = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->amulet=(Item *)node->element;
-		else
-			stats[player]->amulet=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->amulet = (Item*)node->element;
+		} else {
+			stats[player]->amulet = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->ring=(Item *)node->element;
-		else
-			stats[player]->ring=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->ring = (Item*)node->element;
+		} else {
+			stats[player]->ring = NULL;
+		}
 		fread(&c, sizeof(Uint32), 1, fp);
-		node = list_Node(&stats[player]->inventory,c);
-		if( node )
-			stats[player]->mask=(Item *)node->element;
-		else
-			stats[player]->mask=NULL;
+		node = list_Node(&stats[player]->inventory, c);
+		if ( node ) {
+			stats[player]->mask = (Item*)node->element;
+		} else {
+			stats[player]->mask = NULL;
+		}
 	} else {
-		stats[player]->inventory.first=NULL;
-		stats[player]->inventory.last=NULL;
-		stats[player]->helmet=NULL;
-		stats[player]->breastplate=NULL;
-		stats[player]->gloves=NULL;
-		stats[player]->shoes=NULL;
-		stats[player]->shield=NULL;
-		stats[player]->weapon=NULL;
-		stats[player]->cloak=NULL;
-		stats[player]->amulet=NULL;
-		stats[player]->ring=NULL;
-		stats[player]->mask=NULL;
+		stats[player]->inventory.first = NULL;
+		stats[player]->inventory.last = NULL;
+		stats[player]->helmet = NULL;
+		stats[player]->breastplate = NULL;
+		stats[player]->gloves = NULL;
+		stats[player]->shoes = NULL;
+		stats[player]->shield = NULL;
+		stats[player]->weapon = NULL;
+		stats[player]->cloak = NULL;
+		stats[player]->amulet = NULL;
+		stats[player]->ring = NULL;
+		stats[player]->mask = NULL;
 
-		if( multiplayer==SERVER ) {
-			for( c=0; c<10; c++ ) {
+		if ( multiplayer == SERVER ) {
+			for ( c = 0; c < 10; c++ ) {
 				ItemType type;
 				Status status;
 				Sint16 beatitude;
@@ -1545,16 +1557,16 @@ int loadGame(int player) {
 				bool identified;
 
 				fread(&type, sizeof(ItemType), 1, fp);
-				if( (int)type<NUMITEMS ) {
+				if ( (int)type < NUMITEMS ) {
 					fread(&status, sizeof(Status), 1, fp);
 					fread(&beatitude, sizeof(Sint16), 1, fp);
 					fread(&count, sizeof(Sint16), 1, fp);
 					fread(&appearance, sizeof(Uint32), 1, fp);
 					fread(&identified, sizeof(bool), 1, fp);
 
-					Item *item = newItem(type,status,beatitude,count,appearance,identified,NULL);
+					Item* item = newItem(type, status, beatitude, count, appearance, identified, NULL);
 
-					switch( c ) {
+					switch ( c ) {
 						case 0:
 							stats[player]->helmet = item;
 							break;
@@ -1592,10 +1604,10 @@ int loadGame(int player) {
 	}
 
 	// assign hotbar items
-	for( c=0; c<NUM_HOTBAR_SLOTS; c++ ) {
-		node = list_Node(&stats[player]->inventory,temp_hotbar[c]);
-		if( node ) {
-			Item *item = (Item *)node->element;
+	for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ ) {
+		node = list_Node(&stats[player]->inventory, temp_hotbar[c]);
+		if ( node ) {
+			Item* item = (Item*)node->element;
 			hotbar[c].item = item->uid;
 		} else {
 			hotbar[c].item = 0;
@@ -1605,13 +1617,13 @@ int loadGame(int player) {
 	// reset some unused variables
 	stats[player]->monster_sound = NULL;
 	stats[player]->monster_idlevar = 0;
-	stats[player]->leader_uid=0;
-	stats[player]->FOLLOWERS.first=NULL;
-	stats[player]->FOLLOWERS.last=NULL;
-	stats[player]->stache_x1=0;
-	stats[player]->stache_x2=0;
-	stats[player]->stache_y1=0;
-	stats[player]->stache_y2=0;
+	stats[player]->leader_uid = 0;
+	stats[player]->FOLLOWERS.first = NULL;
+	stats[player]->FOLLOWERS.last = NULL;
+	stats[player]->stache_x1 = 0;
+	stats[player]->stache_x2 = 0;
+	stats[player]->stache_y1 = 0;
+	stats[player]->stache_y2 = 0;
 
 	fclose(fp);
 	return 0;
@@ -1625,12 +1637,12 @@ int loadGame(int player) {
 
 -------------------------------------------------------------------------------*/
 
-list_t *loadGameFollowers() {
-	FILE *fp;
+list_t* loadGameFollowers() {
+	FILE* fp;
 	int c;
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE2,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE2, "rb")) == NULL ) {
 		printlog("error: failed to load '%s'!\n", SAVEGAMEFILE2);
 		return NULL;
 	}
@@ -1638,42 +1650,42 @@ list_t *loadGameFollowers() {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAMEFOLLOWERS"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAMEFOLLOWERS",strlen("BARONYSAVEGAMEFOLLOWERS")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAMEFOLLOWERS", strlen("BARONYSAVEGAMEFOLLOWERS")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE2);
 		fclose(fp);
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE2);
 		fclose(fp);
 		return NULL;
 	}
 
 	// create followers list
-	list_t *followers = (list_t *) malloc(sizeof(list_t));
+	list_t* followers = (list_t*) malloc(sizeof(list_t));
 	followers->first = NULL;
 	followers->last = NULL;
 
 	// read the follower data
-	for( c=0; c<MAXPLAYERS; c++ ) {
-		list_t *followerList = (list_t *) malloc(sizeof(list_t));
+	for ( c = 0; c < MAXPLAYERS; c++ ) {
+		list_t* followerList = (list_t*) malloc(sizeof(list_t));
 		followerList->first = NULL;
 		followerList->last = NULL;
-		node_t *node = list_AddNodeLast(followers);
+		node_t* node = list_AddNodeLast(followers);
 		node->element = followerList;
 		node->deconstructor = &listDeconstructor;
 		node->size = sizeof(list_t);
 
 		// number of followers for this player
-		Uint32 numFollowers=0;
+		Uint32 numFollowers = 0;
 		fread(&numFollowers, sizeof(Uint32), 1, fp);
 
 		int i;
-		for( i=0; i<numFollowers; i++ ) {
-			Stat *followerStats = new Stat();
+		for ( i = 0; i < numFollowers; i++ ) {
+			Stat* followerStats = new Stat();
 
-			node_t *node = list_AddNodeLast(followerList);
+			node_t* node = list_AddNodeLast(followerList);
 			node->element = followerStats;
 			//node->deconstructor = &followerStats->~Stat;
 			node->size = sizeof(followerStats);
@@ -1699,10 +1711,10 @@ list_t *loadGameFollowers() {
 			fread(&followerStats->HUNGER, sizeof(Sint32), 1, fp);
 
 			int j;
-			for( j=0; j<NUMPROFICIENCIES; j++ ) {
+			for ( j = 0; j < NUMPROFICIENCIES; j++ ) {
 				fread(&followerStats->PROFICIENCIES[j], sizeof(Sint32), 1, fp);
 			}
-			for( j=0; j<NUMEFFECTS; j++ ) {
+			for ( j = 0; j < NUMEFFECTS; j++ ) {
 				fread(&followerStats->EFFECTS[j], sizeof(bool), 1, fp);
 				fread(&followerStats->EFFECTS_TIMERS[j], sizeof(Sint32), 1, fp);
 			}
@@ -1721,9 +1733,9 @@ list_t *loadGameFollowers() {
 			bool identified;
 
 			// read follower inventory
-			Uint32 invSize=0;
+			Uint32 invSize = 0;
 			fread(&invSize, sizeof(Uint32), 1, fp);
-			for( j=0; j<invSize; j++ ) {
+			for ( j = 0; j < invSize; j++ ) {
 				fread(&type, sizeof(ItemType), 1, fp);
 				fread(&status, sizeof(Status), 1, fp);
 				fread(&beatitude, sizeof(Sint16), 1, fp);
@@ -1731,25 +1743,25 @@ list_t *loadGameFollowers() {
 				fread(&appearance, sizeof(Uint32), 1, fp);
 				fread(&identified, sizeof(bool), 1, fp);
 
-				Item *item = newItem(type,status,beatitude,count,appearance,identified,&followerStats->inventory);
+				Item* item = newItem(type, status, beatitude, count, appearance, identified, &followerStats->inventory);
 				fread(&item->x, sizeof(Sint32), 1, fp);
 				fread(&item->y, sizeof(Sint32), 1, fp);
 			}
 
 			// read follower equipment
 			int b;
-			for( b=0; b<10; b++ ) {
+			for ( b = 0; b < 10; b++ ) {
 				fread(&type, sizeof(ItemType), 1, fp);
-				if( (int)type<NUMITEMS ) {
+				if ( (int)type < NUMITEMS ) {
 					fread(&status, sizeof(Status), 1, fp);
 					fread(&beatitude, sizeof(Sint16), 1, fp);
 					fread(&count, sizeof(Sint16), 1, fp);
 					fread(&appearance, sizeof(Uint32), 1, fp);
 					fread(&identified, sizeof(bool), 1, fp);
 
-					Item *item = newItem(type,status,beatitude,count,appearance,identified,NULL);
+					Item* item = newItem(type, status, beatitude, count, appearance, identified, NULL);
 
-					switch( b ) {
+					switch ( b ) {
 						case 0:
 							followerStats->helmet = item;
 							break;
@@ -1798,36 +1810,29 @@ list_t *loadGameFollowers() {
 
 -------------------------------------------------------------------------------*/
 
-int deleteSaveGame()
-{
-	if (access(SAVEGAMEFILE, F_OK) != -1)
-	{
+int deleteSaveGame() {
+	if (access(SAVEGAMEFILE, F_OK) != -1) {
 		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE);
 		int result = remove(SAVEGAMEFILE);
-		if (result)
-		{
+		if (result) {
 			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE);
-			#ifdef _MSC_VER
+#ifdef _MSC_VER
 			printlog(strerror(errno));
-			#endif
+#endif
 		}
 	}
 
-	if (access(SAVEGAMEFILE2, F_OK) != -1)
-	{
+	if (access(SAVEGAMEFILE2, F_OK) != -1) {
 		printlog("deleting savegame in '%s'...\n", SAVEGAMEFILE2);
 		int result = remove(SAVEGAMEFILE2);
-		if (result)
-		{
+		if (result) {
 			printlog("warning: failed to delete savegame in '%s'!\n", SAVEGAMEFILE2);
-			#ifdef _MSC_VER
+#ifdef _MSC_VER
 			printlog(strerror(errno));
-			#endif
+#endif
 		}
 		return result;
-	}
-	else
-	{
+	} else {
 		return 0;
 	}
 }
@@ -1841,21 +1846,21 @@ int deleteSaveGame()
 -------------------------------------------------------------------------------*/
 
 bool saveGameExists() {
-	if( access( SAVEGAMEFILE, F_OK )==-1 ) {
+	if ( access( SAVEGAMEFILE, F_OK ) == -1 ) {
 		return FALSE;
 	} else {
-		FILE *fp;
-		if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+		FILE* fp;
+		if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 			return FALSE;
 		}
 		char checkstr[64];
 		fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-		if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+		if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 			fclose(fp);
 			return FALSE;
 		}
 		fread(checkstr, sizeof(char), strlen(VERSION), fp);
-		if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+		if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 			fclose(fp);
 			return FALSE;
 		}
@@ -1872,18 +1877,18 @@ bool saveGameExists() {
 
 -------------------------------------------------------------------------------*/
 
-char *getSaveGameName() {
+char* getSaveGameName() {
 	char name[128];
-	FILE *fp;
+	FILE* fp;
 	int c;
 
 	int level, class_;
 	int mul, plnum;
 
-	char *tempstr = (char *) calloc(1024,sizeof(char));
+	char* tempstr = (char*) calloc(1024, sizeof(char));
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 		printlog("error: failed to check name in '%s'!\n", SAVEGAMEFILE);
 		return NULL;
 	}
@@ -1891,39 +1896,39 @@ char *getSaveGameName() {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return NULL;
 	}
-	
+
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&mul, sizeof(Uint32), 1, fp);
 	fread(&plnum, sizeof(Uint32), 1, fp);
-	fseek(fp, sizeof(Uint32)+sizeof(Uint32)+sizeof(bool), SEEK_CUR);
+	fseek(fp, sizeof(Uint32) + sizeof(Uint32) + sizeof(bool), SEEK_CUR);
 	fseek(fp, sizeof(Uint32)*NUM_HOTBAR_SLOTS, SEEK_CUR);
-	fseek(fp, sizeof(Uint32)+sizeof(bool)+sizeof(bool)+sizeof(bool)+sizeof(bool), SEEK_CUR);
+	fseek(fp, sizeof(Uint32) + sizeof(bool) + sizeof(bool) + sizeof(bool) + sizeof(bool), SEEK_CUR);
 
-	int numspells=0;
+	int numspells = 0;
 	fread(&numspells, sizeof(Uint32), 1, fp);
-	for( c=0; c<numspells; c++ ) {
+	for ( c = 0; c < numspells; c++ ) {
 		fseek(fp, sizeof(Uint32), SEEK_CUR);
 	}
 
 	// skip through other player data until you get to the correct player
-	for( c=0; c<plnum; c++ ) {
+	for ( c = 0; c < plnum; c++ ) {
 		fseek(fp, sizeof(Uint32), SEEK_CUR);
-		fseek(fp, NUMMONSTERS*sizeof(Sint32), SEEK_CUR);
+		fseek(fp, NUMMONSTERS * sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Monster), SEEK_CUR);
 		fseek(fp, sizeof(sex_t), SEEK_CUR);
 		fseek(fp, sizeof(Uint32), SEEK_CUR);
-		fseek(fp, sizeof(char)*32, SEEK_CUR);
+		fseek(fp, sizeof(char) * 32, SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
@@ -1942,13 +1947,13 @@ char *getSaveGameName() {
 		fseek(fp, sizeof(bool)*NUMEFFECTS, SEEK_CUR);
 		fseek(fp, sizeof(Sint32)*NUMEFFECTS, SEEK_CUR);
 
-		if( plnum==0 ) {
+		if ( plnum == 0 ) {
 			// server needs to skip past its inventory
 			int numitems = 0;
 			fread(&numitems, sizeof(Uint32), 1, fp);
 
 			int i;
-			for( i=0; i<numitems; i++ ) {
+			for ( i = 0; i < numitems; i++ ) {
 				fseek(fp, sizeof(ItemType), SEEK_CUR);
 				fseek(fp, sizeof(Status), SEEK_CUR);
 				fseek(fp, sizeof(Sint16), SEEK_CUR);
@@ -1958,7 +1963,7 @@ char *getSaveGameName() {
 				fseek(fp, sizeof(Sint32), SEEK_CUR);
 				fseek(fp, sizeof(Sint32), SEEK_CUR);
 			}
-			fseek(fp, sizeof(Uint32)*10, SEEK_CUR); // equipment slots
+			fseek(fp, sizeof(Uint32) * 10, SEEK_CUR); // equipment slots
 		} else {
 			// client needs to skip the dummy byte
 			fseek(fp, sizeof(Status), SEEK_CUR);
@@ -1966,17 +1971,17 @@ char *getSaveGameName() {
 	}
 
 	fread(&class_, sizeof(Uint32), 1, fp);
-	for( c=0; c<NUMMONSTERS; c++ ) {
+	for ( c = 0; c < NUMMONSTERS; c++ ) {
 		fseek(fp, sizeof(Sint32), SEEK_CUR);
 	}
-	fseek(fp, sizeof(Monster)+sizeof(sex_t)+sizeof(Uint32), SEEK_CUR);
+	fseek(fp, sizeof(Monster) + sizeof(sex_t) + sizeof(Uint32), SEEK_CUR);
 	fread(&name, sizeof(char), 32, fp);
-	name[32]=0;
-	fseek(fp, sizeof(Sint32)*11, SEEK_CUR);
+	name[32] = 0;
+	fseek(fp, sizeof(Sint32) * 11, SEEK_CUR);
 	fread(&level, sizeof(Sint32), 1, fp);
 
 	// assemble string
-	snprintf(tempstr, 1024, language[1540+mul], name, level, language[1900+class_], plnum);
+	snprintf(tempstr, 1024, language[1540 + mul], name, level, language[1900 + class_], plnum);
 
 	// close file
 	fclose(fp);
@@ -1993,11 +1998,11 @@ char *getSaveGameName() {
 -------------------------------------------------------------------------------*/
 
 Uint32 getSaveGameUniqueGameKey() {
-	FILE *fp;
+	FILE* fp;
 	Uint32 gameKey;
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 		printlog("error: failed to get map seed out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
 	}
@@ -2005,18 +2010,18 @@ Uint32 getSaveGameUniqueGameKey() {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
-	
+
 	fread(&gameKey, sizeof(Uint32), 1, fp);
 
 	// close file
@@ -2033,11 +2038,11 @@ Uint32 getSaveGameUniqueGameKey() {
 -------------------------------------------------------------------------------*/
 
 int getSaveGameType() {
-	FILE *fp;
+	FILE* fp;
 	int mul;
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 		printlog("error: failed to get game type out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
 	}
@@ -2045,18 +2050,18 @@ int getSaveGameType() {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
-	
+
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fread(&mul, sizeof(Uint32), 1, fp);
 
@@ -2074,11 +2079,11 @@ int getSaveGameType() {
 -------------------------------------------------------------------------------*/
 
 int getSaveGameClientnum() {
-	FILE *fp;
+	FILE* fp;
 	int clientnum;
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 		printlog("error: failed to get clientnum out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
 	}
@@ -2086,13 +2091,13 @@ int getSaveGameClientnum() {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
@@ -2116,11 +2121,11 @@ int getSaveGameClientnum() {
 -------------------------------------------------------------------------------*/
 
 Uint32 getSaveGameMapSeed() {
-	FILE *fp;
+	FILE* fp;
 	Uint32 seed;
 
 	// open file
-	if( (fp = fopen(SAVEGAMEFILE,"rb")) == NULL ) {
+	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL ) {
 		printlog("error: failed to get map seed out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
 	}
@@ -2128,18 +2133,18 @@ Uint32 getSaveGameMapSeed() {
 	// read from file
 	char checkstr[64];
 	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
-	if( strncmp(checkstr,"BARONYSAVEGAME",strlen("BARONYSAVEGAME")) ) {
+	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
-	if( strncmp(checkstr,VERSION,strlen(VERSION)) ) {
+	if ( strncmp(checkstr, VERSION, strlen(VERSION)) ) {
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
 		return 0;
 	}
-	
+
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fseek(fp, sizeof(Uint32), SEEK_CUR);
 	fseek(fp, sizeof(Uint32), SEEK_CUR);

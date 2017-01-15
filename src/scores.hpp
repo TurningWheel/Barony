@@ -17,7 +17,7 @@
 #define MAXTOPSCORES 10
 typedef struct score_t {
 	Sint32 kills[NUMMONSTERS];
-	Stat *stats;
+	Stat* stats;
 	Sint32 classnum;
 	Sint32 dungeonlevel;
 	int victory;
@@ -40,20 +40,20 @@ extern list_t booksRead;
 extern bool usedClass[10];
 extern Uint32 loadingsavegame;
 
-score_t *scoreConstructor();
-void scoreDeconstructor(void *data);
+score_t* scoreConstructor();
+void scoreDeconstructor(void* data);
 int saveScore();
-int totalScore(score_t *score);
+int totalScore(score_t* score);
 void loadScore(int score);
 void saveAllScores();
 void loadAllScores();
 int saveGame();
 int loadGame(int player);
-list_t *loadGameFollowers();
+list_t* loadGameFollowers();
 int deleteSaveGame();
 bool saveGameExists();
 
-char *getSaveGameName();
+char* getSaveGameName();
 int getSaveGameType();
 int getSaveGameClientnum();
 Uint32 getSaveGameMapSeed();

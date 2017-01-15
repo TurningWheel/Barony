@@ -21,24 +21,25 @@
 //#define MIN_LENGTH_TO_SPLIT_WORD_TITLE (characterspace_x / 2) //This only works in the formatTitle() function, since it uses a local variable characterspace_x in there.
 #define SPLIT_WORD_IN_TITLE FALSE //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
 
-book_t **books = NULL;
+book_t** books = NULL;
 int numbooks = 0;
-list_t *discoveredbooks = NULL;
+list_t* discoveredbooks = NULL;
 
 //book_t *book_space_ninjas = NULL;
 
-int getBook(char *booktitle) {
+int getBook(char* booktitle) {
 	int c;
-	for( c=0; c<numbooks; c++ ) {
-		if( !strcmp(booktitle,books[c]->name) )
+	for ( c = 0; c < numbooks; c++ ) {
+		if ( !strcmp(booktitle, books[c]->name) ) {
 			return c;
+		}
 	}
 	return 0;
 }
 
 void createBooks() {
-	node_t *node;
-	string_t *name = NULL;
+	node_t* node;
+	string_t* name = NULL;
 	bool unsorted;
 	int i = 0;
 
@@ -50,16 +51,16 @@ void createBooks() {
 		if (discoveredbooks->first && discoveredbooks->last) {
 			// allocate memory for books
 			numbooks = list_Size(discoveredbooks);
-			books = (book_t **) malloc(sizeof(book_t *) * numbooks); //Allocate memory for all of the books.
-			
+			books = (book_t**) malloc(sizeof(book_t*) * numbooks);   //Allocate memory for all of the books.
+
 			// sort books alphabetically (bubblesort)
 			do {
 				unsorted = FALSE;
-				for(node = discoveredbooks->first; node != NULL; node = node->next) {
-					if( node->next != NULL ) {
-						string_t *firststring = (string_t *)node->element;
-						string_t *secondstring = (string_t *)node->next->element;
-						if( strcmp(firststring->data, secondstring->data)>0 ) {
+				for (node = discoveredbooks->first; node != NULL; node = node->next) {
+					if ( node->next != NULL ) {
+						string_t* firststring = (string_t*)node->element;
+						string_t* secondstring = (string_t*)node->next->element;
+						if ( strcmp(firststring->data, secondstring->data) > 0 ) {
 							unsorted = TRUE;
 							node->element = secondstring;
 							node->next->element = firststring;
@@ -70,13 +71,13 @@ void createBooks() {
 						break;
 					}
 				}
-			} while( unsorted );
-			
+			} while ( unsorted );
+
 			// create books
-			for(node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i) {
-				books[i] = (book_t *) malloc(sizeof(book_t));
+			for (node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i) {
+				books[i] = (book_t*) malloc(sizeof(book_t));
 				books[i]->text = NULL;
-				name = (string_t *)node->element;
+				name = (string_t*)node->element;
 				books[i]->name = name->data;
 				//printlog("compiling book: \"%s\"\n",books[i]->name);
 				books[i]->bookgui_render_title = NULL;
@@ -85,7 +86,7 @@ void createBooks() {
 				books[i]->pages.last = NULL;
 				//formatTitle(books[i]);
 				createBook(books[i]);
-				books[i]->name[strlen(books[i]->name)-4] = 0;
+				books[i]->name[strlen(books[i]->name) - 4] = 0;
 			}
 		} else {
 			printlog( "Warning: discoveredbooks->first and last do not exist. No books in /books/ directory?\n");
@@ -156,19 +157,23 @@ bool isLetter(char character) {
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
-bool isCharacterPartOfWord(char *text, int index) {
-	if (!text)
+bool isCharacterPartOfWord(char* text, int index) {
+	if (!text) {
 		return FALSE;
-	if (index < 0 || index > strlen(text))
+	}
+	if (index < 0 || index > strlen(text)) {
 		return FALSE;
+	}
 
-	if (isLetter(text[index]))
-		return TRUE; //It's a character. Return true because no use continuing this function.
+	if (isLetter(text[index])) {
+		return TRUE;    //It's a character. Return true because no use continuing this function.
+	}
 
 	switch (text[index]) {
 		case '\'':
-			if (isLetter(text[index - 1]) && isLetter(text[index + 1])) //An apostrophe needs to be surrounded by letters to qualify as part of a word.
+			if (isLetter(text[index - 1]) && isLetter(text[index + 1])) { //An apostrophe needs to be surrounded by letters to qualify as part of a word.
 				return TRUE;
+			}
 			return FALSE;
 		default:
 			return FALSE;
@@ -177,53 +182,62 @@ bool isCharacterPartOfWord(char *text, int index) {
 	return FALSE;
 }
 
-int moveToStartOfWord(char *text, int index) {
-	if (!text)
+int moveToStartOfWord(char* text, int index) {
+	if (!text) {
 		return index;
-	if (index < 0 || index > strlen(text))
+	}
+	if (index < 0 || index > strlen(text)) {
 		return index;
+	}
 
 	int i = index;
 
 	//Keep running backwards until it finds a non-letter character (which would be the character before the start of the word).
 	for (; i - 1 > 0; --i) {
-		if (!isCharacterPartOfWord(text, i - 1))
+		if (!isCharacterPartOfWord(text, i - 1)) {
 			return i;
+		}
 	}
 
 	return i;
 }
 
 //Returns 0 on error. Returns 0 if index not on a word. Returns length of word otherwise. If nonletter character at the current index, it keeps looking until it finds the start of the next word.
-int lengthOfCurrentWord(char *text, int index) {
-	if (!text) //Can't do this without text.
+int lengthOfCurrentWord(char* text, int index) {
+	if (!text) { //Can't do this without text.
 		return 0;
-	if (index < 0 || index > strlen(text)) //Index has to be in bounds.
+	}
+	if (index < 0 || index > strlen(text)) { //Index has to be in bounds.
 		return 0;
+	}
 
 	int length = 0;
 	int i = index;
 
 	if (!isCharacterPartOfWord(text, i)) //The current character is not part of a word.
 		//i = moveToNextWord(text, index); //Find the start of the next word.
-		return 0; //Not our problem. Tell it the current word is length 0.
-	else if (i > 0 && isCharacterPartOfWord(text, i)) //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
-		i = moveToStartOfWord(text, i); //Move to the start of the current word.
+	{
+		return 0;    //Not our problem. Tell it the current word is length 0.
+	} else if (i > 0 && isCharacterPartOfWord(text, i)) { //Not at the start of the text array and the previous character is a letter...yikes, not at the start of the word.
+		i = moveToStartOfWord(text, i);    //Move to the start of the current word.
+	}
 
-	for(; i < strlen(text); ++i) {
-		if (isCharacterPartOfWord(text, i))
-			length++; //The current character is part of the word.
-		else
-			return length; //Reached the end of the word. Return the length.
+	for (; i < strlen(text); ++i) {
+		if (isCharacterPartOfWord(text, i)) {
+			length++;    //The current character is part of the word.
+		} else {
+			return length;    //Reached the end of the word. Return the length.
+		}
 	}
 
 	return length;
 }
 
-void createBook(book_t *book) {
-	if (!book)
+void createBook(book_t* book) {
+	if (!book) {
 		return;
-		
+	}
+
 	//Load in the text from a file.
 	strcpy(tempstr, "books/");
 	strcat(tempstr, book->name);
@@ -237,12 +251,13 @@ void createBook(book_t *book) {
 	int book_characterspace_y = BOOK_PAGE_HEIGHT / BOOK_FONT_HEIGHT;
 	int max_characters = book_characterspace_x * book_characterspace_y;
 
-	book->pages.first = NULL; book->pages.last = NULL;
+	book->pages.first = NULL;
+	book->pages.last = NULL;
 
-	Uint32 color = SDL_MapRGBA(mainsurface->format,0,0,0,255);
-	string_t *string = newString(&book->pages,color,NULL);
-	string->data = (char *) malloc(sizeof(char)*(max_characters+1));
-	memset(string->data,0,sizeof(char)*(max_characters+1));
+	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
+	string_t* string = newString(&book->pages, color, NULL);
+	string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
 	int i; // current character in the book's entire text
 	int p = 0; // current character in the page's text
@@ -273,8 +288,7 @@ void createBook(book_t *book) {
 		if (x + 1 >= book_characterspace_x) {
 			//Overflowed the line. Go onto the next line.
 			newline = TRUE;
-		}
-		else if (tab <= 0 && book->text[i] == '\n') {
+		} else if (tab <= 0 && book->text[i] == '\n') {
 			newline = TRUE;
 			write_out = FALSE; //Do not want to write out this /n.
 		}
@@ -285,9 +299,9 @@ void createBook(book_t *book) {
 			x = 0; //Reset x since it's back to the beginning of the line.
 			if (y + 1 >= book_characterspace_y) {
 				//Create the next page. Do not record the character if it's a newline.
-				string = newString(&book->pages,color,NULL);
-				string->data = (char *) malloc(sizeof(char)*(max_characters+1));
-				memset(string->data,0,sizeof(char)*(max_characters+1));
+				string = newString(&book->pages, color, NULL);
+				string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+				memset(string->data, 0, sizeof(char) * (max_characters + 1));
 				p = 0;
 				y = 0;
 			} else {
@@ -299,13 +313,15 @@ void createBook(book_t *book) {
 			}
 			//Bugger the tab away if it hit the end of the line.
 			if (tab > 0) {
-				if (tab < TAB_WIDTH)
-					i--; //Do this too? Or i++? I don't know.
+				if (tab < TAB_WIDTH) {
+					i--;    //Do this too? Or i++? I don't know.
+				}
 				tab = 0;
 			}
 			// no spaces at the start of a line
-			if( character_to_record==' ' )
+			if ( character_to_record == ' ' ) {
 				continue;
+			}
 		} else if (tab > 0) {
 			character_to_record = ' ';
 		}
@@ -328,9 +344,9 @@ void createBook(book_t *book) {
 							x = 0; //Reset x, since it's writing out a new line and x gets reset when we do that.
 							if (y + 1 >= book_characterspace_y) { //Check if it hit the end of the page.
 								//It does indeed go off the page. Start a new page.
-								string = newString(&book->pages,color,NULL);
-								string->data = (char *) malloc(sizeof(char)*(max_characters+1));
-								memset(string->data,0,sizeof(char)*(max_characters+1));
+								string = newString(&book->pages, color, NULL);
+								string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
+								memset(string->data, 0, sizeof(char) * (max_characters + 1));
 								p = 0;
 								y = 0;
 							} else {
@@ -378,8 +394,9 @@ void createBook(book_t *book) {
 			}
 
 			if (tab > 0) {
-				if (tab < TAB_WIDTH)
-					i--; //To make sure it doesn't bugger the character.
+				if (tab < TAB_WIDTH) {
+					i--;    //To make sure it doesn't bugger the character.
+				}
 				tab--;
 			}
 		}

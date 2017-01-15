@@ -40,9 +40,8 @@
  * This is what that does.
  */
 
-typedef struct Message
-{
-	string_t *text; //Same size as the message in draw.c. Make sure not to overrun it.
+typedef struct Message {
+	string_t* text; //Same size as the message in draw.c. Make sure not to overrun it.
 
 	//Its location (durr).
 	int x, y;
@@ -68,7 +67,7 @@ typedef struct Message
 	//Its neighbors.
 	//struct Message* next;
 	//struct Message* previous;
-	node_t *node; //Its node in the message list.
+	node_t* node; //Its node in the message list.
 } Message;
 
 //extern Message *notification_messages;
@@ -77,7 +76,7 @@ extern list_t notification_messages;
 /*
  * Adds a message to the list of messages.
  */
-void addMessage(Uint32 color, char *content, ...);
+void addMessage(Uint32 color, char* content, ...);
 
 /*
  * Updates all the messages; fades them & removes them.
@@ -85,7 +84,7 @@ void addMessage(Uint32 color, char *content, ...);
 void updateMessages();
 
 /*
- * Draw all the messages. 
+ * Draw all the messages.
  */
 void drawMessages();
 

@@ -29,8 +29,8 @@
 
 -------------------------------------------------------------------------------*/
 
-void actFountain(Entity *my) {
-	Entity *entity;
+void actFountain(Entity* my) {
+	Entity* entity;
 
 	//messagePlayer(0, "actFountain()");
 	//TODO: Temporary mechanism testing code.
@@ -48,13 +48,13 @@ void actFountain(Entity *my) {
 	//****************END TEST CODE***************
 
 	//TODO: Sounds.
-	
+
 	// spray water
-	if( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) ) {
-		#define FOUNTAIN_AMBIENCE my->skill[7]
+	if ( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) ) {
+#define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
-		if( FOUNTAIN_AMBIENCE<=0 ) {
-			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND*6;
+		if ( FOUNTAIN_AMBIENCE <= 0 ) {
+			FOUNTAIN_AMBIENCE = TICKS_PER_SECOND * 6;
 			playSoundEntityLocal(my, 135, 32 );
 		}
 		entity = spawnGib(my);
@@ -66,48 +66,50 @@ void actFountain(Entity *my) {
 		entity->flags[UPDATENEEDED] = FALSE;
 		entity->skill[4] = 7;
 		entity->sprite = 4;
-		entity->yaw = (rand()%360)*PI/180.0;
-		entity->pitch = (rand()%360)*PI/180.0;
-		entity->roll = (rand()%360)*PI/180.0;
+		entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->pitch = (rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
 		entity->vel_x = 0;
 		entity->vel_y = 0;
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
 	}
-	
-	 // the rest of the function is server-side.
-	if( multiplayer==CLIENT )
+
+	// the rest of the function is server-side.
+	if ( multiplayer == CLIENT ) {
 		return;
-		
+	}
+
 	// makes the fountain stop spraying water on clients
-	if( my->skill[0] <= 0 )
+	if ( my->skill[0] <= 0 ) {
 		my->skill[2] = 1;
-	else
+	} else {
 		my->skill[2] = 0;
+	}
 
 	//Using the fountain (TODO: Monsters using it?).
 	int i;
 	for (i = 0; i < MAXPLAYERS; ++i) {
-		if ( (i==0 && selectedEntity==my) || (client_selected[i]==my) ) {
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 			if (inrange[i]) { //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 				//First check that it's not depleted.
 				if (my->skill[0] == 0) {
 					//Depleted
 					messagePlayer(i, language[467]);
 				} else {
-					if (players[i]->entity->flags[BURNING])
-					{
+					if (players[i]->entity->flags[BURNING]) {
 						messagePlayer(i, language[468]);
 						players[i]->entity->flags[BURNING] = FALSE;
-						if (i > 0)
+						if (i > 0) {
 							serverUpdateEntityFlag(players[i]->entity, BURNING);
+						}
 					}
 					switch (my->skill[1]) {
 						case 0: {
 							playSoundEntity(players[i]->entity, 52, 64);
-							
+
 							//Spawn succubus.
-							Uint32 color = SDL_MapRGB(mainsurface->format,255,128,0);
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 							messagePlayerColor(i, color, language[469]);
 							summonMonster(SUCCUBUS, my->x, my->y);
 							break;
@@ -121,43 +123,53 @@ void actFountain(Entity *my) {
 						case 2: {
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
 							messagePlayer(i, language[470]);
-							Item *item = newItem(static_cast<ItemType>(POTION_WATER+my->skill[3]), static_cast<Status>(4), 0,1,0,FALSE,NULL);
-							useItem(item,i);
+							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, FALSE, NULL);
+							useItem(item, i);
 							// Long live the mystical fountain of TODO.
 							break;
 						}
 						case 3: {
 							// bless equipment
 							playSoundEntity(players[i]->entity, 52, 64);
-							Uint32 textcolor = SDL_MapRGB(mainsurface->format,0,255,255);
+							Uint32 textcolor = SDL_MapRGB(mainsurface->format, 0, 255, 255);
 							messagePlayerColor(i, textcolor, language[471]);
 							messagePlayer(i, language[473]);
-							if( stats[i]->helmet )
+							if ( stats[i]->helmet ) {
 								stats[i]->helmet->beatitude++;
-							if( stats[i]->breastplate )
+							}
+							if ( stats[i]->breastplate ) {
 								stats[i]->breastplate->beatitude++;
-							if( stats[i]->gloves )
+							}
+							if ( stats[i]->gloves ) {
 								stats[i]->gloves->beatitude++;
-							if( stats[i]->shoes )
+							}
+							if ( stats[i]->shoes ) {
 								stats[i]->shoes->beatitude++;
-							if( stats[i]->shield )
+							}
+							if ( stats[i]->shield ) {
 								stats[i]->shield->beatitude++;
-							if( stats[i]->weapon )
+							}
+							if ( stats[i]->weapon ) {
 								stats[i]->weapon->beatitude++;
-							if( stats[i]->cloak )
+							}
+							if ( stats[i]->cloak ) {
 								stats[i]->cloak->beatitude++;
-							if( stats[i]->amulet )
+							}
+							if ( stats[i]->amulet ) {
 								stats[i]->amulet->beatitude++;
-							if( stats[i]->ring )
+							}
+							if ( stats[i]->ring ) {
 								stats[i]->ring->beatitude++;
-							if( stats[i]->mask )
+							}
+							if ( stats[i]->mask ) {
 								stats[i]->mask->beatitude++;
-							if( multiplayer==SERVER && i>0 ) {
-								strcpy((char *)net_packet->data,"BLES");
-								net_packet->address.host = net_clients[i-1].host;
-								net_packet->address.port = net_clients[i-1].port;
+							}
+							if ( multiplayer == SERVER && i > 0 ) {
+								strcpy((char*)net_packet->data, "BLES");
+								net_packet->address.host = net_clients[i - 1].host;
+								net_packet->address.port = net_clients[i - 1].port;
 								net_packet->len = 4;
-								sendPacketSafe(net_sock, -1, net_packet, i-1);
+								sendPacketSafe(net_sock, -1, net_packet, i - 1);
 							}
 							break;
 						}

@@ -20,7 +20,7 @@
 
 Entity* openedChest[4] = { nullptr };
 
-void repopulateInvItems(list_t *chestInventory) {
+void repopulateInvItems(list_t* chestInventory) {
 	int c = 0;
 
 	//Step 1: Clear.
@@ -28,15 +28,15 @@ void repopulateInvItems(list_t *chestInventory) {
 		invitemschest[c] = nullptr;
 	}
 
-	node_t *node = nullptr;
-	Item *item = nullptr;
+	node_t* node = nullptr;
+	Item* item = nullptr;
 
 	c = 0;
 
 	//Step 2: Loop through inventory till reach part visible in chest GUI and add those items.
 	for ( node = chestInventory->first; node != nullptr; node = node->next ) {
 		if ( node->element ) {
-			item = (Item *) node->element;
+			item = (Item*) node->element;
 			if ( item ) {
 				++c;
 				if ( c <= chestitemscroll ) {
@@ -54,13 +54,13 @@ void repopulateInvItems(list_t *chestInventory) {
 int numItemsInChest() {
 	node_t* node = nullptr;
 
-	list_t *chestInventory = nullptr;
+	list_t* chestInventory = nullptr;
 	if ( clientnum != 0 ) {
 		if ( multiplayer != SERVER ) {
 			chestInventory = &chestInv;
 		}
 	} else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element) {
-		chestInventory = (list_t *)openedChest[clientnum]->children.first->element;
+		chestInventory = (list_t*)openedChest[clientnum]->children.first->element;
 	}
 
 	int i = 0;
@@ -81,20 +81,21 @@ void warpMouseToSelectedChestSlot() {
 /*-------------------------------------------------------------------------------
 
 	updateChestInventory
-	
+
 	Processes and draws everything related to chest inventory
 
 -------------------------------------------------------------------------------*/
 
 inline void drawChestSlots() {
 	SDL_Rect pos;
-	Item *item = nullptr;
+	Item* item = nullptr;
 
 	int highlightingSlot = -1;
 
 	if (omousex >= CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28)) {
 		pos.x = CHEST_INVENTORY_X + 12;
-		pos.w = 0; pos.h = 0;
+		pos.w = 0;
+		pos.h = 0;
 
 		int currentY = CHEST_INVENTORY_Y + 16;
 		for ( int i = 0; i < 4; ++i, currentY += inventoryoptionChest_bmp->h ) {
@@ -114,25 +115,25 @@ inline void drawChestSlots() {
 						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], false);
 						messagePlayer(clientnum, language[374], item->description());
 						itemPickup(clientnum, item);
-						playSound(35 + rand()%3, 64);
+						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					} else if ( mousestatus[SDL_BUTTON_RIGHT] && openedChest[clientnum] ) {
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						item = openedChest[clientnum]->getItemFromChest(invitemschest[i], true);
 						messagePlayer(clientnum, language[374], item->description());
 						itemPickup(clientnum, item); //Grab all of that item from the chest.
-						playSound(35 + rand()%3, 64);
+						playSound(35 + rand() % 3, 64);
 						grabbedItem = true;
 					}
 
 					if ( grabbedItem ) {
-						list_t *chestInventory = nullptr;
+						list_t* chestInventory = nullptr;
 						if ( clientnum != 0 ) {
 							if ( multiplayer != SERVER ) {
 								chestInventory = &chestInv;
 							}
 						} else if ( openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element ) {
-							chestInventory = (list_t *)openedChest[clientnum]->children.first->element;
+							chestInventory = (list_t*)openedChest[clientnum]->children.first->element;
 						}
 						repopulateInvItems(chestInventory); //Have to regenerate, otherwise the following if check will often end up evaluating to false. //Doesn't work. #blamedennis
 
@@ -164,10 +165,10 @@ inline void drawChestSlots() {
 
 void updateChestInventory() {
 	SDL_Rect pos;
-	node_t *node, *nextnode;
+	node_t* node, *nextnode;
 	int y, c;
 	int chest_buttonclick = 0;
-	Item *item;
+	Item* item;
 
 	//Chest inventory GUI.
 	if (openedChest[clientnum]) {
@@ -180,7 +181,7 @@ void updateChestInventory() {
 		drawImage(inventoryChest_bmp, NULL, &pos);
 
 		// buttons
-		if( mousestatus[SDL_BUTTON_LEFT] && !selectedItem ) {
+		if ( mousestatus[SDL_BUTTON_LEFT] && !selectedItem ) {
 			if (openedChest[clientnum]) {
 				//Chest inventory scroll up button.
 				if (omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + 52) {
@@ -197,8 +198,7 @@ void updateChestInventory() {
 						chestitemscroll++;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 					}
-				}
-				else if (omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15) {
+				} else if (omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15) {
 					//Chest inventory close button.
 					if (omousex >= CHEST_INVENTORY_X + 393 && omousex < CHEST_INVENTORY_X + 407) {
 						chest_buttonclick = 9;
@@ -219,49 +219,53 @@ void updateChestInventory() {
 				}
 			}
 		}
-		
+
 		if ( *inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) ) { //Gamepad "Y" button grabs all items in chest.
 			*inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) = 0;
 			chest_buttonclick = 10;
 		}
 
 		// mousewheel
-		if( omousex>=CHEST_INVENTORY_X+12 && omousex<CHEST_INVENTORY_X+(inventoryChest_bmp->w-28) ) {
-			if( omousey>=CHEST_INVENTORY_Y+16 && omousey<CHEST_INVENTORY_Y+(inventoryChest_bmp->h-8) ) {
-				if( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
+		if ( omousex >= CHEST_INVENTORY_X + 12 && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) ) {
+			if ( omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + (inventoryChest_bmp->h - 8) ) {
+				if ( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
 					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 					chestitemscroll++;
-				} else if( mousestatus[SDL_BUTTON_WHEELUP] ) {
+				} else if ( mousestatus[SDL_BUTTON_WHEELUP] ) {
 					mousestatus[SDL_BUTTON_WHEELUP] = 0;
 					chestitemscroll--;
 				}
 			}
 		}
-		
+
 		if (dragging_chestGUI) {
 			if (gui_clickdrag) {
 				chestgui_offset_x = (omousex - dragoffset_x) - (CHEST_INVENTORY_X - chestgui_offset_x);
 				chestgui_offset_y = (omousey - dragoffset_y) - (CHEST_INVENTORY_Y - chestgui_offset_y);
-				if (CHEST_INVENTORY_X <= camera.winx)
+				if (CHEST_INVENTORY_X <= camera.winx) {
 					chestgui_offset_x = camera.winx - (CHEST_INVENTORY_X - chestgui_offset_x);
-				if (CHEST_INVENTORY_X > camera.winx+camera.winw-inventoryChest_bmp->w)
-					chestgui_offset_x = (camera.winx+camera.winw-inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
-				if (CHEST_INVENTORY_Y <= camera.winy)
+				}
+				if (CHEST_INVENTORY_X > camera.winx + camera.winw - inventoryChest_bmp->w) {
+					chestgui_offset_x = (camera.winx + camera.winw - inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
+				}
+				if (CHEST_INVENTORY_Y <= camera.winy) {
 					chestgui_offset_y = camera.winy - (CHEST_INVENTORY_Y - chestgui_offset_y);
-				if (CHEST_INVENTORY_Y > camera.winy+camera.winh-inventoryChest_bmp->h)
-					chestgui_offset_y = (camera.winy+camera.winh-inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+				}
+				if (CHEST_INVENTORY_Y > camera.winy + camera.winh - inventoryChest_bmp->h) {
+					chestgui_offset_y = (camera.winy + camera.winh - inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+				}
 			} else {
 				dragging_chestGUI = FALSE;
 			}
 		}
 
-		list_t *chest_inventory = NULL;
+		list_t* chest_inventory = NULL;
 		if (clientnum != 0) {
 			if (multiplayer != SERVER) {
 				chest_inventory = &chestInv;
 			}
 		} else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element) {
-			chest_inventory = (list_t *)openedChest[clientnum]->children.first->element;
+			chest_inventory = (list_t*)openedChest[clientnum]->children.first->element;
 		}
 
 		if (!chest_inventory) {
@@ -272,20 +276,26 @@ void updateChestInventory() {
 
 			//Chest inventory up button.
 			if (chest_buttonclick == 7) {
-				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28); pos.y = CHEST_INVENTORY_Y + 16;
-				pos.w=0; pos.h=0;
+				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
+				pos.y = CHEST_INVENTORY_Y + 16;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invup_bmp, NULL, &pos);
 			}
 			//Chest inventory down button.
 			if (chest_buttonclick == 8) {
-				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28); pos.y = CHEST_INVENTORY_Y + 52;
-				pos.w=0; pos.h=0;
+				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
+				pos.y = CHEST_INVENTORY_Y + 52;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invdown_bmp, NULL, &pos);
 			}
 			//Chest inventory close button.
 			if (chest_buttonclick == 9) {
-				pos.x = CHEST_INVENTORY_X + 393; pos.y = CHEST_INVENTORY_Y;
-				pos.w=0; pos.h=0;
+				pos.x = CHEST_INVENTORY_X + 393;
+				pos.y = CHEST_INVENTORY_Y;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
 				if (openedChest[clientnum]) {
 					openedChest[clientnum]->closeChest();
@@ -293,17 +303,19 @@ void updateChestInventory() {
 			}
 			//Chest inventory grab all items button.
 			if (chest_buttonclick == 10) {
-				pos.x = CHEST_INVENTORY_X + 376; pos.y = CHEST_INVENTORY_Y;
-				pos.w=0; pos.h=0;
+				pos.x = CHEST_INVENTORY_X + 376;
+				pos.y = CHEST_INVENTORY_Y;
+				pos.w = 0;
+				pos.h = 0;
 				drawImage(invgraball_bmp, NULL, &pos);
-				for (node = chest_inventory->first; node != NULL; node=nextnode) {
-					nextnode=node->next;
+				for (node = chest_inventory->first; node != NULL; node = nextnode) {
+					nextnode = node->next;
 					if (node->element && openedChest[clientnum]) {
 						item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), TRUE);
-						if( item != NULL ) {
+						if ( item != NULL ) {
 							messagePlayer(clientnum, language[374], item->description());
 							itemPickup(clientnum, item);
-							playSound(35+rand()%3,64);
+							playSound(35 + rand() % 3, 64);
 						}
 					}
 				}
@@ -312,7 +324,8 @@ void updateChestInventory() {
 			drawChestSlots();
 
 			//Okay, now prepare to render all the items.
-			y = CHEST_INVENTORY_Y + 22; c = 0;
+			y = CHEST_INVENTORY_Y + 22;
+			c = 0;
 			if (chest_inventory) {
 				c = numItemsInChest();
 				chestitemscroll = std::max(0, std::min(chestitemscroll, c - 4));
@@ -324,23 +337,27 @@ void updateChestInventory() {
 				//Actually render the items.
 				for (node = chest_inventory->first; node != NULL; node = node->next) {
 					if (node->element) {
-						item = (Item *) node->element;
+						item = (Item*) node->element;
 						if (item) {
 							c++;
-							if (c <= chestitemscroll)
+							if (c <= chestitemscroll) {
 								continue;
+							}
 							char tempstr[64] = { 0 };
-							strncpy(tempstr,item->description(),46);
-							if( strlen(tempstr)==46 )
-								strcat(tempstr," ...");
-							ttfPrintText(ttf8,CHEST_INVENTORY_X+36,y,tempstr);
+							strncpy(tempstr, item->description(), 46);
+							if ( strlen(tempstr) == 46 ) {
+								strcat(tempstr, " ...");
+							}
+							ttfPrintText(ttf8, CHEST_INVENTORY_X + 36, y, tempstr);
 							pos.x = CHEST_INVENTORY_X + 16;
 							pos.y = CHEST_INVENTORY_Y + 17 + 18 * (c - chestitemscroll - 1);
-							pos.w = 16; pos.h = 16;
+							pos.w = 16;
+							pos.h = 16;
 							drawImageScaled(itemSprite(item), NULL, &pos);
 							y += 18;
-							if (c > 3 + chestitemscroll)
+							if (c > 3 + chestitemscroll) {
 								break;
+							}
 						}
 					}
 				}
@@ -395,7 +412,7 @@ void selectChestSlot(int slot) {
 		 * * 3) Scrolling down past bottom of chest, max chest scroll (revoke move -- can't go beyond limit of chest).
 		 */
 
-		Item *item = nullptr;
+		Item* item = nullptr;
 
 		if ( selectedChestSlot >= 3 ) {
 			//Covers cases 2 & 3.

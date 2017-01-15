@@ -15,8 +15,8 @@
 #include "magic.hpp"
 
 void setupSpells() { ///TODO: Verify this function.
-	node_t *node = NULL;
-	spellElement_t *element = NULL;
+	node_t* node = NULL;
+	spellElement_t* element = NULL;
 
 	spellElementConstructor(&spellElement_unintelligible);
 	spellElement_unintelligible.mana = 0;
@@ -204,15 +204,16 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_force);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_magicmissile);
@@ -223,15 +224,16 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_magicmissile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_cold);
@@ -242,79 +244,86 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_cold);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_fireball);
 	strcpy(spell_fireball.name, language[416]);
 	spell_fireball.ID = SPELL_FIREBALL;
 	spell_fireball.difficulty = 25;
-	spell_fireball.elements.first = NULL; spell_fireball.elements.last = NULL;
+	spell_fireball.elements.first = NULL;
+	spell_fireball.elements.last = NULL;
 	node = list_AddNodeLast(&spell_fireball.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_fire);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_lightning);
 	strcpy(spell_lightning.name, language[417]);
 	spell_lightning.ID = SPELL_LIGHTNING;
 	spell_lightning.difficulty = 50;
-	spell_lightning.elements.first = NULL; spell_lightning.elements.last = NULL;
+	spell_lightning.elements.first = NULL;
+	spell_lightning.elements.last = NULL;
 	node = list_AddNodeLast(&spell_lightning.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_lightning);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_removecurse);
 	strcpy(spell_removecurse.name, language[434]);
 	spell_removecurse.ID = SPELL_REMOVECURSE;
 	spell_removecurse.difficulty = 50;
-	spell_removecurse.elements.first = NULL; spell_removecurse.elements.last = NULL;
+	spell_removecurse.elements.first = NULL;
+	spell_removecurse.elements.last = NULL;
 	node = list_AddNodeLast(&spell_removecurse.elements);
 	node->element = copySpellElement(&spellElement_removecurse);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 
 	spellConstructor(&spell_light);
 	strcpy(spell_light.name, language[418]);
 	spell_light.ID = SPELL_LIGHT;
 	spell_light.difficulty = 0;
-	spell_light.elements.first = NULL; spell_light.elements.last = NULL;
+	spell_light.elements.first = NULL;
+	spell_light.elements.last = NULL;
 	node = list_AddNodeLast(&spell_light.elements);
 	node->element = copySpellElement(&spellElement_light);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	element->channeled = TRUE;
 
@@ -322,24 +331,26 @@ void setupSpells() { ///TODO: Verify this function.
 	strcpy(spell_identify.name, language[421]);
 	spell_identify.ID = SPELL_IDENTIFY;
 	spell_identify.difficulty = 50;
-	spell_identify.elements.first = NULL; spell_identify.elements.last = NULL;
+	spell_identify.elements.first = NULL;
+	spell_identify.elements.last = NULL;
 	node = list_AddNodeLast(&spell_identify.elements);
 	node->element = copySpellElement(&spellElement_identify);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 
 	spellConstructor(&spell_magicmapping);
 	strcpy(spell_magicmapping.name, language[435]);
 	spell_magicmapping.ID = SPELL_MAGICMAPPING;
 	spell_magicmapping.difficulty = 50;
-	spell_magicmapping.elements.first = NULL; spell_magicmapping.elements.last = NULL;
+	spell_magicmapping.elements.first = NULL;
+	spell_magicmapping.elements.last = NULL;
 	node = list_AddNodeLast(&spell_magicmapping.elements);
 	node->element = copySpellElement(&spellElement_magicmapping);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_sleep);
@@ -350,15 +361,16 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_sleep);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_confuse);
@@ -369,15 +381,16 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_confuse);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 	element->mana = 15; //Set the spell's mana to 15 so that it lasts ~30 seconds.
 
@@ -389,15 +402,16 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_slow);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_opening);
@@ -408,15 +422,16 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_opening);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_locking);
@@ -427,27 +442,29 @@ void setupSpells() { ///TODO: Verify this function.
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_locking);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_levitation);
 	strcpy(spell_levitation.name, language[431]);
 	spell_levitation.ID = SPELL_LEVITATION;
 	spell_levitation.difficulty = 75;
-	spell_levitation.elements.first = NULL; spell_levitation.elements.last = NULL;
+	spell_levitation.elements.first = NULL;
+	spell_levitation.elements.last = NULL;
 	node = list_AddNodeLast(&spell_levitation.elements);
 	node->element = copySpellElement(&spellElement_levitation);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	element->channeled = TRUE;
 
@@ -455,12 +472,13 @@ void setupSpells() { ///TODO: Verify this function.
 	strcpy(spell_invisibility.name, language[420]);
 	spell_invisibility.ID = SPELL_INVISIBILITY;
 	spell_invisibility.difficulty = 75;
-	spell_invisibility.elements.first = NULL; spell_invisibility.elements.last = NULL;
+	spell_invisibility.elements.first = NULL;
+	spell_invisibility.elements.last = NULL;
 	node = list_AddNodeLast(&spell_invisibility.elements);
 	node->element = copySpellElement(&spellElement_invisible);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	element->channeled = TRUE;
 
@@ -468,24 +486,26 @@ void setupSpells() { ///TODO: Verify this function.
 	strcpy(spell_teleportation.name, language[432]);
 	spell_teleportation.ID = SPELL_TELEPORTATION;
 	spell_teleportation.difficulty = 75;
-	spell_teleportation.elements.first = NULL; spell_teleportation.elements.last = NULL;
+	spell_teleportation.elements.first = NULL;
+	spell_teleportation.elements.last = NULL;
 	node = list_AddNodeLast(&spell_teleportation.elements);
 	node->element = copySpellElement(&spellElement_teleportation);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 
 	spellConstructor(&spell_healing);
 	strcpy(spell_healing.name, language[423]);
 	spell_healing.ID = SPELL_HEALING;
 	spell_healing.difficulty = 25;
-	spell_healing.elements.first = NULL; spell_healing.elements.last = NULL;
+	spell_healing.elements.first = NULL;
+	spell_healing.elements.last = NULL;
 	node = list_AddNodeLast(&spell_healing.elements);
 	node->element = copySpellElement(&spellElement_heal);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 	element->mana = 10;
 
@@ -493,12 +513,13 @@ void setupSpells() { ///TODO: Verify this function.
 	strcpy(spell_extrahealing.name, language[438]);
 	spell_extrahealing.ID = SPELL_EXTRAHEALING;
 	spell_extrahealing.difficulty = 50;
-	spell_extrahealing.elements.first = NULL; spell_extrahealing.elements.last = NULL;
+	spell_extrahealing.elements.first = NULL;
+	spell_extrahealing.elements.last = NULL;
 	node = list_AddNodeLast(&spell_extrahealing.elements);
 	node->element = copySpellElement(&spellElement_heal);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 	element->mana = 40;
 
@@ -512,31 +533,34 @@ void setupSpells() { ///TODO: Verify this function.
 	strcpy(spell_cureailment.name, language[425]);
 	spell_cureailment.ID = SPELL_CUREAILMENT;
 	spell_cureailment.difficulty = 25;
-	spell_cureailment.elements.first = NULL; spell_cureailment.elements.last = NULL;
+	spell_cureailment.elements.first = NULL;
+	spell_cureailment.elements.last = NULL;
 	node = list_AddNodeLast(&spell_cureailment.elements);
 	node->element = copySpellElement(&spellElement_cure_ailment);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 
 	spellConstructor(&spell_dig);
 	strcpy(spell_dig.name, "Dig");
 	spell_dig.ID = SPELL_DIG;
 	spell_dig.difficulty = 50;
-	spell_dig.elements.first = NULL; spell_dig.elements.last = NULL;
+	spell_dig.elements.first = NULL;
+	spell_dig.elements.last = NULL;
 	node = list_AddNodeLast(&spell_dig.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	//Now for the second element.
-	element->elements.first = NULL; element->elements.last = NULL;
+	element->elements.first = NULL;
+	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_dig);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
-	element = (spellElement_t *) node->element;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 }

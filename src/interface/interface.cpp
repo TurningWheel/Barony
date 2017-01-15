@@ -25,23 +25,23 @@
 #include "../player.hpp"
 
 Uint32 svFlags = 30;
-SDL_Surface *backdrop_bmp = NULL;
-SDL_Surface *status_bmp = NULL;
-SDL_Surface *character_bmp = NULL;
-SDL_Surface *hunger_bmp = NULL;
+SDL_Surface* backdrop_bmp = NULL;
+SDL_Surface* status_bmp = NULL;
+SDL_Surface* character_bmp = NULL;
+SDL_Surface* hunger_bmp = NULL;
 int textscroll = 0;
 int attributespage = 0;
-Item *invitems[4];
-Item *invitemschest[4];
-int inventorycategory=7; // inventory window defaults to wildcard
-int itemscroll=0;
+Item* invitems[4];
+Item* invitemschest[4];
+int inventorycategory = 7; // inventory window defaults to wildcard
+int itemscroll = 0;
 view_t camera_charsheet;
 
-SDL_Surface *font12x12_small_bmp = NULL;
-SDL_Surface *inventoryChest_bmp = NULL;
-SDL_Surface *invclose_bmp = NULL;
-SDL_Surface *invgraball_bmp = NULL;
-SDL_Surface *button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
+SDL_Surface* font12x12_small_bmp = NULL;
+SDL_Surface* inventoryChest_bmp = NULL;
+SDL_Surface* invclose_bmp = NULL;
+SDL_Surface* invgraball_bmp = NULL;
+SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
 bool gui_clickdrag = FALSE;
 int dragoffset_x = 0;
 int dragoffset_y = 0;
@@ -63,58 +63,58 @@ int removecursegui_offset_x = 0;
 int removecursegui_offset_y = 0;
 bool dragging_removecurseGUI = FALSE;
 int removecursescroll = 0;
-Item *removecurse_items[4];
-SDL_Surface *removecurseGUI_img;
+Item* removecurse_items[4];
+SDL_Surface* removecurseGUI_img;
 
-SDL_Surface *rightsidebar_titlebar_img = NULL;
-SDL_Surface *rightsidebar_slot_img = NULL;
-SDL_Surface *rightsidebar_slot_highlighted_img = NULL;
-SDL_Surface *rightsidebar_slot_grayedout_img = NULL;
+SDL_Surface* rightsidebar_titlebar_img = NULL;
+SDL_Surface* rightsidebar_slot_img = NULL;
+SDL_Surface* rightsidebar_slot_highlighted_img = NULL;
+SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
 int rightsidebar_height = 0;
 int appraisal_timer = 0;
 int appraisal_timermax = 0;
 Uint32 appraisal_item = 0;
 
-SDL_Surface *bookgui_img = NULL;
+SDL_Surface* bookgui_img = NULL;
 //SDL_Surface *nextpage_img = NULL;
 //SDL_Surface *previouspage_img = NULL;
 //SDL_Surface *bookclose_img = NULL;
-node_t *book_page = NULL;
+node_t* book_page = NULL;
 int bookgui_offset_x = 0;
 int bookgui_offset_y = 0;
 bool dragging_book_GUI = FALSE;
 bool book_open = FALSE;
-book_t *open_book = NULL;
-Item *open_book_item = NULL;
+book_t* open_book = NULL;
+Item* open_book_item = NULL;
 //int book_characterspace_x = 0;
 //int book_characterspace_y = 0;
 
-SDL_Surface *book_highlighted_left_img = NULL;
-SDL_Surface *book_highlighted_right_img = NULL;
+SDL_Surface* book_highlighted_left_img = NULL;
+SDL_Surface* book_highlighted_right_img = NULL;
 
 int gui_mode = GUI_MODE_NONE;
 
-SDL_Surface *magicspellList_bmp = NULL;
-SDL_Surface *spell_list_titlebar_bmp = NULL;
-SDL_Surface *spell_list_gui_slot_bmp = NULL;
-SDL_Surface *spell_list_gui_slot_highlighted_bmp = NULL;
-SDL_Surface *textup_bmp = NULL;
-SDL_Surface *textdown_bmp = NULL;
-SDL_Surface *attributesleft_bmp = NULL;
-SDL_Surface *attributesright_bmp = NULL;
-SDL_Surface *attributesleftunclicked_bmp = NULL;
-SDL_Surface *attributesrightunclicked_bmp = NULL;
-SDL_Surface *inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
+SDL_Surface* magicspellList_bmp = NULL;
+SDL_Surface* spell_list_titlebar_bmp = NULL;
+SDL_Surface* spell_list_gui_slot_bmp = NULL;
+SDL_Surface* spell_list_gui_slot_highlighted_bmp = NULL;
+SDL_Surface* textup_bmp = NULL;
+SDL_Surface* textdown_bmp = NULL;
+SDL_Surface* attributesleft_bmp = NULL;
+SDL_Surface* attributesright_bmp = NULL;
+SDL_Surface* attributesleftunclicked_bmp = NULL;
+SDL_Surface* attributesrightunclicked_bmp = NULL;
+SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
 //SDL_Surface *category_bmp[NUMCATEGORIES];
-SDL_Surface *shopkeeper_bmp = NULL;
-SDL_Surface *damage_bmp = NULL;
+SDL_Surface* shopkeeper_bmp = NULL;
+SDL_Surface* damage_bmp = NULL;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
 bool dragging_magicspell_list_GUI = FALSE;
 int magic_GUI_state = 0;
 SDL_Rect magic_gui_pos;
-SDL_Surface *sustained_spell_generic_icon = NULL;
+SDL_Surface* sustained_spell_generic_icon = NULL;
 
 int buttonclick = 0;
 
@@ -122,8 +122,8 @@ bool draw_cursor = true;
 
 hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 int current_hotbar = 0;
-SDL_Surface *hotbar_img = NULL;
-SDL_Surface *hotbar_spell_img = NULL;
+SDL_Surface* hotbar_img = NULL;
+SDL_Surface* hotbar_spell_img = NULL;
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = TRUE;
@@ -133,12 +133,12 @@ bool auto_appraise_new_items = FALSE;
 
 bool loadInterfaceResources() {
 	//General GUI images.
-	font12x12_small_bmp=loadImage("images/system/font12x12_small.png");
-	backdrop_bmp=loadImage("images/system/backdrop.png");
-	button_bmp=loadImage("images/system/ButtonHighlighted.png");
-	smallbutton_bmp=loadImage("images/system/SmallButtonHighlighted.png");
-	invup_bmp=loadImage("images/system/InventoryUpHighlighted.png");
-	invdown_bmp=loadImage("images/system/InventoryDownHighlighted.png");
+	font12x12_small_bmp = loadImage("images/system/font12x12_small.png");
+	backdrop_bmp = loadImage("images/system/backdrop.png");
+	button_bmp = loadImage("images/system/ButtonHighlighted.png");
+	smallbutton_bmp = loadImage("images/system/SmallButtonHighlighted.png");
+	invup_bmp = loadImage("images/system/InventoryUpHighlighted.png");
+	invdown_bmp = loadImage("images/system/InventoryDownHighlighted.png");
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
@@ -157,13 +157,13 @@ bool loadInterfaceResources() {
 	spell_list_gui_slot_bmp = loadImage("images/system/spellListSlot.png");
 	spell_list_gui_slot_highlighted_bmp = loadImage("images/system/spellListSlotHighlighted.png");
 	sustained_spell_generic_icon = loadImage("images/system/magic/channeled_spell.png");
-	inventory_bmp=loadImage("images/system/Inventory.png");
-	inventoryoption_bmp=loadImage("images/system/InventoryOption.png");
+	inventory_bmp = loadImage("images/system/Inventory.png");
+	inventoryoption_bmp = loadImage("images/system/InventoryOption.png");
 	inventory_mode_item_img = loadImage("images/system/inventory_mode_item.png");
 	inventory_mode_item_highlighted_img = loadImage("images/system/inventory_mode_item_highlighted.png");
 	inventory_mode_spell_img = loadImage("images/system/inventory_mode_spell.png");
 	inventory_mode_spell_highlighted_img = loadImage("images/system/inventory_mode_spell_highlighted.png");
-	equipped_bmp=loadImage("images/system/Equipped.png");
+	equipped_bmp = loadImage("images/system/Equipped.png");
 	//sky_bmp=scaleSurface(loadImage("images/system/sky.png"), 1280*(xres/320.0),468*(xres/320.0));
 	/*category_bmp[0]=loadImage("images/system/Weapon.png");
 	category_bmp[1]=loadImage("images/system/Armor.png");
@@ -177,7 +177,7 @@ bool loadInterfaceResources() {
 	category_bmp[9]=loadImage("images/system/Tool.png");
 	category_bmp[10]=loadImage("images/system/Food.png");
 	category_bmp[11]=loadImage("images/system/Spellbook.png");*/
-	
+
 	//Chest images..
 	inventoryChest_bmp = loadImage("images/system/InventoryChest.png");
 	inventoryoptionChest_bmp = loadImage("images/system/InventoryOptionChest.png");
@@ -231,106 +231,143 @@ bool loadInterfaceResources() {
 void freeInterfaceResources() {
 	//int c;
 
-	if(font12x12_small_bmp)
+	if (font12x12_small_bmp) {
 		SDL_FreeSurface(font12x12_small_bmp);
-	if(backdrop_bmp)
+	}
+	if (backdrop_bmp) {
 		SDL_FreeSurface(backdrop_bmp);
-	if(status_bmp)
+	}
+	if (status_bmp) {
 		SDL_FreeSurface(status_bmp);
-	if(character_bmp)
+	}
+	if (character_bmp) {
 		SDL_FreeSurface(character_bmp);
-	if(hunger_bmp)
+	}
+	if (hunger_bmp) {
 		SDL_FreeSurface(hunger_bmp);
+	}
 	//if(textup_bmp)
-		//SDL_FreeSurface(textup_bmp);
+	//SDL_FreeSurface(textup_bmp);
 	//if(textdown_bmp)
-		//SDL_FreeSurface(textdown_bmp);
-	if(attributesleft_bmp)
+	//SDL_FreeSurface(textdown_bmp);
+	if (attributesleft_bmp) {
 		SDL_FreeSurface(attributesleft_bmp);
-	if(attributesright_bmp)
+	}
+	if (attributesright_bmp) {
 		SDL_FreeSurface(attributesright_bmp);
-	if(attributesleftunclicked_bmp)
+	}
+	if (attributesleftunclicked_bmp) {
 		SDL_FreeSurface(attributesleftunclicked_bmp);
-	if(attributesrightunclicked_bmp)
+	}
+	if (attributesrightunclicked_bmp) {
 		SDL_FreeSurface(attributesrightunclicked_bmp);
-	if(magicspellList_bmp)
+	}
+	if (magicspellList_bmp) {
 		SDL_FreeSurface(magicspellList_bmp);
-	if(spell_list_titlebar_bmp)
+	}
+	if (spell_list_titlebar_bmp) {
 		SDL_FreeSurface(spell_list_titlebar_bmp);
-	if(spell_list_gui_slot_bmp)
+	}
+	if (spell_list_gui_slot_bmp) {
 		SDL_FreeSurface(spell_list_gui_slot_bmp);
-	if(spell_list_gui_slot_highlighted_bmp)
+	}
+	if (spell_list_gui_slot_highlighted_bmp) {
 		SDL_FreeSurface(spell_list_gui_slot_highlighted_bmp);
-	if (sustained_spell_generic_icon)
+	}
+	if (sustained_spell_generic_icon) {
 		SDL_FreeSurface(sustained_spell_generic_icon);
-	if(invup_bmp!=NULL)
+	}
+	if (invup_bmp != NULL) {
 		SDL_FreeSurface(invup_bmp);
-	if(invdown_bmp!=NULL)
+	}
+	if (invdown_bmp != NULL) {
 		SDL_FreeSurface(invdown_bmp);
-	if(inventory_bmp!=NULL)
+	}
+	if (inventory_bmp != NULL) {
 		SDL_FreeSurface(inventory_bmp);
-	if(inventoryoption_bmp!=NULL)
+	}
+	if (inventoryoption_bmp != NULL) {
 		SDL_FreeSurface(inventoryoption_bmp);
-	if (inventory_mode_item_img)
+	}
+	if (inventory_mode_item_img) {
 		SDL_FreeSurface(inventory_mode_item_img);
-	if (inventory_mode_item_highlighted_img)
+	}
+	if (inventory_mode_item_highlighted_img) {
 		SDL_FreeSurface(inventory_mode_item_highlighted_img);
-	if (inventory_mode_spell_img)
+	}
+	if (inventory_mode_spell_img) {
 		SDL_FreeSurface(inventory_mode_spell_img);
-	if (inventory_mode_spell_highlighted_img)
+	}
+	if (inventory_mode_spell_highlighted_img) {
 		SDL_FreeSurface(inventory_mode_spell_highlighted_img);
-	if(button_bmp!=NULL)
+	}
+	if (button_bmp != NULL) {
 		SDL_FreeSurface(button_bmp);
-	if(smallbutton_bmp!=NULL)
+	}
+	if (smallbutton_bmp != NULL) {
 		SDL_FreeSurface(smallbutton_bmp);
-	if(equipped_bmp!=NULL)
+	}
+	if (equipped_bmp != NULL) {
 		SDL_FreeSurface(equipped_bmp);
-	if(inventoryChest_bmp != NULL)
+	}
+	if (inventoryChest_bmp != NULL) {
 		SDL_FreeSurface(inventoryChest_bmp);
-	if(invclose_bmp != NULL)
+	}
+	if (invclose_bmp != NULL) {
 		SDL_FreeSurface(invclose_bmp);
-	if(invgraball_bmp != NULL)
+	}
+	if (invgraball_bmp != NULL) {
 		SDL_FreeSurface(invgraball_bmp);
-	if(inventoryoptionChest_bmp != NULL)
+	}
+	if (inventoryoptionChest_bmp != NULL) {
 		SDL_FreeSurface(inventoryoptionChest_bmp);
-	if(shopkeeper_bmp != NULL)
+	}
+	if (shopkeeper_bmp != NULL) {
 		SDL_FreeSurface(shopkeeper_bmp);
-	if(damage_bmp != NULL)
+	}
+	if (damage_bmp != NULL) {
 		SDL_FreeSurface(damage_bmp);
+	}
 	//for( c=0; c<NUMCATEGORIES; c++ )
-		//if(category_bmp[c]!=NULL)
-			//SDL_FreeSurface(category_bmp[c]);
-	if(identifyGUI_img != NULL)
+	//if(category_bmp[c]!=NULL)
+	//SDL_FreeSurface(category_bmp[c]);
+	if (identifyGUI_img != NULL) {
 		SDL_FreeSurface(identifyGUI_img);
+	}
 	/*if (rightsidebar_titlebar_img)
 		SDL_FreeSurface(rightsidebar_titlebar_img);
 	if (rightsidebar_slot_img)
 		SDL_FreeSurface(rightsidebar_slot_img);
 	if (rightsidebar_slot_highlighted_img)
 		SDL_FreeSurface(rightsidebar_slot_highlighted_img);*/
-	if (rightsidebar_slot_grayedout_img)
+	if (rightsidebar_slot_grayedout_img) {
 		SDL_FreeSurface(rightsidebar_slot_grayedout_img);
-	if (bookgui_img)
+	}
+	if (bookgui_img) {
 		SDL_FreeSurface(bookgui_img);
+	}
 	//if (nextpage_img)
-		//SDL_FreeSurface(nextpage_img);
+	//SDL_FreeSurface(nextpage_img);
 	//if (previouspage_img)
-		//SDL_FreeSurface(previouspage_img);
+	//SDL_FreeSurface(previouspage_img);
 	//if (bookclose_img)
-		//SDL_FreeSurface(bookclose_img);
-	if (book_highlighted_left_img)
+	//SDL_FreeSurface(bookclose_img);
+	if (book_highlighted_left_img) {
 		SDL_FreeSurface(book_highlighted_left_img);
-	if (book_highlighted_right_img)
+	}
+	if (book_highlighted_right_img) {
 		SDL_FreeSurface(book_highlighted_right_img);
-	if (hotbar_img)
+	}
+	if (hotbar_img) {
 		SDL_FreeSurface(hotbar_img);
-	if (hotbar_spell_img)
+	}
+	if (hotbar_spell_img) {
 		SDL_FreeSurface(hotbar_spell_img);
+	}
 	list_FreeAll(&damageIndicators);
 }
 
-void defaultImpulses()
-{
+void defaultImpulses() {
 	impulses[IN_FORWARD] = 26;
 	impulses[IN_LEFT] = 4;
 	impulses[IN_BACK] = 22;
@@ -510,124 +547,134 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 /*-------------------------------------------------------------------------------
 
 	saveCommand
-	
+
 	saves a command to the command history
 
 -------------------------------------------------------------------------------*/
 
-void saveCommand(char *content) {
-	newString(&command_history,0xFFFFFFFF,content);
+void saveCommand(char* content) {
+	newString(&command_history, 0xFFFFFFFF, content);
 }
 
 /*-------------------------------------------------------------------------------
 
 	loadConfig
-	
+
 	Reads the provided config file and executes the commands therein. Return
 	value represents number of errors in config file
 
 -------------------------------------------------------------------------------*/
 
-int loadConfig(char *filename) {
+int loadConfig(char* filename) {
 	defaultImpulses(); //So that a config file that's missing impulses can get all them.
 
 	char str[1024];
-	FILE *fp;
+	FILE* fp;
 	bool mallocd = FALSE;
 
-	printlog("Loading config '%s'...\n",filename);
-	
-	if( strstr(filename,".cfg") == NULL ) {
-		char *filename2 = filename;
-		filename = (char *) malloc(sizeof(char)*256);
-		strcpy(filename,filename2);
+	printlog("Loading config '%s'...\n", filename);
+
+	if ( strstr(filename, ".cfg") == NULL ) {
+		char* filename2 = filename;
+		filename = (char*) malloc(sizeof(char) * 256);
+		strcpy(filename, filename2);
 		mallocd = TRUE;
-		strcat(filename,".cfg");
+		strcat(filename, ".cfg");
 	}
-	
+
 	// open the config file
-	if( (fp = fopen(filename,"rb")) == NULL ) {
+	if ( (fp = fopen(filename, "rb")) == NULL ) {
 		printlog("warning: config file '%s' does not exist!\n", filename);
 		defaultConfig(); //Set up the game with the default config.
 		return 0;
 	}
-	
+
 	// read commands from it
-	while( fgets(str,1024,fp) != NULL ) {
-		if( str[0] != '#' && str[0]!='\n' && str[0]!='\r' ) { // if this line is not white space or a comment
+	while ( fgets(str, 1024, fp) != NULL ) {
+		if ( str[0] != '#' && str[0] != '\n' && str[0] != '\r' ) { // if this line is not white space or a comment
 			// execute command
 			consoleCommand(str);
 		}
 	}
 	fclose(fp);
-	if( mallocd )
+	if ( mallocd ) {
 		free(filename);
+	}
 	return 0;
 }
 
 /*-------------------------------------------------------------------------------
 
 	saveConfig
-	
+
 	Opens the provided config file and saves the status of certain variables
 	therein
 
 -------------------------------------------------------------------------------*/
 
-int saveConfig(char *filename) {
+int saveConfig(char* filename) {
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
-	FILE *fp;
+	FILE* fp;
 	int c;
 	bool mallocd = FALSE;
 
-	printlog("Saving config '%s'...\n",filename);
-	
-	if( strstr(filename,".cfg") == NULL ) {
-		char *filename2 = filename;
-		filename = (char *) malloc(sizeof(char)*256);
-		strcpy(filename,filename2);
+	printlog("Saving config '%s'...\n", filename);
+
+	if ( strstr(filename, ".cfg") == NULL ) {
+		char* filename2 = filename;
+		filename = (char*) malloc(sizeof(char) * 256);
+		strcpy(filename, filename2);
 		mallocd = TRUE;
-		strcat(filename,".cfg");
+		strcat(filename, ".cfg");
 	}
-	
+
 	// open the config file
-	if( (fp = fopen(filename,"wb")) == NULL ) {
+	if ( (fp = fopen(filename, "wb")) == NULL ) {
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
 		return 1;
 	}
-	
+
 	// write config header
-	fprintf(fp,"# %s\n",filename);
-	fprintf(fp,"# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n",tm.tm_year + 1900,tm.tm_mon + 1,tm.tm_mday,tm.tm_hour,tm.tm_min,tm.tm_sec);
-	
+	fprintf(fp, "# %s\n", filename);
+	fprintf(fp, "# this file was auto-generated on %d-%02d-%02d at %02d:%02d:%02d\n\n", tm.tm_year + 1900, tm.tm_mon + 1, tm.tm_mday, tm.tm_hour, tm.tm_min, tm.tm_sec);
+
 	// write contents of config
-	fprintf(fp,"/lang %s\n",languageCode);
-	fprintf(fp,"/res %dx%d\n",xres,yres);
-	fprintf(fp,"/gamma %3.3f\n",vidgamma);
-	fprintf(fp,"/fov %d\n",fov);
-	fprintf(fp,"/svflags %d\n",svFlags);
-	if( lastname != "" )
-		fprintf(fp,"/lastname %s\n",lastname.c_str());
-	if( smoothlighting )
-		fprintf(fp,"/smoothlighting\n");
-	if( fullscreen )
-		fprintf(fp,"/fullscreen\n");
-	if( shaking )
-		fprintf(fp,"/shaking\n");
-	if( bobbing )
-		fprintf(fp,"/bobbing\n");
-	fprintf(fp,"/sfxvolume %d\n",sfxvolume);
-	fprintf(fp,"/musvolume %d\n",musvolume);
-	for (c = 0; c < NUMIMPULSES; c++)
+	fprintf(fp, "/lang %s\n", languageCode);
+	fprintf(fp, "/res %dx%d\n", xres, yres);
+	fprintf(fp, "/gamma %3.3f\n", vidgamma);
+	fprintf(fp, "/fov %d\n", fov);
+	fprintf(fp, "/svflags %d\n", svFlags);
+	if ( lastname != "" ) {
+		fprintf(fp, "/lastname %s\n", lastname.c_str());
+	}
+	if ( smoothlighting ) {
+		fprintf(fp, "/smoothlighting\n");
+	}
+	if ( fullscreen ) {
+		fprintf(fp, "/fullscreen\n");
+	}
+	if ( shaking ) {
+		fprintf(fp, "/shaking\n");
+	}
+	if ( bobbing ) {
+		fprintf(fp, "/bobbing\n");
+	}
+	fprintf(fp, "/sfxvolume %d\n", sfxvolume);
+	fprintf(fp, "/musvolume %d\n", musvolume);
+	for (c = 0; c < NUMIMPULSES; c++) {
 		fprintf(fp, "/bind %d IN_%s\n", impulses[c], impulsenames[c]);
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
+	}
+	for (c = 0; c < NUM_JOY_IMPULSES; c++) {
 		fprintf(fp, "/joybind %d INJOY_%s\n", joyimpulses[c], joyimpulsenames[c]);
-	fprintf(fp,"/mousespeed %d\n",(int)(mousespeed));
-	if( reversemouse )
-		fprintf(fp,"/reversemouse\n");
-	if( smoothmouse )
-		fprintf(fp,"/smoothmouse\n");
+	}
+	fprintf(fp, "/mousespeed %d\n", (int)(mousespeed));
+	if ( reversemouse ) {
+		fprintf(fp, "/reversemouse\n");
+	}
+	if ( smoothmouse ) {
+		fprintf(fp, "/smoothmouse\n");
+	}
 	if (last_ip[0]) {
 		fprintf(fp, "/ip %s\n", last_ip);
 	}
@@ -649,28 +696,22 @@ int saveConfig(char *filename) {
 	if (nohud) {
 		fprintf(fp, "/nohud\n");
 	}
-	if (!auto_hotbar_new_items)
-	{
+	if (!auto_hotbar_new_items) {
 		fprintf(fp, "/disablehotbarnewitems\n");
 	}
-	if (disable_messages)
-	{
+	if (disable_messages) {
 		fprintf(fp, "/disablemessages\n");
 	}
-	if (right_click_protect) 
-	{
+	if (right_click_protect) {
 		fprintf(fp, "/right_click_protect\n");
 	}
-	if (auto_appraise_new_items) 
-	{
+	if (auto_appraise_new_items) {
 		fprintf(fp, "/autoappraisenewitems\n");
 	}
-	if (startfloor)
-	{
+	if (startfloor) {
 		fprintf(fp, "/startfloor %d\n", startfloor);
 	}
-	if (splitscreen)
-	{
+	if (splitscreen) {
 		fprintf(fp, "/splitscreen\n");
 	}
 	fprintf(fp, "/gamepad_deadzone %d\n", gamepad_deadzone);
@@ -681,42 +722,37 @@ int saveConfig(char *filename) {
 	fprintf(fp, "/gamepad_righty_sensitivity %d\n", gamepad_righty_sensitivity);
 	fprintf(fp, "/gamepad_menux_sensitivity %d\n", gamepad_menux_sensitivity);
 	fprintf(fp, "/gamepad_menuy_sensitivity %d\n", gamepad_menuy_sensitivity);
-	if (gamepad_rightx_invert)
-	{
+	if (gamepad_rightx_invert) {
 		fprintf(fp, "/gamepad_rightx_invert\n");
 	}
-	if (gamepad_righty_invert)
-	{
+	if (gamepad_righty_invert) {
 		fprintf(fp, "/gamepad_righty_invert\n");
 	}
-	if (gamepad_leftx_invert)
-	{
+	if (gamepad_leftx_invert) {
 		fprintf(fp, "/gamepad_leftx_invert\n");
 	}
-	if (gamepad_lefty_invert)
-	{
+	if (gamepad_lefty_invert) {
 		fprintf(fp, "/gamepad_lefty_invert\n");
 	}
-	if (gamepad_menux_invert)
-	{
+	if (gamepad_menux_invert) {
 		fprintf(fp, "/gamepad_menux_invert\n");
 	}
-	if (gamepad_menuy_invert)
-	{
+	if (gamepad_menuy_invert) {
 		fprintf(fp, "/gamepad_menuy_invert\n");
 	}
 	fprintf(fp, "/skipintro\n");
 
 	fclose(fp);
-	if( mallocd )
+	if ( mallocd ) {
 		free(filename);
+	}
 	return 0;
 }
 
 /*-------------------------------------------------------------------------------
 
 	mouseInBounds
-	
+
 	Returns true if the mouse is within the rectangle specified, otherwise
 	returns false
 
@@ -724,13 +760,14 @@ int saveConfig(char *filename) {
 
 bool mouseInBounds(int x1, int x2, int y1, int y2) {
 	if (omousey >= y1 && omousey < y2)
-		if (omousex >= x1 && omousex < x2)
+		if (omousex >= x1 && omousex < x2) {
 			return TRUE;
+		}
 
 	return FALSE;
 }
 
-hotbar_slot_t *getHotbar(int x, int y) {
+hotbar_slot_t* getHotbar(int x, int y) {
 	if (x >= STATUS_X && x < STATUS_X + status_bmp->w && y >= STATUS_Y - hotbar_img->h && y < STATUS_Y) {
 		int relx = x - STATUS_X; //X relative to the start of the hotbar.
 		return &hotbar[relx / hotbar_img->w]; //The slot will clearly be the x divided by the width of a slot
@@ -742,16 +779,16 @@ hotbar_slot_t *getHotbar(int x, int y) {
 /*-------------------------------------------------------------------------------
 
 	getInputName
-	
-	Returns the character string from the 
+
+	Returns the character string from the
 
 -------------------------------------------------------------------------------*/
 
-const char *getInputName(Uint32 scancode) {
-	if( scancode>=0 && scancode<283 ) {
+const char* getInputName(Uint32 scancode) {
+	if ( scancode >= 0 && scancode < 283 ) {
 		return SDL_GetKeyName(SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode)));
-	} else if( scancode<299 ) {
-		switch( scancode ) {
+	} else if ( scancode < 299 ) {
+		switch ( scancode ) {
 			case 283:
 				return "Mouse 0";
 			case 284:
@@ -787,8 +824,8 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown key";
 		}
-	} else if( scancode<301 ) { //Game Controller triggers.
-		switch( scancode ) {
+	} else if ( scancode < 301 ) { //Game Controller triggers.
+		switch ( scancode ) {
 			case 299:
 				return "Left Trigger";
 			case 300:
@@ -796,7 +833,7 @@ const char *getInputName(Uint32 scancode) {
 			default:
 				return "Unknown trigger";
 		}
-	} else if( scancode<317 ) { //Game controller buttons.
+	} else if ( scancode < 317 ) { //Game controller buttons.
 		return SDL_GameControllerGetStringForButton(static_cast<SDL_GameControllerButton>(scancode - 301));
 	} else {
 		return "Unknown key";
@@ -814,29 +851,19 @@ const char *getInputName(Uint32 scancode) {
 
 Sint8 dummy_value = 0; //THIS LINE IS AN UTTER BODGE to stop this function from crashing.
 
-Sint8 *inputPressed(Uint32 scancode)
-{
-	if (scancode >= 0 && scancode < 283)
-	{
+Sint8* inputPressed(Uint32 scancode) {
+	if (scancode >= 0 && scancode < 283) {
 		// usual (keyboard) scancode range
 		return &keystatus[scancode];
-	}
-	else if (scancode < 299)
-	{
+	} else if (scancode < 299) {
 		// mouse scancodes
 		return &mousestatus[scancode - 282];
-	}
-	else if (scancode < 301)
-	{
+	} else if (scancode < 301) {
 		//Analog joystick triggers are mapped to digital status (0 = not pressed, 1 = pressed).
 		return &joy_trigger_status[scancode - 299];
-	}
-	else if (scancode < 318)
-	{
+	} else if (scancode < 318) {
 		return &joystatus[scancode - 301];
-	}
-	else
-	{
+	} else {
 		// bad scancode
 		//return nullptr; //This crashes.
 		dummy_value = 0;
@@ -845,12 +872,13 @@ Sint8 *inputPressed(Uint32 scancode)
 	}
 }
 
-void selectHotbarSlot(int slot)
-{
-	if (slot < 0)
+void selectHotbarSlot(int slot) {
+	if (slot < 0) {
 		slot = NUM_HOTBAR_SLOTS - 1;
-	if (slot >= NUM_HOTBAR_SLOTS)
+	}
+	if (slot >= NUM_HOTBAR_SLOTS) {
 		slot = 0;
+	}
 
 	current_hotbar = slot;
 }
