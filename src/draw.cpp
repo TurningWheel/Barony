@@ -23,12 +23,14 @@
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getPixel(SDL_Surface* surface, int x, int y) {
+Uint32 getPixel(SDL_Surface* surface, int x, int y)
+{
 	int bpp = surface->format->BytesPerPixel;
 	// Here p is the address to the pixel we want to retrieve
 	Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
 
-	switch (bpp) {
+	switch (bpp)
+	{
 		case 1:
 			return *p;
 			break;
@@ -38,9 +40,12 @@ Uint32 getPixel(SDL_Surface* surface, int x, int y) {
 			break;
 
 		case 3:
-			if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+			if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+			{
 				return p[0] << 16 | p[1] << 8 | p[2];
-			} else {
+			}
+			else
+			{
 				return p[0] | p[1] << 8 | p[2] << 16;
 			}
 			break;
@@ -63,12 +68,14 @@ Uint32 getPixel(SDL_Surface* surface, int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel) {
+void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel)
+{
 	int bpp = surface->format->BytesPerPixel;
 	// Here p is the address to the pixel we want to set
 	Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
 
-	switch (bpp) {
+	switch (bpp)
+	{
 		case 1:
 			*p = pixel;
 			break;
@@ -78,11 +85,14 @@ void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel) {
 			break;
 
 		case 3:
-			if (SDL_BYTEORDER == SDL_BIG_ENDIAN) {
+			if (SDL_BYTEORDER == SDL_BIG_ENDIAN)
+			{
 				p[0] = (pixel >> 16) & 0xff;
 				p[1] = (pixel >> 8) & 0xff;
 				p[2] = pixel & 0xff;
-			} else {
+			}
+			else
+			{
 				p[0] = pixel & 0xff;
 				p[1] = (pixel >> 8) & 0xff;
 				p[2] = (pixel >> 16) & 0xff;
@@ -103,7 +113,8 @@ void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* flipSurface( SDL_Surface* surface, int flags ) {
+SDL_Surface* flipSurface( SDL_Surface* surface, int flags )
+{
 	SDL_Surface* flipped = NULL;
 	Uint32 pixel;
 	int x, rx;
@@ -111,33 +122,44 @@ SDL_Surface* flipSurface( SDL_Surface* surface, int flags ) {
 
 	// prepare surface for flipping
 	flipped = SDL_CreateRGBSurface( SDL_SWSURFACE, surface->w, surface->h, surface->format->BitsPerPixel, surface->format->Rmask, surface->format->Gmask, surface->format->Bmask, surface->format->Amask );
-	if ( SDL_MUSTLOCK( surface ) ) {
+	if ( SDL_MUSTLOCK( surface ) )
+	{
 		SDL_LockSurface( surface );
 	}
-	if ( SDL_MUSTLOCK( flipped ) ) {
+	if ( SDL_MUSTLOCK( flipped ) )
+	{
 		SDL_LockSurface( flipped );
 	}
 
-	for ( x = 0, rx = flipped->w - 1; x < flipped->w; x++, rx-- ) {
-		for ( y = 0, ry = flipped->h - 1; y < flipped->h; y++, ry-- ) {
+	for ( x = 0, rx = flipped->w - 1; x < flipped->w; x++, rx-- )
+	{
+		for ( y = 0, ry = flipped->h - 1; y < flipped->h; y++, ry-- )
+		{
 			pixel = getPixel( surface, x, y );
 
 			// copy pixel
-			if ( ( flags & FLIP_VERTICAL ) && ( flags & FLIP_HORIZONTAL ) ) {
+			if ( ( flags & FLIP_VERTICAL ) && ( flags & FLIP_HORIZONTAL ) )
+			{
 				putPixel( flipped, rx, ry, pixel );
-			} else if ( flags & FLIP_HORIZONTAL ) {
+			}
+			else if ( flags & FLIP_HORIZONTAL )
+			{
 				putPixel( flipped, rx, y, pixel );
-			} else if ( flags & FLIP_VERTICAL ) {
+			}
+			else if ( flags & FLIP_VERTICAL )
+			{
 				putPixel( flipped, x, ry, pixel );
 			}
 		}
 	}
 
 	// restore image
-	if ( SDL_MUSTLOCK( surface ) ) {
+	if ( SDL_MUSTLOCK( surface ) )
+	{
 		SDL_UnlockSurface( surface );
 	}
-	if ( SDL_MUSTLOCK( flipped ) ) {
+	if ( SDL_MUSTLOCK( flipped ) )
+	{
 		SDL_UnlockSurface( flipped );
 	}
 
@@ -152,7 +174,8 @@ SDL_Surface* flipSurface( SDL_Surface* surface, int flags ) {
 
 -------------------------------------------------------------------------------*/
 
-void drawCircle( int x, int y, double radius, Uint32 color, Uint8 alpha ) {
+void drawCircle( int x, int y, double radius, Uint32 color, Uint8 alpha )
+{
 	drawArc(x, y, radius, 0, 360, color, alpha);
 }
 
@@ -164,7 +187,8 @@ void drawCircle( int x, int y, double radius, Uint32 color, Uint8 alpha ) {
 
 -------------------------------------------------------------------------------*/
 
-void drawArc( int x, int y, double radius, double angle1, double angle2, Uint32 color, Uint8 alpha ) {
+void drawArc( int x, int y, double radius, double angle1, double angle2, Uint32 color, Uint8 alpha )
+{
 	int c;
 
 	// update projection
@@ -187,7 +211,8 @@ void drawArc( int x, int y, double radius, double angle1, double angle2, Uint32 
 	glBindTexture(GL_TEXTURE_2D, 0);
 	glEnable(GL_LINE_SMOOTH);
 	glBegin(GL_LINE_STRIP);
-	for ( c = angle1; c <= angle2; c++) {
+	for ( c = angle1; c <= angle2; c++)
+	{
 		float degInRad = c * PI / 180.f;
 		glVertex2f(x + ceil(cos(degInRad)*radius) + 1, yres - (y + ceil(sin(degInRad)*radius)));
 	}
@@ -206,7 +231,8 @@ void drawArc( int x, int y, double radius, double angle1, double angle2, Uint32 
 
 -------------------------------------------------------------------------------*/
 
-void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha ) {
+void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha )
+{
 	// update projection
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
@@ -244,7 +270,8 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha ) {
 
 -------------------------------------------------------------------------------*/
 
-int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha ) {
+int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha )
+{
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -258,7 +285,8 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha ) {
 	glEnable(GL_BLEND);
 
 	// for the use of the whole screen
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = xres;
@@ -286,7 +314,8 @@ int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha ) {
 	draws the border of a rectangle
 
 -------------------------------------------------------------------------------*/
-int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha) {
+int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha)
+{
 	drawLine(src->x, src->y, src->x + src->w, src->y, color, alpha); //Top.
 	drawLine(src->x, src->y, src->x, src->y + src->h, color, alpha); //Left.
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, alpha); //Right.
@@ -302,13 +331,15 @@ int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha) {
 
 -------------------------------------------------------------------------------*/
 
-void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation) {
+void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation)
+{
 	Uint32 color;
 	int c;
 	Sint16 x1, y1, x2, y2;
 
 	color = SDL_MapRGB(mainsurface->format, 255, 127, 0);
-	for ( c = 0; c < 6; c++ ) {
+	for ( c = 0; c < 6; c++ )
+	{
 		drawArc(x, y, size, 0 + c * 60 + rotation, 30 + c * 60 + rotation, color, 255);
 		drawArc(x, y, (int)ceil(size * 1.33), 30 + c * 60 + 4 + rotation, 60 + c * 60 - 4 + rotation, color, 255);
 		x1 = ceil(size * cos((30 + c * 60 + rotation) * (PI / 180))) + x;
@@ -337,7 +368,8 @@ void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation) {
 
 -------------------------------------------------------------------------------*/
 
-void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, double angle, Uint8 alpha ) {
+void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, double angle, Uint8 alpha )
+{
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -353,7 +385,8 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, do
 	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
 
 	// for the use of a whole image
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = image->w;
@@ -386,7 +419,8 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, do
 
 -------------------------------------------------------------------------------*/
 
-void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color ) {
+void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color )
+{
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -400,7 +434,8 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = image->w;
@@ -438,7 +473,8 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 
 -------------------------------------------------------------------------------*/
 
-void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha ) {
+void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha )
+{
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -452,7 +488,8 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = image->w;
@@ -486,7 +523,8 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 
 -------------------------------------------------------------------------------*/
 
-void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
+void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
+{
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -500,7 +538,8 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = image->w;
@@ -534,10 +573,12 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
 
 -------------------------------------------------------------------------------*/
 
-void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
+void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
+{
 	SDL_Rect secondsrc;
 
-	if ( !image ) {
+	if ( !image )
+	{
 		return;
 	}
 
@@ -552,7 +593,8 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
 	glEnable(GL_BLEND);
 
 	// for the use of a whole image
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = image->w;
@@ -586,10 +628,12 @@ void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height) {
+SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height)
+{
 	Sint32 x, y, o_x, o_y;
 
-	if (!Surface || !Width || !Height) {
+	if (!Surface || !Width || !Height)
+	{
 		return NULL;
 	}
 
@@ -601,7 +645,8 @@ SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height) {
 	for (y = 0; y < Surface->h; y++)
 		for (x = 0; x < Surface->w; x++)
 			for (o_y = 0; o_y < _stretch_factor_y; ++o_y)
-				for (o_x = 0; o_x < _stretch_factor_x; ++o_x) {
+				for (o_x = 0; o_x < _stretch_factor_x; ++o_x)
+				{
 					putPixel(_ret, (Sint32)(_stretch_factor_x * x) + o_x, (Sint32)(_stretch_factor_y * y) + o_y, getPixel(Surface, x, y));
 				}
 
@@ -618,10 +663,12 @@ SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height) {
 
 -------------------------------------------------------------------------------*/
 
-void drawImageFancy( SDL_Surface* image, Uint32 color, double angle, SDL_Rect* src, SDL_Rect* pos ) {
+void drawImageFancy( SDL_Surface* image, Uint32 color, double angle, SDL_Rect* src, SDL_Rect* pos )
+{
 	SDL_Rect secondsrc;
 
-	if ( !image ) {
+	if ( !image )
+	{
 		return;
 	}
 
@@ -638,7 +685,8 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, double angle, SDL_Rect* s
 	glRotatef(-angle * 180 / PI, 0.f, 0.f, 1.f);
 
 	// for the use of a whole image
-	if ( src == NULL ) {
+	if ( src == NULL )
+	{
 		secondsrc.x = 0;
 		secondsrc.y = 0;
 		secondsrc.w = image->w;
@@ -677,7 +725,8 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, double angle, SDL_Rect* s
 
 -------------------------------------------------------------------------------*/
 
-void drawSky3D( view_t* camera, SDL_Surface* tex ) {
+void drawSky3D( view_t* camera, SDL_Surface* tex )
+{
 	double screenfactor;
 	int skyx, skyy;
 	SDL_Rect dest;
@@ -702,7 +751,8 @@ void drawSky3D( view_t* camera, SDL_Surface* tex ) {
 	drawImage(tex, &src, &dest);
 
 	// draw the part of the last part of the sky (only appears when angle > 270 deg.)
-	if ( skyx < -960 * screenfactor ) {
+	if ( skyx < -960 * screenfactor )
+	{
 		dest.x = 1280 * screenfactor + skyx;
 		dest.y = 0;
 		dest.w = xres;
@@ -723,7 +773,8 @@ void drawSky3D( view_t* camera, SDL_Surface* tex ) {
 
 -------------------------------------------------------------------------------*/
 
-void drawLayer(long camx, long camy, int z, map_t* map) {
+void drawLayer(long camx, long camy, int z, map_t* map)
+{
 	long x, y;
 	long minx, miny, maxx, maxy;
 	int index;
@@ -733,21 +784,30 @@ void drawLayer(long camx, long camy, int z, map_t* map) {
 	maxx = std::min<long int>((camx >> TEXTUREPOWER) + xres / TEXTURESIZE + 2, map->width); //TODO: Why are long int and unsigned int being compared?
 	miny = std::max<long int>(camy >> TEXTUREPOWER, 0);
 	maxy = std::min<long int>((camy >> TEXTUREPOWER) + yres / TEXTURESIZE + 2, map->height); //TODO: Why are long int and unsigned int being compared?
-	for ( y = miny; y < maxy; y++ ) {
-		for ( x = minx; x < maxx; x++ ) {
+	for ( y = miny; y < maxy; y++ )
+	{
+		for ( x = minx; x < maxx; x++ )
+		{
 			index = map->tiles[z + y * MAPLAYERS + x * MAPLAYERS * map->height];
-			if ( index > 0) {
+			if ( index > 0)
+			{
 				pos.x = (x << TEXTUREPOWER) - camx;
 				pos.y = (y << TEXTUREPOWER) - camy;
 				pos.w = TEXTURESIZE;
 				pos.h = TEXTURESIZE;
-				if ( index >= 0 && index < numtiles ) {
-					if ( tiles[index] != NULL ) {
+				if ( index >= 0 && index < numtiles )
+				{
+					if ( tiles[index] != NULL )
+					{
 						drawImageScaled(tiles[index], NULL, &pos);
-					} else {
+					}
+					else
+					{
 						drawImageScaled(sprites[0], NULL, &pos);
 					}
-				} else {
+				}
+				else
+				{
 					drawImageScaled(sprites[0], NULL, &pos);
 				}
 			}
@@ -755,16 +815,20 @@ void drawLayer(long camx, long camy, int z, map_t* map) {
 	}
 }
 
-void drawBackground(long camx, long camy) {
+void drawBackground(long camx, long camy)
+{
 	long z;
-	for ( z = 0; z < OBSTACLELAYER; z++ ) {
+	for ( z = 0; z < OBSTACLELAYER; z++ )
+	{
 		drawLayer(camx, camy, z, &map);
 	}
 }
 
-void drawForeground(long camx, long camy) {
+void drawForeground(long camx, long camy)
+{
 	long z;
-	for ( z = OBSTACLELAYER; z < MAPLAYERS; z++ ) {
+	for ( z = OBSTACLELAYER; z < MAPLAYERS; z++ )
+	{
 		drawLayer(camx, camy, z, &map);
 	}
 }
@@ -777,17 +841,22 @@ void drawForeground(long camx, long camy) {
 
 -------------------------------------------------------------------------------*/
 
-void drawClearBuffers() {
+void drawClearBuffers()
+{
 	// empty video and input buffers
-	if ( zbuffer != NULL ) {
+	if ( zbuffer != NULL )
+	{
 		memset( zbuffer, 0, xres * yres * sizeof(double) );
 	}
-	if ( clickmap != NULL ) {
+	if ( clickmap != NULL )
+	{
 		memset( clickmap, 0, xres * yres * sizeof(Entity*) );
 	}
-	if ( vismap != NULL ) {
+	if ( vismap != NULL )
+	{
 		int c, i = map.width * map.height;
-		for ( c = 0; c < i; c++ ) {
+		for ( c = 0; c < i; c++ )
+		{
 			vismap[c] = FALSE;
 		}
 	}
@@ -806,7 +875,8 @@ void drawClearBuffers() {
 
 -------------------------------------------------------------------------------*/
 
-void raycast(view_t* camera, int mode) {
+void raycast(view_t* camera, int mode)
+{
 	long posx, posy;
 	double fracx, fracy;
 	long inx, iny, inx2, iny2;
@@ -833,21 +903,25 @@ void raycast(view_t* camera, int mode) {
 	rx = cos(camera->ang - wfov / 2.f);
 	ry = sin(camera->ang - wfov / 2.f);
 
-	if ( posx >= 0 && posy >= 0 && posx < map.width && posy < map.height ) {
+	if ( posx >= 0 && posy >= 0 && posx < map.width && posy < map.height )
+	{
 		vismap[posy + posx * map.height] = TRUE;
 	}
-	for ( sx = 0; sx < camera->winw; sx++ ) { // for every column of the screen
+	for ( sx = 0; sx < camera->winw; sx++ )   // for every column of the screen
+	{
 		inx = posx;
 		iny = posy;
 		inx2 = inx;
 		iny2 = iny;
 
 		arx = 0;
-		if (rx) {
+		if (rx)
+		{
 			arx = 1.0 / fabs(rx);  // distance increments
 		}
 		ary = 0;
-		if (ry) {
+		if (ry)
+		{
 			ary = 1.0 / fabs(ry);
 		}
 
@@ -859,74 +933,101 @@ void raycast(view_t* camera, int mode) {
 
 		// calculate integer coordinate increments
 		// x-axis:
-		if (rx < 0) {
+		if (rx < 0)
+		{
 			dincx = -1;
 			dval0 = fracx * arx;
-		} else if (rx > 0) {
+		}
+		else if (rx > 0)
+		{
 			dincx = 1;
 			dval0 = (1 - fracx) * arx;
 		}
 
 		// y-axis:
-		if (ry < 0) {
+		if (ry < 0)
+		{
 			dincy = -1;
 			dval1 = fracy * ary;
-		} else if (ry > 0) {
+		}
+		else if (ry > 0)
+		{
 			dincy = 1;
 			dval1 = (1 - fracy) * ary;
 		}
 
 		d = 0;
 		dend = CLIPFAR / 16;
-		do {
+		do
+		{
 			inx2 = inx;
 			iny2 = iny;
 
 			// move the ray one square forward
-			if (dval1 > dval0) {
+			if (dval1 > dval0)
+			{
 				inx += dincx;
 				d = dval0;
 				dval0 += arx;
-			} else {
+			}
+			else
+			{
 				iny += dincy;
 				d = dval1;
 				dval1 += ary;
 			}
 
-			if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height ) {
+			if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
+			{
 				vismap[iny + inx * map.height] = TRUE;
-				for ( z = 0; z < MAPLAYERS; z++ ) {
+				for ( z = 0; z < MAPLAYERS; z++ )
+				{
 					zhit[z] = FALSE;
-					if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] && d > dstart ) { // hit something solid
+					if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] && d > dstart )   // hit something solid
+					{
 						zhit[z] = TRUE;
 
 						// collect light information
-						if ( inx2 >= 0 && iny2 >= 0 && inx2 < map.width && iny2 < map.height ) {
-							if ( map.tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * map.height] ) {
+						if ( inx2 >= 0 && iny2 >= 0 && inx2 < map.width && iny2 < map.height )
+						{
+							if ( map.tiles[z + iny2 * MAPLAYERS + inx2 * MAPLAYERS * map.height] )
+							{
 								continue;
 							}
 							light = std::min(std::max(0, lightmap[iny2 + inx2 * map.height]), 255);
-						} else {
+						}
+						else
+						{
 							light = 128;
 						}
 
 						// update minimap
 						if ( mode == REALCOLORS )
 							if ( d < 16 && z == OBSTACLELAYER )
-								if ( light > 0 ) {
+								if ( light > 0 )
+								{
 									minimap[iny][inx] = 2;  // wall space
 								}
-					} else if ( z == OBSTACLELAYER && mode == REALCOLORS ) {
+					}
+					else if ( z == OBSTACLELAYER && mode == REALCOLORS )
+					{
 						// update minimap to show empty region
-						if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height ) {
+						if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
+						{
 							light = std::min(std::max(0, lightmap[iny + inx * map.height]), 255);
-						} else {
+						}
+						else
+						{
 							light = 128;
 						}
-						if ( d < 16 ) {
-							if ( light > 0 && map.tiles[iny * MAPLAYERS + inx * MAPLAYERS * map.height] ) {
+						if ( d < 16 )
+						{
+							if ( light > 0 && map.tiles[iny * MAPLAYERS + inx * MAPLAYERS * map.height] )
+							{
 								minimap[iny][inx] = 1;  // walkable space
-							} else if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] ) {
+							}
+							else if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] )
+							{
 								minimap[iny][inx] = 0;  // no floor
 							}
 						}
@@ -934,14 +1035,17 @@ void raycast(view_t* camera, int mode) {
 				}
 				wallhit = TRUE;
 				for ( z = 0; z < MAPLAYERS; z++ )
-					if ( zhit[z] == FALSE ) {
+					if ( zhit[z] == FALSE )
+					{
 						wallhit = FALSE;
 					}
-				if ( wallhit == TRUE ) {
+				if ( wallhit == TRUE )
+				{
 					break;
 				}
 			}
-		} while (d < dend);
+		}
+		while (d < dend);
 
 		// new ray vector for next column
 		rx = cos(camera->ang - wfov / 2.f + (wfov / camera->winw) * sx);
@@ -957,44 +1061,61 @@ void raycast(view_t* camera, int mode) {
 
 -------------------------------------------------------------------------------*/
 
-void drawEntities3D(view_t* camera, int mode) {
+void drawEntities3D(view_t* camera, int mode)
+{
 	node_t* node;
 	Entity* entity;
 	long x, y;
 
-	if ( map.entities->first == NULL ) {
+	if ( map.entities->first == NULL )
+	{
 		return;
 	}
 
-	for ( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
 		entity = (Entity*)node->element;
-		if ( entity->flags[INVISIBLE] ) {
+		if ( entity->flags[INVISIBLE] )
+		{
 			continue;
 		}
-		if ( entity->flags[UNCLICKABLE] && mode == ENTITYUIDS ) {
+		if ( entity->flags[UNCLICKABLE] && mode == ENTITYUIDS )
+		{
 			continue;
 		}
-		if ( entity->flags[GENIUS] ) {
+		if ( entity->flags[GENIUS] )
+		{
 			// genius entities are not drawn when the camera is inside their bounding box
 			if ( camera->x >= (entity->x - entity->sizex) / 16 && camera->x <= (entity->x + entity->sizex) / 16 )
-				if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 ) {
+				if ( camera->y >= (entity->y - entity->sizey) / 16 && camera->y <= (entity->y + entity->sizey) / 16 )
+				{
 					continue;
 				}
 		}
 		x = entity->x / 16;
 		y = entity->y / 16;
-		if ( x >= 0 && y >= 0 && x < map.width && y < map.height ) {
-			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] ) {
-				if ( entity->flags[SPRITE] == FALSE ) {
+		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
+		{
+			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] )
+			{
+				if ( entity->flags[SPRITE] == FALSE )
+				{
 					glDrawVoxel(camera, entity, mode);
-				} else {
+				}
+				else
+				{
 					glDrawSprite(camera, entity, mode);
 				}
 			}
-		} else {
-			if ( entity->flags[SPRITE] == FALSE ) {
+		}
+		else
+		{
+			if ( entity->flags[SPRITE] == FALSE )
+			{
 				glDrawVoxel(camera, entity, mode);
-			} else {
+			}
+			else
+			{
 				glDrawSprite(camera, entity, mode);
 			}
 		}
@@ -1010,28 +1131,35 @@ void drawEntities3D(view_t* camera, int mode) {
 
 -------------------------------------------------------------------------------*/
 
-void drawEntities2D(long camx, long camy) {
+void drawEntities2D(long camx, long camy)
+{
 	node_t* node;
 	Entity* entity;
 	SDL_Rect pos, box;
 
-	if ( map.entities->first == NULL ) {
+	if ( map.entities->first == NULL )
+	{
 		return;
 	}
 
 	// draw entities
-	for ( node = map.entities->first; node != NULL; node = node->next ) {
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
 		entity = (Entity*)node->element;
-		if ( entity->flags[INVISIBLE] ) {
+		if ( entity->flags[INVISIBLE] )
+		{
 			continue;
 		}
 		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
 		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
 		pos.w = TEXTURESIZE;
 		pos.h = TEXTURESIZE;
-		if ( entity->sprite >= 0 && entity->sprite < numsprites ) {
-			if ( sprites[entity->sprite] != NULL ) {
-				if ( entity == selectedEntity ) {
+		if ( entity->sprite >= 0 && entity->sprite < numsprites )
+		{
+			if ( sprites[entity->sprite] != NULL )
+			{
+				if ( entity == selectedEntity )
+				{
 					// draws a box around the sprite
 					box.w = TEXTURESIZE;
 					box.h = TEXTURESIZE;
@@ -1045,8 +1173,11 @@ void drawEntities2D(long camx, long camy) {
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
 				}
 				drawImageScaled(sprites[entity->sprite], NULL, &pos);
-			} else {
-				if ( entity == selectedEntity ) {
+			}
+			else
+			{
+				if ( entity == selectedEntity )
+				{
 					// draws a box around the sprite
 					box.w = TEXTURESIZE;
 					box.h = TEXTURESIZE;
@@ -1061,8 +1192,11 @@ void drawEntities2D(long camx, long camy) {
 				}
 				drawImageScaled(sprites[0], NULL, &pos);
 			}
-		} else {
-			if ( entity == selectedEntity ) {
+		}
+		else
+		{
+			if ( entity == selectedEntity )
+			{
 				// draws a box around the sprite
 				box.w = TEXTURESIZE;
 				box.h = TEXTURESIZE;
@@ -1088,15 +1222,18 @@ void drawEntities2D(long camx, long camy) {
 
 -------------------------------------------------------------------------------*/
 
-void drawGrid(long camx, long camy) {
+void drawGrid(long camx, long camy)
+{
 	long x, y;
 	Uint32 color;
 
 	color = SDL_MapRGB(mainsurface->format, 127, 127, 127);
 	drawLine(-camx, (map.height << TEXTUREPOWER) - camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
 	drawLine((map.width << TEXTUREPOWER) - camx, -camy, (map.width << TEXTUREPOWER) - camx, (map.height << TEXTUREPOWER) - camy, color, 255);
-	for ( y = 0; y < map.height; y++ ) {
-		for ( x = 0; x < map.width; x++ ) {
+	for ( y = 0; y < map.height; y++ )
+	{
+		for ( x = 0; x < map.width; x++ )
+		{
 			drawLine((x << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, ((x + 1) << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, color, 255);
 			drawLine((x << TEXTUREPOWER) - camx, (y << TEXTUREPOWER) - camy, (x << TEXTUREPOWER) - camx, ((y + 1) << TEXTUREPOWER) - camy, color, 255);
 		}
@@ -1112,7 +1249,8 @@ void drawGrid(long camx, long camy) {
 
 -------------------------------------------------------------------------------*/
 
-void drawEditormap(long camx, long camy) {
+void drawEditormap(long camx, long camy)
+{
 	SDL_Rect src, osrc;
 
 	src.x = xres - 120;
@@ -1128,24 +1266,28 @@ void drawEditormap(long camx, long camy) {
 	src.h = (112.0 / map.height) * ((double)yres / TEXTURESIZE);
 
 	// clip at left edge
-	if ( src.x < xres - 120 ) {
+	if ( src.x < xres - 120 )
+	{
 		src.w -= (xres - 120) - src.x;
 		src.x = xres - 120;
 	}
 
 	// clip at right edge
-	if ( src.x + src.w > xres - 8 ) {
+	if ( src.x + src.w > xres - 8 )
+	{
 		src.w = xres - 8 - src.x;
 	}
 
 	// clip at top edge
-	if ( src.y < 24 ) {
+	if ( src.y < 24 )
+	{
 		src.h -= 24 - src.y;
 		src.y = 24;
 	}
 
 	// clip at bottom edge
-	if ( src.y + src.h > 136 ) {
+	if ( src.y + src.h > 136 )
+	{
 		src.h = 136 - src.y;
 	}
 
@@ -1166,7 +1308,8 @@ void drawEditormap(long camx, long camy) {
 
 -------------------------------------------------------------------------------*/
 
-void drawWindow(int x1, int y1, int x2, int y2) {
+void drawWindow(int x1, int y1, int x2, int y2)
+{
 	SDL_Rect src;
 
 	src.x = x1;
@@ -1186,7 +1329,8 @@ void drawWindow(int x1, int y1, int x2, int y2) {
 	drawRect(&src, SDL_MapRGB(mainsurface->format, 128, 128, 160), 255);
 }
 
-void drawDepressed(int x1, int y1, int x2, int y2) {
+void drawDepressed(int x1, int y1, int x2, int y2)
+{
 	SDL_Rect src;
 
 	src.x = x1;
@@ -1206,8 +1350,10 @@ void drawDepressed(int x1, int y1, int x2, int y2) {
 	drawRect(&src, SDL_MapRGB(mainsurface->format, 128, 128, 160), 255);
 }
 
-void drawWindowFancy(int x1, int y1, int x2, int y2) {
-	if (softwaremode) {
+void drawWindowFancy(int x1, int y1, int x2, int y2)
+{
+	if (softwaremode)
+	{
 		// no fancy stuff in software mode
 		drawWindow(x1, y1, x2, y2);
 		return;
@@ -1266,12 +1412,14 @@ void drawWindowFancy(int x1, int y1, int x2, int y2) {
 
 SDL_Rect errorRect = { 0 };
 
-SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str ) {
+SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str )
+{
 	SDL_Rect pos = { x, y, 0, 0 };
 	SDL_Surface* surf;
 	int c;
 
-	if ( !str ) {
+	if ( !str )
+	{
 		return errorRect;
 	}
 
@@ -1279,35 +1427,48 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 	strcpy(newStr, str);
 
 	// tokenize string
-	for ( c = 0; c < strlen(newStr) + 1; c++ ) {
-		if ( newStr[c] == '\n' || newStr[c] == '\r' ) {
+	for ( c = 0; c < strlen(newStr) + 1; c++ )
+	{
+		if ( newStr[c] == '\n' || newStr[c] == '\r' )
+		{
 			int offY = 0;
-			if ( newStr[c] == '\n' ) {
+			if ( newStr[c] == '\n' )
+			{
 				offY = TTF_FontHeight(font);
 			}
 			newStr[c] = 0;
 			ttfPrintTextColor(font, x, y + offY, color, outline, (char*)&newStr[c + 1]);
 			break;
-		} else if ( newStr[c] == 0 ) {
+		}
+		else if ( newStr[c] == 0 )
+		{
 			break;
 		}
 	}
 
 	// retrieve text surface
-	if ( (surf = ttfTextHashRetrieve(ttfTextHash, newStr, font, outline)) == NULL ) {
+	if ( (surf = ttfTextHashRetrieve(ttfTextHash, newStr, font, outline)) == NULL )
+	{
 		// create the text outline surface
-		if ( outline ) {
-			if ( font == ttf8 ) {
+		if ( outline )
+		{
+			if ( font == ttf8 )
+			{
 				TTF_SetFontOutline(font, 1);
-			} else {
+			}
+			else
+			{
 				TTF_SetFontOutline(font, 2);
 			}
 			SDL_Color sdlColorBlack = { 0, 0, 0, 255 };
 			surf = TTF_RenderUTF8_Blended(font, newStr, sdlColorBlack);
-		} else {
+		}
+		else
+		{
 			int w, h;
 			TTF_SizeUTF8(font, str, &w, &h);
-			if ( font == ttf8 ) {
+			if ( font == ttf8 )
+			{
 				surf = SDL_CreateRGBSurface(0, w + 2, h + 2,
 				                            mainsurface->format->BitsPerPixel,
 				                            mainsurface->format->Rmask,
@@ -1315,7 +1476,9 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 				                            mainsurface->format->Bmask,
 				                            mainsurface->format->Amask
 				                           );
-			} else {
+			}
+			else
+			{
 				surf = SDL_CreateRGBSurface(0, w + 4, h + 4,
 				                            mainsurface->format->BitsPerPixel,
 				                            mainsurface->format->Rmask,
@@ -1332,10 +1495,13 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(font, newStr, sdlColorWhite);
 
 		// combine the surfaces
-		if ( font == ttf8 ) {
+		if ( font == ttf8 )
+		{
 			pos.x = 1;
 			pos.y = 1;
-		} else {
+		}
+		else
+		{
 			pos.x = 2;
 			pos.y = 2;
 		}
@@ -1348,16 +1514,20 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 		imgref++;
 
 		// store the surface in the text surface cache
-		if ( !ttfTextHashStore(ttfTextHash, newStr, font, outline, surf) ) {
+		if ( !ttfTextHashStore(ttfTextHash, newStr, font, outline, surf) )
+		{
 			printlog("warning: failed to store text outline surface with imgref %d\n", imgref - 1);
 		}
 	}
 
 	// draw the text surface
-	if ( font == ttf8 ) {
+	if ( font == ttf8 )
+	{
 		pos.x = x;
 		pos.y = y - 3;
-	} else {
+	}
+	else
+	{
 		pos.x = x + 1;
 		pos.y = y - 4;
 	}
@@ -1370,8 +1540,10 @@ SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool out
 	return pos;
 }
 
-SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str ) {
-	if ( !str ) {
+SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str )
+{
+	if ( !str )
+	{
 		return errorRect;
 	}
 	return ttfPrintTextColor(font, x, y, 0xFFFFFFFF, TRUE, str);
@@ -1386,10 +1558,12 @@ SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str ) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char* fmt, ... ) {
+SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char* fmt, ... )
+{
 	char str[1024] = { 0 };
 
-	if ( !fmt ) {
+	if ( !fmt )
+	{
 		return errorRect;
 	}
 
@@ -1403,10 +1577,12 @@ SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color,
 	return ttfPrintTextColor(font, x, y, color, TRUE, str);
 }
 
-SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... ) {
+SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... )
+{
 	char str[1024] = { 0 };
 
-	if ( !fmt ) {
+	if ( !fmt )
+	{
 		return errorRect;
 	}
 
@@ -1428,12 +1604,14 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... ) {
 
 -------------------------------------------------------------------------------*/
 
-void printText( SDL_Surface* font_bmp, int x, int y, char* str ) {
+void printText( SDL_Surface* font_bmp, int x, int y, char* str )
+{
 	int c;
 	int numbytes;
 	SDL_Rect src, dest, odest;
 
-	if ( strlen(str) > 2048 ) {
+	if ( strlen(str) > 2048 )
+	{
 		printlog("error: buffer overflow in printText\n");
 		return;
 	}
@@ -1450,16 +1628,20 @@ void printText( SDL_Surface* font_bmp, int x, int y, char* str ) {
 	src.h = font_bmp->h / 16;
 
 	// print the characters in the string
-	for ( c = 0; c < numbytes; c++ ) {
+	for ( c = 0; c < numbytes; c++ )
+	{
 		src.x = (str[c] * src.w) % font_bmp->w;
 		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 ) { // LF/CR
+		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
+		{
 			odest.x = dest.x;
 			odest.y = dest.y;
 			drawImage( font_bmp, &src, &dest );
 			dest.x = odest.x + src.w;
 			dest.y = odest.y;
-		} else if ( str[c] == 10 ) {
+		}
+		else if ( str[c] == 10 )
+		{
 			dest.x = x;
 			dest.y += src.h;
 		}
@@ -1474,7 +1656,8 @@ void printText( SDL_Surface* font_bmp, int x, int y, char* str ) {
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... ) {
+void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... )
+{
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1495,16 +1678,20 @@ void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... ) {
 	src.h = font_bmp->h / 16;
 
 	// print the characters in the string
-	for ( c = 0; c < numbytes; c++ ) {
+	for ( c = 0; c < numbytes; c++ )
+	{
 		src.x = (str[c] * src.w) % font_bmp->w;
 		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 ) { // LF/CR
+		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
+		{
 			odest.x = dest.x;
 			odest.y = dest.y;
 			drawImage( font_bmp, &src, &dest );
 			dest.x = odest.x + src.w;
 			dest.y = odest.y;
-		} else if ( str[c] == 10 ) {
+		}
+		else if ( str[c] == 10 )
+		{
 			dest.x = x;
 			dest.y += src.h;
 		}
@@ -1520,7 +1707,8 @@ void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... ) {
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...) {
+void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...)
+{
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1541,16 +1729,20 @@ void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, c
 	src.h = font_bmp->h / 16;
 
 	// print the characters in the string
-	for ( c = 0; c < numbytes; c++ ) {
+	for ( c = 0; c < numbytes; c++ )
+	{
 		src.x = (str[c] * src.w) % font_bmp->w;
 		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 ) { // LF/CR
+		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
+		{
 			odest.x = dest.x;
 			odest.y = dest.y;
 			drawImageAlpha( font_bmp, &src, &dest, alpha );
 			dest.x = odest.x + src.w;
 			dest.y = odest.y;
-		} else if ( str[c] == 10 ) {
+		}
+		else if ( str[c] == 10 )
+		{
 			dest.x = x;
 			dest.y += src.h;
 		}
@@ -1566,7 +1758,8 @@ void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, c
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...) {
+void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...)
+{
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1587,16 +1780,20 @@ void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 	src.h = font_bmp->h / 16;
 
 	// print the characters in the string
-	for ( c = 0; c < numbytes; c++ ) {
+	for ( c = 0; c < numbytes; c++ )
+	{
 		src.x = (str[c] * src.w) % font_bmp->w;
 		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 ) { // LF/CR
+		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
+		{
 			odest.x = dest.x;
 			odest.y = dest.y;
 			drawImageColor( font_bmp, &src, &dest, color );
 			dest.x = odest.x + src.w;
 			dest.y = odest.y;
-		} else if ( str[c] == 10 ) {
+		}
+		else if ( str[c] == 10 )
+		{
 			dest.x = x;
 			dest.y += src.h;
 		}
@@ -1612,7 +1809,8 @@ void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, double angle, double scale, char* fmt, ...) {
+void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, double angle, double scale, char* fmt, ...)
+{
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1634,16 +1832,20 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 	// print the characters in the string
 	int line = 0;
-	for ( c = 0; c < numbytes; c++ ) {
+	for ( c = 0; c < numbytes; c++ )
+	{
 		src.x = (str[c] * src.w) % font_bmp->w;
 		src.y = (int)((str[c] * src.w) / font_bmp->w) * src.h;
-		if ( str[c] != 10 && str[c] != 13 ) { // LF/CR
+		if ( str[c] != 10 && str[c] != 13 )   // LF/CR
+		{
 			dest.x = newX;
 			dest.y = newY;
 			drawImageFancy( font_bmp, color, angle, &src, &dest );
 			newX += (double)dest.w * cos(angle);
 			newY += (double)dest.h * sin(angle);
-		} else if ( str[c] == 10 ) {
+		}
+		else if ( str[c] == 10 )
+		{
 			line++;
 			dest.x = x + dest.h * cos(angle + PI / 2) * line;
 			dest.y = y + dest.h * sin(angle + PI / 2) * line;
@@ -1659,7 +1861,8 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 -------------------------------------------------------------------------------*/
 
-void drawTooltip(SDL_Rect* src) {
+void drawTooltip(SDL_Rect* src)
+{
 	drawRect(src, 0, 250);
 	drawLine(src->x, src->y, src->x + src->w, src->y, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
 	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);

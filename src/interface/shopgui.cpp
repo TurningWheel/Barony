@@ -17,25 +17,40 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
-void rebuildShopInventory() {
+void rebuildShopInventory()
+{
 	//Count number of items.
 	int c = 0;
 	node_t* node = nullptr;
-	for ( node = shopInv->first; node != NULL; node = node->next ) {
+	for ( node = shopInv->first; node != NULL; node = node->next )
+	{
 		Item* item = (Item*) node->element;
-		if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
+		if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON )
+		{
 			continue;
-		} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
+		}
+		else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR )
+		{
 			continue;
-		} else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
+		}
+		else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING )
+		{
 			continue;
-		} else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
+		}
+		else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL )
+		{
 			continue;
-		} else if ( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
+		}
+		else if ( shopinventorycategory == 4 && itemCategory(item) != GEM )
+		{
 			continue;
-		} else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
+		}
+		else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION )
+		{
 			continue;
-		} else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
+		}
+		else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK )
+		{
 			continue;
 		}
 		c++;
@@ -43,46 +58,66 @@ void rebuildShopInventory() {
 	//Sanitize item scroll.
 	shopitemscroll = std::max(0, std::min(shopitemscroll, c - 4));
 	//Clear out currently displayed items.
-	for ( c = 0; c < 4; c++ ) {
+	for ( c = 0; c < 4; c++ )
+	{
 		shopinvitems[c] = NULL;
 	}
 	//Display the items.
 	c = 0;
-	for ( node = shopInv->first; node != NULL; node = node->next ) {
+	for ( node = shopInv->first; node != NULL; node = node->next )
+	{
 		Item* item = (Item*) node->element;
-		if (item) {
-			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
+		if (item)
+		{
+			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON )
+			{
 				continue;
-			} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
+			}
+			else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR )
+			{
 				continue;
-			} else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
+			}
+			else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING )
+			{
 				continue;
-			} else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
+			}
+			else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL )
+			{
 				continue;
-			} else if ( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
+			}
+			else if ( shopinventorycategory == 4 && itemCategory(item) != GEM )
+			{
 				continue;
-			} else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
+			}
+			else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION )
+			{
 				continue;
-			} else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
+			}
+			else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK )
+			{
 				continue;
 			}
 			c++;
-			if ( c <= shopitemscroll ) {
+			if ( c <= shopitemscroll )
+			{
 				continue;
 			}
 			shopinvitems[c - shopitemscroll - 1] = item;
-			if ( c > 3 + shopitemscroll ) {
+			if ( c > 3 + shopitemscroll )
+			{
 				break;
 			}
 		}
 	}
 }
 
-struct Area {
+struct Area
+{
 public:
 	int x1, x2, y1, y2;
 
-	Area(int inX1 = 0, int inX2 = 0, int inY1 = 0, int inY2 = 0) {
+	Area(int inX1 = 0, int inX2 = 0, int inY1 = 0, int inY2 = 0)
+	{
 		x1 = inX1;
 		x2 = inX2;
 		y1 = inY1;
@@ -90,8 +125,10 @@ public:
 	}
 };
 
-inline void checkBuyItem() {
-	if ( (stats[clientnum]->HP <= 0) || (players[clientnum] == nullptr) || (players[clientnum]->entity == nullptr) ) {
+inline void checkBuyItem()
+{
+	if ( (stats[clientnum]->HP <= 0) || (players[clientnum] == nullptr) || (players[clientnum]->entity == nullptr) )
+	{
 		return;
 	}
 
@@ -111,31 +148,39 @@ inline void checkBuyItem() {
 	slotPos.y = slotAreaBounds.y1;
 	slotPos.h = inventoryoption_bmp->h;
 
-	if ( (omousex < slotPos.x) || (omousex >= slotPos.x + slotPos.w) ) {
+	if ( (omousex < slotPos.x) || (omousex >= slotPos.x + slotPos.w) )
+	{
 		selectedShopSlot = -1;
 		return;
 	}
 
 	bool selectingSlot = false;
 
-	for (int i = 0; i < NUM_SHOP_GUI_SLOTS; ++i, slotPos.y += slotPos.h) {
-		if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h ) {
+	for (int i = 0; i < NUM_SHOP_GUI_SLOTS; ++i, slotPos.y += slotPos.h)
+	{
+		if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h )
+		{
 			//If moused over, highlight slot & check for mouse click or gamepad buy button.
 			selectedShopSlot = i;
 			selectingSlot = true;
 			drawImage(inventoryoption_bmp, nullptr, &slotPos);
-			if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) ) {
+			if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
+			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 				buyItemFromShop(shopinvitems[i]);
 				//Check if no more items after this slot & deal accordingly.
 				rebuildShopInventory();
-				if ( shopinvitems[i] == nullptr ) {
-					if ( shopinvitems[0] == nullptr ) {
+				if ( shopinvitems[i] == nullptr )
+				{
+					if ( shopinvitems[0] == nullptr )
+					{
 						//Go back to inventory.
 						selectedShopSlot = -1;
 						warpMouseToSelectedInventorySlot();
-					} else {
+					}
+					else
+					{
 						//Move up one slot.
 						--selectedShopSlot;
 						warpMouseToSelectedShopSlot();
@@ -145,12 +190,14 @@ inline void checkBuyItem() {
 		}
 	}
 
-	if ( !selectingSlot ) {
+	if ( !selectingSlot )
+	{
 		selectedShopSlot = -1;
 	}
 }
 
-void warpMouseToSelectedShopSlot() {
+void warpMouseToSelectedShopSlot()
+{
 	Area shopWindow(xres / 2 - SHOPWINDOW_SIZEX / 2, xres / 2 + SHOPWINDOW_SIZEX / 2, yres / 2 - SHOPWINDOW_SIZEY / 2, yres / 2 + SHOPWINDOW_SIZEY / 2);
 
 	Area slotAreaBounds;
@@ -176,14 +223,17 @@ void warpMouseToSelectedShopSlot() {
 
 -------------------------------------------------------------------------------*/
 
-void updateShopWindow() {
+void updateShopWindow()
+{
 	SDL_Rect pos;
 	node_t* node;
 	int c;
 
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		Entity* entity = uidToEntity(shopkeeper);
-		if (entity) {
+		if (entity)
+		{
 			Stat* stats = entity->getStats();
 			shopkeepername = stats->name;
 		}
@@ -200,20 +250,29 @@ void updateShopWindow() {
 	pos.x = x;
 	pos.y = y;
 	drawImage(inventory_bmp, NULL, &pos);
-	if ( mousestatus[SDL_BUTTON_LEFT] ) {
-		if ( omousey >= y && omousey < y + 16 ) {
-			if ( omousex >= x + 12 && omousex < x + inventory_bmp->w - 12 ) {
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		if ( omousey >= y && omousey < y + 16 )
+		{
+			if ( omousex >= x + 12 && omousex < x + inventory_bmp->w - 12 )
+			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				shopinventorycategory = (omousex - x - 12) / button_bmp->w;
 			}
-		} else if ( omousey >= y + 16 && omousey < y + 52 ) {
-			if ( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 ) {
+		}
+		else if ( omousey >= y + 16 && omousey < y + 52 )
+		{
+			if ( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 )
+			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				buttonclick = 10;
 				shopitemscroll--;
 			}
-		} else if ( omousey >= y + 52 && omousey < y + 88 ) {
-			if ( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 ) {
+		}
+		else if ( omousey >= y + 52 && omousey < y + 88 )
+		{
+			if ( omousex >= x + inventory_bmp->w - 28 && omousex < x + inventory_bmp->w - 12 )
+			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 				buttonclick = 11;
 				shopitemscroll++;
@@ -222,12 +281,17 @@ void updateShopWindow() {
 	}
 
 	// mousewheel
-	if ( omousex >= x + 12 && omousex < x + inventory_bmp->w - 28 ) {
-		if ( omousey >= 16 && omousey < y + inventory_bmp->h - 8 ) {
-			if ( mousestatus[SDL_BUTTON_WHEELDOWN] ) {
+	if ( omousex >= x + 12 && omousex < x + inventory_bmp->w - 28 )
+	{
+		if ( omousey >= 16 && omousey < y + inventory_bmp->h - 8 )
+		{
+			if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
+			{
 				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
 				shopitemscroll++;
-			} else if ( mousestatus[SDL_BUTTON_WHEELUP] ) {
+			}
+			else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+			{
 				mousestatus[SDL_BUTTON_WHEELUP] = 0;
 				shopitemscroll--;
 			}
@@ -235,7 +299,8 @@ void updateShopWindow() {
 	}
 
 	// inventory up button
-	if ( buttonclick == 10 ) {
+	if ( buttonclick == 10 )
+	{
 		pos.x = x + inventory_bmp->w - 28;
 		pos.y = y + 16;
 		pos.w = 0;
@@ -243,7 +308,8 @@ void updateShopWindow() {
 		drawImage(invup_bmp, NULL, &pos);
 	}
 	// inventory down button
-	if ( buttonclick == 11 ) {
+	if ( buttonclick == 11 )
+	{
 		pos.x = x + inventory_bmp->w - 28;
 		pos.y = y + 52;
 		pos.w = 0;
@@ -254,9 +320,12 @@ void updateShopWindow() {
 	pos.y = y;
 	pos.w = 0;
 	pos.h = 0;
-	if ( shopinventorycategory <= 6 ) {
+	if ( shopinventorycategory <= 6 )
+	{
 		drawImage(button_bmp, NULL, &pos);
-	} else {
+	}
+	else
+	{
 		drawImage(smallbutton_bmp, NULL, &pos);
 	}
 
@@ -278,31 +347,48 @@ void updateShopWindow() {
 
 	int y3 = y + 22;
 	c = 0;
-	for ( node = shopInv->first; node != NULL; node = node->next ) {
+	for ( node = shopInv->first; node != NULL; node = node->next )
+	{
 		Item* item = (Item*) node->element;
-		if (item) {
-			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
+		if (item)
+		{
+			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON )
+			{
 				continue;
-			} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
+			}
+			else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR )
+			{
 				continue;
-			} else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING ) {
+			}
+			else if ( shopinventorycategory == 2 && itemCategory(item) != AMULET && itemCategory(item) != RING )
+			{
 				continue;
-			} else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL ) {
+			}
+			else if ( shopinventorycategory == 3 && itemCategory(item) != SPELLBOOK && itemCategory(item) != MAGICSTAFF && itemCategory(item) != SCROLL )
+			{
 				continue;
-			} else if ( shopinventorycategory == 4 && itemCategory(item) != GEM ) {
+			}
+			else if ( shopinventorycategory == 4 && itemCategory(item) != GEM )
+			{
 				continue;
-			} else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION ) {
+			}
+			else if ( shopinventorycategory == 5 && itemCategory(item) != FOOD && itemCategory(item) != POTION )
+			{
 				continue;
-			} else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK ) {
+			}
+			else if ( shopinventorycategory == 6 && itemCategory(item) != TOOL && itemCategory(item) != BOOK )
+			{
 				continue;
 			}
 			c++;
-			if ( c <= shopitemscroll ) {
+			if ( c <= shopitemscroll )
+			{
 				continue;
 			}
 			char tempstr[64] = { 0 };
 			strncpy(tempstr, item->description(), 42);
-			if ( strlen(tempstr) == 42 ) {
+			if ( strlen(tempstr) == 42 )
+			{
 				strcat(tempstr, " ...");
 			}
 			ttfPrintText(ttf8, x + 12 + 36, y3, tempstr);
@@ -313,7 +399,8 @@ void updateShopWindow() {
 			pos.h = 16;
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			y3 += 18;
-			if ( c > 3 + shopitemscroll ) {
+			if ( c > 3 + shopitemscroll )
+			{
 				break;
 			}
 		}
@@ -323,18 +410,23 @@ void updateShopWindow() {
 	ttfPrintTextFormatted( ttf16, x1 + 16, y2 - 32, language[357], stats[clientnum]->GOLD );
 
 	// chitchat
-	if ( (ticks - shoptimer) % 600 == 0 ) {
+	if ( (ticks - shoptimer) % 600 == 0 )
+	{
 		shopspeech = language[216 + rand() % NUMCHITCHAT];
 		shoptimer--;
 	}
 
 	// draw speech
-	if (sellitem) {
+	if (sellitem)
+	{
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 32, shopspeech, sellitem->sellValue(clientnum) );
-	} else {
+	}
+	else
+	{
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 32, shopspeech, 0 );
 	}
-	if ( !strcmp(shopspeech, language[194]) || !strcmp(shopspeech, language[195]) || !strcmp(shopspeech, language[196]) ) {
+	if ( !strcmp(shopspeech, language[194]) || !strcmp(shopspeech, language[195]) || !strcmp(shopspeech, language[196]) )
+	{
 		ttfPrintTextFormatted( ttf16, x1 + 16 + 160 + 16, y1 + 64, language[358], shopkeepername, language[184 + shopkeepertype] );
 	}
 
@@ -346,15 +438,19 @@ void updateShopWindow() {
 	drawRect(&pos, 0, 255);
 
 	// draw shopkeeper
-	if ( uidToEntity(shopkeeper) ) {
+	if ( uidToEntity(shopkeeper) )
+	{
 		Entity* entity = uidToEntity(shopkeeper);
-		if ( !entity->flags[INVISIBLE] ) {
+		if ( !entity->flags[INVISIBLE] )
+		{
 			pos.x = x1 + 16;
 			pos.y = y1 + 16;
 			pos.w = 160;
 			pos.h = 160;
 			drawImage(shopkeeper_bmp, NULL, &pos);
-		} else {
+		}
+		else
+		{
 			pos.x = x1 + 16;
 			pos.y = y1 + 16;
 			pos.w = 160;
@@ -375,16 +471,20 @@ void updateShopWindow() {
 	SDL_WarpMouseInWindow(screen, x, y);
 }*/
 
-inline Item* getItemInfoFromShop(int slot) {
-	if ( slot >= 4 ) {
+inline Item* getItemInfoFromShop(int slot)
+{
+	if ( slot >= 4 )
+	{
 		return nullptr; //Out of bounds,
 	}
 
 	return shopinvitems[slot];
 }
 
-void selectShopSlot(int slot) {
-	if ( slot < selectedShopSlot ) {
+void selectShopSlot(int slot)
+{
+	if ( slot < selectedShopSlot )
+	{
 		//Moving up.
 
 		/*
@@ -394,7 +494,8 @@ void selectShopSlot(int slot) {
 		 * * 3) Scrolling up past top of shop, no shopitemscroll (move back to inventory)
 		 */
 
-		if ( selectedShopSlot <= 0 ) {
+		if ( selectedShopSlot <= 0 )
+		{
 			//Covers cases 2 & 3.
 
 			/*
@@ -403,21 +504,28 @@ void selectShopSlot(int slot) {
 			 * * B) Page up, scrolling through shopitemscroll.
 			 */
 
-			if ( shopitemscroll <= 0 ) {
+			if ( shopitemscroll <= 0 )
+			{
 				//Case 3/A: Return to inventory.
 				selectedShopSlot = -1;
-			} else {
+			}
+			else
+			{
 				//Case 2/B: Page up through shop inventory.
 				--shopitemscroll;
 			}
-		} else {
+		}
+		else
+		{
 			//Covers case 1.
 
 			//Move cursor up the GUI through different selectedShopSlot (--selectedShopSlot).
 			--selectedShopSlot;
 			warpMouseToSelectedShopSlot();
 		}
-	} else if ( slot > selectedShopSlot ) {
+	}
+	else if ( slot > selectedShopSlot )
+	{
 		//Moving down.
 
 		/*
@@ -427,10 +535,13 @@ void selectShopSlot(int slot) {
 		 * * 3) Scrolling down past bottom of shop, max shop scroll (revoke move -- can't go beyond limit of shop).
 		 */
 
-		if ( selectedShopSlot >= NUM_SHOP_GUI_SLOTS - 1 ) {
+		if ( selectedShopSlot >= NUM_SHOP_GUI_SLOTS - 1 )
+		{
 			//Covers cases 2 & 3.
 			++shopitemscroll; //Shopitemscroll is automatically sanitized in updateShopWindow().
-		} else {
+		}
+		else
+		{
 			//Covers case 1.
 			//Move cursor down through the GUi through different selectedShopSlot (++selectedShopSlot).
 			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
@@ -443,28 +554,38 @@ void selectShopSlot(int slot) {
 
 			Item* item = getItemInfoFromShop(selectedShopSlot + 1);
 
-			if ( item ) {
+			if ( item )
+			{
 				++selectedShopSlot;
 				warpMouseToSelectedShopSlot();
-			} else {
+			}
+			else
+			{
 				//No more items. Stop.
 			}
 		}
 	}
 }
 
-void cycleShopCategories(int direction) {
-	if ( direction < 0 ) {
+void cycleShopCategories(int direction)
+{
+	if ( direction < 0 )
+	{
 		//Cycle left.
 		--shopinventorycategory;
-	} else if ( direction > 0 ) {
+	}
+	else if ( direction > 0 )
+	{
 		//Cycle right.
 		++shopinventorycategory;
 	}
 
-	if ( shopinventorycategory < 0 ) {
+	if ( shopinventorycategory < 0 )
+	{
 		shopinventorycategory = NUM_SHOP_CATEGORIES - 1;
-	} else if ( shopinventorycategory >= NUM_SHOP_CATEGORIES ) {
+	}
+	else if ( shopinventorycategory >= NUM_SHOP_CATEGORIES )
+	{
 		shopinventorycategory = 0;
 	}
 }

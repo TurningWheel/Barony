@@ -20,7 +20,8 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initSuccubus(Entity* my, Stat* myStats) {
+void initSuccubus(Entity* my, Stat* myStats)
+{
 	int c;
 	node_t* node;
 
@@ -30,24 +31,31 @@ void initSuccubus(Entity* my, Stat* myStats) {
 	my->flags[BLOCKSIGHT] = TRUE;
 	my->flags[INVISIBLE] = FALSE;
 
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		MONSTER_SPOTSND = 70;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT ) {
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
 		myStats->sex = FEMALE;
 		myStats->appearance = rand();
-		if ( rand() % 50 || my->flags[USERFLAG2] ) {
+		if ( rand() % 50 || my->flags[USERFLAG2] )
+		{
 			myStats->DEX = 3;
 			strcpy(myStats->name, "");
-		} else {
+		}
+		else
+		{
 			myStats->DEX = 10;
 			strcpy(myStats->name, "Lilith");
-			for ( c = 0; c < 2; c++ ) {
+			for ( c = 0; c < 2; c++ )
+			{
 				Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
-				if ( entity ) {
+				if ( entity )
+				{
 					entity->parent = my->uid;
 				}
 			}
@@ -69,19 +77,24 @@ void initSuccubus(Entity* my, Stat* myStats) {
 		myStats->LVL = 10;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid ) {
+		if ( !myStats->leader_uid )
+		{
 			myStats->leader_uid = 0;
 		}
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
-			if ( c < NUMPROFICIENCIES ) {
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
+			{
 				myStats->PROFICIENCIES[c] = 0;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS[c] = FALSE;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
@@ -188,21 +201,29 @@ void initSuccubus(Entity* my, Stat* myStats) {
 	node->size = sizeof(Entity*);
 }
 
-void actSuccubusLimb(Entity* my) {
+void actSuccubusLimb(Entity* my)
+{
 	int i;
 
 	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
+	if ( (parent = uidToEntity(my->skill[2])) == NULL )
+	{
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	if ( multiplayer != CLIENT ) {
-		for ( i = 0; i < MAXPLAYERS; i++ ) {
-			if ( inrange[i] ) {
-				if ( i == 0 && selectedEntity == my ) {
+	if ( multiplayer != CLIENT )
+	{
+		for ( i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( inrange[i] )
+			{
+				if ( i == 0 && selectedEntity == my )
+				{
 					parent->skill[13] = i + 1;
-				} else if ( client_selected[i] == my ) {
+				}
+				else if ( client_selected[i] == my )
+				{
 					parent->skill[13] = i + 1;
 				}
 			}
@@ -211,20 +232,25 @@ void actSuccubusLimb(Entity* my) {
 	return;
 }
 
-void succubusDie(Entity* my) {
+void succubusDie(Entity* my)
+{
 	node_t* node, *nextnode;
 
 	int c;
-	for ( c = 0; c < 5; c++ ) {
+	for ( c = 0; c < 5; c++ )
+	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood) {
+	if (spawn_blood)
+	{
 		int x, y;
 		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		{
+			if ( !checkObstacle(my->x, my->y, my, NULL) )
+			{
 				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
@@ -240,9 +266,11 @@ void succubusDie(Entity* my) {
 	}
 	playSoundEntity(my, 71, 128);
 	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode) {
+	for (node = my->children.first; node != NULL; node = nextnode)
+	{
 		nextnode = node->next;
-		if (node->element != NULL && i >= 2) {
+		if (node->element != NULL && i >= 2)
+		{
 			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
@@ -256,47 +284,60 @@ void succubusDie(Entity* my) {
 
 #define SUCCUBUSWALKSPEED .25
 
-void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
+{
 	node_t* node;
 	Entity* entity = NULL;
 	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT ) {
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		{
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next) {
-				if ( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next)
+			{
+				if ( bodypart < 2 )
+				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 ) {
+				if ( bodypart >= 7 )
+				{
 					break;
 				}
 				entity = (Entity*)node->element;
-				if ( !entity->flags[INVISIBLE] ) {
+				if ( !entity->flags[INVISIBLE] )
+				{
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
 			}
-		} else {
+		}
+		else
+		{
 			my->flags[INVISIBLE] = FALSE;
 			my->flags[BLOCKSIGHT] = TRUE;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next) {
-				if ( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next)
+			{
+				if ( bodypart < 2 )
+				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 ) {
+				if ( bodypart >= 7 )
+				{
 					break;
 				}
 				entity = (Entity*)node->element;
-				if ( entity->flags[INVISIBLE] ) {
+				if ( entity->flags[INVISIBLE] )
+				{
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -305,16 +346,21 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 		}
 
 		// sleeping
-		if ( myStats->EFFECTS[EFF_ASLEEP] ) {
+		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		{
 			my->z = 1.5;
-		} else {
+		}
+		else
+		{
 			my->z = -1;
 		}
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
-		if ( bodypart < 2 ) {
+	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	{
+		if ( bodypart < 2 )
+		{
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -322,93 +368,134 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 ) {
-			if ( bodypart == 3 ) {
+		if ( bodypart == 3 || bodypart == 6 )
+		{
+			if ( bodypart == 3 )
+			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( dist > 0.1 ) {
-				if ( !rightbody->skill[0] ) {
+			if ( dist > 0.1 )
+			{
+				if ( !rightbody->skill[0] )
+				{
 					entity->pitch -= dist * SUCCUBUSWALKSPEED;
-					if ( entity->pitch < -PI / 4.0 ) {
+					if ( entity->pitch < -PI / 4.0 )
+					{
 						entity->pitch = -PI / 4.0;
 						entity->skill[0] = 1;
 					}
-				} else {
+				}
+				else
+				{
 					entity->pitch += dist * SUCCUBUSWALKSPEED;
-					if ( entity->pitch > PI / 4.0 ) {
+					if ( entity->pitch > PI / 4.0 )
+					{
 						entity->pitch = PI / 4.0;
 						entity->skill[0] = 0;
 					}
 				}
-			} else {
-				if ( entity->pitch < 0 ) {
+			}
+			else
+			{
+				if ( entity->pitch < 0 )
+				{
 					entity->pitch += 1 / fmax(dist * .1, 10.0);
-					if ( entity->pitch > 0 ) {
+					if ( entity->pitch > 0 )
+					{
 						entity->pitch = 0;
 					}
-				} else if ( entity->pitch > 0 ) {
+				}
+				else if ( entity->pitch > 0 )
+				{
 					entity->pitch -= 1 / fmax(dist * .1, 10.0);
-					if ( entity->pitch < 0 ) {
+					if ( entity->pitch < 0 )
+					{
 						entity->pitch = 0;
 					}
 				}
 			}
-		} else if ( bodypart == 4 || bodypart == 5 ) {
-			if ( bodypart == 5 ) {
-				if ( MONSTER_ATTACK == 1 ) {
+		}
+		else if ( bodypart == 4 || bodypart == 5 )
+		{
+			if ( bodypart == 5 )
+			{
+				if ( MONSTER_ATTACK == 1 )
+				{
 					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = -3 * PI / 4;
 						entity->roll = 0;
-					} else {
-						if ( entity->pitch >= -PI / 2 ) {
+					}
+					else
+					{
+						if ( entity->pitch >= -PI / 2 )
+						{
 							MONSTER_ARMBENDED = 1;
 						}
-						if ( entity->pitch >= PI / 4 ) {
+						if ( entity->pitch >= PI / 4 )
+						{
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
 							MONSTER_ATTACK = 0;
-						} else {
+						}
+						else
+						{
 							entity->pitch += .25;
 						}
 					}
-				} else if ( MONSTER_ATTACK == 2 ) {
+				}
+				else if ( MONSTER_ATTACK == 2 )
+				{
 					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
 						MONSTER_ARMBENDED = 1;
 						MONSTER_WEAPONYAW = -3 * PI / 4;
 						entity->pitch = 0;
 						entity->roll = -PI / 2;
-					} else {
-						if ( MONSTER_WEAPONYAW >= PI / 8 ) {
+					}
+					else
+					{
+						if ( MONSTER_WEAPONYAW >= PI / 8 )
+						{
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
 							MONSTER_ATTACK = 0;
-						} else {
+						}
+						else
+						{
 							MONSTER_WEAPONYAW += .25;
 						}
 					}
-				} else if ( MONSTER_ATTACK == 3 ) {
+				}
+				else if ( MONSTER_ATTACK == 3 )
+				{
 					// stab
-					if ( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = 2 * PI / 3;
 						entity->roll = 0;
-					} else {
-						if ( MONSTER_ATTACKTIME >= 5 ) {
+					}
+					else
+					{
+						if ( MONSTER_ATTACKTIME >= 5 )
+						{
 							MONSTER_ARMBENDED = 1;
 							entity->pitch = -PI / 6;
 						}
-						if ( MONSTER_ATTACKTIME >= 10 ) {
+						if ( MONSTER_ATTACKTIME >= 10 )
+						{
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
@@ -420,37 +507,52 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				}
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) ) {
-				if ( dist > 0.1 ) {
-					if ( entity->skill[0] ) {
+			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+			{
+				if ( dist > 0.1 )
+				{
+					if ( entity->skill[0] )
+					{
 						entity->pitch -= dist * SUCCUBUSWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 ) {
+						if ( entity->pitch < -PI / 4.0 )
+						{
 							entity->skill[0] = 0;
 							entity->pitch = -PI / 4.0;
 						}
-					} else {
+					}
+					else
+					{
 						entity->pitch += dist * SUCCUBUSWALKSPEED;
-						if ( entity->pitch > PI / 4.0 ) {
+						if ( entity->pitch > PI / 4.0 )
+						{
 							entity->skill[0] = 1;
 							entity->pitch = PI / 4.0;
 						}
 					}
-				} else {
-					if ( entity->pitch < 0 ) {
+				}
+				else
+				{
+					if ( entity->pitch < 0 )
+					{
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 ) {
+						if ( entity->pitch > 0 )
+						{
 							entity->pitch = 0;
 						}
-					} else if ( entity->pitch > 0 ) {
+					}
+					else if ( entity->pitch > 0 )
+					{
 						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 ) {
+						if ( entity->pitch < 0 )
+						{
 							entity->pitch = 0;
 						}
 					}
 				}
 			}
 		}
-		switch ( bodypart ) {
+		switch ( bodypart )
+		{
 			// torso
 			case 2:
 				entity->x -= .5 * cos(my->yaw);
@@ -462,7 +564,8 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				entity->x += 1 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) - .75 * sin(my->yaw);
 				entity->z += 5;
-				if ( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
 				}
@@ -472,7 +575,8 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				entity->x -= 1 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) + .75 * sin(my->yaw);
 				entity->z += 5;
-				if ( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
 				}
@@ -484,7 +588,8 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				entity->z += 1;
 				entity->roll = -PI / 8;
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
 					entity->pitch = 0;
 				}
 				break;
@@ -494,15 +599,19 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				entity->y -= 2 * sin(my->yaw + PI / 2); //+.20*sin(my->yaw);
 				entity->z += 1;
 				entity->roll = PI / 8;
-				if ( my->z >= 1.4 && my->z <= 1.6 ) {
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
 					entity->pitch = 0;
 				}
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 ) {
+	if ( MONSTER_ATTACK != 0 )
+	{
 		MONSTER_ATTACKTIME++;
-	} else {
+	}
+	else
+	{
 		MONSTER_ATTACKTIME = 0;
 	}
 }

@@ -30,23 +30,31 @@
 #define SPRITE_ANIMSPEED my->skill[2]
 #define SPRITE_LIT my->skill[5]
 
-void actSprite(Entity* my) {
-	if ( !my->skill[6] && SPRITE_LIT ) {
+void actSprite(Entity* my)
+{
+	if ( !my->skill[6] && SPRITE_LIT )
+	{
 		my->skill[6] = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, SPRITE_LIT, 256);
-	} else if ( !SPRITE_LIT ) {
+	}
+	else if ( !SPRITE_LIT )
+	{
 		my->light = NULL;
 	}
 	my->skill[3]++;
-	if ( my->skill[3] >= SPRITE_ANIMSPEED ) {
+	if ( my->skill[3] >= SPRITE_ANIMSPEED )
+	{
 		my->skill[3] = 0;
 		my->skill[4]++;
 		my->sprite++;
-		if ( my->skill[4] >= SPRITE_FRAMES ) {
+		if ( my->skill[4] >= SPRITE_FRAMES )
+		{
 			my->skill[4] -= SPRITE_FRAMES;
 			my->sprite -= SPRITE_FRAMES;
-			if ( SPRITE_DESTROY ) {
-				if ( my->light ) {
+			if ( SPRITE_DESTROY )
+			{
+				if ( my->light )
+				{
 					list_RemoveNode(my->light->node);
 					my->light = NULL;
 				}
@@ -57,11 +65,15 @@ void actSprite(Entity* my) {
 	}
 }
 
-Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z) {
+Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
+{
 	int c;
-	if ( multiplayer == SERVER ) {
-		for ( c = 1; c < MAXPLAYERS; c++ ) {
-			if ( client_disconnected[c] ) {
+	if ( multiplayer == SERVER )
+	{
+		for ( c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] )
+			{
 				continue;
 			}
 			strcpy((char*)net_packet->data, "BANG");
@@ -90,18 +102,23 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z) {
 	entity->skill[1] = 4;
 	entity->skill[2] = 4;
 	playSoundEntityLocal(entity, 66, 64);
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		entity_uids--;
 	}
 	entity->uid = -3;
 	return entity;
 }
 
-Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
+Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
+{
 	int c, i;
-	if ( multiplayer == SERVER ) {
-		for ( c = 1; c < MAXPLAYERS; c++ ) {
-			if ( client_disconnected[c] ) {
+	if ( multiplayer == SERVER )
+	{
+		for ( c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] )
+			{
 				continue;
 			}
 			strcpy((char*)net_packet->data, "EXPL");
@@ -135,7 +152,8 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 	SPRITE_LIT = 4;
 	playSoundEntityLocal(entity, 153, 128);
 	Entity* explosion = entity;
-	for (i = 0; i < 10; ++i) {
+	for (i = 0; i < 10; ++i)
+	{
 		entity = newEntity(16, 1, map.entities);
 		entity->behavior = &actFlame;
 		entity->x = explosion->x;
@@ -153,14 +171,16 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 		entity->vel_z = (-40 + rand() % 81) / 8.f;
 		entity->skill[0] = 15 + rand() % 10;
 	}
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		entity_uids--;
 	}
 	entity->uid = -3;
 	return explosion;
 }
 
-void actSleepZ(Entity* my) {
+void actSleepZ(Entity* my)
+{
 	// spin around
 	my->x -= my->fskill[0];
 	my->y -= my->fskill[1];
@@ -171,7 +191,8 @@ void actSleepZ(Entity* my) {
 
 	// go up
 	my->z -= .2;
-	if ( my->z < -128 ) {
+	if ( my->z < -128 )
+	{
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -182,12 +203,16 @@ void actSleepZ(Entity* my) {
 	my->scalez = fmin(my->scalez + 0.01, 0.75);
 }
 
-Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
+Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
+{
 	int c;
 
-	if ( multiplayer == SERVER ) {
-		for ( c = 1; c < MAXPLAYERS; c++ ) {
-			if ( client_disconnected[c] ) {
+	if ( multiplayer == SERVER )
+	{
+		for ( c = 1; c < MAXPLAYERS; c++ )
+		{
+			if ( client_disconnected[c] )
+			{
 				continue;
 			}
 			strcpy((char*)net_packet->data, "SLEZ");
@@ -216,7 +241,8 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
 	entity->scalez = 0.05;
 	entity->sizex = 1;
 	entity->sizey = 1;
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		entity_uids--;
 	}
 	entity->uid = -3;

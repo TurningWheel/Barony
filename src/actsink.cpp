@@ -31,14 +31,17 @@
 
 #define SINK_AMBIENCE my->skill[7]
 
-void actSink(Entity* my) {
+void actSink(Entity* my)
+{
 	SINK_AMBIENCE--;
-	if ( SINK_AMBIENCE <= 0 ) {
+	if ( SINK_AMBIENCE <= 0 )
+	{
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
 		playSoundEntityLocal( my, 149, 128 );
 	}
 
-	if ( my->skill[2] > 0 ) {
+	if ( my->skill[2] > 0 )
+	{
 		Entity* entity = spawnGib(my);
 		entity->flags[INVISIBLE] = FALSE;
 		entity->x += .5;
@@ -56,27 +59,37 @@ void actSink(Entity* my) {
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
 
-		if ( multiplayer != CLIENT ) {
+		if ( multiplayer != CLIENT )
+		{
 			my->skill[2]--;
 		}
 	}
 
-	if ( multiplayer == CLIENT ) {
+	if ( multiplayer == CLIENT )
+	{
 		return;
 	}
 
 	//Using the sink. //TODO: Monsters using it?
 	int i;
-	for (i = 0; i < MAXPLAYERS; ++i) {
-		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
-			if (inrange[i]) {
+	for (i = 0; i < MAXPLAYERS; ++i)
+	{
+		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+		{
+			if (inrange[i])
+			{
 				//First check that it's not depleted.
-				if (my->skill[0] == 0) {
+				if (my->skill[0] == 0)
+				{
 					messagePlayer(i, language[580]);
 					playSoundEntity(my, 140 + rand(), 64);
-				} else {
-					switch (my->skill[3]) {
-						case 0: {
+				}
+				else
+				{
+					switch (my->skill[3])
+					{
+						case 0:
+						{
 							playSoundEntity(players[i]->entity, 52, 64);
 							messagePlayer(i, language[581]);
 
@@ -88,7 +101,8 @@ void actSink(Entity* my) {
 							//Generate a random status.
 							Status status = SERVICABLE;
 							int status_rand = rand() % 4;
-							switch (status_rand) {
+							switch (status_rand)
+							{
 								case 0:
 									status = DECREPIT;
 									break;
@@ -110,19 +124,22 @@ void actSink(Entity* my) {
 
 							//Actually create the item, put it in the player's inventory, and then free the memory of the temp item.
 							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), FALSE, NULL);
-							if (item) {
+							if (item)
+							{
 								itemPickup(i, item);
 								messagePlayer(i, language[504], item->description());
 								free(item);
 							}
 							break;
 						}
-						case 1: {
+						case 1:
+						{
 							playSoundEntity(players[i]->entity, 52, 64);
 
 							// spawn slime
 							Entity* monster = summonMonster(SLIME, my->x, my->y);
-							if ( monster ) {
+							if ( monster )
+							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 								messagePlayerColor(i, color, language[582]);
 								Stat* monsterStats = monster->getStats();
@@ -150,12 +167,14 @@ void actSink(Entity* my) {
 					my->skill[2] = TICKS_PER_SECOND / 2;
 
 					//Deduct one usage from it.
-					if (my->skill[0] > 1) { //First usage. Will create second stats now.
+					if (my->skill[0] > 1)   //First usage. Will create second stats now.
+					{
 						my->skill[0]--; //Deduct one usage.
 
 						//Randomly choose second usage stats.
 						int effect = rand() % 10; //4 possible effects.
-						switch (effect) {
+						switch (effect)
+						{
 							case 0:
 								//10% chance.
 								my->skill[3] = 0; //Player will find a ring.
@@ -180,7 +199,9 @@ void actSink(Entity* my) {
 							default:
 								break; //Should never happen.
 						}
-					} else { //Second usage.
+					}
+					else     //Second usage.
+					{
 						my->skill[0]--; //Sink is depleted!
 						messagePlayer(i, language[585]);
 						playSoundEntity(my, 132, 64);

@@ -20,7 +20,8 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initDemon(Entity* my, Stat* myStats) {
+void initDemon(Entity* my, Stat* myStats)
+{
 	int c;
 	node_t* node;
 
@@ -31,13 +32,15 @@ void initDemon(Entity* my, Stat* myStats) {
 	my->flags[BLOCKSIGHT] = TRUE;
 	my->flags[INVISIBLE] = FALSE;
 
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		MONSTER_SPOTSND = 210;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 214;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT ) {
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
 		myStats->inventory.first = NULL;
@@ -55,33 +58,43 @@ void initDemon(Entity* my, Stat* myStats) {
 		myStats->CHR = -4;
 		myStats->EXP = 0;
 		myStats->LVL = 20;
-		if ( rand() % 50 || my->flags[USERFLAG2] ) {
+		if ( rand() % 50 || my->flags[USERFLAG2] )
+		{
 			strcpy(myStats->name, "");
-		} else {
+		}
+		else
+		{
 			strcpy(myStats->name, "Deu De'Breau");
 			myStats->LVL = 30;
-			for ( c = 0; c < 3; c++ ) {
+			for ( c = 0; c < 3; c++ )
+			{
 				Entity* entity = summonMonster(DEMON, my->x, my->y);
-				if ( entity ) {
+				if ( entity )
+				{
 					entity->parent = my->uid;
 				}
 			}
 		}
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid ) {
+		if ( !myStats->leader_uid )
+		{
 			myStats->leader_uid = 0;
 		}
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
-			if ( c < NUMPROFICIENCIES ) {
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
+			{
 				myStats->PROFICIENCIES[c] = 0;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS[c] = FALSE;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
@@ -95,7 +108,8 @@ void initDemon(Entity* my, Stat* myStats) {
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		if ( rand() % 2 == 0 ) {
+		if ( rand() % 2 == 0 )
+		{
 			myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, FALSE, NULL);
 		}
 	}
@@ -209,21 +223,29 @@ void initDemon(Entity* my, Stat* myStats) {
 	node->size = sizeof(Entity*);
 }
 
-void actDemonLimb(Entity* my) {
+void actDemonLimb(Entity* my)
+{
 	int i;
 
 	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
+	if ( (parent = uidToEntity(my->skill[2])) == NULL )
+	{
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	if ( multiplayer != CLIENT ) {
-		for ( i = 0; i < MAXPLAYERS; i++ ) {
-			if ( inrange[i] ) {
-				if ( i == 0 && selectedEntity == my ) {
+	if ( multiplayer != CLIENT )
+	{
+		for ( i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( inrange[i] )
+			{
+				if ( i == 0 && selectedEntity == my )
+				{
 					parent->skill[13] = i + 1;
-				} else if ( client_selected[i] == my ) {
+				}
+				else if ( client_selected[i] == my )
+				{
 					parent->skill[13] = i + 1;
 				}
 			}
@@ -232,20 +254,25 @@ void actDemonLimb(Entity* my) {
 	return;
 }
 
-void demonDie(Entity* my) {
+void demonDie(Entity* my)
+{
 	node_t* node, *nextnode;
 
 	int c;
-	for ( c = 0; c < 5; c++ ) {
+	for ( c = 0; c < 5; c++ )
+	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood) {
+	if (spawn_blood)
+	{
 		int x, y;
 		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		{
+			if ( !checkObstacle(my->x, my->y, my, NULL) )
+			{
 				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
@@ -261,9 +288,11 @@ void demonDie(Entity* my) {
 	}
 	playSoundEntity(my, 213, 128);
 	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode) {
+	for (node = my->children.first; node != NULL; node = nextnode)
+	{
 		nextnode = node->next;
-		if (node->element != NULL && i >= 2) {
+		if (node->element != NULL && i >= 2)
+		{
 			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
@@ -277,47 +306,60 @@ void demonDie(Entity* my) {
 
 #define DEMONWALKSPEED .125
 
-void demonMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
+{
 	node_t* node;
 	Entity* entity = NULL;
 	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT ) {
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		{
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next) {
-				if ( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next)
+			{
+				if ( bodypart < 2 )
+				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 ) {
+				if ( bodypart >= 7 )
+				{
 					break;
 				}
 				entity = (Entity*)node->element;
-				if ( !entity->flags[INVISIBLE] ) {
+				if ( !entity->flags[INVISIBLE] )
+				{
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
 			}
-		} else {
+		}
+		else
+		{
 			my->flags[INVISIBLE] = FALSE;
 			my->flags[BLOCKSIGHT] = TRUE;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next) {
-				if ( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next)
+			{
+				if ( bodypart < 2 )
+				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 ) {
+				if ( bodypart >= 7 )
+				{
 					break;
 				}
 				entity = (Entity*)node->element;
-				if ( entity->flags[INVISIBLE] ) {
+				if ( entity->flags[INVISIBLE] )
+				{
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -327,8 +369,10 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
-		if ( bodypart < 2 ) {
+	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	{
+		if ( bodypart < 2 )
+		{
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -336,129 +380,187 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 ) {
-			if ( bodypart == 3 ) {
+		if ( bodypart == 3 || bodypart == 6 )
+		{
+			if ( bodypart == 3 )
+			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( bodypart == 3 || !MONSTER_ATTACK ) {
-				if ( dist > 0.1 ) {
-					if ( !rightbody->skill[0] ) {
+			if ( bodypart == 3 || !MONSTER_ATTACK )
+			{
+				if ( dist > 0.1 )
+				{
+					if ( !rightbody->skill[0] )
+					{
 						entity->pitch -= dist * DEMONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 ) {
+						if ( entity->pitch < -PI / 4.0 )
+						{
 							entity->pitch = -PI / 4.0;
-							if (bodypart == 3) {
+							if (bodypart == 3)
+							{
 								entity->skill[0] = 1;
 							}
 						}
-					} else {
+					}
+					else
+					{
 						entity->pitch += dist * DEMONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 ) {
+						if ( entity->pitch > PI / 4.0 )
+						{
 							entity->pitch = PI / 4.0;
-							if (bodypart == 3) {
+							if (bodypart == 3)
+							{
 								entity->skill[0] = 0;
 							}
 						}
 					}
-				} else {
-					if ( entity->pitch < 0 ) {
+				}
+				else
+				{
+					if ( entity->pitch < 0 )
+					{
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 ) {
+						if ( entity->pitch > 0 )
+						{
 							entity->pitch = 0;
 						}
-					} else if ( entity->pitch > 0 ) {
+					}
+					else if ( entity->pitch > 0 )
+					{
 						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 ) {
+						if ( entity->pitch < 0 )
+						{
 							entity->pitch = 0;
 						}
 					}
 				}
-			} else {
+			}
+			else
+			{
 				// vertical chop
-				if ( MONSTER_ATTACKTIME == 0 ) {
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
 					MONSTER_ARMBENDED = 0;
 					MONSTER_WEAPONYAW = 0;
 					entity->pitch = -3 * PI / 4;
 					entity->roll = 0;
-				} else {
-					if ( entity->pitch >= -PI / 2 ) {
+				}
+				else
+				{
+					if ( entity->pitch >= -PI / 2 )
+					{
 						MONSTER_ARMBENDED = 1;
 					}
-					if ( entity->pitch >= PI / 4 ) {
+					if ( entity->pitch >= PI / 4 )
+					{
 						entity->skill[0] = rightbody->skill[0];
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = rightbody->pitch;
 						entity->roll = 0;
 						MONSTER_ARMBENDED = 0;
 						MONSTER_ATTACK = 0;
-					} else {
+					}
+					else
+					{
 						entity->pitch += .25;
 					}
 				}
 			}
-		} else if ( bodypart == 4 || bodypart == 5 ) {
-			if ( bodypart == 5 ) {
-				if ( MONSTER_ATTACK ) {
+		}
+		else if ( bodypart == 4 || bodypart == 5 )
+		{
+			if ( bodypart == 5 )
+			{
+				if ( MONSTER_ATTACK )
+				{
 					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = -3 * PI / 4;
 						entity->roll = 0;
-					} else {
-						if ( entity->pitch >= -PI / 2 ) {
+					}
+					else
+					{
+						if ( entity->pitch >= -PI / 2 )
+						{
 							MONSTER_ARMBENDED = 1;
 						}
-						if ( entity->pitch >= PI / 4 ) {
+						if ( entity->pitch >= PI / 4 )
+						{
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
 							entity->pitch = rightbody->pitch;
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
-						} else {
+						}
+						else
+						{
 							entity->pitch += .25;
 						}
 					}
 				}
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) ) {
-				if ( dist > 0.1 ) {
-					if ( entity->skill[0] ) {
+			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+			{
+				if ( dist > 0.1 )
+				{
+					if ( entity->skill[0] )
+					{
 						entity->pitch -= dist * DEMONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 ) {
+						if ( entity->pitch < -PI / 4.0 )
+						{
 							entity->skill[0] = 0;
 							entity->pitch = -PI / 4.0;
 						}
-					} else {
+					}
+					else
+					{
 						entity->pitch += dist * DEMONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 ) {
+						if ( entity->pitch > PI / 4.0 )
+						{
 							entity->skill[0] = 1;
 							entity->pitch = PI / 4.0;
 						}
 					}
-				} else {
-					if ( entity->pitch < 0 ) {
+				}
+				else
+				{
+					if ( entity->pitch < 0 )
+					{
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 ) {
+						if ( entity->pitch > 0 )
+						{
 							entity->pitch = 0;
 						}
-					} else if ( entity->pitch > 0 ) {
+					}
+					else if ( entity->pitch > 0 )
+					{
 						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 ) {
+						if ( entity->pitch < 0 )
+						{
 							entity->pitch = 0;
 						}
 					}
 				}
 			}
-		} else if ( bodypart == 7 ) {
+		}
+		else if ( bodypart == 7 )
+		{
 			// jaw
-			if ( MONSTER_ATTACK ) {
+			if ( MONSTER_ATTACK )
+			{
 				entity->pitch += 0.04;
-			} else {
+			}
+			else
+			{
 				entity->pitch = 0;
 			}
 		}
-		switch ( bodypart ) {
+		switch ( bodypart )
+		{
 			// torso
 			case 2:
 				entity->x -= .5 * cos(my->yaw);
@@ -494,28 +596,38 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 ) {
+	if ( MONSTER_ATTACK != 0 )
+	{
 		MONSTER_ATTACKTIME++;
-	} else {
+	}
+	else
+	{
 		MONSTER_ATTACKTIME = 0;
 	}
 }
 
-void actDemonCeilingBuster(Entity* my) {
+void actDemonCeilingBuster(Entity* my)
+{
 	double x, y;
 
 	// bust ceilings
-	for ( x = my->x - my->sizex - 1; x <= my->x + my->sizex + 1; x += 1 ) {
-		for ( y = my->y - my->sizey - 1; y <= my->y + my->sizey + 1; y += 1 ) {
-			if ( x >= 0 && y >= 0 && x < map.width << 4 && y < map.height << 4 ) {
+	for ( x = my->x - my->sizex - 1; x <= my->x + my->sizex + 1; x += 1 )
+	{
+		for ( y = my->y - my->sizey - 1; y <= my->y + my->sizey + 1; y += 1 )
+		{
+			if ( x >= 0 && y >= 0 && x < map.width << 4 && y < map.height << 4 )
+			{
 				int index = (MAPLAYERS - 1) + ((int)floor(y / 16)) * MAPLAYERS + ((int)floor(x / 16)) * MAPLAYERS * map.height;
-				if ( map.tiles[index] ) {
+				if ( map.tiles[index] )
+				{
 					map.tiles[index] = 0;
-					if ( multiplayer != CLIENT ) {
+					if ( multiplayer != CLIENT )
+					{
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK = 1;
 						Stat* myStats = my->getStats();
-						if ( myStats ) {
+						if ( myStats )
+						{
 							// easy hack to stop the demon while he breaks stuff
 							myStats->EFFECTS[EFF_PARALYZED] = TRUE;
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = TICKS_PER_SECOND / 2;
@@ -524,7 +636,8 @@ void actDemonCeilingBuster(Entity* my) {
 
 					// spawn several rock particles (NOT items)
 					int c, i = 6 + rand() % 4;
-					for ( c = 0; c < i; c++ ) {
+					for ( c = 0; c < i; c++ )
+					{
 						Entity* entity = spawnGib(my);
 						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;

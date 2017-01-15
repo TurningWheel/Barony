@@ -23,7 +23,8 @@
 
 -------------------------------------------------------------------------------*/
 
-void takeScreenshot() {
+void takeScreenshot()
+{
 	char filename[1024];
 	SDL_Surface* temp, *temp2;
 
@@ -49,9 +50,12 @@ void takeScreenshot() {
 	SDL_FreeSurface( temp2 );
 	SDL_SavePNG( temp, filename );
 	SDL_FreeSurface( temp );
-	if ( !intro ) {
+	if ( !intro )
+	{
 		messagePlayer(clientnum, "%s", filename);
-	} else {
+	}
+	else
+	{
 		printlog("%s", filename);
 	}
 }

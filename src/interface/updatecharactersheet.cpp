@@ -26,7 +26,8 @@ void drawSkillsSheet();
 
 -------------------------------------------------------------------------------*/
 
-void updateCharacterSheet() {
+void updateCharacterSheet()
+{
 	int i = 0;
 	int x = 0;
 	SDL_Rect pos;
@@ -52,8 +53,10 @@ void updateCharacterSheet() {
 	// character sheet
 	double ofov = fov;
 	fov = 50;
-	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr) {
-		if (!softwaremode) {
+	if (players[clientnum] != nullptr && players[clientnum]->entity != nullptr)
+	{
+		if (!softwaremode)
+		{
 			glClear(GL_DEPTH_BUFFER_BIT);
 		}
 		//TODO: These two NOT PLAYERSWAP
@@ -71,19 +74,24 @@ void updateCharacterSheet() {
 		camera_charsheet.winh = 180;
 		b = players[clientnum]->entity->flags[BRIGHT];
 		players[clientnum]->entity->flags[BRIGHT] = TRUE;
-		if (!players[clientnum]->entity->flags[INVISIBLE]) {
+		if (!players[clientnum]->entity->flags[INVISIBLE])
+		{
 			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 		}
 		players[clientnum]->entity->flags[BRIGHT] = b;
 		c = 0;
-		if (multiplayer != CLIENT) {
-			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next) {
-				if (c == 0) {
+		if (multiplayer != CLIENT)
+		{
+			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next)
+			{
+				if (c == 0)
+				{
 					c++;
 					continue;
 				}
 				entity = (Entity*) node->element;
-				if ( !entity->flags[INVISIBLE] ) {
+				if ( !entity->flags[INVISIBLE] )
+				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = TRUE;
 					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
@@ -91,21 +99,30 @@ void updateCharacterSheet() {
 				}
 				c++;
 			}
-			for ( node = map.entities->first; node != NULL; node = node->next ) {
+			for ( node = map.entities->first; node != NULL; node = node->next )
+			{
 				entity = (Entity*) node->element;
-				if ( (Sint32)entity->uid == -4 ) {
+				if ( (Sint32)entity->uid == -4 )
+				{
 					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
 				}
 			}
-		} else {
-			for ( node = map.entities->first; node != NULL; node = node->next ) {
+		}
+		else
+		{
+			for ( node = map.entities->first; node != NULL; node = node->next )
+			{
 				entity = (Entity*) node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->uid == -4 ) {
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->uid == -4 )
+				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = TRUE;
-					if ( (Sint32)entity->uid == -4 ) {
+					if ( (Sint32)entity->uid == -4 )
+					{
 						glDrawSprite(&camera_charsheet, entity, REALCOLORS);
-					} else {
+					}
+					else
+					{
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 					}
 					entity->flags[BRIGHT] = b;
@@ -132,7 +149,8 @@ void updateCharacterSheet() {
 	ttfPrintTextFormatted(ttf12, 8, 346, language[370], stats[clientnum]->GOLD);
 	ttfPrintTextFormatted(ttf12, 8, 358, language[371], AC(stats[clientnum]));
 	Uint32 weight = 0;
-	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next ) {
+	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+	{
 		item = (Item*)node->element;
 		weight += items[item->type].weight * item->count;
 	}
@@ -142,7 +160,8 @@ void updateCharacterSheet() {
 	drawSkillsSheet();
 }
 
-void drawSkillsSheet() {
+void drawSkillsSheet()
+{
 	SDL_Rect pos;
 	pos.x = xres - 208;
 	pos.w = 208;
@@ -157,26 +176,41 @@ void drawSkillsSheet() {
 
 	SDL_Rect initialSkillPos = pos;
 	//Draw skill names.
-	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (TTF12_HEIGHT /** 2*/) ) {
+	for ( int c = 0; c < (NUMPROFICIENCIES); ++c, pos.y += (TTF12_HEIGHT /** 2*/) )
+	{
 		ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, "%s:", language[236 + c]);
 	}
 
 	//Draw skill levels.
 	pos = initialSkillPos;
-	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (TTF12_HEIGHT /** 2*/) ) {
-		if ( stats[clientnum]->PROFICIENCIES[i] == 0 ) {
+	for ( int i = 0; i < (NUMPROFICIENCIES); ++i, pos.y += (TTF12_HEIGHT /** 2*/) )
+	{
+		if ( stats[clientnum]->PROFICIENCIES[i] == 0 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[363]);
-		} else if ( stats[clientnum]->PROFICIENCIES[i] < 20 ) {
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] < 20 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[364]);
-		} else if ( stats[clientnum]->PROFICIENCIES[i] >= 20 && stats[clientnum]->PROFICIENCIES[i] < 40 ) {
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= 20 && stats[clientnum]->PROFICIENCIES[i] < 40 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[365]);
-		} else if ( stats[clientnum]->PROFICIENCIES[i] >= 40 && stats[clientnum]->PROFICIENCIES[i] < 60 ) {
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= 40 && stats[clientnum]->PROFICIENCIES[i] < 60 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[366]);
-		} else if ( stats[clientnum]->PROFICIENCIES[i] >= 60 && stats[clientnum]->PROFICIENCIES[i] < 80 ) {
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= 60 && stats[clientnum]->PROFICIENCIES[i] < 80 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[367]);
-		} else if ( stats[clientnum]->PROFICIENCIES[i] >= 80 && stats[clientnum]->PROFICIENCIES[i] < 100 ) {
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= 80 && stats[clientnum]->PROFICIENCIES[i] < 100 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[368]);
-		} else if ( stats[clientnum]->PROFICIENCIES[i] >= 100 ) {
+		}
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= 100 )
+		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[369]);
 		}
 	}

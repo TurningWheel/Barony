@@ -40,7 +40,8 @@
  * This is what that does.
  */
 
-typedef struct Message {
+typedef struct Message
+{
 	string_t* text; //Same size as the message in draw.c. Make sure not to overrun it.
 
 	//Its location (durr).

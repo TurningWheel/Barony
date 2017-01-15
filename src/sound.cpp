@@ -62,11 +62,14 @@ float default_fadein_increment = 0.002f;
 float fadeout_increment = 0.005f;
 float default_fadeout_increment = 0.005f;
 
-bool FMODErrorCheck() {
-	if (no_sound) {
+bool FMODErrorCheck()
+{
+	if (no_sound)
+	{
 		return FALSE;
 	}
-	if (fmod_result != FMOD_OK) {
+	if (fmod_result != FMOD_OK)
+	{
 		printlog("[FMOD Error] Error Code (%d): \"%s\"\n", fmod_result, FMOD_ErrorString(fmod_result)); //Report the FMOD error.
 		return TRUE;
 	}
@@ -74,11 +77,14 @@ bool FMODErrorCheck() {
 	return FALSE;
 }
 
-void sound_update() {
-	if (no_sound) {
+void sound_update()
+{
+	if (no_sound)
+	{
 		return;
 	}
-	if (!fmod_system) {
+	if (!fmod_system)
+	{
 		return;
 	}
 
@@ -120,16 +126,20 @@ void sound_update() {
 	FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, 0, &forward, &up);
 
 	//Fade in the currently playing music.
-	if (music_channel) {
+	if (music_channel)
+	{
 		FMOD_BOOL playing = FALSE;
 		FMOD_Channel_IsPlaying(music_channel, &playing);
-		if (playing) {
+		if (playing)
+		{
 			float volume = 1.0f;
 			FMOD_Channel_GetVolume(music_channel, &volume);
 
-			if (volume < 1.0f) {
+			if (volume < 1.0f)
+			{
 				volume += fadein_increment * 2;
-				if (volume > 1.0f) {
+				if (volume > 1.0f)
+				{
 					volume = 1.0f;
 				}
 				FMOD_Channel_SetVolume(music_channel, volume);
@@ -137,18 +147,22 @@ void sound_update() {
 		}
 	}
 	//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
-	if (music_channel2) {
+	if (music_channel2)
+	{
 		FMOD_BOOL playing = FALSE;
 		FMOD_Channel_IsPlaying(music_channel2, &playing);
-		if (playing) {
+		if (playing)
+		{
 			float volume = 0.0f;
 			FMOD_Channel_GetVolume(music_channel2, &volume);
 
-			if (volume > 0.0f) {
+			if (volume > 0.0f)
+			{
 				//volume -= 0.001f;
 				//volume -= 0.005f;
 				volume -= fadeout_increment * 2;
-				if (volume < 0.0f) {
+				if (volume < 0.0f)
+				{
 					volume = 0.0f;
 				}
 				FMOD_Channel_SetVolume(music_channel2, volume);

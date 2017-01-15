@@ -20,7 +20,8 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initGhoul(Entity* my, Stat* myStats) {
+void initGhoul(Entity* my, Stat* myStats)
+{
 	int c;
 	node_t* node;
 
@@ -30,13 +31,15 @@ void initGhoul(Entity* my, Stat* myStats) {
 	my->flags[BLOCKSIGHT] = TRUE;
 	my->flags[INVISIBLE] = FALSE;
 
-	if ( multiplayer != CLIENT ) {
+	if ( multiplayer != CLIENT )
+	{
 		MONSTER_SPOTSND = 142;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 146;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT ) {
+	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
 		myStats->inventory.first = NULL;
@@ -56,19 +59,24 @@ void initGhoul(Entity* my, Stat* myStats) {
 		myStats->LVL = 7;
 		myStats->GOLD = 0;
 		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid ) {
+		if ( !myStats->leader_uid )
+		{
 			myStats->leader_uid = 0;
 		}
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ ) {
-			if ( c < NUMPROFICIENCIES ) {
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
+			{
 				myStats->PROFICIENCIES[c] = 0;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS[c] = FALSE;
 			}
-			if ( c < NUMEFFECTS ) {
+			if ( c < NUMEFFECTS )
+			{
 				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
@@ -82,13 +90,18 @@ void initGhoul(Entity* my, Stat* myStats) {
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		if ( rand() % 50 || my->flags[USERFLAG2] ) {
+		if ( rand() % 50 || my->flags[USERFLAG2] )
+		{
 			strcpy(myStats->name, "");
-		} else {
+		}
+		else
+		{
 			strcpy(myStats->name, "Coral Grimes");
-			for ( c = 0; c < 3; c++ ) {
+			for ( c = 0; c < 3; c++ )
+			{
 				Entity* entity = summonMonster(GHOUL, my->x, my->y);
-				if ( entity ) {
+				if ( entity )
+				{
 					entity->parent = my->uid;
 				}
 			}
@@ -99,13 +112,16 @@ void initGhoul(Entity* my, Stat* myStats) {
 			newItem( GEM_GARNET, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
 		}
 
-		if ( rand() % 20 == 0 ) {
+		if ( rand() % 20 == 0 )
+		{
 			newItem( POTION_WATER, SERVICABLE, 2, 1, rand(), FALSE, &myStats->inventory );
 		}
-		if ( rand() % 10 == 0 ) {
+		if ( rand() % 10 == 0 )
+		{
 			newItem( itemCurve(TOOL), DECREPIT, 1, 1, rand(), FALSE, &myStats->inventory );
 		}
-		if ( rand() % 4 == 0 ) {
+		if ( rand() % 4 == 0 )
+		{
 			newItem( FOOD_MEAT, DECREPIT, -1, 1, rand(), FALSE, &myStats->inventory );
 		}
 	}
@@ -201,21 +217,29 @@ void initGhoul(Entity* my, Stat* myStats) {
 	node->size = sizeof(Entity*);
 }
 
-void actGhoulLimb(Entity* my) {
+void actGhoulLimb(Entity* my)
+{
 	int i;
 
 	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
+	if ( (parent = uidToEntity(my->skill[2])) == NULL )
+	{
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
-	if ( multiplayer != CLIENT ) {
-		for ( i = 0; i < MAXPLAYERS; i++ ) {
-			if ( inrange[i] ) {
-				if ( i == 0 && selectedEntity == my ) {
+	if ( multiplayer != CLIENT )
+	{
+		for ( i = 0; i < MAXPLAYERS; i++ )
+		{
+			if ( inrange[i] )
+			{
+				if ( i == 0 && selectedEntity == my )
+				{
 					parent->skill[13] = i + 1;
-				} else if ( client_selected[i] == my ) {
+				}
+				else if ( client_selected[i] == my )
+				{
 					parent->skill[13] = i + 1;
 				}
 			}
@@ -224,24 +248,31 @@ void actGhoulLimb(Entity* my) {
 	return;
 }
 
-void ghoulDie(Entity* my) {
+void ghoulDie(Entity* my)
+{
 	node_t* node, *nextnode;
 	int c;
-	for ( c = 0; c < 10; c++ ) {
+	for ( c = 0; c < 10; c++ )
+	{
 		Entity* entity = spawnGib(my);
-		if ( entity ) {
-			if ( c < 6 ) {
+		if ( entity )
+		{
+			if ( c < 6 )
+			{
 				entity->sprite = 246 + c;
 			}
 			serverSpawnGibForClient(entity);
 		}
 	}
-	if (spawn_blood) {
+	if (spawn_blood)
+	{
 		int x, y;
 		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		{
+			if ( !checkObstacle(my->x, my->y, my, NULL) )
+			{
 				Entity* entity = newEntity(212, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
@@ -256,9 +287,11 @@ void ghoulDie(Entity* my) {
 		}
 	}
 	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode) {
+	for (node = my->children.first; node != NULL; node = nextnode)
+	{
 		nextnode = node->next;
-		if (node->element != NULL && i >= 2) {
+		if (node->element != NULL && i >= 2)
+		{
 			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
@@ -273,47 +306,60 @@ void ghoulDie(Entity* my) {
 
 #define GHOULWALKSPEED .125
 
-void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
+{
 	node_t* node;
 	Entity* entity = NULL;
 	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT ) {
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
+	if ( multiplayer != CLIENT )
+	{
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		{
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next) {
-				if ( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next)
+			{
+				if ( bodypart < 2 )
+				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 ) {
+				if ( bodypart >= 7 )
+				{
 					break;
 				}
 				entity = (Entity*)node->element;
-				if ( !entity->flags[INVISIBLE] ) {
+				if ( !entity->flags[INVISIBLE] )
+				{
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
 			}
-		} else {
+		}
+		else
+		{
 			my->flags[INVISIBLE] = FALSE;
 			my->flags[BLOCKSIGHT] = TRUE;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next) {
-				if ( bodypart < 2 ) {
+			for (node = my->children.first; node != NULL; node = node->next)
+			{
+				if ( bodypart < 2 )
+				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 ) {
+				if ( bodypart >= 7 )
+				{
 					break;
 				}
 				entity = (Entity*)node->element;
-				if ( entity->flags[INVISIBLE] ) {
+				if ( entity->flags[INVISIBLE] )
+				{
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
@@ -325,8 +371,10 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 	//Move bodyparts
 	my->x -= cos(my->yaw);
 	my->y -= sin(my->yaw);
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
-		if ( bodypart < 2 ) {
+	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	{
+		if ( bodypart < 2 )
+		{
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -334,117 +382,174 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 ) {
-			if ( bodypart == 3 ) {
+		if ( bodypart == 3 || bodypart == 6 )
+		{
+			if ( bodypart == 3 )
+			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( bodypart == 6 ) {
-				if ( MONSTER_ATTACK ) {
+			if ( bodypart == 6 )
+			{
+				if ( MONSTER_ATTACK )
+				{
 					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 ) {
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->pitch = -3 * PI / 4;
 						entity->roll = 0;
-					} else {
-						if ( entity->pitch >= -PI / 2 ) {
+					}
+					else
+					{
+						if ( entity->pitch >= -PI / 2 )
+						{
 							MONSTER_ARMBENDED = 1;
 						}
-						if ( entity->pitch >= PI / 4 ) {
+						if ( entity->pitch >= PI / 4 )
+						{
 							entity->skill[0] = 0;
 							MONSTER_ARMBENDED = 0;
 							MONSTER_ATTACK = 0;
-						} else {
+						}
+						else
+						{
 							entity->pitch += .25;
 						}
 					}
-				} else {
+				}
+				else
+				{
 					MONSTER_WEAPONYAW = -PI / 16.0;
 					entity->pitch = -7 * PI / 16;
 					entity->roll = 0;
 				}
-			} else {
-				if ( dist > 0.1 ) {
-					if ( !rightbody->skill[0] ) {
+			}
+			else
+			{
+				if ( dist > 0.1 )
+				{
+					if ( !rightbody->skill[0] )
+					{
 						entity->pitch -= dist * GHOULWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 ) {
+						if ( entity->pitch < -PI / 4.0 )
+						{
 							entity->pitch = -PI / 4.0;
 						}
-					} else {
+					}
+					else
+					{
 						entity->pitch += dist * GHOULWALKSPEED;
-						if ( entity->pitch > PI / 4.0 ) {
+						if ( entity->pitch > PI / 4.0 )
+						{
 							entity->pitch = PI / 4.0;
 						}
 					}
-				} else {
-					if ( entity->pitch < 0 ) {
+				}
+				else
+				{
+					if ( entity->pitch < 0 )
+					{
 						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 ) {
+						if ( entity->pitch > 0 )
+						{
 							entity->pitch = 0;
 						}
-					} else if ( entity->pitch > 0 ) {
+					}
+					else if ( entity->pitch > 0 )
+					{
 						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 ) {
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
-		} else if ( bodypart == 4 || bodypart == 5 ) {
-			if ( bodypart == 5 ) {
-				if ( MONSTER_ATTACK ) {
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 ) {
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					} else {
-						if ( entity->pitch >= -PI / 2 ) {
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 ) {
-							entity->skill[0] = 0;
-						} else {
-							entity->pitch += .25;
-						}
-					}
-				} else {
-					MONSTER_WEAPONYAW = -PI / 16.0;
-					entity->pitch = -7 * PI / 16;
-					entity->roll = 0;
-				}
-			} else {
-				if ( dist > 0.1 ) {
-					if ( entity->skill[0] ) {
-						entity->pitch -= dist * GHOULWALKSPEED * .5;
-						if ( entity->pitch < -PI / 8.0 ) {
-							entity->skill[0] = 0;
-							entity->pitch = -PI / 8.0;
-						}
-					} else {
-						entity->pitch += dist * GHOULWALKSPEED * .5;
-						if ( entity->pitch > PI / 8.0 ) {
-							entity->skill[0] = 1;
-							entity->pitch = PI / 8.0;
-						}
-					}
-				} else {
-					if ( entity->pitch < 0 ) {
-						entity->pitch += (1 / fmax(dist * .1, 10.0)) * .5;
-						if ( entity->pitch > 0 ) {
-							entity->pitch = 0;
-						}
-					} else if ( entity->pitch > 0 ) {
-						entity->pitch -= (1 / fmax(dist * .1, 10.0)) * .5;
-						if ( entity->pitch < 0 ) {
+						if ( entity->pitch < 0 )
+						{
 							entity->pitch = 0;
 						}
 					}
 				}
 			}
 		}
-		switch ( bodypart ) {
+		else if ( bodypart == 4 || bodypart == 5 )
+		{
+			if ( bodypart == 5 )
+			{
+				if ( MONSTER_ATTACK )
+				{
+					// vertical chop
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
+						MONSTER_ARMBENDED = 0;
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = -3 * PI / 4;
+						entity->roll = 0;
+					}
+					else
+					{
+						if ( entity->pitch >= -PI / 2 )
+						{
+							MONSTER_ARMBENDED = 1;
+						}
+						if ( entity->pitch >= PI / 4 )
+						{
+							entity->skill[0] = 0;
+						}
+						else
+						{
+							entity->pitch += .25;
+						}
+					}
+				}
+				else
+				{
+					MONSTER_WEAPONYAW = -PI / 16.0;
+					entity->pitch = -7 * PI / 16;
+					entity->roll = 0;
+				}
+			}
+			else
+			{
+				if ( dist > 0.1 )
+				{
+					if ( entity->skill[0] )
+					{
+						entity->pitch -= dist * GHOULWALKSPEED * .5;
+						if ( entity->pitch < -PI / 8.0 )
+						{
+							entity->skill[0] = 0;
+							entity->pitch = -PI / 8.0;
+						}
+					}
+					else
+					{
+						entity->pitch += dist * GHOULWALKSPEED * .5;
+						if ( entity->pitch > PI / 8.0 )
+						{
+							entity->skill[0] = 1;
+							entity->pitch = PI / 8.0;
+						}
+					}
+				}
+				else
+				{
+					if ( entity->pitch < 0 )
+					{
+						entity->pitch += (1 / fmax(dist * .1, 10.0)) * .5;
+						if ( entity->pitch > 0 )
+						{
+							entity->pitch = 0;
+						}
+					}
+					else if ( entity->pitch > 0 )
+					{
+						entity->pitch -= (1 / fmax(dist * .1, 10.0)) * .5;
+						if ( entity->pitch < 0 )
+						{
+							entity->pitch = 0;
+						}
+					}
+				}
+			}
+		}
+		switch ( bodypart )
+		{
 			// torso
 			case 2:
 				entity->x += .5 * cos(my->yaw);
@@ -483,9 +588,12 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist) {
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 ) {
+	if ( MONSTER_ATTACK != 0 )
+	{
 		MONSTER_ATTACKTIME++;
-	} else {
+	}
+	else
+	{
 		MONSTER_ATTACKTIME = 0;
 	}
 	my->x += cos(my->yaw);
