@@ -1079,6 +1079,21 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 		}
 	}
+	else if (!strncmp(command_str, "/minotaurlevel", 10))
+	{
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+		else
+		{
+			if ( !minotaurlevel )
+			{
+				minotaurlevel = 1;
+				createMinotaurTimer(players[0]->entity, &map);
+			}
+		}
+	}
 	else
 	{
 		messagePlayer(clientnum, language[305], command_str);

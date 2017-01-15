@@ -1496,20 +1496,7 @@ void assignActions(map_t* map)
 				{
 					if ( numplayers == 0 && minotaurlevel )
 					{
-						// make a minotaur timer
-						childEntity = newEntity(37, 0, map->entities);
-						//printlog("Generated minotaur timer. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
-						childEntity->sizex = 2;
-						childEntity->sizey = 2;
-						childEntity->x = entity->x;
-						childEntity->y = entity->y;
-						childEntity->behavior = &actMinotaurTimer;
-						childEntity->flags[SPRITE] = TRUE;
-						childEntity->flags[INVISIBLE] = TRUE;
-						childEntity->flags[PASSABLE] = TRUE;
-						childEntity->flags[NOUPDATE] = TRUE;
-						childEntity->uid = -3;
-						entity_uids--;
+						createMinotaurTimer(entity, map);
 					}
 				}
 				numplayers++;

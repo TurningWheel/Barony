@@ -902,3 +902,19 @@ void actMinotaurCeilingBuster(Entity* my)
 		}
 	}
 }
+
+void createMinotaurTimer(Entity* entity, map_t* map)
+{
+	Entity* childEntity = newEntity(37, 0, map->entities);
+	childEntity->sizex = 2;
+	childEntity->sizey = 2;
+	childEntity->x = entity->x;
+	childEntity->y = entity->y;
+	childEntity->behavior = &actMinotaurTimer;
+	childEntity->flags[SPRITE] = TRUE;
+	childEntity->flags[INVISIBLE] = TRUE;
+	childEntity->flags[PASSABLE] = TRUE;
+	childEntity->flags[NOUPDATE] = TRUE;
+	childEntity->uid = -3;
+	entity_uids--;
+}
