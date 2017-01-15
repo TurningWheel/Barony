@@ -1272,12 +1272,12 @@ void actPlayer(Entity* my) {
 			if (game_controller && !*inputPressed(impulses[IN_FORWARD]) && !*inputPressed(impulses[IN_BACK])) {
 				y_force = game_controller->getLeftYPercent();
 
-				if (y_force < 0) {
-					y_force *= 0.25f;    //Move backwards more slowly.
-				}
-
 				if (stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED]) {
 					y_force *= -1;
+				}
+
+				if (y_force < 0) {
+					y_force *= 0.25f;    //Move backwards more slowly.
 				}
 			}
 
