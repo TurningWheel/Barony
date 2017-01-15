@@ -20,9 +20,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initDemon(Entity *my, Stat *myStats) {
+void initDemon(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 258;
 
@@ -61,7 +61,7 @@ void initDemon(Entity *my, Stat *myStats) {
 			strcpy(myStats->name, "Deu De'Breau");
 			myStats->LVL = 30;
 			for ( c = 0; c < 3; c++ ) {
-				Entity *entity = summonMonster(DEMON, my->x, my->y);
+				Entity* entity = summonMonster(DEMON, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -101,7 +101,7 @@ void initDemon(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(264, 0, map.entities);
+	Entity* entity = newEntity(264, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -116,7 +116,7 @@ void initDemon(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(263, 0, map.entities);
@@ -134,7 +134,7 @@ void initDemon(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(262, 0, map.entities);
@@ -152,7 +152,7 @@ void initDemon(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(261, 0, map.entities);
@@ -170,7 +170,7 @@ void initDemon(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(260, 0, map.entities);
@@ -188,7 +188,7 @@ void initDemon(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// jaw
 	entity = newEntity(259, 0, map.entities);
@@ -206,13 +206,13 @@ void initDemon(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void actDemonLimb(Entity *my) {
+void actDemonLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -232,12 +232,12 @@ void actDemonLimb(Entity *my) {
 	return;
 }
 
-void demonDie(Entity *my) {
-	node_t *node, *nextnode;
+void demonDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -246,7 +246,7 @@ void demonDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -264,7 +264,7 @@ void demonDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -277,10 +277,10 @@ void demonDie(Entity *my) {
 
 #define DEMONWALKSPEED .125
 
-void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL;
-	Entity *rightbody = NULL;
+void demonMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL;
+	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
@@ -297,7 +297,7 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -316,7 +316,7 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -331,14 +331,14 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
 			if ( bodypart == 3 || !MONSTER_ATTACK ) {
 				if ( dist > 0.1 ) {
@@ -501,7 +501,7 @@ void demonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	}
 }
 
-void actDemonCeilingBuster(Entity *my) {
+void actDemonCeilingBuster(Entity* my) {
 	double x, y;
 
 	// bust ceilings
@@ -514,7 +514,7 @@ void actDemonCeilingBuster(Entity *my) {
 					if ( multiplayer != CLIENT ) {
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK = 1;
-						Stat *myStats = my->getStats();
+						Stat* myStats = my->getStats();
 						if ( myStats ) {
 							// easy hack to stop the demon while he breaks stuff
 							myStats->EFFECTS[EFF_PARALYZED] = TRUE;
@@ -525,7 +525,7 @@ void actDemonCeilingBuster(Entity *my) {
 					// spawn several rock particles (NOT items)
 					int c, i = 6 + rand() % 4;
 					for ( c = 0; c < i; c++ ) {
-						Entity *entity = spawnGib(my);
+						Entity* entity = spawnGib(my);
 						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
 						entity->z = -8;

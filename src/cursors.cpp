@@ -11,7 +11,7 @@
 
 #include "main.hpp"
 
-char *cursor_pencil[] = {
+char* cursor_pencil[] = {
 	// width height num_colors chars_per_pixel
 	"    32    32        3            1",
 	// colors
@@ -54,7 +54,7 @@ char *cursor_pencil[] = {
 	"0,0"
 };
 
-char *cursor_brush[] = {
+char* cursor_brush[] = {
 	// width height num_colors chars_per_pixel
 	"    32    32        3            1",
 	// colors
@@ -97,7 +97,7 @@ char *cursor_brush[] = {
 	"1,0"
 };
 
-char *cursor_fill[] = {
+char* cursor_fill[] = {
 	// width height num_colors chars_per_pixel
 	"    32    32        3            1",
 	// colors
@@ -140,7 +140,7 @@ char *cursor_fill[] = {
 	"3,17"
 };
 
-SDL_Cursor *newCursor(char *image[]) {
+SDL_Cursor* newCursor(char* image[]) {
 	int i, row, col;
 	Uint8 data[128];
 	Uint8 mask[128];

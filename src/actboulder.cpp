@@ -37,14 +37,14 @@
 
 -------------------------------------------------------------------------------*/
 
-int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
+int boulderCheckAgainstEntity(Entity* my, Entity* entity) {
 	if (!my || !entity) {
 		return 0;
 	}
 
 	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 		if ( entityInsideEntity( my, entity ) ) {
-			Stat *stats = entity->getStats();
+			Stat* stats = entity->getStats();
 			if ( stats ) {
 				if ( entity->behavior == &actPlayer ) {
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -53,7 +53,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 						camera_shakex += .1;
 						camera_shakey += 10;
 					} else {
-						strcpy((char *)net_packet->data, "SHAK");
+						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 10; // turns into .1
 						net_packet->data[5] = 10;
 						net_packet->address.host = net_clients[entity->skill[2] - 1].host;
@@ -77,7 +77,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 
 					int c;
 					for ( c = 0; c < i; c++ ) {
-						Entity *entity = newEntity(-1, 1, map.entities);
+						Entity* entity = newEntity(-1, 1, map.entities);
 						entity->flags[INVISIBLE] = TRUE;
 						entity->flags[UPDATENEEDED] = TRUE;
 						entity->x = my->x - 4 + rand() % 8;
@@ -109,7 +109,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 
 					// on sokoban, destroying boulders spawns scorpions
 					if ( !strcmp(map.name, "Sokoban") ) {
-						Entity *monster = summonMonster(SCORPION, ox, oy);
+						Entity* monster = summonMonster(SCORPION, ox, oy);
 						if ( monster ) {
 							int c;
 							for ( c = 0; c < MAXPLAYERS; c++ ) {
@@ -162,7 +162,7 @@ int boulderCheckAgainstEntity(Entity *my, Entity *entity) {
 
 -------------------------------------------------------------------------------*/
 
-void actBoulder(Entity *my) {
+void actBoulder(Entity* my) {
 	int i;
 
 	my->skill[2] = -7; // invokes actEmpty() on clients
@@ -193,9 +193,9 @@ void actBoulder(Entity *my) {
 		}
 		if ( !BOULDER_NOGROUND ) {
 			if ( my->z >= -8 && fabs(my->vel_z) > 2 ) {
-				node_t *node;
+				node_t* node;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity == my ) {
 						continue;
 					}
@@ -271,9 +271,9 @@ void actBoulder(Entity *my) {
 
 			// crush objects
 			if ( dist && !BOULDER_NOGROUND ) {
-				node_t *node;
+				node_t* node;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity == my ) {
 						continue;
 					}
@@ -398,9 +398,9 @@ void actBoulder(Entity *my) {
 
 				// crush objects
 				if ( dist && !BOULDER_NOGROUND ) {
-					node_t *node;
+					node_t* node;
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						Entity *entity = (Entity *)node->element;
+						Entity* entity = (Entity*)node->element;
 						if ( entity == my ) {
 							continue;
 						}
@@ -440,7 +440,7 @@ void actBoulder(Entity *my) {
 #define BOULDERTRAP_FIRED my->skill[0]
 #define BOULDERTRAP_AMBIENCE my->skill[6]
 
-void actBoulderTrap(Entity *my) {
+void actBoulderTrap(Entity* my) {
 	int x, y;
 	int c;
 
@@ -485,7 +485,7 @@ void actBoulderTrap(Entity *my) {
 				y = ((int)(y + my->y)) >> 4;
 				if ( x >= 0 && y >= 0 && x < map.width && y < map.height ) {
 					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
-						Entity *entity = newEntity(245, 1, map.entities); // boulder
+						Entity* entity = newEntity(245, 1, map.entities); // boulder
 						entity->parent = my->uid;
 						entity->x = (x << 4) + 8;
 						entity->y = (y << 4) + 8;

@@ -109,7 +109,7 @@ typedef struct spellElement_t {
 	*/
 
 	list_t elements; // all spell elements attached to this one.
-	node_t *node; // points to its location in whatever list it's in.
+	node_t* node; // points to its location in whatever list it's in.
 } spellElement_t;
 
 /*
@@ -284,8 +284,8 @@ typedef struct spell_t {
 	//int skill_caster; //The spellcasting skill it was cast with. Lower skill can introduce inefficiencies and other !!FUN!!
 	bool sustain; //If a spell is channeled, should it be sustained? (NOTE: True by default. Set to false when the player decides to cancel/abandon a spell)
 	bool magicstaff; // if true the spell was cast from a magicstaff and thus it may have slightly different behavior
-	node_t *sustain_node; //Node in the sustained/channeled spells list.
-	node_t *magic_effects_node;
+	node_t* sustain_node; //Node in the sustained/channeled spells list.
+	node_t* magic_effects_node;
 	Uint32 caster;
 	int channel_duration; //This is the value to reset the timer to when a spell is channeled.
 	list_t elements; //NOTE: This could technically allow a spell to have multiple roots. So you could make a flurry of fireballs, for example.
@@ -293,7 +293,7 @@ typedef struct spell_t {
 };
 
 extern list_t spellList; //All of the player's spells are stored here.
-extern spell_t *selected_spell; //The spell the player's currently selected.
+extern spell_t* selected_spell; //The spell the player's currently selected.
 extern list_t channeledSpells[4]; //Spells the player is currently channeling. //TODO: Universalize it for all entities that can cast spells? //TODO: Cleanup and stuff.
 
 //TODO: Add stock spells.
@@ -331,50 +331,50 @@ extern spell_t spell_dig; //Done.
 
 void setupSpells();
 
-void equipSpell(spell_t *spell, int playernum);
-Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool trap);
-void castSpellInit(Uint32 caster_uid, spell_t *spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
+void equipSpell(spell_t* spell, int playernum);
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap);
+void castSpellInit(Uint32 caster_uid, spell_t* spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 
-void actMagicTrap(Entity *my);
-void actMagicStatuseffect(Entity *my);
-void actMagicMissile(Entity *my);
-void actMagicClient(Entity *my);
-void actMagicClientNoLight(Entity *my);
-void actMagicParticle(Entity *my);
-Entity *spawnMagicParticle(Entity *parentent);
+void actMagicTrap(Entity* my);
+void actMagicStatuseffect(Entity* my);
+void actMagicMissile(Entity* my);
+void actMagicClient(Entity* my);
+void actMagicClientNoLight(Entity* my);
+void actMagicParticle(Entity* my);
+Entity* spawnMagicParticle(Entity* parentent);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
 
-spell_t *newSpell();
-spell_t *copySpell(spell_t *spell);
-void spellConstructor(spell_t *spell);
-void spellDeconstructor(void *data);
-spellElement_t *newSpellElement();
-spellElement_t *copySpellElement(spellElement_t *spellElement);
-void spellElementConstructor(spellElement_t *element);
-void spellElementDeconstructor(void *data);
+spell_t* newSpell();
+spell_t* copySpell(spell_t* spell);
+void spellConstructor(spell_t* spell);
+void spellDeconstructor(void* data);
+spellElement_t* newSpellElement();
+spellElement_t* copySpellElement(spellElement_t* spellElement);
+void spellElementConstructor(spellElement_t* element);
+void spellElementDeconstructor(void* data);
 
-int getCostOfSpell(spell_t *spell);
-int getCostOfSpellElement(spellElement_t *spellElement);
-bool spell_isChanneled(spell_t *spell);
-bool spellElement_isChanneled(spellElement_t *spellElement);
+int getCostOfSpell(spell_t* spell);
+int getCostOfSpellElement(spellElement_t* spellElement);
+bool spell_isChanneled(spell_t* spell);
+bool spellElement_isChanneled(spellElement_t* spellElement);
 
-spell_t *getSpellFromID(int ID);
+spell_t* getSpellFromID(int ID);
 
-bool spellInList(list_t *list, spell_t *spell);
+bool spellInList(list_t* list, spell_t* spell);
 
 //-----Implementations of spell effects-----
 void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
 
-void spell_changeHealth(Entity *entity, int amount); //This function changes an entity's health.
+void spell_changeHealth(Entity* entity, int amount); //This function changes an entity's health.
 
 //-----Spell Casting Animation-----
 //The two hand animation functions.
-void actLeftHandMagic(Entity *my);
-void actRightHandMagic(Entity *my);
+void actLeftHandMagic(Entity* my);
+void actRightHandMagic(Entity* my);
 
 typedef struct spellcastingAnimationManager {
 	//The data to pass on to the castSpell function.
-	spell_t *spell;
+	spell_t* spell;
 	Uint32 caster;
 
 	bool active;
@@ -393,12 +393,12 @@ typedef struct spellcastingAnimationManager {
 } spellcasting_animation_manager_t;
 extern spellcasting_animation_manager_t cast_animation;
 
-void fireOffSpellAnimation(spellcasting_animation_manager_t *animation_manager, Uint32 caster_uid, spell_t *spell);
-extern Entity *magicLeftHand;
-extern Entity *magicRightHand;
-void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t *animation_manager);
-void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t *animation_manager);
+void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell);
+extern Entity* magicLeftHand;
+extern Entity* magicRightHand;
+void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager);
+void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager);
 
 class Item;
 
-spell_t *getSpellFromItem(Item *item);
+spell_t* getSpellFromItem(Item* item);

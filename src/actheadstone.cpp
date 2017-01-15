@@ -34,13 +34,13 @@
 #define HEADSTONE_MESSAGE my->skill[4]
 #define HEADSTONE_AMBIENCE my->skill[5]
 
-void actHeadstone(Entity *my) {
+void actHeadstone(Entity* my) {
 	if ( my->flags[INVISIBLE] ) {
 		if ( multiplayer != CLIENT ) {
-			node_t *node;
+			node_t* node;
 			int goldbags = 0;
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				if ( entity->sprite == 130 ) { // gold bag
 					goldbags++;
 				}
@@ -98,7 +98,7 @@ void actHeadstone(Entity *my) {
 			HEADSTONE_FIRED = 1;
 
 			// make a ghoul
-			Entity *monster = summonMonster(GHOUL, my->x, my->y);
+			Entity* monster = summonMonster(GHOUL, my->x, my->y);
 			if ( monster ) {
 				monster->z = 13;
 			}

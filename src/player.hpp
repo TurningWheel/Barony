@@ -17,7 +17,7 @@
 extern int current_player; //This may not be necessary. Consider this: Each Player instance keeps track of whether it is a network player or a localhost player.
 
 //TODO: Move these into each and every individual player.
-extern Entity *selectedEntity;
+extern Entity* selectedEntity;
 extern Sint32 mousex, mousey;
 extern Sint32 omousex, omousey;
 extern Sint32 mousexrel, mouseyrel;
@@ -146,7 +146,7 @@ public:
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */
-	bool handleItemContextMenu(const Item &item);
+	bool handleItemContextMenu(const Item& item);
 };
 
 extern GameController* game_controller;
@@ -156,7 +156,7 @@ void initGameControllers();
 class Player {
 	//Splitscreen support. Every player gets their own screen.
 	//Except in multiplayer. In that case, this is just a big old dummy class.
-	SDL_Surface *screen;
+	SDL_Surface* screen;
 
 	//Is this a hotseat player? If so, draw splitscreen and stuff. (Host player is automatically a hotseat player). If not, then this is a dummy container for the multiplayer client.
 	bool local_host;
@@ -164,7 +164,7 @@ class Player {
 	int playernum;
 
 public:
-	Entity *entity;
+	Entity* entity;
 
 	Player(int playernum = 0, bool local_host = true);
 	~Player();
@@ -172,7 +172,7 @@ public:
 
 void initIdentifyGUIControllerCode();
 
-extern Player **players;
+extern Player** players;
 //In the process of switching from the old entity player array, all of the old uses of player need to be hunted down and then corrected to account for the new array.
 //So, search for the comment:
 //TODO: PLAYERSWAP

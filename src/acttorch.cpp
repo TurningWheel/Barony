@@ -31,7 +31,7 @@
 #define TORCH_FLICKER my->skill[1]
 #define TORCH_FIRE my->skill[3]
 
-void actTorch(Entity *my) {
+void actTorch(Entity* my) {
 	int i;
 
 	// ambient noises (yeah, torches can make these...)
@@ -40,7 +40,7 @@ void actTorch(Entity *my) {
 		TORCH_FIRE = 480;
 		playSoundEntityLocal( my, 133, 32 );
 	}
-	Entity *entity = spawnFlame(my);
+	Entity* entity = spawnFlame(my);
 	entity->x += .25 * cos(my->yaw);
 	entity->y += .25 * sin(my->yaw);
 	entity->z -= 2.5;
@@ -88,7 +88,7 @@ void actTorch(Entity *my) {
 					messagePlayer(i, language[589]);
 					list_RemoveNode(my->light->node);
 					list_RemoveNode(my->mynode);
-					Item *item = newItem(TOOL_TORCH, WORN, 0, 1, 0, TRUE, NULL);
+					Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, TRUE, NULL);
 					itemPickup(i, item);
 					free(item);
 					return;

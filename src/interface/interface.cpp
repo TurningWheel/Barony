@@ -25,23 +25,23 @@
 #include "../player.hpp"
 
 Uint32 svFlags = 30;
-SDL_Surface *backdrop_bmp = NULL;
-SDL_Surface *status_bmp = NULL;
-SDL_Surface *character_bmp = NULL;
-SDL_Surface *hunger_bmp = NULL;
+SDL_Surface* backdrop_bmp = NULL;
+SDL_Surface* status_bmp = NULL;
+SDL_Surface* character_bmp = NULL;
+SDL_Surface* hunger_bmp = NULL;
 int textscroll = 0;
 int attributespage = 0;
-Item *invitems[4];
-Item *invitemschest[4];
+Item* invitems[4];
+Item* invitemschest[4];
 int inventorycategory = 7; // inventory window defaults to wildcard
 int itemscroll = 0;
 view_t camera_charsheet;
 
-SDL_Surface *font12x12_small_bmp = NULL;
-SDL_Surface *inventoryChest_bmp = NULL;
-SDL_Surface *invclose_bmp = NULL;
-SDL_Surface *invgraball_bmp = NULL;
-SDL_Surface *button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
+SDL_Surface* font12x12_small_bmp = NULL;
+SDL_Surface* inventoryChest_bmp = NULL;
+SDL_Surface* invclose_bmp = NULL;
+SDL_Surface* invgraball_bmp = NULL;
+SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
 bool gui_clickdrag = FALSE;
 int dragoffset_x = 0;
 int dragoffset_y = 0;
@@ -63,58 +63,58 @@ int removecursegui_offset_x = 0;
 int removecursegui_offset_y = 0;
 bool dragging_removecurseGUI = FALSE;
 int removecursescroll = 0;
-Item *removecurse_items[4];
-SDL_Surface *removecurseGUI_img;
+Item* removecurse_items[4];
+SDL_Surface* removecurseGUI_img;
 
-SDL_Surface *rightsidebar_titlebar_img = NULL;
-SDL_Surface *rightsidebar_slot_img = NULL;
-SDL_Surface *rightsidebar_slot_highlighted_img = NULL;
-SDL_Surface *rightsidebar_slot_grayedout_img = NULL;
+SDL_Surface* rightsidebar_titlebar_img = NULL;
+SDL_Surface* rightsidebar_slot_img = NULL;
+SDL_Surface* rightsidebar_slot_highlighted_img = NULL;
+SDL_Surface* rightsidebar_slot_grayedout_img = NULL;
 int rightsidebar_height = 0;
 int appraisal_timer = 0;
 int appraisal_timermax = 0;
 Uint32 appraisal_item = 0;
 
-SDL_Surface *bookgui_img = NULL;
+SDL_Surface* bookgui_img = NULL;
 //SDL_Surface *nextpage_img = NULL;
 //SDL_Surface *previouspage_img = NULL;
 //SDL_Surface *bookclose_img = NULL;
-node_t *book_page = NULL;
+node_t* book_page = NULL;
 int bookgui_offset_x = 0;
 int bookgui_offset_y = 0;
 bool dragging_book_GUI = FALSE;
 bool book_open = FALSE;
-book_t *open_book = NULL;
-Item *open_book_item = NULL;
+book_t* open_book = NULL;
+Item* open_book_item = NULL;
 //int book_characterspace_x = 0;
 //int book_characterspace_y = 0;
 
-SDL_Surface *book_highlighted_left_img = NULL;
-SDL_Surface *book_highlighted_right_img = NULL;
+SDL_Surface* book_highlighted_left_img = NULL;
+SDL_Surface* book_highlighted_right_img = NULL;
 
 int gui_mode = GUI_MODE_NONE;
 
-SDL_Surface *magicspellList_bmp = NULL;
-SDL_Surface *spell_list_titlebar_bmp = NULL;
-SDL_Surface *spell_list_gui_slot_bmp = NULL;
-SDL_Surface *spell_list_gui_slot_highlighted_bmp = NULL;
-SDL_Surface *textup_bmp = NULL;
-SDL_Surface *textdown_bmp = NULL;
-SDL_Surface *attributesleft_bmp = NULL;
-SDL_Surface *attributesright_bmp = NULL;
-SDL_Surface *attributesleftunclicked_bmp = NULL;
-SDL_Surface *attributesrightunclicked_bmp = NULL;
-SDL_Surface *inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
+SDL_Surface* magicspellList_bmp = NULL;
+SDL_Surface* spell_list_titlebar_bmp = NULL;
+SDL_Surface* spell_list_gui_slot_bmp = NULL;
+SDL_Surface* spell_list_gui_slot_highlighted_bmp = NULL;
+SDL_Surface* textup_bmp = NULL;
+SDL_Surface* textdown_bmp = NULL;
+SDL_Surface* attributesleft_bmp = NULL;
+SDL_Surface* attributesright_bmp = NULL;
+SDL_Surface* attributesleftunclicked_bmp = NULL;
+SDL_Surface* attributesrightunclicked_bmp = NULL;
+SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoptionChest_bmp = NULL, *equipped_bmp = NULL;
 //SDL_Surface *category_bmp[NUMCATEGORIES];
-SDL_Surface *shopkeeper_bmp = NULL;
-SDL_Surface *damage_bmp = NULL;
+SDL_Surface* shopkeeper_bmp = NULL;
+SDL_Surface* damage_bmp = NULL;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
 bool dragging_magicspell_list_GUI = FALSE;
 int magic_GUI_state = 0;
 SDL_Rect magic_gui_pos;
-SDL_Surface *sustained_spell_generic_icon = NULL;
+SDL_Surface* sustained_spell_generic_icon = NULL;
 
 int buttonclick = 0;
 
@@ -122,8 +122,8 @@ bool draw_cursor = true;
 
 hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 int current_hotbar = 0;
-SDL_Surface *hotbar_img = NULL;
-SDL_Surface *hotbar_spell_img = NULL;
+SDL_Surface* hotbar_img = NULL;
+SDL_Surface* hotbar_spell_img = NULL;
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = TRUE;
@@ -552,7 +552,7 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] = {
 
 -------------------------------------------------------------------------------*/
 
-void saveCommand(char *content) {
+void saveCommand(char* content) {
 	newString(&command_history, 0xFFFFFFFF, content);
 }
 
@@ -565,18 +565,18 @@ void saveCommand(char *content) {
 
 -------------------------------------------------------------------------------*/
 
-int loadConfig(char *filename) {
+int loadConfig(char* filename) {
 	defaultImpulses(); //So that a config file that's missing impulses can get all them.
 
 	char str[1024];
-	FILE *fp;
+	FILE* fp;
 	bool mallocd = FALSE;
 
 	printlog("Loading config '%s'...\n", filename);
 
 	if ( strstr(filename, ".cfg") == NULL ) {
-		char *filename2 = filename;
-		filename = (char *) malloc(sizeof(char) * 256);
+		char* filename2 = filename;
+		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, filename2);
 		mallocd = TRUE;
 		strcat(filename, ".cfg");
@@ -612,18 +612,18 @@ int loadConfig(char *filename) {
 
 -------------------------------------------------------------------------------*/
 
-int saveConfig(char *filename) {
+int saveConfig(char* filename) {
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
-	FILE *fp;
+	FILE* fp;
 	int c;
 	bool mallocd = FALSE;
 
 	printlog("Saving config '%s'...\n", filename);
 
 	if ( strstr(filename, ".cfg") == NULL ) {
-		char *filename2 = filename;
-		filename = (char *) malloc(sizeof(char) * 256);
+		char* filename2 = filename;
+		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, filename2);
 		mallocd = TRUE;
 		strcat(filename, ".cfg");
@@ -767,7 +767,7 @@ bool mouseInBounds(int x1, int x2, int y1, int y2) {
 	return FALSE;
 }
 
-hotbar_slot_t *getHotbar(int x, int y) {
+hotbar_slot_t* getHotbar(int x, int y) {
 	if (x >= STATUS_X && x < STATUS_X + status_bmp->w && y >= STATUS_Y - hotbar_img->h && y < STATUS_Y) {
 		int relx = x - STATUS_X; //X relative to the start of the hotbar.
 		return &hotbar[relx / hotbar_img->w]; //The slot will clearly be the x divided by the width of a slot
@@ -784,7 +784,7 @@ hotbar_slot_t *getHotbar(int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-const char *getInputName(Uint32 scancode) {
+const char* getInputName(Uint32 scancode) {
 	if ( scancode >= 0 && scancode < 283 ) {
 		return SDL_GetKeyName(SDL_GetKeyFromScancode(static_cast<SDL_Scancode>(scancode)));
 	} else if ( scancode < 299 ) {
@@ -851,7 +851,7 @@ const char *getInputName(Uint32 scancode) {
 
 Sint8 dummy_value = 0; //THIS LINE IS AN UTTER BODGE to stop this function from crashing.
 
-Sint8 *inputPressed(Uint32 scancode) {
+Sint8* inputPressed(Uint32 scancode) {
 	if (scancode >= 0 && scancode < 283) {
 		// usual (keyboard) scancode range
 		return &keystatus[scancode];

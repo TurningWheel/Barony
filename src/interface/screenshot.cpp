@@ -25,7 +25,7 @@
 
 void takeScreenshot() {
 	char filename[1024];
-	SDL_Surface *temp, *temp2;
+	SDL_Surface* temp, *temp2;
 
 	strcpy( filename, "Screenshot " );
 	time_t timer;

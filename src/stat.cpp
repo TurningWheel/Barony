@@ -16,7 +16,7 @@
 #include "items.hpp"
 #include "magic/magic.hpp"
 
-Stat *stats[MAXPLAYERS];
+Stat* stats[MAXPLAYERS];
 
 // Constructor
 Stat::Stat() {
@@ -161,12 +161,12 @@ Stat::~Stat() {
 		this->mask = NULL;
 	}
 	//Free memory for magic effects.
-	node_t *spellnode;
+	node_t* spellnode;
 	spellnode = this->magic_effects.first;
 	while (spellnode) {
-		node_t *oldnode = spellnode;
+		node_t* oldnode = spellnode;
 		spellnode = spellnode->next;
-		spell_t *spell = (spell_t*)oldnode->element;
+		spell_t* spell = (spell_t*)oldnode->element;
 		spell->magic_effects_node = NULL;
 	}
 	list_FreeAll(&this->magic_effects);
@@ -317,10 +317,10 @@ Returns a pointer to a new instance of the Stats class
 -------------------------------------------------------------------------------*/
 
 Stat* Stat::copyStats() {
-	node_t *node;
+	node_t* node;
 	int c;
 
-	Stat *newStat = new Stat();
+	Stat* newStat = new Stat();
 
 	newStat->type = this->type;
 	newStat->sex = this->sex;
@@ -366,16 +366,16 @@ Stat* Stat::copyStats() {
 	newStat->inventory.last = NULL;
 	list_Copy(&newStat->inventory, &this->inventory);
 	for (node = newStat->inventory.first; node != NULL; node = node->next) {
-		Item *item = (Item *)node->element;
+		Item* item = (Item*)node->element;
 		item->node = node;
 	}
 
 	if (this->helmet) {
 		if (this->helmet->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->helmet->node));
-			newStat->helmet = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->helmet->node));
+			newStat->helmet = (Item*)node->element;
 		} else {
-			newStat->helmet = (Item *)malloc(sizeof(Item));
+			newStat->helmet = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->helmet, this->helmet, sizeof(Item));
 		}
 	} else {
@@ -383,10 +383,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->breastplate) {
 		if (this->breastplate->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->breastplate->node));
-			newStat->breastplate = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->breastplate->node));
+			newStat->breastplate = (Item*)node->element;
 		} else {
-			newStat->breastplate = (Item *)malloc(sizeof(Item));
+			newStat->breastplate = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->breastplate, this->breastplate, sizeof(Item));
 		}
 	} else {
@@ -394,10 +394,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->gloves) {
 		if (this->gloves->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->gloves->node));
-			newStat->gloves = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->gloves->node));
+			newStat->gloves = (Item*)node->element;
 		} else {
-			newStat->gloves = (Item *)malloc(sizeof(Item));
+			newStat->gloves = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->gloves, this->gloves, sizeof(Item));
 		}
 	} else {
@@ -405,10 +405,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->shoes) {
 		if (this->shoes->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->shoes->node));
-			newStat->shoes = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->shoes->node));
+			newStat->shoes = (Item*)node->element;
 		} else {
-			newStat->shoes = (Item *)malloc(sizeof(Item));
+			newStat->shoes = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->shoes, this->shoes, sizeof(Item));
 		}
 	} else {
@@ -416,10 +416,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->shield) {
 		if (this->shield->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->shield->node));
-			newStat->shield = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->shield->node));
+			newStat->shield = (Item*)node->element;
 		} else {
-			newStat->shield = (Item *)malloc(sizeof(Item));
+			newStat->shield = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->shield, this->shield, sizeof(Item));
 		}
 	} else {
@@ -427,10 +427,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->weapon) {
 		if (this->weapon->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->weapon->node));
-			newStat->weapon = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->weapon->node));
+			newStat->weapon = (Item*)node->element;
 		} else {
-			newStat->weapon = (Item *)malloc(sizeof(Item));
+			newStat->weapon = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->weapon, this->weapon, sizeof(Item));
 		}
 	} else {
@@ -438,10 +438,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->cloak) {
 		if (this->cloak->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->cloak->node));
-			newStat->cloak = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->cloak->node));
+			newStat->cloak = (Item*)node->element;
 		} else {
-			newStat->cloak = (Item *)malloc(sizeof(Item));
+			newStat->cloak = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->cloak, this->cloak, sizeof(Item));
 		}
 	} else {
@@ -449,10 +449,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->amulet) {
 		if (this->amulet->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->amulet->node));
-			newStat->amulet = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->amulet->node));
+			newStat->amulet = (Item*)node->element;
 		} else {
-			newStat->amulet = (Item *)malloc(sizeof(Item));
+			newStat->amulet = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->amulet, this->amulet, sizeof(Item));
 		}
 	} else {
@@ -460,10 +460,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->ring) {
 		if (this->ring->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->ring->node));
-			newStat->ring = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->ring->node));
+			newStat->ring = (Item*)node->element;
 		} else {
-			newStat->ring = (Item *)malloc(sizeof(Item));
+			newStat->ring = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->ring, this->ring, sizeof(Item));
 		}
 	} else {
@@ -471,10 +471,10 @@ Stat* Stat::copyStats() {
 	}
 	if (this->mask) {
 		if (this->mask->node) {
-			node_t *node = list_Node(&newStat->inventory, list_Index(this->mask->node));
-			newStat->mask = (Item *)node->element;
+			node_t* node = list_Node(&newStat->inventory, list_Index(this->mask->node));
+			newStat->mask = (Item*)node->element;
 		} else {
-			newStat->mask = (Item *)malloc(sizeof(Item));
+			newStat->mask = (Item*)malloc(sizeof(Item));
 			memcpy(newStat->mask, this->mask, sizeof(Item));
 		}
 	} else {

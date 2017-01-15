@@ -30,7 +30,7 @@ Uint32 minotaur_timer = 0;
 
 #define MINIMAPSCALE 4
 void drawMinimap() {
-	node_t *node;
+	node_t* node;
 	Uint32 color;
 	int x, y, i;
 
@@ -75,7 +75,7 @@ void drawMinimap() {
 
 	// draw exits/monsters
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 161 || (entity->sprite >= 254 && entity->sprite < 258) ) { // ladder or portal models
 			if ( entity->x >= 0 && entity->y >= 0 && entity->x < map.width << 4 && entity->y < map.height << 4 ) {
 				x = floor(entity->x / 16);
@@ -129,7 +129,7 @@ void drawMinimap() {
 
 	// draw players and allies
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		bool drawchar = FALSE;
 		bool foundme = FALSE;
 		if ( entity->behavior == &actPlayer ) {
@@ -138,9 +138,9 @@ void drawMinimap() {
 				foundme = TRUE;
 			}
 		} else if ( entity->behavior == &actMonster ) {
-			node_t *node2;
+			node_t* node2;
 			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != NULL; node2 = node2->next ) {
-				if ( *((Uint32 *)node2->element) == entity->uid ) {
+				if ( *((Uint32*)node2->element) == entity->uid ) {
 					drawchar = TRUE;
 					break;
 				}
@@ -209,7 +209,7 @@ void drawMinimap() {
 		return;
 	}
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 239 ) {
 			if ( ticks % 120 - ticks % 60 ) {
 				if ( !minotaur_timer ) {

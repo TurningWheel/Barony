@@ -35,14 +35,14 @@
 #define BEARTRAP_APPEARANCE my->skill[14]
 #define BEARTRAP_IDENTIFIED my->skill[15]
 
-void actBeartrap(Entity *my) {
+void actBeartrap(Entity* my) {
 	int i;
 
 	// undo beartrap
 	for (i = 0; i < MAXPLAYERS; i++) {
 		if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) ) {
 			if (inrange[i]) {
-				Entity *entity = newEntity(-1, 1, map.entities);
+				Entity* entity = newEntity(-1, 1, map.entities);
 				entity->flags[INVISIBLE] = TRUE;
 				entity->flags[UPDATENEEDED] = TRUE;
 				entity->flags[PASSABLE] = TRUE;
@@ -69,14 +69,14 @@ void actBeartrap(Entity *my) {
 	}
 
 	// launch beartrap
-	node_t *node;
+	node_t* node;
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( my->parent == entity->uid ) {
 			continue;
 		}
 		if ( entity->behavior == &actMonster || entity->behavior == &actPlayer ) {
-			Stat *stat = entity->getStats();
+			Stat* stat = entity->getStats();
 			if ( stat ) {
 				if ( entityDist(my, entity) < 6.5 ) {
 					stat->EFFECTS[EFF_PARALYZED] = TRUE;
@@ -89,7 +89,7 @@ void actBeartrap(Entity *my) {
 					entity->setObituary(language[1504]);
 
 					if ( stat->HP <= 0 ) {
-						Entity *parent = uidToEntity(my->parent);
+						Entity* parent = uidToEntity(my->parent);
 						if ( parent ) {
 							parent->awardXP( entity, TRUE, TRUE );
 						}
@@ -105,7 +105,7 @@ void actBeartrap(Entity *my) {
 							camera_shakex += .1;
 							camera_shakey += 10;
 						} else if ( player > 0 && multiplayer == SERVER ) {
-							strcpy((char *)net_packet->data, "SHAK");
+							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
 							net_packet->data[5] = 10;
 							net_packet->address.host = net_clients[player - 1].host;
@@ -116,7 +116,7 @@ void actBeartrap(Entity *my) {
 					}
 					playSoundEntity(my, 76, 64);
 					playSoundEntity(entity, 28, 64);
-					Entity *gib = spawnGib(entity);
+					Entity* gib = spawnGib(entity);
 					serverSpawnGibForClient(gib);
 
 					// make first arm
@@ -152,7 +152,7 @@ void actBeartrap(Entity *my) {
 	}
 }
 
-void actBeartrapLaunched(Entity *my) {
+void actBeartrapLaunched(Entity* my) {
 	if ( my->ticks >= 200 ) {
 		list_RemoveNode(my->mynode);
 		return;

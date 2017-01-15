@@ -19,16 +19,16 @@
 #include "net.hpp"
 #include "player.hpp"
 
-list_t *shopInv = NULL;
+list_t* shopInv = NULL;
 Uint32 shopkeeper = 0;
 Uint32 shoptimer = 0;
-char *shopspeech = NULL;
+char* shopspeech = NULL;
 int shopinventorycategory = 7;
 int shopitemscroll;
-Item *shopinvitems[4];
-Item *sellitem = NULL;
+Item* shopinvitems[4];
+Item* sellitem = NULL;
 int shopkeepertype = 0;
-char *shopkeepername = NULL;
+char* shopkeepername = NULL;
 char shopkeepername_client[64];
 
 int selectedShopSlot = -1;
@@ -41,7 +41,7 @@ int selectedShopSlot = -1;
 
 -------------------------------------------------------------------------------*/
 
-void startTradingServer(Entity *entity, int player) {
+void startTradingServer(Entity* entity, int player) {
 	if (!entity) {
 		return;
 	}
@@ -52,7 +52,7 @@ void startTradingServer(Entity *entity, int player) {
 		return;
 	}
 
-	Stat *stats = entity->getStats();
+	Stat* stats = entity->getStats();
 	if ( stats == NULL ) {
 		return;
 	}
@@ -66,7 +66,7 @@ void startTradingServer(Entity *entity, int player) {
 		shopspeech = language[194 + rand() % 3];
 		shopinventorycategory = 7;
 		sellitem = NULL;
-		Entity *entity = uidToEntity(shopkeeper);
+		Entity* entity = uidToEntity(shopkeeper);
 		shopkeepertype = entity->skill[18];
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
@@ -81,11 +81,11 @@ void startTradingServer(Entity *entity, int player) {
 		}
 	} else if ( multiplayer == SERVER ) {
 		// open shop on client
-		Stat *entitystats = entity->getStats();
-		strcpy((char *)net_packet->data, "SHOP");
+		Stat* entitystats = entity->getStats();
+		strcpy((char*)net_packet->data, "SHOP");
 		SDLNet_Write32((Uint32)entity->uid, &net_packet->data[4]);
 		net_packet->data[8] = entity->skill[18];
-		strcpy((char *)(&net_packet->data[9]), entitystats->name);
+		strcpy((char*)(&net_packet->data[9]), entitystats->name);
 		net_packet->data[9 + strlen(entitystats->name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
@@ -93,10 +93,10 @@ void startTradingServer(Entity *entity, int player) {
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		// fill client's shop inventory with items
-		node_t *node;
+		node_t* node;
 		for ( node = entitystats->inventory.first; node != NULL; node = node->next ) {
-			Item *item = (Item *)node->element;
-			strcpy((char *)net_packet->data, "SHPI");
+			Item* item = (Item*)node->element;
+			strcpy((char*)net_packet->data, "SHPI");
 			SDLNet_Write32(item->type, &net_packet->data[4]);
 			net_packet->data[8] = (char)item->status;
 			net_packet->data[9] = (char)item->beatitude;
@@ -126,7 +126,7 @@ void startTradingServer(Entity *entity, int player) {
 
 -------------------------------------------------------------------------------*/
 
-void buyItemFromShop(Item *item) {
+void buyItemFromShop(Item* item) {
 	if ( !item ) {
 		return;
 	}
@@ -146,16 +146,16 @@ void buyItemFromShop(Item *item) {
 		messagePlayer(clientnum, language[1123], item->description(), item->buyValue(clientnum));
 		item->count = ocount;
 		if ( multiplayer != CLIENT ) {
-			Entity *entity = uidToEntity(shopkeeper);
+			Entity* entity = uidToEntity(shopkeeper);
 			if (entity) {
-				Stat *shopstats = entity->getStats();
+				Stat* shopstats = entity->getStats();
 				shopstats->GOLD += item->buyValue(clientnum);
 			}
 			if ( rand() % 2 ) {
 				players[clientnum]->entity->increaseSkill(PRO_TRADING);
 			}
 		} else {
-			strcpy((char *)net_packet->data, "SHPB");
+			strcpy((char*)net_packet->data, "SHPB");
 			SDLNet_Write32(shopkeeper, &net_packet->data[4]);
 
 			// send item that was bought to server
@@ -190,7 +190,7 @@ void buyItemFromShop(Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-void sellItemToShop(Item *item) {
+void sellItemToShop(Item* item) {
 	if ( !item ) {
 		return;
 	}
@@ -271,7 +271,7 @@ void sellItemToShop(Item *item) {
 			players[clientnum]->entity->increaseSkill(PRO_TRADING);
 		}
 	} else {
-		strcpy((char *)net_packet->data, "SHPS");
+		strcpy((char*)net_packet->data, "SHPS");
 		SDLNet_Write32(shopkeeper, &net_packet->data[4]);
 
 		// send item that was sold to server

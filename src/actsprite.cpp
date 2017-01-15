@@ -30,7 +30,7 @@
 #define SPRITE_ANIMSPEED my->skill[2]
 #define SPRITE_LIT my->skill[5]
 
-void actSprite(Entity *my) {
+void actSprite(Entity* my) {
 	if ( !my->skill[6] && SPRITE_LIT ) {
 		my->skill[6] = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, SPRITE_LIT, 256);
@@ -57,14 +57,14 @@ void actSprite(Entity *my) {
 	}
 }
 
-Entity *spawnBang(Sint16 x, Sint16 y, Sint16 z) {
+Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z) {
 	int c;
 	if ( multiplayer == SERVER ) {
 		for ( c = 1; c < MAXPLAYERS; c++ ) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "BANG");
+			strcpy((char*)net_packet->data, "BANG");
 			SDLNet_Write16(x, &net_packet->data[4]);
 			SDLNet_Write16(y, &net_packet->data[6]);
 			SDLNet_Write16(z, &net_packet->data[8]);
@@ -76,7 +76,7 @@ Entity *spawnBang(Sint16 x, Sint16 y, Sint16 z) {
 	}
 
 	// bang
-	Entity *entity = newEntity(23, 1, map.entities);
+	Entity* entity = newEntity(23, 1, map.entities);
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
@@ -97,14 +97,14 @@ Entity *spawnBang(Sint16 x, Sint16 y, Sint16 z) {
 	return entity;
 }
 
-Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
+Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 	int c, i;
 	if ( multiplayer == SERVER ) {
 		for ( c = 1; c < MAXPLAYERS; c++ ) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "EXPL");
+			strcpy((char*)net_packet->data, "EXPL");
 			SDLNet_Write16(x, &net_packet->data[4]);
 			SDLNet_Write16(y, &net_packet->data[6]);
 			SDLNet_Write16(z, &net_packet->data[8]);
@@ -116,7 +116,7 @@ Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 	}
 
 	// boom
-	Entity *entity = newEntity(49, 1, map.entities);
+	Entity* entity = newEntity(49, 1, map.entities);
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
@@ -129,12 +129,12 @@ Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 	entity->skill[0] = 1;
 	entity->skill[1] = 4;
 	entity->skill[2] = 4;
-	Entity *my = entity;
+	Entity* my = entity;
 	SPRITE_FRAMES = 10;
 	SPRITE_ANIMSPEED = 2;
 	SPRITE_LIT = 4;
 	playSoundEntityLocal(entity, 153, 128);
-	Entity *explosion = entity;
+	Entity* explosion = entity;
 	for (i = 0; i < 10; ++i) {
 		entity = newEntity(16, 1, map.entities);
 		entity->behavior = &actFlame;
@@ -160,7 +160,7 @@ Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z) {
 	return explosion;
 }
 
-void actSleepZ(Entity *my) {
+void actSleepZ(Entity* my) {
 	// spin around
 	my->x -= my->fskill[0];
 	my->y -= my->fskill[1];
@@ -182,7 +182,7 @@ void actSleepZ(Entity *my) {
 	my->scalez = fmin(my->scalez + 0.01, 0.75);
 }
 
-Entity *spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
+Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
 	int c;
 
 	if ( multiplayer == SERVER ) {
@@ -190,7 +190,7 @@ Entity *spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "SLEZ");
+			strcpy((char*)net_packet->data, "SLEZ");
 			SDLNet_Write16(x, &net_packet->data[4]);
 			SDLNet_Write16(y, &net_packet->data[6]);
 			SDLNet_Write16(z, &net_packet->data[8]);
@@ -201,7 +201,7 @@ Entity *spawnSleepZ(Sint16 x, Sint16 y, Sint16 z) {
 		}
 	}
 
-	Entity *entity = newEntity(47, 1, map.entities);
+	Entity* entity = newEntity(47, 1, map.entities);
 	entity->behavior = &actSleepZ;
 	entity->x = x;
 	entity->y = y;

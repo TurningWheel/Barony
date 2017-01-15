@@ -119,22 +119,22 @@ public:
 
 	// equipment
 	list_t inventory;
-	Item *helmet;
-	Item *breastplate;
-	Item *gloves;
-	Item *shoes;
-	Item *shield;
-	Item *weapon;
-	Item *cloak;
-	Item *amulet;
-	Item *ring;
-	Item *mask;
+	Item* helmet;
+	Item* breastplate;
+	Item* gloves;
+	Item* shoes;
+	Item* shield;
+	Item* weapon;
+	Item* cloak;
+	Item* amulet;
+	Item* ring;
+	Item* mask;
 
 	// misc
 #ifdef HAVE_FMOD
-	FMOD_CHANNEL *monster_sound; //TODO: Do?
+	FMOD_CHANNEL* monster_sound; //TODO: Do?
 #else
-	void *monster_sound;
+	void* monster_sound;
 #endif
 	int monster_idlevar;
 
@@ -143,7 +143,7 @@ public:
 	~Stat();
 	void clearStats();
 	void freePlayerEquipment();
-	Stat *copyStats();
+	Stat* copyStats();
 	void printStats();
 };
-extern Stat *stats[MAXPLAYERS];
+extern Stat* stats[MAXPLAYERS];

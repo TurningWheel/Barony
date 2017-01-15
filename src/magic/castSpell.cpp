@@ -21,9 +21,9 @@
 #include "../player.hpp"
 #include "magic.hpp"
 
-void castSpellInit(Uint32 caster_uid, spell_t *spell) {
-	Entity *caster = uidToEntity(caster_uid);
-	node_t *node = NULL;
+void castSpellInit(Uint32 caster_uid, spell_t* spell) {
+	Entity* caster = uidToEntity(caster_uid);
+	node_t* node = NULL;
 	if (!caster || !spell) {
 		//Need a spell and caster to cast a spell.
 		return;
@@ -60,7 +60,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 		if (spell_isChanneled(spell)) {
 			if (channeledSpells[clientnum], spell) {
 				for (node = channeledSpells[player].first; node; node = node->next) {
-					spell_t *spell_search = (spell_t*)node->element;
+					spell_t* spell_search = (spell_t*)node->element;
 					if (spell_search->ID == spell->ID) {
 						//list_RemoveNode(node);
 						//node = NULL;
@@ -70,7 +70,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 						messagePlayer(player, language[408], spell->name);
 						if (multiplayer == CLIENT) {
 							list_RemoveNode(node);
-							strcpy( (char *)net_packet->data, "UNCH");
+							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = clientnum;
 							SDLNet_Write32(spell->ID, &net_packet->data[5]);
 							net_packet->address.host = net_server.host;
@@ -89,7 +89,7 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 	//Entity *entity = NULL;
 	//node_t *node = spell->elements->first;
 
-	Stat *stat = caster->getStats();
+	Stat* stat = caster->getStats();
 	if ( !stat ) {
 		return;
 	}
@@ -118,19 +118,19 @@ void castSpellInit(Uint32 caster_uid, spell_t *spell) {
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
 
-Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool trap) {
-	Entity *caster = uidToEntity(caster_uid);
+Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool trap) {
+	Entity* caster = uidToEntity(caster_uid);
 
 	if (!caster || !spell) {
 		//Need a spell and caster to cast a spell.
 		return NULL;
 	}
 
-	Entity *result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
+	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
 #define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat)),100) //Shortcut!
 
 	if (clientnum != 0 && multiplayer == CLIENT) {
-		strcpy( (char *)net_packet->data, "SPEL" );
+		strcpy( (char*)net_packet->data, "SPEL" );
 		net_packet->data[4] = clientnum;
 		SDLNet_Write32(spell->ID, &net_packet->data[5]);
 		net_packet->address.host = net_server.host;
@@ -154,11 +154,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 	int magiccost = 0;
 	int extramagic = 0; //Extra magic drawn in from the caster being a newbie.
 	int extramagic_to_use = 0; //Instead of doing element->mana (which causes bugs), this is an extra factor in the mana equations. Pumps extra mana into elements from extramagic.
-	Entity *entity = NULL;
-	spell_t *channeled_spell = NULL; //Pointer to the spell if it's a channeled spell. For the purpose of giving it its node in the channeled spell list.
-	node_t *node = spell->elements.first;
+	Entity* entity = NULL;
+	spell_t* channeled_spell = NULL; //Pointer to the spell if it's a channeled spell. For the purpose of giving it its node in the channeled spell list.
+	node_t* node = spell->elements.first;
 
-	Stat *stat = caster->getStats();
+	Stat* stat = caster->getStats();
 
 	int player = -1;
 	for (i = 0; i < numplayers; ++i) {
@@ -239,7 +239,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			}
 	}
 
-	node_t *node2; //For traversing the map looking for...liquids?
+	node_t* node2; //For traversing the map looking for...liquids?
 	//Check if swimming.
 	if (!waterwalkingboots && !levitating && !trap && player >= 0) {
 		bool swimming = FALSE;
@@ -261,7 +261,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 
 	//Right. First, grab the root element, which is what determines the delivery system.
 	//spellElement_t *element = (spellElement_t *)spell->elements->first->element;
-	spellElement_t *element = (spellElement_t *)node->element;
+	spellElement_t* element = (spellElement_t*)node->element;
 	if (element) {
 		extramagic_to_use = 0;
 		/*if (magiccost > stat->MP) {
@@ -313,13 +313,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 			entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
 			entity->skill[12] = (element->duration * (((element->mana + extramagic_to_use) / element->base_mana) * element->overload_multiplier)); //How long this thing lives.
-			node_t *spellnode = list_AddNodeLast(&entity->children);
+			node_t* spellnode = list_AddNodeLast(&entity->children);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
 			spellnode->size = sizeof(spell_t);
-			((spell_t *)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->uid;
 			if ( using_magicstaff ) {
-				((spell_t *)spellnode->element)->magicstaff = TRUE;
+				((spell_t*)spellnode->element)->magicstaff = TRUE;
 			}
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie) {
@@ -335,23 +335,23 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			}
 			if (using_magicstaff || trap) {
 				entity->skill[12] = MAGICSTAFF_LIGHT_DURATION; //TODO: Grab the duration from the magicstaff or trap?
-				((spell_t *)spellnode->element)->sustain = FALSE;
+				((spell_t*)spellnode->element)->sustain = FALSE;
 			} else {
-				entity->skill[12] /= getCostOfSpell((spell_t *)spellnode->element);
+				entity->skill[12] /= getCostOfSpell((spell_t*)spellnode->element);
 			}
-			((spell_t *)spellnode->element)->channel_duration = entity->skill[12]; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+			((spell_t*)spellnode->element)->channel_duration = entity->skill[12];  //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			result = entity;
 
 			playSoundEntity(entity, 165, 128 );
 		} else if (!strcmp(element->name, spellElement_invisible.name)) {
 			int duration = element->duration;
 			duration += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
-			node_t *spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
 			channeled_spell->magic_effects_node = spellnode;
 			spellnode->size = sizeof(spell_t);
-			((spell_t *)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->uid;
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie) {
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
@@ -363,7 +363,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					duration = 180;    //Range checking.
 				}
 			}
-			duration /= getCostOfSpell((spell_t *)spellnode->element);
+			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			stat->EFFECTS[EFF_INVISIBLE] = TRUE;
 			stat->EFFECTS_TIMERS[EFF_INVISIBLE] = duration;
@@ -378,12 +378,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 		} else if (!strcmp(element->name, spellElement_levitation.name)) {
 			int duration = element->duration;
 			duration += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
-			node_t *spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
+			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
 			channeled_spell->magic_effects_node = spellnode;
 			spellnode->size = sizeof(spell_t);
-			((spell_t *)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->uid;
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie) {
 				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
@@ -395,7 +395,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					duration = 180;    //Range checking.
 				}
 			}
-			duration /= getCostOfSpell((spell_t *)spellnode->element);
+			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
 			stat->EFFECTS[EFF_LEVITATING] = TRUE;
 			stat->EFFECTS_TIMERS[EFF_LEVITATING] = duration;
@@ -415,7 +415,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
 					if (i != 0) {
 						//Tell the client to identify an item.
-						strcpy((char *)net_packet->data, "IDEN");
+						strcpy((char*)net_packet->data, "IDEN");
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
 						net_packet->len = 4;
@@ -441,7 +441,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 					if (i != 0) {
 						//Tell the client to uncurse an item.
-						strcpy((char *)net_packet->data, "RCUR");
+						strcpy((char*)net_packet->data, "RCUR");
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
 						net_packet->len = 4;
@@ -483,7 +483,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					playSoundEntity(caster, 168, 128);
 
 					for (node = map.entities->first; node->next; node = node->next) {
-						entity = (Entity *)(node->element);
+						entity = (Entity*)(node->element);
 						if ( !entity ||  entity == caster ) {
 							continue;
 						}
@@ -521,14 +521,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 					playSoundEntity(entity, 168, 128);
 
 					for (node = map.entities->first; node->next; node = node->next) {
-						entity = (Entity *)(node->element);
+						entity = (Entity*)(node->element);
 						if ( !entity || entity == caster ) {
 							continue;
 						}
 						if ( entity->behavior != &actPlayer && entity->behavior != &actMonster ) {
 							continue;
 						}
-						Stat *target_stat = entity->getStats();
+						Stat* target_stat = entity->getStats();
 						if ( target_stat ) {
 							if (entityDist(entity, caster) <= HEAL_RADIUS && entity->checkFriend(caster)) {
 								for (c = 0; c < NUMEFFECTS; ++c) { //This does a whole lot more than just cure ailments.
@@ -577,7 +577,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			entity->skill[5] = traveltime;
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
-			((spell_t *)node->element)->caster = caster->uid;
+			((spell_t*)node->element)->caster = caster->uid;
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
@@ -608,7 +608,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 		//element = (spellElement_t *)element->elements->first->element;
 		node = element->elements.first;
 		if ( node ) {
-			element = (spellElement_t *)node->element;
+			element = (spellElement_t*)node->element;
 			if (!strcmp(element->name, spellElement_force.name)) {
 				//Give the spell force properties.
 				if (propulsion == PROPULSION_MISSILE) {
@@ -713,7 +713,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t *spell, bool using_magicstaff, bool
 			}
 			//printlog( "Client is: %d\n", target_client);
 			if (multiplayer == SERVER && target_client != 0) {
-				strcpy( (char *)net_packet->data, "CHAN" );
+				strcpy( (char*)net_packet->data, "CHAN" );
 				net_packet->data[4] = clientnum;
 				SDLNet_Write32(spell->ID, &net_packet->data[5]);
 				net_packet->address.host = net_clients[target_client - 1].host;

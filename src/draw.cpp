@@ -23,10 +23,10 @@
 
 -------------------------------------------------------------------------------*/
 
-Uint32 getPixel(SDL_Surface *surface, int x, int y) {
+Uint32 getPixel(SDL_Surface* surface, int x, int y) {
 	int bpp = surface->format->BytesPerPixel;
 	// Here p is the address to the pixel we want to retrieve
-	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+	Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
 
 	switch (bpp) {
 		case 1:
@@ -34,7 +34,7 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y) {
 			break;
 
 		case 2:
-			return *(Uint16 *)p;
+			return *(Uint16*)p;
 			break;
 
 		case 3:
@@ -46,7 +46,7 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y) {
 			break;
 
 		case 4:
-			return *(Uint32 *)p;
+			return *(Uint32*)p;
 			break;
 
 		default:
@@ -63,10 +63,10 @@ Uint32 getPixel(SDL_Surface *surface, int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-void putPixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
+void putPixel(SDL_Surface* surface, int x, int y, Uint32 pixel) {
 	int bpp = surface->format->BytesPerPixel;
 	// Here p is the address to the pixel we want to set
-	Uint8 *p = (Uint8 *)surface->pixels + y * surface->pitch + x * bpp;
+	Uint8* p = (Uint8*)surface->pixels + y * surface->pitch + x * bpp;
 
 	switch (bpp) {
 		case 1:
@@ -74,7 +74,7 @@ void putPixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
 			break;
 
 		case 2:
-			*(Uint16 *)p = pixel;
+			*(Uint16*)p = pixel;
 			break;
 
 		case 3:
@@ -90,7 +90,7 @@ void putPixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
 			break;
 
 		case 4:
-			*(Uint32 *)p = pixel;
+			*(Uint32*)p = pixel;
 			break;
 	}
 }
@@ -103,8 +103,8 @@ void putPixel(SDL_Surface *surface, int x, int y, Uint32 pixel) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface *flipSurface( SDL_Surface *surface, int flags ) {
-	SDL_Surface *flipped = NULL;
+SDL_Surface* flipSurface( SDL_Surface* surface, int flags ) {
+	SDL_Surface* flipped = NULL;
 	Uint32 pixel;
 	int x, rx;
 	int y, ry;
@@ -244,7 +244,7 @@ void drawLine( int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha ) {
 
 -------------------------------------------------------------------------------*/
 
-int drawRect( SDL_Rect *src, Uint32 color, Uint8 alpha ) {
+int drawRect( SDL_Rect* src, Uint32 color, Uint8 alpha ) {
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -286,7 +286,7 @@ int drawRect( SDL_Rect *src, Uint32 color, Uint8 alpha ) {
 	draws the border of a rectangle
 
 -------------------------------------------------------------------------------*/
-int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha) {
+int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha) {
 	drawLine(src->x, src->y, src->x + src->w, src->y, color, alpha); //Top.
 	drawLine(src->x, src->y, src->x, src->y + src->h, color, alpha); //Left.
 	drawLine(src->x + src->w, src->y, src->x + src->w, src->y + src->h, color, alpha); //Right.
@@ -337,7 +337,7 @@ void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation) {
 
 -------------------------------------------------------------------------------*/
 
-void drawImageRotatedAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, double angle, Uint8 alpha ) {
+void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, double angle, Uint8 alpha ) {
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -386,7 +386,7 @@ void drawImageRotatedAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, do
 
 -------------------------------------------------------------------------------*/
 
-void drawImageColor( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint32 color ) {
+void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color ) {
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -438,7 +438,7 @@ void drawImageColor( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint32 co
 
 -------------------------------------------------------------------------------*/
 
-void drawImageAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint8 alpha ) {
+void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha ) {
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -486,7 +486,7 @@ void drawImageAlpha( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint8 alp
 
 -------------------------------------------------------------------------------*/
 
-void drawImage( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
+void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
 	SDL_Rect secondsrc;
 
 	// update projection
@@ -534,7 +534,7 @@ void drawImage( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 
 -------------------------------------------------------------------------------*/
 
-void drawImageScaled( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
+void drawImageScaled( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos ) {
 	SDL_Rect secondsrc;
 
 	if ( !image ) {
@@ -586,14 +586,14 @@ void drawImageScaled( SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos ) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
+SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height) {
 	Sint32 x, y, o_x, o_y;
 
 	if (!Surface || !Width || !Height) {
 		return NULL;
 	}
 
-	SDL_Surface *_ret = SDL_CreateRGBSurface(Surface->flags, Width, Height, Surface->format->BitsPerPixel, Surface->format->Rmask, Surface->format->Gmask, Surface->format->Bmask, Surface->format->Amask);
+	SDL_Surface* _ret = SDL_CreateRGBSurface(Surface->flags, Width, Height, Surface->format->BitsPerPixel, Surface->format->Rmask, Surface->format->Gmask, Surface->format->Bmask, Surface->format->Amask);
 
 	double _stretch_factor_x = (double)Width / (double)Surface->w;
 	double _stretch_factor_y = (double)Height / (double)Surface->h;
@@ -618,7 +618,7 @@ SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height) {
 
 -------------------------------------------------------------------------------*/
 
-void drawImageFancy( SDL_Surface *image, Uint32 color, double angle, SDL_Rect *src, SDL_Rect *pos ) {
+void drawImageFancy( SDL_Surface* image, Uint32 color, double angle, SDL_Rect* src, SDL_Rect* pos ) {
 	SDL_Rect secondsrc;
 
 	if ( !image ) {
@@ -677,7 +677,7 @@ void drawImageFancy( SDL_Surface *image, Uint32 color, double angle, SDL_Rect *s
 
 -------------------------------------------------------------------------------*/
 
-void drawSky3D( view_t *camera, SDL_Surface *tex ) {
+void drawSky3D( view_t* camera, SDL_Surface* tex ) {
 	double screenfactor;
 	int skyx, skyy;
 	SDL_Rect dest;
@@ -723,7 +723,7 @@ void drawSky3D( view_t *camera, SDL_Surface *tex ) {
 
 -------------------------------------------------------------------------------*/
 
-void drawLayer(long camx, long camy, int z, map_t *map) {
+void drawLayer(long camx, long camy, int z, map_t* map) {
 	long x, y;
 	long minx, miny, maxx, maxy;
 	int index;
@@ -783,7 +783,7 @@ void drawClearBuffers() {
 		memset( zbuffer, 0, xres * yres * sizeof(double) );
 	}
 	if ( clickmap != NULL ) {
-		memset( clickmap, 0, xres * yres * sizeof(Entity *) );
+		memset( clickmap, 0, xres * yres * sizeof(Entity*) );
 	}
 	if ( vismap != NULL ) {
 		int c, i = map.width * map.height;
@@ -806,7 +806,7 @@ void drawClearBuffers() {
 
 -------------------------------------------------------------------------------*/
 
-void raycast(view_t *camera, int mode) {
+void raycast(view_t* camera, int mode) {
 	long posx, posy;
 	double fracx, fracy;
 	long inx, iny, inx2, iny2;
@@ -957,9 +957,9 @@ void raycast(view_t *camera, int mode) {
 
 -------------------------------------------------------------------------------*/
 
-void drawEntities3D(view_t *camera, int mode) {
-	node_t *node;
-	Entity *entity;
+void drawEntities3D(view_t* camera, int mode) {
+	node_t* node;
+	Entity* entity;
 	long x, y;
 
 	if ( map.entities->first == NULL ) {
@@ -967,7 +967,7 @@ void drawEntities3D(view_t *camera, int mode) {
 	}
 
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		if ( entity->flags[INVISIBLE] ) {
 			continue;
 		}
@@ -1011,8 +1011,8 @@ void drawEntities3D(view_t *camera, int mode) {
 -------------------------------------------------------------------------------*/
 
 void drawEntities2D(long camx, long camy) {
-	node_t *node;
-	Entity *entity;
+	node_t* node;
+	Entity* entity;
 	SDL_Rect pos, box;
 
 	if ( map.entities->first == NULL ) {
@@ -1021,7 +1021,7 @@ void drawEntities2D(long camx, long camy) {
 
 	// draw entities
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		if ( entity->flags[INVISIBLE] ) {
 			continue;
 		}
@@ -1266,9 +1266,9 @@ void drawWindowFancy(int x1, int y1, int x2, int y2) {
 
 SDL_Rect errorRect = { 0 };
 
-SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool outline, const char *str ) {
+SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str ) {
 	SDL_Rect pos = { x, y, 0, 0 };
-	SDL_Surface *surf;
+	SDL_Surface* surf;
 	int c;
 
 	if ( !str ) {
@@ -1286,7 +1286,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 				offY = TTF_FontHeight(font);
 			}
 			newStr[c] = 0;
-			ttfPrintTextColor(font, x, y + offY, color, outline, (char *)&newStr[c + 1]);
+			ttfPrintTextColor(font, x, y + offY, color, outline, (char*)&newStr[c + 1]);
 			break;
 		} else if ( newStr[c] == 0 ) {
 			break;
@@ -1329,7 +1329,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 		// create the text surface
 		TTF_SetFontOutline(font, 0);
 		SDL_Color sdlColorWhite = { 255, 255, 255, 255 };
-		SDL_Surface *textSurf = TTF_RenderUTF8_Blended(font, newStr, sdlColorWhite);
+		SDL_Surface* textSurf = TTF_RenderUTF8_Blended(font, newStr, sdlColorWhite);
 
 		// combine the surfaces
 		if ( font == ttf8 ) {
@@ -1370,7 +1370,7 @@ SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool out
 	return pos;
 }
 
-SDL_Rect ttfPrintText( TTF_Font *font, int x, int y, const char *str ) {
+SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str ) {
 	if ( !str ) {
 		return errorRect;
 	}
@@ -1386,7 +1386,7 @@ SDL_Rect ttfPrintText( TTF_Font *font, int x, int y, const char *str ) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Rect ttfPrintTextFormattedColor( TTF_Font *font, int x, int y, Uint32 color, char *fmt, ... ) {
+SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char* fmt, ... ) {
 	char str[1024] = { 0 };
 
 	if ( !fmt ) {
@@ -1403,7 +1403,7 @@ SDL_Rect ttfPrintTextFormattedColor( TTF_Font *font, int x, int y, Uint32 color,
 	return ttfPrintTextColor(font, x, y, color, TRUE, str);
 }
 
-SDL_Rect ttfPrintTextFormatted( TTF_Font *font, int x, int y, char *fmt, ... ) {
+SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... ) {
 	char str[1024] = { 0 };
 
 	if ( !fmt ) {
@@ -1428,7 +1428,7 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font *font, int x, int y, char *fmt, ... ) {
 
 -------------------------------------------------------------------------------*/
 
-void printText( SDL_Surface *font_bmp, int x, int y, char *str ) {
+void printText( SDL_Surface* font_bmp, int x, int y, char* str ) {
 	int c;
 	int numbytes;
 	SDL_Rect src, dest, odest;
@@ -1474,7 +1474,7 @@ void printText( SDL_Surface *font_bmp, int x, int y, char *str ) {
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... ) {
+void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... ) {
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1520,7 +1520,7 @@ void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... ) {
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedAlpha(SDL_Surface *font_bmp, int x, int y, Uint8 alpha, char *fmt, ...) {
+void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...) {
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1566,7 +1566,7 @@ void printTextFormattedAlpha(SDL_Surface *font_bmp, int x, int y, Uint8 alpha, c
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedColor(SDL_Surface *font_bmp, int x, int y, Uint32 color, char *fmt, ...) {
+void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...) {
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1612,7 +1612,7 @@ void printTextFormattedColor(SDL_Surface *font_bmp, int x, int y, Uint32 color, 
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedFancy(SDL_Surface *font_bmp, int x, int y, Uint32 color, double angle, double scale, char *fmt, ...) {
+void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, double angle, double scale, char* fmt, ...) {
 	int c;
 	int numbytes;
 	char str[1024] = { 0 };
@@ -1659,7 +1659,7 @@ void printTextFormattedFancy(SDL_Surface *font_bmp, int x, int y, Uint32 color, 
 
 -------------------------------------------------------------------------------*/
 
-void drawTooltip(SDL_Rect *src) {
+void drawTooltip(SDL_Rect* src) {
 	drawRect(src, 0, 250);
 	drawLine(src->x, src->y, src->x + src->w, src->y, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);
 	drawLine(src->x, src->y + src->h, src->x + src->w, src->y + src->h, SDL_MapRGB(mainsurface->format, 0, 192, 255), 255);

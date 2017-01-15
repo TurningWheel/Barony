@@ -20,9 +20,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initSuccubus(Entity *my, Stat *myStats) {
+void initSuccubus(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 190;
 
@@ -46,7 +46,7 @@ void initSuccubus(Entity *my, Stat *myStats) {
 			myStats->DEX = 10;
 			strcpy(myStats->name, "Lilith");
 			for ( c = 0; c < 2; c++ ) {
-				Entity *entity = summonMonster(SUCCUBUS, my->x, my->y);
+				Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -98,7 +98,7 @@ void initSuccubus(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(191, 0, map.entities);
+	Entity* entity = newEntity(191, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -113,7 +113,7 @@ void initSuccubus(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(195, 0, map.entities);
@@ -131,7 +131,7 @@ void initSuccubus(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(194, 0, map.entities);
@@ -149,7 +149,7 @@ void initSuccubus(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(193, 0, map.entities);
@@ -167,7 +167,7 @@ void initSuccubus(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(192, 0, map.entities);
@@ -185,13 +185,13 @@ void initSuccubus(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void actSuccubusLimb(Entity *my) {
+void actSuccubusLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -211,12 +211,12 @@ void actSuccubusLimb(Entity *my) {
 	return;
 }
 
-void succubusDie(Entity *my) {
-	node_t *node, *nextnode;
+void succubusDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -225,7 +225,7 @@ void succubusDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -243,7 +243,7 @@ void succubusDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -256,10 +256,10 @@ void succubusDie(Entity *my) {
 
 #define SUCCUBUSWALKSPEED .25
 
-void succubusMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL;
-	Entity *rightbody = NULL;
+void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL;
+	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
@@ -276,7 +276,7 @@ void succubusMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -295,7 +295,7 @@ void succubusMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -317,14 +317,14 @@ void succubusMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
 			if ( dist > 0.1 ) {
 				if ( !rightbody->skill[0] ) {

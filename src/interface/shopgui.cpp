@@ -20,9 +20,9 @@
 void rebuildShopInventory() {
 	//Count number of items.
 	int c = 0;
-	node_t *node = nullptr;
+	node_t* node = nullptr;
 	for ( node = shopInv->first; node != NULL; node = node->next ) {
-		Item *item = (Item *) node->element;
+		Item* item = (Item*) node->element;
 		if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
 			continue;
 		} else if ( shopinventorycategory == 1 && itemCategory(item) != ARMOR ) {
@@ -49,7 +49,7 @@ void rebuildShopInventory() {
 	//Display the items.
 	c = 0;
 	for ( node = shopInv->first; node != NULL; node = node->next ) {
-		Item *item = (Item *) node->element;
+		Item* item = (Item*) node->element;
 		if (item) {
 			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
 				continue;
@@ -178,13 +178,13 @@ void warpMouseToSelectedShopSlot() {
 
 void updateShopWindow() {
 	SDL_Rect pos;
-	node_t *node;
+	node_t* node;
 	int c;
 
 	if ( multiplayer != CLIENT ) {
-		Entity *entity = uidToEntity(shopkeeper);
+		Entity* entity = uidToEntity(shopkeeper);
 		if (entity) {
-			Stat *stats = entity->getStats();
+			Stat* stats = entity->getStats();
 			shopkeepername = stats->name;
 		}
 	}
@@ -279,7 +279,7 @@ void updateShopWindow() {
 	int y3 = y + 22;
 	c = 0;
 	for ( node = shopInv->first; node != NULL; node = node->next ) {
-		Item *item = (Item *) node->element;
+		Item* item = (Item*) node->element;
 		if (item) {
 			if ( shopinventorycategory == 0 && itemCategory(item) != WEAPON ) {
 				continue;
@@ -347,7 +347,7 @@ void updateShopWindow() {
 
 	// draw shopkeeper
 	if ( uidToEntity(shopkeeper) ) {
-		Entity *entity = uidToEntity(shopkeeper);
+		Entity* entity = uidToEntity(shopkeeper);
 		if ( !entity->flags[INVISIBLE] ) {
 			pos.x = x1 + 16;
 			pos.y = y1 + 16;
@@ -441,7 +441,7 @@ void selectShopSlot(int slot) {
 			 * * B) On last item already. Do nothing (revoke movement).
 			 */
 
-			Item *item = getItemInfoFromShop(selectedShopSlot + 1);
+			Item* item = getItemInfoFromShop(selectedShopSlot + 1);
 
 			if ( item ) {
 				++selectedShopSlot;

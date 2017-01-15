@@ -27,7 +27,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void actAnimator(Entity *my) {
+void actAnimator(Entity* my) {
 	if ( my->skill[4] == 0 ) {
 		my->skill[4] = 1;
 		map.tiles[my->skill[0] + (int)my->y * MAPLAYERS + (int)my->x * MAPLAYERS * map.height] -= my->skill[1] - 1;
@@ -52,7 +52,7 @@ void actAnimator(Entity *my) {
 
 #define TESTSPRITES
 
-void actRotate(Entity *my) {
+void actRotate(Entity* my) {
 	my->yaw += 0.1;
 	my->flags[PASSABLE] = TRUE; // this entity should always be passable
 
@@ -81,7 +81,7 @@ void actRotate(Entity *my) {
 #define LIQUID_LAVA my->flags[USERFLAG1]
 #define LIQUID_LAVANOBUBBLE my->skill[4]
 
-void actLiquid(Entity *my) {
+void actLiquid(Entity* my) {
 	// as of 1.0.7 this function is DEPRECATED
 
 	list_RemoveNode(my->mynode);
@@ -107,7 +107,7 @@ void actLiquid(Entity *my) {
 		if ( ticks % 40 == my->uid % 40 && rand() % 3 == 0 ) {
 			int c, j = 1 + rand() % 2;
 			for ( c = 0; c < j; c++ ) {
-				Entity *entity = spawnGib( my );
+				Entity* entity = spawnGib( my );
 				entity->x += rand() % 16 - 8;
 				entity->y += rand() % 16 - 8;
 				entity->flags[SPRITE] = TRUE;
@@ -123,7 +123,7 @@ void actLiquid(Entity *my) {
 	}
 }
 
-void actEmpty(Entity *my) {
+void actEmpty(Entity* my) {
 	// an empty action
 	// used on clients to permit dead reckoning and other interpolation
 }
@@ -133,7 +133,7 @@ void actEmpty(Entity *my) {
 #define FURNITURE_HEALTH my->skill[4]
 #define FURNITURE_MAXHEALTH my->skill[9]
 
-void actFurniture(Entity *my) {
+void actFurniture(Entity* my) {
 	if ( !FURNITURE_INIT ) {
 		FURNITURE_INIT = 1;
 		if ( !FURNITURE_TYPE ) {
@@ -156,7 +156,7 @@ void actFurniture(Entity *my) {
 			if ( FURNITURE_HEALTH <= 0 ) {
 				int c;
 				for ( c = 0; c < 5; c++ ) {
-					Entity *entity = spawnGib(my);
+					Entity* entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
 					entity->sprite = 187; // Splinter.vox
 					entity->x = floor(my->x / 16) * 16 + 8;
@@ -174,7 +174,7 @@ void actFurniture(Entity *my) {
 					serverSpawnGibForClient(entity);
 				}
 				playSoundEntity(my, 176, 128);
-				Entity *entity;
+				Entity* entity;
 				if ( (entity = uidToEntity(my->parent)) != NULL ) {
 					entity->skill[18] = 0; // drop the item that was on the table
 					serverUpdateEntitySkill(entity, 18);
@@ -203,7 +203,7 @@ void actFurniture(Entity *my) {
 // an easter egg
 #define MCAXE_USED my->skill[0]
 
-void actMCaxe(Entity *my) {
+void actMCaxe(Entity* my) {
 	my->yaw += .05;
 	if ( my->yaw > PI * 2 ) {
 		my->yaw -= PI * 2;

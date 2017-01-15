@@ -38,12 +38,12 @@
 #define LOADSTR3 language[743]
 #define LOADSTR4 language[744]
 
-FILE *logfile = nullptr;
+FILE* logfile = nullptr;
 bool steam_init = FALSE;
 
-int initApp(char *title, int fullscreen) {
+int initApp(char* title, int fullscreen) {
 	char name[128];
-	FILE *fp;
+	FILE* fp;
 	Uint32 x, c;
 
 	// open log file
@@ -189,12 +189,12 @@ int initApp(char *title, int fullscreen) {
 #endif
 
 	// initialize buffers
-	zbuffer = (double *) malloc(sizeof(double) * xres * yres);
-	clickmap = (Entity **) malloc(sizeof(Entity *)*xres * yres);
-	texid = (GLuint *) malloc(MAXTEXTURES * sizeof(GLuint));
+	zbuffer = (double*) malloc(sizeof(double) * xres * yres);
+	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
+	texid = (GLuint*) malloc(MAXTEXTURES * sizeof(GLuint));
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
 	//vboid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
-	allsurfaces = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*MAXTEXTURES);
+	allsurfaces = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*MAXTEXTURES);
 	for ( c = 0; c < MAXTEXTURES; c++ ) {
 		allsurfaces[c] = NULL;
 	}
@@ -261,7 +261,7 @@ int initApp(char *title, int fullscreen) {
 		printlog("failed to identify any sprites in sprites.txt\n");
 		return 6;
 	}
-	sprites = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numsprites);
+	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
 	fp = fopen("images/sprites.txt", "r");
 	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
@@ -301,7 +301,7 @@ int initApp(char *title, int fullscreen) {
 		printlog("failed to identify any models in models.txt\n");
 		return 11;
 	}
-	models = (voxel_t **) malloc(sizeof(voxel_t *)*nummodels);
+	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
 	fp = fopen("models/models.txt", "r");
 	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
@@ -344,9 +344,9 @@ int initApp(char *title, int fullscreen) {
 		printlog("failed to identify any tiles in tiles.txt\n");
 		return 8;
 	}
-	tiles = (SDL_Surface **) malloc(sizeof(SDL_Surface *)*numtiles);
-	animatedtiles = (bool *) malloc(sizeof(bool) * numtiles);
-	lavatiles = (bool *) malloc(sizeof(bool) * numtiles);
+	tiles = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numtiles);
+	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
+	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
 	fp = fopen("images/tiles.txt", "r");
 	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
@@ -399,7 +399,7 @@ int initApp(char *title, int fullscreen) {
 		printlog("failed to identify any sounds in sounds.txt\n");
 		return 10;
 	}
-	sounds = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*numsounds);
+	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
 	fp = fopen("sound/sounds.txt", "r");
 	for ( c = 0; !feof(fp); c++ ) {
 		fscanf(fp, "%s", name);
@@ -429,9 +429,9 @@ int initApp(char *title, int fullscreen) {
 
 -------------------------------------------------------------------------------*/
 
-int loadLanguage(char *lang) {
+int loadLanguage(char* lang) {
 	char filename[128] = { 0 };
-	FILE *fp;
+	FILE* fp;
 	int c;
 
 	// open log file
@@ -510,7 +510,7 @@ int loadLanguage(char *lang) {
 	// free currently loaded language if any
 	if ( language ) {
 		for ( c = 0; c < NUMLANGENTRIES; c++ ) {
-			char *entry = language[c];
+			char* entry = language[c];
 			if ( entry ) {
 				free(entry);
 			}
@@ -522,11 +522,11 @@ int loadLanguage(char *lang) {
 	strcpy(languageCode, lang);
 
 	// allocate new language strings
-	language = (char **) calloc(NUMLANGENTRIES, sizeof(char *));
+	language = (char**) calloc(NUMLANGENTRIES, sizeof(char*));
 
 	// Allocate an emptry string for each possible language entry
 	for (c = 0; c < NUMLANGENTRIES; c++) {
-		language[c] = (char *)calloc(1, sizeof(char));
+		language[c] = (char*)calloc(1, sizeof(char));
 	}
 
 	// read file
@@ -586,8 +586,8 @@ int loadLanguage(char *lang) {
 			printlog( "warning: duplicate entry %d in '%s':%d\n", entry, filename, line);
 			free(language[entry]);
 		}
-		language[entry] = (char *) calloc(strlen((char *)(data + strlen(entryText) + 1)) + 1, sizeof(char));
-		strcpy(language[entry], (char *)(data + strlen(entryText) + 1));
+		language[entry] = (char*) calloc(strlen((char*)(data + strlen(entryText) + 1)) + 1, sizeof(char));
+		strcpy(language[entry], (char*)(data + strlen(entryText) + 1));
 	}
 
 	// close file
@@ -627,7 +627,7 @@ void generatePolyModels() {
 	Uint32 index, indexdown[3];
 	Uint8 newcolor, oldcolor;
 	bool buildingquad;
-	polyquad_t *quad1, *quad2;
+	polyquad_t* quad1, *quad2;
 	Uint32 numquads;
 	list_t quads;
 
@@ -635,7 +635,7 @@ void generatePolyModels() {
 	quads.last = NULL;
 
 	printlog("generating poly models...\n");
-	polymodels = (polymodel_t *) malloc(sizeof(polymodel_t) * nummodels);
+	polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
 	for ( c = 0; c < nummodels; ++c ) {
 		char loadText[128];
 		snprintf(loadText, 127, language[745], c, nummodels);
@@ -653,7 +653,7 @@ void generatePolyModels() {
 
 		numquads = 0;
 		polymodels[c].numfaces = 0;
-		voxel_t *model = models[c];
+		voxel_t* model = models[c];
 		if ( !model ) {
 			continue;
 		}
@@ -681,8 +681,8 @@ void generatePolyModels() {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
-							node_t *currentNode = quads.last;
-							quad1 = (polyquad_t *)currentNode->element;
+							node_t* currentNode = quads.last;
+							quad1 = (polyquad_t*)currentNode->element;
 							quad1->vertex[1].x = x - model->sizex / 2.f + 1;
 							quad1->vertex[1].y = y - model->sizey / 2.f;
 							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
@@ -691,9 +691,9 @@ void generatePolyModels() {
 							quad1->vertex[2].z = z - model->sizez / 2.f;
 
 							// optimize quad
-							node_t *node;
+							node_t* node;
 							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-								quad2 = (polyquad_t *)node->element;
+								quad2 = (polyquad_t*)node->element;
 								if ( quad1->side == quad2->side ) {
 									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
@@ -725,7 +725,7 @@ void generatePolyModels() {
 								numquads++;
 								polymodels[c].numfaces += 2;
 
-								quad1 = (polyquad_t *) calloc(1, sizeof(polyquad_t));
+								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
 								quad1->side = 0;
 								quad1->vertex[0].x = x - model->sizex / 2.f + 1;
 								quad1->vertex[0].y = y - model->sizey / 2.f;
@@ -737,7 +737,7 @@ void generatePolyModels() {
 								quad1->g = models[c]->palette[models[c]->data[index]][1];
 								quad1->b = models[c]->palette[models[c]->data[index]][2];
 
-								node_t *newNode = list_AddNodeLast(&quads);
+								node_t* newNode = list_AddNodeLast(&quads);
 								newNode->element = quad1;
 								newNode->deconstructor = &defaultDeconstructor;
 								newNode->size = sizeof(polyquad_t);
@@ -750,8 +750,8 @@ void generatePolyModels() {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
-					node_t *currentNode = quads.last;
-					quad1 = (polyquad_t *)currentNode->element;
+					node_t* currentNode = quads.last;
+					quad1 = (polyquad_t*)currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f + 1;
 					quad1->vertex[1].y = y - model->sizey / 2.f;
 					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
@@ -760,9 +760,9 @@ void generatePolyModels() {
 					quad1->vertex[2].z = z - model->sizez / 2.f;
 
 					// optimize quad
-					node_t *node;
+					node_t* node;
 					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-						quad2 = (polyquad_t *)node->element;
+						quad2 = (polyquad_t*)node->element;
 						if ( quad1->side == quad2->side ) {
 							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
@@ -802,8 +802,8 @@ void generatePolyModels() {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
-							node_t *currentNode = quads.last;
-							quad1 = (polyquad_t *)currentNode->element;
+							node_t* currentNode = quads.last;
+							quad1 = (polyquad_t*)currentNode->element;
 							quad1->vertex[1].x = x - model->sizex / 2.f;
 							quad1->vertex[1].y = y - model->sizey / 2.f;
 							quad1->vertex[1].z = z - model->sizez / 2.f;
@@ -812,9 +812,9 @@ void generatePolyModels() {
 							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
 
 							// optimize quad
-							node_t *node;
+							node_t* node;
 							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-								quad2 = (polyquad_t *)node->element;
+								quad2 = (polyquad_t*)node->element;
 								if ( quad1->side == quad2->side ) {
 									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
@@ -846,7 +846,7 @@ void generatePolyModels() {
 								numquads++;
 								polymodels[c].numfaces += 2;
 
-								quad1 = (polyquad_t *) calloc(1, sizeof(polyquad_t));
+								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
 								quad1->side = 1;
 								quad1->vertex[0].x = x - model->sizex / 2.f;
 								quad1->vertex[0].y = y - model->sizey / 2.f;
@@ -858,7 +858,7 @@ void generatePolyModels() {
 								quad1->g = models[c]->palette[models[c]->data[index]][1];
 								quad1->b = models[c]->palette[models[c]->data[index]][2];
 
-								node_t *newNode = list_AddNodeLast(&quads);
+								node_t* newNode = list_AddNodeLast(&quads);
 								newNode->element = quad1;
 								newNode->deconstructor = &defaultDeconstructor;
 								newNode->size = sizeof(polyquad_t);
@@ -871,8 +871,8 @@ void generatePolyModels() {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
-					node_t *currentNode = quads.last;
-					quad1 = (polyquad_t *)currentNode->element;
+					node_t* currentNode = quads.last;
+					quad1 = (polyquad_t*)currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
 					quad1->vertex[1].y = y - model->sizey / 2.f;
 					quad1->vertex[1].z = z - model->sizez / 2.f;
@@ -881,9 +881,9 @@ void generatePolyModels() {
 					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
 
 					// optimize quad
-					node_t *node;
+					node_t* node;
 					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-						quad2 = (polyquad_t *)node->element;
+						quad2 = (polyquad_t*)node->element;
 						if ( quad1->side == quad2->side ) {
 							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
@@ -923,8 +923,8 @@ void generatePolyModels() {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
-							node_t *currentNode = quads.last;
-							quad1 = (polyquad_t *) currentNode->element;
+							node_t* currentNode = quads.last;
+							quad1 = (polyquad_t*) currentNode->element;
 							quad1->vertex[1].x = x - model->sizex / 2.f;
 							quad1->vertex[1].y = y - model->sizey / 2.f + 1;
 							quad1->vertex[1].z = z - model->sizez / 2.f;
@@ -933,9 +933,9 @@ void generatePolyModels() {
 							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
 
 							// optimize quad
-							node_t *node;
+							node_t* node;
 							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-								quad2 = (polyquad_t *)node->element;
+								quad2 = (polyquad_t*)node->element;
 								if ( quad1->side == quad2->side ) {
 									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
@@ -967,7 +967,7 @@ void generatePolyModels() {
 								numquads++;
 								polymodels[c].numfaces += 2;
 
-								quad1 = (polyquad_t *) calloc(1, sizeof(polyquad_t));
+								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
 								quad1->side = 2;
 								quad1->vertex[0].x = x - model->sizex / 2.f;
 								quad1->vertex[0].y = y - model->sizey / 2.f + 1;
@@ -979,7 +979,7 @@ void generatePolyModels() {
 								quad1->g = models[c]->palette[models[c]->data[index]][1];
 								quad1->b = models[c]->palette[models[c]->data[index]][2];
 
-								node_t *newNode = list_AddNodeLast(&quads);
+								node_t* newNode = list_AddNodeLast(&quads);
 								newNode->element = quad1;
 								newNode->deconstructor = &defaultDeconstructor;
 								newNode->size = sizeof(polyquad_t);
@@ -991,8 +991,8 @@ void generatePolyModels() {
 				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
-					node_t *currentNode = quads.last;
-					quad1 = (polyquad_t *) currentNode->element;
+					node_t* currentNode = quads.last;
+					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
 					quad1->vertex[1].y = y - model->sizey / 2.f + 1;
 					quad1->vertex[1].z = z - model->sizez / 2.f;
@@ -1001,9 +1001,9 @@ void generatePolyModels() {
 					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
 
 					// optimize quad
-					node_t *node;
+					node_t* node;
 					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-						quad2 = (polyquad_t *)node->element;
+						quad2 = (polyquad_t*)node->element;
 						if ( quad1->side == quad2->side ) {
 							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
@@ -1043,8 +1043,8 @@ void generatePolyModels() {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
-							node_t *currentNode = quads.last;
-							quad1 = (polyquad_t *) currentNode->element;
+							node_t* currentNode = quads.last;
+							quad1 = (polyquad_t*) currentNode->element;
 							quad1->vertex[1].x = x - model->sizex / 2.f;
 							quad1->vertex[1].y = y - model->sizey / 2.f;
 							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
@@ -1053,9 +1053,9 @@ void generatePolyModels() {
 							quad1->vertex[2].z = z - model->sizez / 2.f;
 
 							// optimize quad
-							node_t *node;
+							node_t* node;
 							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-								quad2 = (polyquad_t *)node->element;
+								quad2 = (polyquad_t*)node->element;
 								if ( quad1->side == quad2->side ) {
 									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
@@ -1087,7 +1087,7 @@ void generatePolyModels() {
 								numquads++;
 								polymodels[c].numfaces += 2;
 
-								quad1 = (polyquad_t *) calloc(1, sizeof(polyquad_t));
+								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
 								quad1->side = 3;
 								quad1->vertex[0].x = x - model->sizex / 2.f;
 								quad1->vertex[0].y = y - model->sizey / 2.f;
@@ -1099,7 +1099,7 @@ void generatePolyModels() {
 								quad1->g = models[c]->palette[models[c]->data[index]][1];
 								quad1->b = models[c]->palette[models[c]->data[index]][2];
 
-								node_t *newNode = list_AddNodeLast(&quads);
+								node_t* newNode = list_AddNodeLast(&quads);
 								newNode->element = quad1;
 								newNode->deconstructor = &defaultDeconstructor;
 								newNode->size = sizeof(polyquad_t);
@@ -1111,8 +1111,8 @@ void generatePolyModels() {
 				if ( buildingquad == TRUE ) {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
-					node_t *currentNode = quads.last;
-					quad1 = (polyquad_t *) currentNode->element;
+					node_t* currentNode = quads.last;
+					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
 					quad1->vertex[1].y = y - model->sizey / 2.f;
 					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
@@ -1121,9 +1121,9 @@ void generatePolyModels() {
 					quad1->vertex[2].z = z - model->sizez / 2.f;
 
 					// optimize quad
-					node_t *node;
+					node_t* node;
 					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-						quad2 = (polyquad_t *)node->element;
+						quad2 = (polyquad_t*)node->element;
 						if ( quad1->side == quad2->side ) {
 							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
@@ -1163,8 +1163,8 @@ void generatePolyModels() {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
-							node_t *currentNode = quads.last;
-							quad1 = (polyquad_t *) currentNode->element;
+							node_t* currentNode = quads.last;
+							quad1 = (polyquad_t*) currentNode->element;
 							quad1->vertex[1].x = x - model->sizex / 2.f;
 							quad1->vertex[1].y = y - model->sizey / 2.f;
 							quad1->vertex[1].z = z - model->sizez / 2.f;
@@ -1173,9 +1173,9 @@ void generatePolyModels() {
 							quad1->vertex[2].z = z - model->sizez / 2.f;
 
 							// optimize quad
-							node_t *node;
+							node_t* node;
 							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-								quad2 = (polyquad_t *)node->element;
+								quad2 = (polyquad_t*)node->element;
 								if ( quad1->side == quad2->side ) {
 									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 										if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
@@ -1207,7 +1207,7 @@ void generatePolyModels() {
 								numquads++;
 								polymodels[c].numfaces += 2;
 
-								quad1 = (polyquad_t *) calloc(1, sizeof(polyquad_t));
+								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
 								quad1->side = 4;
 								quad1->vertex[0].x = x - model->sizex / 2.f;
 								quad1->vertex[0].y = y - model->sizey / 2.f;
@@ -1219,7 +1219,7 @@ void generatePolyModels() {
 								quad1->g = models[c]->palette[models[c]->data[index]][1];
 								quad1->b = models[c]->palette[models[c]->data[index]][2];
 
-								node_t *newNode = list_AddNodeLast(&quads);
+								node_t* newNode = list_AddNodeLast(&quads);
 								newNode->element = quad1;
 								newNode->deconstructor = &defaultDeconstructor;
 								newNode->size = sizeof(polyquad_t);
@@ -1232,8 +1232,8 @@ void generatePolyModels() {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
-					node_t *currentNode = quads.last;
-					quad1 = (polyquad_t *) currentNode->element;
+					node_t* currentNode = quads.last;
+					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
 					quad1->vertex[1].y = y - model->sizey / 2.f;
 					quad1->vertex[1].z = z - model->sizez / 2.f;
@@ -1242,9 +1242,9 @@ void generatePolyModels() {
 					quad1->vertex[2].z = z - model->sizez / 2.f;
 
 					// optimize quad
-					node_t *node;
+					node_t* node;
 					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-						quad2 = (polyquad_t *)node->element;
+						quad2 = (polyquad_t*)node->element;
 						if ( quad1->side == quad2->side ) {
 							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 								if ( quad2->vertex[3].x == quad1->vertex[0].x && quad2->vertex[3].y == quad1->vertex[0].y && quad2->vertex[3].z == quad1->vertex[0].z ) {
@@ -1284,8 +1284,8 @@ void generatePolyModels() {
 							// add the last two vertices to the previous quad
 							buildingquad = FALSE;
 
-							node_t *currentNode = quads.last;
-							quad1 = (polyquad_t *) currentNode->element;
+							node_t* currentNode = quads.last;
+							quad1 = (polyquad_t*) currentNode->element;
 							quad1->vertex[1].x = x - model->sizex / 2.f;
 							quad1->vertex[1].y = y - model->sizey / 2.f + 1;
 							quad1->vertex[1].z = z - model->sizez / 2.f - 1;
@@ -1294,9 +1294,9 @@ void generatePolyModels() {
 							quad1->vertex[2].z = z - model->sizez / 2.f - 1;
 
 							// optimize quad
-							node_t *node;
+							node_t* node;
 							for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-								quad2 = (polyquad_t *)node->element;
+								quad2 = (polyquad_t*)node->element;
 								if ( quad1->side == quad2->side ) {
 									if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 										if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
@@ -1328,7 +1328,7 @@ void generatePolyModels() {
 								numquads++;
 								polymodels[c].numfaces += 2;
 
-								quad1 = (polyquad_t *) calloc(1, sizeof(polyquad_t));
+								quad1 = (polyquad_t*) calloc(1, sizeof(polyquad_t));
 								quad1->side = 5;
 								quad1->vertex[0].x = x - model->sizex / 2.f;
 								quad1->vertex[0].y = y - model->sizey / 2.f + 1;
@@ -1340,7 +1340,7 @@ void generatePolyModels() {
 								quad1->g = models[c]->palette[models[c]->data[index]][1];
 								quad1->b = models[c]->palette[models[c]->data[index]][2];
 
-								node_t *newNode = list_AddNodeLast(&quads);
+								node_t* newNode = list_AddNodeLast(&quads);
 								newNode->element = quad1;
 								newNode->deconstructor = &defaultDeconstructor;
 								newNode->size = sizeof(polyquad_t);
@@ -1353,8 +1353,8 @@ void generatePolyModels() {
 					// add the last two vertices to the previous quad
 					buildingquad = FALSE;
 
-					node_t *currentNode = quads.last;
-					quad1 = (polyquad_t *) currentNode->element;
+					node_t* currentNode = quads.last;
+					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
 					quad1->vertex[1].y = y - model->sizey / 2.f + 1;
 					quad1->vertex[1].z = z - model->sizez / 2.f - 1;
@@ -1363,9 +1363,9 @@ void generatePolyModels() {
 					quad1->vertex[2].z = z - model->sizez / 2.f - 1;
 
 					// optimize quad
-					node_t *node;
+					node_t* node;
 					for ( i = 0, node = quads.first; i < numquads - 1; i++, node = node->next ) {
-						quad2 = (polyquad_t *)node->element;
+						quad2 = (polyquad_t*)node->element;
 						if ( quad1->side == quad2->side ) {
 							if ( quad1->r == quad2->r && quad1->g == quad2->g && quad1->b == quad2->b ) {
 								if ( quad2->vertex[0].x == quad1->vertex[3].x && quad2->vertex[0].y == quad1->vertex[3].y && quad2->vertex[0].z == quad1->vertex[3].z ) {
@@ -1386,10 +1386,10 @@ void generatePolyModels() {
 		}
 
 		// translate quads into triangles
-		polymodels[c].faces = (polytriangle_t *) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
+		polymodels[c].faces = (polytriangle_t*) malloc(sizeof(polytriangle_t) * polymodels[c].numfaces);
 		for ( i = 0; i < polymodels[c].numfaces; i++ ) {
-			node_t *node = list_Node(&quads, i / 2);
-			polyquad_t *quad = (polyquad_t *)node->element;
+			node_t* node = list_Node(&quads, i / 2);
+			polyquad_t* quad = (polyquad_t*)node->element;
 			polymodels[c].faces[i].r = quad->r;
 			polymodels[c].faces[i].g = quad->g;
 			polymodels[c].faces[i].b = quad->b;
@@ -1428,9 +1428,9 @@ void generateVBOs() {
 	for ( c = 0; c < nummodels; ++c ) {
 		/*if( c>0 )
 			break;*/
-		GLfloat *points = (GLfloat *) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		GLfloat *colors = (GLfloat *) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
-		GLfloat *colors_shifted = (GLfloat *) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
+		GLfloat* points = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
+		GLfloat* colors = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
+		GLfloat* colors_shifted = (GLfloat*) malloc(sizeof(GLfloat) * 9 * polymodels[c].numfaces);
 		for ( i = 0; i < polymodels[c].numfaces; i++ ) {
 			points[i * 9] = polymodels[c].faces[i].vertex[0].x;
 			colors[i * 9] = polymodels[c].faces[i].r / 255.f;
@@ -1715,7 +1715,7 @@ int deinitApp() {
 	// free currently loaded language if any
 	if ( language ) {
 		for ( c = 0; c < NUMLANGENTRIES; c++ ) {
-			char *entry = language[c];
+			char* entry = language[c];
 			if ( entry ) {
 				free(entry);
 			}

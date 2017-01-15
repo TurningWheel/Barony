@@ -39,39 +39,39 @@ extern bool losingConnection[4];
 extern int rebindaction;
 
 // button definitions
-void buttonQuitConfirm(button_t *my);
-void buttonQuitNoSaveConfirm(button_t *my);
-void buttonEndGameConfirm(button_t *my);
-void buttonCloseAndEndGameConfirm(button_t *my);
-void buttonCloseSubwindow(button_t *my);
-void buttonContinue(button_t *my);
-void buttonBack(button_t *my);
-void buttonVideoTab(button_t *my);
-void buttonAudioTab(button_t *my);
-void buttonKeyboardTab(button_t *my);
-void buttonMouseTab(button_t *my);
-void buttonGamepadBindingsTab(button_t *my);
-void buttonGamepadSettingsTab(button_t *my);
-void buttonMiscTab(button_t *my);
-void buttonSettingsAccept(button_t *my);
-void buttonSettingsOK(button_t *my);
-void buttonStartSingleplayer(button_t *my);
-void buttonStartServer(button_t *my);
-void buttonHostMultiplayer(button_t *my);
-void buttonJoinMultiplayer(button_t *my);
-void buttonHostLobby(button_t *my);
-void buttonJoinLobby(button_t *my);
-void buttonDisconnect(button_t *my);
-void buttonScoreNext(button_t *my);
-void buttonScorePrev(button_t *my);
-void buttonOpenCharacterCreationWindow(button_t *my);
-void buttonLoadGame(button_t *my);
-void buttonRandomCharacter(button_t *my);
+void buttonQuitConfirm(button_t* my);
+void buttonQuitNoSaveConfirm(button_t* my);
+void buttonEndGameConfirm(button_t* my);
+void buttonCloseAndEndGameConfirm(button_t* my);
+void buttonCloseSubwindow(button_t* my);
+void buttonContinue(button_t* my);
+void buttonBack(button_t* my);
+void buttonVideoTab(button_t* my);
+void buttonAudioTab(button_t* my);
+void buttonKeyboardTab(button_t* my);
+void buttonMouseTab(button_t* my);
+void buttonGamepadBindingsTab(button_t* my);
+void buttonGamepadSettingsTab(button_t* my);
+void buttonMiscTab(button_t* my);
+void buttonSettingsAccept(button_t* my);
+void buttonSettingsOK(button_t* my);
+void buttonStartSingleplayer(button_t* my);
+void buttonStartServer(button_t* my);
+void buttonHostMultiplayer(button_t* my);
+void buttonJoinMultiplayer(button_t* my);
+void buttonHostLobby(button_t* my);
+void buttonJoinLobby(button_t* my);
+void buttonDisconnect(button_t* my);
+void buttonScoreNext(button_t* my);
+void buttonScorePrev(button_t* my);
+void buttonOpenCharacterCreationWindow(button_t* my);
+void buttonLoadGame(button_t* my);
+void buttonRandomCharacter(button_t* my);
 
 #ifdef STEAMWORKS
-void buttonInviteFriends(button_t *my);
-void buttonSteamLobbyBrowserJoinGame(button_t *my);
-void buttonSteamLobbyBrowserRefresh(button_t *my);
+void buttonInviteFriends(button_t* my);
+void buttonSteamLobbyBrowserJoinGame(button_t* my);
+void buttonSteamLobbyBrowserRefresh(button_t* my);
 #endif
 
 #define SLIDERFONT font12x12_bmp
@@ -80,10 +80,10 @@ void buttonSteamLobbyBrowserRefresh(button_t *my);
 void openSettingsWindow();
 void openFailedConnectionWindow(int mode);
 void openGameoverWindow();
-void openSteamLobbyBrowserWindow(button_t *my);
-void openLoadGameWindow(button_t *my);
-void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int *var, SDL_Surface *slider_font = SLIDERFONT, int slider_font_char_width = 16);
-void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double *var);
+void openSteamLobbyBrowserWindow(button_t* my);
+void openLoadGameWindow(button_t* my);
+void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font = SLIDERFONT, int slider_font_char_width = 16);
+void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double* var);
 
 // menu variables
 extern bool settings_window;

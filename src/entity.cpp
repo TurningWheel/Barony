@@ -34,7 +34,7 @@
 
 -------------------------------------------------------------------------------*/
 
-Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
+Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_gonnavomit(skill[26]),
 	char_heal(skill[22]),
 	char_energize(skill[23]),
@@ -126,7 +126,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 -------------------------------------------------------------------------------*/
 
 Entity::~Entity() {
-	node_t *node;
+	node_t* node;
 	//node_t *node2;
 	int i;
 	//deleteent_t *deleteent;
@@ -160,7 +160,7 @@ Entity::~Entity() {
 				node->deconstructor = &defaultDeconstructor;*/
 
 				// send the delete entity command to the client
-				strcpy((char *)net_packet->data, "ENTD");
+				strcpy((char*)net_packet->data, "ENTD");
 				SDLNet_Write32((Uint32)uid, &net_packet->data[4]);
 				net_packet->address.host = net_clients[i - 1].host;
 				net_packet->address.port = net_clients[i - 1].port;
@@ -198,8 +198,8 @@ Entity::~Entity() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::setObituary(char *obituary) {
-	Stat *tempStats = this->getStats();
+void Entity::setObituary(char* obituary) {
+	Stat* tempStats = this->getStats();
 	if ( !tempStats ) {
 		return;
 	}
@@ -214,12 +214,12 @@ void Entity::setObituary(char *obituary) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::killedByMonsterObituary(Entity *victim) {
+void Entity::killedByMonsterObituary(Entity* victim) {
 	if ( !victim ) {
 		return;
 	}
-	Stat *hitstats = victim->getStats();
-	Stat *myStats = this->getStats();
+	Stat* hitstats = victim->getStats();
+	Stat* myStats = this->getStats();
 	if ( !hitstats || !myStats ) {
 		return;
 	}
@@ -320,10 +320,10 @@ int Entity::entityLight() {
 -------------------------------------------------------------------------------*/
 
 void Entity::effectTimes() {
-	Stat *myStats = this->getStats();
+	Stat* myStats = this->getStats();
 	int player, c;
-	spell_t *spell = NULL;
-	node_t *node = NULL;
+	spell_t* spell = NULL;
+	node_t* node = NULL;
 	int count = 0;
 
 	if ( myStats == NULL ) {
@@ -336,15 +336,15 @@ void Entity::effectTimes() {
 	}
 
 
-	spell_t *invisibility_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things.
-	spell_t *levitation_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
+	spell_t* invisibility_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things.
+	spell_t* levitation_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
 	//Handle magic effects (like invisibility)
 	for (node = myStats->magic_effects.first; node; node = node->next, ++count) {
 		//printlog( "%s\n", "Potato.");
 		//Handle magic effects.
-		spell = (spell_t *) node->element;
+		spell = (spell_t*) node->element;
 		if (!spell->sustain) {
-			node_t *temp = NULL;
+			node_t* temp = NULL;
 			if (node->prev) {
 				temp = node->prev;
 			} else if (node->next) {
@@ -352,7 +352,7 @@ void Entity::effectTimes() {
 			}
 			spell->magic_effects_node = NULL; //To prevent recursive removal, which results in a crash.
 			if (player > -1 && multiplayer == SERVER) {
-				strcpy( (char *)net_packet->data, "UNCH");
+				strcpy( (char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
 				SDLNet_Write32(spell->ID, &net_packet->data[5]);
 				net_packet->address.host = net_clients[player - 1].host;
@@ -376,7 +376,7 @@ void Entity::effectTimes() {
 							messagePlayer(c, language[591]);    //If cure ailments or somesuch bombs the status effects.
 						}
 					}
-					node_t *temp = nullptr;
+					node_t* temp = nullptr;
 					if (node->prev) {
 						temp = node->prev;
 					} else if (node->next) {
@@ -394,7 +394,7 @@ void Entity::effectTimes() {
 							messagePlayer(c, language[592]);
 						}
 					}
-					node_t *temp = nullptr;
+					node_t* temp = nullptr;
 					if (node->prev) {
 						temp = node->prev;
 					} else if (node->next) {
@@ -446,7 +446,7 @@ void Entity::effectTimes() {
 						dissipate = TRUE; //Remove the effect by default.
 						if (invisibility_hijacked) {
 							bool sustained = FALSE;
-							Entity *caster = uidToEntity(invisibility_hijacked->caster);
+							Entity* caster = uidToEntity(invisibility_hijacked->caster);
 							if (caster) {
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
@@ -499,7 +499,7 @@ void Entity::effectTimes() {
 						dissipate = TRUE; //Remove the effect by default.
 						if (levitation_hijacked) {
 							bool sustained = FALSE;
-							Entity *caster = uidToEntity(levitation_hijacked->caster);
+							Entity* caster = uidToEntity(levitation_hijacked->caster);
 							if (caster) {
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
 								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
@@ -568,7 +568,7 @@ void Entity::effectTimes() {
 -------------------------------------------------------------------------------*/
 
 void Entity::increaseSkill(int skill) {
-	Stat *myStats = this->getStats();
+	Stat* myStats = this->getStats();
 	int player = -1;
 
 	if ( myStats == NULL ) {
@@ -605,7 +605,7 @@ void Entity::increaseSkill(int skill) {
 	myStats->EXP += 2;
 	if ( player > 0 && multiplayer == SERVER ) {
 		// update SKILL
-		strcpy((char *)net_packet->data, "SKIL");
+		strcpy((char*)net_packet->data, "SKIL");
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = skill;
 		net_packet->data[6] = myStats->PROFICIENCIES[skill];
@@ -615,7 +615,7 @@ void Entity::increaseSkill(int skill) {
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 		// update EXP
-		strcpy((char *)net_packet->data, "ATTR");
+		strcpy((char*)net_packet->data, "ATTR");
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = (Sint8)myStats->STR;
 		net_packet->data[6] = (Sint8)myStats->DEX;
@@ -644,11 +644,11 @@ void Entity::increaseSkill(int skill) {
 
 -------------------------------------------------------------------------------*/
 
-Stat *Entity::getStats() {
+Stat* Entity::getStats() {
 	if (this->behavior == &actMonster) { // monsters
 		if (this->children.first != nullptr) {
 			if (this->children.first->next != nullptr) {
-				return (Stat *)this->children.first->next->element;
+				return (Stat*)this->children.first->next->element;
 			}
 		}
 	} else if (this->behavior == &actPlayer) { // players
@@ -669,12 +669,12 @@ Stat *Entity::getStats() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::checkBetterEquipment(Stat *myStats) {
+void Entity::checkBetterEquipment(Stat* myStats) {
 	if (!myStats) {
 		return;    //Can't continue without these.
 	}
 
-	list_t *items = NULL;
+	list_t* items = NULL;
 	//X and Y in terms of tiles.
 	int tx = x / 16;
 	int ty = y / 16;
@@ -688,9 +688,9 @@ void Entity::checkBetterEquipment(Stat *myStats) {
 	getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
 	getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
 	int currentAC, newAC;
-	Item *oldarmor = NULL;
+	Item* oldarmor = NULL;
 
-	node_t *node = NULL;
+	node_t* node = NULL;
 
 	bool glovesandshoes = FALSE;
 	if ( myStats->type == HUMAN ) {
@@ -707,8 +707,8 @@ void Entity::checkBetterEquipment(Stat *myStats) {
 		for (node = items->first; node != NULL; node = node->next) {
 			//Turn the entity into an item.
 			if (node->element) {
-				Entity *entity = (Entity *)node->element;
-				Item *item = NULL;
+				Entity* entity = (Entity*)node->element;
+				Item* item = NULL;
 				if (entity != NULL) {
 					item = newItemFromEntity( entity );
 				}
@@ -915,12 +915,12 @@ void Entity::checkBetterEquipment(Stat *myStats) {
 
 -------------------------------------------------------------------------------*/
 
-Entity *uidToEntity(Uint32 uidnum) {
-	node_t *node;
-	Entity *entity;
+Entity* uidToEntity(Uint32 uidnum) {
+	node_t* node;
+	Entity* entity;
 
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		entity = (Entity *) node->element;
+		entity = (Entity*) node->element;
 		if ( uidnum == entity->uid ) {
 			return entity;
 		}
@@ -953,7 +953,7 @@ void Entity::setHP(int amount) {
 		for (i = 1; i < numplayers; i++) {
 			if (this == players[i]->entity) {
 				// tell the client its HP changed
-				strcpy((char *)net_packet->data, "UPHP");
+				strcpy((char*)net_packet->data, "UPHP");
 				SDLNet_Write32((Uint32)entitystats->HP, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)NOTHING, &net_packet->data[8]);
 				net_packet->address.host = net_clients[i - 1].host;
@@ -1010,7 +1010,7 @@ void Entity::setMP(int amount) {
 		for (i = 1; i < numplayers; i++) {
 			if (this == players[i]->entity) {
 				// tell the client its MP just changed
-				strcpy((char *)net_packet->data, "UPMP");
+				strcpy((char*)net_packet->data, "UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[4]);
 				net_packet->address.host = net_clients[i - 1].host;
 				net_packet->address.port = net_clients[i - 1].port;
@@ -1078,7 +1078,7 @@ void Entity::drainMP(int amount) {
 		for (i = 1; i < numplayers; ++i) {
 			if (this == players[i]->entity) {
 				//It is. Tell the client its MP just changed.
-				strcpy((char *)net_packet->data, "UPMP");
+				strcpy((char*)net_packet->data, "UPMP");
 				SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)stats[i]->type, &net_packet->data[8]);
 				net_packet->address.host = net_clients[i - 1].host;
@@ -1090,7 +1090,7 @@ void Entity::drainMP(int amount) {
 	} else if (clientnum != 0 && multiplayer == CLIENT) {
 		if (this == players[clientnum]->entity) {
 			//It's the player entity. Tell the server its MP changed.
-			strcpy((char *)net_packet->data, "UPMP");
+			strcpy((char*)net_packet->data, "UPMP");
 			net_packet->data[4] = clientnum;
 			SDLNet_Write32((Uint32)entitystats->MP, &net_packet->data[5]);
 			SDLNet_Write32((Uint32)stats[clientnum]->type, &net_packet->data[9]);
@@ -1107,7 +1107,7 @@ void Entity::drainMP(int amount) {
 			messagePlayerColor(player, color, language[621]);
 		}
 		this->modHP(overdrawn); //Drain the extra magic from health.
-		Stat *tempStats = this->getStats();
+		Stat* tempStats = this->getStats();
 		if ( tempStats ) {
 			if ( tempStats->sex == MALE ) {
 				this->setObituary(language[1528]);
@@ -1127,7 +1127,7 @@ void Entity::drainMP(int amount) {
 -------------------------------------------------------------------------------*/
 
 bool Entity::safeConsumeMP(int amount) {
-	Stat *stat = this->getStats();
+	Stat* stat = this->getStats();
 
 	//Check if no stats found.
 	if (!stat) {
@@ -1153,7 +1153,7 @@ bool Entity::safeConsumeMP(int amount) {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::handleEffects(Stat *myStats) {
+void Entity::handleEffects(Stat* myStats) {
 	int increasestat[3];
 	int i, c;
 	int player = -1;
@@ -1232,7 +1232,7 @@ void Entity::handleEffects(Stat *myStats) {
 
 		// inform clients of stat changes
 		if ( multiplayer == SERVER && player > 0 ) {
-			strcpy((char *)net_packet->data, "ATTR");
+			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = (Sint8)myStats->STR;
 			net_packet->data[6] = (Sint8)myStats->DEX;
@@ -1333,7 +1333,7 @@ void Entity::handleEffects(Stat *myStats) {
 			if ( player == clientnum ) {
 				camera_shakey += 9;
 			} else if ( player > 0 && multiplayer == SERVER ) {
-				strcpy((char *)net_packet->data, "SHAK");
+				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 0; // turns into 0
 				net_packet->data[5] = 9;
 				net_packet->address.host = net_clients[player - 1].host;
@@ -1347,7 +1347,7 @@ void Entity::handleEffects(Stat *myStats) {
 
 	// vomiting
 	if ( myStats->EFFECTS[EFF_VOMITING] && ticks % 2 == 0 ) {
-		Entity *entity = spawnGib(this);
+		Entity* entity = spawnGib(this);
 		entity->sprite = 29;
 		entity->flags[SPRITE] = TRUE;
 		entity->flags[GENIUS] = TRUE;
@@ -1417,7 +1417,7 @@ void Entity::handleEffects(Stat *myStats) {
 			if ( player >= 0 ) {
 				dropItem(myStats->weapon, player);
 				if ( player > 0 && multiplayer == SERVER ) {
-					strcpy((char *)net_packet->data, "DROP");
+					strcpy((char*)net_packet->data, "DROP");
 					net_packet->data[4] = 5;
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
@@ -1450,7 +1450,7 @@ void Entity::handleEffects(Stat *myStats) {
 					messagePlayer(player, language[638], myStats->shield->getName());
 				}
 				if ( multiplayer == SERVER && player > 0 ) {
-					strcpy((char *)net_packet->data, "ARMR");
+					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 4;
 					net_packet->data[5] = myStats->shield->status;
 					net_packet->address.host = net_clients[player - 1].host;
@@ -1480,7 +1480,7 @@ void Entity::handleEffects(Stat *myStats) {
 			int poisonhurt = std::max(1 + rand() % 4 - myStats->CON, 3);
 			this->modHP(-poisonhurt);
 			if ( myStats->HP <= 0 ) {
-				Entity *killer = uidToEntity( myStats->poisonKiller );
+				Entity* killer = uidToEntity( myStats->poisonKiller );
 				if ( killer ) {
 					killer->awardXP( this, TRUE, TRUE );
 				}
@@ -1491,7 +1491,7 @@ void Entity::handleEffects(Stat *myStats) {
 				camera_shakex += .1;
 				camera_shakey += 10;
 			} else if ( player > 0 && multiplayer == SERVER ) {
-				strcpy((char *)net_packet->data, "SHAK");
+				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 10; // turns into .1
 				net_packet->data[5] = 10;
 				net_packet->address.host = net_clients[player - 1].host;
@@ -1517,13 +1517,13 @@ void Entity::handleEffects(Stat *myStats) {
 				int bleedhurt = 1;
 				this->modHP(-bleedhurt);
 				this->setObituary(language[1532]);
-				Entity *gib = spawnGib(this);
+				Entity* gib = spawnGib(this);
 				serverSpawnGibForClient(gib);
 				if ( player == clientnum ) {
 					camera_shakex -= .03;
 					camera_shakey += 3;
 				} else if ( player > 0 && multiplayer == SERVER ) {
-					strcpy((char *)net_packet->data, "SHAK");
+					strcpy((char*)net_packet->data, "SHAK");
 					net_packet->data[4] = -3; // turns into -.03
 					net_packet->data[5] = 3;
 					net_packet->address.host = net_clients[player - 1].host;
@@ -1533,7 +1533,7 @@ void Entity::handleEffects(Stat *myStats) {
 				}
 				messagePlayer(player, language[642]);
 				if ( spawn_blood ) {
-					Entity *entity = NULL;
+					Entity* entity = NULL;
 					if ( gibtype[myStats->type] == 1 ) {
 						entity = newEntity(203, 1, map.entities);
 					} else if ( gibtype[myStats->type] == 2 ) {
@@ -1565,7 +1565,7 @@ void Entity::handleEffects(Stat *myStats) {
 		if ( ticks % 30 == 0 ) {
 			this->modHP(-2 - rand() % 3);
 			if ( myStats->HP <= 0 ) {
-				Entity *killer = uidToEntity( myStats->poisonKiller );
+				Entity* killer = uidToEntity( myStats->poisonKiller );
 				if ( killer ) {
 					killer->awardXP( this, TRUE, TRUE );
 				}
@@ -1576,7 +1576,7 @@ void Entity::handleEffects(Stat *myStats) {
 			if ( player == clientnum ) {
 				camera_shakey += 3;
 			} else if ( player > 0 && multiplayer == SERVER ) {
-				strcpy((char *)net_packet->data, "SHAK");
+				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 0; // turns into 0
 				net_packet->data[5] = 3;
 				net_packet->address.host = net_clients[player - 1].host;
@@ -1599,7 +1599,7 @@ void Entity::handleEffects(Stat *myStats) {
 						messagePlayer(player, language[646], myStats->cloak->getName());
 					}
 					if ( player > 0 && multiplayer == SERVER ) {
-						strcpy((char *)net_packet->data, "ARMR");
+						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 6;
 						net_packet->data[5] = myStats->cloak->status;
 						net_packet->address.host = net_clients[player - 1].host;
@@ -1630,7 +1630,7 @@ void Entity::handleEffects(Stat *myStats) {
 					this->setObituary(language[1534]);
 					if ( myStats->HP <= 0 ) {
 						if ( player <= 0 ) {
-							Item *item = myStats->amulet;
+							Item* item = myStats->amulet;
 							if ( item->count > 1 ) {
 								newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &myStats->inventory);
 							}
@@ -1639,7 +1639,7 @@ void Entity::handleEffects(Stat *myStats) {
 						myStats->amulet->status = BROKEN;
 						playSoundEntity(this, 76, 64);
 						if ( player > 0 && multiplayer == SERVER ) {
-							strcpy((char *)net_packet->data, "ARMR");
+							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 7;
 							net_packet->data[5] = myStats->amulet->status;
 							net_packet->address.host = net_clients[player - 1].host;
@@ -1651,7 +1651,7 @@ void Entity::handleEffects(Stat *myStats) {
 					if ( player == clientnum ) {
 						camera_shakey += 8;
 					} else if ( player > 0 && multiplayer == SERVER ) {
-						strcpy((char *)net_packet->data, "SHAK");
+						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 0; // turns into 0
 						net_packet->data[5] = 8;
 						net_packet->address.host = net_clients[player - 1].host;
@@ -1663,7 +1663,7 @@ void Entity::handleEffects(Stat *myStats) {
 					messagePlayer(player, language[649]);
 					messagePlayer(player, language[650]);
 					if ( player <= 0 ) {
-						Item *item = myStats->amulet;
+						Item* item = myStats->amulet;
 						if ( item->count > 1 ) {
 							newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &myStats->inventory);
 						}
@@ -1672,7 +1672,7 @@ void Entity::handleEffects(Stat *myStats) {
 					myStats->amulet->status = BROKEN;
 					playSoundEntity(this, 76, 64);
 					if ( player > 0 && multiplayer == SERVER ) {
-						strcpy((char *)net_packet->data, "ARMR");
+						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 7;
 						net_packet->data[5] = myStats->amulet->status;
 						net_packet->address.host = net_clients[player - 1].host;
@@ -1702,7 +1702,7 @@ void Entity::handleEffects(Stat *myStats) {
 					if ( myStats->MAXHP < 10 ) {
 						myStats->MAXHP = 10;
 						if ( player > 0 && multiplayer == SERVER ) {
-							strcpy((char *)net_packet->data, "ATTR");
+							strcpy((char*)net_packet->data, "ATTR");
 							net_packet->data[4] = clientnum;
 							net_packet->data[5] = (Sint8)myStats->STR;
 							net_packet->data[6] = (Sint8)myStats->DEX;
@@ -1737,7 +1737,7 @@ void Entity::handleEffects(Stat *myStats) {
 				myStats->amulet->status = BROKEN;
 				playSoundEntity(this, 76, 64);
 				if ( player > 0 && multiplayer == SERVER ) {
-					strcpy((char *)net_packet->data, "ARMR");
+					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 7;
 					net_packet->data[5] = myStats->amulet->status;
 					net_packet->address.host = net_clients[player - 1].host;
@@ -1809,7 +1809,7 @@ Sint32 Entity::getSTR() {
 	return statGetSTR(entitystats);
 }
 
-Sint32 statGetSTR(Stat *entitystats) {
+Sint32 statGetSTR(Stat* entitystats) {
 	Sint32 STR;
 
 	STR = entitystats->STR;
@@ -1858,7 +1858,7 @@ Sint32 Entity::getDEX() {
 	return statGetDEX(entitystats);
 }
 
-Sint32 statGetDEX(Stat *entitystats) {
+Sint32 statGetDEX(Stat* entitystats) {
 	Sint32 DEX;
 
 	// paralyzed
@@ -1919,7 +1919,7 @@ Sint32 Entity::getCON() {
 	return statGetCON(entitystats);
 }
 
-Sint32 statGetCON(Stat *entitystats) {
+Sint32 statGetCON(Stat* entitystats) {
 	Sint32 CON;
 
 	CON = entitystats->CON;
@@ -1961,7 +1961,7 @@ Sint32 Entity::getINT() {
 	return statGetINT(entitystats);
 }
 
-Sint32 statGetINT(Stat *entitystats) {
+Sint32 statGetINT(Stat* entitystats) {
 	Sint32 INT;
 
 	INT = entitystats->INT;
@@ -1992,7 +1992,7 @@ Sint32 Entity::getPER() {
 	return statGetPER(entitystats);
 }
 
-Sint32 statGetPER(Stat *entitystats) {
+Sint32 statGetPER(Stat* entitystats) {
 	Sint32 PER;
 
 	PER = entitystats->PER;
@@ -2023,7 +2023,7 @@ Sint32 Entity::getCHR() {
 	return statGetCHR(entitystats);
 }
 
-Sint32 statGetCHR(Stat *entitystats) {
+Sint32 statGetCHR(Stat* entitystats) {
 	Sint32 CHR;
 
 	CHR = entitystats->CHR;
@@ -2151,21 +2151,21 @@ bool Entity::isMobile() {
 
 -------------------------------------------------------------------------------*/
 
-list_t *checkTileForEntity(int x, int y) {
-	list_t *return_val = NULL;
+list_t* checkTileForEntity(int x, int y) {
+	list_t* return_val = NULL;
 
 	//Loop through the list.
 	//If the entity's x and y match the tile's x and y (correcting for the difference in the two x/y systems, of course), then the entity is on the tile.
 	//Traverse map.entities...
-	node_t *node = NULL;
-	node_t *node2 = NULL;
+	node_t* node = NULL;
+	node_t* node2 = NULL;
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
 		if (node->element) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if (entity && (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y) { //Check if the current entity is on the tile.
 				//Right. So. Create the list if it doesn't exist.
 				if (!return_val) {
-					return_val = (list_t *) malloc(sizeof(list_t));
+					return_val = (list_t*) malloc(sizeof(list_t));
 					return_val->first = NULL;
 					return_val->last = NULL;
 				}
@@ -2190,31 +2190,31 @@ list_t *checkTileForEntity(int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-void getItemsOnTile(int x, int y, list_t **list) {
+void getItemsOnTile(int x, int y, list_t** list) {
 
 	//Take the return value of checkTileForEntity() and sort that list for items.
 	//if( entity->behavior == &actItem )
 	//And then free the list returned by checkTileForEntity.
 
 	//Right. First, grab all the entities on the tile.
-	list_t *entities = NULL;
+	list_t* entities = NULL;
 	entities = checkTileForEntity(x, y);
 
 	if (!entities) {
 		return;    //No use continuing of got no entities.
 	}
 
-	node_t *node = NULL;
-	node_t *node2 = NULL;
+	node_t* node = NULL;
+	node_t* node2 = NULL;
 	//Loop through the list of entities.
 	for (node = entities->first; node != NULL; node = node->next) {
 		if (node->element) {
-			Entity *entity = (Entity *) node->element;
+			Entity* entity = (Entity*) node->element;
 			//Check if the entity is an item.
 			if (entity && entity->behavior == &actItem) {
 				//If this is the first item found, the list needs to be created.
 				if (!(*list)) {
-					*list = (list_t *) malloc(sizeof(list_t));
+					*list = (list_t*) malloc(sizeof(list_t));
 					(*list)->first = NULL;
 					(*list)->last = NULL;
 				}
@@ -2244,14 +2244,14 @@ void getItemsOnTile(int x, int y, list_t **list) {
 -------------------------------------------------------------------------------*/
 
 void Entity::attack(int pose, int charge) {
-	Stat *hitstats = NULL;
-	Stat *myStats;
-	Entity *entity;
+	Stat* hitstats = NULL;
+	Stat* myStats;
+	Entity* entity;
 	int player, playerhit = -1;
 	double dist;
 	int c, i;
 	int weaponskill = -1;
-	node_t *node;
+	node_t* node;
 	double tangent;
 
 	if ( (myStats = getStats()) == NULL ) {
@@ -2347,7 +2347,7 @@ void Entity::attack(int pose, int charge) {
 							messagePlayer(player, language[660]);
 						}
 						if ( player > 0 && multiplayer == SERVER ) {
-							strcpy((char *)net_packet->data, "ARMR");
+							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = myStats->weapon->status;
 							net_packet->address.host = net_clients[player - 1].host;
@@ -2430,7 +2430,7 @@ void Entity::attack(int pose, int charge) {
 							messagePlayer(player, language[662], myStats->weapon->getName());
 						}
 						if ( player > 0 && multiplayer == SERVER ) {
-							strcpy((char *)net_packet->data, "ARMR");
+							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
 							net_packet->data[5] = myStats->weapon->status;
 							net_packet->address.host = net_clients[player - 1].host;
@@ -2527,7 +2527,7 @@ void Entity::attack(int pose, int charge) {
 
 						int c;
 						for ( c = 0; c < i; c++ ) {
-							Entity *entity = newEntity(-1, 1, map.entities);
+							Entity* entity = newEntity(-1, 1, map.entities);
 							entity->flags[INVISIBLE] = TRUE;
 							entity->flags[UPDATENEEDED] = TRUE;
 							entity->x = hit.entity->x - 4 + rand() % 8;
@@ -2566,7 +2566,7 @@ void Entity::attack(int pose, int charge) {
 								messagePlayer(player, language[665]);
 							}
 							if ( player > 0 && multiplayer == SERVER ) {
-								strcpy((char *)net_packet->data, "ARMR");
+								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
 								net_packet->data[5] = myStats->weapon->status;
 								net_packet->address.host = net_clients[player - 1].host;
@@ -2578,7 +2578,7 @@ void Entity::attack(int pose, int charge) {
 
 						// on sokoban, destroying boulders spawns scorpions
 						if ( !strcmp(map.name, "Sokoban") ) {
-							Entity *monster = summonMonster(SCORPION, ox, oy);
+							Entity* monster = summonMonster(SCORPION, ox, oy);
 							if ( monster ) {
 								int c;
 								for ( c = 0; c < MAXPLAYERS; c++ ) {
@@ -2597,7 +2597,7 @@ void Entity::attack(int pose, int charge) {
 			} else if ( hit.entity->behavior == &actMonster ) {
 				if ( hit.entity->children.first != NULL ) {
 					if ( hit.entity->children.first->next != NULL ) {
-						hitstats = (Stat *)hit.entity->children.first->next->element;
+						hitstats = (Stat*)hit.entity->children.first->next->element;
 
 						// alert the monster!
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) ) {
@@ -2611,11 +2611,11 @@ void Entity::attack(int pose, int charge) {
 						}
 
 						// alert other monsters too
-						Entity *ohitentity = hit.entity;
+						Entity* ohitentity = hit.entity;
 						for ( node = map.entities->first; node != NULL; node = node->next ) {
-							entity = (Entity *)node->element;
+							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
-								Stat *buddystats = entity->getStats();
+								Stat* buddystats = entity->getStats();
 								if ( buddystats != NULL ) {
 									if ( entity->checkFriend(hit.entity) ) {
 										if ( entity->skill[0] == 0 ) { // monster is waiting
@@ -2641,11 +2641,11 @@ void Entity::attack(int pose, int charge) {
 
 				// alert the player's followers!
 				for ( node = hitstats->FOLLOWERS.first; node != NULL; node = node->next ) {
-					Uint32 *c = (Uint32 *)node->element;
+					Uint32* c = (Uint32*)node->element;
 					entity = uidToEntity(*c);
-					Entity *ohitentity = hit.entity;
+					Entity* ohitentity = hit.entity;
 					if ( entity ) {
-						Stat *buddystats = entity->getStats();
+						Stat* buddystats = entity->getStats();
 						if ( buddystats != NULL ) {
 							if ( entity->skill[0] == 0 || (entity->skill[0] == 3 && entity->skill[1] != uid) ) { // monster is waiting or hunting
 								entity->skill[0] = 2; // path state
@@ -2730,10 +2730,10 @@ void Entity::attack(int pose, int charge) {
 					//50% chance spawn a slime.
 					if (rand() % 2 == 0) {
 						// spawn slime
-						Entity *monster = summonMonster(SLIME, x, y);
+						Entity* monster = summonMonster(SLIME, x, y);
 						if ( monster ) {
 							messagePlayer(player, language[582]);
-							Stat *monsterStats = monster->getStats();
+							Stat* monsterStats = monster->getStats();
 							monsterStats->LVL = 4;
 						}
 					}
@@ -2867,7 +2867,7 @@ void Entity::attack(int pose, int charge) {
 									messagePlayer(player, language[680]);
 								}
 								if ( player > 0 && multiplayer == SERVER ) {
-									strcpy((char *)net_packet->data, "ARMR");
+									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
 									net_packet->data[5] = myStats->weapon->status;
 									net_packet->address.host = net_clients[player - 1].host;
@@ -2880,7 +2880,7 @@ void Entity::attack(int pose, int charge) {
 					}
 
 					// damage opponent armor if applicable
-					Item *armor = NULL;
+					Item* armor = NULL;
 					int armornum = 0;
 					if ( damage > 0 && ((rand() % 25 == 0 && weaponskill != PRO_MACE) || (rand() % 10 == 0 && weaponskill == PRO_MACE)) ) {
 						switch ( rand() % 6 ) {
@@ -2939,7 +2939,7 @@ void Entity::attack(int pose, int charge) {
 							messagePlayer(playerhit, language[682], armor->getName());
 						}
 						if ( playerhit > 0 && multiplayer == SERVER ) {
-							strcpy((char *)net_packet->data, "ARMR");
+							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
 							net_packet->data[5] = armor->status;
 							net_packet->address.host = net_clients[playerhit - 1].host;
@@ -2968,7 +2968,7 @@ void Entity::attack(int pose, int charge) {
 					// special monster effects
 					if ( damage > 0 && rand() % 4 == 0 ) {
 						int armornum = 0;
-						Item *armor = NULL;
+						Item* armor = NULL;
 						int armorstolen = rand() % 9;
 						switch ( myStats->type ) {
 							case SCORPION:
@@ -3035,7 +3035,7 @@ void Entity::attack(int pose, int charge) {
 									armor->count = 1;
 									messagePlayer(playerhit, language[688], armor->getName());
 									newItem(armor->type, armor->status, armor->beatitude, armor->count, armor->appearance, armor->identified, &myStats->inventory);
-									Item **slot = itemSlot(hitstats, armor);
+									Item** slot = itemSlot(hitstats, armor);
 									if ( slot ) {
 										*slot = NULL;
 									}
@@ -3045,7 +3045,7 @@ void Entity::attack(int pose, int charge) {
 										free(armor);
 									}
 									if ( playerhit > 0 && multiplayer == SERVER ) {
-										strcpy((char *)net_packet->data, "STLA");
+										strcpy((char*)net_packet->data, "STLA");
 										net_packet->data[4] = armornum;
 										net_packet->address.host = net_clients[playerhit - 1].host;
 										net_packet->address.port = net_clients[playerhit - 1].port;
@@ -3105,7 +3105,7 @@ void Entity::attack(int pose, int charge) {
 						}
 					}
 					if ( playerhit > 0 && multiplayer == SERVER ) {
-						strcpy((char *)net_packet->data, "UPHP");
+						strcpy((char*)net_packet->data, "UPHP");
 						SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
 						SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
 						net_packet->address.host = net_clients[playerhit - 1].host;
@@ -3129,7 +3129,7 @@ void Entity::attack(int pose, int charge) {
 						messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
 					}
 					if ( damage > 0 ) {
-						Entity *gib = spawnGib(hit.entity);
+						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
 					} else {
 						messagePlayer(playerhit, language[700]);
@@ -3202,7 +3202,7 @@ void Entity::attack(int pose, int charge) {
 									if ( client_disconnected[c] == TRUE ) {
 										continue;
 									}
-									strcpy((char *)net_packet->data, "WALD");
+									strcpy((char*)net_packet->data, "WALD");
 									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
 									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
 									net_packet->address.host = net_clients[c - 1].host;
@@ -3220,7 +3220,7 @@ void Entity::attack(int pose, int charge) {
 									messagePlayer(player, language[705]);
 								}
 								if ( player > 0 && multiplayer == SERVER ) {
-									strcpy((char *)net_packet->data, "ARMR");
+									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
 									net_packet->data[5] = myStats->weapon->status;
 									net_packet->address.host = net_clients[player - 1].host;
@@ -3251,7 +3251,7 @@ void Entity::attack(int pose, int charge) {
 		if ( player == -1 ) {
 			return;    // clients are NOT supposed to invoke monster attacks in the gamestate!
 		}
-		strcpy((char *)net_packet->data, "ATAK");
+		strcpy((char*)net_packet->data, "ATAK");
 		net_packet->data[4] = player;
 		net_packet->data[5] = pose;
 		net_packet->data[6] = charge;
@@ -3270,7 +3270,7 @@ void Entity::attack(int pose, int charge) {
 
 -------------------------------------------------------------------------------*/
 
-int AC(Stat *stat) {
+int AC(Stat* stat) {
 	if (!stat) {
 		return 0;
 	}
@@ -3348,7 +3348,7 @@ void Entity::teleport(int tele_x, int tele_y) {
 		return;
 	}
 	if ( player > 0 && multiplayer == SERVER ) {
-		strcpy((char *)net_packet->data, "TELE");
+		strcpy((char*)net_packet->data, "TELE");
 		net_packet->data[4] = x;
 		net_packet->data[5] = y;
 		net_packet->address.host = net_clients[player - 1].host;
@@ -3411,13 +3411,13 @@ void Entity::teleportRandom() {
 
 -------------------------------------------------------------------------------*/
 
-void Entity::awardXP(Entity *src, bool share, bool root) {
+void Entity::awardXP(Entity* src, bool share, bool root) {
 	if ( !src ) {
 		return;
 	}
 
-	Stat *destStats = getStats();
-	Stat *srcStats = src->getStats();
+	Stat* destStats = getStats();
+	Stat* srcStats = src->getStats();
 
 	if ( !destStats || !srcStats ) {
 		return;
@@ -3443,7 +3443,7 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 	// divide shares
 	if ( player >= 0 ) {
 		int numshares = 0;
-		Entity *shares[MAXPLAYERS];
+		Entity* shares[MAXPLAYERS];
 		int c;
 
 		for ( c = 0; c < MAXPLAYERS; c++ ) {
@@ -3451,9 +3451,9 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 		}
 
 		// find other players to divide shares with
-		node_t *node;
+		node_t* node;
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity == this ) {
 				continue;
 			}
@@ -3495,7 +3495,7 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 			kills[srcStats->type]++;
 		} else if ( multiplayer == SERVER && player > 0 ) {
 			// inform client of kill
-			strcpy((char *)net_packet->data, "MKIL");
+			strcpy((char*)net_packet->data, "MKIL");
 			net_packet->data[4] = srcStats->type;
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
@@ -3503,7 +3503,7 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 
 			// update client attributes
-			strcpy((char *)net_packet->data, "ATTR");
+			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = (Sint8)destStats->STR;
 			net_packet->data[6] = (Sint8)destStats->DEX;
@@ -3523,7 +3523,7 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 	} else {
-		Entity *leader;
+		Entity* leader;
 
 		// NPCs with leaders award equal XP to their master (so NPCs don't steal XP gainz)
 		if ( (leader = uidToEntity(destStats->leader_uid)) != NULL ) {
@@ -3551,15 +3551,15 @@ void Entity::awardXP(Entity *src, bool share, bool root) {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::checkEnemy(Entity *your) {
+bool Entity::checkEnemy(Entity* your) {
 	if (!your) {
 		return false;
 	}
 
 	bool result;
 
-	Stat *myStats = getStats();
-	Stat *yourStats = your->getStats();
+	Stat* myStats = getStats();
+	Stat* yourStats = your->getStats();
 
 	if ( !myStats || !yourStats ) {
 		return FALSE;
@@ -3573,12 +3573,12 @@ bool Entity::checkEnemy(Entity *your) {
 	}
 
 	// if you have a leader, check whether we are enemies instead
-	Entity *yourLeader = NULL;
+	Entity* yourLeader = NULL;
 	if ( yourStats->leader_uid ) {
 		yourLeader = uidToEntity(yourStats->leader_uid);
 	}
 	if ( yourLeader ) {
-		Stat *yourLeaderStats = yourLeader->getStats();
+		Stat* yourLeaderStats = yourLeader->getStats();
 		if ( yourLeaderStats ) {
 			if ( yourLeader == this ) {
 				return FALSE;
@@ -3589,12 +3589,12 @@ bool Entity::checkEnemy(Entity *your) {
 	}
 
 	// first find out if I have a leader
-	Entity *myLeader = NULL;
+	Entity* myLeader = NULL;
 	if ( myStats->leader_uid ) {
 		myLeader = uidToEntity(myStats->leader_uid);
 	}
 	if ( myLeader ) {
-		Stat *myLeaderStats = myLeader->getStats();
+		Stat* myLeaderStats = myLeader->getStats();
 		if ( myLeaderStats ) {
 			if ( myLeader == your ) {
 				result = FALSE;
@@ -3606,10 +3606,10 @@ bool Entity::checkEnemy(Entity *your) {
 			result = swornenemies[myStats->type][yourStats->type];
 		}
 	} else {
-		node_t *t_node;
+		node_t* t_node;
 		bool foundFollower = FALSE;
 		for ( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next ) {
-			Uint32 *uid = (Uint32 *)t_node->element;
+			Uint32* uid = (Uint32*)t_node->element;
 			if ( *uid == your->uid ) {
 				foundFollower = TRUE;
 				result = FALSE;
@@ -3638,15 +3638,15 @@ bool Entity::checkEnemy(Entity *your) {
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::checkFriend(Entity *your) {
+bool Entity::checkFriend(Entity* your) {
 	bool result;
 
 	if (!your) {
 		return false;    //Equivalent to if (!myStats || !yourStats)
 	}
 
-	Stat *myStats = getStats();
-	Stat *yourStats = your->getStats();
+	Stat* myStats = getStats();
+	Stat* yourStats = your->getStats();
 
 	if ( !myStats || !yourStats ) {
 		return FALSE;
@@ -3657,12 +3657,12 @@ bool Entity::checkFriend(Entity *your) {
 	}
 
 	// if you have a leader, check whether we are friends instead
-	Entity *yourLeader = NULL;
+	Entity* yourLeader = NULL;
 	if ( yourStats->leader_uid ) {
 		yourLeader = uidToEntity(yourStats->leader_uid);
 	}
 	if ( yourLeader ) {
-		Stat *yourLeaderStats = yourLeader->getStats();
+		Stat* yourLeaderStats = yourLeader->getStats();
 		if ( yourLeaderStats ) {
 			if ( yourLeader == this ) {
 				return TRUE;
@@ -3673,12 +3673,12 @@ bool Entity::checkFriend(Entity *your) {
 	}
 
 	// first find out if I have a leader
-	Entity *myLeader = NULL;
+	Entity* myLeader = NULL;
 	if ( myStats->leader_uid ) {
 		myLeader = uidToEntity(myStats->leader_uid);
 	}
 	if ( myLeader ) {
-		Stat *myLeaderStats = myLeader->getStats();
+		Stat* myLeaderStats = myLeader->getStats();
 		if ( myLeaderStats ) {
 			if ( myLeader == your ) {
 				result = TRUE;
@@ -3690,10 +3690,10 @@ bool Entity::checkFriend(Entity *your) {
 			result = monsterally[myStats->type][yourStats->type];
 		}
 	} else {
-		node_t *t_node;
+		node_t* t_node;
 		bool foundFollower = FALSE;
 		for ( t_node = myStats->FOLLOWERS.first; t_node != NULL; t_node = t_node->next ) {
-			Uint32 *uid = (Uint32 *)t_node->element;
+			Uint32* uid = (Uint32*)t_node->element;
 			if ( *uid == your->uid ) {
 				foundFollower = TRUE;
 				result = TRUE;

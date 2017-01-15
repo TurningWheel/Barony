@@ -27,9 +27,9 @@
 
 -------------------------------------------------------------------------------*/
 
-void clickDescription(int player, Entity *entity) {
-	Stat *stat;
-	Item *item;
+void clickDescription(int player, Entity* entity) {
+	Stat* stat;
+	Item* item;
 	Uint32 uidnum;
 
 	if ( entity == NULL ) {
@@ -76,7 +76,7 @@ void clickDescription(int player, Entity *entity) {
 				//Right, now calculate the spell list's height (the same way it calculates it for itself).
 				int height = spell_list_titlebar_bmp->h;
 				int numspells = 0;
-				node_t *node;
+				node_t* node;
 				for (node = spellList.first; node != NULL; node = node->next) {
 					numspells++;
 				}
@@ -109,7 +109,7 @@ void clickDescription(int player, Entity *entity) {
 			entity = clickmap[omousey + omousex * yres];
 		} else {
 			GLubyte pixel[4];
-			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
+			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
 			uidnum = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
 			entity = uidToEntity(uidnum);
 		}
@@ -118,11 +118,11 @@ void clickDescription(int player, Entity *entity) {
 	if ( entity != NULL ) {
 		if ( multiplayer != CLIENT ) {
 			if ( (stat = entity->getStats()) == NULL ) {
-				Entity *parent = uidToEntity(entity->parent);
+				Entity* parent = uidToEntity(entity->parent);
 				if ( entity->behavior == &actPlayerLimb || entity->skill[2] == entity->parent ) {
 					if ( parent ) {
 						if ( parent->behavior == &actPlayer || parent->behavior == &actMonster ) {
-							Stat *stats = parent->getStats();
+							Stat* stats = parent->getStats();
 							if ( stats ) {
 								if ( strcmp(stats->name, "") ) {
 									messagePlayer(player, language[253], language[90 + stats->type], stats->name);
@@ -188,7 +188,7 @@ void clickDescription(int player, Entity *entity) {
 			}
 		} else {
 			// send spot command to server
-			strcpy((char *)net_packet->data, "SPOT");
+			strcpy((char*)net_packet->data, "SPOT");
 			net_packet->data[4] = player;
 			SDLNet_Write32((Uint32)entity->uid, &net_packet->data[5]);
 			net_packet->address.host = net_server.host;

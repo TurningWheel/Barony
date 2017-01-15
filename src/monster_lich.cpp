@@ -20,7 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initLich(Entity *my, Stat *myStats) {
+void initLich(Entity* my, Stat* myStats) {
 	int c;
 
 	my->flags[UPDATENEEDED] = TRUE;
@@ -84,7 +84,7 @@ void initLich(Entity *my, Stat *myStats) {
 	}
 
 	// right arm
-	Entity *entity = newEntity(276, 0, map.entities);
+	Entity* entity = newEntity(276, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -96,10 +96,10 @@ void initLich(Entity *my, Stat *myStats) {
 	entity->focalz = limbs[LICH][1][2]; // 2
 	entity->behavior = &actLichLimb;
 	entity->parent = my->uid;
-	node_t *node = list_AddNodeLast(&my->children);
+	node_t* node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(275, 0, map.entities);
@@ -117,7 +117,7 @@ void initLich(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// head
 	entity = newEntity(277, 0, map.entities);
@@ -136,14 +136,14 @@ void initLich(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void lichDie(Entity *my) {
-	node_t *node, *nextnode;
+void lichDie(Entity* my) {
+	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 20; c++ ) {
-		Entity *entity = spawnGib(my);
+		Entity* entity = spawnGib(my);
 		if ( entity ) {
 			switch ( c ) {
 				case 0:
@@ -183,7 +183,7 @@ void lichDie(Entity *my) {
 	for ( node = my->children.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		if ( node->element != NULL && i >= 2 ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity->light != NULL ) {
 				list_RemoveNode(entity->light->node);
 			}
@@ -201,13 +201,13 @@ void lichDie(Entity *my) {
 	// kill all other monsters on the level
 	for ( node = map.entities->first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( entity == my ) {
 			continue;
 		}
 		if ( entity->behavior == &actMonster ) {
 			spawnExplosion(entity->x, entity->y, entity->z);
-			Stat *stats = entity->getStats();
+			Stat* stats = entity->getStats();
 			if ( stats )
 				if ( stats->type != HUMAN ) {
 					stats->HP = 0;
@@ -223,7 +223,7 @@ void lichDie(Entity *my) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "BDTH");
+			strcpy((char*)net_packet->data, "BDTH");
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 4;
@@ -235,10 +235,10 @@ void lichDie(Entity *my) {
 	return;
 }
 
-void actLichLimb(Entity *my) {
+void actLichLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -258,9 +258,9 @@ void actLichLimb(Entity *my) {
 	return;
 }
 
-void lichAnimate(Entity *my, double dist) {
-	node_t *node;
-	Entity *entity;
+void lichAnimate(Entity* my, double dist) {
+	node_t* node;
+	Entity* entity;
 	int bodypart;
 
 	// remove old light field
@@ -271,7 +271,7 @@ void lichAnimate(Entity *my, double dist) {
 
 	// set invisibility
 	if ( multiplayer != CLIENT ) {
-		Stat *myStats = my->getStats();
+		Stat* myStats = my->getStats();
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
@@ -281,7 +281,7 @@ void lichAnimate(Entity *my, double dist) {
 					bodypart++;
 					continue;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -297,7 +297,7 @@ void lichAnimate(Entity *my, double dist) {
 					bodypart++;
 					continue;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -318,12 +318,12 @@ void lichAnimate(Entity *my, double dist) {
 	}
 
 	// move arms
-	Entity *rightarm = NULL;
+	Entity* rightarm = NULL;
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
@@ -371,10 +371,10 @@ void lichAnimate(Entity *my, double dist) {
 			// head
 			case 4: {
 				entity->z -= 4.25;
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
+				node_t* tempNode;
+				Entity* playertotrack = NULL;
 				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
+					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer ) {
 						double disttoplayer = entityDist(my, tempEntity);

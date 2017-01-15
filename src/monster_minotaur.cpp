@@ -21,9 +21,9 @@
 #include "magic/magic.hpp"
 #include "player.hpp"
 
-void initMinotaur(Entity *my, Stat *myStats) {
+void initMinotaur(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 239;
 
@@ -115,7 +115,7 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	}
 
 	// head
-	Entity *entity = newEntity(237, 0, map.entities);
+	Entity* entity = newEntity(237, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -130,7 +130,7 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// chest
 	entity = newEntity(238, 0, map.entities);
@@ -148,7 +148,7 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(243, 0, map.entities);
@@ -166,7 +166,7 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(242, 0, map.entities);
@@ -184,7 +184,7 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(241, 0, map.entities);
@@ -202,7 +202,7 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(240, 0, map.entities);
@@ -220,13 +220,13 @@ void initMinotaur(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void actMinotaurLimb(Entity *my) {
+void actMinotaurLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -246,12 +246,12 @@ void actMinotaurLimb(Entity *my) {
 	return;
 }
 
-void minotaurDie(Entity *my) {
-	node_t *node, *nextnode;
+void minotaurDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -260,7 +260,7 @@ void minotaurDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -280,7 +280,7 @@ void minotaurDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -293,12 +293,12 @@ void minotaurDie(Entity *my) {
 
 #define MINOTAURWALKSPEED .07
 
-void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL;
-	Entity *rightbody = NULL;
-	Entity *head = NULL;
-	Entity *chest = NULL;
+void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL;
+	Entity* rightbody = NULL;
+	Entity* head = NULL;
+	Entity* chest = NULL;
 	int bodypart;
 
 	// set invisibility
@@ -315,7 +315,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -334,7 +334,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -349,7 +349,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
@@ -361,7 +361,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		}
 		if ( bodypart == 4 || bodypart == 7 ) {
 			if ( bodypart == 4 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
 			if ( dist > 0.1 ) {
 				if ( !rightbody->skill[0] ) {
@@ -550,7 +550,7 @@ void minotaurMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 
 #define MINOTAURTRAP_FIRED my->skill[0]
 
-void actMinotaurTrap(Entity *my) {
+void actMinotaurTrap(Entity* my) {
 	if ( !my->skill[28] ) {
 		return;
 	}
@@ -558,7 +558,7 @@ void actMinotaurTrap(Entity *my) {
 	// received on signal
 	if ( my->skill[28] == 2) {
 		if ( !MINOTAURTRAP_FIRED ) {
-			Entity *monster = summonMonster(MINOTAUR, my->x, my->y);
+			Entity* monster = summonMonster(MINOTAUR, my->x, my->y);
 			if ( monster ) {
 				MINOTAURTRAP_FIRED = 1;
 				if ( strcmp(map.name, "Hell Boss") ) {
@@ -577,8 +577,8 @@ void actMinotaurTrap(Entity *my) {
 #define MINOTAURTIMER_LIFE my->skill[0]
 #define MINOTAURTIMER_ACTIVE my->skill[1]
 
-void actMinotaurTimer(Entity *my) {
-	node_t *node;
+void actMinotaurTimer(Entity* my) {
+	node_t* node;
 
 	MINOTAURTIMER_LIFE++;
 	if ( MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120 && rand() % 5 == 0 ) { // two minutes
@@ -586,14 +586,14 @@ void actMinotaurTimer(Entity *my) {
 		bool spawnedsomebody = FALSE;
 		for ( c = 0; c < 9; c++ ) {
 			Uint32 zapLeaderUid = 0;
-			Entity *monster = summonMonster(HUMAN, my->x, my->y);
+			Entity* monster = summonMonster(HUMAN, my->x, my->y);
 			if ( monster ) {
 				monster->skill[29] = 1; // so we spawn a zap brigadier
 				spawnedsomebody = TRUE;
 				if ( !zapLeaderUid ) {
 					zapLeaderUid = monster->uid;
 				} else {
-					Stat *monsterStats = monster->getStats();
+					Stat* monsterStats = monster->getStats();
 					monsterStats->leader_uid = zapLeaderUid;
 				}
 			}
@@ -611,7 +611,7 @@ void actMinotaurTimer(Entity *my) {
 			}
 		}
 	} else if ( MINOTAURTIMER_LIFE >= TICKS_PER_SECOND * 150 && !MINOTAURTIMER_ACTIVE ) { // two and a half minutes
-		Entity *monster = summonMonster(MINOTAUR, my->x, my->y);
+		Entity* monster = summonMonster(MINOTAUR, my->x, my->y);
 		if ( monster ) {
 			int c;
 			for ( c = 0; c < MAXPLAYERS; c++ ) {
@@ -635,7 +635,7 @@ void actMinotaurTimer(Entity *my) {
 	}
 }
 
-void actMinotaurCeilingBuster(Entity *my) {
+void actMinotaurCeilingBuster(Entity* my) {
 	double x, y;
 
 	// levitate particles
@@ -644,7 +644,7 @@ void actMinotaurCeilingBuster(Entity *my) {
 	if ( !map.tiles[v * MAPLAYERS + u * MAPLAYERS * map.height] ) {
 		int c;
 		for ( c = 0; c < 2; c++ ) {
-			Entity *entity = newEntity(171, 1, map.entities);
+			Entity* entity = newEntity(171, 1, map.entities);
 			entity->x = my->x - 8 + rand() % 17;
 			entity->y = my->y - 8 + rand() % 17;
 			entity->z = 10 + rand() % 3;
@@ -676,7 +676,7 @@ void actMinotaurCeilingBuster(Entity *my) {
 					if ( multiplayer != CLIENT ) {
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK = 1;
-						Stat *myStats = my->getStats();
+						Stat* myStats = my->getStats();
 						if ( myStats ) {
 							// easy hack to stop the minotaur while he breaks stuff
 							myStats->EFFECTS[EFF_PARALYZED] = TRUE;
@@ -687,7 +687,7 @@ void actMinotaurCeilingBuster(Entity *my) {
 					// spawn several rock particles (NOT items)
 					int c, i = 6 + rand() % 4;
 					for ( c = 0; c < i; c++ ) {
-						Entity *entity = spawnGib(my);
+						Entity* entity = spawnGib(my);
 						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
 						entity->z = -8;
@@ -705,16 +705,16 @@ void actMinotaurCeilingBuster(Entity *my) {
 						entity->fskill[3] = 0.03;
 					}
 				}
-				node_t *node, *nextnode;
+				node_t* node, *nextnode;
 				for ( node = map.entities->first; node != NULL; node = nextnode ) {
 					nextnode = node->next;
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( (int)(x / 16) == (int)(entity->x / 16) && (int)(y / 16) == (int)(entity->y / 16) ) {
 						if ( entity->behavior == &actDoorFrame ) {
 							// spawn several rock items
 							int c, i = 8 + rand() % 4;
 							for ( c = 0; c < i; c++ ) {
-								Entity *childEntity = spawnGib(my);
+								Entity* childEntity = spawnGib(my);
 								childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 								childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
 								childEntity->z = -8;

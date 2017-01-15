@@ -17,7 +17,7 @@
 
 //#include "player.hpp"
 
-Entity *selectedEntity = nullptr;
+Entity* selectedEntity = nullptr;
 Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;
 Sint32 mousexrel = 0, mouseyrel = 0;
@@ -26,7 +26,7 @@ bool splitscreen = false; //Unused variable, for game only.
 
 int game = 0;
 // function prototypes
-Uint32 timerCallback(Uint32 interval, void *param);
+Uint32 timerCallback(Uint32 interval, void* param);
 void handleEvents(void);
 void mainLogic(void);
 
@@ -143,15 +143,15 @@ void mainLogic(void) {
 -------------------------------------------------------------------------------*/
 
 void handleButtons(void) {
-	node_t *node;
-	node_t *nextnode;
-	button_t *button;
+	node_t* node;
+	node_t* nextnode;
+	button_t* button;
 	int w, h;
 
 	// handle buttons
 	for ( node = button_l.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
-		button = (button_t *)node->element;
+		button = (button_t*)node->element;
 		if ( !subwindow && button->focused ) {
 			list_RemoveNode(button->node);
 			continue;
@@ -340,15 +340,15 @@ void handleEvents(void) {
 					if ( zbuffer != NULL ) {
 						free(zbuffer);
 					}
-					zbuffer = (double *) malloc(sizeof(double) * xres * yres);
+					zbuffer = (double*) malloc(sizeof(double) * xres * yres);
 					if ( clickmap != NULL ) {
 						free(clickmap);
 					}
-					clickmap = (Entity **) malloc(sizeof(Entity *)*xres * yres);
+					clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 					if (palette != NULL) {
 						free(palette);
 					}
-					palette = (int *) malloc(sizeof(unsigned int) * xres * yres);
+					palette = (int*) malloc(sizeof(unsigned int) * xres * yres);
 					if ( !changeVideoMode() ) {
 						printlog("critical error! Attempting to abort safely...\n");
 						mainloop = 0;
@@ -373,7 +373,7 @@ void handleEvents(void) {
 
 -------------------------------------------------------------------------------*/
 
-Uint32 timerCallback(Uint32 interval, void *param) {
+Uint32 timerCallback(Uint32 interval, void* param) {
 	SDL_Event event;
 	SDL_UserEvent userevent;
 
@@ -462,11 +462,11 @@ void editFill(int x, int y, int layer, int type) {
 
 #define MAXUNDOS 10
 
-node_t *undospot = NULL;
-node_t *redospot = NULL;
+node_t* undospot = NULL;
+node_t* redospot = NULL;
 list_t undolist;
 void makeUndo() {
-	node_t *node, *nextnode;
+	node_t* node, *nextnode;
 
 	// eliminate any undo nodes beyond the one we are currently on
 	if ( undospot != NULL ) {
@@ -481,20 +481,20 @@ void makeUndo() {
 	}
 
 	// copy all the current map data
-	map_t *undomap = (map_t *) malloc(sizeof(map_t));
+	map_t* undomap = (map_t*) malloc(sizeof(map_t));
 	strcpy(undomap->author, map.author);
 	strcpy(undomap->name, map.name);
 	undomap->width = map.width;
 	undomap->height = map.height;
-	undomap->tiles = (Sint32 *) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
+	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
 	memcpy(undomap->tiles, map.tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
-	undomap->entities = (list_t *) malloc(sizeof(list_t));
+	undomap->entities = (list_t*) malloc(sizeof(list_t));
 	undomap->entities->first = NULL;
 	undomap->entities->last = NULL;
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = newEntity(((Entity *)node->element)->sprite, 1, undomap->entities);
-		entity->x = ((Entity *)node->element)->x;
-		entity->y = ((Entity *)node->element)->y;
+		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities);
+		entity->x = ((Entity*)node->element)->x;
+		entity->y = ((Entity*)node->element)->y;
 	}
 
 	// add the new node to the undo list
@@ -523,28 +523,28 @@ void clearUndos() {
 -------------------------------------------------------------------------------*/
 
 void undo() {
-	node_t *node;
+	node_t* node;
 
 	if ( undospot == NULL ) {
 		return;
 	}
 	selectedEntity = NULL;
 	if ( undospot == undolist.last ) {
-		node_t *tempnode = undospot;
+		node_t* tempnode = undospot;
 		makeUndo();
 		undospot = tempnode;
 	}
 	free(map.tiles);
-	map_t *undomap = (map_t *)undospot->element;
+	map_t* undomap = (map_t*)undospot->element;
 	map.width = undomap->width;
 	map.height = undomap->height;
-	map.tiles = (Sint32 *) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
+	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next ) {
-		Entity *entity = newEntity(((Entity *)node->element)->sprite, 1, map.entities);
-		entity->x = ((Entity *)node->element)->x;
-		entity->y = ((Entity *)node->element)->y;
+		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
+		entity->x = ((Entity*)node->element)->x;
+		entity->y = ((Entity*)node->element)->y;
 	}
 	if ( redospot != NULL ) {
 		redospot = redospot->prev;
@@ -555,23 +555,23 @@ void undo() {
 }
 
 void redo() {
-	node_t *node;
+	node_t* node;
 
 	if ( redospot == NULL ) {
 		return;
 	}
 	selectedEntity = NULL;
 	free(map.tiles);
-	map_t *undomap = (map_t *)redospot->element;
+	map_t* undomap = (map_t*)redospot->element;
 	map.width = undomap->width;
 	map.height = undomap->height;
-	map.tiles = (Sint32 *) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
+	map.tiles = (Sint32*) malloc(sizeof(Sint32) * map.width * map.height * MAPLAYERS);
 	memcpy(map.tiles, undomap->tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	list_FreeAll(map.entities);
 	for ( node = undomap->entities->first; node != NULL; node = node->next ) {
-		Entity *entity = newEntity(((Entity *)node->element)->sprite, 1, map.entities);
-		entity->x = ((Entity *)node->element)->x;
-		entity->y = ((Entity *)node->element)->y;
+		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
+		entity->x = ((Entity*)node->element)->x;
+		entity->y = ((Entity*)node->element)->y;
 	}
 	if ( undospot != NULL ) {
 		undospot = undospot->next;
@@ -614,7 +614,7 @@ bool pasting = FALSE;
 #include <mach-o/dyld.h> //For _NSGetExecutablePath()
 #endif
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 #ifdef APPLE
 	uint32_t buffsize = 4096;
 	char binarypath[buffsize];
@@ -640,17 +640,17 @@ int main(int argc, char **argv) {
 		printlog( "Failed to get binary path. Program may not work correctly!\n");
 	}
 #endif
-	button_t *button;
-	node_t *node;
-	node_t *nextnode;
-	Entity *entity;
+	button_t* button;
+	node_t* node;
+	node_t* nextnode;
+	Entity* entity;
 	SDL_Rect pos;
 	int c;
 	int x, y, z;
 	int x2, y2;
 	//char action[32];
 	int oslidery = 0;
-	light_t *light = NULL;
+	light_t* light = NULL;
 	bool savedundo = FALSE;
 	smoothlighting = TRUE;
 
@@ -691,10 +691,10 @@ int main(int argc, char **argv) {
 	// create an empty map
 	map.width = 32;
 	map.height = 24;
-	map.entities = (list_t *) malloc(sizeof(list_t));
+	map.entities = (list_t*) malloc(sizeof(list_t));
 	map.entities->first = NULL;
 	map.entities->last = NULL;
-	map.tiles = (int *) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
+	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
 	for ( z = 0; z < MAPLAYERS; z++ ) {
@@ -712,8 +712,8 @@ int main(int argc, char **argv) {
 			}
 		}
 	}
-	vismap = (bool *) malloc(sizeof(bool) * map.width * map.height);
-	lightmap = (int *) malloc(sizeof(Sint32) * map.width * map.height);
+	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
+	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
 	for (c = 0; c < map.width * map.height; c++ ) {
 		lightmap[c] = 0;
 	}
@@ -727,7 +727,7 @@ int main(int argc, char **argv) {
 
 	// initialize editor settings
 	strcpy(layerstatus, "BACKGROUND");
-	palette = (int *) malloc(sizeof(unsigned int) * xres * yres);
+	palette = (int*) malloc(sizeof(unsigned int) * xres * yres);
 
 	// main interface
 	button = butFile = newButton();
@@ -1131,7 +1131,7 @@ int main(int argc, char **argv) {
 				if ( map.entities->first != NULL && viewsprites && allowediting ) {
 					for ( node = map.entities->first; node != NULL; node = nextnode ) {
 						nextnode = node->next;
-						entity = (Entity *)node->element;
+						entity = (Entity*)node->element;
 						if ( entity == selectedEntity ) {
 							if ( mousestatus[SDL_BUTTON_LEFT] ) {
 								mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -1284,7 +1284,7 @@ int main(int argc, char **argv) {
 				camera.winh = yres - 32;
 				light = lightSphere(camera.x, camera.y, 16, 255);
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					entity = (Entity *)node->element;
+					entity = (Entity*)node->element;
 					entity->flags[SPRITE] = TRUE; // all entities rendered as SPRITES in the editor
 					entity->x += 8;
 					entity->y += 8;
@@ -1296,7 +1296,7 @@ int main(int argc, char **argv) {
 				printTextFormatted(font8x8_bmp, 8, yres - 64, "x = %3.3f\ny = %3.3f\nz = %3.3f\nang = %3.3f\nfps = %3.1f", camera.x, camera.y, camera.z, camera.ang, fps);
 				list_RemoveNode(light->node);
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					entity = (Entity *)node->element;
+					entity = (Entity*)node->element;
 					entity->x -= 8;
 					entity->y -= 8;
 				}

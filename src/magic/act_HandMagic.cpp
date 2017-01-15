@@ -24,8 +24,8 @@
 #define THROW 1 //Throw spell!
 
 spellcasting_animation_manager_t cast_animation;
-Entity *magicLeftHand = NULL;
-Entity *magicRightHand = NULL;
+Entity* magicLeftHand = NULL;
+Entity* magicRightHand = NULL;
 
 #define HANDMAGIC_INIT my->skill[0]
 #define HANDMAGIC_TESTVAR my->skill[1]
@@ -36,13 +36,13 @@ Entity *magicRightHand = NULL;
 #define HANDMAGIC_CIRCLE_RADIUS 0.8
 #define HANDMAGIC_CIRCLE_SPEED 0.3
 
-void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t *spell) {
+void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, Uint32 caster_uid, spell_t* spell) {
 	//This function triggers the spellcasting animation and sets up everything.
 
 	if (!animation_manager) {
 		return;
 	}
-	Entity *caster = uidToEntity(caster_uid);
+	Entity* caster = uidToEntity(caster_uid);
 	if (!caster) {
 		return;
 	}
@@ -57,7 +57,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	}
 
 	playSoundEntity(caster, 170, 128 );
-	Stat *stat = caster->getStats();
+	Stat* stat = caster->getStats();
 
 	//Save these two very important pieces of data.
 	animation_manager->caster = caster->uid;
@@ -88,7 +88,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->consume_timer = animation_manager->consume_interval;
 }
 
-void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t *animation_manager) {
+void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* animation_manager) {
 	animation_manager->caster = -1;
 	animation_manager->spell = NULL;
 	animation_manager->active = FALSE;
@@ -103,7 +103,7 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t *a
 	}
 }
 
-void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t *animation_manager) {
+void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager) {
 	castSpell(animation_manager->caster, animation_manager->spell, FALSE, FALSE); //Actually cast the spell.
 
 	spellcastingAnimationManager_deactivate(animation_manager);
@@ -116,7 +116,7 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 [12:49:46 PM] Sheridan Kane Rathbun: the first step is to get the hands visible on the screen when you cast. worry about moving them when that critical part is done.
 */
 
-void actLeftHandMagic(Entity *my) {
+void actLeftHandMagic(Entity* my) {
 	//int c = 0;
 	if (intro == TRUE) {
 		my->flags[INVISIBLE] = TRUE;
@@ -203,7 +203,7 @@ void actLeftHandMagic(Entity *my) {
 		switch (cast_animation.stage) {
 			case CIRCLE:
 				if (ticks % 5 == 0) {
-					Entity *entity = spawnGib(my);
+					Entity* entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
 					entity->flags[SPRITE] = TRUE;
 					entity->flags[NOUPDATE] = TRUE;
@@ -278,7 +278,7 @@ void actLeftHandMagic(Entity *my) {
 	my->roll = HANDMAGIC_ROLL;
 }
 
-void actRightHandMagic(Entity *my) {
+void actRightHandMagic(Entity* my) {
 	if (intro == TRUE) {
 		my->flags[INVISIBLE] = TRUE;
 		return;
@@ -362,7 +362,7 @@ void actRightHandMagic(Entity *my) {
 			case CIRCLE:
 				if (ticks % 5 == 0) {
 					//messagePlayer(0, "Pingas!");
-					Entity *entity = spawnGib(my);
+					Entity* entity = spawnGib(my);
 					entity->flags[INVISIBLE] = FALSE;
 					entity->flags[SPRITE] = TRUE;
 					entity->flags[NOUPDATE] = TRUE;

@@ -29,8 +29,8 @@
 
 -------------------------------------------------------------------------------*/
 
-void actFountain(Entity *my) {
-	Entity *entity;
+void actFountain(Entity* my) {
+	Entity* entity;
 
 	//messagePlayer(0, "actFountain()");
 	//TODO: Temporary mechanism testing code.
@@ -123,7 +123,7 @@ void actFountain(Entity *my) {
 						case 2: {
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
 							messagePlayer(i, language[470]);
-							Item *item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, FALSE, NULL);
+							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, FALSE, NULL);
 							useItem(item, i);
 							// Long live the mystical fountain of TODO.
 							break;
@@ -165,7 +165,7 @@ void actFountain(Entity *my) {
 								stats[i]->mask->beatitude++;
 							}
 							if ( multiplayer == SERVER && i > 0 ) {
-								strcpy((char *)net_packet->data, "BLES");
+								strcpy((char*)net_packet->data, "BLES");
 								net_packet->address.host = net_clients[i - 1].host;
 								net_packet->address.port = net_clients[i - 1].port;
 								net_packet->len = 4;

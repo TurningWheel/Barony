@@ -23,7 +23,7 @@ bool stop = FALSE;
 
 // language stuff
 char languageCode[32] = { 0 };
-char **language = NULL;
+char** language = NULL;
 
 // input stuff
 int reversemouse = 0;
@@ -32,12 +32,12 @@ Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
 Sint8 keystatus[512];
-char *inputstr = NULL;
+char* inputstr = NULL;
 int inputlen = 0;
 Sint8 mousestatus[6];
 Sint8 joystatus[NUM_JOY_STATUS];
 Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
-Entity **clickmap = NULL;
+Entity** clickmap = NULL;
 bool capture_mouse = TRUE;
 string lastname;
 
@@ -53,31 +53,31 @@ bool directConnect = TRUE;
 #endif
 char address[64];
 IPaddress net_server;
-IPaddress *net_clients = NULL;
+IPaddress* net_clients = NULL;
 UDPsocket net_sock = NULL;
 TCPsocket net_tcpsock = NULL;
-UDPpacket *net_packet = NULL;
-TCPsocket *net_tcpclients = NULL;
+UDPpacket* net_packet = NULL;
+TCPsocket* net_tcpclients = NULL;
 SDLNet_SocketSet tcpset = NULL;
 list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
 bool receivedclientnum = FALSE;
-char *window_title = NULL;
+char* window_title = NULL;
 bool softwaremode = FALSE;
 SDL_TimerID timer;
-SDL_Window *screen = NULL;
+SDL_Window* screen = NULL;
 #ifdef APPLE
-SDL_Renderer *renderer = NULL;
+SDL_Renderer* renderer = NULL;
 #else
 SDL_GLContext renderer;
 #endif
-SDL_Surface *mainsurface = NULL;
+SDL_Surface* mainsurface = NULL;
 SDL_Event event;
 bool firstmouseevent = TRUE;
 int fullscreen = 0;
 bool smoothlighting = FALSE;
 list_t removedEntities;
 list_t entitiesToDelete[MAXPLAYERS];
-Entity *client_selected[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
+Entity* client_selected[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
 Uint32 client_keepalive[MAXPLAYERS];
@@ -99,11 +99,11 @@ Sint32 newcamx, newcamy;
 Uint32 entity_uids = 1, lastEntityUIDs = 1;
 view_t camera;
 map_t map;
-voxel_t **models = NULL;
+voxel_t** models = NULL;
 list_t button_l;
 list_t light_l;
 Uint32 mapseed;
-bool *shoparea = NULL;
+bool* shoparea = NULL;
 
 // game variables
 bool shootmode = FALSE;
@@ -131,7 +131,7 @@ int kills[NUMMONSTERS];
 // messages
 list_t messages;
 list_t command_history;
-node_t *chosen_command = NULL;
+node_t* chosen_command = NULL;
 bool command = FALSE;
 char command_str[128];
 
@@ -158,7 +158,7 @@ int openwindow = 0, savewindow = 0, newwindow = 0;
 int slidery = 0, slidersize = 16;
 int menuDisappear = 0;
 int selectedFile = 0;
-char **d_names = NULL;
+char** d_names = NULL;
 unsigned long d_names_length = 0;
 char filename[128];
 char oldfilename[128];
@@ -166,34 +166,34 @@ char message[48];
 int messagetime = 0;
 char widthtext[4], heighttext[4], nametext[32], authortext[32];
 int editproperty = 0;
-SDL_Cursor *cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
-int *palette;
+SDL_Cursor* cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
+int* palette;
 
 // video definitions
-polymodel_t *polymodels = NULL;
+polymodel_t* polymodels = NULL;
 list_t ttfTextHash[HASH_SIZE];
-TTF_Font *ttf8 = NULL;
-TTF_Font *ttf12 = NULL;
-TTF_Font *ttf16 = NULL;
-SDL_Surface *font8x8_bmp = NULL;
-SDL_Surface *font12x12_bmp = NULL;
-SDL_Surface *font16x16_bmp = NULL;
-SDL_Surface *fancyWindow_bmp = NULL;
-SDL_Surface **sprites = NULL;
-SDL_Surface **tiles = NULL;
+TTF_Font* ttf8 = NULL;
+TTF_Font* ttf12 = NULL;
+TTF_Font* ttf16 = NULL;
+SDL_Surface* font8x8_bmp = NULL;
+SDL_Surface* font12x12_bmp = NULL;
+SDL_Surface* font16x16_bmp = NULL;
+SDL_Surface* fancyWindow_bmp = NULL;
+SDL_Surface** sprites = NULL;
+SDL_Surface** tiles = NULL;
 Uint32 imgref = 1, vboref = 1;
-GLuint *texid = NULL;
+GLuint* texid = NULL;
 bool disablevbos = FALSE;
 Uint32 fov = 65;
 //GLuint *vboid=NULL, *vaoid=NULL;
-SDL_Surface **allsurfaces;
+SDL_Surface** allsurfaces;
 Uint32 numsprites, numtiles, nummodels;
-bool *animatedtiles = NULL, *lavatiles = NULL;
+bool* animatedtiles = NULL, *lavatiles = NULL;
 int rscale = 1;
 double vidgamma = 1.0f;
-double *zbuffer = NULL;
-Sint32 *lightmap = NULL;
-bool *vismap = NULL;
+double* zbuffer = NULL;
+Sint32* lightmap = NULL;
+bool* vismap = NULL;
 bool mode3d = FALSE;
 
 // audio definitions
@@ -205,10 +205,10 @@ int sfxvolume = 64;
 int musvolume = 48;
 
 // fun stuff
-SDL_Surface *title_bmp = NULL;
-SDL_Surface *logo_bmp = NULL;
-SDL_Surface *cursor_bmp = NULL;
-SDL_Surface *cross_bmp = NULL;
+SDL_Surface* title_bmp = NULL;
+SDL_Surface* logo_bmp = NULL;
+SDL_Surface* cursor_bmp = NULL;
+SDL_Surface* cross_bmp = NULL;
 int shaking = 0, bobbing = 0;
 bool fadeout = FALSE, fadefinished = FALSE;
 int fadealpha = 0;
@@ -239,7 +239,7 @@ hit_t hit;
 
 -------------------------------------------------------------------------------*/
 
-int longestline(char *str) {
+int longestline(char* str) {
 	int c, x = 0, result = 0;
 	for ( c = 0; c < strlen(str); c++ ) {
 		if ( str[c] == 10 ) {
@@ -261,7 +261,7 @@ int longestline(char *str) {
 
 -------------------------------------------------------------------------------*/
 
-int concatedStringLength(char *str, ...) {
+int concatedStringLength(char* str, ...) {
 	va_list argptr;
 	char newstr[1024] = { 0 };
 
@@ -306,7 +306,7 @@ int numdigits_sint16(Sint16 x) {
 
 -------------------------------------------------------------------------------*/
 
-void printlog(char *str, ...) {
+void printlog(char* str, ...) {
 	char newstr[1024] = { 0 };
 	va_list argptr;
 

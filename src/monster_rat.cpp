@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initRat(Entity *my, Stat *myStats) {
+void initRat(Entity* my, Stat* myStats) {
 	int c;
 
 	my->sprite = 131; // rat model
@@ -105,7 +105,7 @@ void initRat(Entity *my, Stat *myStats) {
 
 			int c;
 			for ( c = 0; c < 6; c++ ) {
-				Entity *entity = summonMonster(RAT, my->x, my->y);
+				Entity* entity = summonMonster(RAT, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -114,7 +114,7 @@ void initRat(Entity *my, Stat *myStats) {
 	}
 }
 
-void ratAnimate(Entity *my, double dist) {
+void ratAnimate(Entity* my, double dist) {
 	// move legs
 	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME != MONSTER_ATTACK) ) {
 		MONSTER_ATTACKTIME = MONSTER_ATTACK;
@@ -126,10 +126,10 @@ void ratAnimate(Entity *my, double dist) {
 	}
 }
 
-void ratDie(Entity *my) {
+void ratDie(Entity* my) {
 	int c = 0;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -138,7 +138,7 @@ void ratDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;

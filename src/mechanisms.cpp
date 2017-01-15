@@ -19,7 +19,7 @@
 
 //Circuits do not overlap. They connect to all their neighbors, allowing for circuits to interfere with eachother.
 
-void actCircuit(Entity *my) {
+void actCircuit(Entity* my) {
 	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
 }
 
@@ -43,13 +43,13 @@ void Entity::circuitPowerOff() {
 
 void Entity::updateCircuitNeighbors() {
 	//Send the power on or off signal to all neighboring circuits & mechanisms.
-	list_t *neighbors = getPowerableNeighbors(); //Grab a list of all neighboring circuits and mechanisms.
+	list_t* neighbors = getPowerableNeighbors(); //Grab a list of all neighboring circuits and mechanisms.
 
 	if (neighbors) {
-		node_t *node = NULL;
+		node_t* node = NULL;
 		for (node = neighbors->first; node != NULL; node = node->next) {
 			if (node->element) {
-				Entity *powerable = (Entity *)(node->element);
+				Entity* powerable = (Entity*)(node->element);
 
 				if (powerable) {
 					if (powerable->behavior == actCircuit) {
@@ -107,7 +107,7 @@ void Entity::mechanismPowerOff() {
  */
 
 
-void actSwitch(Entity *my) {
+void actSwitch(Entity* my) {
 	//TODO: If powered on, and it detects a depowered neighbor, it should pulse that neighbor to turn on.
 	//Thus, this function needs to be called periodically.
 	//This is so that if a switch goes off and there's another switch on the network, the entire network shuts off regardless of the other switch's status.
@@ -166,10 +166,10 @@ void actSwitch(Entity *my) {
 }
 
 #define TRAP_ON my->skill[0]
-void actTrap(Entity *my) {
+void actTrap(Entity* my) {
 	// activates circuit when certain entities are occupying its tile
-	node_t *node;
-	Entity *entity;
+	node_t* node;
+	Entity* entity;
 	bool somebodyonme = FALSE;
 	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
 
@@ -178,7 +178,7 @@ void actTrap(Entity *my) {
 	}
 
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder ) {
 			if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) ) {
 				somebodyonme = TRUE;
@@ -198,16 +198,16 @@ void actTrap(Entity *my) {
 }
 
 #define TRAPPERMANENT_ON my->skill[0]
-void actTrapPermanent(Entity *my) {
+void actTrapPermanent(Entity* my) {
 	// activates circuit when certain entities are occupying its tile
 	// unlike actTrap, never deactivates
-	node_t *node;
-	Entity *entity;
+	node_t* node;
+	Entity* entity;
 	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
 
 	if ( !strcmp(map.name, "Boss") ) {
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			entity = (Entity *)node->element;
+			entity = (Entity*)node->element;
 			if ( entity->behavior == &actPlayer ) {
 				if ( entity->x < 26 * 16 || entity->y < 6 * 16 || entity->y >= 26 * 16 ) { // hardcoded, I know...
 					return;
@@ -220,7 +220,7 @@ void actTrapPermanent(Entity *my) {
 		my->switchUpdateNeighbors();
 	} else {
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			entity = (Entity *)node->element;
+			entity = (Entity*)node->element;
 			if ( entity->behavior == &actPlayer || entity->behavior == &actItem || entity->behavior == &actMonster || entity->behavior == &actBoulder ) {
 				if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) ) {
 					my->toggleSwitch();
@@ -240,13 +240,13 @@ void Entity::toggleSwitch() {
 
 	//(my->skill[0]) ? my->sprite = 171 : my->sprite = 168;
 
-	list_t *neighbors = getPowerableNeighbors(); //Grab a list of all neighboring circuits and mechanisms.
+	list_t* neighbors = getPowerableNeighbors(); //Grab a list of all neighboring circuits and mechanisms.
 
 	if (neighbors) {
-		node_t *node = NULL;
+		node_t* node = NULL;
 		for (node = neighbors->first; node != NULL; node = node->next) {
 			if (node->element) {
-				Entity *powerable = (Entity *)(node->element);
+				Entity* powerable = (Entity*)(node->element);
 
 				if (powerable) {
 					if (powerable->behavior == actCircuit) {
@@ -264,13 +264,13 @@ void Entity::toggleSwitch() {
 }
 
 void Entity::switchUpdateNeighbors() {
-	list_t *neighbors = getPowerableNeighbors(); //Grab a list of all neighboring circuits and mechanisms.
+	list_t* neighbors = getPowerableNeighbors(); //Grab a list of all neighboring circuits and mechanisms.
 
 	if (neighbors) {
-		node_t *node = NULL;
+		node_t* node = NULL;
 		for (node = neighbors->first; node != NULL; node = node->next) {
 			if (node->element) {
-				Entity *powerable = (Entity *)(node->element);
+				Entity* powerable = (Entity*)(node->element);
 
 				if (powerable) {
 					if (powerable->circuit_status != CIRCUIT_ON) {
@@ -289,31 +289,31 @@ void Entity::switchUpdateNeighbors() {
 	}
 }
 
-void getPowerablesOnTile(int x, int y, list_t **list) {
+void getPowerablesOnTile(int x, int y, list_t** list) {
 
 	//Take the return value of checkTileForEntity() and sort that list for powerables.
 	//if (entity->powerable == true)
 	//And then free the list returned by checkTileForEntity.
 
 	//Right. First, grab all the entities on the tile.
-	list_t *entities = NULL;
+	list_t* entities = NULL;
 	entities = checkTileForEntity(x, y);
 
 	if (!entities) {
 		return;    //No use continuing, got no entities.
 	}
 
-	node_t *node = NULL;
-	node_t *node2 = NULL;
+	node_t* node = NULL;
+	node_t* node2 = NULL;
 	//Loop through the list of entities.
 	for (node = entities->first; node != NULL; node = node->next) {
 		if (node->element) {
-			Entity *entity = (Entity *) node->element;
+			Entity* entity = (Entity*) node->element;
 			//Check if the entity is powerable.
 			if (entity && entity->skill[28]) { //If skill 28 = 0, the entity is not a powerable.
 				//If this is the first powerable found, the list needs to be created.
 				if (!(*list)) {
-					*list = (list_t *) malloc(sizeof(list_t));
+					*list = (list_t*) malloc(sizeof(list_t));
 					(*list)->first = NULL;
 					(*list)->last = NULL;
 				}
@@ -335,7 +335,7 @@ void getPowerablesOnTile(int x, int y, list_t **list) {
 }
 
 list_t* Entity::getPowerableNeighbors() {
-	list_t *return_val = NULL;
+	list_t* return_val = NULL;
 
 
 	int tx = x / 16;

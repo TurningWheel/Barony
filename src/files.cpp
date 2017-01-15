@@ -23,7 +23,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void glLoadTexture(SDL_Surface *image, int texnum) {
+void glLoadTexture(SDL_Surface* image, int texnum) {
 	SDL_LockSurface(image);
 	glEnable(GL_TEXTURE_2D);
 	glBindTexture(GL_TEXTURE_2D, texid[texnum]);
@@ -50,8 +50,8 @@ void glLoadTexture(SDL_Surface *image, int texnum) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface *loadImage(char *filename) {
-	SDL_Surface *originalSurface;
+SDL_Surface* loadImage(char* filename) {
+	SDL_Surface* originalSurface;
 
 	if ( imgref >= MAXTEXTURES ) {
 		printlog("critical error! No more room in allsurfaces[], MAXTEXTURES reached.\n");
@@ -89,32 +89,32 @@ SDL_Surface *loadImage(char *filename) {
 
 -------------------------------------------------------------------------------*/
 
-voxel_t *loadVoxel(char *filename2) {
-	char *filename;
-	FILE *file;
-	voxel_t *model;
+voxel_t* loadVoxel(char* filename2) {
+	char* filename;
+	FILE* file;
+	voxel_t* model;
 
 	if (filename2 != NULL) {
 		if ( strstr(filename2, ".vox") == NULL ) {
-			filename = (char *) malloc(sizeof(char) * 256);
+			filename = (char*) malloc(sizeof(char) * 256);
 			strcpy(filename, filename2);
 			strcat(filename, ".vox");
 		} else {
-			filename = (char *) malloc(sizeof(char) * 256);
+			filename = (char*) malloc(sizeof(char) * 256);
 			strcpy(filename, filename2);
 		}
 		if ((file = fopen(filename, "rb")) == NULL) {
 			free(filename);
 			return NULL;
 		}
-		model = (voxel_t *) malloc(sizeof(voxel_t));
+		model = (voxel_t*) malloc(sizeof(voxel_t));
 		model->sizex = 0;
 		fread(&model->sizex, sizeof(Sint32), 1, file);
 		model->sizey = 0;
 		fread(&model->sizey, sizeof(Sint32), 1, file);
 		model->sizez = 0;
 		fread(&model->sizez, sizeof(Sint32), 1, file);
-		model->data = (Uint8 *) malloc(sizeof(Uint8) * model->sizex * model->sizey * model->sizez);
+		model->data = (Uint8*) malloc(sizeof(Uint8) * model->sizex * model->sizey * model->sizez);
 		memset(model->data, 0, sizeof(Uint8)*model->sizex * model->sizey * model->sizez);
 		fread(model->data, sizeof(Uint8), model->sizex * model->sizey * model->sizez, file);
 		fread(&model->palette, sizeof(Uint8), 256 * 3, file);
@@ -141,15 +141,15 @@ voxel_t *loadVoxel(char *filename2) {
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
-	FILE *fp;
+int loadMap(char* filename2, map_t* destmap, list_t* entlist) {
+	FILE* fp;
 	char valid_data[11];
 	Uint32 numentities;
 	Uint32 c;
 	Sint32 x, y;
-	Entity *entity;
+	Entity* entity;
 	Sint32 sprite;
-	char *filename;
+	char* filename;
 
 	char oldmapname[64];
 	strcpy(oldmapname, map.name);
@@ -162,7 +162,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			}
 			c++;
 		}
-		filename = (char *) malloc(sizeof(char) * 256);
+		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, "maps/");
 		strcat(filename, filename2);
 
@@ -214,7 +214,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 		fread(destmap->author, sizeof(char), 32, fp); // map author
 		fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
 		fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
-		destmap->tiles = (Sint32 *) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
+		destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
 		fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
 		fread(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
 		for (c = 0; c < numentities; c++) {
@@ -242,7 +242,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			if (lightmap != NULL) {
 				free(lightmap);
 			}
-			lightmap = (int *) malloc(sizeof(Sint32) * destmap->width * destmap->height);
+			lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
 			if ( strncmp(map.name, "Hell", 4) ) {
 				for (c = 0; c < destmap->width * destmap->height; c++ ) {
 					lightmap[c] = 0;
@@ -257,7 +257,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			if (vismap != NULL) {
 				free(vismap);
 			}
-			vismap = (bool *) calloc(destmap->width * destmap->height, sizeof(bool));
+			vismap = (bool*) calloc(destmap->width * destmap->height, sizeof(bool));
 
 			// reset minimap
 			for ( x = 0; x < 64; x++ )
@@ -284,7 +284,7 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 			if ( shoparea ) {
 				free(shoparea);
 			}
-			shoparea = (bool *) malloc(sizeof(bool) * destmap->width * destmap->height);
+			shoparea = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
 			for ( x = 0; x < destmap->width; x++ )
 				for ( y = 0; y < destmap->height; y++ ) {
 					shoparea[y + x * destmap->height] = FALSE;
@@ -309,16 +309,16 @@ int loadMap(char *filename2, map_t *destmap, list_t *entlist) {
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char *filename2) {
-	FILE *fp;
+int saveMap(char* filename2) {
+	FILE* fp;
 	Uint32 numentities = 0;
-	node_t *node;
-	Entity *entity;
-	char *filename;
+	node_t* node;
+	Entity* entity;
+	char* filename;
 	Sint32 x, y;
 
 	if ( filename2 != NULL && strcmp(filename2, "") ) {
-		filename = (char *) malloc(sizeof(char) * 256);
+		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, "maps/");
 		strcat(filename, filename2);
 
@@ -341,7 +341,7 @@ int saveMap(char *filename2) {
 		}
 		fwrite(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
 		for (node = map.entities->first; node != NULL; node = node->next) {
-			entity = (Entity *) node->element;
+			entity = (Entity*) node->element;
 			fwrite(&entity->sprite, sizeof(Sint32), 1, fp);
 			x = entity->x;
 			y = entity->y;
@@ -364,10 +364,10 @@ int saveMap(char *filename2) {
 
 -------------------------------------------------------------------------------*/
 
-char *readFile(char *filename) {
-	char *file_contents = NULL;
+char* readFile(char* filename) {
+	char* file_contents = NULL;
 	long input_file_size;
-	FILE *input_file = fopen(filename, "rb");
+	FILE* input_file = fopen(filename, "rb");
 	if ( input_file ) {
 		fseek(input_file, 0, SEEK_END);
 		input_file_size = ftell(input_file);
@@ -389,10 +389,10 @@ char *readFile(char *filename) {
 
 -------------------------------------------------------------------------------*/
 
-list_t *directoryContents(char *directory) {
-	list_t *list = NULL; // list of strings
-	DIR *dir = NULL;
-	struct dirent *entry = NULL;
+list_t* directoryContents(char* directory) {
+	list_t* list = NULL; // list of strings
+	DIR* dir = NULL;
+	struct dirent* entry = NULL;
 	dir = opendir(directory);
 
 	if ( !dir ) {
@@ -400,7 +400,7 @@ list_t *directoryContents(char *directory) {
 		return NULL;
 	}
 
-	list = (list_t *) malloc(sizeof(list_t));
+	list = (list_t*) malloc(sizeof(list_t));
 	list->first = NULL;
 	list->last = NULL;
 
@@ -408,7 +408,7 @@ list_t *directoryContents(char *directory) {
 		strcpy(tempstr, directory);
 		strcat(tempstr, entry->d_name);
 
-		DIR *newdir = NULL;
+		DIR* newdir = NULL;
 		if ( (newdir = opendir(tempstr)) == NULL ) {
 			newString(list, 0xFFFFFFFF, entry->d_name);
 		} else {

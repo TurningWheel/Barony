@@ -22,8 +22,8 @@
 
 -------------------------------------------------------------------------------*/
 
-light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
-	light_t *light;
+light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
+	light_t* light;
 	Sint32 i;
 	Sint32 u, v, u2, v2;
 	double a, b;
@@ -112,8 +112,8 @@ light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) 
 
 -------------------------------------------------------------------------------*/
 
-light_t *lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
-	light_t *light;
+light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity) {
+	light_t* light;
 	Sint32 u, v;
 	Sint32 dx, dy;
 

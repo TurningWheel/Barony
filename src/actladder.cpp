@@ -31,7 +31,7 @@
 #define LADDER_AMBIENCE my->skill[1]
 #define LADDER_SECRET my->skill[3]
 
-void actLadder(Entity *my) {
+void actLadder(Entity* my) {
 	int playercount = 0;
 	double dist;
 	int i, c;
@@ -84,7 +84,7 @@ void actLadder(Entity *my) {
 	}
 }
 
-void actLadderUp(Entity *my) {
+void actLadderUp(Entity* my) {
 	int i;
 
 	LADDER_AMBIENCE--;
@@ -110,7 +110,7 @@ void actLadderUp(Entity *my) {
 #define PORTAL_INIT my->skill[1]
 #define PORTAL_NOTSECRET my->skill[3]
 
-void actPortal(Entity *my) {
+void actPortal(Entity* my) {
 	int playercount = 0;
 	double dist;
 	int i, c;
@@ -160,9 +160,9 @@ void actPortal(Entity *my) {
 						case 9: {
 							;
 							bool visiblegrave = FALSE;
-							node_t *node;
+							node_t* node;
 							for ( node = map.entities->first; node != NULL; node = node->next ) {
-								Entity *entity = (Entity *)node->element;
+								Entity* entity = (Entity*)node->element;
 								if ( entity->sprite == 224 && !entity->flags[INVISIBLE] ) {
 									visiblegrave = TRUE;
 									break;
@@ -192,18 +192,18 @@ void actPortal(Entity *my) {
 
 #define PORTAL_VICTORYTYPE my->skill[4]
 
-void actWinningPortal(Entity *my) {
+void actWinningPortal(Entity* my) {
 	int playercount = 0;
 	double dist;
 	int i, c;
 
 	if ( multiplayer != CLIENT ) {
 		if ( my->flags[INVISIBLE] ) {
-			node_t *node;
+			node_t* node;
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				if ( entity->behavior == &actMonster ) {
-					Stat *stats = entity->getStats();
+					Stat* stats = entity->getStats();
 					if ( stats ) {
 						if ( stats->type == LICH || stats->type == DEVIL ) {
 							return;
@@ -259,7 +259,7 @@ void actWinningPortal(Entity *my) {
 						if ( client_disconnected[c] == TRUE ) {
 							continue;
 						}
-						strcpy((char *)net_packet->data, "WING");
+						strcpy((char*)net_packet->data, "WING");
 						net_packet->data[4] = victory;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;

@@ -33,7 +33,7 @@
 #define SPEARTRAP_STARTHEIGHT my->fskill[0]
 #define SPEARTRAP_VELZ my->vel_z
 
-void actSpearTrap(Entity *my) {
+void actSpearTrap(Entity* my) {
 	SPEARTRAP_AMBIENCE--;
 	if ( SPEARTRAP_AMBIENCE <= 0 ) {
 		SPEARTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
@@ -91,11 +91,11 @@ void actSpearTrap(Entity *my) {
 				playSoundEntity(my, 82, 64);
 				serverUpdateEntitySkill(my, 4);
 			} else if ( SPEARTRAP_OUTTIME == 1 ) {
-				node_t *node;
+				node_t* node;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
-						Stat *stats = entity->getStats();
+						Stat* stats = entity->getStats();
 						if ( stats ) {
 							if ( entityInsideEntity(my, entity) ) {
 								// do damage!
@@ -106,7 +106,7 @@ void actSpearTrap(Entity *my) {
 										camera_shakex += .1;
 										camera_shakey += 10;
 									} else {
-										strcpy((char *)net_packet->data, "SHAK");
+										strcpy((char*)net_packet->data, "SHAK");
 										net_packet->data[4] = 10; // turns into .1
 										net_packet->data[5] = 10;
 										net_packet->address.host = net_clients[entity->skill[2] - 1].host;

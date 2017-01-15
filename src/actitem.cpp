@@ -42,21 +42,21 @@
 #define ITEM_AMBIENCE my->skill[17]
 #define ITEM_NOTMOVING my->skill[18]
 
-void actItem(Entity *my) {
-	Item *item;
+void actItem(Entity* my) {
+	Item* item;
 	int i;
 
 	if ( multiplayer == CLIENT ) {
 		my->flags[NOUPDATE] = TRUE;
 		if ( ITEM_LIFE == 0 ) {
-			Entity *tempEntity = uidToEntity(clientplayer);
+			Entity* tempEntity = uidToEntity(clientplayer);
 			if ( tempEntity ) {
 				if ( entityInsideEntity(my, tempEntity) ) {
 					my->parent = tempEntity->uid;
 				} else {
-					node_t *node;
+					node_t* node;
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						Entity *entity = (Entity *)node->element;
+						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 							if ( entityInsideEntity(my, entity) ) {
 								my->parent = entity->uid;
@@ -66,9 +66,9 @@ void actItem(Entity *my) {
 					}
 				}
 			} else {
-				node_t *node;
+				node_t* node;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 						if ( entityInsideEntity(my, entity) ) {
 							my->parent = entity->uid;
@@ -81,7 +81,7 @@ void actItem(Entity *my) {
 
 		// request entity update (check if I've been deleted)
 		if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) ) {
-			strcpy((char *)net_packet->data, "ENTE");
+			strcpy((char*)net_packet->data, "ENTE");
 			net_packet->data[4] = clientnum;
 			SDLNet_Write32(my->uid, &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
@@ -114,7 +114,7 @@ void actItem(Entity *my) {
 					if (players[i] != nullptr && players[i]->entity != nullptr) {
 						playSoundEntity( players[i]->entity, 35 + rand() % 3, 64 );
 					}
-					Item *item2 = newItemFromEntity(my);
+					Item* item2 = newItemFromEntity(my);
 					if (item2) {
 						item = itemPickup(i, item2);
 						if (item) {

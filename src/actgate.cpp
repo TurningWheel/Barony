@@ -24,7 +24,7 @@
 #define GATE_STARTHEIGHT my->fskill[0]
 #define GATE_VELZ my->vel_z
 
-void actGate(Entity *my) {
+void actGate(Entity* my) {
 	int i;
 
 	if ( multiplayer != CLIENT ) {
@@ -102,11 +102,11 @@ void actGate(Entity *my) {
 	}
 
 	//Setting collision
-	node_t *node;
+	node_t* node;
 	bool somebodyinside = FALSE;
 	if ( my->z > GATE_STARTHEIGHT - 6 && my->flags[PASSABLE] ) {
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 ) {
 				continue;
 			}

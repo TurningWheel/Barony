@@ -32,8 +32,8 @@
 #define CAMPFIRE_INIT my->skill[4]
 #define CAMPFIRE_SOUNDTIME my->skill[5]
 
-void actCampfire(Entity *my) {
-	Entity *entity;
+void actCampfire(Entity* my) {
+	Entity* entity;
 	int i;
 
 	// init
@@ -108,7 +108,7 @@ void actCampfire(Entity *my) {
 								}
 							my->light = NULL;
 						}
-						Item *item = newItem(TOOL_TORCH, WORN, 0, 1, 0, TRUE, NULL);
+						Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, TRUE, NULL);
 						itemPickup(i, item);
 						free(item);
 					} else {

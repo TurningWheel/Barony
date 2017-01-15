@@ -39,22 +39,22 @@
 #define THROWN_IDENTIFIED my->skill[15]
 #define THROWN_LIFE my->skill[16]
 
-void actThrown(Entity *my) {
-	Item *item;
+void actThrown(Entity* my) {
+	Item* item;
 	Category cat = GEM;
-	char *itemname = NULL;
-	node_t *node;
+	char* itemname = NULL;
+	node_t* node;
 
 	if ( multiplayer == CLIENT ) {
 		if ( THROWN_LIFE == 0 ) {
-			Entity *tempEntity = uidToEntity(clientplayer);
+			Entity* tempEntity = uidToEntity(clientplayer);
 			if ( tempEntity ) {
 				if ( entityInsideEntity(my, tempEntity) ) {
 					my->parent = tempEntity->uid;
 				} else {
-					node_t *node;
+					node_t* node;
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						Entity *entity = (Entity *)node->element;
+						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 							if ( entityInsideEntity(my, entity) ) {
 								my->parent = entity->uid;
@@ -64,9 +64,9 @@ void actThrown(Entity *my) {
 					}
 				}
 			} else {
-				node_t *node;
+				node_t* node;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actPlayer || entity->behavior == &actMonster ) {
 						if ( entityInsideEntity(my, entity) ) {
 							my->parent = entity->uid;
@@ -105,7 +105,7 @@ void actThrown(Entity *my) {
 					list_RemoveNode(my->mynode);
 					return;
 				} else {
-					Entity *entity = newEntity(-1, 1, map.entities);
+					Entity* entity = newEntity(-1, 1, map.entities);
 					entity->flags[INVISIBLE] = TRUE;
 					entity->flags[UPDATENEEDED] = TRUE;
 					entity->flags[PASSABLE] = TRUE;
@@ -166,7 +166,7 @@ void actThrown(Entity *my) {
 		if ( hit.entity != NULL ) {
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 				// test for friendly fire
-				Entity *parent = uidToEntity(my->parent);
+				Entity* parent = uidToEntity(my->parent);
 				if ( parent && parent->checkFriend(hit.entity) ) {
 					list_RemoveNode(my->mynode);
 					return;
@@ -181,8 +181,8 @@ void actThrown(Entity *my) {
 				snprintf(whatever, 255, language[1508], itemname);
 				hit.entity->setObituary(whatever);
 
-				Entity *parent = uidToEntity(my->parent);
-				Stat *hitstats = hit.entity->getStats();
+				Entity* parent = uidToEntity(my->parent);
+				Stat* hitstats = hit.entity->getStats();
 				if ( hitstats ) {
 					if ( hitstats->type < LICH || hitstats->type >= SHOPKEEPER ) { // this makes it impossible to bork the end boss :)
 						switch ( item->type ) {
@@ -260,7 +260,7 @@ void actThrown(Entity *my) {
 				}
 
 				if ( damage > 0 ) {
-					Entity *gib = spawnGib(hit.entity);
+					Entity* gib = spawnGib(hit.entity);
 					serverSpawnGibForClient(gib);
 					playSoundEntity(hit.entity, 28, 64);
 					if ( hit.entity->behavior == &actPlayer ) {
@@ -268,7 +268,7 @@ void actThrown(Entity *my) {
 							camera_shakex += .1;
 							camera_shakey += 10;
 						} else {
-							strcpy((char *)net_packet->data, "SHAK");
+							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1
 							net_packet->data[5] = 10;
 							net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
@@ -294,10 +294,10 @@ void actThrown(Entity *my) {
 						hit.entity->fskill[3] = parent->y;
 					}
 					// alert other monsters too
-					Entity *ohitentity = hit.entity;
-					node_t *node;
+					Entity* ohitentity = hit.entity;
+					node_t* node;
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						Entity *entity = (Entity *)node->element;
+						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
 							if ( entity->checkFriend(hit.entity) ) {
 								if ( entity->skill[0] == 0 ) { // monster is waiting
@@ -350,7 +350,7 @@ void actThrown(Entity *my) {
 			list_RemoveNode(my->mynode);
 			return;
 		} else {
-			Entity *entity = newEntity(-1, 1, map.entities);
+			Entity* entity = newEntity(-1, 1, map.entities);
 			entity->flags[INVISIBLE] = TRUE;
 			entity->flags[UPDATENEEDED] = TRUE;
 			entity->flags[PASSABLE] = TRUE;

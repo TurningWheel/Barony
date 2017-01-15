@@ -28,7 +28,7 @@
 #define FLAME_VELY my->vel_y
 #define FLAME_VELZ my->vel_z
 
-void actFlame(Entity *my) {
+void actFlame(Entity* my) {
 	if ( FLAME_LIFE <= 0 ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -47,8 +47,8 @@ void actFlame(Entity *my) {
 
 -------------------------------------------------------------------------------*/
 
-Entity *spawnFlame(Entity *parentent) {
-	Entity *entity;
+Entity* spawnFlame(Entity* parentent) {
+	Entity* entity;
 	double vel;
 
 	entity = newEntity(13, 1, map.entities); // flame particle

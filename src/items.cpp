@@ -36,11 +36,11 @@ ItemGeneric items[NUMITEMS];
 
 -------------------------------------------------------------------------------*/
 
-Item *newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t *inventory) {
-	Item *item;
+Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory) {
+	Item* item;
 
 	// allocate memory for the item
-	if ( (item = (Item *) malloc(sizeof(Item))) == NULL ) {
+	if ( (item = (Item*) malloc(sizeof(Item))) == NULL ) {
 		printlog( "failed to allocate memory for new item!\n" );
 		exit(1);
 	}
@@ -77,9 +77,9 @@ Item *newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 		x = 0;
 		while ( 1 ) {
 			for ( y = 0; y < INVENTORY_SIZEY; y++ ) {
-				node_t *node;
+				node_t* node;
 				for ( node = inventory->first; node != NULL; node = node->next ) {
-					Item *tempItem = (Item *)node->element;
+					Item* tempItem = (Item*)node->element;
 					if ( tempItem == item ) {
 						continue;
 					}
@@ -137,10 +137,10 @@ Item *newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 
 -------------------------------------------------------------------------------*/
 
-Item *uidToItem(Uint32 uid) {
-	node_t *node;
+Item* uidToItem(Uint32 uid) {
+	node_t* node;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next ) {
-		Item *item = (Item *)node->element;
+		Item* item = (Item*)node->element;
 		if ( item->uid == uid ) {
 			return item;
 		}
@@ -270,7 +270,7 @@ ItemType itemCurve(Category cat) {
 
 -------------------------------------------------------------------------------*/
 
-char *Item::description() {
+char* Item::description() {
 	int c = 0;
 
 	if ( identified == TRUE ) {
@@ -397,7 +397,7 @@ char *Item::description() {
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item *item) {
+Category itemCategory(const Item* item) {
 	if ( !item ) {
 		return GEM;
 	}
@@ -412,7 +412,7 @@ Category itemCategory(const Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-char *Item::getName() {
+char* Item::getName() {
 	if ( type >= 0 && type < NUMITEMS ) {
 		if ( identified ) {
 			if ( itemCategory(this) == BOOK ) {
@@ -443,7 +443,7 @@ char *Item::getName() {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModel(Item *item) {
+Sint32 itemModel(Item* item) {
 	if ( !item ) {
 		return 0;
 	}
@@ -458,7 +458,7 @@ Sint32 itemModel(Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-Sint32 itemModelFirstperson(Item *item) {
+Sint32 itemModelFirstperson(Item* item) {
 	if ( !item ) {
 		return 0;
 	}
@@ -473,26 +473,26 @@ Sint32 itemModelFirstperson(Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface *itemSprite(Item *item) {
+SDL_Surface* itemSprite(Item* item) {
 	if ( !item ) {
 		return NULL;
 	}
 	if (itemCategory(item) == SPELL_CAT) {
-		spell_t *spell = getSpellFromItem(item);
+		spell_t* spell = getSpellFromItem(item);
 		if (spell) {
-			node_t *node = list_Node(&items[item->type].surfaces, spell->ID);
+			node_t* node = list_Node(&items[item->type].surfaces, spell->ID);
 			if ( !node ) {
 				return NULL;
 			}
-			SDL_Surface **surface = (SDL_Surface **)node->element;
+			SDL_Surface** surface = (SDL_Surface**)node->element;
 			return *surface;
 		}
 	} else {
-		node_t *node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
+		node_t* node = list_Node(&items[item->type].surfaces, item->appearance % items[item->type].variations);
 		if ( !node ) {
 			return NULL;
 		}
-		SDL_Surface **surface = (SDL_Surface **)node->element;
+		SDL_Surface** surface = (SDL_Surface**)node->element;
 		return *surface;
 	}
 	return NULL;
@@ -507,7 +507,7 @@ SDL_Surface *itemSprite(Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-int itemCompare(const Item *item1, const Item *item2) {
+int itemCompare(const Item* item1, const Item* item2) {
 	// null cases
 	if ( item1 == NULL ) {
 		if ( item2 == NULL ) {
@@ -550,12 +550,12 @@ int itemCompare(const Item *item1, const Item *item2) {
 
 -------------------------------------------------------------------------------*/
 
-void dropItem(Item *item, int player) {
+void dropItem(Item* item, int player) {
 	if (!item) {
 		return;
 	}
 
-	Entity *entity;
+	Entity* entity;
 	Sint16 oldcount;
 
 	if (item == nullptr || players[player] == nullptr || players[player]->entity == nullptr || itemCategory(item) == SPELL_CAT) {
@@ -569,7 +569,7 @@ void dropItem(Item *item, int player) {
 	}
 
 	if ( multiplayer == CLIENT ) {
-		strcpy((char *)net_packet->data, "DROP");
+		strcpy((char*)net_packet->data, "DROP");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -592,7 +592,7 @@ void dropItem(Item *item, int player) {
 
 		// unequip the item
 		if ( item->count <= 1 ) {
-			Item **slot = itemSlot(stats[player], item);
+			Item** slot = itemSlot(stats[player], item);
 			if ( slot != NULL ) {
 				*slot = NULL;
 			}
@@ -630,7 +630,7 @@ void dropItem(Item *item, int player) {
 		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
 
 		// unequip the item
-		Item **slot = itemSlot(stats[player], item);
+		Item** slot = itemSlot(stats[player], item);
 		if ( slot != NULL ) {
 			*slot = NULL;
 		}
@@ -653,8 +653,8 @@ void dropItem(Item *item, int player) {
 	}
 }
 
-Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats) {
-	Entity *entity;
+Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats) {
+	Entity* entity;
 
 	if ( !item || !monster ) {
 		return NULL;
@@ -683,7 +683,7 @@ Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats) {
 	entity->parent = monster->uid;
 
 	item->count--;
-	Item **slot;
+	Item** slot;
 	if ( (slot = itemSlot(monsterStats, item)) != NULL ) {
 		*slot = NULL; // clear the item slot
 	}
@@ -706,7 +706,7 @@ Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats) {
 
 -------------------------------------------------------------------------------*/
 
-void consumeItem(Item *item) {
+void consumeItem(Item* item) {
 	if ( item == NULL ) {
 		return;
 	}
@@ -720,7 +720,7 @@ void consumeItem(Item *item) {
 			int i;
 			for ( i = 0; i < MAXPLAYERS; i++ ) {
 				if ( item->node->list == &stats[i]->inventory ) {
-					Item **slot;
+					Item** slot;
 					if ( (slot = itemSlot(stats[i], item)) != NULL ) {
 						*slot = NULL;
 					}
@@ -741,7 +741,7 @@ void consumeItem(Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-void equipItem(Item *item, Item **slot, int player) {
+void equipItem(Item* item, Item** slot, int player) {
 	int oldcount;
 
 	if (!item) { // needs "|| !slot " ?
@@ -849,7 +849,7 @@ void equipItem(Item *item, Item **slot, int player) {
 
 -------------------------------------------------------------------------------*/
 
-void useItem(Item *item, int player) {
+void useItem(Item* item, int player) {
 	if ( item == NULL ) {
 		return;
 	}
@@ -925,9 +925,9 @@ void useItem(Item *item, int player) {
 	if ( player == clientnum ) {
 		if ( item->type == FOOD_TIN ) {
 			bool havetinopener = FALSE;
-			node_t *node;
+			node_t* node;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next ) {
-				Item *tempitem = (Item *)node->element;
+				Item* tempitem = (Item*)node->element;
 				if ( tempitem->type == TOOL_TINOPENER ) {
 					if ( tempitem->status != BROKEN ) {
 						havetinopener = TRUE;
@@ -943,7 +943,7 @@ void useItem(Item *item, int player) {
 	}
 
 	if ( multiplayer == CLIENT && !intro ) {
-		strcpy((char *)net_packet->data, "USEI");
+		strcpy((char*)net_packet->data, "USEI");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1300,7 +1300,7 @@ void useItem(Item *item, int player) {
 			break;
 		case SPELL_ITEM: {
 			;
-			spell_t *spell = getSpellFromItem(item);
+			spell_t* spell = getSpellFromItem(item);
 			if (spell) {
 				equipSpell(spell, player);
 			}
@@ -1334,16 +1334,16 @@ void useItem(Item *item, int player) {
 
 -------------------------------------------------------------------------------*/
 
-Item *itemPickup(int player, Item *item) {
+Item* itemPickup(int player, Item* item) {
 	if (!item) {
 		return NULL;
 	}
-	Item *item2;
-	node_t *node;
+	Item* item2;
+	node_t* node;
 
 	if ( player != 0 && multiplayer == SERVER ) {
 		// send the client info on the item it just picked up
-		strcpy((char *)net_packet->data, "ITEM");
+		strcpy((char*)net_packet->data, "ITEM");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1356,7 +1356,7 @@ Item *itemPickup(int player, Item *item) {
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	} else {
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next ) {
-			item2 = (Item *) node->element;
+			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2)) {
 				item2->count += item->count;
 				return item2;
@@ -1378,7 +1378,7 @@ Item *itemPickup(int player, Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-Item *newItemFromEntity(Entity *entity) {
+Item* newItemFromEntity(Entity* entity) {
 	if ( entity == NULL ) {
 		return NULL;
 	}
@@ -1394,7 +1394,7 @@ Item *newItemFromEntity(Entity *entity) {
 
 -------------------------------------------------------------------------------*/
 
-Item **itemSlot(Stat *myStats, Item *item) {
+Item** itemSlot(Stat* myStats, Item* item) {
 	if ( !myStats || !item ) {
 		return NULL;
 	}
@@ -1439,7 +1439,7 @@ Item **itemSlot(Stat *myStats, Item *item) {
 
 -------------------------------------------------------------------------------*/
 
-bool itemIsEquipped(const Item *item, int player) {
+bool itemIsEquipped(const Item* item, int player) {
 	if ( !itemCompare(item, stats[player]->helmet) ) {
 		return TRUE;
 	}
@@ -1690,10 +1690,10 @@ int Item::sellValue(int player) {
 
 -------------------------------------------------------------------------------*/
 
-void Item::apply(int player, Entity *entity) {
+void Item::apply(int player, Entity* entity) {
 	// for clients:
 	if ( multiplayer == CLIENT ) {
-		strcpy((char *)net_packet->data, "APIT");
+		strcpy((char*)net_packet->data, "APIT");
 		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
 		SDLNet_Write32((Uint32)status, &net_packet->data[8]);
 		SDLNet_Write32((Uint32)beatitude, &net_packet->data[12]);
@@ -1762,7 +1762,7 @@ void Item::apply(int player, Entity *entity) {
 								messagePlayer(player, language[1104]);
 							}
 							if ( player > 0 && multiplayer == SERVER ) {
-								strcpy((char *)net_packet->data, "ARMR");
+								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
 								net_packet->data[5] = stats[player]->weapon->status;
 								net_packet->address.host = net_clients[player - 1].host;
@@ -1803,7 +1803,7 @@ void Item::apply(int player, Entity *entity) {
 								messagePlayer(player, language[1104]);
 							}
 							if ( player > 0 && multiplayer == SERVER ) {
-								strcpy((char *)net_packet->data, "ARMR");
+								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
 								net_packet->data[5] = stats[player]->weapon->status;
 								net_packet->address.host = net_clients[player - 1].host;
@@ -1831,7 +1831,7 @@ SummonProperties::~SummonProperties() {
 	//TODO:
 }
 
-bool isPotionBad(const Item &potion) {
+bool isPotionBad(const Item& potion) {
 	if (itemCategory(&potion) != POTION) {
 		return false;
 	}

@@ -28,15 +28,15 @@ void removeLastMessage() {
 	list_RemoveNode(notification_messages.last);
 }
 
-void messageDeconstructor(void *data) {
+void messageDeconstructor(void* data) {
 	if (data != NULL) {
-		Message *message = (Message *)data;
-		stringDeconstructor((void *)message->text);
+		Message* message = (Message*)data;
+		stringDeconstructor((void*)message->text);
 		free(data);
 	}
 }
 
-void addMessage(Uint32 color, char *content, ...) {
+void addMessage(Uint32 color, char* content, ...) {
 	//Add a message to notification_messages (the list of messages) -- and pop off (and delete) and excess messages.
 
 	//Find out how many lines we need.
@@ -60,13 +60,13 @@ void addMessage(Uint32 color, char *content, ...) {
 		}
 	}
 
-	node_t *node = NULL;
+	node_t* node = NULL;
 
 	//First check number of lines all messages currently are contributing.
 	int line_count = 0;
 	if (notification_messages.first) {
 		node = notification_messages.first;
-		Message *current = (Message* )node->element;
+		Message* current = (Message* )node->element;
 		line_count += current->text->lines;
 
 		while (node->next) {
@@ -84,7 +84,7 @@ void addMessage(Uint32 color, char *content, ...) {
 				node = node->next;
 			}
 			//TODO: Instead of just removing it, check to see if it's multiline. If it is, check to see if removing some of its lines, not the entire thing, will give enough space. If so, do that, rather than outright deleting the entire thing.
-			Message *last = (Message* )node->element;
+			Message* last = (Message* )node->element;
 			line_count -= last->text->lines;
 			removeLastMessage(); //Remove last message, cause there's too many!
 		}
@@ -94,8 +94,8 @@ void addMessage(Uint32 color, char *content, ...) {
 	}
 
 	//Allocate the new message.
-	Message *new_message = NULL;
-	if ((new_message = (Message *) malloc(sizeof(Message))) == NULL) {
+	Message* new_message = NULL;
+	if ((new_message = (Message*) malloc(sizeof(Message))) == NULL) {
 		printlog( "failed to allocate memory for new message!\n"); //Yell at the user.
 		exit(1);
 	}
@@ -105,7 +105,7 @@ void addMessage(Uint32 color, char *content, ...) {
 		int c, i;
 		char str[1024] = { 0 };
 
-		if ((new_message->text = (string_t *) malloc(sizeof(string_t))) == NULL) {
+		if ((new_message->text = (string_t*) malloc(sizeof(string_t))) == NULL) {
 			printlog( "[addMessage()] Failed to allocate memory for new string!\n" );
 			exit(1); //Should it do this?
 		}
@@ -117,7 +117,7 @@ void addMessage(Uint32 color, char *content, ...) {
 			va_start(argptr, content);
 			i = vsnprintf(str, 1023, content, argptr);
 			va_end(argptr);
-			new_message->text->data = (char *) malloc(sizeof(char) * (i + 1));
+			new_message->text->data = (char*) malloc(sizeof(char) * (i + 1));
 			if (new_message->text->data == NULL) {
 				printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
 				exit(1);
@@ -137,8 +137,8 @@ void addMessage(Uint32 color, char *content, ...) {
 					for (c = 0; c < i; ++c) {
 						if (str[c] == 10) { //Line feed
 							new_message->text->lines--; //First let it know it's now one less line.
-							char *temp = new_message->text->data; //Point to the message's text so we don't lose it.
-							new_message->text->data = (char *) malloc(sizeof(char) * ((i + 1) - c)); //Give the message itself new text.
+							char* temp = new_message->text->data; //Point to the message's text so we don't lose it.
+							new_message->text->data = (char*) malloc(sizeof(char) * ((i + 1) - c));  //Give the message itself new text.
 							if (new_message->text->data == NULL) { //Error checking.
 								printlog( "Failed to allocate memory for new message's text!\n"); //Yell at user.
 								exit(1);
@@ -171,13 +171,13 @@ void addMessage(Uint32 color, char *content, ...) {
 
 	//Update the position of the other messages;
 	int count = 0;
-	Message *current = NULL;
+	Message* current = NULL;
 	node = notification_messages.first;
 	while (node->next) {
 		count++;
 		node = node->next;
 		current = (Message* )node->element;
-		current->y = ((Message *)node->prev->element)->y - MESSAGE_FONT_SIZE * current->text->lines;
+		current->y = ((Message*)node->prev->element)->y - MESSAGE_FONT_SIZE * current->text->lines;
 	}
 }
 
@@ -190,14 +190,14 @@ void updateMessages() {
 
 	time_passed = SDL_GetTicks() - old_sdl_ticks;
 	old_sdl_ticks = SDL_GetTicks();
-	node_t *node = NULL, *nextnode = NULL;
-	Message *current = NULL;
+	node_t* node = NULL, *nextnode = NULL;
+	Message* current = NULL;
 
 	// limit the number of onscreen messages to reduce spam
 	int c = 0;
-	node_t *tempNode = notification_messages.last;
+	node_t* tempNode = notification_messages.last;
 	while ( list_Size(&notification_messages) - c > 10 ) {
-		current = (Message *)tempNode->element;
+		current = (Message*)tempNode->element;
 		current->time_displayed = MESSAGE_PREFADE_TIME;
 		tempNode = tempNode->prev;
 		c++;
@@ -224,8 +224,8 @@ void updateMessages() {
 }
 
 void drawMessages() {
-	node_t *node;
-	Message *current;
+	node_t* node;
+	Message* current;
 
 	for ( node = notification_messages.first; node != NULL; node = node->next ) {
 		current = (Message*)node->element;

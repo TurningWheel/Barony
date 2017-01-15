@@ -30,14 +30,14 @@
 #define GOLDBAG_AMOUNT my->skill[0]
 #define GOLDBAG_AMBIENCE my->skill[1]
 
-void actGoldBag(Entity *my) {
+void actGoldBag(Entity* my) {
 	int i;
 
 	if ( my->flags[INVISIBLE] ) {
 		if ( multiplayer != CLIENT ) {
-			node_t *node;
+			node_t* node;
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				if ( entity->sprite == 245 ) { // boulder.vox
 					return;
 				}
@@ -72,7 +72,7 @@ void actGoldBag(Entity *my) {
 					if ( i != 0 ) {
 						if ( multiplayer == SERVER ) {
 							// send the client info on the gold it picked up
-							strcpy((char *)net_packet->data, "GOLD");
+							strcpy((char*)net_packet->data, "GOLD");
 							SDLNet_Write32(stats[i]->GOLD, &net_packet->data[4]);
 							net_packet->address.host = net_clients[i - 1].host;
 							net_packet->address.port = net_clients[i - 1].port;

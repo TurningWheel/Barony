@@ -33,10 +33,10 @@ Uint32 enemy_timer = 0;
 -------------------------------------------------------------------------------*/
 
 void handleDamageIndicators() {
-	node_t *node, *nextnode;
+	node_t* node, *nextnode;
 	for ( node = damageIndicators.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
-		damageIndicator_t *damageIndicator = (damageIndicator_t *)node->element;
+		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
 
 		double tangent = atan2( damageIndicator->y / 16 - camera.y, damageIndicator->x / 16 - camera.x );
 		double angle = tangent - camera.ang;
@@ -66,9 +66,9 @@ void handleDamageIndicators() {
 }
 
 void handleDamageIndicatorTicks() {
-	node_t *node;
+	node_t* node;
 	for ( node = damageIndicators.first; node != NULL; node = node->next ) {
-		damageIndicator_t *damageIndicator = (damageIndicator_t *)node->element;
+		damageIndicator_t* damageIndicator = (damageIndicator_t*)node->element;
 		damageIndicator->ticks--;
 	}
 }
@@ -81,11 +81,11 @@ void handleDamageIndicatorTicks() {
 
 -------------------------------------------------------------------------------*/
 
-damageIndicator_t *newDamageIndicator(double x, double y) {
-	damageIndicator_t *damageIndicator;
+damageIndicator_t* newDamageIndicator(double x, double y) {
+	damageIndicator_t* damageIndicator;
 
 	// allocate memory for the indicator
-	if ( (damageIndicator = (damageIndicator_t *) malloc(sizeof(damageIndicator_t))) == NULL ) {
+	if ( (damageIndicator = (damageIndicator_t*) malloc(sizeof(damageIndicator_t))) == NULL ) {
 		printlog( "failed to allocate memory for new damage indicator!\n" );
 		exit(1);
 	}
@@ -112,7 +112,7 @@ damageIndicator_t *newDamageIndicator(double x, double y) {
 
 -------------------------------------------------------------------------------*/
 
-void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint32 maxhp) {
+void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp) {
 	int player = -1;
 	int c;
 
@@ -135,13 +135,13 @@ void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint3
 		}
 	}
 
-	Stat *stats = target->getStats();
+	Stat* stats = target->getStats();
 	if ( stats ) {
 		if ( stats->HP != stats->OLDHP ) {
 			if ( playertarget == clientnum ) {
 				newDamageIndicator(source->x, source->y);
 			} else if ( playertarget > 0 && multiplayer == SERVER ) {
-				strcpy((char *)net_packet->data, "DAMI");
+				strcpy((char*)net_packet->data, "DAMI");
 				SDLNet_Write32(source->x, &net_packet->data[4]);
 				SDLNet_Write32(source->y, &net_packet->data[8]);
 				net_packet->address.host = net_clients[playertarget - 1].host;
@@ -158,10 +158,10 @@ void updateEnemyBar(Entity *source, Entity *target, char *name, Sint32 hp, Sint3
 		enemy_maxhp = maxhp;
 		strcpy( enemy_name, name );
 	} else if ( player > 0 && multiplayer == SERVER ) {
-		strcpy((char *)net_packet->data, "ENHP");
+		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);
 		SDLNet_Write32(maxhp, &net_packet->data[8]);
-		strcpy((char *)(&net_packet->data[12]), name);
+		strcpy((char*)(&net_packet->data[12]), name);
 		net_packet->data[12 + strlen(name)] = 0;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
@@ -184,8 +184,8 @@ bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinvento
 void drawStatus() {
 	SDL_Rect pos, initial_position;
 	Sint32 x, y, z, c, i;
-	node_t *node;
-	string_t *string;
+	node_t* node;
+	string_t* string;
 	pos.x = STATUS_X;
 	pos.y = STATUS_Y;
 	//To garner the position of the hotbar.
@@ -242,7 +242,7 @@ void drawStatus() {
 		if ( c <= textscroll ) {
 			continue;
 		}
-		string = (string_t *) node->element;
+		string = (string_t*) node->element;
 		y -= TTF12_HEIGHT * string->lines;
 		if ( y < yres - status_bmp->h + 4 ) {
 			break;
@@ -256,9 +256,9 @@ void drawStatus() {
 			}
 			if ( z == 65 ) {
 				if ( string->data[i] != 10 ) {
-					char *tempString = (char *) malloc(sizeof(char) * (strlen(string->data) + 2));
+					char* tempString = (char*) malloc(sizeof(char) * (strlen(string->data) + 2));
 					strcpy(tempString, string->data);
-					strcpy((char *)(tempString + i + 1), (char *)(string->data + i));
+					strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
 					tempString[i] = 10;
 					free(string->data);
 					string->data = tempString;
@@ -421,7 +421,7 @@ void drawStatus() {
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
 	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr );
 
-	Item *item = NULL;
+	Item* item = NULL;
 	//Now the hotbar.
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
@@ -488,7 +488,7 @@ void drawStatus() {
 								useItem(item, clientnum);
 							} else {
 								if ( multiplayer == CLIENT ) {
-									strcpy((char *)net_packet->data, "EQUI");
+									strcpy((char*)net_packet->data, "EQUI");
 									SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 									SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 									SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -527,7 +527,7 @@ void drawStatus() {
 						drawImage(equipped_bmp, NULL, &src);
 					}
 				} else {
-					spell_t *spell = getSpellFromItem(item);
+					spell_t* spell = getSpellFromItem(item);
 					if ( selected_spell == spell ) {
 						SDL_Rect src;
 						src.x = pos.x + 2;
@@ -554,7 +554,7 @@ void drawStatus() {
 					src.x = mousex + 16;
 					src.y = mousey + 8;
 					if (itemCategory(item) == SPELL_CAT) {
-						spell_t *spell = getSpellFromItem(item);
+						spell_t* spell = getSpellFromItem(item);
 						if (spell) {
 							char tempstr[32];
 							snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
@@ -625,7 +625,7 @@ void drawStatus() {
 
 	//NOTE: If you change the number of hotbar slots, you *MUST* change this.
 	if ( !command && stats[clientnum]->HP > 0 ) {
-		Item *item = NULL;
+		Item* item = NULL;
 		if ( keystatus[SDL_SCANCODE_1] ) {
 			keystatus[SDL_SCANCODE_1] = 0;
 			item = uidToItem(hotbar[0].item);
@@ -716,7 +716,7 @@ void drawStatus() {
 			if ( !shootmode && !book_open && !openedChest[clientnum] && *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) ) {
 				//Drop item if this hotbar is currently active & the player pressed the cancel button on the gamepad (typically "b").
 				*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
-				Item *itemToDrop = uidToItem(hotbar[current_hotbar].item);
+				Item* itemToDrop = uidToItem(hotbar[current_hotbar].item);
 				if ( itemToDrop ) {
 					dropItem(itemToDrop, clientnum);
 				}
@@ -734,7 +734,7 @@ void drawStatus() {
 				useItem(item, clientnum);
 			} else {
 				if ( multiplayer == CLIENT ) {
-					strcpy((char *)net_packet->data, "EQUI");
+					strcpy((char*)net_packet->data, "EQUI");
 					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 					SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 					SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);

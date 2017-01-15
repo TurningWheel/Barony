@@ -37,8 +37,8 @@
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
-void* cpp_SteamMatchmaking_GetLobbyOwner(void *steamIDLobby) {
-	CSteamID *id = new CSteamID();
+void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby) {
+	CSteamID* id = new CSteamID();
 	*id = SteamMatchmaking()->GetLobbyOwner(*static_cast<CSteamID*>(steamIDLobby));
 	return id; //Still don't like this method.
 }
@@ -280,11 +280,11 @@ void handleMainMenu(bool mode) {
 	bool b;
 	//int tilesreceived=0;
 	//Mix_Music **music, *intromusic, *splashmusic, *creditsmusic;
-	node_t *node, *nextnode;
-	Entity *entity;
-	FILE *fp;
+	node_t* node, *nextnode;
+	Entity* entity;
+	FILE* fp;
 	//SDL_Surface *sky_bmp;
-	button_t *button;
+	button_t* button;
 
 	if ( !movie ) {
 		// title pic
@@ -593,7 +593,7 @@ void handleMainMenu(bool mode) {
 				} else {
 					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 				}
-				char *endgameText = NULL;
+				char* endgameText = NULL;
 				if ( multiplayer == SINGLE ) {
 					endgameText = language[1310];
 				} else {
@@ -896,7 +896,7 @@ void handleMainMenu(bool mode) {
 					if ( c == 0 ) {
 						c++;
 					}
-					entity = (Entity *) node->element;
+					entity = (Entity*) node->element;
 					if ( !entity->flags[INVISIBLE] ) {
 						b = entity->flags[BRIGHT];
 						entity->flags[BRIGHT] = TRUE;
@@ -1195,7 +1195,7 @@ void handleMainMenu(bool mode) {
 
 			// lobby info tooltip
 			if ( lobbyIDs[hoveringSelection] ) {
-				const char *lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svFlags" );
+				const char* lobbySvFlagsChar = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(lobbyIDs[hoveringSelection]), "svFlags" );
 				Uint32 lobbySvFlags = atoi(lobbySvFlagsChar);
 
 				int numSvFlags = 0, c;
@@ -1359,7 +1359,7 @@ void handleMainMenu(bool mode) {
 
 			// fov slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, language[1346]);
-			doSlider(subx1 + 24, suby2 - 104, 14, 40, 100, 1, (int *)(&settings_fov));
+			doSlider(subx1 + 24, suby2 - 104, 14, 40, 100, 1, (int*)(&settings_fov));
 
 			// gamma slider
 			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[1347]);
@@ -1722,7 +1722,7 @@ void handleMainMenu(bool mode) {
 
 							if ( multiplayer == SERVER ) {
 								// update client flags
-								strcpy((char *)net_packet->data, "SVFL");
+								strcpy((char*)net_packet->data, "SVFL");
 								SDLNet_Write32(svFlags, &net_packet->data[4]);
 								net_packet->len = 8;
 
@@ -1834,7 +1834,7 @@ void handleMainMenu(bool mode) {
 			if ( handleSafePacket() ) {
 				continue;
 			}
-			if (!strncmp((char *)net_packet->data, "BARONY_JOIN_REQUEST", 19)) {
+			if (!strncmp((char*)net_packet->data, "BARONY_JOIN_REQUEST", 19)) {
 #ifdef STEAMWORKS
 				if ( !directConnect ) {
 					bool skipJoin = FALSE;
@@ -1853,7 +1853,7 @@ void handleMainMenu(bool mode) {
 					}
 				}
 #endif
-				if ( strcmp( VERSION, (char *)net_packet->data + 54 ) ) {
+				if ( strcmp( VERSION, (char*)net_packet->data + 54 ) ) {
 					c = MAXPLAYERS + 1; // wrong version number
 				} else {
 					Uint32 clientlsg = SDLNet_Read32(&net_packet->data[68]);
@@ -1911,7 +1911,7 @@ void handleMainMenu(bool mode) {
 					}
 				} else {
 					// on success, client gets legit player number
-					strcpy(stats[c]->name, (char *)(&net_packet->data[19]));
+					strcpy(stats[c]->name, (char*)(&net_packet->data[19]));
 					client_disconnected[c] = FALSE;
 					client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
 					stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
@@ -1920,7 +1920,7 @@ void handleMainMenu(bool mode) {
 					net_clients[c - 1].port = net_packet->address.port;
 					if ( directConnect ) {
 						while ((net_tcpclients[c - 1] = SDLNet_TCP_Accept(net_tcpsock)) == NULL);
-						const char *clientaddr = SDLNet_ResolveIP(&net_packet->address);
+						const char* clientaddr = SDLNet_ResolveIP(&net_packet->address);
 						printlog("client %d connected from %s:%d\n", c, clientaddr, net_packet->address.port);
 					} else {
 						printlog("client %d connected.\n", c);
@@ -1932,11 +1932,11 @@ void handleMainMenu(bool mode) {
 						if ( client_disconnected[x] || c == x ) {
 							continue;
 						}
-						strcpy((char *)(&net_packet->data[0]), "NEWPLAYER");
+						strcpy((char*)(&net_packet->data[0]), "NEWPLAYER");
 						net_packet->data[9] = c; // clientnum
 						net_packet->data[10] = client_classes[c]; // class
 						net_packet->data[11] = stats[c]->sex; // sex
-						strcpy((char *)(&net_packet->data[12]), stats[c]->name); // name
+						strcpy((char*)(&net_packet->data[12]), stats[c]->name);  // name
 						net_packet->address.host = net_clients[x - 1].host;
 						net_packet->address.port = net_clients[x - 1].port;
 						net_packet->len = 12 + strlen(stats[c]->name) + 1;
@@ -1953,7 +1953,7 @@ void handleMainMenu(bool mode) {
 						net_packet->data[4 + x * (3 + 16)] = client_classes[x]; // class
 						net_packet->data[5 + x * (3 + 16)] = stats[x]->sex; // sex
 						net_packet->data[6 + x * (3 + 16)] = client_disconnected[x]; // connectedness :p
-						strcpy((char *)(&net_packet->data[7 + x * (3 + 16)]), stats[x]->name); // name
+						strcpy((char*)(&net_packet->data[7 + x * (3 + 16)]), stats[x]->name);  // name
 					}
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
@@ -1966,7 +1966,7 @@ void handleMainMenu(bool mode) {
 							cpp_Free_CSteamID( steamIDRemote[c - 1] );
 						}
 						steamIDRemote[c - 1] = new CSteamID();
-						*static_cast<CSteamID *>(steamIDRemote[c - 1]) = newSteamID;
+						*static_cast<CSteamID*>(steamIDRemote[c - 1]) = newSteamID;
 						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
 						SDL_Delay(5);
 						SteamNetworking()->SendP2PPacket(*static_cast<CSteamID* >(steamIDRemote[c - 1]), net_packet->data, net_packet->len, k_EP2PSendReliable, 0);
@@ -1984,7 +1984,7 @@ void handleMainMenu(bool mode) {
 			}
 
 			// got a chat message
-			else if (!strncmp((char *)net_packet->data, "CMSG", 4)) {
+			else if (!strncmp((char*)net_packet->data, "CMSG", 4)) {
 				int i;
 				for ( i = 0; i < MAXPLAYERS; i++ ) {
 					if ( client_disconnected[i] ) {
@@ -1994,13 +1994,13 @@ void handleMainMenu(bool mode) {
 					net_packet->address.port = net_clients[i - 1].port;
 					sendPacketSafe(net_sock, -1, net_packet, i - 1);
 				}
-				newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char *)(&net_packet->data[4]));
+				newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
 				playSound(238, 64);
 				continue;
 			}
 
 			// player disconnected
-			else if (!strncmp((char *)net_packet->data, "PLAYERDISCONNECT", 16)) {
+			else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16)) {
 				client_disconnected[net_packet->data[16]] = TRUE;
 				for ( c = 1; c < MAXPLAYERS; c++ ) {
 					if ( client_disconnected[c] ) {
@@ -2018,7 +2018,7 @@ void handleMainMenu(bool mode) {
 			}
 
 			// client requesting new svFlags
-			else if (!strncmp((char *)net_packet->data, "SVFL", 4)) {
+			else if (!strncmp((char*)net_packet->data, "SVFL", 4)) {
 				// update svFlags for everyone
 				SDLNet_Write32(svFlags, &net_packet->data[4]);
 				net_packet->len = 8;
@@ -2036,7 +2036,7 @@ void handleMainMenu(bool mode) {
 			}
 
 			// keepalive
-			else if (!strncmp((char *)net_packet->data, "KEEPALIVE", 9)) {
+			else if (!strncmp((char*)net_packet->data, "KEEPALIVE", 9)) {
 				client_keepalive[net_packet->data[9]] = ticks;
 				continue; // just a keep alive
 			}
@@ -2098,7 +2098,7 @@ void handleMainMenu(bool mode) {
 					buttonCloseSubwindow(NULL);
 					for ( node = button_l.first; node != NULL; node = nextnode ) {
 						nextnode = node->next;
-						button = (button_t *)node->element;
+						button = (button_t*)node->element;
 						if ( button->focused ) {
 							list_RemoveNode(button->node);
 						}
@@ -2179,11 +2179,11 @@ void handleMainMenu(bool mode) {
 						client_classes[c] = net_packet->data[4 + c * (3 + 16)]; // class
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (3 + 16)]); // sex
 						client_disconnected[c] = net_packet->data[6 + c * (3 + 16)]; // connectedness :p
-						strcpy(stats[c]->name, (char *)(&net_packet->data[7 + c * (3 + 16)])); // name
+						strcpy(stats[c]->name, (char*)(&net_packet->data[7 + c * (3 + 16)]));  // name
 					}
 
 					// request svFlags
-					strcpy((char *)net_packet->data, "SVFL");
+					strcpy((char*)net_packet->data, "SVFL");
 					net_packet->len = 4;
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
@@ -2260,7 +2260,7 @@ void handleMainMenu(bool mode) {
 				}
 
 				// game start
-				if (!strncmp((char *)net_packet->data, "BARONY_GAME_START", 17)) {
+				if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17)) {
 					svFlags = SDLNet_Read32(&net_packet->data[17]);
 					uniqueGameKey = SDLNet_Read32(&net_packet->data[21]);
 					buttonCloseSubwindow(NULL);
@@ -2271,11 +2271,11 @@ void handleMainMenu(bool mode) {
 				}
 
 				// new player
-				else if (!strncmp((char *)net_packet->data, "NEWPLAYER", 9)) {
+				else if (!strncmp((char*)net_packet->data, "NEWPLAYER", 9)) {
 					client_disconnected[net_packet->data[9]] = FALSE;
 					client_classes[net_packet->data[9]] = net_packet->data[10];
 					stats[net_packet->data[9]]->sex = static_cast<sex_t>(net_packet->data[11]);
-					strcpy(stats[net_packet->data[9]]->name, (char *)(&net_packet->data[12]));
+					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[12]));
 
 					char shortname[11] = { 0 };
 					strncpy(shortname, stats[net_packet->data[9]]->name, 10);
@@ -2284,14 +2284,14 @@ void handleMainMenu(bool mode) {
 				}
 
 				// player disconnect
-				else if (!strncmp((char *)net_packet->data, "PLAYERDISCONNECT", 16)) {
+				else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16)) {
 					client_disconnected[net_packet->data[16]] = TRUE;
 					if ( net_packet->data[16] == 0 ) {
 						// close lobby window
 						buttonCloseSubwindow(NULL);
 						for ( node = button_l.first; node != NULL; node = nextnode ) {
 							nextnode = node->next;
-							button = (button_t *)node->element;
+							button = (button_t*)node->element;
 							if ( button->focused ) {
 								list_RemoveNode(button->node);
 							}
@@ -2361,20 +2361,20 @@ void handleMainMenu(bool mode) {
 				}
 
 				// got a chat message
-				else if (!strncmp((char *)net_packet->data, "CMSG", 4)) {
-					newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char *)(&net_packet->data[4]));
+				else if (!strncmp((char*)net_packet->data, "CMSG", 4)) {
+					newString(&lobbyChatboxMessages, 0xFFFFFFFF, (char*)(&net_packet->data[4]));
 					playSound(238, 64);
 					continue;
 				}
 
 				// update svFlags
-				else if (!strncmp((char *)net_packet->data, "SVFL", 4)) {
+				else if (!strncmp((char*)net_packet->data, "SVFL", 4)) {
 					svFlags = SDLNet_Read32(&net_packet->data[4]);
 					continue;
 				}
 
 				// keepalive
-				else if (!strncmp((char *)net_packet->data, "KEEPALIVE", 9)) {
+				else if (!strncmp((char*)net_packet->data, "KEEPALIVE", 9)) {
 					client_keepalive[0] = ticks;
 					continue; // just a keep alive
 				}
@@ -2450,7 +2450,7 @@ void handleMainMenu(bool mode) {
 						svFlags ^= power(2, i);
 
 						// update client flags
-						strcpy((char *)net_packet->data, "SVFL");
+						strcpy((char*)net_packet->data, "SVFL");
 						SDLNet_Write32(svFlags, &net_packet->data[4]);
 						net_packet->len = 8;
 
@@ -2565,7 +2565,7 @@ void handleMainMenu(bool mode) {
 
 			// update server name
 			if ( currentLobby ) {
-				const char *lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name");
+				const char* lobbyName = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(currentLobby), "name");
 				if ( lobbyName ) {
 					if ( strcmp(lobbyName, currentLobbyName) ) {
 						if ( multiplayer == CLIENT ) {
@@ -2588,9 +2588,9 @@ void handleMainMenu(bool mode) {
 		// draw chatbox main text
 		int y = suby2 - 50;
 		for ( c = 0; c < 20; c++ ) {
-			node_t *node = list_Node(&lobbyChatboxMessages, list_Size(&lobbyChatboxMessages) - c - 1);
+			node_t* node = list_Node(&lobbyChatboxMessages, list_Size(&lobbyChatboxMessages) - c - 1);
 			if ( node ) {
-				string_t *str = (string_t *)node->element;
+				string_t* str = (string_t*)node->element;
 				y -= str->lines * 12;
 				if ( y < suby2 - 254 ) { // there were some tall messages and we're out of space
 					break;
@@ -2627,9 +2627,9 @@ void handleMainMenu(bool mode) {
 				msg[strlen(msg)] = '\n';
 				int i;
 				for ( i = 0; i < strlen(shortname) + 2; i++ ) {
-					snprintf((char *)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), " ");
+					snprintf((char*)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), " ");
 				}
-				snprintf((char *)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), "%s", (char *)(lobbyChatbox + LOBBY_CHATBOX_LENGTH - strlen(shortname) - 2));
+				snprintf((char*)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), "%s", (char*)(lobbyChatbox + LOBBY_CHATBOX_LENGTH - strlen(shortname) - 2));
 			}
 			if ( multiplayer != CLIENT ) {
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
@@ -2637,8 +2637,8 @@ void handleMainMenu(bool mode) {
 			strcpy(lobbyChatbox, "");
 
 			// send the message
-			strcpy((char *)net_packet->data, "CMSG");
-			strcat((char *)(net_packet->data), msg);
+			strcpy((char*)net_packet->data, "CMSG");
+			strcat((char*)(net_packet->data), msg);
 			net_packet->len = 4 + strlen(msg) + 1;
 			net_packet->data[net_packet->len - 1] = 0;
 			if ( multiplayer == CLIENT ) {
@@ -2684,7 +2684,7 @@ void handleMainMenu(bool mode) {
 				}
 				if ( ticks - client_keepalive[i] > TICKS_PER_SECOND * 30 ) {
 					client_disconnected[i] = TRUE;
-					strncpy((char *)(net_packet->data), "PLAYERDISCONNECT", 16);
+					strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
 					net_packet->data[16] = i;
 					net_packet->len = 17;
 					for ( c = 1; c < MAXPLAYERS; c++ ) {
@@ -2710,7 +2710,7 @@ void handleMainMenu(bool mode) {
 
 		// send keepalive messages every second
 		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE ) {
-			strcpy((char *)net_packet->data, "KEEPALIVE");
+			strcpy((char*)net_packet->data, "KEEPALIVE");
 			net_packet->data[9] = clientnum;
 			net_packet->len = 10;
 			if ( multiplayer == CLIENT ) {
@@ -2769,7 +2769,7 @@ void handleMainMenu(bool mode) {
 					if ( c == 0 ) {
 						c++;
 					}
-					entity = (Entity *) node->element;
+					entity = (Entity*) node->element;
 					if ( !entity->flags[INVISIBLE] ) {
 						b = entity->flags[BRIGHT];
 						entity->flags[BRIGHT] = TRUE;
@@ -2805,7 +2805,7 @@ void handleMainMenu(bool mode) {
 			// print total score
 			node = list_Node(&topscores, score_window - 1);
 			if ( node ) {
-				score_t *score = (score_t *)node->element;
+				score_t* score = (score_t*)node->element;
 				ttfPrintTextFormatted(ttf16, subx1 + 448, suby1 + 104, language[1404], totalScore(score));
 			}
 
@@ -2982,7 +2982,7 @@ void handleMainMenu(bool mode) {
 				magicRightHand = NULL;
 
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					entity = (Entity *)node->element;
+					entity = (Entity*)node->element;
 					entity->flags[NOUPDATE] = TRUE;
 				}
 				mapseed = 0;
@@ -3030,28 +3030,28 @@ void handleMainMenu(bool mode) {
 				if ( loadingsavegame ) {
 					loadingsavegame = 0;
 
-					list_t *followers = loadGameFollowers();
+					list_t* followers = loadGameFollowers();
 					if ( followers ) {
 						int c;
 						for ( c = 0; c < MAXPLAYERS; c++ ) {
-							node_t *tempNode = list_Node(followers, c);
+							node_t* tempNode = list_Node(followers, c);
 							if ( tempNode ) {
-								list_t *tempFollowers = (list_t *)tempNode->element;
+								list_t* tempFollowers = (list_t*)tempNode->element;
 								if (players[c] && players[c]->entity && !client_disconnected[c]) {
-									node_t *node;
+									node_t* node;
 									for ( node = tempFollowers->first; node != NULL; node = node->next ) {
-										Stat *tempStats = (Stat *)node->element;
-										Entity *monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
+										Stat* tempStats = (Stat*)node->element;
+										Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
 										if ( monster ) {
 											monster->skill[3] = 1; // to mark this monster partially initialized
 											list_RemoveNode(monster->children.last);
 
-											node_t *newNode = list_AddNodeLast(&monster->children);
+											node_t* newNode = list_AddNodeLast(&monster->children);
 											newNode->element = tempStats->copyStats();
 											//newNode->deconstructor = &tempStats->~Stat;
 											newNode->size = sizeof(tempStats);
 
-											Stat *monsterStats = (Stat *)newNode->element;
+											Stat* monsterStats = (Stat*)newNode->element;
 											monsterStats->leader_uid = players[c]->entity->uid;
 											if ( !monsterally[HUMAN][monsterStats->type] ) {
 												monster->flags[USERFLAG2] = TRUE;
@@ -3059,12 +3059,12 @@ void handleMainMenu(bool mode) {
 
 											newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 											newNode->deconstructor = &defaultDeconstructor;
-											Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
+											Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 											newNode->element = myuid;
 											*myuid = monster->uid;
 
 											if ( c > 0 && multiplayer == SERVER ) {
-												strcpy((char *)net_packet->data, "LEAD");
+												strcpy((char*)net_packet->data, "LEAD");
 												SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
 												net_packet->address.host = net_clients[c - 1].host;
 												net_packet->address.port = net_clients[c - 1].port;
@@ -3152,7 +3152,7 @@ void handleMainMenu(bool mode) {
 				generatePathMaps();
 				for ( node = map.entities->first; node != NULL; node = nextnode ) {
 					nextnode = node->next;
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity->flags[NOUPDATE] ) {
 						list_RemoveNode(entity->mynode);    // we're anticipating this entity data from server
 					}
@@ -3243,7 +3243,7 @@ void handleMainMenu(bool mode) {
 
 			// send disconnect messages
 			if (multiplayer == CLIENT) {
-				strcpy((char *)net_packet->data, "DISCONNECT");
+				strcpy((char*)net_packet->data, "DISCONNECT");
 				net_packet->data[10] = clientnum;
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -3255,7 +3255,7 @@ void handleMainMenu(bool mode) {
 					if ( client_disconnected[x] == TRUE ) {
 						continue;
 					}
-					strcpy((char *)net_packet->data, "DISCONNECT");
+					strcpy((char*)net_packet->data, "DISCONNECT");
 					net_packet->data[10] = clientnum;
 					net_packet->address.host = net_clients[x - 1].host;
 					net_packet->address.port = net_clients[x - 1].port;
@@ -3773,28 +3773,28 @@ void handleMainMenu(bool mode) {
 
 // opens the gameover window
 void openGameoverWindow() {
-	node_t *node;
+	node_t* node;
 
 	subwindow = 1;
 	subx1 = xres / 2 - 288;
 	subx2 = xres / 2 + 288;
 	suby1 = yres / 2 - 160;
 	suby2 = yres / 2 + 160;
-	button_t *button;
+	button_t* button;
 
 	// calculate player score
 	char scorenum[16];
-	score_t *score = scoreConstructor();
+	score_t* score = scoreConstructor();
 	Uint32 total = totalScore(score);
 	snprintf(scorenum, 16, "%d\n\n", total);
-	scoreDeconstructor((void *)score);
+	scoreDeconstructor((void*)score);
 
 	bool madetop = FALSE;
 	if ( !list_Size(&topscores) ) {
 		madetop = TRUE;
 	} else if ( list_Size(&topscores) < MAXTOPSCORES ) {
 		madetop = TRUE;
-	} else if ( totalScore((score_t *)topscores.last->element) < total ) {
+	} else if ( totalScore((score_t*)topscores.last->element) < total ) {
 		madetop = TRUE;
 	}
 
@@ -3815,7 +3815,7 @@ void openGameoverWindow() {
 
 		// identify all inventory items
 		for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next ) {
-			Item *item = (Item *)node->element;
+			Item* item = (Item*)node->element;
 			item->identified = TRUE;
 		}
 
@@ -3898,7 +3898,7 @@ void openGameoverWindow() {
 
 // sets up the settings window
 void openSettingsWindow() {
-	button_t *button;
+	button_t* button;
 	int c;
 
 	// set the "settings" variables
@@ -4112,11 +4112,11 @@ void openSettingsWindow() {
 	changeSettingsTab(settings_tab);
 }
 
-void openSteamLobbyWaitWindow(button_t *my);
+void openSteamLobbyWaitWindow(button_t* my);
 
 // "failed to connect" message
 void openFailedConnectionWindow(int mode) {
-	button_t *button;
+	button_t* button;
 
 	// close current window
 	buttonCloseSubwindow(NULL);
@@ -4197,8 +4197,8 @@ void openFailedConnectionWindow(int mode) {
 }
 
 // opens the wait window for steam lobby (getting lobby list, etc.)
-void openSteamLobbyWaitWindow(button_t *my) {
-	button_t *button;
+void openSteamLobbyWaitWindow(button_t* my) {
+	button_t* button;
 
 	// close current window
 	buttonCloseSubwindow(NULL);
@@ -4247,8 +4247,8 @@ void openSteamLobbyWaitWindow(button_t *my) {
 }
 
 // opens the lobby browser window (steam client only)
-void openSteamLobbyBrowserWindow(button_t *my) {
-	button_t *button;
+void openSteamLobbyBrowserWindow(button_t* my) {
+	button_t* button;
 
 	// close current window
 	buttonCloseSubwindow(NULL);
@@ -4314,12 +4314,12 @@ void openSteamLobbyBrowserWindow(button_t *my) {
 }
 
 // steam lobby browser join game
-void buttonSteamLobbyBrowserJoinGame(button_t *my) {
+void buttonSteamLobbyBrowserJoinGame(button_t* my) {
 #ifndef STEAMWORKS
 	return;
 #else
 
-	button_t *button;
+	button_t* button;
 	int lobbyIndex = std::min(std::max(0, selectedSteamLobby), MAX_STEAM_LOBBIES - 1);
 	if ( lobbyIDs[lobbyIndex] ) {
 		// close current window
@@ -4372,7 +4372,7 @@ void buttonSteamLobbyBrowserJoinGame(button_t *my) {
 }
 
 // steam lobby browser refresh
-void buttonSteamLobbyBrowserRefresh(button_t *my) {
+void buttonSteamLobbyBrowserRefresh(button_t* my) {
 #ifndef STEAMWORKS
 	return;
 #else
@@ -4381,14 +4381,14 @@ void buttonSteamLobbyBrowserRefresh(button_t *my) {
 }
 
 // quit game button
-void buttonQuitConfirm(button_t *my) {
+void buttonQuitConfirm(button_t* my) {
 	subwindow = 0;
 	introstage = 2; // prepares to quit the whole game
 	fadeout = TRUE;
 }
 
 // quit game button (no save)
-void buttonQuitNoSaveConfirm(button_t *my) {
+void buttonQuitNoSaveConfirm(button_t* my) {
 	buttonQuitConfirm(my);
 	deleteSaveGame();
 
@@ -4398,7 +4398,7 @@ void buttonQuitNoSaveConfirm(button_t *my) {
 
 // end game button
 bool savethisgame = FALSE;
-void buttonEndGameConfirm(button_t *my) {
+void buttonEndGameConfirm(button_t* my) {
 	savethisgame = FALSE;
 	subwindow = 0;
 	introstage = 5; // prepares to end the current game (throws to main menu)
@@ -4412,7 +4412,7 @@ void buttonEndGameConfirm(button_t *my) {
 	}
 }
 
-void buttonEndGameConfirmSave(button_t *my) {
+void buttonEndGameConfirmSave(button_t* my) {
 	subwindow = 0;
 	introstage = 5; // prepares to end the current game (throws to main menu)
 	fadeout = TRUE;
@@ -4423,7 +4423,7 @@ void buttonEndGameConfirmSave(button_t *my) {
 }
 
 // generic close window button
-void buttonCloseSubwindow(button_t *my) {
+void buttonCloseSubwindow(button_t* my) {
 	int c;
 	for ( c = 0; c < 512; c++ ) {
 		keystatus[c] = 0;
@@ -4468,7 +4468,7 @@ void buttonCloseSubwindow(button_t *my) {
 	playSound(138, 64);
 }
 
-void buttonCloseSettingsSubwindow(button_t *my) {
+void buttonCloseSettingsSubwindow(button_t* my) {
 	if ( rebindkey != -1 || rebindaction != -1 ) {
 		//Do not close settings subwindow if rebinding a key/gamepad button/whatever.
 		return;
@@ -4477,7 +4477,7 @@ void buttonCloseSettingsSubwindow(button_t *my) {
 	buttonCloseSubwindow(my);
 }
 
-void buttonCloseAndEndGameConfirm(button_t *my) {
+void buttonCloseAndEndGameConfirm(button_t* my) {
 	//Edge case for freeing channeled spells on a client.
 	if (multiplayer == CLIENT) {
 		list_FreeAll(&channeledSpells[clientnum]);
@@ -4489,8 +4489,8 @@ void buttonCloseAndEndGameConfirm(button_t *my) {
 Uint32 charcreation_ticks = 0;
 
 // move player forward through creation dialogue
-void buttonContinue(button_t *my) {
-	button_t *button;
+void buttonContinue(button_t* my) {
+	button_t* button;
 
 	if ( ticks - charcreation_ticks < TICKS_PER_SECOND / 10 ) {
 		return;
@@ -4557,7 +4557,7 @@ void buttonContinue(button_t *my) {
 			connectingToLobby = TRUE;
 			connectingToLobbyWindow = TRUE;
 			strncpy( currentLobbyName, "", 31 );
-			cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID *>(lobbyToConnectTo));
+			cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID*>(lobbyToConnectTo));
 			cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Bugger this.
 			lobbyToConnectTo = NULL;
 		}
@@ -4591,7 +4591,7 @@ void buttonContinue(button_t *my) {
 }
 
 // move player backward through creation dialogue
-void buttonBack(button_t *my) {
+void buttonBack(button_t* my) {
 	charcreation_step--;
 	if (charcreation_step < 4) {
 		playing_random_char = FALSE;
@@ -4606,7 +4606,7 @@ void buttonBack(button_t *my) {
 }
 
 // start a singleplayer game
-void buttonStartSingleplayer(button_t *my) {
+void buttonStartSingleplayer(button_t* my) {
 	buttonCloseSubwindow(my);
 	multiplayer = SINGLE;
 	numplayers = 0;
@@ -4618,8 +4618,8 @@ void buttonStartSingleplayer(button_t *my) {
 }
 
 // host a multiplayer game
-void buttonHostMultiplayer(button_t *my) {
-	button_t *button;
+void buttonHostMultiplayer(button_t* my) {
+	button_t* button;
 
 	// refresh keepalive
 	int c;
@@ -4687,8 +4687,8 @@ void buttonHostMultiplayer(button_t *my) {
 }
 
 // join a multiplayer game
-void buttonJoinMultiplayer(button_t *my) {
-	button_t *button;
+void buttonJoinMultiplayer(button_t* my) {
+	button_t* button;
 
 	// close current window
 	buttonCloseSubwindow(my);
@@ -4745,8 +4745,8 @@ void buttonJoinMultiplayer(button_t *my) {
 }
 
 // starts a lobby as host
-void buttonHostLobby(button_t *my) {
-	button_t *button;
+void buttonHostLobby(button_t* my) {
+	button_t* button;
 	int c;
 
 	// close current window
@@ -4798,8 +4798,8 @@ void buttonHostLobby(button_t *my) {
 	}
 
 	// allocate data for client connections
-	net_clients = (IPaddress *) malloc(sizeof(IPaddress) * MAXPLAYERS);
-	net_tcpclients = (TCPsocket *) malloc(sizeof(TCPsocket) * MAXPLAYERS);
+	net_clients = (IPaddress*) malloc(sizeof(IPaddress) * MAXPLAYERS);
+	net_tcpclients = (TCPsocket*) malloc(sizeof(TCPsocket) * MAXPLAYERS);
 	for ( c = 0; c < MAXPLAYERS; c++ ) {
 		net_tcpclients[c] = NULL;
 	}
@@ -4884,8 +4884,8 @@ void buttonHostLobby(button_t *my) {
 }
 
 // joins a lobby as client
-void buttonJoinLobby(button_t *my) {
-	button_t *button;
+void buttonJoinLobby(button_t* my) {
+	button_t* button;
 	int c;
 
 	// refresh keepalive
@@ -4999,21 +4999,21 @@ void buttonJoinLobby(button_t *my) {
 	printlog( "submitting join request...\n");
 
 	// send join request
-	strcpy((char *)net_packet->data, "BARONY_JOIN_REQUEST");
+	strcpy((char*)net_packet->data, "BARONY_JOIN_REQUEST");
 	if ( loadingsavegame ) {
-		strncpy((char *)net_packet->data + 19, stats[getSaveGameClientnum()]->name, 22);
+		strncpy((char*)net_packet->data + 19, stats[getSaveGameClientnum()]->name, 22);
 		SDLNet_Write32((Uint32)client_classes[getSaveGameClientnum()], &net_packet->data[42]);
 		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->sex, &net_packet->data[46]);
 		SDLNet_Write32((Uint32)stats[getSaveGameClientnum()]->appearance, &net_packet->data[50]);
-		strcpy((char *)net_packet->data + 54, VERSION);
+		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
 		net_packet->data[63] = getSaveGameClientnum();
 	} else {
-		strncpy((char *)net_packet->data + 19, stats[0]->name, 22);
+		strncpy((char*)net_packet->data + 19, stats[0]->name, 22);
 		SDLNet_Write32((Uint32)client_classes[0], &net_packet->data[42]);
 		SDLNet_Write32((Uint32)stats[0]->sex, &net_packet->data[46]);
 		SDLNet_Write32((Uint32)stats[0]->appearance, &net_packet->data[50]);
-		strcpy((char *)net_packet->data + 54, VERSION);
+		strcpy((char*)net_packet->data + 54, VERSION);
 		net_packet->data[62] = 0;
 		net_packet->data[63] = 0;
 	}
@@ -5046,7 +5046,7 @@ void buttonJoinLobby(button_t *my) {
 }
 
 // starts the game as server
-void buttonStartServer(button_t *my) {
+void buttonStartServer(button_t* my) {
 	int c;
 
 	// close window
@@ -5077,7 +5077,7 @@ void buttonStartServer(button_t *my) {
 		if ( client_disconnected[c] ) {
 			continue;
 		}
-		strcpy((char *)net_packet->data, "BARONY_GAME_START");
+		strcpy((char*)net_packet->data, "BARONY_GAME_START");
 		SDLNet_Write32(svFlags, &net_packet->data[17]);
 		SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
 		net_packet->address.host = net_clients[c - 1].host;
@@ -5089,7 +5089,7 @@ void buttonStartServer(button_t *my) {
 
 // opens the steam dialog to invite friends
 #ifdef STEAMWORKS
-void buttonInviteFriends(button_t *my) {
+void buttonInviteFriends(button_t* my) {
 	if (SteamUser()->BLoggedOn()) {
 		SteamFriends()->ActivateGameOverlayInviteDialog(*static_cast<CSteamID*>(currentLobby));
 	}
@@ -5098,7 +5098,7 @@ void buttonInviteFriends(button_t *my) {
 #endif
 
 // disconnects from whatever lobby the game is connected to
-void buttonDisconnect(button_t *my) {
+void buttonDisconnect(button_t* my) {
 	int c;
 
 	if ( multiplayer == SERVER ) {
@@ -5107,7 +5107,7 @@ void buttonDisconnect(button_t *my) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "PLAYERDISCONNECT");
+			strcpy((char*)net_packet->data, "PLAYERDISCONNECT");
 			net_packet->data[16] = clientnum;
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
@@ -5116,7 +5116,7 @@ void buttonDisconnect(button_t *my) {
 		}
 	} else {
 		// send disconnect message to server
-		strcpy((char *)net_packet->data, "PLAYERDISCONNECT");
+		strcpy((char*)net_packet->data, "PLAYERDISCONNECT");
 		net_packet->data[16] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
@@ -5150,37 +5150,37 @@ void buttonDisconnect(button_t *my) {
 }
 
 // open the video tab in the settings window
-void buttonVideoTab(button_t *my) {
+void buttonVideoTab(button_t* my) {
 	changeSettingsTab(SETTINGS_VIDEO_TAB);
 }
 
 // open the audio tab in the settings window
-void buttonAudioTab(button_t *my) {
+void buttonAudioTab(button_t* my) {
 	changeSettingsTab(SETTINGS_AUDIO_TAB);
 }
 
 // open the keyboard tab in the settings window
-void buttonKeyboardTab(button_t *my) {
+void buttonKeyboardTab(button_t* my) {
 	changeSettingsTab(SETTINGS_KEYBOARD_TAB);
 }
 
 // open the mouse tab in the settings window
-void buttonMouseTab(button_t *my) {
+void buttonMouseTab(button_t* my) {
 	changeSettingsTab(SETTINGS_MOUSE_TAB);
 }
 
 //Open the gamepad bindings tab in the settings window
-void buttonGamepadBindingsTab(button_t *my) {
+void buttonGamepadBindingsTab(button_t* my) {
 	changeSettingsTab(SETTINGS_GAMEPAD_BINDINGS_TAB);
 }
 
 //Open the general gamepad settings tab in the settings window
-void buttonGamepadSettingsTab(button_t *my) {
+void buttonGamepadSettingsTab(button_t* my) {
 	changeSettingsTab(SETTINGS_GAMEPAD_SETTINGS_TAB);
 }
 
 // open the misc tab in the settings window
-void buttonMiscTab(button_t *my) {
+void buttonMiscTab(button_t* my) {
 	changeSettingsTab(SETTINGS_MISC_TAB);
 }
 
@@ -5211,11 +5211,11 @@ void applySettings() {
 	if ( zbuffer != NULL ) {
 		free(zbuffer);
 	}
-	zbuffer = (double *) malloc(sizeof(double) * xres * yres);
+	zbuffer = (double*) malloc(sizeof(double) * xres * yres);
 	if ( clickmap != NULL ) {
 		free(clickmap);
 	}
-	clickmap = (Entity **) malloc(sizeof(Entity *)*xres * yres);
+	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 
 	// set audio options
 	sfxvolume = settings_sfxvolume;
@@ -5338,7 +5338,7 @@ void revertResolution() {
 }
 
 // settings accept button
-void buttonSettingsAccept(button_t *my) {
+void buttonSettingsAccept(button_t* my) {
 	applySettings();
 
 	if ( resolutionChanged ) {
@@ -5357,7 +5357,7 @@ void buttonSettingsAccept(button_t *my) {
 }
 
 // settings okay button
-void buttonSettingsOK(button_t *my) {
+void buttonSettingsOK(button_t* my) {
 	buttonSettingsAccept(my);
 	if ( !confirmResolutionWindow ) {
 		buttonCloseSubwindow(my);
@@ -5365,19 +5365,19 @@ void buttonSettingsOK(button_t *my) {
 }
 
 // next score button (statistics window)
-void buttonScoreNext(button_t *my) {
+void buttonScoreNext(button_t* my) {
 	score_window = std::min<int>(score_window + 1, std::max<Uint32>(1, list_Size(&topscores)));
 	loadScore(score_window - 1);
 }
 
 // previous score button (statistics window)
-void buttonScorePrev(button_t *my) {
+void buttonScorePrev(button_t* my) {
 	score_window = std::max(score_window - 1, 1);
 	loadScore(score_window - 1);
 }
 
 // handles slider
-void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int *var, SDL_Surface *slider_font, int slider_font_char_width) {
+void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font, int slider_font_char_width) {
 	int c;
 
 	// build bar
@@ -5412,7 +5412,7 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 }
 
 // handles slider (float)
-void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double *var) {
+void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double* var) {
 	int c;
 
 	// build bar
@@ -5447,8 +5447,8 @@ void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double 
 	drawWindowFancy( sliderx - (SLIDERFONT->w / 16) / 2, y - (SLIDERFONT->h / 16) / 2, sliderx + (SLIDERFONT->w / 16) / 2, y + ((SLIDERFONT->h / 16) / 2) * 3);
 }
 
-void openLoadGameWindow(button_t *my) {
-	button_t *button;
+void openLoadGameWindow(button_t* my) {
+	button_t* button;
 
 	// close current window
 	buttonCloseSubwindow(NULL);
@@ -5462,7 +5462,7 @@ void openLoadGameWindow(button_t *my) {
 	suby1 = yres / 2 - 128;
 	suby2 = yres / 2 + 128;
 	strcpy(subtext, language[1460]);
-	char *saveGameName = getSaveGameName();
+	char* saveGameName = getSaveGameName();
 	strcat(subtext, saveGameName);
 	free(saveGameName);
 	strcat(subtext, language[1461]);
@@ -5506,8 +5506,8 @@ void openLoadGameWindow(button_t *my) {
 	button->joykey = joyimpulses[INJOY_MENU_LOAD_SAVE]; //load save games no => "y" button
 }
 
-void buttonOpenCharacterCreationWindow(button_t *my) {
-	button_t *button;
+void buttonOpenCharacterCreationWindow(button_t* my) {
+	button_t* button;
 
 	playing_random_char = FALSE;
 	loadingsavegame = 0;
@@ -5592,7 +5592,7 @@ void buttonOpenCharacterCreationWindow(button_t *my) {
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //random character => "y" button
 }
 
-void buttonLoadGame(button_t *button) {
+void buttonLoadGame(button_t* button) {
 	loadingsavegame = getSaveGameUniqueGameKey();
 	int mul = getSaveGameType();
 
@@ -5668,7 +5668,7 @@ void buttonLoadGame(button_t *button) {
 	}
 }
 
-void buttonRandomCharacter(button_t *my) {
+void buttonRandomCharacter(button_t* my) {
 	playing_random_char = TRUE;
 	charcreation_step = 4;
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);

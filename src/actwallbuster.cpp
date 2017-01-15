@@ -26,7 +26,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void actWallBuster(Entity *my) {
+void actWallBuster(Entity* my) {
 	int c;
 
 	if ( !my->skill[28] ) {
@@ -45,7 +45,7 @@ void actWallBuster(Entity *my) {
 				if ( client_disconnected[c] == TRUE ) {
 					continue;
 				}
-				strcpy((char *)net_packet->data, "WACD");
+				strcpy((char*)net_packet->data, "WACD");
 				SDLNet_Write16(x, &net_packet->data[4]);
 				SDLNet_Write16(y, &net_packet->data[6]);
 				net_packet->address.host = net_clients[c - 1].host;
@@ -58,7 +58,7 @@ void actWallBuster(Entity *my) {
 	}
 }
 
-void actWallBuilder(Entity *my) {
+void actWallBuilder(Entity* my) {
 	int c;
 
 	if ( !my->skill[28] ) {
@@ -76,7 +76,7 @@ void actWallBuilder(Entity *my) {
 				if ( client_disconnected[c] == TRUE ) {
 					continue;
 				}
-				strcpy((char *)net_packet->data, "WALC");
+				strcpy((char*)net_packet->data, "WALC");
 				SDLNet_Write16(x, &net_packet->data[4]);
 				SDLNet_Write16(y, &net_packet->data[6]);
 				net_packet->address.host = net_clients[c - 1].host;

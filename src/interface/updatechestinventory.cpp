@@ -20,7 +20,7 @@
 
 Entity* openedChest[4] = { nullptr };
 
-void repopulateInvItems(list_t *chestInventory) {
+void repopulateInvItems(list_t* chestInventory) {
 	int c = 0;
 
 	//Step 1: Clear.
@@ -28,15 +28,15 @@ void repopulateInvItems(list_t *chestInventory) {
 		invitemschest[c] = nullptr;
 	}
 
-	node_t *node = nullptr;
-	Item *item = nullptr;
+	node_t* node = nullptr;
+	Item* item = nullptr;
 
 	c = 0;
 
 	//Step 2: Loop through inventory till reach part visible in chest GUI and add those items.
 	for ( node = chestInventory->first; node != nullptr; node = node->next ) {
 		if ( node->element ) {
-			item = (Item *) node->element;
+			item = (Item*) node->element;
 			if ( item ) {
 				++c;
 				if ( c <= chestitemscroll ) {
@@ -54,13 +54,13 @@ void repopulateInvItems(list_t *chestInventory) {
 int numItemsInChest() {
 	node_t* node = nullptr;
 
-	list_t *chestInventory = nullptr;
+	list_t* chestInventory = nullptr;
 	if ( clientnum != 0 ) {
 		if ( multiplayer != SERVER ) {
 			chestInventory = &chestInv;
 		}
 	} else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element) {
-		chestInventory = (list_t *)openedChest[clientnum]->children.first->element;
+		chestInventory = (list_t*)openedChest[clientnum]->children.first->element;
 	}
 
 	int i = 0;
@@ -88,7 +88,7 @@ void warpMouseToSelectedChestSlot() {
 
 inline void drawChestSlots() {
 	SDL_Rect pos;
-	Item *item = nullptr;
+	Item* item = nullptr;
 
 	int highlightingSlot = -1;
 
@@ -127,13 +127,13 @@ inline void drawChestSlots() {
 					}
 
 					if ( grabbedItem ) {
-						list_t *chestInventory = nullptr;
+						list_t* chestInventory = nullptr;
 						if ( clientnum != 0 ) {
 							if ( multiplayer != SERVER ) {
 								chestInventory = &chestInv;
 							}
 						} else if ( openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element ) {
-							chestInventory = (list_t *)openedChest[clientnum]->children.first->element;
+							chestInventory = (list_t*)openedChest[clientnum]->children.first->element;
 						}
 						repopulateInvItems(chestInventory); //Have to regenerate, otherwise the following if check will often end up evaluating to false. //Doesn't work. #blamedennis
 
@@ -165,10 +165,10 @@ inline void drawChestSlots() {
 
 void updateChestInventory() {
 	SDL_Rect pos;
-	node_t *node, *nextnode;
+	node_t* node, *nextnode;
 	int y, c;
 	int chest_buttonclick = 0;
-	Item *item;
+	Item* item;
 
 	//Chest inventory GUI.
 	if (openedChest[clientnum]) {
@@ -259,13 +259,13 @@ void updateChestInventory() {
 			}
 		}
 
-		list_t *chest_inventory = NULL;
+		list_t* chest_inventory = NULL;
 		if (clientnum != 0) {
 			if (multiplayer != SERVER) {
 				chest_inventory = &chestInv;
 			}
 		} else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element) {
-			chest_inventory = (list_t *)openedChest[clientnum]->children.first->element;
+			chest_inventory = (list_t*)openedChest[clientnum]->children.first->element;
 		}
 
 		if (!chest_inventory) {
@@ -337,7 +337,7 @@ void updateChestInventory() {
 				//Actually render the items.
 				for (node = chest_inventory->first; node != NULL; node = node->next) {
 					if (node->element) {
-						item = (Item *) node->element;
+						item = (Item*) node->element;
 						if (item) {
 							c++;
 							if (c <= chestitemscroll) {
@@ -412,7 +412,7 @@ void selectChestSlot(int slot) {
 		 * * 3) Scrolling down past bottom of chest, max chest scroll (revoke move -- can't go beyond limit of chest).
 		 */
 
-		Item *item = nullptr;
+		Item* item = nullptr;
 
 		if ( selectedChestSlot >= 3 ) {
 			//Covers cases 2 & 3.

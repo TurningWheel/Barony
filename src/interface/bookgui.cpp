@@ -110,10 +110,10 @@ void updateBookGUI() {
 
 	// render the book's text
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
-	string_t *pagetext = (string_t *)book_page->element;
+	string_t* pagetext = (string_t*)book_page->element;
 	ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 44, BOOK_GUI_Y + 20, color, FALSE, pagetext->data );
 	if ( book_page->next != NULL ) {
-		string_t *pagetext = (string_t *)book_page->next->element;
+		string_t* pagetext = (string_t*)book_page->next->element;
 		ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 316, BOOK_GUI_Y + 20, color, FALSE, pagetext->data );
 	}
 
@@ -164,7 +164,7 @@ void closeBookGUI() {
 
 -------------------------------------------------------------------------------*/
 
-void openBook(book_t *book, Item *item) {
+void openBook(book_t* book, Item* item) {
 	if (!book || !book->pages.first) {
 		return;
 	}
@@ -179,15 +179,15 @@ void openBook(book_t *book, Item *item) {
 
 	// add the book to the list of read books
 	bool hasreadbook = FALSE;
-	node_t *node;
+	node_t* node;
 	for ( node = booksRead.first; node != NULL; node = node->next ) {
-		if ( !strcmp(book->name, (char *)node->element) ) {
+		if ( !strcmp(book->name, (char*)node->element) ) {
 			hasreadbook = TRUE;
 			break;
 		}
 	}
 	if ( !hasreadbook ) {
-		char *bookName = (char *) malloc(sizeof(char) * (strlen(book->name) + 1));
+		char* bookName = (char*) malloc(sizeof(char) * (strlen(book->name) + 1));
 		strcpy(bookName, book->name);
 
 		node = list_AddNodeFirst(&booksRead);

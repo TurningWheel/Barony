@@ -21,9 +21,9 @@
 #include "classdescriptions.hpp"
 #include "player.hpp"
 
-void initHuman(Entity *my, Stat *myStats) {
+void initHuman(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	//my->flags[GENIUS] = TRUE;
 	my->flags[UPDATENEEDED] = TRUE;
@@ -101,7 +101,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(106, 0, map.entities);
+	Entity* entity = newEntity(106, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -116,7 +116,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(107, 0, map.entities);
@@ -134,7 +134,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(108, 0, map.entities);
@@ -152,7 +152,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(109, 0, map.entities);
@@ -170,7 +170,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(110, 0, map.entities);
@@ -188,7 +188,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// world weapon
 	entity = newEntity(-1, 0, map.entities);
@@ -207,7 +207,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// shield
 	entity = newEntity(-1, 0, map.entities);
@@ -225,7 +225,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// cloak
 	entity = newEntity(-1, 0, map.entities);
@@ -246,7 +246,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// helmet
 	entity = newEntity(-1, 0, map.entities);
@@ -267,7 +267,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// mask
 	entity = newEntity(-1, 0, map.entities);
@@ -288,7 +288,7 @@ void initHuman(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	if ( multiplayer == CLIENT ) {
 		my->sprite = 113; // human head model
@@ -447,7 +447,7 @@ void initHuman(Entity *my, Stat *myStats) {
 						myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), FALSE, NULL);
 						int c;
 						for ( c = 0; c < 2; c++ ) {
-							Entity *entity = summonMonster(SPIDER, my->x, my->y);
+							Entity* entity = summonMonster(SPIDER, my->x, my->y);
 							if ( entity ) {
 								entity->parent = my->uid;
 								entity->flags[USERFLAG2] = TRUE;
@@ -711,10 +711,10 @@ void initHuman(Entity *my, Stat *myStats) {
 	}
 }
 
-void actHumanLimb(Entity *my) {
+void actHumanLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -750,12 +750,12 @@ void actHumanLimb(Entity *my) {
 	}
 }
 
-void humanDie(Entity *my) {
-	node_t *node, *nextnode;
+void humanDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -764,7 +764,7 @@ void humanDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -782,7 +782,7 @@ void humanDie(Entity *my) {
 	for ( node = my->children.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		if ( node->element != NULL && i >= 2 ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity->light != NULL ) {
 				list_RemoveNode(entity->light->node);
 			}
@@ -798,11 +798,11 @@ void humanDie(Entity *my) {
 
 #define HUMANWALKSPEED .12
 
-void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL, *entity2 = NULL;
-	Entity *rightbody = NULL;
-	Entity *weaponarm = NULL;
+void humanMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL, *entity2 = NULL;
+	Entity* rightbody = NULL;
+	Entity* weaponarm = NULL;
 	int bodypart;
 	bool wearingring = FALSE;
 
@@ -828,7 +828,7 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -847,7 +847,7 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -888,18 +888,18 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
-			node_t *shieldNode = list_Node(&my->children, 8);
+			node_t* shieldNode = list_Node(&my->children, 8);
 			if ( shieldNode ) {
-				Entity *shield = (Entity *)shieldNode->element;
+				Entity* shield = (Entity*)shieldNode->element;
 				if ( dist > 0.1 && (bodypart != 6 || shield->flags[INVISIBLE]) ) {
 					if ( !rightbody->skill[0] ) {
 						entity->pitch -= dist * HUMANWALKSPEED;
@@ -908,9 +908,9 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 							if (bodypart == 3) {
 								entity->skill[0] = 1;
 								if ( dist > .4 ) {
-									node_t *tempNode = list_Node(&my->children, 3);
+									node_t* tempNode = list_Node(&my->children, 3);
 									if ( tempNode ) {
-										Entity *foot = (Entity *)tempNode->element;
+										Entity* foot = (Entity*)tempNode->element;
 										if ( foot->sprite == 152 || foot->sprite == 153 ) {
 											playSoundEntityLocal(my, 7 + rand() % 7, 32);
 										} else if ( foot->sprite == 156 || foot->sprite == 157 ) {
@@ -929,9 +929,9 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 							if (bodypart == 3) {
 								entity->skill[0] = 0;
 								if ( dist > .4 ) {
-									node_t *tempNode = list_Node(&my->children, 3);
+									node_t* tempNode = list_Node(&my->children, 3);
 									if ( tempNode ) {
-										Entity *foot = (Entity *)tempNode->element;
+										Entity* foot = (Entity*)tempNode->element;
 										if ( foot->sprite == 152 || foot->sprite == 153 ) {
 											playSoundEntityLocal(my, 7 + rand() % 7, 32);
 										} else if ( foot->sprite == 156 || foot->sprite == 157 ) {
@@ -1239,9 +1239,9 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
 				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
 				entity->z += 1.5;
-				node_t *tempNode = list_Node(&my->children, 7);
+				node_t* tempNode = list_Node(&my->children, 7);
 				if ( tempNode ) {
-					Entity *weapon = (Entity *)tempNode->element;
+					Entity* weapon = (Entity*)tempNode->element;
 					if ( multiplayer == CLIENT ) {
 						if ( !MONSTER_ARMBENDED ) {
 							if ( entity->skill[7] == 0 ) {
@@ -1313,7 +1313,7 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				entity->z += 1.5;
 				node_t* tempNode = list_Node(&my->children, 8);
 				if ( tempNode ) {
-					Entity *shield = (Entity *)tempNode->element;
+					Entity* shield = (Entity*)tempNode->element;
 					if ( shield->flags[INVISIBLE] ) {
 						entity->focalx = limbs[HUMAN][5][0]; // 0
 						entity->focaly = limbs[HUMAN][5][1]; // 0
@@ -1575,9 +1575,9 @@ void humanMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		}
 	}
 	// rotate shield a bit
-	node_t *shieldNode = list_Node(&my->children, 8);
+	node_t* shieldNode = list_Node(&my->children, 8);
 	if ( shieldNode ) {
-		Entity *shieldEntity = (Entity *)shieldNode->element;
+		Entity* shieldEntity = (Entity*)shieldNode->element;
 		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index ) {
 			shieldEntity->yaw -= PI / 6;
 		}

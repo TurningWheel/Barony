@@ -14,7 +14,7 @@
 
 
 
-Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
+Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_gonnavomit(skill[26]),
 	char_heal(skill[22]),
 	char_energize(skill[23]),

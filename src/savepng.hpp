@@ -30,9 +30,9 @@
  * Returns 0 success or -1 on failure, the error message is then retrievable
  * via SDL_GetError().
  */
-extern int SDL_SavePNG_RW(SDL_Surface *surface, SDL_RWops *rw, int freedst);
+extern int SDL_SavePNG_RW(SDL_Surface* surface, SDL_RWops* rw, int freedst);
 
 /*
  * Return new SDL_Surface with a format suitable for PNG output.
  */
-extern SDL_Surface *SDL_PNGFormatAlpha(SDL_Surface *src);
+extern SDL_Surface* SDL_PNGFormatAlpha(SDL_Surface* src);

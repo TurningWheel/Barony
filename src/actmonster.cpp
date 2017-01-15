@@ -111,13 +111,13 @@ double sightranges[NUMMONSTERS] = {
 -------------------------------------------------------------------------------*/
 
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid) {
-	Entity *entity = summonMonster(creature, x, y);
+	Entity* entity = summonMonster(creature, x, y);
 	entity->flags[INVISIBLE] = FALSE;
 	entity->uid = uid;
 }
 
-Entity *summonMonster(Monster creature, long x, long y) {
-	Entity *entity = newEntity(-1, 1, map.entities);
+Entity* summonMonster(Monster creature, long x, long y) {
+	Entity* entity = newEntity(-1, 1, map.entities);
 	//Set the monster's variables.
 	entity->sizex = 4;
 	entity->sizey = 4;
@@ -131,11 +131,11 @@ Entity *summonMonster(Monster creature, long x, long y) {
 	entity->ranbehavior = TRUE;
 	entity->skill[5] = nummonsters;
 
-	Stat *myStats = NULL;
+	Stat* myStats = NULL;
 	if ( multiplayer != CLIENT ) {
 		// Need to give the entity its list stuff.
 		// create an empty first node for traversal purposes
-		node_t *node = NULL;
+		node_t* node = NULL;
 		node = list_AddNodeFirst(&entity->children);
 		node->element = NULL;
 		node->deconstructor = &emptyDeconstructor;
@@ -323,7 +323,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 			nummonsters++;
 		}
 		if ( multiplayer == SERVER ) {
-			strcpy((char *)net_packet->data, "SUMM");
+			strcpy((char*)net_packet->data, "SUMM");
 			SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
 			SDLNet_Write32((Uint32)entity->x, &net_packet->data[8]);
 			SDLNet_Write32((Uint32)entity->y, &net_packet->data[12]);
@@ -354,7 +354,7 @@ Entity *summonMonster(Monster creature, long x, long y) {
 
 -------------------------------------------------------------------------------*/
 
-bool monsterMoveAside(Entity *my, Entity *entity) {
+bool monsterMoveAside(Entity* my, Entity* entity) {
 	if ( MONSTER_STATE != 0 ) {
 		return FALSE;
 	}
@@ -426,21 +426,21 @@ int devilroar = 0;
 int devilintro = 0;
 //int devilintro=0;
 
-void actMonster(Entity *my) {
+void actMonster(Entity* my) {
 	if (!my) {
 		return;
 	}
 
 	int x, y, c, i;
 	double dist, dist2;
-	list_t *path;
-	node_t *node, *node2;
-	pathnode_t *pathnode;
+	list_t* path;
+	node_t* node, *node2;
+	pathnode_t* pathnode;
 	double dir;
 	double tangent;
-	Stat *myStats;
-	Entity *entity;
-	Stat *hitstats = NULL;
+	Stat* myStats;
+	Entity* entity;
+	Stat* hitstats = NULL;
 	bool hasrangedweapon = FALSE;
 	bool myReflex;
 
@@ -556,7 +556,7 @@ void actMonster(Entity *my) {
 
 			// request entity update (check if I've been deleted)
 			if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) ) {
-				strcpy((char *)net_packet->data, "ENTE");
+				strcpy((char*)net_packet->data, "ENTE");
 				net_packet->data[4] = clientnum;
 				SDLNet_Write32(my->uid, &net_packet->data[5]);
 				net_packet->address.host = net_server.host;
@@ -720,11 +720,11 @@ void actMonster(Entity *my) {
 	if ( myStats->type == LICH ) {
 		// destroying room lights
 		if ( myStats->HP <= myStats->MAXHP / 2 ) {
-			node_t *node, *nextnode;
+			node_t* node, *nextnode;
 			bool foundlights = FALSE;
 			for ( node = map.entities->first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				Entity *tempEntity = (Entity *)node->element;
+				Entity* tempEntity = (Entity*)node->element;
 
 				if ( tempEntity->behavior == &actTorch || tempEntity->behavior == &actCampfire ) {
 					foundlights = TRUE;
@@ -828,10 +828,10 @@ void actMonster(Entity *my) {
 			entity->flags[USERFLAG1] = TRUE;
 		}
 		myStats->mask = NULL;
-		node_t *nextnode = NULL;
+		node_t* nextnode = NULL;
 		for ( node = myStats->inventory.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
-			Item *item = (Item *)node->element;
+			Item* item = (Item*)node->element;
 			for ( c = item->count; c > 0; c-- ) {
 				entity = dropItemMonster(item, my, myStats);
 				if ( entity ) {
@@ -1128,9 +1128,9 @@ void actMonster(Entity *my) {
 	// effect of a ring of conflict
 	bool ringconflict = FALSE;
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *tempentity = (Entity *)node->element;
+		Entity* tempentity = (Entity*)node->element;
 		if ( tempentity != NULL && tempentity != my ) {
-			Stat *tempstats = tempentity->getStats();
+			Stat* tempstats = tempentity->getStats();
 			if ( tempstats != NULL ) {
 				if ( tempstats->ring != NULL ) {
 					if ( tempstats->ring->type == RING_CONFLICT ) {
@@ -1159,13 +1159,13 @@ void actMonster(Entity *my) {
 		if ( myStats->EFFECTS[EFF_INVISIBLE] ) {
 			my->flags[INVISIBLE] = TRUE;
 			for ( node = list_Node(&my->children, 2); node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				entity->flags[INVISIBLE] = TRUE;
 			}
 		} else {
 			my->flags[INVISIBLE] = FALSE;
 			for ( node = list_Node(&my->children, 2); node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				entity->flags[INVISIBLE] = FALSE;
 			}
 		}
@@ -1225,9 +1225,9 @@ void actMonster(Entity *my) {
 						if (!ringconflict) {
 							if (myStats->leader_uid == 0) {
 								if (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS)) {
-									node_t *newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
+									node_t* newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
-									Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
+									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
 									*myuid = my->uid;
 									if (my->getINT() > -2) {
@@ -1240,7 +1240,7 @@ void actMonster(Entity *my) {
 									MONSTER_STATE = 0; // be ready to follow
 									myStats->leader_uid = players[monsterclicked]->entity->uid;
 									if (monsterclicked > 0 && multiplayer == SERVER) {
-										strcpy((char *)net_packet->data, "LEAD");
+										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]);
 										net_packet->address.host = net_clients[monsterclicked - 1].host;
 										net_packet->address.port = net_clients[monsterclicked - 1].port;
@@ -1300,7 +1300,7 @@ void actMonster(Entity *my) {
 
 		// being bumped by someone friendly
 		for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next ) {
-			entity = (Entity *)node2->element;
+			entity = (Entity*)node2->element;
 			if ( entity == my ) {
 				continue;
 			}
@@ -1350,7 +1350,7 @@ void actMonster(Entity *my) {
 			MONSTER_VELY = 0;
 			if ( myReflex ) {
 				for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next ) {
-					entity = (Entity *)node2->element;
+					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] ) {
 						continue;
 					}
@@ -1447,7 +1447,7 @@ void actMonster(Entity *my) {
 
 									// alert other monsters of this enemy's presence
 									for ( node = map.entities->first; node != NULL; node = node->next ) {
-										entity = (Entity *)node->element;
+										entity = (Entity*)node->element;
 										if ( entity->behavior == &actMonster ) {
 											hitstats = entity->getStats();
 											if ( hitstats != NULL ) {
@@ -1505,7 +1505,7 @@ void actMonster(Entity *my) {
 
 			// follow the leader :)
 			if ( myStats->leader_uid != 0 && my->uid % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND ) {
-				Entity *leader = uidToEntity(myStats->leader_uid);
+				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader ) {
 					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
 					if ( dist > WAIT_FOLLOWDIST ) {
@@ -1799,7 +1799,7 @@ timeToGoAgain:
 									}
 								}
 
-								Entity *tempHitEntity = hit.entity;
+								Entity* tempHitEntity = hit.entity;
 								if ( lineTrace(my, my->x, my->x, tangent2, TOUCHRANGE, 1, FALSE) < TOUCHRANGE ) {
 									MONSTER_FLIPPEDANGLE = (MONSTER_FLIPPEDANGLE < 5) * 10;
 									goAgain++;
@@ -2079,7 +2079,7 @@ timeToGoAgain:
 		} else if ( MONSTER_STATE == 3 ) { // hunt state
 			if ( myReflex && (myStats->type != LICH || MONSTER_SPECIAL <= 0) ) {
 				for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next ) {
-					entity = (Entity *)node2->element;
+					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] ) {
 						continue;
 					}
@@ -2188,7 +2188,7 @@ timeToGoAgain:
 			// minotaurs and liches chase players relentlessly.
 			if (myStats->type == MINOTAUR || (myStats->type == LICH && MONSTER_SPECIAL <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss"))) {
 				bool shouldHuntPlayer = FALSE;
-				Entity *playerOrNot = uidToEntity(MONSTER_TARGET);
+				Entity* playerOrNot = uidToEntity(MONSTER_TARGET);
 				if (playerOrNot) {
 					if (ticks % 180 == 0 && playerOrNot->behavior == &actPlayer) {
 						shouldHuntPlayer = TRUE;
@@ -2232,7 +2232,7 @@ timeToGoAgain:
 
 			// follow the leader :)
 			if ( myStats->leader_uid != 0 && my->uid % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND ) {
-				Entity *leader = uidToEntity(myStats->leader_uid);
+				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader ) {
 					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
 					if ( dist > HUNT_FOLLOWDIST && !MONSTER_TARGET ) {
@@ -2264,7 +2264,7 @@ timeToGoAgain:
 						return;
 					} else {
 						double tangent = atan2( leader->y - my->y, leader->x - my->x );
-						Entity *ohitentity = hit.entity;
+						Entity* ohitentity = hit.entity;
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
 						if ( hit.entity != leader ) {
 							MONSTER_TARGET = 0;
@@ -2307,9 +2307,9 @@ timeToGoAgain:
 				}
 			if ( my->children.first != NULL ) {
 				if ( my->children.first->element != NULL ) {
-					path = (list_t *)my->children.first->element;
+					path = (list_t*)my->children.first->element;
 					if ( path->first != NULL ) {
-						pathnode = (pathnode_t *)path->first->element;
+						pathnode = (pathnode_t*)path->first->element;
 						dist = sqrt( pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
 						if ( dist <= 2 ) {
 							list_RemoveNode(pathnode->node);
@@ -2368,7 +2368,7 @@ timeToGoAgain:
 										}
 									}
 								} else if ( hit.entity->behavior == &actMonster ) {
-									Stat *yourStats = hit.entity->getStats();
+									Stat* yourStats = hit.entity->getStats();
 									if ( hit.entity->uid == MONSTER_TARGET ) {
 										MONSTER_STATE = 1; // charge state
 									} else if ( yourStats ) {
@@ -2419,7 +2419,7 @@ timeToGoAgain:
 							}
 						}
 					} else {
-						Entity *target = uidToEntity(MONSTER_TARGET);
+						Entity* target = uidToEntity(MONSTER_TARGET);
 						if ( target ) {
 							double tangent = atan2( target->y - my->y, target->x - my->x );
 							MONSTER_LOOKTIME = 1;
@@ -2429,7 +2429,7 @@ timeToGoAgain:
 						MONSTER_STATE = 0; // no path, return to wait state
 					}
 				} else {
-					Entity *target = uidToEntity(MONSTER_TARGET);
+					Entity* target = uidToEntity(MONSTER_TARGET);
 					if ( target ) {
 						double tangent = atan2( target->y - my->y, target->x - my->x );
 						MONSTER_LOOKTIME = 1;
@@ -2439,7 +2439,7 @@ timeToGoAgain:
 					MONSTER_STATE = 0; // no path, return to wait state
 				}
 			} else {
-				Entity *target = uidToEntity(MONSTER_TARGET);
+				Entity* target = uidToEntity(MONSTER_TARGET);
 				if ( target ) {
 					double tangent = atan2( target->y - my->y, target->x - my->x );
 					MONSTER_LOOKTIME = 1;
@@ -2453,7 +2453,7 @@ timeToGoAgain:
 			MONSTER_VELY = 0;
 
 			// turn towards target
-			Entity *target = uidToEntity(MONSTER_TARGET);
+			Entity* target = uidToEntity(MONSTER_TARGET);
 			if ( target != NULL ) {
 				dir = my->yaw - atan2( target->y - my->y, target->x - my->x );
 				while ( dir >= PI ) {
@@ -2483,7 +2483,7 @@ timeToGoAgain:
 						gui_mode = GUI_MODE_INVENTORY;
 					} else {
 						// inform client of abandonment
-						strcpy((char *)net_packet->data, "SHPC");
+						strcpy((char*)net_packet->data, "SHPC");
 						net_packet->address.host = net_clients[player - 1].host;
 						net_packet->address.port = net_clients[player - 1].port;
 						net_packet->len = 4;
@@ -2611,10 +2611,10 @@ timeToGoAgain:
 			}
 			MONSTER_SPECIAL++;
 			if ( my->z >= 64 ) {
-				node_t *node;
+				node_t* node;
 				int c = 0;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity->behavior == &actDevilTeleport ) {
 						if ( entity->x == my->x && entity->y == my->y ) {
 							continue;
@@ -2644,7 +2644,7 @@ timeToGoAgain:
 					int i = rand() % c;
 					c = 0;
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						Entity *entity = (Entity *)node->element;
+						Entity* entity = (Entity*)node->element;
 						if ( entity->behavior == &actDevilTeleport ) {
 							if ( entity->x == my->x && entity->y == my->y ) {
 								continue;
@@ -2703,14 +2703,14 @@ timeToGoAgain:
 					if ( myStats->HP > 0 ) {
 						my->flags[PASSABLE] = FALSE;
 					}
-					node_t *node;
+					node_t* node;
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						Entity *entity = (Entity *)node->element;
+						Entity* entity = (Entity*)node->element;
 						if ( entity == my ) {
 							continue;
 						}
 						if ( entityInsideEntity(my, entity) ) {
-							Stat *stats = entity->getStats();
+							Stat* stats = entity->getStats();
 							if ( stats )
 								if ( stats->HP > 0 ) {
 									stats->HP = 0;
@@ -2741,10 +2741,10 @@ timeToGoAgain:
 					}
 				}
 			} else {
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
+				node_t* tempNode;
+				Entity* playertotrack = NULL;
 				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
+					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer ) {
 						double disttoplayer = entityDist(my, tempEntity);
@@ -2808,10 +2808,10 @@ timeToGoAgain:
 				serverUpdateEntitySkill(my, 9);
 				MONSTER_SPECIAL = 0;
 				MONSTER_STATE = 1;
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
+				node_t* tempNode;
+				Entity* playertotrack = NULL;
 				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
+					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer ) {
 						double disttoplayer = entityDist(my, tempEntity);
@@ -2880,7 +2880,7 @@ timeToGoAgain:
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ ) {
-					Entity *entity = newEntity(245, 1, map.entities); // boulder
+					Entity* entity = newEntity(245, 1, map.entities); // boulder
 					entity->parent = my->uid;
 					if ( angle == 0 ) {
 						entity->x = (20 << 4) + 8;
@@ -2919,7 +2919,7 @@ timeToGoAgain:
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ ) {
-					Entity *entity = newEntity(245, 1, map.entities); // boulder
+					Entity* entity = newEntity(245, 1, map.entities); // boulder
 					entity->parent = my->uid;
 					if ( angle == 0 ) {
 						entity->x = (20 << 4) + 8;
@@ -2958,7 +2958,7 @@ timeToGoAgain:
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 12; c++ ) {
-					Entity *entity = newEntity(245, 1, map.entities); // boulder
+					Entity* entity = newEntity(245, 1, map.entities); // boulder
 					entity->parent = my->uid;
 					if ( angle == 0 ) {
 						entity->x = (20 << 4) + 8;
@@ -2989,10 +2989,10 @@ timeToGoAgain:
 				serverUpdateEntitySkill(my, 9);
 				MONSTER_SPECIAL = 0;
 				MONSTER_STATE = 1;
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
+				node_t* tempNode;
+				Entity* playertotrack = NULL;
 				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
+					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer ) {
 						double disttoplayer = entityDist(my, tempEntity);

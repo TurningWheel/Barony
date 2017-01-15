@@ -19,7 +19,7 @@
 
 void updateRemoveCurseGUI() {
 	SDL_Rect pos;
-	node_t *node;
+	node_t* node;
 	int y, c;
 
 	//Remove Curse GUI.
@@ -96,13 +96,13 @@ void updateRemoveCurseGUI() {
 			}
 		}
 
-		list_t *removecurse_inventory = &stats[clientnum]->inventory;
+		list_t* removecurse_inventory = &stats[clientnum]->inventory;
 
 		if (!removecurse_inventory) {
 			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
 		} else {
 			//Print the window label signifying this as the remove curse GUI.
-			char *window_name;
+			char* window_name;
 			window_name = language[346];
 			ttfPrintText(ttf8, (REMOVECURSE_GUI_X + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(window_name)) / 2))), REMOVECURSE_GUI_Y + 4, window_name);
 
@@ -132,7 +132,7 @@ void updateRemoveCurseGUI() {
 				removecursegui_active = FALSE;
 			}
 
-			Item *item = NULL;
+			Item* item = NULL;
 			if (omousex >= REMOVECURSE_GUI_X && omousex < REMOVECURSE_GUI_X + (identifyGUI_img->w - 28)) {
 				pos.x = REMOVECURSE_GUI_X + 12;
 				pos.w = 0;
@@ -173,7 +173,7 @@ void updateRemoveCurseGUI() {
 			c = 0;
 			if (removecurse_inventory) {
 				for (node = removecurse_inventory->first; node != NULL; node = node->next) {
-					item = (Item *) node->element;
+					item = (Item*) node->element;
 					if (item && item->identified && item->beatitude < 0) {
 						c++;
 					}
@@ -187,7 +187,7 @@ void updateRemoveCurseGUI() {
 				//Actually render the items.
 				for (node = removecurse_inventory->first; node != NULL; node = node->next) {
 					if (node->element) {
-						item = (Item *) node->element;
+						item = (Item*) node->element;
 						if (item && item->identified && item->beatitude < 0) { //Skip over all unidentified or uncursed items.
 							c++;
 							if (c <= removecursescroll) {
@@ -217,7 +217,7 @@ void updateRemoveCurseGUI() {
 	}
 } //updateRemoveCurseGUI()
 
-void removecurseGUIRemoveCurse(Item *item) {
+void removecurseGUIRemoveCurse(Item* item) {
 	if (!item) {
 		return;
 	}
@@ -253,7 +253,7 @@ void removecurseGUIRemoveCurse(Item *item) {
 		} else if ( item == stats[clientnum]->mask ) {
 			armornum = 9;
 		}
-		strcpy((char *)net_packet->data, "RCUR");
+		strcpy((char*)net_packet->data, "RCUR");
 		net_packet->data[4] = clientnum;
 		net_packet->data[5] = armornum;
 		net_packet->address.host = net_server.host;

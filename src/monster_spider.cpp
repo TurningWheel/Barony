@@ -20,7 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initSpider(Entity *my, Stat *myStats) {
+void initSpider(Entity* my, Stat* myStats) {
 	int c;
 
 	my->flags[UPDATENEEDED] = TRUE;
@@ -98,7 +98,7 @@ void initSpider(Entity *my, Stat *myStats) {
 
 			int c;
 			for ( c = 0; c < 3; c++ ) {
-				Entity *entity = summonMonster(SPIDER, my->x, my->y);
+				Entity* entity = summonMonster(SPIDER, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -107,7 +107,7 @@ void initSpider(Entity *my, Stat *myStats) {
 	}
 
 	// right pedipalp
-	Entity *entity = newEntity(268, 0, map.entities);
+	Entity* entity = newEntity(268, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -119,10 +119,10 @@ void initSpider(Entity *my, Stat *myStats) {
 	entity->focalz = limbs[SPIDER][1][2]; // 1
 	entity->behavior = &actSpiderLimb;
 	entity->parent = my->uid;
-	node_t *node = list_AddNodeLast(&my->children);
+	node_t* node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left pedipalp
 	entity = newEntity(268, 0, map.entities);
@@ -140,7 +140,7 @@ void initSpider(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// eight legs :)
 	for ( c = 0; c < 8; c++ ) {
@@ -161,7 +161,7 @@ void initSpider(Entity *my, Stat *myStats) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// "shin"
 		entity = newEntity(270, 0, map.entities);
@@ -179,16 +179,16 @@ void initSpider(Entity *my, Stat *myStats) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 	}
 }
 
-void spiderDie(Entity *my) {
-	node_t *node, *nextnode;
+void spiderDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c = 0;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -197,7 +197,7 @@ void spiderDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(212, 1, map.entities);
+				Entity* entity = newEntity(212, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -214,7 +214,7 @@ void spiderDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -226,10 +226,10 @@ void spiderDie(Entity *my) {
 	return;
 }
 
-void actSpiderLimb(Entity *my) {
+void actSpiderLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -249,9 +249,9 @@ void actSpiderLimb(Entity *my) {
 	return;
 }
 
-void spiderMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity;
+void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity;
 	int bodypart;
 
 	// set invisibility
@@ -265,7 +265,7 @@ void spiderMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					bodypart++;
 					continue;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -281,7 +281,7 @@ void spiderMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 					bodypart++;
 					continue;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -296,10 +296,10 @@ void spiderMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
-		Entity *previous = NULL; // previous part
+		entity = (Entity*)node->element;
+		Entity* previous = NULL; // previous part
 		if ( bodypart > 2 ) {
-			previous = (Entity *)node->prev->element;
+			previous = (Entity*)node->prev->element;
 		}
 		entity->x = my->x;
 		entity->y = my->y;

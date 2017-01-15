@@ -26,7 +26,7 @@
 -------------------------------------------------------------------------------*/
 
 void initClass(int player) {
-	Item *item, *item2;
+	Item* item, *item2;
 
 	if ( player == clientnum) {
 		//TODO: Dedicated gameStartStuff() function. Seriously.
@@ -960,9 +960,9 @@ void initClass(int player) {
 
 	// move default items to the right
 	if ( player == clientnum ) {
-		node_t *node;
+		node_t* node;
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next ) {
-			Item *item = (Item *)node->element;
+			Item* item = (Item*)node->element;
 			item->x = INVENTORY_SIZEX - item->x - 1;
 		}
 	}

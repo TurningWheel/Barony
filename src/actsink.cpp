@@ -31,7 +31,7 @@
 
 #define SINK_AMBIENCE my->skill[7]
 
-void actSink(Entity *my) {
+void actSink(Entity* my) {
 	SINK_AMBIENCE--;
 	if ( SINK_AMBIENCE <= 0 ) {
 		SINK_AMBIENCE = TICKS_PER_SECOND * 30;
@@ -39,7 +39,7 @@ void actSink(Entity *my) {
 	}
 
 	if ( my->skill[2] > 0 ) {
-		Entity *entity = spawnGib(my);
+		Entity* entity = spawnGib(my);
 		entity->flags[INVISIBLE] = FALSE;
 		entity->x += .5;
 		entity->z -= 3;
@@ -109,7 +109,7 @@ void actSink(Entity *my) {
 							int beatitude = rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
 
 							//Actually create the item, put it in the player's inventory, and then free the memory of the temp item.
-							Item *item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), FALSE, NULL);
+							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), FALSE, NULL);
 							if (item) {
 								itemPickup(i, item);
 								messagePlayer(i, language[504], item->description());
@@ -121,11 +121,11 @@ void actSink(Entity *my) {
 							playSoundEntity(players[i]->entity, 52, 64);
 
 							// spawn slime
-							Entity *monster = summonMonster(SLIME, my->x, my->y);
+							Entity* monster = summonMonster(SLIME, my->x, my->y);
 							if ( monster ) {
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 								messagePlayerColor(i, color, language[582]);
-								Stat *monsterStats = monster->getStats();
+								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
 								monster->sprite = 210;
 								monster->flags[INVISIBLE] = FALSE;

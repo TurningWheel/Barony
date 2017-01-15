@@ -162,24 +162,24 @@ int monsterCurve(int level) {
 
 -------------------------------------------------------------------------------*/
 
-int generateDungeon(char *levelset, Uint32 seed) {
-	char *sublevelname, *fullname;
+int generateDungeon(char* levelset, Uint32 seed) {
+	char* sublevelname, *fullname;
 	char sublevelnum[3];
-	map_t *tempMap;
+	map_t* tempMap;
 	list_t mapList, *newList;
-	node_t *node, *node2, *node3, *nextnode;
+	node_t* node, *node2, *node3, *nextnode;
 	Sint32 c, i, j;
 	Sint32 numlevels, levelnum, levelnum2;
 	Sint32 x, y, z;
 	Sint32 x0, y0, x1, y1;
-	door_t *door, *newDoor;
-	bool *possiblelocations, *possiblelocations2, *possiblerooms;
-	bool *firstroomtile;
+	door_t* door, *newDoor;
+	bool* possiblelocations, *possiblelocations2, *possiblerooms;
+	bool* firstroomtile;
 	Sint32 numpossiblelocations, pickedlocation;
-	Entity *entity, *entity2, *childEntity;
+	Entity* entity, *entity2, *childEntity;
 	Uint32 levellimit;
 	list_t doorList;
-	node_t *doorNode;
+	node_t* doorNode;
 	bool shoplevel = FALSE;
 	map_t shopmap;
 	map_t secretlevelmap;
@@ -234,8 +234,8 @@ int generateDungeon(char *levelset, Uint32 seed) {
 
 	// load shop room
 	if ( shoplevel ) {
-		sublevelname = (char *) malloc(sizeof(char) * 128);
-		fullname = (char *) malloc(sizeof(char) * 128);
+		sublevelname = (char*) malloc(sizeof(char) * 128);
+		fullname = (char*) malloc(sizeof(char) * 128);
 		for ( numlevels = 0; numlevels < 100; numlevels++ ) {
 			strcpy(sublevelname, "shop");
 			snprintf(sublevelnum, 3, "%02d", numlevels);
@@ -252,7 +252,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 			strcat(sublevelname, sublevelnum);
 
 			shopmap.tiles = NULL;
-			shopmap.entities = (list_t *) malloc(sizeof(list_t));
+			shopmap.entities = (list_t*) malloc(sizeof(list_t));
 			shopmap.entities->first = NULL;
 			shopmap.entities->last = NULL;
 			if ( loadMap(sublevelname, &shopmap, shopmap.entities) == -1 ) {
@@ -269,8 +269,8 @@ int generateDungeon(char *levelset, Uint32 seed) {
 		free( fullname );
 	}
 
-	sublevelname = (char *) malloc(sizeof(char) * 128);
-	fullname = (char *) malloc(sizeof(char) * 128);
+	sublevelname = (char*) malloc(sizeof(char) * 128);
+	fullname = (char*) malloc(sizeof(char) * 128);
 
 	// a maximum of 100 (0-99 inclusive) sublevels can be added to the pool
 	for ( numlevels = 0; numlevels < 100; numlevels++ ) {
@@ -285,18 +285,18 @@ int generateDungeon(char *levelset, Uint32 seed) {
 		}
 
 		// allocate memory for the next sublevel and attempt to load it
-		tempMap = (map_t *) malloc(sizeof(map_t));
+		tempMap = (map_t*) malloc(sizeof(map_t));
 		tempMap->tiles = NULL;
-		tempMap->entities = (list_t *) malloc(sizeof(list_t));
+		tempMap->entities = (list_t*) malloc(sizeof(list_t));
 		tempMap->entities->first = NULL;
 		tempMap->entities->last = NULL;
 		if ( loadMap(sublevelname, tempMap, tempMap->entities) == -1 ) {
-			mapDeconstructor((void *)tempMap);
+			mapDeconstructor((void*)tempMap);
 			continue; // failed to load level
 		}
 
 		// level is successfully loaded, add it to the pool
-		newList = (list_t *) malloc(sizeof(list_t));
+		newList = (list_t*) malloc(sizeof(list_t));
 		newList->first = NULL;
 		newList->last = NULL;
 		node = list_AddNodeLast(&mapList);
@@ -312,7 +312,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 			for ( x = 0; x < tempMap->width; x++ ) {
 				if ( x == 0 || y == 0 || x == tempMap->width - 1 || y == tempMap->height - 1 ) {
 					if ( !tempMap->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * tempMap->height] ) {
-						door = (door_t *) malloc(sizeof(door_t));
+						door = (door_t*) malloc(sizeof(door_t));
 						door->x = x;
 						door->y = y;
 						if ( x == tempMap->width - 1 ) {
@@ -336,7 +336,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 	// generate dungeon level...
 	int roomcount = 0;
 	if ( numlevels > 1 ) {
-		possiblelocations = (bool *) malloc(sizeof(bool) * map.width * map.height);
+		possiblelocations = (bool*) malloc(sizeof(bool) * map.width * map.height);
 		for ( y = 0; y < map.height; y++ ) {
 			for ( x = 0; x < map.width; x++ ) {
 				if ( x < 2 || y < 2 || x > map.width - 3 || y > map.height - 3 ) {
@@ -346,9 +346,9 @@ int generateDungeon(char *levelset, Uint32 seed) {
 				}
 			}
 		}
-		possiblelocations2 = (bool *) malloc(sizeof(bool) * map.width * map.height);
-		firstroomtile = (bool *) malloc(sizeof(bool) * map.width * map.height);
-		possiblerooms = (bool *) malloc(sizeof(bool) * numlevels);
+		possiblelocations2 = (bool*) malloc(sizeof(bool) * map.width * map.height);
+		firstroomtile = (bool*) malloc(sizeof(bool) * map.width * map.height);
+		possiblerooms = (bool*) malloc(sizeof(bool) * numlevels);
 		for ( c = 0; c < numlevels; c++ ) {
 			possiblerooms[c] = TRUE;
 		}
@@ -367,12 +367,12 @@ int generateDungeon(char *levelset, Uint32 seed) {
 				numlevels--;
 				possiblerooms[0] = FALSE;
 				node = mapList.first;
-				node = ((list_t *)node->element)->first;
+				node = ((list_t*)node->element)->first;
 				doorNode = node->next;
-				tempMap = (map_t *)node->element;
+				tempMap = (map_t*)node->element;
 			} else if ( c == 1 && secretlevelexit ) {
 				secretlevelmap.tiles = NULL;
-				secretlevelmap.entities = (list_t *) malloc(sizeof(list_t));
+				secretlevelmap.entities = (list_t*) malloc(sizeof(list_t));
 				secretlevelmap.entities->first = NULL;
 				secretlevelmap.entities->last = NULL;
 				char secretmapname[128];
@@ -428,9 +428,9 @@ int generateDungeon(char *levelset, Uint32 seed) {
 					i++;
 				}
 				levelnum2 = i;
-				node = ((list_t *)node->element)->first;
+				node = ((list_t*)node->element)->first;
 				doorNode = node->next;
-				tempMap = (map_t *)node->element;
+				tempMap = (map_t*)node->element;
 			}
 
 			// find locations where the selected room can be added to the level
@@ -533,7 +533,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 						// remove any existing entities in this region too
 						for ( node = map.entities->first; node != NULL; node = nextnode ) {
 							nextnode = node->next;
-							Entity *entity = (Entity *)node->element;
+							Entity* entity = (Entity*)node->element;
 							if ( (int)entity->x == x0 << 4 && (int)entity->y == y0 << 4 ) {
 								list_RemoveNode(entity->mynode);
 							}
@@ -544,7 +544,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 
 			// copy the entities as well
 			for ( node = tempMap->entities->first; node != NULL; node = node->next ) {
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				childEntity = newEntity(entity->sprite, 1, map.entities);
 				childEntity->x = entity->x + x * 16;
 				childEntity->y = entity->y + y * 16;
@@ -553,8 +553,8 @@ int generateDungeon(char *levelset, Uint32 seed) {
 
 			// finally, copy the doors into a single doors list
 			while (doorNode != NULL) {
-				door = (door_t *)doorNode->element;
-				newDoor = (door_t *) malloc(sizeof(door_t));
+				door = (door_t*)doorNode->element;
+				newDoor = (door_t*) malloc(sizeof(door_t));
 				newDoor->x = door->x + x;
 				newDoor->y = door->y + y;
 				newDoor->dir = door->dir;
@@ -596,15 +596,15 @@ int generateDungeon(char *levelset, Uint32 seed) {
 
 	// doors
 	for ( node = doorList.first; node != NULL; node = node->next ) {
-		door = (door_t *)node->element;
+		door = (door_t*)node->element;
 		for (node2 = map.entities->first; node2 != NULL; node2 = node2->next) {
-			entity = (Entity *)node2->element;
+			entity = (Entity*)node2->element;
 			if ( entity->x / 16 == door->x && entity->y / 16 == door->y && (entity->sprite == 2 || entity->sprite == 3) ) {
 				switch ( door->dir ) {
 					case 0: // east
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x + 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode ) {
-							entity = (Entity *)node3->element;
+							entity = (Entity*)node3->element;
 							nextnode = node3->next;
 							if ( entity->sprite == 2 || entity->sprite == 3 ) {
 								if ( (int)(entity->x / 16) == door->x + 2 && (int)(entity->y / 16) == door->y ) {
@@ -626,7 +626,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 					case 1: // south
 						map.tiles[OBSTACLELAYER + (door->y + 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode ) {
-							entity = (Entity *)node3->element;
+							entity = (Entity*)node3->element;
 							nextnode = node3->next;
 							if ( entity->sprite == 2 || entity->sprite == 3 ) {
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y + 2 ) {
@@ -648,7 +648,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 					case 2: // west
 						map.tiles[OBSTACLELAYER + door->y * MAPLAYERS + (door->x - 1)*MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode ) {
-							entity = (Entity *)node3->element;
+							entity = (Entity*)node3->element;
 							nextnode = node3->next;
 							if ( entity->sprite == 2 || entity->sprite == 3 ) {
 								if ( (int)(entity->x / 16) == door->x - 2 && (int)(entity->y / 16) == door->y ) {
@@ -670,7 +670,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 					case 3: // north
 						map.tiles[OBSTACLELAYER + (door->y - 1)*MAPLAYERS + door->x * MAPLAYERS * map.height] = 0;
 						for ( node3 = map.entities->first; node3 != NULL; node3 = nextnode ) {
-							entity = (Entity *)node3->element;
+							entity = (Entity*)node3->element;
 							nextnode = node3->next;
 							if ( entity->sprite == 2 || entity->sprite == 3 ) {
 								if ( (int)(entity->x / 16) == door->x && (int)(entity->y / 16) == door->y - 2 ) {
@@ -726,9 +726,9 @@ int generateDungeon(char *levelset, Uint32 seed) {
 		}
 
 		// don't spawn traps in doors
-		node_t *doorNode;
+		node_t* doorNode;
 		for ( doorNode = doorList.first; doorNode != NULL; doorNode = doorNode->next ) {
-			door_t *door = (door_t *)doorNode->element;
+			door_t* door = (door_t*)doorNode->element;
 			int x = std::min<unsigned int>(std::max(0, door->x), map.width); //TODO: Why are const int and unsigned int being compared?
 			int y = std::min<unsigned int>(std::max(0, door->y), map.height); //TODO: Why are const int and unsigned int being compared?
 			if ( possiblelocations[y + x * map.height] == TRUE ) {
@@ -829,7 +829,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 			// make torches
 			if ( arrowtrap ) {
 				entity = newEntity(4 + side, 1, map.entities);
-				Entity *entity2 = newEntity(4 + side, 1, map.entities);
+				Entity* entity2 = newEntity(4 + side, 1, map.entities);
 				switch ( side ) {
 					case 0:
 						entity->x = x * 16 + 16;
@@ -864,11 +864,11 @@ int generateDungeon(char *levelset, Uint32 seed) {
 			do {
 				if ( i == 0 ) {
 					// get rid of extraneous torch
-					node_t *tempNode;
-					node_t *nextTempNode;
+					node_t* tempNode;
+					node_t* nextTempNode;
 					for ( tempNode = map.entities->first; tempNode != NULL; tempNode = nextTempNode ) {
 						nextTempNode = tempNode->next;
-						Entity *tempEntity = (Entity *)tempNode->element;
+						Entity* tempEntity = (Entity*)tempNode->element;
 						if ( tempEntity->sprite >= 4 && tempEntity->sprite <= 7 ) {
 							if ( ((int)floor(tempEntity->x + 8)) / 16 == x && ((int)floor(tempEntity->y + 8)) / 16 == y ) {
 								list_RemoveNode(tempNode);
@@ -918,7 +918,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 		}
 	}
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		x = entity->x / 16;
 		y = entity->y / 16;
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height ) {
@@ -972,9 +972,9 @@ int generateDungeon(char *levelset, Uint32 seed) {
 			if ( strncmp(map.name, "Underworld", 10) ) {
 				bool nopath = FALSE;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					entity2 = (Entity *)node->element;
+					entity2 = (Entity*)node->element;
 					if ( entity2->sprite == 1 ) {
-						list_t *path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2);
+						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2);
 						if ( path == NULL ) {
 							nopath = TRUE;
 						} else {
@@ -1085,7 +1085,7 @@ int generateDungeon(char *levelset, Uint32 seed) {
 					}
 				} else {
 					entity = newEntity(64, 1, map.entities); // spear trap
-					Entity *also = newEntity(33, 1, map.entities);
+					Entity* also = newEntity(33, 1, map.entities);
 					also->x = x * 16;
 					also->y = y * 16;
 					//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->uid,also->x,also->y);
@@ -1131,12 +1131,12 @@ int generateDungeon(char *levelset, Uint32 seed) {
 
 -------------------------------------------------------------------------------*/
 
-void assignActions(map_t *map) {
+void assignActions(map_t* map) {
 	Sint32 x, y, c;
 	//Sint32 z;
-	node_t *node, *nextnode;
-	Entity *entity, *childEntity;
-	Item *item;
+	node_t* node, *nextnode;
+	Entity* entity, *childEntity;
+	Item* item;
 	bool itemsdonebefore = FALSE;
 
 	if (map == NULL) {
@@ -1157,7 +1157,7 @@ void assignActions(map_t *map) {
 
 	// assign entity behaviors
 	for ( node = map->entities->first; node != NULL; node = nextnode ) {
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		nextnode = node->next;
 		switch ( entity->sprite ) {
 			// null:
@@ -1507,12 +1507,12 @@ void assignActions(map_t *map) {
 				entity->behavior = &actMonster;
 				entity->flags[UPDATENEEDED] = TRUE;
 				entity->skill[5] = -1;
-				Stat *myStats = NULL;
+				Stat* myStats = NULL;
 
 				if ( multiplayer != CLIENT ) {
 					// need to give the entity its list stuff.
 					// create an empty first node for traversal purposes
-					node_t *node2 = list_AddNodeFirst(&entity->children);
+					node_t* node2 = list_AddNodeFirst(&entity->children);
 					node2->element = NULL;
 					node2->deconstructor = &emptyDeconstructor;
 
@@ -1911,7 +1911,7 @@ void assignActions(map_t *map) {
 				childEntity->flags[PASSABLE] = TRUE;
 
 				//Chest inventory.
-				node_t *tempNode = list_AddNodeFirst(&entity->children);
+				node_t* tempNode = list_AddNodeFirst(&entity->children);
 				tempNode->element = NULL;
 				tempNode->deconstructor = &emptyDeconstructor;
 				break;
@@ -2012,7 +2012,7 @@ void assignActions(map_t *map) {
 					y = ((int)(y + entity->y)) >> 4;
 					if ( x >= 0 && y >= 0 && x < map->width && y < map->height ) {
 						if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] ) {
-							Entity *childEntity = newEntity(252, 1, map->entities);
+							Entity* childEntity = newEntity(252, 1, map->entities);
 							childEntity->x = (x << 4) + 8;
 							childEntity->y = (y << 4) + 8;
 							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);

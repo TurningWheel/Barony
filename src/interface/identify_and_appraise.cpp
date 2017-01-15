@@ -24,13 +24,13 @@ int identifygui_offset_x = 0;
 int identifygui_offset_y = 0;
 bool dragging_identifyGUI = FALSE;
 int identifyscroll = 0;
-Item *identify_items[NUM_IDENTIFY_GUI_ITEMS];
-SDL_Surface *identifyGUI_img;
+Item* identify_items[NUM_IDENTIFY_GUI_ITEMS];
+SDL_Surface* identifyGUI_img;
 
 int selectedIdentifySlot = -1;
 
 void rebuildIdentifyGUIInventory() {
-	list_t *identify_inventory = &stats[clientnum]->inventory;
+	list_t* identify_inventory = &stats[clientnum]->inventory;
 	node_t* node = nullptr;
 	Item* item = nullptr;
 	int c = 0;
@@ -38,7 +38,7 @@ void rebuildIdentifyGUIInventory() {
 	if (identify_inventory) {
 		//Count the number of items in the identify GUI "inventory".
 		for (node = identify_inventory->first; node != NULL; node = node->next) {
-			item = (Item *) node->element;
+			item = (Item*) node->element;
 			if (item && !item->identified) {
 				c++;
 			}
@@ -52,7 +52,7 @@ void rebuildIdentifyGUIInventory() {
 		//Assign the visible items to the GUI slots.
 		for (node = identify_inventory->first; node != NULL; node = node->next) {
 			if (node->element) {
-				item = (Item *) node->element;
+				item = (Item*) node->element;
 				if (item && !item->identified) { //Skip over all identified items.
 					c++;
 					if (c <= identifyscroll) {
@@ -73,7 +73,7 @@ void updateIdentifyGUI() {
 	//	return; //Cannot have the identify and chest GUIs open at the same time.
 
 	SDL_Rect pos;
-	node_t *node;
+	node_t* node;
 	int y, c;
 
 	//Identify GUI.
@@ -150,7 +150,7 @@ void updateIdentifyGUI() {
 			}
 		}
 
-		list_t *identify_inventory = &stats[clientnum]->inventory;
+		list_t* identify_inventory = &stats[clientnum]->inventory;
 
 		if (!identify_inventory) {
 			messagePlayer(0, "Warning: stats[%d].inventory is not a valid list. This should not happen.", clientnum);
@@ -158,7 +158,7 @@ void updateIdentifyGUI() {
 			//Print the window label signifying this as the identify GUI.
 			//char *window_name = (char*)malloc(sizeof(char));
 			//strcpy(window_name, "Identify Item");
-			char *window_name;
+			char* window_name;
 			if (identifygui_appraising) {
 				window_name = language[317];
 			} else {
@@ -196,7 +196,7 @@ void updateIdentifyGUI() {
 				selectedIdentifySlot = -1;
 			}
 
-			Item *item = NULL;
+			Item* item = NULL;
 
 			bool selectingSlot = false;
 			SDL_Rect slotPos;
@@ -249,7 +249,7 @@ void updateIdentifyGUI() {
 				c = 0;
 				for (node = identify_inventory->first; node != NULL; node = node->next) {
 					if (node->element) {
-						item = (Item *) node->element;
+						item = (Item*) node->element;
 						if (item && !item->identified) { //Skip over all identified items.
 							c++;
 							if (c <= identifyscroll) {
@@ -278,7 +278,7 @@ void updateIdentifyGUI() {
 	}
 } //updateIdentifyGUI()
 
-void identifyGUIIdentify(Item *item) {
+void identifyGUIIdentify(Item* item) {
 	if (!item) {
 		return;
 	}
@@ -314,7 +314,7 @@ void identifyGUIIdentify(Item *item) {
 	selectedIdentifySlot = -1;
 }
 
-int getAppraisalTime(Item *item) {
+int getAppraisalTime(Item* item) {
 	int appraisal_time;
 	if ( item->type != GEM_GLASS ) {
 		appraisal_time = (items[item->type].value * 60) / (stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] + 1);    // time in ticks until item is appraised
@@ -391,7 +391,7 @@ void selectIdentifySlot(int slot) {
 			 * * B) On last item already. Do nothing (revoke movement).
 			 */
 
-			Item *item = getItemInfoFromIdentifyGUI(selectedIdentifySlot + 1);
+			Item* item = getItemInfoFromIdentifyGUI(selectedIdentifySlot + 1);
 
 			if ( item ) {
 				++selectedIdentifySlot;

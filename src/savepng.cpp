@@ -30,12 +30,12 @@ static void png_error_SDL(png_structp ctx, png_const_charp str) {
 	SDL_SetError("libpng: %s\n", str);
 }
 static void png_write_SDL(png_structp png_ptr, png_bytep data, png_size_t length) {
-	SDL_RWops *rw = (SDL_RWops*)png_get_io_ptr(png_ptr);
+	SDL_RWops* rw = (SDL_RWops*)png_get_io_ptr(png_ptr);
 	SDL_RWwrite(rw, data, sizeof(png_byte), length);
 }
 
-SDL_Surface *SDL_PNGFormatAlpha(SDL_Surface *src) {
-	SDL_Surface *surf;
+SDL_Surface* SDL_PNGFormatAlpha(SDL_Surface* src) {
+	SDL_Surface* surf;
 	SDL_Rect rect = { 0 };
 
 	/* NO-OP for images < 32bpp and 32bpp images that already have Alpha channel */
@@ -54,14 +54,14 @@ SDL_Surface *SDL_PNGFormatAlpha(SDL_Surface *src) {
 	return surf;
 }
 
-int SDL_SavePNG_RW(SDL_Surface *surface, SDL_RWops *dst, int freedst) {
+int SDL_SavePNG_RW(SDL_Surface* surface, SDL_RWops* dst, int freedst) {
 	png_structp png_ptr;
 	png_infop info_ptr;
 	png_colorp pal_ptr;
-	SDL_Palette *pal;
+	SDL_Palette* pal;
 	int i, colortype;
 #ifdef USE_ROW_POINTERS
-	png_bytep *row_pointers;
+	png_bytep* row_pointers;
 #endif
 	/* Initialize and do basic error checking */
 	if (!dst) {

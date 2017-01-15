@@ -36,7 +36,7 @@
 #define MAGICTRAP_SPELL my->skill[1]
 #define MAGICTRAP_DIRECTION my->skill[3]
 
-void actMagicTrap(Entity *my) {
+void actMagicTrap(Entity* my) {
 	if ( !MAGICTRAP_INIT ) {
 		MAGICTRAP_INIT = 1;
 		switch ( rand() % 8 ) {
@@ -117,20 +117,20 @@ void actMagicTrap(Entity *my) {
 		int u = std::min<int>(std::max(0.0, (my->x + x) / 16), map.width - 1);
 		int v = std::min<int>(std::max(0.0, (my->y + y) / 16), map.height - 1);
 		if ( !map.tiles[OBSTACLELAYER + v * MAPLAYERS + u * MAPLAYERS * map.height] ) {
-			Entity *entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
+			Entity* entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
 			entity->x = my->x + x;
 			entity->y = my->y + y;
 			entity->z = my->z;
 			entity->yaw = oldir * (PI / 2.f);
-			double missile_speed = 4 * ((double)(((spellElement_t *)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t *)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
+			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 		}
 	}
 }
 
-void actMagiclightBall(Entity *my) {
-	Entity *caster = NULL;
+void actMagiclightBall(Entity* my) {
+	Entity* caster = NULL;
 	if (!my) {
 		return;
 	}
@@ -178,7 +178,7 @@ void actMagiclightBall(Entity *my) {
 	})*/
 
 	//list_t *path = NULL;
-	pathnode_t *pathnode = NULL;
+	pathnode_t* pathnode = NULL;
 
 	//TODO: Follow player around (at a distance -- and delay before starting to follow).
 	//TODO: Circle around player's head if they stand still for a little bit. Continue circling even if the player walks away -- until the player is far enough to trigger move (or if the player moved for a bit and then stopped, then update position).
@@ -193,11 +193,11 @@ void actMagiclightBall(Entity *my) {
 		list_RemoveNode(my->mynode); //Delete the light spell.C
 		return;
 	}
-	node_t *node = NULL;
+	node_t* node = NULL;
 
-	spell_t *spell = NULL;
+	spell_t* spell = NULL;
 	node = my->children.first;
-	spell = (spell_t *)node->element;
+	spell = (spell_t*)node->element;
 	if (!spell) {
 		list_RemoveNode(my->mynode);
 		return; //We need the source spell!
@@ -205,7 +205,7 @@ void actMagiclightBall(Entity *my) {
 
 	caster = uidToEntity(spell->caster);
 	if (caster) {
-		Stat *stats = caster->getStats();
+		Stat* stats = caster->getStats();
 		if (stats) {
 			if (stats->HP <= 0) {
 				if ( my->light != NULL ) {
@@ -235,7 +235,7 @@ void actMagiclightBall(Entity *my) {
 			}
 		}
 		if (player > -1 && multiplayer == SERVER) {
-			strcpy( (char *)net_packet->data, "UNCH");
+			strcpy( (char*)net_packet->data, "UNCH");
 			net_packet->data[4] = player;
 			SDLNet_Write32(spell->ID, &net_packet->data[5]);
 			net_packet->address.host = net_clients[player - 1].host;
@@ -274,7 +274,7 @@ void actMagiclightBall(Entity *my) {
 							}
 						}
 						if (player > -1 && multiplayer == SERVER) {
-							strcpy( (char *)net_packet->data, "UNCH");
+							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = player;
 							SDLNet_Write32(spell->ID, &net_packet->data[5]);
 							net_packet->address.host = net_clients[player - 1].host;
@@ -309,7 +309,7 @@ void actMagiclightBall(Entity *my) {
 
 		//Lightball moving.
 		//messagePlayer(0, "*");
-		Entity *parent = uidToEntity(my->parent);
+		Entity* parent = uidToEntity(my->parent);
 		if ( !parent ) {
 			return;
 		}
@@ -342,7 +342,7 @@ void actMagiclightBall(Entity *my) {
 					}*/
 					if (!my->path) {
 						//messagePlayer(0, "[Light ball] Generating path.");
-						list_t *path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
+						list_t* path = generatePath((int)floor(my->x / 16), (int)floor(my->y / 16), (int)floor(parent->x / 16), (int)floor(parent->y / 16), my, parent);
 						if ( path != NULL ) {
 							my->path = path;
 						} else {
@@ -357,7 +357,7 @@ void actMagiclightBall(Entity *my) {
 						if (my->path != NULL) {
 							for (node = my->path->first; node != NULL; node = node->next) {
 								if (node->element) {
-									pathnode = (pathnode_t *)node->element;
+									pathnode = (pathnode_t*)node->element;
 									//total_distance += sqrt(pow(pathnode->y - prevy, 2) + pow(pathnode->x - prevx, 2) );
 									total_distance += sqrt(pow(prevx - pathnode->x, 2) + pow(prevy - pathnode->y, 2) );
 									prevx = pathnode->x;
@@ -372,7 +372,7 @@ void actMagiclightBall(Entity *my) {
 
 						if (my->path != NULL) {
 							if (my->path->first != NULL) {
-								pathnode = (pathnode_t *)my->path->first->element;
+								pathnode = (pathnode_t*)my->path->first->element;
 								//double distance = sqrt(pow(pathnode->y * 16 + 8 - my->y, 2) + pow(pathnode->x * 16 + 8 - my->x, 2) );
 								//double distance = sqrt(pow((my->y) - ((pathnode->y + 8) * 16), 2) + pow((my->x) - ((pathnode->x + 8) * 16), 2));
 								double distance = sqrt(pow(((pathnode->y * 16) + 8) - (my->y), 2) + pow(((pathnode->x * 16) + 8) - (my->x), 2));
@@ -479,23 +479,23 @@ void actMagiclightBall(Entity *my) {
 	}
 }
 
-void actMagicMissile(Entity *my) { //TODO: Verify this function.
+void actMagicMissile(Entity* my) { //TODO: Verify this function.
 	if (!my || !my->children.first || !my->children.first->element) {
 		return;
 	}
-	spell_t *spell = (spell_t *)my->children.first->element;
+	spell_t* spell = (spell_t*)my->children.first->element;
 	if (!spell) {
 		return;
 	}
 	//node_t *node = NULL;
-	spellElement_t *element = NULL;
-	node_t *node = NULL;
+	spellElement_t* element = NULL;
+	node_t* node = NULL;
 	int i = 0;
 	int c = 0;
-	Entity *entity = NULL;
+	Entity* entity = NULL;
 	double tangent;
 
-	Entity *parent = uidToEntity(my->parent);
+	Entity* parent = uidToEntity(my->parent);
 
 	if (magic_init) {
 		if ( my->light != NULL ) {
@@ -514,16 +514,16 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 			node = spell->elements.first;
 			//element = (spellElement_t *) spell->elements->first->element;
-			element = (spellElement_t *)node->element;
+			element = (spellElement_t*)node->element;
 
 			double dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
 
 			if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) ) {
 				node = element->elements.first;
 				//element = (spellElement_t *) element->elements->first->element;
-				element = (spellElement_t *)node->element;
+				element = (spellElement_t*)node->element;
 				//if (hit.entity != NULL) {
-				Stat *hitstats = NULL;
+				Stat* hitstats = NULL;
 				int player = -1;
 				if (hit.entity) {
 					hitstats = hit.entity->getStats();
@@ -555,11 +555,11 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 						}
 
 						// alert other monsters too
-						Entity *ohitentity = hit.entity;
+						Entity* ohitentity = hit.entity;
 						for ( node = map.entities->first; node != NULL; node = node->next ) {
-							entity = (Entity *)node->element;
+							entity = (Entity*)node->element;
 							if ( entity->behavior == &actMonster && entity != ohitentity ) {
-								Stat *buddystats = entity->getStats();
+								Stat* buddystats = entity->getStats();
 								if ( buddystats != NULL ) {
 									if ( hit.entity && hit.entity->checkFriend(entity) ) { //TODO: hit.entity->checkFriend() without first checking if it's NULL crashes because hit.entity turns to NULL somewhere along the line. It looks like ohitentity preserves that value though, so....uh...ya, I don't know.
 										if ( entity->skill[0] == 0 ) { // monster is waiting
@@ -585,11 +585,11 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				if ( hitstats ) {
 					if ( !strcmp(map.name, "Hell Boss") && hit.entity->behavior == &actPlayer ) {
 						bool founddevil = FALSE;
-						node_t *tempNode;
+						node_t* tempNode;
 						for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
-							Entity *tempEntity = (Entity *)tempNode->element;
+							Entity* tempEntity = (Entity*)tempNode->element;
 							if ( tempEntity->behavior == &actMonster ) {
-								Stat *stats = tempEntity->getStats();
+								Stat* stats = tempEntity->getStats();
 								if ( stats ) {
 									if ( stats->type == DEVIL ) {
 										founddevil = TRUE;
@@ -685,7 +685,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 							}
 						}
 						if (player > 0 && multiplayer == SERVER) {
-							strcpy((char *)net_packet->data, "ARMR");
+							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
 							if (reflection == 1) {
 								net_packet->data[5] = hitstats->cloak->status;
@@ -728,7 +728,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 				if (!strcmp(element->name, spellElement_force.name)) {
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							Entity *parent = uidToEntity(my->parent);
+							Entity* parent = uidToEntity(my->parent);
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
@@ -842,7 +842,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 					spawnExplosion(my->x, my->y, my->z);
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							Entity *parent = uidToEntity(my->parent);
+							Entity* parent = uidToEntity(my->parent);
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent &&  parent->checkFriend(hit.entity) ) {
@@ -1273,7 +1273,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 					playSoundEntity(my, 173, 128);
 					if (hit.entity) {
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer) {
-							Entity *parent = uidToEntity(my->parent);
+							Entity* parent = uidToEntity(my->parent);
 							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) ) {
@@ -1518,7 +1518,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 									if ( client_disconnected[c] == TRUE ) {
 										continue;
 									}
-									strcpy((char *)net_packet->data, "WALD");
+									strcpy((char*)net_packet->data, "WALD");
 									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
 									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
 									net_packet->address.host = net_clients[c - 1].host;
@@ -1534,7 +1534,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 							int c;
 							for ( c = 0; c < i; c++ ) {
-								Entity *entity = newEntity(-1, 1, map.entities);
+								Entity* entity = newEntity(-1, 1, map.entities);
 								entity->flags[INVISIBLE] = TRUE;
 								entity->flags[UPDATENEEDED] = TRUE;
 								entity->x = hit.entity->x - 4 + rand() % 8;
@@ -1570,7 +1570,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 							// on sokoban, destroying boulders spawns scorpions
 							if ( !strcmp(map.name, "Sokoban") ) {
-								Entity *monster = summonMonster(SCORPION, ox, oy);
+								Entity* monster = summonMonster(SCORPION, ox, oy);
 								if ( monster ) {
 									int c;
 									for ( c = 0; c < MAXPLAYERS; c++ ) {
@@ -1601,11 +1601,11 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 
 		//Go down two levels to the next element. This will need to get re-written shortly.
 		node = spell->elements.first;
-		element = (spellElement_t *)node->element;
+		element = (spellElement_t*)node->element;
 		//element = (spellElement_t *)spell->elements->first->element;
 		//element = (spellElement_t *)element->elements->first->element; //Go down two levels to the second element.
 		node = element->elements.first;
-		element = (spellElement_t *)node->element;
+		element = (spellElement_t*)node->element;
 		if (!strcmp(element->name, spellElement_fire.name) || !strcmp(element->name, spellElement_lightning.name)) {
 			//Make the ball light up stuff as it travels.
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
@@ -1641,7 +1641,7 @@ void actMagicMissile(Entity *my) { //TODO: Verify this function.
 	}
 }
 
-void actMagicClient(Entity *my) {
+void actMagicClient(Entity* my) {
 	if ( my->light != NULL ) {
 		list_RemoveNode(my->light->node);
 		my->light = NULL;
@@ -1671,11 +1671,11 @@ void actMagicClient(Entity *my) {
 	spawnMagicParticle(my);
 }
 
-void actMagicClientNoLight(Entity *my) {
+void actMagicClientNoLight(Entity* my) {
 	spawnMagicParticle(my); // simply spawn particles
 }
 
-void actMagicParticle(Entity *my) {
+void actMagicParticle(Entity* my) {
 	my->x += my->vel_x;
 	my->y += my->vel_y;
 	my->z += my->vel_z;
@@ -1691,8 +1691,8 @@ void actMagicParticle(Entity *my) {
 	}
 }
 
-Entity *spawnMagicParticle(Entity *parentent) {
-	Entity *entity;
+Entity* spawnMagicParticle(Entity* parentent) {
+	Entity* entity;
 
 	entity = newEntity(parentent->sprite, 1, map.entities);
 	entity->x = parentent->x + (rand() % 50 - 25) / 20.f;
@@ -1728,7 +1728,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "MAGE");
+			strcpy((char*)net_packet->data, "MAGE");
 			SDLNet_Write16(x, &net_packet->data[4]);
 			SDLNet_Write16(y, &net_packet->data[6]);
 			SDLNet_Write16(z, &net_packet->data[8]);
@@ -1742,7 +1742,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite) {
 
 	// boosty boost
 	for ( c = 0; c < 10; c++ ) {
-		Entity *entity = newEntity(sprite, 1, map.entities);
+		Entity* entity = newEntity(sprite, 1, map.entities);
 		entity->x = x - 5 + rand() % 11;
 		entity->y = y - 5 + rand() % 11;
 		entity->z = z - 10 + rand() % 21;

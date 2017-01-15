@@ -21,9 +21,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initGnome(Entity *my, Stat *myStats) {
+void initGnome(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 295; //Gnome head model
 
@@ -118,7 +118,7 @@ void initGnome(Entity *my, Stat *myStats) {
 
 			int c;
 			for ( c = 0; c < 3; c++ ) {
-				Entity *entity = summonMonster(GNOME, my->x, my->y);
+				Entity* entity = summonMonster(GNOME, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -127,7 +127,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(296, 0, map.entities);
+	Entity* entity = newEntity(296, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -142,7 +142,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(297, 0, map.entities);
@@ -160,7 +160,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(298, 0, map.entities);
@@ -178,7 +178,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(299, 0, map.entities);
@@ -196,7 +196,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(301, 0, map.entities);
@@ -214,7 +214,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// world weapon
 	entity = newEntity(-1, 0, map.entities);
@@ -234,7 +234,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// shield
 	entity = newEntity(-1, 0, map.entities);
@@ -253,7 +253,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// cloak
 	entity = newEntity(-1, 0, map.entities);
@@ -275,7 +275,7 @@ void initGnome(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	if ( multiplayer == CLIENT || MONSTER_INIT ) {
 		return;
@@ -337,10 +337,10 @@ void initGnome(Entity *my, Stat *myStats) {
 	}
 }
 
-void actGnomeLimb(Entity *my) {
+void actGnomeLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -376,11 +376,11 @@ void actGnomeLimb(Entity *my) {
 	}
 }
 
-void gnomeDie(Entity *my) {
-	node_t *node, *nextnode;
+void gnomeDie(Entity* my) {
+	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 6; c++ ) {
-		Entity *entity = spawnGib(my);
+		Entity* entity = spawnGib(my);
 		if ( entity ) {
 			serverSpawnGibForClient(entity);
 		}
@@ -391,7 +391,7 @@ void gnomeDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -408,7 +408,7 @@ void gnomeDie(Entity *my) {
 	for ( node = my->children.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		if ( node->element != NULL && i >= 2 ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity->light != NULL ) {
 				list_RemoveNode(entity->light->node);
 			}
@@ -425,11 +425,11 @@ void gnomeDie(Entity *my) {
 
 #define GNOMEWALKSPEED .13
 
-void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL, *entity2 = NULL;
-	Entity *rightbody = NULL;
-	Entity *weaponarm = NULL;
+void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL, *entity2 = NULL;
+	Entity* rightbody = NULL;
+	Entity* weaponarm = NULL;
 	int bodypart;
 	bool wearingring = FALSE;
 
@@ -455,7 +455,7 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -474,7 +474,7 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -498,18 +498,18 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
-			node_t *shieldNode = list_Node(&my->children, 7);
+			node_t* shieldNode = list_Node(&my->children, 7);
 			if ( shieldNode ) {
-				Entity *shield = (Entity *)shieldNode->element;
+				Entity* shield = (Entity*)shieldNode->element;
 				if ( dist > 0.1 && (bodypart != 6 || shield->flags[INVISIBLE]) ) {
 					if ( !rightbody->skill[0] ) {
 						entity->pitch -= dist * GNOMEWALKSPEED;
@@ -683,9 +683,9 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			// right arm
 			case 5: {
 				;
-				node_t *weaponNode = list_Node(&my->children, 7);
+				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode ) {
-					Entity *weapon = (Entity *)weaponNode->element;
+					Entity* weapon = (Entity*)weaponNode->element;
 					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED ) {
 						entity->focalx = limbs[GNOME][4][0]; // 0
 						entity->focaly = limbs[GNOME][4][1]; // 0
@@ -710,9 +710,9 @@ void gnomeMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 			case 6: {
 				;
-				node_t *shieldNode = list_Node(&my->children, 8);
+				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode ) {
-					Entity *shield = (Entity *)shieldNode->element;
+					Entity* shield = (Entity*)shieldNode->element;
 					if ( shield->flags[INVISIBLE] ) {
 						entity->focalx = limbs[GNOME][5][0]; // 0
 						entity->focaly = limbs[GNOME][5][1]; // 0

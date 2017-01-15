@@ -31,7 +31,7 @@
 
 -------------------------------------------------------------------------------*/
 
-double entityDist(Entity *my, Entity *your) {
+double entityDist(Entity* my, Entity* your) {
 	double dx, dy;
 	dx = my->x - your->x;
 	dy = my->y - your->y;
@@ -46,7 +46,7 @@ double entityDist(Entity *my, Entity *your) {
 
 -------------------------------------------------------------------------------*/
 
-Entity *entityClicked() {
+Entity* entityClicked() {
 	Uint32 uidnum;
 	GLubyte pixel[4];
 
@@ -96,7 +96,7 @@ Entity *entityClicked() {
 				//Right, now calculate the spell list's height (the same way it calculates it for itself).
 				int height = spell_list_titlebar_bmp->h;
 				int numspells = 0;
-				node_t *node;
+				node_t* node;
 				for (node = spellList.first; node != NULL; node = node->next) {
 					numspells++;
 				}
@@ -122,7 +122,7 @@ Entity *entityClicked() {
 		if ( softwaremode ) {
 			return clickmap[omousey + omousex * yres];
 		} else {
-			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
+			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
 		}
 	} else {
 		*inputPressed(impulses[IN_USE]) = 0;
@@ -130,7 +130,7 @@ Entity *entityClicked() {
 		if ( softwaremode ) {
 			return clickmap[(yres / 2) + (xres / 2) * yres];
 		} else {
-			glReadPixels(xres / 2, yres / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void *)pixel);
+			glReadPixels(xres / 2, yres / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
 		}
 	}
 
@@ -151,7 +151,7 @@ Entity *entityClicked() {
 
 -------------------------------------------------------------------------------*/
 
-bool entityInsideTile(Entity *entity, int x, int y, int z) {
+bool entityInsideTile(Entity* entity, int x, int y, int z) {
 	if ( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS ) {
 		return FALSE;
 	}
@@ -191,7 +191,7 @@ bool entityInsideTile(Entity *entity, int x, int y, int z) {
 
 -------------------------------------------------------------------------------*/
 
-bool entityInsideEntity(Entity *entity1, Entity *entity2) {
+bool entityInsideEntity(Entity* entity1, Entity* entity2) {
 	if ( entity1->x + entity1->sizex > entity2->x - entity2->sizex ) {
 		if ( entity1->x - entity1->sizex < entity2->x + entity2->sizex ) {
 			if ( entity1->y + entity1->sizey > entity2->y - entity2->sizey ) {
@@ -212,8 +212,8 @@ bool entityInsideEntity(Entity *entity1, Entity *entity2) {
 
 -------------------------------------------------------------------------------*/
 
-bool entityInsideSomething(Entity *entity) {
-	node_t *node;
+bool entityInsideSomething(Entity* entity) {
+	node_t* node;
 	int z;
 
 	// test against the map
@@ -224,7 +224,7 @@ bool entityInsideSomething(Entity *entity) {
 
 	// test against entities
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *testEntity = (Entity *)node->element;
+		Entity* testEntity = (Entity*)node->element;
 		if ( testEntity == entity || testEntity->flags[PASSABLE] ) {
 			continue;
 		}
@@ -244,15 +244,15 @@ bool entityInsideSomething(Entity *entity) {
 
 -------------------------------------------------------------------------------*/
 
-int barony_clear(double tx, double ty, Entity *my) {
+int barony_clear(double tx, double ty, Entity* my) {
 	if (!my) {
 		return 1;
 	}
 
 	long x, y;
 	double tx2, ty2;
-	node_t *node;
-	Entity *entity;
+	node_t* node;
+	Entity* entity;
 	bool levitating = FALSE;
 
 	for ( ty2 = ty - my->sizey; ty2 <= ty + my->sizey; ty2++ ) {
@@ -269,7 +269,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 					hit.entity = NULL;
 					return 0;
 				}
-				Stat *stats;
+				Stat* stats;
 				if ( (stats = my->getStats()) != NULL ) {
 					if ( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
 						levitating = TRUE;
@@ -307,15 +307,15 @@ int barony_clear(double tx, double ty, Entity *my) {
 				}
 			}
 			for (node = map.entities->first; node != NULL; node = node->next) {
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid ) {
 					continue;
 				}
 				if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame ) {
 					continue;    // monsters don't have hard collision with door frames
 				}
-				Stat *myStats = my->getStats();
-				Stat *yourStats = entity->getStats();
+				Stat* myStats = my->getStats();
+				Stat* yourStats = entity->getStats();
 				if ( myStats && yourStats ) {
 					if ( yourStats->leader_uid == my->uid ) {
 						continue;
@@ -355,7 +355,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 						if ( multiplayer != CLIENT ) {
 							if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] ) {
 								bool dyrnwyn = FALSE;
-								Stat *stats = hit.entity->getStats();
+								Stat* stats = hit.entity->getStats();
 								if ( stats )
 									if ( stats->weapon )
 										if ( stats->weapon->type == ARTIFACT_SWORD ) {
@@ -372,7 +372,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 								}
 							} else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] ) {
 								bool dyrnwyn = FALSE;
-								Stat *stats = my->getStats();
+								Stat* stats = my->getStats();
 								if ( stats )
 									if ( stats->weapon )
 										if ( stats->weapon->type == ARTIFACT_SWORD ) {
@@ -408,7 +408,7 @@ int barony_clear(double tx, double ty, Entity *my) {
 
 -------------------------------------------------------------------------------*/
 
-double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
+double clipMove(double* x, double* y, double vx, double vy, Entity* my) {
 	double tx, ty;
 	hit.entity = NULL;
 
@@ -455,9 +455,9 @@ double clipMove(double *x, double *y, double vx, double vy, Entity *my) {
 
 -------------------------------------------------------------------------------*/
 
-Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int entities, Entity *target ) {
-	Entity *result = NULL;
-	node_t *node;
+Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int entities, Entity* target ) {
+	Entity* result = NULL;
+	node_t* node;
 	double lowestDist = 9999;
 	int quadrant = 0;
 
@@ -491,7 +491,7 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 	}
 
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( (entity != target && target != NULL) || entity->flags[PASSABLE] || entity == my || (entities && !entity->flags[BLOCKSIGHT]) ) {
 			continue;
 		}
@@ -581,7 +581,7 @@ Entity *findEntityInLine( Entity *my, double x1, double y1, double angle, int en
 
 -------------------------------------------------------------------------------*/
 
-double lineTrace( Entity *my, double x1, double y1, double angle, double range, int entities, bool ground ) {
+double lineTrace( Entity* my, double x1, double y1, double angle, double range, int entities, bool ground ) {
 	int posx, posy;
 	double fracx, fracy;
 	double rx, ry;
@@ -631,7 +631,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 	d = 0;
 
 	if ( my ) {
-		Stat *stats = my->getStats();
+		Stat* stats = my->getStats();
 		if ( stats ) {
 			if ( stats->type == DEVIL ) {
 				ground = FALSE;
@@ -639,7 +639,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 		}
 	}
 
-	Entity *entity = findEntityInLine(my, x1, y1, angle, entities, NULL);
+	Entity* entity = findEntityInLine(my, x1, y1, angle, entities, NULL);
 
 	// trace the line
 	while ( d < range ) {
@@ -710,7 +710,7 @@ double lineTrace( Entity *my, double x1, double y1, double angle, double range, 
 	return range;
 }
 
-double lineTraceTarget( Entity *my, double x1, double y1, double angle, double range, int entities, bool ground, Entity *target ) {
+double lineTraceTarget( Entity* my, double x1, double y1, double angle, double range, int entities, bool ground, Entity* target ) {
 	int posx, posy;
 	double fracx, fracy;
 	double rx, ry;
@@ -759,7 +759,7 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 	}
 	d = 0;
 
-	Entity *entity = findEntityInLine(my, x1, y1, angle, entities, target);
+	Entity* entity = findEntityInLine(my, x1, y1, angle, entities, target);
 
 	// trace the line
 	while ( d < range ) {
@@ -839,10 +839,10 @@ double lineTraceTarget( Entity *my, double x1, double y1, double angle, double r
 
 -------------------------------------------------------------------------------*/
 
-int checkObstacle(long x, long y, Entity *my, Entity *target) {
-	node_t *node;
-	Entity *entity;
-	Stat *stats;
+int checkObstacle(long x, long y, Entity* my, Entity* target) {
+	node_t* node;
+	Entity* entity;
+	Stat* stats;
 	bool levitating = FALSE;
 
 	// get levitation status
@@ -871,7 +871,7 @@ int checkObstacle(long x, long y, Entity *my, Entity *target) {
 	if ( x >= 0 && x < map.width << 4 ) {
 		if ( y >= 0 && y < map.height << 4 ) {
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[PASSABLE] || entity == my || entity == target || entity->behavior == &actDoor ) {
 					continue;
 				}

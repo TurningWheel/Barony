@@ -43,7 +43,7 @@
 
 //chest->children->first is the chest's inventory.
 
-void actChest(Entity *my) {
+void actChest(Entity* my) {
 	if (!my) {
 		return;
 	}
@@ -68,11 +68,11 @@ void actChest(Entity *my) {
 			CHEST_LOCKED = 1;
 		}
 
-		node_t *node = NULL;
+		node_t* node = NULL;
 		node = list_AddNodeFirst(&my->children);
 		node->element = malloc(sizeof(list_t)); //Allocate memory for the inventory list.
 		node->deconstructor = &listDeconstructor;
-		list_t *inventory = (list_t *) node->element;
+		list_t* inventory = (list_t*) node->element;
 		inventory->first = NULL;
 		inventory->last = NULL;
 
@@ -331,16 +331,16 @@ void actChest(Entity *my) {
 		}
 	}
 
-	list_t *inventory = static_cast<list_t* >(my->children.first->element);
-	node_t *node = NULL;
-	Item *item = NULL;
+	list_t* inventory = static_cast<list_t* >(my->children.first->element);
+	node_t* node = NULL;
+	Item* item = NULL;
 
 	if ( CHEST_HEALTH <= 0 ) {
 		// the chest busts open, drops some items randomly, then destroys itself.
-		node_t *nextnode;
+		node_t* nextnode;
 		for ( node = inventory->first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
-			item = (Item *)node->element;
+			item = (Item*)node->element;
 			if ( rand() % 2 == 0 ) {
 				dropItemMonster(item, my, NULL);
 			}
@@ -349,7 +349,7 @@ void actChest(Entity *my) {
 		// wood chunk particles
 		int c;
 		for ( c = 0; c < 10; c++ ) {
-			Entity *entity = spawnGib(my);
+			Entity* entity = spawnGib(my);
 			entity->flags[INVISIBLE] = FALSE;
 			entity->sprite = 187; // Splinter.vox
 			entity->x = floor(my->x / 16) * 16 + 8;
@@ -367,7 +367,7 @@ void actChest(Entity *my) {
 		playSoundEntity(my, 177, 64);
 
 		// remove chest entities
-		Entity *parent = uidToEntity(my->parent);
+		Entity* parent = uidToEntity(my->parent);
 		if ( parent ) {
 			list_RemoveNode(parent->mynode);    // remove lid
 		}
@@ -408,15 +408,15 @@ void actChest(Entity *my) {
 				identifygui_active = false;
 				if (chestclicked != 0 && multiplayer == SERVER) {
 					//Send all of the items to the client.
-					strcpy((char *)net_packet->data, "CHST"); //Chest.
+					strcpy((char*)net_packet->data, "CHST");  //Chest.
 					SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]); //Give the client the UID.
 					net_packet->address.host = net_clients[chestclicked - 1].host;
 					net_packet->address.port = net_clients[chestclicked - 1].port;
 					net_packet->len = 8;
 					sendPacketSafe(net_sock, -1, net_packet, chestclicked - 1);
 					for (node = inventory->first; node != NULL; node = node->next) {
-						item = (Item *) node->element;
-						strcpy((char *)net_packet->data, "CITM"); //Chest item.
+						item = (Item*) node->element;
+						strcpy((char*)net_packet->data, "CITM");  //Chest item.
 						SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 						SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 						SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -443,7 +443,7 @@ void actChest(Entity *my) {
 			} else {
 				messagePlayer(chestclicked, language[460]);
 				if (CHEST_OPENER != 0) {
-					strcpy((char *)net_packet->data, "CCLS"); //Chest close.
+					strcpy((char*)net_packet->data, "CCLS");  //Chest close.
 					net_packet->address.host = net_clients[CHEST_OPENER - 1].host;
 					net_packet->address.port = net_clients[CHEST_OPENER - 1].port;
 					net_packet->len = 4;
@@ -463,10 +463,10 @@ void actChest(Entity *my) {
 	}
 }
 
-void actChestLid(Entity *my) {
+void actChestLid(Entity* my) {
 	int i;
 
-	Entity *parent = uidToEntity(my->parent);
+	Entity* parent = uidToEntity(my->parent);
 	if ( !parent ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -533,7 +533,7 @@ void Entity::closeChest() {
 		if (openedChest[clientnum] != NULL) {
 			//Message server.
 			messagePlayer(clientnum, language[460]);
-			strcpy( (char *)net_packet->data, "CCLS" );
+			strcpy( (char*)net_packet->data, "CCLS" );
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -551,7 +551,7 @@ void Entity::closeChest() {
 		openedChest[chest_opener] = NULL;
 		if (chest_opener != 0 && multiplayer == SERVER) {
 			//Tell the client that the chest got closed.
-			strcpy((char *)net_packet->data, "CCLS"); //Chest close.
+			strcpy((char*)net_packet->data, "CCLS");  //Chest close.
 			net_packet->address.host = net_clients[chest_opener - 1].host;
 			net_packet->address.port = net_clients[chest_opener - 1].port;
 			net_packet->len = 4;
@@ -571,14 +571,14 @@ void Entity::closeChestServer() {
 	}
 }
 
-void Entity::addItemToChest(Item *item) {
+void Entity::addItemToChest(Item* item) {
 	if (!item) {
 		return;
 	}
 
 	if (clientnum != 0 && multiplayer == CLIENT) {
 		//Tell the server.
-		strcpy( (char *)net_packet->data, "CITM" );
+		strcpy( (char*)net_packet->data, "CITM" );
 		net_packet->data[4] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
@@ -595,15 +595,15 @@ void Entity::addItemToChest(Item *item) {
 		return;
 	}
 
-	Item *item2 = NULL;
+	Item* item2 = NULL;
 
 	//Add the item to the chest's inventory.
-	list_t *inventory = static_cast<list_t* >(children.first->element);
+	list_t* inventory = static_cast<list_t* >(children.first->element);
 
-	node_t *t_node = NULL;
+	node_t* t_node = NULL;
 	//If item's already in the chest, add it to a pre-existing stack.
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next) {
-		item2 = (Item *) t_node->element;
+		item2 = (Item*) t_node->element;
 		if (!itemCompare(item, item2)) {
 			item2->count += item->count;
 			return;
@@ -615,7 +615,7 @@ void Entity::addItemToChest(Item *item) {
 	item->node->deconstructor = &defaultDeconstructor;
 
 	if (chest_opener != 0 && multiplayer == SERVER) {
-		strcpy((char *)net_packet->data, "CITM");
+		strcpy((char*)net_packet->data, "CITM");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 		SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 		SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -629,7 +629,7 @@ void Entity::addItemToChest(Item *item) {
 	}
 }
 
-void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
+void Entity::addItemToChestFromInventory(int player, Item* item, bool all) {
 	if (!item || !players[player] || !players[player]->entity) {
 		return;
 	}
@@ -645,8 +645,8 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 	}
 	playSoundPlayer(player, 47 + rand() % 3, 64);
 
-	Item *newitem = NULL;
-	if ( (newitem = (Item *) malloc(sizeof(Item))) == NULL) {
+	Item* newitem = NULL;
+	if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL) {
 		printlog( "failed to allocate memory for new item!\n" );
 		return; //Error or something.
 	}
@@ -660,7 +660,7 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 
 	// unequip the item
 	if ( item->count <= 1 || all) {
-		Item **slot = itemSlot(stats[player], item);
+		Item** slot = itemSlot(stats[player], item);
 		if ( slot != NULL ) {
 			*slot = NULL;
 		}
@@ -690,12 +690,12 @@ void Entity::addItemToChestFromInventory(int player, Item *item, bool all) {
 	return; //Do not execute the rest of this function.
 }
 
-Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
+Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly) {
 	/*
 	 * getInfoOnly just returns a copy of the item at the slot, it does not actually grab the item.
 	 * Note that the returned memory will need to be freed.
 	 */
-	Item *newitem = NULL;
+	Item* newitem = NULL;
 
 	if ( item == NULL ) {
 		return NULL;
@@ -706,7 +706,7 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 			return NULL;
 		}
 
-		if ( (newitem = (Item *) malloc(sizeof(Item))) == NULL) {
+		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL) {
 			printlog( "failed to allocate memory for new item!\n" );
 			return NULL; //Error or something.
 		}
@@ -720,7 +720,7 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 
 		//Tell the server.
 		if ( !getInfoOnly ) {
-			strcpy( (char *)net_packet->data, "RCIT" ); //Have the server remove the item from the chest).
+			strcpy( (char*)net_packet->data, "RCIT" );  //Have the server remove the item from the chest).
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -748,7 +748,7 @@ Item* Entity::getItemFromChest(Item *item, bool all, bool getInfoOnly) {
 			return NULL;
 		}
 
-		if ( (newitem = (Item *) malloc(sizeof(Item))) == NULL) {
+		if ( (newitem = (Item*) malloc(sizeof(Item))) == NULL) {
 			printlog( "failed to allocate memory for new item!\n" );
 			return NULL; //Error or something.
 		}
@@ -800,18 +800,18 @@ void closeChestClientside() {
 	selectedChestSlot = -1;
 }
 
-void addItemToChestClientside(Item *item) {
+void addItemToChestClientside(Item* item) {
 	if (openedChest[clientnum]) {
 		//messagePlayer(clientnum, "Recieved item.");
 
 		//If there's an open chests, add an item to it.
 		//TODO: Add item to the chest.
 
-		Item *item2 = NULL;
-		node_t *node = NULL;
+		Item* item2 = NULL;
+		node_t* node = NULL;
 
 		for (node = chestInv.first; node != NULL; node = node->next) {
-			item2 = (Item *) node->element;
+			item2 = (Item*) node->element;
 			if (!itemCompare(item, item2)) {
 				item2->count += item->count;
 				return;
@@ -827,16 +827,16 @@ void addItemToChestClientside(Item *item) {
 
 
 
-void Entity::addItemToChestServer(Item *item) {
+void Entity::addItemToChestServer(Item* item) {
 	if (!item) {
 		return;
 	}
 
-	Item *item2 = NULL;
-	node_t *t_node = NULL;
+	Item* item2 = NULL;
+	node_t* t_node = NULL;
 
 	//Add the item to the chest's inventory.
-	list_t *inventory = static_cast<list_t* >(children.first->element);
+	list_t* inventory = static_cast<list_t* >(children.first->element);
 
 	if (!inventory) {
 		return;
@@ -844,7 +844,7 @@ void Entity::addItemToChestServer(Item *item) {
 
 	//If item's already in the chest, add it to a pre-existing stack.
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next) {
-		item2 = (Item *) t_node->element;
+		item2 = (Item*) t_node->element;
 		if (!itemCompare(item, item2)) {
 			item2->count += item->count;
 			return;
@@ -856,21 +856,21 @@ void Entity::addItemToChestServer(Item *item) {
 	item->node->deconstructor = &defaultDeconstructor;
 }
 
-void Entity::removeItemFromChestServer(Item *item, int count) {
+void Entity::removeItemFromChestServer(Item* item, int count) {
 	if (!item) {
 		return;
 	}
 
-	Item *item2 = NULL;
-	node_t *t_node = NULL;
+	Item* item2 = NULL;
+	node_t* t_node = NULL;
 
-	list_t *inventory = static_cast<list_t* >(children.first->element);
+	list_t* inventory = static_cast<list_t* >(children.first->element);
 	if (!inventory) {
 		return;
 	}
 
 	for (t_node = inventory->first; t_node != NULL; t_node = t_node->next) {
-		item2 = (Item *) t_node->element;
+		item2 = (Item*) t_node->element;
 		if (!item2  || !item2->node || item2->node->list != children.first->element) {
 			return;
 		}

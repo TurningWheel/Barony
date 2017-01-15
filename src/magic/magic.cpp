@@ -27,7 +27,7 @@ void spell_magicMap(int player) {
 
 	if ( multiplayer == SERVER && player > 0 ) {
 		//Tell the client to map the magic.
-		strcpy((char *)net_packet->data, "MMAP");
+		strcpy((char*)net_packet->data, "MMAP");
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 4;

@@ -39,11 +39,11 @@
 #define ARROW_OLDY my->fskill[3]
 #define ARROW_MAXLIFE 600
 
-void actArrow(Entity *my) {
+void actArrow(Entity* my) {
 	double dist;
 	int damage;
-	Entity *entity;
-	node_t *node;
+	Entity* entity;
+	node_t* node;
 	double tangent;
 
 	my->skill[2] = -7; // invokes actEmpty() on clients
@@ -73,7 +73,7 @@ void actArrow(Entity *my) {
 			ARROW_STUCK = 1;
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
-			Entity *oentity = hit.entity;
+			Entity* oentity = hit.entity;
 			lineTrace(my, my->x, my->y, my->yaw, sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY), 0, FALSE);
 			hit.entity = oentity;
 			my->x = hit.x - cos(my->yaw);
@@ -82,8 +82,8 @@ void actArrow(Entity *my) {
 			ARROW_VELY = 0;
 			ARROW_VELZ = 0;
 			if ( hit.entity != NULL ) {
-				Entity *parent = uidToEntity(my->parent);
-				Stat *hitstats = hit.entity->getStats();
+				Entity* parent = uidToEntity(my->parent);
+				Stat* hitstats = hit.entity->getStats();
 				playSoundEntity(my, 72 + rand() % 3, 64);
 				if ( hitstats != NULL && hit.entity != parent ) {
 					if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) ) {
@@ -115,7 +115,7 @@ void actArrow(Entity *my) {
 					}
 
 					if ( damage > 0 ) {
-						Entity *gib = spawnGib(hit.entity);
+						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
 						playSoundEntity(hit.entity, 28, 64);
 						if ( hit.entity->behavior == &actPlayer ) {
@@ -123,7 +123,7 @@ void actArrow(Entity *my) {
 								camera_shakex += .1;
 								camera_shakey += 10;
 							} else {
-								strcpy((char *)net_packet->data, "SHAK");
+								strcpy((char*)net_packet->data, "SHAK");
 								net_packet->data[4] = 10; // turns into .1
 								net_packet->data[5] = 10;
 								net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
@@ -150,11 +150,11 @@ void actArrow(Entity *my) {
 						}
 
 						// alert other monsters too
-						Entity *ohitentity = hit.entity;
+						Entity* ohitentity = hit.entity;
 						for ( node = map.entities->first; node != NULL; node = node->next ) {
-							entity = (Entity *)node->element;
+							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity ) {
-								Stat *buddystats = entity->getStats();
+								Stat* buddystats = entity->getStats();
 								if ( buddystats != NULL ) {
 									if ( entity->checkFriend(hit.entity) ) {
 										if ( entity->skill[0] == 0 ) { // monster is waiting

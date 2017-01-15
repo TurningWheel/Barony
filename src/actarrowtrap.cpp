@@ -28,7 +28,7 @@
 #define ARROWTRAP_FIRED my->skill[0]
 #define ARROWTRAP_AMBIENCE my->skill[6]
 
-void actArrowTrap(Entity *my) {
+void actArrowTrap(Entity* my) {
 	int x, y;
 	int c;
 
@@ -72,7 +72,7 @@ void actArrowTrap(Entity *my) {
 						break;
 				}
 				if ( !checkObstacle(my->x + x, my->y + y, my, NULL) ) {
-					Entity *entity = newEntity(166, 1, map.entities); // arrow
+					Entity* entity = newEntity(166, 1, map.entities); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
 					entity->parent = my->uid;
 					entity->x = my->x + x;

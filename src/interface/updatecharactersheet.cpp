@@ -31,9 +31,9 @@ void updateCharacterSheet() {
 	int x = 0;
 	SDL_Rect pos;
 	bool b = FALSE;
-	node_t *node = NULL;
-	Entity *entity = NULL;
-	Item *item = NULL;
+	node_t* node = NULL;
+	Entity* entity = NULL;
+	Item* item = NULL;
 	int c;
 
 	// draw window
@@ -82,7 +82,7 @@ void updateCharacterSheet() {
 					c++;
 					continue;
 				}
-				entity = (Entity *) node->element;
+				entity = (Entity*) node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = TRUE;
@@ -92,14 +92,14 @@ void updateCharacterSheet() {
 				c++;
 			}
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				entity = (Entity *) node->element;
+				entity = (Entity*) node->element;
 				if ( (Sint32)entity->uid == -4 ) {
 					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
 				}
 			}
 		} else {
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				entity = (Entity *) node->element;
+				entity = (Entity*) node->element;
 				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->uid == -4 ) {
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = TRUE;
@@ -133,7 +133,7 @@ void updateCharacterSheet() {
 	ttfPrintTextFormatted(ttf12, 8, 358, language[371], AC(stats[clientnum]));
 	Uint32 weight = 0;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next ) {
-		item = (Item *)node->element;
+		item = (Item*)node->element;
 		weight += items[item->type].weight * item->count;
 	}
 	weight += stats[clientnum]->GOLD / 100;

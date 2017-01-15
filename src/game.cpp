@@ -43,13 +43,13 @@
 
 const unsigned STACK_SIZE = 10;
 
-void segfault_sigaction(int signal, siginfo_t *si, void *arg) {
+void segfault_sigaction(int signal, siginfo_t* si, void* arg) {
 	printf("Caught segfault at address %p\n", si->si_addr);
 
 	printlog("Caught segfault at address %p\n", si->si_addr);
 
 	//Dump the stack.
-	void *array[STACK_SIZE];
+	void* array[STACK_SIZE];
 	size_t size;
 
 	size = backtrace(array, STACK_SIZE);
@@ -83,15 +83,15 @@ list_t steamAchievements;
 
 void gameLogic(void) {
 	Uint32 x;
-	node_t *node, *nextnode, *node2;
-	Entity *entity;
+	node_t* node, *nextnode, *node2;
+	Entity* entity;
 	int c = 0;
 	Uint32 i = 0, j;
-	FILE *fp;
-	deleteent_t *deleteent;
+	FILE* fp;
+	deleteent_t* deleteent;
 	bool entitydeletedself;
 	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
-	Item *auto_appraise_target = NULL;
+	Item* auto_appraise_target = NULL;
 
 	if ( creditstage > 0 ) {
 		credittime++;
@@ -165,7 +165,7 @@ void gameLogic(void) {
 				if ( client_disconnected[c] ) {
 					continue;
 				}
-				strcpy((char *)net_packet->data, "BARONY_GAME_START");
+				strcpy((char*)net_packet->data, "BARONY_GAME_START");
 				SDLNet_Write32(svFlags, &net_packet->data[17]);
 				SDLNet_Write32(uniqueGameKey, &net_packet->data[21]);
 				net_packet->address.host = net_clients[c - 1].host;
@@ -184,7 +184,7 @@ void gameLogic(void) {
 		for ( node = safePacketsSent.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
 
-			packetsend_t *packet = (packetsend_t *)node->element;
+			packetsend_t* packet = (packetsend_t*)node->element;
 			sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
 			packet->tries++;
 			if ( packet->tries >= MAXTRIES ) {
@@ -200,7 +200,7 @@ void gameLogic(void) {
 	// spawn flame particles on burning objects
 	if ( !gamePaused || (multiplayer && !client_disconnected[0]) ) {
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			entity = (Entity *)node->element;
+			entity = (Entity*)node->element;
 			if ( entity->flags[BURNING] ) {
 				if ( !entity->flags[BURNABLE] ) {
 					entity->flags[BURNING] = FALSE;
@@ -208,7 +208,7 @@ void gameLogic(void) {
 				}
 				j = 1 + rand() % 4;
 				for ( c = 0; c < j; c++ ) {
-					Entity *flame = spawnFlame(entity);
+					Entity* flame = spawnFlame(entity);
 					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
 					flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
 					flame->z += rand() % 5 - 2;
@@ -260,7 +260,7 @@ void gameLogic(void) {
 		clientnum = 0;
 		for ( node = map.entities->first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
-			entity = (Entity *)node->element;
+			entity = (Entity*)node->element;
 			if ( !entity->ranbehavior ) {
 				entity->ticks++;
 				if ( entity->behavior != NULL ) {
@@ -268,7 +268,7 @@ void gameLogic(void) {
 					if ( entitiesdeleted.first != NULL ) {
 						entitydeletedself = FALSE;
 						for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next ) {
-							if ( entity == (Entity *)node2->element ) {
+							if ( entity == (Entity*)node2->element ) {
 								entitydeletedself = TRUE;
 								break;
 							}
@@ -286,7 +286,7 @@ void gameLogic(void) {
 			}
 		}
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			entity = (Entity *)node->element;
+			entity = (Entity*)node->element;
 			entity->ranbehavior = FALSE;
 		}
 		multiplayer = c;
@@ -301,8 +301,8 @@ void gameLogic(void) {
 						nextnode = node->next;
 
 						// send the delete entity command to the client
-						strcpy((char *)net_packet->data, "ENTD");
-						deleteent = (deleteent_t *)node->element;
+						strcpy((char*)net_packet->data, "ENTD");
+						deleteent = (deleteent_t*)node->element;
 						SDLNet_Write32(deleteent->uid, &net_packet->data[4]);
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
@@ -361,7 +361,7 @@ void gameLogic(void) {
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 ) {
 											int c, j = 1 + rand() % 2;
 											for ( c = 0; c < j; c++ ) {
-												Entity *entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities);
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -420,7 +420,7 @@ void gameLogic(void) {
 			//generatePathMaps();
 			for ( node = map.entities->first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->ranbehavior ) {
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) ) {
 						entity->ticks++;
@@ -432,7 +432,7 @@ void gameLogic(void) {
 						if ( entitiesdeleted.first != NULL ) {
 							entitydeletedself = FALSE;
 							for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next ) {
-								if ( entity == (Entity *)node2->element ) {
+								if ( entity == (Entity*)node2->element ) {
 									entitydeletedself = TRUE;
 									break;
 								}
@@ -450,7 +450,7 @@ void gameLogic(void) {
 				}
 				if ( loadnextlevel == TRUE ) {
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						entity = (Entity *)node->element;
+						entity = (Entity*)node->element;
 						entity->flags[NOUPDATE] = TRUE;
 					}
 
@@ -485,13 +485,13 @@ void gameLogic(void) {
 						tempFollowers[c].first = NULL;
 						tempFollowers[c].last = NULL;
 
-						node_t *node;
+						node_t* node;
 						for ( node = stats[c]->FOLLOWERS.first; node != NULL; node = node->next ) {
-							Entity *follower = uidToEntity(*((Uint32 *)node->element));
+							Entity* follower = uidToEntity(*((Uint32*)node->element));
 							if ( follower ) {
-								Stat *followerStats = follower->getStats();
+								Stat* followerStats = follower->getStats();
 								if ( followerStats ) {
-									node_t *newNode = list_AddNodeLast(&tempFollowers[c]);
+									node_t* newNode = list_AddNodeLast(&tempFollowers[c]);
 									newNode->element = followerStats->copyStats();
 //									newNode->deconstructor = &followerStats->~Stat;
 									newNode->size = sizeof(followerStats);
@@ -530,7 +530,7 @@ void gameLogic(void) {
 							if ( client_disconnected[c] == TRUE ) {
 								continue;
 							}
-							strcpy((char *)net_packet->data, "LVLC");
+							strcpy((char*)net_packet->data, "LVLC");
 							net_packet->data[4] = secretlevel;
 							SDLNet_Write32(mapseed, &net_packet->data[5]);
 							SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
@@ -621,20 +621,20 @@ void gameLogic(void) {
 
 					for (c = 0; c < MAXPLAYERS; c++) {
 						if (players[c] && players[c]->entity && !client_disconnected[c]) {
-							node_t *node;
+							node_t* node;
 							for (node = tempFollowers[c].first; node != nullptr; node = node->next) {
-								Stat *tempStats = (Stat *)node->element;
-								Entity *monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
+								Stat* tempStats = (Stat*)node->element;
+								Entity* monster = summonMonster(tempStats->type, players[c]->entity->x, players[c]->entity->y);
 								if (monster) {
 									monster->skill[3] = 1; // to mark this monster partially initialized
 									list_RemoveNode(monster->children.last);
 
-									node_t *newNode = list_AddNodeLast(&monster->children);
+									node_t* newNode = list_AddNodeLast(&monster->children);
 									newNode->element = tempStats->copyStats();
 //									newNode->deconstructor = &tempStats->~Stat;
 									newNode->size = sizeof(tempStats);
 
-									Stat *monsterStats = (Stat *)newNode->element;
+									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->uid;
 									if (strcmp(monsterStats->name, "")) {
 										messagePlayer(c, language[720], monsterStats->name);
@@ -647,12 +647,12 @@ void gameLogic(void) {
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
-									Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
+									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
 									*myuid = monster->uid;
 
 									if ( c > 0 && multiplayer == SERVER ) {
-										strcpy((char *)net_packet->data, "LEAD");
+										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
 										net_packet->address.host = net_clients[c - 1].host;
 										net_packet->address.port = net_clients[c - 1].port;
@@ -676,7 +676,7 @@ void gameLogic(void) {
 				}
 			}
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				entity->ranbehavior = FALSE;
 			}
 
@@ -687,7 +687,7 @@ void gameLogic(void) {
 						if ( client_disconnected[c] == TRUE ) {
 							continue;
 						}
-						strcpy((char *)net_packet->data, "LVLC");
+						strcpy((char*)net_packet->data, "LVLC");
 						net_packet->data[4] = secretlevel;
 						SDLNet_Write32(mapseed, &net_packet->data[5]);
 						SDLNet_Write32(lastEntityUIDs, &net_packet->data[9]);
@@ -702,7 +702,7 @@ void gameLogic(void) {
 				// send entity info to clients
 				if ( ticks % (TICKS_PER_SECOND / 8) == 0 ) {
 					for ( node = map.entities->first; node != NULL; node = node->next ) {
-						entity = (Entity *)node->element;
+						entity = (Entity*)node->element;
 						for ( c = 1; c < MAXPLAYERS; c++ ) {
 							if ( !client_disconnected[c] ) {
 								if ( entity->flags[UPDATENEEDED] == TRUE && entity->flags[NOUPDATE] == FALSE ) {
@@ -725,7 +725,7 @@ void gameLogic(void) {
 					}
 					if ( ticks % (TICKS_PER_SECOND * 1) == 0 ) {
 						// send a keep alive every second
-						strcpy((char *)net_packet->data, "KPAL");
+						strcpy((char*)net_packet->data, "KPAL");
 						net_packet->data[4] = clientnum;
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
@@ -752,7 +752,7 @@ void gameLogic(void) {
 						for ( i = 0; i < MAXPLAYERS; i++ ) {
 							messagePlayer(clientnum, language[726], c, stats[c]->name);
 						}
-						strcpy((char *)net_packet->data, "KICK");
+						strcpy((char*)net_packet->data, "KICK");
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
 						net_packet->len = 4;
@@ -767,7 +767,7 @@ void gameLogic(void) {
 				if ( !client_disconnected[c] ) {
 					if ( oassailant[c] != assailant[c] ) {
 						oassailant[c] = assailant[c];
-						strcpy((char *)net_packet->data, "MUSM");
+						strcpy((char*)net_packet->data, "MUSM");
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
 						net_packet->data[3] = assailant[c];
@@ -783,7 +783,7 @@ void gameLogic(void) {
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				Item *item = (Item *)node->element;
+				Item* item = (Item*)node->element;
 
 				// unlock achievements for special collected items
 				switch ( item->type ) {
@@ -832,7 +832,7 @@ void gameLogic(void) {
 			if ( multiplayer == CLIENT ) {
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 ) {
 					// send a keep alive every second
-					strcpy((char *)net_packet->data, "KPAL");
+					strcpy((char*)net_packet->data, "KPAL");
 					net_packet->data[4] = clientnum;
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
@@ -851,14 +851,14 @@ void gameLogic(void) {
 					// additional 15 seconds (disconnect time)
 					messagePlayer(clientnum, language[730]);
 
-					button_t *button;
+					button_t* button;
 					pauseGame(2, 0);
 
 					// close current window
 					buttonCloseSubwindow(NULL);
 					for ( node = button_l.first; node != NULL; node = nextnode ) {
 						nextnode = node->next;
-						button = (button_t *)node->element;
+						button = (button_t*)node->element;
 						if ( button->focused ) {
 							list_RemoveNode(button->node);
 						}
@@ -936,7 +936,7 @@ void gameLogic(void) {
 										if ( ticks % 40 == (y + x * map.height) % 40 && rand() % 3 == 0 ) {
 											int c, j = 1 + rand() % 2;
 											for ( c = 0; c < j; c++ ) {
-												Entity *entity = newEntity(42, 1, map.entities);
+												Entity* entity = newEntity(42, 1, map.entities);
 												entity->behavior = &actGib;
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
@@ -977,12 +977,12 @@ void gameLogic(void) {
 
 			// ask for entity delete update
 			if ( ticks % 4 == 0 && list_Size(map.entities) ) {
-				node_t *nodeToCheck = list_Node(map.entities, ticks % list_Size(map.entities));
+				node_t* nodeToCheck = list_Node(map.entities, ticks % list_Size(map.entities));
 				if ( nodeToCheck ) {
-					Entity *entity = (Entity *)nodeToCheck->element;
+					Entity* entity = (Entity*)nodeToCheck->element;
 					if ( entity ) {
 						if ( !entity->flags[NOUPDATE] && entity->uid > 0 && entity->uid != -2 && entity->uid != -3 && entity->uid != -4 ) {
-							strcpy((char *)net_packet->data, "ENTE");
+							strcpy((char*)net_packet->data, "ENTE");
 							net_packet->data[4] = clientnum;
 							SDLNet_Write32(entity->uid, &net_packet->data[5]);
 							net_packet->address.host = net_server.host;
@@ -997,7 +997,7 @@ void gameLogic(void) {
 			// run entity actions
 			for ( node = map.entities->first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->ranbehavior ) {
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) ) {
 						entity->ticks++;
@@ -1008,7 +1008,7 @@ void gameLogic(void) {
 							if ( entitiesdeleted.first != NULL ) {
 								entitydeletedself = FALSE;
 								for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next ) {
-									if ( entity == (Entity *)node2->element ) {
+									if ( entity == (Entity*)node2->element ) {
 										entitydeletedself = TRUE;
 										break;
 									}
@@ -1043,9 +1043,9 @@ void gameLogic(void) {
 										clipMove(&entity->x, &entity->y, entity->vel_x, entity->vel_y, entity);
 										clipMove(&entity->new_x, &entity->new_y, entity->vel_x, entity->vel_y, entity);
 										if ( entity->behavior == &actPlayer ) {
-											node_t *node2;
+											node_t* node2;
 											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next ) {
-												Entity *bodypart = (Entity *)node2->element;
+												Entity* bodypart = (Entity*)node2->element;
 												if ( bodypart->behavior == &actPlayerLimb ) {
 													if ( bodypart->skill[2] == entity->skill[2] ) {
 														bodypart->x += entity->x - ox;
@@ -1057,9 +1057,9 @@ void gameLogic(void) {
 											}
 										}
 										if ( entity->behavior == &actMonster ) {
-											node_t *node2;
+											node_t* node2;
 											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next ) {
-												Entity *bodypart = (Entity *)node2->element;
+												Entity* bodypart = (Entity*)node2->element;
 												if ( bodypart->skill[2] == entity->uid && bodypart->parent == entity->uid ) {
 													bodypart->x += entity->x - ox;
 													bodypart->y += entity->y - oy;
@@ -1122,13 +1122,13 @@ void gameLogic(void) {
 				}
 			}
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				entity->ranbehavior = FALSE;
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				Item *item = (Item *)node->element;
+				Item* item = (Item*)node->element;
 
 				// unlock achievements for special collected items
 				switch ( item->type ) {
@@ -1198,9 +1198,9 @@ void gameLogic(void) {
 //char subtext[1024];
 
 void handleButtons(void) {
-	node_t *node;
-	node_t *nextnode;
-	button_t *button;
+	node_t* node;
+	node_t* nextnode;
+	button_t* button;
 	int w = 0, h = 0;
 
 	// handle buttons
@@ -1209,7 +1209,7 @@ void handleButtons(void) {
 		if ( node->element == NULL ) {
 			continue;
 		}
-		button = (button_t *)node->element;
+		button = (button_t*)node->element;
 		if ( button == NULL ) {
 			continue;
 		}
@@ -1244,12 +1244,12 @@ void handleButtons(void) {
 			if ( mousestatus[SDL_BUTTON_LEFT] ) {
 				if ( mousex >= button->x && mousex < button->x + button->sizex && omousex >= button->x && omousex < button->x + button->sizex ) {
 					if ( mousey >= button->y && mousey < button->y + button->sizey && omousey >= button->y && omousey < button->y + button->sizey ) {
-						node_t *node;
+						node_t* node;
 						for ( node = button_l.first; node != NULL; node = node->next ) {
 							if ( node->element == NULL ) {
 								continue;
 							}
-							button_t *button = (button_t *)node->element;
+							button_t* button = (button_t*)node->element;
 							button->pressed = FALSE;
 						}
 						button->pressed = TRUE;
@@ -1541,7 +1541,7 @@ void handleEvents(void) {
 
 -------------------------------------------------------------------------------*/
 
-Uint32 timerCallback(Uint32 interval, void *param) {
+Uint32 timerCallback(Uint32 interval, void* param) {
 	SDL_Event event;
 	SDL_UserEvent userevent;
 
@@ -1617,7 +1617,7 @@ void pauseGame(int mode, int ignoreplayer) {
 				if ( client_disconnected[c] || ignoreplayer == c ) {
 					continue;
 				}
-				strcpy((char *)net_packet->data, "PAUS");
+				strcpy((char*)net_packet->data, "PAUS");
 				net_packet->data[4] = clientnum;
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
@@ -1625,7 +1625,7 @@ void pauseGame(int mode, int ignoreplayer) {
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		} else if ( multiplayer == CLIENT && ignoreplayer ) {
-			strcpy((char *)net_packet->data, "PAUS");
+			strcpy((char*)net_packet->data, "PAUS");
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -1644,7 +1644,7 @@ void pauseGame(int mode, int ignoreplayer) {
 				if ( client_disconnected[c] || ignoreplayer == c ) {
 					continue;
 				}
-				strcpy((char *)net_packet->data, "UNPS");
+				strcpy((char*)net_packet->data, "UNPS");
 				net_packet->data[4] = clientnum;
 				net_packet->address.host = net_clients[c - 1].host;
 				net_packet->address.port = net_clients[c - 1].port;
@@ -1652,7 +1652,7 @@ void pauseGame(int mode, int ignoreplayer) {
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		} else if ( multiplayer == CLIENT && ignoreplayer ) {
-			strcpy((char *)net_packet->data, "UNPS");
+			strcpy((char*)net_packet->data, "UNPS");
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -1711,7 +1711,7 @@ bool frameRateLimit( Uint32 maxFrameRate ) {
 #include <mach-o/dyld.h>
 #endif
 
-int main(int argc, char **argv) {
+int main(int argc, char** argv) {
 
 #ifdef LINUX
 	//Catch segfault stuff.
@@ -1755,11 +1755,11 @@ int main(int argc, char **argv) {
 		int c;
 		//int tilesreceived=0;
 		//Mix_Music **music, *intromusic, *splashmusic, *creditsmusic;
-		node_t *node;
-		Entity *entity;
-		FILE *fp;
+		node_t* node;
+		Entity* entity;
+		FILE* fp;
 		//SDL_Surface *sky_bmp;
-		light_t *light;
+		light_t* light;
 
 		// load default language file (english)
 		if ( loadLanguage("en") ) {
@@ -1839,7 +1839,7 @@ int main(int argc, char **argv) {
 
 		// initialize map
 		map.tiles = NULL;
-		map.entities = (list_t *) malloc(sizeof(list_t));
+		map.entities = (list_t*) malloc(sizeof(list_t));
 		map.entities->first = NULL;
 		map.entities->last = NULL;
 
@@ -1962,8 +1962,8 @@ int main(int argc, char **argv) {
 					magicRightHand = NULL;
 
 					drawRect(NULL, 0, 255);
-					char *banner_text1 = language[738];
-					char *banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
+					char* banner_text1 = language[738];
+					char* banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
 					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
 					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
 					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, TRUE, banner_text2);
@@ -2075,7 +2075,7 @@ int main(int argc, char **argv) {
 						mapseed = 0;
 						lastEntityUIDs = entity_uids;
 						for ( node = map.entities->first; node != NULL; node = node->next ) {
-							entity = (Entity *)node->element;
+							entity = (Entity*)node->element;
 							entity->flags[NOUPDATE] = TRUE;
 						}
 						if ( loadingmap == FALSE ) {
@@ -2151,7 +2151,7 @@ int main(int argc, char **argv) {
 				if ( multiplayer == CLIENT ) {
 					// make sure shop inventory is alloc'd
 					if ( !shopInv ) {
-						shopInv = (list_t *) malloc(sizeof(list_t));
+						shopInv = (list_t*) malloc(sizeof(list_t));
 						shopInv->first = NULL;
 						shopInv->last = NULL;
 					}
@@ -2171,7 +2171,7 @@ int main(int argc, char **argv) {
 						selectedIdentifySlot = -1;
 						if ( shopkeeper != 0 ) {
 							if ( multiplayer != CLIENT ) {
-								Entity *entity = uidToEntity(shopkeeper);
+								Entity* entity = uidToEntity(shopkeeper);
 								entity->skill[0] = 0;
 								if ( uidToEntity(entity->skill[1]) ) {
 									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
@@ -2179,7 +2179,7 @@ int main(int argc, char **argv) {
 								entity->skill[1] = 0;
 							} else {
 								// inform server that we're done talking to shopkeeper
-								strcpy((char *)net_packet->data, "SHPC");
+								strcpy((char*)net_packet->data, "SHPC");
 								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
 								net_packet->address.host = net_server.host;
 								net_packet->address.port = net_server.port;
@@ -2260,7 +2260,7 @@ int main(int argc, char **argv) {
 						//What even is this code? When should it be run?
 						if ( shopkeeper != 0 ) {
 							if ( multiplayer != CLIENT ) {
-								Entity *entity = uidToEntity(shopkeeper);
+								Entity* entity = uidToEntity(shopkeeper);
 								entity->skill[0] = 0;
 								if ( uidToEntity(entity->skill[1]) ) {
 									monsterMoveAside(entity, uidToEntity(entity->skill[1]));
@@ -2268,7 +2268,7 @@ int main(int argc, char **argv) {
 								entity->skill[1] = 0;
 							} else {
 								// inform server that we're done talking to shopkeeper
-								strcpy((char *)net_packet->data, "SHPC");
+								strcpy((char*)net_packet->data, "SHPC");
 								SDLNet_Write32((Uint32)shopkeeper, &net_packet->data[4]);
 								net_packet->address.host = net_server.host;
 								net_packet->address.port = net_server.port;
@@ -2360,13 +2360,13 @@ int main(int argc, char **argv) {
 												if ( client_disconnected[c] ) {
 													continue;
 												}
-												strcpy((char *)net_packet->data, "MSGS");
+												strcpy((char*)net_packet->data, "MSGS");
 												strncpy(chatstring, stats[0]->name, std::min<size_t>(strlen(stats[0]->name), 10)); //TODO: Why are size_t and int being compared?
 												chatstring[std::min<size_t>(strlen(stats[0]->name), 10)] = 0; //TODO: Why are size_t and int being compared?
 												strcat(chatstring, ": ");
 												strcat(chatstring, command_str);
 												SDLNet_Write32(color, &net_packet->data[4]);
-												strcpy((char *)(&net_packet->data[8]), chatstring);
+												strcpy((char*)(&net_packet->data[8]), chatstring);
 												net_packet->address.host = net_clients[c - 1].host;
 												net_packet->address.port = net_clients[c - 1].port;
 												net_packet->len = 8 + strlen(chatstring) + 1;
@@ -2392,10 +2392,10 @@ int main(int argc, char **argv) {
 										playSound(238, 64);
 
 										// send message to server
-										strcpy((char *)net_packet->data, "MSGS");
+										strcpy((char*)net_packet->data, "MSGS");
 										net_packet->data[4] = clientnum;
 										SDLNet_Write32(color, &net_packet->data[5]);
-										strcpy((char *)(&net_packet->data[9]), command_str);
+										strcpy((char*)(&net_packet->data[9]), command_str);
 										net_packet->address.host = net_server.host;
 										net_packet->address.port = net_server.port;
 										net_packet->len = 9 + strlen(command_str) + 1;
@@ -2492,7 +2492,7 @@ int main(int argc, char **argv) {
 									drawImage(equipped_bmp, NULL, &pos);
 								}
 							} else {
-								spell_t *spell = getSpellFromItem(selectedItem);
+								spell_t* spell = getSpellFromItem(selectedItem);
 								if ( selected_spell == spell ) {
 									pos.y += 16;
 									drawImage(equipped_bmp, NULL, &pos);

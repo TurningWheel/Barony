@@ -55,7 +55,7 @@ class Entity {
 	static const int SWITCH_UNPOWERED = 0;
 	static const int SWITCH_POWERED = 1;
 public:
-	Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist);
+	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist);
 	~Entity();
 
 
@@ -79,23 +79,23 @@ public:
 	double fskill[30]; // floating point general purpose variables
 	Sint32 skill[30];  // general purpose variables
 	bool flags[16];    // engine flags
-	char *string;      // general purpose string
-	light_t *light;    // every entity has a specialized light pointer
+	char* string;      // general purpose string
+	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
-	node_t *mynode;
+	node_t* mynode;
 
-	list_t *path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
+	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
 
 	// behavior function pointer
-	void (*behavior)(class Entity *my);
+	void (*behavior)(class Entity* my);
 	bool ranbehavior;
 
-	void setObituary(char *obituary);
+	void setObituary(char* obituary);
 
-	void killedByMonsterObituary(Entity *victim);
+	void killedByMonsterObituary(Entity* victim);
 
 	Sint32 getSTR();
 	Sint32 getDEX();
@@ -106,12 +106,12 @@ public:
 
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
 
-	void handleEffects(Stat *myStats);
+	void handleEffects(Stat* myStats);
 
 	void effectTimes();
 	void increaseSkill(int skill);
 
-	Stat *getStats();
+	Stat* getStats();
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
@@ -135,10 +135,10 @@ public:
 	void teleportRandom();
 
 	//void entityAwardXP(Entity *dest, Entity *src, bool share, bool root);
-	void awardXP(Entity *src, bool share, bool root);
+	void awardXP(Entity* src, bool share, bool root);
 
 	//--*CheckBetterEquipment functions--
-	void checkBetterEquipment(Stat *myStats);
+	void checkBetterEquipment(Stat* myStats);
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -148,19 +148,19 @@ public:
 	void mechanismPowerOff(); //Called when a circuit or switch next to a mechanism powers on.
 	void toggleSwitch(); //Called when a player flips a switch (lever).
 	void switchUpdateNeighbors(); //Run each time actSwitch() is called to make sure the network is online if any one switch connected to it is still set to the on position.
-	list_t *getPowerableNeighbors(); //Returns a list of all circuits and mechanisms this entity can influence.
+	list_t* getPowerableNeighbors(); //Returns a list of all circuits and mechanisms this entity can influence.
 
 	//Chest/container functions.
 	void closeChest();
 	void closeChestServer(); //Close the chest serverside, silently. Called when the chest is closed somewhere else for that client, but the server end stuff needs to be tied up.
-	void addItemToChest(Item *item); //Adds an item to the chest. If server, notifies the client. If client, notifies the server.
-	Item *getItemFromChest(Item *item, bool all, bool getInfoOnly = false); //Removes an item from the chest and returns a pointer to it.
-	void addItemToChestFromInventory(int player, Item *item, bool all);
-	void addItemToChestServer(Item *item); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
-	void removeItemFromChestServer(Item *item, int count); //Called when the server learns that a client removed an item from the chest.
+	void addItemToChest(Item* item); //Adds an item to the chest. If server, notifies the client. If client, notifies the server.
+	Item* getItemFromChest(Item* item, bool all, bool getInfoOnly = false); //Removes an item from the chest and returns a pointer to it.
+	void addItemToChestFromInventory(int player, Item* item, bool all);
+	void addItemToChestServer(Item* item); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
+	void removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
 
-	bool checkEnemy(Entity *your);
-	bool checkFriend(Entity *your);
+	bool checkEnemy(Entity* your);
+	bool checkFriend(Entity* your);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -180,22 +180,22 @@ class Item;
 extern bool swornenemies[NUMMONSTERS][NUMMONSTERS];
 extern bool monsterally[NUMMONSTERS][NUMMONSTERS];
 
-Sint32 statGetSTR(Stat *entitystats);
-Sint32 statGetDEX(Stat *entitystats);
-Sint32 statGetCON(Stat *entitystats);
-Sint32 statGetINT(Stat *entitystats);
-Sint32 statGetPER(Stat *entitystats);
-Sint32 statGetCHR(Stat *entitystats);
-int AC(Stat *stat);
+Sint32 statGetSTR(Stat* entitystats);
+Sint32 statGetDEX(Stat* entitystats);
+Sint32 statGetCON(Stat* entitystats);
+Sint32 statGetINT(Stat* entitystats);
+Sint32 statGetPER(Stat* entitystats);
+Sint32 statGetCHR(Stat* entitystats);
+int AC(Stat* stat);
 
-Entity *uidToEntity(Uint32 uidnum);
-list_t *checkTileForEntity(int x, int y); //Don't forget to free the list returned when you're done with it. Also, provide x and y in map, not entity, units.
+Entity* uidToEntity(Uint32 uidnum);
+list_t* checkTileForEntity(int x, int y); //Don't forget to free the list returned when you're done with it. Also, provide x and y in map, not entity, units.
 /*
  * Don't forget to free the list returned when you're done with it.
  * Provide x and y in map, not entity, units.
  * The list parameter is a pointer to the list all the items found will be appended to.
  */
-void getItemsOnTile(int x, int y, list_t **list);
+void getItemsOnTile(int x, int y, list_t** list);
 
 //--- Entity act* functions ---
 
@@ -219,17 +219,17 @@ void getItemsOnTile(int x, int y, list_t **list);
  * value 14 = POTION_PARALYSIS
  */
 //TODO: Allow for cursed fountains. Any fountain that has a negative effect has, say, skill[4] set to 1 to indicate cursed. Used for monster behavior and for effects of things like healing potions.
-void actFountain(Entity *my);
-void actSink(Entity *my);
+void actFountain(Entity* my);
+void actSink(Entity* my);
 
 //--- Mechanism functions ---
-void actCircuit(Entity *my);
-void actSwitch(Entity *my); //Needs to be called periodically to ensure network's powered state is correct.
-void getPowerablesOnTile(int x, int y, list_t **list); //Stores a list of all circuits and mechanisms, on the tile (in map coordinates), in list.
-void actGate(Entity *my);
-void actArrowTrap(Entity *my);
-void actTrap(Entity *my);
-void actTrapPermanent(Entity *my);
+void actCircuit(Entity* my);
+void actSwitch(Entity* my); //Needs to be called periodically to ensure network's powered state is correct.
+void getPowerablesOnTile(int x, int y, list_t** list); //Stores a list of all circuits and mechanisms, on the tile (in map coordinates), in list.
+void actGate(Entity* my);
+void actArrowTrap(Entity* my);
+void actTrap(Entity* my);
+void actTrapPermanent(Entity* my);
 
 /*
  * Note: Circuits and mechanisms use skill[28] to signify powered state.
@@ -240,10 +240,10 @@ void actTrapPermanent(Entity *my);
  */
 
 //---Chest/container functions---
-void actChest(Entity *my);
-void actChestLid(Entity *my);
+void actChest(Entity* my);
+void actChestLid(Entity* my);
 void closeChestClientside(); //Called by the client to manage all clientside stuff relating to closing a chest.
-void addItemToChestClientside(Item *item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
+void addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
 
 //---Magic entity functions---
-void actMagiclightBall(Entity *my);
+void actMagiclightBall(Entity* my);

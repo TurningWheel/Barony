@@ -32,7 +32,7 @@
 #define GIB_GRAVITY my->fskill[3]
 #define GIB_LIFESPAN my->skill[4]
 
-void actGib(Entity *my) {
+void actGib(Entity* my) {
 	// don't update gibs that have no velocity
 	if ( my->z == 8 && fabs(GIB_VELX) < .01 && fabs(GIB_VELY) < .01 ) {
 		list_RemoveNode(my->mynode);
@@ -91,9 +91,9 @@ void actGib(Entity *my) {
 
 -------------------------------------------------------------------------------*/
 
-Entity *spawnGib(Entity *parentent) {
-	Entity *entity;
-	Stat *parentstats;
+Entity* spawnGib(Entity* parentent) {
+	Entity* entity;
+	Stat* parentstats;
 	double vel;
 	int gibsprite = 5;
 
@@ -153,10 +153,10 @@ Entity *spawnGib(Entity *parentent) {
 	return entity;
 }
 
-Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
+Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 	double vel;
 
-	Entity *entity = newEntity(sprite, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities);
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
@@ -178,7 +178,7 @@ Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite) {
 	return entity;
 }
 
-void serverSpawnGibForClient(Entity *gib) {
+void serverSpawnGibForClient(Entity* gib) {
 	int c;
 	if ( !gib ) {
 		return;
@@ -188,7 +188,7 @@ void serverSpawnGibForClient(Entity *gib) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "SPGB");
+			strcpy((char*)net_packet->data, "SPGB");
 			SDLNet_Write16((Sint16)gib->x, &net_packet->data[4]);
 			SDLNet_Write16((Sint16)gib->y, &net_packet->data[6]);
 			SDLNet_Write16((Sint16)gib->z, &net_packet->data[8]);

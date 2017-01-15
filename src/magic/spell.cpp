@@ -22,7 +22,7 @@
 
 list_t spellList;
 list_t channeledSpells[4];
-spell_t *selected_spell = NULL;
+spell_t* selected_spell = NULL;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
@@ -71,14 +71,14 @@ spell_t spell_cureailment;
 spell_t spell_dig;
 
 void addSpell(int spell, int player) {
-	node_t *node = NULL;
+	node_t* node = NULL;
 
 	// this is a local function
 	if ( player != clientnum ) {
 		return;
 	}
 
-	spell_t *new_spell = NULL;
+	spell_t* new_spell = NULL;
 
 	switch ( spell ) {
 		case SPELL_FORCEBOLT:
@@ -149,12 +149,12 @@ void addSpell(int spell, int player) {
 	}
 	if ( spellInList(&spellList, new_spell) ) {
 		messagePlayer(player, language[439], new_spell->name);
-		spellDeconstructor((void *)new_spell);
+		spellDeconstructor((void*)new_spell);
 		return;
 	}
 	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty ) {
 		messagePlayer(player, language[440]);
-		spellDeconstructor((void *)new_spell);
+		spellDeconstructor((void*)new_spell);
 		return;
 	}
 	messagePlayer(player, language[441], new_spell->name);
@@ -165,18 +165,18 @@ void addSpell(int spell, int player) {
 
 	players[player]->entity->increaseSkill(PRO_MAGIC);
 
-	Item *item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, TRUE, NULL);
+	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, TRUE, NULL);
 	itemPickup(player, item);
 	free(item);
 }
 
-spell_t *newSpell() {
-	spell_t *spell = (spell_t *) malloc(sizeof(spell_t));
+spell_t* newSpell() {
+	spell_t* spell = (spell_t*) malloc(sizeof(spell_t));
 	spellConstructor(spell);
 	return spell;
 }
 
-void spellConstructor(spell_t *spell) {
+void spellConstructor(spell_t* spell) {
 	spell->ID = -1;
 	strcpy(spell->name, "Spell");
 	spell->elements.first = NULL;
@@ -190,11 +190,11 @@ void spellConstructor(spell_t *spell) {
 	//spell->timer = 0;
 }
 
-void spellDeconstructor(void *data) {
-	spell_t *spell;
+void spellDeconstructor(void* data) {
+	spell_t* spell;
 
 	if ( data != NULL ) {
-		spell = (spell_t *) data;
+		spell = (spell_t*) data;
 
 		if ( spell_isChanneled(spell) ) {
 			if ( spell->sustain_node ) {
@@ -207,7 +207,7 @@ void spellDeconstructor(void *data) {
 	}
 }
 
-void spellElementConstructor(spellElement_t *element) {
+void spellElementConstructor(spellElement_t* element) {
 	element->mana = 0;
 	element->base_mana = 0;
 	element->overload_multiplier = 1;
@@ -221,26 +221,26 @@ void spellElementConstructor(spellElement_t *element) {
 	element->channeled = FALSE;
 }
 
-void spellElementDeconstructor(void *data) {
-	spellElement_t *spellElement;
+void spellElementDeconstructor(void* data) {
+	spellElement_t* spellElement;
 	if (data != NULL) {
-		spellElement = (spellElement_t *) data;
+		spellElement = (spellElement_t*) data;
 
 		list_FreeAll(&spellElement->elements);
 		free(spellElement);
 	}
 }
 
-spellElement_t *newSpellelement() {
-	spellElement_t *element = (spellElement_t *) malloc(sizeof(spellElement_t));
+spellElement_t* newSpellelement() {
+	spellElement_t* element = (spellElement_t*) malloc(sizeof(spellElement_t));
 	spellElementConstructor(element);
 	return element;
 }
 
-spell_t *copySpell(spell_t *spell) {
-	node_t *node;
+spell_t* copySpell(spell_t* spell) {
+	node_t* node;
 
-	spell_t *result = (spell_t *) malloc(sizeof(spell_t));
+	spell_t* result = (spell_t*) malloc(sizeof(spell_t));
 	*result = *spell; // copy over all the static data members.
 
 	result->sustain_node = NULL;
@@ -249,24 +249,24 @@ spell_t *copySpell(spell_t *spell) {
 	result->elements.last = NULL;
 
 	for ( node = spell->elements.first; node != NULL; node = node->next ) {
-		spellElement_t *tempElement = (spellElement_t *) node->element;
+		spellElement_t* tempElement = (spellElement_t*) node->element;
 
-		node_t *tempNode = list_AddNodeLast(&result->elements);
+		node_t* tempNode = list_AddNodeLast(&result->elements);
 		tempNode->deconstructor = &spellElementDeconstructor;
 		tempNode->size = sizeof(spellElement_t);
 		tempNode->element = copySpellElement(tempElement);
 
-		spellElement_t *newElement = (spellElement_t *)tempNode->element;
+		spellElement_t* newElement = (spellElement_t*)tempNode->element;
 		newElement->node = tempNode;
 	}
 
 	return result;
 }
 
-spellElement_t *copySpellElement(spellElement_t *spellElement) {
-	node_t *node;
+spellElement_t* copySpellElement(spellElement_t* spellElement) {
+	node_t* node;
 
-	spellElement_t *result = (spellElement_t *) malloc(sizeof(spellElement_t));
+	spellElement_t* result = (spellElement_t*) malloc(sizeof(spellElement_t));
 	*result = *spellElement; // copy over all the static data members.
 
 	result->node = NULL;
@@ -274,49 +274,49 @@ spellElement_t *copySpellElement(spellElement_t *spellElement) {
 	result->elements.last = NULL;
 
 	for ( node = spellElement->elements.first; node != NULL; node = node->next ) {
-		spellElement_t *tempElement = (spellElement_t *) node->element;
+		spellElement_t* tempElement = (spellElement_t*) node->element;
 
-		node_t *tempNode = list_AddNodeLast(&result->elements);
+		node_t* tempNode = list_AddNodeLast(&result->elements);
 		tempNode->deconstructor = &spellElementDeconstructor;
 		tempNode->size = sizeof(spellElement_t);
 		tempNode->element = copySpellElement(tempElement);
 
-		spellElement_t *newElement = (spellElement_t *)tempNode->element;
+		spellElement_t* newElement = (spellElement_t*)tempNode->element;
 		newElement->node = tempNode;
 	}
 
 	return result;
 }
 
-int getCostOfSpell(spell_t *spell) {
+int getCostOfSpell(spell_t* spell) {
 	int cost = 0;
 
-	node_t *node;
+	node_t* node;
 	for ( node = spell->elements.first; node != NULL; node = node->next ) {
-		spellElement_t *spellElement = (spellElement_t *)node->element;
+		spellElement_t* spellElement = (spellElement_t*)node->element;
 		cost += getCostOfSpellElement(spellElement);
 	}
 
 	return cost;
 }
 
-int getCostOfSpellElement(spellElement_t *spellElement) {
+int getCostOfSpellElement(spellElement_t* spellElement) {
 	int cost = spellElement->mana;
 
-	node_t *node;
+	node_t* node;
 	for ( node = spellElement->elements.first; node != NULL; node = node->next ) {
-		spellElement_t *spellElement2 = (spellElement_t *)node->element;
+		spellElement_t* spellElement2 = (spellElement_t*)node->element;
 		cost += getCostOfSpellElement(spellElement2);
 	}
 
 	return cost;
 }
 
-bool spell_isChanneled(spell_t *spell) {
-	node_t *node = NULL;
+bool spell_isChanneled(spell_t* spell) {
+	node_t* node = NULL;
 
 	for ( node = spell->elements.first; node != NULL; node = node->next ) {
-		spellElement_t *spellElement = (spellElement_t *)node->element;
+		spellElement_t* spellElement = (spellElement_t*)node->element;
 		if ( spellElement_isChanneled(spellElement) ) {
 			return TRUE;
 		}
@@ -325,14 +325,14 @@ bool spell_isChanneled(spell_t *spell) {
 	return FALSE;
 }
 
-bool spellElement_isChanneled(spellElement_t *spellElement) {
-	node_t *node = NULL;
+bool spellElement_isChanneled(spellElement_t* spellElement) {
+	node_t* node = NULL;
 
 	if ( spellElement->channeled ) {
 		return TRUE;
 	}
 	for ( node = spellElement->elements.first; node != NULL; node = node->next ) {
-		spellElement_t *tempElement = (spellElement_t *)node->element;
+		spellElement_t* tempElement = (spellElement_t*)node->element;
 		if ( spellElement_isChanneled(tempElement) ) {
 			return TRUE;
 		}
@@ -341,15 +341,15 @@ bool spellElement_isChanneled(spellElement_t *spellElement) {
 	return FALSE;
 }
 
-void equipSpell(spell_t *spell, int playernum) {
+void equipSpell(spell_t* spell, int playernum) {
 	if ( playernum == clientnum ) {
 		selected_spell = spell;
 		messagePlayer(playernum, language[442], spell->name);
 	}
 }
 
-spell_t *getSpellFromID(int ID) {
-	spell_t *spell = NULL;
+spell_t* getSpellFromID(int ID) {
+	spell_t* spell = NULL;
 
 	switch (ID) {
 		case SPELL_FORCEBOLT:
@@ -423,10 +423,10 @@ spell_t *getSpellFromID(int ID) {
 	return spell;
 }
 
-bool spellInList(list_t *list, spell_t *spell) {
-	node_t *node;
+bool spellInList(list_t* list, spell_t* spell) {
+	node_t* node;
 	for ( node = list->first; node != NULL; node = node->next ) {
-		spell_t *current = (spell_t*)node->element;
+		spell_t* current = (spell_t*)node->element;
 		if (current) {
 			if (current->ID == spell->ID) {
 				return TRUE;
@@ -437,7 +437,7 @@ bool spellInList(list_t *list, spell_t *spell) {
 	return FALSE;
 }
 
-void spell_changeHealth(Entity *entity, int amount) {
+void spell_changeHealth(Entity* entity, int amount) {
 	if (!entity) {
 		return;
 	}
@@ -466,7 +466,7 @@ void spell_changeHealth(Entity *entity, int amount) {
 		}
 
 		if (multiplayer == SERVER) {
-			strcpy((char *)net_packet->data, "UPHP");
+			strcpy((char*)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);
 			SDLNet_Write32(0, &net_packet->data[8]);
 			net_packet->address.host = net_clients[player - 1].host;
@@ -477,12 +477,12 @@ void spell_changeHealth(Entity *entity, int amount) {
 	}
 }
 
-spell_t *getSpellFromItem(Item *item) {
-	spell_t *spell = NULL;
-	node_t *node = NULL;
+spell_t* getSpellFromItem(Item* item) {
+	spell_t* spell = NULL;
+	node_t* node = NULL;
 	for (node = spellList.first; node; node = node->next) {
 		if (node->element) {
-			spell = (spell_t *) node->element;
+			spell = (spell_t*) node->element;
 			if (spell->ID == item->appearance) {
 				return spell;    //Found the spell.
 			}

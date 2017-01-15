@@ -20,8 +20,8 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-Entity *hudweapon = NULL;
-Entity *hudarm = NULL;
+Entity* hudweapon = NULL;
+Entity* hudarm = NULL;
 bool weaponSwitch = FALSE;
 bool shieldSwitch = FALSE;
 
@@ -36,9 +36,9 @@ Sint32 throwGimpTimer = 0; // player cannot throw objects unless zero
 
 -------------------------------------------------------------------------------*/
 
-void actHudArm(Entity *my) {
+void actHudArm(Entity* my) {
 	hudarm = my;
-	Entity *parent = hudweapon;
+	Entity* parent = hudweapon;
 
 	if (parent == nullptr) {
 		return;
@@ -107,7 +107,7 @@ void actHudArm(Entity *my) {
 }
 
 #ifdef HAVE_FMOD
-FMOD_CHANNEL *bowDrawingSound = NULL;
+FMOD_CHANNEL* bowDrawingSound = NULL;
 FMOD_BOOL bowDrawingSoundPlaying = 0;
 #else
 // implement bow drawing timer via SDL_GetTicks()
@@ -135,12 +135,12 @@ bool bowFire = FALSE;
 #define HUDWEAPON_OLDVIBRATEZ my->fskill[8]
 
 Uint32 hudweaponuid = 0;
-void actHudWeapon(Entity *my) {
+void actHudWeapon(Entity* my) {
 	double result = 0;
 	ItemType type;
 	bool wearingring = FALSE;
-	Entity *entity;
-	Entity *parent = hudarm;
+	Entity* entity;
+	Entity* parent = hudarm;
 
 	// isn't active during intro/menu sequence
 	if ( intro == TRUE ) {
@@ -422,7 +422,7 @@ void actHudWeapon(Entity *my) {
 						HUDWEAPON_CHOP = 1;
 					}
 				} else {
-					Item *item = stats[clientnum]->weapon;
+					Item* item = stats[clientnum]->weapon;
 					if (item) {
 						if (itemCategory(item) == SPELLBOOK) {
 							mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -433,7 +433,7 @@ void actHudWeapon(Entity *my) {
 							// keys and lockpicks
 							HUDWEAPON_MOVEX = 5;
 							HUDWEAPON_CHOP = 3;
-							Entity *player = players[clientnum]->entity;
+							Entity* player = players[clientnum]->entity;
 							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, FALSE);
 							if (hit.entity  && stats[clientnum]->weapon) {
 								stats[clientnum]->weapon->apply(clientnum, hit.entity);
@@ -629,7 +629,7 @@ void actHudWeapon(Entity *my) {
 	} else if ( HUDWEAPON_CHOP == 3 ) { // return from first swing
 		if ( swingweapon ) {
 			// another swing...
-			Item *item = stats[clientnum]->weapon;
+			Item* item = stats[clientnum]->weapon;
 			if ( item ) {
 				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM ) {
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE ) {
@@ -906,7 +906,7 @@ void actHudWeapon(Entity *my) {
 		my->pitch = defaultpitch + HUDWEAPON_PITCH - camera_shakey2 / 200.f;
 		my->roll = HUDWEAPON_ROLL;
 	} else {
-		Item *item = stats[clientnum]->weapon;
+		Item* item = stats[clientnum]->weapon;
 		if (item) {
 			if (item->type == TOOL_SKELETONKEY || item->type == TOOL_LOCKPICK) {
 				defaultpitch = -PI / 8.f;
@@ -945,7 +945,7 @@ void actHudWeapon(Entity *my) {
 #define HUDSHIELD_PITCH my->fskill[4]
 #define HUDSHIELD_ROLL my->fskill[5]
 
-void actHudShield(Entity *my) {
+void actHudShield(Entity* my) {
 	my->flags[UNCLICKABLE] = TRUE;
 
 	// isn't active during intro/menu sequence
@@ -1028,7 +1028,7 @@ void actHudShield(Entity *my) {
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
 			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]) {
 				my->flags[INVISIBLE] = TRUE;
-				Entity *parent = uidToEntity(my->parent);
+				Entity* parent = uidToEntity(my->parent);
 				if (parent) {
 					parent->flags[INVISIBLE] = TRUE;
 				}
@@ -1058,7 +1058,7 @@ void actHudShield(Entity *my) {
 
 	if (multiplayer == CLIENT) {
 		if (HUDSHIELD_DEFEND != defending || ticks % 120 == 0) {
-			strcpy((char *)net_packet->data, "SHLD");
+			strcpy((char*)net_packet->data, "SHLD");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = defending;
 			net_packet->address.host = net_server.host;
@@ -1161,13 +1161,13 @@ void actHudShield(Entity *my) {
 	if (stats[clientnum]->shield && !swimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch) {
 		if (itemCategory(stats[clientnum]->shield) == TOOL) {
 			if (stats[clientnum]->shield->type == TOOL_TORCH) {
-				Entity *entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my);
 				entity->flags[OVERDRAW] = TRUE;
 				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
 				my->flags[BRIGHT] = TRUE;
 			} else if (stats[clientnum]->shield->type == TOOL_LANTERN) {
-				Entity *entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my);
 				entity->flags[OVERDRAW] = TRUE;
 				entity->z += 1;
 				my->flags[BRIGHT] = TRUE;

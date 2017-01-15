@@ -238,7 +238,7 @@ public:
 
 	// weight, category and other generic info reported by function calls
 
-	node_t *node;
+	node_t* node;
 
 	/*
 	 * Gems use this to store information about what sort of creature they contain.
@@ -248,8 +248,8 @@ public:
 	//As it stands, no item destructor is called , so this would lead to a memory leak.
 	//And tracking down every time an item gets deleted and calling an item destructor would be quite a doozey.
 
-	char *description();
-	char *getName();
+	char* description();
+	char* getName();
 
 	//General Functions.
 	Sint32 weaponGetAttack(); //Returns the tohit of the weapon.
@@ -257,7 +257,7 @@ public:
 	bool canUnequip(); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
-	void apply(int player, Entity *entity);
+	void apply(int player, Entity* entity);
 };
 extern Uint32 itemuids;
 
@@ -268,13 +268,13 @@ static const int INVENTORY_SLOTSIZE = 40;
 #define INVENTORY_STARTX ((xres)/2-(INVENTORY_SIZEX)*(INVENTORY_SLOTSIZE)/2-inventory_mode_item_img->w/2)
 static const int INVENTORY_STARTY = 10;
 
-extern Item *selectedItem;
+extern Item* selectedItem;
 
 // item generic
 class ItemGeneric {
 public:
-	char *name_identified;      // identified item name
-	char *name_unidentified;    // unidentified item name
+	char* name_identified;      // identified item name
+	char* name_unidentified;    // unidentified item name
 	int index;                  // world model
 	int fpindex;                // first person model
 	int variations;             // number of model variations
@@ -287,66 +287,66 @@ public:
 extern ItemGeneric items[NUMITEMS];
 
 //----------Item usage functions----------
-void item_PotionWater(Item *item, Entity *entity);
-void item_PotionBooze(Item *item, Entity *entity);
-void item_PotionJuice(Item *item, Entity *entity);
-void item_PotionSickness(Item *item, Entity *entity);
-void item_PotionConfusion(Item *item, Entity *entity);
-void item_PotionCureAilment(Item *item, Entity *entity);
-void item_PotionBlindness(Item *item, Entity *entity);
-void item_PotionHealing(Item *item, Entity *entity);
-void item_PotionExtraHealing(Item *item, Entity *entity);
-void item_PotionRestoreMagic(Item *item, Entity *entity);
-void item_PotionInvisibility(Item *item, Entity *entity);
-void item_PotionLevitation(Item *item, Entity *entity);
-void item_PotionSpeed(Item *item, Entity *entity);
-void item_PotionAcid(Item *item, Entity *entity);
-void item_PotionParalysis(Item *item, Entity *entity);
-void item_ScrollMail(Item *item, int player);
-void item_ScrollIdentify(Item *item, int player);
-void item_ScrollLight(Item *item, int player);
-void item_ScrollBlank(Item *item, int player);
-void item_ScrollEnchantWeapon(Item *item, int player);
-void item_ScrollEnchantArmor(Item *item, int player);
-void item_ScrollRemoveCurse(Item *item, int player);
-void item_ScrollFire(Item *item, int player);
-void item_ScrollFood(Item *item, int player);
-void item_ScrollMagicMapping(Item *item, int player);
-void item_ScrollRepair(Item *item, int player);
-void item_ScrollDestroyArmor(Item *item, int player);
-void item_ScrollTeleportation(Item *item, int player);
-void item_ScrollSummon(Item *item, int player);
-void item_AmuletSexChange(Item *item, int player);
-void item_ToolTowel(Item *item, int player);
-void item_ToolTinOpener(Item *item, int player);
-void item_ToolMirror(Item *item, int player);
-void item_ToolBeartrap(Item *item, int player);
-void item_Food(Item *item, int player);
-void item_FoodTin(Item *item, int player);
-void item_Gem(Item *item, int player);
-void item_Spellbook(Item *item, int player);
+void item_PotionWater(Item* item, Entity* entity);
+void item_PotionBooze(Item* item, Entity* entity);
+void item_PotionJuice(Item* item, Entity* entity);
+void item_PotionSickness(Item* item, Entity* entity);
+void item_PotionConfusion(Item* item, Entity* entity);
+void item_PotionCureAilment(Item* item, Entity* entity);
+void item_PotionBlindness(Item* item, Entity* entity);
+void item_PotionHealing(Item* item, Entity* entity);
+void item_PotionExtraHealing(Item* item, Entity* entity);
+void item_PotionRestoreMagic(Item* item, Entity* entity);
+void item_PotionInvisibility(Item* item, Entity* entity);
+void item_PotionLevitation(Item* item, Entity* entity);
+void item_PotionSpeed(Item* item, Entity* entity);
+void item_PotionAcid(Item* item, Entity* entity);
+void item_PotionParalysis(Item* item, Entity* entity);
+void item_ScrollMail(Item* item, int player);
+void item_ScrollIdentify(Item* item, int player);
+void item_ScrollLight(Item* item, int player);
+void item_ScrollBlank(Item* item, int player);
+void item_ScrollEnchantWeapon(Item* item, int player);
+void item_ScrollEnchantArmor(Item* item, int player);
+void item_ScrollRemoveCurse(Item* item, int player);
+void item_ScrollFire(Item* item, int player);
+void item_ScrollFood(Item* item, int player);
+void item_ScrollMagicMapping(Item* item, int player);
+void item_ScrollRepair(Item* item, int player);
+void item_ScrollDestroyArmor(Item* item, int player);
+void item_ScrollTeleportation(Item* item, int player);
+void item_ScrollSummon(Item* item, int player);
+void item_AmuletSexChange(Item* item, int player);
+void item_ToolTowel(Item* item, int player);
+void item_ToolTinOpener(Item* item, int player);
+void item_ToolMirror(Item* item, int player);
+void item_ToolBeartrap(Item* item, int player);
+void item_Food(Item* item, int player);
+void item_FoodTin(Item* item, int player);
+void item_Gem(Item* item, int player);
+void item_Spellbook(Item* item, int player);
 
 //General functions.
-Item *newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t *inventory);
-Item *uidToItem(Uint32 uid);
+Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
+Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
-Item* newItemFromEntity(Entity *entity); //Make sure to call free(item).
-Entity *dropItemMonster(Item *item, Entity *monster, Stat *monsterStats);
-Item **itemSlot(Stat *myStats, Item *item);
+Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
+Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats);
+Item** itemSlot(Stat* myStats, Item* item);
 
-enum Category itemCategory(const Item *item);
-Sint32 itemModel(Item *item);
-Sint32 itemModelFirstperson(Item *item);
-SDL_Surface *itemSprite(Item *item);
-void consumeItem(Item *item); //NOTE: Items have to be unequipped before calling this function on them.
-int itemCompare(const Item *item1, const Item *item2);
-void dropItem(Item *item, int player);
-void useItem(Item *item, int player);
-void equipItem(Item *item, Item **slot, int player);
-Item *itemPickup(int player, Item *item);
-bool itemIsEquipped(const Item *item, int player);
+enum Category itemCategory(const Item* item);
+Sint32 itemModel(Item* item);
+Sint32 itemModelFirstperson(Item* item);
+SDL_Surface* itemSprite(Item* item);
+void consumeItem(Item* item); //NOTE: Items have to be unequipped before calling this function on them.
+int itemCompare(const Item* item1, const Item* item2);
+void dropItem(Item* item, int player);
+void useItem(Item* item, int player);
+void equipItem(Item* item, Item** slot, int player);
+Item* itemPickup(int player, Item* item);
+bool itemIsEquipped(const Item* item, int player);
 
 /*
  * Returns true if potion is harmful to the player.
  */
-bool isPotionBad(const Item &potion);
+bool isPotionBad(const Item& potion);

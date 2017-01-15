@@ -23,14 +23,14 @@
 #include "monster.hpp"
 #include "player.hpp"
 
-void item_PotionWater(Item *item, Entity *entity) {
+void item_PotionWater(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
-	node_t *node;
+	node_t* node;
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -75,7 +75,7 @@ void item_PotionWater(Item *item, Entity *entity) {
 		// randomly curse an unidentified item in the entity's inventory
 		int items = 0;
 		for ( node = stats->inventory.first; node != NULL; node = node->next ) {
-			Item *target = (Item *)node->element;
+			Item* target = (Item*)node->element;
 			if ( target->identified == FALSE ) {
 				items++;
 			}
@@ -87,7 +87,7 @@ void item_PotionWater(Item *item, Entity *entity) {
 		int itemToCurse = rand() % items;
 		items = 0;
 		for ( node = stats->inventory.first; node != NULL; node = node->next ) {
-			Item *target = (Item *)node->element;
+			Item* target = (Item*)node->element;
 			if ( target->identified == FALSE ) {
 				if ( items == itemToCurse ) {
 					target->beatitude = std::max<Sint16>(-1, target->beatitude);
@@ -100,13 +100,13 @@ void item_PotionWater(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionBooze(Item *item, Entity *entity) {
+void item_PotionBooze(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -144,13 +144,13 @@ void item_PotionBooze(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionJuice(Item *item, Entity *entity) {
+void item_PotionJuice(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -184,13 +184,13 @@ void item_PotionJuice(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionSickness(Item *item, Entity *entity) {
+void item_PotionSickness(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -237,13 +237,13 @@ void item_PotionSickness(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionConfusion(Item *item, Entity *entity) {
+void item_PotionConfusion(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -282,13 +282,13 @@ void item_PotionConfusion(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionCureAilment(Item *item, Entity *entity) {
+void item_PotionCureAilment(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 	int c;
 
 	if ( entity->behavior == &actPlayer ) {
@@ -332,13 +332,13 @@ void item_PotionCureAilment(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionBlindness(Item *item, Entity *entity) {
+void item_PotionBlindness(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -374,13 +374,13 @@ void item_PotionBlindness(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionInvisibility(Item *item, Entity *entity) {
+void item_PotionInvisibility(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -416,13 +416,13 @@ void item_PotionInvisibility(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionLevitation(Item *item, Entity *entity) {
+void item_PotionLevitation(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -458,13 +458,13 @@ void item_PotionLevitation(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionSpeed(Item *item, Entity *entity) {
+void item_PotionSpeed(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -506,13 +506,13 @@ void item_PotionSpeed(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionAcid(Item *item, Entity *entity) {
+void item_PotionAcid(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -557,13 +557,13 @@ void item_PotionAcid(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionParalysis(Item *item, Entity *entity) {
+void item_PotionParalysis(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -599,13 +599,13 @@ void item_PotionParalysis(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionHealing(Item *item, Entity *entity) {
+void item_PotionHealing(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -662,13 +662,13 @@ void item_PotionHealing(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionExtraHealing(Item *item, Entity *entity) {
+void item_PotionExtraHealing(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -725,13 +725,13 @@ void item_PotionExtraHealing(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_PotionRestoreMagic(Item *item, Entity *entity) {
+void item_PotionRestoreMagic(Item* item, Entity* entity) {
 	if (!entity) {
 		return;
 	}
 
 	int player = -1;
-	Stat *stats;
+	Stat* stats;
 
 	if ( entity->behavior == &actPlayer ) {
 		player = entity->skill[2];
@@ -779,7 +779,7 @@ void item_PotionRestoreMagic(Item *item, Entity *entity) {
 	consumeItem(item);
 }
 
-void item_ScrollMail(Item *item, int player) {
+void item_ScrollMail(Item* item, int player) {
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -873,9 +873,9 @@ void item_ScrollMail(Item *item, int player) {
 	}
 }
 
-void item_ScrollIdentify(Item *item, int player) {
-	node_t *node;
-	Item *target;
+void item_ScrollIdentify(Item* item, int player) {
+	node_t* node;
+	Item* target;
 	int c, items, itemToIdentify, numIdentified = 0;
 
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
@@ -907,7 +907,7 @@ void item_ScrollIdentify(Item *item, int player) {
 	for ( c = 0; c < std::max(item->beatitude + 1, 1); c++ ) {
 		items = 0;
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next ) {
-			target = (Item *)node->element;
+			target = (Item*)node->element;
 			if ( target && target->identified == FALSE ) {
 				items++;
 			}
@@ -921,7 +921,7 @@ void item_ScrollIdentify(Item *item, int player) {
 		itemToIdentify = rand() % items;
 		items = 0;
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next ) {
-			target = (Item *)node->element;
+			target = (Item*)node->element;
 			if ( target && target->identified == FALSE ) {
 				if ( items == itemToIdentify ) {
 					target->identified = TRUE;
@@ -935,7 +935,7 @@ void item_ScrollIdentify(Item *item, int player) {
 	}
 }
 
-void item_ScrollLight(Item *item, int player) {
+void item_ScrollLight(Item* item, int player) {
 	int c;
 
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
@@ -966,7 +966,7 @@ void item_ScrollLight(Item *item, int player) {
 			if (client_disconnected[c] == TRUE) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "LITS");
+			strcpy((char*)net_packet->data, "LITS");
 			SDLNet_Write16(players[player]->entity->x / 16, &net_packet->data[4]);
 			SDLNet_Write16(players[player]->entity->y / 16, &net_packet->data[6]);
 			SDLNet_Write16(8, &net_packet->data[8]);
@@ -979,7 +979,7 @@ void item_ScrollLight(Item *item, int player) {
 	}
 }
 
-void item_ScrollBlank(Item *item, int player) {
+void item_ScrollBlank(Item* item, int player) {
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1000,7 +1000,7 @@ void item_ScrollBlank(Item *item, int player) {
 	messagePlayer(player, language[852]);
 }
 
-void item_ScrollEnchantWeapon(Item *item, int player) {
+void item_ScrollEnchantWeapon(Item* item, int player) {
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1043,8 +1043,8 @@ void item_ScrollEnchantWeapon(Item *item, int player) {
 	}
 }
 
-void item_ScrollEnchantArmor(Item *item, int player) {
-	Item *armor;
+void item_ScrollEnchantArmor(Item* item, int player) {
+	Item* armor;
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1103,9 +1103,9 @@ void item_ScrollEnchantArmor(Item *item, int player) {
 	}
 }
 
-void item_ScrollRemoveCurse(Item *item, int player) {
-	Item *target;
-	node_t *node;
+void item_ScrollRemoveCurse(Item* item, int player) {
+	Item* target;
+	node_t* node;
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1160,7 +1160,7 @@ void item_ScrollRemoveCurse(Item *item, int player) {
 		}
 		if (item->beatitude > 0 && player == clientnum )
 			for (node = stats[player]->inventory.first; node != nullptr; node = node->next) {
-				target = (Item *)node->element;
+				target = (Item*)node->element;
 				target->beatitude = std::max<Sint16>(0, target->beatitude);
 			}
 	} else {
@@ -1170,7 +1170,7 @@ void item_ScrollRemoveCurse(Item *item, int player) {
 	}
 }
 
-void item_ScrollFire(Item *item, int player) {
+void item_ScrollFire(Item* item, int player) {
 	if (multiplayer == CLIENT) {
 		return;
 	}
@@ -1196,7 +1196,7 @@ void item_ScrollFire(Item *item, int player) {
 		players[player]->entity->flags[BURNING] = TRUE;
 		int c;
 		for (c = 0; c < 100; c++) {
-			Entity *entity = spawnFlame(players[player]->entity);
+			Entity* entity = spawnFlame(players[player]->entity);
 			entity->sprite = 16;
 			double vel = rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
@@ -1210,9 +1210,9 @@ void item_ScrollFire(Item *item, int player) {
 	}
 }
 
-void item_ScrollFood(Item *item, int player) {
-	Item *target;
-	node_t *node, *nextnode;
+void item_ScrollFood(Item* item, int player) {
+	Item* target;
+	node_t* node, *nextnode;
 	int foundfood = 0;
 
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
@@ -1245,7 +1245,7 @@ void item_ScrollFood(Item *item, int player) {
 	} else {
 		for ( node = stats[player]->inventory.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
-			target = (Item *)node->element;
+			target = (Item*)node->element;
 			if ( itemCategory(target) == FOOD ) {
 				if ( rand() % 2 == 0 ) { // 50% chance of destroying that food item
 					consumeItem(target);
@@ -1261,7 +1261,7 @@ void item_ScrollFood(Item *item, int player) {
 	}
 }
 
-void item_ScrollMagicMapping(Item *item, int player) {
+void item_ScrollMagicMapping(Item* item, int player) {
 	int x, y;
 
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
@@ -1312,8 +1312,8 @@ void item_ScrollMagicMapping(Item *item, int player) {
 	}
 }
 
-void item_ScrollRepair(Item *item, int player) {
-	Item *armor;
+void item_ScrollRepair(Item* item, int player) {
+	Item* armor;
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1365,8 +1365,8 @@ void item_ScrollRepair(Item *item, int player) {
 	}
 }
 
-void item_ScrollDestroyArmor(Item *item, int player) {
-	Item *armor;
+void item_ScrollDestroyArmor(Item* item, int player) {
+	Item* armor;
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1415,7 +1415,7 @@ void item_ScrollDestroyArmor(Item *item, int player) {
 				armor->status = static_cast<Status>(0);
 			} else {
 				if ( player == clientnum ) {
-					Item *item = newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, NULL);
+					Item* item = newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, NULL);
 					itemPickup(player, item);
 					free(item);
 				}
@@ -1426,7 +1426,7 @@ void item_ScrollDestroyArmor(Item *item, int player) {
 	}
 }
 
-void item_ScrollTeleportation(Item *item, int player) {
+void item_ScrollTeleportation(Item* item, int player) {
 	// server only function
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
@@ -1455,7 +1455,7 @@ void item_ScrollTeleportation(Item *item, int player) {
 	players[player]->entity->teleportRandom();
 }
 
-void item_ScrollSummon(Item *item, int player) {
+void item_ScrollSummon(Item* item, int player) {
 	// server only function
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
@@ -1565,13 +1565,13 @@ void item_ScrollSummon(Item *item, int player) {
 	int i;
 	bool spawnedMonster = FALSE;
 	for (i = 0; i < numCreatures; ++i) {
-		Entity *monster = summonMonster(creature, floor(players[player]->entity->x / 16) * 16 + 8, floor(players[player]->entity->y / 16) * 16 + 8);
+		Entity* monster = summonMonster(creature, floor(players[player]->entity->x / 16) * 16 + 8, floor(players[player]->entity->y / 16) * 16 + 8);
 		if ( monster ) {
 			spawnedMonster = TRUE;
 			if ( item->beatitude >= 2 && creature == HUMAN ) {
 				monster->skill[29] = 1; // zap brigadier
 			}
-			Stat *monsterStats = monster->getStats();
+			Stat* monsterStats = monster->getStats();
 			if ( item->beatitude >= 0 && monsterStats ) {
 				monsterStats->leader_uid = players[player]->entity->uid;
 				if ( !monsterally[HUMAN][monsterStats->type] ) {
@@ -1579,15 +1579,15 @@ void item_ScrollSummon(Item *item, int player) {
 				}
 
 				// update followers for this player
-				node_t *newNode = list_AddNodeLast(&stats[player]->FOLLOWERS);
+				node_t* newNode = list_AddNodeLast(&stats[player]->FOLLOWERS);
 				newNode->deconstructor = &defaultDeconstructor;
-				Uint32 *myuid = (Uint32 *) malloc(sizeof(Uint32));
+				Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 				newNode->element = myuid;
 				*myuid = monster->uid;
 
 				// update client followers
 				if ( player > 0 && multiplayer == SERVER ) {
-					strcpy((char *)net_packet->data, "LEAD");
+					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
@@ -1620,7 +1620,7 @@ void item_ScrollSummon(Item *item, int player) {
 	}
 }
 
-void item_ToolTowel(Item *item, int player) {
+void item_ToolTowel(Item* item, int player) {
 	if ( player == clientnum ) {
 		messagePlayer(player, language[883]);
 	}
@@ -1647,7 +1647,7 @@ void item_ToolTowel(Item *item, int player) {
 	}
 }
 
-void item_ToolTinOpener(Item *item, int player) {
+void item_ToolTinOpener(Item* item, int player) {
 	if (multiplayer == CLIENT) {
 		return;
 	}
@@ -1655,7 +1655,7 @@ void item_ToolTinOpener(Item *item, int player) {
 	messagePlayer(player, language[886]);
 }
 
-void item_ToolMirror(Item *item, int player) {
+void item_ToolMirror(Item* item, int player) {
 	if (players[player] == nullptr || players[player]->entity == nullptr) {
 		return;
 	}
@@ -1742,8 +1742,8 @@ void item_ToolMirror(Item *item, int player) {
 	}
 }
 
-void item_ToolBeartrap(Item *item, int player) {
-	Entity *entity;
+void item_ToolBeartrap(Item* item, int player) {
+	Entity* entity;
 
 	if ( multiplayer == CLIENT ) {
 		consumeItem(item);
@@ -1800,7 +1800,7 @@ void item_ToolBeartrap(Item *item, int player) {
 	return;
 }
 
-void item_Food(Item *item, int player) {
+void item_Food(Item* item, int player) {
 	int oldcount;
 	int pukeChance;
 
@@ -1937,7 +1937,7 @@ void item_Food(Item *item, int player) {
 	consumeItem(item);
 }
 
-void item_FoodTin(Item *item, int player) {
+void item_FoodTin(Item* item, int player) {
 	int oldcount;
 	int pukeChance;
 	bool slippery = FALSE;
@@ -2072,7 +2072,7 @@ void item_FoodTin(Item *item, int player) {
 	consumeItem(item);
 }
 
-void item_AmuletSexChange(Item *item, int player) {
+void item_AmuletSexChange(Item* item, int player) {
 	if ( stats[player]->amulet != NULL ) {
 		if ( !stats[player]->amulet->canUnequip() ) {
 			if ( player == clientnum ) {
@@ -2095,8 +2095,8 @@ void item_AmuletSexChange(Item *item, int player) {
 	messagePlayer(player, language[969]);
 }
 
-void item_Spellbook(Item *item, int player) {
-	node_t *node, *nextnode;
+void item_Spellbook(Item* item, int player) {
+	node_t* node, *nextnode;
 
 	item->identified = TRUE;
 	if (player != clientnum) {
@@ -2118,7 +2118,7 @@ void item_Spellbook(Item *item, int player) {
 			// randomly delete a spell
 			int spellToDelete = rand() % list_Size(&spellList);
 			node = list_Node(&spellList, spellToDelete);
-			spell_t *spell = (spell_t *)node->element;
+			spell_t* spell = (spell_t*)node->element;
 			if ( spell == selected_spell ) {
 				selected_spell = NULL;
 			}
@@ -2128,7 +2128,7 @@ void item_Spellbook(Item *item, int player) {
 			// delete its accompanying spell item(s)
 			for ( node = stats[player]->inventory.first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				Item *item = (Item *)node->element;
+				Item* item = (Item*)node->element;
 				if ( item->type == SPELL_ITEM ) {
 					if ( item->appearance == spellID ) {
 						list_RemoveNode(node);

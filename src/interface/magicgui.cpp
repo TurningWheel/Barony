@@ -50,7 +50,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 
 		int height = spell_list_titlebar_bmp->h;
 		int numspells = 0;
-		node_t *node;
+		node_t* node;
 		for (node = spellList.first; node != NULL; node = node->next) { //TODO: Create spellList. -- Done?
 			numspells++;
 		}
@@ -79,7 +79,7 @@ void renderMagicGUI(int winx, int winy, int winw, int winh) {
 		}
 		for (i = 0; i < numspells; ++i) {
 			if (node) { //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
-				spell_t *spell = (spell_t*)node->element;
+				spell_t* spell = (spell_t*)node->element;
 				if (spell) {
 					//If the mouse is over the slot, then draw the highlighted version.
 					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h)) {
@@ -127,7 +127,7 @@ void updateMagicGUI() {
 			//TODO: Loop through all spells then run the if check below.
 			int height = spell_list_titlebar_bmp->h;
 			int numspells = 0;
-			node_t *node;
+			node_t* node;
 			for (node = spellList.first; node != NULL; node = node->next) {
 				numspells++;
 			}
@@ -153,7 +153,7 @@ void updateMagicGUI() {
 				if (node) { //If the node exists (so that there's no crashes midgame...though the node should not be null in the first place. If it is, you have a problem.
 					if (mouseInBounds(pos.x, pos.x + spell_list_gui_slot_bmp->w, pos.y, pos.y + spell_list_gui_slot_bmp->h)) {
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						spell_t *spell = (spell_t*)node->element;
+						spell_t* spell = (spell_t*)node->element;
 						if (spell) {
 							equipSpell(spell, clientnum);
 							//selected_spell = spell;
@@ -181,28 +181,28 @@ void drawSustainedSpells() {
 	if (SUST_SPELLS_RIGHT_ALIGN) {
 		//Alright, so, the list should be right-aligned.
 		//Meaning, it draws alongside the right side of the screen.
-		node_t *node = list_Node(&items[SPELL_ITEM].surfaces, 1); //Use any old sprite icon as a reference to calculate the position.
+		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, 1); //Use any old sprite icon as a reference to calculate the position.
 		if (!node) {
 			return;
 		}
-		SDL_Surface **surface = (SDL_Surface **)node->element;
+		SDL_Surface** surface = (SDL_Surface**)node->element;
 		pos.x = camera.winw - (*surface)->w - SUST_SPELLS_X;
 	}
 	pos.y = SUST_SPELLS_Y;
 
 	int count = 0; //This is just for debugging purposes.
-	node_t *node = channeledSpells[clientnum].first;
+	node_t* node = channeledSpells[clientnum].first;
 	for (; node; node = node->next, count++) {
-		spell_t *spell = (spell_t*)node->element;
+		spell_t* spell = (spell_t*)node->element;
 		if (!spell) {
 			break;
 		}
 		//Grab the sprite/
-		node_t *node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
+		node_t* node = list_Node(&items[SPELL_ITEM].surfaces, spell->ID);
 		if (!node) {
 			break;
 		}
-		sprite = (SDL_Surface **)node->element;
+		sprite = (SDL_Surface**)node->element;
 
 		drawImage(*sprite, NULL, &pos);
 

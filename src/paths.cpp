@@ -19,8 +19,8 @@
 #include "items.hpp"
 #include "net.hpp"
 
-int *pathMapFlying = NULL;
-int *pathMapGrounded = NULL;
+int* pathMapFlying = NULL;
+int* pathMapGrounded = NULL;
 int pathMapZone = 1;
 
 #define STRAIGHTCOST 10
@@ -49,7 +49,7 @@ Uint32 heuristic(int x1, int y1, int x2, int y2) {
 
 -------------------------------------------------------------------------------*/
 
-pathnode_t **heapAdd(pathnode_t **heap, pathnode_t *pathnode, long *length) {
+pathnode_t** heapAdd(pathnode_t** heap, pathnode_t* pathnode, long* length) {
 	long x;
 
 	*length += 1;
@@ -76,9 +76,9 @@ pathnode_t **heapAdd(pathnode_t **heap, pathnode_t *pathnode, long *length) {
 
 -------------------------------------------------------------------------------*/
 
-pathnode_t **heapRemove(pathnode_t **heap, long *length) {
+pathnode_t** heapRemove(pathnode_t** heap, long* length) {
 	long u, v = 1;
-	pathnode_t *pathnode;
+	pathnode_t* pathnode;
 
 	heap[1] = heap[*length];
 	*length -= 1;
@@ -116,7 +116,7 @@ pathnode_t **heapRemove(pathnode_t **heap, long *length) {
 
 -------------------------------------------------------------------------------*/
 
-int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
+int pathCheckObstacle(long x, long y, Entity* my, Entity* target) {
 	int u = std::min(std::max<unsigned int>(0, x >> 4), map.width);
 	int v = std::min(std::max<unsigned int>(0, y >> 4), map.height); //TODO: Why are int and long int being compared?
 	int index = v * MAPLAYERS + u * MAPLAYERS * map.height;
@@ -125,9 +125,9 @@ int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
 		return 1;
 	}
 
-	node_t *node;
+	node_t* node;
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 14 || entity->sprite == 15 || entity->sprite == 19 || entity->sprite == 20 || entity->sprite == 39 || entity->sprite == 44 ) {
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v ) {
 				return 1;
@@ -150,22 +150,22 @@ int pathCheckObstacle(long x, long y, Entity *my, Entity *target) {
 
 -------------------------------------------------------------------------------*/
 
-list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target) {
+list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target) {
 	if (!my) {
 		return NULL;
 	}
 
-	pathnode_t *pathnode, *childnode, *parent;
-	list_t *openList, *closedList;
-	list_t *path;
-	node_t *node;
+	pathnode_t* pathnode, *childnode, *parent;
+	list_t* openList, *closedList;
+	list_t* path;
+	node_t* node;
 	bool alreadyadded;
 	Sint32 x, y, z, h, g;
-	pathnode_t **binaryheap;
+	pathnode_t** binaryheap;
 	long heaplength = 0;
-	node_t *entityNode = NULL;
+	node_t* entityNode = NULL;
 
-	int *pathMap = (int *) calloc(map.width * map.height, sizeof(int));
+	int* pathMap = (int*) calloc(map.width * map.height, sizeof(int));
 
 	bool levitating = FALSE;
 
@@ -175,7 +175,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	y2 = std::min<unsigned int>(std::max(0, y2), map.height - 1); //TODO: Why are int and unsigned int being compared?
 
 	// get levitation status
-	Stat *stats = my->getStats();
+	Stat* stats = my->getStats();
 	if ( stats ) {
 		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE ) {
 			levitating = TRUE;
@@ -212,7 +212,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 	}
 
 	for ( entityNode = map.entities->first; entityNode != NULL; entityNode = entityNode->next ) {
-		Entity *entity = (Entity *)entityNode->element;
+		Entity* entity = (Entity*)entityNode->element;
 		if ( entity->flags[PASSABLE] ) {
 			continue;
 		}
@@ -230,13 +230,13 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 		pathMap[y + x * map.height] = 0;
 	}
 
-	openList = (list_t *) malloc(sizeof(list_t));
+	openList = (list_t*) malloc(sizeof(list_t));
 	openList->first = NULL;
 	openList->last = NULL;
-	closedList = (list_t *) malloc(sizeof(list_t));
+	closedList = (list_t*) malloc(sizeof(list_t));
 	closedList->first = NULL;
 	closedList->last = NULL;
-	binaryheap = (pathnode_t **) malloc(sizeof(pathnode_t *)*map.width * map.height);
+	binaryheap = (pathnode_t**) malloc(sizeof(pathnode_t*)*map.width * map.height);
 	binaryheap[0] = NULL;
 
 	// create starting node in list
@@ -266,7 +266,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 		pathnode->g = g;
 		if ( pathnode->x == x2 && pathnode->y == y2 ) {
 			// found target, retrace path
-			path = (list_t *) malloc(sizeof(list_t));
+			path = (list_t*) malloc(sizeof(list_t));
 			path->first = NULL;
 			path->last = NULL;
 			list_FreeAll(openList);
@@ -321,14 +321,14 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 				if ( !z ) {
 					alreadyadded = FALSE;
 					for ( node = closedList->first; node != NULL; node = node->next ) {
-						childnode = (pathnode_t *)node->element;
+						childnode = (pathnode_t*)node->element;
 						if ( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y ) {
 							alreadyadded = TRUE;
 							break;
 						}
 					}
 					for ( node = openList->first; node != NULL; node = node->next ) {
-						childnode = (pathnode_t *)node->element;
+						childnode = (pathnode_t*)node->element;
 						if ( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y ) {
 							alreadyadded = TRUE;
 							if ( x && y ) {
@@ -385,7 +385,7 @@ list_t *generatePath(int x1, int y1, int x2, int y2, Entity *my, Entity *target)
 
 -------------------------------------------------------------------------------*/
 
-void fillPathMap(int *pathMap, int x, int y, int zone);
+void fillPathMap(int* pathMap, int x, int y, int zone);
 
 void generatePathMaps() {
 	int x, y;
@@ -393,11 +393,11 @@ void generatePathMaps() {
 	if ( pathMapGrounded ) {
 		free(pathMapGrounded);
 	}
-	pathMapGrounded = (int *) calloc(map.width * map.height, sizeof(int));
+	pathMapGrounded = (int*) calloc(map.width * map.height, sizeof(int));
 	if ( pathMapFlying ) {
 		free(pathMapFlying);
 	}
-	pathMapFlying = (int *) calloc(map.width * map.height, sizeof(int));
+	pathMapFlying = (int*) calloc(map.width * map.height, sizeof(int));
 
 	pathMapZone = 1;
 	for ( y = 0; y < map.height; y++ ) {
@@ -412,7 +412,7 @@ void generatePathMaps() {
 	}
 }
 
-void fillPathMap(int *pathMap, int x, int y, int zone) {
+void fillPathMap(int* pathMap, int x, int y, int zone) {
 	bool obstacle = TRUE;
 
 	int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
@@ -422,11 +422,11 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 		obstacle = FALSE;
 	}
 	if ( obstacle == FALSE ) {
-		node_t *node;
-		list_t *list = checkTileForEntity(x, y);
+		node_t* node;
+		list_t* list = checkTileForEntity(x, y);
 		if ( list ) {
 			for ( node = list->first; node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				if ( entity ) {
 					if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
 						obstacle = TRUE;
@@ -459,11 +459,11 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 						if ( !pathMap[v + (u + 1)*map.height] ) {
 							bool foundObstacle = FALSE;
 							bool foundWallModifier = FALSE;
-							list_t *list = checkTileForEntity(u + 1, v);
+							list_t* list = checkTileForEntity(u + 1, v);
 							if ( list ) {
-								node_t *node;
+								node_t* node;
 								for ( node = list->first; node != NULL; node = node->next ) {
-									Entity *entity = (Entity *)node->element;
+									Entity* entity = (Entity*)node->element;
 									if ( entity ) {
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
 											foundObstacle = TRUE;
@@ -494,11 +494,11 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 						if ( !pathMap[v + (u - 1)*map.height] ) {
 							bool foundObstacle = FALSE;
 							bool foundWallModifier = FALSE;
-							list_t *list = checkTileForEntity(u - 1, v);
+							list_t* list = checkTileForEntity(u - 1, v);
 							if ( list ) {
-								node_t *node;
+								node_t* node;
 								for ( node = list->first; node != NULL; node = node->next ) {
-									Entity *entity = (Entity *)node->element;
+									Entity* entity = (Entity*)node->element;
 									if ( entity ) {
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
 											foundObstacle = TRUE;
@@ -529,11 +529,11 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 						if ( !pathMap[(v + 1) + u * map.height] ) {
 							bool foundObstacle = FALSE;
 							bool foundWallModifier = FALSE;
-							list_t *list = checkTileForEntity(u, v + 1);
+							list_t* list = checkTileForEntity(u, v + 1);
 							if ( list ) {
-								node_t *node;
+								node_t* node;
 								for ( node = list->first; node != NULL; node = node->next ) {
-									Entity *entity = (Entity *)node->element;
+									Entity* entity = (Entity*)node->element;
 									if ( entity ) {
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
 											foundObstacle = TRUE;
@@ -564,11 +564,11 @@ void fillPathMap(int *pathMap, int x, int y, int zone) {
 						if ( !pathMap[(v - 1) + u * map.height] ) {
 							bool foundObstacle = FALSE;
 							bool foundWallModifier = FALSE;
-							list_t *list = checkTileForEntity(u, v - 1);
+							list_t* list = checkTileForEntity(u, v - 1);
 							if ( list ) {
-								node_t *node;
+								node_t* node;
 								for ( node = list->first; node != NULL; node = node->next ) {
-									Entity *entity = (Entity *)node->element;
+									Entity* entity = (Entity*)node->element;
 									if ( entity ) {
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain ) {
 											foundObstacle = TRUE;

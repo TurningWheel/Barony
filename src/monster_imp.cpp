@@ -20,9 +20,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initImp(Entity *my, Stat *myStats) {
+void initImp(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 289;
 
@@ -102,7 +102,7 @@ void initImp(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(290, 0, map.entities);
+	Entity* entity = newEntity(290, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
@@ -118,7 +118,7 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(292, 0, map.entities);
@@ -136,7 +136,7 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(291, 0, map.entities);
@@ -154,7 +154,7 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(294, 0, map.entities);
@@ -172,7 +172,7 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(293, 0, map.entities);
@@ -190,7 +190,7 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right wing
 	entity = newEntity(310, 0, map.entities);
@@ -208,7 +208,7 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left wing
 	entity = newEntity(309, 0, map.entities);
@@ -226,13 +226,13 @@ void initImp(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void actImpLimb(Entity *my) {
+void actImpLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -252,12 +252,12 @@ void actImpLimb(Entity *my) {
 	return;
 }
 
-void impDie(Entity *my) {
-	node_t *node, *nextnode;
+void impDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -266,7 +266,7 @@ void impDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(160, 1, map.entities);
+				Entity* entity = newEntity(160, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -284,7 +284,7 @@ void impDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -297,10 +297,10 @@ void impDie(Entity *my) {
 
 #define IMPWALKSPEED .01
 
-void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL;
-	Entity *rightbody = NULL;
+void impMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL;
+	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
@@ -317,7 +317,7 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -336,7 +336,7 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -362,14 +362,14 @@ void impMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
 			if ( bodypart == 3 || !MONSTER_ATTACK ) {
 				if ( !rightbody->skill[0] ) {

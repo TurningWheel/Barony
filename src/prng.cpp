@@ -85,8 +85,8 @@ prng_seed_time (void) {
    treated as a circular array, so that accesses past the first
    N_BYTES bytes wrap around to the beginning. */
 static unsigned char
-get_octet (const void *bytes_, size_t n_bytes, size_t octet_idx) {
-	const unsigned char *bytes = static_cast<const unsigned char* >(bytes_);
+get_octet (const void* bytes_, size_t n_bytes, size_t octet_idx) {
+	const unsigned char* bytes = static_cast<const unsigned char* >(bytes_);
 	if (CHAR_BIT == 8) {
 		return bytes[octet_idx % n_bytes];
 	} else {
@@ -110,7 +110,7 @@ get_octet (const void *bytes_, size_t n_bytes, size_t octet_idx) {
 /* Seeds the pseudo-random number based on the SIZE bytes in
    KEY.  At most the first 2048 bits in KEY are used. */
 void
-prng_seed_bytes (const void *key, size_t size) {
+prng_seed_bytes (const void* key, size_t size) {
 	Sint32 i, j;
 
 	assert (key != NULL && size > 0);
@@ -156,8 +156,8 @@ prng_get_byte (void) {
 
 /* Fills BUF with SIZE pseudo-random bytes. */
 void
-prng_get_bytes (void *buf_, size_t size) {
-	unsigned char *buf;
+prng_get_bytes (void* buf_, size_t size) {
+	unsigned char* buf;
 
 	for (buf = static_cast<unsigned char* >(buf_); size-- > 0; buf++) {
 		*buf = prng_get_byte ();

@@ -20,9 +20,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initGhoul(Entity *my, Stat *myStats) {
+void initGhoul(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 246;
 
@@ -87,7 +87,7 @@ void initGhoul(Entity *my, Stat *myStats) {
 		} else {
 			strcpy(myStats->name, "Coral Grimes");
 			for ( c = 0; c < 3; c++ ) {
-				Entity *entity = summonMonster(GHOUL, my->x, my->y);
+				Entity* entity = summonMonster(GHOUL, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -111,7 +111,7 @@ void initGhoul(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(247, 0, map.entities);
+	Entity* entity = newEntity(247, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -126,7 +126,7 @@ void initGhoul(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(251, 0, map.entities);
@@ -144,7 +144,7 @@ void initGhoul(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(250, 0, map.entities);
@@ -162,7 +162,7 @@ void initGhoul(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(249, 0, map.entities);
@@ -180,7 +180,7 @@ void initGhoul(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(248, 0, map.entities);
@@ -198,13 +198,13 @@ void initGhoul(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void actGhoulLimb(Entity *my) {
+void actGhoulLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -224,11 +224,11 @@ void actGhoulLimb(Entity *my) {
 	return;
 }
 
-void ghoulDie(Entity *my) {
-	node_t *node, *nextnode;
+void ghoulDie(Entity* my) {
+	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 10; c++ ) {
-		Entity *entity = spawnGib(my);
+		Entity* entity = spawnGib(my);
 		if ( entity ) {
 			if ( c < 6 ) {
 				entity->sprite = 246 + c;
@@ -242,7 +242,7 @@ void ghoulDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(212, 1, map.entities);
+				Entity* entity = newEntity(212, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -259,7 +259,7 @@ void ghoulDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -273,10 +273,10 @@ void ghoulDie(Entity *my) {
 
 #define GHOULWALKSPEED .125
 
-void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL;
-	Entity *rightbody = NULL;
+void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL;
+	Entity* rightbody = NULL;
 	int bodypart;
 
 	// set invisibility
@@ -293,7 +293,7 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -312,7 +312,7 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -329,14 +329,14 @@ void ghoulMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
 			if ( bodypart == 6 ) {
 				if ( MONSTER_ATTACK ) {

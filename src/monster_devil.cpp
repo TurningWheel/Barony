@@ -20,9 +20,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initDevil(Entity *my, Stat *myStats) {
+void initDevil(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 304;
 
@@ -94,7 +94,7 @@ void initDevil(Entity *my, Stat *myStats) {
 	}
 
 	// head
-	Entity *entity = newEntity(303, 0, map.entities);
+	Entity* entity = newEntity(303, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -109,7 +109,7 @@ void initDevil(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right bicep
 	entity = newEntity(305, 0, map.entities);
@@ -127,7 +127,7 @@ void initDevil(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right forearm
 	entity = newEntity(306, 0, map.entities);
@@ -145,7 +145,7 @@ void initDevil(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left bicep
 	entity = newEntity(307, 0, map.entities);
@@ -163,7 +163,7 @@ void initDevil(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left forearm
 	entity = newEntity(308, 0, map.entities);
@@ -181,13 +181,13 @@ void initDevil(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void actDevilLimb(Entity *my) {
+void actDevilLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -207,12 +207,12 @@ void actDevilLimb(Entity *my) {
 	return;
 }
 
-void devilDie(Entity *my) {
-	node_t *node, *nextnode;
+void devilDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	//playSoundEntity(my, 28, 128);
@@ -220,7 +220,7 @@ void devilDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -232,7 +232,7 @@ void devilDie(Entity *my) {
 			if ( client_disconnected[c] ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "BDTH");
+			strcpy((char*)net_packet->data, "BDTH");
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
 			net_packet->len = 4;
@@ -248,7 +248,7 @@ void devilDie(Entity *my) {
 		}
 	}
 	for ( node = map.entities->first; node != NULL; node = node->next ) {
-		Entity *entity = (Entity *)node->element;
+		Entity* entity = (Entity*)node->element;
 		if ( entity->skill[28] ) {
 			entity->skill[28] = 2;
 		}
@@ -263,7 +263,7 @@ void devilDie(Entity *my) {
 		stats[c]->CON += 20;
 		stats[c]->INT += 5;
 		if ( multiplayer == SERVER && c > 0 ) {
-			strcpy((char *)net_packet->data, "ATTR");
+			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = (Sint8)stats[c]->STR;
 			net_packet->data[6] = (Sint8)stats[c]->DEX;
@@ -286,11 +286,11 @@ void devilDie(Entity *my) {
 	return;
 }
 
-void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL;
-	Entity *rightbody = NULL;
-	Entity *leftbody = NULL;
+void devilMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL;
+	Entity* rightbody = NULL;
+	Entity* leftbody = NULL;
 	int bodypart;
 
 	// set invisibility
@@ -307,7 +307,7 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -326,7 +326,7 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -343,7 +343,7 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++) {
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		if ( bodypart < 2 ) {
 			continue;
 		} else if ( bodypart > 2 ) {
@@ -427,10 +427,10 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			// head
 			case 2: {
 				entity->z -= 16;
-				node_t *tempNode;
-				Entity *playertotrack = NULL;
+				node_t* tempNode;
+				Entity* playertotrack = NULL;
 				for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next ) {
-					Entity *tempEntity = (Entity *)tempNode->element;
+					Entity* tempEntity = (Entity*)tempNode->element;
 					double lowestdist = 5000;
 					if ( tempEntity->behavior == &actPlayer ) {
 						double disttoplayer = entityDist(my, tempEntity);
@@ -551,6 +551,6 @@ void devilMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 	}
 }
 
-void actDevilTeleport(Entity *my) {
+void actDevilTeleport(Entity* my) {
 	// dummy function
 }

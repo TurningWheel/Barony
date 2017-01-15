@@ -42,7 +42,7 @@ bool settings_smoothmouse = FALSE;
 #define DEATHCAM_ROTX my->fskill[0]
 #define DEATHCAM_ROTY my->fskill[1]
 
-void actDeathCam(Entity *my) {
+void actDeathCam(Entity* my) {
 	DEATHCAM_TIME++;
 	if ( DEATHCAM_TIME == 1 ) {
 		DEATHCAM_PLAYER = -1;
@@ -154,17 +154,17 @@ void actDeathCam(Entity *my) {
 #define PLAYER_ROTY my->fskill[7]
 #define PLAYERWALKSPEED .12
 
-void actPlayer(Entity *my) {
+void actPlayer(Entity* my) {
 	if (!my) {
 		return;
 	}
 
-	Entity *entity;
-	Entity *entity2 = NULL;
-	Entity *rightbody = NULL;
-	Entity *weaponarm = NULL;
-	node_t *node;
-	Item *item;
+	Entity* entity;
+	Entity* entity2 = NULL;
+	Entity* rightbody = NULL;
+	Entity* weaponarm = NULL;
+	node_t* node;
+	Item* item;
 	int i, bodypart;
 	double dist = 0;
 	double weightratio;
@@ -182,7 +182,7 @@ void actPlayer(Entity *my) {
 		}
 		// request entity update (check if I've been deleted)
 		if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) ) {
-			strcpy((char *)net_packet->data, "ENTE");
+			strcpy((char*)net_packet->data, "ENTE");
 			net_packet->data[4] = clientnum;
 			SDLNet_Write32(my->uid, &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
@@ -212,7 +212,7 @@ void actPlayer(Entity *my) {
 			node = list_AddNodeLast(&my->children);
 			node->element = entity;
 			node->deconstructor = &emptyDeconstructor;
-			node->size = sizeof(Entity *);
+			node->size = sizeof(Entity*);
 
 			// magic hands
 
@@ -268,7 +268,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// right leg
 		entity = newEntity(107 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
@@ -286,7 +286,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// left leg
 		entity = newEntity(108 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
@@ -304,7 +304,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// right arm
 		entity = newEntity(109 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
@@ -322,7 +322,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// left arm
 		entity = newEntity(110 + 12 * stats[PLAYER_NUM]->sex, 1, map.entities);
@@ -340,7 +340,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// world weapon
 		entity = newEntity(-1, 1, map.entities);
@@ -359,7 +359,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// shield
 		entity = newEntity(-1, 1, map.entities);
@@ -379,7 +379,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// cloak
 		entity = newEntity(-1, 1, map.entities);
@@ -401,7 +401,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// helmet
 		entity = newEntity(-1, 1, map.entities);
@@ -423,7 +423,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 
 		// mask
 		entity = newEntity(-1, 1, map.entities);
@@ -445,7 +445,7 @@ void actPlayer(Entity *my) {
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
-		node->size = sizeof(Entity *);
+		node->size = sizeof(Entity*);
 	}
 	Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 
@@ -456,7 +456,7 @@ void actPlayer(Entity *my) {
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] ) {
 				bool foundherx = FALSE;
 				for ( node = map.entities->first; node != NULL; node = node->next ) {
-					Entity *entity = (Entity *)node->element;
+					Entity* entity = (Entity*)node->element;
 					if ( entity->sprite == 274 ) {
 						foundherx = TRUE;
 						break;
@@ -541,7 +541,7 @@ void actPlayer(Entity *my) {
 	}
 
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0) {
-		Item *tempItem = uidToItem(appraisal_item);
+		Item* tempItem = uidToItem(appraisal_item);
 		if ( tempItem ) {
 			if ( tempItem->identified ) {
 				appraisal_timer = 0;
@@ -664,7 +664,7 @@ void actPlayer(Entity *my) {
 						if ( i >= 6 ) {
 							break;
 						}
-						entity = (Entity *)node->element;
+						entity = (Entity*)node->element;
 						if ( !entity->flags[INVISIBLE] ) {
 							entity->flags[INVISIBLE] = TRUE;
 							serverUpdateEntityBodypart(my, i);
@@ -685,7 +685,7 @@ void actPlayer(Entity *my) {
 						if ( i >= 6 ) {
 							break;
 						}
-						entity = (Entity *)node->element;
+						entity = (Entity*)node->element;
 						if ( entity->flags[INVISIBLE] ) {
 							entity->flags[INVISIBLE] = FALSE;
 							serverUpdateEntityBodypart(my, i);
@@ -879,15 +879,15 @@ void actPlayer(Entity *my) {
 				}
 				if ( multiplayer == CLIENT ) {
 					if ( inrange[PLAYER_NUM] ) {
-						strcpy((char *)net_packet->data, "CKIR");
+						strcpy((char*)net_packet->data, "CKIR");
 					} else {
-						strcpy((char *)net_packet->data, "CKOR");
+						strcpy((char*)net_packet->data, "CKOR");
 					}
 					net_packet->data[4] = PLAYER_NUM;
 					if (selectedEntity->behavior == &actPlayerLimb) {
 						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->uid, &net_packet->data[5]);
 					} else {
-						Entity *tempEntity = uidToEntity(selectedEntity->skill[2]);
+						Entity* tempEntity = uidToEntity(selectedEntity->skill[2]);
 						if (tempEntity) {
 							if (tempEntity->behavior == &actMonster) {
 								SDLNet_Write32((Uint32)tempEntity->uid, &net_packet->data[5]);
@@ -987,14 +987,14 @@ void actPlayer(Entity *my) {
 			my->handleEffects(stats[PLAYER_NUM]); // hunger, regaining hp/mp, poison, etc.
 			if ( client_disconnected[PLAYER_NUM] || stats[PLAYER_NUM]->HP <= 0 ) {
 				// remove body parts
-				node_t *nextnode;
+				node_t* nextnode;
 				for ( node = my->children.first, i = 0; node != NULL; node = nextnode, i++ ) {
 					nextnode = node->next;
 					if ( i == 0 ) {
 						continue;
 					}
 					if ( node->element ) {
-						Entity *tempEntity = (Entity *)node->element;
+						Entity* tempEntity = (Entity*)node->element;
 						list_RemoveNode(tempEntity->mynode);
 						if ( i > 10 ) {
 							break;
@@ -1005,7 +1005,7 @@ void actPlayer(Entity *my) {
 					// die
 					playSoundEntity(my, 28, 128);
 					for ( i = 0; i < 5; i++ ) {
-						Entity *gib = spawnGib(my);
+						Entity* gib = spawnGib(my);
 						serverSpawnGibForClient(gib);
 					}
 					if (spawn_blood) {
@@ -1027,12 +1027,12 @@ void actPlayer(Entity *my) {
 							}
 						}
 					}
-					node_t *spellnode;
+					node_t* spellnode;
 					spellnode = stats[PLAYER_NUM]->magic_effects.first;
 					while (spellnode) {
-						node_t *oldnode = spellnode;
+						node_t* oldnode = spellnode;
 						spellnode = spellnode->next;
-						spell_t *spell = (spell_t*)oldnode->element;
+						spell_t* spell = (spell_t*)oldnode->element;
 						spell->magic_effects_node = NULL;
 						list_RemoveNode(oldnode);
 					}
@@ -1068,7 +1068,7 @@ void actPlayer(Entity *my) {
 						entity->behavior = &actDeathCam;
 						entity->yaw = my->yaw;
 						entity->pitch = PI / 8;
-						node_t *nextnode;
+						node_t* nextnode;
 
 						deleteSaveGame(); // stops save scumming c:
 
@@ -1084,7 +1084,7 @@ void actPlayer(Entity *my) {
 						combat = FALSE;
 						for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode) {
 							nextnode = node->next;
-							Item *item = (Item *)node->element;
+							Item* item = (Item*)node->element;
 							if (itemCategory(item) == SPELL_CAT) {
 								continue;    // don't drop spells on death, stupid!
 							}
@@ -1115,7 +1115,7 @@ void actPlayer(Entity *my) {
 						if (multiplayer != SINGLE) {
 							for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode) {
 								nextnode = node->next;
-								Item *item = (Item *)node->element;
+								Item* item = (Item*)node->element;
 								if (itemCategory(item) == SPELL_CAT) {
 									continue;    // don't drop spells on death, stupid!
 								}
@@ -1237,7 +1237,7 @@ void actPlayer(Entity *my) {
 		// calculate weight
 		weight = 0;
 		for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next ) {
-			item = (Item *)node->element;
+			item = (Item*)node->element;
 			if ( item != NULL )
 				if ( item->type >= 0 && item->type < NUMITEMS ) {
 					weight += items[item->type].weight * item->count;
@@ -1290,7 +1290,7 @@ void actPlayer(Entity *my) {
 		PLAYER_VELY *= .75;
 
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity == my ) {
 				continue;
 			}
@@ -1429,7 +1429,7 @@ void actPlayer(Entity *my) {
 
 		// send movement updates to server
 		if ( multiplayer == CLIENT ) {
-			strcpy((char *)net_packet->data, "PMOV");
+			strcpy((char*)net_packet->data, "PMOV");
 			net_packet->data[4] = clientnum;
 			net_packet->data[5] = currentlevel;
 			SDLNet_Write16((Sint16)(my->x * 32), &net_packet->data[6]);
@@ -1509,27 +1509,27 @@ void actPlayer(Entity *my) {
 			// hudweapon case
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 2 || bodypart == 5 ) {
 			if ( bodypart == 2 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
-			node_t *shieldNode = list_Node(&my->children, 7);
+			node_t* shieldNode = list_Node(&my->children, 7);
 			if ( shieldNode ) {
-				Entity *shield = (Entity *)shieldNode->element;
+				Entity* shield = (Entity*)shieldNode->element;
 				if ( (fabs(PLAYER_VELX) > 0.1 || fabs(PLAYER_VELY) > 0.1) && (bodypart != 5 || shield->flags[INVISIBLE]) ) {
 					if ( !rightbody->skill[0] ) {
 						entity->pitch -= dist * PLAYERWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 ) {
 							entity->pitch = -PI / 4.0;
 							if (bodypart == 2 && dist > .4 && !levitating && !swimming) {
-								node_t *tempNode = list_Node(&my->children, 2);
+								node_t* tempNode = list_Node(&my->children, 2);
 								if ( tempNode ) {
-									Entity *foot = (Entity *)tempNode->element;
+									Entity* foot = (Entity*)tempNode->element;
 									if ( foot->sprite == 152 || foot->sprite == 153 ) {
 										playSoundEntityLocal(my, 7 + rand() % 7, 32);
 									} else if ( foot->sprite == 156 || foot->sprite == 157 ) {
@@ -1545,9 +1545,9 @@ void actPlayer(Entity *my) {
 						if ( entity->pitch > PI / 4.0 ) {
 							entity->pitch = PI / 4.0;
 							if (bodypart == 2 && dist > .4 && !levitating && !swimming) {
-								node_t *tempNode = list_Node(&my->children, 2);
+								node_t* tempNode = list_Node(&my->children, 2);
 								if ( tempNode ) {
-									Entity *foot = (Entity *)tempNode->element;
+									Entity* foot = (Entity*)tempNode->element;
 									if ( foot->sprite == 152 || foot->sprite == 153 ) {
 										playSoundEntityLocal(my, 7 + rand() % 7, 32);
 									} else if ( foot->sprite == 156 || foot->sprite == 157 ) {
@@ -1854,9 +1854,9 @@ void actPlayer(Entity *my) {
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
 				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
 				entity->z += 1.5;
-				node_t *tempNode = list_Node(&my->children, 6);
+				node_t* tempNode = list_Node(&my->children, 6);
 				if ( tempNode ) {
-					Entity *weapon = (Entity *)tempNode->element;
+					Entity* weapon = (Entity*)tempNode->element;
 					/*if( multiplayer==CLIENT ) {
 						if( !PLAYER_ARMBENDED ) {
 							if( entity->skill[7]==0 )
@@ -1925,9 +1925,9 @@ void actPlayer(Entity *my) {
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 1.5;
-				node_t *tempNode = list_Node(&my->children, 7);
+				node_t* tempNode = list_Node(&my->children, 7);
 				if ( tempNode ) {
-					Entity *shield = (Entity *)tempNode->element;
+					Entity* shield = (Entity*)tempNode->element;
 					if ( shield->flags[INVISIBLE] ) {
 						entity->focalx = limbs[HUMAN][5][0]; // 0
 						entity->focaly = limbs[HUMAN][5][1]; // 0
@@ -2221,9 +2221,9 @@ void actPlayer(Entity *my) {
 		}
 	}
 	// rotate shield a bit
-	node_t *shieldNode = list_Node(&my->children, 7);
+	node_t* shieldNode = list_Node(&my->children, 7);
 	if ( shieldNode ) {
-		Entity *shieldEntity = (Entity *)shieldNode->element;
+		Entity* shieldEntity = (Entity*)shieldNode->element;
 		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index ) {
 			shieldEntity->yaw -= PI / 6;
 		}
@@ -2251,10 +2251,10 @@ void actPlayer(Entity *my) {
 }
 
 // client function
-void actPlayerLimb(Entity *my) {
+void actPlayerLimb(Entity* my) {
 	int i;
 
-	Entity *parent = uidToEntity(my->parent);
+	Entity* parent = uidToEntity(my->parent);
 
 	if ( multiplayer == CLIENT ) {
 		if ( stats[PLAYER_NUM]->HP <= 0 ) {

@@ -18,7 +18,7 @@
 #endif
 
 #ifdef HAVE_FMOD
-FMOD_SYSTEM *fmod_system = NULL;
+FMOD_SYSTEM* fmod_system = NULL;
 
 FMOD_RESULT fmod_result;
 
@@ -26,36 +26,36 @@ int fmod_maxchannels = 100;
 int fmod_flags;
 void* fmod_extdriverdata;
 
-FMOD_SOUND **sounds = NULL;
+FMOD_SOUND** sounds = NULL;
 Uint32 numsounds = 0;
-FMOD_SOUND **minesmusic = NULL;
-FMOD_SOUND **swampmusic = NULL;
-FMOD_SOUND **labyrinthmusic = NULL;
-FMOD_SOUND **ruinsmusic = NULL;
-FMOD_SOUND **underworldmusic = NULL;
-FMOD_SOUND **hellmusic = NULL;
-FMOD_SOUND *intromusic = NULL;
-FMOD_SOUND *intermissionmusic = NULL;
-FMOD_SOUND *minetownmusic = NULL;
-FMOD_SOUND *splashmusic = NULL;
-FMOD_SOUND *librarymusic = NULL;
-FMOD_SOUND *shopmusic = NULL;
-FMOD_SOUND *storymusic = NULL;
-FMOD_SOUND **minotaurmusic = NULL;
-FMOD_SOUND *herxmusic = NULL;
-FMOD_SOUND *templemusic = NULL;
-FMOD_SOUND *endgamemusic = NULL;
-FMOD_SOUND *devilmusic = NULL;
-FMOD_SOUND *escapemusic = NULL;
-FMOD_SOUND *introductionmusic = NULL;
+FMOD_SOUND** minesmusic = NULL;
+FMOD_SOUND** swampmusic = NULL;
+FMOD_SOUND** labyrinthmusic = NULL;
+FMOD_SOUND** ruinsmusic = NULL;
+FMOD_SOUND** underworldmusic = NULL;
+FMOD_SOUND** hellmusic = NULL;
+FMOD_SOUND* intromusic = NULL;
+FMOD_SOUND* intermissionmusic = NULL;
+FMOD_SOUND* minetownmusic = NULL;
+FMOD_SOUND* splashmusic = NULL;
+FMOD_SOUND* librarymusic = NULL;
+FMOD_SOUND* shopmusic = NULL;
+FMOD_SOUND* storymusic = NULL;
+FMOD_SOUND** minotaurmusic = NULL;
+FMOD_SOUND* herxmusic = NULL;
+FMOD_SOUND* templemusic = NULL;
+FMOD_SOUND* endgamemusic = NULL;
+FMOD_SOUND* devilmusic = NULL;
+FMOD_SOUND* escapemusic = NULL;
+FMOD_SOUND* introductionmusic = NULL;
 bool levelmusicplaying = FALSE;
 
-FMOD_CHANNEL *music_channel = NULL;
-FMOD_CHANNEL *music_channel2 = NULL;
-FMOD_CHANNEL *music_resume = NULL;
+FMOD_CHANNEL* music_channel = NULL;
+FMOD_CHANNEL* music_channel2 = NULL;
+FMOD_CHANNEL* music_resume = NULL;
 
-FMOD_CHANNELGROUP *sound_group = NULL;
-FMOD_CHANNELGROUP *music_group = NULL;
+FMOD_CHANNELGROUP* sound_group = NULL;
+FMOD_CHANNELGROUP* music_group = NULL;
 
 float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;

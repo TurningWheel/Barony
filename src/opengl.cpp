@@ -51,7 +51,7 @@ double getLightForEntity(double x, double y) {
 -------------------------------------------------------------------------------*/
 
 bool wholevoxels = FALSE;
-void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
+void glDrawVoxel(view_t* camera, Entity* entity, int mode) {
 	double dx, dy, dz;
 	int voxX, voxY, voxZ;
 	double s = 1;
@@ -59,7 +59,7 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 	//int y = 0;
 	Sint32 index;
 	Sint32 indexdown[3];
-	voxel_t *model;
+	voxel_t* model;
 	int modelindex = 0;
 	GLfloat rotx, roty, rotz;
 	//GLuint uidcolor;
@@ -264,7 +264,7 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 					glColor4ub((Uint8)(entity->uid), (Uint8)(entity->uid >> 8), (Uint8)(entity->uid >> 16), (Uint8)(entity->uid >> 24));
 				}
 
-				polytriangle_t *face = &polymodels[modelindex].faces[index];
+				polytriangle_t* face = &polymodels[modelindex].faces[index];
 
 				glBegin( GL_TRIANGLES );
 				glVertex3f(face->vertex[0].x, -face->vertex[0].z, face->vertex[0].y);
@@ -275,7 +275,7 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 		} else {
 			SDL_glBindVertexArray(polymodels[modelindex].va);
 			SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[modelindex].vbo);
-			glVertexPointer( 3, GL_FLOAT, 0, (char *) NULL ); // Set The Vertex Pointer To The Vertex Buffer
+			glVertexPointer( 3, GL_FLOAT, 0, (char*) NULL );  // Set The Vertex Pointer To The Vertex Buffer
 			glEnableClientState(GL_VERTEX_ARRAY); // enable the vertex array on the client side
 			if ( mode == REALCOLORS ) {
 				glEnableClientState(GL_COLOR_ARRAY); // enable the color array on the client side
@@ -318,8 +318,8 @@ void glDrawVoxel(view_t *camera, Entity *entity, int mode) {
 
 -------------------------------------------------------------------------------*/
 
-void glDrawSprite(view_t *camera, Entity *entity, int mode) {
-	SDL_Surface *sprite;
+void glDrawSprite(view_t* camera, Entity* entity, int mode) {
+	SDL_Surface* sprite;
 	//int x, y;
 	double s = 1;
 
@@ -445,7 +445,7 @@ double getLightAt(int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-void glDrawWorld(view_t *camera, int mode) {
+void glDrawWorld(view_t* camera, int mode) {
 	int x, y, z;
 	int index;
 	double s;

@@ -18,7 +18,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 
-void initSlime(Entity *my, Stat *myStats) {
+void initSlime(Entity* my, Stat* myStats) {
 	int c;
 
 	my->flags[UPDATENEEDED] = TRUE;
@@ -92,7 +92,7 @@ void initSlime(Entity *my, Stat *myStats) {
 	}
 }
 
-void slimeAnimate(Entity *my, double dist) {
+void slimeAnimate(Entity* my, double dist) {
 	if (my->skill[24]) {
 		my->scalez += .05 * dist;
 		my->scalex -= .05 * dist;
@@ -116,11 +116,11 @@ void slimeAnimate(Entity *my, double dist) {
 	}
 }
 
-void slimeDie(Entity *my) {
-	Entity *entity;
+void slimeDie(Entity* my) {
+	Entity* entity;
 	int c = 0;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {

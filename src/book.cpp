@@ -21,13 +21,13 @@
 //#define MIN_LENGTH_TO_SPLIT_WORD_TITLE (characterspace_x / 2) //This only works in the formatTitle() function, since it uses a local variable characterspace_x in there.
 #define SPLIT_WORD_IN_TITLE FALSE //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
 
-book_t **books = NULL;
+book_t** books = NULL;
 int numbooks = 0;
-list_t *discoveredbooks = NULL;
+list_t* discoveredbooks = NULL;
 
 //book_t *book_space_ninjas = NULL;
 
-int getBook(char *booktitle) {
+int getBook(char* booktitle) {
 	int c;
 	for ( c = 0; c < numbooks; c++ ) {
 		if ( !strcmp(booktitle, books[c]->name) ) {
@@ -38,8 +38,8 @@ int getBook(char *booktitle) {
 }
 
 void createBooks() {
-	node_t *node;
-	string_t *name = NULL;
+	node_t* node;
+	string_t* name = NULL;
 	bool unsorted;
 	int i = 0;
 
@@ -51,15 +51,15 @@ void createBooks() {
 		if (discoveredbooks->first && discoveredbooks->last) {
 			// allocate memory for books
 			numbooks = list_Size(discoveredbooks);
-			books = (book_t **) malloc(sizeof(book_t *) * numbooks); //Allocate memory for all of the books.
+			books = (book_t**) malloc(sizeof(book_t*) * numbooks);   //Allocate memory for all of the books.
 
 			// sort books alphabetically (bubblesort)
 			do {
 				unsorted = FALSE;
 				for (node = discoveredbooks->first; node != NULL; node = node->next) {
 					if ( node->next != NULL ) {
-						string_t *firststring = (string_t *)node->element;
-						string_t *secondstring = (string_t *)node->next->element;
+						string_t* firststring = (string_t*)node->element;
+						string_t* secondstring = (string_t*)node->next->element;
 						if ( strcmp(firststring->data, secondstring->data) > 0 ) {
 							unsorted = TRUE;
 							node->element = secondstring;
@@ -75,9 +75,9 @@ void createBooks() {
 
 			// create books
 			for (node = discoveredbooks->first, i = 0; node != NULL; node = node->next, ++i) {
-				books[i] = (book_t *) malloc(sizeof(book_t));
+				books[i] = (book_t*) malloc(sizeof(book_t));
 				books[i]->text = NULL;
-				name = (string_t *)node->element;
+				name = (string_t*)node->element;
 				books[i]->name = name->data;
 				//printlog("compiling book: \"%s\"\n",books[i]->name);
 				books[i]->bookgui_render_title = NULL;
@@ -157,7 +157,7 @@ bool isLetter(char character) {
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
-bool isCharacterPartOfWord(char *text, int index) {
+bool isCharacterPartOfWord(char* text, int index) {
 	if (!text) {
 		return FALSE;
 	}
@@ -182,7 +182,7 @@ bool isCharacterPartOfWord(char *text, int index) {
 	return FALSE;
 }
 
-int moveToStartOfWord(char *text, int index) {
+int moveToStartOfWord(char* text, int index) {
 	if (!text) {
 		return index;
 	}
@@ -203,7 +203,7 @@ int moveToStartOfWord(char *text, int index) {
 }
 
 //Returns 0 on error. Returns 0 if index not on a word. Returns length of word otherwise. If nonletter character at the current index, it keeps looking until it finds the start of the next word.
-int lengthOfCurrentWord(char *text, int index) {
+int lengthOfCurrentWord(char* text, int index) {
 	if (!text) { //Can't do this without text.
 		return 0;
 	}
@@ -233,7 +233,7 @@ int lengthOfCurrentWord(char *text, int index) {
 	return length;
 }
 
-void createBook(book_t *book) {
+void createBook(book_t* book) {
 	if (!book) {
 		return;
 	}
@@ -255,8 +255,8 @@ void createBook(book_t *book) {
 	book->pages.last = NULL;
 
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
-	string_t *string = newString(&book->pages, color, NULL);
-	string->data = (char *) malloc(sizeof(char) * (max_characters + 1));
+	string_t* string = newString(&book->pages, color, NULL);
+	string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 	memset(string->data, 0, sizeof(char) * (max_characters + 1));
 
 	int i; // current character in the book's entire text
@@ -300,7 +300,7 @@ void createBook(book_t *book) {
 			if (y + 1 >= book_characterspace_y) {
 				//Create the next page. Do not record the character if it's a newline.
 				string = newString(&book->pages, color, NULL);
-				string->data = (char *) malloc(sizeof(char) * (max_characters + 1));
+				string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 				memset(string->data, 0, sizeof(char) * (max_characters + 1));
 				p = 0;
 				y = 0;
@@ -345,7 +345,7 @@ void createBook(book_t *book) {
 							if (y + 1 >= book_characterspace_y) { //Check if it hit the end of the page.
 								//It does indeed go off the page. Start a new page.
 								string = newString(&book->pages, color, NULL);
-								string->data = (char *) malloc(sizeof(char) * (max_characters + 1));
+								string->data = (char*) malloc(sizeof(char) * (max_characters + 1));
 								memset(string->data, 0, sizeof(char) * (max_characters + 1));
 								p = 0;
 								y = 0;

@@ -20,9 +20,9 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initSkeleton(Entity *my, Stat *myStats) {
+void initSkeleton(Entity* my, Stat* myStats) {
 	int c;
-	node_t *node;
+	node_t* node;
 
 	my->sprite = 229; //Skeleton head model
 
@@ -92,7 +92,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	}
 
 	// torso
-	Entity *entity = newEntity(230, 0, map.entities);
+	Entity* entity = newEntity(230, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -107,7 +107,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right leg
 	entity = newEntity(236, 0, map.entities);
@@ -125,7 +125,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left leg
 	entity = newEntity(235, 0, map.entities);
@@ -143,7 +143,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// right arm
 	entity = newEntity(233, 0, map.entities);
@@ -161,7 +161,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// left arm
 	entity = newEntity(231, 0, map.entities);
@@ -179,7 +179,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// world weapon
 	entity = newEntity(-1, 0, map.entities);
@@ -199,7 +199,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// shield
 	entity = newEntity(-1, 0, map.entities);
@@ -218,7 +218,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// cloak
 	entity = newEntity(-1, 0, map.entities);
@@ -240,7 +240,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// helmet
 	entity = newEntity(-1, 0, map.entities);
@@ -262,7 +262,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	// mask
 	entity = newEntity(-1, 0, map.entities);
@@ -281,7 +281,7 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 
 	if ( multiplayer == CLIENT || MONSTER_INIT ) {
 		return;
@@ -381,10 +381,10 @@ void initSkeleton(Entity *my, Stat *myStats) {
 	}
 }
 
-void actSkeletonLimb(Entity *my) {
+void actSkeletonLimb(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -420,13 +420,13 @@ void actSkeletonLimb(Entity *my) {
 	}
 }
 
-void skeletonDie(Entity *my) {
-	node_t *node, *nextnode;
+void skeletonDie(Entity* my) {
+	node_t* node, *nextnode;
 	int i = 0;
 	for ( node = my->children.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
 		if ( node->element != NULL && i >= 2 ) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			if ( entity->light != NULL ) {
 				list_RemoveNode(entity->light->node);
 			}
@@ -438,7 +438,7 @@ void skeletonDie(Entity *my) {
 	}
 	int c;
 	for ( c = 0; c < 6; c++ ) {
-		Entity *entity = spawnGib(my);
+		Entity* entity = spawnGib(my);
 		if ( entity ) {
 			switch ( c ) {
 				case 0:
@@ -470,11 +470,11 @@ void skeletonDie(Entity *my) {
 
 #define SKELETONWALKSPEED .13
 
-void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
-	node_t *node;
-	Entity *entity = NULL, *entity2 = NULL;
-	Entity *rightbody = NULL;
-	Entity *weaponarm = NULL;
+void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist) {
+	node_t* node;
+	Entity* entity = NULL, *entity2 = NULL;
+	Entity* rightbody = NULL;
+	Entity* weaponarm = NULL;
 	int bodypart;
 	bool wearingring = FALSE;
 
@@ -500,7 +500,7 @@ void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -519,7 +519,7 @@ void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 				if ( bodypart >= 7 ) {
 					break;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -543,18 +543,18 @@ void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 ) {
 			if ( bodypart == 3 ) {
-				rightbody = (Entity *)node->next->element;
+				rightbody = (Entity*)node->next->element;
 			}
-			node_t *shieldNode = list_Node(&my->children, 7);
+			node_t* shieldNode = list_Node(&my->children, 7);
 			if ( shieldNode ) {
-				Entity *shield = (Entity *)shieldNode->element;
+				Entity* shield = (Entity*)shieldNode->element;
 				if ( dist > 0.1 && (bodypart != 6 || shield->flags[INVISIBLE]) ) {
 					if ( !rightbody->skill[0] ) {
 						entity->pitch -= dist * SKELETONWALKSPEED;
@@ -747,9 +747,9 @@ void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			// right arm
 			case 5: {
 				entity->sprite = 233;
-				node_t *weaponNode = list_Node(&my->children, 7);
+				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode ) {
-					Entity *weapon = (Entity *)weaponNode->element;
+					Entity* weapon = (Entity*)weaponNode->element;
 					if ( !MONSTER_ARMBENDED ) {
 						entity->sprite += (weapon->flags[INVISIBLE] != TRUE);
 					}
@@ -775,9 +775,9 @@ void skeletonMoveBodyparts(Entity *my, Stat *myStats, double dist) {
 			}
 			case 6: {
 				entity->sprite = 231;
-				node_t *shieldNode = list_Node(&my->children, 8);
+				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode ) {
-					Entity *shield = (Entity *)shieldNode->element;
+					Entity* shield = (Entity*)shieldNode->element;
 					entity->sprite += (shield->flags[INVISIBLE] != TRUE);
 					if ( shield->flags[INVISIBLE] ) {
 						entity->focalx = limbs[SKELETON][5][0]; // 0

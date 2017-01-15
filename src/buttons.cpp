@@ -14,45 +14,45 @@
 #include "entity.hpp"
 #include "player.hpp"
 
-button_t *butX;
-button_t *but_;
-button_t *butTilePalette;
-button_t *butSprite;
-button_t *butPoint;
-button_t *butBrush;
-button_t *butSelect;
-button_t *butFill;
-button_t *butFile;
-button_t *butNew;
-button_t *butOpen;
-button_t *butSave;
-button_t *butSaveAs;
-button_t *butExit;
-button_t *butEdit;
-button_t *butCut;
-button_t *butCopy;
-button_t *butPaste;
-button_t *butDelete;
-button_t *butSelectAll;
-button_t *butUndo;
-button_t *butRedo;
-button_t *butView;
-button_t *butToolbox;
-button_t *butStatusBar;
-button_t *butAllLayers;
-button_t *butViewSprites;
-button_t *butGrid;
-button_t *but3DMode;
-button_t *butMap;
-button_t *butAttributes;
-button_t *butClearMap;
-button_t *butHelp;
-button_t *butAbout;
+button_t* butX;
+button_t* but_;
+button_t* butTilePalette;
+button_t* butSprite;
+button_t* butPoint;
+button_t* butBrush;
+button_t* butSelect;
+button_t* butFill;
+button_t* butFile;
+button_t* butNew;
+button_t* butOpen;
+button_t* butSave;
+button_t* butSaveAs;
+button_t* butExit;
+button_t* butEdit;
+button_t* butCut;
+button_t* butCopy;
+button_t* butPaste;
+button_t* butDelete;
+button_t* butSelectAll;
+button_t* butUndo;
+button_t* butRedo;
+button_t* butView;
+button_t* butToolbox;
+button_t* butStatusBar;
+button_t* butAllLayers;
+button_t* butViewSprites;
+button_t* butGrid;
+button_t* but3DMode;
+button_t* butMap;
+button_t* butAttributes;
+button_t* butClearMap;
+button_t* butHelp;
+button_t* butAbout;
 
 // Corner buttons
 
-void buttonExit(button_t *my) {
-	button_t *button;
+void buttonExit(button_t* my) {
+	button_t* button;
 
 	// this shouldn't work if a window is already open
 	if ( subwindow ) {
@@ -88,49 +88,49 @@ void buttonExit(button_t *my) {
 	button->focused = 1;
 }
 
-void buttonExitConfirm(button_t *my) {
+void buttonExitConfirm(button_t* my) {
 	mainloop = 0; // gracefully stops the game/editor
 }
 
-void buttonIconify(button_t *my) {
+void buttonIconify(button_t* my) {
 	// aka minimize
 	SDL_MinimizeWindow(screen);
 }
 
 // Toolbox buttons
 
-void buttonTilePalette(button_t *my) {
+void buttonTilePalette(button_t* my) {
 	tilepalette = 1;
 }
 
-void buttonSprite(button_t *my) {
+void buttonSprite(button_t* my) {
 	makeUndo();
 	spritepalette = 1;
 }
 
-void buttonPoint(button_t *my) {
+void buttonPoint(button_t* my) {
 	selectedTool = 0;
 	selectedarea = FALSE;
 }
 
-void buttonBrush(button_t *my) {
+void buttonBrush(button_t* my) {
 	selectedTool = 1;
 	selectedarea = FALSE;
 }
 
-void buttonSelect(button_t *my) {
+void buttonSelect(button_t* my) {
 	selectedTool = 2;
 	selectedarea = FALSE;
 }
 
-void buttonFill(button_t *my) {
+void buttonFill(button_t* my) {
 	selectedTool = 3;
 	selectedarea = FALSE;
 }
 
 // File menu
 
-void buttonFile(button_t *my) {
+void buttonFile(button_t* my) {
 	if ( menuVisible != 1 ) {
 		menuVisible = 1;
 	} else {
@@ -138,8 +138,8 @@ void buttonFile(button_t *my) {
 	}
 }
 
-void buttonNew(button_t *my) {
-	button_t *button;
+void buttonNew(button_t* my) {
+	button_t* button;
 
 	editproperty = 0;
 	inputstr = map.name;
@@ -188,7 +188,7 @@ void buttonNew(button_t *my) {
 	button->focused = 1;
 }
 
-void buttonNewConfirm(button_t *my) {
+void buttonNewConfirm(button_t* my) {
 	int x, y, z, c;
 	clearUndos();
 	free(map.tiles);
@@ -199,7 +199,7 @@ void buttonNewConfirm(button_t *my) {
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
-	map.tiles = (int *) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	for ( z = 0; z < MAPLAYERS; z++ ) {
 		for ( y = 0; y < map.height; y++ ) {
 			for ( x = 0; x < map.width; x++ ) {
@@ -218,11 +218,11 @@ void buttonNewConfirm(button_t *my) {
 	if ( vismap != NULL ) {
 		free(vismap);
 	}
-	vismap = (bool *) malloc(sizeof(bool) * map.width * map.height);
+	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
 	if ( lightmap != NULL ) {
 		free(lightmap);
 	}
-	lightmap = (int *) malloc(sizeof(Sint32) * map.width * map.height);
+	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
 	for (c = 0; c < map.width * map.height; c++ ) {
 		lightmap[c] = 0;
 	}
@@ -233,10 +233,10 @@ void buttonNewConfirm(button_t *my) {
 	buttonCloseSubwindow(my);
 }
 
-void buttonOpen(button_t *my) {
-	button_t *button;
-	DIR *dir = NULL;
-	struct dirent *ent = NULL;
+void buttonOpen(button_t* my) {
+	button_t* button;
+	DIR* dir = NULL;
+	struct dirent* ent = NULL;
 	unsigned long c = 0;
 
 	inputstr = filename;
@@ -299,9 +299,9 @@ void buttonOpen(button_t *my) {
 		return;
 	}
 	if ( d_names_length > 0 ) {
-		d_names = (char **) malloc(sizeof(char *)*d_names_length);
+		d_names = (char**) malloc(sizeof(char*)*d_names_length);
 		for ( c = 0; c < d_names_length; c++ ) {
-			d_names[c] = (char *) malloc(sizeof(char) * FILENAME_MAX);
+			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
 		}
 		c = 0;
 		if ( (dir = opendir("maps/")) != NULL ) {
@@ -318,7 +318,7 @@ void buttonOpen(button_t *my) {
 	}
 }
 
-void buttonOpenConfirm(button_t *my) {
+void buttonOpenConfirm(button_t* my) {
 	int c, c2;
 	clearUndos();
 	strcpy(oldfilename, filename);
@@ -344,7 +344,7 @@ void buttonOpenConfirm(button_t *my) {
 	buttonCloseSubwindow(my);
 }
 
-void buttonSave(button_t *my) {
+void buttonSave(button_t* my) {
 	int c, c2;
 	menuVisible = 0;
 	strcpy(oldfilename, filename);
@@ -375,10 +375,10 @@ void buttonSave(button_t *my) {
 	}
 }
 
-void buttonSaveAs(button_t *my) {
-	button_t *button;
-	DIR *dir;
-	struct dirent *ent;
+void buttonSaveAs(button_t* my) {
+	button_t* button;
+	DIR* dir;
+	struct dirent* ent;
 	unsigned long c = 0;
 
 	cursorflash = ticks;
@@ -440,9 +440,9 @@ void buttonSaveAs(button_t *my) {
 		return;
 	}
 	if ( d_names_length > 0 ) {
-		d_names = (char **) malloc(sizeof(char *)*d_names_length);
+		d_names = (char**) malloc(sizeof(char*)*d_names_length);
 		for ( c = 0; c < d_names_length; c++ ) {
-			d_names[c] = (char *) malloc(sizeof(char) * FILENAME_MAX);
+			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
 		}
 		c = 0;
 		if ( (dir = opendir("maps/")) != NULL ) {
@@ -461,7 +461,7 @@ void buttonSaveAs(button_t *my) {
 
 // Edit menu
 
-void buttonEdit(button_t *my) {
+void buttonEdit(button_t* my) {
 	if ( menuVisible != 2 ) {
 		menuVisible = 2;
 	} else {
@@ -469,7 +469,7 @@ void buttonEdit(button_t *my) {
 	}
 }
 
-void buttonCut(button_t *my) {
+void buttonCut(button_t* my) {
 	menuVisible = 0;
 	if ( !selectedarea ) {
 		return;
@@ -479,7 +479,7 @@ void buttonCut(button_t *my) {
 	buttonDelete(my);
 }
 
-void buttonCopy(button_t *my) {
+void buttonCopy(button_t* my) {
 	menuVisible = 0;
 	int x, y;
 
@@ -490,7 +490,7 @@ void buttonCopy(button_t *my) {
 		if ( copymap.tiles != NULL ) {
 			free(copymap.tiles);
 		}
-		copymap.tiles = (Sint32 *) malloc(sizeof(Sint32) * copymap.width * copymap.height * MAPLAYERS);
+		copymap.tiles = (Sint32*) malloc(sizeof(Sint32) * copymap.width * copymap.height * MAPLAYERS);
 		memset(copymap.tiles, 0, sizeof(Sint32)*copymap.width * copymap.height * MAPLAYERS);
 		for ( x = 0; x < copymap.width; x++ ) {
 			for ( y = 0; y < copymap.height; y++ ) {
@@ -502,7 +502,7 @@ void buttonCopy(button_t *my) {
 	selectedarea = FALSE;
 }
 
-void buttonPaste(button_t *my) {
+void buttonPaste(button_t* my) {
 	menuVisible = 0;
 
 	// paste the selected tiles
@@ -512,7 +512,7 @@ void buttonPaste(button_t *my) {
 	}
 }
 
-void buttonDelete(button_t *my) {
+void buttonDelete(button_t* my) {
 	menuVisible = 0;
 	makeUndo();
 
@@ -533,7 +533,7 @@ void buttonDelete(button_t *my) {
 	}
 }
 
-void buttonSelectAll(button_t *my) {
+void buttonSelectAll(button_t* my) {
 	menuVisible = 0;
 	selectedTool = 2;
 	selectedarea = TRUE;
@@ -544,19 +544,19 @@ void buttonSelectAll(button_t *my) {
 	selectedarea_y2 = map.height - 1;
 }
 
-void buttonUndo(button_t *my) {
+void buttonUndo(button_t* my) {
 	menuVisible = 0;
 	undo();
 }
 
-void buttonRedo(button_t *my) {
+void buttonRedo(button_t* my) {
 	menuVisible = 0;
 	redo();
 }
 
 // View menu
 
-void buttonView(button_t *my) {
+void buttonView(button_t* my) {
 	if ( menuVisible != 3 ) {
 		menuVisible = 3;
 	} else {
@@ -564,7 +564,7 @@ void buttonView(button_t *my) {
 	}
 }
 
-void buttonToolbox(button_t *my) {
+void buttonToolbox(button_t* my) {
 	toolbox = (toolbox == 0);
 	butTilePalette->visible = (butTilePalette->visible == 0);
 	butSprite->visible = (butSprite->visible == 0);
@@ -574,29 +574,29 @@ void buttonToolbox(button_t *my) {
 	butFill->visible = (butFill->visible == 0);
 }
 
-void buttonStatusBar(button_t *my) {
+void buttonStatusBar(button_t* my) {
 	statusbar = (statusbar == 0);
 }
 
-void buttonAllLayers(button_t *my) {
+void buttonAllLayers(button_t* my) {
 	alllayers = (alllayers == 0);
 }
 
-void buttonViewSprites(button_t *my) {
+void buttonViewSprites(button_t* my) {
 	viewsprites = (viewsprites == 0);
 }
 
-void buttonGrid(button_t *my) {
+void buttonGrid(button_t* my) {
 	showgrid = (showgrid == 0);
 }
 
-void button3DMode(button_t *my) {
+void button3DMode(button_t* my) {
 	mode3d = (mode3d == FALSE);
 }
 
 // Map menu
 
-void buttonMap(button_t *my) {
+void buttonMap(button_t* my) {
 	if ( menuVisible != 4 ) {
 		menuVisible = 4;
 	} else {
@@ -604,8 +604,8 @@ void buttonMap(button_t *my) {
 	}
 }
 
-void buttonAttributes(button_t *my) {
-	button_t *button;
+void buttonAttributes(button_t* my) {
+	button_t* button;
 
 	editproperty = 0;
 	inputstr = map.name;
@@ -654,7 +654,7 @@ void buttonAttributes(button_t *my) {
 	button->focused = 1;
 }
 
-void buttonAttributesConfirm(button_t *my) {
+void buttonAttributesConfirm(button_t* my) {
 	int x, y, z, c;
 	map_t mapcopy;
 	makeUndo();
@@ -662,7 +662,7 @@ void buttonAttributesConfirm(button_t *my) {
 	// make a copy of the current map
 	mapcopy.width = map.width;
 	mapcopy.height = map.height;
-	mapcopy.tiles = (int *) malloc(sizeof(int) * MAPLAYERS * mapcopy.width * mapcopy.height);
+	mapcopy.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * mapcopy.width * mapcopy.height);
 	for ( z = 0; z < MAPLAYERS; z++ ) {
 		for ( y = 0; y < map.height; y++ ) {
 			for ( x = 0; x < map.width; x++ ) {
@@ -677,17 +677,17 @@ void buttonAttributesConfirm(button_t *my) {
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
-	map.tiles = (int *) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
+	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
 	if ( vismap != NULL ) {
 		free(vismap);
 	}
-	vismap = (bool *) malloc(sizeof(bool) * map.width * map.height);
+	vismap = (bool*) malloc(sizeof(bool) * map.width * map.height);
 	if ( lightmap != NULL ) {
 		free(lightmap);
 	}
-	lightmap = (int *) malloc(sizeof(Sint32) * map.width * map.height);
+	lightmap = (int*) malloc(sizeof(Sint32) * map.width * map.height);
 	for (c = 0; c < map.width * map.height; c++ ) {
 		lightmap[c] = 0;
 	}
@@ -710,8 +710,8 @@ void buttonAttributesConfirm(button_t *my) {
 	buttonCloseSubwindow(my);
 }
 
-void buttonClearMap(button_t *my) {
-	button_t *button;
+void buttonClearMap(button_t* my) {
+	button_t* button;
 
 	menuVisible = 0;
 	subwindow = 1;
@@ -752,7 +752,7 @@ void buttonClearMap(button_t *my) {
 	button->focused = 1;
 }
 
-void buttonClearMapConfirm(button_t *my) {
+void buttonClearMapConfirm(button_t* my) {
 	long x, y, z;
 	makeUndo();
 	for ( z = 0; z < MAPLAYERS; z++ ) {
@@ -768,7 +768,7 @@ void buttonClearMapConfirm(button_t *my) {
 
 // Help menu
 
-void buttonHelp(button_t *my) {
+void buttonHelp(button_t* my) {
 	if ( menuVisible != 5 ) {
 		menuVisible = 5;
 	} else {
@@ -776,8 +776,8 @@ void buttonHelp(button_t *my) {
 	}
 }
 
-void buttonAbout(button_t *my) {
-	button_t *button;
+void buttonAbout(button_t* my) {
+	button_t* button;
 
 	menuVisible = 0;
 	subwindow = 1;
@@ -813,7 +813,7 @@ void buttonAbout(button_t *my) {
 }
 
 // Subwindows
-void buttonCloseSubwindow(button_t *my) {
+void buttonCloseSubwindow(button_t* my) {
 	int c;
 
 	// close window

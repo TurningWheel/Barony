@@ -106,7 +106,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 #define PI 3.14159265358979323846
 
-extern FILE *logfile;
+extern FILE* logfile;
 
 class Item;
 //enum Item;
@@ -222,18 +222,18 @@ class Entity; //TODO: Bugger?
 
 // node structure
 typedef struct node_t {
-	struct node_t *next;
-	struct node_t *prev;
-	struct list_t *list;
-	void *element;
-	void (*deconstructor)(void *data);
+	struct node_t* next;
+	struct node_t* prev;
+	struct list_t* list;
+	void* element;
+	void (*deconstructor)(void* data);
 	Uint32 size;
 } node_t;
 
 // list structure
 typedef struct list_t {
-	node_t *first;
-	node_t *last;
+	node_t* first;
+	node_t* last;
 } list_t;
 extern list_t button_l;
 extern list_t light_l;
@@ -243,8 +243,8 @@ typedef struct map_t {
 	char name[32];   // name of the map
 	char author[32]; // author of the map
 	unsigned int width, height;  // size of the map
-	Sint32 *tiles;
-	list_t *entities;
+	Sint32* tiles;
+	list_t* entities;
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map
@@ -255,10 +255,10 @@ typedef struct light_t {
 	Sint32 x, y;
 	Sint32 radius;
 	Sint32 intensity;
-	Sint32 *tiles;
+	Sint32* tiles;
 
 	// a pointer to the light's location in a list
-	node_t *node;
+	node_t* node;
 } light_t;
 
 // delete entity structure
@@ -271,10 +271,10 @@ typedef struct deleteent_t {
 
 // pathnode struct
 typedef struct pathnode_t {
-	struct pathnode_t *parent;
+	struct pathnode_t* parent;
 	Sint32 x, y;
 	Uint32 g, h;
-	node_t *node;
+	node_t* node;
 } pathnode_t;
 
 // hit structure
@@ -283,7 +283,7 @@ typedef struct pathnode_t {
 typedef struct hit_t {
 	double x, y;
 	int mapx, mapy;
-	Entity *entity;
+	Entity* entity;
 	int side;
 } hit_t;
 extern hit_t hit;
@@ -302,15 +302,15 @@ typedef struct button_t {
 	bool outline;        // draw golden border if true. For such things as indicated which settings tab gamepad has selected.
 
 	// a pointer to the button's location in a list
-	node_t *node;
+	node_t* node;
 
-	void (*action)(struct button_t *my);
+	void (*action)(struct button_t* my);
 } button_t;
 
 // voxel structure
 typedef struct voxel_t {
 	Sint32 sizex, sizey, sizez;
-	Uint8 *data;
+	Uint8* data;
 	Uint8 palette[256][3];
 } voxel_t;
 
@@ -334,7 +334,7 @@ typedef struct polytriangle_t {
 
 // polymodel structure
 typedef struct polymodel_t {
-	polytriangle_t *faces;
+	polytriangle_t* faces;
 	Uint32 numfaces;
 	GLuint vbo;
 	GLuint colors;
@@ -345,8 +345,8 @@ typedef struct polymodel_t {
 // string structure
 typedef struct string_t {
 	Uint32 lines;
-	char *data;
-	node_t *node;
+	char* data;
+	node_t* node;
 	Uint32 color;
 } string_t;
 
@@ -365,16 +365,16 @@ typedef struct door_t {
 extern int game;
 extern bool loading;
 extern SDL_TimerID timer;
-extern SDL_Window *screen;
+extern SDL_Window* screen;
 #ifdef APPLE
-extern SDL_Renderer *renderer;
+extern SDL_Renderer* renderer;
 #else
 extern SDL_GLContext renderer;
 #endif
-extern SDL_Surface *mainsurface;
+extern SDL_Surface* mainsurface;
 extern SDL_Event event;
 extern bool firstmouseevent;
-extern char *window_title;
+extern char* window_title;
 extern Sint32 fullscreen;
 extern bool smoothlighting;
 extern Sint32 xres;
@@ -383,7 +383,7 @@ extern int mainloop;
 extern Uint32 ticks;
 extern Uint32 lastkeypressed;
 extern Sint8 keystatus[512];
-extern char *inputstr;
+extern char* inputstr;
 extern int inputlen;
 extern string lastname;
 static const unsigned NUM_MOUSE_STATUS = 6;
@@ -402,10 +402,10 @@ extern char subtext[1024];
 extern int rscale;
 extern double vidgamma;
 extern bool softwaremode;
-extern double *zbuffer;
-extern Sint32 *lightmap;
-extern bool *vismap;
-extern Entity **clickmap;
+extern double* zbuffer;
+extern Sint32* lightmap;
+extern bool* vismap;
+extern Entity** clickmap;
 extern list_t entitiesdeleted;
 extern Sint32 multiplayer;
 extern bool directConnect;
@@ -420,7 +420,7 @@ extern int minotaurlevel;
 // language stuff
 #define NUMLANGENTRIES 2000
 extern char languageCode[32];
-extern char **language;
+extern char** language;
 
 // random game defines
 extern bool movie;
@@ -430,17 +430,17 @@ extern char classtoquickstart[256];
 // commands
 extern list_t messages;
 extern list_t command_history;
-extern node_t *chosen_command;
+extern node_t* chosen_command;
 extern bool command;
 extern char command_str[128];
 
 // network definitions
 extern IPaddress net_server;
-extern IPaddress *net_clients;
+extern IPaddress* net_clients;
 extern UDPsocket net_sock;
-extern UDPpacket *net_packet;
+extern UDPpacket* net_packet;
 extern TCPsocket net_tcpsock;
-extern TCPsocket *net_tcpclients;
+extern TCPsocket* net_tcpclients;
 extern SDLNet_SocketSet tcpset;
 
 #define MAXTEXTURES 10240
@@ -451,167 +451,167 @@ extern SDLNet_SocketSet tcpset;
 // various definitions
 extern map_t map;
 extern list_t ttfTextHash[HASH_SIZE];
-extern TTF_Font *ttf8;
+extern TTF_Font* ttf8;
 #define TTF8_WIDTH 7
 #define TTF8_HEIGHT 12
-extern TTF_Font *ttf12;
+extern TTF_Font* ttf12;
 #define TTF12_WIDTH 9
 #define TTF12_HEIGHT 16
-extern TTF_Font *ttf16;
+extern TTF_Font* ttf16;
 #define TTF16_WIDTH 12
 #define TTF16_HEIGHT 22
-extern SDL_Surface *font8x8_bmp;
-extern SDL_Surface *font12x12_bmp;
-extern SDL_Surface *font16x16_bmp;
-extern SDL_Surface *fancyWindow_bmp;
-extern SDL_Surface **sprites;
-extern SDL_Surface **tiles;
-extern voxel_t **models;
-extern polymodel_t *polymodels;
+extern SDL_Surface* font8x8_bmp;
+extern SDL_Surface* font12x12_bmp;
+extern SDL_Surface* font16x16_bmp;
+extern SDL_Surface* fancyWindow_bmp;
+extern SDL_Surface** sprites;
+extern SDL_Surface** tiles;
+extern voxel_t** models;
+extern polymodel_t* polymodels;
 extern Uint32 imgref, vboref;
-extern GLuint *texid;
+extern GLuint* texid;
 extern bool disablevbos;
 extern Uint32 fov;
 //extern GLuint *vboid, *vaoid;
-extern SDL_Surface **allsurfaces;
+extern SDL_Surface** allsurfaces;
 extern Uint32 numsprites;
 extern Uint32 numtiles;
 extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
 extern int sfxvolume;
-extern bool *animatedtiles, *lavatiles;
+extern bool* animatedtiles, *lavatiles;
 extern char tempstr[1024];
 extern Sint8 minimap[64][64];
 extern Uint32 mapseed;
-extern bool *shoparea;
+extern bool* shoparea;
 
 // function prototypes for main.c:
 int sgn(double x);
 int numdigits_sint16(Sint16 x);
-int longestline(char *str);
-int concatedStringLength(char *str, ...);
-void printlog(char *str, ...);
+int longestline(char* str);
+int concatedStringLength(char* str, ...);
+void printlog(char* str, ...);
 
 // function prototypes for init.c:
-int initApp(char *title, int fullscreen);
+int initApp(char* title, int fullscreen);
 int deinitApp();
 bool initVideo();
 bool changeVideoMode();
 void generatePolyModels();
 void generateVBOs();
-int loadLanguage(char *lang);
+int loadLanguage(char* lang);
 int reloadLanguage();
 
 // function prototypes for list.c:
-void list_FreeAll(list_t *list);
-void list_RemoveNode(node_t *node);
-node_t *list_AddNodeFirst(list_t *list);
-node_t *list_AddNodeLast(list_t *list);
-node_t *list_AddNode(list_t *list, int index);
-Uint32 list_Size(list_t *list);
-list_t *list_Copy(list_t *destlist, list_t *srclist);
-list_t *list_CopyNew(list_t *srclist);
-Uint32 list_Index(node_t *node);
-node_t *list_Node(list_t *list, int index);
+void list_FreeAll(list_t* list);
+void list_RemoveNode(node_t* node);
+node_t* list_AddNodeFirst(list_t* list);
+node_t* list_AddNodeLast(list_t* list);
+node_t* list_AddNode(list_t* list, int index);
+Uint32 list_Size(list_t* list);
+list_t* list_Copy(list_t* destlist, list_t* srclist);
+list_t* list_CopyNew(list_t* srclist);
+Uint32 list_Index(node_t* node);
+node_t* list_Node(list_t* list, int index);
 
 // function prototypes for light.c:
-light_t *lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-light_t *lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
+light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
+light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
 
 // function prototypes for objects.c:
-void defaultDeconstructor(void *data);
-void emptyDeconstructor(void *data);
-void entityDeconstructor(void *data);
-void lightDeconstructor(void *data);
-void mapDeconstructor(void *data);
-void stringDeconstructor(void *data);
-void listDeconstructor(void *data);
-Entity *newEntity(Sint32 sprite, Uint32 pos, list_t *entlist);
-button_t *newButton(void);
-light_t *newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-string_t *newString(list_t *list, Uint32 color, char *content, ...);
-pathnode_t *newPathnode(list_t *list, Sint32 x, Sint32 y, pathnode_t *parent, Sint8 pos);
+void defaultDeconstructor(void* data);
+void emptyDeconstructor(void* data);
+void entityDeconstructor(void* data);
+void lightDeconstructor(void* data);
+void mapDeconstructor(void* data);
+void stringDeconstructor(void* data);
+void listDeconstructor(void* data);
+Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist);
+button_t* newButton(void);
+light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
+string_t* newString(list_t* list, Uint32 color, char* content, ...);
+pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
 // function prototypes for draw.c:
 #define FLIP_VERTICAL 1
 #define FLIP_HORIZONTAL 2
-SDL_Surface *flipSurface(SDL_Surface *surface, int flags);
+SDL_Surface* flipSurface(SDL_Surface* surface, int flags);
 void drawCircle(int x, int y, double radius, Uint32 color, Uint8 alpha);
 void drawArc(int x, int y, double radius, double angle1, double angle2, Uint32 color, Uint8 alpha);
 void drawLine(int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha);
-int drawRect(SDL_Rect *src, Uint32 color, Uint8 alpha);
-int drawBox(SDL_Rect *src, Uint32 color, Uint8 alpha);
+int drawRect(SDL_Rect* src, Uint32 color, Uint8 alpha);
+int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha);
 void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation);
-void drawImage(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos);
-void drawImageScaled(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos);
-void drawImageAlpha(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint8 alpha);
-void drawImageColor(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, Uint32 color);
-void drawImageFancy(SDL_Surface *image, Uint32 color, double angle, SDL_Rect *src, SDL_Rect *pos);
-void drawImageRotatedAlpha(SDL_Surface *image, SDL_Rect *src, SDL_Rect *pos, double angle, Uint8 alpha);
-SDL_Surface* scaleSurface(SDL_Surface *Surface, Uint16 Width, Uint16 Height);
-void drawSky3D(view_t *camera, SDL_Surface *tex);
-void drawLayer(long camx, long camy, int z, map_t *map);
+void drawImage(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
+void drawImageScaled(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
+void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha);
+void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
+void drawImageFancy(SDL_Surface* image, Uint32 color, double angle, SDL_Rect* src, SDL_Rect* pos);
+void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, double angle, Uint8 alpha);
+SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height);
+void drawSky3D(view_t* camera, SDL_Surface* tex);
+void drawLayer(long camx, long camy, int z, map_t* map);
 void drawBackground(long camx, long camy);
 void drawForeground(long camx, long camy);
 void drawClearBuffers();
-void raycast(view_t *camera, int mode);
-void drawFloors(view_t *camera);
-void drawSky(SDL_Surface *srfc);
-void drawVoxel(view_t *camera, Entity *entity);
-void drawEntities3D(view_t *camera, int mode);
-void drawPalette(voxel_t *model);
+void raycast(view_t* camera, int mode);
+void drawFloors(view_t* camera);
+void drawSky(SDL_Surface* srfc);
+void drawVoxel(view_t* camera, Entity* entity);
+void drawEntities3D(view_t* camera, int mode);
+void drawPalette(voxel_t* model);
 void drawEntities2D(long camx, long camy);
 void drawGrid(long camx, long camy);
 void drawEditormap(long camx, long camy);
 void drawWindow(int x1, int y1, int x2, int y2);
 void drawDepressed(int x1, int y1, int x2, int y2);
 void drawWindowFancy(int x1, int y1, int x2, int y2);
-SDL_Rect ttfPrintTextColor( TTF_Font *font, int x, int y, Uint32 color, bool outline, const char *str );
-SDL_Rect ttfPrintText( TTF_Font *font, int x, int y, const char *str );
-SDL_Rect ttfPrintTextFormattedColor( TTF_Font *font, int x, int y, Uint32 color, char *fmt, ... );
-SDL_Rect ttfPrintTextFormatted( TTF_Font *font, int x, int y, char *fmt, ... );
-void printTextFormatted( SDL_Surface *font_bmp, int x, int y, char *fmt, ... );
-void printTextFormattedAlpha(SDL_Surface *font_bmp, int x, int y, Uint8 alpha, char *fmt, ...);
-void printTextFormattedColor(SDL_Surface *font_bmp, int x, int y, Uint32 color, char *fmt, ...);
-void printTextFormattedFancy(SDL_Surface *font_bmp, int x, int y, Uint32 color, double angle, double scale, char *fmt, ...);
-void printText( SDL_Surface *font_bmp, int x, int y, char *str );
-void drawSprite(view_t *camera, Entity *entity);
-void drawTooltip(SDL_Rect *src);
+SDL_Rect ttfPrintTextColor( TTF_Font* font, int x, int y, Uint32 color, bool outline, const char* str );
+SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str );
+SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color, char* fmt, ... );
+SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... );
+void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... );
+void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...);
+void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...);
+void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, double angle, double scale, char* fmt, ...);
+void printText( SDL_Surface* font_bmp, int x, int y, char* str );
+void drawSprite(view_t* camera, Entity* entity);
+void drawTooltip(SDL_Rect* src);
 
 // function prototypes for opengl.c:
 #define REALCOLORS 0
 #define ENTITYUIDS 1
 double getLightForEntity(double x, double y);
-void glDrawVoxel(view_t *camera, Entity *entity, int mode);
-void glDrawSprite(view_t *camera, Entity *entity, int mode);
+void glDrawVoxel(view_t* camera, Entity* entity, int mode);
+void glDrawSprite(view_t* camera, Entity* entity, int mode);
 double getLightAt(int x, int y);
-void glDrawWorld(view_t *camera, int mode);
+void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for files.c:
-void glLoadTexture(SDL_Surface *image, int texnum);
-SDL_Surface *loadImage(char *filename);
-voxel_t *loadVoxel(char *filename2);
-int loadMap(char *filename, map_t *destmap, list_t *entlist);
-int loadConfig(char *filename);
-int saveMap(char *filename);
+void glLoadTexture(SDL_Surface* image, int texnum);
+SDL_Surface* loadImage(char* filename);
+voxel_t* loadVoxel(char* filename2);
+int loadMap(char* filename, map_t* destmap, list_t* entlist);
+int loadConfig(char* filename);
+int saveMap(char* filename);
 
 // function prototypes for cursors.c:
-SDL_Cursor *newCursor(char *image[]);
+SDL_Cursor* newCursor(char* image[]);
 
 // function prototypes for maps.c:
-int generateDungeon(char *levelset, Uint32 seed);
-void assignActions(map_t *map);
+int generateDungeon(char* levelset, Uint32 seed);
+void assignActions(map_t* map);
 
 // cursor bitmap definitions
-extern char *cursor_pencil[];
-extern char *cursor_brush[];
-extern char *cursor_fill[];
+extern char* cursor_pencil[];
+extern char* cursor_brush[];
+extern char* cursor_fill[];
 
 GLuint create_shader(const char* filename, GLenum type);
 
-char *readFile(char *filename);
-list_t *directoryContents(char *directory);
+char* readFile(char* filename);
+list_t* directoryContents(char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?

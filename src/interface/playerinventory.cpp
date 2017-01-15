@@ -26,10 +26,10 @@
 void itemContextMenu();
 
 
-SDL_Surface *inventory_mode_item_img = NULL;
-SDL_Surface *inventory_mode_item_highlighted_img = NULL;
-SDL_Surface *inventory_mode_spell_img = NULL;
-SDL_Surface *inventory_mode_spell_highlighted_img = NULL;
+SDL_Surface* inventory_mode_item_img = NULL;
+SDL_Surface* inventory_mode_item_highlighted_img = NULL;
+SDL_Surface* inventory_mode_spell_img = NULL;
+SDL_Surface* inventory_mode_spell_highlighted_img = NULL;
 int inventory_mode = INVENTORY_MODE_ITEM;
 
 selectBehavior_t itemSelectBehavior = BEHAVIOR_MOUSE;
@@ -47,7 +47,7 @@ void warpMouseToSelectedInventorySlot() {
 
 -------------------------------------------------------------------------------*/
 
-char *itemUseString(const Item *item) {
+char* itemUseString(const Item* item) {
 	if ( itemCategory(item) == WEAPON ) {
 		if ( itemIsEquipped(item, clientnum) ) {
 			return language[323];
@@ -169,7 +169,7 @@ char *itemUseString(const Item *item) {
 
 void updateAppraisalItemBox() {
 	SDL_Rect pos;
-	Item *item;
+	Item* item;
 	int x, y;
 
 	x = INVENTORY_STARTX;
@@ -272,7 +272,7 @@ void select_inventory_slot(int x, int y) {
 
 -------------------------------------------------------------------------------*/
 
-Item *selectedItem = nullptr;
+Item* selectedItem = nullptr;
 int selectedItemFromHotbar = -1;
 bool toggleclick = false;
 
@@ -493,7 +493,7 @@ void drawBlueInventoryBorder(const Item& item, int x, int y) {
 
 void updatePlayerInventory() {
 	SDL_Rect pos, mode_pos;
-	node_t *node, *nextnode;
+	node_t* node, *nextnode;
 	int x, y;
 
 	x = INVENTORY_STARTX;
@@ -596,7 +596,7 @@ void updatePlayerInventory() {
 	y = INVENTORY_STARTY;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
 		nextnode = node->next;
-		Item *item = (Item *)node->element;
+		Item* item = (Item*)node->element;
 
 		if ( item == selectedItem || (inventory_mode == INVENTORY_MODE_ITEM && itemCategory(item) == SPELL_CAT) || (inventory_mode == INVENTORY_MODE_SPELL && itemCategory(item) != SPELL_CAT) ) {
 			//Item is selected, or, item is a spell but it's item inventory mode, or, item is an item but it's spell inventory mode...(this filters out items)
@@ -665,7 +665,7 @@ void updatePlayerInventory() {
 				drawImage(equipped_bmp, NULL, &pos);
 			}
 		} else {
-			spell_t *spell = getSpellFromItem(item);
+			spell_t* spell = getSpellFromItem(item);
 			if ( selected_spell == spell ) {
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 2;
 				pos.y = y + item->y * INVENTORY_SLOTSIZE + 22;
@@ -730,7 +730,7 @@ void updatePlayerInventory() {
 	if ( !selectedItem ) {
 		for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
-			Item *item = (Item *)node->element; //I don't like that there's not a check that either are null.
+			Item* item = (Item*)node->element;  //I don't like that there's not a check that either are null.
 
 			if (item) {
 				pos.x = x + item->x * INVENTORY_SLOTSIZE + 4;
@@ -748,7 +748,7 @@ void updatePlayerInventory() {
 						src.x = mousex + 16;
 						src.y = mousey + 8;
 						if (itemCategory(item) == SPELL_CAT) {
-							spell_t *spell = getSpellFromItem(item);
+							spell_t* spell = getSpellFromItem(item);
 							if (spell) {
 								char tempstr[32];
 								snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
@@ -902,7 +902,7 @@ inline void drawItemMenuSlot(int x, int y, int width, int height, bool selected 
 /*
  * Helper function to itemContextMenu(). Draws the context menu slots.
  */
-inline void drawItemMenuSlots(const Item &item, int slot_width, int slot_height) {
+inline void drawItemMenuSlots(const Item& item, int slot_width, int slot_height) {
 	//Draw the action select boxes. "Appraise", "Use, "Equip", etc.
 	int current_x = itemMenuX;
 	int current_y = itemMenuY;
@@ -936,7 +936,7 @@ inline void drawOptionSell(int x, int y) {
 	ttfPrintText(ttf12, x + 50 - width / 2, y + 4, language[345]);
 }
 
-inline void drawOptionUse(const Item &item, int x, int y) {
+inline void drawOptionUse(const Item& item, int x, int y) {
 	int width = 0;
 	ttfPrintTextFormatted(ttf12, x + 50 - strlen(itemUseString(&item)) * TTF12_WIDTH / 2, y + 4, "%s", itemUseString(&item));
 }
@@ -968,7 +968,7 @@ inline void drawOptionDrop(int x, int y) {
 /*
  * Helper function to itemContextMenu(). Draws a spell's options.
  */
-inline void drawItemMenuOptionSpell(const Item &item, int x, int y) {
+inline void drawItemMenuOptionSpell(const Item& item, int x, int y) {
 	if (itemCategory(&item) != SPELL_CAT) {
 		return;
 	}
@@ -982,7 +982,7 @@ inline void drawItemMenuOptionSpell(const Item &item, int x, int y) {
 /*
  * Helper function to itemContextMenu(). Draws a potion's options.
  */
-inline void drawItemMenuOptionPotion(const Item &item, int x, int y, int height, bool is_potion_bad = false) {
+inline void drawItemMenuOptionPotion(const Item& item, int x, int y, int height, bool is_potion_bad = false) {
 	if (itemCategory(&item) != POTION) {
 		return;
 	}
@@ -1030,7 +1030,7 @@ inline void drawItemMenuOptionPotion(const Item &item, int x, int y, int height,
 /*
  * Helper function to itemContextMenu(). Draws all other items's options.
  */
-inline void drawItemMenuOptionGeneric(const Item &item, int x, int y, int height) {
+inline void drawItemMenuOptionGeneric(const Item& item, int x, int y, int height) {
 	if (itemCategory(&item) == SPELL_CAT || itemCategory(&item) == POTION) {
 		return;
 	}
@@ -1059,7 +1059,7 @@ inline void drawItemMenuOptionGeneric(const Item &item, int x, int y, int height
 /*
  * Helper function to itemContextMenu(). Changes the currently selected slot based on the mouse cursor's position.
  */
-inline void selectItemMenuSlot(const Item &item, int x, int y, int slot_width, int slot_height) {
+inline void selectItemMenuSlot(const Item& item, int x, int y, int slot_width, int slot_height) {
 	int current_x = itemMenuX;
 	int current_y = itemMenuY;
 
@@ -1102,7 +1102,7 @@ inline void selectItemMenuSlot(const Item &item, int x, int y, int slot_width, i
 /*
  * execteItemMenuOptionX() -  Helper function to itemContextMenu(). Executes the specified menu option for the item.
  */
-inline void executeItemMenuOption0(Item *item, bool is_potion_bad = false) {
+inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false) {
 	if (!item) {
 		return;
 	}
@@ -1120,7 +1120,7 @@ inline void executeItemMenuOption0(Item *item, bool is_potion_bad = false) {
 		} else {
 			//Option 0 = equip.
 			if (multiplayer == CLIENT) {
-				strcpy((char *)net_packet->data, "EQUI");
+				strcpy((char*)net_packet->data, "EQUI");
 				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1138,7 +1138,7 @@ inline void executeItemMenuOption0(Item *item, bool is_potion_bad = false) {
 	}
 }
 
-inline void executeItemMenuOption1(Item *item, bool is_potion_bad = false) {
+inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false) {
 	if (!item || itemCategory(item) == SPELL_CAT) {
 		return;
 	}
@@ -1156,7 +1156,7 @@ inline void executeItemMenuOption1(Item *item, bool is_potion_bad = false) {
 		if (!is_potion_bad) {
 			//Option 1 = equip.
 			if (multiplayer == CLIENT) {
-				strcpy((char *)net_packet->data, "EQUI");
+				strcpy((char*)net_packet->data, "EQUI");
 				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
 				SDLNet_Write32((Uint32)item->status, &net_packet->data[8]);
 				SDLNet_Write32((Uint32)item->beatitude, &net_packet->data[12]);
@@ -1177,7 +1177,7 @@ inline void executeItemMenuOption1(Item *item, bool is_potion_bad = false) {
 	}
 }
 
-inline void executeItemMenuOption2(Item *item) {
+inline void executeItemMenuOption2(Item* item) {
 	if (!item || itemCategory(item) == SPELL_CAT) {
 		return;
 	}
@@ -1197,7 +1197,7 @@ inline void executeItemMenuOption2(Item *item) {
 	}
 }
 
-inline void executeItemMenuOption3(Item *item) {
+inline void executeItemMenuOption3(Item* item) {
 	if (!item || itemCategory(item) != POTION) {
 		return;
 	}
@@ -1221,7 +1221,7 @@ void itemContextMenu() {
 
 	//Item *item = uidToItem(itemMenuItem);
 
-	Item *current_item = uidToItem(itemMenuItem);
+	Item* current_item = uidToItem(itemMenuItem);
 	if (!current_item) {
 		itemMenuOpen = false;
 		return;

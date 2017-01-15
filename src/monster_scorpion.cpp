@@ -20,7 +20,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initScorpion(Entity *my, Stat *myStats) {
+void initScorpion(Entity* my, Stat* myStats) {
 	int c;
 
 	my->flags[UPDATENEEDED] = TRUE;
@@ -97,7 +97,7 @@ void initScorpion(Entity *my, Stat *myStats) {
 
 			int c;
 			for ( c = 0; c < 3; c++ ) {
-				Entity *entity = summonMonster(SCORPION, my->x, my->y);
+				Entity* entity = summonMonster(SCORPION, my->x, my->y);
 				if ( entity ) {
 					entity->parent = my->uid;
 				}
@@ -106,7 +106,7 @@ void initScorpion(Entity *my, Stat *myStats) {
 	}
 
 	// tail
-	Entity *entity = newEntity(197, 0, map.entities);
+	Entity* entity = newEntity(197, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->uid;
@@ -117,18 +117,18 @@ void initScorpion(Entity *my, Stat *myStats) {
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->behavior = &actScorpionTail;
 	entity->parent = my->uid;
-	node_t *node = list_AddNodeLast(&my->children);
+	node_t* node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity *);
+	node->size = sizeof(Entity*);
 }
 
-void scorpionDie(Entity *my) {
-	node_t *node, *nextnode;
+void scorpionDie(Entity* my) {
+	node_t* node, *nextnode;
 
 	int c = 0;
 	for ( c = 0; c < 5; c++ ) {
-		Entity *gib = spawnGib(my);
+		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
 	if (spawn_blood) {
@@ -137,7 +137,7 @@ void scorpionDie(Entity *my) {
 		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
 		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] ) {
 			if ( !checkObstacle(my->x, my->y, my, NULL) ) {
-				Entity *entity = newEntity(212, 1, map.entities);
+				Entity* entity = newEntity(212, 1, map.entities);
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
@@ -154,7 +154,7 @@ void scorpionDie(Entity *my) {
 	for (node = my->children.first; node != NULL; node = nextnode) {
 		nextnode = node->next;
 		if (node->element != NULL && i >= 2) {
-			Entity *entity = (Entity *)node->element;
+			Entity* entity = (Entity*)node->element;
 			entity->flags[UPDATENEEDED] = FALSE;
 			list_RemoveNode(entity->mynode);
 		}
@@ -165,10 +165,10 @@ void scorpionDie(Entity *my) {
 	list_RemoveNode(my->mynode);
 	return;
 }
-void actScorpionTail(Entity *my) {
+void actScorpionTail(Entity* my) {
 	int i;
 
-	Entity *parent = NULL;
+	Entity* parent = NULL;
 	if ( (parent = uidToEntity(my->skill[2])) == NULL ) {
 		list_RemoveNode(my->mynode);
 		return;
@@ -188,18 +188,18 @@ void actScorpionTail(Entity *my) {
 	return;
 }
 
-void scorpionAnimate(Entity *my, double dist) {
+void scorpionAnimate(Entity* my, double dist) {
 	if (!my) {
 		return;
 	}
 
-	node_t *node;
-	Entity *entity;
+	node_t* node;
+	Entity* entity;
 	int bodypart;
 
 	// set invisibility
 	if ( multiplayer != CLIENT ) {
-		Stat *myStats = my->getStats();
+		Stat* myStats = my->getStats();
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE ) {
 			my->flags[INVISIBLE] = TRUE;
 			my->flags[BLOCKSIGHT] = FALSE;
@@ -209,7 +209,7 @@ void scorpionAnimate(Entity *my, double dist) {
 					bodypart++;
 					continue;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = TRUE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -225,7 +225,7 @@ void scorpionAnimate(Entity *my, double dist) {
 					bodypart++;
 					continue;
 				}
-				entity = (Entity *)node->element;
+				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] ) {
 					entity->flags[INVISIBLE] = FALSE;
 					serverUpdateEntityBodypart(my, bodypart);
@@ -249,7 +249,7 @@ void scorpionAnimate(Entity *my, double dist) {
 		if ( bodypart < 2 ) {
 			continue;
 		}
-		entity = (Entity *)node->element;
+		entity = (Entity*)node->element;
 		entity->x = my->x - 4 * cos(my->yaw);
 		entity->y = my->y - 4 * sin(my->yaw);
 		entity->z = my->z;

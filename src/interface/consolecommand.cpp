@@ -31,9 +31,9 @@
 
 -------------------------------------------------------------------------------*/
 
-void consoleCommand(char *command_str) {
-	node_t *node;
-	Entity *entity;
+void consoleCommand(char* command_str) {
+	node_t* node;
+	Entity* entity;
 	char name[64];
 	int c;
 
@@ -45,7 +45,7 @@ void consoleCommand(char *command_str) {
 		if ( multiplayer != CLIENT ) {
 			messagePlayer(clientnum, language[1117], 0);
 		} else {
-			strcpy((char *)net_packet->data, "PING");
+			strcpy((char*)net_packet->data, "PING");
 			net_packet->data[4] = clientnum;
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
@@ -65,7 +65,7 @@ void consoleCommand(char *command_str) {
 
 			if ( multiplayer == SERVER ) {
 				// update client flags
-				strcpy((char *)net_packet->data, "SVFL");
+				strcpy((char*)net_packet->data, "SVFL");
 				SDLNet_Write32(svFlags, &net_packet->data[4]);
 				net_packet->len = 8;
 
@@ -121,7 +121,7 @@ void consoleCommand(char *command_str) {
 			for ( c = 1; c < MAXPLAYERS; c++ ) {
 				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) ) {
 					client_disconnected[c] = TRUE;
-					strcpy((char *)net_packet->data, "KICK");
+					strcpy((char*)net_packet->data, "KICK");
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
 					net_packet->len = 4;
@@ -243,7 +243,7 @@ void consoleCommand(char *command_str) {
 			return;
 		}
 		for ( node = map.entities->first; node != NULL; node = node->next ) {
-			entity = (Entity *)node->element;
+			entity = (Entity*)node->element;
 			if ( entity->behavior == &actLadder ) {
 				messagePlayer(clientnum, language[298], (int)(entity->x / 16), (int)(entity->y / 16));
 			}
@@ -504,7 +504,7 @@ void consoleCommand(char *command_str) {
 		}
 	} else if (!strncmp(command_str, "/hunger", 7)) {
 		if (multiplayer == SINGLE) {
-			Stat *tempStats = players[clientnum]->entity->getStats();
+			Stat* tempStats = players[clientnum]->entity->getStats();
 			if (tempStats) {
 				tempStats->HUNGER = std::max(0, tempStats->HUNGER - 100);
 			}
@@ -515,7 +515,7 @@ void consoleCommand(char *command_str) {
 		int num = 0;
 		//snprintf((char *)(command_str + 11), strlen(command_str)-11, "%d", num);
 		//printlog( "Number is %d. Original is: \"%s\"\n", num, (char *)(&command_str[11]));
-		num = atoi((char *)(command_str + 11));
+		num = atoi((char*)(command_str + 11));
 		playSound(num, 256);
 	} else if (!strncmp(command_str, "/skipintro", 10)) {
 		skipintro = (skipintro == FALSE);
@@ -540,10 +540,10 @@ void consoleCommand(char *command_str) {
 			messagePlayer(clientnum, language[284]);
 		} else {
 			int c = 0;
-			node_t *node, *nextnode;
+			node_t* node, *nextnode;
 			for ( node = map.entities->first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				if ( entity->behavior == &actMonster ) {
 					entity->setHP(0);
 					c++;
@@ -605,7 +605,7 @@ void consoleCommand(char *command_str) {
 				playSoundEntity(players[clientnum]->entity, 153, 64);
 
 				//Spawn monster
-				Entity *monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
+				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster) {
 					messagePlayer(clientnum, language[302], language[90 + creature]);
 				} else {

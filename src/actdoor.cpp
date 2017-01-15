@@ -38,12 +38,12 @@
 #define DOOR_MAXHEALTH my->skill[9]
 #define DOOR_STARTANG my->fskill[0]
 
-void actDoor(Entity *my) {
+void actDoor(Entity* my) {
 	if (!my) {
 		return;
 	}
 
-	Entity *entity;
+	Entity* entity;
 	int i, c;
 
 	if ( !DOOR_INIT ) {
@@ -167,10 +167,10 @@ void actDoor(Entity *my) {
 		// setting collision
 		if ( my->yaw == DOOR_STARTANG && my->flags[PASSABLE] ) {
 			// don't set impassable if someone's inside, otherwise do
-			node_t *node;
+			node_t* node;
 			bool somebodyinside = FALSE;
 			for ( node = map.entities->first; node != NULL; node = node->next ) {
-				Entity *entity = (Entity *)node->element;
+				Entity* entity = (Entity*)node->element;
 				if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1  ) {
 					continue;
 				}
@@ -208,7 +208,7 @@ void actDoor(Entity *my) {
 	}
 }
 
-void actDoorFrame(Entity *my) {
+void actDoorFrame(Entity* my) {
 	// dummy function
 	// intended to make it easier
 	// to determine whether an entity

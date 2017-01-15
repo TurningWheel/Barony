@@ -46,7 +46,7 @@
 int initGame() {
 	int c, x;
 	char name[32];
-	FILE *fp;
+	FILE* fp;
 
 	// setup some lists
 	steamAchievements.first = NULL;
@@ -204,11 +204,11 @@ int initGame() {
 		items[c].images.first = NULL;
 		items[c].images.last = NULL;
 		while ( 1 ) {
-			string_t *string = (string_t *) malloc(sizeof(string_t));
-			string->data = (char *) malloc(sizeof(char) * 64);
+			string_t* string = (string_t*) malloc(sizeof(string_t));
+			string->data = (char*) malloc(sizeof(char) * 64);
 			string->lines = 1;
 
-			node_t *node = list_AddNodeLast(&items[c].images);
+			node_t* node = list_AddNodeLast(&items[c].images);
 			node->element = string;
 			node->deconstructor = &stringDeconstructor;
 			node->size = sizeof(string_t);
@@ -234,14 +234,14 @@ int initGame() {
 		items[c].surfaces.first = NULL;
 		items[c].surfaces.last = NULL;
 		for ( x = 0; x < list_Size(&items[c].images); x++ ) {
-			SDL_Surface **surface = (SDL_Surface **) malloc(sizeof(SDL_Surface *));
-			node_t *node = list_AddNodeLast(&items[c].surfaces);
+			SDL_Surface** surface = (SDL_Surface**) malloc(sizeof(SDL_Surface*));
+			node_t* node = list_AddNodeLast(&items[c].surfaces);
 			node->element = surface;
 			node->deconstructor = &defaultDeconstructor;
-			node->size = sizeof(SDL_Surface *);
+			node->size = sizeof(SDL_Surface*);
 
-			node_t *node2 = list_Node(&items[c].images, x);
-			string_t *string = (string_t *)node2->element;
+			node_t* node2 = list_Node(&items[c].images, x);
+			string_t* string = (string_t*)node2->element;
 			*surface = loadImage(string->data);
 		}
 	}
@@ -330,49 +330,49 @@ int initGame() {
 	//fmod_result = FMOD_System_CreateStream(fmod_system, "music/story.ogg", FMOD_SOFTWARE, NULL, &storymusic);
 
 	if ( NUMMINESMUSIC > 0 ) {
-		minesmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMMINESMUSIC);
+		minesmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMMINESMUSIC);
 		for ( c = 0; c < NUMMINESMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minesmusic[c]);
 		}
 	}
 	if ( NUMSWAMPMUSIC > 0 ) {
-		swampmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMSWAMPMUSIC);
+		swampmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMSWAMPMUSIC);
 		for ( c = 0; c < NUMSWAMPMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &swampmusic[c]);
 		}
 	}
 	if ( NUMLABYRINTHMUSIC > 0 ) {
-		labyrinthmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMLABYRINTHMUSIC);
+		labyrinthmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMLABYRINTHMUSIC);
 		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &labyrinthmusic[c]);
 		}
 	}
 	if ( NUMRUINSMUSIC > 0 ) {
-		ruinsmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMRUINSMUSIC);
+		ruinsmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMRUINSMUSIC);
 		for ( c = 0; c < NUMRUINSMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &ruinsmusic[c]);
 		}
 	}
 	if ( NUMUNDERWORLDMUSIC > 0 ) {
-		underworldmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMUNDERWORLDMUSIC);
+		underworldmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMUNDERWORLDMUSIC);
 		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &underworldmusic[c]);
 		}
 	}
 	if ( NUMHELLMUSIC > 0 ) {
-		hellmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMHELLMUSIC);
+		hellmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMHELLMUSIC);
 		for ( c = 0; c < NUMHELLMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &hellmusic[c]);
 		}
 	}
 	if ( NUMMINOTAURMUSIC > 0 ) {
-		minotaurmusic = (FMOD_SOUND **) malloc(sizeof(FMOD_SOUND *)*NUMMINOTAURMUSIC);
+		minotaurmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMMINOTAURMUSIC);
 		for ( c = 0; c < NUMMINOTAURMUSIC; c++ ) {
 			snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
@@ -418,7 +418,7 @@ void deinitGame() {
 
 	// send disconnect messages
 	if (multiplayer == CLIENT) {
-		strcpy((char *)net_packet->data, "DISCONNECT");
+		strcpy((char*)net_packet->data, "DISCONNECT");
 		net_packet->data[10] = clientnum;
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
@@ -430,7 +430,7 @@ void deinitGame() {
 			if ( client_disconnected[x] == TRUE ) {
 				continue;
 			}
-			strcpy((char *)net_packet->data, "DISCONNECT");
+			strcpy((char*)net_packet->data, "DISCONNECT");
 			net_packet->data[10] = clientnum;
 			net_packet->address.host = net_clients[x - 1].host;
 			net_packet->address.port = net_clients[x - 1].port;
@@ -453,11 +453,11 @@ void deinitGame() {
 		}
 		if ( !(SDL_GetTicks() % 25) && multiplayer ) {
 			int j = 0;
-			node_t *node, *nextnode;
+			node_t* node, *nextnode;
 			for ( node = safePacketsSent.first; node != NULL; node = nextnode ) {
 				nextnode = node->next;
 
-				packetsend_t *packet = (packetsend_t *)node->element;
+				packetsend_t* packet = (packetsend_t*)node->element;
 				sendPacket(packet->sock, packet->channel, packet->packet, packet->hostnum);
 				packet->tries++;
 				if ( packet->tries >= MAXTRIES ) {
@@ -603,10 +603,10 @@ void deinitGame() {
 	printlog( "freeing item data...\n");
 	for ( c = 0; c < NUMITEMS; c++ ) {
 		list_FreeAll(&items[c].images);
-		node_t *node, *nextnode;
+		node_t* node, *nextnode;
 		for ( node = items[c].surfaces.first; node != NULL; node = nextnode ) {
 			nextnode = node->next;
-			SDL_Surface **surface = (SDL_Surface **)node->element;
+			SDL_Surface** surface = (SDL_Surface**)node->element;
 			if ( surface )
 				if ( *surface ) {
 					SDL_FreeSurface(*surface);
