@@ -63,6 +63,7 @@ void updateRightSidebar()
 			identifygui_active = TRUE;
 			identifygui_appraising = TRUE;
 			gui_mode = GUI_MODE_INVENTORY;
+			removecursegui_active = false;
 
 			//Initialize Identify GUI game controller code here.
 			initIdentifyGUIControllerCode();

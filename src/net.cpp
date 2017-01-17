@@ -2231,6 +2231,7 @@ void clientHandlePacket()
 		identifygui_appraising = false;
 		shootmode = FALSE;
 		gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+		removecursegui_active = false;
 
 		//Initialize Identify GUI game controller code here.
 		initIdentifyGUIControllerCode();
