@@ -159,7 +159,7 @@ void updateRemoveCurseGUI()
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
-				removecursegui_active = FALSE;
+				closeRemoveCurseGUI();
 			}
 
 			Item* item = NULL;
@@ -283,7 +283,7 @@ void removecurseGUIRemoveCurse(Item* item)
 
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
 	messagePlayer(clientnum, language[348], item->description());
-	removecursegui_active = FALSE;
+	closeRemoveCurseGUI();
 	if ( multiplayer == CLIENT && itemIsEquipped(item, clientnum) )
 	{
 		// the client needs to inform the server that their equipment was uncursed.
@@ -336,4 +336,10 @@ void removecurseGUIRemoveCurse(Item* item)
 		net_packet->len = 6;
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
+}
+
+void closeRemoveCurseGUI()
+{
+	//TODO: Clean up Remove Curse GUI gamepad code here.
+	removecursegui_active = false;
 }

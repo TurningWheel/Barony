@@ -513,7 +513,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						identifygui_active = true;
 						identifygui_appraising = false;
-						removecursegui_active = false;
+						if ( removecursegui_active )
+						{
+							closeRemoveCurseGUI();
+						}
 						//identifygui_mode = TRUE;
 
 						//Initialize Identify GUI game controller code here.

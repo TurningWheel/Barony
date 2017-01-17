@@ -233,6 +233,7 @@ extern int removecursescroll;
 extern Item* removecurse_items[4];
 //extern SDL_Surface *removecurseGUI_img; //Nah, just use the identify GUI's image. It works well enough. No need to double the resources.
 
+void closeRemoveCurseGUI();
 void updateRemoveCurseGUI(); //Updates the remove curse GUI.
 void removecurseGUIRemoveCurse(Item* item); //Uncurse the given item.
 

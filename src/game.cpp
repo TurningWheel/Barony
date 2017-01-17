@@ -2943,6 +2943,7 @@ int main(int argc, char** argv)
 					else
 					{
 						//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
+						//2-3 years later...yes, it is run every frame.
 						if (identifygui_appraising)
 						{
 							//Close the identify GUI if appraising.
@@ -2952,9 +2953,19 @@ int main(int argc, char** argv)
 							//Cleanup identify GUI gamecontroller code here.
 							selectedIdentifySlot = -1;
 						}
-						removecursegui_active = FALSE;
-						closeBookGUI();
+
+						if ( removecursegui_active )
+						{
+							closeRemoveCurseGUI();
+						}
+
+						if ( book_open )
+						{
+							closeBookGUI();
+						}
+
 						gui_clickdrag = FALSE; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
+
 						if (capture_mouse)
 						{
 							SDL_SetRelativeMouseMode(SDL_TRUE);
