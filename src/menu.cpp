@@ -218,10 +218,13 @@ void navigateMainMenuItems(bool mode)
 	if (menuselect == 0)
 	{
 		//No menu item selected.
-		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+		if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_UP] = 0;
-			*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+			}
 			draw_cursor = false;
 			menuselect = 1;
 			//Warp cursor to menu item, for gamepad convenience.
@@ -229,10 +232,13 @@ void navigateMainMenuItems(bool mode)
 			warpy = (yres / 4) + 80 + (18 / 2); //I am a wizard. I hate magic numbers.
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
 		}
-		else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+		else if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_DOWN] = 0;
-			*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+			}
 			draw_cursor = false;
 			menuselect = 1;
 			warpx = 50 + 18;
@@ -242,10 +248,13 @@ void navigateMainMenuItems(bool mode)
 	}
 	else
 	{
-		if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+		if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_UP] = 0;
-			*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+			}
 			draw_cursor = false;
 			menuselect--;
 			if (menuselect == 0)
@@ -264,10 +273,13 @@ void navigateMainMenuItems(bool mode)
 			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
 		}
-		else if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+		else if (keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 		{
 			keystatus[SDL_SCANCODE_DOWN] = 0;
-			*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+			}
 			draw_cursor = false;
 			menuselect++;
 			if (mode)
@@ -443,11 +455,14 @@ void handleMainMenu(bool mode)
 			{
 				menuselect = 1;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 80, colorGray, language[1303]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
 					playSound(139, 64);
 
 					// look for a save game
@@ -470,11 +485,14 @@ void handleMainMenu(bool mode)
 			{
 				menuselect = 2;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 104, colorGray, language[1304]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
 					playSound(139, 64);
 					introstage = 6; // goes to intro movie
 					fadeout = TRUE;
@@ -492,11 +510,14 @@ void handleMainMenu(bool mode)
 			{
 				menuselect = 3;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 128, colorGray, language[1305]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
 					playSound(139, 64);
 
 					// create statistics window
@@ -559,11 +580,14 @@ void handleMainMenu(bool mode)
 			{
 				menuselect = 4;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152, colorGray, language[1306]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
 					playSound(139, 64);
 					openSettingsWindow();
 				}
@@ -577,11 +601,14 @@ void handleMainMenu(bool mode)
 			{
 				menuselect = 5;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 176, colorGray, language[1307]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
 					playSound(139, 64);
 					introstage = 4; // goes to credits
 					fadeout = TRUE;
@@ -596,11 +623,14 @@ void handleMainMenu(bool mode)
 			{
 				menuselect = 6;
 				ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 200, colorGray, language[1308]);
-				if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+				if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 				{
 					mousestatus[SDL_BUTTON_LEFT] = 0;
 					keystatus[SDL_SCANCODE_RETURN] = 0;
-					*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+					}
 					playSound(139, 64);
 
 					// create confirmation window
@@ -662,9 +692,12 @@ void handleMainMenu(bool mode)
 				{
 					menuselect = 1;
 					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 80, colorGray, language[1309]);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						if ( rebindaction == -1 )
+						{
+							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						}
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
 						playSound(139, 64);
@@ -679,11 +712,14 @@ void handleMainMenu(bool mode)
 				{
 					menuselect = 2;
 					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 104, colorGray, language[1306]);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						if ( rebindaction == -1 )
+						{
+							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						}
 						playSound(139, 64);
 						openSettingsWindow();
 					}
@@ -705,11 +741,14 @@ void handleMainMenu(bool mode)
 				{
 					menuselect = 3;
 					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 128, colorGray, endgameText);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						if ( rebindaction == -1 )
+						{
+							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						}
 						playSound(139, 64);
 
 						// create confirmation window
@@ -768,11 +807,14 @@ void handleMainMenu(bool mode)
 					{
 						menuselect = 4;
 						ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152, colorGray, language[1312]);
-						if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+						if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							keystatus[SDL_SCANCODE_RETURN] = 0;
-							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+							if ( rebindaction == -1 )
+							{
+								*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+							}
 							playSound(139, 64);
 
 							// create confirmation window
@@ -837,11 +879,14 @@ void handleMainMenu(bool mode)
 				{
 					menuselect = 4 + (multiplayer != CLIENT);
 					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
-					if (mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]))
+					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
 						keystatus[SDL_SCANCODE_RETURN] = 0;
-						*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						if ( rebindaction == -1 )
+						{
+							*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+						}
 						playSound(139, 64);
 
 						// create confirmation window
@@ -1084,17 +1129,23 @@ void handleMainMenu(bool mode)
 					}
 				}
 			}
-			if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+			if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_UP] = 0;
-				*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+				}
 				draw_cursor = false;
 				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
-			if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+			if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 			{
 				keystatus[SDL_SCANCODE_DOWN] = 0;
-				*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				if ( rebindaction == -1 )
+				{
+					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+				}
 				draw_cursor = false;
 				stats[0]->sex = static_cast<sex_t>((stats[0]->sex == MALE));
 			}
@@ -1130,10 +1181,13 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					}
 					draw_cursor = false;
 					client_classes[0]--;
 					if (client_classes[0] < 0)
@@ -1145,10 +1199,13 @@ void handleMainMenu(bool mode)
 					stats[0]->clearStats();
 					initClass(0);
 				}
-				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					}
 					draw_cursor = false;
 					client_classes[0]++;
 					if (client_classes[0] > 9)
@@ -1192,10 +1249,13 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				if ( keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					}
 					draw_cursor = false;
 					stats[0]->appearance--;
 					if (stats[0]->appearance >= NUMAPPEARANCES)
@@ -1203,10 +1263,13 @@ void handleMainMenu(bool mode)
 						stats[0]->appearance = NUMAPPEARANCES - 1;
 					}
 				}
-				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					}
 					draw_cursor = false;
 					stats[0]->appearance++;
 					if (stats[0]->appearance >= NUMAPPEARANCES)
@@ -1328,10 +1391,13 @@ void handleMainMenu(bool mode)
 						}
 					}
 				}
-				if (keystatus[SDL_SCANCODE_UP] || *inputPressed(joyimpulses[INJOY_DPAD_UP]))
+				if (keystatus[SDL_SCANCODE_UP] || (*inputPressed(joyimpulses[INJOY_DPAD_UP]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_UP] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+					}
 					draw_cursor = false;
 					multiplayerselect--;
 					if (multiplayerselect < 0)
@@ -1339,10 +1405,13 @@ void handleMainMenu(bool mode)
 						multiplayerselect = nummodes - 1;
 					}
 				}
-				if (keystatus[SDL_SCANCODE_DOWN] || *inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
 				{
 					keystatus[SDL_SCANCODE_DOWN] = 0;
-					*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					if ( rebindaction == -1 )
+					{
+						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+					}
 					draw_cursor = false;
 					multiplayerselect++;
 					if (multiplayerselect > nummodes - 1)
@@ -1486,12 +1555,12 @@ void handleMainMenu(bool mode)
 		int hovering_selection = -1; //0 to NUM_SERVER_FLAGS used for the game flags settings, e.g. are traps enabled, are cheats enabled, is minotaur enabled, etc.
 		SDL_Rect tooltip_box;
 
-		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) )
+		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) && rebindaction == -1 )
 		{
 			*inputPressed(joyimpulses[INJOY_MENU_SETTINGS_NEXT]) = 0;;
 			changeSettingsTab(settings_tab + 1);
 		}
-		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) )
+		if ( *inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) && rebindaction == -1 )
 		{
 			*inputPressed(joyimpulses[INJOY_MENU_SETTINGS_PREV]) = 0;
 			changeSettingsTab(settings_tab - 1);
@@ -4246,10 +4315,13 @@ void handleMainMenu(bool mode)
 	if ( creditstage > 0 )
 	{
 		if ( (credittime >= 300 && (creditstage <= 10 || creditstage > 12)) || (credittime >= 180 && creditstage == 11) ||
-		        (credittime >= 480 && creditstage == 12) || mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) )
+		        (credittime >= 480 && creditstage == 12) || mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			}
 			introstage = 4;
 			fadeout = TRUE;
 		}
@@ -4362,11 +4434,14 @@ void handleMainMenu(bool mode)
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
-		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) )
+		        keystatus[SDL_SCANCODE_SPACE] || keystatus[SDL_SCANCODE_RETURN] || (intromovietime >= 120 && intromoviestage == 1) || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 		{
 			intromovietime = 0;
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			if ( rebindaction == -1 )
+			{
+				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
+			}
 			if ( intromoviestage != 9 )
 			{
 				intromoviestage++;
