@@ -2177,6 +2177,10 @@ void clientHandlePacket()
 			if (entity2->uid == i)
 			{
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
+				if ( removecursegui_active )
+				{
+					closeRemoveCurseGUI();
+				}
 				identifygui_active = false;
 				list_FreeAll(&chestInv);
 				chestInv.first = nullptr;
@@ -2234,6 +2238,10 @@ void clientHandlePacket()
 		if ( removecursegui_active )
 		{
 			closeRemoveCurseGUI();
+		}
+		if ( openedChest[clientnum] )
+		{
+			openedChest[clientnum]->closeChest();
 		}
 
 		//Initialize Identify GUI game controller code here.

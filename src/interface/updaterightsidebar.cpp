@@ -17,6 +17,7 @@
 #include "interface.hpp"
 #include "../magic/magic.hpp"
 #include "../player.hpp"
+#include "../entity.hpp"
 
 void updateRightSidebar()
 {
@@ -66,6 +67,10 @@ void updateRightSidebar()
 			if ( removecursegui_active )
 			{
 				closeRemoveCurseGUI();
+			}
+			if ( openedChest[clientnum] )
+			{
+				openedChest[clientnum]->closeChest();
 			}
 
 			//Initialize Identify GUI game controller code here.
