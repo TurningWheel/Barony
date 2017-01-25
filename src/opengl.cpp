@@ -33,7 +33,7 @@ PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
 
 -------------------------------------------------------------------------------*/
 
-double getLightForEntity(double x, double y)
+DOUBLE getLightForEntity(DOUBLE x, DOUBLE y)
 {
 	if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
 	{
@@ -55,9 +55,9 @@ double getLightForEntity(double x, double y)
 bool wholevoxels = FALSE;
 void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 {
-	double dx, dy, dz;
+	DOUBLE dx, dy, dz;
 	int voxX, voxY, voxZ;
-	double s = 1;
+	DOUBLE s = 1;
 	//int x = 0;
 	//int y = 0;
 	Sint32 index;
@@ -97,7 +97,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (double)camera->winw / (double)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if ( !entity->flags[OVERDRAW] )
 	{
@@ -153,9 +153,10 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			s = getLightForEntity(camera->x, camera->y);
 		}
 	}
-
+	// Moved glBeign / glEnd outside the loops, to limit the number of calls (helps gl4es on Pandora)
 	if ( wholevoxels )
 	{
+		glBegin( GL_QUADS );
 		for ( index = 0, voxX = 0; voxX < model->sizex; voxX++ )
 		{
 			for ( voxY = 0; voxY < model->sizey; voxY++ )
@@ -177,9 +178,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// calculate model offsets
-					dx = (double)voxX - ((double)model->sizex) / 2.f;
-					dy = (double)voxY - ((double)model->sizey) / 2.f;
-					dz = ((double)model->sizez) / 2.f - (double)voxZ;
+					dx = (DOUBLE)voxX - ((DOUBLE)model->sizex) / 2.f;
+					dy = (DOUBLE)voxY - ((DOUBLE)model->sizey) / 2.f;
+					dz = ((DOUBLE)model->sizez) / 2.f - (DOUBLE)voxZ;
 
 					// draw front of cube
 					bool drawFront = FALSE;
@@ -193,12 +194,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					if ( drawFront )
 					{
-						glBegin( GL_QUADS );
+						//glBegin( GL_QUADS );
 						glVertex3f(dx + 1, dz + 0, dy + 1);
 						glVertex3f(dx + 1, dz + 0, dy + 0);
 						glVertex3f(dx + 1, dz + 1, dy + 0);
 						glVertex3f(dx + 1, dz + 1, dy + 1);
-						glEnd();
+						//glEnd();
 					}
 
 					// draw back of cube
@@ -213,12 +214,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					if ( drawBack )
 					{
-						glBegin( GL_QUADS );
+						//glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 1);
 						glVertex3f(dx + 0, dz + 1, dy + 1);
 						glVertex3f(dx + 0, dz + 1, dy + 0);
 						glVertex3f(dx + 0, dz + 0, dy + 0);
-						glEnd();
+						//glEnd();
 					}
 
 					// draw right side of cube
@@ -233,12 +234,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					if ( drawRight )
 					{
-						glBegin( GL_QUADS );
+						//glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 1);
 						glVertex3f(dx + 1, dz + 0, dy + 1);
 						glVertex3f(dx + 1, dz + 1, dy + 1);
 						glVertex3f(dx + 0, dz + 1, dy + 1);
-						glEnd();
+						//glEnd();
 					}
 
 					// draw left side of cube
@@ -253,12 +254,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					if ( drawLeft )
 					{
-						glBegin( GL_QUADS );
+						//glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 0);
 						glVertex3f(dx + 0, dz + 1, dy + 0);
 						glVertex3f(dx + 1, dz + 1, dy + 0);
 						glVertex3f(dx + 1, dz + 0, dy + 0);
-						glEnd();
+						//glEnd();
 					}
 
 					// draw bottom of cube
@@ -273,12 +274,12 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					if ( drawBottom )
 					{
-						glBegin( GL_QUADS );
+						//glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 0, dy + 0);
 						glVertex3f(dx + 1, dz + 0, dy + 0);
 						glVertex3f(dx + 1, dz + 0, dy + 1);
 						glVertex3f(dx + 0, dz + 0, dy + 1);
-						glEnd();
+						//glEnd();
 					}
 
 					// draw top of cube
@@ -293,21 +294,23 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					if ( drawTop )
 					{
-						glBegin( GL_QUADS );
+						//glBegin( GL_QUADS );
 						glVertex3f(dx + 0, dz + 1, dy + 0);
 						glVertex3f(dx + 0, dz + 1, dy + 1);
 						glVertex3f(dx + 1, dz + 1, dy + 1);
 						glVertex3f(dx + 1, dz + 1, dy + 0);
-						glEnd();
+						//glEnd();
 					}
 				}
 			}
 		}
+		glEnd();
 	}
 	else
 	{
 		if ( disablevbos )
 		{
+			glBegin( GL_TRIANGLES ); //moved outside
 			for ( index = 0; index < polymodels[modelindex].numfaces; index++ )
 			{
 				if ( mode == REALCOLORS )
@@ -328,12 +331,13 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 
 				polytriangle_t* face = &polymodels[modelindex].faces[index];
 
-				glBegin( GL_TRIANGLES );
+				//glBegin( GL_TRIANGLES );
 				glVertex3f(face->vertex[0].x, -face->vertex[0].z, face->vertex[0].y);
 				glVertex3f(face->vertex[1].x, -face->vertex[1].z, face->vertex[1].y);
 				glVertex3f(face->vertex[2].x, -face->vertex[2].z, face->vertex[2].y);
-				glEnd();
+				//glEnd();
 			}
+			glEnd();
 		}
 		else
 		{
@@ -393,13 +397,13 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
 	SDL_Surface* sprite;
 	//int x, y;
-	double s = 1;
+	DOUBLE s = 1;
 
 	// setup projection
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (double)camera->winw / (double)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if (!entity->flags[OVERDRAW])
 	{
@@ -460,12 +464,12 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
 	if (!entity->flags[OVERDRAW])
 	{
-		double tangent = 180 - camera->ang * (180 / PI);
+		DOUBLE tangent = 180 - camera->ang * (180 / PI);
 		glRotatef(tangent, 0, 1, 0);
 	}
 	else
 	{
-		double tangent = 180;
+		DOUBLE tangent = 180;
 		glRotatef(tangent, 0, 1, 0);
 	}
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
@@ -523,9 +527,9 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 
 -------------------------------------------------------------------------------*/
 
-double getLightAt(int x, int y)
+DOUBLE getLightAt(int x, int y)
 {
-	double l = 0;
+	DOUBLE l = 0;
 	int u, v;
 
 	for ( u = x - 1; u < x + 1; u++ )
@@ -553,7 +557,7 @@ void glDrawWorld(view_t* camera, int mode)
 {
 	int x, y, z;
 	int index;
-	double s;
+	DOUBLE s;
 	bool clouds = FALSE;
 
 	if ( softwaremode == TRUE )
@@ -572,7 +576,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-		gluPerspective(fov, (double)camera->winw / (double)camera->winh, CLIPNEAR, CLIPFAR * 16);
+		gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 16);
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		GLfloat rotz = 0; // get z rotation
@@ -589,16 +593,16 @@ void glDrawWorld(view_t* camera, int mode)
 		glColor4f(1.f, 1.f, 1.f, .5);
 		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
 		glBegin( GL_QUADS );
-		glTexCoord2f((double)(ticks % 60) / 60, (double)(ticks % 60) / 60);
+		glTexCoord2f((DOUBLE)(ticks % 60) / 60, (DOUBLE)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (double)(ticks % 60) / 60, (double)(ticks % 60) / 60);
+		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60, (DOUBLE)(ticks % 60) / 60);
 		glVertex3f(CLIPFAR * 16, 64, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (double)(ticks % 60) / 60, (CLIPFAR) / 2 + (double)(ticks % 60) / 60);
+		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60, (CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60);
 		glVertex3f(CLIPFAR * 16, 64, CLIPFAR * 16);
 
-		glTexCoord2f((double)(ticks % 60) / 60, (CLIPFAR) / 2 + (double)(ticks % 60) / 60);
+		glTexCoord2f((DOUBLE)(ticks % 60) / 60, (CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, CLIPFAR * 16);
 		glEnd();
 
@@ -606,16 +610,16 @@ void glDrawWorld(view_t* camera, int mode)
 		glColor4f(1.f, 1.f, 1.f, .5);
 		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
 		glBegin( GL_QUADS );
-		glTexCoord2f((double)(ticks % 240) / 240, (double)(ticks % 240) / 240);
+		glTexCoord2f((DOUBLE)(ticks % 240) / 240, (DOUBLE)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (double)(ticks % 240) / 240, (double)(ticks % 240) / 240);
+		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240, (DOUBLE)(ticks % 240) / 240);
 		glVertex3f(CLIPFAR * 16, 32, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (double)(ticks % 240) / 240, (CLIPFAR) / 2 + (double)(ticks % 240) / 240);
+		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240, (CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240);
 		glVertex3f(CLIPFAR * 16, 32, CLIPFAR * 16);
 
-		glTexCoord2f((double)(ticks % 240) / 240, (CLIPFAR) / 2 + (double)(ticks % 240) / 240);
+		glTexCoord2f((DOUBLE)(ticks % 240) / 240, (CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, CLIPFAR * 16);
 		glEnd();
 	}
@@ -624,7 +628,7 @@ void glDrawWorld(view_t* camera, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (double)camera->winw / (double)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation
@@ -645,6 +649,11 @@ void glDrawWorld(view_t* camera, int mode)
 		glDisable(GL_BLEND);
 	}
 
+	// glBegin / glEnd are also moved outside, 
+	// but needs to track the texture used to "flush" current drawing before switching
+	GLuint cur_tex = 0, new_tex = 0;
+	glBindTexture(GL_TEXTURE_2D, 0);
+	glBegin(GL_QUADS);
 	for ( x = 0; x < map.width; x++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -672,16 +681,27 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( map.tiles[index] < 0 || map.tiles[index] >= numtiles )
 							{
-								glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
+								new_tex = texid[sprites[0]->refcount];
+								//glBindTexture(GL_TEXTURE_2D, texid[sprites[0]->refcount]);
 							}
 							else
 							{
-								glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
+								new_tex = texid[tiles[map.tiles[index]]->refcount];
+								//glBindTexture(GL_TEXTURE_2D, texid[tiles[map.tiles[index]]->refcount]);
 							}
 						}
 						else
 						{
-							glBindTexture(GL_TEXTURE_2D, 0);
+							new_tex = 0;
+							//glBindTexture(GL_TEXTURE_2D, 0);
+						}
+						// check if the texture has changed (flushing drawing if it's the case)
+						if(new_tex != cur_tex)
+						{
+							glEnd();
+							glBindTexture(GL_TEXTURE_2D, new_tex);
+							cur_tex=new_tex;
+							glBegin(GL_QUADS);
 						}
 
 						// draw east wall
@@ -689,7 +709,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( smoothlighting && mode == REALCOLORS )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								if ( z )
 								{
 									s = getLightAt(x + 1, y + 1);
@@ -722,7 +742,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
 								}
-								glEnd();
+								//glEnd();
 							}
 							else
 							{
@@ -744,7 +764,7 @@ void glDrawWorld(view_t* camera, int mode)
 								}
 								if ( x == map.width - 1 || !map.tiles[z + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 								{
-									glBegin( GL_QUADS );
+									//glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
 									glTexCoord2f(0, 1);
@@ -753,7 +773,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 0);
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
-									glEnd();
+									//glEnd();
 								}
 							}
 						}
@@ -763,7 +783,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( smoothlighting && mode == REALCOLORS )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								if ( z )
 								{
 									s = getLightAt(x, y + 1);
@@ -796,7 +816,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
 								}
-								glEnd();
+								//glEnd();
 							}
 							else
 							{
@@ -814,7 +834,7 @@ void glDrawWorld(view_t* camera, int mode)
 								}
 								if ( y == map.height - 1 || !map.tiles[z + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 								{
-									glBegin( GL_QUADS );
+									//glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
 									glTexCoord2f(0, 1);
@@ -823,7 +843,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glVertex3f(x * 32 + 32, z * 32 - 48, y * 32 + 32);
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 32);
-									glEnd();
+									//glEnd();
 								}
 							}
 						}
@@ -833,7 +853,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( smoothlighting && mode == REALCOLORS )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								if ( z )
 								{
 									s = getLightAt(x, y);
@@ -866,7 +886,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
 								}
-								glEnd();
+								//glEnd();
 							}
 							else
 							{
@@ -884,7 +904,7 @@ void glDrawWorld(view_t* camera, int mode)
 								}
 								if ( x == 0 || !map.tiles[z + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
 								{
-									glBegin( GL_QUADS );
+									//glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
 									glTexCoord2f(0, 1);
@@ -893,7 +913,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 32);
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 32);
-									glEnd();
+									//glEnd();
 								}
 							}
 						}
@@ -903,7 +923,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( smoothlighting && mode == REALCOLORS )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								if ( z )
 								{
 									s = getLightAt(x + 1, y);
@@ -936,7 +956,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
 								}
-								glEnd();
+								//glEnd();
 							}
 							else
 							{
@@ -954,7 +974,7 @@ void glDrawWorld(view_t* camera, int mode)
 								}
 								if ( y == 0 || !map.tiles[z + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 								{
-									glBegin( GL_QUADS );
+									//glBegin( GL_QUADS );
 									glTexCoord2f(0, 0);
 									glVertex3f(x * 32 + 32, z * 32 - 16, y * 32 + 0);
 									glTexCoord2f(0, 1);
@@ -963,7 +983,7 @@ void glDrawWorld(view_t* camera, int mode)
 									glVertex3f(x * 32 + 0, z * 32 - 48, y * 32 + 0);
 									glTexCoord2f(1, 0);
 									glVertex3f(x * 32 + 0, z * 32 - 16, y * 32 + 0);
-									glEnd();
+									//glEnd();
 								}
 							}
 						}
@@ -973,7 +993,15 @@ void glDrawWorld(view_t* camera, int mode)
 						// bind texture
 						if ( mode == REALCOLORS )
 						{
-							glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
+							new_tex = texid[tiles[50]->refcount];
+							//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
+							if (cur_tex!=new_tex)
+							{
+								glEnd();
+								cur_tex = new_tex;
+								glBindTexture(GL_TEXTURE_2D, new_tex);
+								glBegin(GL_QUADS);
+							}
 						}
 						else
 						{
@@ -988,7 +1016,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( !map.tiles[index + 1] )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								s = getLightAt(x, y);
 								glColor3f(s, s, s);
 								glTexCoord2f(0, 0);
@@ -1005,7 +1033,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glColor3f(s, s, s);
 								glTexCoord2f(1, 0);
 								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-								glEnd();
+								//glEnd();
 							}
 						}
 
@@ -1014,7 +1042,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( !map.tiles[index - 1] )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								s = getLightAt(x, y);
 								glColor3f(s, s, s);
 								glTexCoord2f(0, 0);
@@ -1031,7 +1059,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glColor3f(s, s, s);
 								glTexCoord2f(0, 1);
 								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-								glEnd();
+								//glEnd();
 							}
 						}
 					}
@@ -1049,7 +1077,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( !map.tiles[index + 1] )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, -16 - 32 * abs(z), y * 32 + 0);
 								glTexCoord2f(0, 1);
@@ -1058,7 +1086,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 32);
 								glTexCoord2f(1, 0);
 								glVertex3f(x * 32 + 32, -16 - 32 * abs(z), y * 32 + 0);
-								glEnd();
+								//glEnd();
 							}
 						}
 
@@ -1067,7 +1095,7 @@ void glDrawWorld(view_t* camera, int mode)
 						{
 							if ( !map.tiles[index - 1] )
 							{
-								glBegin( GL_QUADS );
+								//glBegin( GL_QUADS );
 								glTexCoord2f(0, 0);
 								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 0);
 								glTexCoord2f(1, 0);
@@ -1076,7 +1104,7 @@ void glDrawWorld(view_t* camera, int mode)
 								glVertex3f(x * 32 + 32, 16 + 32 * abs(z - 2), y * 32 + 32);
 								glTexCoord2f(0, 1);
 								glVertex3f(x * 32 + 0, 16 + 32 * abs(z - 2), y * 32 + 32);
-								glEnd();
+								//glEnd();
 							}
 						}
 					}
@@ -1084,6 +1112,7 @@ void glDrawWorld(view_t* camera, int mode)
 			}
 		}
 	}
+	glEnd();
 }
 
 /*GLuint create_shader(const char* filename, GLenum type)
@@ -1124,3 +1153,82 @@ void glDrawWorld(view_t* camera, int mode)
 	return res;
 }
 */
+
+static int dirty = 1;
+static int oldx = 0, oldy = 0;
+static unsigned int oldpix = 0;
+
+unsigned int GO_GetPixelU32(int x, int y)
+{
+	if(!dirty && (oldx==x) && (oldy==y))
+		return oldpix;
+
+	if(dirty) {
+#ifdef PANDORA
+		// Pandora fbo
+		if((xres==800) && (yres==480)) {
+			glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
+		}
+#endif
+		// generate object buffer
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glDrawWorld(&camera, ENTITYUIDS);
+		drawEntities3D(&camera, ENTITYUIDS);
+	}
+
+	GLubyte pixel[4];
+	glReadPixels(x, y, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+	oldpix = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
+#ifdef PANDORA
+	if((dirty) && (xres==800) && (yres==480)) {
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	}
+#endif
+	dirty = 0;
+	return oldpix;
+}
+
+void GO_SwapBuffers(SDL_Window* screen)
+{
+	dirty = 1;
+#ifdef PANDORA
+	bool bBlit = !(xres==800 && yres==480);
+
+	int vp_old[4];
+	if(bBlit) {
+		glBindFramebuffer(GL_FRAMEBUFFER, 0);
+		glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
+		glGetIntegerv(GL_VIEWPORT, vp_old);
+		glViewport(0, 0, 800, 480);
+		glMatrixMode( GL_PROJECTION );
+		glLoadIdentity();
+		glOrtho(0, 800, 480, 0, 1, -1);
+		glMatrixMode( GL_MODELVIEW );
+		glLoadIdentity();
+
+		glDisable(GL_BLEND);
+		glDisable(GL_ALPHA_TEST);
+		glDisable(GL_DEPTH_TEST);
+		glDisable(GL_LIGHTING);
+
+		glBindTexture(GL_TEXTURE_2D, fbo_tex);
+		glColor4f(1,1,1,1);
+
+		glBegin(GL_QUADS);
+		 glTexCoord2f(0,yres/1024.0f); glVertex2f(0,0);
+		 glTexCoord2f(0, 0); glVertex2f(0,480);
+		 glTexCoord2f(xres/1024.0f, 0); glVertex2f(800,480);
+		 glTexCoord2f(xres/1024.0f, yres/1024.0f); glVertex2f(800,0);
+		glEnd();
+
+		glBindTexture(GL_TEXTURE_2D, 0);
+	}
+#endif
+	SDL_GL_SwapWindow(screen);
+#ifdef PANDORA
+	if(bBlit) {
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
+		glViewport(vp_old[0], vp_old[1], vp_old[2], vp_old[3]);
+	}
+#endif
+}

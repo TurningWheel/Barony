@@ -25,6 +25,9 @@
 #include <steam/steam_api.h>
 #endif
 #include "player.hpp"
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -2604,12 +2607,22 @@ list_t* checkTileForEntity(int x, int y)
 	//Traverse map.entities...
 	node_t* node = NULL;
 	node_t* node2 = NULL;
+	#ifdef __ARM_NEON__
+	const int32x2_t xy = {x, y};
+	#endif
+	
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		if (node->element)
 		{
 			Entity* entity = (Entity*)node->element;
-			if (entity && (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y)   //Check if the current entity is on the tile.
+			if (entity) {
+			#ifdef __ARM_NEON__
+			uint32x2_t eqxy =vceq_s32(vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f)), xy);
+			if ( eqxy[0] && eqxy[1] )
+			#else
+			if ( (int)floor((entity->x / 16)) == x && (int)floor((entity->y / 16)) == y)   //Check if the current entity is on the tile.
+			#endif
 			{
 				//Right. So. Create the list if it doesn't exist.
 				if (!return_val)
@@ -2623,6 +2636,7 @@ list_t* checkTileForEntity(int x, int y)
 				node2 = list_AddNodeLast(return_val);
 				node2->element = entity;
 				node2->deconstructor = &emptyDeconstructor;
+			}
 			}
 		}
 	}

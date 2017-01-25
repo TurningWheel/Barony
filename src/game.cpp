@@ -577,6 +577,11 @@ void gameLogic(void)
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
+#elif defined HAVE_OPENAL
+					if ( sound_group )
+					{
+						OPENAL_ChannelGroup_Stop(sound_group);
+					}
 #endif
 
 					// show loading message
@@ -588,7 +593,7 @@ void gameLogic(void)
 #ifdef APPLE
 					SDL_RenderPresent(renderer);
 #else
-					SDL_GL_SwapWindow(screen);
+					GO_SwapBuffers(screen);
 #endif
 
 					// copy followers list
@@ -1726,11 +1731,34 @@ void handleEvents(void)
 						cursorflash = ticks;
 					}
 				}
-				lastkeypressed = event.key.keysym.scancode;
-				keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+#ifdef PANDORA
+				// Pandora Shoulder as Mouse Button handling
+				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+					mousestatus[SDL_BUTTON_LEFT] = 1; // set this mouse button to 1
+					lastkeypressed = 282 + SDL_BUTTON_LEFT;
+				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
+					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
+				} else 
+#endif
+				{
+					lastkeypressed = event.key.keysym.scancode;
+					keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
-				keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+#ifdef PANDORA
+				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
+					lastkeypressed = 282 + SDL_BUTTON_LEFT;
+				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
+					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
+				} else 
+#endif
+				{
+					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+				}
 				break;
 			case SDL_TEXTINPUT:
 				if ( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) )
@@ -1772,6 +1800,12 @@ void handleEvents(void)
 				menuselect = 0;
 				mousex = event.motion.x;
 				mousey = event.motion.y;
+#ifdef PANDORA
+				if(xres!=800 || yres!=480) {	// SEB Pandora 
+					mousex = (mousex*xres)/800;
+					mousey = (mousey*yres)/480;
+				}
+#endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
@@ -2347,7 +2381,7 @@ int main(int argc, char** argv)
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
 							introstage = 6;
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 							playmusic(introductionmusic, TRUE, FALSE, FALSE);
 #endif
 						}
@@ -2356,7 +2390,7 @@ int main(int argc, char** argv)
 							introstage = 1;
 							fadeout = FALSE;
 							fadefinished = FALSE;
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 							playmusic(intromusic, TRUE, FALSE, FALSE);
 #endif
 						}
@@ -3120,7 +3154,7 @@ int main(int argc, char** argv)
 #ifdef APPLE
 			SDL_RenderPresent(renderer);
 #else
-			SDL_GL_SwapWindow(screen);
+			GO_SwapBuffers(screen);
 #endif
 
 			// screenshots

@@ -81,7 +81,7 @@ int initGame()
 #ifdef APPLE
 	SDL_RenderPresent(renderer);
 #else
-	SDL_GL_SwapWindow(screen);
+	GO_SwapBuffers(screen);
 #endif
 
 	initGameControllers();
@@ -149,7 +149,7 @@ int initGame()
 #ifdef APPLE
 	SDL_RenderPresent(renderer);
 #else
-	SDL_GL_SwapWindow(screen);
+	GO_SwapBuffers(screen);
 #endif
 
 	// load item types
@@ -303,11 +303,13 @@ int initGame()
 #ifdef APPLE
 	SDL_RenderPresent(renderer);
 #else
-	SDL_GL_SwapWindow(screen);
+	GO_SwapBuffers(screen);
 #endif
 
 #ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+#elif define HAVE_OPENAL
+	OPENAL_ChannelGroup_SetVolume(musvolume / 128.f);
 #endif
 	removedEntities.first = NULL;
 	removedEntities.last = NULL;
@@ -365,6 +367,15 @@ int initGame()
 
 	// load music
 #ifdef SOUND
+#ifdef HAVE_OPENAL
+#define FMOD_ChannelGroup_SetVolume OPENAL_ChannelGroup_SetVolume
+#define fmod_system 0
+#define FMOD_SOFTWARE 0
+#define FMOD_System_CreateStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E)
+#define FMOD_SOUND OPENAL_BUFFER
+int fmod_result;
+#endif
+
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intro.ogg", FMOD_SOFTWARE, NULL, &intromusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/introduction.ogg", FMOD_SOFTWARE, NULL, &introductionmusic);
@@ -443,6 +454,14 @@ int initGame()
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
 		}
 	}
+#ifdef HAVE_OPENAL
+#undef FMOD_ChannelGroup_SetVolume
+#undef fmod_system
+#undef FMOD_SOFTWARE
+#undef FMOD_System_CreateStream
+#undef FMOD_SOUND
+#endif
+
 #endif
 
 	// print a loading message
@@ -452,7 +471,7 @@ int initGame()
 #ifdef APPLE
 	SDL_RenderPresent(renderer);
 #else
-	SDL_GL_SwapWindow(screen);
+	GO_SwapBuffers(screen);
 #endif
 
 	// load extraneous game resources
@@ -641,6 +660,10 @@ void deinitGame()
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
+#ifdef HAVE_OPENAL
+#define FMOD_Channel_Stop OPENAL_Channel_Stop
+#define FMOD_Sound_Release OPENAL_Sound_Release
+#endif
 	FMOD_Channel_Stop(music_channel);
 	FMOD_Channel_Stop(music_channel2);
 	FMOD_Sound_Release(intromusic);
@@ -711,6 +734,10 @@ void deinitGame()
 	{
 		free(minotaurmusic);
 	}
+#ifdef HAVE_OPENAL
+#undef FMOD_Channel_Stop
+#undef FMOD_Sound_Release
+#endif
 #endif
 
 	// free items

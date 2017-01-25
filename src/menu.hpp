@@ -11,7 +11,12 @@
 
 #pragma once
 
+#ifdef PANDORA
+#define NUMRESOLUTIONS 2
+#else
 #define NUMRESOLUTIONS 10
+#endif
+
 extern int resolutions[NUMRESOLUTIONS][2];
 
 extern bool savethisgame;
@@ -34,7 +39,7 @@ extern int firstendmovietime;
 extern int firstendmoviestage;
 extern int secondendmovietime;
 extern int secondendmoviestage;
-extern double drunkextend;
+extern DOUBLE drunkextend;
 extern bool losingConnection[4];
 extern int rebindaction;
 
@@ -83,7 +88,7 @@ void openGameoverWindow();
 void openSteamLobbyBrowserWindow(button_t* my);
 void openLoadGameWindow(button_t* my);
 void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment, int* var, SDL_Surface* slider_font = SLIDERFONT, int slider_font_char_width = 16);
-void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double* var);
+void doSliderF(int x, int y, int dots, DOUBLE minvalue, DOUBLE maxvalue, DOUBLE increment, DOUBLE* var);
 
 // menu variables
 extern bool settings_window;
@@ -102,12 +107,12 @@ extern Uint32 settings_fov;
 extern int settings_xres, settings_yres;
 extern bool settings_smoothlighting;
 extern int settings_fullscreen, settings_shaking, settings_bobbing;
-extern double settings_gamma;
+extern DOUBLE settings_gamma;
 extern int settings_sfxvolume, settings_musvolume;
 extern int settings_impulses[NUMIMPULSES];
 extern int settings_reversemouse;
 extern bool settings_smoothmouse;
-extern double settings_mousespeed;
+extern DOUBLE settings_mousespeed;
 extern bool settings_broadcast;
 extern bool settings_nohud;
 extern bool settings_colorblind;

@@ -62,7 +62,7 @@ void actDeathCam(Entity* my)
 		}
 		else
 		{
-			DEATHCAM_ROTX = std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 		}
 		my->yaw += DEATHCAM_ROTX;
 		if ( my->yaw >= PI * 2 )
@@ -81,7 +81,7 @@ void actDeathCam(Entity* my)
 		}
 		else
 		{
-			DEATHCAM_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 		}
 		my->pitch -= DEATHCAM_ROTY;
 		if ( my->pitch > PI / 2 )
@@ -1059,15 +1059,9 @@ void actPlayer(Entity* my)
 		// object interaction
 		if ( intro == FALSE )
 		{
-			if ( softwaremode == FALSE )
-			{
-				// generate object buffer
-				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-				glDrawWorld(&camera, ENTITYUIDS);
-				drawEntities3D(&camera, ENTITYUIDS);
-			}
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			selectedEntity = entityClicked(); // using objects
+
 			if ( selectedEntity != NULL )
 			{
 				if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
@@ -1665,7 +1659,7 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 					else
 					{
@@ -1679,16 +1673,16 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX -= mousexrel * .006 * (mousespeed / 128.f);
+						PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = -std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 					else
 					{
@@ -1744,7 +1738,7 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 					}
 					else
 					{
@@ -1758,16 +1752,16 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY -= mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+						PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 					}
-					PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
+					PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
 					PLAYER_ROTY *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 					}
 					else
 					{

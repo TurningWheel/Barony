@@ -27,7 +27,7 @@ char** language = NULL;
 
 // input stuff
 int reversemouse = 0;
-double mousespeed = 32;
+DOUBLE mousespeed = 32;
 Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
@@ -87,10 +87,10 @@ list_t entitiesdeleted;
 
 // fps
 bool showfps = FALSE;
-double t, ot = 0.0, frameval[AVERAGEFRAMES];
+DOUBLE t, ot = 0.0, frameval[AVERAGEFRAMES];
 Uint32 cycles = 0, pingtime = 0;
 Uint32 timesync = 0;
-double fps = 0.0;
+DOUBLE fps = 0.0;
 
 // world sim data
 Sint32 camx = 0, camy = 0;
@@ -190,8 +190,8 @@ SDL_Surface** allsurfaces;
 Uint32 numsprites, numtiles, nummodels;
 bool* animatedtiles = NULL, *lavatiles = NULL;
 int rscale = 1;
-double vidgamma = 1.0f;
-double* zbuffer = NULL;
+DOUBLE vidgamma = 1.0f;
+DOUBLE* zbuffer = NULL;
 Sint32* lightmap = NULL;
 bool* vismap = NULL;
 bool mode3d = FALSE;
@@ -212,8 +212,8 @@ SDL_Surface* cross_bmp = NULL;
 int shaking = 0, bobbing = 0;
 bool fadeout = FALSE, fadefinished = FALSE;
 int fadealpha = 0;
-double camera_shakex;
-double camera_shakex2;
+DOUBLE camera_shakex;
+DOUBLE camera_shakex2;
 int camera_shakey;
 int camera_shakey2;
 
@@ -286,7 +286,7 @@ int concatedStringLength(char* str, ...)
 
 -------------------------------------------------------------------------------*/
 
-int sgn(double x)
+int sgn(DOUBLE x)
 {
 	return (x > 0) - (x < 0);
 }

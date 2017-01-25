@@ -119,10 +119,10 @@ extern list_t undolist;
 
 // fps
 extern bool showfps;
-extern double t, ot, frameval[AVERAGEFRAMES];
+extern DOUBLE t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
-extern double fps;
+extern DOUBLE fps;
 
 extern Sint32 ocamx, ocamy;
 

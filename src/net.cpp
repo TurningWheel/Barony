@@ -1698,6 +1698,11 @@ void clientHandlePacket()
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
+#elif define HAVE_OPENAL
+		if ( sound_group )
+		{
+			OPENAL_ChannelGroup_Stop(sound_group);
+		}
 #endif
 
 		// show loading message
@@ -1710,7 +1715,7 @@ void clientHandlePacket()
 #ifdef APPLE
 		SDL_RenderPresent(renderer);
 #else
-		SDL_GL_SwapWindow(screen);
+		GO_SwapBuffers(screen);
 #endif
 
 		// unlock some steam achievements

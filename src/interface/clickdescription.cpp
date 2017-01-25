@@ -131,9 +131,7 @@ void clickDescription(int player, Entity* entity)
 		}
 		else
 		{
-			GLubyte pixel[4];
-			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
-			uidnum = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey);
 			entity = uidToEntity(uidnum);
 		}
 	}

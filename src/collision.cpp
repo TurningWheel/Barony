@@ -22,6 +22,9 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -31,9 +34,9 @@
 
 -------------------------------------------------------------------------------*/
 
-double entityDist(Entity* my, Entity* your)
+DOUBLE entityDist(Entity* my, Entity* your)
 {
-	double dx, dy;
+	DOUBLE dx, dy;
 	dx = my->x - your->x;
 	dy = my->y - your->y;
 	return sqrt(dx * dx + dy * dy);
@@ -146,7 +149,7 @@ Entity* entityClicked()
 		}
 		else
 		{
-			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey);
 		}
 	}
 	else
@@ -159,14 +162,13 @@ Entity* entityClicked()
 		}
 		else
 		{
-			glReadPixels(xres / 2, yres / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+			uidnum = GO_GetPixelU32(xres / 2, yres / 2);
 		}
 	}
 
 	// pixel processing (opengl only)
 	if ( softwaremode == FALSE)
 	{
-		uidnum = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
 		return uidToEntity(uidnum);
 	}
 	else
@@ -266,10 +268,18 @@ bool entityInsideSomething(Entity* entity)
 {
 	node_t* node;
 	int z;
-
+	int x, y;
+	#ifdef __ARM_NEON__
+	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f));
+	x = xy[0];
+	y = xy[1];
+	#else
+	x = (long)floor(entity->x / 16);
+	y = (long)floor(entity->y / 16);
+	#endif
 	// test against the map
 	for ( z = 0; z < MAPLAYERS; z++ )
-		if ( entityInsideTile(entity, entity->x / 16, entity->y / 16, z) )
+		if ( entityInsideTile(entity, x, y, z) )
 		{
 			return TRUE;
 		}
@@ -299,7 +309,7 @@ bool entityInsideSomething(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-int barony_clear(double tx, double ty, Entity* my)
+int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my)
 {
 	if (!my)
 	{
@@ -307,17 +317,75 @@ int barony_clear(double tx, double ty, Entity* my)
 	}
 
 	long x, y;
-	double tx2, ty2;
+	DOUBLE tx2, ty2;
 	node_t* node;
 	Entity* entity;
 	bool levitating = FALSE;
+// The NEWLOOP break the loop in two part. 
+// A first fast one using integer only x/y
+// And the second part that loop on entity and used a global BoundingBox collision detection
+// Also, static stuff are out of the loop too
+#define NEWLOOP
 
+#ifdef NEWLOOP
+	Stat* stats = my->getStats();
+	// moved static stuff outside of the loop
+	if ( stats )
+	{
+		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
+		{
+			levitating = TRUE;
+		}
+		if ( stats->ring != NULL )
+			if ( stats->ring->type == RING_LEVITATION )
+			{
+				levitating = TRUE;
+			}
+		if ( stats->shoes != NULL )
+			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
+			{
+				levitating = TRUE;
+			}
+	}
+	bool isMonster = FALSE;
+	if ( my )
+		if ( my->behavior == &actMonster )
+		{
+			isMonster = TRUE;
+		}
+	if ( isMonster && multiplayer == CLIENT )
+		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
+		{
+			levitating = TRUE;
+		}
+	if ( my )
+		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
+		{
+			levitating = TRUE;
+		}
+
+	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
+	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
+	const DOUBLE tymin = ty - my->sizey, tymax = ty + my->sizey;
+	const DOUBLE txmin = tx - my->sizex, txmax = tx + my->sizex;
+	for ( y = ymin; y <= ymax; y++ )
+	{
+		for ( x = xmin;  x <= xmax; x++ )
+		{
+#else
 	for ( ty2 = ty - my->sizey; ty2 <= ty + my->sizey; ty2++ )
 	{
 		for ( tx2 = tx - my->sizex; tx2 <= tx + my->sizex; tx2++ )
 		{
+			#ifdef __ARM_NEON__
+			int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f));
+			x = xy[0];
+			y = xy[1];
+			#else
 			x = (long)floor(tx2 / 16);
 			y = (long)floor(ty2 / 16);
+			#endif
+#endif
 			if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 			{
 				if (map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height])
@@ -330,6 +398,7 @@ int barony_clear(double tx, double ty, Entity* my)
 					hit.entity = NULL;
 					return 0;
 				}
+#ifndef NEWLOOP				
 				Stat* stats;
 				if ( (stats = my->getStats()) != NULL )
 				{
@@ -364,6 +433,7 @@ int barony_clear(double tx, double ty, Entity* my)
 					{
 						levitating = TRUE;
 					}
+#endif				
 				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
 				{
 					// no floor
@@ -375,6 +445,10 @@ int barony_clear(double tx, double ty, Entity* my)
 					return 0;
 				}
 			}
+#ifdef NEWLOOP
+		}
+	}
+#endif
 			for (node = map.entities->first; node != NULL; node = node->next)
 			{
 				entity = (Entity*)node->element;
@@ -386,7 +460,7 @@ int barony_clear(double tx, double ty, Entity* my)
 				{
 					continue;    // monsters don't have hard collision with door frames
 				}
-				Stat* myStats = my->getStats();
+				Stat* myStats = stats; //my->getStats();	//SEB <<<
 				Stat* yourStats = entity->getStats();
 				if ( myStats && yourStats )
 				{
@@ -426,10 +500,21 @@ int barony_clear(double tx, double ty, Entity* my)
 						continue; // fix clients not being able to walk through friendly monsters
 					}
 				}
+#ifdef NEWLOOP
+				const DOUBLE eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
+				const DOUBLE exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+				if( (txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax) )
+				{
+					if( (tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax))
+					{
+						tx2 = std::max(txmin, exmin);
+						ty2 = std::max(tymin, eymin);
+#else
 				if ( tx2 >= entity->x - entity->sizex && tx2 < entity->x + entity->sizex )
 				{
 					if ( ty2 >= entity->y - entity->sizey && ty2 < entity->y + entity->sizey )
 					{
+#endif
 						hit.x = tx2;
 						hit.y = ty2;
 						hit.mapx = entity->x / 16;
@@ -488,8 +573,10 @@ int barony_clear(double tx, double ty, Entity* my)
 					}
 				}
 			}
+#ifndef NEWLOOP
 		}
 	}
+#endif
 
 	return 1;
 }
@@ -503,9 +590,9 @@ int barony_clear(double tx, double ty, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-double clipMove(double* x, double* y, double vx, double vy, Entity* my)
+DOUBLE clipMove(DOUBLE* x, DOUBLE* y, DOUBLE vx, DOUBLE vy, Entity* my)
 {
-	double tx, ty;
+	DOUBLE tx, ty;
 	hit.entity = NULL;
 
 	// move x and y
@@ -554,11 +641,11 @@ double clipMove(double* x, double* y, double vx, double vy, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int entities, Entity* target )
+Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int entities, Entity* target )
 {
 	Entity* result = NULL;
 	node_t* node;
-	double lowestDist = 9999;
+	DOUBLE lowestDist = 9999;
 	int quadrant = 0;
 
 	while ( angle >= PI * 2 )
@@ -615,12 +702,12 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 		if ( quadrant == 2 || quadrant == 4 )
 		{
 			// upper right and lower left
-			double upperX = entity->x + entity->sizex;
-			double upperY = entity->y - entity->sizey;
-			double lowerX = entity->x - entity->sizex;
-			double lowerY = entity->y + entity->sizey;
-			double upperTan = atan2(upperY - y1, upperX - x1);
-			double lowerTan = atan2(lowerY - y1, lowerX - x1);
+			DOUBLE upperX = entity->x + entity->sizex;
+			DOUBLE upperY = entity->y - entity->sizey;
+			DOUBLE lowerX = entity->x - entity->sizex;
+			DOUBLE lowerY = entity->y + entity->sizey;
+			DOUBLE upperTan = atan2(upperY - y1, upperX - x1);
+			DOUBLE lowerTan = atan2(lowerY - y1, lowerX - x1);
 			if ( adjust )
 			{
 				if ( upperTan < 0 )
@@ -638,7 +725,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle >= upperTan && angle <= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -650,7 +737,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle <= upperTan && angle >= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -662,12 +749,12 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 		else
 		{
 			// upper left and lower right
-			double upperX = entity->x - entity->sizex;
-			double upperY = entity->y - entity->sizey;
-			double lowerX = entity->x + entity->sizex;
-			double lowerY = entity->y + entity->sizey;
-			double upperTan = atan2(upperY - y1, upperX - x1);
-			double lowerTan = atan2(lowerY - y1, lowerX - x1);
+			DOUBLE upperX = entity->x - entity->sizex;
+			DOUBLE upperY = entity->y - entity->sizey;
+			DOUBLE lowerX = entity->x + entity->sizex;
+			DOUBLE lowerY = entity->y + entity->sizey;
+			DOUBLE upperTan = atan2(upperY - y1, upperX - x1);
+			DOUBLE lowerTan = atan2(lowerY - y1, lowerX - x1);
 			if ( adjust )
 			{
 				if ( upperTan < 0 )
@@ -685,7 +772,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle >= upperTan && angle <= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -697,7 +784,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle <= upperTan && angle >= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -720,16 +807,16 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 
 -------------------------------------------------------------------------------*/
 
-double lineTrace( Entity* my, double x1, double y1, double angle, double range, int entities, bool ground )
+DOUBLE lineTrace( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, int entities, bool ground )
 {
 	int posx, posy;
-	double fracx, fracy;
-	double rx, ry;
-	double ix, iy;
+	DOUBLE fracx, fracy;
+	DOUBLE rx, ry;
+	DOUBLE ix, iy;
 	int inx, iny;
-	double arx, ary;
-	double dincx, dval0, dincy, dval1;
-	double d;
+	DOUBLE arx, ary;
+	DOUBLE dincx, dval0, dincy, dval1;
+	DOUBLE d;
 
 	posx = floor(x1);
 	posy = floor(y1); // integer coordinates
@@ -873,16 +960,16 @@ double lineTrace( Entity* my, double x1, double y1, double angle, double range, 
 	return range;
 }
 
-double lineTraceTarget( Entity* my, double x1, double y1, double angle, double range, int entities, bool ground, Entity* target )
+DOUBLE lineTraceTarget( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, int entities, bool ground, Entity* target )
 {
 	int posx, posy;
-	double fracx, fracy;
-	double rx, ry;
-	double ix, iy;
+	DOUBLE fracx, fracy;
+	DOUBLE rx, ry;
+	DOUBLE ix, iy;
 	int inx, iny;
-	double arx, ary;
-	double dincx, dval0, dincy, dval1;
-	double d;
+	DOUBLE arx, ary;
+	DOUBLE dincx, dval0, dincy, dval1;
+	DOUBLE d;
 
 	posx = floor(x1);
 	posy = floor(y1); // integer coordinates

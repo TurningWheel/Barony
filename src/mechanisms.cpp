@@ -165,7 +165,7 @@ void actSwitch(Entity* my)
 	{
 		if ( my->roll > -PI / 4 )
 		{
-			my->roll -= std::max((my->roll + PI / 4) / 2, .05);
+			my->roll -= std::max<DOUBLE>((my->roll + PI / 4) / 2, .05);
 		}
 		else
 		{
@@ -176,7 +176,7 @@ void actSwitch(Entity* my)
 	{
 		if ( my->roll < PI / 4 )
 		{
-			my->roll += std::max(-(my->roll - PI / 4) / 2, .05);
+			my->roll += std::max<DOUBLE>(-(my->roll - PI / 4) / 2, .05);
 		}
 		else
 		{

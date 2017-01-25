@@ -122,8 +122,8 @@ void actMagicTrap(Entity* my)
 				MAGICTRAP_DIRECTION = 0;
 				break;
 		}
-		int u = std::min<int>(std::max(0.0, (my->x + x) / 16), map.width - 1);
-		int v = std::min<int>(std::max(0.0, (my->y + y) / 16), map.height - 1);
+		int u = std::min<int>(std::max<int>(0.0, (my->x + x) / 16), map.width - 1);
+		int v = std::min<int>(std::max<int>(0.0, (my->y + y) / 16), map.height - 1);
 		if ( !map.tiles[OBSTACLELAYER + v * MAPLAYERS + u * MAPLAYERS * map.height] )
 		{
 			Entity* entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
