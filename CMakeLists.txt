@@ -28,7 +28,7 @@ if(FMOD_ENABLED AND OPENAL_ENABLED)
 endif()
 
 set(PANDORA 0)
-option(PANDORA_ENABLED "Build forthe OpenPandora" OFF)
+option(PANDORA_ENABLED "Build for the OpenPandora" OFF)
 if(PANDORA_ENABLED)
   set(PANDORA 1)
 endif()
