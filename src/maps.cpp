@@ -2192,7 +2192,7 @@ void assignActions(map_t *map) {
 				entity->z = 5.5;
 				entity->yaw = PI / 2;
 				entity->behavior = &actChest;
-				entity->editorChestType = entity->sprite - 75; //MOD
+				entity->editorChestType = entity->sprite - 75; //Set the chest content category from 0 to 7, depending on sprite index in editor.
 
 				entity->sprite = 188;
 

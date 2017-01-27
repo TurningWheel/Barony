@@ -114,7 +114,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 	parent = 0;
 	path = NULL;
 
-	editorChestType = -1;
+	editorChestType = -1; //initialize chest types to be random (<0)
 }
 
 /*-------------------------------------------------------------------------------

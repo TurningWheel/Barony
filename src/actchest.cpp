@@ -79,7 +79,7 @@ void actChest(Entity *my) {
 
 		int chesttype = 0;
 
-		if (my->editorChestType >= 0) {
+		if (my->editorChestType >= 0) { //if chest spawned by editor sprite 75-82, manually set the chest content category.
 			chesttype = my->editorChestType;
 		}
 		else {

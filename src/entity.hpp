@@ -68,7 +68,7 @@ public:
 	Sint32 sizex, sizey;           // entity bounding box size
 	Sint32 sprite;                 // the entity's sprite index
 
-	int editorChestType;
+	int editorChestType;		//field to be set if the chest sprite is 75-82 in the editor, otherwise should stay at value -1
 	
 	// network stuff
 	Uint32 lastupdate;                   // last time since the entity was updated
