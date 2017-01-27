@@ -78,10 +78,17 @@ void actChest(Entity *my) {
 		int itemcount = 0;
 
 		int chesttype = 0;
-		if( strcmp(map.name,"The Mystic Library") ) {
-			chesttype = rand()%8;
-		} else {
-			chesttype = 6; // magic chest
+
+		if (my->editorChestType >= 0) {
+			chesttype = my->editorChestType;
+		}
+		else {
+			if (strcmp(map.name, "The Mystic Library")) {
+				chesttype = rand() % 8;
+			}
+			else {
+				chesttype = 6; // magic chest
+			}
 		}
 
 		switch (chesttype) { //Note that all of this needs to be properly balanced over time.

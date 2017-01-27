@@ -113,6 +113,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t *entlist) :
 	ranbehavior=FALSE;
 	parent = 0;
 	path = NULL;
+
+	editorChestType = -1;
 }
 
 /*-------------------------------------------------------------------------------

@@ -67,6 +67,8 @@ public:
 	double scalex, scaley, scalez; // stretches/squashes the entity visually
 	Sint32 sizex, sizey;           // entity bounding box size
 	Sint32 sprite;                 // the entity's sprite index
+
+	int editorChestType;
 	
 	// network stuff
 	Uint32 lastupdate;                   // last time since the entity was updated

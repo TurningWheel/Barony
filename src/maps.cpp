@@ -1803,7 +1803,8 @@ void assignActions(map_t *map) {
 				entity->yaw = PI/2;
 				entity->behavior = &actChest;
 				entity->sprite = 188;
-				
+				entity->editorChestType = -1;
+
 				childEntity = newEntity(216,0,map->entities);
 				childEntity->parent = entity->uid;
 				entity->parent = childEntity->uid;
@@ -2175,6 +2176,47 @@ void assignActions(map_t *map) {
 				entity->flags[PASSABLE] = TRUE;
 				entity->flags[NOUPDATE]=TRUE;
 				break;
+			case 75:
+			case 76:
+			case 77:
+			case 78:
+			case 79:
+			case 80:
+			case 81:
+			case 82:
+			{
+				entity->sizex = 3;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 5.5;
+				entity->yaw = PI / 2;
+				entity->behavior = &actChest;
+				entity->editorChestType = entity->sprite - 75; //MOD
+
+				entity->sprite = 188;
+
+				childEntity = newEntity(216, 0, map->entities);
+				childEntity->parent = entity->uid;
+				entity->parent = childEntity->uid;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y - 3;
+				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				childEntity->z = entity->z - 2.75;
+				childEntity->focalx = 3;
+				childEntity->focalz = -.75;
+				childEntity->yaw = PI / 2;
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actChestLid;
+				childEntity->flags[PASSABLE] = TRUE;
+
+				//Chest inventory.
+				node_t *tempNode = list_AddNodeFirst(&entity->children);
+				tempNode->element = NULL;
+				tempNode->deconstructor = &emptyDeconstructor;
+				break;
+			}
 			default:
 				break;
 		}
