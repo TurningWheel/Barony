@@ -2661,7 +2661,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z = 5.5;
 				entity->yaw = PI / 2;
-				entity->skill[9] = entity->sprite - 75; //Set chest type to category value between 1 and 7 depending on case entity->sprite.
+				entity->skill[9] = entity->sprite - 75; //Set chest type to category value between 0 and 7 depending on case entity->sprite.
 				entity->behavior = &actChest;
 				entity->sprite = 188;
 
