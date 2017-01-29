@@ -2243,7 +2243,7 @@ void assignActions(map_t* map)
 				entity->yaw = PI / 2;
 				entity->behavior = &actChest;
 				entity->sprite = 188;
-				entity->skill[9] = 0; //Set default chest as random category.
+				entity->skill[9] = -1; //Set default chest as random category < 0
 
 				childEntity = newEntity(216, 0, map->entities);
 				childEntity->parent = entity->uid;
@@ -2653,6 +2653,7 @@ void assignActions(map_t* map)
 			case 79:
 			case 80:
 			case 81: 
+			case 82:
 			{
 				entity->sizex = 3;
 				entity->sizey = 2;
@@ -2660,7 +2661,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z = 5.5;
 				entity->yaw = PI / 2;
-				entity->skill[9] = entity->sprite - 75 + 1; //Set chest type to category value between 1 and 7 depending on case entity->sprite.
+				entity->skill[9] = entity->sprite - 75; //Set chest type to category value between 1 and 7 depending on case entity->sprite.
 				entity->behavior = &actChest;
 				entity->sprite = 188;
 

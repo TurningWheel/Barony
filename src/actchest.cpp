@@ -87,9 +87,9 @@ void actChest(Entity* my)
 
 		int chesttype = 0;
 
-		if (CHEST_TYPE > 0) //If chest spawned by editor sprite 75-81, manually set the chest content category. Otherwise this value should be 0 (random).
+		if (CHEST_TYPE >= 0) //If chest spawned by editor sprite 75-81, manually set the chest content category. Otherwise this value should be 0 (random).
 		{ 
-			chesttype = CHEST_TYPE; //Value between 1 and 7.
+			chesttype = CHEST_TYPE; //Value between 0 and 7.
 		}
 		else 
 		{
