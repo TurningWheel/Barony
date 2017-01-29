@@ -27,7 +27,7 @@
 #define CHEST_LIDCLICKED my->skill[6]
 #define CHEST_AMBIENCE my->skill[7]
 #define CHEST_MAXHEALTH my->skill[8]
-#define CHEST_TYPE my->skill[9] //field to be set if the chest sprite is 75-82 in the editor, otherwise should stay at value -1
+#define CHEST_TYPE my->skill[9] //field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
 
 /*
  * Chest theme ideas:
@@ -87,7 +87,7 @@ void actChest(Entity* my)
 
 		int chesttype = 0;
 
-		if (CHEST_TYPE > 0) //If chest spawned by editor sprite 75-82, manually set the chest content category. Otherwise this value should be 0 (random).
+		if (CHEST_TYPE > 0) //If chest spawned by editor sprite 75-81, manually set the chest content category. Otherwise this value should be 0 (random).
 		{ 
 			chesttype = CHEST_TYPE; //Value between 1 and 7.
 		}

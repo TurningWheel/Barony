@@ -2243,7 +2243,7 @@ void assignActions(map_t* map)
 				entity->yaw = PI / 2;
 				entity->behavior = &actChest;
 				entity->sprite = 188;
-				entity->skill[9] = 0;
+				entity->skill[9] = 0; //Set default chest as random category.
 
 				childEntity = newEntity(216, 0, map->entities);
 				childEntity->parent = entity->uid;
