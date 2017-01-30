@@ -214,7 +214,7 @@ void actBoulder(Entity* my)
 		}
 	if ( my->z < 0 || BOULDER_NOGROUND )
 	{
-		my->vel_z = std::min<DOUBLE>(my->vel_z + .1, 3.0);
+		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
 		my->vel_x *= 0.85f;
 		my->vel_y *= 0.85f;
 		nobounce = TRUE;

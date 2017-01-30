@@ -79,8 +79,8 @@ bool FMODErrorCheck();
 void sound_update();
 
 FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol);
-FMOD_CHANNEL* playSoundPosLocal(DOUBLE x, DOUBLE y, Uint32 snd, int vol);
+FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
+FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
 FMOD_CHANNEL* playSoundEntity(Entity* entity, Uint32 snd, int vol);
 FMOD_CHANNEL* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
 FMOD_CHANNEL* playSound(Uint32 snd, int vol);
@@ -150,8 +150,8 @@ int initOPENAL();
 void sound_update();
 
 OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol);
-OPENAL_SOUND* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol);
-OPENAL_SOUND* playSoundPosLocal(DOUBLE x, DOUBLE y, Uint32 snd, int vol);
+OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol);
+OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol);
 OPENAL_SOUND* playSoundEntity(Entity* entity, Uint32 snd, int vol);
 OPENAL_SOUND* playSoundEntityLocal(Entity* entity, Uint32 snd, int vol);
 OPENAL_SOUND* playSound(Uint32 snd, int vol);
@@ -183,8 +183,8 @@ void OPENAL_Sound_Release(OPENAL_BUFFER* buffer);
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
 #else
 void* playSound(Uint32, int);
-void* playSoundPos(DOUBLE x, DOUBLE y, Uint32, int);
-void* playSoundPosLocal(DOUBLE, DOUBLE, Uint32, int);
+void* playSoundPos(real_t x, real_t y, Uint32, int);
+void* playSoundPosLocal(real_t, real_t, Uint32, int);
 void* playSoundEntity(Entity*, Uint32, int);
 void* playSoundEntityLocal(Entity*, Uint32, int);
 void* playSoundPlayer(int, Uint32, int);

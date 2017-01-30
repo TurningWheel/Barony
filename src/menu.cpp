@@ -97,12 +97,12 @@ int settings_xres, settings_yres;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
-DOUBLE settings_gamma;
+real_t settings_gamma;
 int settings_sfxvolume, settings_musvolume;
 int settings_impulses[NUMIMPULSES];
 int settings_joyimpulses[NUM_JOY_IMPULSES];
 int settings_reversemouse;
-DOUBLE settings_mousespeed;
+real_t settings_mousespeed;
 bool settings_broadcast;
 bool settings_nohud;
 bool settings_colorblind;
@@ -154,7 +154,7 @@ int firstendmovietime = 0;
 int firstendmoviestage = 0;
 int secondendmovietime = 0;
 int secondendmoviestage = 0;
-DOUBLE drunkextend = 0;
+real_t drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
@@ -1079,7 +1079,7 @@ void handleMainMenu(bool mode)
 			{
 				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
-					DOUBLE ofov = fov;
+					real_t ofov = fov;
 					fov = 50;
 					glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 					fov = ofov;
@@ -1097,7 +1097,7 @@ void handleMainMenu(bool mode)
 					{
 						b = entity->flags[BRIGHT];
 						entity->flags[BRIGHT] = TRUE;
-						DOUBLE ofov = fov;
+						real_t ofov = fov;
 						fov = 50;
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 						fov = ofov;
@@ -1445,12 +1445,12 @@ void handleMainMenu(bool mode)
 		drawDepressed(subx2 - 32, suby1 + 24, subx2 - 8, suby2 - 64);
 
 		// slider
-		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((DOUBLE)std::max(numSteamLobbies + 1, 1) / 20));
+		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(numSteamLobbies + 1, 1) / 20));
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
 		drawWindowFancy(subx2 - 31, slidery, subx2 - 9, slidery + slidersize);
 
 		// directory list offset from slider
-		Sint32 y2 = ((DOUBLE)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
+		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
 		if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 32 && omousex < subx2 - 8 && omousey >= suby1 + 24 && omousey < suby2 - 64 )
 		{
 			slidery = oslidery + mousey - omousey;
@@ -1466,7 +1466,7 @@ void handleMainMenu(bool mode)
 			oslidery = slidery;
 		}
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		y2 = ((DOUBLE)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
+		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
 
 		// server flags tooltip variables
 		SDL_Rect flagsBox;
@@ -3446,7 +3446,7 @@ void handleMainMenu(bool mode)
 				players[clientnum]->entity->flags[BRIGHT] = TRUE;
 				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
-					DOUBLE ofov = fov;
+					real_t ofov = fov;
 					fov = 50;
 					glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 					fov = ofov;
@@ -3464,7 +3464,7 @@ void handleMainMenu(bool mode)
 					{
 						b = entity->flags[BRIGHT];
 						entity->flags[BRIGHT] = TRUE;
-						DOUBLE ofov = fov;
+						real_t ofov = fov;
 						fov = 50;
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 						fov = ofov;
@@ -4464,7 +4464,7 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((DOUBLE)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
@@ -4559,7 +4559,7 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((DOUBLE)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
@@ -4622,7 +4622,7 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((DOUBLE)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
@@ -6328,7 +6328,7 @@ void applySettings()
 		{
 			free(zbuffer);
 		}
-		zbuffer = (DOUBLE*) malloc(sizeof(DOUBLE) * xres * yres);
+		zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
 		if ( clickmap != NULL )
 		{
 			free(clickmap);
@@ -6534,7 +6534,7 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 		{
 			if ( omousey >= y - (slider_font->h / slider_font_char_width) / 2 && omousey < y + ((slider_font->h / slider_font_char_width) / 2) * 3 )
 			{
-				*var = ((DOUBLE)(mousex - x - (slider_font->w / slider_font_char_width) / 2) / sliderLength) * range + minvalue;
+				*var = ((real_t)(mousex - x - (slider_font->w / slider_font_char_width) / 2) / sliderLength) * range + minvalue;
 				if ( increment )
 				{
 					*var += increment / 2;
@@ -6548,12 +6548,12 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 
 	// draw slider
 	int sliderx = x + (slider_font->w / slider_font_char_width) / 2;
-	sliderx += (((DOUBLE)(*var) - minvalue) / range) * sliderLength;
+	sliderx += (((real_t)(*var) - minvalue) / range) * sliderLength;
 	drawWindowFancy( sliderx - (slider_font->w / slider_font_char_width) / 2, y - (slider_font->h / slider_font_char_width) / 2, sliderx + (slider_font->w / slider_font_char_width) / 2, y + ((slider_font->h / slider_font_char_width) / 2) * 3);
 }
 
 // handles slider (float)
-void doSliderF(int x, int y, int dots, DOUBLE minvalue, DOUBLE maxvalue, DOUBLE increment, DOUBLE* var)
+void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t increment, real_t* var)
 {
 	int c;
 
@@ -6567,7 +6567,7 @@ void doSliderF(int x, int y, int dots, DOUBLE minvalue, DOUBLE maxvalue, DOUBLE 
 	printTextFormatted(SLIDERFONT, x, y, tempstr, *var);
 
 	// control
-	DOUBLE range = maxvalue - minvalue;
+	real_t range = maxvalue - minvalue;
 	int sliderLength = ((strlen(tempstr) - 6) * (SLIDERFONT->w / 16));
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
@@ -6575,7 +6575,7 @@ void doSliderF(int x, int y, int dots, DOUBLE minvalue, DOUBLE maxvalue, DOUBLE 
 		{
 			if ( omousey >= y - (SLIDERFONT->h / 16) / 2 && omousey < y + ((SLIDERFONT->h / 16) / 2) * 3 )
 			{
-				*var = ((DOUBLE)(mousex - x - (SLIDERFONT->w / 16) / 2) / sliderLength) * range + minvalue;
+				*var = ((real_t)(mousex - x - (SLIDERFONT->w / 16) / 2) / sliderLength) * range + minvalue;
 				if ( increment )
 				{
 					*var += increment / 2;

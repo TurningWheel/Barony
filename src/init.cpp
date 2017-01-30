@@ -215,6 +215,8 @@ int initApp(char* title, int fullscreen)
 		{
 			noextensions = TRUE;
 		}
+/*
+// Unused
 		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
 		{
 			noextensions = TRUE;
@@ -223,6 +225,7 @@ int initApp(char* title, int fullscreen)
 		{
 			noextensions = TRUE;
 		}
+*/
 	}
 	if (softwaremode)
 	{
@@ -241,7 +244,7 @@ int initApp(char* title, int fullscreen)
 #endif
 
 	// initialize buffers
-	zbuffer = (DOUBLE*) malloc(sizeof(DOUBLE) * xres * yres);
+	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
 	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	texid = (GLuint*) malloc(MAXTEXTURES * sizeof(GLuint));
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));

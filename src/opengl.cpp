@@ -33,7 +33,7 @@ PFNGLVERTEXATTRIBPOINTERPROC SDL_glVertexAttribPointer;
 
 -------------------------------------------------------------------------------*/
 
-DOUBLE getLightForEntity(DOUBLE x, DOUBLE y)
+real_t getLightForEntity(real_t x, real_t y)
 {
 	if ( x < 0 || y < 0 || x >= map.width || y >= map.height )
 	{
@@ -55,9 +55,9 @@ DOUBLE getLightForEntity(DOUBLE x, DOUBLE y)
 bool wholevoxels = FALSE;
 void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 {
-	DOUBLE dx, dy, dz;
+	real_t dx, dy, dz;
 	int voxX, voxY, voxZ;
-	DOUBLE s = 1;
+	real_t s = 1;
 	//int x = 0;
 	//int y = 0;
 	Sint32 index;
@@ -97,7 +97,7 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if ( !entity->flags[OVERDRAW] )
 	{
@@ -178,9 +178,9 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// calculate model offsets
-					dx = (DOUBLE)voxX - ((DOUBLE)model->sizex) / 2.f;
-					dy = (DOUBLE)voxY - ((DOUBLE)model->sizey) / 2.f;
-					dz = ((DOUBLE)model->sizez) / 2.f - (DOUBLE)voxZ;
+					dx = (real_t)voxX - ((real_t)model->sizex) / 2.f;
+					dy = (real_t)voxY - ((real_t)model->sizey) / 2.f;
+					dz = ((real_t)model->sizez) / 2.f - (real_t)voxZ;
 
 					// draw front of cube
 					bool drawFront = FALSE;
@@ -397,13 +397,13 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 {
 	SDL_Surface* sprite;
 	//int x, y;
-	DOUBLE s = 1;
+	real_t s = 1;
 
 	// setup projection
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	glEnable( GL_DEPTH_TEST );
 	if (!entity->flags[OVERDRAW])
 	{
@@ -464,12 +464,12 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	glTranslatef(entity->x * 2, -entity->z * 2 - 1, entity->y * 2);
 	if (!entity->flags[OVERDRAW])
 	{
-		DOUBLE tangent = 180 - camera->ang * (180 / PI);
+		real_t tangent = 180 - camera->ang * (180 / PI);
 		glRotatef(tangent, 0, 1, 0);
 	}
 	else
 	{
-		DOUBLE tangent = 180;
+		real_t tangent = 180;
 		glRotatef(tangent, 0, 1, 0);
 	}
 	glScalef(entity->scalex, entity->scalez, entity->scaley);
@@ -527,9 +527,9 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 
 -------------------------------------------------------------------------------*/
 
-DOUBLE getLightAt(int x, int y)
+real_t getLightAt(int x, int y)
 {
-	DOUBLE l = 0;
+	real_t l = 0;
 	int u, v;
 
 	for ( u = x - 1; u < x + 1; u++ )
@@ -557,7 +557,7 @@ void glDrawWorld(view_t* camera, int mode)
 {
 	int x, y, z;
 	int index;
-	DOUBLE s;
+	real_t s;
 	bool clouds = FALSE;
 
 	if ( softwaremode == TRUE )
@@ -576,7 +576,7 @@ void glDrawWorld(view_t* camera, int mode)
 		glMatrixMode( GL_PROJECTION );
 		glLoadIdentity();
 		glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-		gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 16);
+		gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 16);
 		GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 		GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 		GLfloat rotz = 0; // get z rotation
@@ -593,16 +593,16 @@ void glDrawWorld(view_t* camera, int mode)
 		glColor4f(1.f, 1.f, 1.f, .5);
 		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
 		glBegin( GL_QUADS );
-		glTexCoord2f((DOUBLE)(ticks % 60) / 60, (DOUBLE)(ticks % 60) / 60);
+		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60, (DOUBLE)(ticks % 60) / 60);
+		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
 		glVertex3f(CLIPFAR * 16, 64, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60, (CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60);
+		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 60) / 60, (CLIPFAR) / 2 + (real_t)(ticks % 60) / 60);
 		glVertex3f(CLIPFAR * 16, 64, CLIPFAR * 16);
 
-		glTexCoord2f((DOUBLE)(ticks % 60) / 60, (CLIPFAR) / 2 + (DOUBLE)(ticks % 60) / 60);
+		glTexCoord2f((real_t)(ticks % 60) / 60, (CLIPFAR) / 2 + (real_t)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, CLIPFAR * 16);
 		glEnd();
 
@@ -610,16 +610,16 @@ void glDrawWorld(view_t* camera, int mode)
 		glColor4f(1.f, 1.f, 1.f, .5);
 		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
 		glBegin( GL_QUADS );
-		glTexCoord2f((DOUBLE)(ticks % 240) / 240, (DOUBLE)(ticks % 240) / 240);
+		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240, (DOUBLE)(ticks % 240) / 240);
+		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
 		glVertex3f(CLIPFAR * 16, 32, -CLIPFAR * 16);
 
-		glTexCoord2f((CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240, (CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240);
+		glTexCoord2f((CLIPFAR) / 2 + (real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
 		glVertex3f(CLIPFAR * 16, 32, CLIPFAR * 16);
 
-		glTexCoord2f((DOUBLE)(ticks % 240) / 240, (CLIPFAR) / 2 + (DOUBLE)(ticks % 240) / 240);
+		glTexCoord2f((real_t)(ticks % 240) / 240, (CLIPFAR) / 2 + (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, CLIPFAR * 16);
 		glEnd();
 	}
@@ -628,7 +628,7 @@ void glDrawWorld(view_t* camera, int mode)
 	glMatrixMode( GL_PROJECTION );
 	glLoadIdentity();
 	glViewport(camera->winx, yres - camera->winh - camera->winy, camera->winw, camera->winh);
-	gluPerspective(fov, (DOUBLE)camera->winw / (DOUBLE)camera->winh, CLIPNEAR, CLIPFAR * 2);
+	gluPerspective(fov, (real_t)camera->winw / (real_t)camera->winh, CLIPNEAR, CLIPFAR * 2);
 	GLfloat rotx = camera->vang * 180 / PI; // get x rotation
 	GLfloat roty = (camera->ang - 3 * PI / 2) * 180 / PI; // get y rotation
 	GLfloat rotz = 0; // get z rotation

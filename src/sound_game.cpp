@@ -73,7 +73,7 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 
 -------------------------------------------------------------------------------*/
 
-FMOD_CHANNEL* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
+FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
@@ -142,7 +142,7 @@ FMOD_CHANNEL* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
 	return channel;
 }
 
-FMOD_CHANNEL* playSoundPosLocal(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
+FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
@@ -650,7 +650,7 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol)
 
 -------------------------------------------------------------------------------*/
 
-OPENAL_SOUND* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
+OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
@@ -711,7 +711,7 @@ OPENAL_SOUND* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
 	return channel;
 }
 
-OPENAL_SOUND* playSoundPosLocal(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
+OPENAL_SOUND* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 {
 	if (no_sound)
 	{
@@ -1164,7 +1164,7 @@ void* playSound(Uint32 snd, int vol)
 	return NULL;
 }
 
-void* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
+void* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 {
 	int c;
 
@@ -1196,7 +1196,7 @@ void* playSoundPos(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
 	return NULL;
 }
 
-void* playSoundPosLocal(DOUBLE x, DOUBLE y, Uint32 snd, int vol)
+void* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 {
 	return NULL;
 }

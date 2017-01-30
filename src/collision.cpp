@@ -34,9 +34,9 @@
 
 -------------------------------------------------------------------------------*/
 
-DOUBLE entityDist(Entity* my, Entity* your)
+real_t entityDist(Entity* my, Entity* your)
 {
-	DOUBLE dx, dy;
+	real_t dx, dy;
 	dx = my->x - your->x;
 	dy = my->y - your->y;
 	return sqrt(dx * dx + dy * dy);
@@ -309,7 +309,7 @@ bool entityInsideSomething(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my)
+int barony_clear(real_t tx, real_t ty, Entity* my)
 {
 	if (!my)
 	{
@@ -317,7 +317,7 @@ int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my)
 	}
 
 	long x, y;
-	DOUBLE tx2, ty2;
+	real_t tx2, ty2;
 	node_t* node;
 	Entity* entity;
 	bool levitating = FALSE;
@@ -366,8 +366,8 @@ int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my)
 
 	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
 	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
-	const DOUBLE tymin = ty - my->sizey, tymax = ty + my->sizey;
-	const DOUBLE txmin = tx - my->sizex, txmax = tx + my->sizex;
+	const real_t tymin = ty - my->sizey, tymax = ty + my->sizey;
+	const real_t txmin = tx - my->sizex, txmax = tx + my->sizex;
 	for ( y = ymin; y <= ymax; y++ )
 	{
 		for ( x = xmin;  x <= xmax; x++ )
@@ -501,8 +501,8 @@ int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my)
 					}
 				}
 #ifdef NEWLOOP
-				const DOUBLE eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
-				const DOUBLE exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+				const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
+				const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
 				if( (txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax) )
 				{
 					if( (tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax))
@@ -590,9 +590,9 @@ int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-DOUBLE clipMove(DOUBLE* x, DOUBLE* y, DOUBLE vx, DOUBLE vy, Entity* my)
+real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 {
-	DOUBLE tx, ty;
+	real_t tx, ty;
 	hit.entity = NULL;
 
 	// move x and y
@@ -641,11 +641,11 @@ DOUBLE clipMove(DOUBLE* x, DOUBLE* y, DOUBLE vx, DOUBLE vy, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int entities, Entity* target )
+Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int entities, Entity* target )
 {
 	Entity* result = NULL;
 	node_t* node;
-	DOUBLE lowestDist = 9999;
+	real_t lowestDist = 9999;
 	int quadrant = 0;
 
 	while ( angle >= PI * 2 )
@@ -702,12 +702,12 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 		if ( quadrant == 2 || quadrant == 4 )
 		{
 			// upper right and lower left
-			DOUBLE upperX = entity->x + entity->sizex;
-			DOUBLE upperY = entity->y - entity->sizey;
-			DOUBLE lowerX = entity->x - entity->sizex;
-			DOUBLE lowerY = entity->y + entity->sizey;
-			DOUBLE upperTan = atan2(upperY - y1, upperX - x1);
-			DOUBLE lowerTan = atan2(lowerY - y1, lowerX - x1);
+			real_t upperX = entity->x + entity->sizex;
+			real_t upperY = entity->y - entity->sizey;
+			real_t lowerX = entity->x - entity->sizex;
+			real_t lowerY = entity->y + entity->sizey;
+			real_t upperTan = atan2(upperY - y1, upperX - x1);
+			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
 			if ( adjust )
 			{
 				if ( upperTan < 0 )
@@ -725,7 +725,7 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 			{
 				if ( angle >= upperTan && angle <= lowerTan )
 				{
-					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -737,7 +737,7 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 			{
 				if ( angle <= upperTan && angle >= lowerTan )
 				{
-					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -749,12 +749,12 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 		else
 		{
 			// upper left and lower right
-			DOUBLE upperX = entity->x - entity->sizex;
-			DOUBLE upperY = entity->y - entity->sizey;
-			DOUBLE lowerX = entity->x + entity->sizex;
-			DOUBLE lowerY = entity->y + entity->sizey;
-			DOUBLE upperTan = atan2(upperY - y1, upperX - x1);
-			DOUBLE lowerTan = atan2(lowerY - y1, lowerX - x1);
+			real_t upperX = entity->x - entity->sizex;
+			real_t upperY = entity->y - entity->sizey;
+			real_t lowerX = entity->x + entity->sizex;
+			real_t lowerY = entity->y + entity->sizey;
+			real_t upperTan = atan2(upperY - y1, upperX - x1);
+			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
 			if ( adjust )
 			{
 				if ( upperTan < 0 )
@@ -772,7 +772,7 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 			{
 				if ( angle >= upperTan && angle <= lowerTan )
 				{
-					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -784,7 +784,7 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 			{
 				if ( angle <= upperTan && angle >= lowerTan )
 				{
-					DOUBLE dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -807,16 +807,16 @@ Entity* findEntityInLine( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int en
 
 -------------------------------------------------------------------------------*/
 
-DOUBLE lineTrace( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, int entities, bool ground )
+real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground )
 {
 	int posx, posy;
-	DOUBLE fracx, fracy;
-	DOUBLE rx, ry;
-	DOUBLE ix, iy;
+	real_t fracx, fracy;
+	real_t rx, ry;
+	real_t ix, iy;
 	int inx, iny;
-	DOUBLE arx, ary;
-	DOUBLE dincx, dval0, dincy, dval1;
-	DOUBLE d;
+	real_t arx, ary;
+	real_t dincx, dval0, dincy, dval1;
+	real_t d;
 
 	posx = floor(x1);
 	posy = floor(y1); // integer coordinates
@@ -960,16 +960,16 @@ DOUBLE lineTrace( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, 
 	return range;
 }
 
-DOUBLE lineTraceTarget( Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, int entities, bool ground, Entity* target )
+real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target )
 {
 	int posx, posy;
-	DOUBLE fracx, fracy;
-	DOUBLE rx, ry;
-	DOUBLE ix, iy;
+	real_t fracx, fracy;
+	real_t rx, ry;
+	real_t ix, iy;
 	int inx, iny;
-	DOUBLE arx, ary;
-	DOUBLE dincx, dval0, dincy, dval1;
-	DOUBLE d;
+	real_t arx, ary;
+	real_t dincx, dval0, dincy, dval1;
+	real_t d;
 
 	posx = floor(x1);
 	posy = floor(y1); // integer coordinates

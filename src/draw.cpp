@@ -174,7 +174,7 @@ SDL_Surface* flipSurface( SDL_Surface* surface, int flags )
 
 -------------------------------------------------------------------------------*/
 
-void drawCircle( int x, int y, DOUBLE radius, Uint32 color, Uint8 alpha )
+void drawCircle( int x, int y, real_t radius, Uint32 color, Uint8 alpha )
 {
 	drawArc(x, y, radius, 0, 360, color, alpha);
 }
@@ -187,7 +187,7 @@ void drawCircle( int x, int y, DOUBLE radius, Uint32 color, Uint8 alpha )
 
 -------------------------------------------------------------------------------*/
 
-void drawArc( int x, int y, DOUBLE radius, DOUBLE angle1, DOUBLE angle2, Uint32 color, Uint8 alpha )
+void drawArc( int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha )
 {
 	int c;
 
@@ -331,7 +331,7 @@ int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha)
 
 -------------------------------------------------------------------------------*/
 
-void drawGear(Sint16 x, Sint16 y, DOUBLE size, Sint32 rotation)
+void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation)
 {
 	Uint32 color;
 	int c;
@@ -368,7 +368,7 @@ void drawGear(Sint16 x, Sint16 y, DOUBLE size, Sint32 rotation)
 
 -------------------------------------------------------------------------------*/
 
-void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, DOUBLE angle, Uint8 alpha )
+void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha )
 {
 	SDL_Rect secondsrc;
 
@@ -398,13 +398,13 @@ void drawImageRotatedAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, DO
 	glBindTexture(GL_TEXTURE_2D, texid[image->refcount]);
 	glColor4f(1, 1, 1, alpha / 255.1);
 	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(-src->w / 2, src->h / 2);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(-src->w / 2, -src->h / 2);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(src->w / 2, -src->h / 2);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(src->w / 2, src->h / 2);
 	glEnd();
 	glPopMatrix();
@@ -445,20 +445,20 @@ void drawImageColor( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 co
 
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[image->refcount]);
-	DOUBLE r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	DOUBLE g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	DOUBLE b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	DOUBLE a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
+	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
+	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
+	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
+	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
 	glColor4f(r, g, b, a);
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
 	glPopMatrix();
@@ -502,13 +502,13 @@ void drawImageAlpha( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alp
 	glColor4f(1, 1, 1, alpha / 255.1);
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
 	glPopMatrix();
@@ -552,13 +552,13 @@ void drawImage( SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos )
 	glColor4f(1, 1, 1, 1);
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x, yres - pos->y);
-	glTexCoord2f(1.0 * ((DOUBLE)src->x / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * ((real_t)src->x / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * (((DOUBLE)src->y + src->h) / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * (((real_t)src->y + src->h) / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y - src->h);
-	glTexCoord2f(1.0 * (((DOUBLE)src->x + src->w) / image->w), 1.0 * ((DOUBLE)src->y / image->h));
+	glTexCoord2f(1.0 * (((real_t)src->x + src->w) / image->w), 1.0 * ((real_t)src->y / image->h));
 	glVertex2f(pos->x + src->w, yres - pos->y);
 	glEnd();
 	glPopMatrix();
@@ -639,8 +639,8 @@ SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height)
 
 	SDL_Surface* _ret = SDL_CreateRGBSurface(Surface->flags, Width, Height, Surface->format->BitsPerPixel, Surface->format->Rmask, Surface->format->Gmask, Surface->format->Bmask, Surface->format->Amask);
 
-	DOUBLE _stretch_factor_x = (DOUBLE)Width / (DOUBLE)Surface->w;
-	DOUBLE _stretch_factor_y = (DOUBLE)Height / (DOUBLE)Surface->h;
+	real_t _stretch_factor_x = (real_t)Width / (real_t)Surface->w;
+	real_t _stretch_factor_y = (real_t)Height / (real_t)Surface->h;
 
 	for (y = 0; y < Surface->h; y++)
 		for (x = 0; x < Surface->w; x++)
@@ -663,7 +663,7 @@ SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height)
 
 -------------------------------------------------------------------------------*/
 
-void drawImageFancy( SDL_Surface* image, Uint32 color, DOUBLE angle, SDL_Rect* src, SDL_Rect* pos )
+void drawImageFancy( SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos )
 {
 	SDL_Rect secondsrc;
 
@@ -696,20 +696,20 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, DOUBLE angle, SDL_Rect* s
 
 	// draw a textured quad
 	glBindTexture(GL_TEXTURE_2D, texid[image->refcount]);
-	DOUBLE r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
-	DOUBLE g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
-	DOUBLE b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
-	DOUBLE a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
+	real_t r = ((Uint8)(color >> mainsurface->format->Rshift)) / 255.f;
+	real_t g = ((Uint8)(color >> mainsurface->format->Gshift)) / 255.f;
+	real_t b = ((Uint8)(color >> mainsurface->format->Bshift)) / 255.f;
+	real_t a = ((Uint8)(color >> mainsurface->format->Ashift)) / 255.f;
 	glColor4f(r, g, b, a);
 	glPushMatrix();
 	glBegin(GL_QUADS);
-	glTexCoord2f(((DOUBLE)src->x) / ((DOUBLE)image->w), ((DOUBLE)src->y) / ((DOUBLE)image->h));
+	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
 	glVertex2f(0, 0);
-	glTexCoord2f(((DOUBLE)src->x) / ((DOUBLE)image->w), ((DOUBLE)(src->y + src->h)) / ((DOUBLE)image->h));
+	glTexCoord2f(((real_t)src->x) / ((real_t)image->w), ((real_t)(src->y + src->h)) / ((real_t)image->h));
 	glVertex2f(0, -pos->h);
-	glTexCoord2f(((DOUBLE)(src->x + src->w)) / ((DOUBLE)image->w), ((DOUBLE)(src->y + src->h)) / ((DOUBLE)image->h));
+	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)(src->y + src->h)) / ((real_t)image->h));
 	glVertex2f(pos->w, -pos->h);
-	glTexCoord2f(((DOUBLE)(src->x + src->w)) / ((DOUBLE)image->w), ((DOUBLE)src->y) / ((DOUBLE)image->h));
+	glTexCoord2f(((real_t)(src->x + src->w)) / ((real_t)image->w), ((real_t)src->y) / ((real_t)image->h));
 	glVertex2f(pos->w, 0);
 	glEnd();
 	glPopMatrix();
@@ -727,7 +727,7 @@ void drawImageFancy( SDL_Surface* image, Uint32 color, DOUBLE angle, SDL_Rect* s
 
 void drawSky3D( view_t* camera, SDL_Surface* tex )
 {
-	DOUBLE screenfactor;
+	real_t screenfactor;
 	int skyx, skyy;
 	SDL_Rect dest;
 	SDL_Rect src;
@@ -846,7 +846,7 @@ void drawClearBuffers()
 	// empty video and input buffers
 	if ( zbuffer != NULL )
 	{
-		memset( zbuffer, 0, xres * yres * sizeof(DOUBLE) );
+		memset( zbuffer, 0, xres * yres * sizeof(real_t) );
 	}
 	if ( clickmap != NULL )
 	{
@@ -878,14 +878,14 @@ void drawClearBuffers()
 void raycast(view_t* camera, int mode)
 {
 	long posx, posy;
-	DOUBLE fracx, fracy;
+	real_t fracx, fracy;
 	long inx, iny, inx2, iny2;
-	DOUBLE rx, ry;
-	DOUBLE d, dstart, dend;
+	real_t rx, ry;
+	real_t d, dstart, dend;
 	long sx;
-	DOUBLE arx, ary;
+	real_t arx, ary;
 	long dincx, dincy;
-	DOUBLE dval0, dval1;
+	real_t dval0, dval1;
 
 	Uint8 light;
 	Sint32 z;
@@ -896,7 +896,7 @@ void raycast(view_t* camera, int mode)
 	fracx = camera->x - posx;
 	fracy = camera->y - posy; // fraction coordinates
 
-	DOUBLE wfov = (fov * camera->winw / camera->winh) * PI / 180.f;
+	real_t wfov = (fov * camera->winw / camera->winh) * PI / 180.f;
 	dstart = CLIPNEAR / 16.0;
 
 	// ray vector
@@ -1260,10 +1260,10 @@ void drawEditormap(long camx, long camy)
 	drawRect(&src, SDL_MapRGB(mainsurface->format, 0, 0, 0), 255);
 
 	// initial box dimensions
-	src.x = (xres - 120) + (((DOUBLE)camx / TEXTURESIZE) * 112.0) / map.width;
-	src.y = 24 + (((DOUBLE)camy / TEXTURESIZE) * 112.0) / map.height;
-	src.w = (112.0 / map.width) * ((DOUBLE)xres / TEXTURESIZE);
-	src.h = (112.0 / map.height) * ((DOUBLE)yres / TEXTURESIZE);
+	src.x = (xres - 120) + (((real_t)camx / TEXTURESIZE) * 112.0) / map.width;
+	src.y = 24 + (((real_t)camy / TEXTURESIZE) * 112.0) / map.height;
+	src.w = (112.0 / map.width) * ((real_t)xres / TEXTURESIZE);
+	src.h = (112.0 / map.height) * ((real_t)yres / TEXTURESIZE);
 
 	// clip at left edge
 	if ( src.x < xres - 120 )
@@ -1391,11 +1391,11 @@ void drawWindowFancy(int x1, int y1, int x2, int y2)
 	glBegin(GL_QUADS);
 	glTexCoord2f(0, 0);
 	glVertex2f(x1 + 2, yres - y1 - 2);
-	glTexCoord2f(0, (y2 - y1 - 4) / (DOUBLE)tiles[30]->h);
+	glTexCoord2f(0, (y2 - y1 - 4) / (real_t)tiles[30]->h);
 	glVertex2f(x1 + 2, yres - y2 + 2);
-	glTexCoord2f((x2 - x1 - 4) / (DOUBLE)tiles[30]->w, (y2 - y1 - 4) / (DOUBLE)tiles[30]->h);
+	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, (y2 - y1 - 4) / (real_t)tiles[30]->h);
 	glVertex2f(x2 - 2, yres - y2 + 2);
-	glTexCoord2f((x2 - x1 - 4) / (DOUBLE)tiles[30]->w, 0);
+	glTexCoord2f((x2 - x1 - 4) / (real_t)tiles[30]->w, 0);
 	glVertex2f(x2 - 2, yres - y1 - 2);
 	glEnd();
 }
@@ -1807,7 +1807,7 @@ void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 
 -------------------------------------------------------------------------------*/
 
-void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, DOUBLE angle, DOUBLE scale, char* fmt, ...)
+void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...)
 {
 	int c;
 	int numbytes;
@@ -1821,11 +1821,11 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 	va_end( argptr );
 
 	// define font dimensions
-	DOUBLE newX = x;
-	DOUBLE newY = y;
-	dest.w = ((DOUBLE)font_bmp->w / 16.f) * scale;
+	real_t newX = x;
+	real_t newY = y;
+	dest.w = ((real_t)font_bmp->w / 16.f) * scale;
 	src.w = font_bmp->w / 16;
-	dest.h = ((DOUBLE)font_bmp->h / 16.f) * scale;
+	dest.h = ((real_t)font_bmp->h / 16.f) * scale;
 	src.h = font_bmp->h / 16;
 
 	// print the characters in the string
@@ -1839,8 +1839,8 @@ void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, 
 			dest.x = newX;
 			dest.y = newY;
 			drawImageFancy( font_bmp, color, angle, &src, &dest );
-			newX += (DOUBLE)dest.w * cos(angle);
-			newY += (DOUBLE)dest.h * sin(angle);
+			newX += (real_t)dest.w * cos(angle);
+			newY += (real_t)dest.h * sin(angle);
 		}
 		else if ( str[c] == 10 )
 		{

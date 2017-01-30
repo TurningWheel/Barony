@@ -14,14 +14,14 @@
 #define IGNORE_ENTITIES 1
 
 // function prototypes
-DOUBLE entityDist(Entity* my, Entity* your);
+real_t entityDist(Entity* my, Entity* your);
 Entity* entityClicked();
 bool entityInsideTile(Entity* entity, int x, int y, int z);
 bool entityInsideEntity(Entity* entity1, Entity* entity2);
 bool entityInsideSomething(Entity* entity);
-int barony_clear(DOUBLE tx, DOUBLE ty, Entity* my);
-DOUBLE clipMove(DOUBLE* x, DOUBLE* y, DOUBLE vx, DOUBLE vy, Entity* my);
-Entity* findEntityInLine(Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, int entities, Entity* target);
-DOUBLE lineTrace(Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, int entities, bool ground);
-DOUBLE lineTraceTarget(Entity* my, DOUBLE x1, DOUBLE y1, DOUBLE angle, DOUBLE range, int entities, bool ground, Entity* target); //If the linetrace function encounters the linetrace entity, it returns even if it's invisible or passable.
+int barony_clear(real_t tx, real_t ty, Entity* my);
+real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my);
+Entity* findEntityInLine(Entity* my, real_t x1, real_t y1, real_t angle, int entities, Entity* target);
+real_t lineTrace(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground);
+real_t lineTraceTarget(Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target); //If the linetrace function encounters the linetrace entity, it returns even if it's invisible or passable.
 int checkObstacle(long x, long y, Entity* my, Entity* target);
