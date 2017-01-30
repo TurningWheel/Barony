@@ -321,13 +321,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	node_t* node;
 	Entity* entity;
 	bool levitating = FALSE;
-// The NEWLOOP break the loop in two part. 
+// Reworked that function to break the loop in two part. 
 // A first fast one using integer only x/y
 // And the second part that loop on entity and used a global BoundingBox collision detection
 // Also, static stuff are out of the loop too
-#define NEWLOOP
 
-#ifdef NEWLOOP
 	Stat* stats = my->getStats();
 	// moved static stuff outside of the loop
 	if ( stats )
@@ -372,20 +370,6 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	{
 		for ( x = xmin;  x <= xmax; x++ )
 		{
-#else
-	for ( ty2 = ty - my->sizey; ty2 <= ty + my->sizey; ty2++ )
-	{
-		for ( tx2 = tx - my->sizex; tx2 <= tx + my->sizex; tx2++ )
-		{
-			#ifdef __ARM_NEON__
-			int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f));
-			x = xy[0];
-			y = xy[1];
-			#else
-			x = (long)floor(tx2 / 16);
-			y = (long)floor(ty2 / 16);
-			#endif
-#endif
 			if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 			{
 				if (map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height])
@@ -398,42 +382,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					hit.entity = NULL;
 					return 0;
 				}
-#ifndef NEWLOOP				
-				Stat* stats;
-				if ( (stats = my->getStats()) != NULL )
-				{
-					if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
-					{
-						levitating = TRUE;
-					}
-					if ( stats->ring != NULL )
-						if ( stats->ring->type == RING_LEVITATION )
-						{
-							levitating = TRUE;
-						}
-					if ( stats->shoes != NULL )
-						if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-						{
-							levitating = TRUE;
-						}
-				}
-				bool isMonster = FALSE;
-				if ( my )
-					if ( my->behavior == &actMonster )
-					{
-						isMonster = TRUE;
-					}
-				if ( isMonster && multiplayer == CLIENT )
-					if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
-					{
-						levitating = TRUE;
-					}
-				if ( my )
-					if ( my->behavior != &actPlayer && my->behavior != &actMonster )
-					{
-						levitating = TRUE;
-					}
-#endif				
+	
 				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
 				{
 					// no floor
@@ -445,138 +394,125 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					return 0;
 				}
 			}
-#ifdef NEWLOOP
 		}
 	}
-#endif
-			for (node = map.entities->first; node != NULL; node = node->next)
+	for (node = map.entities->first; node != NULL; node = node->next)
+	{
+		entity = (Entity*)node->element;
+		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid )
+		{
+			continue;
+		}
+		if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
+		{
+			continue;    // monsters don't have hard collision with door frames
+		}
+		Stat* myStats = stats; //my->getStats();	//SEB <<<
+		Stat* yourStats = entity->getStats();
+		if ( myStats && yourStats )
+		{
+			if ( yourStats->leader_uid == my->uid )
 			{
-				entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid )
+				continue;
+			}
+			if ( myStats->leader_uid == entity->uid )
+			{
+				continue;
+			}
+			if ( monsterally[myStats->type][yourStats->type] )
+			{
+				continue;
+			}
+			if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
+			{
+				continue;
+			}
+		}
+		if ( multiplayer == CLIENT )
+		{
+			// fixes bug where clients can't move through humans
+			if ( (entity->sprite >= 113 && entity->sprite < 118) ||
+					(entity->sprite >= 125 && entity->sprite < 130) ||
+					(entity->sprite >= 332 && entity->sprite < 334) ||
+					(entity->sprite >= 341 && entity->sprite < 347) ||
+					(entity->sprite >= 354 && entity->sprite < 360) ||
+					(entity->sprite >= 367 && entity->sprite < 373) ||
+					(entity->sprite >= 380 && entity->sprite < 386) ||
+					entity->sprite == 217 )   // human heads
+			{
+				continue;
+			}
+			else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
+			{
+				continue; // fix clients not being able to walk through friendly monsters
+			}
+		}
+		const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
+		const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+		if( (txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax) )
+		{
+			if( (tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax))
+			{
+				tx2 = std::max(txmin, exmin);
+				ty2 = std::max(tymin, eymin);
+				hit.x = tx2;
+				hit.y = ty2;
+				hit.mapx = entity->x / 16;
+				hit.mapy = entity->y / 16;
+				hit.entity = entity;
+				if ( multiplayer != CLIENT )
 				{
-					continue;
-				}
-				if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
-				{
-					continue;    // monsters don't have hard collision with door frames
-				}
-				Stat* myStats = stats; //my->getStats();	//SEB <<<
-				Stat* yourStats = entity->getStats();
-				if ( myStats && yourStats )
-				{
-					if ( yourStats->leader_uid == my->uid )
+					if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
 					{
-						continue;
-					}
-					if ( myStats->leader_uid == entity->uid )
-					{
-						continue;
-					}
-					if ( monsterally[myStats->type][yourStats->type] )
-					{
-						continue;
-					}
-					if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
-					{
-						continue;
-					}
-				}
-				if ( multiplayer == CLIENT )
-				{
-					// fixes bug where clients can't move through humans
-					if ( (entity->sprite >= 113 && entity->sprite < 118) ||
-					        (entity->sprite >= 125 && entity->sprite < 130) ||
-					        (entity->sprite >= 332 && entity->sprite < 334) ||
-					        (entity->sprite >= 341 && entity->sprite < 347) ||
-					        (entity->sprite >= 354 && entity->sprite < 360) ||
-					        (entity->sprite >= 367 && entity->sprite < 373) ||
-					        (entity->sprite >= 380 && entity->sprite < 386) ||
-					        entity->sprite == 217 )   // human heads
-					{
-						continue;
-					}
-					else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
-					{
-						continue; // fix clients not being able to walk through friendly monsters
-					}
-				}
-#ifdef NEWLOOP
-				const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
-				const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
-				if( (txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax) )
-				{
-					if( (tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax))
-					{
-						tx2 = std::max(txmin, exmin);
-						ty2 = std::max(tymin, eymin);
-#else
-				if ( tx2 >= entity->x - entity->sizex && tx2 < entity->x + entity->sizex )
-				{
-					if ( ty2 >= entity->y - entity->sizey && ty2 < entity->y + entity->sizey )
-					{
-#endif
-						hit.x = tx2;
-						hit.y = ty2;
-						hit.mapx = entity->x / 16;
-						hit.mapy = entity->y / 16;
-						hit.entity = entity;
-						if ( multiplayer != CLIENT )
-						{
-							if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
-							{
-								bool dyrnwyn = FALSE;
-								Stat* stats = hit.entity->getStats();
-								if ( stats )
-									if ( stats->weapon )
-										if ( stats->weapon->type == ARTIFACT_SWORD )
-										{
-											dyrnwyn = TRUE;
-										}
-								if ( !dyrnwyn )
+						bool dyrnwyn = FALSE;
+						Stat* stats = hit.entity->getStats();
+						if ( stats )
+							if ( stats->weapon )
+								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
-									hit.entity->flags[BURNING] = TRUE;
-									if ( hit.entity->behavior == &actPlayer)
-									{
-										messagePlayer(hit.entity->skill[2], language[590]);
-										if ( hit.entity->skill[2] > 0 )
-										{
-											serverUpdateEntityFlag(hit.entity, BURNING);
-										}
-									}
+									dyrnwyn = TRUE;
 								}
-							}
-							else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+						if ( !dyrnwyn )
+						{
+							hit.entity->flags[BURNING] = TRUE;
+							if ( hit.entity->behavior == &actPlayer)
 							{
-								bool dyrnwyn = FALSE;
-								Stat* stats = my->getStats();
-								if ( stats )
-									if ( stats->weapon )
-										if ( stats->weapon->type == ARTIFACT_SWORD )
-										{
-											dyrnwyn = TRUE;
-										}
-								if ( !dyrnwyn )
+								messagePlayer(hit.entity->skill[2], language[590]);
+								if ( hit.entity->skill[2] > 0 )
 								{
-									my->flags[BURNING] = TRUE;
-									if ( my->behavior == &actPlayer)
-									{
-										messagePlayer(my->skill[2], language[590]);
-										if ( my->skill[2] > 0 )
-										{
-											serverUpdateEntityFlag(my, BURNING);
-										}
-									}
+									serverUpdateEntityFlag(hit.entity, BURNING);
 								}
 							}
 						}
-						return 0;
+					}
+					else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+					{
+						bool dyrnwyn = FALSE;
+						Stat* stats = my->getStats();
+						if ( stats )
+							if ( stats->weapon )
+								if ( stats->weapon->type == ARTIFACT_SWORD )
+								{
+									dyrnwyn = TRUE;
+								}
+						if ( !dyrnwyn )
+						{
+							my->flags[BURNING] = TRUE;
+							if ( my->behavior == &actPlayer)
+							{
+								messagePlayer(my->skill[2], language[590]);
+								if ( my->skill[2] > 0 )
+								{
+									serverUpdateEntityFlag(my, BURNING);
+								}
+							}
+						}
 					}
 				}
+				return 0;
 			}
-#ifndef NEWLOOP
 		}
 	}
-#endif
 
 	return 1;
 }
