@@ -477,7 +477,8 @@ int initOPENAL()
 
 	alcMakeContextCurrent(openal_context);
 
-	alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
+	alDistanceModel(AL_INVERSE_DISTANCE_CLAMPED);
+	alDopplerFactor(2.0f);
 
 	// creates channels groups
 	sound_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
@@ -800,8 +801,8 @@ void OPENAL_Channel_Set3DAttributes(OPENAL_SOUND* channel, float x, float y, flo
 
 	alSourcei(channel->id,AL_SOURCE_RELATIVE, AL_FALSE);
 	alSource3f(channel->id, AL_POSITION, x, y, z);
-	alSourcef(channel->id, AL_REFERENCE_DISTANCE, 1*2);	// hardcoding FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-	alSourcef(channel->id, AL_MAX_DISTANCE, 10*2);
+	alSourcef(channel->id, AL_REFERENCE_DISTANCE, 1.f);	// hardcoding FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
+	alSourcef(channel->id, AL_MAX_DISTANCE, 10.f);		// but this are simply OpenAL default (the 2.0f is used for Dopler only)
 }
 
 void OPENAL_Channel_Play(OPENAL_SOUND* channel) {
