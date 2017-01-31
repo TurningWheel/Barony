@@ -166,6 +166,7 @@ int resolutionConfirmationTimer = 0;
 Sint32 oldXres;
 Sint32 oldYres;
 Sint32 oldFullscreen;
+real_t oldGamma;
 button_t* revertResolutionButton = nullptr;
 
 void buttonCloseSettingsSubwindow(button_t* my);
@@ -6308,6 +6309,7 @@ void applySettings()
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
 	colorblind = settings_colorblind;
+	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
 	oldXres = xres;
 	oldYres = yres;
@@ -6317,7 +6319,7 @@ void applySettings()
 	camera.winy = 0;
 	camera.winw = std::min(camera.winw, xres);
 	camera.winh = std::min(camera.winh, yres);
-	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen)
+	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma)
 	{
 		if ( !changeVideoMode() )
 		{
