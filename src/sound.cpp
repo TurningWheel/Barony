@@ -477,8 +477,6 @@ int initOPENAL()
 
 	alcMakeContextCurrent(openal_context);
 
-	alutInitWithoutContext(NULL, NULL);
-
 	alDistanceModel(AL_LINEAR_DISTANCE_CLAMPED);
 
 	// creates channels groups
@@ -681,7 +679,6 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 	*buffer = (OPENAL_BUFFER*)malloc(sizeof(OPENAL_BUFFER));
 	strcpy((*buffer)->oggfile, name);	// for debugging purpose
 	(*buffer)->stream = false;
-	//(*buffer)->id = alutCreateBufferFromFile(name);
 	FILE *f = fopen(name, "rb");
 	if(!f) {
 		printlog("Error loading sound %s\n", name);

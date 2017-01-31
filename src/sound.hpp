@@ -17,8 +17,13 @@
 #include "fmod.h"
 #endif
 #ifdef HAVE_OPENAL
+#ifdef APPLE
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#else
 #include <AL/al.h>
-#include <AL/alut.h>
+#include <AL/alc.h>
+#endif
 #endif
 
 
