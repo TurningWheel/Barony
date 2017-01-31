@@ -590,11 +590,8 @@ void gameLogic(void)
 					int w, h;
 					TTF_SizeUTF8(ttf16, language[709], &w, &h);
 					ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[709]);
-#ifdef APPLE
-					SDL_RenderPresent(renderer);
-#else
+
 					GO_SwapBuffers(screen);
-#endif
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
@@ -3151,11 +3148,7 @@ int main(int argc, char** argv)
 			}
 
 			// update screen
-#ifdef APPLE
-			SDL_RenderPresent(renderer);
-#else
 			GO_SwapBuffers(screen);
-#endif
 
 			// screenshots
 			if ( keystatus[SDL_SCANCODE_F6] )

@@ -304,11 +304,8 @@ int initApp(char* title, int fullscreen)
 	int w, h;
 	TTF_SizeUTF8(ttf16, LOADSTR1, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR1);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	// load sprites
 	printlog("loading sprites...\n");
@@ -351,11 +348,8 @@ int initApp(char* title, int fullscreen)
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR2, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR2);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	// load models
 	printlog("loading models...\n");
@@ -402,11 +396,8 @@ int initApp(char* title, int fullscreen)
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR3, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR3);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	// load tiles
 	printlog("loading tiles...\n");
@@ -468,11 +459,8 @@ int initApp(char* title, int fullscreen)
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR4, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR4);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	// load sound effects
 #ifdef HAVE_FMOD
@@ -807,11 +795,8 @@ void generatePolyModels()
 		int w, h;
 		TTF_SizeUTF8(ttf16, loadText, &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
-#ifdef APPLE
-		SDL_RenderPresent(renderer);
-#else
+
 		GO_SwapBuffers(screen);
-#endif
 
 		numquads = 0;
 		polymodels[c].numfaces = 0;

@@ -1224,7 +1224,11 @@ void GO_SwapBuffers(SDL_Window* screen)
 		glBindTexture(GL_TEXTURE_2D, 0);
 	}
 #endif
+#ifdef APPLE
+	SDL_RenderPresent(renderer);
+#else
 	SDL_GL_SwapWindow(screen);
+#endif
 #ifdef PANDORA
 	if(bBlit) {
 		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);

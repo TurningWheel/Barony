@@ -78,11 +78,8 @@ int initGame()
 	int w, h;
 	TTF_SizeUTF8(ttf16, _LOADSTR1, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR1);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	initGameControllers();
 
@@ -146,11 +143,8 @@ int initGame()
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR2, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR2);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	// load item types
 	printlog( "loading items...\n");
@@ -300,11 +294,8 @@ int initGame()
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR3, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR3);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 #ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
@@ -468,11 +459,8 @@ int fmod_result;
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR4, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR4);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
+
 	GO_SwapBuffers(screen);
-#endif
 
 	// load extraneous game resources
 	title_bmp = loadImage("images/system/title.png");

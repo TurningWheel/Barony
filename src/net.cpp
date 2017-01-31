@@ -1712,11 +1712,8 @@ void clientHandlePacket()
 		int w, h;
 		TTF_SizeUTF8(ttf16, LOADSTR, &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR);
-#ifdef APPLE
-		SDL_RenderPresent(renderer);
-#else
+
 		GO_SwapBuffers(screen);
-#endif
 
 		// unlock some steam achievements
 		if ( !secretlevel )
