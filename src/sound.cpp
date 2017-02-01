@@ -505,10 +505,15 @@ int initOPENAL()
 
 int closeOPENAL()
 {
+	if(OpenALSoundON) return 0;
+
 	OpenALSoundON = false;
 	SDL_WaitThread(openal_soundthread, NULL);
 
-	SDL_DestroyMutex(openal_mutex);
+	if(openal_mutex) {
+		SDL_DestroyMutex(openal_mutex);
+		openal_mutex = NULL;
+	}
 
 	// stop all remaining sound
 	for (int i=0; i<upper_unfreechannel; i++) {
