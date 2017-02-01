@@ -299,7 +299,7 @@ int initGame()
 
 #ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-#elif define HAVE_OPENAL
+#elif defined HAVE_OPENAL
 	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 #endif
 	removedEntities.first = NULL;

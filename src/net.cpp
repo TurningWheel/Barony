@@ -1698,7 +1698,7 @@ void clientHandlePacket()
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
-#elif define HAVE_OPENAL
+#elif defined HAVE_OPENAL
 		if ( sound_group )
 		{
 			OPENAL_ChannelGroup_Stop(sound_group);
