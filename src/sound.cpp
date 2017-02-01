@@ -460,7 +460,7 @@ int OPENAL_ThreadFunction(void* data) {
 		
 		SDL_Delay(100);
 	}
-	return 0;
+	return 1;
 }
 
 int initOPENAL()
@@ -508,7 +508,11 @@ int closeOPENAL()
 	if(OpenALSoundON) return 0;
 
 	OpenALSoundON = false;
-	SDL_WaitThread(openal_soundthread, NULL);
+	int i = 0;
+	SDL_WaitThread(openal_soundthread, &i);
+	if(i!=1) {
+		printlog("Warning, unable to stop Openal thread\n");
+	}
 
 	if(openal_mutex) {
 		SDL_DestroyMutex(openal_mutex);
@@ -527,6 +531,8 @@ int closeOPENAL()
 	openal_context = NULL;
 	alcCloseDevice(openal_device);
 	openal_device = NULL;
+	initialized = 0;
+
 	return 1;
 }
 
