@@ -857,10 +857,12 @@ void OPENAL_Channel_GetPosition(OPENAL_SOUND* channel, unsigned int *position) {
 }
 
 void OPENAL_Sound_GetLength(OPENAL_BUFFER* buffer, unsigned int *length) {
+	if(!buffer) return;
 	alGetBufferi(buffer->id, AL_SIZE, (GLint*)length);
 }
 
 void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
+	if(!buffer) return;
 	if(!buffer->stream)
 		alDeleteBuffers( 1, &buffer->id );
 	free(buffer);
