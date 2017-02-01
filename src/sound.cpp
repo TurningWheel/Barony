@@ -291,6 +291,7 @@ static int openal_oggopen(OPENAL_SOUND *self, const char* oggfile) {
 	self->vorbisComment = ov_comment(&self->oggStream, -1);
 
 	alGenBuffers(4, self->streambuff);
+	return 1;
 }
 
 static int openal_oggrelease(OPENAL_SOUND *self) {
@@ -305,6 +306,7 @@ static int openal_oggrelease(OPENAL_SOUND *self) {
 	alDeleteBuffers(4, self->streambuff);
 	ov_clear(&self->oggStream);
 	free(self->oggdata);
+	return 1;
 }
 
 static int openal_streamread(OPENAL_SOUND *self, ALuint buffer) {

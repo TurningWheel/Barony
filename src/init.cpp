@@ -1814,10 +1814,6 @@ void generateVBOs()
 	frees all memory consumed by the application and terminates the engine
 
 -------------------------------------------------------------------------------*/
-#ifdef HAVE_OPENAL
-void closeOPENAL();
-#endif
-
 int deinitApp()
 {
 	Uint32 c;

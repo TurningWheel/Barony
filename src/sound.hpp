@@ -150,6 +150,7 @@ extern OPENAL_SOUND* music_channel, *music_channel2, *music_resume; //TODO: List
 extern OPENAL_CHANNELGROUP *sound_group, *music_group;
 
 int initOPENAL();
+int closeOPENAL();
 
 //Updates OpenAL and whatnot (dummy function)
 void sound_update();
