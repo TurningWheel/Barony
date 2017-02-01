@@ -510,6 +510,13 @@ int closeOPENAL()
 
 	SDL_DestroyMutex(openal_mutex);
 
+	// stop all remaining sound
+	for (int i=0; i<upper_unfreechannel; i++) {
+		if(openal_sounds[i].active && !openal_sounds[i].buffer->stream) {
+			private_OPENAL_Channel_Stop(&openal_sounds[i]);
+		}
+	}
+
 	alcMakeContextCurrent(NULL);
 	alcDestroyContext(openal_context);
 	openal_context = NULL;
