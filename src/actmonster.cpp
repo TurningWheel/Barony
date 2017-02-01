@@ -879,6 +879,11 @@ void actMonster(Entity* my)
 				{
 					FMOD_Channel_Stop(MONSTER_SOUND);
 				}
+#elif defined HAVE_OPENAL
+				if ( MONSTER_SOUND )
+				{
+					OPENAL_Channel_Stop(MONSTER_SOUND);
+				}
 #endif
 				int c;
 				for ( c = 0; c < MAXPLAYERS; c++ )
@@ -1066,6 +1071,11 @@ void actMonster(Entity* my)
 		{
 			FMOD_Channel_Stop(MONSTER_SOUND);
 		}
+#elif defined HAVE_OPENAL
+		if ( MONSTER_SOUND )
+		{
+			OPENAL_Channel_Stop(MONSTER_SOUND);
+		}
 #endif
 		myStats = my->getStats();
 		switch ( myStats->type )
@@ -1184,6 +1194,26 @@ void actMonster(Entity* my)
 				}*/
 				FMOD_BOOL playing = TRUE;
 				FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
+				if (!playing)
+				{
+					MONSTER_SOUND = NULL;
+					break;
+				}
+			}
+		}
+#elif defined HAVE_OPENAL
+		ALboolean playing;
+		OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
+		if (!playing)
+		{
+			MONSTER_SOUND = NULL;
+		}
+		else
+		{
+			for ( c = 0; c < numsounds; c++ )
+			{
+				ALboolean playing = TRUE;
+				OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
 				if (!playing)
 				{
 					MONSTER_SOUND = NULL;

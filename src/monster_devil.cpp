@@ -62,7 +62,7 @@ void initDevil(Entity* my, Stat* myStats)
 		myStats->leader_uid = 0;
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
 		{
 			if ( c < NUMPROFICIENCIES )
 			{
@@ -423,13 +423,13 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( MONSTER_ATTACKTIME < 30 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 2);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 2);
 				}
 				else if ( MONSTER_ATTACKTIME > 40 )
 				{
 					if ( entity->pitch < 0 )
 					{
-						entity->pitch = std::min(entity->pitch + .4, 0.0);
+						entity->pitch = std::min<real_t>(entity->pitch + .4, 0.0);
 						if ( entity->pitch >= 0 )
 						{
 							playSound(181, 64);
@@ -439,7 +439,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else if ( MONSTER_ATTACK == 4 )
 			{
-				entity->pitch = std::max(entity->pitch - .1, -4 * PI / 5);
+				entity->pitch = std::max<real_t>(entity->pitch - .1, -4 * PI / 5);
 			}
 			else if ( MONSTER_ATTACK == 5 )
 			{
@@ -456,13 +456,13 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( MONSTER_ATTACKTIME < 30 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 2);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 2);
 				}
 				else if ( MONSTER_ATTACKTIME > 40 )
 				{
 					if ( entity->pitch < 0 )
 					{
-						entity->pitch = std::min(entity->pitch + .4, 0.0);
+						entity->pitch = std::min<real_t>(entity->pitch + .4, 0.0);
 						if ( entity->pitch >= 0 )
 						{
 							playSound(181, 64);
@@ -472,7 +472,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else if ( MONSTER_ATTACK == 4 )
 			{
-				entity->pitch = std::max(entity->pitch - .1, -4 * PI / 5);
+				entity->pitch = std::max<real_t>(entity->pitch - .1, -4 * PI / 5);
 			}
 			else if ( MONSTER_ATTACK == 6 )
 			{
@@ -570,21 +570,21 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						if ( MONSTER_ATTACK == 1 )
 						{
-							entity->yaw = std::min(entity->yaw + .1, my->yaw + PI / 6);
+							entity->yaw = std::min<real_t>(entity->yaw + .1, my->yaw + PI / 6);
 						}
 						else if ( MONSTER_ATTACK == 2 )
 						{
-							entity->yaw = std::max(entity->yaw - .1, my->yaw - PI / 6);
+							entity->yaw = std::max<real_t>(entity->yaw - .1, my->yaw - PI / 6);
 						}
 					}
 				}
 				if ( MONSTER_ATTACK == 4 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 6);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 6);
 				}
 				else
 				{
-					entity->pitch = std::min(entity->pitch + .1, 0.0);
+					entity->pitch = std::min<real_t>(entity->pitch + .1, 0.0);
 				}
 				break;
 			}

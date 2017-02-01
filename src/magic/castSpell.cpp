@@ -229,7 +229,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if (chance >= spellcasting / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
 			extramagic = rand() % (300 / (spellcasting + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
-			extramagic = std::min(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
+			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
 			caster->drainMP(extramagic);
 		}
 
@@ -289,8 +289,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		bool swimming = FALSE;
 		if (players[player] && players[player]->entity)
 		{
-			int x = std::min<int>(std::max(0.0, floor(caster->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0.0, floor(caster->y / 16)), map.height - 1);
+			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
 			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
 			{
 				swimming = TRUE;

@@ -145,7 +145,7 @@ bool loadInterfaceResources()
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
-	minotaur_bmp = loadImage("images/system/minotaur.png");
+	minotaur_bmp = loadImage("images/sprites/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
 	attributesleft_bmp = loadImage("images/system/AttributesLeftHighlighted.png");
@@ -417,10 +417,17 @@ void freeInterfaceResources()
 
 void defaultImpulses()
 {
+#ifdef PANDORA
+	impulses[IN_FORWARD] = 82;
+	impulses[IN_LEFT] = 80;
+	impulses[IN_BACK] = 81;
+	impulses[IN_RIGHT] = 79;
+#else
 	impulses[IN_FORWARD] = 26;
 	impulses[IN_LEFT] = 4;
 	impulses[IN_BACK] = 22;
 	impulses[IN_RIGHT] = 7;
+#endif
 	impulses[IN_TURNL] = 20;
 	impulses[IN_TURNR] = 8;
 	impulses[IN_UP] = 6;
@@ -428,9 +435,15 @@ void defaultImpulses()
 	impulses[IN_CHAT] = 40;
 	impulses[IN_COMMAND] = 56;
 	impulses[IN_STATUS] = 43;
+#ifdef PANDORA
+	impulses[IN_SPELL_LIST] = 75;
+	impulses[IN_CAST_SPELL] = 77;
+	impulses[IN_DEFEND] = 78;
+#else
 	impulses[IN_SPELL_LIST] = 16;
 	impulses[IN_CAST_SPELL] = 9;
 	impulses[IN_DEFEND] = 44;
+#endif
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
 
@@ -470,19 +483,35 @@ void defaultImpulses()
 
 void defaultConfig()
 {
+#ifdef PANDORA
+	consoleCommand("/res 960x600");
+	consoleCommand("/gamma 2.000");
+	consoleCommand("/smoothlighting");
+	consoleCommand("/fullscreen");
+#else
 	consoleCommand("/res 1280x720");
 	consoleCommand("/gamma 1.000");
 	consoleCommand("/smoothlighting");
+#endif
 	consoleCommand("/shaking");
 	consoleCommand("/bobbing");
 	consoleCommand("/sfxvolume 64");
 	consoleCommand("/musvolume 32");
+#ifdef PANDORA
+	consoleCommand("/mousespeed 105");
+	consoleCommand("/svflags 30");
+	consoleCommand("/bind 82 IN_FORWARD");
+	consoleCommand("/bind 80 IN_LEFT");
+	consoleCommand("/bind 81 IN_BACK");
+	consoleCommand("/bind 79 IN_RIGHT");
+#else
 	consoleCommand("/mousespeed 16");
 	consoleCommand("/svflags 30");
 	consoleCommand("/bind 26 IN_FORWARD");
 	consoleCommand("/bind 4 IN_LEFT");
 	consoleCommand("/bind 22 IN_BACK");
 	consoleCommand("/bind 7 IN_RIGHT");
+#endif
 	consoleCommand("/bind 20 IN_TURNL");
 	consoleCommand("/bind 8 IN_TURNR");
 	consoleCommand("/bind 6 IN_UP");
@@ -490,9 +519,15 @@ void defaultConfig()
 	consoleCommand("/bind 40 IN_CHAT");
 	consoleCommand("/bind 56 IN_COMMAND");
 	consoleCommand("/bind 43 IN_STATUS");
+#ifdef PANDORA
+	consoleCommand("/bind 75 IN_SPELL_LIST");
+	consoleCommand("/bind 77 IN_CAST_SPELL");
+	consoleCommand("/bind 78 IN_DEFEND");
+#else
 	consoleCommand("/bind 16 IN_SPELL_LIST");
 	consoleCommand("/bind 9 IN_CAST_SPELL");
 	consoleCommand("/bind 44 IN_DEFEND");
+#endif
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/joybind 307 INJOY_STATUS");

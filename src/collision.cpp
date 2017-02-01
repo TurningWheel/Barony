@@ -22,6 +22,9 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#ifdef __ARM_NEON__
+#include <arm_neon.h>
+#endif
 
 /*-------------------------------------------------------------------------------
 
@@ -31,9 +34,9 @@
 
 -------------------------------------------------------------------------------*/
 
-double entityDist(Entity* my, Entity* your)
+real_t entityDist(Entity* my, Entity* your)
 {
-	double dx, dy;
+	real_t dx, dy;
 	dx = my->x - your->x;
 	dy = my->y - your->y;
 	return sqrt(dx * dx + dy * dy);
@@ -146,7 +149,7 @@ Entity* entityClicked()
 		}
 		else
 		{
-			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey);
 		}
 	}
 	else
@@ -159,14 +162,13 @@ Entity* entityClicked()
 		}
 		else
 		{
-			glReadPixels(xres / 2, yres / 2, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
+			uidnum = GO_GetPixelU32(xres / 2, yres / 2);
 		}
 	}
 
 	// pixel processing (opengl only)
 	if ( softwaremode == FALSE)
 	{
-		uidnum = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
 		return uidToEntity(uidnum);
 	}
 	else
@@ -266,10 +268,18 @@ bool entityInsideSomething(Entity* entity)
 {
 	node_t* node;
 	int z;
-
+	int x, y;
+	#ifdef __ARM_NEON__
+	int32x2_t xy = vcvt_s32_f32(vmul_n_f32(vld1_f32(&entity->x), 1.0f/16.0f));
+	x = xy[0];
+	y = xy[1];
+	#else
+	x = (long)floor(entity->x / 16);
+	y = (long)floor(entity->y / 16);
+	#endif
 	// test against the map
 	for ( z = 0; z < MAPLAYERS; z++ )
-		if ( entityInsideTile(entity, entity->x / 16, entity->y / 16, z) )
+		if ( entityInsideTile(entity, x, y, z) )
 		{
 			return TRUE;
 		}
@@ -299,7 +309,7 @@ bool entityInsideSomething(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-int barony_clear(double tx, double ty, Entity* my)
+int barony_clear(real_t tx, real_t ty, Entity* my)
 {
 	if (!my)
 	{
@@ -307,17 +317,59 @@ int barony_clear(double tx, double ty, Entity* my)
 	}
 
 	long x, y;
-	double tx2, ty2;
+	real_t tx2, ty2;
 	node_t* node;
 	Entity* entity;
 	bool levitating = FALSE;
+// Reworked that function to break the loop in two part. 
+// A first fast one using integer only x/y
+// And the second part that loop on entity and used a global BoundingBox collision detection
+// Also, static stuff are out of the loop too
 
-	for ( ty2 = ty - my->sizey; ty2 <= ty + my->sizey; ty2++ )
+	Stat* stats = my->getStats();
+	// moved static stuff outside of the loop
+	if ( stats )
 	{
-		for ( tx2 = tx - my->sizex; tx2 <= tx + my->sizex; tx2++ )
+		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
 		{
-			x = (long)floor(tx2 / 16);
-			y = (long)floor(ty2 / 16);
+			levitating = TRUE;
+		}
+		if ( stats->ring != NULL )
+			if ( stats->ring->type == RING_LEVITATION )
+			{
+				levitating = TRUE;
+			}
+		if ( stats->shoes != NULL )
+			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
+			{
+				levitating = TRUE;
+			}
+	}
+	bool isMonster = FALSE;
+	if ( my )
+		if ( my->behavior == &actMonster )
+		{
+			isMonster = TRUE;
+		}
+	if ( isMonster && multiplayer == CLIENT )
+		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
+		{
+			levitating = TRUE;
+		}
+	if ( my )
+		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
+		{
+			levitating = TRUE;
+		}
+
+	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
+	long xmin = floor((tx - my->sizex)/16), xmax = floor((tx + my->sizex)/16);
+	const real_t tymin = ty - my->sizey, tymax = ty + my->sizey;
+	const real_t txmin = tx - my->sizex, txmax = tx + my->sizex;
+	for ( y = ymin; y <= ymax; y++ )
+	{
+		for ( x = xmin;  x <= xmax; x++ )
+		{
 			if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 			{
 				if (map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height])
@@ -330,40 +382,7 @@ int barony_clear(double tx, double ty, Entity* my)
 					hit.entity = NULL;
 					return 0;
 				}
-				Stat* stats;
-				if ( (stats = my->getStats()) != NULL )
-				{
-					if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
-					{
-						levitating = TRUE;
-					}
-					if ( stats->ring != NULL )
-						if ( stats->ring->type == RING_LEVITATION )
-						{
-							levitating = TRUE;
-						}
-					if ( stats->shoes != NULL )
-						if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-						{
-							levitating = TRUE;
-						}
-				}
-				bool isMonster = FALSE;
-				if ( my )
-					if ( my->behavior == &actMonster )
-					{
-						isMonster = TRUE;
-					}
-				if ( isMonster && multiplayer == CLIENT )
-					if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
-					{
-						levitating = TRUE;
-					}
-				if ( my )
-					if ( my->behavior != &actPlayer && my->behavior != &actMonster )
-					{
-						levitating = TRUE;
-					}
+	
 				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
 				{
 					// no floor
@@ -375,118 +394,122 @@ int barony_clear(double tx, double ty, Entity* my)
 					return 0;
 				}
 			}
-			for (node = map.entities->first; node != NULL; node = node->next)
+		}
+	}
+	for (node = map.entities->first; node != NULL; node = node->next)
+	{
+		entity = (Entity*)node->element;
+		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid )
+		{
+			continue;
+		}
+		if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
+		{
+			continue;    // monsters don't have hard collision with door frames
+		}
+		Stat* myStats = stats; //my->getStats();	//SEB <<<
+		Stat* yourStats = entity->getStats();
+		if ( myStats && yourStats )
+		{
+			if ( yourStats->leader_uid == my->uid )
 			{
-				entity = (Entity*)node->element;
-				if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid )
+				continue;
+			}
+			if ( myStats->leader_uid == entity->uid )
+			{
+				continue;
+			}
+			if ( monsterally[myStats->type][yourStats->type] )
+			{
+				continue;
+			}
+			if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
+			{
+				continue;
+			}
+		}
+		if ( multiplayer == CLIENT )
+		{
+			// fixes bug where clients can't move through humans
+			if ( (entity->sprite >= 113 && entity->sprite < 118) ||
+					(entity->sprite >= 125 && entity->sprite < 130) ||
+					(entity->sprite >= 332 && entity->sprite < 334) ||
+					(entity->sprite >= 341 && entity->sprite < 347) ||
+					(entity->sprite >= 354 && entity->sprite < 360) ||
+					(entity->sprite >= 367 && entity->sprite < 373) ||
+					(entity->sprite >= 380 && entity->sprite < 386) ||
+					entity->sprite == 217 )   // human heads
+			{
+				continue;
+			}
+			else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
+			{
+				continue; // fix clients not being able to walk through friendly monsters
+			}
+		}
+		const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
+		const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
+		if( (txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax) )
+		{
+			if( (tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax))
+			{
+				tx2 = std::max(txmin, exmin);
+				ty2 = std::max(tymin, eymin);
+				hit.x = tx2;
+				hit.y = ty2;
+				hit.mapx = entity->x / 16;
+				hit.mapy = entity->y / 16;
+				hit.entity = entity;
+				if ( multiplayer != CLIENT )
 				{
-					continue;
-				}
-				if ( my->behavior == &actMonster && entity->behavior == &actDoorFrame )
-				{
-					continue;    // monsters don't have hard collision with door frames
-				}
-				Stat* myStats = my->getStats();
-				Stat* yourStats = entity->getStats();
-				if ( myStats && yourStats )
-				{
-					if ( yourStats->leader_uid == my->uid )
+					if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
 					{
-						continue;
-					}
-					if ( myStats->leader_uid == entity->uid )
-					{
-						continue;
-					}
-					if ( monsterally[myStats->type][yourStats->type] )
-					{
-						continue;
-					}
-					if ( (myStats->type == HUMAN || my->flags[USERFLAG2]) && (yourStats->type == HUMAN || entity->flags[USERFLAG2]) )
-					{
-						continue;
-					}
-				}
-				if ( multiplayer == CLIENT )
-				{
-					// fixes bug where clients can't move through humans
-					if ( (entity->sprite >= 113 && entity->sprite < 118) ||
-					        (entity->sprite >= 125 && entity->sprite < 130) ||
-					        (entity->sprite >= 332 && entity->sprite < 334) ||
-					        (entity->sprite >= 341 && entity->sprite < 347) ||
-					        (entity->sprite >= 354 && entity->sprite < 360) ||
-					        (entity->sprite >= 367 && entity->sprite < 373) ||
-					        (entity->sprite >= 380 && entity->sprite < 386) ||
-					        entity->sprite == 217 )   // human heads
-					{
-						continue;
-					}
-					else if ( my->behavior == &actPlayer && entity->flags[USERFLAG2] )
-					{
-						continue; // fix clients not being able to walk through friendly monsters
-					}
-				}
-				if ( tx2 >= entity->x - entity->sizex && tx2 < entity->x + entity->sizex )
-				{
-					if ( ty2 >= entity->y - entity->sizey && ty2 < entity->y + entity->sizey )
-					{
-						hit.x = tx2;
-						hit.y = ty2;
-						hit.mapx = entity->x / 16;
-						hit.mapy = entity->y / 16;
-						hit.entity = entity;
-						if ( multiplayer != CLIENT )
-						{
-							if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
-							{
-								bool dyrnwyn = FALSE;
-								Stat* stats = hit.entity->getStats();
-								if ( stats )
-									if ( stats->weapon )
-										if ( stats->weapon->type == ARTIFACT_SWORD )
-										{
-											dyrnwyn = TRUE;
-										}
-								if ( !dyrnwyn )
+						bool dyrnwyn = FALSE;
+						Stat* stats = hit.entity->getStats();
+						if ( stats )
+							if ( stats->weapon )
+								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
-									hit.entity->flags[BURNING] = TRUE;
-									if ( hit.entity->behavior == &actPlayer)
-									{
-										messagePlayer(hit.entity->skill[2], language[590]);
-										if ( hit.entity->skill[2] > 0 )
-										{
-											serverUpdateEntityFlag(hit.entity, BURNING);
-										}
-									}
+									dyrnwyn = TRUE;
 								}
-							}
-							else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+						if ( !dyrnwyn )
+						{
+							hit.entity->flags[BURNING] = TRUE;
+							if ( hit.entity->behavior == &actPlayer)
 							{
-								bool dyrnwyn = FALSE;
-								Stat* stats = my->getStats();
-								if ( stats )
-									if ( stats->weapon )
-										if ( stats->weapon->type == ARTIFACT_SWORD )
-										{
-											dyrnwyn = TRUE;
-										}
-								if ( !dyrnwyn )
+								messagePlayer(hit.entity->skill[2], language[590]);
+								if ( hit.entity->skill[2] > 0 )
 								{
-									my->flags[BURNING] = TRUE;
-									if ( my->behavior == &actPlayer)
-									{
-										messagePlayer(my->skill[2], language[590]);
-										if ( my->skill[2] > 0 )
-										{
-											serverUpdateEntityFlag(my, BURNING);
-										}
-									}
+									serverUpdateEntityFlag(hit.entity, BURNING);
 								}
 							}
 						}
-						return 0;
+					}
+					else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
+					{
+						bool dyrnwyn = FALSE;
+						Stat* stats = my->getStats();
+						if ( stats )
+							if ( stats->weapon )
+								if ( stats->weapon->type == ARTIFACT_SWORD )
+								{
+									dyrnwyn = TRUE;
+								}
+						if ( !dyrnwyn )
+						{
+							my->flags[BURNING] = TRUE;
+							if ( my->behavior == &actPlayer)
+							{
+								messagePlayer(my->skill[2], language[590]);
+								if ( my->skill[2] > 0 )
+								{
+									serverUpdateEntityFlag(my, BURNING);
+								}
+							}
+						}
 					}
 				}
+				return 0;
 			}
 		}
 	}
@@ -503,9 +526,9 @@ int barony_clear(double tx, double ty, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-double clipMove(double* x, double* y, double vx, double vy, Entity* my)
+real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my)
 {
-	double tx, ty;
+	real_t tx, ty;
 	hit.entity = NULL;
 
 	// move x and y
@@ -554,11 +577,11 @@ double clipMove(double* x, double* y, double vx, double vy, Entity* my)
 
 -------------------------------------------------------------------------------*/
 
-Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int entities, Entity* target )
+Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int entities, Entity* target )
 {
 	Entity* result = NULL;
 	node_t* node;
-	double lowestDist = 9999;
+	real_t lowestDist = 9999;
 	int quadrant = 0;
 
 	while ( angle >= PI * 2 )
@@ -615,12 +638,12 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 		if ( quadrant == 2 || quadrant == 4 )
 		{
 			// upper right and lower left
-			double upperX = entity->x + entity->sizex;
-			double upperY = entity->y - entity->sizey;
-			double lowerX = entity->x - entity->sizex;
-			double lowerY = entity->y + entity->sizey;
-			double upperTan = atan2(upperY - y1, upperX - x1);
-			double lowerTan = atan2(lowerY - y1, lowerX - x1);
+			real_t upperX = entity->x + entity->sizex;
+			real_t upperY = entity->y - entity->sizey;
+			real_t lowerX = entity->x - entity->sizex;
+			real_t lowerY = entity->y + entity->sizey;
+			real_t upperTan = atan2(upperY - y1, upperX - x1);
+			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
 			if ( adjust )
 			{
 				if ( upperTan < 0 )
@@ -638,7 +661,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle >= upperTan && angle <= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -650,7 +673,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle <= upperTan && angle >= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -662,12 +685,12 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 		else
 		{
 			// upper left and lower right
-			double upperX = entity->x - entity->sizex;
-			double upperY = entity->y - entity->sizey;
-			double lowerX = entity->x + entity->sizex;
-			double lowerY = entity->y + entity->sizey;
-			double upperTan = atan2(upperY - y1, upperX - x1);
-			double lowerTan = atan2(lowerY - y1, lowerX - x1);
+			real_t upperX = entity->x - entity->sizex;
+			real_t upperY = entity->y - entity->sizey;
+			real_t lowerX = entity->x + entity->sizex;
+			real_t lowerY = entity->y + entity->sizey;
+			real_t upperTan = atan2(upperY - y1, upperX - x1);
+			real_t lowerTan = atan2(lowerY - y1, lowerX - x1);
 			if ( adjust )
 			{
 				if ( upperTan < 0 )
@@ -685,7 +708,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle >= upperTan && angle <= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -697,7 +720,7 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 			{
 				if ( angle <= upperTan && angle >= lowerTan )
 				{
-					double dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
+					real_t dist = sqrt(pow(x1 - entity->x, 2) + pow(y1 - entity->y, 2));
 					if ( dist < lowestDist )
 					{
 						lowestDist = dist;
@@ -720,16 +743,16 @@ Entity* findEntityInLine( Entity* my, double x1, double y1, double angle, int en
 
 -------------------------------------------------------------------------------*/
 
-double lineTrace( Entity* my, double x1, double y1, double angle, double range, int entities, bool ground )
+real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground )
 {
 	int posx, posy;
-	double fracx, fracy;
-	double rx, ry;
-	double ix, iy;
+	real_t fracx, fracy;
+	real_t rx, ry;
+	real_t ix, iy;
 	int inx, iny;
-	double arx, ary;
-	double dincx, dval0, dincy, dval1;
-	double d;
+	real_t arx, ary;
+	real_t dincx, dval0, dincy, dval1;
+	real_t d;
 
 	posx = floor(x1);
 	posy = floor(y1); // integer coordinates
@@ -873,16 +896,16 @@ double lineTrace( Entity* my, double x1, double y1, double angle, double range, 
 	return range;
 }
 
-double lineTraceTarget( Entity* my, double x1, double y1, double angle, double range, int entities, bool ground, Entity* target )
+real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, int entities, bool ground, Entity* target )
 {
 	int posx, posy;
-	double fracx, fracy;
-	double rx, ry;
-	double ix, iy;
+	real_t fracx, fracy;
+	real_t rx, ry;
+	real_t ix, iy;
 	int inx, iny;
-	double arx, ary;
-	double dincx, dval0, dincy, dval1;
-	double d;
+	real_t arx, ary;
+	real_t dincx, dval0, dincy, dval1;
+	real_t d;
 
 	posx = floor(x1);
 	posy = floor(y1); // integer coordinates

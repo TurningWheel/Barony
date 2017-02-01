@@ -29,13 +29,13 @@ extern list_t steamAchievements;
 extern Uint32 impulses[NUMIMPULSES];
 extern Uint32 joyimpulses[NUM_JOY_IMPULSES]; //Joystick/gamepad only impulses.
 extern int reversemouse;
-extern double mousespeed;
+extern real_t mousespeed;
 
 void handleEvents(void);
 void startMessages();
 
-extern double camera_shakex;
-extern double camera_shakex2;
+extern real_t camera_shakex;
+extern real_t camera_shakex2;
 extern int camera_shakey;
 extern int camera_shakey2;
 
@@ -88,10 +88,10 @@ extern Uint32 uniqueGameKey;
 
 // definitions
 extern bool showfps;
-extern double t, ot, frameval[AVERAGEFRAMES];
+extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
-extern double fps;
+extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 10
 extern char classnames[10][10];

@@ -236,8 +236,8 @@ void consoleCommand(char* command_str)
 		}
 		if (players[clientnum] && players[clientnum]->entity)
 		{
-			int x = std::min<int>(std::max(0.0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0.0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
+			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
 			messagePlayer(clientnum, "pathMapGrounded value: %d", pathMapGrounded[y + x * map.height]);
 			messagePlayer(clientnum, "pathMapFlying value: %d", pathMapFlying[y + x * map.height]);
 		}

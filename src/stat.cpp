@@ -73,7 +73,7 @@ Stat::Stat()
 	this->amulet = NULL;
 	this->ring = NULL;
 	this->mask = NULL;
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 	this->monster_sound = NULL;
 #endif
 	this->monster_idlevar = 1;
@@ -635,7 +635,7 @@ Stat* Stat::copyStats()
 		newStat->mask = NULL;
 	}
 
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 	newStat->monster_sound = NULL;
 #endif
 	newStat->monster_idlevar = this->monster_idlevar;

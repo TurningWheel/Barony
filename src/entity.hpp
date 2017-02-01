@@ -62,22 +62,22 @@ public:
 
 	Uint32 uid;                    // entity uid
 	Uint32 ticks;                  // duration of the entity's existence
-	double x, y, z;                // world coordinates
-	double yaw, pitch, roll;       // rotation
-	double focalx, focaly, focalz; // focal point for rotation, movement, etc.
-	double scalex, scaley, scalez; // stretches/squashes the entity visually
+	real_t x, y, z;                // world coordinates
+	real_t yaw, pitch, roll;       // rotation
+	real_t focalx, focaly, focalz; // focal point for rotation, movement, etc.
+	real_t scalex, scaley, scalez; // stretches/squashes the entity visually
 	Sint32 sizex, sizey;           // entity bounding box size
 	Sint32 sprite;                 // the entity's sprite index
 
 	// network stuff
 	Uint32 lastupdate;                   // last time since the entity was updated
 	Uint32 lastupdateserver;             // used to sort out old packets
-	double vel_x, vel_y, vel_z;          // entity velocity vector
-	double new_x, new_y, new_z;          // world coordinates
-	double new_yaw, new_pitch, new_roll; // rotation
+	real_t vel_x, vel_y, vel_z;          // entity velocity vector
+	real_t new_x, new_y, new_z;          // world coordinates
+	real_t new_yaw, new_pitch, new_roll; // rotation
 
 	// entity attributes
-	double fskill[30]; // floating point general purpose variables
+	real_t fskill[30]; // floating point general purpose variables
 	Sint32 skill[30];  // general purpose variables
 	bool flags[16];    // engine flags
 	char* string;      // general purpose string

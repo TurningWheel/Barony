@@ -139,8 +139,8 @@ void drawMinimap()
 			}
 			else if ( entity->sprite == 245 )     // boulder.vox
 			{
-				x = std::min<int>(std::max(0.0, entity->x / 16), map.width - 1);
-				y = std::min<int>(std::max(0.0, entity->y / 16), map.height - 1);
+				x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+				y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( minimap[y][x] == 1 || minimap[y][x] == 2 )
 				{
 					glColor4f( 192 / 255.f, 64 / 255.f, 0 / 255.f, 1 );

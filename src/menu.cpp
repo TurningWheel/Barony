@@ -72,6 +72,13 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
+#ifdef PANDORA
+int resolutions[NUMRESOLUTIONS][2] =
+{
+	{ 800, 480 },
+	{ 960, 600 }
+};
+#else
 int resolutions[NUMRESOLUTIONS][2] =
 {
 	{ 960, 600 },
@@ -85,16 +92,17 @@ int resolutions[NUMRESOLUTIONS][2] =
 	{ 1920, 1080 },
 	{ 1920, 1200 }
 };
+#endif
 int settings_xres, settings_yres;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
-double settings_gamma;
+real_t settings_gamma;
 int settings_sfxvolume, settings_musvolume;
 int settings_impulses[NUMIMPULSES];
 int settings_joyimpulses[NUM_JOY_IMPULSES];
 int settings_reversemouse;
-double settings_mousespeed;
+real_t settings_mousespeed;
 bool settings_broadcast;
 bool settings_nohud;
 bool settings_colorblind;
@@ -146,7 +154,7 @@ int firstendmovietime = 0;
 int firstendmoviestage = 0;
 int secondendmovietime = 0;
 int secondendmoviestage = 0;
-double drunkextend = 0;
+real_t drunkextend = 0;
 bool losingConnection[4] = { false };
 bool subtitleVisible = false;
 int subtitleCurrent = 0;
@@ -157,6 +165,8 @@ bool confirmResolutionWindow = false;
 int resolutionConfirmationTimer = 0;
 Sint32 oldXres;
 Sint32 oldYres;
+Sint32 oldFullscreen;
+real_t oldGamma;
 button_t* revertResolutionButton = nullptr;
 
 void buttonCloseSettingsSubwindow(button_t* my);
@@ -527,8 +537,13 @@ void handleMainMenu(bool mode)
 					loadScore(0);
 					subx1 = xres / 2 - 400;
 					subx2 = xres / 2 + 400;
+#ifdef PANDORA
+					suby1 = yres / 2 - ((yres==480)?200:240);
+					suby2 = yres / 2 + ((yres==480)?200:240);
+#else
 					suby1 = yres / 2 - 240;
 					suby2 = yres / 2 + 240;
+#endif
 					strcpy(subtext, "");
 
 					// close button
@@ -1065,7 +1080,7 @@ void handleMainMenu(bool mode)
 			{
 				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
-					double ofov = fov;
+					real_t ofov = fov;
 					fov = 50;
 					glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 					fov = ofov;
@@ -1083,7 +1098,7 @@ void handleMainMenu(bool mode)
 					{
 						b = entity->flags[BRIGHT];
 						entity->flags[BRIGHT] = TRUE;
-						double ofov = fov;
+						real_t ofov = fov;
 						fov = 50;
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 						fov = ofov;
@@ -1431,12 +1446,12 @@ void handleMainMenu(bool mode)
 		drawDepressed(subx2 - 32, suby1 + 24, subx2 - 8, suby2 - 64);
 
 		// slider
-		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((double)std::max(numSteamLobbies + 1, 1) / 20));
+		slidersize = std::min<int>(((suby2 - 65) - (suby1 + 25)), ((suby2 - 65) - (suby1 + 25)) / ((real_t)std::max(numSteamLobbies + 1, 1) / 20));
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
 		drawWindowFancy(subx2 - 31, slidery, subx2 - 9, slidery + slidersize);
 
 		// directory list offset from slider
-		Sint32 y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
+		Sint32 y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
 		if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 32 && omousex < subx2 - 8 && omousey >= suby1 + 24 && omousey < suby2 - 64 )
 		{
 			slidery = oslidery + mousey - omousey;
@@ -1452,7 +1467,7 @@ void handleMainMenu(bool mode)
 			oslidery = slidery;
 		}
 		slidery = std::min(std::max(suby1 + 25, slidery), suby2 - 65 - slidersize);
-		y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
+		y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * (numSteamLobbies + 1);
 
 		// server flags tooltip variables
 		SDL_Rect flagsBox;
@@ -2740,8 +2755,13 @@ void handleMainMenu(bool mode)
 					subwindow = 1;
 					subx1 = xres / 2 - 400;
 					subx2 = xres / 2 + 400;
+#ifdef PANDORA
+					suby1 = yres / 2 - ((yres==480)?230:290);
+					suby2 = yres / 2 + ((yres==480)?230:290);
+#else
 					suby1 = yres / 2 - 300;
 					suby2 = yres / 2 + 300;
+#endif
 
 					if ( directConnect )
 					{
@@ -3427,7 +3447,7 @@ void handleMainMenu(bool mode)
 				players[clientnum]->entity->flags[BRIGHT] = TRUE;
 				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
-					double ofov = fov;
+					real_t ofov = fov;
 					fov = 50;
 					glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 					fov = ofov;
@@ -3445,7 +3465,7 @@ void handleMainMenu(bool mode)
 					{
 						b = entity->flags[BRIGHT];
 						entity->flags[BRIGHT] = TRUE;
-						double ofov = fov;
+						real_t ofov = fov;
 						fov = 50;
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 						fov = ofov;
@@ -3664,6 +3684,11 @@ void handleMainMenu(bool mode)
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
+#elif defined HAVE_OPENAL
+				if ( sound_group )
+				{
+					OPENAL_ChannelGroup_Stop(sound_group);
+				}
 #endif
 
 				// generate a unique game key (used to identify compatible save games)
@@ -3852,6 +3877,11 @@ void handleMainMenu(bool mode)
 				{
 					FMOD_ChannelGroup_Stop(sound_group);
 				}
+#elif defined HAVE_OPENAL
+				if ( sound_group )
+				{
+					OPENAL_ChannelGroup_Stop(sound_group);
+				}
 #endif
 				// load next level
 				mapseed = 0;
@@ -4019,6 +4049,11 @@ void handleMainMenu(bool mode)
 			if ( sound_group )
 			{
 				FMOD_ChannelGroup_Stop(sound_group);
+			}
+#elif defined HAVE_OPENAL
+			if ( sound_group )
+			{
+				OPENAL_ChannelGroup_Stop(sound_group);
 			}
 #endif
 
@@ -4430,7 +4465,7 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((double)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( intromovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
@@ -4525,7 +4560,7 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((double)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( firstendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
@@ -4588,7 +4623,7 @@ void handleMainMenu(bool mode)
 		pos.x = 0;
 		pos.y = 0;
 		pos.w = xres;
-		pos.h = (((double)xres) / backdrop_bmp->w) * backdrop_bmp->h;
+		pos.h = (((real_t)xres) / backdrop_bmp->w) * backdrop_bmp->h;
 		drawImageScaled(backdrop_bmp, NULL, &pos);
 
 		if ( secondendmovietime >= 600 || mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_ESCAPE] ||
@@ -4870,8 +4905,13 @@ void openSettingsWindow()
 	subx2 = xres / 2 + 352;
 	//suby1 = yres/2-192;
 	//suby2 = yres/2+192;
+#ifdef PANDORA
+	suby1 = yres / 2 - ((yres==480)?210:278);
+	suby2 = yres / 2 + ((yres==480)?210:278);
+#else
 	suby1 = yres / 2 - 288;
 	suby2 = yres / 2 + 288;
+#endif
 	strcpy(subtext, language[1306]);
 
 	// close button
@@ -5838,8 +5878,13 @@ void buttonHostLobby(button_t* my)
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
 	subx2 = xres / 2 + 400;
+#ifdef PANDORA
+	suby1 = yres / 2 - ((yres==480)?230:290);
+	suby2 = yres / 2 + ((yres==480)?230:290);
+#else
 	suby1 = yres / 2 - 300;
 	suby2 = yres / 2 + 300;
+#endif
 	if ( directConnect )
 	{
 		strcpy(subtext, language[1454]);
@@ -6258,11 +6303,13 @@ void applySettings()
 	// set video options
 	fov = settings_fov;
 	smoothlighting = settings_smoothlighting;
+	oldFullscreen = fullscreen;
 	fullscreen = settings_fullscreen;
 	shaking = settings_shaking;
 	bobbing = settings_bobbing;
 	spawn_blood = settings_spawn_blood;
 	colorblind = settings_colorblind;
+	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
 	oldXres = xres;
 	oldYres = yres;
@@ -6272,22 +6319,24 @@ void applySettings()
 	camera.winy = 0;
 	camera.winw = std::min(camera.winw, xres);
 	camera.winh = std::min(camera.winh, yres);
-	if ( !changeVideoMode() )
+	if(xres!=oldXres || yres!=oldYres || oldFullscreen!=fullscreen || oldGamma!=vidgamma)
 	{
-		printlog("critical error! Attempting to abort safely...\n");
-		mainloop = 0;
+		if ( !changeVideoMode() )
+		{
+			printlog("critical error! Attempting to abort safely...\n");
+			mainloop = 0;
+		}
+		if ( zbuffer != NULL )
+		{
+			free(zbuffer);
+		}
+		zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
+		if ( clickmap != NULL )
+		{
+			free(clickmap);
+		}
+		clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	}
-	if ( zbuffer != NULL )
-	{
-		free(zbuffer);
-	}
-	zbuffer = (double*) malloc(sizeof(double) * xres * yres);
-	if ( clickmap != NULL )
-	{
-		free(clickmap);
-	}
-	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
-
 	// set audio options
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
@@ -6295,6 +6344,9 @@ void applySettings()
 #ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+#elif defined HAVE_OPENAL
+	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 #endif
 
 	// set keyboard options
@@ -6484,7 +6536,7 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 		{
 			if ( omousey >= y - (slider_font->h / slider_font_char_width) / 2 && omousey < y + ((slider_font->h / slider_font_char_width) / 2) * 3 )
 			{
-				*var = ((double)(mousex - x - (slider_font->w / slider_font_char_width) / 2) / sliderLength) * range + minvalue;
+				*var = ((real_t)(mousex - x - (slider_font->w / slider_font_char_width) / 2) / sliderLength) * range + minvalue;
 				if ( increment )
 				{
 					*var += increment / 2;
@@ -6498,12 +6550,12 @@ void doSlider(int x, int y, int dots, int minvalue, int maxvalue, int increment,
 
 	// draw slider
 	int sliderx = x + (slider_font->w / slider_font_char_width) / 2;
-	sliderx += (((double)(*var) - minvalue) / range) * sliderLength;
+	sliderx += (((real_t)(*var) - minvalue) / range) * sliderLength;
 	drawWindowFancy( sliderx - (slider_font->w / slider_font_char_width) / 2, y - (slider_font->h / slider_font_char_width) / 2, sliderx + (slider_font->w / slider_font_char_width) / 2, y + ((slider_font->h / slider_font_char_width) / 2) * 3);
 }
 
 // handles slider (float)
-void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double increment, double* var)
+void doSliderF(int x, int y, int dots, real_t minvalue, real_t maxvalue, real_t increment, real_t* var)
 {
 	int c;
 
@@ -6517,7 +6569,7 @@ void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double 
 	printTextFormatted(SLIDERFONT, x, y, tempstr, *var);
 
 	// control
-	double range = maxvalue - minvalue;
+	real_t range = maxvalue - minvalue;
 	int sliderLength = ((strlen(tempstr) - 6) * (SLIDERFONT->w / 16));
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
@@ -6525,7 +6577,7 @@ void doSliderF(int x, int y, int dots, double minvalue, double maxvalue, double 
 		{
 			if ( omousey >= y - (SLIDERFONT->h / 16) / 2 && omousey < y + ((SLIDERFONT->h / 16) / 2) * 3 )
 			{
-				*var = ((double)(mousex - x - (SLIDERFONT->w / 16) / 2) / sliderLength) * range + minvalue;
+				*var = ((real_t)(mousex - x - (SLIDERFONT->w / 16) / 2) / sliderLength) * range + minvalue;
 				if ( increment )
 				{
 					*var += increment / 2;

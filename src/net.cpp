@@ -1698,6 +1698,11 @@ void clientHandlePacket()
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
+#elif defined HAVE_OPENAL
+		if ( sound_group )
+		{
+			OPENAL_ChannelGroup_Stop(sound_group);
+		}
 #endif
 
 		// show loading message
@@ -1707,11 +1712,8 @@ void clientHandlePacket()
 		int w, h;
 		TTF_SizeUTF8(ttf16, LOADSTR, &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR);
-#ifdef APPLE
-		SDL_RenderPresent(renderer);
-#else
-		SDL_GL_SwapWindow(screen);
-#endif
+
+		GO_SwapBuffers(screen);
 
 		// unlock some steam achievements
 		if ( !secretlevel )

@@ -112,7 +112,7 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 				}
 				if ( wallhit == FALSE || (wallhit == TRUE && u2 == u && v2 == v) )
 				{
-					light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)] = intensity - intensity * std::min(sqrt(dx * dx + dy * dy) / radius, 1.0);
+					light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)] = intensity - intensity * std::min<float>(sqrtf(dx * dx + dy * dy) / radius, 1.0f);
 					lightmap[v + u * map.height] += light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
 				}
 			}
@@ -153,7 +153,7 @@ light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 			{
 				dx = u - x;
 				dy = v - y;
-				light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)] = intensity - intensity * std::min(sqrt(dx * dx + dy * dy) / radius, 1.0);
+				light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)] = intensity - intensity * std::min<float>(sqrtf(dx * dx + dy * dy) / radius, 1.0f);
 				lightmap[v + u * map.height] += light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
 			}
 		}
