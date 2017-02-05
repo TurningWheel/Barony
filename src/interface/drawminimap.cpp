@@ -174,7 +174,7 @@ void drawMinimap()
 			node_t* node2;
 			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != NULL; node2 = node2->next )
 			{
-				if ( *((Uint32*)node2->element) == entity->uid )
+				if ( *((Uint32*)node2->element) == entity->getUID() )
 				{
 					drawchar = TRUE;
 					break;

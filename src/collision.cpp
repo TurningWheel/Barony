@@ -399,7 +399,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	for (node = map.entities->first; node != NULL; node = node->next)
 	{
 		entity = (Entity*)node->element;
-		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->uid )
+		if ( entity == my || entity->flags[PASSABLE] || my->parent == entity->getUID() )
 		{
 			continue;
 		}
@@ -411,11 +411,11 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		Stat* yourStats = entity->getStats();
 		if ( myStats && yourStats )
 		{
-			if ( yourStats->leader_uid == my->uid )
+			if ( yourStats->leader_uid == my->getUID() )
 			{
 				continue;
 			}
-			if ( myStats->leader_uid == entity->uid )
+			if ( myStats->leader_uid == entity->getUID() )
 			{
 				continue;
 			}

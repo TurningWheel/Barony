@@ -147,7 +147,7 @@ Entity* spawnGib(Entity* parentent)
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
-	entity->parent = parentent->uid;
+	entity->parent = parentent->getUID();
 	entity->sizex = 2;
 	entity->sizey = 2;
 	entity->yaw = (rand() % 360) * PI / 180.0;
@@ -170,7 +170,7 @@ Entity* spawnGib(Entity* parentent)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }

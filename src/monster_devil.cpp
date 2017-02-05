@@ -95,7 +95,7 @@ void initDevil(Entity* my, Stat* myStats)
 
 		if (players[0] && players[0]->entity)
 		{
-			MONSTER_TARGET = players[0]->entity->uid;
+			MONSTER_TARGET = players[0]->entity->getUID();
 			MONSTER_TARGETX = players[0]->entity->x;
 			MONSTER_TARGETY = players[0]->entity->y;
 		}
@@ -105,7 +105,7 @@ void initDevil(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(303, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -113,7 +113,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][1][1]; // 0
 	entity->focalz = limbs[DEVIL][1][2]; // -4
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -123,7 +123,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(305, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -131,7 +131,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][2][1]; // 18
 	entity->focalz = limbs[DEVIL][2][2]; // 6
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -141,7 +141,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(306, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -149,7 +149,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][3][1]; // 17
 	entity->focalz = limbs[DEVIL][3][2]; // 26
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -159,7 +159,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(307, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -167,7 +167,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][4][1]; // -18
 	entity->focalz = limbs[DEVIL][4][2]; // 6
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -177,7 +177,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(308, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -185,7 +185,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][5][1]; // -17
 	entity->focalz = limbs[DEVIL][5][2]; // 26
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;

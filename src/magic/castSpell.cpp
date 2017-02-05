@@ -134,7 +134,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 
 	//Hand the torch off to the spell animator. And stuff. Stuff. I mean spell animation handler thingymabobber.
-	fireOffSpellAnimation(&cast_animation, caster->uid, spell);
+	fireOffSpellAnimation(&cast_animation, caster->getUID(), spell);
 
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
@@ -355,7 +355,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->name, spellElement_light.name))
 		{
 			entity = newEntity(175, 1, map.entities); // black magic ball
-			entity->parent = caster->uid;
+			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
 			entity->z = -5.5 + ((-6.5f + -4.5f) / 2) * sin(0);
@@ -374,7 +374,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
 			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->getUID();
 			if ( using_magicstaff )
 			{
 				((spell_t*)spellnode->element)->magicstaff = TRUE;
@@ -417,7 +417,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell = (spell_t*)(spellnode->element);
 			channeled_spell->magic_effects_node = spellnode;
 			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie)
 			{
@@ -456,7 +456,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell = (spell_t*)(spellnode->element);
 			channeled_spell->magic_effects_node = spellnode;
 			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie)
 			{
@@ -686,7 +686,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if (propulsion == PROPULSION_MISSILE)
 		{
 			entity = newEntity(168, 1, map.entities); // red magic ball
-			entity->parent = caster->uid;
+			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
 			entity->z = -1;
@@ -706,7 +706,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->skill[5] = traveltime;
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
-			((spell_t*)node->element)->caster = caster->uid;
+			((spell_t*)node->element)->caster = caster->getUID();
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 

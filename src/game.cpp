@@ -475,7 +475,7 @@ void gameLogic(void)
 												{
 													entity_uids--;
 												}
-												entity->uid = -3;
+												entity->setUID(-3);
 											}
 										}
 									}
@@ -778,7 +778,7 @@ void gameLogic(void)
 									newNode->size = sizeof(tempStats);
 
 									Stat* monsterStats = (Stat*)newNode->element;
-									monsterStats->leader_uid = players[c]->entity->uid;
+									monsterStats->leader_uid = players[c]->entity->getUID();
 									if (strcmp(monsterStats->name, ""))
 									{
 										messagePlayer(c, language[720], monsterStats->name);
@@ -796,12 +796,12 @@ void gameLogic(void)
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
-									*myuid = monster->uid;
+									*myuid = monster->getUID();
 
 									if ( c > 0 && multiplayer == SERVER )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
-										SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
 										net_packet->address.host = net_clients[c - 1].host;
 										net_packet->address.port = net_clients[c - 1].port;
 										net_packet->len = 8;
@@ -870,7 +870,7 @@ void gameLogic(void)
 								if ( entity->flags[UPDATENEEDED] == TRUE && entity->flags[NOUPDATE] == FALSE )
 								{
 									// update entity for all clients
-									if ( entity->uid % (TICKS_PER_SECOND * 4) == ticks % (TICKS_PER_SECOND * 4) )
+									if ( entity->getUID() % (TICKS_PER_SECOND * 4) == ticks % (TICKS_PER_SECOND * 4) )
 									{
 										sendEntityUDP(entity, c, TRUE);
 									}
@@ -1179,7 +1179,7 @@ void gameLogic(void)
 												{
 													entity_uids--;
 												}
-												entity->uid = -3;
+												entity->setUID(-3);
 											}
 										}
 									}
@@ -1206,11 +1206,11 @@ void gameLogic(void)
 					Entity* entity = (Entity*)nodeToCheck->element;
 					if ( entity )
 					{
-						if ( !entity->flags[NOUPDATE] && entity->uid > 0 && entity->uid != -2 && entity->uid != -3 && entity->uid != -4 )
+						if ( !entity->flags[NOUPDATE] && entity->getUID() > 0 && entity->getUID() != -2 && entity->getUID() != -3 && entity->getUID() != -4 )
 						{
 							strcpy((char*)net_packet->data, "ENTE");
 							net_packet->data[4] = clientnum;
-							SDLNet_Write32(entity->uid, &net_packet->data[5]);
+							SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
 							net_packet->address.host = net_server.host;
 							net_packet->address.port = net_server.port;
 							net_packet->len = 9;
@@ -1308,7 +1308,7 @@ void gameLogic(void)
 											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
 											{
 												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->skill[2] == entity->uid && bodypart->parent == entity->uid )
+												if ( bodypart->skill[2] == entity->getUID() && bodypart->parent == entity->getUID() )
 												{
 													bodypart->x += entity->x - ox;
 													bodypart->y += entity->y - oy;
@@ -2820,7 +2820,7 @@ int main(int argc, char** argv)
 						}
 						if (players[clientnum] && players[clientnum]->entity)
 						{
-							castSpellInit(players[clientnum]->entity->uid, selected_spell);
+							castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
 						}
 					}
 

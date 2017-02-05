@@ -57,7 +57,7 @@ Entity* spawnFlame(Entity* parentent)
 	entity = newEntity(13, 1, map.entities); // flame particle
 	if ( intro )
 	{
-		entity->uid = 0;
+		entity->setUID(0);
 	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
@@ -82,7 +82,7 @@ Entity* spawnFlame(Entity* parentent)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }

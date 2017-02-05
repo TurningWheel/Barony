@@ -606,7 +606,7 @@ void actBoulderTrap(Entity* my)
 					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 					{
 						Entity* entity = newEntity(245, 1, map.entities); // boulder
-						entity->parent = my->uid;
+						entity->parent = my->getUID();
 						entity->x = (x << 4) + 8;
 						entity->y = (y << 4) + 8;
 						entity->z = -64;

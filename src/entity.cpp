@@ -116,6 +116,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 		{
 			uid = entity_uids;
 			entity_uids++;
+			map.entities_map.insert({uid, mynode});
 		}
 		else
 		{
@@ -130,6 +131,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	ranbehavior = FALSE;
 	parent = 0;
 	path = NULL;
+}
+
+void Entity::setUID(Sint32 new_uid) {
+	if ( mynode->list == map.entities ) {
+		if(uid>0)
+			map.entities_map.erase(uid);
+		if(new_uid>0)
+			map.entities_map.insert({new_uid, mynode});
+	}
+	uid = new_uid;
 }
 
 /*-------------------------------------------------------------------------------
@@ -1087,17 +1098,22 @@ void Entity::checkBetterEquipment(Stat* myStats)
 
 -------------------------------------------------------------------------------*/
 
-Entity* uidToEntity(Uint32 uidnum)
+Entity* uidToEntity(Sint32 uidnum)
 {
 	node_t* node;
 	Entity* entity;
-
-	for ( node = map.entities->first; node != NULL; node = node->next )
-	{
-		entity = (Entity*) node->element;
-		if ( uidnum == entity->uid )
+	if(uidnum>0) {
+		auto it = map.entities_map.find(uidnum);
+		if(it != map.entities_map.end())
+			return (Entity*)it->second->element;
+	} else {
+		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
-			return entity;
+			entity = (Entity*) node->element;
+			if ( uidnum == entity->getUID() )
+			{
+				return entity;
+			}
 		}
 	}
 	return NULL;

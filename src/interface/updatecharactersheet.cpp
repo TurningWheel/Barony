@@ -102,7 +102,7 @@ void updateCharacterSheet()
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*) node->element;
-				if ( (Sint32)entity->uid == -4 )
+				if ( (Sint32)entity->getUID() == -4 )
 				{
 					glDrawSprite(&camera_charsheet, entity, REALCOLORS);
 				}
@@ -113,11 +113,11 @@ void updateCharacterSheet()
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*) node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->uid == -4 )
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = TRUE;
-					if ( (Sint32)entity->uid == -4 )
+					if ( (Sint32)entity->getUID() == -4 )
 					{
 						glDrawSprite(&camera_charsheet, entity, REALCOLORS);
 					}
