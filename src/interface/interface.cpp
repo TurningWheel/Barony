@@ -145,7 +145,7 @@ bool loadInterfaceResources()
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
-	minotaur_bmp = loadImage("images/sprites/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
+	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
 	attributesleft_bmp = loadImage("images/system/AttributesLeftHighlighted.png");
