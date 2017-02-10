@@ -309,7 +309,7 @@ bool entityInsideSomething(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-int barony_clear(real_t tx, real_t ty, Entity* my)
+int __attribute__((optimize(0))) barony_clear(real_t tx, real_t ty, Entity* my)
 {
 	if (!my)
 	{
@@ -449,9 +449,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		}
 		const real_t eymin = entity->y - entity->sizey, eymax = entity->y + entity->sizey;
 		const real_t exmin = entity->x - entity->sizex, exmax = entity->x + entity->sizex;
-		if( (txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax) )
+		if( (entity->sizex>0) && ((txmin >= exmin && txmin < exmax) || (txmax >= exmin && txmax < exmax) || (txmin <= exmin && txmax > exmax)) )
 		{
-			if( (tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax))
+			if( (entity->sizey>0) && ((tymin >= eymin && tymin < eymax) || (tymax >= eymin && tymax < eymax) || (tymin <= eymin && tymax > eymax)) )
 			{
 				tx2 = std::max(txmin, exmin);
 				ty2 = std::max(tymin, eymin);
