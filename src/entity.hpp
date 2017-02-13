@@ -55,14 +55,14 @@ class Entity
 
 	static const int SWITCH_UNPOWERED = 0;
 	static const int SWITCH_POWERED = 1;
-	Sint32 uid;                    // entity uid
+	Uint32 uid;                    // entity uid
 public:
 	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist);
 	~Entity();
 
 
-	Sint32 getUID() const {return uid;}
-	void setUID(Sint32 new_uid);
+	Uint32 getUID() const {return uid;}
+	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence
 	real_t x, y, z;                // world coordinates
 	real_t yaw, pitch, roll;       // rotation

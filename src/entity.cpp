@@ -133,7 +133,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	path = NULL;
 }
 
-void Entity::setUID(Sint32 new_uid) {
+void Entity::setUID(Uint32 new_uid) {
 	if ( mynode->list == map.entities ) {
 		map.entities_map.erase(uid);
 		map.entities_map.insert({new_uid, mynode});
