@@ -62,7 +62,7 @@ void actDeathCam(Entity* my)
 		}
 		else
 		{
-			DEATHCAM_ROTX = std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 		}
 		my->yaw += DEATHCAM_ROTX;
 		if ( my->yaw >= PI * 2 )
@@ -81,7 +81,7 @@ void actDeathCam(Entity* my)
 		}
 		else
 		{
-			DEATHCAM_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 		}
 		my->pitch -= DEATHCAM_ROTY;
 		if ( my->pitch > PI / 2 )
@@ -215,11 +215,11 @@ void actPlayer(Entity* my)
 			my->flags[UPDATENEEDED] = TRUE;
 		}
 		// request entity update (check if I've been deleted)
-		if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) )
+		if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 		{
 			strcpy((char*)net_packet->data, "ENTE");
 			net_packet->data[4] = clientnum;
-			SDLNet_Write32(my->uid, &net_packet->data[5]);
+			SDLNet_Write32(my->getUID(), &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 9;
@@ -305,7 +305,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][1][1];
 		entity->focalz = limbs[HUMAN][1][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -323,7 +323,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][2][1];
 		entity->focalz = limbs[HUMAN][2][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -341,7 +341,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][3][1];
 		entity->focalz = limbs[HUMAN][3][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -359,7 +359,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][4][1];
 		entity->focalz = limbs[HUMAN][4][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -377,7 +377,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][5][1];
 		entity->focalz = limbs[HUMAN][5][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -396,7 +396,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][6][1];
 		entity->focalz = limbs[HUMAN][6][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -415,7 +415,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][7][1];
 		entity->focalz = limbs[HUMAN][7][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		entity->focalx = 2;
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
@@ -438,7 +438,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][8][1];
 		entity->focalz = limbs[HUMAN][8][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -460,7 +460,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][9][1];
 		entity->focalz = limbs[HUMAN][9][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -482,7 +482,7 @@ void actPlayer(Entity* my)
 		entity->focaly = limbs[HUMAN][10][1];
 		entity->focalz = limbs[HUMAN][10][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -495,7 +495,7 @@ void actPlayer(Entity* my)
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum )
 		{
-			clientplayer = my->uid;
+			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{
 				bool foundherx = FALSE;
@@ -602,7 +602,7 @@ void actPlayer(Entity* my)
 		}
 		if ( multiplayer == SERVER )
 		{
-			if ( my->uid % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3) )
+			if ( my->getUID() % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3) )
 			{
 				serverUpdateBodypartIDs(my);
 
@@ -1059,15 +1059,9 @@ void actPlayer(Entity* my)
 		// object interaction
 		if ( intro == FALSE )
 		{
-			if ( softwaremode == FALSE )
-			{
-				// generate object buffer
-				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-				glDrawWorld(&camera, ENTITYUIDS);
-				drawEntities3D(&camera, ENTITYUIDS);
-			}
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			selectedEntity = entityClicked(); // using objects
+
 			if ( selectedEntity != NULL )
 			{
 				if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
@@ -1091,7 +1085,7 @@ void actPlayer(Entity* my)
 					net_packet->data[4] = PLAYER_NUM;
 					if (selectedEntity->behavior == &actPlayerLimb)
 					{
-						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->uid, &net_packet->data[5]);
+						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->getUID(), &net_packet->data[5]);
 					}
 					else
 					{
@@ -1100,16 +1094,16 @@ void actPlayer(Entity* my)
 						{
 							if (tempEntity->behavior == &actMonster)
 							{
-								SDLNet_Write32((Uint32)tempEntity->uid, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
 							}
 							else
 							{
-								SDLNet_Write32((Uint32)selectedEntity->uid, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
 							}
 						}
 						else
 						{
-							SDLNet_Write32((Uint32)selectedEntity->uid, &net_packet->data[5]);
+							SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
 						}
 					}
 					net_packet->address.host = net_server.host;
@@ -1286,7 +1280,7 @@ void actPlayer(Entity* my)
 								entity->x = my->x;
 								entity->y = my->y;
 								entity->z = 7.4 + (rand() % 20) / 100.f;
-								entity->parent = my->uid;
+								entity->parent = my->getUID();
 								entity->sizex = 2;
 								entity->sizey = 2;
 								entity->yaw = (rand() % 360) * PI / 180.0;
@@ -1665,7 +1659,7 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 					else
 					{
@@ -1679,16 +1673,16 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX -= mousexrel * .006 * (mousespeed / 128.f);
+						PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = -std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 					else
 					{
@@ -1744,7 +1738,7 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 					}
 					else
 					{
@@ -1758,16 +1752,16 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY -= mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+						PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 					}
-					PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
+					PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
 					PLAYER_ROTY *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 					}
 					else
 					{
@@ -2652,11 +2646,11 @@ void actPlayer(Entity* my)
 					entity2->z -= 2;
 					if ( my->skill[2] == clientnum )
 					{
-						entity2->uid = -4;
+						entity2->setUID(-4);
 					}
 					else
 					{
-						entity2->uid = -3;
+						entity2->setUID(-3);
 					}
 				}
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
@@ -2672,11 +2666,11 @@ void actPlayer(Entity* my)
 					entity2->z += 1;
 					if ( my->skill[2] == clientnum )
 					{
-						entity2->uid = -4;
+						entity2->setUID(-4);
 					}
 					else
 					{
-						entity2->uid = -3;
+						entity2->setUID(-3);
 					}
 				}
 				break;

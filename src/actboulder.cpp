@@ -214,7 +214,7 @@ void actBoulder(Entity* my)
 		}
 	if ( my->z < 0 || BOULDER_NOGROUND )
 	{
-		my->vel_z = std::min(my->vel_z + .1, 3.0);
+		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
 		my->vel_x *= 0.85f;
 		my->vel_y *= 0.85f;
 		nobounce = TRUE;
@@ -312,8 +312,8 @@ void actBoulder(Entity* my)
 		{
 			my->vel_y = -1.5;
 		}
-		int x = std::min<int>(std::max(0.0, (my->x + cos(my->yaw) * 8) / 16), map.width - 1);
-		int y = std::min<int>(std::max(0.0, (my->y + sin(my->yaw) * 8) / 16), map.height - 1);
+		int x = std::min<int>(std::max<int>(0, (my->x + cos(my->yaw) * 8) / 16), map.width - 1);
+		int y = std::min<int>(std::max<int>(0, (my->y + sin(my->yaw) * 8) / 16), map.height - 1);
 		if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 		{
 			playSoundEntity(my, 181, 128);
@@ -432,8 +432,8 @@ void actBoulder(Entity* my)
 			}
 			int x = (my->x + my->vel_x * 8) / 16;
 			int y = (my->y + my->vel_y * 8) / 16;
-			x = std::min<unsigned int>(std::max(0, x), map.width - 1);
-			y = std::min<unsigned int>(std::max(0, y), map.height - 1);
+			x = std::min<unsigned int>(std::max<int>(0, x), map.width - 1);
+			y = std::min<unsigned int>(std::max<int>(0, y), map.height - 1);
 			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				BOULDER_ROLLING = 0;
@@ -606,7 +606,7 @@ void actBoulderTrap(Entity* my)
 					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 					{
 						Entity* entity = newEntity(245, 1, map.entities); // boulder
-						entity->parent = my->uid;
+						entity->parent = my->getUID();
 						entity->x = (x << 4) + 8;
 						entity->y = (y << 4) + 8;
 						entity->z = -64;

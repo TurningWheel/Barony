@@ -94,7 +94,7 @@ void initLich(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(276, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -102,7 +102,7 @@ void initLich(Entity* my, Stat* myStats)
 	entity->focaly = limbs[LICH][1][1]; // 0
 	entity->focalz = limbs[LICH][1][2]; // 2
 	entity->behavior = &actLichLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node_t* node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -112,7 +112,7 @@ void initLich(Entity* my, Stat* myStats)
 	entity = newEntity(275, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -120,7 +120,7 @@ void initLich(Entity* my, Stat* myStats)
 	entity->focaly = limbs[LICH][2][1]; // 0
 	entity->focalz = limbs[LICH][2][2]; // 2
 	entity->behavior = &actLichLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -131,7 +131,7 @@ void initLich(Entity* my, Stat* myStats)
 	entity->yaw = my->yaw;
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -139,7 +139,7 @@ void initLich(Entity* my, Stat* myStats)
 	entity->focaly = limbs[LICH][3][1]; // 0
 	entity->focalz = limbs[LICH][3][2]; // -2
 	entity->behavior = &actLichLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;

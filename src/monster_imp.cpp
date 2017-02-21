@@ -119,7 +119,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -127,7 +127,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][1][1]; // 1
 	entity->focalz = limbs[CREATURE_IMP][1][2]; // 0
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -137,7 +137,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(292, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -145,7 +145,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][2][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][2][2]; // 2
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -155,7 +155,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(291, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -163,7 +163,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][3][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][3][2]; // 2
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -173,7 +173,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(294, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -181,7 +181,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][4][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][4][2]; // 3
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -191,7 +191,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(293, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -199,7 +199,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][5][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][5][2]; // 3
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -209,7 +209,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(310, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -217,7 +217,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][6][1]; // 4
 	entity->focalz = limbs[CREATURE_IMP][6][2]; // 0
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -227,7 +227,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(309, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -235,7 +235,7 @@ void initImp(Entity* my, Stat* myStats)
 	entity->focaly = limbs[CREATURE_IMP][7][1]; // -4
 	entity->focalz = limbs[CREATURE_IMP][7][2]; // 0
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -296,7 +296,7 @@ void impDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

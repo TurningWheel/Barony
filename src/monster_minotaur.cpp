@@ -130,7 +130,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(237, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -138,7 +138,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->focaly = limbs[MINOTAUR][1][1]; // 0
 	entity->focalz = limbs[MINOTAUR][1][2]; // 0
 	entity->behavior = &actMinotaurLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -148,7 +148,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity = newEntity(238, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -156,7 +156,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->focaly = limbs[MINOTAUR][2][1]; // 0
 	entity->focalz = limbs[MINOTAUR][2][2]; // 0
 	entity->behavior = &actMinotaurLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -166,7 +166,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity = newEntity(243, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -174,7 +174,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->focaly = limbs[MINOTAUR][3][1]; // 0
 	entity->focalz = limbs[MINOTAUR][3][2]; // 5
 	entity->behavior = &actMinotaurLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -184,7 +184,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity = newEntity(242, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -192,7 +192,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->focaly = limbs[MINOTAUR][4][1]; // 0
 	entity->focalz = limbs[MINOTAUR][4][2]; // 5
 	entity->behavior = &actMinotaurLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -202,7 +202,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity = newEntity(241, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -210,7 +210,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->focaly = limbs[MINOTAUR][5][1]; // 7
 	entity->focalz = limbs[MINOTAUR][5][2]; // 3.5
 	entity->behavior = &actMinotaurLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -220,7 +220,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity = newEntity(240, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -228,7 +228,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->focaly = limbs[MINOTAUR][6][1]; // -7
 	entity->focalz = limbs[MINOTAUR][6][2]; // 3.5
 	entity->behavior = &actMinotaurLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -289,7 +289,7 @@ void minotaurDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
@@ -714,7 +714,7 @@ void actMinotaurTimer(Entity* my)
 				spawnedsomebody = TRUE;
 				if ( !zapLeaderUid )
 				{
-					zapLeaderUid = monster->uid;
+					zapLeaderUid = monster->getUID();
 				}
 				else
 				{
@@ -799,7 +799,7 @@ void actMinotaurCeilingBuster(Entity* my)
 			{
 				entity_uids--;
 			}
-			entity->uid = -3;
+			entity->setUID(-3);
 		}
 	}
 
@@ -915,6 +915,6 @@ void createMinotaurTimer(Entity* entity, map_t* map)
 	childEntity->flags[INVISIBLE] = TRUE;
 	childEntity->flags[PASSABLE] = TRUE;
 	childEntity->flags[NOUPDATE] = TRUE;
-	childEntity->uid = -3;
+	childEntity->setUID(-3);
 	entity_uids--;
 }

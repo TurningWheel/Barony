@@ -285,7 +285,7 @@ void sendEntityTCP(Entity* entity, int c)
 
 	// send entity data to the client
 	strcpy((char*)net_packet->data, "ENTU");
-	SDLNet_Write32((Uint32)entity->uid, &net_packet->data[4]);
+	SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
 	SDLNet_Write16((Uint16)entity->sprite, &net_packet->data[8]);
 	SDLNet_Write16((Sint16)(entity->x * 32), &net_packet->data[10]);
 	SDLNet_Write16((Sint16)(entity->y * 32), &net_packet->data[12]);
@@ -346,7 +346,7 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 
 	// send entity data to the client
 	strcpy((char*)net_packet->data, "ENTU");
-	SDLNet_Write32((Uint32)entity->uid, &net_packet->data[4]);
+	SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
 	SDLNet_Write16((Uint16)entity->sprite, &net_packet->data[8]);
 	SDLNet_Write16((Sint16)(entity->x * 32), &net_packet->data[10]);
 	SDLNet_Write16((Sint16)(entity->y * 32), &net_packet->data[12]);
@@ -487,7 +487,7 @@ void serverUpdateBodypartIDs(Entity* entity)
 		if ( !client_disconnected[c] )
 		{
 			strcpy((char*)net_packet->data, "BDYI");
-			SDLNet_Write32(entity->uid, &net_packet->data[4]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			node_t* node;
 			int i;
 			for ( i = 0, node = entity->children.first; node != NULL; node = node->next, i++ )
@@ -499,11 +499,11 @@ void serverUpdateBodypartIDs(Entity* entity)
 				Entity* tempEntity = (Entity*)node->element;
 				if ( entity->behavior == &actMonster )
 				{
-					SDLNet_Write32(tempEntity->uid, &net_packet->data[8 + 4 * (i - 2)]);
+					SDLNet_Write32(tempEntity->getUID(), &net_packet->data[8 + 4 * (i - 2)]);
 				}
 				else
 				{
-					SDLNet_Write32(tempEntity->uid, &net_packet->data[8 + 4 * (i - 1)]);
+					SDLNet_Write32(tempEntity->getUID(), &net_packet->data[8 + 4 * (i - 1)]);
 				}
 			}
 			net_packet->address.host = net_clients[c - 1].host;
@@ -534,7 +534,7 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 		if ( !client_disconnected[c] )
 		{
 			strcpy((char*)net_packet->data, "ENTB");
-			SDLNet_Write32(entity->uid, &net_packet->data[4]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = bodypart;
 			node_t* node = list_Node(&entity->children, bodypart);
 			if ( node )
@@ -571,7 +571,7 @@ void serverUpdateEntitySprite(Entity* entity)
 		if ( !client_disconnected[c] )
 		{
 			strcpy((char*)net_packet->data, "ENTA");
-			SDLNet_Write32(entity->uid, &net_packet->data[4]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			SDLNet_Write32(entity->sprite, &net_packet->data[8]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
@@ -601,7 +601,7 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 		if ( !client_disconnected[c] )
 		{
 			strcpy((char*)net_packet->data, "ENTS");
-			SDLNet_Write32(entity->uid, &net_packet->data[4]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = skill;
 			SDLNet_Write32(entity->skill[skill], &net_packet->data[9]);
 			net_packet->address.host = net_clients[c - 1].host;
@@ -632,7 +632,7 @@ void serverUpdateEntityFlag(Entity* entity, int flag)
 		if ( !client_disconnected[c] )
 		{
 			strcpy((char*)net_packet->data, "ENTF");
-			SDLNet_Write32(entity->uid, &net_packet->data[4]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = flag;
 			net_packet->data[9] = entity->flags[flag];
 			net_packet->address.host = net_clients[c - 1].host;
@@ -741,7 +741,7 @@ Entity* receiveEntity(Entity* entity)
 	}
 	entity->lastupdate = ticks;
 	entity->lastupdateserver = (Uint32)SDLNet_Read32(&net_packet->data[36]);
-	entity->uid = (int)SDLNet_Read32(&net_packet->data[4]); // remember who I am
+	entity->setUID((int)SDLNet_Read32(&net_packet->data[4])); // remember who I am
 	entity->new_x = ((Sint16)SDLNet_Read16(&net_packet->data[10])) / 32.0;
 	entity->new_y = ((Sint16)SDLNet_Read16(&net_packet->data[12])) / 32.0;
 	entity->new_z = ((Sint16)SDLNet_Read16(&net_packet->data[14])) / 32.0;
@@ -1105,10 +1105,10 @@ void clientHandlePacket()
 		{
 			nextnode = node->next;
 			entity = (Entity*)node->element;
-			if ( entity->uid == (int)SDLNet_Read32(&net_packet->data[4]) )
+			if ( entity->getUID() == (int)SDLNet_Read32(&net_packet->data[4]) )
 			{
 				entity2 = newEntity(entity->sprite, 1, &removedEntities);
-				entity2->uid = entity->uid;
+				entity2->setUID(entity->getUID());
 				for ( j = 0; j < MAXPLAYERS; j++ )
 					if (entity == players[j]->entity )
 					{
@@ -1124,7 +1124,7 @@ void clientHandlePacket()
 				// inform the server that we deleted the entity
 				strcpy((char*)net_packet->data, "ENTD");
 				net_packet->data[4] = clientnum;
-				SDLNet_Write32(entity2->uid, &net_packet->data[5]);
+				SDLNet_Write32(entity2->getUID(), &net_packet->data[5]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 9;
@@ -1698,6 +1698,11 @@ void clientHandlePacket()
 		{
 			FMOD_ChannelGroup_Stop(sound_group);
 		}
+#elif defined HAVE_OPENAL
+		if ( sound_group )
+		{
+			OPENAL_ChannelGroup_Stop(sound_group);
+		}
 #endif
 
 		// show loading message
@@ -1707,11 +1712,8 @@ void clientHandlePacket()
 		int w, h;
 		TTF_SizeUTF8(ttf16, LOADSTR, &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR);
-#ifdef APPLE
-		SDL_RenderPresent(renderer);
-#else
-		SDL_GL_SwapWindow(screen);
-#endif
+
+		GO_SwapBuffers(screen);
 
 		// unlock some steam achievements
 		if ( !secretlevel )
@@ -1742,7 +1744,7 @@ void clientHandlePacket()
 		{
 			entity = (Entity*)node->element;
 			entity2 = newEntity(entity->sprite, 1, &removedEntities);
-			entity2->uid = entity->uid;
+			entity2->setUID(entity->getUID());
 		}
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -1991,7 +1993,7 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->uid == i )
+			if ( entity->getUID() == i )
 			{
 				entity->sprite = SDLNet_Read32(&net_packet->data[8]);
 			}
@@ -2006,7 +2008,7 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->uid == i )
+			if ( entity->getUID() == i )
 			{
 				node_t* tempNode;
 				int c;
@@ -2019,11 +2021,11 @@ void clientHandlePacket()
 					Entity* tempEntity = (Entity*)tempNode->element;
 					if ( entity->behavior == &actMonster )
 					{
-						tempEntity->uid = SDLNet_Read32(&net_packet->data[8 + 4 * (c - 2)]);
+						tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 2)]));
 					}
 					else
 					{
-						tempEntity->uid = SDLNet_Read32(&net_packet->data[8 + 4 * (c - 1)]);
+						tempEntity->setUID(SDLNet_Read32(&net_packet->data[8 + 4 * (c - 1)]));
 					}
 				}
 			}
@@ -2049,7 +2051,7 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->uid == i )
+			if ( entity->getUID() == i )
 			{
 				node_t* tempNode = list_Node(&entity->children, net_packet->data[8]);
 				if ( tempNode )
@@ -2071,7 +2073,7 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->uid == i )
+			if ( entity->getUID() == i )
 			{
 				entity->skill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
 			}
@@ -2086,7 +2088,7 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->uid == i )
+			if ( entity->getUID() == i )
 			{
 				entity->flags[net_packet->data[8]] = net_packet->data[9];
 			}
@@ -2103,7 +2105,7 @@ void clientHandlePacket()
 		{
 			nextnode = node->next;
 			entity2 = (Entity*)node->element;
-			if (entity2->uid == i)
+			if (entity2->getUID() == i)
 			{
 				if ( (Uint32)SDLNet_Read32(&net_packet->data[36]) < (Uint32)entity2->lastupdateserver )
 				{
@@ -2118,7 +2120,7 @@ void clientHandlePacket()
 					// inform the server that it tried to update a no-update entity
 					strcpy((char*)net_packet->data, "NOUP");
 					net_packet->data[4] = clientnum;
-					SDLNet_Write32(entity2->uid, &net_packet->data[5]);
+					SDLNet_Write32(entity2->getUID(), &net_packet->data[5]);
 					net_packet->address.host = net_server.host;
 					net_packet->address.port = net_server.port;
 					net_packet->len = 9;
@@ -2142,7 +2144,7 @@ void clientHandlePacket()
 		for ( node = removedEntities.first; node != NULL; node = node->next )
 		{
 			entity2 = (Entity*)node->element;
-			if ( entity2->uid == (int)SDLNet_Read32(&net_packet->data[4]) )
+			if ( entity2->getUID() == (int)SDLNet_Read32(&net_packet->data[4]) )
 			{
 				i = -1;
 				break;
@@ -2174,7 +2176,7 @@ void clientHandlePacket()
 		{
 			nextnode = node->next;
 			entity2 = (Entity*)node->element;
-			if (entity2->uid == i)
+			if (entity2->getUID() == i)
 			{
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
 				if ( removecursegui_active )
@@ -2541,7 +2543,7 @@ void serverHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			if ( entity->uid == uid )
+			if ( entity->getUID() == uid )
 			{
 				foundit = TRUE;
 				break;
@@ -2640,7 +2642,7 @@ void serverHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			Entity* tempEntity = (Entity*)node->element;
-			if (tempEntity->uid == SDLNet_Read32(&net_packet->data[5]))
+			if (tempEntity->getUID() == SDLNet_Read32(&net_packet->data[5]))
 			{
 				tempEntity->flags[UPDATENEEDED] = FALSE;
 			}
@@ -2670,7 +2672,7 @@ void serverHandlePacket()
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{
 			entity = (Entity*)node->element;
-			if (entity->uid == SDLNet_Read32(&net_packet->data[5]))
+			if (entity->getUID() == SDLNet_Read32(&net_packet->data[5]))
 			{
 				client_selected[net_packet->data[4]] = entity;
 				inrange[net_packet->data[4]] = TRUE;
@@ -2686,7 +2688,7 @@ void serverHandlePacket()
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{
 			entity = (Entity*)node->element;
-			if (entity->uid == SDLNet_Read32(&net_packet->data[5]))
+			if (entity->getUID() == SDLNet_Read32(&net_packet->data[5]))
 			{
 				client_selected[net_packet->data[4]] = entity;
 				inrange[net_packet->data[4]] = FALSE;
@@ -2764,7 +2766,7 @@ void serverHandlePacket()
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{
 			entity = (Entity*)node->element;
-			if (entity->uid == SDLNet_Read32(&net_packet->data[5]))
+			if (entity->getUID() == SDLNet_Read32(&net_packet->data[5]))
 			{
 				clickDescription(j, entity);
 				break;
@@ -2988,7 +2990,7 @@ void serverHandlePacket()
 		int the_client = net_packet->data[4];
 
 		spell_t* thespell = getSpellFromID(SDLNet_Read32(&net_packet->data[5]));
-		castSpell(players[the_client]->entity->uid, thespell, FALSE, FALSE);
+		castSpell(players[the_client]->entity->getUID(), thespell, FALSE, FALSE);
 		return;
 	}
 

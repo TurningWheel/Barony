@@ -66,7 +66,7 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	Stat* stat = caster->getStats();
 
 	//Save these two very important pieces of data.
-	animation_manager->caster = caster->uid;
+	animation_manager->caster = caster->getUID();
 	animation_manager->spell = spell;
 	animation_manager->active = TRUE;
 	animation_manager->stage = CIRCLE;

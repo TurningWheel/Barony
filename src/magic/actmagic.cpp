@@ -122,11 +122,11 @@ void actMagicTrap(Entity* my)
 				MAGICTRAP_DIRECTION = 0;
 				break;
 		}
-		int u = std::min<int>(std::max(0.0, (my->x + x) / 16), map.width - 1);
-		int v = std::min<int>(std::max(0.0, (my->y + y) / 16), map.height - 1);
+		int u = std::min<int>(std::max<int>(0.0, (my->x + x) / 16), map.width - 1);
+		int v = std::min<int>(std::max<int>(0.0, (my->y + y) / 16), map.height - 1);
 		if ( !map.tiles[OBSTACLELAYER + v * MAPLAYERS + u * MAPLAYERS * map.height] )
 		{
-			Entity* entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
+			Entity* entity = castSpell(my->getUID(), getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
 			entity->x = my->x + x;
 			entity->y = my->y + y;
 			entity->z = my->z;
@@ -660,7 +660,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = parent->uid;
+							hit.entity->skill[1] = parent->getUID();
 							hit.entity->fskill[2] = parent->x;
 							hit.entity->fskill[3] = parent->y;
 						}
@@ -684,7 +684,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 											if ( hit.entity == entity )
 											{
 												entity->skill[0] = 2; // path state
-												entity->skill[1] = parent->uid;
+												entity->skill[1] = parent->getUID();
 												entity->fskill[2] = parent->x;
 												entity->fskill[3] = parent->y;
 											}
@@ -777,7 +777,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
-						my->parent = hit.entity->uid;
+						my->parent = hit.entity->getUID();
 					}
 					if ( rand() % 2 == 0 && hitstats && reflection < 3 )
 					{
@@ -2152,7 +2152,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }
@@ -2203,6 +2203,6 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		{
 			entity_uids--;
 		}
-		entity->uid = -3;
+		entity->setUID(-3);
 	}
 }

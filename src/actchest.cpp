@@ -27,6 +27,7 @@
 #define CHEST_LIDCLICKED my->skill[6]
 #define CHEST_AMBIENCE my->skill[7]
 #define CHEST_MAXHEALTH my->skill[8]
+#define CHEST_TYPE my->skill[9] //field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
 
 /*
  * Chest theme ideas:
@@ -85,13 +86,21 @@ void actChest(Entity* my)
 		int itemcount = 0;
 
 		int chesttype = 0;
-		if ( strcmp(map.name, "The Mystic Library") )
-		{
-			chesttype = rand() % 8;
+
+		if (CHEST_TYPE >= 0) //If chest spawned by editor sprite 75-81, manually set the chest content category. Otherwise this value should be 0 (random).
+		{ 
+			chesttype = CHEST_TYPE; //Value between 0 and 7.
 		}
-		else
+		else 
 		{
-			chesttype = 6; // magic chest
+			if (strcmp(map.name, "The Mystic Library")) 
+			{
+				chesttype = rand() % 8;
+			}
+			else 
+			{
+				chesttype = 6; // magic chest			
+			}
 		}
 
 		switch (chesttype)   //Note that all of this needs to be properly balanced over time.
@@ -471,7 +480,7 @@ void actChest(Entity* my)
 				{
 					//Send all of the items to the client.
 					strcpy((char*)net_packet->data, "CHST");  //Chest.
-					SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]); //Give the client the UID.
+					SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]); //Give the client the UID.
 					net_packet->address.host = net_clients[chestclicked - 1].host;
 					net_packet->address.port = net_clients[chestclicked - 1].port;
 					net_packet->len = 8;

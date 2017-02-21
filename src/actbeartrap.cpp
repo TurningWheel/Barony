@@ -77,7 +77,7 @@ void actBeartrap(Entity* my)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( my->parent == entity->uid )
+		if ( my->parent == entity->getUID() )
 		{
 			continue;
 		}

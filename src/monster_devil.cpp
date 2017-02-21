@@ -62,7 +62,7 @@ void initDevil(Entity* my, Stat* myStats)
 		myStats->leader_uid = 0;
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
 		{
 			if ( c < NUMPROFICIENCIES )
 			{
@@ -95,7 +95,7 @@ void initDevil(Entity* my, Stat* myStats)
 
 		if (players[0] && players[0]->entity)
 		{
-			MONSTER_TARGET = players[0]->entity->uid;
+			MONSTER_TARGET = players[0]->entity->getUID();
 			MONSTER_TARGETX = players[0]->entity->x;
 			MONSTER_TARGETY = players[0]->entity->y;
 		}
@@ -105,7 +105,7 @@ void initDevil(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(303, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -113,7 +113,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][1][1]; // 0
 	entity->focalz = limbs[DEVIL][1][2]; // -4
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -123,7 +123,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(305, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -131,7 +131,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][2][1]; // 18
 	entity->focalz = limbs[DEVIL][2][2]; // 6
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -141,7 +141,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(306, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -149,7 +149,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][3][1]; // 17
 	entity->focalz = limbs[DEVIL][3][2]; // 26
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -159,7 +159,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(307, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -167,7 +167,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][4][1]; // -18
 	entity->focalz = limbs[DEVIL][4][2]; // 6
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -177,7 +177,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(308, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -185,7 +185,7 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEVIL][5][1]; // -17
 	entity->focalz = limbs[DEVIL][5][2]; // 26
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -423,13 +423,13 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( MONSTER_ATTACKTIME < 30 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 2);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 2);
 				}
 				else if ( MONSTER_ATTACKTIME > 40 )
 				{
 					if ( entity->pitch < 0 )
 					{
-						entity->pitch = std::min(entity->pitch + .4, 0.0);
+						entity->pitch = std::min<real_t>(entity->pitch + .4, 0.0);
 						if ( entity->pitch >= 0 )
 						{
 							playSound(181, 64);
@@ -439,7 +439,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else if ( MONSTER_ATTACK == 4 )
 			{
-				entity->pitch = std::max(entity->pitch - .1, -4 * PI / 5);
+				entity->pitch = std::max<real_t>(entity->pitch - .1, -4 * PI / 5);
 			}
 			else if ( MONSTER_ATTACK == 5 )
 			{
@@ -456,13 +456,13 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( MONSTER_ATTACKTIME < 30 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 2);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 2);
 				}
 				else if ( MONSTER_ATTACKTIME > 40 )
 				{
 					if ( entity->pitch < 0 )
 					{
-						entity->pitch = std::min(entity->pitch + .4, 0.0);
+						entity->pitch = std::min<real_t>(entity->pitch + .4, 0.0);
 						if ( entity->pitch >= 0 )
 						{
 							playSound(181, 64);
@@ -472,7 +472,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else if ( MONSTER_ATTACK == 4 )
 			{
-				entity->pitch = std::max(entity->pitch - .1, -4 * PI / 5);
+				entity->pitch = std::max<real_t>(entity->pitch - .1, -4 * PI / 5);
 			}
 			else if ( MONSTER_ATTACK == 6 )
 			{
@@ -570,21 +570,21 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						if ( MONSTER_ATTACK == 1 )
 						{
-							entity->yaw = std::min(entity->yaw + .1, my->yaw + PI / 6);
+							entity->yaw = std::min<real_t>(entity->yaw + .1, my->yaw + PI / 6);
 						}
 						else if ( MONSTER_ATTACK == 2 )
 						{
-							entity->yaw = std::max(entity->yaw - .1, my->yaw - PI / 6);
+							entity->yaw = std::max<real_t>(entity->yaw - .1, my->yaw - PI / 6);
 						}
 					}
 				}
 				if ( MONSTER_ATTACK == 4 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 6);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 6);
 				}
 				else
 				{
-					entity->pitch = std::min(entity->pitch + .1, 0.0);
+					entity->pitch = std::min<real_t>(entity->pitch + .1, 0.0);
 				}
 				break;
 			}

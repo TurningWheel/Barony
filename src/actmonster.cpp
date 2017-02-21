@@ -117,7 +117,7 @@ void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 {
 	Entity* entity = summonMonster(creature, x, y);
 	entity->flags[INVISIBLE] = FALSE;
-	entity->uid = uid;
+	entity->setUID(uid);
 }
 
 Entity* summonMonster(Monster creature, long x, long y)
@@ -351,7 +351,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 			SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
 			SDLNet_Write32((Uint32)entity->x, &net_packet->data[8]);
 			SDLNet_Write32((Uint32)entity->y, &net_packet->data[12]);
-			SDLNet_Write32(entity->uid, &net_packet->data[16]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[16]);
 			net_packet->len = 20;
 
 			int c;
@@ -669,11 +669,11 @@ void actMonster(Entity* my)
 			}
 
 			// request entity update (check if I've been deleted)
-			if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) )
+			if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 			{
 				strcpy((char*)net_packet->data, "ENTE");
 				net_packet->data[4] = clientnum;
-				SDLNet_Write32(my->uid, &net_packet->data[5]);
+				SDLNet_Write32(my->getUID(), &net_packet->data[5]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 9;
@@ -683,7 +683,7 @@ void actMonster(Entity* my)
 		return;
 	}
 
-	if ( ticks % (TICKS_PER_SECOND) == my->uid % (TICKS_PER_SECOND / 2) )
+	if ( ticks % (TICKS_PER_SECOND) == my->getUID() % (TICKS_PER_SECOND / 2) )
 	{
 		myReflex = TRUE;
 	}
@@ -879,6 +879,11 @@ void actMonster(Entity* my)
 				{
 					FMOD_Channel_Stop(MONSTER_SOUND);
 				}
+#elif defined HAVE_OPENAL
+				if ( MONSTER_SOUND )
+				{
+					OPENAL_Channel_Stop(MONSTER_SOUND);
+				}
 #endif
 				int c;
 				for ( c = 0; c < MAXPLAYERS; c++ )
@@ -1009,7 +1014,7 @@ void actMonster(Entity* my)
 		{
 			if (players[c] && players[c]->entity)
 			{
-				if (myStats->leader_uid == players[c]->entity->uid)
+				if (myStats->leader_uid == players[c]->entity->getUID())
 				{
 					playerFollower = c;
 					break;
@@ -1065,6 +1070,11 @@ void actMonster(Entity* my)
 		if ( MONSTER_SOUND )
 		{
 			FMOD_Channel_Stop(MONSTER_SOUND);
+		}
+#elif defined HAVE_OPENAL
+		if ( MONSTER_SOUND )
+		{
+			OPENAL_Channel_Stop(MONSTER_SOUND);
 		}
 #endif
 		myStats = my->getStats();
@@ -1184,6 +1194,26 @@ void actMonster(Entity* my)
 				}*/
 				FMOD_BOOL playing = TRUE;
 				FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
+				if (!playing)
+				{
+					MONSTER_SOUND = NULL;
+					break;
+				}
+			}
+		}
+#elif defined HAVE_OPENAL
+		ALboolean playing;
+		OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
+		if (!playing)
+		{
+			MONSTER_SOUND = NULL;
+		}
+		else
+		{
+			for ( c = 0; c < numsounds; c++ )
+			{
+				ALboolean playing = TRUE;
+				OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
 				if (!playing)
 				{
 					MONSTER_SOUND = NULL;
@@ -1452,7 +1482,7 @@ void actMonster(Entity* my)
 		}
 		else
 		{
-			if (MONSTER_TARGET == players[monsterclicked]->entity->uid && MONSTER_STATE != 4)
+			if (MONSTER_TARGET == players[monsterclicked]->entity->getUID() && MONSTER_STATE != 4)
 			{
 				switch (myStats->type)
 				{
@@ -1466,7 +1496,7 @@ void actMonster(Entity* my)
 			}
 			else if (MONSTER_STATE == 4)
 			{
-				if (MONSTER_TARGET != players[monsterclicked]->entity->uid)
+				if (MONSTER_TARGET != players[monsterclicked]->entity->getUID())
 				{
 					switch (myStats->type)
 					{
@@ -1496,7 +1526,7 @@ void actMonster(Entity* my)
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
-									*myuid = my->uid;
+									*myuid = my->getUID();
 									if (my->getINT() > -2)
 									{
 										messagePlayer(monsterclicked, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
@@ -1508,11 +1538,11 @@ void actMonster(Entity* my)
 									monsterMoveAside(my, players[monsterclicked]->entity);
 									players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 									MONSTER_STATE = 0; // be ready to follow
-									myStats->leader_uid = players[monsterclicked]->entity->uid;
+									myStats->leader_uid = players[monsterclicked]->entity->getUID();
 									if (monsterclicked > 0 && multiplayer == SERVER)
 									{
 										strcpy((char*)net_packet->data, "LEAD");
-										SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]);
 										net_packet->address.host = net_clients[monsterclicked - 1].host;
 										net_packet->address.port = net_clients[monsterclicked - 1].port;
 										net_packet->len = 8;
@@ -1535,7 +1565,7 @@ void actMonster(Entity* my)
 							}
 							else
 							{
-								if (myStats->leader_uid == players[monsterclicked]->entity->uid)
+								if (myStats->leader_uid == players[monsterclicked]->entity->getUID())
 								{
 									if (my->getINT() > -2)
 									{
@@ -1671,7 +1701,7 @@ void actMonster(Entity* my)
 					hitstats = entity->getStats();
 					if ( hitstats != NULL )
 					{
-						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->uid || ringconflict) )
+						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->getUID() || ringconflict) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -1766,7 +1796,7 @@ void actMonster(Entity* my)
 								if ( hit.entity == entity )
 								{
 									MONSTER_STATE = 1; // charge state
-									MONSTER_TARGET = hit.entity->uid;
+									MONSTER_TARGET = hit.entity->getUID();
 									MONSTER_TARGETX = hit.entity->x;
 									MONSTER_TARGETY = hit.entity->y;
 									if ( MONSTER_SOUND == NULL )
@@ -1863,7 +1893,7 @@ void actMonster(Entity* my)
 					if (playerToChase >= 0)
 					{
 						MONSTER_STATE = 2; // path state
-						MONSTER_TARGET = players[playerToChase]->entity->uid;
+						MONSTER_TARGET = players[playerToChase]->entity->getUID();
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
@@ -1872,7 +1902,7 @@ void actMonster(Entity* my)
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->uid % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -2139,7 +2169,7 @@ void actMonster(Entity* my)
 				{
 					if (players[c] && players[c]->entity)
 					{
-						if (MONSTER_TARGET == players[c]->entity->uid)
+						if (MONSTER_TARGET == players[c]->entity->getUID())
 						{
 							swornenemies[SHOPKEEPER][HUMAN] = TRUE;
 							monsterally[SHOPKEEPER][HUMAN] = FALSE;
@@ -2263,7 +2293,7 @@ timeToGoAgain:
 							{
 								if ( MONSTER_FLIPPEDANGLE < 5 )
 								{
-									if ( (my->ticks + my->uid) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
+									if ( (my->ticks + my->getUID()) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
 									{
 										tangent2 += PI / 6;
 									}
@@ -2274,7 +2304,7 @@ timeToGoAgain:
 								}
 								else
 								{
-									if ( (my->ticks + my->uid) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
+									if ( (my->ticks + my->getUID()) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
 									{
 										tangent2 += PI / 6;
 									}
@@ -2458,7 +2488,7 @@ timeToGoAgain:
 												//hit.entity->skill[4]=0;
 												//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
 												hit.entity->skill[0] = 2;
-												hit.entity->skill[1] = my->uid;
+												hit.entity->skill[1] = my->getUID();
 												hit.entity->fskill[2] = my->x;
 												hit.entity->fskill[3] = my->y;
 											}
@@ -2599,7 +2629,7 @@ timeToGoAgain:
 				{
 					// throw fireballs
 					my->yaw = my->yaw + MONSTER_WEAPONYAW;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, TRUE, FALSE);
 					my->yaw = my->yaw - MONSTER_WEAPONYAW;
 				}
 
@@ -2672,7 +2702,7 @@ timeToGoAgain:
 					hitstats = entity->getStats();
 					if ( hitstats != NULL )
 					{
-						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->uid || ringconflict) )
+						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->getUID() || ringconflict) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -2764,7 +2794,7 @@ timeToGoAgain:
 											lineTrace(my, my->x, my->y - 1, tangent, sightranges[myStats->type], 0, (levitating == FALSE));
 											if ( hit.entity == entity )
 											{
-												MONSTER_TARGET = hit.entity->uid;
+												MONSTER_TARGET = hit.entity->getUID();
 												MONSTER_STATE = 1; // charge state
 												MONSTER_TARGETX = hit.entity->x;
 												MONSTER_TARGETY = hit.entity->y;
@@ -2853,7 +2883,7 @@ timeToGoAgain:
 					if (playerToChase >= 0)
 					{
 						MONSTER_STATE = 2; // path state
-						MONSTER_TARGET = players[playerToChase]->entity->uid;
+						MONSTER_TARGET = players[playerToChase]->entity->getUID();
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
@@ -2871,7 +2901,7 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->uid % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -3057,7 +3087,7 @@ timeToGoAgain:
 								else if ( hit.entity->behavior == &actMonster )
 								{
 									Stat* yourStats = hit.entity->getStats();
-									if ( hit.entity->uid == MONSTER_TARGET )
+									if ( hit.entity->getUID() == MONSTER_TARGET )
 									{
 										MONSTER_STATE = 1; // charge state
 									}
@@ -3073,7 +3103,7 @@ timeToGoAgain:
 										}
 										else if ( my->checkEnemy(hit.entity) )
 										{
-											MONSTER_TARGET = hit.entity->uid;
+											MONSTER_TARGET = hit.entity->getUID();
 											MONSTER_TARGETX = hit.entity->x;
 											MONSTER_TARGETY = hit.entity->y;
 											MONSTER_STATE = 1; // charge state
@@ -3084,7 +3114,7 @@ timeToGoAgain:
 								{
 									if ( my->checkEnemy(hit.entity) )
 									{
-										MONSTER_TARGET = hit.entity->uid;
+										MONSTER_TARGET = hit.entity->getUID();
 										MONSTER_TARGETX = hit.entity->x;
 										MONSTER_TARGETY = hit.entity->y;
 										MONSTER_STATE = 1; // charge state
@@ -3573,7 +3603,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->uid;
+					MONSTER_TARGET = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 					MONSTER_VELX = MONSTER_TARGETX - my->x;
@@ -3655,7 +3685,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->uid;
+					MONSTER_TARGET = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 				}
@@ -3724,13 +3754,13 @@ timeToGoAgain:
 				for ( c = 0; c < 12; c++ )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, TRUE, FALSE);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ )
 				{
 					Entity* entity = newEntity(245, 1, map.entities); // boulder
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
 						entity->x = (20 << 4) + 8;
@@ -3774,13 +3804,13 @@ timeToGoAgain:
 				for ( c = 0; c < 12; c++ )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, TRUE, FALSE);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ )
 				{
 					Entity* entity = newEntity(245, 1, map.entities); // boulder
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
 						entity->x = (20 << 4) + 8;
@@ -3824,13 +3854,13 @@ timeToGoAgain:
 				for ( c = 0; c < 12; c++ )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, TRUE, FALSE);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 12; c++ )
 				{
 					Entity* entity = newEntity(245, 1, map.entities); // boulder
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
 						entity->x = (20 << 4) + 8;
@@ -3885,7 +3915,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->uid;
+					MONSTER_TARGET = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 				}

@@ -1976,7 +1976,7 @@ void item_ScrollSummon(Item* item, int player)
 			Stat* monsterStats = monster->getStats();
 			if ( item->beatitude >= 0 && monsterStats )
 			{
-				monsterStats->leader_uid = players[player]->entity->uid;
+				monsterStats->leader_uid = players[player]->entity->getUID();
 				if ( !monsterally[HUMAN][monsterStats->type] )
 				{
 					monster->flags[USERFLAG2] = TRUE;
@@ -1987,13 +1987,13 @@ void item_ScrollSummon(Item* item, int player)
 				newNode->deconstructor = &defaultDeconstructor;
 				Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 				newNode->element = myuid;
-				*myuid = monster->uid;
+				*myuid = monster->getUID();
 
 				// update client followers
 				if ( player > 0 && multiplayer == SERVER )
 				{
 					strcpy((char*)net_packet->data, "LEAD");
-					SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 8;
@@ -2253,7 +2253,7 @@ void item_ToolBeartrap(Item* item, int player)
 	entity->z = 6.75;
 	entity->yaw = players[player]->entity->yaw;
 	entity->roll = -PI / 2; // flip the model
-	entity->parent = players[player]->entity->uid;
+	entity->parent = players[player]->entity->getUID();
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[11] = item->status;

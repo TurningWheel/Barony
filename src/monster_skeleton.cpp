@@ -103,7 +103,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(230, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -111,7 +111,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][1][1]; // 0
 	entity->focalz = limbs[SKELETON][1][2]; // 0
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -121,7 +121,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(236, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -129,7 +129,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][2][1]; // 0
 	entity->focalz = limbs[SKELETON][2][2]; // 2
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -139,7 +139,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(235, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -147,7 +147,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][3][1]; // 0
 	entity->focalz = limbs[SKELETON][3][2]; // 2
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -157,7 +157,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(233, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -165,7 +165,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][4][1]; // 0
 	entity->focalz = limbs[SKELETON][4][2]; // 2
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -175,7 +175,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(231, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -183,7 +183,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][5][1]; // 0
 	entity->focalz = limbs[SKELETON][5][2]; // 2
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -193,7 +193,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[INVISIBLE] = TRUE;
@@ -202,7 +202,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][6][1]; // 0
 	entity->focalz = limbs[SKELETON][6][2]; // 0
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	entity->pitch = .25;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -213,7 +213,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[INVISIBLE] = TRUE;
@@ -222,7 +222,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][7][1]; // 0
 	entity->focalz = limbs[SKELETON][7][2]; // 0
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -232,7 +232,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->scalex = 1.01;
 	entity->scaley = 1.01;
 	entity->scalez = 1.01;
@@ -244,7 +244,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][8][1]; // 0
 	entity->focalz = limbs[SKELETON][8][2]; // 4
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -254,7 +254,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->scalex = 1.01;
 	entity->scaley = 1.01;
 	entity->scalez = 1.01;
@@ -266,7 +266,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][9][1]; // 0
 	entity->focalz = limbs[SKELETON][9][2]; // -2
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -276,7 +276,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[INVISIBLE] = TRUE;
@@ -285,7 +285,7 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SKELETON][10][1]; // 0
 	entity->focalz = limbs[SKELETON][10][2]; // .5
 	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -843,7 +843,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -976,7 +976,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1068,7 +1068,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1119,7 +1119,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1160,7 +1160,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1243,7 +1243,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}

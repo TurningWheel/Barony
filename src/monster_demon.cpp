@@ -71,7 +71,7 @@ void initDemon(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(DEMON, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -118,7 +118,7 @@ void initDemon(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(264, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -126,7 +126,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEMON][1][1]; // 0
 	entity->focalz = limbs[DEMON][1][2]; // 0
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -136,7 +136,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(263, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -144,7 +144,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEMON][2][1]; // 0
 	entity->focalz = limbs[DEMON][2][2]; // 5
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -154,7 +154,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(262, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -162,7 +162,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEMON][3][1]; // 0
 	entity->focalz = limbs[DEMON][3][2]; // 5
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -172,7 +172,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(261, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -180,7 +180,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEMON][4][1]; // 0
 	entity->focalz = limbs[DEMON][4][2]; // 4
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -190,7 +190,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(260, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -198,7 +198,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEMON][5][1]; // 0
 	entity->focalz = limbs[DEMON][5][2]; // 4
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -208,7 +208,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(259, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -216,7 +216,7 @@ void initDemon(Entity* my, Stat* myStats)
 	entity->focaly = limbs[DEMON][6][1]; // 0
 	entity->focalz = limbs[DEMON][6][2]; // 1
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -277,7 +277,7 @@ void demonDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

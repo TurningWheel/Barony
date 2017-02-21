@@ -475,7 +475,7 @@ void gameLogic(void)
 												{
 													entity_uids--;
 												}
-												entity->uid = -3;
+												entity->setUID(-3);
 											}
 										}
 									}
@@ -577,6 +577,11 @@ void gameLogic(void)
 					{
 						FMOD_ChannelGroup_Stop(sound_group);
 					}
+#elif defined HAVE_OPENAL
+					if ( sound_group )
+					{
+						OPENAL_ChannelGroup_Stop(sound_group);
+					}
 #endif
 
 					// show loading message
@@ -585,11 +590,8 @@ void gameLogic(void)
 					int w, h;
 					TTF_SizeUTF8(ttf16, language[709], &w, &h);
 					ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, language[709]);
-#ifdef APPLE
-					SDL_RenderPresent(renderer);
-#else
-					SDL_GL_SwapWindow(screen);
-#endif
+
+					GO_SwapBuffers(screen);
 
 					// copy followers list
 					list_t tempFollowers[MAXPLAYERS];
@@ -776,7 +778,7 @@ void gameLogic(void)
 									newNode->size = sizeof(tempStats);
 
 									Stat* monsterStats = (Stat*)newNode->element;
-									monsterStats->leader_uid = players[c]->entity->uid;
+									monsterStats->leader_uid = players[c]->entity->getUID();
 									if (strcmp(monsterStats->name, ""))
 									{
 										messagePlayer(c, language[720], monsterStats->name);
@@ -794,12 +796,12 @@ void gameLogic(void)
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
-									*myuid = monster->uid;
+									*myuid = monster->getUID();
 
 									if ( c > 0 && multiplayer == SERVER )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
-										SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
 										net_packet->address.host = net_clients[c - 1].host;
 										net_packet->address.port = net_clients[c - 1].port;
 										net_packet->len = 8;
@@ -868,7 +870,7 @@ void gameLogic(void)
 								if ( entity->flags[UPDATENEEDED] == TRUE && entity->flags[NOUPDATE] == FALSE )
 								{
 									// update entity for all clients
-									if ( entity->uid % (TICKS_PER_SECOND * 4) == ticks % (TICKS_PER_SECOND * 4) )
+									if ( entity->getUID() % (TICKS_PER_SECOND * 4) == ticks % (TICKS_PER_SECOND * 4) )
 									{
 										sendEntityUDP(entity, c, TRUE);
 									}
@@ -1177,7 +1179,7 @@ void gameLogic(void)
 												{
 													entity_uids--;
 												}
-												entity->uid = -3;
+												entity->setUID(-3);
 											}
 										}
 									}
@@ -1204,11 +1206,11 @@ void gameLogic(void)
 					Entity* entity = (Entity*)nodeToCheck->element;
 					if ( entity )
 					{
-						if ( !entity->flags[NOUPDATE] && entity->uid > 0 && entity->uid != -2 && entity->uid != -3 && entity->uid != -4 )
+						if ( !entity->flags[NOUPDATE] && entity->getUID() > 0 && entity->getUID() != -2 && entity->getUID() != -3 && entity->getUID() != -4 )
 						{
 							strcpy((char*)net_packet->data, "ENTE");
 							net_packet->data[4] = clientnum;
-							SDLNet_Write32(entity->uid, &net_packet->data[5]);
+							SDLNet_Write32(entity->getUID(), &net_packet->data[5]);
 							net_packet->address.host = net_server.host;
 							net_packet->address.port = net_server.port;
 							net_packet->len = 9;
@@ -1306,7 +1308,7 @@ void gameLogic(void)
 											for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
 											{
 												Entity* bodypart = (Entity*)node2->element;
-												if ( bodypart->skill[2] == entity->uid && bodypart->parent == entity->uid )
+												if ( bodypart->skill[2] == entity->getUID() && bodypart->parent == entity->getUID() )
 												{
 													bodypart->x += entity->x - ox;
 													bodypart->y += entity->y - oy;
@@ -1726,11 +1728,34 @@ void handleEvents(void)
 						cursorflash = ticks;
 					}
 				}
-				lastkeypressed = event.key.keysym.scancode;
-				keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+#ifdef PANDORA
+				// Pandora Shoulder as Mouse Button handling
+				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+					mousestatus[SDL_BUTTON_LEFT] = 1; // set this mouse button to 1
+					lastkeypressed = 282 + SDL_BUTTON_LEFT;
+				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
+					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
+				} else 
+#endif
+				{
+					lastkeypressed = event.key.keysym.scancode;
+					keystatus[event.key.keysym.scancode] = 1; // set this key's index to 1
+				}
 				break;
 			case SDL_KEYUP: // if a key is unpressed...
-				keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+#ifdef PANDORA
+				if(event.key.keysym.sym==SDLK_RCTRL) { // L
+					mousestatus[SDL_BUTTON_LEFT] = 0; // set this mouse button to 0
+					lastkeypressed = 282 + SDL_BUTTON_LEFT;
+				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
+					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
+					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
+				} else 
+#endif
+				{
+					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
+				}
 				break;
 			case SDL_TEXTINPUT:
 				if ( (event.text.text[0] != 'c' && event.text.text[0] != 'C') || !(SDL_GetModState()&KMOD_CTRL) )
@@ -1772,6 +1797,12 @@ void handleEvents(void)
 				menuselect = 0;
 				mousex = event.motion.x;
 				mousey = event.motion.y;
+#ifdef PANDORA
+				if(xres!=800 || yres!=480) {	// SEB Pandora 
+					mousex = (mousex*xres)/800;
+					mousey = (mousey*yres)/480;
+				}
+#endif
 				mousexrel += event.motion.xrel;
 				mouseyrel += event.motion.yrel;
 
@@ -2347,7 +2378,7 @@ int main(int argc, char** argv)
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
 							introstage = 6;
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 							playmusic(introductionmusic, TRUE, FALSE, FALSE);
 #endif
 						}
@@ -2356,7 +2387,7 @@ int main(int argc, char** argv)
 							introstage = 1;
 							fadeout = FALSE;
 							fadefinished = FALSE;
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 							playmusic(intromusic, TRUE, FALSE, FALSE);
 #endif
 						}
@@ -2789,7 +2820,7 @@ int main(int argc, char** argv)
 						}
 						if (players[clientnum] && players[clientnum]->entity)
 						{
-							castSpellInit(players[clientnum]->entity->uid, selected_spell);
+							castSpellInit(players[clientnum]->entity->getUID(), selected_spell);
 						}
 					}
 
@@ -3128,11 +3159,7 @@ int main(int argc, char** argv)
 			}
 
 			// update screen
-#ifdef APPLE
-			SDL_RenderPresent(renderer);
-#else
-			SDL_GL_SwapWindow(screen);
-#endif
+			GO_SwapBuffers(screen);
 
 			// screenshots
 			if ( keystatus[SDL_SCANCODE_F6] )

@@ -169,7 +169,7 @@ void actArrow(Entity* my)
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = parent->uid;
+							hit.entity->skill[1] = parent->getUID();
 							hit.entity->fskill[2] = parent->x;
 							hit.entity->fskill[3] = parent->y;
 						}
@@ -193,7 +193,7 @@ void actArrow(Entity* my)
 											if ( hit.entity == entity )
 											{
 												entity->skill[0] = 2; // path state
-												entity->skill[1] = parent->uid;
+												entity->skill[1] = parent->getUID();
 												entity->fskill[2] = parent->x;
 												entity->fskill[3] = parent->y;
 											}

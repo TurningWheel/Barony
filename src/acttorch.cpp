@@ -47,7 +47,7 @@ void actTorch(Entity* my)
 	entity->y += .25 * sin(my->yaw);
 	entity->z -= 2.5;
 	entity->flags[GENIUS] = FALSE;
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	// check wall
 	if ( !checkObstacle( my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL ) )

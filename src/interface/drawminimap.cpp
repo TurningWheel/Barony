@@ -44,6 +44,7 @@ void drawMinimap()
 	glOrtho(0, xres, 0, yres, -1, 1);
 	glMatrixMode(GL_MODELVIEW);
 	glBindTexture(GL_TEXTURE_2D, 0);
+	glBegin(GL_QUADS);
 	for ( x = 0; x < map.width; x++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -68,14 +69,15 @@ void drawMinimap()
 			{
 				glColor4f( 64 / 255.f, 64 / 255.f, 64 / 255.f, 1 );
 			}
-			glBegin(GL_QUADS);
+			//glBegin(GL_QUADS);
 			glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 			glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 			glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
 			glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
-			glEnd();
+			//glEnd();
 		}
 	}
+	glEnd();
 	glDisable(GL_DEPTH_TEST);
 	glDisable(GL_LIGHTING);
 	glMatrixMode(GL_PROJECTION);
@@ -86,6 +88,7 @@ void drawMinimap()
 	glBindTexture(GL_TEXTURE_2D, 0);
 
 	// draw exits/monsters
+	glBegin(GL_QUADS);
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
@@ -107,12 +110,12 @@ void drawMinimap()
 						{
 							glColor4f( 0, 1, 1, 1 );
 						}
-						glBegin(GL_QUADS);
+						//glBegin(GL_QUADS);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
-						glEnd();
+						//glEnd();
 					}
 				}
 			}
@@ -128,34 +131,36 @@ void drawMinimap()
 						x = floor(entity->x / 16);
 						y = floor(entity->y / 16);
 						glColor4f( .5, .25, .5, 1 );
-						glBegin(GL_QUADS);
+						//glBegin(GL_QUADS);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
 						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
-						glEnd();
+						//glEnd();
 					}
 				}
 			}
 			else if ( entity->sprite == 245 )     // boulder.vox
 			{
-				x = std::min<int>(std::max(0.0, entity->x / 16), map.width - 1);
-				y = std::min<int>(std::max(0.0, entity->y / 16), map.height - 1);
+				x = std::min<int>(std::max<int>(0, entity->x / 16), map.width - 1);
+				y = std::min<int>(std::max<int>(0, entity->y / 16), map.height - 1);
 				if ( minimap[y][x] == 1 || minimap[y][x] == 2 )
 				{
 					glColor4f( 192 / 255.f, 64 / 255.f, 0 / 255.f, 1 );
-					glBegin(GL_QUADS);
+					//glBegin(GL_QUADS);
 					glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 					glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
 					glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
 					glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
-					glEnd();
+					//glEnd();
 				}
 			}
 		}
 	}
+	glEnd();
 
 	// draw players and allies
+	
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
@@ -174,7 +179,7 @@ void drawMinimap()
 			node_t* node2;
 			for ( node2 = stats[clientnum]->FOLLOWERS.first; node2 != NULL; node2 = node2->next )
 			{
-				if ( *((Uint32*)node2->element) == entity->uid )
+				if ( *((Uint32*)node2->element) == entity->getUID() )
 				{
 					drawchar = TRUE;
 					break;

@@ -11,11 +11,18 @@
 
 #pragma once
 
+#ifdef __arm__
+typedef float real_t;
+#else
+typedef double real_t;
+#endif
+
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 #include <iostream>
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
+#include <unordered_map>
 
 #include "Config.hpp"
 
@@ -211,9 +218,9 @@ extern bool stop;
 // view structure
 typedef struct view_t
 {
-	double x, y, z;
-	double ang;
-	double vang;
+	real_t x, y, z;
+	real_t ang;
+	real_t vang;
 	Sint32 winx, winy, winw, winh;
 } view_t;
 
@@ -248,6 +255,7 @@ typedef struct map_t
 	char author[32]; // author of the map
 	unsigned int width, height;  // size of the map
 	Sint32* tiles;
+	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 } map_t;
 
@@ -289,7 +297,7 @@ typedef struct pathnode_t
 #define VERTICAL 2
 typedef struct hit_t
 {
-	double x, y;
+	real_t x, y;
 	int mapx, mapy;
 	Entity* entity;
 	int side;
@@ -327,7 +335,7 @@ typedef struct voxel_t
 // vertex structure
 typedef struct vertex_t
 {
-	double x, y, z;
+	real_t x, y, z;
 } vertex_t;
 
 // quad structure
@@ -416,9 +424,9 @@ extern int subwindow;
 extern int subx1, subx2, suby1, suby2;
 extern char subtext[1024];
 extern int rscale;
-extern double vidgamma;
+extern real_t vidgamma;
 extern bool softwaremode;
-extern double* zbuffer;
+extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern bool* vismap;
 extern Entity** clickmap;
@@ -503,7 +511,7 @@ extern Uint32 mapseed;
 extern bool* shoparea;
 
 // function prototypes for main.c:
-int sgn(double x);
+int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char* str);
 int concatedStringLength(char* str, ...);
@@ -553,18 +561,18 @@ pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Si
 #define FLIP_VERTICAL 1
 #define FLIP_HORIZONTAL 2
 SDL_Surface* flipSurface(SDL_Surface* surface, int flags);
-void drawCircle(int x, int y, double radius, Uint32 color, Uint8 alpha);
-void drawArc(int x, int y, double radius, double angle1, double angle2, Uint32 color, Uint8 alpha);
+void drawCircle(int x, int y, real_t radius, Uint32 color, Uint8 alpha);
+void drawArc(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);
 void drawLine(int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha);
 int drawRect(SDL_Rect* src, Uint32 color, Uint8 alpha);
 int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha);
-void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation);
+void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation);
 void drawImage(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
 void drawImageScaled(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
 void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha);
 void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
-void drawImageFancy(SDL_Surface* image, Uint32 color, double angle, SDL_Rect* src, SDL_Rect* pos);
-void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, double angle, Uint8 alpha);
+void drawImageFancy(SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos);
+void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha);
 SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height);
 void drawSky3D(view_t* camera, SDL_Surface* tex);
 void drawLayer(long camx, long camy, int z, map_t* map);
@@ -590,7 +598,7 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... );
 void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... );
 void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...);
 void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...);
-void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, double angle, double scale, char* fmt, ...);
+void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...);
 void printText( SDL_Surface* font_bmp, int x, int y, char* str );
 void drawSprite(view_t* camera, Entity* entity);
 void drawTooltip(SDL_Rect* src);
@@ -598,10 +606,10 @@ void drawTooltip(SDL_Rect* src);
 // function prototypes for opengl.c:
 #define REALCOLORS 0
 #define ENTITYUIDS 1
-double getLightForEntity(double x, double y);
+real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
-double getLightAt(int x, int y);
+real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for files.c:
@@ -631,3 +639,12 @@ list_t* directoryContents(char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
+
+#ifdef PANDORA
+// Pandora: FBO variables
+extern GLuint fbo_fbo;
+extern GLuint fbo_tex;
+extern GLuint fbo_ren;
+#endif
+void GO_SwapBuffers(SDL_Window* screen);
+unsigned int GO_GetPixelU32(int x, int y);
