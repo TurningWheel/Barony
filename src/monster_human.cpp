@@ -116,7 +116,7 @@ void initHuman(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(106, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -124,7 +124,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][1][1]; // 0
 	entity->focalz = limbs[HUMAN][1][2]; // 0
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -134,7 +134,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(107, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -142,7 +142,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][2][1]; // 0
 	entity->focalz = limbs[HUMAN][2][2]; // 2
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -152,7 +152,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(108, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -160,7 +160,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][3][1]; // 0
 	entity->focalz = limbs[HUMAN][3][2]; // 2
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -170,7 +170,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(109, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -178,7 +178,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][4][1]; // 0
 	entity->focalz = limbs[HUMAN][4][2]; // 1.5
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -188,7 +188,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(110, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -196,7 +196,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][5][1]; // 0
 	entity->focalz = limbs[HUMAN][5][2]; // 1.5
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -206,7 +206,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -214,7 +214,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][6][1]; // 0
 	entity->focalz = limbs[HUMAN][6][2]; // -.5
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	entity->pitch = .25;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -225,7 +225,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -233,7 +233,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][7][1]; // 0
 	entity->focalz = limbs[HUMAN][7][2]; // 0
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -243,7 +243,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->scalex = 1.01;
 	entity->scaley = 1.01;
 	entity->scalez = 1.01;
@@ -254,7 +254,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][8][1]; // 0
 	entity->focalz = limbs[HUMAN][8][2]; // 4
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -264,7 +264,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->scalex = 1.01;
 	entity->scaley = 1.01;
 	entity->scalez = 1.01;
@@ -275,7 +275,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][9][1]; // 0
 	entity->focalz = limbs[HUMAN][9][2]; // -1.75
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -285,7 +285,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->scalex = .99;
 	entity->scaley = .99;
 	entity->scalez = .99;
@@ -296,7 +296,7 @@ void initHuman(Entity* my, Stat* myStats)
 	entity->focaly = limbs[HUMAN][10][1]; // 0
 	entity->focalz = limbs[HUMAN][10][2]; // .5
 	entity->behavior = &actHumanLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -468,7 +468,7 @@ void initHuman(Entity* my, Stat* myStats)
 							Entity* entity = summonMonster(SPIDER, my->x, my->y);
 							if ( entity )
 							{
-								entity->parent = my->uid;
+								entity->parent = my->getUID();
 								entity->flags[USERFLAG2] = TRUE;
 							}
 						}
@@ -826,7 +826,7 @@ void humanDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
@@ -1256,7 +1256,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1311,7 +1311,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1371,7 +1371,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1432,7 +1432,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1528,7 +1528,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1593,7 +1593,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1689,7 +1689,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1740,7 +1740,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1781,7 +1781,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1860,7 +1860,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}

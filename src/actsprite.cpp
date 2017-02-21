@@ -106,7 +106,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 	return entity;
 }
 
@@ -175,7 +175,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 	return explosion;
 }
 
@@ -245,7 +245,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }

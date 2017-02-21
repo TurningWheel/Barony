@@ -122,7 +122,7 @@ void actLiquid(Entity* my)
 	}
 	if ( LIQUID_LAVA && !LIQUID_LAVANOBUBBLE )
 	{
-		if ( ticks % 40 == my->uid % 40 && rand() % 3 == 0 )
+		if ( ticks % 40 == my->getUID() % 40 && rand() % 3 == 0 )
 		{
 			int c, j = 1 + rand() % 2;
 			for ( c = 0; c < j; c++ )

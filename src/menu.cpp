@@ -3814,7 +3814,7 @@ void handleMainMenu(bool mode)
 											newNode->size = sizeof(tempStats);
 
 											Stat* monsterStats = (Stat*)newNode->element;
-											monsterStats->leader_uid = players[c]->entity->uid;
+											monsterStats->leader_uid = players[c]->entity->getUID();
 											if ( !monsterally[HUMAN][monsterStats->type] )
 											{
 												monster->flags[USERFLAG2] = TRUE;
@@ -3824,12 +3824,12 @@ void handleMainMenu(bool mode)
 											newNode->deconstructor = &defaultDeconstructor;
 											Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 											newNode->element = myuid;
-											*myuid = monster->uid;
+											*myuid = monster->getUID();
 
 											if ( c > 0 && multiplayer == SERVER )
 											{
 												strcpy((char*)net_packet->data, "LEAD");
-												SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
+												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
 												net_packet->address.host = net_clients[c - 1].host;
 												net_packet->address.port = net_clients[c - 1].port;
 												net_packet->len = 8;

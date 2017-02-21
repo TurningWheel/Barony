@@ -67,7 +67,7 @@ void startTradingServer(Entity* entity, int player)
 		shootmode = FALSE;
 		gui_mode = GUI_MODE_SHOP;
 		shopInv = &stats->inventory;
-		shopkeeper = entity->uid;
+		shopkeeper = entity->getUID();
 		shoptimer = ticks - 1;
 		shopspeech = language[194 + rand() % 3];
 		shopinventorycategory = 7;
@@ -94,7 +94,7 @@ void startTradingServer(Entity* entity, int player)
 		// open shop on client
 		Stat* entitystats = entity->getStats();
 		strcpy((char*)net_packet->data, "SHOP");
-		SDLNet_Write32((Uint32)entity->uid, &net_packet->data[4]);
+		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
 		net_packet->data[8] = entity->skill[18];
 		strcpy((char*)(&net_packet->data[9]), entitystats->name);
 		net_packet->data[9 + strlen(entitystats->name)] = 0;
@@ -129,7 +129,7 @@ void startTradingServer(Entity* entity, int player)
 		}
 	}
 	entity->skill[0] = 4; // talk state
-	entity->skill[1] = players[player]->entity->uid;
+	entity->skill[1] = players[player]->entity->getUID();
 	messagePlayer(player, language[1122], stats->name);
 }
 

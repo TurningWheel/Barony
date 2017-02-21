@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
-
+#include "entity.hpp"
 /*-------------------------------------------------------------------------------
 
 	list_FreeAll
@@ -22,6 +22,8 @@
 void list_FreeAll(list_t* list)
 {
 	node_t* node, *nextnode;
+	if (list == map.entities)
+		map.entities_map.clear();
 	for ( node = list->first; node != NULL; node = nextnode )
 	{
 		nextnode = node->next;
@@ -41,6 +43,10 @@ void list_FreeAll(list_t* list)
 
 void list_RemoveNode(node_t* node)
 {
+
+	if (node->list == map.entities) {
+		map.entities_map.erase(((Entity*)node->element)->getUID());
+	}
 	if ( node->list && node->list->first )
 	{
 		// if this is the first node...

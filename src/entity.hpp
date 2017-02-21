@@ -55,12 +55,14 @@ class Entity
 
 	static const int SWITCH_UNPOWERED = 0;
 	static const int SWITCH_POWERED = 1;
+	Uint32 uid;                    // entity uid
 public:
 	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist);
 	~Entity();
 
 
-	Uint32 uid;                    // entity uid
+	Uint32 getUID() const {return uid;}
+	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence
 	real_t x, y, z;                // world coordinates
 	real_t yaw, pitch, roll;       // rotation
@@ -189,7 +191,7 @@ Sint32 statGetPER(Stat* entitystats);
 Sint32 statGetCHR(Stat* entitystats);
 int AC(Stat* stat);
 
-Entity* uidToEntity(Uint32 uidnum);
+Entity* uidToEntity(Sint32 uidnum);
 list_t* checkTileForEntity(int x, int y); //Don't forget to free the list returned when you're done with it. Also, provide x and y in map, not entity, units.
 /*
  * Don't forget to free the list returned when you're done with it.

@@ -118,7 +118,7 @@ void initTroll(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(GNOME, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 			myStats->HP *= 2;
@@ -133,7 +133,7 @@ void initTroll(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(205, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -141,7 +141,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity->focaly = limbs[TROLL][1][1]; // 0
 	entity->focalz = limbs[TROLL][1][2]; // 0
 	entity->behavior = &actTrollLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -151,7 +151,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity = newEntity(209, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -159,7 +159,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity->focaly = limbs[TROLL][2][1]; // 0
 	entity->focalz = limbs[TROLL][2][2]; // 2
 	entity->behavior = &actTrollLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -169,7 +169,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity = newEntity(208, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -177,7 +177,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity->focaly = limbs[TROLL][3][1]; // 0
 	entity->focalz = limbs[TROLL][3][2]; // 2
 	entity->behavior = &actTrollLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -187,7 +187,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity = newEntity(207, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -195,7 +195,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity->focaly = limbs[TROLL][4][1]; // 0
 	entity->focalz = limbs[TROLL][4][2]; // 3
 	entity->behavior = &actTrollLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -205,7 +205,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity = newEntity(206, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -213,7 +213,7 @@ void initTroll(Entity* my, Stat* myStats)
 	entity->focaly = limbs[TROLL][5][1]; // 0
 	entity->focalz = limbs[TROLL][5][2]; // 3
 	entity->behavior = &actTrollLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -274,7 +274,7 @@ void trollDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
