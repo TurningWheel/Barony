@@ -102,7 +102,7 @@ void initGhoul(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(GHOUL, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 			myStats->HP *= 3;
@@ -130,7 +130,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(247, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -138,7 +138,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GHOUL][1][1]; // 0
 	entity->focalz = limbs[GHOUL][1][2]; // 0
 	entity->behavior = &actGhoulLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -148,7 +148,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity = newEntity(251, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -156,7 +156,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GHOUL][2][1]; // 0
 	entity->focalz = limbs[GHOUL][2][2]; // 2
 	entity->behavior = &actGhoulLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -166,7 +166,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity = newEntity(250, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -174,7 +174,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GHOUL][3][1]; // 0
 	entity->focalz = limbs[GHOUL][3][2]; // 2
 	entity->behavior = &actGhoulLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -184,7 +184,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity = newEntity(249, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -192,7 +192,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GHOUL][4][1]; // 0
 	entity->focalz = limbs[GHOUL][4][2]; // 3
 	entity->behavior = &actGhoulLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -202,7 +202,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity = newEntity(248, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -210,7 +210,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GHOUL][5][1]; // 0
 	entity->focalz = limbs[GHOUL][5][2]; // 3
 	entity->behavior = &actGhoulLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -277,7 +277,7 @@ void ghoulDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

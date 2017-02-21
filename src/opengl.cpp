@@ -174,7 +174,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 					else
 					{
-						glColor4ub((Uint8)(entity->uid), (Uint8)(entity->uid >> 8), (Uint8)(entity->uid >> 16), (Uint8)(entity->uid >> 24));
+						Uint32 uid = entity->getUID();
+						glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
 					}
 
 					// calculate model offsets
@@ -326,7 +327,8 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 				}
 				else
 				{
-					glColor4ub((Uint8)(entity->uid), (Uint8)(entity->uid >> 8), (Uint8)(entity->uid >> 16), (Uint8)(entity->uid >> 24));
+					Uint32 uid = entity->getUID();
+					glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
 				}
 
 				polytriangle_t* face = &polymodels[modelindex].faces[index];
@@ -365,10 +367,11 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 			else
 			{
 				GLfloat uidcolors[4];
-				uidcolors[0] = ((Uint8)(entity->uid)) / 255.f;
-				uidcolors[1] = ((Uint8)(entity->uid >> 8)) / 255.f;
-				uidcolors[2] = ((Uint8)(entity->uid >> 16)) / 255.f;
-				uidcolors[3] = ((Uint8)(entity->uid >> 24)) / 255.f;
+				Uint32 uid = entity->getUID();
+				uidcolors[0] = ((Uint8)(uid)) / 255.f;
+				uidcolors[1] = ((Uint8)(uid >> 8)) / 255.f;
+				uidcolors[2] = ((Uint8)(uid >> 16)) / 255.f;
+				uidcolors[3] = ((Uint8)(uid >> 24)) / 255.f;
 				glColor4f(uidcolors[0], uidcolors[1], uidcolors[2], uidcolors[3]);
 			}
 			glDrawArrays(GL_TRIANGLES, 0, 3 * polymodels[modelindex].numfaces);
@@ -501,7 +504,8 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode)
 	}
 	else
 	{
-		glColor4ub((Uint8)(entity->uid), (Uint8)(entity->uid >> 8), (Uint8)(entity->uid >> 16), (Uint8)(entity->uid >> 24));
+		Uint32 uid = entity->getUID();
+		glColor4ub((Uint8)(uid), (Uint8)(uid >> 8), (Uint8)(uid >> 16), (Uint8)(uid >> 24));
 	}
 
 	// draw quad

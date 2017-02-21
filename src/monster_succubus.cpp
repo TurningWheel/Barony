@@ -56,7 +56,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -114,7 +114,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(191, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -122,7 +122,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SUCCUBUS][1][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][1][2]; // 0
 	entity->behavior = &actSuccubusLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -132,7 +132,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity = newEntity(195, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -140,7 +140,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SUCCUBUS][2][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][2][2]; // 2
 	entity->behavior = &actSuccubusLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -150,7 +150,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity = newEntity(194, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -158,7 +158,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SUCCUBUS][3][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][3][2]; // 2
 	entity->behavior = &actSuccubusLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -168,7 +168,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity = newEntity(193, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -176,7 +176,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SUCCUBUS][4][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][4][2]; // 1.5
 	entity->behavior = &actSuccubusLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -186,7 +186,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity = newEntity(192, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -194,7 +194,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SUCCUBUS][5][1]; // 0
 	entity->focalz = limbs[SUCCUBUS][5][2]; // 1.5
 	entity->behavior = &actSuccubusLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -255,7 +255,7 @@ void succubusDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

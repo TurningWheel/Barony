@@ -57,7 +57,7 @@ void actItem(Entity* my)
 			{
 				if ( entityInsideEntity(my, tempEntity) )
 				{
-					my->parent = tempEntity->uid;
+					my->parent = tempEntity->getUID();
 				}
 				else
 				{
@@ -69,7 +69,7 @@ void actItem(Entity* my)
 						{
 							if ( entityInsideEntity(my, entity) )
 							{
-								my->parent = entity->uid;
+								my->parent = entity->getUID();
 								break;
 							}
 						}
@@ -86,7 +86,7 @@ void actItem(Entity* my)
 					{
 						if ( entityInsideEntity(my, entity) )
 						{
-							my->parent = entity->uid;
+							my->parent = entity->getUID();
 							break;
 						}
 					}
@@ -95,11 +95,11 @@ void actItem(Entity* my)
 		}
 
 		// request entity update (check if I've been deleted)
-		if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) )
+		if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 		{
 			strcpy((char*)net_packet->data, "ENTE");
 			net_packet->data[4] = clientnum;
-			SDLNet_Write32(my->uid, &net_packet->data[5]);
+			SDLNet_Write32(my->getUID(), &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 9;

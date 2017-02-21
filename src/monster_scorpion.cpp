@@ -110,7 +110,7 @@ void initScorpion(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(SCORPION, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -120,14 +120,14 @@ void initScorpion(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(197, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->focalz = -models[entity->sprite]->sizez / 4 + .5;
 	entity->focalx = .75;
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->behavior = &actScorpionTail;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node_t* node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -157,7 +157,7 @@ void scorpionDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

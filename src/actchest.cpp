@@ -476,7 +476,7 @@ void actChest(Entity* my)
 				{
 					//Send all of the items to the client.
 					strcpy((char*)net_packet->data, "CHST");  //Chest.
-					SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]); //Give the client the UID.
+					SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]); //Give the client the UID.
 					net_packet->address.host = net_clients[chestclicked - 1].host;
 					net_packet->address.port = net_clients[chestclicked - 1].port;
 					net_packet->len = 8;

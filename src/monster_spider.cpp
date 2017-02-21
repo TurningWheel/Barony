@@ -111,7 +111,7 @@ void initSpider(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(SPIDER, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -121,7 +121,7 @@ void initSpider(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(268, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -129,7 +129,7 @@ void initSpider(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SPIDER][1][1]; // 0
 	entity->focalz = limbs[SPIDER][1][2]; // 1
 	entity->behavior = &actSpiderLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node_t* node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -139,7 +139,7 @@ void initSpider(Entity* my, Stat* myStats)
 	entity = newEntity(268, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -147,7 +147,7 @@ void initSpider(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SPIDER][2][1]; // 0
 	entity->focalz = limbs[SPIDER][2][2]; // 1
 	entity->behavior = &actSpiderLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -160,7 +160,7 @@ void initSpider(Entity* my, Stat* myStats)
 		entity = newEntity(269, 0, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
-		entity->skill[2] = my->uid;
+		entity->skill[2] = my->getUID();
 		entity->fskill[2] = (c / 8.f);
 		entity->flags[PASSABLE] = TRUE;
 		entity->flags[NOUPDATE] = TRUE;
@@ -169,7 +169,7 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->focaly = limbs[SPIDER][3][1]; // 0
 		entity->focalz = limbs[SPIDER][3][2]; // -1
 		entity->behavior = &actSpiderLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -179,7 +179,7 @@ void initSpider(Entity* my, Stat* myStats)
 		entity = newEntity(270, 0, map.entities);
 		entity->sizex = 4;
 		entity->sizey = 4;
-		entity->skill[2] = my->uid;
+		entity->skill[2] = my->getUID();
 		entity->flags[PASSABLE] = TRUE;
 		entity->flags[NOUPDATE] = TRUE;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -187,7 +187,7 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->focaly = limbs[SPIDER][4][1]; // 0
 		entity->focalz = limbs[SPIDER][4][2]; // 0
 		entity->behavior = &actSpiderLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -218,7 +218,7 @@ void spiderDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

@@ -287,7 +287,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(218, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -295,7 +295,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SHOPKEEPER][1][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][1][2]; // 0
 	entity->behavior = &actShopkeeperLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -305,7 +305,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity = newEntity(222, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -313,7 +313,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SHOPKEEPER][2][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][2][2]; // 2
 	entity->behavior = &actShopkeeperLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -323,7 +323,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity = newEntity(221, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -331,7 +331,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SHOPKEEPER][3][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][3][2]; // 2
 	entity->behavior = &actShopkeeperLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -341,7 +341,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity = newEntity(220, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -349,7 +349,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SHOPKEEPER][4][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][4][2]; // 1.5
 	entity->behavior = &actShopkeeperLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -359,7 +359,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity = newEntity(219, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -367,7 +367,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	entity->focaly = limbs[SHOPKEEPER][5][1]; // 0
 	entity->focalz = limbs[SHOPKEEPER][5][2]; // 1.5
 	entity->behavior = &actShopkeeperLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -428,7 +428,7 @@ void shopkeeperDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;

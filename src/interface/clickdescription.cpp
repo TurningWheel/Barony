@@ -269,7 +269,7 @@ void clickDescription(int player, Entity* entity)
 			// send spot command to server
 			strcpy((char*)net_packet->data, "SPOT");
 			net_packet->data[4] = player;
-			SDLNet_Write32((Uint32)entity->uid, &net_packet->data[5]);
+			SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 9;

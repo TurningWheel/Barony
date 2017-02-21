@@ -22,6 +22,7 @@ typedef double real_t;
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
+#include <unordered_map>
 
 #include "Config.hpp"
 
@@ -254,6 +255,7 @@ typedef struct map_t
 	char author[32]; // author of the map
 	unsigned int width, height;  // size of the map
 	Sint32* tiles;
+	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 } map_t;
 

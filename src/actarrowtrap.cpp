@@ -83,7 +83,7 @@ void actArrowTrap(Entity* my)
 				{
 					Entity* entity = newEntity(166, 1, map.entities); // arrow
 					playSoundEntity(my, 239 + rand() % 3, 96);
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					entity->x = my->x + x;
 					entity->y = my->y + y;
 					entity->z = my->z;

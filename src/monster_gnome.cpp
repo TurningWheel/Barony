@@ -136,7 +136,7 @@ void initGnome(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(GNOME, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -146,7 +146,7 @@ void initGnome(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(296, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -154,7 +154,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][1][1]; // 0
 	entity->focalz = limbs[GNOME][1][2]; // 0
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -164,7 +164,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(297, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -172,7 +172,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][2][1]; // 0
 	entity->focalz = limbs[GNOME][2][2]; // 1.5
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -182,7 +182,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(298, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -190,7 +190,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][3][1]; // 0
 	entity->focalz = limbs[GNOME][3][2]; // 1.5
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -200,7 +200,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(299, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -208,7 +208,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][4][1]; // 0
 	entity->focalz = limbs[GNOME][4][2]; // 2
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -218,7 +218,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(301, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
@@ -226,7 +226,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][5][1]; // 0
 	entity->focalz = limbs[GNOME][5][2]; // 2
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -236,7 +236,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[INVISIBLE] = TRUE;
@@ -245,7 +245,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][6][1]; // 0
 	entity->focalz = limbs[GNOME][6][2]; // -.5
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	entity->pitch = .25;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -256,7 +256,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = TRUE;
 	entity->flags[NOUPDATE] = TRUE;
 	entity->flags[INVISIBLE] = TRUE;
@@ -265,7 +265,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][7][1]; // 0
 	entity->focalz = limbs[GNOME][7][2]; // 1.5
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -275,7 +275,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity = newEntity(-1, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
+	entity->skill[2] = my->getUID();
 	entity->scalex = 1.01;
 	entity->scaley = 1.01;
 	entity->scalez = 1.01;
@@ -287,7 +287,7 @@ void initGnome(Entity* my, Stat* myStats)
 	entity->focaly = limbs[GNOME][8][1]; // 0
 	entity->focalz = limbs[GNOME][8][2]; // 4
 	entity->behavior = &actGnomeLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -435,7 +435,7 @@ void gnomeDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
@@ -907,7 +907,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -999,7 +999,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
@@ -1050,7 +1050,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->uid % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}

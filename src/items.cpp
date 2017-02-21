@@ -816,7 +816,7 @@ void dropItem(Item* item, int player)
 		entity->skill[13] = 1;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
-		entity->parent = players[player]->entity->uid;
+		entity->parent = players[player]->entity->getUID();
 
 		// play sound
 		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
@@ -881,7 +881,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 	entity->skill[13] = 1;
 	entity->skill[14] = item->appearance;
 	entity->skill[15] = item->identified;
-	entity->parent = monster->uid;
+	entity->parent = monster->getUID();
 
 	item->count--;
 	Item** slot;
@@ -2141,7 +2141,7 @@ void Item::apply(int player, Entity* entity)
 		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
 		net_packet->data[24] = identified;
 		net_packet->data[25] = player;
-		SDLNet_Write32((Uint32)entity->uid, &net_packet->data[26]);
+		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[26]);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		net_packet->len = 30;

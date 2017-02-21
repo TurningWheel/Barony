@@ -665,7 +665,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				childEntity = newEntity(entity->sprite, 1, map.entities);
 				childEntity->x = entity->x + x * 16;
 				childEntity->y = entity->y + y * 16;
-				//printlog("1 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("1 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 			}
 
 			// finally, copy the doors into a single doors list
@@ -1023,11 +1023,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			entity->x = x * 16;
 			entity->y = y * 16;
-			//printlog("2 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->uid,entity->x,entity->y);
+			//printlog("2 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 			entity = newEntity(18, 1, map.entities); // electricity node
 			entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
 			entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
-			//printlog("4 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->uid,entity->x,entity->y);
+			//printlog("4 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 			// make torches
 			if ( arrowtrap )
 			{
@@ -1060,8 +1060,8 @@ int generateDungeon(char* levelset, Uint32 seed)
 						entity2->y = y * 16 - 16;
 						break;
 				}
-				//printlog("5 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->uid,entity->x,entity->y);
-				//printlog("6 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity2->sprite,entity2->uid,entity2->x,entity2->y);
+				//printlog("5 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
+				//printlog("6 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity2->sprite,entity2->getUID(),entity2->x,entity2->y);
 			}
 			i = 0;
 			int testx = 0, testy = 0;
@@ -1088,11 +1088,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 				entity = newEntity(34, 1, map.entities); // pressure plate
 				entity->x = x * 16;
 				entity->y = y * 16;
-				//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->uid,entity->x,entity->y);
+				//printlog("7 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 				entity = newEntity(18, 1, map.entities); // electricity node
 				entity->x = x * 16 - (side == 3) * 16 + (side == 1) * 16;
 				entity->y = y * 16 - (side == 0) * 16 + (side == 2) * 16;
-				//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->uid,entity->x,entity->y);
+				//printlog("8 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 				switch ( side )
 				{
 					case 0:
@@ -1354,7 +1354,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					Entity* also = newEntity(33, 1, map.entities);
 					also->x = x * 16;
 					also->y = y * 16;
-					//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->uid,also->x,also->y);
+					//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->getUID(),also->x,also->y);
 				}
 			}
 		}
@@ -1362,7 +1362,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			entity->x = x * 16;
 			entity->y = y * 16;
-			//printlog("9 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->uid,entity->x,entity->y);
+			//printlog("9 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 		}
 
 		// mark this location as inelligible for reselection
@@ -1517,7 +1517,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(2, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				//printlog("16 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("16 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
 				childEntity->behavior = &actDoor;
@@ -1528,7 +1528,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
-				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -1537,7 +1537,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
-				//printlog("18 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("18 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -1555,7 +1555,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(2, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				//printlog("19 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("19 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
@@ -1567,7 +1567,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
-				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -1576,7 +1576,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
-				//printlog("21 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("21 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -2002,10 +2002,10 @@ void assignActions(map_t* map)
 					if ( myStats->type == DEVIL )
 					{
 						childEntity = newEntity(72, 1, map->entities);
-						//printlog("Generated devil spawner. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+						//printlog("Generated devil spawner. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
-						childEntity->uid = -3;
+						childEntity->setUID(-3);
 						entity_uids--;
 					}
 				}
@@ -2135,7 +2135,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = 8;
 				childEntity->focalz = -4.5;
 				childEntity->sizex = 1;
@@ -2171,7 +2171,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
@@ -2183,7 +2183,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
-				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -2192,7 +2192,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
-				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -2207,7 +2207,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
 				childEntity->skill[28] = 1; //It's a mechanism.
@@ -2218,7 +2218,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
-				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -2227,7 +2227,7 @@ void assignActions(map_t* map)
 				childEntity->flags[BLOCKSIGHT] = TRUE;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
-				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
@@ -2246,11 +2246,11 @@ void assignActions(map_t* map)
 				entity->skill[9] = -1; //Set default chest as random category < 0
 
 				childEntity = newEntity(216, 0, map->entities);
-				childEntity->parent = entity->uid;
-				entity->parent = childEntity->uid;
+				childEntity->parent = entity->getUID();
+				entity->parent = childEntity->getUID();
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 3;
-				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 2.75;
 				childEntity->focalx = 3;
 				childEntity->focalz = -.75;
@@ -2370,7 +2370,7 @@ void assignActions(map_t* map)
 							Entity* childEntity = newEntity(252, 1, map->entities);
 							childEntity->x = (x << 4) + 8;
 							childEntity->y = (y << 4) + 8;
-							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 							entity->flags[PASSABLE] = TRUE;
 							if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 							{
@@ -2491,10 +2491,10 @@ void assignActions(map_t* map)
 					childEntity = newEntity(8, 1, map->entities);
 					childEntity->x = entity->x - 8;
 					childEntity->y = entity->y - 8;
-					//printlog("31 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+					//printlog("31 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 					childEntity->z = 0;
 					childEntity->skill[18] = 1; // so the item retains its position
-					entity->parent = childEntity->uid;
+					entity->parent = childEntity->getUID();
 				}
 				if ( prng_get_uint() % 2 == 0 )
 				{
@@ -2506,7 +2506,7 @@ void assignActions(map_t* map)
 						childEntity = newEntity(60, 1, map->entities);
 						childEntity->x = entity->x - 8;
 						childEntity->y = entity->y - 8;
-						//printlog("32 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+						//printlog("32 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 						childEntity->yaw = ((int)(prng_get_uint() % 80) - 40 + c * 90) * (PI / 180.f);
 						if ( childEntity->yaw >= PI * 2 )
 						{
@@ -2589,7 +2589,7 @@ void assignActions(map_t* map)
 				childEntity = newEntity(283, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				//printlog("33 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("33 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 7.75 - 0.01;
 				childEntity->flags[PASSABLE] = TRUE;
 				break;
@@ -2666,11 +2666,11 @@ void assignActions(map_t* map)
 				entity->sprite = 188;
 
 				childEntity = newEntity(216, 0, map->entities);
-				childEntity->parent = entity->uid;
-				entity->parent = childEntity->uid;
+				childEntity->parent = entity->getUID();
+				entity->parent = childEntity->getUID();
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 3;
-				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->uid,childEntity->x,childEntity->y);
+				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 2.75;
 				childEntity->focalx = 3;
 				childEntity->focalz = -.75;
