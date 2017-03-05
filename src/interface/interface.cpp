@@ -57,16 +57,6 @@ int selectedChestSlot = -1;
 int selected_inventory_slot_x = 0;
 int selected_inventory_slot_y = 0;
 
-//Remove curse GUI definitions.
-bool removecursegui_active = FALSE;
-bool removecursegui_appraising = FALSE;
-int removecursegui_offset_x = 0;
-int removecursegui_offset_y = 0;
-bool dragging_removecurseGUI = FALSE;
-int removecursescroll = 0;
-Item* removecurse_items[4];
-SDL_Surface* removecurseGUI_img;
-
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
 SDL_Surface* rightsidebar_slot_highlighted_img = NULL;

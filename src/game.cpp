@@ -2649,6 +2649,7 @@ int main(int argc, char** argv)
 						gui_mode = GUI_MODE_INVENTORY;
 						identifygui_active = false;
 						selectedIdentifySlot = -1;
+						closeRemoveCurseGUI();
 						if ( shopkeeper != 0 )
 						{
 							if ( multiplayer != CLIENT )
@@ -2753,6 +2754,7 @@ int main(int argc, char** argv)
 							shootmode = true;
 							identifygui_active = false;
 							selectedIdentifySlot = -1;
+							closeRemoveCurseGUI();
 						}
 
 						//What even is this code? When should it be run?

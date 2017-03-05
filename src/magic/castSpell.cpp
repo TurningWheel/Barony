@@ -558,6 +558,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							openedChest[i]->closeChest();
 						}
+
+						initRemoveCurseGUIControllerCode();
 					}
 				}
 			}

@@ -138,10 +138,16 @@ public:
 	bool handleShopMovement();
 
 	/*
-	 * Uses dpad to move the cursor around a shop's inventory and select items.
+	 * Uses dpad to move the cursor around Identify GUI's inventory and select items.
 	 * Returns true if moved.
 	 */
 	bool handleIdentifyMovement();
+
+	/*
+	 * Uses dpad to move the cursor around Remove Curse GUI's inventory and select items.
+	 * Returns true if moved.
+	 */
+	bool handleRemoveCurseMovement();
 
 	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
@@ -173,6 +179,7 @@ public:
 };
 
 void initIdentifyGUIControllerCode();
+void initRemoveCurseGUIControllerCode();
 
 extern Player** players;
 //In the process of switching from the old entity player array, all of the old uses of player need to be hunted down and then corrected to account for the new array.

@@ -1429,6 +1429,7 @@ void clientHandlePacket()
 		sellitem = NULL;
 		shopitemscroll = 0;
 		identifygui_active = false; //Really need a centralized function to open up whatever screen/inventory.
+		closeRemoveCurseGUI();
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
