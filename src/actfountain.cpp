@@ -61,12 +61,12 @@ void actFountain(Entity* my)
 			playSoundEntityLocal(my, 135, 32 );
 		}
 		entity = spawnGib(my);
-		entity->flags[INVISIBLE] = FALSE;
+		entity->flags[INVISIBLE] = false;
 		entity->y -= 2;
 		entity->z -= 8;
-		entity->flags[SPRITE] = FALSE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[UPDATENEEDED] = FALSE;
+		entity->flags[SPRITE] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UPDATENEEDED] = false;
 		entity->skill[4] = 7;
 		entity->sprite = 4;
 		entity->yaw = (rand() % 360) * PI / 180.0;
@@ -113,7 +113,7 @@ void actFountain(Entity* my)
 					if (players[i]->entity->flags[BURNING])
 					{
 						messagePlayer(i, language[468]);
-						players[i]->entity->flags[BURNING] = FALSE;
+						players[i]->entity->flags[BURNING] = false;
 						if (i > 0)
 						{
 							serverUpdateEntityFlag(players[i]->entity, BURNING);
@@ -141,7 +141,7 @@ void actFountain(Entity* my)
 						{
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
 							messagePlayer(i, language[470]);
-							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, FALSE, NULL);
+							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
 							useItem(item, i);
 							// Long live the mystical fountain of TODO.
 							break;

@@ -27,9 +27,9 @@ void initDevil(Entity* my, Stat* myStats)
 
 	my->sprite = 304;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[BLOCKSIGHT] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[BLOCKSIGHT] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -70,7 +70,7 @@ void initDevil(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -87,7 +87,7 @@ void initDevil(Entity* my, Stat* myStats)
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
+		myStats->EFFECTS[EFF_LEVITATING] = true;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
@@ -106,8 +106,8 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][1][0]; // 2.5
 	entity->focaly = limbs[DEVIL][1][1]; // 0
@@ -124,8 +124,8 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][2][0]; // 0
 	entity->focaly = limbs[DEVIL][2][1]; // 18
@@ -142,8 +142,8 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][3][0]; // 0
 	entity->focaly = limbs[DEVIL][3][1]; // 17
@@ -160,8 +160,8 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][4][0]; // 0
 	entity->focaly = limbs[DEVIL][4][1]; // -18
@@ -178,8 +178,8 @@ void initDevil(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][5][0]; // 0
 	entity->focaly = limbs[DEVIL][5][1]; // -17
@@ -241,7 +241,7 @@ void devilDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -327,10 +327,10 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -346,7 +346,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -354,8 +354,8 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -371,7 +371,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;

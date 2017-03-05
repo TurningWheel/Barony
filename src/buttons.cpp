@@ -117,25 +117,25 @@ void buttonSprite(button_t* my)
 void buttonPoint(button_t* my)
 {
 	selectedTool = 0;
-	selectedarea = FALSE;
+	selectedarea = false;
 }
 
 void buttonBrush(button_t* my)
 {
 	selectedTool = 1;
-	selectedarea = FALSE;
+	selectedarea = false;
 }
 
 void buttonSelect(button_t* my)
 {
 	selectedTool = 2;
-	selectedarea = FALSE;
+	selectedarea = false;
 }
 
 void buttonFill(button_t* my)
 {
 	selectedTool = 3;
-	selectedarea = FALSE;
+	selectedarea = false;
 }
 
 // File menu
@@ -552,7 +552,7 @@ void buttonCut(button_t* my)
 		return;
 	}
 	buttonCopy(my);
-	selectedarea = TRUE;
+	selectedarea = true;
 	buttonDelete(my);
 }
 
@@ -581,7 +581,7 @@ void buttonCopy(button_t* my)
 		}
 		copymap.name[0] = drawlayer;
 	}
-	selectedarea = FALSE;
+	selectedarea = false;
 }
 
 void buttonPaste(button_t* my)
@@ -591,8 +591,8 @@ void buttonPaste(button_t* my)
 	// paste the selected tiles
 	if ( copymap.tiles != NULL )
 	{
-		pasting = TRUE;
-		selectedarea = FALSE;
+		pasting = true;
+		selectedarea = false;
 	}
 }
 
@@ -618,7 +618,7 @@ void buttonDelete(button_t* my)
 				map.tiles[drawlayer + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
 			}
 		}
-		selectedarea = FALSE;
+		selectedarea = false;
 	}
 }
 
@@ -626,8 +626,8 @@ void buttonSelectAll(button_t* my)
 {
 	menuVisible = 0;
 	selectedTool = 2;
-	selectedarea = TRUE;
-	selectingspace = FALSE;
+	selectedarea = true;
+	selectingspace = false;
 	selectedarea_x1 = 0;
 	selectedarea_x2 = map.width - 1;
 	selectedarea_y1 = 0;
@@ -693,7 +693,7 @@ void buttonGrid(button_t* my)
 
 void button3DMode(button_t* my)
 {
-	mode3d = (mode3d == FALSE);
+	mode3d = (mode3d == false);
 }
 
 // Map menu

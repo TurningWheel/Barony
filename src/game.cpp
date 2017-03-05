@@ -180,12 +180,12 @@ void gameLogic(void)
 	}
 
 	// fading in/out
-	if ( fadeout == TRUE )
+	if ( fadeout == true )
 	{
 		fadealpha = std::min(fadealpha + 5, 255);
 		if ( fadealpha == 255 )
 		{
-			fadefinished = TRUE;
+			fadefinished = true;
 		}
 		if ( multiplayer == SERVER && introstage == 3 )
 		{
@@ -244,7 +244,7 @@ void gameLogic(void)
 			{
 				if ( !entity->flags[BURNABLE] )
 				{
-					entity->flags[BURNING] = FALSE;
+					entity->flags[BURNING] = false;
 					continue;
 				}
 				j = 1 + rand() % 4;
@@ -262,7 +262,7 @@ void gameLogic(void)
 	// damage indicator timers
 	handleDamageIndicatorTicks();
 
-	if ( intro == TRUE )
+	if ( intro == true )
 	{
 		// rotate gear
 		gearrot += 1;
@@ -323,25 +323,25 @@ void gameLogic(void)
 					(*entity->behavior)(entity);
 					if ( entitiesdeleted.first != NULL )
 					{
-						entitydeletedself = FALSE;
+						entitydeletedself = false;
 						for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
 						{
 							if ( entity == (Entity*)node2->element )
 							{
-								entitydeletedself = TRUE;
+								entitydeletedself = true;
 								break;
 							}
 						}
-						if ( entitydeletedself == FALSE )
+						if ( entitydeletedself == false )
 						{
-							entity->ranbehavior = TRUE;
+							entity->ranbehavior = true;
 						}
 						nextnode = map.entities->first;
 						list_FreeAll(&entitiesdeleted);
 					}
 					else
 					{
-						entity->ranbehavior = TRUE;
+						entity->ranbehavior = true;
 						nextnode = node->next;
 					}
 				}
@@ -350,7 +350,7 @@ void gameLogic(void)
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			entity = (Entity*)node->element;
-			entity->ranbehavior = FALSE;
+			entity->ranbehavior = false;
 		}
 		multiplayer = c;
 		clientnum = x;
@@ -397,7 +397,7 @@ void gameLogic(void)
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				assailant[c] = FALSE;
+				assailant[c] = false;
 			}
 
 			// animate tiles
@@ -456,11 +456,11 @@ void gameLogic(void)
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
 												entity->z = 7.5;
-												entity->flags[PASSABLE] = TRUE;
-												entity->flags[SPRITE] = TRUE;
-												entity->flags[NOUPDATE] = TRUE;
-												entity->flags[UPDATENEEDED] = FALSE;
-												entity->flags[UNCLICKABLE] = TRUE;
+												entity->flags[PASSABLE] = true;
+												entity->flags[SPRITE] = true;
+												entity->flags[NOUPDATE] = true;
+												entity->flags[UPDATENEEDED] = false;
+												entity->flags[UNCLICKABLE] = true;
 												entity->sizex = 2;
 												entity->sizey = 2;
 												entity->fskill[3] = 0.01;
@@ -510,7 +510,7 @@ void gameLogic(void)
 			{
 				if ( stats[clientnum]->GOLD > 0 )
 				{
-					conductPenniless = FALSE;
+					conductPenniless = false;
 				}
 			}
 
@@ -534,35 +534,35 @@ void gameLogic(void)
 						}
 						if ( entitiesdeleted.first != NULL )
 						{
-							entitydeletedself = FALSE;
+							entitydeletedself = false;
 							for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
 							{
 								if ( entity == (Entity*)node2->element )
 								{
-									entitydeletedself = TRUE;
+									entitydeletedself = true;
 									break;
 								}
 							}
-							if ( entitydeletedself == FALSE )
+							if ( entitydeletedself == false )
 							{
-								entity->ranbehavior = TRUE;
+								entity->ranbehavior = true;
 							}
 							nextnode = map.entities->first;
 							list_FreeAll(&entitiesdeleted);
 						}
 						else
 						{
-							entity->ranbehavior = TRUE;
+							entity->ranbehavior = true;
 							nextnode = node->next;
 						}
 					}
 				}
-				if ( loadnextlevel == TRUE )
+				if ( loadnextlevel == true )
 				{
 					for ( node = map.entities->first; node != NULL; node = node->next )
 					{
 						entity = (Entity*)node->element;
-						entity->flags[NOUPDATE] = TRUE;
+						entity->flags[NOUPDATE] = true;
 					}
 
 					// hack to fix these things from breaking everything...
@@ -585,7 +585,7 @@ void gameLogic(void)
 #endif
 
 					// show loading message
-					loading = TRUE;
+					loading = true;
 					drawClearBuffers();
 					int w, h;
 					TTF_SizeUTF8(ttf16, language[709], &w, &h);
@@ -649,7 +649,7 @@ void gameLogic(void)
 					{
 						for ( c = 1; c < MAXPLAYERS; c++ )
 						{
-							if ( client_disconnected[c] == TRUE )
+							if ( client_disconnected[c] == true )
 							{
 								continue;
 							}
@@ -664,7 +664,7 @@ void gameLogic(void)
 							sendPacketSafe(net_sock, -1, net_packet, c - 1);
 						}
 					}
-					darkmap = FALSE;
+					darkmap = false;
 					numplayers = 0;
 					if ( !secretlevel )
 					{
@@ -753,9 +753,9 @@ void gameLogic(void)
 								break;
 						}
 					}
-					loadnextlevel = FALSE;
-					loading = FALSE;
-					fadeout = FALSE;
+					loadnextlevel = false;
+					loading = false;
+					fadeout = false;
 					fadealpha = 255;
 
 					for (c = 0; c < MAXPLAYERS; c++)
@@ -789,7 +789,7 @@ void gameLogic(void)
 									}
 									if (!monsterally[HUMAN][monsterStats->type])
 									{
-										monster->flags[USERFLAG2] = TRUE;
+										monster->flags[USERFLAG2] = true;
 									}
 
 									newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -831,7 +831,7 @@ void gameLogic(void)
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*)node->element;
-				entity->ranbehavior = FALSE;
+				entity->ranbehavior = false;
 			}
 
 			if ( multiplayer == SERVER )
@@ -841,7 +841,7 @@ void gameLogic(void)
 				{
 					for ( c = 1; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == TRUE )
+						if ( client_disconnected[c] == true )
 						{
 							continue;
 						}
@@ -867,16 +867,16 @@ void gameLogic(void)
 						{
 							if ( !client_disconnected[c] )
 							{
-								if ( entity->flags[UPDATENEEDED] == TRUE && entity->flags[NOUPDATE] == FALSE )
+								if ( entity->flags[UPDATENEEDED] == true && entity->flags[NOUPDATE] == false )
 								{
 									// update entity for all clients
 									if ( entity->getUID() % (TICKS_PER_SECOND * 4) == ticks % (TICKS_PER_SECOND * 4) )
 									{
-										sendEntityUDP(entity, c, TRUE);
+										sendEntityUDP(entity, c, true);
 									}
 									else
 									{
-										sendEntityUDP(entity, c, FALSE);
+										sendEntityUDP(entity, c, false);
 									}
 								}
 							}
@@ -904,7 +904,7 @@ void gameLogic(void)
 					if ( losingConnection[c] && ticks - client_keepalive[c] == 1 )
 					{
 						// regained connection
-						losingConnection[c] = FALSE;
+						losingConnection[c] = false;
 						int i;
 						for ( i = 0; i < MAXPLAYERS; i++ )
 						{
@@ -914,7 +914,7 @@ void gameLogic(void)
 					else if ( !losingConnection[c] && ticks - client_keepalive[c] == TICKS_PER_SECOND * 30 - 1 )
 					{
 						// 30 second timer
-						losingConnection[c] = TRUE;
+						losingConnection[c] = true;
 						int i;
 						for ( i = 0; i < MAXPLAYERS; i++ )
 						{
@@ -934,7 +934,7 @@ void gameLogic(void)
 						net_packet->address.port = net_clients[c - 1].port;
 						net_packet->len = 4;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
-						client_disconnected[c] = TRUE;
+						client_disconnected[c] = true;
 					}
 				}
 			}
@@ -1037,13 +1037,13 @@ void gameLogic(void)
 				if ( losingConnection[0] && ticks - client_keepalive[0] == 1 )
 				{
 					// regained connection
-					losingConnection[0] = FALSE;
+					losingConnection[0] = false;
 					messagePlayer(i, language[728]);
 				}
 				else if ( !losingConnection[0] && ticks - client_keepalive[0] == TICKS_PER_SECOND * 30 - 1 )
 				{
 					// 30 second timer
-					losingConnection[0] = TRUE;
+					losingConnection[0] = true;
 					messagePlayer(clientnum, language[729]);
 				}
 				else if ( !client_disconnected[c] && ticks - client_keepalive[0] >= TICKS_PER_SECOND * 45 - 1 )
@@ -1100,7 +1100,7 @@ void gameLogic(void)
 					button->key = SDL_SCANCODE_RETURN;
 					button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-					client_disconnected[0] = TRUE;
+					client_disconnected[0] = true;
 				}
 			}
 
@@ -1160,11 +1160,11 @@ void gameLogic(void)
 												entity->x = x * 16 + rand() % 16;
 												entity->y = y * 16 + rand() % 16;
 												entity->z = 7.5;
-												entity->flags[PASSABLE] = TRUE;
-												entity->flags[SPRITE] = TRUE;
-												entity->flags[NOUPDATE] = TRUE;
-												entity->flags[UPDATENEEDED] = FALSE;
-												entity->flags[UNCLICKABLE] = TRUE;
+												entity->flags[PASSABLE] = true;
+												entity->flags[SPRITE] = true;
+												entity->flags[NOUPDATE] = true;
+												entity->flags[UPDATENEEDED] = false;
+												entity->flags[UNCLICKABLE] = true;
 												entity->sizex = 2;
 												entity->sizey = 2;
 												entity->fskill[3] = 0.01;
@@ -1193,7 +1193,7 @@ void gameLogic(void)
 			{
 				if ( stats[clientnum]->GOLD > 0 )
 				{
-					conductPenniless = FALSE;
+					conductPenniless = false;
 				}
 			}
 
@@ -1238,25 +1238,25 @@ void gameLogic(void)
 							(*entity->behavior)(entity);
 							if ( entitiesdeleted.first != NULL )
 							{
-								entitydeletedself = FALSE;
+								entitydeletedself = false;
 								for ( node2 = entitiesdeleted.first; node2 != NULL; node2 = node2->next )
 								{
 									if ( entity == (Entity*)node2->element )
 									{
-										entitydeletedself = TRUE;
+										entitydeletedself = true;
 										break;
 									}
 								}
-								if ( entitydeletedself == FALSE )
+								if ( entitydeletedself == false )
 								{
-									entity->ranbehavior = TRUE;
+									entity->ranbehavior = true;
 								}
 								nextnode = map.entities->first;
 								list_FreeAll(&entitiesdeleted);
 							}
 							else
 							{
-								entity->ranbehavior = TRUE;
+								entity->ranbehavior = true;
 								nextnode = node->next;
 								if ( entity->flags[UPDATENEEDED] && !entity->flags[NOUPDATE] )
 								{
@@ -1385,7 +1385,7 @@ void gameLogic(void)
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*)node->element;
-				entity->ranbehavior = FALSE;
+				entity->ranbehavior = false;
 			}
 
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = nextnode )
@@ -1521,13 +1521,13 @@ void handleButtons(void)
 		{
 			if ( keystatus[button->key] && button->key )
 			{
-				button->pressed = TRUE;
-				button->needclick = FALSE;
+				button->pressed = true;
+				button->needclick = false;
 			}
 			if (button->joykey != -1 && *inputPressed(button->joykey))
 			{
-				button->pressed = TRUE;
-				button->needclick = FALSE;
+				button->pressed = true;
+				button->needclick = false;
 			}
 			if ( mousestatus[SDL_BUTTON_LEFT] )
 			{
@@ -1543,20 +1543,20 @@ void handleButtons(void)
 								continue;
 							}
 							button_t* button = (button_t*)node->element;
-							button->pressed = FALSE;
+							button->pressed = false;
 						}
-						button->pressed = TRUE;
+						button->pressed = true;
 					}
 					else if ( !keystatus[button->key] )
 					{
-						button->pressed = FALSE;
+						button->pressed = false;
 					}
 				}
 				else if ( !keystatus[button->key] )
 				{
-					button->pressed = FALSE;
+					button->pressed = false;
 				}
-				button->needclick = TRUE;
+				button->needclick = true;
 			}
 			if ( button->pressed )
 			{
@@ -1774,7 +1774,7 @@ void handleEvents(void)
 			case SDL_MOUSEBUTTONUP: // if a mouse button is released...
 				mousestatus[event.button.button] = 0; // set this mouse button to 0
 				buttonclick = 0; // release any buttons that were being held down
-				gui_clickdrag = FALSE;
+				gui_clickdrag = false;
 				break;
 			case SDL_MOUSEWHEEL:
 				if ( event.wheel.y > 0 )
@@ -1789,9 +1789,9 @@ void handleEvents(void)
 				}
 				break;
 			case SDL_MOUSEMOTION: // if the mouse is moved...
-				if ( firstmouseevent == TRUE )
+				if ( firstmouseevent == true )
 				{
-					firstmouseevent = FALSE;
+					firstmouseevent = false;
 					break;
 				}
 				menuselect = 0;
@@ -1927,11 +1927,11 @@ Uint32 timerCallback(Uint32 interval, void* param)
 	event.user = userevent;
 
 	int c;
-	bool playeralive = FALSE;
+	bool playeralive = false;
 	for (c = 0; c < MAXPLAYERS; c++)
 		if (players[c] && players[c]->entity && !client_disconnected[c])
 		{
-			playeralive = TRUE;
+			playeralive = true;
 		}
 
 	if ((!gamePaused || multiplayer) && !loading && !intro && playeralive)
@@ -1989,7 +1989,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	if ( (!gamePaused && mode != 1) || mode == 2 )
 	{
-		gamePaused = TRUE;
+		gamePaused = true;
 		if ( SDL_GetRelativeMouseMode() )
 		{
 			SDL_SetRelativeMouseMode(SDL_FALSE);
@@ -2024,7 +2024,7 @@ void pauseGame(int mode, int ignoreplayer)
 	else if ( (gamePaused && mode != 2) || mode == 1 )
 	{
 		buttonCloseSubwindow(NULL);
-		gamePaused = FALSE;
+		gamePaused = false;
 		if ( !SDL_GetRelativeMouseMode() && capture_mouse )
 		{
 			SDL_SetRelativeMouseMode(SDL_TRUE);
@@ -2062,7 +2062,7 @@ void pauseGame(int mode, int ignoreplayer)
 
 	frameRateLimit
 
-	Returns TRUE until the correct number of frames has passed from the
+	Returns true until the correct number of frames has passed from the
 	beginning of the last cycle in the main loop.
 
 -------------------------------------------------------------------------------*/
@@ -2088,11 +2088,11 @@ bool frameRateLimit( Uint32 maxFrameRate )
 #endif
 		}
 
-		return TRUE;
+		return true;
 	}
 	else
 	{
-		return FALSE;
+		return false;
 	}
 }
 
@@ -2195,18 +2195,18 @@ int main(int argc, char** argv)
 					else if ( !strncmp(argv[c], "-map=", 5) )
 					{
 						strcpy(maptoload, argv[c] + 5);
-						loadingmap = TRUE;
+						loadingmap = true;
 					}
 					else if ( !strncmp(argv[c], "-gen=", 5) )
 					{
 						strcpy(maptoload, argv[c] + 5);
-						loadingmap = TRUE;
-						genmap = TRUE;
+						loadingmap = true;
+						genmap = true;
 					}
 					else if ( !strncmp(argv[c], "-config=", 8) )
 					{
 						strcpy(configtoload, argv[c] + 5);
-						loadingconfig = TRUE;
+						loadingconfig = true;
 					}
 					else if (!strncmp(argv[c], "-quickstart=", 12))
 					{
@@ -2261,7 +2261,7 @@ int main(int argc, char** argv)
 			deinitApp();
 			exit(c);
 		}
-		initialized = TRUE;
+		initialized = true;
 
 		// initialize map
 		map.tiles = NULL;
@@ -2275,7 +2275,7 @@ int main(int argc, char** argv)
 
 		// play splash sound
 #ifdef MUSIC
-		playmusic(splashmusic, FALSE, FALSE, FALSE);
+		playmusic(splashmusic, false, false, false);
 #endif
 
 		int old_sdl_ticks = 0;
@@ -2325,7 +2325,7 @@ int main(int argc, char** argv)
 					printTextFormattedAlpha(font16x16_bmp, (xres / 2) - strlen("Turning Wheel") * 9, yres / 2 + 128, std::min<Uint16>(std::max<Uint16>(0, logoalpha), 255), "Turning Wheel");
 					if ( (logoalpha >= 255 || keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL])) && !fadeout )
 					{
-						fadeout = TRUE;
+						fadeout = true;
 					}
 					if ( fadefinished || keystatus[SDL_SCANCODE_ESCAPE] || *inputPressed(joyimpulses[INJOY_MENU_NEXT]) || *inputPressed(joyimpulses[INJOY_MENU_CANCEL]))
 					{
@@ -2335,8 +2335,8 @@ int main(int argc, char** argv)
 						fadealpha = 255;
 #ifndef STEAMWORKS
 						introstage = 0;
-						fadeout = FALSE;
-						fadefinished = FALSE;
+						fadeout = false;
+						fadefinished = false;
 #else
 						switch ( rand() % 4 )
 						{
@@ -2373,22 +2373,22 @@ int main(int argc, char** argv)
 						multiplayer = 0;
 						assignActions(&map);
 						generatePathMaps();
-						fadeout = TRUE;
-						fadefinished = FALSE;
+						fadeout = true;
+						fadefinished = false;
 						if ( !skipintro && !strcmp(classtoquickstart, "") )
 						{
 							introstage = 6;
 #if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
-							playmusic(introductionmusic, TRUE, FALSE, FALSE);
+							playmusic(introductionmusic, true, false, false);
 #endif
 						}
 						else
 						{
 							introstage = 1;
-							fadeout = FALSE;
-							fadefinished = FALSE;
+							fadeout = false;
+							fadefinished = false;
 #if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
-							playmusic(intromusic, TRUE, FALSE, FALSE);
+							playmusic(intromusic, true, false, false);
 #endif
 						}
 #endif
@@ -2407,7 +2407,7 @@ int main(int argc, char** argv)
 					char* banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
 					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
 					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
-					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, TRUE, banner_text2);
+					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, true, banner_text2);
 
 					int time_passed = 0;
 					if (old_sdl_ticks == 0)
@@ -2456,8 +2456,8 @@ int main(int argc, char** argv)
 						multiplayer = 0;
 						assignActions(&map);
 						generatePathMaps();
-						fadeout = TRUE;
-						fadefinished = FALSE;
+						fadeout = true;
+						fadefinished = false;
 					}
 					if ( fadefinished )
 					{
@@ -2465,16 +2465,16 @@ int main(int argc, char** argv)
 						{
 							introstage = 6;
 #ifdef MUSIC
-							playmusic(introductionmusic, TRUE, FALSE, FALSE);
+							playmusic(introductionmusic, true, false, false);
 #endif
 						}
 						else
 						{
 							introstage = 1;
-							fadeout = FALSE;
-							fadefinished = FALSE;
+							fadeout = false;
+							fadefinished = false;
 #ifdef MUSIC
-							playmusic(intromusic, TRUE, FALSE, FALSE);
+							playmusic(intromusic, true, false, false);
 #endif
 						}
 					}
@@ -2499,7 +2499,7 @@ int main(int argc, char** argv)
 						{
 							uniqueGameKey++;
 						}
-						loading = TRUE;
+						loading = true;
 
 						// hack to fix these things from breaking everything...
 						hudarm = NULL;
@@ -2515,12 +2515,12 @@ int main(int argc, char** argv)
 
 						strcpy(stats[0]->name, "Avatar");
 						multiplayer = SINGLE;
-						fadefinished = FALSE;
-						fadeout = FALSE;
+						fadefinished = false;
+						fadeout = false;
 						numplayers = 0;
 
 						// setup game
-						shootmode = TRUE;
+						shootmode = true;
 
 						// make some messages
 						startMessages();
@@ -2531,9 +2531,9 @@ int main(int argc, char** argv)
 						for ( node = map.entities->first; node != NULL; node = node->next )
 						{
 							entity = (Entity*)node->element;
-							entity->flags[NOUPDATE] = TRUE;
+							entity->flags[NOUPDATE] = true;
 						}
-						if ( loadingmap == FALSE )
+						if ( loadingmap == false )
 						{
 							if ( !secretlevel )
 							{
@@ -2570,7 +2570,7 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							if ( genmap == FALSE )
+							if ( genmap == false )
 							{
 								loadMap(maptoload, &map, map.entities);
 							}
@@ -2586,15 +2586,15 @@ int main(int argc, char** argv)
 
 						// kick off the main loop!
 						strcpy(classtoquickstart, "");
-						intro = FALSE;
-						loading = FALSE;
+						intro = false;
+						loading = false;
 					}
 					else
 					{
 
 						// draws the menu level "backdrop"
 						drawClearBuffers();
-						if ( movie == FALSE )
+						if ( movie == false )
 						{
 							camera.winx = 0;
 							camera.winy = 0;
@@ -2645,7 +2645,7 @@ int main(int argc, char** argv)
 					*inputPressed(joyimpulses[INJOY_PAUSE_MENU]) = 0;
 					if ( !shootmode )
 					{
-						shootmode = TRUE;
+						shootmode = true;
 						gui_mode = GUI_MODE_INVENTORY;
 						identifygui_active = false;
 						selectedIdentifySlot = -1;
@@ -2787,7 +2787,7 @@ int main(int argc, char** argv)
 							//Clean up shopkeeper gamepad code here.
 							selectedShopSlot = -1;
 						}
-						if ( shootmode == FALSE )
+						if ( shootmode == false )
 						{
 						}
 						else
@@ -2809,7 +2809,7 @@ int main(int argc, char** argv)
 
 						if (shootmode)
 						{
-							shootmode = FALSE;
+							shootmode = false;
 							attributespage = 0;
 						}
 					}
@@ -2831,7 +2831,7 @@ int main(int argc, char** argv)
 					{
 						*inputPressed(impulses[IN_CHAT]) = 0;
 						cursorflash = ticks;
-						command = TRUE;
+						command = true;
 						if ( !(*inputPressed(impulses[IN_COMMAND])) )
 						{
 							strcpy(command_str, "");
@@ -2862,7 +2862,7 @@ int main(int argc, char** argv)
 						if ( keystatus[SDL_SCANCODE_RETURN] )   // enter
 						{
 							keystatus[SDL_SCANCODE_RETURN] = 0;
-							command = FALSE;
+							command = false;
 							if ( multiplayer != CLIENT )
 							{
 								if ( command_str[0] == '/' )
@@ -2969,7 +2969,7 @@ int main(int argc, char** argv)
 					}
 
 					// other status
-					if ( shootmode == FALSE )
+					if ( shootmode == false )
 					{
 						SDL_SetRelativeMouseMode(SDL_FALSE);
 					}
@@ -2997,7 +2997,7 @@ int main(int argc, char** argv)
 							closeBookGUI();
 						}
 
-						gui_clickdrag = FALSE; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
+						gui_clickdrag = false; //Just a catchall to make sure that any ongoing GUI dragging ends when the GUI is closed.
 
 						if (capture_mouse)
 						{
@@ -3013,7 +3013,7 @@ int main(int argc, char** argv)
 					updateAppraisalItemBox();
 
 					// inventory and stats
-					if ( shootmode == FALSE )
+					if ( shootmode == false )
 					{
 						if (gui_mode == GUI_MODE_INVENTORY)
 						{
@@ -3044,7 +3044,7 @@ int main(int argc, char** argv)
 					}
 
 					// pointer in inventory screen
-					if (shootmode == FALSE)
+					if (shootmode == false)
 					{
 						if (selectedItem)
 						{

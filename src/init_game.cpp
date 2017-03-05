@@ -250,12 +250,12 @@ int initGame()
 			string->node = node;
 
 			x = 0;
-			bool fileend = FALSE;
+			bool fileend = false;
 			while ( (string->data[x] = fgetc(fp)) != '\n' )
 			{
 				if ( feof(fp) )
 				{
-					fileend = TRUE;
+					fileend = true;
 					break;
 				}
 				x++;
@@ -336,7 +336,7 @@ int initGame()
 		stats[c] = new Stat();
 		if (c > 0)
 		{
-			client_disconnected[c] = TRUE;
+			client_disconnected[c] = true;
 		}
 		players[c]->entity = nullptr;
 		stats[c]->sex = static_cast<sex_t>(0);
@@ -505,7 +505,7 @@ void deinitGame()
 	{
 		for (x = 1; x < MAXPLAYERS; x++)
 		{
-			if ( client_disconnected[x] == TRUE )
+			if ( client_disconnected[x] == true )
 			{
 				continue;
 			}
@@ -517,7 +517,7 @@ void deinitGame()
 			sendPacketSafe(net_sock, -1, net_packet, x - 1);
 
 			stats[x]->freePlayerEquipment();
-			client_disconnected[x] = TRUE;
+			client_disconnected[x] = true;
 		}
 	}
 

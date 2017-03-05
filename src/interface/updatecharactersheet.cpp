@@ -31,7 +31,7 @@ void updateCharacterSheet()
 	int i = 0;
 	int x = 0;
 	SDL_Rect pos;
-	bool b = FALSE;
+	bool b = false;
 	node_t* node = NULL;
 	Entity* entity = NULL;
 	Item* item = NULL;
@@ -73,7 +73,7 @@ void updateCharacterSheet()
 		camera_charsheet.winw = 208;
 		camera_charsheet.winh = 180;
 		b = players[clientnum]->entity->flags[BRIGHT];
-		players[clientnum]->entity->flags[BRIGHT] = TRUE;
+		players[clientnum]->entity->flags[BRIGHT] = true;
 		if (!players[clientnum]->entity->flags[INVISIBLE])
 		{
 			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
@@ -93,7 +93,7 @@ void updateCharacterSheet()
 				if ( !entity->flags[INVISIBLE] )
 				{
 					b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = TRUE;
+					entity->flags[BRIGHT] = true;
 					glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
 					entity->flags[BRIGHT] = b;
 				}
@@ -116,7 +116,7 @@ void updateCharacterSheet()
 				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
 					b = entity->flags[BRIGHT];
-					entity->flags[BRIGHT] = TRUE;
+					entity->flags[BRIGHT] = true;
 					if ( (Sint32)entity->getUID() == -4 )
 					{
 						glDrawSprite(&camera_charsheet, entity, REALCOLORS);

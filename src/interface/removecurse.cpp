@@ -19,11 +19,11 @@
 
 
 //Remove curse GUI definitions.
-bool removecursegui_active = FALSE;
-bool removecursegui_appraising = FALSE;
+bool removecursegui_active = false;
+bool removecursegui_appraising = false;
 int removecursegui_offset_x = 0;
 int removecursegui_offset_y = 0;
-bool dragging_removecurseGUI = FALSE;
+bool dragging_removecurseGUI = false;
 int removecursescroll = 0;
 Item* removecurse_items[NUM_REMOVE_CURSE_GUI_ITEMS];
 SDL_Surface* removecurseGUI_img;
@@ -127,8 +127,8 @@ void updateRemoveCurseGUI()
 				}
 				if (omousex >= REMOVECURSE_GUI_X && omousex < REMOVECURSE_GUI_X + 377 && omousey >= REMOVECURSE_GUI_Y && omousey < REMOVECURSE_GUI_Y + 15)
 				{
-					gui_clickdrag = TRUE;
-					dragging_removecurseGUI = TRUE;
+					gui_clickdrag = true;
+					dragging_removecurseGUI = true;
 					dragoffset_x = omousex - REMOVECURSE_GUI_X;
 					dragoffset_y = omousey - REMOVECURSE_GUI_Y;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -179,7 +179,7 @@ void updateRemoveCurseGUI()
 			}
 			else
 			{
-				dragging_removecurseGUI = FALSE;
+				dragging_removecurseGUI = false;
 			}
 		}
 

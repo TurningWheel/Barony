@@ -52,7 +52,7 @@ real_t getLightForEntity(real_t x, real_t y)
 
 -------------------------------------------------------------------------------*/
 
-bool wholevoxels = FALSE;
+bool wholevoxels = false;
 void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 {
 	real_t dx, dy, dz;
@@ -184,14 +184,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					dz = ((real_t)model->sizez) / 2.f - (real_t)voxZ;
 
 					// draw front of cube
-					bool drawFront = FALSE;
+					bool drawFront = false;
 					if ( voxX == model->sizex - 1 )
 					{
-						drawFront = TRUE;
+						drawFront = true;
 					}
 					else if ( model->data[index + indexdown[0]] == 255 )
 					{
-						drawFront = TRUE;
+						drawFront = true;
 					}
 					if ( drawFront )
 					{
@@ -204,14 +204,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// draw back of cube
-					bool drawBack = FALSE;
+					bool drawBack = false;
 					if ( voxX == 0 )
 					{
-						drawBack = TRUE;
+						drawBack = true;
 					}
 					else if ( model->data[index - indexdown[0]] == 255 )
 					{
-						drawBack = TRUE;
+						drawBack = true;
 					}
 					if ( drawBack )
 					{
@@ -224,14 +224,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// draw right side of cube
-					bool drawRight = FALSE;
+					bool drawRight = false;
 					if ( voxY == model->sizey - 1 )
 					{
-						drawRight = TRUE;
+						drawRight = true;
 					}
 					else if ( model->data[index + indexdown[1]] == 255 )
 					{
-						drawRight = TRUE;
+						drawRight = true;
 					}
 					if ( drawRight )
 					{
@@ -244,14 +244,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// draw left side of cube
-					bool drawLeft = FALSE;
+					bool drawLeft = false;
 					if ( voxY == 0 )
 					{
-						drawLeft = TRUE;
+						drawLeft = true;
 					}
 					else if ( model->data[index - indexdown[1]] == 255 )
 					{
-						drawLeft = TRUE;
+						drawLeft = true;
 					}
 					if ( drawLeft )
 					{
@@ -264,14 +264,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// draw bottom of cube
-					bool drawBottom = FALSE;
+					bool drawBottom = false;
 					if ( voxZ == model->sizez - 1 )
 					{
-						drawBottom = TRUE;
+						drawBottom = true;
 					}
 					else if ( model->data[index + indexdown[2]] == 255 )
 					{
-						drawBottom = TRUE;
+						drawBottom = true;
 					}
 					if ( drawBottom )
 					{
@@ -284,14 +284,14 @@ void glDrawVoxel(view_t* camera, Entity* entity, int mode)
 					}
 
 					// draw top of cube
-					bool drawTop = FALSE;
+					bool drawTop = false;
 					if ( voxZ == 0 )
 					{
-						drawTop = TRUE;
+						drawTop = true;
 					}
 					else if ( model->data[index - indexdown[2]] == 255 )
 					{
-						drawTop = TRUE;
+						drawTop = true;
 					}
 					if ( drawTop )
 					{
@@ -562,16 +562,16 @@ void glDrawWorld(view_t* camera, int mode)
 	int x, y, z;
 	int index;
 	real_t s;
-	bool clouds = FALSE;
+	bool clouds = false;
 
-	if ( softwaremode == TRUE )
+	if ( softwaremode == true )
 	{
 		return;
 	}
 
 	if ( !strncmp(map.name, "Hell", 4) && smoothlighting )
 	{
-		clouds = TRUE;
+		clouds = true;
 	}
 
 	if ( clouds && mode == REALCOLORS )
@@ -664,7 +664,7 @@ void glDrawWorld(view_t* camera, int mode)
 		{
 			if ( x >= (int)camera->x - 3 && x <= (int)camera->x + 3 && y >= (int)camera->y - 3 && y <= (int)camera->y + 3 )
 			{
-				vismap[y + x * map.height] = TRUE;
+				vismap[y + x * map.height] = true;
 			}
 			if ( vismap[y + x * map.height] )
 			{

@@ -27,9 +27,9 @@ void initGhoul(Entity* my, Stat* myStats)
 
 	my->sprite = 246;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[BLOCKSIGHT] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[BLOCKSIGHT] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -73,7 +73,7 @@ void initGhoul(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -109,20 +109,20 @@ void initGhoul(Entity* my, Stat* myStats)
 			myStats->MAXHP *= 3;
 			myStats->OLDHP = myStats->HP;
 			myStats->LVL = 15;
-			newItem( GEM_GARNET, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
+			newItem( GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory );
 		}
 
 		if ( rand() % 20 == 0 )
 		{
-			newItem( POTION_WATER, SERVICABLE, 2, 1, rand(), FALSE, &myStats->inventory );
+			newItem( POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory );
 		}
 		if ( rand() % 10 == 0 )
 		{
-			newItem( itemCurve(TOOL), DECREPIT, 1, 1, rand(), FALSE, &myStats->inventory );
+			newItem( itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory );
 		}
 		if ( rand() % 4 == 0 )
 		{
-			newItem( FOOD_MEAT, DECREPIT, -1, 1, rand(), FALSE, &myStats->inventory );
+			newItem( FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory );
 		}
 	}
 
@@ -131,8 +131,8 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GHOUL][1][0]; // 0
 	entity->focaly = limbs[GHOUL][1][1]; // 0
@@ -149,8 +149,8 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GHOUL][2][0]; // 1
 	entity->focaly = limbs[GHOUL][2][1]; // 0
@@ -167,8 +167,8 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GHOUL][3][0]; // 1
 	entity->focaly = limbs[GHOUL][3][1]; // 0
@@ -185,8 +185,8 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GHOUL][4][0]; // -.25
 	entity->focaly = limbs[GHOUL][4][1]; // 0
@@ -203,8 +203,8 @@ void initGhoul(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[GHOUL][5][0]; // -.25
 	entity->focaly = limbs[GHOUL][5][1]; // 0
@@ -281,8 +281,8 @@ void ghoulDie(Entity* my)
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
@@ -293,7 +293,7 @@ void ghoulDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -316,10 +316,10 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -335,7 +335,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -343,8 +343,8 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -360,7 +360,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;

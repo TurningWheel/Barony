@@ -76,7 +76,7 @@ extern FMOD_CHANNELGROUP* sound_group, *music_group;
 
 /*
  * Checks for FMOD errors. Store return value of all FMOD functions in fmod_result so that this funtion can access it and check for errors.
- * Returns TRUE on error (and prints an error message), FALSE if everything went fine.
+ * Returns true on error (and prints an error message), false if everything went fine.
  */
 bool FMODErrorCheck();
 

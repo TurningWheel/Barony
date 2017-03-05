@@ -79,7 +79,7 @@ void actSpearTrap(Entity* my)
 	}
 	else
 	{
-		my->flags[NOUPDATE] = TRUE;
+		my->flags[NOUPDATE] = true;
 	}
 	if ( !SPEARTRAP_INIT )
 	{

@@ -88,11 +88,6 @@ using std::string; //Instead of including an entire namespace, please explicitly
 //#include "sprig.h"
 #include "savepng.hpp"
 
-#ifndef APPLE
-#define FALSE false
-#define TRUE true
-#endif
-
 //Ifdef steam or something?
 #ifdef STEAMWORKS
 //#include <steamworks_cwrapper/steam_wrapper.h>

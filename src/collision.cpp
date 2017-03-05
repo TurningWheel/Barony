@@ -167,7 +167,7 @@ Entity* entityClicked()
 	}
 
 	// pixel processing (opengl only)
-	if ( softwaremode == FALSE)
+	if ( softwaremode == false)
 	{
 		return uidToEntity(uidnum);
 	}
@@ -189,7 +189,7 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 {
 	if ( x < 0 || x >= map.width || y < 0 || y >= map.height || z < 0 || z >= MAPLAYERS )
 	{
-		return FALSE;
+		return false;
 	}
 	if ( entity->x + entity->sizex >= x << 4 )
 	{
@@ -203,31 +203,31 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 					{
 						if ( map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							return TRUE;
+							return true;
 						}
 					}
 					else if ( z == 0 )
 					{
 						if ( !map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 						{
-							return TRUE;
+							return true;
 						}
-						bool isMonster = FALSE;
+						bool isMonster = false;
 						if ( entity )
 							if ( entity->behavior == &actMonster )
 							{
-								isMonster = TRUE;
+								isMonster = true;
 							}
 						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster )
 						{
-							return TRUE;
+							return true;
 						}
 					}
 				}
 			}
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -248,12 +248,12 @@ bool entityInsideEntity(Entity* entity1, Entity* entity2)
 			{
 				if ( entity1->y - entity1->sizey < entity2->y + entity2->sizey )
 				{
-					return TRUE;
+					return true;
 				}
 			}
 		}
 	}
-	return FALSE;
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -281,7 +281,7 @@ bool entityInsideSomething(Entity* entity)
 	for ( z = 0; z < MAPLAYERS; z++ )
 		if ( entityInsideTile(entity, x, y, z) )
 		{
-			return TRUE;
+			return true;
 		}
 
 	// test against entities
@@ -294,11 +294,11 @@ bool entityInsideSomething(Entity* entity)
 		}
 		if ( entityInsideEntity(entity, testEntity) )
 		{
-			return TRUE;
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -320,7 +320,7 @@ int __attribute__((optimize(0))) barony_clear(real_t tx, real_t ty, Entity* my)
 	real_t tx2, ty2;
 	node_t* node;
 	Entity* entity;
-	bool levitating = FALSE;
+	bool levitating = false;
 // Reworked that function to break the loop in two part. 
 // A first fast one using integer only x/y
 // And the second part that loop on entity and used a global BoundingBox collision detection
@@ -330,36 +330,36 @@ int __attribute__((optimize(0))) barony_clear(real_t tx, real_t ty, Entity* my)
 	// moved static stuff outside of the loop
 	if ( stats )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
+		if ( stats->EFFECTS[EFF_LEVITATING] == true )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 		if ( stats->ring != NULL )
 			if ( stats->ring->type == RING_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		if ( stats->shoes != NULL )
 			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 	}
-	bool isMonster = FALSE;
+	bool isMonster = false;
 	if ( my )
 		if ( my->behavior == &actMonster )
 		{
-			isMonster = TRUE;
+			isMonster = true;
 		}
 	if ( isMonster && multiplayer == CLIENT )
 		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 	if ( my )
 		if ( my->behavior != &actPlayer && my->behavior != &actMonster )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 
 	long ymin = floor((ty - my->sizey)/16), ymax = floor((ty + my->sizey)/16);
@@ -464,17 +464,17 @@ int __attribute__((optimize(0))) barony_clear(real_t tx, real_t ty, Entity* my)
 				{
 					if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
 					{
-						bool dyrnwyn = FALSE;
+						bool dyrnwyn = false;
 						Stat* stats = hit.entity->getStats();
 						if ( stats )
 							if ( stats->weapon )
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
-									dyrnwyn = TRUE;
+									dyrnwyn = true;
 								}
 						if ( !dyrnwyn )
 						{
-							hit.entity->flags[BURNING] = TRUE;
+							hit.entity->flags[BURNING] = true;
 							if ( hit.entity->behavior == &actPlayer)
 							{
 								messagePlayer(hit.entity->skill[2], language[590]);
@@ -487,17 +487,17 @@ int __attribute__((optimize(0))) barony_clear(real_t tx, real_t ty, Entity* my)
 					}
 					else if ( hit.entity->flags[BURNING] && !my->flags[BURNING] && my->flags[BURNABLE] )
 					{
-						bool dyrnwyn = FALSE;
+						bool dyrnwyn = false;
 						Stat* stats = my->getStats();
 						if ( stats )
 							if ( stats->weapon )
 								if ( stats->weapon->type == ARTIFACT_SWORD )
 								{
-									dyrnwyn = TRUE;
+									dyrnwyn = true;
 								}
 						if ( !dyrnwyn )
 						{
-							my->flags[BURNING] = TRUE;
+							my->flags[BURNING] = true;
 							if ( my->behavior == &actPlayer)
 							{
 								messagePlayer(my->skill[2], language[590]);
@@ -610,10 +610,10 @@ Entity* findEntityInLine( Entity* my, real_t x1, real_t y1, real_t angle, int en
 		quadrant = 4;
 	}
 
-	bool adjust = FALSE;
+	bool adjust = false;
 	if ( angle >= PI / 2 && angle < 3 * (PI / 2) )
 	{
-		adjust = TRUE;
+		adjust = true;
 	}
 	else
 	{
@@ -808,7 +808,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		{
 			if ( stats->type == DEVIL )
 			{
-				ground = FALSE;
+				ground = false;
 			}
 		}
 	}
@@ -853,11 +853,11 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 		}
 		if ( ground )
 		{
-			bool isMonster = FALSE;
+			bool isMonster = false;
 			if ( my )
 				if ( my->behavior == &actMonster )
 				{
-					isMonster = TRUE;
+					isMonster = true;
 				}
 			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
 			{
@@ -994,11 +994,11 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 		}
 		if ( ground )
 		{
-			bool isMonster = FALSE;
+			bool isMonster = false;
 			if ( my )
 				if ( my->behavior == &actMonster )
 				{
-					isMonster = TRUE;
+					isMonster = true;
 				}
 			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
 			{
@@ -1051,27 +1051,27 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	node_t* node;
 	Entity* entity;
 	Stat* stats;
-	bool levitating = FALSE;
+	bool levitating = false;
 
 	// get levitation status
 	if ( (my && (stats = my->getStats())) != NULL )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
+		if ( stats->EFFECTS[EFF_LEVITATING] == true )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 		if ( stats->ring != NULL )
 		{
 			if ( stats->ring->type == RING_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		}
 		if ( stats->shoes != NULL )
 		{
 			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		}
 	}
@@ -1079,7 +1079,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	{
 		if ( my->behavior != &actPlayer && my->behavior != &actMonster && my->behavior != &actLadder && my->behavior != &actPortal )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 	}
 
@@ -1108,12 +1108,12 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 			{
 				return 1;
 			}
-			bool isMonster = FALSE;
+			bool isMonster = false;
 			if ( my )
 			{
 				if ( my->behavior == &actMonster )
 				{
-					isMonster = TRUE;
+					isMonster = true;
 				}
 			}
 			if ( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) )   // no floor

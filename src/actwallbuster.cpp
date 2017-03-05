@@ -47,7 +47,7 @@ void actWallBuster(Entity* my)
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == TRUE )
+				if ( client_disconnected[c] == true )
 				{
 					continue;
 				}
@@ -84,7 +84,7 @@ void actWallBuilder(Entity* my)
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == TRUE )
+				if ( client_disconnected[c] == true )
 				{
 					continue;
 				}

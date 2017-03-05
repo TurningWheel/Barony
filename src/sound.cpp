@@ -56,7 +56,7 @@ FMOD_SOUND* endgamemusic = NULL;
 FMOD_SOUND* devilmusic = NULL;
 FMOD_SOUND* escapemusic = NULL;
 FMOD_SOUND* introductionmusic = NULL;
-bool levelmusicplaying = FALSE;
+bool levelmusicplaying = false;
 
 FMOD_CHANNEL* music_channel = NULL;
 FMOD_CHANNEL* music_channel2 = NULL;
@@ -74,15 +74,15 @@ bool FMODErrorCheck()
 {
 	if (no_sound)
 	{
-		return FALSE;
+		return false;
 	}
 	if (fmod_result != FMOD_OK)
 	{
 		printlog("[FMOD Error] Error Code (%d): \"%s\"\n", fmod_result, FMOD_ErrorString(fmod_result)); //Report the FMOD error.
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 void sound_update()
@@ -136,7 +136,7 @@ void sound_update()
 	//Fade in the currently playing music.
 	if (music_channel)
 	{
-		FMOD_BOOL playing = FALSE;
+		FMOD_BOOL playing = false;
 		FMOD_Channel_IsPlaying(music_channel, &playing);
 		if (playing)
 		{
@@ -157,7 +157,7 @@ void sound_update()
 	//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
 	if (music_channel2)
 	{
-		FMOD_BOOL playing = FALSE;
+		FMOD_BOOL playing = false;
 		FMOD_Channel_IsPlaying(music_channel2, &playing);
 		if (playing)
 		{
@@ -391,7 +391,7 @@ OPENAL_BUFFER* endgamemusic = NULL;
 OPENAL_BUFFER* devilmusic = NULL;
 OPENAL_BUFFER* escapemusic = NULL;
 OPENAL_BUFFER* introductionmusic = NULL;
-bool levelmusicplaying = FALSE;
+bool levelmusicplaying = false;
 
 OPENAL_SOUND* music_channel = NULL;
 OPENAL_SOUND* music_channel2 = NULL;

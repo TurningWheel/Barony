@@ -64,7 +64,7 @@ void startTradingServer(Entity* entity, int player)
 
 	if ( player == 0 )
 	{
-		shootmode = FALSE;
+		shootmode = false;
 		gui_mode = GUI_MODE_SHOP;
 		shopInv = &stats->inventory;
 		shopkeeper = entity->getUID();
@@ -235,56 +235,56 @@ void sellItemToShop(Item* item)
 		return;
 	}
 
-	bool deal = TRUE;
+	bool deal = true;
 	switch ( shopkeepertype )
 	{
 		case 0: // arms & armor
 			if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 1: // hats
 			if ( itemCategory(item) != ARMOR )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 2: // jewelry
 			if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 3: // bookstore
 			if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 4: // potion shop
 			if ( itemCategory(item) != POTION )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 5: // magicstaffs
 			if ( itemCategory(item) != MAGICSTAFF )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 6: // food
 			if ( itemCategory(item) != FOOD )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 7: // tools
 		case 8: // lights
 			if ( itemCategory(item) != TOOL )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		default:

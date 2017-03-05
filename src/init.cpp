@@ -47,7 +47,7 @@ GLuint fbo_ren = 0;
 #endif
 
 FILE* logfile = nullptr;
-bool steam_init = FALSE;
+bool steam_init = false;
 
 int initApp(char* title, int fullscreen)
 {
@@ -94,7 +94,7 @@ int initApp(char* title, int fullscreen)
 		printlog(" make sure your steam client is running before attempting to start again.\n");
 		return 1;
 	}
-	steam_init = TRUE;
+	steam_init = true;
 #endif
 
 	window_title = title;
@@ -117,7 +117,7 @@ int initApp(char* title, int fullscreen)
 	if (FMODErrorCheck())
 	{
 		printlog("Failed to create FMOD.\n");
-		no_sound = TRUE;
+		no_sound = true;
 	}
 	if (!no_sound)
 	{
@@ -126,7 +126,7 @@ int initApp(char* title, int fullscreen)
 		if (FMODErrorCheck())
 		{
 			printlog("Failed to initialize FMOD.\n");
-			no_sound = TRUE;
+			no_sound = true;
 		}
 		if (!no_sound)
 		{
@@ -134,7 +134,7 @@ int initApp(char* title, int fullscreen)
 			if (FMODErrorCheck())
 			{
 				printlog("Failed to create sound channel group.\n");
-				no_sound = TRUE;
+				no_sound = true;
 			}
 			if (!no_sound)
 			{
@@ -142,7 +142,7 @@ int initApp(char* title, int fullscreen)
 				if (FMODErrorCheck())
 				{
 					printlog("Failed to create music channel group.\n");
-					no_sound = TRUE;
+					no_sound = true;
 				}
 			}
 		}
@@ -184,46 +184,46 @@ int initApp(char* title, int fullscreen)
 
 	// get pointers to opengl extensions
 #ifdef WINDOWS
-	bool noextensions = FALSE;
+	bool noextensions = false;
 	if ( !softwaremode )
 	{
 		if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 /*
 // Unused
 		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 */
 	}
@@ -234,7 +234,7 @@ int initApp(char* title, int fullscreen)
 	if ( noextensions )
 	{
 		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
-		disablevbos = TRUE;
+		disablevbos = true;
 	}
 #else
 	if (softwaremode)
@@ -427,21 +427,21 @@ int initApp(char* title, int fullscreen)
 				break;
 			}
 		tiles[c] = loadImage(name);
-		animatedtiles[c] = FALSE;
-		lavatiles[c] = FALSE;
+		animatedtiles[c] = false;
+		lavatiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
 			for (x = 0; x < strlen(name); x++)
 			{
 				if ( name[x] >= 48 && name[x] < 58 )
 				{
-					animatedtiles[c] = TRUE;
+					animatedtiles[c] = true;
 					break;
 				}
 			}
 			if ( strstr(name, "Lava") || strstr(name, "lava") )
 			{
-				lavatiles[c] = TRUE;
+				lavatiles[c] = true;
 			}
 		}
 		else
@@ -674,13 +674,13 @@ int loadLanguage(char* lang)
 
 		// read line from file
 		int i;
-		bool fileEnd = FALSE;
+		bool fileEnd = false;
 		for ( i = 0; ; i++ )
 		{
 			data[i] = fgetc(fp);
 			if ( feof(fp) )
 			{
-				fileEnd = TRUE;
+				fileEnd = true;
 				break;
 			}
 
@@ -815,27 +815,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( y = 0; y < models[c]->sizey; y++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( x < models[c]->sizex - 1 )
 							if ( models[c]->data[index + indexdown[0]] >= 0 && models[c]->data[index + indexdown[0]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*)currentNode->element;
@@ -876,19 +876,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( x == models[c]->sizex - 1 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index + indexdown[0]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -913,10 +913,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*)currentNode->element;
@@ -961,27 +961,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( y = 0; y < models[c]->sizey; y++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( x > 0 )
 							if ( models[c]->data[index - indexdown[0]] >= 0 && models[c]->data[index - indexdown[0]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*)currentNode->element;
@@ -1022,19 +1022,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( x == 0 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index - indexdown[0]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1059,10 +1059,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*)currentNode->element;
@@ -1107,27 +1107,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( y < models[c]->sizey - 1 )
 							if ( models[c]->data[index + indexdown[1]] >= 0 && models[c]->data[index + indexdown[1]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1168,19 +1168,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( y == models[c]->sizey - 1 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index + indexdown[1]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1205,10 +1205,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
@@ -1252,27 +1252,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( y > 0 )
 							if ( models[c]->data[index - indexdown[1]] >= 0 && models[c]->data[index - indexdown[1]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1313,19 +1313,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( y == 0 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index - indexdown[1]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1350,10 +1350,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
@@ -1397,27 +1397,27 @@ void generatePolyModels()
 			for ( y = 0; y < models[c]->sizey; y++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( z < models[c]->sizez - 1 )
 							if ( models[c]->data[index + indexdown[2]] >= 0 && models[c]->data[index + indexdown[2]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1458,19 +1458,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( z == models[c]->sizez - 1 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index + indexdown[2]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1495,10 +1495,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
@@ -1543,27 +1543,27 @@ void generatePolyModels()
 			for ( y = 0; y < models[c]->sizey; y++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( z > 0 )
 							if ( models[c]->data[index - indexdown[2]] >= 0 && models[c]->data[index - indexdown[2]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1604,19 +1604,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( z == 0 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index - indexdown[2]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1641,10 +1641,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
@@ -2196,7 +2196,7 @@ bool initVideo()
 #endif
 		{
 			printlog("failed to set video mode.\n");
-			return FALSE;
+			return false;
 		}
 	}
 	else
@@ -2226,7 +2226,7 @@ bool initVideo()
 #endif
 			printlog("failed to create SDL renderer. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
-			return FALSE;
+			return false;
 		}
 	}
 #ifndef APPLE
@@ -2246,7 +2246,7 @@ bool initVideo()
 	if ((mainsurface = SDL_CreateRGBSurface(0, xres, yres, 32, rmask, gmask, bmask, amask)) == NULL)
 	{
 		printlog("failed to create main window surface.\n");
-		return FALSE;
+		return false;
 	}
 	if ( !softwaremode )
 	{
@@ -2269,10 +2269,10 @@ bool initVideo()
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
-		return TRUE;
+		return true;
 	}
 	printlog("display changed successfully.\n");
-	return TRUE;
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2336,7 +2336,7 @@ bool changeVideoMode()
 		printlog("defaulting to safe video mode...\n");
 		if ( !initVideo() )
 		{
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -2354,5 +2354,5 @@ bool changeVideoMode()
 	}
 #endif
 	// success
-	return TRUE;
+	return true;
 }

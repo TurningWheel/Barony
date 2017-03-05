@@ -124,8 +124,8 @@ void updateBookGUI()
 		if ( mouseInBounds(BOOK_GUI_X + FLIPMARGIN, BOOK_GUI_X + bookgui_img->w - FLIPMARGIN, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) || mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + DRAGHEIGHT_BOOK) )
 		{
 			// moving book
-			gui_clickdrag = TRUE;
-			dragging_book_GUI = TRUE;
+			gui_clickdrag = true;
+			dragging_book_GUI = true;
 			dragoffset_x = omousex - BOOK_GUI_X;
 			dragoffset_y = omousey - BOOK_GUI_Y;
 			mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -135,11 +135,11 @@ void updateBookGUI()
 	// render the book's text
 	Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255);
 	string_t* pagetext = (string_t*)book_page->element;
-	ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 44, BOOK_GUI_Y + 20, color, FALSE, pagetext->data );
+	ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 44, BOOK_GUI_Y + 20, color, false, pagetext->data );
 	if ( book_page->next != NULL )
 	{
 		string_t* pagetext = (string_t*)book_page->next->element;
-		ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 316, BOOK_GUI_Y + 20, color, FALSE, pagetext->data );
+		ttfPrintTextColor(BOOK_FONT, BOOK_GUI_X + 316, BOOK_GUI_Y + 20, color, false, pagetext->data );
 	}
 
 	if (dragging_book_GUI)
@@ -167,7 +167,7 @@ void updateBookGUI()
 		}
 		else
 		{
-			dragging_book_GUI = FALSE;
+			dragging_book_GUI = false;
 		}
 	}
 }
@@ -182,10 +182,10 @@ void updateBookGUI()
 
 void closeBookGUI()
 {
-	book_open = FALSE;
+	book_open = false;
 	/*if (book_page)
 		free(book_page);*/
-	dragging_book_GUI = FALSE;
+	dragging_book_GUI = false;
 	open_book = NULL;
 	open_book_item = NULL;
 }
@@ -206,21 +206,21 @@ void openBook(book_t* book, Item* item)
 	}
 
 	gui_mode = GUI_MODE_INVENTORY; //Yes, this is pretty much the main GUI screen.
-	shootmode = FALSE;
+	shootmode = false;
 	book_page = book->pages.first;
-	book_open = TRUE;
+	book_open = true;
 	open_book = book;
 
 	open_book_item = item;
 
 	// add the book to the list of read books
-	bool hasreadbook = FALSE;
+	bool hasreadbook = false;
 	node_t* node;
 	for ( node = booksRead.first; node != NULL; node = node->next )
 	{
 		if ( !strcmp(book->name, (char*)node->element) )
 		{
-			hasreadbook = TRUE;
+			hasreadbook = true;
 			break;
 		}
 	}

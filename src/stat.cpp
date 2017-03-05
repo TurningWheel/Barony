@@ -42,7 +42,7 @@ Stat::Stat()
 	this->LVL = 1;
 	this->GOLD = 0;
 	this->HUNGER = 800;
-	this->defending = FALSE;
+	this->defending = false;
 
 	int c;
 	for (c = 0; c < NUMPROFICIENCIES; c++)
@@ -248,7 +248,7 @@ void Stat::clearStats()
 		}
 		if (x < NUMEFFECTS)
 		{
-			this->EFFECTS[x] = FALSE;
+			this->EFFECTS[x] = false;
 			this->EFFECTS_TIMERS[x] = 0;
 		}
 	}

@@ -263,8 +263,8 @@ void updateChestInventory()
 				}
 				if (omousex >= CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + 377 && omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
 				{
-					gui_clickdrag = TRUE;
-					dragging_chestGUI = TRUE;
+					gui_clickdrag = true;
+					dragging_chestGUI = true;
 					dragoffset_x = omousex - CHEST_INVENTORY_X;
 					dragoffset_y = omousey - CHEST_INVENTORY_Y;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -322,7 +322,7 @@ void updateChestInventory()
 		}
 		else
 		{
-			dragging_chestGUI = FALSE;
+			dragging_chestGUI = false;
 		}
 	}
 
@@ -393,7 +393,7 @@ void updateChestInventory()
 				nextnode = node->next;
 				if (node->element && openedChest[clientnum])
 				{
-					item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), TRUE);
+					item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), true);
 					if ( item != NULL )
 					{
 						messagePlayer(clientnum, language[374], item->description());

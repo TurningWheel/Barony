@@ -61,8 +61,8 @@ void updateRightSidebar()
 		if (mousestatus[SDL_BUTTON_LEFT])
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			identifygui_active = TRUE;
-			identifygui_appraising = TRUE;
+			identifygui_active = true;
+			identifygui_appraising = true;
 			gui_mode = GUI_MODE_INVENTORY;
 			if ( removecursegui_active )
 			{
@@ -103,7 +103,7 @@ void updateRightSidebar()
 			gui_mode = GUI_MODE_MAGIC;
 			if (shootmode)
 			{
-				shootmode = FALSE;
+				shootmode = false;
 				attributespage = 0;
 			}
 		}

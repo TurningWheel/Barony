@@ -54,17 +54,17 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 				b = dxabs * .5;
 				u2 = u;
 				v2 = v;
-				wallhit = TRUE;
+				wallhit = true;
 				index = v * MAPLAYERS + u * MAPLAYERS * map.height;
 				for ( z = 0; z < MAPLAYERS; z++ )
 				{
 					if ( !map.tiles[index + z] )
 					{
-						wallhit = FALSE;
+						wallhit = false;
 						break;
 					}
 				}
-				if ( wallhit == TRUE )
+				if ( wallhit == true )
 				{
 					continue;
 				}
@@ -83,7 +83,7 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 						{
 							if ( map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height] )
 							{
-								wallhit = TRUE;
+								wallhit = true;
 								break;
 							}
 						}
@@ -104,13 +104,13 @@ light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 						{
 							if ( map.tiles[OBSTACLELAYER + v2 * MAPLAYERS + u2 * MAPLAYERS * map.height] )
 							{
-								wallhit = TRUE;
+								wallhit = true;
 								break;
 							}
 						}
 					}
 				}
-				if ( wallhit == FALSE || (wallhit == TRUE && u2 == u && v2 == v) )
+				if ( wallhit == false || (wallhit == true && u2 == u && v2 == v) )
 				{
 					light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)] = intensity - intensity * std::min<float>(sqrtf(dx * dx + dy * dy) / radius, 1.0f);
 					lightmap[v + u * map.height] += light->tiles[(dy + radius) + (dx + radius) * (radius * 2 + 1)];
