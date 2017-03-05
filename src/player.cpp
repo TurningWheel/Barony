@@ -657,6 +657,42 @@ bool GameController::handleIdentifyMovement()
 	return false;
 }
 
+bool GameController::handleRemoveCurseMovement()
+{
+	bool dpad_moved = false;
+
+	if ( itemMenuOpen )
+	{
+		return false;
+	}
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	{
+		selectRemoveCurseSlot(selectedRemoveCurseSlot - 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	{
+		selectRemoveCurseSlot(selectedRemoveCurseSlot + 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (dpad_moved)
+	{
+		dpad_moved = false;
+		draw_cursor = false;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool GameController::handleItemContextMenu(const Item& item)
 {
 	bool dpad_moved = false;
@@ -750,6 +786,19 @@ void initIdentifyGUIControllerCode()
 	else
 	{
 		selectedIdentifySlot = -1;
+	}
+}
+
+void initRemoveCurseGUIControllerCode()
+{
+	if ( removecurse_items[0] )
+	{
+		selectedRemoveCurseSlot = 0;
+		warpMouseToSelectedRemoveCurseSlot();
+	}
+	else
+	{
+		selectedRemoveCurseSlot = -1;
 	}
 }
 

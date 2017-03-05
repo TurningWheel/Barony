@@ -471,6 +471,10 @@ void actChest(Entity* my)
 				messagePlayer(chestclicked, language[459]);
 				CHEST_OPENER = chestclicked;
 				openedChest[chestclicked] = my;
+				if ( removecursegui_active )
+				{
+					closeRemoveCurseGUI();
+				}
 				identifygui_active = false;
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{

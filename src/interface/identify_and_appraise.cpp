@@ -193,8 +193,6 @@ void updateIdentifyGUI()
 		else
 		{
 			//Print the window label signifying this as the identify GUI.
-			//char *window_name = (char*)malloc(sizeof(char));
-			//strcpy(window_name, "Identify Item");
 			char* window_name;
 			if (identifygui_appraising)
 			{
@@ -237,6 +235,7 @@ void updateIdentifyGUI()
 
 				//Cleanup identify GUI gamecontroller code here.
 				selectedIdentifySlot = -1;
+				//TODO: closeIdentifyGUI() instead.
 			}
 
 			Item* item = NULL;

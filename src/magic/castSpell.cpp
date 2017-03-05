@@ -517,6 +517,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							closeRemoveCurseGUI();
 						}
+						if ( openedChest[i] )
+						{
+							openedChest[i]->closeChest();
+						}
 						//identifygui_mode = TRUE;
 
 						//Initialize Identify GUI game controller code here.
@@ -537,7 +541,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					if (i != 0)
 					{
 						//Tell the client to uncurse an item.
-						strcpy((char*)net_packet->data, "RCUR");
+						strcpy((char*)net_packet->data, "RCUR"); //TODO: Send a different packet, to pop open the remove curse GUI.
 						net_packet->address.host = net_clients[i - 1].host;
 						net_packet->address.port = net_clients[i - 1].port;
 						net_packet->len = 4;
@@ -550,6 +554,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						removecursegui_active = TRUE;
 						identifygui_active = false;
+						if ( openedChest[i] )
+						{
+							openedChest[i]->closeChest();
+						}
+
+						initRemoveCurseGUIControllerCode();
 					}
 				}
 			}

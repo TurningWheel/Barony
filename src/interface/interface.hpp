@@ -230,12 +230,19 @@ extern int removecursegui_offset_x;
 extern int removecursegui_offset_y;
 extern bool dragging_removecurseGUI; //The remove curse GUI is being dragged.
 extern int removecursescroll;
-extern Item* removecurse_items[4];
+static const int NUM_REMOVE_CURSE_GUI_ITEMS = 4;
+extern Item* removecurse_items[NUM_REMOVE_CURSE_GUI_ITEMS];
 //extern SDL_Surface *removecurseGUI_img; //Nah, just use the identify GUI's image. It works well enough. No need to double the resources.
 
 void closeRemoveCurseGUI();
 void updateRemoveCurseGUI(); //Updates the remove curse GUI.
 void removecurseGUIRemoveCurse(Item* item); //Uncurse the given item.
+
+//Gamepad-support related stuff.
+extern int selectedRemoveCurseSlot;
+void selectRemoveCurseSlot(int slot);
+void warpMouseToSelectedRemoveCurseSlot();
+
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
