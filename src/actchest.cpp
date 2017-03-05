@@ -656,7 +656,7 @@ void Entity::closeChest()
 	{
 		chest_status = 0;
 		messagePlayer(chest_opener, language[460]);
-		openedChest[chest_opener] = NULL;
+		openedChest[chest_opener] = nullptr;
 		if (chest_opener != 0 && multiplayer == SERVER)
 		{
 			//Tell the client that the chest got closed.

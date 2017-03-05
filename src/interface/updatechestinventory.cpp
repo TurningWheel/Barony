@@ -201,6 +201,11 @@ inline void drawChestSlots()
 
 void updateChestInventory()
 {
+	if ( !openedChest[clientnum] )
+	{
+		return;
+	}
+
 	SDL_Rect pos;
 	node_t* node, *nextnode;
 	int y, c;
@@ -208,241 +213,240 @@ void updateChestInventory()
 	Item* item;
 
 	//Chest inventory GUI.
-	if (openedChest[clientnum])
+
+	//Center the chest GUI.
+	//pos.x = ((xres - winx) / 2) - (inventory_bmp->w / 2);
+	pos.x = CHEST_INVENTORY_X; //(winx + ((winw / 2) - (inventoryChest_bmp->w / 2)))
+	//pos.x = character_bmp->w;
+	//pos.y = ((yres - winy) / 2) - (inventory_bmp->h / 2);
+	pos.y = CHEST_INVENTORY_Y; //(winy + ((winh - winy) - (inventoryChest_bmp->h / 2)));
+	drawImage(inventoryChest_bmp, NULL, &pos);
+
+	// buttons
+	if ( mousestatus[SDL_BUTTON_LEFT] && !selectedItem )
 	{
-		//Center the chest GUI.
-		//pos.x = ((xres - winx) / 2) - (inventory_bmp->w / 2);
-		pos.x = CHEST_INVENTORY_X; //(winx + ((winw / 2) - (inventoryChest_bmp->w / 2)))
-		//pos.x = character_bmp->w;
-		//pos.y = ((yres - winy) / 2) - (inventory_bmp->h / 2);
-		pos.y = CHEST_INVENTORY_Y; //(winy + ((winh - winy) - (inventoryChest_bmp->h / 2)));
-		drawImage(inventoryChest_bmp, NULL, &pos);
-
-		// buttons
-		if ( mousestatus[SDL_BUTTON_LEFT] && !selectedItem )
+		if (openedChest[clientnum])
 		{
-			if (openedChest[clientnum])
+			//Chest inventory scroll up button.
+			if (omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + 52)
 			{
-				//Chest inventory scroll up button.
-				if (omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + 52)
+				if (omousex >= CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 12))
 				{
-					if (omousex >= CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 12))
-					{
-						chest_buttonclick = 7;
-						chestitemscroll--;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-					}
-				}
-				//Chest inventory scroll down button.
-				else if (omousey >= CHEST_INVENTORY_Y + 52 && omousey < CHEST_INVENTORY_Y + 88)
-				{
-					if (omousex >= CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 12))
-					{
-						chest_buttonclick = 8;
-						chestitemscroll++;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-					}
-				}
-				else if (omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
-				{
-					//Chest inventory close button.
-					if (omousex >= CHEST_INVENTORY_X + 393 && omousex < CHEST_INVENTORY_X + 407)
-					{
-						chest_buttonclick = 9;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-					}
-					//Chest inventory grab all button.
-					if (omousex >= CHEST_INVENTORY_X + 376 && omousex < CHEST_INVENTORY_X + 391)
-					{
-						chest_buttonclick = 10;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-					}
-					if (omousex >= CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + 377 && omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
-					{
-						gui_clickdrag = TRUE;
-						dragging_chestGUI = TRUE;
-						dragoffset_x = omousex - CHEST_INVENTORY_X;
-						dragoffset_y = omousey - CHEST_INVENTORY_Y;
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-					}
-				}
-			}
-		}
-
-		if ( *inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) )   //Gamepad "Y" button grabs all items in chest.
-		{
-			*inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) = 0;
-			chest_buttonclick = 10;
-		}
-
-		// mousewheel
-		if ( omousex >= CHEST_INVENTORY_X + 12 && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) )
-		{
-			if ( omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + (inventoryChest_bmp->h - 8) )
-			{
-				if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
-				{
-					mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
-					chestitemscroll++;
-				}
-				else if ( mousestatus[SDL_BUTTON_WHEELUP] )
-				{
-					mousestatus[SDL_BUTTON_WHEELUP] = 0;
+					chest_buttonclick = 7;
 					chestitemscroll--;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
-		}
-
-		if (dragging_chestGUI)
-		{
-			if (gui_clickdrag)
+			//Chest inventory scroll down button.
+			else if (omousey >= CHEST_INVENTORY_Y + 52 && omousey < CHEST_INVENTORY_Y + 88)
 			{
-				chestgui_offset_x = (omousex - dragoffset_x) - (CHEST_INVENTORY_X - chestgui_offset_x);
-				chestgui_offset_y = (omousey - dragoffset_y) - (CHEST_INVENTORY_Y - chestgui_offset_y);
-				if (CHEST_INVENTORY_X <= camera.winx)
+				if (omousex >= CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 12))
 				{
-					chestgui_offset_x = camera.winx - (CHEST_INVENTORY_X - chestgui_offset_x);
-				}
-				if (CHEST_INVENTORY_X > camera.winx + camera.winw - inventoryChest_bmp->w)
-				{
-					chestgui_offset_x = (camera.winx + camera.winw - inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
-				}
-				if (CHEST_INVENTORY_Y <= camera.winy)
-				{
-					chestgui_offset_y = camera.winy - (CHEST_INVENTORY_Y - chestgui_offset_y);
-				}
-				if (CHEST_INVENTORY_Y > camera.winy + camera.winh - inventoryChest_bmp->h)
-				{
-					chestgui_offset_y = (camera.winy + camera.winh - inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+					chest_buttonclick = 8;
+					chestitemscroll++;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
 				}
 			}
-			else
+			else if (omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
 			{
-				dragging_chestGUI = FALSE;
+				//Chest inventory close button.
+				if (omousex >= CHEST_INVENTORY_X + 393 && omousex < CHEST_INVENTORY_X + 407)
+				{
+					chest_buttonclick = 9;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+				//Chest inventory grab all button.
+				if (omousex >= CHEST_INVENTORY_X + 376 && omousex < CHEST_INVENTORY_X + 391)
+				{
+					chest_buttonclick = 10;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
+				if (omousex >= CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + 377 && omousey >= CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + 15)
+				{
+					gui_clickdrag = TRUE;
+					dragging_chestGUI = TRUE;
+					dragoffset_x = omousex - CHEST_INVENTORY_X;
+					dragoffset_y = omousey - CHEST_INVENTORY_Y;
+					mousestatus[SDL_BUTTON_LEFT] = 0;
+				}
 			}
 		}
+	}
 
-		list_t* chest_inventory = NULL;
-		if (clientnum != 0)
+	if ( *inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) )   //Gamepad "Y" button grabs all items in chest.
+	{
+		*inputPressed(joyimpulses[INJOY_MENU_CHEST_GRAB_ALL]) = 0;
+		chest_buttonclick = 10;
+	}
+
+	// mousewheel
+	if ( omousex >= CHEST_INVENTORY_X + 12 && omousex < CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28) )
+	{
+		if ( omousey >= CHEST_INVENTORY_Y + 16 && omousey < CHEST_INVENTORY_Y + (inventoryChest_bmp->h - 8) )
 		{
-			if (multiplayer != SERVER)
+			if ( mousestatus[SDL_BUTTON_WHEELDOWN] )
 			{
-				chest_inventory = &chestInv;
+				mousestatus[SDL_BUTTON_WHEELDOWN] = 0;
+				chestitemscroll++;
+			}
+			else if ( mousestatus[SDL_BUTTON_WHEELUP] )
+			{
+				mousestatus[SDL_BUTTON_WHEELUP] = 0;
+				chestitemscroll--;
 			}
 		}
-		else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element)
-		{
-			chest_inventory = (list_t*)openedChest[clientnum]->children.first->element;
-		}
+	}
 
-		if (!chest_inventory)
+	if (dragging_chestGUI)
+	{
+		if (gui_clickdrag)
 		{
-			messagePlayer(0, "Warning: openedChest[%d] has no inventory. This should not happen.", clientnum);
+			chestgui_offset_x = (omousex - dragoffset_x) - (CHEST_INVENTORY_X - chestgui_offset_x);
+			chestgui_offset_y = (omousey - dragoffset_y) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+			if (CHEST_INVENTORY_X <= camera.winx)
+			{
+				chestgui_offset_x = camera.winx - (CHEST_INVENTORY_X - chestgui_offset_x);
+			}
+			if (CHEST_INVENTORY_X > camera.winx + camera.winw - inventoryChest_bmp->w)
+			{
+				chestgui_offset_x = (camera.winx + camera.winw - inventoryChest_bmp->w) - (CHEST_INVENTORY_X - chestgui_offset_x);
+			}
+			if (CHEST_INVENTORY_Y <= camera.winy)
+			{
+				chestgui_offset_y = camera.winy - (CHEST_INVENTORY_Y - chestgui_offset_y);
+			}
+			if (CHEST_INVENTORY_Y > camera.winy + camera.winh - inventoryChest_bmp->h)
+			{
+				chestgui_offset_y = (camera.winy + camera.winh - inventoryChest_bmp->h) - (CHEST_INVENTORY_Y - chestgui_offset_y);
+			}
 		}
 		else
 		{
-			//Print the window label signifying this as the chest inventory GUI.
-			ttfPrintText(ttf8, (CHEST_INVENTORY_X + 2 + ((inventoryChest_bmp->w / 2) - ((TTF8_WIDTH * 15) / 2))), CHEST_INVENTORY_Y + 4, language[373]);
+			dragging_chestGUI = FALSE;
+		}
+	}
 
-			//Chest inventory up button.
-			if (chest_buttonclick == 7)
+	list_t* chest_inventory = NULL;
+	if (clientnum != 0)
+	{
+		if (multiplayer != SERVER)
+		{
+			chest_inventory = &chestInv;
+		}
+	}
+	else if (openedChest[clientnum]->children.first && openedChest[clientnum]->children.first->element)
+	{
+		chest_inventory = (list_t*)openedChest[clientnum]->children.first->element;
+	}
+
+	if (!chest_inventory)
+	{
+		messagePlayer(0, "Warning: openedChest[%d] has no inventory. This should not happen.", clientnum);
+	}
+	else
+	{
+		//Print the window label signifying this as the chest inventory GUI.
+		ttfPrintText(ttf8, (CHEST_INVENTORY_X + 2 + ((inventoryChest_bmp->w / 2) - ((TTF8_WIDTH * 15) / 2))), CHEST_INVENTORY_Y + 4, language[373]);
+
+		//Chest inventory up button.
+		if (chest_buttonclick == 7)
+		{
+			pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
+			pos.y = CHEST_INVENTORY_Y + 16;
+			pos.w = 0;
+			pos.h = 0;
+			drawImage(invup_bmp, NULL, &pos);
+		}
+		//Chest inventory down button.
+		if (chest_buttonclick == 8)
+		{
+			pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
+			pos.y = CHEST_INVENTORY_Y + 52;
+			pos.w = 0;
+			pos.h = 0;
+			drawImage(invdown_bmp, NULL, &pos);
+		}
+		//Chest inventory close button.
+		if (chest_buttonclick == 9)
+		{
+			pos.x = CHEST_INVENTORY_X + 393;
+			pos.y = CHEST_INVENTORY_Y;
+			pos.w = 0;
+			pos.h = 0;
+			drawImage(invclose_bmp, NULL, &pos);
+			if (openedChest[clientnum])
 			{
-				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
-				pos.y = CHEST_INVENTORY_Y + 16;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invup_bmp, NULL, &pos);
+				openedChest[clientnum]->closeChest();
+				return; //Crashes otherwise, because the rest of this function runs without a chest...
 			}
-			//Chest inventory down button.
-			if (chest_buttonclick == 8)
+		}
+		//Chest inventory grab all items button.
+		if (chest_buttonclick == 10)
+		{
+			pos.x = CHEST_INVENTORY_X + 376;
+			pos.y = CHEST_INVENTORY_Y;
+			pos.w = 0;
+			pos.h = 0;
+			drawImage(invgraball_bmp, NULL, &pos);
+			for (node = chest_inventory->first; node != NULL; node = nextnode)
 			{
-				pos.x = CHEST_INVENTORY_X + (inventoryChest_bmp->w - 28);
-				pos.y = CHEST_INVENTORY_Y + 52;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invdown_bmp, NULL, &pos);
-			}
-			//Chest inventory close button.
-			if (chest_buttonclick == 9)
-			{
-				pos.x = CHEST_INVENTORY_X + 393;
-				pos.y = CHEST_INVENTORY_Y;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invclose_bmp, NULL, &pos);
-				if (openedChest[clientnum])
+				nextnode = node->next;
+				if (node->element && openedChest[clientnum])
 				{
-					openedChest[clientnum]->closeChest();
-				}
-			}
-			//Chest inventory grab all items button.
-			if (chest_buttonclick == 10)
-			{
-				pos.x = CHEST_INVENTORY_X + 376;
-				pos.y = CHEST_INVENTORY_Y;
-				pos.w = 0;
-				pos.h = 0;
-				drawImage(invgraball_bmp, NULL, &pos);
-				for (node = chest_inventory->first; node != NULL; node = nextnode)
-				{
-					nextnode = node->next;
-					if (node->element && openedChest[clientnum])
+					item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), TRUE);
+					if ( item != NULL )
 					{
-						item = openedChest[clientnum]->getItemFromChest(static_cast<Item* >(node->element), TRUE);
-						if ( item != NULL )
-						{
-							messagePlayer(clientnum, language[374], item->description());
-							itemPickup(clientnum, item);
-							playSound(35 + rand() % 3, 64);
-						}
+						messagePlayer(clientnum, language[374], item->description());
+						itemPickup(clientnum, item);
+						playSound(35 + rand() % 3, 64);
 					}
 				}
 			}
+		}
 
-			drawChestSlots();
+		drawChestSlots();
 
-			//Okay, now prepare to render all the items.
-			y = CHEST_INVENTORY_Y + 22;
+		//Okay, now prepare to render all the items.
+		y = CHEST_INVENTORY_Y + 22;
+		c = 0;
+		if (chest_inventory)
+		{
+			c = numItemsInChest();
+			chestitemscroll = std::max(0, std::min(chestitemscroll, c - 4));
+
+			repopulateInvItems(chest_inventory);
+
 			c = 0;
-			if (chest_inventory)
+
+			//Actually render the items.
+			for (node = chest_inventory->first; node != NULL; node = node->next)
 			{
-				c = numItemsInChest();
-				chestitemscroll = std::max(0, std::min(chestitemscroll, c - 4));
-
-				repopulateInvItems(chest_inventory);
-
-				c = 0;
-
-				//Actually render the items.
-				for (node = chest_inventory->first; node != NULL; node = node->next)
+				if (node->element)
 				{
-					if (node->element)
+					item = (Item*) node->element;
+					if (item)
 					{
-						item = (Item*) node->element;
-						if (item)
+						c++;
+						if (c <= chestitemscroll)
 						{
-							c++;
-							if (c <= chestitemscroll)
-							{
-								continue;
-							}
-							char tempstr[64] = { 0 };
-							strncpy(tempstr, item->description(), 46);
-							if ( strlen(tempstr) == 46 )
-							{
-								strcat(tempstr, " ...");
-							}
-							ttfPrintText(ttf8, CHEST_INVENTORY_X + 36, y, tempstr);
-							pos.x = CHEST_INVENTORY_X + 16;
-							pos.y = CHEST_INVENTORY_Y + 17 + 18 * (c - chestitemscroll - 1);
-							pos.w = 16;
-							pos.h = 16;
-							drawImageScaled(itemSprite(item), NULL, &pos);
-							y += 18;
-							if (c > 3 + chestitemscroll)
-							{
-								break;
-							}
+							continue;
+						}
+						char tempstr[64] = { 0 };
+						strncpy(tempstr, item->description(), 46);
+						if ( strlen(tempstr) == 46 )
+						{
+							strcat(tempstr, " ...");
+						}
+						ttfPrintText(ttf8, CHEST_INVENTORY_X + 36, y, tempstr);
+						pos.x = CHEST_INVENTORY_X + 16;
+						pos.y = CHEST_INVENTORY_Y + 17 + 18 * (c - chestitemscroll - 1);
+						pos.w = 16;
+						pos.h = 16;
+						drawImageScaled(itemSprite(item), NULL, &pos);
+						y += 18;
+						if (c > 3 + chestitemscroll)
+						{
+							break;
 						}
 					}
 				}
