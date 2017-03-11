@@ -309,11 +309,7 @@ bool entityInsideSomething(Entity* entity)
 
 -------------------------------------------------------------------------------*/
 
-#ifndef WINDOWS
-int __attribute__((optimize(0))) barony_clear(real_t tx, real_t ty, Entity* my)
-#else
 int barony_clear(real_t tx, real_t ty, Entity* my)
-#endif
 {
 	if (!my)
 	{
