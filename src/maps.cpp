@@ -1819,6 +1819,18 @@ void assignActions(map_t* map)
 			case 30:
 			case 27:
 			case 10:
+			case 83:
+			case 84:
+			case 85:
+			case 86:
+			case 87:
+			case 88:
+			case 89:
+			case 90:
+			case 91:
+			case 92:
+			case 93:
+			case 94:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -1879,6 +1891,54 @@ void assignActions(map_t* map)
 				else if ( entity->sprite == 71 )     // devil.png
 				{
 					monsterType = DEVIL;
+				}
+				else if ( entity->sprite == 83 )     // devil.png
+				{
+					monsterType = KOBOLD;
+				}
+				else if ( entity->sprite == 84 )     // devil.png
+				{
+					monsterType = SCARAB;
+				}
+				else if ( entity->sprite == 85 )     // devil.png
+				{
+					monsterType = CRYSTALGOLEM;
+				}
+				else if ( entity->sprite == 86 )     // devil.png
+				{
+					monsterType = INCUBUS;
+				}
+				else if ( entity->sprite == 87 )     // devil.png
+				{
+					monsterType = VAMPIRE;
+				}
+				else if ( entity->sprite == 88 )     // devil.png
+				{
+					monsterType = SHADOW;
+				}
+				else if ( entity->sprite == 89 )     // devil.png
+				{
+					monsterType = COCKATRICE;
+				}
+				else if ( entity->sprite == 90 )     // devil.png
+				{
+					monsterType = INSECTOID;
+				}
+				else if ( entity->sprite == 91 )     // devil.png
+				{
+					monsterType = GOATMAN;
+				}
+				else if ( entity->sprite == 92 )     // devil.png
+				{
+					monsterType = AUTOMATON;
+				}
+				else if ( entity->sprite == 93 )     // devil.png
+				{
+					monsterType = LICH_ICE;
+				}
+				else if ( entity->sprite == 94 )     // devil.png
+				{
+					monsterType = LICH_FIRE;
 				}
 				else
 				{
@@ -1992,6 +2052,83 @@ void assignActions(map_t* map)
 						entity->sizex = 20;
 						entity->sizey = 20;
 						entity->yaw = PI;
+						break;
+					case KOBOLD:
+						entity->z = 2.25;
+						entity->focalx = limbs[GNOME][0][0]; // 0
+						entity->focaly = limbs[GNOME][0][1]; // 0
+						entity->focalz = limbs[GNOME][0][2]; // -2
+						break;
+					case SCARAB:
+						entity->focalx = limbs[RAT][0][0]; // 0
+						entity->focaly = limbs[RAT][0][1]; // 0
+						entity->focalz = limbs[RAT][0][2]; // 0
+						break;
+					case CRYSTALGOLEM:
+						entity->z = -1.5;
+						entity->focalx = limbs[TROLL][0][0]; // 1
+						entity->focaly = limbs[TROLL][0][1]; // 0
+						entity->focalz = limbs[TROLL][0][2]; // -2
+						break;
+					case INCUBUS:
+						entity->z = -1;
+						entity->focalx = limbs[SUCCUBUS][0][0]; // 0
+						entity->focaly = limbs[SUCCUBUS][0][1]; // 0
+						entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+						break;
+					case VAMPIRE:
+						entity->z = -.5;
+						entity->focalx = limbs[SKELETON][0][0]; // 0
+						entity->focaly = limbs[SKELETON][0][1]; // 0
+						entity->focalz = limbs[SKELETON][0][2]; // -1.5
+						break;
+					case SHADOW:
+						entity->z = -1;
+						entity->focalx = limbs[SUCCUBUS][0][0]; // 0
+						entity->focaly = limbs[SUCCUBUS][0][1]; // 0
+						entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+						break;
+					case COCKATRICE:
+						entity->z = -4.5;
+						entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
+						entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
+						entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
+						break;
+					case INSECTOID:
+						entity->z = 0;
+						entity->focalx = limbs[GOBLIN][0][0]; // 0
+						entity->focaly = limbs[GOBLIN][0][1]; // 0
+						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+						break;
+					case GOATMAN:
+						entity->z = 0;
+						entity->focalx = limbs[GOBLIN][0][0]; // 0
+						entity->focaly = limbs[GOBLIN][0][1]; // 0
+						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+						break;
+					case AUTOMATON:
+						entity->z = -.5;
+						entity->focalx = limbs[SKELETON][0][0]; // 0
+						entity->focaly = limbs[SKELETON][0][1]; // 0
+						entity->focalz = limbs[SKELETON][0][2]; // -1.5
+						break;
+					case LICH_ICE:
+						entity->focalx = limbs[LICH][0][0]; // -0.75
+						entity->focaly = limbs[LICH][0][1]; // 0
+						entity->focalz = limbs[LICH][0][2]; // 0
+						entity->z = -2;
+						entity->yaw = PI;
+						entity->sprite = 274;
+						entity->skill[29] = 120;
+						break;
+					case LICH_FIRE:
+						entity->focalx = limbs[LICH][0][0]; // -0.75
+						entity->focaly = limbs[LICH][0][1]; // 0
+						entity->focalz = limbs[LICH][0][2]; // 0
+						entity->z = -2;
+						entity->yaw = PI;
+						entity->sprite = 274;
+						entity->skill[29] = 120;
 						break;
 					default:
 						break;

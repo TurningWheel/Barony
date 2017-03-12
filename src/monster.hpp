@@ -11,7 +11,7 @@
 
 #pragma once
 
-static char monstertypename[][11] =
+static char monstertypename[][13] =
 {
 	"nothing",
 	"human",
@@ -33,7 +33,20 @@ static char monstertypename[][11] =
 	"lich",
 	"minotaur",
 	"devil",
-	"shopkeeper"
+	"shopkeeper",
+	"kobold",
+	"scarab",
+	"crystalgolem",
+	"incubus",
+	"vampire",
+	"shadow",
+	"cockatrice",
+	"insectoid",
+	"goatman",
+	"automaton",
+	"lichice",
+	"lichfire"
+
 };
 
 // body part focal points
@@ -45,27 +58,40 @@ extern float limbs[NUMMONSTERS][20][3];
 // 3: slime
 static char gibtype[NUMMONSTERS] =
 {
-	0,
-	1,
-	1,
-	1,
-	3,
-	1,
-	1,
-	2,
-	2,
-	0,
-	2,
-	1,
-	1,
-	1,
-	1,
-	1,
-	1,
-	2,
-	1,
-	1,
-	1
+	0,	//NOTHING,
+	1,	//HUMAN,
+	1,	//RAT,
+	1,	//GOBLIN,
+	3,	//SLIME,
+	1,	//TROLL,
+	1,	//OCTOPUS,
+	2,	//SPIDER,
+	2,	//GHOUL,
+	0,	//SKELETON,
+	2,	//SCORPION,
+	1,	//CREATURE_IMP
+	1,	//BUGBEAR,
+	1,	//GNOME,
+	1,	//DEMON,
+	1,	//SUCCUBUS,
+	1,	//MIMIC,
+	2,	//LICH,
+	1,	//MINOTAUR,
+	1,	//DEVIL,
+	1,	//SHOPKEEPER,
+	1,	//KOBOLD,
+	1,	//SCARAB,
+	1,	//CRYSTALGOLem,
+	1,	//INCUBUS,
+	0,	//VAMPIRE,
+	1,	//SHADOW,
+	1,	//COCKATRICE
+	1,	//INSECTOID,
+	1,	//GOATMAN,
+	0,	//AUTOMATON,
+	2,	//LICH_ICE,
+	2	//LICH_FIRE
+	
 };
 
 // columns go like this:
@@ -93,7 +119,20 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }, // lich
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
-	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }  // shopkeeper
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
+	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1 }, // kobold
+	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f }, // scarab
+	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f }, // crystal golem
+	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
+	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
+	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // shadow
+	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2 }, // cockatrice
+	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
+	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
+	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // automaton
+	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }, // lich ice
+	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }  // lich fire
+
 };
 
 #define WAIT_FOLLOWDIST 48
@@ -154,6 +193,8 @@ void initLich(Entity* my, Stat* myStats);
 void initImp(Entity* my, Stat* myStats);
 void initGnome(Entity* my, Stat* myStats);
 void initDevil(Entity* my, Stat* myStats);
+void initAutomaton(Entity* my, Stat* myStats);
+void initCockatrice(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -171,6 +212,8 @@ void actLichLimb(Entity* my);
 void actImpLimb(Entity* my);
 void actGnomeLimb(Entity* my);
 void actDevilLimb(Entity* my);
+void actAutomatonLimb(Entity* my);
+void actCockatriceLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -190,6 +233,8 @@ void lichDie(Entity* my);
 void impDie(Entity* my);
 void gnomeDie(Entity* my);
 void devilDie(Entity* my);
+void automatonDie(Entity* my);
+void cockatriceDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -209,6 +254,8 @@ void lichAnimate(Entity* my, double dist);
 void impMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void devilMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);
