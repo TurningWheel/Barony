@@ -122,11 +122,11 @@ void actMagicTrap(Entity* my)
 				MAGICTRAP_DIRECTION = 0;
 				break;
 		}
-		int u = std::min<int>(std::max(0.0, (my->x + x) / 16), map.width - 1);
-		int v = std::min<int>(std::max(0.0, (my->y + y) / 16), map.height - 1);
+		int u = std::min<int>(std::max<int>(0.0, (my->x + x) / 16), map.width - 1);
+		int v = std::min<int>(std::max<int>(0.0, (my->y + y) / 16), map.height - 1);
 		if ( !map.tiles[OBSTACLELAYER + v * MAPLAYERS + u * MAPLAYERS * map.height] )
 		{
-			Entity* entity = castSpell(my->uid, getSpellFromID(MAGICTRAP_SPELL), FALSE, TRUE);
+			Entity* entity = castSpell(my->getUID(), getSpellFromID(MAGICTRAP_SPELL), false, true);
 			entity->x = my->x + x;
 			entity->y = my->y + y;
 			entity->z = my->z;
@@ -376,7 +376,7 @@ void actMagiclightBall(Entity* my)
 			{
 				//messagePlayer(0, "****Moving.");
 				double tangent = atan2(parent->y - my->y, parent->x - my->x);
-				lineTraceTarget(my, my->x, my->y, tangent, 1024, IGNORE_ENTITIES, FALSE, parent);
+				lineTraceTarget(my, my->x, my->y, tangent, 1024, IGNORE_ENTITIES, false, parent);
 				if (hit.entity && hit.entity == parent)   //Line of sight to caster?
 				{
 					if (my->path != NULL)
@@ -660,7 +660,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = parent->uid;
+							hit.entity->skill[1] = parent->getUID();
 							hit.entity->fskill[2] = parent->x;
 							hit.entity->fskill[3] = parent->y;
 						}
@@ -680,11 +680,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 										if ( entity->skill[0] == 0 )   // monster is waiting
 										{
 											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, FALSE);
+											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
 												entity->skill[0] = 2; // path state
-												entity->skill[1] = parent->uid;
+												entity->skill[1] = parent->getUID();
 												entity->fskill[2] = parent->x;
 												entity->fskill[3] = parent->y;
 											}
@@ -703,7 +703,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				{
 					if ( !strcmp(map.name, "Hell Boss") && hit.entity->behavior == &actPlayer )
 					{
-						bool founddevil = FALSE;
+						bool founddevil = false;
 						node_t* tempNode;
 						for ( tempNode = map.entities->first; tempNode != NULL; tempNode = tempNode->next )
 						{
@@ -715,7 +715,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									if ( stats->type == DEVIL )
 									{
-										founddevil = TRUE;
+										founddevil = true;
 										break;
 									}
 								}
@@ -777,7 +777,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
-						my->parent = hit.entity->uid;
+						my->parent = hit.entity->getUID();
 					}
 					if ( rand() % 2 == 0 && hitstats && reflection < 3 )
 					{
@@ -874,21 +874,21 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				// check for magic resistance...
-				bool resistance = FALSE;
+				bool resistance = false;
 				if ( hitstats )
 				{
 					if ( hitstats->shield )
 					{
 						if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE )
 						{
-							resistance = TRUE;
+							resistance = true;
 						}
 					}
 					if ( hitstats->ring )
 					{
 						if ( hitstats->ring->type == RING_MAGICRESISTANCE )
 						{
-							resistance = TRUE;
+							resistance = true;
 						}
 					}
 				}
@@ -947,7 +947,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( hitstats->HP <= 0 && parent)
 							{
-								parent->awardXP( hit.entity, TRUE, TRUE );
+								parent->awardXP( hit.entity, true, true );
 							}
 							if ( my->light != NULL )
 							{
@@ -1096,7 +1096,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 							if ( hitstats->HP <= 0 && parent)
 							{
-								parent->awardXP( hit.entity, TRUE, TRUE );
+								parent->awardXP( hit.entity, true, true );
 							}
 							if ( my->light != NULL )
 							{
@@ -1206,7 +1206,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( hit.entity->flags[BURNABLE] )
 							if ( !hit.entity->flags[BURNING] )
 							{
-								hit.entity->flags[BURNING] = TRUE;
+								hit.entity->flags[BURNING] = true;
 							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
@@ -1254,7 +1254,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( hitstats->HP <= 0 && parent)
 							{
-								parent->awardXP( hit.entity, TRUE, TRUE );
+								parent->awardXP( hit.entity, true, true );
 							}
 							if ( my->light != NULL )
 							{
@@ -1373,7 +1373,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 174, 64);
-							hitstats->EFFECTS[EFF_CONFUSED] = TRUE;
+							hitstats->EFFECTS[EFF_CONFUSED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
 							hit.entity->skill[1] = 0; //Remove the monster's target.
@@ -1430,7 +1430,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 172, 64);
-							hitstats->EFFECTS[EFF_SLOW] = TRUE;
+							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							int damage = element->damage;
@@ -1503,7 +1503,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 172, 64); //TODO: Slow spell sound.
-							hitstats->EFFECTS[EFF_SLOW] = TRUE;
+							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							// update enemy bar for attacker
@@ -1559,7 +1559,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 174, 64);
-							hitstats->EFFECTS[EFF_ASLEEP] = TRUE;
+							hitstats->EFFECTS[EFF_ASLEEP] = true;
 							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] = 600 + rand() % 300;
 							hitstats->EFFECTS_TIMERS[EFF_ASLEEP] /= (1 + (int)resistance);
 							hitstats->OLDHP = hitstats->HP;
@@ -1642,7 +1642,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							if ( hitstats->HP <= 0 && parent)
 							{
-								parent->awardXP( hit.entity, TRUE, TRUE );
+								parent->awardXP( hit.entity, true, true );
 							}
 							if ( my->light != NULL )
 							{
@@ -1887,8 +1887,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								for ( c = 0; c < i; c++ )
 								{
 									entity = newEntity(-1, 1, map.entities);
-									entity->flags[INVISIBLE] = TRUE;
-									entity->flags[UPDATENEEDED] = TRUE;
+									entity->flags[INVISIBLE] = true;
+									entity->flags[UPDATENEEDED] = true;
 									entity->x = hit.mapx * 16 + 4 + rand() % 8;
 									entity->y = hit.mapy * 16 + 4 + rand() % 8;
 									entity->z = -6 + rand() % 12;
@@ -1898,22 +1898,22 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									entity->vel_x = (rand() % 20 - 10) / 10.0;
 									entity->vel_y = (rand() % 20 - 10) / 10.0;
 									entity->vel_z = -.25 - (rand() % 5) / 10.0;
-									entity->flags[PASSABLE] = TRUE;
+									entity->flags[PASSABLE] = true;
 									entity->behavior = &actItem;
-									entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
+									entity->flags[USERFLAG1] = true; // no collision: helps performance
 									entity->skill[10] = GEM_ROCK;    // type
 									entity->skill[11] = WORN;        // status
 									entity->skill[12] = 0;           // beatitude
 									entity->skill[13] = 1;           // count
 									entity->skill[14] = 0;           // appearance
-									entity->skill[15] = FALSE;       // identified
+									entity->skill[15] = false;       // identified
 								}
 
 								map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
 								// send wall destroy info to clients
 								for ( c = 1; c < MAXPLAYERS; c++ )
 								{
-									if ( client_disconnected[c] == TRUE )
+									if ( client_disconnected[c] == true )
 									{
 										continue;
 									}
@@ -1938,8 +1938,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							for ( c = 0; c < i; c++ )
 							{
 								Entity* entity = newEntity(-1, 1, map.entities);
-								entity->flags[INVISIBLE] = TRUE;
-								entity->flags[UPDATENEEDED] = TRUE;
+								entity->flags[INVISIBLE] = true;
+								entity->flags[UPDATENEEDED] = true;
 								entity->x = hit.entity->x - 4 + rand() % 8;
 								entity->y = hit.entity->y - 4 + rand() % 8;
 								entity->z = -6 + rand() % 12;
@@ -1949,15 +1949,15 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								entity->vel_x = (rand() % 20 - 10) / 10.0;
 								entity->vel_y = (rand() % 20 - 10) / 10.0;
 								entity->vel_z = -.25 - (rand() % 5) / 10.0;
-								entity->flags[PASSABLE] = TRUE;
+								entity->flags[PASSABLE] = true;
 								entity->behavior = &actItem;
-								entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
+								entity->flags[USERFLAG1] = true; // no collision: helps performance
 								entity->skill[10] = GEM_ROCK;    // type
 								entity->skill[11] = WORN;        // status
 								entity->skill[12] = 0;           // beatitude
 								entity->skill[13] = 1;           // count
 								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = FALSE;       // identified
+								entity->skill[15] = false;       // identified
 							}
 
 							double ox = hit.entity->x;
@@ -2141,18 +2141,18 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->yaw = parentent->yaw;
 	entity->pitch = parentent->pitch;
 	entity->roll = parentent->roll;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[BRIGHT] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[UPDATENEEDED] = FALSE;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UPDATENEEDED] = false;
 	entity->behavior = &actMagicParticle;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }
@@ -2193,16 +2193,16 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->yaw = (rand() % 360) * PI / 180.f;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[BRIGHT] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[UNCLICKABLE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[BRIGHT] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
 		if ( multiplayer != CLIENT )
 		{
 			entity_uids--;
 		}
-		entity->uid = -3;
+		entity->setUID(-3);
 	}
 }

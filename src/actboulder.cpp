@@ -90,8 +90,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					for ( c = 0; c < i; c++ )
 					{
 						Entity* entity = newEntity(-1, 1, map.entities);
-						entity->flags[INVISIBLE] = TRUE;
-						entity->flags[UPDATENEEDED] = TRUE;
+						entity->flags[INVISIBLE] = true;
+						entity->flags[UPDATENEEDED] = true;
 						entity->x = my->x - 4 + rand() % 8;
 						entity->y = my->y - 4 + rand() % 8;
 						entity->z = -6 + rand() % 12;
@@ -101,15 +101,15 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						entity->vel_x = (rand() % 20 - 10) / 10.0;
 						entity->vel_y = (rand() % 20 - 10) / 10.0;
 						entity->vel_z = -.25 - (rand() % 5) / 10.0;
-						entity->flags[PASSABLE] = TRUE;
+						entity->flags[PASSABLE] = true;
 						entity->behavior = &actItem;
-						entity->flags[USERFLAG1] = TRUE; // no collision: helps performance
+						entity->flags[USERFLAG1] = true; // no collision: helps performance
 						entity->skill[10] = GEM_ROCK;    // type
 						entity->skill[11] = WORN;        // status
 						entity->skill[12] = 0;           // beatitude
 						entity->skill[13] = 1;           // count
 						entity->skill[14] = 0;           // appearance
-						entity->skill[15] = FALSE;       // identified
+						entity->skill[15] = false;       // identified
 					}
 
 					double ox = my->x;
@@ -151,7 +151,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 				playSoundEntity(my, 181, 128);
 				if ( my->flags[PASSABLE] )
 				{
-					my->flags[PASSABLE] = FALSE;
+					my->flags[PASSABLE] = false;
 					if ( multiplayer == SERVER )
 					{
 						serverUpdateEntityFlag(my, PASSABLE);
@@ -194,30 +194,30 @@ void actBoulder(Entity* my)
 	int i;
 
 	my->skill[2] = -7; // invokes actEmpty() on clients
-	my->flags[UPDATENEEDED] = TRUE;
+	my->flags[UPDATENEEDED] = true;
 
-	bool noground = FALSE;
+	bool noground = false;
 	int x = std::min<int>(std::max(0, (int)(my->x / 16)), map.width);
 	int y = std::min<int>(std::max(0, (int)(my->y / 16)), map.height);
 	Uint32 index = y * MAPLAYERS + x * MAPLAYERS * map.height;
 	if ( !map.tiles[index] || animatedtiles[map.tiles[index]] )
 	{
-		noground = TRUE;
+		noground = true;
 	}
 
 	// gravity
-	bool nobounce = TRUE;
+	bool nobounce = true;
 	if ( !BOULDER_NOGROUND )
 		if ( noground )
 		{
-			BOULDER_NOGROUND = TRUE;
+			BOULDER_NOGROUND = true;
 		}
 	if ( my->z < 0 || BOULDER_NOGROUND )
 	{
-		my->vel_z = std::min(my->vel_z + .1, 3.0);
+		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
 		my->vel_x *= 0.85f;
 		my->vel_y *= 0.85f;
-		nobounce = TRUE;
+		nobounce = true;
 		if ( my->z >= 128 )
 		{
 			list_RemoveNode(my->mynode);
@@ -249,7 +249,7 @@ void actBoulder(Entity* my)
 		{
 			playSoundEntity(my, 182, 128);
 			my->vel_z = -(my->vel_z / 2);
-			nobounce = TRUE;
+			nobounce = true;
 		}
 		else
 		{
@@ -258,7 +258,7 @@ void actBoulder(Entity* my)
 				playSoundEntity(my, 182, 128);
 			}
 			my->vel_z = 0;
-			nobounce = FALSE;
+			nobounce = false;
 		}
 		my->z = 0;
 	}
@@ -267,7 +267,7 @@ void actBoulder(Entity* my)
 	{
 		if ( !my->flags[PASSABLE] )
 		{
-			my->flags[PASSABLE] = TRUE;
+			my->flags[PASSABLE] = true;
 			if ( multiplayer == SERVER )
 			{
 				serverUpdateEntityFlag(my, PASSABLE);
@@ -286,7 +286,7 @@ void actBoulder(Entity* my)
 	{
 		if ( my->flags[PASSABLE] )
 		{
-			my->flags[PASSABLE] = FALSE;
+			my->flags[PASSABLE] = false;
 			if ( multiplayer == SERVER )
 			{
 				serverUpdateEntityFlag(my, PASSABLE);
@@ -312,8 +312,8 @@ void actBoulder(Entity* my)
 		{
 			my->vel_y = -1.5;
 		}
-		int x = std::min<int>(std::max(0.0, (my->x + cos(my->yaw) * 8) / 16), map.width - 1);
-		int y = std::min<int>(std::max(0.0, (my->y + sin(my->yaw) * 8) / 16), map.height - 1);
+		int x = std::min<int>(std::max<int>(0, (my->x + cos(my->yaw) * 8) / 16), map.width - 1);
+		int y = std::min<int>(std::max<int>(0, (my->y + sin(my->yaw) * 8) / 16), map.height - 1);
 		if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 		{
 			playSoundEntity(my, 181, 128);
@@ -432,8 +432,8 @@ void actBoulder(Entity* my)
 			}
 			int x = (my->x + my->vel_x * 8) / 16;
 			int y = (my->y + my->vel_y * 8) / 16;
-			x = std::min<unsigned int>(std::max(0, x), map.width - 1);
-			y = std::min<unsigned int>(std::max(0, y), map.height - 1);
+			x = std::min<unsigned int>(std::max<int>(0, x), map.width - 1);
+			y = std::min<unsigned int>(std::max<int>(0, y), map.height - 1);
 			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
 				BOULDER_ROLLING = 0;
@@ -606,7 +606,7 @@ void actBoulderTrap(Entity* my)
 					if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 					{
 						Entity* entity = newEntity(245, 1, map.entities); // boulder
-						entity->parent = my->uid;
+						entity->parent = my->getUID();
 						entity->x = (x << 4) + 8;
 						entity->y = (y << 4) + 8;
 						entity->z = -64;
@@ -626,8 +626,8 @@ void actBoulderTrap(Entity* my)
 							}
 						}
 						entity->behavior = &actBoulder;
-						entity->flags[UPDATENEEDED] = TRUE;
-						entity->flags[PASSABLE] = TRUE;
+						entity->flags[UPDATENEEDED] = true;
+						entity->flags[PASSABLE] = true;
 					}
 				}
 			}

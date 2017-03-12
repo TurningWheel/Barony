@@ -78,7 +78,7 @@ void actLadder(Entity* my)
 					{
 						messagePlayer(i, language[507]);
 					}
-					loadnextlevel = TRUE;
+					loadnextlevel = true;
 					if (secretlevel)
 					{
 						switch (currentlevel)
@@ -93,7 +93,7 @@ void actLadder(Entity* my)
 					}
 					if (LADDER_SECRET)
 					{
-						secretlevel = (secretlevel == FALSE);    // toggle level lists
+						secretlevel = (secretlevel == false);    // toggle level lists
 					}
 					return;
 				}
@@ -193,7 +193,7 @@ void actPortal(Entity* my)
 				{
 					messagePlayer(i, language[511]);
 				}
-				loadnextlevel = TRUE;
+				loadnextlevel = true;
 				if ( secretlevel )
 				{
 					switch ( currentlevel )
@@ -201,14 +201,14 @@ void actPortal(Entity* my)
 						case 9:
 						{
 							;
-							bool visiblegrave = FALSE;
+							bool visiblegrave = false;
 							node_t* node;
 							for ( node = map.entities->first; node != NULL; node = node->next )
 							{
 								Entity* entity = (Entity*)node->element;
 								if ( entity->sprite == 224 && !entity->flags[INVISIBLE] )
 								{
-									visiblegrave = TRUE;
+									visiblegrave = true;
 									break;
 								}
 							}
@@ -229,7 +229,7 @@ void actPortal(Entity* my)
 				}
 				if ( !PORTAL_NOTSECRET )
 				{
-					secretlevel = (secretlevel == FALSE);  // toggle level lists
+					secretlevel = (secretlevel == false);  // toggle level lists
 				}
 				return;
 			}
@@ -265,7 +265,7 @@ void actWinningPortal(Entity* my)
 					}
 				}
 			}
-			my->flags[INVISIBLE] = FALSE;
+			my->flags[INVISIBLE] = false;
 		}
 	}
 	else
@@ -326,7 +326,7 @@ void actWinningPortal(Entity* my)
 				{
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
-						if ( client_disconnected[c] == TRUE )
+						if ( client_disconnected[c] == true )
 						{
 							continue;
 						}
@@ -340,10 +340,10 @@ void actWinningPortal(Entity* my)
 				}
 				subwindow = 0;
 				introstage = 5; // prepares win game sequence
-				fadeout = TRUE;
+				fadeout = true;
 				if ( !intro )
 				{
-					pauseGame(2, FALSE);
+					pauseGame(2, false);
 				}
 				return;
 			}

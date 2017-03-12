@@ -92,11 +92,11 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
-	entity->flags[SPRITE] = TRUE;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[BRIGHT] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
 	entity->skill[0] = 1;
 	entity->skill[1] = 4;
@@ -106,7 +106,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 	return entity;
 }
 
@@ -137,11 +137,11 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
-	entity->flags[SPRITE] = TRUE;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[BRIGHT] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actSprite;
 	entity->skill[0] = 1;
 	entity->skill[1] = 4;
@@ -159,10 +159,10 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		entity->x = explosion->x;
 		entity->y = explosion->y;
 		entity->z = explosion->z;
-		entity->flags[SPRITE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[UPDATENEEDED] = FALSE;
-		entity->flags[BRIGHT] = TRUE;
+		entity->flags[SPRITE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UPDATENEEDED] = false;
+		entity->flags[BRIGHT] = true;
 		//entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 		//entity->scaley = 0.25f;
 		//entity->scalez = 0.25f;
@@ -175,7 +175,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 	return explosion;
 }
 
@@ -231,11 +231,11 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	entity->x = x;
 	entity->y = y;
 	entity->z = z;
-	entity->flags[SPRITE] = TRUE;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[UPDATENEEDED] = FALSE;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[SPRITE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UPDATENEEDED] = false;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
 	entity->scalex = 0.05;
 	entity->scaley = 0.05;
 	entity->scalez = 0.05;
@@ -245,7 +245,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }

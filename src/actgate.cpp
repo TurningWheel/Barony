@@ -58,7 +58,7 @@ void actGate(Entity* my)
 	}
 	else
 	{
-		my->flags[NOUPDATE] = TRUE;
+		my->flags[NOUPDATE] = true;
 	}
 	if (!GATE_INIT )
 	{
@@ -131,7 +131,7 @@ void actGate(Entity* my)
 
 	//Setting collision
 	node_t* node;
-	bool somebodyinside = FALSE;
+	bool somebodyinside = false;
 	if ( my->z > GATE_STARTHEIGHT - 6 && my->flags[PASSABLE] )
 	{
 		for ( node = map.entities->first; node != NULL; node = node->next )
@@ -143,17 +143,17 @@ void actGate(Entity* my)
 			}
 			if ( entityInsideEntity(my, entity) )
 			{
-				somebodyinside = TRUE;
+				somebodyinside = true;
 				break;
 			}
 		}
 		if ( !somebodyinside )
 		{
-			my->flags[PASSABLE] = FALSE;
+			my->flags[PASSABLE] = false;
 		}
 	}
 	else if ( my->z < GATE_STARTHEIGHT - 9 && !my->flags[PASSABLE] )
 	{
-		my->flags[PASSABLE] = TRUE;
+		my->flags[PASSABLE] = true;
 	}
 }

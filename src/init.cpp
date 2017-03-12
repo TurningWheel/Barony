@@ -38,8 +38,16 @@
 #define LOADSTR3 language[743]
 #define LOADSTR4 language[744]
 
+#ifdef PANDORA
+// Pandora FBO
+GLuint fbo_fbo = 0;
+GLuint fbo_tex = 0;
+GLuint fbo_trn = 0;
+GLuint fbo_ren = 0;
+#endif
+
 FILE* logfile = nullptr;
-bool steam_init = FALSE;
+bool steam_init = false;
 
 int initApp(char* title, int fullscreen)
 {
@@ -86,7 +94,7 @@ int initApp(char* title, int fullscreen)
 		printlog(" make sure your steam client is running before attempting to start again.\n");
 		return 1;
 	}
-	steam_init = TRUE;
+	steam_init = true;
 #endif
 
 	window_title = title;
@@ -109,7 +117,7 @@ int initApp(char* title, int fullscreen)
 	if (FMODErrorCheck())
 	{
 		printlog("Failed to create FMOD.\n");
-		no_sound = TRUE;
+		no_sound = true;
 	}
 	if (!no_sound)
 	{
@@ -118,7 +126,7 @@ int initApp(char* title, int fullscreen)
 		if (FMODErrorCheck())
 		{
 			printlog("Failed to initialize FMOD.\n");
-			no_sound = TRUE;
+			no_sound = true;
 		}
 		if (!no_sound)
 		{
@@ -126,7 +134,7 @@ int initApp(char* title, int fullscreen)
 			if (FMODErrorCheck())
 			{
 				printlog("Failed to create sound channel group.\n");
-				no_sound = TRUE;
+				no_sound = true;
 			}
 			if (!no_sound)
 			{
@@ -134,10 +142,15 @@ int initApp(char* title, int fullscreen)
 				if (FMODErrorCheck())
 				{
 					printlog("Failed to create music channel group.\n");
-					no_sound = TRUE;
+					no_sound = true;
 				}
 			}
 		}
+	}
+#elif defined HAVE_OPENAL
+	if (!no_sound)
+	{
+		initOPENAL();
 	}
 #endif
 	printlog("initializing SDL_net...\n");
@@ -171,45 +184,48 @@ int initApp(char* title, int fullscreen)
 
 	// get pointers to opengl extensions
 #ifdef WINDOWS
-	bool noextensions = FALSE;
+	bool noextensions = false;
 	if ( !softwaremode )
 	{
 		if ( (SDL_glGenBuffers = (PFNGLGENBUFFERSPROC)SDL_GL_GetProcAddress("glGenBuffers")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glBindBuffer = (PFNGLBINDBUFFERPROC)SDL_GL_GetProcAddress("glBindBuffer")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glBufferData = (PFNGLBUFFERDATAPROC)SDL_GL_GetProcAddress("glBufferData")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glDeleteBuffers = (PFNGLDELETEBUFFERSPROC)SDL_GL_GetProcAddress("glDeleteBuffers")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glGenVertexArrays = (PFNGLGENVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glGenVertexArrays")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glBindVertexArray = (PFNGLBINDVERTEXARRAYPROC)SDL_GL_GetProcAddress("glBindVertexArray")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glDeleteVertexArrays = (PFNGLDELETEVERTEXARRAYSPROC)SDL_GL_GetProcAddress("glDeleteVertexArrays")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
+/*
+// Unused
 		else if ( (SDL_glEnableVertexAttribArray = (PFNGLENABLEVERTEXATTRIBARRAYPROC)SDL_GL_GetProcAddress("glEnableVertexAttribArray")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
 		else if ( (SDL_glVertexAttribPointer = (PFNGLVERTEXATTRIBPOINTERPROC)SDL_GL_GetProcAddress("glVertexAttribPointer")) == NULL )
 		{
-			noextensions = TRUE;
+			noextensions = true;
 		}
+*/
 	}
 	if (softwaremode)
 	{
@@ -218,7 +234,7 @@ int initApp(char* title, int fullscreen)
 	if ( noextensions )
 	{
 		printlog("warning: failed to load OpenGL extensions.\nYou may want to update your drivers or your graphics card, as performance will be reduced without these.\n");
-		disablevbos = TRUE;
+		disablevbos = true;
 	}
 #else
 	if (softwaremode)
@@ -228,7 +244,7 @@ int initApp(char* title, int fullscreen)
 #endif
 
 	// initialize buffers
-	zbuffer = (double*) malloc(sizeof(double) * xres * yres);
+	zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
 	clickmap = (Entity**) malloc(sizeof(Entity*)*xres * yres);
 	texid = (GLuint*) malloc(MAXTEXTURES * sizeof(GLuint));
 	//vaoid = (GLuint *) malloc(MAXBUFFERS*sizeof(GLuint));
@@ -288,11 +304,8 @@ int initApp(char* title, int fullscreen)
 	int w, h;
 	TTF_SizeUTF8(ttf16, LOADSTR1, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR1);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	// load sprites
 	printlog("loading sprites...\n");
@@ -335,11 +348,8 @@ int initApp(char* title, int fullscreen)
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR2, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR2);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	// load models
 	printlog("loading models...\n");
@@ -386,11 +396,8 @@ int initApp(char* title, int fullscreen)
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR3, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR3);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	// load tiles
 	printlog("loading tiles...\n");
@@ -420,21 +427,21 @@ int initApp(char* title, int fullscreen)
 				break;
 			}
 		tiles[c] = loadImage(name);
-		animatedtiles[c] = FALSE;
-		lavatiles[c] = FALSE;
+		animatedtiles[c] = false;
+		lavatiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
 			for (x = 0; x < strlen(name); x++)
 			{
 				if ( name[x] >= 48 && name[x] < 58 )
 				{
-					animatedtiles[c] = TRUE;
+					animatedtiles[c] = true;
 					break;
 				}
 			}
 			if ( strstr(name, "Lava") || strstr(name, "lava") )
 			{
-				lavatiles[c] = TRUE;
+				lavatiles[c] = true;
 			}
 		}
 		else
@@ -452,11 +459,8 @@ int initApp(char* title, int fullscreen)
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR4, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, LOADSTR4);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	// load sound effects
 #ifdef HAVE_FMOD
@@ -495,6 +499,38 @@ int initApp(char* title, int fullscreen)
 	fclose(fp);
 	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
+#elif defined HAVE_OPENAL
+	printlog("loading sounds...\n");
+	fp = fopen("sound/sounds.txt", "r");
+	for ( numsounds = 0; !feof(fp); numsounds++ )
+	{
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+	}
+	fclose(fp);
+	if ( numsounds == 0 )
+	{
+		printlog("failed to identify any sounds in sounds.txt\n");
+		return 10;
+	}
+	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
+	fp = fopen("sound/sounds.txt", "r");
+	for ( c = 0; !feof(fp); c++ )
+	{
+		fscanf(fp, "%s", name);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+		//TODO: Might need to malloc the sounds[c]->sound
+		OPENAL_CreateSound(name, true, &sounds[c]);
+		//TODO: set sound volume? Or otherwise handle sound volume.
+	}
+	fclose(fp);
+	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
+	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
 #endif
 
 	return 0;
@@ -638,13 +674,13 @@ int loadLanguage(char* lang)
 
 		// read line from file
 		int i;
-		bool fileEnd = FALSE;
+		bool fileEnd = false;
 		for ( i = 0; ; i++ )
 		{
 			data[i] = fgetc(fp);
 			if ( feof(fp) )
 			{
-				fileEnd = TRUE;
+				fileEnd = true;
 				break;
 			}
 
@@ -759,11 +795,8 @@ void generatePolyModels()
 		int w, h;
 		TTF_SizeUTF8(ttf16, loadText, &w, &h);
 		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
-#ifdef APPLE
-		SDL_RenderPresent(renderer);
-#else
-		SDL_GL_SwapWindow(screen);
-#endif
+
+		GO_SwapBuffers(screen);
 
 		numquads = 0;
 		polymodels[c].numfaces = 0;
@@ -782,27 +815,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( y = 0; y < models[c]->sizey; y++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( x < models[c]->sizex - 1 )
 							if ( models[c]->data[index + indexdown[0]] >= 0 && models[c]->data[index + indexdown[0]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*)currentNode->element;
@@ -843,19 +876,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( x == models[c]->sizex - 1 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index + indexdown[0]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -880,10 +913,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*)currentNode->element;
@@ -928,27 +961,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( y = 0; y < models[c]->sizey; y++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( x > 0 )
 							if ( models[c]->data[index - indexdown[0]] >= 0 && models[c]->data[index - indexdown[0]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*)currentNode->element;
@@ -989,19 +1022,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( x == 0 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index - indexdown[0]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1026,10 +1059,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*)currentNode->element;
@@ -1074,27 +1107,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( y < models[c]->sizey - 1 )
 							if ( models[c]->data[index + indexdown[1]] >= 0 && models[c]->data[index + indexdown[1]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1135,19 +1168,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( y == models[c]->sizey - 1 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index + indexdown[1]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1172,10 +1205,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
@@ -1219,27 +1252,27 @@ void generatePolyModels()
 			for ( z = 0; z < models[c]->sizez; z++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( y > 0 )
 							if ( models[c]->data[index - indexdown[1]] >= 0 && models[c]->data[index - indexdown[1]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1280,19 +1313,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( y == 0 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index - indexdown[1]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1317,10 +1350,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
 					quad1->vertex[1].x = x - model->sizex / 2.f;
@@ -1364,27 +1397,27 @@ void generatePolyModels()
 			for ( y = 0; y < models[c]->sizey; y++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( z < models[c]->sizez - 1 )
 							if ( models[c]->data[index + indexdown[2]] >= 0 && models[c]->data[index + indexdown[2]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1425,19 +1458,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( z == models[c]->sizez - 1 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index + indexdown[2]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1462,10 +1495,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
@@ -1510,27 +1543,27 @@ void generatePolyModels()
 			for ( y = 0; y < models[c]->sizey; y++ )
 			{
 				oldcolor = 255;
-				buildingquad = FALSE;
+				buildingquad = false;
 				for ( x = 0; x < models[c]->sizex; x++ )
 				{
 					index = z + y * models[c]->sizez + x * models[c]->sizey * models[c]->sizez;
 					newcolor = models[c]->data[index];
-					if ( buildingquad == TRUE )
+					if ( buildingquad == true )
 					{
-						bool doit = FALSE;
+						bool doit = false;
 						if ( newcolor != oldcolor )
 						{
-							doit = TRUE;
+							doit = true;
 						}
 						else if ( z > 0 )
 							if ( models[c]->data[index - indexdown[2]] >= 0 && models[c]->data[index - indexdown[2]] < 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 						if ( doit )
 						{
 							// add the last two vertices to the previous quad
-							buildingquad = FALSE;
+							buildingquad = false;
 
 							node_t* currentNode = quads.last;
 							quad1 = (polyquad_t*) currentNode->element;
@@ -1571,19 +1604,19 @@ void generatePolyModels()
 					{
 						if ( newcolor != 255 )
 						{
-							bool doit = FALSE;
+							bool doit = false;
 							if ( z == 0 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							else if ( models[c]->data[index - indexdown[2]] == 255 )
 							{
-								doit = TRUE;
+								doit = true;
 							}
 							if ( doit )
 							{
 								// start building a new quad
-								buildingquad = TRUE;
+								buildingquad = true;
 								numquads++;
 								polymodels[c].numfaces += 2;
 
@@ -1608,10 +1641,10 @@ void generatePolyModels()
 					}
 					oldcolor = newcolor;
 				}
-				if ( buildingquad == TRUE )
+				if ( buildingquad == true )
 				{
 					// add the last two vertices to the previous quad
-					buildingquad = FALSE;
+					buildingquad = false;
 
 					node_t* currentNode = quads.last;
 					quad1 = (polyquad_t*) currentNode->element;
@@ -1748,24 +1781,25 @@ void generateVBOs()
 		SDL_glBindVertexArray(polymodels[c].va);
 
 		// vertex data
+		// Well, the generic vertex array are not used, so disabled (making it run on any OpenGL 1.5 hardware)
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].vbo);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, points, GL_STATIC_DRAW);
-		SDL_glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
-		SDL_glEnableVertexAttribArray(0);
+		//SDL_glVertexAttribPointer((GLuint)0, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		//SDL_glEnableVertexAttribArray(0);
 
 		// color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, colors, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		SDL_glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		//SDL_glVertexAttribPointer((GLuint)1, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		glColorPointer(3, GL_FLOAT, 0, 0);
-		SDL_glEnableVertexAttribArray(1);
+		//SDL_glEnableVertexAttribArray(1);
 
 		// shifted color data
 		SDL_glBindBuffer(GL_ARRAY_BUFFER, polymodels[c].colors_shifted);
 		SDL_glBufferData(GL_ARRAY_BUFFER, sizeof(GLfloat) * 9 * polymodels[c].numfaces, colors_shifted, GL_STATIC_DRAW); // Set the size and data of our VBO and set it to STATIC_DRAW
-		SDL_glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, 0, 0);
+		//SDL_glVertexAttribPointer((GLuint)2, 3, GL_FLOAT, GL_FALSE, 0, 0);
 		glColorPointer(3, GL_FLOAT, 0, 0);
-		SDL_glEnableVertexAttribArray(2);
+		//SDL_glEnableVertexAttribArray(2);
 
 		free(points);
 		free(colors);
@@ -1780,11 +1814,12 @@ void generateVBOs()
 	frees all memory consumed by the application and terminates the engine
 
 -------------------------------------------------------------------------------*/
-
 int deinitApp()
 {
 	Uint32 c;
-
+#ifdef HAVE_OPENAL
+	closeOPENAL();
+#endif
 	// close engine
 	printlog("closing engine...\n");
 	printlog("removing engine timer...\n");
@@ -2051,6 +2086,54 @@ int deinitApp()
 	return 0;
 }
 
+#ifdef PANDORA
+void GO_InitFBO()
+{
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if(fbo_fbo) {
+		glDeleteFramebuffers(1, &fbo_fbo); fbo_fbo = 0;
+		glDeleteRenderbuffers(1, &fbo_ren); fbo_ren = 0;
+		if(fbo_trn) {
+			glDeleteRenderbuffers(1, &fbo_trn); fbo_trn = 0;
+		}
+		if(fbo_tex) {
+			glDeleteTextures(1, &fbo_tex); fbo_tex = 0;
+		}
+	}
+
+	// Pandora, create the FBO!
+	bool small_fbo=((xres==800) && (yres==480));
+	glGenFramebuffers(1, &fbo_fbo);
+	glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
+	if(small_fbo) {
+		glGenRenderbuffers(1, &fbo_trn);
+		glBindRenderbuffer(GL_RENDERBUFFER, fbo_trn);
+		glRenderbufferStorage(GL_RENDERBUFFER, GL_RGBA8, 1024, 512);
+		glBindRenderbuffer(GL_RENDERBUFFER, 0);
+		glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_RENDERBUFFER, fbo_trn);
+	} else {
+		glGenTextures(1, &fbo_tex);
+		glBindTexture(GL_TEXTURE_2D, fbo_tex);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MIN_FILTER, GL_LINEAR);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_MAG_FILTER, GL_NEAREST);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_S, GL_CLAMP_TO_EDGE);
+		glTexParameteri(GL_TEXTURE_2D, GL_TEXTURE_WRAP_T, GL_CLAMP_TO_EDGE);
+		glTexImage2D(GL_TEXTURE_2D, 0, GL_RGBA, 1024, 1024, 0, GL_RGBA, GL_UNSIGNED_BYTE, 0);
+		glBindTexture(GL_TEXTURE_2D, 0);
+		glFramebufferTexture2D(GL_FRAMEBUFFER, GL_COLOR_ATTACHMENT0, GL_TEXTURE_2D, fbo_tex, 0);
+	}
+	glGenRenderbuffers(1, &fbo_ren);
+	glBindRenderbuffer(GL_RENDERBUFFER, fbo_ren);
+	glRenderbufferStorage(GL_RENDERBUFFER, GL_DEPTH_COMPONENT16, 1024, (small_fbo)?512:1024);
+	glBindRenderbuffer(GL_RENDERBUFFER, 0);
+	glFramebufferRenderbuffer(GL_FRAMEBUFFER, GL_DEPTH_ATTACHMENT, GL_RENDERBUFFER, fbo_ren);
+	glBindFramebuffer(GL_FRAMEBUFFER, 0);
+	if(!small_fbo)
+		glBindFramebuffer(GL_FRAMEBUFFER, fbo_fbo);
+
+}
+#endif
+
 /*-------------------------------------------------------------------------------
 
 	initVideo
@@ -2061,17 +2144,20 @@ int deinitApp()
 
 bool initVideo()
 {
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 3 );
+	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MAJOR_VERSION, 1/*3*/ ); //Why GL 3.0? using only fixed pipeline stuff here
 	SDL_GL_SetAttribute( SDL_GL_CONTEXT_MINOR_VERSION, 0 );
 	SDL_GL_SetAttribute( SDL_GL_ALPHA_SIZE, 8 );
 	SDL_GL_SetAttribute( SDL_GL_DOUBLEBUFFER, 1 );
 	SDL_GL_SetAttribute( SDL_GL_DEPTH_SIZE, 24 );
-	SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
+	//SDL_GL_SetAttribute( SDL_GL_CONTEXT_PROFILE_MASK, SDL_GL_CONTEXT_PROFILE_CORE );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLEBUFFERS, 1 );
 	//SDL_GL_SetAttribute( SDL_GL_MULTISAMPLESAMPLES, 4 );
 
 	printlog("setting display mode to %dx%d...\n", xres, yres);
 	Uint32 flags = 0;
+#ifdef PANDORA
+	fullscreen = true;
+#endif
 	if ( fullscreen )
 	{
 		flags |= SDL_WINDOW_FULLSCREEN;
@@ -2092,22 +2178,34 @@ bool initVideo()
 	SDL_DestroyWindow(screen);
 	screen = NULL;
 #endif
+#ifdef PANDORA
+	int screen_width = 800;
+#else
 	int screen_width = xres;
+#endif
 	if (splitscreen)
 	{
 		screen_width *= 2;
 	}
 	if ( !screen )
 	{
+#ifdef PANDORA
+		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, 480, flags )) == NULL)
+#else
 		if ((screen = SDL_CreateWindow( window_title, SDL_WINDOWPOS_UNDEFINED, SDL_WINDOWPOS_UNDEFINED, screen_width, yres, flags )) == NULL)
+#endif
 		{
 			printlog("failed to set video mode.\n");
-			return FALSE;
+			return false;
 		}
 	}
 	else
 	{
+#ifdef PANDORA
+		SDL_SetWindowSize(screen, screen_width, 480);
+#else
 		SDL_SetWindowSize(screen, screen_width, yres);
+#endif
 		if ( fullscreen )
 		{
 			SDL_SetWindowFullscreen(screen, SDL_WINDOW_FULLSCREEN);
@@ -2128,7 +2226,7 @@ bool initVideo()
 #endif
 			printlog("failed to create SDL renderer. Reason: \"%s\"\n", SDL_GetError());
 			printlog("You may need to update your video drivers.\n");
-			return FALSE;
+			return false;
 		}
 	}
 #ifndef APPLE
@@ -2148,10 +2246,13 @@ bool initVideo()
 	if ((mainsurface = SDL_CreateRGBSurface(0, xres, yres, 32, rmask, gmask, bmask, amask)) == NULL)
 	{
 		printlog("failed to create main window surface.\n");
-		return FALSE;
+		return false;
 	}
 	if ( !softwaremode )
 	{
+#ifdef PANDORA
+		GO_InitFBO();
+#endif
 		glColorMask(GL_TRUE, GL_TRUE, GL_TRUE, GL_TRUE);
 		glEnable(GL_TEXTURE_2D);
 		glEnable(GL_CULL_FACE);
@@ -2168,10 +2269,10 @@ bool initVideo()
 	if ( SDL_SetWindowBrightness(screen, vidgamma) < 0 )
 	{
 		printlog("warning: failed to change gamma setting:\n%s\n", SDL_GetError());
-		return FALSE;
+		return true;
 	}
 	printlog("display changed successfully.\n");
-	return TRUE;
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2187,6 +2288,9 @@ bool initVideo()
 bool changeVideoMode()
 {
 	printlog("changing video mode.\n");
+#ifdef PANDORA
+	GO_InitFBO();
+#else
 	int c;
 
 	// delete old texture names (they're going away anyway)
@@ -2232,7 +2336,7 @@ bool changeVideoMode()
 		printlog("defaulting to safe video mode...\n");
 		if ( !initVideo() )
 		{
-			return FALSE;
+			return false;
 		}
 	}
 
@@ -2248,7 +2352,7 @@ bool changeVideoMode()
 	{
 		generateVBOs();
 	}
-
+#endif
 	// success
-	return TRUE;
+	return true;
 }

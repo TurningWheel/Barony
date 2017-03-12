@@ -47,9 +47,9 @@ void actBeartrap(Entity* my)
 			if (inrange[i])
 			{
 				Entity* entity = newEntity(-1, 1, map.entities);
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = my->z;
@@ -77,7 +77,7 @@ void actBeartrap(Entity* my)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( my->parent == entity->uid )
+		if ( my->parent == entity->getUID() )
 		{
 			continue;
 		}
@@ -88,9 +88,9 @@ void actBeartrap(Entity* my)
 			{
 				if ( entityDist(my, entity) < 6.5 )
 				{
-					stat->EFFECTS[EFF_PARALYZED] = TRUE;
+					stat->EFFECTS[EFF_PARALYZED] = true;
 					stat->EFFECTS_TIMERS[EFF_PARALYZED] = 200;
-					stat->EFFECTS[EFF_BLEEDING] = TRUE;
+					stat->EFFECTS[EFF_BLEEDING] = true;
 					stat->EFFECTS_TIMERS[EFF_BLEEDING] = 300;
 					entity->modHP(-15 - rand() % 10);
 
@@ -102,7 +102,7 @@ void actBeartrap(Entity* my)
 						Entity* parent = uidToEntity(my->parent);
 						if ( parent )
 						{
-							parent->awardXP( entity, TRUE, TRUE );
+							parent->awardXP( entity, true, true );
 						}
 					}
 					if ( entity->behavior == &actPlayer )
@@ -138,8 +138,8 @@ void actBeartrap(Entity* my)
 					// make first arm
 					entity = newEntity(98, 1, map.entities);
 					entity->behavior = &actBeartrapLaunched;
-					entity->flags[PASSABLE] = TRUE;
-					entity->flags[UPDATENEEDED] = TRUE;
+					entity->flags[PASSABLE] = true;
+					entity->flags[UPDATENEEDED] = true;
 					entity->x = my->x;
 					entity->y = my->y;
 					entity->z = my->z + 1;
@@ -150,8 +150,8 @@ void actBeartrap(Entity* my)
 					// and then the second
 					entity = newEntity(98, 1, map.entities);
 					entity->behavior = &actBeartrapLaunched;
-					entity->flags[PASSABLE] = TRUE;
-					entity->flags[UPDATENEEDED] = TRUE;
+					entity->flags[PASSABLE] = true;
+					entity->flags[UPDATENEEDED] = true;
 					entity->x = my->x;
 					entity->y = my->y;
 					entity->z = my->z + 1;

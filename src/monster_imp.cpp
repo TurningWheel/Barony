@@ -27,9 +27,9 @@ void initImp(Entity* my, Stat* myStats)
 
 	my->sprite = 289;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[BLOCKSIGHT] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[BLOCKSIGHT] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -81,7 +81,7 @@ void initImp(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -98,19 +98,19 @@ void initImp(Entity* my, Stat* myStats)
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, FALSE, NULL);
-		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
+		myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
+		myStats->EFFECTS[EFF_LEVITATING] = true;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 		if ( rand() % 4 == 0 )
 		{
-			myStats->EFFECTS[EFF_ASLEEP] = TRUE;
+			myStats->EFFECTS[EFF_ASLEEP] = true;
 			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
 		}
 
 		if ( rand() % 4 == 0 )
 		{
-			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), FALSE, &myStats->inventory );
+			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
 		}
 	}
 
@@ -119,15 +119,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->focaly = 1;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][1][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][1][1]; // 1
 	entity->focalz = limbs[CREATURE_IMP][1][2]; // 0
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -137,15 +137,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(292, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][2][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][2][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][2][2]; // 2
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -155,15 +155,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(291, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][3][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][3][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][3][2]; // 2
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -173,15 +173,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(294, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][4][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][4][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][4][2]; // 3
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -191,15 +191,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(293, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][5][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][5][1]; // 0
 	entity->focalz = limbs[CREATURE_IMP][5][2]; // 3
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -209,15 +209,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(310, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][6][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][6][1]; // 4
 	entity->focalz = limbs[CREATURE_IMP][6][2]; // 0
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -227,15 +227,15 @@ void initImp(Entity* my, Stat* myStats)
 	entity = newEntity(309, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[CREATURE_IMP][7][0]; // 0
 	entity->focaly = limbs[CREATURE_IMP][7][1]; // -4
 	entity->focalz = limbs[CREATURE_IMP][7][2]; // 0
 	entity->behavior = &actImpLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -296,12 +296,12 @@ void impDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
@@ -313,7 +313,7 @@ void impDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -335,10 +335,10 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -354,7 +354,7 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -362,8 +362,8 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -379,7 +379,7 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -397,7 +397,7 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// imps are always flying
-		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
+		myStats->EFFECTS[EFF_LEVITATING] = true;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 

@@ -234,8 +234,8 @@ button_t* newButton(void)
 	button->focused = 0;
 	button->key = 0;
 	button->joykey = -1;
-	button->pressed = FALSE;
-	button->needclick = TRUE;
+	button->pressed = false;
+	button->needclick = true;
 	button->action = NULL;
 	strcpy(button->label, "nodef");
 

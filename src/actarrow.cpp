@@ -79,7 +79,7 @@ void actArrow(Entity* my)
 			my->x = ARROW_OLDX;
 			my->y = ARROW_OLDY;
 			Entity* oentity = hit.entity;
-			lineTrace(my, my->x, my->y, my->yaw, sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY), 0, FALSE);
+			lineTrace(my, my->x, my->y, my->yaw, sqrt(ARROW_VELX * ARROW_VELX + ARROW_VELY * ARROW_VELY), 0, false);
 			hit.entity = oentity;
 			my->x = hit.x - cos(my->yaw);
 			my->y = hit.y - sin(my->yaw);
@@ -160,7 +160,7 @@ void actArrow(Entity* my)
 					}
 					if ( hitstats->HP <= 0 && parent)
 					{
-						parent->awardXP( hit.entity, TRUE, TRUE );
+						parent->awardXP( hit.entity, true, true );
 					}
 
 					// alert the monster
@@ -169,7 +169,7 @@ void actArrow(Entity* my)
 						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = parent->uid;
+							hit.entity->skill[1] = parent->getUID();
 							hit.entity->fskill[2] = parent->x;
 							hit.entity->fskill[3] = parent->y;
 						}
@@ -189,11 +189,11 @@ void actArrow(Entity* my)
 										if ( entity->skill[0] == 0 )   // monster is waiting
 										{
 											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, FALSE);
+											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
 												entity->skill[0] = 2; // path state
-												entity->skill[1] = parent->uid;
+												entity->skill[1] = parent->getUID();
 												entity->fskill[2] = parent->x;
 												entity->fskill[3] = parent->y;
 											}
@@ -244,7 +244,7 @@ void actArrow(Entity* my)
 					if ( ARROW_POISON && damage > 0 )
 					{
 						hitstats->poisonKiller = my->parent;
-						hitstats->EFFECTS[EFF_POISONED] = TRUE;
+						hitstats->EFFECTS[EFF_POISONED] = true;
 						hitstats->EFFECTS_TIMERS[EFF_POISONED] = ARROW_POISON;
 						if ( hit.entity->behavior == &actPlayer )
 						{

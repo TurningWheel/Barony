@@ -47,7 +47,7 @@ void actGoldBag(Entity* my)
 					return;
 				}
 			}
-			my->flags[INVISIBLE] = FALSE;
+			my->flags[INVISIBLE] = false;
 			serverUpdateEntityFlag(my, INVISIBLE);
 			if ( !strcmp(map.name, "Sokoban") )
 			{
@@ -117,6 +117,6 @@ void actGoldBag(Entity* my)
 	}
 	else
 	{
-		my->flags[NOUPDATE] = TRUE;
+		my->flags[NOUPDATE] = true;
 	}
 }

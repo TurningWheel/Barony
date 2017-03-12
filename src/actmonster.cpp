@@ -116,8 +116,8 @@ double sightranges[NUMMONSTERS] =
 void summonMonsterClient(Monster creature, long x, long y, Uint32 uid)
 {
 	Entity* entity = summonMonster(creature, x, y);
-	entity->flags[INVISIBLE] = FALSE;
-	entity->uid = uid;
+	entity->flags[INVISIBLE] = false;
+	entity->setUID(uid);
 }
 
 Entity* summonMonster(Monster creature, long x, long y)
@@ -131,9 +131,9 @@ Entity* summonMonster(Monster creature, long x, long y)
 	entity->z = 6;
 	entity->yaw = (rand() % 360) * PI / 180.0;
 	entity->behavior = &actMonster;
-	entity->flags[UPDATENEEDED] = TRUE;
-	entity->flags[INVISIBLE] = TRUE;
-	entity->ranbehavior = TRUE;
+	entity->flags[UPDATENEEDED] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->ranbehavior = true;
 	entity->skill[5] = nummonsters;
 
 	Stat* myStats = NULL;
@@ -351,7 +351,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 			SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
 			SDLNet_Write32((Uint32)entity->x, &net_packet->data[8]);
 			SDLNet_Write32((Uint32)entity->y, &net_packet->data[12]);
-			SDLNet_Write32(entity->uid, &net_packet->data[16]);
+			SDLNet_Write32(entity->getUID(), &net_packet->data[16]);
 			net_packet->len = 20;
 
 			int c;
@@ -384,7 +384,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 {
 	if ( MONSTER_STATE != 0 )
 	{
-		return FALSE;
+		return false;
 	}
 
 	int x = 0, y = 0;
@@ -449,9 +449,9 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 		MONSTER_TARGETX = my->x + x;
 		MONSTER_TARGETY = my->y + y;
 
-		return TRUE;
+		return true;
 	}
-	return FALSE;
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -486,7 +486,7 @@ void actMonster(Entity* my)
 	Stat* myStats;
 	Entity* entity;
 	Stat* hitstats = NULL;
-	bool hasrangedweapon = FALSE;
+	bool hasrangedweapon = false;
 	bool myReflex;
 
 	// deactivate in menu
@@ -585,7 +585,7 @@ void actMonster(Entity* my)
 		}
 		else
 		{
-			my->flags[BURNABLE] = TRUE;
+			my->flags[BURNABLE] = true;
 			if ( (my->sprite >= 113 && my->sprite < 118) ||
 			        (my->sprite >= 125 && my->sprite < 130) ||
 			        (my->sprite >= 332 && my->sprite < 334) ||
@@ -622,7 +622,7 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 229 )     // skeleton head
 			{
-				my->flags[BURNABLE] = FALSE;
+				my->flags[BURNABLE] = false;
 				skeletonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else if ( my->sprite == 239 )     // minotaur waist
@@ -636,7 +636,7 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 258 )     // demon head
 			{
-				my->flags[BURNABLE] = FALSE;
+				my->flags[BURNABLE] = false;
 				demonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 				actDemonCeilingBuster(my);
 			}
@@ -646,12 +646,12 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 274 )     // lich body
 			{
-				my->flags[BURNABLE] = FALSE;
+				my->flags[BURNABLE] = false;
 				lichAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else if ( my->sprite == 289 )     // imp head
 			{
-				my->flags[BURNABLE] = FALSE;
+				my->flags[BURNABLE] = false;
 				impMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else if ( my->sprite == 295 )     // gnome head
@@ -660,20 +660,20 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 304 )     // devil torso
 			{
-				my->flags[BURNABLE] = FALSE;
+				my->flags[BURNABLE] = false;
 				devilMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else
 			{
-				my->flags[BURNABLE] = FALSE;
+				my->flags[BURNABLE] = false;
 			}
 
 			// request entity update (check if I've been deleted)
-			if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) )
+			if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 			{
 				strcpy((char*)net_packet->data, "ENTE");
 				net_packet->data[4] = clientnum;
-				SDLNet_Write32(my->uid, &net_packet->data[5]);
+				SDLNet_Write32(my->getUID(), &net_packet->data[5]);
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				net_packet->len = 9;
@@ -683,13 +683,13 @@ void actMonster(Entity* my)
 		return;
 	}
 
-	if ( ticks % (TICKS_PER_SECOND) == my->uid % (TICKS_PER_SECOND / 2) )
+	if ( ticks % (TICKS_PER_SECOND) == my->getUID() % (TICKS_PER_SECOND / 2) )
 	{
-		myReflex = TRUE;
+		myReflex = true;
 	}
 	else
 	{
-		myReflex = FALSE;
+		myReflex = false;
 	}
 
 	// init
@@ -700,7 +700,7 @@ void actMonster(Entity* my)
 		if (myStats)
 		{
 			myStats->monster_sound = NULL;
-			my->flags[BURNABLE] = TRUE;
+			my->flags[BURNABLE] = true;
 			switch ( myStats->type )
 			{
 				case HUMAN:
@@ -713,7 +713,7 @@ void actMonster(Entity* my)
 					initGoblin(my, myStats);
 					break;
 				case SLIME:
-					my->flags[BURNABLE] = FALSE;
+					my->flags[BURNABLE] = false;
 					initSlime(my, myStats);
 					break;
 				case SCORPION:
@@ -729,7 +729,7 @@ void actMonster(Entity* my)
 					initShopkeeper(my, myStats);
 					break;
 				case SKELETON:
-					my->flags[BURNABLE] = FALSE;
+					my->flags[BURNABLE] = false;
 					initSkeleton(my, myStats);
 					break;
 				case MINOTAUR:
@@ -739,25 +739,25 @@ void actMonster(Entity* my)
 					initGhoul(my, myStats);
 					break;
 				case DEMON:
-					my->flags[BURNABLE] = FALSE;
+					my->flags[BURNABLE] = false;
 					initDemon(my, myStats);
 					break;
 				case SPIDER:
 					initSpider(my, myStats);
 					break;
 				case LICH:
-					my->flags[BURNABLE] = FALSE;
+					my->flags[BURNABLE] = false;
 					initLich(my, myStats);
 					break;
 				case CREATURE_IMP:
-					my->flags[BURNABLE] = FALSE;
+					my->flags[BURNABLE] = false;
 					initImp(my, myStats);
 					break;
 				case GNOME:
 					initGnome(my, myStats);
 					break;
 				case DEVIL:
-					my->flags[BURNABLE] = FALSE;
+					my->flags[BURNABLE] = false;
 					devilstate = 0;
 					devilacted = 0;
 					initDevil(my, myStats);
@@ -815,23 +815,23 @@ void actMonster(Entity* my)
 		printlog("ERROR: monster entity at %p has no stats struct!", my);
 		return;
 	}
-	myStats->defending = FALSE;
+	myStats->defending = false;
 
 	// levitation
-	bool levitating = FALSE;
-	if ( myStats->EFFECTS[EFF_LEVITATING] == TRUE )
+	bool levitating = false;
+	if ( myStats->EFFECTS[EFF_LEVITATING] == true )
 	{
-		levitating = TRUE;
+		levitating = true;
 	}
 	if ( myStats->ring != NULL )
 		if ( myStats->ring->type == RING_LEVITATION )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 	if ( myStats->shoes != NULL )
 		if ( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 
 	if ( myStats->type == MINOTAUR )
@@ -839,7 +839,7 @@ void actMonster(Entity* my)
 		int c;
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
-			assailant[c] = TRUE; // as long as this is active, combat music doesn't turn off
+			assailant[c] = true; // as long as this is active, combat music doesn't turn off
 		}
 	}
 
@@ -855,7 +855,7 @@ void actMonster(Entity* my)
 		if ( myStats->HP <= myStats->MAXHP / 2 )
 		{
 			node_t* node, *nextnode;
-			bool foundlights = FALSE;
+			bool foundlights = false;
 			for ( node = map.entities->first; node != NULL; node = nextnode )
 			{
 				nextnode = node->next;
@@ -863,7 +863,7 @@ void actMonster(Entity* my)
 
 				if ( tempEntity->behavior == &actTorch || tempEntity->behavior == &actCampfire )
 				{
-					foundlights = TRUE;
+					foundlights = true;
 					if ( tempEntity->light )
 					{
 						list_RemoveNode(tempEntity->light->node);
@@ -878,6 +878,11 @@ void actMonster(Entity* my)
 				if ( MONSTER_SOUND )
 				{
 					FMOD_Channel_Stop(MONSTER_SOUND);
+				}
+#elif defined HAVE_OPENAL
+				if ( MONSTER_SOUND )
+				{
+					OPENAL_Channel_Stop(MONSTER_SOUND);
 				}
 #endif
 				int c;
@@ -913,31 +918,31 @@ void actMonster(Entity* my)
 		entity = dropItemMonster(myStats->helmet, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->helmet = NULL;
 		entity = dropItemMonster(myStats->breastplate, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->breastplate = NULL;
 		entity = dropItemMonster(myStats->gloves, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->gloves = NULL;
 		entity = dropItemMonster(myStats->shoes, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->shoes = NULL;
 		entity = dropItemMonster(myStats->shield, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->shield = NULL;
 		if ( myStats->weapon )
@@ -947,7 +952,7 @@ void actMonster(Entity* my)
 				entity = dropItemMonster(myStats->weapon, my, myStats);
 				if ( entity )
 				{
-					entity->flags[USERFLAG1] = TRUE;
+					entity->flags[USERFLAG1] = true;
 				}
 			}
 			else
@@ -967,25 +972,25 @@ void actMonster(Entity* my)
 		entity = dropItemMonster(myStats->cloak, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->cloak = NULL;
 		entity = dropItemMonster(myStats->amulet, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->amulet = NULL;
 		entity = dropItemMonster(myStats->ring, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->ring = NULL;
 		entity = dropItemMonster(myStats->mask, my, myStats);
 		if ( entity )
 		{
-			entity->flags[USERFLAG1] = TRUE;
+			entity->flags[USERFLAG1] = true;
 		}
 		myStats->mask = NULL;
 		node_t* nextnode = NULL;
@@ -998,7 +1003,7 @@ void actMonster(Entity* my)
 				entity = dropItemMonster(item, my, myStats);
 				if ( entity )
 				{
-					entity->flags[USERFLAG1] = TRUE;    // makes items passable, improves performance
+					entity->flags[USERFLAG1] = true;    // makes items passable, improves performance
 				}
 			}
 		}
@@ -1009,7 +1014,7 @@ void actMonster(Entity* my)
 		{
 			if (players[c] && players[c]->entity)
 			{
-				if (myStats->leader_uid == players[c]->entity->uid)
+				if (myStats->leader_uid == players[c]->entity->getUID())
 				{
 					playerFollower = c;
 					break;
@@ -1053,8 +1058,8 @@ void actMonster(Entity* my)
 				entity->y = my->y;
 				entity->z = 6;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[UPDATENEEDED] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
 				entity->behavior = &actGoldBag;
 				entity->skill[0] = myStats->GOLD; // amount
 			}
@@ -1065,6 +1070,11 @@ void actMonster(Entity* my)
 		if ( MONSTER_SOUND )
 		{
 			FMOD_Channel_Stop(MONSTER_SOUND);
+		}
+#elif defined HAVE_OPENAL
+		if ( MONSTER_SOUND )
+		{
+			OPENAL_Channel_Stop(MONSTER_SOUND);
 		}
 #endif
 		myStats = my->getStats();
@@ -1110,7 +1120,7 @@ void actMonster(Entity* my)
 				spiderDie(my);
 				break;
 			case LICH:
-				my->flags[PASSABLE] = TRUE; // so I can't take any more hits
+				my->flags[PASSABLE] = true; // so I can't take any more hits
 				MONSTER_STATE = 7; // lich death state
 				MONSTER_SPECIAL = 0;
 				MONSTER_ATTACK = 0;
@@ -1125,7 +1135,7 @@ void actMonster(Entity* my)
 				gnomeDie(my);
 				break;
 			case DEVIL:
-				my->flags[PASSABLE] = TRUE; // so I can't take any more hits
+				my->flags[PASSABLE] = true; // so I can't take any more hits
 				MONSTER_STATE = 8; // devil death state
 				MONSTER_SPECIAL = 0;
 				MONSTER_ATTACK = 0;
@@ -1182,8 +1192,28 @@ void actMonster(Entity* my)
 					MONSTER_SOUND = -1;
 					break;
 				}*/
-				FMOD_BOOL playing = TRUE;
+				FMOD_BOOL playing = true;
 				FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
+				if (!playing)
+				{
+					MONSTER_SOUND = NULL;
+					break;
+				}
+			}
+		}
+#elif defined HAVE_OPENAL
+		ALboolean playing;
+		OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
+		if (!playing)
+		{
+			MONSTER_SOUND = NULL;
+		}
+		else
+		{
+			for ( c = 0; c < numsounds; c++ )
+			{
+				ALboolean playing = true;
+				OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
 				if (!playing)
 				{
 					MONSTER_SOUND = NULL;
@@ -1328,32 +1358,32 @@ void actMonster(Entity* my)
 	{
 		if ( myStats->weapon->type == SLING )
 		{
-			hasrangedweapon = TRUE;
+			hasrangedweapon = true;
 		}
 		else if ( myStats->weapon->type == SHORTBOW )
 		{
-			hasrangedweapon = TRUE;
+			hasrangedweapon = true;
 		}
 		else if ( myStats->weapon->type == CROSSBOW )
 		{
-			hasrangedweapon = TRUE;
+			hasrangedweapon = true;
 		}
 		else if ( myStats->weapon->type == ARTIFACT_BOW )
 		{
-			hasrangedweapon = TRUE;
+			hasrangedweapon = true;
 		}
 		else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			hasrangedweapon = TRUE;
+			hasrangedweapon = true;
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			hasrangedweapon = TRUE;
+			hasrangedweapon = true;
 		}
 	}
 
 	// effect of a ring of conflict
-	bool ringconflict = FALSE;
+	bool ringconflict = false;
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* tempentity = (Entity*)node->element;
@@ -1368,7 +1398,7 @@ void actMonster(Entity* my)
 					{
 						if ( sqrt(pow(my->x - tempentity->x, 2) + pow(my->y - tempentity->y, 2)) < 200 )
 						{
-							ringconflict = TRUE;
+							ringconflict = true;
 						}
 					}
 				}
@@ -1377,14 +1407,14 @@ void actMonster(Entity* my)
 	}
 
 	// invisibility
-	bool handleinvisible = TRUE;
+	bool handleinvisible = true;
 	switch ( myStats->type )
 	{
 		case HUMAN:
 		case GOBLIN:
 		case SKELETON:
 		case GNOME:
-			handleinvisible = FALSE;
+			handleinvisible = false;
 			break;
 		default:
 			break;
@@ -1393,20 +1423,20 @@ void actMonster(Entity* my)
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] )
 		{
-			my->flags[INVISIBLE] = TRUE;
+			my->flags[INVISIBLE] = true;
 			for ( node = list_Node(&my->children, 2); node != NULL; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				entity->flags[INVISIBLE] = TRUE;
+				entity->flags[INVISIBLE] = true;
 			}
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
+			my->flags[INVISIBLE] = false;
 			for ( node = list_Node(&my->children, 2); node != NULL; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
-				entity->flags[INVISIBLE] = FALSE;
+				entity->flags[INVISIBLE] = false;
 			}
 		}
 	}
@@ -1452,7 +1482,7 @@ void actMonster(Entity* my)
 		}
 		else
 		{
-			if (MONSTER_TARGET == players[monsterclicked]->entity->uid && MONSTER_STATE != 4)
+			if (MONSTER_TARGET == players[monsterclicked]->entity->getUID() && MONSTER_STATE != 4)
 			{
 				switch (myStats->type)
 				{
@@ -1466,7 +1496,7 @@ void actMonster(Entity* my)
 			}
 			else if (MONSTER_STATE == 4)
 			{
-				if (MONSTER_TARGET != players[monsterclicked]->entity->uid)
+				if (MONSTER_TARGET != players[monsterclicked]->entity->getUID())
 				{
 					switch (myStats->type)
 					{
@@ -1496,7 +1526,7 @@ void actMonster(Entity* my)
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 									newNode->element = myuid;
-									*myuid = my->uid;
+									*myuid = my->getUID();
 									if (my->getINT() > -2)
 									{
 										messagePlayer(monsterclicked, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
@@ -1508,11 +1538,11 @@ void actMonster(Entity* my)
 									monsterMoveAside(my, players[monsterclicked]->entity);
 									players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 									MONSTER_STATE = 0; // be ready to follow
-									myStats->leader_uid = players[monsterclicked]->entity->uid;
+									myStats->leader_uid = players[monsterclicked]->entity->getUID();
 									if (monsterclicked > 0 && multiplayer == SERVER)
 									{
 										strcpy((char*)net_packet->data, "LEAD");
-										SDLNet_Write32((Uint32)my->uid, &net_packet->data[4]);
+										SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]);
 										net_packet->address.host = net_clients[monsterclicked - 1].host;
 										net_packet->address.port = net_clients[monsterclicked - 1].port;
 										net_packet->len = 8;
@@ -1535,7 +1565,7 @@ void actMonster(Entity* my)
 							}
 							else
 							{
-								if (myStats->leader_uid == players[monsterclicked]->entity->uid)
+								if (myStats->leader_uid == players[monsterclicked]->entity->getUID())
 								{
 									if (my->getINT() > -2)
 									{
@@ -1647,9 +1677,9 @@ void actMonster(Entity* my)
 						}
 					}
 				}
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
-				entity->flags[PASSABLE] = FALSE;
+				entity->flags[PASSABLE] = false;
 			}
 		}
 
@@ -1671,7 +1701,7 @@ void actMonster(Entity* my)
 					hitstats = entity->getStats();
 					if ( hitstats != NULL )
 					{
-						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->uid || ringconflict) )
+						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->getUID() || ringconflict) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -1721,11 +1751,11 @@ void actMonster(Entity* my)
 							{
 								if ( !levitating )
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, FALSE);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								if ( hit.entity == entity )
 									if ( rand() % 100 == 0 )
@@ -1734,39 +1764,39 @@ void actMonster(Entity* my)
 									}
 								continue;
 							}
-							bool visiontest = FALSE;
+							bool visiontest = false;
 							if ( myStats->type != SPIDER )
 							{
 								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
 								{
-									visiontest = TRUE;
+									visiontest = true;
 								}
 							}
 							else
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
 								{
-									visiontest = TRUE;
+									visiontest = true;
 								}
 							}
 							if ( visiontest )   // vision cone
 							{
 								if ( myStats->type >= LICH )
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, FALSE);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], IGNORE_ENTITIES, FALSE);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], IGNORE_ENTITIES, false);
 								}
 								if ( !hit.entity )
 								{
-									lineTrace(my, my->x, my->y, tangent, TOUCHRANGE, 0, FALSE);
+									lineTrace(my, my->x, my->y, tangent, TOUCHRANGE, 0, false);
 								}
 								if ( hit.entity == entity )
 								{
 									MONSTER_STATE = 1; // charge state
-									MONSTER_TARGET = hit.entity->uid;
+									MONSTER_TARGET = hit.entity->getUID();
 									MONSTER_TARGETX = hit.entity->x;
 									MONSTER_TARGETY = hit.entity->y;
 									if ( MONSTER_SOUND == NULL )
@@ -1795,7 +1825,7 @@ void actMonster(Entity* my)
 									if ( entity != NULL )
 										if ( entity->behavior == &actPlayer )
 										{
-											assailant[entity->skill[2]] = TRUE;  // as long as this is active, combat music doesn't turn off
+											assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 										}
 
 									// alert other monsters of this enemy's presence
@@ -1812,7 +1842,7 @@ void actMonster(Entity* my)
 													if ( entity->skill[0] == 0 )   // monster is waiting
 													{
 														tangent = atan2( entity->y - my->y, entity->x - my->x );
-														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, FALSE);
+														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 														if ( hit.entity == entity )
 														{
 															entity->skill[0] = 2; // path state
@@ -1863,7 +1893,7 @@ void actMonster(Entity* my)
 					if (playerToChase >= 0)
 					{
 						MONSTER_STATE = 2; // path state
-						MONSTER_TARGET = players[playerToChase]->entity->uid;
+						MONSTER_TARGET = players[playerToChase]->entity->getUID();
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
@@ -1872,7 +1902,7 @@ void actMonster(Entity* my)
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->uid % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -1884,7 +1914,7 @@ void actMonster(Entity* my)
 						x = ((int)floor(leader->x)) >> 4;
 						y = ((int)floor(leader->y)) >> 4;
 						int u, v;
-						bool foundplace = FALSE;
+						bool foundplace = false;
 						for ( u = x - 1; u <= x + 1; u++ )
 						{
 							for ( v = y - 1; v <= y + 1; v++ )
@@ -1893,7 +1923,7 @@ void actMonster(Entity* my)
 								{
 									x = u;
 									y = v;
-									foundplace = TRUE;
+									foundplace = true;
 									break;
 								}
 							}
@@ -1916,14 +1946,14 @@ void actMonster(Entity* my)
 					else
 					{
 						tangent = atan2( leader->y - my->y, leader->x - my->x );
-						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
+						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
 							MONSTER_TARGET = 0;
 							x = ((int)floor(leader->x)) >> 4;
 							y = ((int)floor(leader->y)) >> 4;
 							int u, v;
-							bool foundplace = FALSE;
+							bool foundplace = false;
 							for ( u = x - 1; u <= x + 1; u++ )
 							{
 								for ( v = y - 1; v <= y + 1; v++ )
@@ -1932,7 +1962,7 @@ void actMonster(Entity* my)
 									{
 										x = u;
 										y = v;
-										foundplace = TRUE;
+										foundplace = true;
 										break;
 									}
 								}
@@ -2027,7 +2057,7 @@ void actMonster(Entity* my)
 				{
 					int chosenspot = rand() % goodspots;
 					int currentspot = 0;
-					bool foundit = FALSE;
+					bool foundit = false;
 					x = 0;
 					y = 0;
 					if ( myStats->type != SHOPKEEPER )
@@ -2040,7 +2070,7 @@ void actMonster(Entity* my)
 								{
 									if ( currentspot == chosenspot )
 									{
-										foundit = TRUE;
+										foundit = true;
 										break;
 									}
 									else
@@ -2067,7 +2097,7 @@ void actMonster(Entity* my)
 									{
 										if ( currentspot == chosenspot )
 										{
-											foundit = TRUE;
+											foundit = true;
 											break;
 										}
 										else
@@ -2126,7 +2156,7 @@ void actMonster(Entity* my)
 			if ( entity != NULL )
 				if ( entity->behavior == &actPlayer )
 				{
-					assailant[entity->skill[2]] = TRUE;  // as long as this is active, combat music doesn't turn off
+					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
 			MONSTER_TARGETX = entity->x;
 			MONSTER_TARGETY = entity->y;
@@ -2139,10 +2169,10 @@ void actMonster(Entity* my)
 				{
 					if (players[c] && players[c]->entity)
 					{
-						if (MONSTER_TARGET == players[c]->entity->uid)
+						if (MONSTER_TARGET == players[c]->entity->getUID())
 						{
-							swornenemies[SHOPKEEPER][HUMAN] = TRUE;
-							monsterally[SHOPKEEPER][HUMAN] = FALSE;
+							swornenemies[SHOPKEEPER][HUMAN] = true;
+							monsterally[SHOPKEEPER][HUMAN] = false;
 							break;
 						}
 					}
@@ -2199,11 +2229,11 @@ void actMonster(Entity* my)
 						tangent = atan2( MONSTER_TARGETY - my->y, MONSTER_TARGETX - my->x );
 						if ( !levitating )
 						{
-							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
+							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						}
 						else
 						{
-							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, FALSE);
+							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 						}
 						if ( hit.entity == entity )
 							if ( rand() % 100 == 0 )
@@ -2227,11 +2257,11 @@ void actMonster(Entity* my)
 							tangent = atan2( MONSTER_TARGETY - my->y, MONSTER_TARGETX - my->x );
 							if ( !levitating )
 							{
-								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
+								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 							}
 							else
 							{
-								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, FALSE);
+								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 							}
 						}
 						else
@@ -2263,7 +2293,7 @@ timeToGoAgain:
 							{
 								if ( MONSTER_FLIPPEDANGLE < 5 )
 								{
-									if ( (my->ticks + my->uid) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
+									if ( (my->ticks + my->getUID()) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
 									{
 										tangent2 += PI / 6;
 									}
@@ -2274,7 +2304,7 @@ timeToGoAgain:
 								}
 								else
 								{
-									if ( (my->ticks + my->uid) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
+									if ( (my->ticks + my->getUID()) % (TICKS_PER_SECOND * 4) > TICKS_PER_SECOND * 2 )
 									{
 										tangent2 += PI / 6;
 									}
@@ -2285,7 +2315,7 @@ timeToGoAgain:
 								}
 
 								Entity* tempHitEntity = hit.entity;
-								if ( lineTrace(my, my->x, my->x, tangent2, TOUCHRANGE, 1, FALSE) < TOUCHRANGE )
+								if ( lineTrace(my, my->x, my->x, tangent2, TOUCHRANGE, 1, false) < TOUCHRANGE )
 								{
 									MONSTER_FLIPPEDANGLE = (MONSTER_FLIPPEDANGLE < 5) * 10;
 									goAgain++;
@@ -2445,7 +2475,7 @@ timeToGoAgain:
 										tracedist = STRIKERANGE;
 									}
 									double newTangent = atan2(entity->y - my->y, entity->x - my->x);
-									lineTrace(my, my->x, my->y, newTangent, tracedist, 0, FALSE);
+									lineTrace(my, my->x, my->y, newTangent, tracedist, 0, false);
 									if (hit.entity != nullptr)
 									{
 										hitstats = hit.entity->getStats();
@@ -2458,7 +2488,7 @@ timeToGoAgain:
 												//hit.entity->skill[4]=0;
 												//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
 												hit.entity->skill[0] = 2;
-												hit.entity->skill[1] = my->uid;
+												hit.entity->skill[1] = my->getUID();
 												hit.entity->fskill[2] = my->x;
 												hit.entity->fskill[3] = my->y;
 											}
@@ -2599,7 +2629,7 @@ timeToGoAgain:
 				{
 					// throw fireballs
 					my->yaw = my->yaw + MONSTER_WEAPONYAW;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, true, false);
 					my->yaw = my->yaw - MONSTER_WEAPONYAW;
 				}
 
@@ -2644,7 +2674,7 @@ timeToGoAgain:
 			if ( entity != NULL )
 				if ( entity->behavior == &actPlayer )
 				{
-					assailant[entity->skill[2]] = TRUE;  // as long as this is active, combat music doesn't turn off
+					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
 			x = ((int)floor(MONSTER_TARGETX)) >> 4;
 			y = ((int)floor(MONSTER_TARGETY)) >> 4;
@@ -2672,7 +2702,7 @@ timeToGoAgain:
 					hitstats = entity->getStats();
 					if ( hitstats != NULL )
 					{
-						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->uid || ringconflict) )
+						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->getUID() || ringconflict) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -2722,11 +2752,11 @@ timeToGoAgain:
 							{
 								if ( !levitating )
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 								}
 								else
 								{
-									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, FALSE);
+									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								if ( hit.entity == entity )
 									if ( rand() % 100 == 0 )
@@ -2735,36 +2765,36 @@ timeToGoAgain:
 									}
 								continue;
 							}
-							bool visiontest = FALSE;
+							bool visiontest = false;
 							if ( myStats->type != SPIDER )
 							{
 								if ( dir >= -7 * PI / 16 && dir <= 7 * PI / 16 )
 								{
-									visiontest = TRUE;
+									visiontest = true;
 								}
 							}
 							else
 							{
 								if ( dir >= -13 * PI / 16 && dir <= 13 * PI / 16 )
 								{
-									visiontest = TRUE;
+									visiontest = true;
 								}
 							}
 							if ( visiontest )   // vision cone
 							{
-								lineTrace(my, my->x + 1, my->y, tangent, sightranges[myStats->type], 0, (levitating == FALSE));
+								lineTrace(my, my->x + 1, my->y, tangent, sightranges[myStats->type], 0, (levitating == false));
 								if ( hit.entity == entity )
 								{
-									lineTrace(my, my->x - 1, my->y, tangent, sightranges[myStats->type], 0, (levitating == FALSE));
+									lineTrace(my, my->x - 1, my->y, tangent, sightranges[myStats->type], 0, (levitating == false));
 									if ( hit.entity == entity )
 									{
-										lineTrace(my, my->x, my->y + 1, tangent, sightranges[myStats->type], 0, (levitating == FALSE));
+										lineTrace(my, my->x, my->y + 1, tangent, sightranges[myStats->type], 0, (levitating == false));
 										if ( hit.entity == entity )
 										{
-											lineTrace(my, my->x, my->y - 1, tangent, sightranges[myStats->type], 0, (levitating == FALSE));
+											lineTrace(my, my->x, my->y - 1, tangent, sightranges[myStats->type], 0, (levitating == false));
 											if ( hit.entity == entity )
 											{
-												MONSTER_TARGET = hit.entity->uid;
+												MONSTER_TARGET = hit.entity->getUID();
 												MONSTER_STATE = 1; // charge state
 												MONSTER_TARGETX = hit.entity->x;
 												MONSTER_TARGETY = hit.entity->y;
@@ -2797,7 +2827,7 @@ timeToGoAgain:
 												if ( entity != NULL )
 													if ( entity->behavior == &actPlayer )
 													{
-														assailant[entity->skill[2]] = TRUE;  // as long as this is active, combat music doesn't turn off
+														assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 													}
 												break;
 											}
@@ -2813,18 +2843,18 @@ timeToGoAgain:
 			// minotaurs and liches chase players relentlessly.
 			if (myStats->type == MINOTAUR || (myStats->type == LICH && MONSTER_SPECIAL <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 			{
-				bool shouldHuntPlayer = FALSE;
+				bool shouldHuntPlayer = false;
 				Entity* playerOrNot = uidToEntity(MONSTER_TARGET);
 				if (playerOrNot)
 				{
 					if (ticks % 180 == 0 && playerOrNot->behavior == &actPlayer)
 					{
-						shouldHuntPlayer = TRUE;
+						shouldHuntPlayer = true;
 					}
 				}
 				else if (ticks % 180 == 0)
 				{
-					shouldHuntPlayer = TRUE;
+					shouldHuntPlayer = true;
 				}
 				if (shouldHuntPlayer)
 				{
@@ -2853,7 +2883,7 @@ timeToGoAgain:
 					if (playerToChase >= 0)
 					{
 						MONSTER_STATE = 2; // path state
-						MONSTER_TARGET = players[playerToChase]->entity->uid;
+						MONSTER_TARGET = players[playerToChase]->entity->getUID();
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
@@ -2871,7 +2901,7 @@ timeToGoAgain:
 			}
 
 			// follow the leader :)
-			if ( myStats->leader_uid != 0 && my->uid % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
+			if ( myStats->leader_uid != 0 && my->getUID() % TICKS_PER_SECOND == ticks % TICKS_PER_SECOND )
 			{
 				Entity* leader = uidToEntity(myStats->leader_uid);
 				if ( leader )
@@ -2882,7 +2912,7 @@ timeToGoAgain:
 						x = ((int)floor(leader->x)) >> 4;
 						y = ((int)floor(leader->y)) >> 4;
 						int u, v;
-						bool foundplace = FALSE;
+						bool foundplace = false;
 						for ( u = x - 1; u <= x + 1; u++ )
 						{
 							for ( v = y - 1; v <= y + 1; v++ )
@@ -2891,7 +2921,7 @@ timeToGoAgain:
 								{
 									x = u;
 									y = v;
-									foundplace = TRUE;
+									foundplace = true;
 									break;
 								}
 							}
@@ -2915,14 +2945,14 @@ timeToGoAgain:
 					{
 						double tangent = atan2( leader->y - my->y, leader->x - my->x );
 						Entity* ohitentity = hit.entity;
-						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, TRUE);
+						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
 							MONSTER_TARGET = 0;
 							int x = ((int)floor(leader->x)) >> 4;
 							int y = ((int)floor(leader->y)) >> 4;
 							int u, v;
-							bool foundplace = FALSE;
+							bool foundplace = false;
 							for ( u = x - 1; u <= x + 1; u++ )
 							{
 								for ( v = y - 1; v <= y + 1; v++ )
@@ -2931,7 +2961,7 @@ timeToGoAgain:
 									{
 										x = u;
 										y = v;
-										foundplace = TRUE;
+										foundplace = true;
 										break;
 									}
 								}
@@ -2960,7 +2990,7 @@ timeToGoAgain:
 			if ( entity != NULL )
 				if ( entity->behavior == &actPlayer )
 				{
-					assailant[entity->skill[2]] = TRUE;  // as long as this is active, combat music doesn't turn off
+					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
 			if ( my->children.first != NULL )
 			{
@@ -3057,7 +3087,7 @@ timeToGoAgain:
 								else if ( hit.entity->behavior == &actMonster )
 								{
 									Stat* yourStats = hit.entity->getStats();
-									if ( hit.entity->uid == MONSTER_TARGET )
+									if ( hit.entity->getUID() == MONSTER_TARGET )
 									{
 										MONSTER_STATE = 1; // charge state
 									}
@@ -3073,7 +3103,7 @@ timeToGoAgain:
 										}
 										else if ( my->checkEnemy(hit.entity) )
 										{
-											MONSTER_TARGET = hit.entity->uid;
+											MONSTER_TARGET = hit.entity->getUID();
 											MONSTER_TARGETX = hit.entity->x;
 											MONSTER_TARGETY = hit.entity->y;
 											MONSTER_STATE = 1; // charge state
@@ -3084,7 +3114,7 @@ timeToGoAgain:
 								{
 									if ( my->checkEnemy(hit.entity) )
 									{
-										MONSTER_TARGET = hit.entity->uid;
+										MONSTER_TARGET = hit.entity->getUID();
 										MONSTER_TARGETX = hit.entity->x;
 										MONSTER_TARGETY = hit.entity->y;
 										MONSTER_STATE = 1; // charge state
@@ -3207,7 +3237,7 @@ timeToGoAgain:
 					}
 					if ( player == 0 )
 					{
-						shootmode = FALSE;
+						shootmode = false;
 						gui_mode = GUI_MODE_INVENTORY;
 					}
 					else
@@ -3364,7 +3394,7 @@ timeToGoAgain:
 		}
 		else if ( MONSTER_STATE == 9 )     // devil teleport state
 		{
-			my->flags[PASSABLE] = TRUE;
+			my->flags[PASSABLE] = true;
 			my->yaw += .1; // rotate
 			if ( my->yaw >= PI * 2 )
 			{
@@ -3504,7 +3534,7 @@ timeToGoAgain:
 				{
 					if ( myStats->HP > 0 )
 					{
-						my->flags[PASSABLE] = FALSE;
+						my->flags[PASSABLE] = false;
 					}
 					node_t* node;
 					for ( node = map.entities->first; node != NULL; node = node->next )
@@ -3573,7 +3603,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->uid;
+					MONSTER_TARGET = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 					MONSTER_VELX = MONSTER_TARGETX - my->x;
@@ -3655,7 +3685,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->uid;
+					MONSTER_TARGET = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 				}
@@ -3724,13 +3754,13 @@ timeToGoAgain:
 				for ( c = 0; c < 12; c++ )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ )
 				{
 					Entity* entity = newEntity(245, 1, map.entities); // boulder
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
 						entity->x = (20 << 4) + 8;
@@ -3756,8 +3786,8 @@ timeToGoAgain:
 					entity->sizex = 7;
 					entity->sizey = 7;
 					entity->behavior = &actBoulder;
-					entity->flags[UPDATENEEDED] = TRUE;
-					entity->flags[PASSABLE] = TRUE;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
 				}
 			}
 			if ( MONSTER_SPECIAL == 150 )
@@ -3774,13 +3804,13 @@ timeToGoAgain:
 				for ( c = 0; c < 12; c++ )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 7; c++ )
 				{
 					Entity* entity = newEntity(245, 1, map.entities); // boulder
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
 						entity->x = (20 << 4) + 8;
@@ -3806,8 +3836,8 @@ timeToGoAgain:
 					entity->sizex = 7;
 					entity->sizey = 7;
 					entity->behavior = &actBoulder;
-					entity->flags[UPDATENEEDED] = TRUE;
-					entity->flags[PASSABLE] = TRUE;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
 				}
 			}
 			if ( MONSTER_SPECIAL == 270 )
@@ -3824,13 +3854,13 @@ timeToGoAgain:
 				for ( c = 0; c < 12; c++ )
 				{
 					my->yaw = ((double)c + ((rand() % 100) / 100.f)) * (PI * 2) / 12.f;
-					castSpell(my->uid, &spell_fireball, TRUE, FALSE);
+					castSpell(my->getUID(), &spell_fireball, true, false);
 				}
 				my->yaw = oyaw;
 				for ( c = 0; c < 12; c++ )
 				{
 					Entity* entity = newEntity(245, 1, map.entities); // boulder
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 					if ( angle == 0 )
 					{
 						entity->x = (20 << 4) + 8;
@@ -3856,8 +3886,8 @@ timeToGoAgain:
 					entity->sizex = 7;
 					entity->sizey = 7;
 					entity->behavior = &actBoulder;
-					entity->flags[UPDATENEEDED] = TRUE;
-					entity->flags[PASSABLE] = TRUE;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
 				}
 			}
 			if ( MONSTER_SPECIAL == 420 )   // 420 blaze it faggot
@@ -3885,7 +3915,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->uid;
+					MONSTER_TARGET = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 				}

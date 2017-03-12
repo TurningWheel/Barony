@@ -78,11 +78,8 @@ int initGame()
 	int w, h;
 	TTF_SizeUTF8(ttf16, _LOADSTR1, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR1);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	initGameControllers();
 
@@ -146,11 +143,8 @@ int initGame()
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR2, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR2);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	// load item types
 	printlog( "loading items...\n");
@@ -256,12 +250,12 @@ int initGame()
 			string->node = node;
 
 			x = 0;
-			bool fileend = FALSE;
+			bool fileend = false;
 			while ( (string->data[x] = fgetc(fp)) != '\n' )
 			{
 				if ( feof(fp) )
 				{
-					fileend = TRUE;
+					fileend = true;
 					break;
 				}
 				x++;
@@ -300,14 +294,13 @@ int initGame()
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR3, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR3);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 #ifdef HAVE_FMOD
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+#elif defined HAVE_OPENAL
+	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 #endif
 	removedEntities.first = NULL;
 	removedEntities.last = NULL;
@@ -343,7 +336,7 @@ int initGame()
 		stats[c] = new Stat();
 		if (c > 0)
 		{
-			client_disconnected[c] = TRUE;
+			client_disconnected[c] = true;
 		}
 		players[c]->entity = nullptr;
 		stats[c]->sex = static_cast<sex_t>(0);
@@ -365,6 +358,15 @@ int initGame()
 
 	// load music
 #ifdef SOUND
+#ifdef HAVE_OPENAL
+#define FMOD_ChannelGroup_SetVolume OPENAL_ChannelGroup_SetVolume
+#define fmod_system 0
+#define FMOD_SOFTWARE 0
+#define FMOD_System_CreateStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E)
+#define FMOD_SOUND OPENAL_BUFFER
+int fmod_result;
+#endif
+
 	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intro.ogg", FMOD_SOFTWARE, NULL, &intromusic);
 	fmod_result = FMOD_System_CreateStream(fmod_system, "music/introduction.ogg", FMOD_SOFTWARE, NULL, &introductionmusic);
@@ -443,17 +445,22 @@ int initGame()
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
 		}
 	}
+#ifdef HAVE_OPENAL
+#undef FMOD_ChannelGroup_SetVolume
+#undef fmod_system
+#undef FMOD_SOFTWARE
+#undef FMOD_System_CreateStream
+#undef FMOD_SOUND
+#endif
+
 #endif
 
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, _LOADSTR4, &w, &h);
 	ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, _LOADSTR4);
-#ifdef APPLE
-	SDL_RenderPresent(renderer);
-#else
-	SDL_GL_SwapWindow(screen);
-#endif
+
+	GO_SwapBuffers(screen);
 
 	// load extraneous game resources
 	title_bmp = loadImage("images/system/title.png");
@@ -498,7 +505,7 @@ void deinitGame()
 	{
 		for (x = 1; x < MAXPLAYERS; x++)
 		{
-			if ( client_disconnected[x] == TRUE )
+			if ( client_disconnected[x] == true )
 			{
 				continue;
 			}
@@ -510,7 +517,7 @@ void deinitGame()
 			sendPacketSafe(net_sock, -1, net_packet, x - 1);
 
 			stats[x]->freePlayerEquipment();
-			client_disconnected[x] = TRUE;
+			client_disconnected[x] = true;
 		}
 	}
 
@@ -641,6 +648,10 @@ void deinitGame()
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
+#ifdef HAVE_OPENAL
+#define FMOD_Channel_Stop OPENAL_Channel_Stop
+#define FMOD_Sound_Release OPENAL_Sound_Release
+#endif
 	FMOD_Channel_Stop(music_channel);
 	FMOD_Channel_Stop(music_channel2);
 	FMOD_Sound_Release(intromusic);
@@ -711,6 +722,10 @@ void deinitGame()
 	{
 		free(minotaurmusic);
 	}
+#ifdef HAVE_OPENAL
+#undef FMOD_Channel_Stop
+#undef FMOD_Sound_Release
+#endif
 #endif
 
 	// free items

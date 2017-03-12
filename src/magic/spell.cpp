@@ -170,7 +170,7 @@ void addSpell(int spell, int player)
 
 	players[player]->entity->increaseSkill(PRO_MAGIC);
 
-	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, TRUE, NULL);
+	Item* item = newItem(SPELL_ITEM, SERVICABLE, 0, 1, spell, true, NULL);
 	itemPickup(player, item);
 	free(item);
 }
@@ -188,8 +188,8 @@ void spellConstructor(spell_t* spell)
 	strcpy(spell->name, "Spell");
 	spell->elements.first = NULL;
 	spell->elements.last = NULL;
-	spell->sustain = TRUE;
-	spell->magicstaff = FALSE;
+	spell->sustain = true;
+	spell->magicstaff = false;
 	spell->sustain_node = NULL;
 	spell->magic_effects_node = NULL;
 	spell->caster = -1;
@@ -225,12 +225,12 @@ void spellElementConstructor(spellElement_t* element)
 	element->overload_multiplier = 1;
 	element->damage = 0;
 	element->duration = 0;
-	element->can_be_learned = TRUE;
+	element->can_be_learned = true;
 	strcpy(element->name, "New Element");
 	element->elements.first = NULL;
 	element->elements.last = NULL;
 	element->node = NULL;
-	element->channeled = FALSE;
+	element->channeled = false;
 }
 
 void spellElementDeconstructor(void* data)
@@ -344,11 +344,11 @@ bool spell_isChanneled(spell_t* spell)
 		spellElement_t* spellElement = (spellElement_t*)node->element;
 		if ( spellElement_isChanneled(spellElement) )
 		{
-			return TRUE;
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 bool spellElement_isChanneled(spellElement_t* spellElement)
@@ -357,18 +357,18 @@ bool spellElement_isChanneled(spellElement_t* spellElement)
 
 	if ( spellElement->channeled )
 	{
-		return TRUE;
+		return true;
 	}
 	for ( node = spellElement->elements.first; node != NULL; node = node->next )
 	{
 		spellElement_t* tempElement = (spellElement_t*)node->element;
 		if ( spellElement_isChanneled(tempElement) )
 		{
-			return TRUE;
+			return true;
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 void equipSpell(spell_t* spell, int playernum)
@@ -467,12 +467,12 @@ bool spellInList(list_t* list, spell_t* spell)
 		{
 			if (current->ID == spell->ID)
 			{
-				return TRUE;
+				return true;
 			}
 		}
 	}
 
-	return FALSE;
+	return false;
 }
 
 void spell_changeHealth(Entity* entity, int amount)

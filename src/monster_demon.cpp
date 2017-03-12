@@ -27,10 +27,10 @@ void initDemon(Entity* my, Stat* myStats)
 
 	my->sprite = 258;
 
-	//my->flags[GENIUS]=TRUE;
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[BLOCKSIGHT] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	//my->flags[GENIUS]=true;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[BLOCKSIGHT] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -71,7 +71,7 @@ void initDemon(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(DEMON, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -91,7 +91,7 @@ void initDemon(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -110,7 +110,7 @@ void initDemon(Entity* my, Stat* myStats)
 		myStats->mask = NULL;
 		if ( rand() % 2 == 0 )
 		{
-			myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, FALSE, NULL);
+			myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
 		}
 	}
 
@@ -118,15 +118,15 @@ void initDemon(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(264, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEMON][1][0]; // 0
 	entity->focaly = limbs[DEMON][1][1]; // 0
 	entity->focalz = limbs[DEMON][1][2]; // 0
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -136,15 +136,15 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(263, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEMON][2][0]; // 1
 	entity->focaly = limbs[DEMON][2][1]; // 0
 	entity->focalz = limbs[DEMON][2][2]; // 5
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -154,15 +154,15 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(262, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEMON][3][0]; // 1
 	entity->focaly = limbs[DEMON][3][1]; // 0
 	entity->focalz = limbs[DEMON][3][2]; // 5
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -172,15 +172,15 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(261, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEMON][4][0]; // -.25
 	entity->focaly = limbs[DEMON][4][1]; // 0
 	entity->focalz = limbs[DEMON][4][2]; // 4
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -190,15 +190,15 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(260, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEMON][5][0]; // -.25
 	entity->focaly = limbs[DEMON][5][1]; // 0
 	entity->focalz = limbs[DEMON][5][2]; // 4
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -208,15 +208,15 @@ void initDemon(Entity* my, Stat* myStats)
 	entity = newEntity(259, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEMON][6][0]; // 1.5
 	entity->focaly = limbs[DEMON][6][1]; // 0
 	entity->focalz = limbs[DEMON][6][2]; // 1
 	entity->behavior = &actDemonLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -277,12 +277,12 @@ void demonDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
@@ -294,7 +294,7 @@ void demonDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -316,10 +316,10 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -335,7 +335,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -343,8 +343,8 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -360,7 +360,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -629,7 +629,7 @@ void actDemonCeilingBuster(Entity* my)
 						if ( myStats )
 						{
 							// easy hack to stop the demon while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = TRUE;
+							myStats->EFFECTS[EFF_PARALYZED] = true;
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = TICKS_PER_SECOND / 2;
 						}
 					}
@@ -642,10 +642,10 @@ void actDemonCeilingBuster(Entity* my)
 						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
 						entity->z = -8;
-						entity->flags[PASSABLE] = TRUE;
-						entity->flags[INVISIBLE] = FALSE;
-						entity->flags[NOUPDATE] = TRUE;
-						entity->flags[UPDATENEEDED] = FALSE;
+						entity->flags[PASSABLE] = true;
+						entity->flags[INVISIBLE] = false;
+						entity->flags[NOUPDATE] = true;
+						entity->flags[UPDATENEEDED] = false;
 						entity->sprite = items[GEM_ROCK].index;
 						entity->yaw = rand() % 360 * PI / 180;
 						entity->pitch = rand() % 360 * PI / 180;

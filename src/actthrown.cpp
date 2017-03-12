@@ -55,7 +55,7 @@ void actThrown(Entity* my)
 			{
 				if ( entityInsideEntity(my, tempEntity) )
 				{
-					my->parent = tempEntity->uid;
+					my->parent = tempEntity->getUID();
 				}
 				else
 				{
@@ -67,7 +67,7 @@ void actThrown(Entity* my)
 						{
 							if ( entityInsideEntity(my, entity) )
 							{
-								my->parent = entity->uid;
+								my->parent = entity->getUID();
 								break;
 							}
 						}
@@ -84,7 +84,7 @@ void actThrown(Entity* my)
 					{
 						if ( entityInsideEntity(my, entity) )
 						{
-							my->parent = entity->uid;
+							my->parent = entity->getUID();
 							break;
 						}
 					}
@@ -96,7 +96,7 @@ void actThrown(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		my->flags[INVISIBLE] = FALSE;
+		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
 		my->sprite = itemModel(item);
 		free(item);
@@ -132,9 +132,9 @@ void actThrown(Entity* my)
 				else
 				{
 					Entity* entity = newEntity(-1, 1, map.entities);
-					entity->flags[INVISIBLE] = TRUE;
-					entity->flags[UPDATENEEDED] = TRUE;
-					entity->flags[PASSABLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
 					entity->x = my->x;
 					entity->y = my->y;
 					entity->z = my->z;
@@ -188,7 +188,7 @@ void actThrown(Entity* my)
 	double oz = my->z;
 	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
 
-	bool usedpotion = FALSE;
+	bool usedpotion = false;
 	if ( result != sqrt( THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY ) )
 	{
 		item = newItemFromEntity(my);
@@ -227,63 +227,63 @@ void actThrown(Entity* my)
 						{
 							case POTION_WATER:
 								item_PotionWater(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_BOOZE:
 								item_PotionBooze(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_JUICE:
 								item_PotionJuice(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_SICKNESS:
 								item_PotionSickness(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_CONFUSION:
 								item_PotionConfusion(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_EXTRAHEALING:
 								item_PotionExtraHealing(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_HEALING:
 								item_PotionHealing(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_CUREAILMENT:
 								item_PotionCureAilment(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_BLINDNESS:
 								item_PotionBlindness(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_RESTOREMAGIC:
 								item_PotionRestoreMagic(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_INVISIBILITY:
 								item_PotionInvisibility(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_LEVITATION:
 								item_PotionLevitation(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_SPEED:
 								item_PotionSpeed(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_ACID:
 								item_PotionAcid(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							case POTION_PARALYSIS:
 								item_PotionParalysis(item, hit.entity);
-								usedpotion = TRUE;
+								usedpotion = true;
 								break;
 							default:
 								break;
@@ -331,7 +331,7 @@ void actThrown(Entity* my)
 				}
 				if ( hitstats->HP <= 0 && parent)
 				{
-					parent->awardXP( hit.entity, TRUE, TRUE );
+					parent->awardXP( hit.entity, true, true );
 				}
 
 				// alert the monster
@@ -340,7 +340,7 @@ void actThrown(Entity* my)
 					if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 					{
 						hit.entity->skill[0] = 2;
-						hit.entity->skill[1] = parent->uid;
+						hit.entity->skill[1] = parent->getUID();
 						hit.entity->fskill[2] = parent->x;
 						hit.entity->fskill[3] = parent->y;
 					}
@@ -357,11 +357,11 @@ void actThrown(Entity* my)
 								if ( entity->skill[0] == 0 )   // monster is waiting
 								{
 									double tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
-									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, FALSE);
+									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 									if ( hit.entity == entity )
 									{
 										entity->skill[0] = 2; // path state
-										entity->skill[1] = parent->uid;
+										entity->skill[1] = parent->getUID();
 										entity->fskill[2] = parent->x;
 										entity->fskill[3] = parent->y;
 									}
@@ -423,9 +423,9 @@ void actThrown(Entity* my)
 		else
 		{
 			Entity* entity = newEntity(-1, 1, map.entities);
-			entity->flags[INVISIBLE] = TRUE;
-			entity->flags[UPDATENEEDED] = TRUE;
-			entity->flags[PASSABLE] = TRUE;
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[PASSABLE] = true;
 			entity->x = ox;
 			entity->y = oy;
 			entity->z = oz;

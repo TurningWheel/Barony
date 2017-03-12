@@ -38,9 +38,9 @@ Uint32 currentSvFlags = 0;
 #ifdef STEAMWORKS
 ELobbyType currentLobbyType = k_ELobbyTypePrivate;
 #endif
-bool stillConnectingToLobby = FALSE;
+bool stillConnectingToLobby = false;
 
-bool serverLoadingSaveGame = FALSE; // determines whether lobbyToConnectTo is loading a savegame or not
+bool serverLoadingSaveGame = false; // determines whether lobbyToConnectTo is loading a savegame or not
 void* currentLobby = NULL; // CSteamID to the current game lobby
 void* lobbyToConnectTo = NULL; // CSteamID of the game lobby that user has been invited to
 void* steamIDGameServer = NULL; // CSteamID to the current game server
@@ -49,8 +49,8 @@ uint16_t steamServerPort = 0; // port number for the current game server
 char pchCmdLine[1024] = { 0 }; // for game join requests
 
 // menu stuff
-bool connectingToLobby = FALSE, connectingToLobbyWindow = FALSE;
-bool requestingLobbies = FALSE;
+bool connectingToLobby = false, connectingToLobbyWindow = false;
+bool requestingLobbies = false;
 #endif
 
 
@@ -573,15 +573,15 @@ void cpp_SteamServerClientWrapper_Destroy()
 
 	achievementUnlocked
 
-	Returns TRUE if the given achievement has been unlocked this game,
-	FALSE otherwise
+	Returns true if the given achievement has been unlocked this game,
+	false otherwise
 
 -------------------------------------------------------------------------------*/
 
 bool achievementUnlocked(const char* achName)
 {
 #ifndef STEAMWORKS
-	return FALSE;
+	return false;
 #else
 
 	// check internal achievement record
@@ -591,10 +591,10 @@ bool achievementUnlocked(const char* achName)
 		char* ach = (char*)node->element;
 		if ( !strcmp(ach, achName) )
 		{
-			return TRUE;
+			return true;
 		}
 	}
-	return FALSE;
+	return false;
 
 #endif
 }
@@ -727,7 +727,7 @@ void steam_OnLobbyMatchListCallback( void* pCallback, bool bIOFailure )
 			lobbyIDs[iLobby] = NULL;
 		}
 	}
-	requestingLobbies = FALSE;
+	requestingLobbies = false;
 
 	if ( bIOFailure )
 	{
@@ -783,7 +783,7 @@ void steam_OnLobbyDataUpdatedCallback( void* pCallback )
 	// finish processing lobby invite?
 	if ( stillConnectingToLobby )
 	{
-		stillConnectingToLobby = FALSE;
+		stillConnectingToLobby = false;
 
 		void processLobbyInvite();
 		processLobbyInvite();
@@ -861,13 +861,13 @@ void processLobbyInvite()
 {
 	if ( !intro )
 	{
-		stillConnectingToLobby = TRUE;
+		stillConnectingToLobby = true;
 		return;
 	}
 	if ( !lobbyToConnectTo )
 	{
 		printlog( "warning: tried to process invitation to null lobby" );
-		stillConnectingToLobby = FALSE;
+		stillConnectingToLobby = false;
 		return;
 	}
 	const char* loadingSaveGameChar = SteamMatchmaking()->GetLobbyData( *static_cast<CSteamID*>(lobbyToConnectTo), "loadingsavegame" );
@@ -895,11 +895,11 @@ void processLobbyInvite()
 			}
 			lobbyToConnectTo = NULL;
 		}
-		stillConnectingToLobby = FALSE;
+		stillConnectingToLobby = false;
 	}
 	else
 	{
-		stillConnectingToLobby = TRUE;
+		stillConnectingToLobby = true;
 		SteamMatchmaking()->RequestLobbyData(*static_cast<CSteamID*>(lobbyToConnectTo));
 		printlog("warning: failed to determine whether lobby is using a saved game or not...\n");
 	}
@@ -944,8 +944,8 @@ void steam_OnGameJoinRequested( void* pCallback )
 			initClass(0);
 		}
 		score_window = 0;
-		lobby_window = FALSE;
-		settings_window = FALSE;
+		lobby_window = false;
+		settings_window = false;
 		charcreation_step = 0;
 		subwindow = 0;
 		if ( SDL_IsTextInputActive() )
@@ -954,7 +954,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 		}
 	}
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 
 	if ( lobbyToConnectTo )
 	{
@@ -1023,8 +1023,8 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 	if ( static_cast<LobbyEnter_t*>(pCallback)->m_EChatRoomEnterResponse != k_EChatRoomEnterResponseSuccess )
 	{
 		// lobby join failed
-		connectingToLobby = FALSE;
-		connectingToLobbyWindow = FALSE;
+		connectingToLobby = false;
+		connectingToLobbyWindow = false;
 		openFailedConnectionWindow(CLIENT);
 		return;
 	}
@@ -1039,7 +1039,7 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 		currentLobby = NULL;
 	}
 	currentLobby = cpp_pCallback_m_ulSteamIDLobby(pCallback); //TODO: More buggery.
-	connectingToLobby = FALSE;
+	connectingToLobby = false;
 }
 
 void steam_GameServerPingOnServerResponded(void* steamID)
@@ -1061,8 +1061,8 @@ void steam_OnP2PSessionConnectFail( void* pCallback )
 
 	if ( intro )
 	{
-		connectingToLobby = FALSE;
-		connectingToLobbyWindow = FALSE;
+		connectingToLobby = false;
+		connectingToLobbyWindow = false;
 		openFailedConnectionWindow(multiplayer);
 	}
 }

@@ -17,6 +17,7 @@
 #include "interface.hpp"
 #include "../magic/magic.hpp"
 #include "../player.hpp"
+#include "../entity.hpp"
 
 void updateRightSidebar()
 {
@@ -60,10 +61,17 @@ void updateRightSidebar()
 		if (mousestatus[SDL_BUTTON_LEFT])
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			identifygui_active = TRUE;
-			identifygui_appraising = TRUE;
+			identifygui_active = true;
+			identifygui_appraising = true;
 			gui_mode = GUI_MODE_INVENTORY;
-			removecursegui_active = false;
+			if ( removecursegui_active )
+			{
+				closeRemoveCurseGUI();
+			}
+			if ( openedChest[clientnum] )
+			{
+				openedChest[clientnum]->closeChest();
+			}
 
 			//Initialize Identify GUI game controller code here.
 			initIdentifyGUIControllerCode();
@@ -95,7 +103,7 @@ void updateRightSidebar()
 			gui_mode = GUI_MODE_MAGIC;
 			if (shootmode)
 			{
-				shootmode = FALSE;
+				shootmode = false;
 				attributespage = 0;
 			}
 		}

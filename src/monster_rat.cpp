@@ -25,8 +25,8 @@ void initRat(Entity* my, Stat* myStats)
 
 	my->sprite = 131; // rat model
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -71,7 +71,7 @@ void initRat(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -93,11 +93,11 @@ void initRat(Entity* my, Stat* myStats)
 		{
 			if ( rand() % 2 )
 			{
-				newItem( FOOD_MEAT, EXCELLENT, 0, 1, rand(), FALSE, &myStats->inventory );
+				newItem( FOOD_MEAT, EXCELLENT, 0, 1, rand(), false, &myStats->inventory );
 			}
 			else
 			{
-				newItem( FOOD_CHEESE, DECREPIT, 0, 1, rand(), FALSE, &myStats->inventory );
+				newItem( FOOD_CHEESE, DECREPIT, 0, 1, rand(), false, &myStats->inventory );
 			}
 		}
 
@@ -114,7 +114,7 @@ void initRat(Entity* my, Stat* myStats)
 			myStats->PER = -2;
 			myStats->CHR = 5;
 			myStats->LVL = 10;
-			newItem(GEM_EMERALD, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), TRUE, &myStats->inventory );
+			newItem(GEM_EMERALD, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 6; c++ )
@@ -122,7 +122,7 @@ void initRat(Entity* my, Stat* myStats)
 				Entity* entity = summonMonster(RAT, my->x, my->y);
 				if ( entity )
 				{
-					entity->parent = my->uid;
+					entity->parent = my->getUID();
 				}
 			}
 		}
@@ -167,12 +167,12 @@ void ratDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}

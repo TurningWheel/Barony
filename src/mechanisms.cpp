@@ -21,7 +21,7 @@
 
 void actCircuit(Entity* my)
 {
-	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
+	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 }
 
 void Entity::circuitPowerOn()
@@ -130,7 +130,7 @@ void actSwitch(Entity* my)
 	//Thus, this function needs to be called periodically.
 	//This is so that if a switch goes off and there's another switch on the network, the entire network shuts off regardless of the other switch's status.
 	//So then when that second switch's actSwitch() comes up, and if it's on, it'll repower the entire network -- which will stay powered until ALL connected switches go off.
-	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
+	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
 	if ( multiplayer != CLIENT )
 	{
@@ -157,7 +157,7 @@ void actSwitch(Entity* my)
 	}
 	else
 	{
-		my->flags[NOUPDATE] = TRUE;
+		my->flags[NOUPDATE] = true;
 	}
 
 	// Rotate the switch when it is on/off.
@@ -165,7 +165,7 @@ void actSwitch(Entity* my)
 	{
 		if ( my->roll > -PI / 4 )
 		{
-			my->roll -= std::max((my->roll + PI / 4) / 2, .05);
+			my->roll -= std::max<real_t>((my->roll + PI / 4) / 2, .05);
 		}
 		else
 		{
@@ -176,7 +176,7 @@ void actSwitch(Entity* my)
 	{
 		if ( my->roll < PI / 4 )
 		{
-			my->roll += std::max(-(my->roll - PI / 4) / 2, .05);
+			my->roll += std::max<real_t>(-(my->roll - PI / 4) / 2, .05);
 		}
 		else
 		{
@@ -205,8 +205,8 @@ void actTrap(Entity* my)
 	// activates circuit when certain entities are occupying its tile
 	node_t* node;
 	Entity* entity;
-	bool somebodyonme = FALSE;
-	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
+	bool somebodyonme = false;
+	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
 	if ( TRAP_ON )
 	{
@@ -220,7 +220,7 @@ void actTrap(Entity* my)
 		{
 			if ( floor(entity->x / 16) == floor(my->x / 16) && floor(entity->y / 16) == floor(my->y / 16) )
 			{
-				somebodyonme = TRUE;
+				somebodyonme = true;
 				if ( !TRAP_ON )
 				{
 					my->toggleSwitch();
@@ -246,7 +246,7 @@ void actTrapPermanent(Entity* my)
 	// unlike actTrap, never deactivates
 	node_t* node;
 	Entity* entity;
-	my->flags[PASSABLE] = TRUE; // these should ALWAYS be passable. No exceptions
+	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
 	if ( !strcmp(map.name, "Boss") )
 	{
