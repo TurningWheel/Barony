@@ -1301,6 +1301,12 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
 				break;
+			case AUTOMATON:
+				automatonDie(my);
+				break;
+			case COCKATRICE:
+				cockatriceDie(my);
+				break;
 			default:
 				break; //This should never be reached.
 		}
@@ -1601,11 +1607,11 @@ void actMonster(Entity* my)
 	char namesays[32];
 	if ( !strcmp(myStats->name, "") )
 	{
-		if ( hitstats->type < 21 ) //Original monster count
+		if ( (int)myStats->type < 21 ) //Original monster count
 		{
 			snprintf(namesays, 31, language[513], language[90 + (int)myStats->type]);
 		}
-		else if ( hitstats->type >= 21 ) //New monsters
+		else if ( (int)myStats->type >= 21 ) //New monsters
 		{
 			snprintf(namesays, 31, language[513], language[2000 + ((int)myStats->type - 21)]);
 		}

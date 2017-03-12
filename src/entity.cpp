@@ -341,40 +341,40 @@ void Entity::killedByMonsterObituary(Entity* victim)
 				victim->setObituary(language[1527]);
 				break;
 			case KOBOLD:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2150]);
 				break;
 			case SCARAB:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2151]);
 				break;
 			case CRYSTALGOLEM:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2152]);
 				break;
 			case INCUBUS:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2153]);
 				break;
 			case VAMPIRE:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2154]);
 				break;
 			case SHADOW:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2155]);
 				break;
 			case COCKATRICE:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2156]);
 				break;
 			case INSECTOID:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2157]);
 				break;
 			case GOATMAN:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2158]);
 				break;
 			case AUTOMATON:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2159]);
 				break;
 			case LICH_ICE:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2160]);
 				break;
 			case LICH_FIRE:
-				victim->setObituary(language[1500]);
+				victim->setObituary(language[2161]);
 				break;
 			default:
 				victim->setObituary(language[1500]);
@@ -3918,13 +3918,20 @@ void Entity::attack(int pose, int charge)
 						}
 						else if ( myStats->type >= 21 ) //New monsters
 						{
-							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - 21)], language[132 + myStats->type]);
+							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - 21)], language[2100 + (myStats->type - 21)]);
 						}
 					}
 					else
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
+						if ( myStats->type < 21 ) //Original monster count
+						{
+							messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
+						}
+						else if ( myStats->type >= 21 ) //New monsters
+						{
+							messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - 21)]);
+						}
 					}
 					if ( damage > 0 )
 					{
