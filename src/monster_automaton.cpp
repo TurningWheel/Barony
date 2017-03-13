@@ -25,7 +25,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 229; //Skeleton head model
+	my->sprite = 467; //Automaton head model
 
 	my->flags[UPDATENEEDED] = true;
 	my->flags[BLOCKSIGHT] = true;
@@ -107,9 +107,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][1][0]; // 0
-	entity->focaly = limbs[SKELETON][1][1]; // 0
-	entity->focalz = limbs[SKELETON][1][2]; // 0
+	entity->focalx = limbs[AUTOMATON][1][0]; // 0
+	entity->focaly = limbs[AUTOMATON][1][1]; // 0
+	entity->focalz = limbs[AUTOMATON][1][2]; // 0
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -125,9 +125,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][2][0]; // 0
-	entity->focaly = limbs[SKELETON][2][1]; // 0
-	entity->focalz = limbs[SKELETON][2][2]; // 2
+	entity->focalx = limbs[AUTOMATON][2][0]; // 0
+	entity->focaly = limbs[AUTOMATON][2][1]; // 0
+	entity->focalz = limbs[AUTOMATON][2][2]; // 2
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -143,9 +143,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][3][0]; // 0
-	entity->focaly = limbs[SKELETON][3][1]; // 0
-	entity->focalz = limbs[SKELETON][3][2]; // 2
+	entity->focalx = limbs[AUTOMATON][3][0]; // 0
+	entity->focaly = limbs[AUTOMATON][3][1]; // 0
+	entity->focalz = limbs[AUTOMATON][3][2]; // 2
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -161,9 +161,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][4][0]; // 0
-	entity->focaly = limbs[SKELETON][4][1]; // 0
-	entity->focalz = limbs[SKELETON][4][2]; // 2
+	entity->focalx = limbs[AUTOMATON][4][0]; // 0
+	entity->focaly = limbs[AUTOMATON][4][1]; // 0
+	entity->focalz = limbs[AUTOMATON][4][2]; // 2
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -179,9 +179,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][5][0]; // 0
-	entity->focaly = limbs[SKELETON][5][1]; // 0
-	entity->focalz = limbs[SKELETON][5][2]; // 2
+	entity->focalx = limbs[AUTOMATON][5][0]; // 0
+	entity->focaly = limbs[AUTOMATON][5][1]; // 0
+	entity->focalz = limbs[AUTOMATON][5][2]; // 2
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -198,9 +198,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][6][0]; // 2.5
-	entity->focaly = limbs[SKELETON][6][1]; // 0
-	entity->focalz = limbs[SKELETON][6][2]; // 0
+	entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
+	entity->focaly = limbs[AUTOMATON][6][1]; // 0
+	entity->focalz = limbs[AUTOMATON][6][2]; // 0
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	entity->pitch = .25;
@@ -218,9 +218,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][7][0]; // 2
-	entity->focaly = limbs[SKELETON][7][1]; // 0
-	entity->focalz = limbs[SKELETON][7][2]; // 0
+	entity->focalx = limbs[AUTOMATON][7][0]; // 2
+	entity->focaly = limbs[AUTOMATON][7][1]; // 0
+	entity->focalz = limbs[AUTOMATON][7][2]; // 0
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -240,9 +240,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][8][0]; // 0
-	entity->focaly = limbs[SKELETON][8][1]; // 0
-	entity->focalz = limbs[SKELETON][8][2]; // 4
+	entity->focalx = limbs[AUTOMATON][8][0]; // 0
+	entity->focaly = limbs[AUTOMATON][8][1]; // 0
+	entity->focalz = limbs[AUTOMATON][8][2]; // 4
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -262,9 +262,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][9][0]; // 0
-	entity->focaly = limbs[SKELETON][9][1]; // 0
-	entity->focalz = limbs[SKELETON][9][2]; // -2
+	entity->focalx = limbs[AUTOMATON][9][0]; // 0
+	entity->focaly = limbs[AUTOMATON][9][1]; // 0
+	entity->focalz = limbs[AUTOMATON][9][2]; // -2
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -281,9 +281,9 @@ void initAutomaton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][10][0]; // 0
-	entity->focaly = limbs[SKELETON][10][1]; // 0
-	entity->focalz = limbs[SKELETON][10][2]; // .5
+	entity->focalx = limbs[AUTOMATON][10][0]; // 0
+	entity->focaly = limbs[AUTOMATON][10][1]; // 0
+	entity->focalz = limbs[AUTOMATON][10][2]; // .5
 	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -482,22 +482,22 @@ void automatonDie(Entity* my)
 			switch ( c )
 			{
 				case 0:
-					entity->sprite = 229;
+					entity->sprite = 467;
 					break;
 				case 1:
-					entity->sprite = 230;
+					entity->sprite = 468;
 					break;
 				case 2:
-					entity->sprite = 231;
+					entity->sprite = 469;
 					break;
 				case 3:
-					entity->sprite = 233;
+					entity->sprite = 470;
 					break;
 				case 4:
-					entity->sprite = 235;
+					entity->sprite = 471;
 					break;
 				case 5:
-					entity->sprite = 236;
+					entity->sprite = 472;
 					break;
 			}
 			serverSpawnGibForClient(entity);
@@ -508,7 +508,7 @@ void automatonDie(Entity* my)
 	return;
 }
 
-#define SKELETONWALKSPEED .13
+#define AUTOMATONWALKSPEED .13
 
 void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
@@ -622,7 +622,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( !rightbody->skill[0] )
 					{
-						entity->pitch -= dist * SKELETONWALKSPEED;
+						entity->pitch -= dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
@@ -638,7 +638,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * SKELETONWALKSPEED;
+						entity->pitch += dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
@@ -777,7 +777,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[0] )
 					{
-						entity->pitch -= dist * SKELETONWALKSPEED;
+						entity->pitch -= dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->skill[0] = 0;
@@ -786,7 +786,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * SKELETONWALKSPEED;
+						entity->pitch += dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->skill[0] = 1;
@@ -829,7 +829,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == NULL )
 					{
-						entity->sprite = 230;
+						entity->sprite = 468;
 					}
 					else
 					{
@@ -855,7 +855,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case 3:
-				entity->sprite = 236;
+				entity->sprite = 474;
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -867,7 +867,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
-				entity->sprite = 235;
+				entity->sprite = 473;
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -880,7 +880,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 233;
+				entity->sprite = 471;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
@@ -891,15 +891,15 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[SKELETON][4][0]; // 0
-						entity->focaly = limbs[SKELETON][4][1]; // 0
-						entity->focalz = limbs[SKELETON][4][2]; // 2
+						entity->focalx = limbs[AUTOMATON][4][0]; // 0
+						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						entity->focalz = limbs[AUTOMATON][4][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][4][0] + 1; // 1
-						entity->focaly = limbs[SKELETON][4][1]; // 0
-						entity->focalz = limbs[SKELETON][4][2] - 1; // 1
+						entity->focalx = limbs[AUTOMATON][4][0] + 1; // 1
+						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						entity->focalz = limbs[AUTOMATON][4][2] - 1; // 1
 					}
 				}
 				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -915,7 +915,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 231;
+				entity->sprite = 469;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
@@ -923,15 +923,15 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->sprite += (shield->flags[INVISIBLE] != true);
 					if ( shield->flags[INVISIBLE] )
 					{
-						entity->focalx = limbs[SKELETON][5][0]; // 0
-						entity->focaly = limbs[SKELETON][5][1]; // 0
-						entity->focalz = limbs[SKELETON][5][2]; // 2
+						entity->focalx = limbs[AUTOMATON][5][0]; // 0
+						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						entity->focalz = limbs[AUTOMATON][5][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][5][0] + 1; // 1
-						entity->focaly = limbs[SKELETON][5][1]; // 0
-						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
+						entity->focalx = limbs[AUTOMATON][5][0] + 1; // 1
+						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						entity->focalz = limbs[AUTOMATON][5][2] - 1; // 1
 					}
 				}
 				entity->x -= 1.75 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -1019,19 +1019,19 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->roll = weaponarm->roll;
 					if ( !MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[SKELETON][6][0]; // 2.5
+						entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
 						if ( entity->sprite == items[CROSSBOW].index )
 						{
 							entity->focalx += 2;
 						}
-						entity->focaly = limbs[SKELETON][6][1]; // 0
-						entity->focalz = limbs[SKELETON][6][2]; // -.5
+						entity->focaly = limbs[AUTOMATON][6][1]; // 0
+						entity->focalz = limbs[AUTOMATON][6][2]; // -.5
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][6][0] + 1; // 3.5
-						entity->focaly = limbs[SKELETON][6][1]; // 0
-						entity->focalz = limbs[SKELETON][6][2] - 2; // -2.5
+						entity->focalx = limbs[AUTOMATON][6][0] + 1; // 3.5
+						entity->focaly = limbs[AUTOMATON][6][1]; // 0
+						entity->focalz = limbs[AUTOMATON][6][2] - 2; // -2.5
 						entity->yaw -= sin(weaponarm->roll) * PI / 2;
 						entity->pitch += cos(weaponarm->roll) * PI / 2;
 					}
@@ -1131,9 +1131,9 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case 10:
-				entity->focalx = limbs[SKELETON][9][0]; // 0
-				entity->focaly = limbs[SKELETON][9][1]; // 0
-				entity->focalz = limbs[SKELETON][9][2]; // -2
+				entity->focalx = limbs[AUTOMATON][9][0]; // 0
+				entity->focaly = limbs[AUTOMATON][9][1]; // 0
+				entity->focalz = limbs[AUTOMATON][9][2]; // -2
 				entity->pitch = my->pitch;
 				entity->roll = 0;
 				if ( multiplayer != CLIENT )
@@ -1170,30 +1170,30 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->sprite == items[HAT_PHRYGIAN].index )
 					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 3.25; // -3.25
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // .5
+						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
+						entity->focaly = limbs[AUTOMATON][9][1] - 3.25; // -3.25
+						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // .5
 						entity->roll = PI / 2;
 					}
 					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
 					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 2.5; // -2.5
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // 2.5
+						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
+						entity->focaly = limbs[AUTOMATON][9][1] - 2.5; // -2.5
+						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // 2.5
 						entity->roll = PI / 2;
 					}
 					else if ( entity->sprite == items[HAT_WIZARD].index )
 					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
+						entity->focalx = limbs[AUTOMATON][9][0]; // 0
+						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
+						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
 						entity->roll = PI / 2;
 					}
 					else if ( entity->sprite == items[HAT_JESTER].index )
 					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
+						entity->focalx = limbs[AUTOMATON][9][0]; // 0
+						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
+						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
 						entity->roll = PI / 2;
 					}
 				}
@@ -1204,9 +1204,9 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// mask
 			case 11:
-				entity->focalx = limbs[SKELETON][10][0]; // 0
-				entity->focaly = limbs[SKELETON][10][1]; // 0
-				entity->focalz = limbs[SKELETON][10][2]; // .5
+				entity->focalx = limbs[AUTOMATON][10][0]; // 0
+				entity->focaly = limbs[AUTOMATON][10][1]; // 0
+				entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
@@ -1251,15 +1251,15 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[SKELETON][10][0] + .35; // .35
-					entity->focaly = limbs[SKELETON][10][1] - 2; // -2
-					entity->focalz = limbs[SKELETON][10][2]; // .5
+					entity->focalx = limbs[AUTOMATON][10][0] + .35; // .35
+					entity->focaly = limbs[AUTOMATON][10][1] - 2; // -2
+					entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				}
 				else
 				{
-					entity->focalx = limbs[SKELETON][10][0] + .25; // .25
-					entity->focaly = limbs[SKELETON][10][1] - 2.25; // -2.25
-					entity->focalz = limbs[SKELETON][10][2]; // .5
+					entity->focalx = limbs[AUTOMATON][10][0] + .25; // .25
+					entity->focaly = limbs[AUTOMATON][10][1] - 2.25; // -2.25
+					entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				}
 				break;
 		}

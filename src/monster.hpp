@@ -11,7 +11,7 @@
 
 #pragma once
 
-static char monstertypename[][13] =
+static char monstertypename[][15] =
 {
 	"nothing",
 	"human",
@@ -195,6 +195,14 @@ void initGnome(Entity* my, Stat* myStats);
 void initDevil(Entity* my, Stat* myStats);
 void initAutomaton(Entity* my, Stat* myStats);
 void initCockatrice(Entity* my, Stat* myStats);
+void initCrystalgolem(Entity* my, Stat* myStats);
+void initScarab(Entity* my, Stat* myStats);
+void initKobold(Entity* my, Stat* myStats);
+void initShadow(Entity* my, Stat* myStats);
+void initVampire(Entity* my, Stat* myStats);
+void initIncubus(Entity* my, Stat* myStats);
+void initInsectoid(Entity* my, Stat* myStats);
+void initGoatman(Entity* my, Stat* myStats);
 
 //--act*Limb functions--
 void actHumanLimb(Entity* my);
@@ -214,6 +222,13 @@ void actGnomeLimb(Entity* my);
 void actDevilLimb(Entity* my);
 void actAutomatonLimb(Entity* my);
 void actCockatriceLimb(Entity* my);
+void actCrystalgolemLimb(Entity* my);
+void actKoboldLimb(Entity* my);
+void actShadowLimb(Entity* my);
+void actVampireLimb(Entity* my);
+void actIncubusLimb(Entity* my);
+void actInsectoidLimb(Entity* my);
+void actGoatmanLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -235,6 +250,14 @@ void gnomeDie(Entity* my);
 void devilDie(Entity* my);
 void automatonDie(Entity* my);
 void cockatriceDie(Entity* my);
+void crystalgolemDie(Entity* my);
+void scarabDie(Entity* my);
+void koboldDie(Entity* my);
+void shadowDie(Entity* my);
+void vampireDie(Entity* my);
+void incubusDie(Entity* my);
+void insectoidDie(Entity* my);
+void goatmanDie(Entity* my);
 
 //--*MoveBodyparts functions--
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist);
@@ -256,6 +279,14 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void devilMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void scarabAnimate(Entity* my, double dist);
+void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist);
+void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist);
 
 //--misc functions--
 void actMinotaurTrap(Entity* my);

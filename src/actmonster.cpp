@@ -695,6 +695,46 @@ void actMonster(Entity* my)
 			{
 				initDevil(my, NULL);
 			}
+			else if ( my->sprite == 475 )     // crystal golem head
+			{
+				initCrystalgolem(my, NULL);
+			}
+			else if ( my->sprite == 413 )     // cockatrice head
+			{
+				initCockatrice(my, NULL);
+			}
+			else if ( my->sprite == 467 )     // automaton torso
+			{
+				initAutomaton(my, NULL);
+			}
+			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
+			{
+				initScarab(my, NULL);
+			}
+			else if ( my->sprite == 421 )     // kobold head
+			{
+				initKobold(my, NULL);
+			}
+			else if ( my->sprite == 431 )     // shadow head
+			{
+				initShadow(my, NULL);
+			}
+			else if ( my->sprite == 437 )     // vampire head
+			{
+				initVampire(my, NULL);
+			}
+			else if ( my->sprite == 445 )     // incubus head
+			{
+				initIncubus(my, NULL);
+			}
+			else if ( my->sprite == 455 )     // insectoid head
+			{
+				initInsectoid(my, NULL);
+			}
+			else if ( my->sprite == 463 )     // goatman head
+			{
+				initGoatman(my, NULL);
+			}
 		}
 		else
 		{
@@ -876,31 +916,31 @@ void actMonster(Entity* my)
 					initDevil(my, myStats);
 					break;
 				case KOBOLD:
-					//initKobold ( my, myStats );
+					initKobold ( my, myStats );
 					break;
 				case SCARAB:
-					//initScarab ( my, myStats );
+					initScarab ( my, myStats );
 					break;
 				case CRYSTALGOLEM:
-					//initCrystalGolem ( my, myStats );
+					initCrystalgolem ( my, myStats );
 					break;
 				case INCUBUS:
-					//initIncubus ( my, myStats );
+					initIncubus ( my, myStats );
 					break;
 				case VAMPIRE:
-					//initVampire ( my, myStats );
+					initVampire ( my, myStats );
 					break;
 				case SHADOW:
-					//initShadow ( my, myStats );
+					initShadow ( my, myStats );
 					break;
 				case COCKATRICE:
 					initCockatrice(my, myStats);
 					break;
 				case INSECTOID:
-					//initInsectoid ( my, myStats );
+					initInsectoid ( my, myStats );
 					break;
 				case GOATMAN:
-					//initGoatman ( my, myStats );
+					initGoatman ( my, myStats );
 					break;
 				case AUTOMATON:
 					initAutomaton(my, myStats);
@@ -1306,6 +1346,30 @@ void actMonster(Entity* my)
 				break;
 			case COCKATRICE:
 				cockatriceDie(my);
+				break;
+			case CRYSTALGOLEM:
+				crystalgolemDie(my);
+				break;
+			case SCARAB:
+				scarabDie(my);
+				break;
+			case KOBOLD:
+				koboldDie(my);
+				break;
+			case SHADOW:
+				shadowDie(my);
+				break;
+			case VAMPIRE:
+				vampireDie(my);
+				break;
+			case INCUBUS:
+				incubusDie(my);
+				break;
+			case INSECTOID:
+				insectoidDie(my);
+				break;
+			case GOATMAN:
+				goatmanDie(my);
 				break;
 			default:
 				break; //This should never be reached.
@@ -4192,6 +4256,38 @@ timeToGoAgain:
 		else if ( myStats->type == AUTOMATON )
 		{
 			automatonMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == CRYSTALGOLEM )
+		{
+			crystalgolemMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == SCARAB )
+		{
+			scarabAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == KOBOLD )
+		{
+			koboldMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == SHADOW )
+		{
+			shadowMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == GOATMAN )
+		{
+			goatmanMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == INSECTOID )
+		{
+			insectoidMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == INCUBUS )
+		{
+			incubusMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == VAMPIRE )
+		{
+			vampireMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 	}
 }

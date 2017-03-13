@@ -123,9 +123,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][1][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][1][1]; // 1
-	entity->focalz = limbs[CREATURE_IMP][1][2]; // 0
+	entity->focalx = limbs[COCKATRICE][1][0]; // 0
+	entity->focaly = limbs[COCKATRICE][1][1]; // 1
+	entity->focalz = limbs[COCKATRICE][1][2]; // 0
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -141,9 +141,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][2][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][2][1]; // 0
-	entity->focalz = limbs[CREATURE_IMP][2][2]; // 2
+	entity->focalx = limbs[COCKATRICE][2][0]; // 0
+	entity->focaly = limbs[COCKATRICE][2][1]; // 0
+	entity->focalz = limbs[COCKATRICE][2][2]; // 2
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -159,9 +159,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][3][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][3][1]; // 0
-	entity->focalz = limbs[CREATURE_IMP][3][2]; // 2
+	entity->focalx = limbs[COCKATRICE][3][0]; // 0
+	entity->focaly = limbs[COCKATRICE][3][1]; // 0
+	entity->focalz = limbs[COCKATRICE][3][2]; // 2
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -177,9 +177,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][4][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][4][1]; // 0
-	entity->focalz = limbs[CREATURE_IMP][4][2]; // 3
+	entity->focalx = limbs[COCKATRICE][4][0]; // 0
+	entity->focaly = limbs[COCKATRICE][4][1]; // 0
+	entity->focalz = limbs[COCKATRICE][4][2]; // 3
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -195,9 +195,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][5][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][5][1]; // 0
-	entity->focalz = limbs[CREATURE_IMP][5][2]; // 3
+	entity->focalx = limbs[COCKATRICE][5][0]; // 0
+	entity->focaly = limbs[COCKATRICE][5][1]; // 0
+	entity->focalz = limbs[COCKATRICE][5][2]; // 3
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -213,9 +213,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][6][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][6][1]; // 4
-	entity->focalz = limbs[CREATURE_IMP][6][2]; // 0
+	entity->focalx = limbs[COCKATRICE][6][0]; // 0
+	entity->focaly = limbs[COCKATRICE][6][1]; // 4
+	entity->focalz = limbs[COCKATRICE][6][2]; // 0
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -231,9 +231,9 @@ void initCockatrice(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[CREATURE_IMP][7][0]; // 0
-	entity->focaly = limbs[CREATURE_IMP][7][1]; // -4
-	entity->focalz = limbs[CREATURE_IMP][7][2]; // 0
+	entity->focalx = limbs[COCKATRICE][7][0]; // 0
+	entity->focaly = limbs[COCKATRICE][7][1]; // -4
+	entity->focalz = limbs[COCKATRICE][7][2]; // 0
 	entity->behavior = &actCockatriceLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
@@ -323,7 +323,7 @@ void cockatriceDie(Entity* my)
 	return;
 }
 
-#define IMPWALKSPEED .01
+#define COCKATRICEWALKSPEED .01
 
 void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
@@ -423,7 +423,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( !rightbody->skill[0] )
 				{
-					entity->pitch -= IMPWALKSPEED;
+					entity->pitch -= COCKATRICEWALKSPEED;
 					if ( entity->pitch < -PI / 8.0 )
 					{
 						entity->pitch = -PI / 8.0;
@@ -435,7 +435,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					entity->pitch += IMPWALKSPEED;
+					entity->pitch += COCKATRICEWALKSPEED;
 					if ( entity->pitch > PI / 8.0 )
 					{
 						entity->pitch = PI / 8.0;
@@ -518,7 +518,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( entity->skill[0] )
 				{
-					entity->pitch -= IMPWALKSPEED;
+					entity->pitch -= COCKATRICEWALKSPEED;
 					if ( entity->pitch < -PI / 8.0 )
 					{
 						entity->skill[0] = 0;
@@ -527,7 +527,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else
 				{
-					entity->pitch += IMPWALKSPEED;
+					entity->pitch += COCKATRICEWALKSPEED;
 					if ( entity->pitch > PI / 8.0 )
 					{
 						entity->skill[0] = 1;

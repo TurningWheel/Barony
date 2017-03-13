@@ -2066,51 +2066,51 @@ void assignActions(map_t* map)
 						break;
 					case CRYSTALGOLEM:
 						entity->z = -1.5;
-						entity->focalx = limbs[TROLL][0][0]; // 1
-						entity->focaly = limbs[TROLL][0][1]; // 0
-						entity->focalz = limbs[TROLL][0][2]; // -2
+						entity->focalx = limbs[CRYSTALGOLEM][0][0]; // 1
+						entity->focaly = limbs[CRYSTALGOLEM][0][1]; // 0
+						entity->focalz = limbs[CRYSTALGOLEM][0][2]; // -2
 						break;
 					case INCUBUS:
 						entity->z = -1;
-						entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-						entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-						entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+						entity->focalx = limbs[INCUBUS][0][0]; // 0
+						entity->focaly = limbs[INCUBUS][0][1]; // 0
+						entity->focalz = limbs[INCUBUS][0][2]; // -1.5
 						break;
 					case VAMPIRE:
 						entity->z = -.5;
-						entity->focalx = limbs[SKELETON][0][0]; // 0
-						entity->focaly = limbs[SKELETON][0][1]; // 0
-						entity->focalz = limbs[SKELETON][0][2]; // -1.5
+						entity->focalx = limbs[VAMPIRE][0][0]; // 0
+						entity->focaly = limbs[VAMPIRE][0][1]; // 0
+						entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
 						break;
 					case SHADOW:
 						entity->z = -1;
-						entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-						entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-						entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+						entity->focalx = limbs[SHADOW][0][0]; // 0
+						entity->focaly = limbs[SHADOW][0][1]; // 0
+						entity->focalz = limbs[SHADOW][0][2]; // -1.5
 						break;
 					case COCKATRICE:
 						entity->z = -4.5;
-						entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
-						entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
-						entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
+						entity->focalx = limbs[COCKATRICE][0][0]; // 0
+						entity->focaly = limbs[COCKATRICE][0][1]; // 0
+						entity->focalz = limbs[COCKATRICE][0][2]; // -1.75
 						break;
 					case INSECTOID:
 						entity->z = 0;
-						entity->focalx = limbs[GOBLIN][0][0]; // 0
-						entity->focaly = limbs[GOBLIN][0][1]; // 0
-						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+						entity->focalx = limbs[INSECTOID][0][0]; // 0
+						entity->focaly = limbs[INSECTOID][0][1]; // 0
+						entity->focalz = limbs[INSECTOID][0][2]; // -1.75
 						break;
 					case GOATMAN:
 						entity->z = 0;
-						entity->focalx = limbs[GOBLIN][0][0]; // 0
-						entity->focaly = limbs[GOBLIN][0][1]; // 0
-						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+						entity->focalx = limbs[GOATMAN][0][0]; // 0
+						entity->focaly = limbs[GOATMAN][0][1]; // 0
+						entity->focalz = limbs[GOATMAN][0][2]; // -1.75
 						break;
 					case AUTOMATON:
 						entity->z = -.5;
-						entity->focalx = limbs[SKELETON][0][0]; // 0
-						entity->focaly = limbs[SKELETON][0][1]; // 0
-						entity->focalz = limbs[SKELETON][0][2]; // -1.5
+						entity->focalx = limbs[AUTOMATON][0][0]; // 0
+						entity->focaly = limbs[AUTOMATON][0][1]; // 0
+						entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
 						break;
 					case LICH_ICE:
 						entity->focalx = limbs[LICH][0][0]; // -0.75
