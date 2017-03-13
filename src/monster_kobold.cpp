@@ -334,7 +334,7 @@ void initKobold(Entity* my, Stat* myStats)
 		case 8:
 		case 9:
 			myStats->GOLD += 100;
-			myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+			//myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
 			break;
 	}
 

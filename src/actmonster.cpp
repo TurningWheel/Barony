@@ -373,76 +373,76 @@ Entity* summonMonster(Monster creature, long x, long y)
 				break;
 			case KOBOLD:
 				entity->z = 2.25;
-				entity->focalx = limbs[GNOME][0][0]; // 0
-				entity->focaly = limbs[GNOME][0][1]; // 0
-				entity->focalz = limbs[GNOME][0][2]; // -2
+				entity->focalx = limbs[KOBOLD][0][0]; // 0
+				entity->focaly = limbs[KOBOLD][0][1]; // 0
+				entity->focalz = limbs[KOBOLD][0][2]; // -2
 				break;
 			case SCARAB:
-				entity->focalx = limbs[RAT][0][0]; // 0
-				entity->focaly = limbs[RAT][0][1]; // 0
-				entity->focalz = limbs[RAT][0][2]; // 0
+				entity->focalx = limbs[SCARAB][0][0]; // 0
+				entity->focaly = limbs[SCARAB][0][1]; // 0
+				entity->focalz = limbs[SCARAB][0][2]; // 0
 				break;
 			case CRYSTALGOLEM:
 				entity->z = -1.5;
-				entity->focalx = limbs[TROLL][0][0]; // 1
-				entity->focaly = limbs[TROLL][0][1]; // 0
-				entity->focalz = limbs[TROLL][0][2]; // -2
+				entity->focalx = limbs[CRYSTALGOLEM][0][0]; // 1
+				entity->focaly = limbs[CRYSTALGOLEM][0][1]; // 0
+				entity->focalz = limbs[CRYSTALGOLEM][0][2]; // -2
 				break;
 			case INCUBUS:
 				entity->z = -1;
-				entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-				entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-				entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+				entity->focalx = limbs[INCUBUS][0][0]; // 0
+				entity->focaly = limbs[INCUBUS][0][1]; // 0
+				entity->focalz = limbs[INCUBUS][0][2]; // -1.5
 				break;
 			case VAMPIRE:
 				entity->z = -.5;
-				entity->focalx = limbs[SKELETON][0][0]; // 0
-				entity->focaly = limbs[SKELETON][0][1]; // 0
-				entity->focalz = limbs[SKELETON][0][2]; // -1.5
+				entity->focalx = limbs[VAMPIRE][0][0]; // 0
+				entity->focaly = limbs[VAMPIRE][0][1]; // 0
+				entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
 				break;
 			case SHADOW:
 				entity->z = -1;
-				entity->focalx = limbs[SUCCUBUS][0][0]; // 0
-				entity->focaly = limbs[SUCCUBUS][0][1]; // 0
-				entity->focalz = limbs[SUCCUBUS][0][2]; // -1.5
+				entity->focalx = limbs[SHADOW][0][0]; // 0
+				entity->focaly = limbs[SHADOW][0][1]; // 0
+				entity->focalz = limbs[SHADOW][0][2]; // -1.5
 				break;
 			case COCKATRICE:
 				entity->z = -4.5;
-				entity->focalx = limbs[CREATURE_IMP][0][0]; // 0
-				entity->focaly = limbs[CREATURE_IMP][0][1]; // 0
-				entity->focalz = limbs[CREATURE_IMP][0][2]; // -1.75
+				entity->focalx = limbs[COCKATRICE][0][0]; // 0
+				entity->focaly = limbs[COCKATRICE][0][1]; // 0
+				entity->focalz = limbs[COCKATRICE][0][2]; // -1.75
 				break;
 			case INSECTOID:
 				entity->z = 0;
-				entity->focalx = limbs[GOBLIN][0][0]; // 0
-				entity->focaly = limbs[GOBLIN][0][1]; // 0
-				entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+				entity->focalx = limbs[INSECTOID][0][0]; // 0
+				entity->focaly = limbs[INSECTOID][0][1]; // 0
+				entity->focalz = limbs[INSECTOID][0][2]; // -1.75
 				break;
 			case GOATMAN:
 				entity->z = 0;
-				entity->focalx = limbs[GOBLIN][0][0]; // 0
-				entity->focaly = limbs[GOBLIN][0][1]; // 0
-				entity->focalz = limbs[GOBLIN][0][2]; // -1.75
+				entity->focalx = limbs[GOATMAN][0][0]; // 0
+				entity->focaly = limbs[GOATMAN][0][1]; // 0
+				entity->focalz = limbs[GOATMAN][0][2]; // -1.75
 				break;
 			case AUTOMATON:
 				entity->z = -.5;
-				entity->focalx = limbs[SKELETON][0][0]; // 0
-				entity->focaly = limbs[SKELETON][0][1]; // 0
-				entity->focalz = limbs[SKELETON][0][2]; // -1.5
+				entity->focalx = limbs[AUTOMATON][0][0]; // 0
+				entity->focaly = limbs[AUTOMATON][0][1]; // 0
+				entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
 				break;
 			case LICH_ICE:
-				entity->focalx = limbs[LICH][0][0]; // -0.75
-				entity->focaly = limbs[LICH][0][1]; // 0
-				entity->focalz = limbs[LICH][0][2]; // 0
+				entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
+				entity->focaly = limbs[LICH_ICE][0][1]; // 0
+				entity->focalz = limbs[LICH_ICE][0][2]; // 0
 				entity->z = -2;
 				entity->yaw = PI;
 				entity->sprite = 274;
 				entity->skill[29] = 120;
 				break;
 			case LICH_FIRE:
-				entity->focalx = limbs[LICH][0][0]; // -0.75
-				entity->focaly = limbs[LICH][0][1]; // 0
-				entity->focalz = limbs[LICH][0][2]; // 0
+				entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
+				entity->focaly = limbs[LICH_FIRE][0][1]; // 0
+				entity->focalz = limbs[LICH_FIRE][0][2]; // 0
 				entity->z = -2;
 				entity->yaw = PI;
 				entity->sprite = 274;
@@ -816,6 +816,46 @@ void actMonster(Entity* my)
 				my->flags[BURNABLE] = false;
 				devilMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
+			else if ( my->sprite == 421 )     // kobold head
+			{
+				koboldMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
+			{
+				scarabAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 475 )     // crystal golem head
+			{
+				crystalgolemMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 445 )     // incubus head
+			{
+				incubusMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 437 )     // vampire head
+			{
+				vampireMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 431 )     // shadow head
+			{
+				shadowMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 413 )     // cockatrice head
+			{
+				cockatriceMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 455 )     // insectoid head
+			{
+				insectoidMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 463 )     // goatman head
+			{
+				goatmanMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 467 )     // automaton head
+			{
+				automatonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
 			else
 			{
 				my->flags[BURNABLE] = false;
@@ -934,7 +974,7 @@ void actMonster(Entity* my)
 					initShadow ( my, myStats );
 					break;
 				case COCKATRICE:
-					initCockatrice(my, myStats);
+					initCockatrice (my, myStats);
 					break;
 				case INSECTOID:
 					initInsectoid ( my, myStats );
@@ -943,7 +983,7 @@ void actMonster(Entity* my)
 					initGoatman ( my, myStats );
 					break;
 				case AUTOMATON:
-					initAutomaton(my, myStats);
+					initAutomaton (my, myStats);
 					break;
 				case LICH_ICE:
 					//initLichIce ( my, myStats );

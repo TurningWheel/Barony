@@ -377,7 +377,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 			case 0:
 			case 1:
 			case 2:
-				myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
+				//myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
 				break;
 			case 3:
 			case 4:
@@ -392,7 +392,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 				myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
 				break;
 			case 9:
-				myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+				//myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
 				break;
 		}
 

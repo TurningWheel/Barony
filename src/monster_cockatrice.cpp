@@ -99,7 +99,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 		myStats->ring = NULL;
 		myStats->mask = NULL;
 		myStats->weapon = NULL; //newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
-		//myStats->EFFECTS[EFF_LEVITATING] = true;
+		myStats->EFFECTS[EFF_LEVITATING] = FALSE;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 		if ( rand() % 4 == 0 )
@@ -397,8 +397,8 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// cockatrices are always flying
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+		//myStats->EFFECTS[EFF_LEVITATING] = true;
+		//myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
 	//Move bodyparts

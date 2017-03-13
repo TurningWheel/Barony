@@ -2055,14 +2055,14 @@ void assignActions(map_t* map)
 						break;
 					case KOBOLD:
 						entity->z = 2.25;
-						entity->focalx = limbs[GNOME][0][0]; // 0
-						entity->focaly = limbs[GNOME][0][1]; // 0
-						entity->focalz = limbs[GNOME][0][2]; // -2
+						entity->focalx = limbs[KOBOLD][0][0]; // 0
+						entity->focaly = limbs[KOBOLD][0][1]; // 0
+						entity->focalz = limbs[KOBOLD][0][2]; // -2
 						break;
 					case SCARAB:
-						entity->focalx = limbs[RAT][0][0]; // 0
-						entity->focaly = limbs[RAT][0][1]; // 0
-						entity->focalz = limbs[RAT][0][2]; // 0
+						entity->focalx = limbs[SCARAB][0][0]; // 0
+						entity->focaly = limbs[SCARAB][0][1]; // 0
+						entity->focalz = limbs[SCARAB][0][2]; // 0
 						break;
 					case CRYSTALGOLEM:
 						entity->z = -1.5;
@@ -2113,18 +2113,18 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
 						break;
 					case LICH_ICE:
-						entity->focalx = limbs[LICH][0][0]; // -0.75
-						entity->focaly = limbs[LICH][0][1]; // 0
-						entity->focalz = limbs[LICH][0][2]; // 0
+						entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
+						entity->focaly = limbs[LICH_ICE][0][1]; // 0
+						entity->focalz = limbs[LICH_ICE][0][2]; // 0
 						entity->z = -2;
 						entity->yaw = PI;
 						entity->sprite = 274;
 						entity->skill[29] = 120;
 						break;
 					case LICH_FIRE:
-						entity->focalx = limbs[LICH][0][0]; // -0.75
-						entity->focaly = limbs[LICH][0][1]; // 0
-						entity->focalz = limbs[LICH][0][2]; // 0
+						entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
+						entity->focaly = limbs[LICH_FIRE][0][1]; // 0
+						entity->focalz = limbs[LICH_FIRE][0][2]; // 0
 						entity->z = -2;
 						entity->yaw = PI;
 						entity->sprite = 274;
