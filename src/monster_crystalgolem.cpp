@@ -148,7 +148,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(478, 0, map.entities);
+	entity = newEntity(480, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -166,7 +166,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(477, 0, map.entities);
+	entity = newEntity(479, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -184,7 +184,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(480, 0, map.entities);
+	entity = newEntity(478, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -202,7 +202,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(479, 0, map.entities);
+	entity = newEntity(477, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();

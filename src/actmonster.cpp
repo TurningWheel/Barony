@@ -404,7 +404,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->z = -1;
 				entity->focalx = limbs[SHADOW][0][0]; // 0
 				entity->focaly = limbs[SHADOW][0][1]; // 0
-				entity->focalz = limbs[SHADOW][0][2]; // -1.5
+				entity->focalz = limbs[SHADOW][0][2]; // -1.75
 				break;
 			case COCKATRICE:
 				entity->z = -4.5;
@@ -715,7 +715,7 @@ void actMonster(Entity* my)
 			{
 				initKobold(my, NULL);
 			}
-			else if ( my->sprite == 431 )     // shadow head
+			else if ( my->sprite == 481 )     // shadow head
 			{
 				initShadow(my, NULL);
 			}
@@ -836,7 +836,7 @@ void actMonster(Entity* my)
 			{
 				vampireMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
-			else if ( my->sprite == 431 )     // shadow head
+			else if ( my->sprite == 481 )     // shadow head
 			{
 				shadowMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}

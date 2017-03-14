@@ -2086,7 +2086,7 @@ void assignActions(map_t* map)
 						entity->z = -1;
 						entity->focalx = limbs[SHADOW][0][0]; // 0
 						entity->focaly = limbs[SHADOW][0][1]; // 0
-						entity->focalz = limbs[SHADOW][0][2]; // -1.5
+						entity->focalz = limbs[SHADOW][0][2]; // -1.75
 						break;
 					case COCKATRICE:
 						entity->z = -4.5;

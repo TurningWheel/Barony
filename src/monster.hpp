@@ -125,7 +125,7 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
-	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // shadow
+	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // shadow
 	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2 }, // cockatrice
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
