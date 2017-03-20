@@ -1311,6 +1311,25 @@ int main(int argc, char** argv)
 							{
 								makeUndo();
 								selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+								// STAT ASSIGNMENT
+								Stat* myStats = NULL;
+
+								if ( multiplayer != CLIENT )
+								{
+									// need to give the entity its list stuff.
+									// create an empty first node for traversal purposes
+									node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
+									node2->element = NULL;
+									node2->deconstructor = &emptyDeconstructor;
+
+									myStats = new Stat();
+									node2 = list_AddNodeLast(&selectedEntity->children);
+									node2->element = myStats;
+									//					node2->deconstructor = &myStats->~Stat;
+									node2->size = sizeof(myStats);
+								}
+
 								selectedEntity->x = entity->x;
 								selectedEntity->y = entity->y;
 								mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -1335,6 +1354,25 @@ int main(int argc, char** argv)
 									// duplicate sprite
 									makeUndo();
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+									//STAT ASSIGNMENT
+									Stat* myStats = NULL;
+
+									if ( multiplayer != CLIENT )
+									{
+										// need to give the entity its list stuff.
+										// create an empty first node for traversal purposes
+										node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
+										node2->element = NULL;
+										node2->deconstructor = &emptyDeconstructor;
+
+										myStats = new Stat();
+										node2 = list_AddNodeLast(&selectedEntity->children);
+										node2->element = myStats;
+										//					node2->deconstructor = &myStats->~Stat;
+										node2->size = sizeof(myStats);
+									}
+
 									selectedEntity->x = entity->x;
 									selectedEntity->y = entity->y;
 									mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -1817,7 +1855,7 @@ int main(int argc, char** argv)
 				}
 
 				// new map and attributes windows
-				if ( newwindow )
+				if ( newwindow == 1 )
 				{
 					printText(font8x8_bmp, subx1 + 8, suby1 + 28, "Map name:");
 					drawDepressed(subx1 + 4, suby1 + 40, subx2 - 4, suby1 + 56);
@@ -1941,6 +1979,127 @@ int main(int argc, char** argv)
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
 							printText(font8x8_bmp, subx1 + 108 + strlen(heighttext) * 8, suby2 - 20, "\26");
+						}
+					}
+				}
+				else if ( newwindow == 2 ) 
+				{
+					if ( selectedEntity != NULL ) 
+					{
+						Stat* spriteStats = selectedEntity->getStats();
+						if ( spriteStats != nullptr )
+						{
+							
+							printText(font8x8_bmp, subx1 + 8, suby1 + 28, "Monster Name:");
+							drawDepressed(subx1 + 4, suby1 + 40, subx2 - 4, suby1 + 56);
+							printText(font8x8_bmp, subx1 + 8, suby1 + 44, spriteStats->name);
+
+							
+							printText(font8x8_bmp, subx1 + 8, suby1 + 64, "Monster Sex:");
+							drawDepressed(subx1 + 4, suby1 + 76, subx2 - 4, suby1 + 92);
+							printText(font8x8_bmp, subx1 + 8, suby1 + 80, spriteProperties[1]);
+
+							
+							printText(font8x8_bmp, subx1 + 8, suby1 + 100, "Monster MAXHP:");
+							drawDepressed(subx1 + 4, suby1 + 112, subx2 - 4, suby1 + 128);
+							printText(font8x8_bmp, subx1 + 8, suby1 + 116, spriteProperties[2]);
+
+							/*printText(font8x8_bmp, subx1 + 8, suby2 - 44, "Map width:");
+							drawDepressed(subx1 + 104, suby2 - 48, subx1 + 168, suby2 - 32);
+							printText(font8x8_bmp, subx1 + 108, suby2 - 44, widthtext);
+
+							printText(font8x8_bmp, subx1 + 8, suby2 - 20, "Map height:");
+							drawDepressed(subx1 + 104, suby2 - 24, subx1 + 168, suby2 - 8);
+							printText(font8x8_bmp, subx1 + 108, suby2 - 20, heighttext);*/
+
+							if ( keystatus[SDL_SCANCODE_TAB] )
+							{
+								keystatus[SDL_SCANCODE_TAB] = 0;
+								cursorflash = ticks;
+								editproperty++;
+								if ( editproperty == 3 )
+								{
+									editproperty = 0;
+								}
+								switch ( editproperty )
+								{
+								case 0:
+									inputstr = spriteStats->name;
+									break;
+								case 1:
+									inputstr = spriteProperties[1];
+									break;
+								case 2:
+									inputstr = spriteProperties[2];
+									break;
+								}
+							}
+
+							// select a textbox
+							if ( mousestatus[SDL_BUTTON_LEFT] )
+							{
+								if ( omousex >= subx1 + 4 && omousey >= suby1 + 40 && omousex < subx2 - 4 && omousey < suby1 + 56 )
+								{
+									inputstr = spriteStats->name;
+									editproperty = 0;
+									cursorflash = ticks;
+								}
+								if ( omousex >= subx1 + 4 && omousey >= suby1 + 76 && omousex < subx2 - 4 && omousey < suby1 + 92 )
+								{
+									inputstr = spriteProperties[1];
+									editproperty = 1;
+									cursorflash = ticks;
+								}
+								if ( omousex >= subx1 + 4 && omousey >= suby1 + 112 && omousex < subx2 - 4 - 36 && omousey < suby1 + 128 )
+								{
+									inputstr = spriteProperties[2];
+									editproperty = 2;
+									cursorflash = ticks;
+								}
+							}
+
+							if ( editproperty == 0 )   // edit map name
+							{
+								if ( !SDL_IsTextInputActive() )
+								{
+									SDL_StartTextInput();
+									inputstr = spriteStats->name;
+								}
+								//strncpy(nametext,inputstr,31);
+								inputlen = 31;
+								if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+								{
+									printText(font8x8_bmp, subx1 + 8 + strlen(spriteStats->name) * 8, suby1 + 44, "\26");
+								}
+							}
+							if ( editproperty == 1 )   // edit author name
+							{
+								if ( !SDL_IsTextInputActive() )
+								{
+									SDL_StartTextInput();
+									inputstr = spriteProperties[1];
+								}
+								//strncpy(authortext,inputstr,31);
+								inputlen = 31;
+								if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+								{
+									printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[1]) * 8, suby1 + 80, "\26");
+								}
+							}
+							if ( editproperty == 2 )   // edit map width
+							{
+								if ( !SDL_IsTextInputActive() )
+								{
+									SDL_StartTextInput();
+									inputstr = spriteProperties[2];
+								}
+								//strncpy(widthtext,inputstr,3);
+								inputlen = 3;
+								if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+								{
+									printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[2]) * 8, suby1 + 116, "\26");
+								}
+							}
 						}
 					}
 				}
@@ -2093,6 +2252,11 @@ int main(int argc, char** argv)
 					keystatus[SDL_SCANCODE_F1] = 0;
 					buttonAbout(NULL);
 				}
+				if ( keystatus[SDL_SCANCODE_F2] )
+				{
+					keystatus[SDL_SCANCODE_F2] = 0;
+					buttonSpriteProperties(NULL);
+				}
 				if ( keystatus[SDL_SCANCODE_1] )
 				{
 					keystatus[SDL_SCANCODE_1] = 0;
@@ -2213,6 +2377,25 @@ int main(int argc, char** argv)
 				if (palette[mousey + mousex * yres] >= 0)
 				{
 					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities);
+					
+					//STAT ASSIGNMENT
+					Stat* myStats = NULL;
+
+					if ( multiplayer != CLIENT )
+					{
+						// need to give the entity its list stuff.
+						// create an empty first node for traversal purposes
+						node_t* node2 = list_AddNodeFirst(&entity->children);
+						node2->element = NULL;
+						node2->deconstructor = &emptyDeconstructor;
+
+						myStats = new Stat();
+						node2 = list_AddNodeLast(&entity->children);
+						node2->element = myStats;
+						//					node2->deconstructor = &myStats->~Stat;
+						node2->size = sizeof(myStats);
+					}
+
 					selectedEntity = entity;
 				}
 

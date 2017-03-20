@@ -164,6 +164,8 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	Entity* entity;
 	Sint32 sprite;
 	char* filename;
+	Stat* myStats;
+	sex_t s;
 
 	char oldmapname[64];
 	strcpy(oldmapname, map.name);
@@ -249,6 +251,54 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		{
 			fread(&sprite, sizeof(Sint32), 1, fp);
 			entity = newEntity(sprite, 0, entlist);
+
+			switch ( sprite )
+			{
+				case 71:
+				case 70:
+				case 62:
+				case 48:
+				case 36:
+				case 35:
+				case 30:
+				case 27:
+				case 10:
+				case 83:
+				case 84:
+				case 85:
+				case 86:
+				case 87:
+				case 88:
+				case 89:
+				case 90:
+				case 91:
+				case 92:
+				case 93:
+				case 94:
+					if ( multiplayer != CLIENT )
+					{
+						// need to give the entity its list stuff.
+						// create an empty first node for traversal purposes
+						node_t* node2 = list_AddNodeFirst(&entity->children);
+						node2->element = NULL;
+						node2->deconstructor = &emptyDeconstructor;
+
+						myStats = new Stat();
+						node2 = list_AddNodeLast(&entity->children);
+						node2->element = myStats;
+						//					node2->deconstructor = &myStats->~Stat;
+						node2->size = sizeof(myStats);
+					}
+
+					fread(&myStats->sex, sizeof(sex_t), 1, fp);
+					fread(&myStats->name, sizeof(char[128]), 1, fp);
+					fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
+					break;
+
+				default:
+					break;
+			}
+
 			fread(&x, sizeof(Sint32), 1, fp);
 			fread(&y, sizeof(Sint32), 1, fp);
 			entity->x = x;
@@ -364,6 +414,7 @@ int saveMap(char* filename2)
 	Entity* entity;
 	char* filename;
 	Sint32 x, y;
+	Stat* myStats;
 
 	if ( filename2 != NULL && strcmp(filename2, "") )
 	{
@@ -396,6 +447,39 @@ int saveMap(char* filename2)
 		{
 			entity = (Entity*) node->element;
 			fwrite(&entity->sprite, sizeof(Sint32), 1, fp);
+
+			switch ( entity->sprite )
+			{
+				case 71:
+				case 70:
+				case 62:
+				case 48:
+				case 36:
+				case 35:
+				case 30:
+				case 27:
+				case 10:
+				case 83:
+				case 84:
+				case 85:
+				case 86:
+				case 87:
+				case 88:
+				case 89:
+				case 90:
+				case 91:
+				case 92:
+				case 93:
+				case 94:
+					myStats = entity->getStats();
+					fwrite(&myStats->sex, sizeof(sex_t), 1, fp);
+					fwrite(&myStats->name, sizeof(char[128]), 1, fp);
+					fwrite(&myStats->MAXHP, sizeof(Sint32), 1, fp);
+					break;
+
+				default:
+					break;
+			}
 			x = entity->x;
 			y = entity->y;
 			fwrite(&x, sizeof(Sint32), 1, fp);

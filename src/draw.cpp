@@ -1165,6 +1165,18 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
+					char test[1024] = "test";
+					ttfPrintText(ttf8, pos.x + 10, pos.y - 10, test);
+					if ( entity->getStats() != nullptr ) {
+						snprintf(test, 4, "%d", entity->getStats()->sex);
+						ttfPrintText(ttf8, pos.x + 10, pos.y - 20, test);
+						snprintf(test, sizeof(entity->getStats()->name), "%s", entity->getStats()->name);
+						ttfPrintText(ttf8, pos.x + 10, pos.y - 30, test);
+						snprintf(test, 4, "%d", entity->getStats()->MAXHP);
+						ttfPrintText(ttf8, pos.x + 10, pos.y - 40, test);
+					}
+
+
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
 					box.w = TEXTURESIZE - 2;
 					box.h = TEXTURESIZE - 2;

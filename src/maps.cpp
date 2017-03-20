@@ -1841,9 +1841,9 @@ void assignActions(map_t* map)
 				entity->behavior = &actMonster;
 				entity->flags[UPDATENEEDED] = true;
 				entity->skill[5] = -1;
-				Stat* myStats = NULL;
+				Stat* myStats = entity->getStats();
 
-				if ( multiplayer != CLIENT )
+				if ( multiplayer != CLIENT && myStats == nullptr)
 				{
 					// need to give the entity its list stuff.
 					// create an empty first node for traversal purposes

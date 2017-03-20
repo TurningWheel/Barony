@@ -107,6 +107,7 @@ extern int messagetime;
 extern char message[48];
 extern Uint32 cursorflash;
 extern char widthtext[4], heighttext[4], nametext[32], authortext[32];
+extern char spriteProperties[16][128];
 extern int editproperty;
 extern bool mode3d;
 extern bool selectingspace;
@@ -174,5 +175,8 @@ void buttonClearMapConfirm(button_t* my);
 void buttonHelp(button_t* my);
 void buttonAbout(button_t* my);
 void buttonCloseSubwindow(button_t* my);
+void buttonSpriteProperties(button_t* my);
+void buttonSpritePropertiesConfirm(button_t* my);
+void buttonCloseSpriteSubwindow(button_t* my);
 
 #define TICKS_PER_SECOND 50

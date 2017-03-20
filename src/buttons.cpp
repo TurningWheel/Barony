@@ -948,6 +948,7 @@ void buttonCloseSubwindow(button_t* my)
 	int c;
 
 	// close window
+	selectedEntity = NULL;
 	subwindow = 0;
 	newwindow = 0;
 	openwindow = 0;
@@ -965,4 +966,93 @@ void buttonCloseSubwindow(button_t* my)
 		d_names = NULL;
 	}
 	strcpy(filename, oldfilename);
+}
+
+void buttonSpriteProperties(button_t* my)
+{
+	if ( selectedEntity != NULL )
+	{
+		Stat* spriteStats = selectedEntity->getStats();
+		if ( spriteStats != nullptr )
+		{
+			button_t* button;
+			editproperty = 0;
+			//strcpy(spriteProperties[0], spriteStats->name);
+			strcpy(spriteProperties[1], "");
+			strcpy(spriteProperties[2], "");
+			snprintf(spriteProperties[1], 4, "%d", spriteStats->sex);
+			snprintf(spriteProperties[2], 4, "%d", spriteStats->MAXHP);
+			inputstr = spriteStats->name;
+			//snprintf(widthtext, 4, "%d", map.width);
+			//snprintf(heighttext, 4, "%d", map.height);
+			//strcpy(nametext, map.name);
+			//strcpy(authortext, map.author);
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 2;
+			subx1 = xres / 2 - 160;
+			subx2 = xres / 2 + 160;
+			suby1 = yres / 2 - 80;
+			suby2 = yres / 2 + 80;
+			strcpy(subtext, "Sprite properties:");
+
+			button = newButton();
+			strcpy(button->label, "  OK  ");
+			button->x = subx2 - 64;
+			button->y = suby2 - 48;
+			button->sizex = 56;
+			button->sizey = 16;
+			button->action = &buttonSpritePropertiesConfirm;
+			button->visible = 1;
+			button->focused = 1;
+
+			button = newButton();
+			strcpy(button->label, "Cancel");
+			button->x = subx2 - 64;
+			button->y = suby2 - 24;
+			button->sizex = 56;
+			button->sizey = 16;
+			button->action = &buttonCloseSpriteSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+
+			button = newButton();
+			strcpy(button->label, "X");
+			button->x = subx2 - 16;
+			button->y = suby1;
+			button->sizex = 16;
+			button->sizey = 16;
+			button->action = &buttonCloseSpriteSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+		}
+	}
+}
+
+void buttonSpritePropertiesConfirm(button_t* my)
+{
+	if ( selectedEntity != NULL )
+	{
+		Stat* spriteStats = selectedEntity->getStats();
+		if ( spriteStats != nullptr )
+		{
+			spriteStats->sex = (sex_t)atoi(spriteProperties[1]);
+			spriteStats->MAXHP = (Sint32)atoi(spriteProperties[2]);
+			strcpy(message, "                       Modified sprite properties.");
+			messagetime = 60;
+			buttonCloseSpriteSubwindow(my);
+		}
+	}
+}
+
+void buttonCloseSpriteSubwindow(button_t* my)
+{
+	// close window
+	selectedEntity = NULL;
+	subwindow = 0;
+	newwindow = 0;
+	editproperty = 0;
+	spritepalette = 0;
+
 }
