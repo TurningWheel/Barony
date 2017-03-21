@@ -289,12 +289,25 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						//					node2->deconstructor = &myStats->~Stat;
 						node2->size = sizeof(myStats);
 					}
-
 					fread(&myStats->sex, sizeof(sex_t), 1, fp);
 					fread(&myStats->name, sizeof(char[128]), 1, fp);
+					fread(&myStats->HP, sizeof(Sint32), 1, fp);
 					fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
+					fread(&myStats->OLDHP, sizeof(Sint32), 1, fp);
+					fread(&myStats->MP, sizeof(Sint32), 1, fp);
+					fread(&myStats->MAXMP, sizeof(Sint32), 1, fp);
+					fread(&myStats->STR, sizeof(Sint32), 1, fp);
+					fread(&myStats->DEX, sizeof(Sint32), 1, fp);
+					fread(&myStats->CON, sizeof(Sint32), 1, fp);
+					fread(&myStats->INT, sizeof(Sint32), 1, fp);
+					fread(&myStats->PER, sizeof(Sint32), 1, fp);
+					fread(&myStats->CHR, sizeof(Sint32), 1, fp);
+					fread(&myStats->LVL, sizeof(Sint32), 1, fp);
+					fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
 					break;
-
+				case 21:
+					fread(&entity->yaw, sizeof(real_t), 1, fp);
+					fread(&entity->skill[9], sizeof(Sint32), 1, fp);
 				default:
 					break;
 			}
@@ -474,9 +487,23 @@ int saveMap(char* filename2)
 					myStats = entity->getStats();
 					fwrite(&myStats->sex, sizeof(sex_t), 1, fp);
 					fwrite(&myStats->name, sizeof(char[128]), 1, fp);
+					fwrite(&myStats->HP, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->MAXHP, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->OLDHP, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->MP, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->MAXMP, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->STR, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->DEX, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->CON, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->INT, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->PER, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->CHR, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->LVL, sizeof(Sint32), 1, fp);
+					fwrite(&myStats->GOLD, sizeof(Sint32), 1, fp);
 					break;
-
+				case 21:
+					fwrite(&entity->yaw, sizeof(real_t), 1, fp);
+					fwrite(&entity->skill[9], sizeof(Sint32), 1, fp);
 				default:
 					break;
 			}

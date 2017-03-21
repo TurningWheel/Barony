@@ -2377,10 +2377,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 5.5;
-				entity->yaw = PI / 2;
+				entity->yaw = entity->yaw * (PI / 2); //set to 0 by default in editor, can be set 0-3
 				entity->behavior = &actChest;
 				entity->sprite = 188;
-				entity->skill[9] = -1; //Set default chest as random category < 0
+				//entity->skill[9] = -1; //Set default chest as random category < 0
 
 				childEntity = newEntity(216, 0, map->entities);
 				childEntity->parent = entity->getUID();
@@ -2391,7 +2391,7 @@ void assignActions(map_t* map)
 				childEntity->z = entity->z - 2.75;
 				childEntity->focalx = 3;
 				childEntity->focalz = -.75;
-				childEntity->yaw = PI / 2;
+				childEntity->yaw = entity->yaw;
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actChestLid;

@@ -179,4 +179,6 @@ void buttonSpriteProperties(button_t* my);
 void buttonSpritePropertiesConfirm(button_t* my);
 void buttonCloseSpriteSubwindow(button_t* my);
 
+int checkSpriteType(Sint32 sprite);
+
 #define TICKS_PER_SECOND 50

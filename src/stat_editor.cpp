@@ -16,7 +16,7 @@
 Stat::Stat()
 {
 	this->type = NOTHING;
-	this->sex = static_cast<sex_t>(rand() % 10);
+	this->sex = static_cast<sex_t>(rand() % 2);
 	this->appearance = 0;
 	strcpy(this->name, "Set Via Map");
 	strcpy(this->obituary, language[1500]);

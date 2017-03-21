@@ -970,80 +970,142 @@ void buttonCloseSubwindow(button_t* my)
 
 void buttonSpriteProperties(button_t* my)
 {
+	button_t* button;
+	Stat* tmpSpriteStats = NULL;
+
 	if ( selectedEntity != NULL )
 	{
-		Stat* spriteStats = selectedEntity->getStats();
-		if ( spriteStats != nullptr )
+		editproperty = 0;
+		for ( int i = 0; i < (sizeof(spriteProperties) / sizeof(spriteProperties[0])); i++ )
 		{
-			button_t* button;
-			editproperty = 0;
-			//strcpy(spriteProperties[0], spriteStats->name);
-			strcpy(spriteProperties[1], "");
-			strcpy(spriteProperties[2], "");
-			snprintf(spriteProperties[1], 4, "%d", spriteStats->sex);
-			snprintf(spriteProperties[2], 4, "%d", spriteStats->MAXHP);
-			inputstr = spriteStats->name;
-			//snprintf(widthtext, 4, "%d", map.width);
-			//snprintf(heighttext, 4, "%d", map.height);
-			//strcpy(nametext, map.name);
-			//strcpy(authortext, map.author);
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 2;
-			subx1 = xres / 2 - 160;
-			subx2 = xres / 2 + 160;
-			suby1 = yres / 2 - 80;
-			suby2 = yres / 2 + 80;
-			strcpy(subtext, "Sprite properties:");
-
-			button = newButton();
-			strcpy(button->label, "  OK  ");
-			button->x = subx2 - 64;
-			button->y = suby2 - 48;
-			button->sizex = 56;
-			button->sizey = 16;
-			button->action = &buttonSpritePropertiesConfirm;
-			button->visible = 1;
-			button->focused = 1;
-
-			button = newButton();
-			strcpy(button->label, "Cancel");
-			button->x = subx2 - 64;
-			button->y = suby2 - 24;
-			button->sizex = 56;
-			button->sizey = 16;
-			button->action = &buttonCloseSpriteSubwindow;
-			button->visible = 1;
-			button->focused = 1;
-
-			button = newButton();
-			strcpy(button->label, "X");
-			button->x = subx2 - 16;
-			button->y = suby1;
-			button->sizex = 16;
-			button->sizey = 16;
-			button->action = &buttonCloseSpriteSubwindow;
-			button->visible = 1;
-			button->focused = 1;
+			strcpy(spriteProperties[i], "");
 		}
+
+		int spriteType = checkSpriteType(selectedEntity->sprite);
+		switch ( spriteType )
+		{
+			case 1:
+				tmpSpriteStats = selectedEntity->getStats();
+				if ( tmpSpriteStats != nullptr )
+				{
+					strcpy(spriteProperties[0], tmpSpriteStats->name);
+					snprintf(spriteProperties[1], 4, "%d", tmpSpriteStats->MAXHP);
+					snprintf(spriteProperties[2], 4, "%d", tmpSpriteStats->HP);
+					snprintf(spriteProperties[3], 4, "%d", tmpSpriteStats->MAXMP);
+					snprintf(spriteProperties[4], 4, "%d", tmpSpriteStats->MP);
+					snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
+					snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
+					snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
+					snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
+					snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
+					snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
+					snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
+					snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
+					inputstr = spriteProperties[0];
+
+					cursorflash = ticks;
+					menuVisible = 0;
+					subwindow = 1;
+					newwindow = 2;
+					subx1 = xres / 2 - 160;
+					subx2 = xres / 2 + 160;
+					suby1 = yres / 2 - 160;
+					suby2 = yres / 2 + 160;
+					strcpy(subtext, "Sprite properties:");
+				}
+				tmpSpriteStats = NULL;
+				break;
+			case 2:
+				snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->yaw);
+				snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
+				inputstr = spriteProperties[0];
+				cursorflash = ticks;
+				menuVisible = 0;
+				subwindow = 1;
+				newwindow = 3;
+				subx1 = xres / 2 - 160;
+				subx2 = xres / 2 + 160;
+				suby1 = yres / 2 - 80;
+				suby2 = yres / 2 + 80;
+				strcpy(subtext, "Sprite properties:");
+				break;
+			default:
+				break;
+		}
+
+		button = newButton();
+		strcpy(button->label, "  OK  ");
+		button->x = subx2 - 64;
+		button->y = suby2 - 48;
+		button->sizex = 56;
+		button->sizey = 16;
+		button->action = &buttonSpritePropertiesConfirm;
+		button->visible = 1;
+		button->focused = 1;
+
+		button = newButton();
+		strcpy(button->label, "Cancel");
+		button->x = subx2 - 64;
+		button->y = suby2 - 24;
+		button->sizex = 56;
+		button->sizey = 16;
+		button->action = &buttonCloseSpriteSubwindow;
+		button->visible = 1;
+		button->focused = 1;
+
+		button = newButton();
+		strcpy(button->label, "X");
+		button->x = subx2 - 16;
+		button->y = suby1;
+		button->sizex = 16;
+		button->sizey = 16;
+		button->action = &buttonCloseSpriteSubwindow;
+		button->visible = 1;
+		button->focused = 1;
 	}
 }
 
 void buttonSpritePropertiesConfirm(button_t* my)
 {
+	Stat* tmpSpriteStats = NULL;
 	if ( selectedEntity != NULL )
 	{
-		Stat* spriteStats = selectedEntity->getStats();
-		if ( spriteStats != nullptr )
+		int spriteType = checkSpriteType(selectedEntity->sprite);
+		switch (spriteType)
 		{
-			spriteStats->sex = (sex_t)atoi(spriteProperties[1]);
-			spriteStats->MAXHP = (Sint32)atoi(spriteProperties[2]);
-			strcpy(message, "                       Modified sprite properties.");
-			messagetime = 60;
-			buttonCloseSpriteSubwindow(my);
+			case 1:
+				tmpSpriteStats = selectedEntity->getStats();
+				if ( tmpSpriteStats != nullptr )
+				{
+					strcpy(tmpSpriteStats->name, spriteProperties[0]);
+					tmpSpriteStats->MAXHP = (Sint32)atoi(spriteProperties[1]);
+					tmpSpriteStats->HP = (Sint32)atoi(spriteProperties[2]);
+					tmpSpriteStats->MAXMP = (Sint32)atoi(spriteProperties[3]);
+					tmpSpriteStats->MP = (Sint32)atoi(spriteProperties[4]);
+					tmpSpriteStats->LVL = (Sint32)atoi(spriteProperties[5]);
+					tmpSpriteStats->GOLD = (Sint32)atoi(spriteProperties[6]);
+					tmpSpriteStats->STR = (Sint32)atoi(spriteProperties[7]);
+					tmpSpriteStats->DEX = (Sint32)atoi(spriteProperties[8]);
+					tmpSpriteStats->CON = (Sint32)atoi(spriteProperties[9]);
+					tmpSpriteStats->INT = (Sint32)atoi(spriteProperties[10]);
+					tmpSpriteStats->PER = (Sint32)atoi(spriteProperties[11]);
+					tmpSpriteStats->CHR = (Sint32)atoi(spriteProperties[12]);
+				}
+				tmpSpriteStats = NULL;
+				break;
+			case 2:
+				selectedEntity->yaw = (real_t)atoi(spriteProperties[0]);
+				selectedEntity->skill[9] = (Sint32)atoi(spriteProperties[1]);
+				break;
+			default:
+				break;
 		}
+		strcpy(message, "                       Modified sprite properties.");
+		messagetime = 60;
+		
+		
 	}
+	buttonCloseSpriteSubwindow(my);
 }
 
 void buttonCloseSpriteSubwindow(button_t* my)
