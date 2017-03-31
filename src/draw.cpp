@@ -9,10 +9,13 @@
 
 -------------------------------------------------------------------------------*/
 
+#pragma once
+
 #include "main.hpp"
 #include "hash.hpp"
 #include "entity.hpp"
 #include "player.hpp"
+#include "editor.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1165,14 +1168,185 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
-					char test[1024] = "test";
-					ttfPrintText(ttf8, pos.x + 10, pos.y - 10, test);
-					if ( entity->getStats() != nullptr ) {
-						snprintf(test, sizeof(entity->getStats()->name), "%s", entity->getStats()->name);
-						ttfPrintText(ttf8, pos.x + 10, pos.y - 30, test);
-						snprintf(test, 4, "%d", entity->getStats()->MAXHP);
-						ttfPrintText(ttf8, pos.x + 10, pos.y - 40, test);
+					int spriteType = checkSpriteType(selectedEntity->sprite);
+					char tmpStr[128] = "";
+					char tmpStr2[128] = "";
+					int padx = pos.x + 10;
+					int pady = pos.y - 40;
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					Uint32 colorWhite = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					switch ( spriteType )
+					{
+						case 1: //monsters
+							pady += 10;
+							if ( entity->getStats() != nullptr ) {
+								strcpy(tmpStr, spriteEditorName(selectedEntity->sprite));
+								ttfPrintText(ttf8, padx, pady - 10, tmpStr);
+								snprintf(tmpStr, sizeof(entity->getStats()->name), "Name: %s", entity->getStats()->name);
+								ttfPrintText(ttf8, padx, pady, tmpStr);
+								snprintf(tmpStr, 10, "HP: %d", entity->getStats()->MAXHP);
+								ttfPrintText(ttf8, padx, pady + 10, tmpStr);
+								snprintf(tmpStr, 10, "Level: %d", entity->getStats()->LVL);
+								ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+								//snprintf(tmpStr, 10, "Slot: %d", itemSlotSelected);
+								//ttfPrintText(ttf8, padx, pady - 20, tmpStr);
+							}
+
+
+							break;
+						case 2: //chest
+							pady += 5;
+							strcpy(tmpStr, spriteEditorName(selectedEntity->sprite));
+							ttfPrintText(ttf8, padx, pady, tmpStr);
+							switch ( (int)entity->yaw )
+							{
+								case 0:
+									strcpy(tmpStr, "Facing: EAST");
+									break;
+								case 1:
+									strcpy(tmpStr, "Facing: SOUTH");
+									break;
+								case 2:
+									strcpy(tmpStr, "Facing: WEST");
+									break;
+								case 3:
+									strcpy(tmpStr, "Facing: NORTH");
+									break;
+								default:
+									strcpy(tmpStr, "Facing: Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx, pady + 10, tmpStr);
+
+							switch ( entity->skill[9] )
+							{
+								case 0:
+									strcpy(tmpStr, "Type: Random");
+									break;
+								case 1:
+									strcpy(tmpStr, "Type: Garbage");
+									break;
+								case 2:
+									strcpy(tmpStr, "Type: Food");
+									break;
+								case 3:
+									strcpy(tmpStr, "Type: Jewelry");
+									break;
+								case 4:
+									strcpy(tmpStr, "Type: Equipment");
+									break;
+								case 5:
+									strcpy(tmpStr, "Type: Tools");
+									break;
+								case 6:
+									strcpy(tmpStr, "Type: Magical");
+									break;
+								case 7:
+									strcpy(tmpStr, "Type: Potions");
+									break;
+								default:
+									strcpy(tmpStr, "Type: Random");
+									break;
+							}
+							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+							break;
+
+						case 3: //Items
+							pady += 5;
+							strcpy(tmpStr, itemNameStrings[selectedEntity->skill[10]]);
+							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
+							color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							pady += 2;
+
+							strcpy(tmpStr, "Status: ");
+							ttfPrintTextColor(ttf8, padx, pady - 10, colorWhite, 0, tmpStr);
+							switch ( (int)selectedEntity->skill[11] )
+							{
+								case 1:
+									strcpy(tmpStr, "Broken");
+									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+									break;
+								case 2:
+									strcpy(tmpStr, "Decrepit");
+									color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+									break;
+								case 3:
+									strcpy(tmpStr, "Worn");
+									color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+									break;
+								case 4:
+									strcpy(tmpStr, "Servicable");
+									color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+									break;
+								case 5:
+									strcpy(tmpStr, "Excellent");
+									color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									break;
+								default:
+									strcpy(tmpStr, "?");
+									color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+									break;
+							}
+							ttfPrintTextColor(ttf8, padx + 56, pady - 10, color, 0, tmpStr);
+
+							strcpy(tmpStr, "Bless: ");
+							ttfPrintTextColor(ttf8, padx, pady, colorWhite, 0, tmpStr);
+							if ( selectedEntity->skill[12] < 0 )
+							{
+								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
+								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							}
+							else if ( selectedEntity->skill[12] == 0 )
+							{
+								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
+								color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							}
+							else if ( selectedEntity->skill[12] == 10 )
+							{
+								strcpy(tmpStr2, "?");
+								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+							}
+							else
+							{
+								snprintf(tmpStr2, 10, "+%d", selectedEntity->skill[12]);
+								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							}
+							ttfPrintTextColor(ttf8, padx + 48, pady, color, 0, tmpStr2);
+
+							strcpy(tmpStr, "Qty: ");
+							ttfPrintTextColor(ttf8, padx, pady + 10, colorWhite, 0, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[13]);
+							ttfPrintTextColor(ttf8, padx + 32, pady + 10, colorWhite, 0, tmpStr2);
+
+							pady += 2;
+							strcpy(tmpStr, "Identified: ");
+							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 0, tmpStr);
+							if ( (int)selectedEntity->skill[15] == 1 )
+							{
+								strcpy(tmpStr2, "No");
+								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+							}
+							else if ( (int)selectedEntity->skill[15] == 2 )
+							{
+								strcpy(tmpStr2, "Yes");
+								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							}
+							else
+							{
+								strcpy(tmpStr2, "?");
+								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+							}
+							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 0, tmpStr2);
+							break;
+
+						default:
+							strcpy(tmpStr, spriteEditorName(selectedEntity->sprite));
+							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+							break;
+
 					}
+					
 
 
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);

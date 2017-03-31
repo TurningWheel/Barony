@@ -182,7 +182,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		node->element = NULL;
 		node->deconstructor = &emptyDeconstructor;
 
-		myStats = new Stat();
+		myStats = new Stat(entity->sprite);
 		node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->size = sizeof(myStats);

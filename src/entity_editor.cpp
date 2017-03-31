@@ -123,3 +123,4 @@ Stat* Entity::getStats()
 
 	return nullptr;
 }
+

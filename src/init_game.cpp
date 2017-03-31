@@ -333,7 +333,7 @@ int initGame()
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
 		players[c] = new Player();
-		stats[c] = new Stat();
+		stats[c] = new Stat(0);
 		if (c > 0)
 		{
 			client_disconnected[c] = true;

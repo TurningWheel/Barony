@@ -252,29 +252,9 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			fread(&sprite, sizeof(Sint32), 1, fp);
 			entity = newEntity(sprite, 0, entlist);
 
-			switch ( sprite )
+			switch ( checkSpriteType(sprite) )
 			{
-				case 71:
-				case 70:
-				case 62:
-				case 48:
-				case 36:
-				case 35:
-				case 30:
-				case 27:
-				case 10:
-				case 83:
-				case 84:
-				case 85:
-				case 86:
-				case 87:
-				case 88:
-				case 89:
-				case 90:
-				case 91:
-				case 92:
-				case 93:
-				case 94:
+				case 1:
 					if ( multiplayer != CLIENT )
 					{
 						// need to give the entity its list stuff.
@@ -283,31 +263,41 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						node2->element = NULL;
 						node2->deconstructor = &emptyDeconstructor;
 
-						myStats = new Stat();
+						myStats = new Stat(entity->sprite);
 						node2 = list_AddNodeLast(&entity->children);
 						node2->element = myStats;
 						//					node2->deconstructor = &myStats->~Stat;
 						node2->size = sizeof(myStats);
+
+						fread(&myStats->sex, sizeof(sex_t), 1, fp);
+						fread(&myStats->name, sizeof(char[128]), 1, fp);
+						fread(&myStats->HP, sizeof(Sint32), 1, fp);
+						fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
+						fread(&myStats->OLDHP, sizeof(Sint32), 1, fp);
+						fread(&myStats->MP, sizeof(Sint32), 1, fp);
+						fread(&myStats->MAXMP, sizeof(Sint32), 1, fp);
+						fread(&myStats->STR, sizeof(Sint32), 1, fp);
+						fread(&myStats->DEX, sizeof(Sint32), 1, fp);
+						fread(&myStats->CON, sizeof(Sint32), 1, fp);
+						fread(&myStats->INT, sizeof(Sint32), 1, fp);
+						fread(&myStats->PER, sizeof(Sint32), 1, fp);
+						fread(&myStats->CHR, sizeof(Sint32), 1, fp);
+						fread(&myStats->LVL, sizeof(Sint32), 1, fp);
+						fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
+						//fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 					}
-					fread(&myStats->sex, sizeof(sex_t), 1, fp);
-					fread(&myStats->name, sizeof(char[128]), 1, fp);
-					fread(&myStats->HP, sizeof(Sint32), 1, fp);
-					fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
-					fread(&myStats->OLDHP, sizeof(Sint32), 1, fp);
-					fread(&myStats->MP, sizeof(Sint32), 1, fp);
-					fread(&myStats->MAXMP, sizeof(Sint32), 1, fp);
-					fread(&myStats->STR, sizeof(Sint32), 1, fp);
-					fread(&myStats->DEX, sizeof(Sint32), 1, fp);
-					fread(&myStats->CON, sizeof(Sint32), 1, fp);
-					fread(&myStats->INT, sizeof(Sint32), 1, fp);
-					fread(&myStats->PER, sizeof(Sint32), 1, fp);
-					fread(&myStats->CHR, sizeof(Sint32), 1, fp);
-					fread(&myStats->LVL, sizeof(Sint32), 1, fp);
-					fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
 					break;
-				case 21:
+				case 2:
 					fread(&entity->yaw, sizeof(real_t), 1, fp);
 					fread(&entity->skill[9], sizeof(Sint32), 1, fp);
+					break;
+				case 3:
+					fread(&entity->skill[10], sizeof(Sint32), 1, fp);
+					fread(&entity->skill[11], sizeof(Sint32), 1, fp);
+					fread(&entity->skill[12], sizeof(Sint32), 1, fp);
+					fread(&entity->skill[13], sizeof(Sint32), 1, fp);
+					fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+					break;
 				default:
 					break;
 			}
@@ -461,29 +451,9 @@ int saveMap(char* filename2)
 			entity = (Entity*) node->element;
 			fwrite(&entity->sprite, sizeof(Sint32), 1, fp);
 
-			switch ( entity->sprite )
+			switch ( checkSpriteType(entity->sprite) )
 			{
-				case 71:
-				case 70:
-				case 62:
-				case 48:
-				case 36:
-				case 35:
-				case 30:
-				case 27:
-				case 10:
-				case 83:
-				case 84:
-				case 85:
-				case 86:
-				case 87:
-				case 88:
-				case 89:
-				case 90:
-				case 91:
-				case 92:
-				case 93:
-				case 94:
+				case 1:
 					myStats = entity->getStats();
 					fwrite(&myStats->sex, sizeof(sex_t), 1, fp);
 					fwrite(&myStats->name, sizeof(char[128]), 1, fp);
@@ -500,10 +470,19 @@ int saveMap(char* filename2)
 					fwrite(&myStats->CHR, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->LVL, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->GOLD, sizeof(Sint32), 1, fp);
+					//fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 					break;
-				case 21:
+				case 2:
 					fwrite(&entity->yaw, sizeof(real_t), 1, fp);
 					fwrite(&entity->skill[9], sizeof(Sint32), 1, fp);
+					break;
+				case 3:
+					fwrite(&entity->skill[10], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[11], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[13], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					break;
 				default:
 					break;
 			}

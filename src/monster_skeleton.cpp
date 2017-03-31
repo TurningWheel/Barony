@@ -40,63 +40,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 40;
-		myStats->MAXHP = 40;
-		myStats->MP = 30;
-		myStats->MAXMP = 30;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 1;
-		myStats->DEX = -1;
-		myStats->CON = 0;
-		myStats->INT = -1;
-		myStats->PER = 1;
-		myStats->CHR = -3;
-		myStats->EXP = 0;
-		myStats->LVL = 2;
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
 		if ( !myStats->leader_uid )
 		{
 			myStats->leader_uid = 0;
 		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
-			{
-				myStats->PROFICIENCIES[c] = 0;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->PROFICIENCIES[PRO_SWORD] = 35;
-		myStats->PROFICIENCIES[PRO_MACE] = 50;
-		myStats->PROFICIENCIES[PRO_AXE] = 45;
-		myStats->PROFICIENCIES[PRO_POLEARM] = 25;
-		myStats->PROFICIENCIES[PRO_RANGED] = 35;
-		myStats->PROFICIENCIES[PRO_SHIELD] = 35;
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 	}
 
 	// torso

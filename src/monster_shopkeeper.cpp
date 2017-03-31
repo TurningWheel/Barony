@@ -116,46 +116,12 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			}
 		}
 
-		myStats->sex = MALE;
-		myStats->appearance = rand();
-		strcpy(myStats->name, language[158 + rand() % 26]);
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 300;
-		myStats->MAXHP = 300;
-		myStats->MP = 200;
-		myStats->MAXMP = 200;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 10;
-		myStats->DEX = 4;
-		myStats->CON = 10;
-		myStats->INT = 7;
-		myStats->PER = 7;
-		myStats->CHR = 3 + rand() % 4;
-		myStats->EXP = 0;
-		myStats->LVL = 10;
-		myStats->GOLD = 300 + rand() % 200;
-		myStats->HUNGER = 900;
+		
 		if ( !myStats->leader_uid )
 		{
 			myStats->leader_uid = 0;
 		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		myStats->PROFICIENCIES[PRO_MAGIC] = 50;
-		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		myStats->PROFICIENCIES[PRO_TRADING] = 75;
-		myStats->PROFICIENCIES[PRO_APPRAISAL] = 75;
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
+
 		myStats->weapon = newItem(SPELLBOOK_MAGICMISSILE, EXCELLENT, 0, 1, 0, false, NULL);
 
 		if ( rand() % 20 == 0 )

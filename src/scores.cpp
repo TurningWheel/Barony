@@ -49,7 +49,7 @@ score_t* scoreConstructor()
 		printlog( "failed to allocate memory for new score!\n" );
 		exit(1);
 	}
-	score->stats = new Stat();
+	score->stats = new Stat(0);
 	if ( !score->stats )
 	{
 		printlog( "failed to allocate memory for new stat!\n" );
@@ -724,7 +724,7 @@ void loadAllScores()
 			printlog( "failed to allocate memory for new score!\n" );
 			exit(1);
 		}
-		score->stats = new Stat();
+		score->stats = new Stat(0);
 		if ( !score->stats )
 		{
 			printlog( "failed to allocate memory for new stat!\n" );
@@ -2020,7 +2020,7 @@ list_t* loadGameFollowers()
 		int i;
 		for ( i = 0; i < numFollowers; i++ )
 		{
-			Stat* followerStats = new Stat();
+			Stat* followerStats = new Stat(0);
 
 			node_t* node = list_AddNodeLast(followerList);
 			node->element = followerStats;

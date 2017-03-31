@@ -37,57 +37,10 @@ void initRat(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 30;
-		myStats->MAXHP = 30;
-		myStats->MP = 10;
-		myStats->MAXMP = 10;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 0;
-		myStats->DEX = 2;
-		myStats->CON = 1;
-		myStats->INT = -2;
-		myStats->PER = 0;
-		myStats->CHR = -1;
-		myStats->EXP = 0;
-		myStats->LVL = 1;
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
 		if ( !myStats->leader_uid )
 		{
 			myStats->leader_uid = 0;
 		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
-			{
-				myStats->PROFICIENCIES[c] = 0;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 
 		if ( rand() % 4 )
 		{

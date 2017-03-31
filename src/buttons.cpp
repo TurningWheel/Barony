@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#pragma once
+
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
@@ -48,6 +50,31 @@ button_t* butAttributes;
 button_t* butClearMap;
 button_t* butHelp;
 button_t* butAbout;
+button_t* butMonsterHelm;
+button_t* butMonsterWeapon;
+button_t* butMonsterShield;
+button_t* butMonsterArmor;
+button_t* butMonsterRing;
+button_t* butMonsterAmulet;
+button_t* butMonsterBoots;
+button_t* butMonsterGloves;
+button_t* butMonsterItem1;
+button_t* butMonsterItem2;
+button_t* butMonsterItem3;
+button_t* butMonsterItem4;
+button_t* butMonsterItem5;
+button_t* butMonsterItem6;
+button_t* butMonsterCloak;
+button_t* butMonsterMask;
+button_t* butMonsterOK;
+button_t* butMonsterX;
+button_t* butMonsterCancel;
+button_t* butMonsterItemOK;
+button_t* butMonsterItemX;
+button_t* butMonsterItemCancel;
+button_t* butItemOK;
+button_t* butItemCancel;
+button_t* butItemX;
 
 // Corner buttons
 
@@ -606,6 +633,7 @@ void buttonDelete(button_t* my)
 	{
 		list_RemoveNode(selectedEntity->mynode);
 		selectedEntity = NULL;
+		lastSelectedEntity = NULL;
 	}
 	if (selectedarea)
 	{
@@ -971,7 +999,28 @@ void buttonCloseSubwindow(button_t* my)
 void buttonSpriteProperties(button_t* my)
 {
 	button_t* button;
+	int c = 0;
 	Stat* tmpSpriteStats = NULL;
+	int spriteType = 0;
+	int spacing = 20;
+	int pad_y2;
+	int pad_x3;
+	int pad_x4;
+	char tmpStr[32] = "";
+	int itemIndex = 0;
+
+	if ( selectedEntity == NULL && lastSelectedEntity != NULL )
+	{
+		if ( checkSpriteType(lastSelectedEntity->sprite) != 0 )
+		{
+			selectedEntity = lastSelectedEntity;
+		}
+		else
+		{
+			strcpy(message, "No properties available for previous sprite.");
+			messagetime = 60;
+		}
+	}
 
 	if ( selectedEntity != NULL )
 	{
@@ -981,140 +1030,1054 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(spriteProperties[i], "");
 		}
 
-		int spriteType = checkSpriteType(selectedEntity->sprite);
+		spriteType = checkSpriteType(selectedEntity->sprite);
 		switch ( spriteType )
 		{
-			case 1:
-				tmpSpriteStats = selectedEntity->getStats();
-				if ( tmpSpriteStats != nullptr )
-				{
-					strcpy(spriteProperties[0], tmpSpriteStats->name);
-					snprintf(spriteProperties[1], 4, "%d", tmpSpriteStats->MAXHP);
-					snprintf(spriteProperties[2], 4, "%d", tmpSpriteStats->HP);
-					snprintf(spriteProperties[3], 4, "%d", tmpSpriteStats->MAXMP);
-					snprintf(spriteProperties[4], 4, "%d", tmpSpriteStats->MP);
-					snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
-					snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
-					snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
-					snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
-					snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
-					snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
-					snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
-					snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
-					inputstr = spriteProperties[0];
-
-					cursorflash = ticks;
-					menuVisible = 0;
-					subwindow = 1;
-					newwindow = 2;
-					subx1 = xres / 2 - 160;
-					subx2 = xres / 2 + 160;
-					suby1 = yres / 2 - 160;
-					suby2 = yres / 2 + 160;
-					strcpy(subtext, "Sprite properties:");
-				}
-				tmpSpriteStats = NULL;
-				break;
-			case 2:
-				snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->yaw);
-				snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
+		case 1: //monsters
+			tmpSpriteStats = selectedEntity->getStats();
+			if ( tmpSpriteStats != nullptr )
+			{
+				strcpy(spriteProperties[0], tmpSpriteStats->name);
+				snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
+				snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
+				snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
+				snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
+				snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
+				snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
+				snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
+				snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
+				snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
+				snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
+				snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
+				snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
 				inputstr = spriteProperties[0];
+
 				cursorflash = ticks;
 				menuVisible = 0;
 				subwindow = 1;
-				newwindow = 3;
+				newwindow = 2;
 				subx1 = xres / 2 - 160;
 				subx2 = xres / 2 + 160;
-				suby1 = yres / 2 - 80;
-				suby2 = yres / 2 + 80;
+				suby1 = yres / 2 - 170;
+				suby2 = yres / 2 + 170;
 				strcpy(subtext, "Sprite properties:");
+			}
+			tmpSpriteStats = NULL;
+			break;
+		case 2: //chests
+			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->yaw);
+			snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 3;
+			subx1 = xres / 2 - 160;
+			subx2 = xres / 2 + 160;
+			suby1 = yres / 2 - 105;
+			suby2 = yres / 2 + 105;
+			strcpy(subtext, "Sprite Properties:");
+			break;
+		case 3: //items
+			itemSelect = 1;
+			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->skill[10]); //ID
+			snprintf(spriteProperties[1], 4, "%d", (int)selectedEntity->skill[11]); //status
+			if ( (int)selectedEntity->skill[12] == 10 )
+			{
+				strcpy(spriteProperties[2], "00"); //bless random
+			}
+			else
+			{
+				snprintf(spriteProperties[2], 4, "%d", (int)selectedEntity->skill[12]); //bless
+			}
+			snprintf(spriteProperties[3], 4, "%d", (int)selectedEntity->skill[13]); //count
+			snprintf(spriteProperties[4], 4, "%d", (int)selectedEntity->skill[15]); //identified
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 4;
+			slidery = 0;
+			subx1 = xres / 2 - 200;
+			subx2 = xres / 2 + 200;
+			suby1 = yres / 2 - 122;
+			suby2 = yres / 2 + 122;
+			strcpy(subtext, "Item Properties:");
+			break;
+		default:
+			strcpy(message, "No properties available for current sprite.");
+			messagetime = 60;
+			break;
+		}
+
+		//remaining buttons
+		switch ( spriteType )
+		{
+			case 1: //monsters
+				tmpSpriteStats = selectedEntity->getStats();
+				if ( tmpSpriteStats != nullptr )
+				{
+
+					butMonsterOK = newButton();
+					strcpy(butMonsterOK->label, "  OK  ");
+					butMonsterOK->x = subx2 - 64;
+					butMonsterOK->y = suby2 - 48;
+					butMonsterOK->sizex = 56;
+					butMonsterOK->sizey = 16;
+					butMonsterOK->action = &buttonSpritePropertiesConfirm;
+					butMonsterOK->visible = 1;
+					butMonsterOK->focused = 1;
+
+					butMonsterCancel = newButton();
+					strcpy(butMonsterCancel->label, "Cancel");
+					butMonsterCancel->x = subx2 - 64;
+					butMonsterCancel->y = suby2 - 24;
+					butMonsterCancel->sizex = 56;
+					butMonsterCancel->sizey = 16;
+					butMonsterCancel->action = &buttonCloseSpriteSubwindow;
+					butMonsterCancel->visible = 1;
+					butMonsterCancel->focused = 1;
+
+					butMonsterX = newButton();
+					strcpy(butMonsterX->label, "X");
+					butMonsterX->x = subx2 - 16;
+					butMonsterX->y = suby1;
+					butMonsterX->sizex = 16;
+					butMonsterX->sizey = 16;
+					butMonsterX->action = &buttonCloseSpriteSubwindow;
+					butMonsterX->visible = 1;
+					butMonsterX->focused = 1;
+
+					pad_y2 = suby1 + 28 + 2 * spacing;
+					pad_x3 = 40;
+					pad_x4 = subx2 - 112;
+					itemIndex = 0;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterHelm = newButton();
+						strcpy(butMonsterHelm->label, tmpStr);
+						butMonsterHelm->x = pad_x4 - 10;
+						butMonsterHelm->y = pad_y2 + spacing - 4;
+						butMonsterHelm->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterHelm->sizey = 16;
+						butMonsterHelm->action = &buttonMonsterItems;
+						butMonsterHelm->visible = 1;
+						butMonsterHelm->focused = 1;
+					}
+
+					pad_y2 += spacing * 2;
+					itemIndex = 6;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterAmulet = newButton();
+					strcpy(butMonsterAmulet->label, tmpStr);
+					butMonsterAmulet->x = pad_x4 - 10;
+					butMonsterAmulet->y = pad_y2 + spacing - 4;
+					butMonsterAmulet->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterAmulet->sizey = 16;
+					butMonsterAmulet->action = &buttonMonsterItems;
+					butMonsterAmulet->visible = 1;
+					butMonsterAmulet->focused = 1;
+
+					pad_y2 += spacing * 2;
+					itemIndex = 3;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterArmor = newButton();
+						strcpy(butMonsterArmor->label, tmpStr);
+						butMonsterArmor->x = pad_x4 - 10;
+						butMonsterArmor->y = pad_y2 + spacing - 4;
+						butMonsterArmor->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterArmor->sizey = 16;
+						butMonsterArmor->action = &buttonMonsterItems;
+						butMonsterArmor->visible = 1;
+						butMonsterArmor->focused = 1;
+					}
+
+					pad_y2 += spacing * 2;
+					itemIndex = 4;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterBoots = newButton();
+						strcpy(butMonsterBoots->label, tmpStr);
+						butMonsterBoots->x = pad_x4 - 10;
+						butMonsterBoots->y = pad_y2 + spacing - 4;
+						butMonsterBoots->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterBoots->sizey = 16;
+						butMonsterBoots->action = &buttonMonsterItems;
+						butMonsterBoots->visible = 1;
+						butMonsterBoots->focused = 1;
+					}
+
+					pad_y2 = suby1 + 28 + 2 * spacing; //reset y coord
+					pad_y2 += 16;
+					pad_x4 -= 64;
+					itemIndex = 7;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterCloak = newButton();
+						strcpy(butMonsterCloak->label, tmpStr);
+						butMonsterCloak->x = pad_x4 - 10;
+						butMonsterCloak->y = pad_y2 + spacing - 4;
+						butMonsterCloak->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterCloak->sizey = 16;
+						butMonsterCloak->action = &buttonMonsterItems;
+						butMonsterCloak->visible = 1;
+						butMonsterCloak->focused = 1;
+					}
+					
+					pad_x4 += 64 * 2;
+					itemIndex = 8;
+
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterMask = newButton();
+						strcpy(butMonsterMask->label, tmpStr);
+						butMonsterMask->x = pad_x4 - 10;
+						butMonsterMask->y = pad_y2 + spacing - 4;
+						butMonsterMask->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterMask->sizey = 16;
+						butMonsterMask->action = &buttonMonsterItems;
+						butMonsterMask->visible = 1;
+						butMonsterMask->focused = 1;
+					}
+
+					pad_y2 += spacing * 2;
+					itemIndex = 2;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterShield = newButton();
+						strcpy(butMonsterShield->label, tmpStr);
+						butMonsterShield->x = pad_x4 - 10;
+						butMonsterShield->y = pad_y2 + spacing - 4;
+						butMonsterShield->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterShield->sizey = 16;
+						butMonsterShield->action = &buttonMonsterItems;
+						butMonsterShield->visible = 1;
+						butMonsterShield->focused = 1;
+					}
+
+					pad_x4 -= 64 * 2;
+					itemIndex = 1;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterWeapon = newButton();
+						strcpy(butMonsterWeapon->label, tmpStr);
+						butMonsterWeapon->x = pad_x4 - 10;
+						butMonsterWeapon->y = pad_y2 + spacing - 4;
+						butMonsterWeapon->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterWeapon->sizey = 16;
+						butMonsterWeapon->action = &buttonMonsterItems;
+						butMonsterWeapon->visible = 1;
+						butMonsterWeapon->focused = 1;
+					}
+
+					pad_y2 += spacing * 2;
+					itemIndex = 5;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterRing = newButton();
+					strcpy(butMonsterRing->label, tmpStr);
+					butMonsterRing->x = pad_x4 - 10;
+					butMonsterRing->y = pad_y2 + spacing - 4;
+					butMonsterRing->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterRing->sizey = 16;
+					butMonsterRing->action = &buttonMonsterItems;
+					butMonsterRing->visible = 1;
+					butMonsterRing->focused = 1;
+
+					pad_x4 += 64 * 2;
+					itemIndex = 9;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterGloves = newButton();
+					strcpy(butMonsterGloves->label, tmpStr);
+					butMonsterGloves->x = pad_x4 - 10;
+					butMonsterGloves->y = pad_y2 + spacing - 4;
+					butMonsterGloves->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterGloves->sizey = 16;
+					butMonsterGloves->action = &buttonMonsterItems;
+					butMonsterGloves->visible = 1;
+					butMonsterGloves->focused = 1;
+					
+					
+					pad_y2 += 32 + spacing * 2;
+					itemIndex = 12;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterItem3 = newButton();
+					strcpy(butMonsterItem3->label, tmpStr);
+					butMonsterItem3->x = pad_x4 - 10;
+					butMonsterItem3->y = pad_y2 + spacing - 4;
+					butMonsterItem3->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterItem3->sizey = 16;
+					butMonsterItem3->action = &buttonMonsterItems;
+					butMonsterItem3->visible = 1;
+					butMonsterItem3->focused = 1;
+
+					itemIndex = 15;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterItem6 = newButton();
+					strcpy(butMonsterItem6->label, tmpStr);
+					butMonsterItem6->x = pad_x4 - 10;
+					butMonsterItem6->y = pad_y2 + 2 * spacing - 4;
+					butMonsterItem6->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterItem6->sizey = 16;
+					butMonsterItem6->action = &buttonMonsterItems;
+					butMonsterItem6->visible = 1;
+					butMonsterItem6->focused = 1;
+
+					pad_x4 -= 64;
+					itemIndex = 11;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterItem2 = newButton();
+					strcpy(butMonsterItem2->label, tmpStr);
+					butMonsterItem2->x = pad_x4 - 10;
+					butMonsterItem2->y = pad_y2 + spacing - 4;
+					butMonsterItem2->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterItem2->sizey = 16;
+					butMonsterItem2->action = &buttonMonsterItems;
+					butMonsterItem2->visible = 1;
+					butMonsterItem2->focused = 1;
+
+					itemIndex = 14;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterItem5 = newButton();
+					strcpy(butMonsterItem5->label, tmpStr);
+					butMonsterItem5->x = pad_x4 - 10;
+					butMonsterItem5->y = pad_y2 + 2 * spacing - 4;
+					butMonsterItem5->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterItem5->sizey = 16;
+					butMonsterItem5->action = &buttonMonsterItems;
+					butMonsterItem5->visible = 1;
+					butMonsterItem5->focused = 1;
+
+					pad_x4 -= 64;
+					itemIndex = 10;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					}
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterItem1 = newButton();
+					strcpy(butMonsterItem1->label, tmpStr);
+					butMonsterItem1->x = pad_x4 - 10;
+					butMonsterItem1->y = pad_y2 + spacing - 4;
+					butMonsterItem1->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterItem1->sizey = 16;
+					butMonsterItem1->action = &buttonMonsterItems;
+					butMonsterItem1->visible = 1;
+					butMonsterItem1->focused = 1;
+
+					itemIndex = 13;
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					{
+						strcpy(tmpStr, "NULL");
+					} 
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					{
+						strcpy(tmpStr, "RAND");
+					}
+					else
+					{
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+					}
+					butMonsterItem4 = newButton();
+					strcpy(butMonsterItem4->label, tmpStr);
+					butMonsterItem4->x = pad_x4 - 10;
+					butMonsterItem4->y = pad_y2 + 2 * spacing - 4;
+					butMonsterItem4->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+					butMonsterItem4->sizey = 16;
+					butMonsterItem4->action = &buttonMonsterItems;
+					butMonsterItem4->visible = 1;
+					butMonsterItem4->focused = 1;
+				}
+				break;
+			case 3: //items
+				butItemOK = newButton();
+				strcpy(butItemOK->label, "  OK  ");
+				butItemOK->x = subx2 - 128;
+				butItemOK->y = suby2 - 24;
+				butItemOK->sizex = 56;
+				butItemOK->sizey = 16;
+				butItemOK->action = &buttonSpritePropertiesConfirm;
+				butItemOK->visible = 1;
+				butItemOK->focused = 1;
+
+				butItemCancel = newButton();
+				strcpy(butItemCancel->label, "Cancel");
+				butItemCancel->x = subx2 - 64;
+				butItemCancel->y = suby2 - 24;
+				butItemCancel->sizex = 56;
+				butItemCancel->sizey = 16;
+				butItemCancel->action = &buttonCloseSpriteSubwindow;
+				butItemCancel->visible = 1;
+				butItemCancel->focused = 1;
+
+				butItemX = newButton();
+				strcpy(butItemX->label, "X");
+				butItemX->x = subx2 - 16;
+				butItemX->y = suby1;
+				butItemX->sizex = 16;
+				butItemX->sizey = 16;
+				butItemX->action = &buttonCloseSpriteSubwindow;
+				butItemX->visible = 1;
+				butItemX->focused = 1;
 				break;
 			default:
+				button = newButton();
+				strcpy(button->label, "  OK  ");
+				button->x = subx2 - 64;
+				button->y = suby2 - 48;
+				button->sizex = 56;
+				button->sizey = 16;
+				button->action = &buttonSpritePropertiesConfirm;
+				button->visible = 1;
+				button->focused = 1;
 				break;
 		}
 
-		button = newButton();
-		strcpy(button->label, "  OK  ");
-		button->x = subx2 - 64;
-		button->y = suby2 - 48;
-		button->sizex = 56;
-		button->sizey = 16;
-		button->action = &buttonSpritePropertiesConfirm;
-		button->visible = 1;
-		button->focused = 1;
+		if ( spriteType != 1 && spriteType != 3 )
+		{
+			button = newButton();
+			strcpy(button->label, "Cancel");
+			button->x = subx2 - 64;
+			button->y = suby2 - 24;
+			button->sizex = 56;
+			button->sizey = 16;
+			button->action = &buttonCloseSpriteSubwindow;
+			button->visible = 1;
+			button->focused = 1;
 
-		button = newButton();
-		strcpy(button->label, "Cancel");
-		button->x = subx2 - 64;
-		button->y = suby2 - 24;
-		button->sizex = 56;
-		button->sizey = 16;
-		button->action = &buttonCloseSpriteSubwindow;
-		button->visible = 1;
-		button->focused = 1;
-
-		button = newButton();
-		strcpy(button->label, "X");
-		button->x = subx2 - 16;
-		button->y = suby1;
-		button->sizex = 16;
-		button->sizey = 16;
-		button->action = &buttonCloseSpriteSubwindow;
-		button->visible = 1;
-		button->focused = 1;
+			button = newButton();
+			strcpy(button->label, "X");
+			button->x = subx2 - 16;
+			button->y = suby1;
+			button->sizex = 16;
+			button->sizey = 16;
+			button->action = &buttonCloseSpriteSubwindow;
+			button->visible = 1;
+			button->focused = 1;
+		}
 	}
 }
 
 void buttonSpritePropertiesConfirm(button_t* my)
 {
 	Stat* tmpSpriteStats = NULL;
+	button_t* button = NULL;
 	if ( selectedEntity != NULL )
 	{
 		int spriteType = checkSpriteType(selectedEntity->sprite);
 		switch (spriteType)
 		{
-			case 1:
+			case 1: //monsters
 				tmpSpriteStats = selectedEntity->getStats();
 				if ( tmpSpriteStats != nullptr )
 				{
-					strcpy(tmpSpriteStats->name, spriteProperties[0]);
-					tmpSpriteStats->MAXHP = (Sint32)atoi(spriteProperties[1]);
-					tmpSpriteStats->HP = (Sint32)atoi(spriteProperties[2]);
-					tmpSpriteStats->MAXMP = (Sint32)atoi(spriteProperties[3]);
-					tmpSpriteStats->MP = (Sint32)atoi(spriteProperties[4]);
-					tmpSpriteStats->LVL = (Sint32)atoi(spriteProperties[5]);
-					tmpSpriteStats->GOLD = (Sint32)atoi(spriteProperties[6]);
-					tmpSpriteStats->STR = (Sint32)atoi(spriteProperties[7]);
-					tmpSpriteStats->DEX = (Sint32)atoi(spriteProperties[8]);
-					tmpSpriteStats->CON = (Sint32)atoi(spriteProperties[9]);
-					tmpSpriteStats->INT = (Sint32)atoi(spriteProperties[10]);
-					tmpSpriteStats->PER = (Sint32)atoi(spriteProperties[11]);
-					tmpSpriteStats->CHR = (Sint32)atoi(spriteProperties[12]);
+					if ( my == butMonsterItemOK )
+					{
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6] = (Sint32)atoi(spriteProperties[0]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 1] = (Sint32)atoi(spriteProperties[1]);
+						if ( strcmp(spriteProperties[2], "00") == 0 )
+						{
+							selectedEntity->skill[12] = 10; //bless random
+						}
+						else
+						{
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 2] = (Sint32)atoi(spriteProperties[2]); //bless
+						}
+						if ( strcmp(spriteProperties[3], "0") == 0 )
+						{
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 2] = 1; //reset quantity to 1
+						}
+						if ( strcmp(spriteProperties[3], "0") == 0 )
+						{
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 3] = 1; //reset quantity to 1
+						}
+						else
+						{
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 3] = (Sint32)atoi(spriteProperties[3]); //quantity
+						}
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 4] = (Sint32)atoi(spriteProperties[4]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 5] = (Sint32)atoi(spriteProperties[5]);
+						newwindow = 2;
+						
+						/*button = newButton();
+						strcpy(button->label, "Cancel");
+						button->x = subx2 - 64;
+						button->y = suby2 - 24;
+						button->sizex = 56;
+						button->sizey = 16;
+						button->action = &buttonCloseSpriteSubwindow;
+						button->visible = 1;
+						button->focused = 1;
+
+						button = newButton();
+						strcpy(button->label, "X");
+						button->x = subx2 - 16;
+						button->y = suby1;
+						button->sizex = 16;
+						button->sizey = 16;
+						button->action = &buttonCloseSpriteSubwindow;
+						button->visible = 1;
+						button->focused = 1;
+
+						button = newButton();
+						strcpy(button->label, "  OK  ");
+						button->x = subx2 - 64;
+						button->y = suby2 - 48;
+						button->sizex = 56;
+						button->sizey = 16;
+						button->action = &buttonSpritePropertiesConfirm;
+						button->visible = 1;
+						button->focused = 1;*/
+
+						//butItemOK->visible = 0;
+						//butItemCancel->visible = 0;
+						//butItemX->visible = 0;
+						if ( butMonsterItemOK != NULL )
+						{
+							butMonsterItemOK->visible = 0;
+						}
+						if ( butMonsterItemX != NULL )
+						{
+							butMonsterItemX->visible = 0;
+						}
+						if ( butMonsterItemCancel != NULL )
+						{
+							butMonsterItemCancel->visible = 0;
+						}
+					}
+					else
+					{
+						strcpy(tmpSpriteStats->name, spriteProperties[0]);
+						tmpSpriteStats->MAXHP = (Sint32)atoi(spriteProperties[1]);
+						tmpSpriteStats->HP = (Sint32)atoi(spriteProperties[2]);
+						tmpSpriteStats->MAXMP = (Sint32)atoi(spriteProperties[3]);
+						tmpSpriteStats->MP = (Sint32)atoi(spriteProperties[4]);
+						tmpSpriteStats->LVL = (Sint32)atoi(spriteProperties[5]);
+						tmpSpriteStats->GOLD = (Sint32)atoi(spriteProperties[6]);
+						tmpSpriteStats->STR = (Sint32)atoi(spriteProperties[7]);
+						tmpSpriteStats->DEX = (Sint32)atoi(spriteProperties[8]);
+						tmpSpriteStats->CON = (Sint32)atoi(spriteProperties[9]);
+						tmpSpriteStats->INT = (Sint32)atoi(spriteProperties[10]);
+						tmpSpriteStats->PER = (Sint32)atoi(spriteProperties[11]);
+						tmpSpriteStats->CHR = (Sint32)atoi(spriteProperties[12]);
+					}
 				}
-				tmpSpriteStats = NULL;
 				break;
-			case 2:
+			case 2: //chest
 				selectedEntity->yaw = (real_t)atoi(spriteProperties[0]);
 				selectedEntity->skill[9] = (Sint32)atoi(spriteProperties[1]);
+				break;
+			case 3: //items
+				selectedEntity->skill[10] = (Sint32)atoi(spriteProperties[0]); //id
+				selectedEntity->skill[11] = (Sint32)atoi(spriteProperties[1]); //status
+				if ( strcmp(spriteProperties[2], "00") == 0 )
+				{
+					selectedEntity->skill[12] = 10; //bless random
+				}
+				else
+				{
+					selectedEntity->skill[12] = (Sint32)atoi(spriteProperties[2]); //bless
+				}
+				if ( strcmp(spriteProperties[3], "0") == 0 )
+				{
+					selectedEntity->skill[13] = 1; //reset quantity to 1
+				}
+				else
+				{
+					selectedEntity->skill[13] = (Sint32)atoi(spriteProperties[3]); //quantity
+				}
+				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[4]); //identified
 				break;
 			default:
 				break;
 		}
-		strcpy(message, "                       Modified sprite properties.");
+		strcpy(message, "                 Modified sprite properties.");
 		messagetime = 60;
-		
-		
 	}
-	buttonCloseSpriteSubwindow(my);
+
+	if ( my == butMonsterItemOK && tmpSpriteStats != NULL )
+	{
+		strcpy(spriteProperties[0], tmpSpriteStats->name);
+		snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
+		snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
+		snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
+		snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
+		snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
+		snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
+		snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
+		snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
+		snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
+		snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
+		snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
+		snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
+
+		inputstr = spriteProperties[0];
+
+		cursorflash = ticks;
+		menuVisible = 0;
+		subwindow = 1;
+		newwindow = 2;
+		subx1 = xres / 2 - 160;
+		subx2 = xres / 2 + 160;
+		suby1 = yres / 2 - 170;
+		suby2 = yres / 2 + 170;
+		strcpy(subtext, "Sprite properties:");
+		buttonSpriteProperties(my);
+		itemSlotSelected = -1;
+	}
+	else
+	{
+		buttonCloseSpriteSubwindow(my);
+	}
 }
 
 void buttonCloseSpriteSubwindow(button_t* my)
 {
+	Stat* tmpSpriteStats = NULL;
 	// close window
-	selectedEntity = NULL;
-	subwindow = 0;
-	newwindow = 0;
-	editproperty = 0;
-	spritepalette = 0;
+	if ( my == butMonsterItemCancel || my == butMonsterItemX )
+	{
+		if ( selectedEntity != NULL )
+		{
+			tmpSpriteStats = selectedEntity->getStats();
+		}
+		if ( tmpSpriteStats != NULL )
+		{
+			strcpy(spriteProperties[0], tmpSpriteStats->name);
+			snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
+			snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
+			snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
+			snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
+			snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
+			snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
+			snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
+			snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
+			snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
+			snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
+			snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
+			snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
 
+			inputstr = spriteProperties[0];
+
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 2;
+			subx1 = xres / 2 - 160;
+			subx2 = xres / 2 + 160;
+			suby1 = yres / 2 - 170;
+			suby2 = yres / 2 + 170;
+			strcpy(subtext, "Sprite properties:");
+			buttonSpriteProperties(my);
+			itemSlotSelected = -1;
+			if ( butMonsterItemOK != NULL )
+			{
+				butMonsterItemOK->visible = 0;
+			}
+			if ( butMonsterItemX != NULL )
+			{
+				butMonsterItemX->visible = 0;
+			}
+			if ( butMonsterItemCancel != NULL )
+			{
+				butMonsterItemCancel->visible = 0;
+			}
+		}
+	}
+	else {
+		selectedEntity = NULL;
+		newwindow = 0;
+		subwindow = 0;
+		editproperty = 0;
+		spritepalette = 0;
+	}
+}
+
+void buttonMonsterItems(button_t* my)
+{
+	int spacing = 20;
+	int pad_y2 = suby1 + 28 + 2 * spacing;
+	int pad_x3 = 40;
+	int pad_x4 = subx2 - 112;
+	char tmpStr[32] = "";
+	button_t* button = NULL;
+
+	itemSelect = 0;
+
+	inputstr = spriteProperties[0];
+	cursorflash = ticks;
+	menuVisible = 0;
+	subwindow = 1;
+	slidery = 0;
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 140;
+	suby2 = yres / 2 + 140;
+	strcpy(subtext, "Monster Item Properties:");
+
+	Stat* tmpSpriteStats = selectedEntity->getStats();
+
+
+	if ( my == butMonsterHelm )
+	{
+		itemSlotSelected = 0;
+	}
+	else if ( my == butMonsterWeapon )
+	{
+		itemSlotSelected = 1;
+	}
+	else if ( my == butMonsterShield )
+	{
+		itemSlotSelected = 2;
+	}
+	else if ( my == butMonsterArmor )
+	{
+		itemSlotSelected = 3;
+	}
+	else if ( my == butMonsterBoots )
+	{
+		itemSlotSelected = 4;
+	}
+	else if ( my == butMonsterRing )
+	{
+		itemSlotSelected = 5;
+	}
+	else if ( my == butMonsterAmulet )
+	{
+		itemSlotSelected = 6;
+	}
+	else if ( my == butMonsterCloak )
+	{
+		itemSlotSelected = 7;
+	}
+	else if ( my == butMonsterMask )
+	{
+		itemSlotSelected = 8;
+	}
+	else if ( my == butMonsterGloves )
+	{
+		itemSlotSelected = 9;
+	}
+	else if ( my == butMonsterItem1 )
+	{
+		itemSlotSelected = 10;
+	}
+	else if ( my == butMonsterItem2 )
+	{
+		itemSlotSelected = 11;
+	}
+	else if ( my == butMonsterItem3 )
+	{
+		itemSlotSelected = 12;
+	}
+	else if ( my == butMonsterItem4 )
+	{
+		itemSlotSelected = 13;
+	}
+	else if ( my == butMonsterItem5 )
+	{
+		itemSlotSelected = 14;
+	}
+	else if ( my == butMonsterItem6 )
+	{
+		itemSlotSelected = 15;
+	}
+	else
+	{
+		itemSlotSelected = -1;
+	}
+
+	newwindow = 5;
+
+
+	if ( butMonsterHelm != NULL )
+	{
+		butMonsterHelm->visible = 0;
+	}
+	if ( butMonsterWeapon != NULL )
+	{
+		butMonsterWeapon->visible = 0;
+	}
+	if ( butMonsterShield != NULL )
+	{
+		butMonsterShield->visible = 0;
+	}
+	if ( butMonsterArmor != NULL )
+	{
+		butMonsterArmor->visible = 0;
+	}
+	if ( butMonsterRing != NULL )
+	{
+		butMonsterRing->visible = 0;
+	}
+	if ( butMonsterAmulet != NULL )
+	{
+		butMonsterAmulet->visible = 0;
+	}
+	if ( butMonsterBoots != NULL )
+	{
+		butMonsterBoots->visible = 0;
+	}
+	if ( butMonsterCloak != NULL )
+	{
+		butMonsterCloak->visible = 0;
+	}
+	if ( butMonsterMask != NULL )
+	{
+		butMonsterMask->visible = 0;
+	}
+	if ( butMonsterGloves != NULL )
+	{
+		butMonsterGloves->visible = 0;
+	}
+	if ( butMonsterItem1 != NULL )
+	{
+		butMonsterItem1->visible = 0;
+	}
+	if ( butMonsterItem2 != NULL )
+	{
+		butMonsterItem2->visible = 0;
+	}
+	if ( butMonsterItem3 != NULL )
+	{
+		butMonsterItem3->visible = 0;
+	}
+	if ( butMonsterItem4 != NULL )
+	{
+		butMonsterItem4->visible = 0;
+	}
+	if ( butMonsterItem5 != NULL )
+	{
+		butMonsterItem5->visible = 0;
+	}
+	if ( butMonsterItem6 != NULL )
+	{
+		butMonsterItem6->visible = 0;
+	}
+	if ( butMonsterOK != NULL )
+	{
+		butMonsterOK->visible = 0;
+	}
+	if ( butMonsterCancel != NULL )
+	{
+		butMonsterCancel->visible = 0;
+	}
+	if ( butMonsterX != NULL )
+	{
+		butMonsterX->visible = 0;
+	}
+	snprintf(spriteProperties[0], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 0]);
+	snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 1]);
+	if ( (int)tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 2] == 10 )
+	{
+		strcpy(spriteProperties[2], "00"); //bless random
+	}
+	else
+	{
+		snprintf(spriteProperties[2], 4, "%d", (int)tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 2]); //bless
+	}
+	snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 3]);
+	snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 4]);
+	snprintf(spriteProperties[5], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 5]);
+
+	butMonsterItemOK = newButton();
+	strcpy(butMonsterItemOK->label, "  OK  ");
+	butMonsterItemOK->x = subx2 - 128;
+	butMonsterItemOK->y = suby2 - 24;
+	butMonsterItemOK->sizex = 56;
+	butMonsterItemOK->sizey = 16;
+	butMonsterItemOK->action = &buttonSpritePropertiesConfirm;
+	butMonsterItemOK->visible = 1;
+	butMonsterItemOK->focused = 1;
+
+	butMonsterItemCancel = newButton();
+	strcpy(butMonsterItemCancel->label, "Cancel");
+	butMonsterItemCancel->x = subx2 - 64;
+	butMonsterItemCancel->y = suby2 - 24;
+	butMonsterItemCancel->sizex = 56;
+	butMonsterItemCancel->sizey = 16;
+	butMonsterItemCancel->action = &buttonCloseSpriteSubwindow;
+	butMonsterItemCancel->visible = 1;
+	butMonsterItemCancel->focused = 1;
+
+	butMonsterItemX = newButton();
+	strcpy(butMonsterItemX->label, "X");
+	butMonsterItemX->x = subx2 - 16;
+	butMonsterItemX->y = suby1;
+	butMonsterItemX->sizex = 16;
+	butMonsterItemX->sizey = 16;
+	butMonsterItemX->action = &buttonCloseSpriteSubwindow;
+	butMonsterItemX->visible = 1;
+	butMonsterItemX->focused = 1;
 }

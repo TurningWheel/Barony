@@ -178,7 +178,10 @@ void buttonCloseSubwindow(button_t* my);
 void buttonSpriteProperties(button_t* my);
 void buttonSpritePropertiesConfirm(button_t* my);
 void buttonCloseSpriteSubwindow(button_t* my);
+void buttonMonsterItems(button_t* my);
 
-int checkSpriteType(Sint32 sprite);
+extern char itemName[128];
+extern int itemSelect;
+extern int itemSlotSelected;
 
 #define TICKS_PER_SECOND 50

@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#pragma once
+
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -17,69 +19,6 @@
 #include "magic/magic.hpp"
 
 Stat* stats[MAXPLAYERS];
-
-// Constructor
-Stat::Stat()
-{
-	this->type = NOTHING;
-	this->sex = static_cast<sex_t>(rand() % 2);
-	this->appearance = 0;
-	strcpy(this->name, "Nobody");
-	strcpy(this->obituary, language[1500]);
-	this->poisonKiller = 0;
-	this->HP = 10;
-	this->MAXHP = 10;
-	this->OLDHP = this->HP;
-	this->MP = 10;
-	this->MAXMP = 10;
-	this->STR = 0;
-	this->DEX = 0;
-	this->CON = 0;
-	this->INT = 0;
-	this->PER = 0;
-	this->CHR = 0;
-	this->EXP = 0;
-	this->LVL = 1;
-	this->GOLD = 0;
-	this->HUNGER = 800;
-	this->defending = false;
-
-	int c;
-	for (c = 0; c < NUMPROFICIENCIES; c++)
-	{
-		this->PROFICIENCIES[c] = 0;
-	}
-	for (c = 0; c < NUMEFFECTS; c++)
-	{
-		this->EFFECTS[c] = 0;
-		this->EFFECTS_TIMERS[c] = 0;
-	}
-	this->leader_uid = 0;
-	this->FOLLOWERS.first = NULL;
-	this->FOLLOWERS.last = NULL;
-	this->stache_x1 = 0;
-	this->stache_x2 = 0;
-	this->stache_y1 = 0;
-	this->stache_y2 = 0;
-	this->inventory.first = NULL;
-	this->inventory.last = NULL;
-	this->helmet = NULL;
-	this->breastplate = NULL;
-	this->gloves = NULL;
-	this->shoes = NULL;
-	this->shield = NULL;
-	this->weapon = NULL;
-	this->cloak = NULL;
-	this->amulet = NULL;
-	this->ring = NULL;
-	this->mask = NULL;
-#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
-	this->monster_sound = NULL;
-#endif
-	this->monster_idlevar = 1;
-	this->magic_effects.first = NULL;
-	this->magic_effects.last = NULL;
-}
 
 //Destructor
 Stat::~Stat()
@@ -252,6 +191,17 @@ void Stat::clearStats()
 			this->EFFECTS_TIMERS[x] = 0;
 		}
 	}
+
+	/*for ( x = 0; x < 96; x = x + 6 )
+	{
+		this->EDITOR_ITEMS[x] = 0;
+		this->EDITOR_ITEMS[x + 1] = 0;
+		this->EDITOR_ITEMS[x + 2] = 10;
+		this->EDITOR_ITEMS[x + 3] = 1;
+		this->EDITOR_ITEMS[x + 4] = 1;
+		this->EDITOR_ITEMS[x + 5] = 1;
+	}*/
+
 	list_FreeAll(&this->inventory);
 	this->helmet = NULL;
 	this->breastplate = NULL;
@@ -411,7 +361,7 @@ Stat* Stat::copyStats()
 	node_t* node;
 	int c;
 
-	Stat* newStat = new Stat();
+	Stat* newStat = new Stat(0);
 
 	newStat->type = this->type;
 	newStat->sex = this->sex;
@@ -444,6 +394,11 @@ Stat* Stat::copyStats()
 		newStat->EFFECTS[c] = this->EFFECTS[c];
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
+
+	/*for ( c = 0; c < 90; c++ )
+	{
+		newStat->EDITOR_ITEMS[c] = this->EDITOR_ITEMS[c];
+	}*/
 
 	newStat->defending = this->defending;
 	newStat->leader_uid = this->leader_uid;
