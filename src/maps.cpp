@@ -1201,12 +1201,13 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( strncmp(map.name, "Underworld", 10) )
 			{
 				bool nopath = false;
+				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
 					if ( entity2->sprite == 1 )
 					{
-						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2);
+						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
 						if ( path == NULL )
 						{
 							nopath = true;

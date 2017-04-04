@@ -172,7 +172,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 
 -------------------------------------------------------------------------------*/
 
-list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
+list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, bool lavaIsPassable)
 {
 	if (!my)
 	{
@@ -264,6 +264,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 		}
 		if ( my->checkFriend(target) )
 		{
+			continue;
+		}
+		if ( entity->sprite == 41 && lavaIsPassable )
+		{
+			//Fix to make ladders generate in hell.
 			continue;
 		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
