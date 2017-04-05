@@ -165,6 +165,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	Sint32 sprite;
 	char* filename;
 	Stat* myStats;
+	Stat* dummyStats;
 	sex_t s;
 
 	char oldmapname[64];
@@ -251,7 +252,6 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		{
 			fread(&sprite, sizeof(Sint32), 1, fp);
 			entity = newEntity(sprite, 0, entlist);
-
 			switch ( checkSpriteType(sprite) )
 			{
 				case 1:
@@ -268,6 +268,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						node2->element = myStats;
 						//					node2->deconstructor = &myStats->~Stat;
 						node2->size = sizeof(myStats);
+						
 
 						fread(&myStats->sex, sizeof(sex_t), 1, fp);
 						fread(&myStats->name, sizeof(char[128]), 1, fp);
@@ -284,7 +285,28 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&myStats->CHR, sizeof(Sint32), 1, fp);
 						fread(&myStats->LVL, sizeof(Sint32), 1, fp);
 						fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
-						//fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+						fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+					}
+					//Read dummy values to move fp for the client
+					else
+					{
+						dummyStats = new Stat(entity->sprite);
+						fread(&dummyStats->sex, sizeof(sex_t), 1, fp);
+						fread(&dummyStats->name, sizeof(char[128]), 1, fp);
+						fread(&dummyStats->HP, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->MAXHP, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->OLDHP, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->MP, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->MAXMP, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->STR, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->DEX, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->CON, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->INT, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->PER, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->CHR, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->LVL, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->GOLD, sizeof(Sint32), 1, fp);
+						fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 					}
 					break;
 				case 2:
@@ -470,7 +492,7 @@ int saveMap(char* filename2)
 					fwrite(&myStats->CHR, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->LVL, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->GOLD, sizeof(Sint32), 1, fp);
-					//fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 					break;
 				case 2:
 					fwrite(&entity->yaw, sizeof(real_t), 1, fp);

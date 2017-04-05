@@ -607,7 +607,7 @@ int canWearEquip(Entity* entity, int category)
 
 			switch ( type )
 			{
-				//monsters that don't wear equipment
+				//monsters that don't wear equipment (only rings/amulets)
 				case DEVIL:
 				case SPIDER:
 				case TROLL:
@@ -627,12 +627,12 @@ int canWearEquip(Entity* entity, int category)
 					equipType = 1;
 					break;
 
-				//monsters with cloak/weapon/shield/boots
+				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
 					equipType = 2;
 					break;
 
-				//monsters with cloak/weapon/shield/boots/helm/armor
+				//monsters with cloak/weapon/shield/boots/helm/armor/mask/gloves
 				case GOBLIN:
 				case HUMAN:
 				case SKELETON:
@@ -644,69 +644,78 @@ int canWearEquip(Entity* entity, int category)
 					equipType = 0;
 					break;
 			}
-
-			if ( category == 0 && equipType == 3 ) //HELM
-			{
-				return 1;
-			}
-			else if ( category == 1 && equipType >= 1 ) //WEAPON
-			{
-				return 1;
-			}
-			else if ( category == 2 && equipType >= 2 ) //SHIELD
-			{
-				return 1;
-			}
-			else if ( category == 3 && equipType >= 3 ) //ARMOR
-			{
-				return 1;
-			}
-			else if ( category == 4 && equipType >= 2 ) //BOOTS
-			{
-				return 1;
-			}
-			else if ( category >= 5 ) {
-				return 1;
-			}
-
-			return 0;
-			// TODO
-			/*case 83:
-			strcpy(tmpStr, "KOBOLD");
-			break;
-			case 84:
-			strcpy(tmpStr, "SCARAB");
-			break;
-			case 85:
-			strcpy(tmpStr, "CRYSTALGOLEM");
-			break;
-			case 86:
-			strcpy(tmpStr, "INCUBUS");
-			break;
-			case 87:
-			strcpy(tmpStr, "VAMPIRE");
-			break;
-			case 88:
-			strcpy(tmpStr, "SHADOW");
-			break;
-			case 89:
-			strcpy(tmpStr, "COCKATRICE");
-			break;
-			case 90:
-			strcpy(tmpStr, "INSECTOID");
-			break;
-			case 91:
-			strcpy(tmpStr, "GOATMAN");
-			break;
-			case 92:
-			strcpy(tmpStr, "AUTOMATON");
-			break;
-			case 93:
-			strcpy(tmpStr, "LICH ICE");
-			break;
-			case 94:
-			strcpy(tmpStr, "LICH FIRE");
-			break;*/
 		}
 	}
+
+	if ( category == 0 && equipType >= 3 ) //HELM
+	{
+		return 1;
+	}
+	else if ( category == 1 && equipType >= 1 ) //WEAPON
+	{
+		return 1;
+	}
+	else if ( category == 2 && equipType >= 2 ) //SHIELD
+	{
+		return 1;
+	}
+	else if ( category == 3 && equipType >= 3 ) //ARMOR
+	{
+		return 1;
+	}
+	else if ( category == 4 && equipType >= 2 ) //BOOTS
+	{
+		return 1;
+	}
+	else if ( category == 5 || category == 6 ) { //RINGS/AMULETS WORN BY ALL
+		return 1;
+	}
+	else if ( (category >= 7 && category <= 9) && equipType >= 2 ) //CLOAK/MASK/GLOVES
+	{
+		return 1;
+	}
+	else
+	{
+		return 0;
+	}
+
+	// TODO
+	/*case 83:
+	strcpy(tmpStr, "KOBOLD");
+	break;
+	case 84:
+	strcpy(tmpStr, "SCARAB");
+	break;
+	case 85:
+	strcpy(tmpStr, "CRYSTALGOLEM");
+	break;
+	case 86:
+	strcpy(tmpStr, "INCUBUS");
+	break;
+	case 87:
+	strcpy(tmpStr, "VAMPIRE");
+	break;
+	case 88:
+	strcpy(tmpStr, "SHADOW");
+	break;
+	case 89:
+	strcpy(tmpStr, "COCKATRICE");
+	break;
+	case 90:
+	strcpy(tmpStr, "INSECTOID");
+	break;
+	case 91:
+	strcpy(tmpStr, "GOATMAN");
+	break;
+	case 92:
+	strcpy(tmpStr, "AUTOMATON");
+	break;
+	case 93:
+	strcpy(tmpStr, "LICH ICE");
+	break;
+	case 94:
+	strcpy(tmpStr, "LICH FIRE");
+	break;*/
+
+	return 0;
 }

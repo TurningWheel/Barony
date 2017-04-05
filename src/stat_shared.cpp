@@ -11,8 +11,12 @@ See LICENSE for details.
 
 #pragma once
 
-#include "entity.hpp"
+#include "main.hpp"
+#include "game.hpp"
 #include "stat.hpp"
+#include "entity.hpp"
+#include "items.hpp"
+#include "magic/magic.hpp"
 
 // Constructor
 Stat::Stat(Sint32 sprite)
@@ -56,7 +60,7 @@ Stat::Stat(Sint32 sprite)
 		}
 	}
 
-	/*for ( c = 0; c < 96; c = c + 6 )
+	for ( c = 0; c < 96; c = c + 6 )
 	{
 		this->EDITOR_ITEMS[c] = 0;
 		this->EDITOR_ITEMS[c + 1] = 0;
@@ -64,7 +68,7 @@ Stat::Stat(Sint32 sprite)
 		this->EDITOR_ITEMS[c + 3] = 1;
 		this->EDITOR_ITEMS[c + 4] = 1;
 		this->EDITOR_ITEMS[c + 5] = 100;
-	}*/
+	}
 
 	this->leader_uid = 0;
 	this->FOLLOWERS.first = NULL;
@@ -94,347 +98,438 @@ Stat::Stat(Sint32 sprite)
 
 	if ( multiplayer != CLIENT )
 	{
-		switch ( (int)sprite )
-		{
+		setDefaultMonsterStats(this, (int)sprite);
+	}
+}
+
+void setDefaultMonsterStats(Stat* stats, int sprite)
+{
+	switch ( sprite )
+	{
 		case 70:
 		case (1000 + GNOME):
-			//this->type = GNOME;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = 0;
-			this->HP = 50;
-			this->MAXHP = 50;
-			this->MP = 50;
-			this->MAXMP = 50;
-			this->OLDHP = this->HP;
-			this->STR = 2;
-			this->DEX = 0;
-			this->CON = 4;
-			this->INT = 0;
-			this->PER = 2;
-			this->CHR = -1;
-			this->EXP = 0;
-			this->LVL = 5;
-			//this->RANDOMGOLD = 20;
-			//this->GOLD = 40 + rand() % this->RANDOMGOLD;
-			this->HUNGER = 900;
+			stats->type = GNOME;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = 0;
+			stats->HP = 50;
+			stats->MAXHP = 50;
+			stats->MP = 50;
+			stats->MAXMP = 50;
+			stats->OLDHP = stats->HP;
+			stats->STR = 2;
+			stats->DEX = 0;
+			stats->CON = 4;
+			stats->INT = 0;
+			stats->PER = 2;
+			stats->CHR = -1;
+			stats->EXP = 0;
+			stats->LVL = 5;
+			stats->RANDOMGOLD = 20;
+			stats->GOLD = 40 + rand() % stats->RANDOMGOLD;
+			stats->HUNGER = 900;
 
-			this->PROFICIENCIES[PRO_SWORD] = 35;
-			this->PROFICIENCIES[PRO_MACE] = 50;
-			this->PROFICIENCIES[PRO_AXE] = 45;
-			this->PROFICIENCIES[PRO_POLEARM] = 25;
-			this->PROFICIENCIES[PRO_RANGED] = 35;
-			this->PROFICIENCIES[PRO_SHIELD] = 35;
+			stats->PROFICIENCIES[PRO_SWORD] = 35;
+			stats->PROFICIENCIES[PRO_MACE] = 50;
+			stats->PROFICIENCIES[PRO_AXE] = 45;
+			stats->PROFICIENCIES[PRO_POLEARM] = 25;
+			stats->PROFICIENCIES[PRO_RANGED] = 35;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
+
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1; //Pick/Lightningstaff
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1; //Lantern/Wooden Shield
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1; //Cloak
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Fish
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Gems
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 2; //Winny's report
 
 			break;
 		case 71:
 		case (1000 + DEVIL):
-			this->type = DEVIL;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand();
-			strcpy(this->name, "Baphomet");
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 1250 + 250 * numplayers;
-			this->MAXHP = this->HP;
-			this->MP = 2000;
-			this->MAXMP = 2000;
-			this->OLDHP = this->HP;
-			this->STR = -50;
-			this->DEX = -20;
-			this->CON = 10;
-			this->INT = 50;
-			this->PER = 500;
-			this->CHR = 50;
-			this->EXP = 0;
-			this->LVL = 30;
-			this->HUNGER = 900;
+			stats->type = DEVIL;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "Baphomet");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 1250 + 250 * numplayers;
+			stats->MAXHP = stats->HP;
+			stats->MP = 2000;
+			stats->MAXMP = 2000;
+			stats->OLDHP = stats->HP;
+			stats->STR = -50;
+			stats->DEX = -20;
+			stats->CON = 10;
+			stats->INT = 50;
+			stats->PER = 500;
+			stats->CHR = 50;
+			stats->EXP = 0;
+			stats->LVL = 30;
+			stats->HUNGER = 900;
 
-			this->EFFECTS[EFF_LEVITATING] = true;
-			this->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+			stats->EFFECTS[EFF_LEVITATING] = true;
+			stats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			this->PROFICIENCIES[PRO_MAGIC] = 100;
-			this->PROFICIENCIES[PRO_SPELLCASTING] = 100;
+			stats->PROFICIENCIES[PRO_MAGIC] = 100;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
 			break;
 		case 62:
 		case (1000 + LICH):
-			this->type = LICH;
-			this->sex = MALE;
-			this->appearance = rand();
-			strcpy(this->name, "Baron Herx");
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 1000 + 250 * numplayers;
-			this->MAXHP = this->HP;
-			this->MP = 1000;
-			this->MAXMP = 1000;
-			this->OLDHP = this->HP;
-			this->STR = 20;
-			this->DEX = 8;
-			this->CON = 8;
-			this->INT = 20;
-			this->PER = 80;
-			this->CHR = 50;
-			this->EXP = 0;
-			this->LVL = 25;
-			this->GOLD = 100;
-			this->HUNGER = 900;
+			stats->type = LICH;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "Baron Herx");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 1000 + 250 * numplayers;
+			stats->MAXHP = stats->HP;
+			stats->MP = 1000;
+			stats->MAXMP = 1000;
+			stats->OLDHP = stats->HP;
+			stats->STR = 20;
+			stats->DEX = 8;
+			stats->CON = 8;
+			stats->INT = 20;
+			stats->PER = 80;
+			stats->CHR = 50;
+			stats->EXP = 0;
+			stats->LVL = 25;
+			stats->GOLD = 100;
+			stats->HUNGER = 900;
 
-			this->EFFECTS[EFF_LEVITATING] = true;
-			this->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+			stats->EFFECTS[EFF_LEVITATING] = true;
+			stats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			break;
 		case 48:
 		case (1000 + SPIDER):
-			this->type = SPIDER;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand();
-			strcpy(this->name, "");
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 50;
-			this->MAXHP = 50;
-			this->MP = 10;
-			this->MAXMP = 10;
-			this->OLDHP = this->HP;
-			this->STR = 3;
-			this->DEX = 8;
-			this->CON = 4;
-			this->INT = -3;
-			this->PER = -3;
-			this->CHR = -1;
-			this->EXP = 0;
-			this->LVL = 5;
-			this->GOLD = 0;
-			this->HUNGER = 900;
+			stats->type = SPIDER;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 50;
+			stats->MAXHP = 50;
+			stats->MP = 10;
+			stats->MAXMP = 10;
+			stats->OLDHP = stats->HP;
+			stats->STR = 3;
+			stats->DEX = 8;
+			stats->CON = 4;
+			stats->INT = -3;
+			stats->PER = -3;
+			stats->CHR = -1;
+			stats->EXP = 0;
+			stats->LVL = 5;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
 
 			break;
 		case 36:
 		case (1000 + GOBLIN):
-			this->type = GOBLIN;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand();
-			strcpy(this->name, "");
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 60;
-			this->MAXHP = 60;
-			this->MP = 20;
-			this->MAXMP = 20;
-			this->OLDHP = this->HP;
-			this->STR = 6;
-			this->DEX = 0;
-			this->CON = 2;
-			this->INT = -1;
-			this->PER = 0;
-			this->CHR = -1;
-			this->EXP = 0;
-			this->LVL = 6;
+			stats->type = GOBLIN;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 60;
+			stats->MAXHP = 60;
+			stats->MP = 20;
+			stats->MAXMP = 20;
+			stats->OLDHP = stats->HP;
+			stats->STR = 6;
+			stats->DEX = 0;
+			stats->CON = 2;
+			stats->INT = -1;
+			stats->PER = 0;
+			stats->CHR = -1;
+			stats->EXP = 0;
+			stats->LVL = 6;
 			if ( rand() % 3 == 0 )
 			{
-				this->GOLD = 10 + rand() % 20;
+				stats->GOLD = 10 + rand() % 20;
 			}
 			else
 			{
-				this->GOLD = 0;
+				stats->GOLD = 0;
 			}
-			this->HUNGER = 900;
+			stats->HUNGER = 900;
 
-			this->PROFICIENCIES[PRO_SWORD] = 35;
-			this->PROFICIENCIES[PRO_MACE] = 50;
-			this->PROFICIENCIES[PRO_AXE] = 45;
-			this->PROFICIENCIES[PRO_POLEARM] = 25;
-			this->PROFICIENCIES[PRO_RANGED] = 35;
-			this->PROFICIENCIES[PRO_SHIELD] = 35;
+			stats->PROFICIENCIES[PRO_SWORD] = 35;
+			stats->PROFICIENCIES[PRO_MACE] = 50;
+			stats->PROFICIENCIES[PRO_AXE] = 45;
+			stats->PROFICIENCIES[PRO_POLEARM] = 25;
+			stats->PROFICIENCIES[PRO_RANGED] = 35;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 			break;
 		case 35:
 		case (1000 + SHOPKEEPER):
-			this->type = SHOPKEEPER;
-			this->sex = MALE;
-			this->appearance = rand();
-			strcpy(this->name, language[158 + rand() % 26]);
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 300;
-			this->MAXHP = 300;
-			this->MP = 200;
-			this->MAXMP = 200;
-			this->OLDHP = this->HP;
-			this->STR = 10;
-			this->DEX = 4;
-			this->CON = 10;
-			this->INT = 7;
-			this->PER = 7;
-			this->CHR = 3 + rand() % 4;
-			this->EXP = 0;
-			this->LVL = 10;
-			this->GOLD = 300 + rand() % 200;
-			this->HUNGER = 900;
+			stats->type = SHOPKEEPER;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, language[158 + rand() % 26]);
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 300;
+			stats->MAXHP = 300;
+			stats->MP = 200;
+			stats->MAXMP = 200;
+			stats->OLDHP = stats->HP;
+			stats->STR = 10;
+			stats->DEX = 4;
+			stats->CON = 10;
+			stats->INT = 7;
+			stats->PER = 7;
+			stats->CHR = 3 + rand() % 4;
+			stats->EXP = 0;
+			stats->LVL = 10;
+			stats->GOLD = 300 + rand() % 200;
+			stats->HUNGER = 900;
 
-			this->FOLLOWERS.first = NULL;
-			this->FOLLOWERS.last = NULL;
-			this->PROFICIENCIES[PRO_MAGIC] = 50;
-			this->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-			this->PROFICIENCIES[PRO_TRADING] = 75;
-			this->PROFICIENCIES[PRO_APPRAISAL] = 75;
+			stats->FOLLOWERS.first = NULL;
+			stats->FOLLOWERS.last = NULL;
+			stats->PROFICIENCIES[PRO_MAGIC] = 50;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+			stats->PROFICIENCIES[PRO_TRADING] = 75;
+			stats->PROFICIENCIES[PRO_APPRAISAL] = 75;
 
 			break;
 		case 30:
 		case (1000 + TROLL):
-			this->type = TROLL;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand();
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 100 + rand() % 20;
-			this->MAXHP = this->HP;
-			this->MP = 30;
-			this->MAXMP = 30;
-			this->OLDHP = this->HP;
-			this->STR = 15;
-			this->DEX = -2;
-			this->CON = 5;
-			this->INT = -4;
-			this->PER = -2;
-			this->CHR = -1;
-			this->EXP = 0;
-			this->LVL = 12;
-			this->GOLD = 0;
-			this->HUNGER = 900;
+			stats->type = TROLL;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 100 + rand() % 20;
+			stats->MAXHP = stats->HP;
+			stats->MP = 30;
+			stats->MAXMP = 30;
+			stats->OLDHP = stats->HP;
+			stats->STR = 15;
+			stats->DEX = -2;
+			stats->CON = 5;
+			stats->INT = -4;
+			stats->PER = -2;
+			stats->CHR = -1;
+			stats->EXP = 0;
+			stats->LVL = 12;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Random Items
 
 			break;
 		case 27:
 		case (1000 + HUMAN):
-			this->type = HUMAN;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand() % 18; //NUMAPPEARANCES = 18
-			strcpy(this->name, "");
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 30 + rand() % 20;
-			this->MAXHP = this->HP;
-			this->MP = 20 + rand() % 20;
-			this->MAXMP = this->MP;
-			this->OLDHP = this->HP;
-			this->STR = -1 + rand() % 4;
-			this->DEX = 4 + rand() % 4;
-			this->CON = -2 + rand() % 4;
-			this->INT = -1 + rand() % 4;
-			this->PER = -2 + rand() % 4;
-			this->CHR = -3 + rand() % 4;
-			this->EXP = 0;
-			this->LVL = 3;
+			stats->type = HUMAN;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand() % 18; //NUMAPPEARANCES = 18
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 30 + rand() % 20;
+			stats->MAXHP = stats->HP;
+			stats->MP = 20 + rand() % 20;
+			stats->MAXMP = stats->MP;
+			stats->OLDHP = stats->HP;
+			stats->STR = -1 + rand() % 4;
+			stats->DEX = 4 + rand() % 4;
+			stats->CON = -2 + rand() % 4;
+			stats->INT = -1 + rand() % 4;
+			stats->PER = -2 + rand() % 4;
+			stats->CHR = -3 + rand() % 4;
+			stats->EXP = 0;
+			stats->LVL = 3;
 			if ( rand() % 2 == 0 )
 			{
-				this->GOLD = 20 + rand() % 20;
+				stats->GOLD = 20 + rand() % 20;
 			}
 			else
 			{
-				this->GOLD = 0;
+				stats->GOLD = 0;
 			}
-			this->HUNGER = 900;
+			stats->HUNGER = 900;
 
-			this->PROFICIENCIES[PRO_SWORD] = 45;
-			this->PROFICIENCIES[PRO_MACE] = 35;
-			this->PROFICIENCIES[PRO_AXE] = 35;
-			this->PROFICIENCIES[PRO_POLEARM] = 45;
-			this->PROFICIENCIES[PRO_RANGED] = 40;
-			this->PROFICIENCIES[PRO_SHIELD] = 35;
+			stats->PROFICIENCIES[PRO_SWORD] = 45;
+			stats->PROFICIENCIES[PRO_MACE] = 35;
+			stats->PROFICIENCIES[PRO_AXE] = 35;
+			stats->PROFICIENCIES[PRO_POLEARM] = 45;
+			stats->PROFICIENCIES[PRO_RANGED] = 40;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 			break;
 		case 83:
 		case (1000 + KOBOLD):
-			this->type = KOBOLD;
+			stats->type = KOBOLD;
 		case 84:
 		case (1000 + SCARAB):
-			this->type = SCARAB;
+			stats->type = SCARAB;
 		case 85:
 		case (1000 + CRYSTALGOLEM):
-			this->type = CRYSTALGOLEM;
+			stats->type = CRYSTALGOLEM;
 		case 86:
 		case (1000 + INCUBUS):
-			this->type = INCUBUS;
+			stats->type = INCUBUS;
 		case 87:
 		case (1000 + VAMPIRE):
-			this->type = VAMPIRE;
+			stats->type = VAMPIRE;
 		case 88:
 		case (1000 + SHADOW):
-			this->type = SHADOW;
+			stats->type = SHADOW;
 		case 89:
 		case (1000 + COCKATRICE):
-			this->type = COCKATRICE;
+			stats->type = COCKATRICE;
 		case 90:
 		case (1000 + INSECTOID):
-			this->type = INSECTOID;
+			stats->type = INSECTOID;
 		case 91:
 		case (1000 + GOATMAN):
-			this->type = GOATMAN;
+			stats->type = GOATMAN;
 		case 92:
 		case (1000 + AUTOMATON):
-			this->type = AUTOMATON;
+			stats->type = AUTOMATON;
 		case 93:
 		case (1000 + LICH_ICE):
-			this->type = LICH_ICE;
+			stats->type = LICH_ICE;
 		case 94:
 		case (1000 + LICH_FIRE):
-			this->type = LICH_FIRE;
+			stats->type = LICH_FIRE;
 			break;
 		case 95:
 		case (1000 + SKELETON):
-			this->type = SKELETON;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand();
-			this->HP = 40;
-			this->MAXHP = 40;
-			this->MP = 30;
-			this->MAXMP = 30;
-			this->OLDHP = this->HP;
-			this->STR = 1;
-			this->DEX = -1;
-			this->CON = 0;
-			this->INT = -1;
-			this->PER = 1;
-			this->CHR = -3;
-			this->EXP = 0;
-			this->LVL = 2;
-			this->GOLD = 0;
-			this->HUNGER = 900;
+			stats->type = SKELETON;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->HP = 40;
+			stats->MAXHP = 40;
+			stats->MP = 30;
+			stats->MAXMP = 30;
+			stats->OLDHP = stats->HP;
+			stats->STR = 1;
+			stats->DEX = -1;
+			stats->CON = 0;
+			stats->INT = -1;
+			stats->PER = 1;
+			stats->CHR = -3;
+			stats->EXP = 0;
+			stats->LVL = 2;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
 
-			this->PROFICIENCIES[PRO_SWORD] = 35;
-			this->PROFICIENCIES[PRO_MACE] = 50;
-			this->PROFICIENCIES[PRO_AXE] = 45;
-			this->PROFICIENCIES[PRO_POLEARM] = 25;
-			this->PROFICIENCIES[PRO_RANGED] = 35;
-			this->PROFICIENCIES[PRO_SHIELD] = 35;
+			stats->PROFICIENCIES[PRO_SWORD] = 35;
+			stats->PROFICIENCIES[PRO_MACE] = 50;
+			stats->PROFICIENCIES[PRO_AXE] = 45;
+			stats->PROFICIENCIES[PRO_POLEARM] = 25;
+			stats->PROFICIENCIES[PRO_RANGED] = 35;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 			break;
 		case 96:
 		case (1000 + RAT):
-			this->type = RAT;
-			this->sex = static_cast<sex_t>(rand() % 2);
-			this->appearance = rand();
-			strcpy(this->name, "");
-			this->inventory.first = NULL;
-			this->inventory.last = NULL;
-			this->HP = 30;
-			this->MAXHP = 30;
-			this->MP = 10;
-			this->MAXMP = 10;
-			this->OLDHP = this->HP;
-			this->STR = 0;
-			this->DEX = 2;
-			this->CON = 1;
-			this->INT = -2;
-			this->PER = 0;
-			this->CHR = -1;
-			this->EXP = 0;
-			this->LVL = 1;
-			this->GOLD = 0;
-			this->HUNGER = 900;
+			stats->type = RAT;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 30;
+			stats->MAXHP = 30;
+			stats->MP = 10;
+			stats->MAXMP = 10;
+			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = 2;
+			stats->CON = 1;
+			stats->INT = -2;
+			stats->PER = 0;
+			stats->CHR = -1;
+			stats->EXP = 0;
+			stats->LVL = 1;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
 			break;
 		case 10:
 		default:
 			break;
-		}
 	}
 }
+
+//void setDefaultMonsterItemSlots ( Stat* stats )
+//{
+//	if ( multiplayer != CLIENT )
+//	{
+//		switch ( stats->type )
+//		{
+//			case HUMAN:
+//				break;
+//			case RAT:
+//				break;
+//			case GOBLIN:
+//				break;
+//			case SLIME:
+//				break;
+//			case SCORPION:
+//				break;
+//			case SUCCUBUS:
+//				break;
+//			case TROLL:
+//				break;
+//			case SHOPKEEPER:
+//				break;
+//			case SKELETON:
+//				break;
+//			case MINOTAUR:
+//				break;
+//			case GHOUL:
+//				break;
+//			case DEMON:
+//				break;
+//			case SPIDER:
+//				break;
+//			case LICH:
+//				break;
+//			case CREATURE_IMP:
+//				break;
+//			case GNOME:
+//
+//				break;
+//			case DEVIL:
+//				break;
+//			case KOBOLD:
+//				break;
+//			case SCARAB:
+//				break;
+//			case CRYSTALGOLEM:
+//				break;
+//			case INCUBUS:
+//				break;
+//			case VAMPIRE:
+//				break;
+//			case SHADOW:
+//				break;
+//			case COCKATRICE:
+//				break;
+//			case INSECTOID:
+//				break;
+//			case GOATMAN:
+//				break;
+//			case AUTOMATON:
+//				break;
+//			case LICH_ICE:
+//				break;
+//			case LICH_FIRE:
+//				break;
+//			default:
+//				break; //This should never be reached.
+//		}
+//	}
+//}

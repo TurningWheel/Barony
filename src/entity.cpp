@@ -4660,328 +4660,366 @@ bool Entity::checkFriend(Entity* your)
 }
 
 
-//void createMonsterEquipment(Stat* stats) //MOD TODO
-//{
-//	int itemIndex = 0;
-//	ItemType itemId;
-//	Status itemStatus;
-//	int itemBless;
-//	int itemAppearance = rand();
-//	int itemCount;
-//	int chance = 1;
-//	bool itemIdentified;
-//
-//	if ( stats != NULL )
-//	{
-//		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
-//		{
-//			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * 6] - 2);
-//			if ( itemId >= 0 )
-//			{
-//				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * 6 + 1]);
-//				if ( itemStatus == 0 )
-//				{
-//					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
-//				}
-//				itemBless = stats->EDITOR_ITEMS[itemIndex * 6 + 2];
-//				if ( itemBless == 10 )
-//				{
-//					itemBless = -2 + rand() % 5;
-//				}
-//				itemCount = stats->EDITOR_ITEMS[itemIndex * 6 + 3];
-//				if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 1 )
-//				{
-//					itemIdentified = false;
-//				}
-//				else if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 2 )
-//				{
-//					itemIdentified = true;
-//				}
-//				else
-//				{
-//					itemIdentified = rand() % 2;
-//				}
-//				itemAppearance = rand();
-//				chance = stats->EDITOR_ITEMS[itemIndex * 6 + 5];
-//
-//				if ( rand() % 100 < chance )
-//				{
-//					switch ( itemIndex ) {
-//					case 0:
-//						stats->helmet = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 1:
-//						stats->weapon = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 2:
-//						stats->shield = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 3:
-//						stats->breastplate = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 4:
-//						stats->shoes = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 5:
-//						stats->ring = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 6:
-//						stats->amulet = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 7:
-//						stats->cloak = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 8:
-//						stats->mask = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					case 9:
-//						stats->gloves = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
-//						break;
-//					default:
-//						break;
-//					}
-//				}
-//			}
-//		}
-//	}
-//}
-//
-////Not for client, only host, run only during MONSTER INIT
-//void setDefaultMonsterEquipment(Entity* my)
-//{
-//	Stat* myStats;
-//	int x = 0;
-//	int c = 0;
-//	int customItems = 0;
-//	int defaultItems = 0;
-//	int customItemLimit = 6;
-//
-//	if ( my != NULL )
-//	{
-//		myStats = my->getStats();
-//		if ( myStats != NULL )
-//		{
-//			createMonsterEquipment(myStats);
-//			customItems = countCustomItems(myStats); //max limit of 6 items per entity.
-//			defaultItems = countDefaultItems(myStats);
-//			switch ( myStats->type )
-//			{
-//				//monsters that don't wear equipment
-//				case DEVIL:
-//					break;
-//				case SPIDER:
-//					if ( !myStats->leader_uid )
-//					{
-//						myStats->leader_uid = 0;
-//					}
-//
-//					if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
-//					{
-//						strcpy(myStats->name, "Shelob");
-//						myStats->HP = 150;
-//						myStats->MAXHP = 150;
-//						myStats->OLDHP = myStats->HP;
-//						myStats->STR = 10;
-//						myStats->DEX = 10;
-//						myStats->CON = 8;
-//						myStats->INT = 5;
-//						myStats->PER = 10;
-//						myStats->CHR = 10;
-//						myStats->LVL = 15;
-//						newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), false, &myStats->inventory);
-//						newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), false, &myStats->inventory);
-//						customItemLimit = customItemLimit - 2;
-//						int c;
-//						for ( c = 0; c < 3; c++ )
-//						{
-//							Entity* entity = summonMonster(SPIDER, my->x, my->y);
-//							if ( entity )
-//							{
-//								entity->parent = my->getUID();
-//							}
-//						}
-//					}
-//					break;
-//				case TROLL:
-//					break;
-//				case RAT:
-//					break;
-//				case SLIME:
-//					break;
-//				case SUCCUBUS:
-//					break;
-//				case SCORPION:
-//					break;
-//				case MINOTAUR:
-//					break;
-//				case GHOUL:
-//					break;
-//
-//					//monsters with weapons only (incl. spellbooks)
-//				case LICH:
-//				case CREATURE_IMP:
-//				case DEMON:
-//					
-//					break;
-//
-//					//monsters with cloak/weapon/shield/boots
-//				case GNOME:
-//					if ( !myStats->leader_uid )
-//					{
-//						myStats->leader_uid = 0;
-//					}
-//
-//					if ( rand() % 8 == 0 )
-//					{
-//						myStats->EFFECTS[EFF_ASLEEP] = true;
-//						myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
-//					}
-//
-//					switch ( defaultItems )
-//					{
-//						case 6:
-//						case 5:
-//						case 4:
-//						case 3:
-//						case 2:
-//							if ( rand() % 10 == 0 )
-//							{
-//								int i = 1 + rand() % 4;
-//								for ( c = 0; c < i; c++ )
-//								{
-//									newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
-//								}
-//							}
-//						case 1:
-//							if ( rand() % 3 == 0 )
-//							{
-//								newItem(FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
-//							}
-//							break;
-//						default:
-//							break;
-//					}
-//					if ( rand() % 50 == 0 )
-//					{
-//						newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
-//					}
-//					
-//					//give shield
-//					if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-//					{
-//						switch ( rand() % 10 )
-//						{
-//						case 0:
-//						case 1:
-//							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-//							break;
-//						case 2:
-//						case 3:
-//						case 4:
-//						case 5:
-//						case 6:
-//							break;
-//						case 7:
-//						case 8:
-//						case 9:
-//							myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
-//							break;
-//						}
-//					}
-//
-//					//give weapon
-//					if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-//					{
-//						switch ( rand() % 10 )
-//						{
-//						case 0:
-//						case 1:
-//						case 2:
-//						case 3:
-//						case 4:
-//							myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-//							break;
-//						case 5:
-//						case 6:
-//						case 7:
-//						case 8:
-//						case 9:
-//							myStats->GOLD += 100;
-//							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-//							break;
-//						}
-//					}
-//					
-//					// give cloak
-//					if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
-//					{
-//						switch ( rand() % 10 )
-//						{
-//							case 0:
-//							case 1:
-//							case 2:
-//							case 3:
-//							case 4:
-//							case 5:
-//								break;
-//							case 6:
-//							case 7:
-//							case 8:
-//							case 9:
-//								myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-//								break;
-//						}
-//					}
-//					break;
-//
-//					//monsters with cloak/weapon/shield/boots/helm/armor
-//				case GOBLIN:
-//				case HUMAN:
-//				case SKELETON:
-//				case SHOPKEEPER:
-//					
-//					break;
-//
-//				default:
-//					
-//					break;
-//				
-//			}
-//			generateCustomInventory(myStats, customItemLimit);
-//		}
-//	}
-//}
+void createMonsterEquipment(Stat* stats) //MOD TODO
+{
+	int itemIndex = 0;
+	ItemType itemId;
+	Status itemStatus;
+	int itemBless;
+	int itemAppearance = rand();
+	int itemCount;
+	int chance = 1;
+	bool itemIdentified;
 
-//int countCustomItems(Stat* stats)
-//{
-//	int x = 0;
-//	int slotItem1 = 35;
-//	int customItemSlotCount = 0;
-//
-//	for ( x = 0; x < 6; x = x + 6 )
-//	{
-//		if ( stats->EDITOR_ITEMS[slotItem1 + x] != 1 )
-//		{
-//			customItemSlotCount++; //found a custom item in inventory
-//		}
-//	}
-//
-//	return customItemSlotCount; //use custom items from editor instead of default generation
-//}
-//
-//int countDefaultItems(Stat* stats)
-//{
-//	int x = 0;
-//	int slotItem1 = 35;
-//	int defaultItemSlotCount = 0;
-//
-//	for ( x = 0; x < 6; x = x + 6 )
-//	{
-//		if ( stats->EDITOR_ITEMS[slotItem1 + x] == 1 )
-//		{
-//			defaultItemSlotCount++; //found a default item in inventory
-//		}
-//	}
-//
-//	return defaultItemSlotCount;
-//}
+	if ( stats != NULL )
+	{
+		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
+		{
+			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * 6] - 2);
+			if ( itemId >= 0 )
+			{
+				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * 6 + 1]);
+				if ( itemStatus == 0 )
+				{
+					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+				}
+				itemBless = stats->EDITOR_ITEMS[itemIndex * 6 + 2];
+				if ( itemBless == 10 )
+				{
+					itemBless = -2 + rand() % 5;
+				}
+				itemCount = stats->EDITOR_ITEMS[itemIndex * 6 + 3];
+				if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 1 )
+				{
+					itemIdentified = false;
+				}
+				else if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 2 )
+				{
+					itemIdentified = true;
+				}
+				else
+				{
+					itemIdentified = rand() % 2;
+				}
+				itemAppearance = rand();
+				chance = stats->EDITOR_ITEMS[itemIndex * 6 + 5];
+
+				if ( rand() % 100 < chance )
+				{
+					switch ( itemIndex ) {
+					case 0:
+						stats->helmet = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 1:
+						stats->weapon = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 2:
+						stats->shield = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 3:
+						stats->breastplate = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 4:
+						stats->shoes = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 5:
+						stats->ring = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 6:
+						stats->amulet = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 7:
+						stats->cloak = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 8:
+						stats->mask = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 9:
+						stats->gloves = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+//Not for client, only host, run only during MONSTER INIT
+void setDefaultMonsterEquipment(Entity* my)
+{
+	Stat* myStats;
+	int x = 0;
+	int c = 0;
+	int customItems = 0;
+	int defaultItems = 0;
+	int customItemLimit = 6;
+
+	if ( my != NULL )
+	{
+		myStats = my->getStats();
+		if ( myStats != NULL )
+		{
+			createMonsterEquipment(myStats);
+			customItems = countCustomItems(myStats); //max limit of 6 items per entity.
+			defaultItems = countDefaultItems(myStats);
+			switch ( myStats->type )
+			{
+				//monsters that don't wear equipment
+				case DEVIL:
+					break;
+				case SPIDER:
+					if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+					{
+						strcpy(myStats->name, "Shelob");
+						myStats->HP = 150;
+						myStats->MAXHP = 150;
+						myStats->OLDHP = myStats->HP;
+						myStats->STR = 10;
+						myStats->DEX = 10;
+						myStats->CON = 8;
+						myStats->INT = 5;
+						myStats->PER = 10;
+						myStats->CHR = 10;
+						myStats->LVL = 15;
+						newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), false, &myStats->inventory);
+						newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), false, &myStats->inventory);
+						customItemLimit = customItemLimit - 2;
+						int c;
+						for ( c = 0; c < 3; c++ )
+						{
+							Entity* entity = summonMonster(SPIDER, my->x, my->y);
+							if ( entity )
+							{
+								entity->parent = my->getUID();
+							}
+						}
+					}
+					break;
+				case TROLL:
+					if ( rand() % 4 == 0 )
+					{
+						myStats->EFFECTS[EFF_ASLEEP] = true;
+						myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+					}
+
+					switch ( defaultItems )
+					{
+						case 6:
+						case 5:
+						case 4:
+						case 3:
+						case 2:
+						case 1:
+							if ( rand() % 3 == 0 )
+							{
+								int i = 1 + rand() % 3;
+								for ( c = 0; c < i; c++ )
+								{
+									newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								}
+							}
+							break;
+						default:
+							break;
+					}
+
+					if ( rand() % 50 || my->flags[USERFLAG2] )
+					{
+						strcpy(myStats->name, "");
+					}
+					else
+					{
+						strcpy(myStats->name, "Thumpus the Troll");
+						for ( c = 0; c < 3; c++ )
+						{
+							Entity* entity = summonMonster(GNOME, my->x, my->y);
+							if ( entity )
+							{
+								entity->parent = my->getUID();
+							}
+						}
+						myStats->HP *= 2;
+						myStats->MAXHP *= 2;
+						myStats->OLDHP = myStats->HP;
+						myStats->GOLD += 300;
+						myStats->LVL += 10;
+					}
+					break;
+				case RAT:
+					break;
+				case SLIME:
+					break;
+				case SUCCUBUS:
+					break;
+				case SCORPION:
+					break;
+				case MINOTAUR:
+					break;
+				case GHOUL:
+					break;
+
+					//monsters with weapons only (incl. spellbooks)
+				case LICH:
+				case CREATURE_IMP:
+				case DEMON:
+					
+					break;
+
+					//monsters with cloak/weapon/shield/boots
+				case GNOME:
+					if ( rand() % 8 == 0 )
+					{
+						myStats->EFFECTS[EFF_ASLEEP] = true;
+						myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+					}
+
+					switch ( defaultItems )
+					{
+						case 6:
+						case 5:
+						case 4:
+						case 3:
+							if ( rand() % 50 == 0 )
+							{
+								newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
+							}
+						case 2:
+							if ( rand() % 10 == 0 )
+							{
+								int i = 1 + rand() % 4;
+								for ( c = 0; c < i; c++ )
+								{
+									newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
+								}
+							}
+						case 1:
+							if ( rand() % 3 == 0 )
+							{
+								newItem(FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+							}
+							break;
+						default:
+							break;
+					}
+					
+					//give shield
+					if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+					{
+						switch ( rand() % 10 )
+						{
+						case 0:
+						case 1:
+							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+							break;
+						case 7:
+						case 8:
+						case 9:
+							myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						}
+					}
+
+					//give weapon
+					if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+					{
+						switch ( rand() % 10 )
+						{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+						case 9:
+							myStats->GOLD += 100;
+							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						}
+					}
+					
+					// give cloak
+					if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+					{
+						switch ( rand() % 10 )
+						{
+							case 0:
+							case 1:
+							case 2:
+							case 3:
+							case 4:
+							case 5:
+								break;
+							case 6:
+							case 7:
+							case 8:
+							case 9:
+								myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
+								break;
+						}
+					}
+					break;
+
+					//monsters with cloak/weapon/shield/boots/helm/armor
+				case GOBLIN:
+				case HUMAN:
+				case SKELETON:
+				case SHOPKEEPER:
+					
+					break;
+
+				default:
+					
+					break;
+				
+			}
+			generateCustomInventory(myStats, customItemLimit);
+		}
+	}
+}
+
+int countCustomItems(Stat* stats)
+{
+	int x = 0;
+	int slotItem1 = 35;
+	int customItemSlotCount = 0;
+
+	for ( x = 0; x < 6; x = x + 6 )
+	{
+		if ( stats->EDITOR_ITEMS[slotItem1 + x] != 1 )
+		{
+			customItemSlotCount++; //found a custom item in inventory
+		}
+	}
+
+	return customItemSlotCount; //use custom items from editor instead of default generation
+}
+
+int countDefaultItems(Stat* stats)
+{
+	int x = 0;
+	int slotItem1 = 35;
+	int defaultItemSlotCount = 0;
+
+	for ( x = 0; x < 6; x = x + 6 )
+	{
+		if ( stats->EDITOR_ITEMS[slotItem1 + x] == 1 )
+		{
+			defaultItemSlotCount++; //found a default item in inventory
+		}
+	}
+
+	return defaultItemSlotCount;
+}

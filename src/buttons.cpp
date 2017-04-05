@@ -1192,15 +1192,18 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
 					}
-					butMonsterAmulet = newButton();
-					strcpy(butMonsterAmulet->label, tmpStr);
-					butMonsterAmulet->x = pad_x4 - 10;
-					butMonsterAmulet->y = pad_y2 + spacing - 4;
-					butMonsterAmulet->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
-					butMonsterAmulet->sizey = 16;
-					butMonsterAmulet->action = &buttonMonsterItems;
-					butMonsterAmulet->visible = 1;
-					butMonsterAmulet->focused = 1;
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterAmulet = newButton();
+						strcpy(butMonsterAmulet->label, tmpStr);
+						butMonsterAmulet->x = pad_x4 - 10;
+						butMonsterAmulet->y = pad_y2 + spacing - 4;
+						butMonsterAmulet->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterAmulet->sizey = 16;
+						butMonsterAmulet->action = &buttonMonsterItems;
+						butMonsterAmulet->visible = 1;
+						butMonsterAmulet->focused = 1;
+					}
 
 					pad_y2 += spacing * 2;
 					itemIndex = 3;
@@ -1383,16 +1386,19 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
 					}
-					butMonsterRing = newButton();
-					strcpy(butMonsterRing->label, tmpStr);
-					butMonsterRing->x = pad_x4 - 10;
-					butMonsterRing->y = pad_y2 + spacing - 4;
-					butMonsterRing->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
-					butMonsterRing->sizey = 16;
-					butMonsterRing->action = &buttonMonsterItems;
-					butMonsterRing->visible = 1;
-					butMonsterRing->focused = 1;
 
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterRing = newButton();
+						strcpy(butMonsterRing->label, tmpStr);
+						butMonsterRing->x = pad_x4 - 10;
+						butMonsterRing->y = pad_y2 + spacing - 4;
+						butMonsterRing->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterRing->sizey = 16;
+						butMonsterRing->action = &buttonMonsterItems;
+						butMonsterRing->visible = 1;
+						butMonsterRing->focused = 1;
+					}
 					pad_x4 += 64 * 2;
 					itemIndex = 9;
 					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
@@ -1407,16 +1413,18 @@ void buttonSpriteProperties(button_t* my)
 					{
 						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
 					}
-					butMonsterGloves = newButton();
-					strcpy(butMonsterGloves->label, tmpStr);
-					butMonsterGloves->x = pad_x4 - 10;
-					butMonsterGloves->y = pad_y2 + spacing - 4;
-					butMonsterGloves->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
-					butMonsterGloves->sizey = 16;
-					butMonsterGloves->action = &buttonMonsterItems;
-					butMonsterGloves->visible = 1;
-					butMonsterGloves->focused = 1;
-					
+					if ( canWearEquip(selectedEntity, itemIndex) )
+					{
+						butMonsterGloves = newButton();
+						strcpy(butMonsterGloves->label, tmpStr);
+						butMonsterGloves->x = pad_x4 - 10;
+						butMonsterGloves->y = pad_y2 + spacing - 4;
+						butMonsterGloves->sizex = pad_x4 + pad_x3 - (pad_x4 - 10);
+						butMonsterGloves->sizey = 16;
+						butMonsterGloves->action = &buttonMonsterItems;
+						butMonsterGloves->visible = 1;
+						butMonsterGloves->focused = 1;
+					}
 					
 					pad_y2 += 32 + spacing * 2;
 					itemIndex = 12;

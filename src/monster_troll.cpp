@@ -44,43 +44,7 @@ void initTroll(Entity* my, Stat* myStats)
 		{
 			myStats->leader_uid = 0;
 		}
-
-		if ( rand() % 4 == 0 )
-		{
-			myStats->EFFECTS[EFF_ASLEEP] = true;
-			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
-		}
-
-		if ( rand() % 3 == 0 )
-		{
-			int i = 1 + rand() % 3;
-			for ( c = 0; c < i; c++ )
-			{
-				newItem( static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
-			}
-		}
-
-		if ( rand() % 50 || my->flags[USERFLAG2] )
-		{
-			strcpy(myStats->name, "");
-		}
-		else
-		{
-			strcpy(myStats->name, "Thumpus the Troll");
-			for ( c = 0; c < 3; c++ )
-			{
-				Entity* entity = summonMonster(GNOME, my->x, my->y);
-				if ( entity )
-				{
-					entity->parent = my->getUID();
-				}
-			}
-			myStats->HP *= 2;
-			myStats->MAXHP *= 2;
-			myStats->OLDHP = myStats->HP;
-			myStats->GOLD += 300;
-			myStats->LVL += 10;
-		}
+		setDefaultMonsterEquipment(my);
 	}
 
 	// torso

@@ -1971,29 +1971,42 @@ void assignActions(map_t* map)
 				else
 				{
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
+
 				}
-
-
-				if ( multiplayer != CLIENT && myStats == nullptr )
+				
+				if ( multiplayer != CLIENT )
 				{
-					// need to give the entity its list stuff.
-					// create an empty first node for traversal purposes
-					node_t* node2 = list_AddNodeFirst(&entity->children);
-					node2->element = NULL;
-					node2->deconstructor = &emptyDeconstructor;
+					if ( myStats == nullptr )
+					{
+						// need to give the entity its list stuff.
+						// create an empty first node for traversal purposes
+						node_t* node2 = list_AddNodeFirst(&entity->children);
+						node2->element = NULL;
+						node2->deconstructor = &emptyDeconstructor;
 
-					if ( entity->sprite == 10 )
+						if ( entity->sprite == 10 )
+						{
+							// if the sprite is 10, then choose from monsterCurve. 
+							// Create the stat struct again for the new monster
+							myStats = new Stat(monsterType + 1000);
+						}
+						else
+						{
+							// if monster not random, then create the stat struct here
+							// should not occur
+							myStats = new Stat(entity->sprite);
+						}
+						node2 = list_AddNodeLast(&entity->children);
+						node2->element = myStats;
+						//					node2->deconstructor = &myStats->~Stat;
+						node2->size = sizeof(myStats);
+					}	
+					else if ( entity->sprite == 10 )
 					{
-						myStats = new Stat(monsterType + 1000);
+						// monster is random, but generated from editor
+						// stat struct is already created, need to set stats
+						setDefaultMonsterStats(myStats, monsterType + 1000);
 					}
-					else
-					{
-						myStats = new Stat(entity->sprite);
-					}
-					node2 = list_AddNodeLast(&entity->children);
-					node2->element = myStats;
-					//					node2->deconstructor = &myStats->~Stat;
-					node2->size = sizeof(myStats);
 				}
 
 				switch ( monsterType )

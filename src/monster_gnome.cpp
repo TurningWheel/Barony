@@ -41,7 +41,11 @@ void initGnome(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		//setDefaultMonsterEquipment(my);
+		if ( !myStats->leader_uid )
+		{
+			myStats->leader_uid = 0;
+		}
+		setDefaultMonsterEquipment(my);
 	}
 
 	// torso

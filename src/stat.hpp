@@ -113,6 +113,7 @@ const int NUMPROFICIENCIES = 14;
 #define ITEM_SLOT_INV_4 78
 #define ITEM_SLOT_INV_5 84
 #define ITEM_SLOT_INV_6 90
+#define ITEM_CHANCE 5
 
 typedef enum
 {
@@ -136,7 +137,7 @@ public:
 	Sint32 STR, DEX, CON, INT, PER, CHR;
 	Sint32 EXP, LVL;
 	Sint32 GOLD, HUNGER;
-	//Sint32 RANDOMGOLD;
+	Sint32 RANDOMGOLD;
 
 	// skills and effects
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
@@ -178,6 +179,7 @@ public:
 	void freePlayerEquipment();
 	Stat* copyStats();
 	void printStats();
-	//Sint32 EDITOR_ITEMS[96];
+	Sint32 EDITOR_ITEMS[96];
 };
 extern Stat* stats[MAXPLAYERS];
+void setDefaultMonsterStats(Stat* stats, int sprite);

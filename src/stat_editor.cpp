@@ -11,7 +11,12 @@
 
 #pragma once
 
+#include "main.hpp"
+#include "game.hpp"
+#include "stat.hpp"
 #include "entity.hpp"
+#include "items.hpp"
+#include "magic/magic.hpp"
 
 //Destructor
 Stat::~Stat() {}
