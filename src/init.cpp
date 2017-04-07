@@ -589,7 +589,7 @@ int loadLanguage(char* lang)
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
 	if ( access(fontName, F_OK) == -1 )
 	{
-		snprintf(fontName, 63, "lang/en.ttf");
+		strncpy(fontName, "lang/en.ttf", 63);
 	}
 	if ( access(fontName, F_OK) == -1 )
 	{
