@@ -458,15 +458,15 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 				if (selectedItem->count > 1)
 				{
 					openedChest[clientnum]->addItemToChestFromInventory(
-					    clientnum, selectedItem, FALSE);
-					toggleclick = TRUE;
+					    clientnum, selectedItem, false);
+					toggleclick = true;
 				}
 				else
 				{
 					openedChest[clientnum]->addItemToChestFromInventory(
-					    clientnum, selectedItem, FALSE);
+					    clientnum, selectedItem, false);
 					selectedItem = NULL;
-					toggleclick = FALSE;
+					toggleclick = false;
 				}
 			}
 		}
@@ -491,7 +491,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 						continue;
 					}
 
-					toggleclick = FALSE;
+					toggleclick = false;
 					if (tempItem->x == selectedItem->x
 					        && tempItem->y == selectedItem->y)
 					{
@@ -511,7 +511,7 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 							tempItem->x = oldx;
 							tempItem->y = oldy;
 							selectedItem = tempItem;
-							toggleclick = TRUE;
+							toggleclick = true;
 							break;
 						}
 					}
@@ -535,13 +535,13 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
-						toggleclick = TRUE;
+						toggleclick = true;
 					}
 					else
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = NULL;
-						toggleclick = FALSE;
+						toggleclick = false;
 					}
 					playSound(139, 64); // click sound
 				}
@@ -562,13 +562,13 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = tempItem;
-						toggleclick = TRUE;
+						toggleclick = true;
 					}
 					else
 					{
 						slot->item = selectedItem->uid;
 						selectedItem = NULL;
-						toggleclick = FALSE;
+						toggleclick = false;
 					}
 					playSound(139, 64); // click sound
 				}
@@ -577,13 +577,13 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 					if (selectedItem->count > 1)
 					{
 						dropItem(selectedItem, clientnum);
-						toggleclick = TRUE;
+						toggleclick = true;
 					}
 					else
 					{
 						dropItem(selectedItem, clientnum);
 						selectedItem = NULL;
-						toggleclick = FALSE;
+						toggleclick = false;
 					}
 				}
 			}
@@ -622,10 +622,10 @@ bool mouseInBoundsRealtimeCoords(int x1, int x2, int y1, int y2)
 	if (mousey >= y1 && mousey < y2)
 		if (mousex >= x1 && mousex < x2)
 		{
-			return TRUE;
+			return true;
 		}
 
-	return FALSE;
+	return false;
 }
 
 void drawBlueInventoryBorder(const Item& item, int x, int y)

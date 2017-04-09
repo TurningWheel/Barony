@@ -28,10 +28,10 @@ void initMinotaur(Entity* my, Stat* myStats)
 
 	my->sprite = 239;
 
-	//my->flags[GENIUS]=TRUE;
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[BLOCKSIGHT] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	//my->flags[GENIUS]=true;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[BLOCKSIGHT] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -85,7 +85,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -104,7 +104,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 		myStats->mask = NULL;
 
 		// minotaurs can traverse waters and pits (pits with magic :))
-		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
+		myStats->EFFECTS[EFF_LEVITATING] = true;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 		ItemType gemtype = GEM_RUBY;
@@ -123,7 +123,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 				gemtype = GEM_DIAMOND;
 				break;
 		}
-		newItem( gemtype, EXCELLENT, 0, 1, rand(), TRUE, &myStats->inventory );
+		newItem( gemtype, EXCELLENT, 0, 1, rand(), true, &myStats->inventory );
 	}
 
 	// head
@@ -131,8 +131,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MINOTAUR][1][0]; // 0
 	entity->focaly = limbs[MINOTAUR][1][1]; // 0
@@ -149,8 +149,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MINOTAUR][2][0]; // 0
 	entity->focaly = limbs[MINOTAUR][2][1]; // 0
@@ -167,8 +167,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MINOTAUR][3][0]; // 1
 	entity->focaly = limbs[MINOTAUR][3][1]; // 0
@@ -185,8 +185,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MINOTAUR][4][0]; // 1
 	entity->focaly = limbs[MINOTAUR][4][1]; // 0
@@ -203,8 +203,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MINOTAUR][5][0]; // 2.5
 	entity->focaly = limbs[MINOTAUR][5][1]; // 7
@@ -221,8 +221,8 @@ void initMinotaur(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[MINOTAUR][6][0]; // 2.5
 	entity->focaly = limbs[MINOTAUR][6][1]; // -7
@@ -293,8 +293,8 @@ void minotaurDie(Entity* my)
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
@@ -309,7 +309,7 @@ void minotaurDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -333,10 +333,10 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -352,7 +352,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -360,8 +360,8 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -377,7 +377,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -703,7 +703,7 @@ void actMinotaurTimer(Entity* my)
 	if ( MINOTAURTIMER_LIFE == TICKS_PER_SECOND * 120 && rand() % 5 == 0 )   // two minutes
 	{
 		int c;
-		bool spawnedsomebody = FALSE;
+		bool spawnedsomebody = false;
 		for ( c = 0; c < 9; c++ )
 		{
 			Uint32 zapLeaderUid = 0;
@@ -711,7 +711,7 @@ void actMinotaurTimer(Entity* my)
 			if ( monster )
 			{
 				monster->skill[29] = 1; // so we spawn a zap brigadier
-				spawnedsomebody = TRUE;
+				spawnedsomebody = true;
 				if ( !zapLeaderUid )
 				{
 					zapLeaderUid = monster->getUID();
@@ -729,7 +729,7 @@ void actMinotaurTimer(Entity* my)
 #ifdef MUSIC
 			fadein_increment = default_fadein_increment * 20;
 			fadeout_increment = default_fadeout_increment * 5;
-			playmusic( sounds[175], FALSE, TRUE, FALSE);
+			playmusic( sounds[175], false, true, false);
 #endif
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -790,10 +790,10 @@ void actMinotaurCeilingBuster(Entity* my)
 			entity->sizex = 1;
 			entity->sizey = 1;
 			entity->yaw = (rand() % 360) * PI / 180.f;
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[BRIGHT] = TRUE;
-			entity->flags[NOUPDATE] = TRUE;
-			entity->flags[UNCLICKABLE] = TRUE;
+			entity->flags[PASSABLE] = true;
+			entity->flags[BRIGHT] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[UNCLICKABLE] = true;
 			entity->behavior = &actMagicParticle;
 			if ( multiplayer != CLIENT )
 			{
@@ -822,7 +822,7 @@ void actMinotaurCeilingBuster(Entity* my)
 						if ( myStats )
 						{
 							// easy hack to stop the minotaur while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = TRUE;
+							myStats->EFFECTS[EFF_PARALYZED] = true;
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 10;
 						}
 					}
@@ -835,10 +835,10 @@ void actMinotaurCeilingBuster(Entity* my)
 						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
 						entity->z = -8;
-						entity->flags[PASSABLE] = TRUE;
-						entity->flags[INVISIBLE] = FALSE;
-						entity->flags[NOUPDATE] = TRUE;
-						entity->flags[UPDATENEEDED] = FALSE;
+						entity->flags[PASSABLE] = true;
+						entity->flags[INVISIBLE] = false;
+						entity->flags[NOUPDATE] = true;
+						entity->flags[UPDATENEEDED] = false;
 						entity->sprite = items[GEM_ROCK].index;
 						entity->yaw = rand() % 360 * PI / 180;
 						entity->pitch = rand() % 360 * PI / 180;
@@ -866,10 +866,10 @@ void actMinotaurCeilingBuster(Entity* my)
 								childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
 								childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
 								childEntity->z = -8;
-								childEntity->flags[PASSABLE] = TRUE;
-								childEntity->flags[INVISIBLE] = FALSE;
-								childEntity->flags[NOUPDATE] = TRUE;
-								childEntity->flags[UPDATENEEDED] = FALSE;
+								childEntity->flags[PASSABLE] = true;
+								childEntity->flags[INVISIBLE] = false;
+								childEntity->flags[NOUPDATE] = true;
+								childEntity->flags[UPDATENEEDED] = false;
 								childEntity->sprite = items[GEM_ROCK].index;
 								childEntity->yaw = rand() % 360 * PI / 180;
 								childEntity->pitch = rand() % 360 * PI / 180;
@@ -911,10 +911,10 @@ void createMinotaurTimer(Entity* entity, map_t* map)
 	childEntity->x = entity->x;
 	childEntity->y = entity->y;
 	childEntity->behavior = &actMinotaurTimer;
-	childEntity->flags[SPRITE] = TRUE;
-	childEntity->flags[INVISIBLE] = TRUE;
-	childEntity->flags[PASSABLE] = TRUE;
-	childEntity->flags[NOUPDATE] = TRUE;
+	childEntity->flags[SPRITE] = true;
+	childEntity->flags[INVISIBLE] = true;
+	childEntity->flags[PASSABLE] = true;
+	childEntity->flags[NOUPDATE] = true;
 	childEntity->setUID(-3);
 	entity_uids--;
 }

@@ -24,8 +24,8 @@ void initScorpion(Entity* my, Stat* myStats)
 {
 	int c;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[INVISIBLE] = false;
 
 	my->sprite = 196;
 	if ( multiplayer != CLIENT )
@@ -71,7 +71,7 @@ void initScorpion(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -102,7 +102,7 @@ void initScorpion(Entity* my, Stat* myStats)
 			myStats->PER = 10;
 			myStats->CHR = 10;
 			myStats->LVL = 15;
-			newItem( GEM_RUBY, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), TRUE, &myStats->inventory );
+			newItem( GEM_RUBY, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 3; c++ )
@@ -123,8 +123,8 @@ void initScorpion(Entity* my, Stat* myStats)
 	entity->skill[2] = my->getUID();
 	entity->focalz = -models[entity->sprite]->sizez / 4 + .5;
 	entity->focalx = .75;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->behavior = &actScorpionTail;
 	entity->parent = my->getUID();
@@ -161,8 +161,8 @@ void scorpionDie(Entity* my)
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
@@ -173,7 +173,7 @@ void scorpionDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -229,10 +229,10 @@ void scorpionAnimate(Entity* my, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		Stat* myStats = my->getStats();
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -244,7 +244,7 @@ void scorpionAnimate(Entity* my, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -252,8 +252,8 @@ void scorpionAnimate(Entity* my, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -265,7 +265,7 @@ void scorpionAnimate(Entity* my, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;

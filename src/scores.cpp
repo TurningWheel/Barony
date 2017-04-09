@@ -21,12 +21,12 @@
 
 // definitions
 list_t topscores;
-int victory = FALSE;
+int victory = false;
 Uint32 completionTime = 0;
-bool conductPenniless = TRUE;
-bool conductFoodless = TRUE;
-bool conductVegetarian = TRUE;
-bool conductIlliterate = TRUE;
+bool conductPenniless = true;
+bool conductFoodless = true;
+bool conductVegetarian = true;
+bool conductIlliterate = true;
 list_t booksRead;
 bool usedClass[10] = {0};
 Uint32 loadingsavegame = 0;
@@ -2199,30 +2199,30 @@ bool saveGameExists()
 {
 	if ( access( SAVEGAMEFILE, F_OK ) == -1 )
 	{
-		return FALSE;
+		return false;
 	}
 	else
 	{
 		FILE* fp;
 		if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
 		{
-			return FALSE;
+			return false;
 		}
 		char checkstr[64];
 		fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
 		if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 		{
 			fclose(fp);
-			return FALSE;
+			return false;
 		}
 		fread(checkstr, sizeof(char), strlen(VERSION), fp);
 		if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
 		{
 			fclose(fp);
-			return FALSE;
+			return false;
 		}
 		fclose(fp);
-		return TRUE;
+		return true;
 	}
 }
 

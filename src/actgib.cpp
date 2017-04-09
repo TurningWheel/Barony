@@ -159,12 +159,12 @@ Entity* spawnGib(Entity* parentent)
 	entity->vel_z = -.5;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actGib;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
 	if ( !spawn_blood )
 	{
-		entity->flags[INVISIBLE] = TRUE;
+		entity->flags[INVISIBLE] = true;
 	}
 	if ( multiplayer != CLIENT )
 	{
@@ -194,9 +194,9 @@ Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite)
 	entity->vel_z = -.5;
 	entity->fskill[3] = 0.04;
 	entity->behavior = &actGib;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
 
 	return entity;
 }

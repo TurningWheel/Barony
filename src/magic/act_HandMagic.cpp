@@ -68,12 +68,12 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	//Save these two very important pieces of data.
 	animation_manager->caster = caster->getUID();
 	animation_manager->spell = spell;
-	animation_manager->active = TRUE;
+	animation_manager->active = true;
 	animation_manager->stage = CIRCLE;
 
 	//Make the HUDWEAPON disappear, or somesuch?
-	magicLeftHand->flags[INVISIBLE] = FALSE;
-	magicRightHand->flags[INVISIBLE] = FALSE;
+	magicLeftHand->flags[INVISIBLE] = false;
+	magicRightHand->flags[INVISIBLE] = false;
 
 	animation_manager->lefthand_angle = 0;
 	animation_manager->lefthand_movex = 0;
@@ -100,23 +100,23 @@ void spellcastingAnimationManager_deactivate(spellcasting_animation_manager_t* a
 {
 	animation_manager->caster = -1;
 	animation_manager->spell = NULL;
-	animation_manager->active = FALSE;
+	animation_manager->active = false;
 	animation_manager->stage = 0;
 
 	//Make the hands invisible (should probably fall away or something, but whatever. That's another project for another day)
 	if ( magicLeftHand )
 	{
-		magicLeftHand->flags[INVISIBLE] = TRUE;
+		magicLeftHand->flags[INVISIBLE] = true;
 	}
 	if ( magicRightHand )
 	{
-		magicRightHand->flags[INVISIBLE] = TRUE;
+		magicRightHand->flags[INVISIBLE] = true;
 	}
 }
 
 void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t* animation_manager)
 {
-	castSpell(animation_manager->caster, animation_manager->spell, FALSE, FALSE); //Actually cast the spell.
+	castSpell(animation_manager->caster, animation_manager->spell, false, false); //Actually cast the spell.
 
 	spellcastingAnimationManager_deactivate(animation_manager);
 }
@@ -131,9 +131,9 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 void actLeftHandMagic(Entity* my)
 {
 	//int c = 0;
-	if (intro == TRUE)
+	if (intro == true)
 	{
-		my->flags[INVISIBLE] = TRUE;
+		my->flags[INVISIBLE] = true;
 		return;
 	}
 
@@ -164,10 +164,10 @@ void actLeftHandMagic(Entity* my)
 	my->roll = HANDMAGIC_ROLL;
 
 	//Sprite
-	bool noGloves = FALSE;
+	bool noGloves = false;
 	if ( stats[clientnum]->gloves == NULL )
 	{
-		noGloves = TRUE;
+		noGloves = true;
 	}
 	else
 	{
@@ -185,7 +185,7 @@ void actLeftHandMagic(Entity* my)
 		}
 		else
 		{
-			noGloves = TRUE;
+			noGloves = true;
 		}
 	}
 	if ( noGloves )
@@ -225,22 +225,22 @@ void actLeftHandMagic(Entity* my)
 		}
 	}
 
-	bool wearingring = FALSE;
+	bool wearingring = false;
 
 	//Select model
 	if (stats[clientnum]->ring != NULL)
 		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 		{
-			wearingring = TRUE;
+			wearingring = true;
 		}
 	if (stats[clientnum]->cloak != NULL)
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 		{
-			wearingring = TRUE;
+			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring )   // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
 	{
-		my->flags[INVISIBLE] = TRUE;
+		my->flags[INVISIBLE] = true;
 	}
 
 	if (cast_animation.active)
@@ -251,12 +251,12 @@ void actLeftHandMagic(Entity* my)
 				if (ticks % 5 == 0)
 				{
 					Entity* entity = spawnGib(my);
-					entity->flags[INVISIBLE] = FALSE;
-					entity->flags[SPRITE] = TRUE;
-					entity->flags[NOUPDATE] = TRUE;
-					entity->flags[UPDATENEEDED] = FALSE;
-					entity->flags[OVERDRAW] = TRUE;
-					entity->flags[BRIGHT] = TRUE;
+					entity->flags[INVISIBLE] = false;
+					entity->flags[SPRITE] = true;
+					entity->flags[NOUPDATE] = true;
+					entity->flags[UPDATENEEDED] = false;
+					entity->flags[OVERDRAW] = true;
+					entity->flags[BRIGHT] = true;
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!
 					entity->scaley = 0.25f;
 					entity->scalez = 0.25f;
@@ -331,9 +331,9 @@ void actLeftHandMagic(Entity* my)
 
 void actRightHandMagic(Entity* my)
 {
-	if (intro == TRUE)
+	if (intro == true)
 	{
-		my->flags[INVISIBLE] = TRUE;
+		my->flags[INVISIBLE] = true;
 		return;
 	}
 
@@ -361,10 +361,10 @@ void actRightHandMagic(Entity* my)
 	my->roll = HANDMAGIC_ROLL;
 
 	//Sprite
-	bool noGloves = FALSE;
+	bool noGloves = false;
 	if ( stats[clientnum]->gloves == NULL )
 	{
-		noGloves = TRUE;
+		noGloves = true;
 	}
 	else
 	{
@@ -382,7 +382,7 @@ void actRightHandMagic(Entity* my)
 		}
 		else
 		{
-			noGloves = TRUE;
+			noGloves = true;
 		}
 	}
 	if ( noGloves )
@@ -422,22 +422,22 @@ void actRightHandMagic(Entity* my)
 		}
 	}
 
-	bool wearingring = FALSE;
+	bool wearingring = false;
 
 	//Select model
 	if (stats[clientnum]->ring != NULL)
 		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 		{
-			wearingring = TRUE;
+			wearingring = true;
 		}
 	if (stats[clientnum]->cloak != NULL)
 		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
 		{
-			wearingring = TRUE;
+			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring )   // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
 	{
-		my->flags[INVISIBLE] = TRUE;
+		my->flags[INVISIBLE] = true;
 	}
 
 	if (cast_animation.active)
@@ -449,12 +449,12 @@ void actRightHandMagic(Entity* my)
 				{
 					//messagePlayer(0, "Pingas!");
 					Entity* entity = spawnGib(my);
-					entity->flags[INVISIBLE] = FALSE;
-					entity->flags[SPRITE] = TRUE;
-					entity->flags[NOUPDATE] = TRUE;
-					entity->flags[UPDATENEEDED] = FALSE;
-					entity->flags[OVERDRAW] = TRUE;
-					entity->flags[BRIGHT] = TRUE;
+					entity->flags[INVISIBLE] = false;
+					entity->flags[SPRITE] = true;
+					entity->flags[NOUPDATE] = true;
+					entity->flags[UPDATENEEDED] = false;
+					entity->flags[OVERDRAW] = true;
+					entity->flags[BRIGHT] = true;
 					//entity->sizex = 1; //MAKE 'EM SMALL PLEASE!
 					//entity->sizey = 1;
 					entity->scalex = 0.25f; //MAKE 'EM SMALL PLEASE!

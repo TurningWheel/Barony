@@ -43,7 +43,7 @@ SDL_Surface* inventoryChest_bmp = NULL;
 SDL_Surface* invclose_bmp = NULL;
 SDL_Surface* invgraball_bmp = NULL;
 SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
-bool gui_clickdrag = FALSE;
+bool gui_clickdrag = false;
 int dragoffset_x = 0;
 int dragoffset_y = 0;
 
@@ -51,7 +51,7 @@ int chestitemscroll = 0;
 list_t chestInv;
 int chestgui_offset_x = 0;
 int chestgui_offset_y = 0;
-bool dragging_chestGUI = FALSE;
+bool dragging_chestGUI = false;
 int selectedChestSlot = -1;
 
 int selected_inventory_slot_x = 0;
@@ -73,8 +73,8 @@ SDL_Surface* bookgui_img = NULL;
 node_t* book_page = NULL;
 int bookgui_offset_x = 0;
 int bookgui_offset_y = 0;
-bool dragging_book_GUI = FALSE;
-bool book_open = FALSE;
+bool dragging_book_GUI = false;
+bool book_open = false;
 book_t* open_book = NULL;
 Item* open_book_item = NULL;
 //int book_characterspace_x = 0;
@@ -102,7 +102,7 @@ SDL_Surface* damage_bmp = NULL;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
-bool dragging_magicspell_list_GUI = FALSE;
+bool dragging_magicspell_list_GUI = false;
 int magic_GUI_state = 0;
 SDL_Rect magic_gui_pos;
 SDL_Surface* sustained_spell_generic_icon = NULL;
@@ -117,10 +117,10 @@ SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
 list_t damageIndicators;
 
-bool auto_hotbar_new_items = TRUE;
-bool disable_messages = FALSE;
-bool right_click_protect = FALSE;
-bool auto_appraise_new_items = FALSE;
+bool auto_hotbar_new_items = true;
+bool disable_messages = false;
+bool right_click_protect = false;
+bool auto_appraise_new_items = false;
 
 
 bool loadInterfaceResources()
@@ -184,17 +184,17 @@ bool loadInterfaceResources()
 	/*rightsidebar_titlebar_img = loadImage("images/system/rightSidebarTitlebar.png");
 	if (!rightsidebar_titlebar_img) {
 		printlog( "Failed to load \"images/system/rightSidebarTitlebar.png\".");
-		return FALSE;
+		return false;
 	}
 	rightsidebar_slot_img = loadImage("images/system/rightSidebarSlot.png");
 	if (!rightsidebar_slot_img) {
 		printlog( "Failed to load \"images/system/rightSidebarSlot.png\".");
-		return FALSE;
+		return false;
 	}
 	rightsidebar_slot_highlighted_img = loadImage("images/system/rightSidebarSlotHighlighted.png");
 	if (!rightsidebar_slot_highlighted_img) {
 		printlog( "Failed to load \"images/system/rightSidebarSlotHighlighted.png\".");
-		return FALSE;
+		return false;
 	}*/
 	rightsidebar_titlebar_img = spell_list_titlebar_bmp;
 	rightsidebar_slot_img = spell_list_gui_slot_bmp;
@@ -220,7 +220,7 @@ bool loadInterfaceResources()
 	damageIndicators.first = nullptr;
 	damageIndicators.last = nullptr;
 
-	return TRUE;
+	return true;
 }
 
 void freeInterfaceResources()
@@ -649,7 +649,7 @@ int loadConfig(char* filename)
 
 	char str[1024];
 	FILE* fp;
-	bool mallocd = FALSE;
+	bool mallocd = false;
 
 	printlog("Loading config '%s'...\n", filename);
 
@@ -658,7 +658,7 @@ int loadConfig(char* filename)
 		char* filename2 = filename;
 		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, filename2);
-		mallocd = TRUE;
+		mallocd = true;
 		strcat(filename, ".cfg");
 	}
 
@@ -702,7 +702,7 @@ int saveConfig(char* filename)
 	struct tm tm = *localtime(&t);
 	FILE* fp;
 	int c;
-	bool mallocd = FALSE;
+	bool mallocd = false;
 
 	printlog("Saving config '%s'...\n", filename);
 
@@ -711,7 +711,7 @@ int saveConfig(char* filename)
 		char* filename2 = filename;
 		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, filename2);
-		mallocd = TRUE;
+		mallocd = true;
 		strcat(filename, ".cfg");
 	}
 
@@ -879,10 +879,10 @@ bool mouseInBounds(int x1, int x2, int y1, int y2)
 	if (omousey >= y1 && omousey < y2)
 		if (omousex >= x1 && omousex < x2)
 		{
-			return TRUE;
+			return true;
 		}
 
-	return FALSE;
+	return false;
 }
 
 hotbar_slot_t* getHotbar(int x, int y)

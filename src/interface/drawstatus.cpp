@@ -314,7 +314,7 @@ void drawStatus()
 			}
 		}
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255); // black color
-		ttfPrintTextColor(ttf12, x, y, color, FALSE, string->data);
+		ttfPrintTextColor(ttf12, x, y, color, false, string->data);
 	}
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
@@ -522,7 +522,7 @@ void drawStatus()
 		item = uidToItem(hotbar[num].item);
 		if (item)
 		{
-			bool used = FALSE;
+			bool used = false;
 			pos.w = hotbar_img->w;
 			pos.h = hotbar_img->h;
 			drawImageScaled(itemSprite(item), NULL, &pos);
@@ -532,7 +532,7 @@ void drawStatus()
 				{
 					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
 					{
-						toggleclick = FALSE;
+						toggleclick = false;
 						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
 						{
 							hotbar[num].item = 0;
@@ -562,12 +562,12 @@ void drawStatus()
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-						bool badpotion = FALSE;
+						bool badpotion = false;
 						if ( itemCategory(item) == POTION && item->identified )
 						{
 							if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
 							{
-								badpotion = TRUE;
+								badpotion = true;
 							}
 						}
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -605,7 +605,7 @@ void drawStatus()
 								}
 								equipItem(item, &stats[clientnum]->weapon, clientnum);
 							}
-							used = TRUE;
+							used = true;
 						}
 					}
 				}
@@ -886,12 +886,12 @@ void drawStatus()
 
 		if ( item )
 		{
-			bool badpotion = FALSE;
+			bool badpotion = false;
 			if ( itemCategory(item) == POTION && item->identified )
 			{
 				if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
 				{
-					badpotion = TRUE;
+					badpotion = true;
 				}
 			}
 			if ( !badpotion )

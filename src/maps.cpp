@@ -208,7 +208,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	Uint32 levellimit;
 	list_t doorList;
 	node_t* doorNode;
-	bool shoplevel = FALSE;
+	bool shoplevel = false;
 	map_t shopmap;
 	map_t secretlevelmap;
 	int secretlevelexit = 0;
@@ -227,7 +227,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	// determine whether shop level or not
 	if ( prng_get_uint() % 2 && currentlevel > 1 && strncmp(map.name, "Underworld", 10) && strncmp(map.name, "Hell", 4) )
 	{
-		shoplevel = TRUE;
+		shoplevel = true;
 	}
 
 	// determine whether minotaur level or not
@@ -242,7 +242,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	{
 		if ( prng_get_uint() % 4 == 0 )
 		{
-			darkmap = TRUE;
+			darkmap = true;
 			messagePlayer(clientnum, language[1108]);
 		}
 	}
@@ -312,7 +312,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 		else
 		{
-			shoplevel = FALSE;
+			shoplevel = false;
 		}
 		free( sublevelname );
 		free( fullname );
@@ -407,11 +407,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				if ( x < 2 || y < 2 || x > map.width - 3 || y > map.height - 3 )
 				{
-					possiblelocations[x + y * map.width] = FALSE;
+					possiblelocations[x + y * map.width] = false;
 				}
 				else
 				{
-					possiblelocations[x + y * map.width] = TRUE;
+					possiblelocations[x + y * map.width] = true;
 				}
 			}
 		}
@@ -420,7 +420,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		possiblerooms = (bool*) malloc(sizeof(bool) * numlevels);
 		for ( c = 0; c < numlevels; c++ )
 		{
-			possiblerooms[c] = TRUE;
+			possiblerooms[c] = true;
 		}
 		levellimit = (map.width * map.height);
 		for ( c = 0; c < levellimit; c++ )
@@ -429,7 +429,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			for ( y = 0; y < map.height; y++ )
 				for ( x = 0; x < map.width; x++ )
 				{
-					possiblelocations2[x + y * map.width] = TRUE;
+					possiblelocations2[x + y * map.width] = true;
 				}
 
 			// pick the room to be used
@@ -438,7 +438,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				levelnum = 0; // the first room *must* be an entrance hall
 				levelnum2 = 0;
 				numlevels--;
-				possiblerooms[0] = FALSE;
+				possiblerooms[0] = false;
 				node = mapList.first;
 				node = ((list_t*)node->element)->first;
 				doorNode = node->next;
@@ -529,9 +529,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 					{
 						for ( x1 = x0; x1 < std::min(x0 + tempMap->width + 1, map.width); x1++ )
 						{
-							if ( possiblelocations[x1 + y1 * map.width] == FALSE && possiblelocations2[x0 + y0 * map.width] == TRUE )
+							if ( possiblelocations[x1 + y1 * map.width] == false && possiblelocations2[x0 + y0 * map.width] == true )
 							{
-								possiblelocations2[x0 + y0 * map.width] = FALSE;
+								possiblelocations2[x0 + y0 * map.width] = false;
 								numpossiblelocations--;
 							}
 						}
@@ -544,7 +544,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				if ( levelnum2 >= 0 && levelnum2 < numlevels )
 				{
-					possiblerooms[levelnum2] = FALSE;
+					possiblerooms[levelnum2] = false;
 				}
 				numlevels--;
 				if ( levelnum2 == 0 )
@@ -593,7 +593,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			y = 0;
 			while ( 1 )
 			{
-				if ( possiblelocations2[x + y * map.width] == TRUE )
+				if ( possiblelocations2[x + y * map.width] == true )
 				{
 					i++;
 					if ( i == pickedlocation )
@@ -617,7 +617,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( c == 0 )
 				for ( z = 0; z < map.width * map.height; z++ )
 				{
-					firstroomtile[z] = FALSE;
+					firstroomtile[z] = false;
 				}
 			x1 = x + tempMap->width;
 			y1 = y + tempMap->height;
@@ -630,17 +630,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 						map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = tempMap->tiles[z + (y0 - y) * MAPLAYERS + (x0 - x) * MAPLAYERS * tempMap->height];
 						if ( z == 0 )
 						{
-							possiblelocations[x0 + y0 * map.width] = FALSE;
+							possiblelocations[x0 + y0 * map.width] = false;
 							if ( c == 0 )
 							{
-								firstroomtile[y0 + x0 * map.height] = TRUE;
+								firstroomtile[y0 + x0 * map.height] = true;
 							}
 							else if ( c == 2 && shoplevel )
 							{
-								firstroomtile[y0 + x0 * map.height] = TRUE;
+								firstroomtile[y0 + x0 * map.height] = true;
 								if ( x0 - x > 0 && y0 - y > 0 && x0 - x < tempMap->width - 1 && y0 - y < tempMap->height - 1 )
 								{
-									shoparea[y0 + x0 * map.height] = TRUE;
+									shoparea[y0 + x0 * map.height] = true;
 								}
 							}
 						}
@@ -864,7 +864,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		numpossiblelocations = 0;
 		for ( c = 0; c < map.width * map.height; c++ )
 		{
-			possiblelocations[c] = FALSE;
+			possiblelocations[c] = false;
 		}
 		for ( y = 1; y < map.height - 1; y++ )
 		{
@@ -893,7 +893,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				}
 				if ( sides == 1 )
 				{
-					possiblelocations[y + x * map.height] = TRUE;
+					possiblelocations[y + x * map.height] = true;
 					numpossiblelocations++;
 				}
 			}
@@ -906,9 +906,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 			door_t* door = (door_t*)doorNode->element;
 			int x = std::min<unsigned int>(std::max(0, door->x), map.width); //TODO: Why are const int and unsigned int being compared?
 			int y = std::min<unsigned int>(std::max(0, door->y), map.height); //TODO: Why are const int and unsigned int being compared?
-			if ( possiblelocations[y + x * map.height] == TRUE )
+			if ( possiblelocations[y + x * map.height] == true )
 			{
-				possiblelocations[y + x * map.height] = FALSE;
+				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
 			}
 		}
@@ -940,7 +940,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			y = 0;
 			while ( 1 )
 			{
-				if ( possiblelocations[y + x * map.height] == TRUE )
+				if ( possiblelocations[y + x * map.height] == true )
 				{
 					i++;
 					if ( i == pickedlocation )
@@ -976,42 +976,42 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				side = 3;
 			}
-			bool arrowtrap = FALSE;
-			bool noceiling = FALSE;
-			bool arrowtrapspawn = FALSE;
+			bool arrowtrap = false;
+			bool noceiling = false;
+			bool arrowtrapspawn = false;
 			if ( !strncmp(map.name, "Hell", 4) )
 			{
 				if ( side == 0 && !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + (x + 1)*MAPLAYERS * map.height] )
 				{
-					noceiling = TRUE;
+					noceiling = true;
 				}
 				if ( side == 1 && !map.tiles[(MAPLAYERS - 1) + (y + 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 				{
-					noceiling = TRUE;
+					noceiling = true;
 				}
 				if ( side == 2 && !map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + (x - 1)*MAPLAYERS * map.height] )
 				{
-					noceiling = TRUE;
+					noceiling = true;
 				}
 				if ( side == 3 && !map.tiles[(MAPLAYERS - 1) + (y - 1)*MAPLAYERS + x * MAPLAYERS * map.height] )
 				{
-					noceiling = TRUE;
+					noceiling = true;
 				}
 				if ( noceiling )
 				{
-					arrowtrapspawn = TRUE;
+					arrowtrapspawn = true;
 				}
 			}
 			else
 			{
 				if ( prng_get_uint() % 2 && currentlevel > 5 )
 				{
-					arrowtrapspawn = TRUE;
+					arrowtrapspawn = true;
 				}
 			}
 			if ( arrowtrapspawn || noceiling )
 			{
-				arrowtrap = TRUE;
+				arrowtrap = true;
 				entity = newEntity(32, 1, map.entities); // arrow trap
 				entity->behavior = &actArrowTrap;
 				map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = 53; // trap wall
@@ -1124,12 +1124,12 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			if ( checkObstacle( x * 16 + 8, y * 16 + 8, NULL, NULL ) || firstroomtile[y + x * map.height] )
 			{
-				possiblelocations[y + x * map.height] = FALSE;
+				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
 			}
 			else
 			{
-				possiblelocations[y + x * map.height] = TRUE;
+				possiblelocations[y + x * map.height] = true;
 			}
 		}
 	}
@@ -1142,7 +1142,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		{
 			if ( possiblelocations[y + x * map.height] )
 			{
-				possiblelocations[y + x * map.height] = FALSE;
+				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
 			}
 		}
@@ -1161,7 +1161,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		y = 0;
 		while ( 1 )
 		{
-			if ( possiblelocations[y + x * map.height] == TRUE )
+			if ( possiblelocations[y + x * map.height] == true )
 			{
 				i++;
 				if ( i == pickedlocation )
@@ -1200,16 +1200,17 @@ int generateDungeon(char* levelset, Uint32 seed)
 			// determine if the ladder generated in a viable location
 			if ( strncmp(map.name, "Underworld", 10) )
 			{
-				bool nopath = FALSE;
+				bool nopath = false;
+				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
 					if ( entity2->sprite == 1 )
 					{
-						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2);
+						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
 						if ( path == NULL )
 						{
-							nopath = TRUE;
+							nopath = true;
 						}
 						else
 						{
@@ -1235,7 +1236,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		else
 		{
 			int x2, y2;
-			bool nodecoration = FALSE;
+			bool nodecoration = false;
 			int obstacles = 0;
 			for ( x2 = -1; x2 <= 1; x2++ )
 			{
@@ -1257,7 +1258,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			if ( obstacles > 1 )
 			{
-				nodecoration = TRUE;
+				nodecoration = true;
 			}
 			if ( prng_get_uint() % 2 || nodecoration )
 			{
@@ -1366,7 +1367,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		}
 
 		// mark this location as inelligible for reselection
-		possiblelocations[y + x * map.height] = FALSE;
+		possiblelocations[y + x * map.height] = false;
 		numpossiblelocations--;
 	}
 
@@ -1405,7 +1406,7 @@ void assignActions(map_t* map)
 	node_t* node, *nextnode;
 	Entity* entity, *childEntity;
 	Item* item;
-	bool itemsdonebefore = FALSE;
+	bool itemsdonebefore = false;
 
 	if (map == NULL)
 	{
@@ -1464,7 +1465,7 @@ void assignActions(map_t* map)
 							stats[numplayers]->HUNGER = 500;
 							for ( c = 0; c < NUMEFFECTS; c++ )
 							{
-								stats[numplayers]->EFFECTS[c] = FALSE;
+								stats[numplayers]->EFFECTS[c] = false;
 								stats[numplayers]->EFFECTS_TIMERS[c] = 0;
 							}
 						}
@@ -1480,16 +1481,16 @@ void assignActions(map_t* map)
 				entity->sprite = 113; // head model
 				entity->sizex = 4;
 				entity->sizey = 4;
-				entity->flags[GENIUS] = TRUE;
+				entity->flags[GENIUS] = true;
 				if ( numplayers == clientnum && multiplayer == CLIENT )
 				{
-					entity->flags[UPDATENEEDED] = FALSE;
+					entity->flags[UPDATENEEDED] = false;
 				}
 				else
 				{
-					entity->flags[UPDATENEEDED] = TRUE;
+					entity->flags[UPDATENEEDED] = true;
 				}
-				entity->flags[BLOCKSIGHT] = TRUE;
+				entity->flags[BLOCKSIGHT] = true;
 				entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
 				players[numplayers]->entity = entity;
 				if ( multiplayer != CLIENT )
@@ -1512,7 +1513,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 1;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 				childEntity = newEntity(2, 0, map->entities);
 				childEntity->x = entity->x;
@@ -1521,11 +1522,11 @@ void assignActions(map_t* map)
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
 				childEntity->behavior = &actDoor;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
 				//printlog("17 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -1533,8 +1534,8 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
 				//printlog("18 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -1550,7 +1551,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->yaw -= PI / 2.0;
 				entity->sprite = 1;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 				childEntity = newEntity(2, 0, map->entities);
 				childEntity->x = entity->x;
@@ -1560,11 +1561,11 @@ void assignActions(map_t* map)
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
 				childEntity->behavior = &actDoor;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
 				//printlog("20 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -1572,8 +1573,8 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
 				//printlog("21 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -1596,8 +1597,8 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z -= 1;
 				entity->sprite = 3;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
 				break;
 				// south torch:
 			}
@@ -1615,8 +1616,8 @@ void assignActions(map_t* map)
 				entity->z -= 1;
 				entity->yaw += PI / 2.0;
 				entity->sprite = 3;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// west torch:
@@ -1634,8 +1635,8 @@ void assignActions(map_t* map)
 				entity->z -= 1;
 				entity->yaw += PI;
 				entity->sprite = 3;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// north torch:
@@ -1653,8 +1654,8 @@ void assignActions(map_t* map)
 				entity->z -= 1;
 				entity->yaw += 3 * PI / 2.0;
 				entity->sprite = 3;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
 				break;
 			}
 			// item:
@@ -1668,7 +1669,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->roll = PI / 2.0;
 				entity->yaw = (prng_get_uint() % 360) * PI / 180.0;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actItem;
 				if ( entity->sprite == 68 )   // magic_bow.png
 				{
@@ -1697,29 +1698,29 @@ void assignActions(map_t* map)
 								balance++;
 							}
 						}
-						bool extrafood = FALSE;
+						bool extrafood = false;
 						switch ( balance )
 						{
 							case 2:
 								if ( prng_get_uint() % 8 == 0 )
 								{
-									extrafood = TRUE;
+									extrafood = true;
 								}
 								break;
 							case 3:
 								if ( prng_get_uint() % 5 == 0 )
 								{
-									extrafood = TRUE;
+									extrafood = true;
 								}
 								break;
 							case 4:
 								if ( prng_get_uint() % 4 == 0 )
 								{
-									extrafood = TRUE;
+									extrafood = true;
 								}
 								break;
 							default:
-								extrafood = FALSE;
+								extrafood = false;
 								break;
 						}
 						if ( !extrafood )
@@ -1789,7 +1790,7 @@ void assignActions(map_t* map)
 					entity->z = 7.5 - models[entity->sprite]->sizey * .25;
 				}
 				entity->skill[18] = 1; // so the item retains its position
-				itemsdonebefore = TRUE;
+				itemsdonebefore = true;
 				break;
 			}
 			// gold:
@@ -1800,13 +1801,13 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z = 6.5;
 				entity->yaw = (prng_get_uint() % 360) * PI / 180.0;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actGoldBag;
 				entity->skill[0] = 10 + rand() % 100; // amount
 				entity->sprite = 130; // gold bag model
 				if ( !strcmp(map->name, "Sokoban") )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 				}
 				break;
 			// monster:
@@ -1827,7 +1828,7 @@ void assignActions(map_t* map)
 				entity->z = 6;
 				entity->yaw = (rand() % 360) * PI / 180.0;
 				entity->behavior = &actMonster;
-				entity->flags[UPDATENEEDED] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
 				entity->skill[5] = -1;
 				Stat* myStats = NULL;
 
@@ -2018,7 +2019,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 5.45;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actLadder;
 				entity->sprite = 161; // ladder
 				break;
@@ -2035,8 +2036,8 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 6;
-				entity->flags[BRIGHT] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[BRIGHT] = true;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actCampfire;
 				entity->sprite = 162; // firepit
 				break;
@@ -2131,7 +2132,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z = 7;
 				entity->sprite = 184; // this is the switch base.
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
@@ -2142,7 +2143,7 @@ void assignActions(map_t* map)
 				childEntity->sizey = 1;
 				childEntity->sprite = 185; // this is the switch handle.
 				childEntity->roll = PI / 4; // "off" position
-				childEntity->flags[PASSABLE] = TRUE;
+				childEntity->flags[PASSABLE] = true;
 				childEntity->behavior = &actSwitch;
 				break;
 			//Circuit.
@@ -2153,9 +2154,9 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z = 5;
 				entity->behavior = &actCircuit;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[NOUPDATE] = true;
 				//entity->sprite = 164; //No sprite.
 				entity->skill[28] = 1; //It's a depowered powerable.
 				break;
@@ -2165,7 +2166,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->yaw -= PI / 2.0;
 				entity->sprite = 1;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 				//entity->skill[28] = 1; //It's a mechanism.
 				childEntity = newEntity(186, 0, map->entities);
@@ -2179,8 +2180,8 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x - 7;
 				childEntity->y = entity->y;
 				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -2188,8 +2189,8 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x + 7;
 				childEntity->y = entity->y;
 				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -2202,7 +2203,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 1;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
@@ -2214,8 +2215,8 @@ void assignActions(map_t* map)
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y - 7;
 				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -2223,8 +2224,8 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				childEntity = newEntity(1, 0, map->entities);
-				childEntity->flags[INVISIBLE] = TRUE;
-				childEntity->flags[BLOCKSIGHT] = TRUE;
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
 				childEntity->x = entity->x;
 				childEntity->y = entity->y + 7;
 				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
@@ -2258,7 +2259,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actChestLid;
-				childEntity->flags[PASSABLE] = TRUE;
+				childEntity->flags[PASSABLE] = true;
 
 				//Chest inventory.
 				node_t* tempNode = list_AddNodeFirst(&entity->children);
@@ -2273,8 +2274,8 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actLiquid;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
 				entity->skill[2] = -9; // so clients know it's a liquid
 				break;
 			// arrow trap
@@ -2284,10 +2285,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actArrowTrap;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
 			// trap (pressure plate thingy)
@@ -2297,10 +2298,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actTrap;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				break;
 			// trap permanent (pressure plate thingy) (remains on)
 			case 34:
@@ -2309,10 +2310,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actTrapPermanent;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				break;
 			// minotaur spawn trap
 			case 37:
@@ -2322,10 +2323,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actMinotaurTrap;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				break;
 			// boulder trap
 			case 38:
@@ -2335,10 +2336,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actBoulderTrap;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				for ( c = 0; c < 4; c++ )
 				{
@@ -2371,7 +2372,7 @@ void assignActions(map_t* map)
 							childEntity->x = (x << 4) + 8;
 							childEntity->y = (y << 4) + 8;
 							//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-							entity->flags[PASSABLE] = TRUE;
+							entity->flags[PASSABLE] = true;
 							if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
 							{
 								childEntity->z = -26.99;
@@ -2397,8 +2398,8 @@ void assignActions(map_t* map)
 				entity->skill[28] = 1; // is a mechanism
 				if ( !strcmp(map->name, "The Haunted Castle") )
 				{
-					entity->flags[INVISIBLE] = TRUE;
-					entity->flags[PASSABLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
+					entity->flags[PASSABLE] = true;
 				}
 				break;
 			// model tester
@@ -2413,9 +2414,9 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actLiquid;
-				entity->flags[USERFLAG1] = TRUE; // this is lava
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
+				entity->flags[USERFLAG1] = true; // this is lava
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
 				entity->skill[2] = -9; // so clients know it's a liquid
 				break;
 			// ladder hole
@@ -2423,7 +2424,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 253;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actLadderUp;
 				x = entity->x / 16;
 				y = entity->y / 16;
@@ -2458,8 +2459,8 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->yaw = PI / 2;
 				entity->behavior = &actPortal;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
 				break;
 			// secret ladder:
 			case 46:
@@ -2468,7 +2469,7 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 5.45;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				entity->behavior = &actLadder;
 				entity->sprite = 161; // ladder
 				entity->skill[3] = 1; // LADDER_SECRET = 1;
@@ -2484,7 +2485,7 @@ void assignActions(map_t* map)
 				entity->focalz = -3;
 				entity->sprite = 271;
 				entity->behavior = &actFurniture;
-				entity->flags[BURNABLE] = TRUE;
+				entity->flags[BURNABLE] = true;
 				if ( prng_get_uint() % 4 == 0 || !strcmp(map->name, "Start Map") )
 				{
 					// put an item on the table
@@ -2533,7 +2534,7 @@ void assignActions(map_t* map)
 				entity->focalz = -5;
 				entity->sprite = 272;
 				entity->behavior = &actFurniture;
-				entity->flags[BURNABLE] = TRUE;
+				entity->flags[BURNABLE] = true;
 				if ( !entity->yaw )
 				{
 					entity->yaw = (prng_get_uint() % 360) * (PI / 180.f);
@@ -2548,7 +2549,7 @@ void assignActions(map_t* map)
 				entity->z = 4;
 				entity->sprite = 273;
 				entity->behavior = &actMCaxe;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				break;
 			// end game portal:
 			case 63:
@@ -2559,11 +2560,11 @@ void assignActions(map_t* map)
 				entity->sizey = 4;
 				entity->yaw = PI / 2;
 				entity->behavior = &actWinningPortal;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[BRIGHT] = TRUE;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
 				if ( strstr(map->name, "Boss") )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 				}
 				if ( strstr(map->name, "Hell") )
 				{
@@ -2585,13 +2586,13 @@ void assignActions(map_t* map)
 				entity->sprite = 282;
 				entity->behavior = &actSpearTrap;
 				entity->skill[28] = 1; // is a mechanism
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[PASSABLE] = true;
 				childEntity = newEntity(283, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("33 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 7.75 - 0.01;
-				childEntity->flags[PASSABLE] = TRUE;
+				childEntity->flags[PASSABLE] = true;
 				break;
 			// magic trap:
 			case 65:
@@ -2600,9 +2601,9 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actMagicTrap;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
 			// wall buster:
@@ -2612,10 +2613,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actWallBuster;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
 			// wall builder:
@@ -2625,10 +2626,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actWallBuilder;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
 				break;
 			// devil teleport location:
@@ -2640,10 +2641,10 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->behavior = &actDevilTeleport;
-				entity->flags[SPRITE] = TRUE;
-				entity->flags[INVISIBLE] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
-				entity->flags[NOUPDATE] = TRUE;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
 				break;
 			//Chests with fixed content categories.
 			case 75: 
@@ -2678,7 +2679,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actChestLid;
-				childEntity->flags[PASSABLE] = TRUE;
+				childEntity->flags[PASSABLE] = true;
 
 				//Chest inventory.
 				node_t* tempNode = list_AddNodeFirst(&entity->children);

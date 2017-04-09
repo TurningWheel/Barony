@@ -104,7 +104,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 		uid = -2;
 	}
 	behavior = nullptr;
-	ranbehavior = FALSE;
+	ranbehavior = false;
 	parent = 0;
 	path = nullptr;
 }

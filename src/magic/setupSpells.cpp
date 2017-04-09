@@ -25,7 +25,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_unintelligible.overload_multiplier = 0; //NOTE: Might crash due to divide by zero?
 	spellElement_unintelligible.damage = 0;
 	spellElement_unintelligible.duration = 0;
-	spellElement_unintelligible.can_be_learned = FALSE;
+	spellElement_unintelligible.can_be_learned = false;
 	strcpy(spellElement_unintelligible.name, language[413]);
 
 	spellElementConstructor(&spellElement_missile);
@@ -326,7 +326,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = TRUE;
+	element->channeled = true;
 
 	spellConstructor(&spell_identify);
 	strcpy(spell_identify.name, language[421]);
@@ -467,7 +467,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = TRUE;
+	element->channeled = true;
 
 	spellConstructor(&spell_invisibility);
 	strcpy(spell_invisibility.name, language[420]);
@@ -481,7 +481,7 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
-	element->channeled = TRUE;
+	element->channeled = true;
 
 	spellConstructor(&spell_teleportation);
 	strcpy(spell_teleportation.name, language[432]);

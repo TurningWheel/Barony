@@ -19,7 +19,7 @@
 //Any word less than this will just get bumped onto the next line.
 #define MIN_LENGTH_TO_SPLIT_WORD (book_characterspace_x / 2)
 //#define MIN_LENGTH_TO_SPLIT_WORD_TITLE (characterspace_x / 2) //This only works in the formatTitle() function, since it uses a local variable characterspace_x in there.
-#define SPLIT_WORD_IN_TITLE FALSE //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
+#define SPLIT_WORD_IN_TITLE false //Whether or not to split a word in the book's title. If set to false, will only split words if they have to be split. If set to true, will split workds if they're a minimum length of MIN_LENGTH_TO_SPLIT_WORD_TITLE.
 
 book_t** books = NULL;
 int numbooks = 0;
@@ -62,7 +62,7 @@ void createBooks()
 			// sort books alphabetically (bubblesort)
 			do
 			{
-				unsorted = FALSE;
+				unsorted = false;
 				for (node = discoveredbooks->first; node != NULL; node = node->next)
 				{
 					if ( node->next != NULL )
@@ -71,7 +71,7 @@ void createBooks()
 						string_t* secondstring = (string_t*)node->next->element;
 						if ( strcmp(firststring->data, secondstring->data) > 0 )
 						{
-							unsorted = TRUE;
+							unsorted = true;
 							node->element = secondstring;
 							node->next->element = firststring;
 							firststring->node = node->next;
@@ -117,61 +117,61 @@ bool isLetter(char character)
 	switch (tolower(character))
 	{
 		case 'a':
-			return TRUE;
+			return true;
 		case 'b':
-			return TRUE;
+			return true;
 		case 'c':
-			return TRUE;
+			return true;
 		case 'd':
-			return TRUE;
+			return true;
 		case 'e':
-			return TRUE;
+			return true;
 		case 'f':
-			return TRUE;
+			return true;
 		case 'g':
-			return TRUE;
+			return true;
 		case 'h':
-			return TRUE;
+			return true;
 		case 'i':
-			return TRUE;
+			return true;
 		case 'j':
-			return TRUE;
+			return true;
 		case 'k':
-			return TRUE;
+			return true;
 		case 'l':
-			return TRUE;
+			return true;
 		case 'm':
-			return TRUE;
+			return true;
 		case 'n':
-			return TRUE;
+			return true;
 		case 'o':
-			return TRUE;
+			return true;
 		case 'p':
-			return TRUE;
+			return true;
 		case 'q':
-			return TRUE;
+			return true;
 		case 'r':
-			return TRUE;
+			return true;
 		case 's':
-			return TRUE;
+			return true;
 		case 't':
-			return TRUE;
+			return true;
 		case 'u':
-			return TRUE;
+			return true;
 		case 'v':
-			return TRUE;
+			return true;
 		case 'w':
-			return TRUE;
+			return true;
 		case 'x':
-			return TRUE;
+			return true;
 		case 'y':
-			return TRUE;
+			return true;
 		case 'z':
-			return TRUE;
+			return true;
 		default:
-			return FALSE;
+			return false;
 	}
-	return FALSE;
+	return false;
 }
 
 //This is a more powerful version of isLetter that checks if a specified character is part of a word. However, it requires contextual information -- what are the next and previous characters? So pass the entire string to this function and the index in the string of the character being looked up.
@@ -179,16 +179,16 @@ bool isCharacterPartOfWord(char* text, int index)
 {
 	if (!text)
 	{
-		return FALSE;
+		return false;
 	}
 	if (index < 0 || index > strlen(text))
 	{
-		return FALSE;
+		return false;
 	}
 
 	if (isLetter(text[index]))
 	{
-		return TRUE;    //It's a character. Return true because no use continuing this function.
+		return true;    //It's a character. Return true because no use continuing this function.
 	}
 
 	switch (text[index])
@@ -196,14 +196,14 @@ bool isCharacterPartOfWord(char* text, int index)
 		case '\'':
 			if (isLetter(text[index - 1]) && isLetter(text[index + 1]))   //An apostrophe needs to be surrounded by letters to qualify as part of a word.
 			{
-				return TRUE;
+				return true;
 			}
-			return FALSE;
+			return false;
 		default:
-			return FALSE;
+			return false;
 	}
 
-	return FALSE;
+	return false;
 }
 
 int moveToStartOfWord(char* text, int index)
@@ -304,13 +304,13 @@ void createBook(book_t* book)
 	int p = 0; // current character in the page's text
 	int x = 0; // number of characters written on the current line
 	int y = 0; // number of lines on the page
-	bool newline = FALSE;
-	bool can_write = TRUE; //If false, it means that the character write to page was interecepted by a - to properly break up a word.
+	bool newline = false;
+	bool can_write = true; //If false, it means that the character write to page was interecepted by a - to properly break up a word.
 	int tab = 0; //Inserting tab characters.
 	char character_to_record  = ' ';
-	bool write_out = TRUE;
+	bool write_out = true;
 	//found_word and word_length are used to prevent smaller words from being broken up. When the for loop detects that it has hit the start of a word, it queries for the word's length. If the word's length < MIN_LENGTH_TO_SPLIT_WORD, then it pumps out a newline and then starts the word. word_length_left is there so that it knows how many more characters it has to go through to reach the end of the word.
-	bool found_word = FALSE;
+	bool found_word = false;
 	int word_length = 0;
 	for (i = 0; book->text[i] != 0; ++i)
 	{
@@ -318,9 +318,9 @@ void createBook(book_t* book)
 		//Line end conditions:
 		//1. Encountered a newline character.
 		//2. Hit the max amount of characters that can fit horizontally in the book GUI.
-		write_out = TRUE;
-		newline = FALSE;
-		can_write = TRUE;
+		write_out = true;
+		newline = false;
+		can_write = true;
 
 		//When the max amount of lines that can fit on one page have been hit, create a new page.
 		if (tab <= 0 && book->text[i] == '\t')   //Assuming it is a null terminated string.
@@ -331,12 +331,12 @@ void createBook(book_t* book)
 		if (x + 1 >= book_characterspace_x)
 		{
 			//Overflowed the line. Go onto the next line.
-			newline = TRUE;
+			newline = true;
 		}
 		else if (tab <= 0 && book->text[i] == '\n')
 		{
-			newline = TRUE;
-			write_out = FALSE; //Do not want to write out this /n.
+			newline = true;
+			write_out = false; //Do not want to write out this /n.
 		}
 
 		character_to_record = book->text[i];
@@ -391,7 +391,7 @@ void createBook(book_t* book)
 				if (isCharacterPartOfWord(book->text, i))
 				{
 					//The character is part of a word. Record that.
-					found_word = TRUE;
+					found_word = true;
 					word_length = lengthOfCurrentWord(book->text, i);
 
 					//Now check if the word will fit on the line and if it's okay to split it. If not okay to split it, make a new line.
@@ -426,7 +426,7 @@ void createBook(book_t* book)
 				if (!isCharacterPartOfWord(book->text, i))
 				{
 					//Reached the end of the word.
-					found_word = FALSE;
+					found_word = false;
 					word_length = 0;
 				}
 			}
@@ -441,7 +441,7 @@ void createBook(book_t* book)
 						string->data[p] = '-';
 						p++;
 						x++;
-						can_write = FALSE;
+						can_write = false;
 						i--;
 					}
 					else if (isCharacterPartOfWord(book->text, i + 1))     //Okay, so the previous character is a space (or otherwise not constituting a word. Check if the next character is not a space (or the like)).
@@ -450,7 +450,7 @@ void createBook(book_t* book)
 						string->data[p] = ' ';
 						p++;
 						x++;
-						can_write = FALSE;
+						can_write = false;
 						i--;
 					}
 				}
@@ -464,7 +464,7 @@ void createBook(book_t* book)
 			}
 			else
 			{
-				can_write = TRUE;
+				can_write = true;
 			}
 
 			if (tab > 0)
@@ -477,6 +477,6 @@ void createBook(book_t* book)
 			}
 		}
 
-		newline = FALSE;
+		newline = false;
 	}
 }

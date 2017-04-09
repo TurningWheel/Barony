@@ -54,8 +54,8 @@ void actHeadstone(Entity* my)
 			{
 				return;
 			}
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[PASSABLE] = FALSE;
+			my->flags[INVISIBLE] = false;
+			my->flags[PASSABLE] = false;
 			serverUpdateEntityFlag(my, INVISIBLE);
 			serverUpdateEntityFlag(my, PASSABLE);
 		}
@@ -84,7 +84,7 @@ void actHeadstone(Entity* my)
 		HEADSTONE_GHOUL = (rand() % 4 == 0);
 	}
 
-	bool shouldspawn = FALSE;
+	bool shouldspawn = false;
 
 	// rightclick message
 	int i;
@@ -99,7 +99,7 @@ void actHeadstone(Entity* my)
 					messagePlayer(i, language[485 + HEADSTONE_MESSAGE % 17]);
 					if ( HEADSTONE_GHOUL && !HEADSTONE_FIRED )
 					{
-						shouldspawn = TRUE;
+						shouldspawn = true;
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
 						messagePlayerColor(i, color, language[502]);
 					}

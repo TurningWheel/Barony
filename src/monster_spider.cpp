@@ -24,8 +24,8 @@ void initSpider(Entity* my, Stat* myStats)
 {
 	int c;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[INVISIBLE] = false;
 
 	my->sprite = 267;
 	if ( multiplayer != CLIENT )
@@ -71,7 +71,7 @@ void initSpider(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -102,8 +102,8 @@ void initSpider(Entity* my, Stat* myStats)
 			myStats->PER = 10;
 			myStats->CHR = 10;
 			myStats->LVL = 15;
-			newItem( RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), FALSE, &myStats->inventory );
-			newItem( ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), FALSE, &myStats->inventory );
+			newItem( RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), false, &myStats->inventory );
+			newItem( ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), false, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 3; c++ )
@@ -122,8 +122,8 @@ void initSpider(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[SPIDER][1][0]; // 1
 	entity->focaly = limbs[SPIDER][1][1]; // 0
@@ -140,8 +140,8 @@ void initSpider(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[SPIDER][2][0]; // 1
 	entity->focaly = limbs[SPIDER][2][1]; // 0
@@ -162,8 +162,8 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->sizey = 4;
 		entity->skill[2] = my->getUID();
 		entity->fskill[2] = (c / 8.f);
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 		entity->focalx = limbs[SPIDER][3][0]; // 1
 		entity->focaly = limbs[SPIDER][3][1]; // 0
@@ -180,8 +180,8 @@ void initSpider(Entity* my, Stat* myStats)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = my->getUID();
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
 		entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 		entity->focalx = limbs[SPIDER][4][0]; // 3
 		entity->focaly = limbs[SPIDER][4][1]; // 0
@@ -222,8 +222,8 @@ void spiderDie(Entity* my)
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}
@@ -234,7 +234,7 @@ void spiderDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -285,10 +285,10 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -300,7 +300,7 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -308,8 +308,8 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -321,7 +321,7 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -550,7 +550,7 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch += (PI / 10) * (previous->z - my->z);
 				break;
 			default:
-				entity->flags[INVISIBLE] = TRUE; // for debugging
+				entity->flags[INVISIBLE] = true; // for debugging
 				break;
 		}
 	}

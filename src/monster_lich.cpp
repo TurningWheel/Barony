@@ -24,8 +24,8 @@ void initLich(Entity* my, Stat* myStats)
 {
 	int c;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[INVISIBLE] = false;
 
 	my->sprite = 274;
 	if ( multiplayer != CLIENT )
@@ -68,7 +68,7 @@ void initLich(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -85,8 +85,8 @@ void initLich(Entity* my, Stat* myStats)
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		myStats->weapon = newItem(SPELLBOOK_LIGHTNING, EXCELLENT, 0, 1, 0, FALSE, NULL);
-		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
+		myStats->weapon = newItem(SPELLBOOK_LIGHTNING, EXCELLENT, 0, 1, 0, false, NULL);
+		myStats->EFFECTS[EFF_LEVITATING] = true;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
@@ -95,8 +95,8 @@ void initLich(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[LICH][1][0]; // 0
 	entity->focaly = limbs[LICH][1][1]; // 0
@@ -113,8 +113,8 @@ void initLich(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[LICH][2][0]; // 0
 	entity->focaly = limbs[LICH][2][1]; // 0
@@ -132,8 +132,8 @@ void initLich(Entity* my, Stat* myStats)
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[LICH][3][0]; // 0
 	entity->focaly = limbs[LICH][3][1]; // 0
@@ -306,10 +306,10 @@ void lichAnimate(Entity* my, double dist)
 	if ( multiplayer != CLIENT )
 	{
 		Stat* myStats = my->getStats();
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -321,7 +321,7 @@ void lichAnimate(Entity* my, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -329,8 +329,8 @@ void lichAnimate(Entity* my, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -342,7 +342,7 @@ void lichAnimate(Entity* my, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;

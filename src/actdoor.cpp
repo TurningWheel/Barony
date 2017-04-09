@@ -62,7 +62,7 @@ void actDoor(Entity* my)
 		my->scalex = 1.01;
 		my->scaley = 1.01;
 		my->scalez = 1.01;
-		my->flags[BURNABLE] = TRUE;
+		my->flags[BURNABLE] = true;
 	}
 	else
 	{
@@ -83,7 +83,7 @@ void actDoor(Entity* my)
 				for ( c = 0; c < 5; c++ )
 				{
 					entity = spawnGib(my);
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					entity->sprite = 187; // Splinter.vox
 					entity->x = floor(my->x / 16) * 16 + 8;
 					entity->y = floor(my->y / 16) * 16 + 8;
@@ -215,7 +215,7 @@ void actDoor(Entity* my)
 		{
 			// don't set impassable if someone's inside, otherwise do
 			node_t* node;
-			bool somebodyinside = FALSE;
+			bool somebodyinside = false;
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				Entity* entity = (Entity*)node->element;
@@ -225,7 +225,7 @@ void actDoor(Entity* my)
 				}
 				if ( entityInsideEntity(my, entity) )
 				{
-					somebodyinside = TRUE;
+					somebodyinside = true;
 					break;
 				}
 			}
@@ -240,7 +240,7 @@ void actDoor(Entity* my)
 				{
 					my->x -= 5;
 				}
-				my->flags[PASSABLE] = FALSE;
+				my->flags[PASSABLE] = false;
 			}
 		}
 		else if ( my->yaw != DOOR_STARTANG && !my->flags[PASSABLE] )
@@ -254,7 +254,7 @@ void actDoor(Entity* my)
 			{
 				my->x += 5;
 			}
-			my->flags[PASSABLE] = TRUE;
+			my->flags[PASSABLE] = true;
 		}
 
 		// update for clients
@@ -275,8 +275,8 @@ void actDoorFrame(Entity* my)
 	// intended to make it easier
 	// to determine whether an entity
 	// is part of a door frame
-	if ( my->sprite == 1 && my->flags[INVISIBLE] == FALSE )
+	if ( my->sprite == 1 && my->flags[INVISIBLE] == false )
 	{
-		my->flags[PASSABLE] = TRUE; // the actual frame should ALWAYS be passable
+		my->flags[PASSABLE] = true; // the actual frame should ALWAYS be passable
 	}
 }

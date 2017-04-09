@@ -91,8 +91,8 @@ void actArrowTrap(Entity* my)
 					entity->sizex = 1;
 					entity->sizey = 1;
 					entity->behavior = &actArrow;
-					entity->flags[UPDATENEEDED] = TRUE;
-					entity->flags[PASSABLE] = TRUE;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
 
 					// arrow power
 					entity->skill[3] = 17;

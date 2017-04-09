@@ -75,7 +75,7 @@ void mainLogic(void)
 	}
 
 	// basic editor functions
-	if ( mode3d == FALSE )
+	if ( mode3d == false )
 	{
 		camx += (keystatus[SDL_SCANCODE_RIGHT] - keystatus[SDL_SCANCODE_LEFT]) * TEXTURESIZE;
 		camy += (keystatus[SDL_SCANCODE_DOWN] - keystatus[SDL_SCANCODE_UP]) * TEXTURESIZE;
@@ -218,7 +218,7 @@ void handleButtons(void)
 					}
 					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
-						button->pressed = TRUE;
+						button->pressed = true;
 					}
 				}
 			}
@@ -232,7 +232,7 @@ void handleButtons(void)
 						printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 						if ( !mousestatus[SDL_BUTTON_LEFT] )   // releasing the mouse over the button
 						{
-							button->pressed = FALSE;
+							button->pressed = false;
 							if ( button->action != NULL )
 							{
 								(*button->action)(button); // run the button's assigned action
@@ -249,7 +249,7 @@ void handleButtons(void)
 						printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 						if ( !mousestatus[SDL_BUTTON_LEFT] )   // releasing the mouse over nothing
 						{
-							button->pressed = FALSE;
+							button->pressed = false;
 						}
 					}
 				}
@@ -259,7 +259,7 @@ void handleButtons(void)
 					printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 					if ( !mousestatus[SDL_BUTTON_LEFT] )   // releasing the mouse over nothing
 					{
-						button->pressed = FALSE;
+						button->pressed = false;
 					}
 				}
 			}
@@ -728,11 +728,11 @@ void processCommandLine(int argc, char** argv)
 
 -------------------------------------------------------------------------------*/
 
-bool selectingspace = FALSE;
+bool selectingspace = false;
 int selectedarea_x1, selectedarea_x2;
 int selectedarea_y1, selectedarea_y2;
-bool selectedarea = FALSE;
-bool pasting = FALSE;
+bool selectedarea = false;
+bool pasting = false;
 
 #ifdef APPLE
 #include <mach-o/dyld.h> //For _NSGetExecutablePath()
@@ -779,8 +779,8 @@ int main(int argc, char** argv)
 	//char action[32];
 	int oslidery = 0;
 	light_t* light = NULL;
-	bool savedundo = FALSE;
-	smoothlighting = TRUE;
+	bool savedundo = false;
+	smoothlighting = true;
 
 	processCommandLine(argc, argv);
 
@@ -1351,7 +1351,7 @@ int main(int argc, char** argv)
 					{
 						if ( !savedundo )
 						{
-							savedundo = TRUE;
+							savedundo = true;
 							makeUndo();
 						}
 						if ( !pasting )   // not pasting, normal editing mode
@@ -1375,20 +1375,20 @@ int main(int argc, char** argv)
 							}
 							else if ( selectedTool == 2 )     // select tool
 							{
-								if ( selectingspace == FALSE )
+								if ( selectingspace == false )
 								{
 									if ( drawx >= 0 && drawy >= 0 && drawx < map.width && drawy < map.height )
 									{
-										selectingspace = TRUE;
+										selectingspace = true;
 										selectedarea_x1 = drawx;
 										selectedarea_x2 = drawx;
 										selectedarea_y1 = drawy;
 										selectedarea_y2 = drawy;
-										selectedarea = TRUE;
+										selectedarea = true;
 									}
 									else
 									{
-										selectedarea = FALSE;
+										selectedarea = false;
 									}
 								}
 								else
@@ -1426,7 +1426,7 @@ int main(int argc, char** argv)
 						else
 						{
 							// pasting from copymap
-							mousestatus[SDL_BUTTON_LEFT] = FALSE;
+							mousestatus[SDL_BUTTON_LEFT] = false;
 							for ( x = 0; x < copymap.width; x++ )
 							{
 								for ( y = 0; y < copymap.height; y++ )
@@ -1441,14 +1441,14 @@ int main(int argc, char** argv)
 									}
 								}
 							}
-							pasting = FALSE;
+							pasting = false;
 						}
 					}
 				}
 				else if ( !mousestatus[SDL_BUTTON_LEFT] )
 				{
-					selectingspace = FALSE;
-					savedundo = FALSE;
+					selectingspace = false;
+					savedundo = false;
 				}
 				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL )
 				{
@@ -1461,7 +1461,7 @@ int main(int argc, char** argv)
 					}
 					else
 					{
-						selectedarea = FALSE;
+						selectedarea = false;
 					}
 				}
 			}
@@ -1472,7 +1472,7 @@ int main(int argc, char** argv)
 
 			// main drawing
 			drawClearBuffers();
-			if ( mode3d == FALSE )
+			if ( mode3d == false )
 			{
 				if ( alllayers )
 					for (c = 0; c <= drawlayer; c++)
@@ -1514,7 +1514,7 @@ int main(int argc, char** argv)
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;
-					entity->flags[SPRITE] = TRUE; // all entities rendered as SPRITES in the editor
+					entity->flags[SPRITE] = true; // all entities rendered as SPRITES in the editor
 					entity->x += 8;
 					entity->y += 8;
 				}
@@ -2097,25 +2097,25 @@ int main(int argc, char** argv)
 				{
 					keystatus[SDL_SCANCODE_1] = 0;
 					selectedTool = 0;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_2] )
 				{
 					keystatus[SDL_SCANCODE_2] = 0;
 					selectedTool = 1;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_3] )
 				{
 					keystatus[SDL_SCANCODE_3] = 0;
 					selectedTool = 2;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_4] )
 				{
 					keystatus[SDL_SCANCODE_4] = 0;
 					selectedTool = 3;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 			}
 			// process and draw buttons

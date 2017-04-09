@@ -49,7 +49,7 @@ void actItem(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		my->flags[NOUPDATE] = TRUE;
+		my->flags[NOUPDATE] = true;
 		if ( ITEM_LIFE == 0 )
 		{
 			Entity* tempEntity = uidToEntity(clientplayer);
@@ -110,7 +110,7 @@ void actItem(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		my->flags[INVISIBLE] = FALSE;
+		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
 		my->sprite = itemModel(item);
 		free(item);
@@ -170,7 +170,7 @@ void actItem(Entity* my)
 	}
 
 	// gravity
-	bool onground = FALSE;
+	bool onground = false;
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
@@ -194,7 +194,7 @@ void actItem(Entity* my)
 				}
 				else
 				{
-					onground = TRUE;
+					onground = true;
 					my->z = 7.5 - models[my->sprite]->sizey * .25 - .0001;
 				}
 			}
@@ -227,7 +227,7 @@ void actItem(Entity* my)
 	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
 	{
 		ITEM_NOTMOVING = 1;
-		my->flags[UPDATENEEDED] = FALSE;
+		my->flags[UPDATENEEDED] = false;
 		return;
 	}
 

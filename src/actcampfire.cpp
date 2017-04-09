@@ -103,7 +103,7 @@ void actCampfire(Entity* my)
 				list_RemoveNode(my->light->node);
 			}
 		my->light = NULL;
-		my->flags[BRIGHT] = FALSE;
+		my->flags[BRIGHT] = false;
 	}
 
 	if ( multiplayer != CLIENT )
@@ -130,7 +130,7 @@ void actCampfire(Entity* my)
 								}
 							my->light = NULL;
 						}
-						Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, TRUE, NULL);
+						Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
 						itemPickup(i, item);
 						free(item);
 					}

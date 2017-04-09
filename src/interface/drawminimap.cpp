@@ -164,14 +164,14 @@ void drawMinimap()
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		bool drawchar = FALSE;
-		bool foundme = FALSE;
+		bool drawchar = false;
+		bool foundme = false;
 		if ( entity->behavior == &actPlayer )
 		{
-			drawchar = TRUE;
+			drawchar = true;
 			if ( entity->skill[2] == clientnum )
 			{
-				foundme = TRUE;
+				foundme = true;
 			}
 		}
 		else if ( entity->behavior == &actMonster )
@@ -181,7 +181,7 @@ void drawMinimap()
 			{
 				if ( *((Uint32*)node2->element) == entity->getUID() )
 				{
-					drawchar = TRUE;
+					drawchar = true;
 					break;
 				}
 			}

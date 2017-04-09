@@ -857,7 +857,7 @@ void drawClearBuffers()
 		int c, i = map.width * map.height;
 		for ( c = 0; c < i; c++ )
 		{
-			vismap[c] = FALSE;
+			vismap[c] = false;
 		}
 	}
 
@@ -905,7 +905,7 @@ void raycast(view_t* camera, int mode)
 
 	if ( posx >= 0 && posy >= 0 && posx < map.width && posy < map.height )
 	{
-		vismap[posy + posx * map.height] = TRUE;
+		vismap[posy + posx * map.height] = true;
 	}
 	for ( sx = 0; sx < camera->winw; sx++ )   // for every column of the screen
 	{
@@ -979,13 +979,13 @@ void raycast(view_t* camera, int mode)
 
 			if ( inx >= 0 && iny >= 0 && inx < map.width && iny < map.height )
 			{
-				vismap[iny + inx * map.height] = TRUE;
+				vismap[iny + inx * map.height] = true;
 				for ( z = 0; z < MAPLAYERS; z++ )
 				{
-					zhit[z] = FALSE;
+					zhit[z] = false;
 					if ( map.tiles[z + iny * MAPLAYERS + inx * MAPLAYERS * map.height] && d > dstart )   // hit something solid
 					{
-						zhit[z] = TRUE;
+						zhit[z] = true;
 
 						// collect light information
 						if ( inx2 >= 0 && iny2 >= 0 && inx2 < map.width && iny2 < map.height )
@@ -1033,13 +1033,13 @@ void raycast(view_t* camera, int mode)
 						}
 					}
 				}
-				wallhit = TRUE;
+				wallhit = true;
 				for ( z = 0; z < MAPLAYERS; z++ )
-					if ( zhit[z] == FALSE )
+					if ( zhit[z] == false )
 					{
-						wallhit = FALSE;
+						wallhit = false;
 					}
-				if ( wallhit == TRUE )
+				if ( wallhit == true )
 				{
 					break;
 				}
@@ -1098,7 +1098,7 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] )
 			{
-				if ( entity->flags[SPRITE] == FALSE )
+				if ( entity->flags[SPRITE] == false )
 				{
 					glDrawVoxel(camera, entity, mode);
 				}
@@ -1110,7 +1110,7 @@ void drawEntities3D(view_t* camera, int mode)
 		}
 		else
 		{
-			if ( entity->flags[SPRITE] == FALSE )
+			if ( entity->flags[SPRITE] == false )
 			{
 				glDrawVoxel(camera, entity, mode);
 			}
@@ -1544,7 +1544,7 @@ SDL_Rect ttfPrintText( TTF_Font* font, int x, int y, const char* str )
 	{
 		return errorRect;
 	}
-	return ttfPrintTextColor(font, x, y, 0xFFFFFFFF, TRUE, str);
+	return ttfPrintTextColor(font, x, y, 0xFFFFFFFF, true, str);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1572,7 +1572,7 @@ SDL_Rect ttfPrintTextFormattedColor( TTF_Font* font, int x, int y, Uint32 color,
 	va_end( argptr );
 
 	// print the text
-	return ttfPrintTextColor(font, x, y, color, TRUE, str);
+	return ttfPrintTextColor(font, x, y, color, true, str);
 }
 
 SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... )
@@ -1591,7 +1591,7 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... )
 	va_end( argptr );
 
 	// print the text
-	return ttfPrintTextColor(font, x, y, 0xFFFFFFFF, TRUE, str);
+	return ttfPrintTextColor(font, x, y, 0xFFFFFFFF, true, str);
 }
 
 /*-------------------------------------------------------------------------------

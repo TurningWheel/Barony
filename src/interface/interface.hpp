@@ -195,11 +195,11 @@ void updateMagicGUI();
 //sust_spells_x & sust_spells_y define the top left corner of where the sustained spells icons start drawing.
 #define SUST_SPELLS_X 32
 #define SUST_SPELLS_Y 32
-#define SUST_SPELLS_RIGHT_ALIGN TRUE //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
+#define SUST_SPELLS_RIGHT_ALIGN true //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
 void drawSustainedSpells(); //Draws an icon for every sustained spell.
 
 //Identify GUI definitions.
-//NOTE: Make sure to always reset identifygui_appraising back to FALSE.
+//NOTE: Make sure to always reset identifygui_appraising back to false.
 #define IDENTIFY_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + identifygui_offset_x)
 #define IDENTIFY_GUI_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + identifygui_offset_y)
 extern bool identifygui_active;

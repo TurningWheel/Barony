@@ -104,7 +104,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if ( client_disconnected[c] == TRUE )
+			if ( client_disconnected[c] == true )
 			{
 				continue;
 			}
@@ -125,7 +125,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		return NULL;
 	}
 
-	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], TRUE, &channel);
+	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
 	if (FMODErrorCheck())
 	{
 		return NULL;
@@ -137,7 +137,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	position.z = -x / 16; //Forward/backward.
 	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
 	FMOD_Channel_SetChannelGroup(channel, sound_group);
-	FMOD_Channel_SetPaused(channel, FALSE);
+	FMOD_Channel_SetPaused(channel, false);
 
 	return channel;
 }
@@ -173,7 +173,7 @@ FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 		return NULL;
 	}
 
-	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], TRUE, &channel);
+	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
 	if (FMODErrorCheck())
 	{
 		return NULL;
@@ -185,7 +185,7 @@ FMOD_CHANNEL* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
 	position.z = -x / 16; //Forward/backward.
 	FMOD_Channel_Set3DAttributes(channel, &position, NULL);
 	FMOD_Channel_SetChannelGroup(channel, sound_group);
-	FMOD_Channel_SetPaused(channel, FALSE);
+	FMOD_Channel_SetPaused(channel, false);
 
 	return channel;
 }
@@ -249,7 +249,7 @@ FMOD_CHANNEL* playSound(Uint32 snd, int vol)
 		return NULL;
 	}
 	FMOD_CHANNEL* channel;
-	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], TRUE, &channel);
+	fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sounds[snd], true, &channel);
 	//Faux 3D. Set to 0 and then set the channel's mode to be relative  to the player's head to achieve global sound.
 	FMOD_VECTOR position;
 	position.x = 0;
@@ -263,7 +263,7 @@ FMOD_CHANNEL* playSound(Uint32 snd, int vol)
 	{
 		return NULL;
 	}
-	FMOD_Channel_SetPaused(channel, FALSE);
+	FMOD_Channel_SetPaused(channel, false);
 	return channel;
 }
 
@@ -301,7 +301,7 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume)
 			FMOD_Channel_Stop(music_channel2);
 			music_channel2 = music_channel;
 			music_channel = NULL;
-			fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sound, TRUE, &music_channel);
+			fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sound, true, &music_channel);
 		}
 	}
 	else
@@ -309,10 +309,10 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume)
 		FMOD_Channel_Stop(music_channel2);
 		music_channel2 = music_channel;
 		music_channel = NULL;
-		fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sound, TRUE, &music_channel);
+		fmod_result = FMOD_System_PlaySound(fmod_system, FMOD_CHANNEL_FREE, sound, true, &music_channel);
 	}
 	FMOD_Channel_SetChannelGroup(music_channel, music_group);
-	if (crossfade == TRUE)
+	if (crossfade == true)
 	{
 		//Start at volume 0 to get louder.
 		FMOD_Channel_SetVolume(music_channel, 0.0f); //Start at 0 then pop up.
@@ -321,7 +321,7 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume)
 	{
 		FMOD_Channel_Stop(music_channel2);
 	}
-	if (loop == TRUE)
+	if (loop == true)
 	{
 		//Loop the channel.
 		FMOD_MODE mode;
@@ -330,19 +330,19 @@ void playmusic(FMOD_SOUND* sound, bool loop, bool crossfade, bool resume)
 		fmod_result = FMOD_Channel_SetMode(music_channel, FMOD_LOOP_NORMAL);
 		FMODErrorCheck();
 	}
-	FMOD_Channel_SetPaused(music_channel, FALSE);
+	FMOD_Channel_SetPaused(music_channel, false);
 	if (FMODErrorCheck())
 	{
 		return;
 	}
 }
 
-bool shopmusicplaying = FALSE;
-bool combatmusicplaying = FALSE;
-bool minotaurmusicplaying = FALSE;
-bool herxmusicplaying = FALSE;
-bool devilmusicplaying = FALSE;
-bool olddarkmap = FALSE;
+bool shopmusicplaying = false;
+bool combatmusicplaying = false;
+bool minotaurmusicplaying = false;
+bool herxmusicplaying = false;
+bool devilmusicplaying = false;
+bool olddarkmap = false;
 
 int currenttrack = -1;
 
@@ -358,7 +358,7 @@ void handleLevelMusic()
 #ifndef MUSIC
 	return;
 #endif
-	bool inshop = FALSE;
+	bool inshop = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
 		int x = (int)players[clientnum]->entity->x / 16;
@@ -366,35 +366,35 @@ void handleLevelMusic()
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			if ( shoparea[y + x * map.height] )
 			{
-				inshop = TRUE;
+				inshop = true;
 			}
 	}
 
-	bool devilaround = FALSE;
-	bool activeminotaur = FALSE;
-	bool herxaround = FALSE;
+	bool devilaround = false;
+	bool activeminotaur = false;
+	bool herxaround = false;
 	node_t* node;
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 274 )   // herx head
 		{
-			herxaround = TRUE;
+			herxaround = true;
 			break;
 		}
 		else if ( entity->sprite == 304 )     // devil body
 		{
-			devilaround = TRUE;
+			devilaround = true;
 			break;
 		}
 		else if ( entity->sprite == 237 )     // minotaur head
 		{
-			activeminotaur = TRUE;
+			activeminotaur = true;
 			break;
 		}
 	}
 
-	FMOD_BOOL playing = TRUE;
+	FMOD_BOOL playing = true;
 	FMOD_Channel_IsPlaying(music_channel, &playing);
 
 	if ( currenttrack == -1 )
@@ -406,7 +406,7 @@ void handleLevelMusic()
 	{
 		if ( darkmap )
 		{
-			playmusic(intermissionmusic, TRUE, TRUE, TRUE);
+			playmusic(intermissionmusic, true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Mines", 9) )     // the mines
 		{
@@ -419,7 +419,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(minesmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(minesmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Swamp", 9) )     // the swamp
 		{
@@ -432,7 +432,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(swampmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(swampmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Labyrinth", 13) )     // the labyrinth
 		{
@@ -445,7 +445,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(labyrinthmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(labyrinthmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
 		{
@@ -458,7 +458,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(ruinsmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(ruinsmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
 		{
@@ -471,27 +471,27 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(underworldmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(underworldmusic[currenttrack], false, true, true);
 		}
 		else if ( !strcmp(map.name, "Minetown") || !strcmp(map.name, "The Gnomish Mines") )     // minetown & gnomish mines
 		{
-			playmusic(minetownmusic, TRUE, TRUE, TRUE);
+			playmusic(minetownmusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Mystic Library") )     // mystic library
 		{
-			playmusic(librarymusic, TRUE, TRUE, TRUE);
+			playmusic(librarymusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Minotaur Maze") )     // minotaur maze
 		{
-			playmusic(minotaurmusic[1], TRUE, TRUE, TRUE);
+			playmusic(minotaurmusic[1], true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Temple") )     // the temple
 		{
-			playmusic(templemusic, TRUE, TRUE, TRUE);
+			playmusic(templemusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "Hell Boss") )     // escape theme
 		{
-			playmusic(escapemusic, TRUE, TRUE, TRUE);
+			playmusic(escapemusic, true, true, true);
 		}
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
@@ -504,55 +504,55 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(hellmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(hellmusic[currenttrack], false, true, true);
 		}
 		else
 		{
-			playmusic(intermissionmusic, TRUE, TRUE, TRUE);
+			playmusic(intermissionmusic, true, true, true);
 		}
 		olddarkmap = darkmap;
-		levelmusicplaying = TRUE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		levelmusicplaying = true;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment;
 		fadeout_increment = default_fadeout_increment;
 	}
 	else if ( (!devilmusicplaying || !playing) && devilaround )
 	{
-		playmusic(devilmusic, TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = TRUE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		playmusic(devilmusic, true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = true;
+		herxmusicplaying = false;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment * 2;
 		fadeout_increment = default_fadeout_increment * 2;
 	}
 	else if ( (!herxmusicplaying || !playing) && !devilaround && herxaround )
 	{
-		playmusic(herxmusic, TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = TRUE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		playmusic(herxmusic, true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = true;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment * 2;
 		fadeout_increment = default_fadeout_increment * 2;
 	}
 	else if ( (!minotaurmusicplaying || !playing) && !herxaround && activeminotaur && strcmp(map.name, "Hell Boss") )
 	{
-		playmusic(minotaurmusic[0], TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = TRUE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		playmusic(minotaurmusic[0], true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		minotaurmusicplaying = true;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment * 5;
 		fadeout_increment = default_fadeout_increment * 5;
 	}
@@ -560,46 +560,46 @@ void handleLevelMusic()
 	{
 		if ( !strncmp(map.name, "The Swamp", 9) || !strncmp(map.name, "The Temple", 10) )   // the swamp
 		{
-			playmusic(swampmusic[0], TRUE, TRUE, TRUE);
+			playmusic(swampmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Labyrinth", 13) || strstr(map.name, "Minotaur") )     // the labyrinth
 		{
-			playmusic(labyrinthmusic[0], TRUE, TRUE, TRUE);
+			playmusic(labyrinthmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
 		{
-			playmusic(ruinsmusic[0], TRUE, TRUE, TRUE);
+			playmusic(ruinsmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
 		{
-			playmusic(underworldmusic[0], TRUE, TRUE, TRUE);
+			playmusic(underworldmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
-			playmusic(hellmusic[0], TRUE, TRUE, TRUE);
+			playmusic(hellmusic[0], true, true, true);
 		}
 		else
 		{
-			playmusic(minesmusic[0], TRUE, TRUE, TRUE);
+			playmusic(minesmusic[0], true, true, true);
 		}
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		combatmusicplaying = TRUE;
-		shopmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		combatmusicplaying = true;
+		shopmusicplaying = false;
+		minotaurmusicplaying = false;
 		fadein_increment = default_fadein_increment * 4;
 		fadeout_increment = default_fadeout_increment;
 	}
 	else if ( (!shopmusicplaying || !playing) && !herxaround && !activeminotaur && !combat && inshop )
 	{
-		playmusic(shopmusic, TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = TRUE;
+		playmusic(shopmusic, true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = true;
 		fadein_increment = default_fadein_increment * 4;
 		fadeout_increment = default_fadeout_increment;
 	}
@@ -681,7 +681,7 @@ OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if ( client_disconnected[c] == TRUE )
+			if ( client_disconnected[c] == true )
 			{
 				continue;
 			}
@@ -862,7 +862,7 @@ void playmusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)
 		music_channel = OPENAL_CreateChannel(sound);
 	}
 	OPENAL_Channel_SetChannelGroup(music_channel, music_group);
-	if (crossfade == TRUE)
+	if (crossfade == true)
 	{
 		//Start at volume 0 to get louder.
 		OPENAL_Channel_SetVolume(music_channel, 0.0f); //Start at 0 then pop up.
@@ -873,19 +873,19 @@ void playmusic(OPENAL_BUFFER* sound, bool loop, bool crossfade, bool resume)
 		OPENAL_Channel_Stop(music_channel2);
 		music_channel2 = NULL;
 	}
-	if (loop == TRUE)
+	if (loop == true)
 	{
 		OPENAL_SetLoop(music_channel, AL_TRUE);
 	}
 	OPENAL_Channel_Play(music_channel);
 }
 
-bool shopmusicplaying = FALSE;
-bool combatmusicplaying = FALSE;
-bool minotaurmusicplaying = FALSE;
-bool herxmusicplaying = FALSE;
-bool devilmusicplaying = FALSE;
-bool olddarkmap = FALSE;
+bool shopmusicplaying = false;
+bool combatmusicplaying = false;
+bool minotaurmusicplaying = false;
+bool herxmusicplaying = false;
+bool devilmusicplaying = false;
+bool olddarkmap = false;
 
 int currenttrack = -1;
 
@@ -901,7 +901,7 @@ void handleLevelMusic()
 #ifndef MUSIC
 	return;
 #endif
-	bool inshop = FALSE;
+	bool inshop = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
 		int x = (int)players[clientnum]->entity->x / 16;
@@ -909,35 +909,35 @@ void handleLevelMusic()
 		if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 			if ( shoparea[y + x * map.height] )
 			{
-				inshop = TRUE;
+				inshop = true;
 			}
 	}
 
-	bool devilaround = FALSE;
-	bool activeminotaur = FALSE;
-	bool herxaround = FALSE;
+	bool devilaround = false;
+	bool activeminotaur = false;
+	bool herxaround = false;
 	node_t* node;
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
 		if ( entity->sprite == 274 )   // herx head
 		{
-			herxaround = TRUE;
+			herxaround = true;
 			break;
 		}
 		else if ( entity->sprite == 304 )     // devil body
 		{
-			devilaround = TRUE;
+			devilaround = true;
 			break;
 		}
 		else if ( entity->sprite == 237 )     // minotaur head
 		{
-			activeminotaur = TRUE;
+			activeminotaur = true;
 			break;
 		}
 	}
 
-	ALboolean playing = TRUE;
+	ALboolean playing = true;
 	OPENAL_Channel_IsPlaying(music_channel, &playing);
 
 	if ( currenttrack == -1 )
@@ -949,7 +949,7 @@ void handleLevelMusic()
 	{
 		if ( darkmap )
 		{
-			playmusic(intermissionmusic, TRUE, TRUE, TRUE);
+			playmusic(intermissionmusic, true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Mines", 9) )     // the mines
 		{
@@ -962,7 +962,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(minesmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(minesmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Swamp", 9) )     // the swamp
 		{
@@ -975,7 +975,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(swampmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(swampmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Labyrinth", 13) )     // the labyrinth
 		{
@@ -988,7 +988,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(labyrinthmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(labyrinthmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
 		{
@@ -1001,7 +1001,7 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(ruinsmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(ruinsmusic[currenttrack], false, true, true);
 		}
 		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
 		{
@@ -1014,27 +1014,27 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(underworldmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(underworldmusic[currenttrack], false, true, true);
 		}
 		else if ( !strcmp(map.name, "Minetown") || !strcmp(map.name, "The Gnomish Mines") )     // minetown & gnomish mines
 		{
-			playmusic(minetownmusic, TRUE, TRUE, TRUE);
+			playmusic(minetownmusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Mystic Library") )     // mystic library
 		{
-			playmusic(librarymusic, TRUE, TRUE, TRUE);
+			playmusic(librarymusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Minotaur Maze") )     // minotaur maze
 		{
-			playmusic(minotaurmusic[1], TRUE, TRUE, TRUE);
+			playmusic(minotaurmusic[1], true, true, true);
 		}
 		else if ( !strcmp(map.name, "The Temple") )     // the temple
 		{
-			playmusic(templemusic, TRUE, TRUE, TRUE);
+			playmusic(templemusic, true, true, true);
 		}
 		else if ( !strcmp(map.name, "Hell Boss") )     // escape theme
 		{
-			playmusic(escapemusic, TRUE, TRUE, TRUE);
+			playmusic(escapemusic, true, true, true);
 		}
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
@@ -1047,55 +1047,55 @@ void handleLevelMusic()
 			{
 				currenttrack = 1;
 			}
-			playmusic(hellmusic[currenttrack], FALSE, TRUE, TRUE);
+			playmusic(hellmusic[currenttrack], false, true, true);
 		}
 		else
 		{
-			playmusic(intermissionmusic, TRUE, TRUE, TRUE);
+			playmusic(intermissionmusic, true, true, true);
 		}
 		olddarkmap = darkmap;
-		levelmusicplaying = TRUE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		levelmusicplaying = true;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment;
 		fadeout_increment = default_fadeout_increment;
 	}
 	else if ( (!devilmusicplaying || !playing) && devilaround )
 	{
-		playmusic(devilmusic, TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = TRUE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		playmusic(devilmusic, true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = true;
+		herxmusicplaying = false;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment * 2;
 		fadeout_increment = default_fadeout_increment * 2;
 	}
 	else if ( (!herxmusicplaying || !playing) && !devilaround && herxaround )
 	{
-		playmusic(herxmusic, TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = TRUE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		playmusic(herxmusic, true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = true;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment * 2;
 		fadeout_increment = default_fadeout_increment * 2;
 	}
 	else if ( (!minotaurmusicplaying || !playing) && !herxaround && activeminotaur && strcmp(map.name, "Hell Boss") )
 	{
-		playmusic(minotaurmusic[0], TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = TRUE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = FALSE;
+		playmusic(minotaurmusic[0], true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		minotaurmusicplaying = true;
+		combatmusicplaying = false;
+		shopmusicplaying = false;
 		fadein_increment = default_fadein_increment * 5;
 		fadeout_increment = default_fadeout_increment * 5;
 	}
@@ -1103,46 +1103,46 @@ void handleLevelMusic()
 	{
 		if ( !strncmp(map.name, "The Swamp", 9) || !strncmp(map.name, "The Temple", 10) )   // the swamp
 		{
-			playmusic(swampmusic[0], TRUE, TRUE, TRUE);
+			playmusic(swampmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Labyrinth", 13) || strstr(map.name, "Minotaur") )     // the labyrinth
 		{
-			playmusic(labyrinthmusic[0], TRUE, TRUE, TRUE);
+			playmusic(labyrinthmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "The Ruins", 9) )     // the ruins
 		{
-			playmusic(ruinsmusic[0], TRUE, TRUE, TRUE);
+			playmusic(ruinsmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Underworld", 10) )     // the underworld
 		{
-			playmusic(underworldmusic[0], TRUE, TRUE, TRUE);
+			playmusic(underworldmusic[0], true, true, true);
 		}
 		else if ( !strncmp(map.name, "Hell", 4) )     // hell
 		{
-			playmusic(hellmusic[0], TRUE, TRUE, TRUE);
+			playmusic(hellmusic[0], true, true, true);
 		}
 		else
 		{
-			playmusic(minesmusic[0], TRUE, TRUE, TRUE);
+			playmusic(minesmusic[0], true, true, true);
 		}
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		combatmusicplaying = TRUE;
-		shopmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		combatmusicplaying = true;
+		shopmusicplaying = false;
+		minotaurmusicplaying = false;
 		fadein_increment = default_fadein_increment * 4;
 		fadeout_increment = default_fadeout_increment;
 	}
 	else if ( (!shopmusicplaying || !playing) && !herxaround && !activeminotaur && !combat && inshop )
 	{
-		playmusic(shopmusic, TRUE, TRUE, TRUE);
-		levelmusicplaying = FALSE;
-		devilmusicplaying = FALSE;
-		herxmusicplaying = FALSE;
-		minotaurmusicplaying = FALSE;
-		combatmusicplaying = FALSE;
-		shopmusicplaying = TRUE;
+		playmusic(shopmusic, true, true, true);
+		levelmusicplaying = false;
+		devilmusicplaying = false;
+		herxmusicplaying = false;
+		minotaurmusicplaying = false;
+		combatmusicplaying = false;
+		shopmusicplaying = true;
 		fadein_increment = default_fadein_increment * 4;
 		fadeout_increment = default_fadeout_increment;
 	}
@@ -1177,7 +1177,7 @@ void* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if ( client_disconnected[c] == TRUE )
+			if ( client_disconnected[c] == true )
 			{
 				continue;
 			}

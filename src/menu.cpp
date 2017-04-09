@@ -46,8 +46,8 @@ void* cpp_SteamMatchmaking_GetLobbyOwner(void* steamIDLobby)
 #endif
 
 // menu variables
-bool lobby_window = FALSE;
-bool settings_window = FALSE;
+bool lobby_window = false;
+bool settings_window = false;
 int connect_window = 0;
 int charcreation_step = 0;
 
@@ -110,7 +110,7 @@ bool settings_spawn_blood;
 char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
-bool spawn_blood = TRUE;
+bool spawn_blood = true;
 int multiplayerselect = SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
@@ -318,7 +318,7 @@ void navigateMainMenuItems(bool mode)
 
 	handleMainMenu
 
-	draws & processes the game menu; if passed TRUE, does the whole menu,
+	draws & processes the game menu; if passed true, does the whole menu,
 	otherwise just handles the reduced ingame menu
 
 -------------------------------------------------------------------------------*/
@@ -355,7 +355,7 @@ void handleMainMenu(bool mode)
 		if ( mode && subtitleVisible )
 		{
 			Uint32 colorYellow = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 255);
-			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, TRUE, language[1910 + subtitleCurrent]);
+			ttfPrintTextColor(ttf16, 176, 20 + title_bmp->h - 24, colorYellow, true, language[1910 + subtitleCurrent]);
 		}
 
 		// print game version
@@ -505,9 +505,9 @@ void handleMainMenu(bool mode)
 					}
 					playSound(139, 64);
 					introstage = 6; // goes to intro movie
-					fadeout = TRUE;
+					fadeout = true;
 #ifdef MUSIC
-					playmusic(introductionmusic, TRUE, TRUE, FALSE);
+					playmusic(introductionmusic, true, true, false);
 #endif
 				}
 			}
@@ -626,7 +626,7 @@ void handleMainMenu(bool mode)
 					}
 					playSound(139, 64);
 					introstage = 4; // goes to credits
-					fadeout = TRUE;
+					fadeout = true;
 				}
 			}
 			else
@@ -980,13 +980,13 @@ void handleMainMenu(bool mode)
 			// lobby entered
 			if ( !connectingToLobby && connectingToLobbyWindow )
 			{
-				connectingToLobbyWindow = FALSE;
-				connectingToLobby = FALSE;
+				connectingToLobbyWindow = false;
+				connectingToLobby = false;
 
 				// close current window
 				buttonCloseSubwindow(NULL);
 				list_FreeAll(&button_l);
-				deleteallbuttons = TRUE;
+				deleteallbuttons = true;
 
 				// we are assuming here that the lobby join was successful
 				// otherwise, the callback would've flipped off the connectingToLobbyWindow and opened an error window
@@ -1075,7 +1075,7 @@ void handleMainMenu(bool mode)
 			pos.h = camera_charsheet.winh;
 			drawRect(&pos, 0, 255);
 			b = players[clientnum]->entity->flags[BRIGHT];
-			players[clientnum]->entity->flags[BRIGHT] = TRUE;
+			players[clientnum]->entity->flags[BRIGHT] = true;
 			if (!playing_random_char)
 			{
 				if ( !players[clientnum]->entity->flags[INVISIBLE] )
@@ -1097,7 +1097,7 @@ void handleMainMenu(bool mode)
 					if ( !entity->flags[INVISIBLE] )
 					{
 						b = entity->flags[BRIGHT];
-						entity->flags[BRIGHT] = TRUE;
+						entity->flags[BRIGHT] = true;
 						real_t ofov = fov;
 						fov = 50;
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
@@ -1563,7 +1563,7 @@ void handleMainMenu(bool mode)
 #endif
 
 	// settings window
-	if ( settings_window == TRUE )
+	if ( settings_window == true )
 	{
 		drawWindowFancy(subx1 + 16, suby1 + 44, subx2 - 16, suby2 - 32);
 
@@ -1694,7 +1694,7 @@ void handleMainMenu(bool mode)
 					else if ( omousey >= suby1 + 204 && omousey < suby1 + 204 + 12 )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						settings_colorblind = (settings_colorblind == FALSE);
+						settings_colorblind = (settings_colorblind == false);
 					}
 				}
 			}
@@ -1722,10 +1722,10 @@ void handleMainMenu(bool mode)
 		{
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1350]);
 
-			bool rebindingkey = FALSE;
+			bool rebindingkey = false;
 			if ( rebindkey != -1 )
 			{
-				rebindingkey = TRUE;
+				rebindingkey = true;
 			}
 
 			int c;
@@ -1747,7 +1747,7 @@ void handleMainMenu(bool mode)
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 							lastkeypressed = 0;
-							rebindingkey = TRUE;
+							rebindingkey = true;
 							rebindkey = c;
 						}
 					}
@@ -2318,7 +2318,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 				if ( !directConnect )
 				{
-					bool skipJoin = FALSE;
+					bool skipJoin = false;
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
 						if ( client_disconnected[c] || !steamIDRemote[c] )
@@ -2328,7 +2328,7 @@ void handleMainMenu(bool mode)
 						if ( newSteamID.ConvertToUint64() == (static_cast<CSteamID* >(steamIDRemote[c]))->ConvertToUint64() )
 						{
 							// we've already accepted this player. NEXT!
-							skipJoin = TRUE;
+							skipJoin = true;
 							break;
 						}
 					}
@@ -2351,7 +2351,7 @@ void handleMainMenu(bool mode)
 						// client will enter any player spot
 						for ( c = 0; c < MAXPLAYERS; c++ )
 						{
-							if ( client_disconnected[c] == TRUE )
+							if ( client_disconnected[c] == true )
 							{
 								break;    // no more player slots
 							}
@@ -2419,7 +2419,7 @@ void handleMainMenu(bool mode)
 				{
 					// on success, client gets legit player number
 					strcpy(stats[c]->name, (char*)(&net_packet->data[19]));
-					client_disconnected[c] = FALSE;
+					client_disconnected[c] = false;
 					client_classes[c] = (int)SDLNet_Read32(&net_packet->data[42]);
 					stats[c]->sex = static_cast<sex_t>((int)SDLNet_Read32(&net_packet->data[46]));
 					stats[c]->appearance = (int)SDLNet_Read32(&net_packet->data[50]);
@@ -2522,7 +2522,7 @@ void handleMainMenu(bool mode)
 			// player disconnected
 			else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16))
 			{
-				client_disconnected[net_packet->data[16]] = TRUE;
+				client_disconnected[net_packet->data[16]] = true;
 				for ( c = 1; c < MAXPLAYERS; c++ )
 				{
 					if ( client_disconnected[c] )
@@ -2573,7 +2573,7 @@ void handleMainMenu(bool mode)
 	// communicating with server
 	if ( multiplayer == CLIENT && mode )
 	{
-		if ( receivedclientnum == FALSE )
+		if ( receivedclientnum == false )
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
@@ -2581,12 +2581,12 @@ void handleMainMenu(bool mode)
 
 			// trying to connect to the server and get a player number
 			// receive the packet:
-			bool gotPacket = FALSE;
+			bool gotPacket = false;
 			if ( directConnect )
 			{
 				if ( SDLNet_TCP_Recv(net_tcpsock, net_packet->data, 4 + MAXPLAYERS * (3 + 16)) )
 				{
-					gotPacket = TRUE;
+					gotPacket = true;
 				}
 			}
 			else
@@ -2617,7 +2617,7 @@ void handleMainMenu(bool mode)
 					{
 						continue;
 					}
-					gotPacket = TRUE;
+					gotPacket = true;
 					break;
 				}
 #endif
@@ -2627,7 +2627,7 @@ void handleMainMenu(bool mode)
 			if ( gotPacket )
 			{
 				list_FreeAll(&button_l);
-				deleteallbuttons = TRUE;
+				deleteallbuttons = true;
 				clientnum = (int)SDLNet_Read32(&net_packet->data[0]);
 				if ( clientnum >= MAXPLAYERS || clientnum <= 0 )
 				{
@@ -2725,9 +2725,9 @@ void handleMainMenu(bool mode)
 				{
 					// join game succeeded, advance to lobby
 					client_keepalive[0] = ticks;
-					receivedclientnum = TRUE;
+					receivedclientnum = true;
 					printlog("connected to server.\n");
-					client_disconnected[clientnum] = FALSE;
+					client_disconnected[clientnum] = false;
 					if ( !loadingsavegame )
 					{
 						stats[clientnum]->appearance = stats[0]->appearance;
@@ -2736,7 +2736,7 @@ void handleMainMenu(bool mode)
 					// now set up everybody else
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{
-						client_disconnected[c] = FALSE;
+						client_disconnected[c] = false;
 						client_classes[c] = net_packet->data[4 + c * (3 + 16)]; // class
 						stats[c]->sex = static_cast<sex_t>(net_packet->data[5 + c * (3 + 16)]); // sex
 						client_disconnected[c] = net_packet->data[6 + c * (3 + 16)]; // connectedness :p
@@ -2751,7 +2751,7 @@ void handleMainMenu(bool mode)
 					sendPacketSafe(net_sock, -1, net_packet, 0);
 
 					// open lobby window
-					lobby_window = TRUE;
+					lobby_window = true;
 					subwindow = 1;
 					subx1 = xres / 2 - 400;
 					subx2 = xres / 2 + 400;
@@ -2851,14 +2851,14 @@ void handleMainMenu(bool mode)
 					buttonCloseSubwindow(NULL);
 					numplayers = MAXPLAYERS;
 					introstage = 3;
-					fadeout = TRUE;
+					fadeout = true;
 					continue;
 				}
 
 				// new player
 				else if (!strncmp((char*)net_packet->data, "NEWPLAYER", 9))
 				{
-					client_disconnected[net_packet->data[9]] = FALSE;
+					client_disconnected[net_packet->data[9]] = false;
 					client_classes[net_packet->data[9]] = net_packet->data[10];
 					stats[net_packet->data[9]]->sex = static_cast<sex_t>(net_packet->data[11]);
 					strcpy(stats[net_packet->data[9]]->name, (char*)(&net_packet->data[12]));
@@ -2872,7 +2872,7 @@ void handleMainMenu(bool mode)
 				// player disconnect
 				else if (!strncmp((char*)net_packet->data, "PLAYERDISCONNECT", 16))
 				{
-					client_disconnected[net_packet->data[16]] = TRUE;
+					client_disconnected[net_packet->data[16]] = true;
 					if ( net_packet->data[16] == 0 )
 					{
 						// close lobby window
@@ -2925,10 +2925,10 @@ void handleMainMenu(bool mode)
 						client_classes[0] = client_classes[clientnum];
 						strcpy(stats[0]->name, stats[clientnum]->name);
 						clientnum = 0;
-						client_disconnected[0] = FALSE;
+						client_disconnected[0] = false;
 						for ( c = 1; c < MAXPLAYERS; c++ )
 						{
-							client_disconnected[c] = TRUE;
+							client_disconnected[c] = true;
 						}
 
 						// close any existing net interfaces
@@ -2981,7 +2981,7 @@ void handleMainMenu(bool mode)
 	}
 	if ( multiplayer == SINGLE )
 	{
-		receivedclientnum = FALSE;
+		receivedclientnum = false;
 	}
 
 	// lobby window
@@ -3355,7 +3355,7 @@ void handleMainMenu(bool mode)
 				}
 				if ( ticks - client_keepalive[i] > TICKS_PER_SECOND * 30 )
 				{
-					client_disconnected[i] = TRUE;
+					client_disconnected[i] = true;
 					strncpy((char*)(net_packet->data), "PLAYERDISCONNECT", 16);
 					net_packet->data[16] = i;
 					net_packet->len = 17;
@@ -3444,7 +3444,7 @@ void handleMainMenu(bool mode)
 				pos.h = camera_charsheet.winh;
 				drawRect(&pos, 0, 255);
 				b = players[clientnum]->entity->flags[BRIGHT];
-				players[clientnum]->entity->flags[BRIGHT] = TRUE;
+				players[clientnum]->entity->flags[BRIGHT] = true;
 				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
 					real_t ofov = fov;
@@ -3464,7 +3464,7 @@ void handleMainMenu(bool mode)
 					if ( !entity->flags[INVISIBLE] )
 					{
 						b = entity->flags[BRIGHT];
-						entity->flags[BRIGHT] = TRUE;
+						entity->flags[BRIGHT] = true;
 						real_t ofov = fov;
 						fov = 50;
 						glDrawVoxel(&camera_charsheet, entity, REALCOLORS);
@@ -3580,12 +3580,12 @@ void handleMainMenu(bool mode)
 			// kills
 			int x = 0, y = 0;
 			ttfPrintText(ttf12, subx1 + 456, suby1 + 272, language[1412]);
-			bool nokills = TRUE;
+			bool nokills = true;
 			for ( x = 0; x < NUMMONSTERS; x++ )
 			{
 				if ( kills[x] )
 				{
-					nokills = FALSE;
+					nokills = false;
 					if ( kills[x] > 1 )
 					{
 						ttfPrintTextFormatted(ttf12, subx1 + 456 + (y / 10) * 180, suby1 + 296 + (y % 10) * 12, "%d %s", kills[x], language[111 + x]);
@@ -3615,11 +3615,11 @@ void handleMainMenu(bool mode)
 		else if ( introstage == 3 )     // new game
 		{
 			introstage = 1;
-			fadefinished = FALSE;
-			fadeout = FALSE;
-			gamePaused = FALSE;
+			fadefinished = false;
+			fadeout = false;
+			gamePaused = false;
 			multiplayerselect = 0;
-			intro = TRUE; //Fix items auto-adding to the hotbar on game restart.
+			intro = true; //Fix items auto-adding to the hotbar on game restart.
 
 			if ( !mode )
 			{
@@ -3630,23 +3630,23 @@ void handleMainMenu(bool mode)
 			}
 
 			// undo shopkeeper grudge
-			swornenemies[SHOPKEEPER][HUMAN] = FALSE;
-			monsterally[SHOPKEEPER][HUMAN] = TRUE;
+			swornenemies[SHOPKEEPER][HUMAN] = false;
+			monsterally[SHOPKEEPER][HUMAN] = true;
 
 			// setup game //TODO: Move into a function startGameStuff() or something.
 			entity_uids = 1;
-			loading = TRUE;
-			darkmap = FALSE;
+			loading = true;
+			darkmap = false;
 			selected_spell = NULL;
-			shootmode = TRUE;
+			shootmode = true;
 			currentlevel = startfloor;
-			secretlevel = FALSE;
+			secretlevel = false;
 			victory = 0;
 			completionTime = 0;
-			conductPenniless = TRUE;
-			conductFoodless = TRUE;
-			conductVegetarian = TRUE;
-			conductIlliterate = TRUE;
+			conductPenniless = true;
+			conductFoodless = true;
+			conductVegetarian = true;
+			conductIlliterate = true;
 			list_FreeAll(&damageIndicators);
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -3654,10 +3654,10 @@ void handleMainMenu(bool mode)
 			}
 
 			// disable cheats
-			noclip = FALSE;
-			godmode = FALSE;
-			buddhamode = FALSE;
-			everybodyfriendly = FALSE;
+			noclip = false;
+			godmode = false;
+			buddhamode = false;
+			everybodyfriendly = false;
 
 #ifdef STEAMWORKS
 			if ( !directConnect )
@@ -3722,12 +3722,12 @@ void handleMainMenu(bool mode)
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;
-					entity->flags[NOUPDATE] = TRUE;
+					entity->flags[NOUPDATE] = true;
 				}
 				mapseed = 0;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
-				if ( loadingmap == FALSE )
+				if ( loadingmap == false )
 				{
 					if ( !secretlevel )
 					{
@@ -3770,7 +3770,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					if ( genmap == FALSE )
+					if ( genmap == false )
 					{
 						loadMap(maptoload, &map, map.entities);
 					}
@@ -3817,7 +3817,7 @@ void handleMainMenu(bool mode)
 											monsterStats->leader_uid = players[c]->entity->getUID();
 											if ( !monsterally[HUMAN][monsterStats->type] )
 											{
-												monster->flags[USERFLAG2] = TRUE;
+												monster->flags[USERFLAG2] = true;
 											}
 
 											newNode = list_AddNodeLast(&stats[c]->FOLLOWERS);
@@ -3858,7 +3858,7 @@ void handleMainMenu(bool mode)
 				magicLeftHand = NULL;
 				magicRightHand = NULL;
 
-				client_disconnected[0] = FALSE;
+				client_disconnected[0] = false;
 
 				// initialize class
 				if ( !loadingsavegame )
@@ -3888,7 +3888,7 @@ void handleMainMenu(bool mode)
 				entity_uids = 1;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
-				if ( loadingmap == FALSE )
+				if ( loadingmap == false )
 				{
 					if ( !secretlevel )
 					{
@@ -3931,7 +3931,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					if ( genmap == FALSE )
+					if ( genmap == false )
 					{
 						loadMap(maptoload, &map, map.entities);
 					}
@@ -3956,12 +3956,12 @@ void handleMainMenu(bool mode)
 			}
 
 			// spice of life achievement
-			usedClass[client_classes[clientnum]] = TRUE;
-			bool usedAllClasses = TRUE;
+			usedClass[client_classes[clientnum]] = true;
+			bool usedAllClasses = true;
 			for ( c = 0; c < 10; c++ )
 				if ( !usedClass[c] )
 				{
-					usedAllClasses = FALSE;
+					usedAllClasses = false;
 				}
 			if ( usedAllClasses )
 			{
@@ -3989,28 +3989,28 @@ void handleMainMenu(bool mode)
 
 			// kick off the main loop!
 			pauseGame(1, 0);
-			loading = FALSE;
-			intro = FALSE;
+			loading = false;
+			intro = false;
 		}
 		else if ( introstage == 4 )     // credits
 		{
-			fadefinished = FALSE;
-			fadeout = FALSE;
+			fadefinished = false;
+			fadeout = false;
 			creditstage++;
 			if ( creditstage >= 14 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, TRUE, FALSE, FALSE);
+				playmusic(intromusic, true, false, false);
 #endif
 				introstage = 1;
 				credittime = 0;
 				creditstage = 0;
-				movie = FALSE;
+				movie = false;
 			}
 			else
 			{
 				credittime = 0;
-				movie = TRUE;
+				movie = true;
 			}
 		}
 		else if ( introstage == 5 )     // end game
@@ -4037,7 +4037,7 @@ void handleMainMenu(bool mode)
 
 			// pick a new subtitle :)
 			subtitleCurrent = rand() % NUMSUBTITLES;
-			subtitleVisible = TRUE;
+			subtitleVisible = true;
 
 			for ( c = 0; c < NUMMONSTERS; c++ )
 			{
@@ -4072,7 +4072,7 @@ void handleMainMenu(bool mode)
 			{
 				for (x = 1; x < MAXPLAYERS; x++)
 				{
-					if ( client_disconnected[x] == TRUE )
+					if ( client_disconnected[x] == true )
 					{
 						continue;
 					}
@@ -4082,7 +4082,7 @@ void handleMainMenu(bool mode)
 					net_packet->address.port = net_clients[x - 1].port;
 					net_packet->len = 11;
 					sendPacketSafe(net_sock, -1, net_packet, x - 1);
-					client_disconnected[x] = TRUE;
+					client_disconnected[x] = true;
 				}
 			}
 
@@ -4104,20 +4104,20 @@ void handleMainMenu(bool mode)
 			}
 			else
 			{
-				savethisgame = FALSE;
+				savethisgame = false;
 			}
 
 			// reset game
-			darkmap = FALSE;
+			darkmap = false;
 			appraisal_timer = 0;
 			appraisal_item = 0;
 			multiplayer = 0;
-			shootmode = TRUE;
+			shootmode = true;
 			currentlevel = 0;
-			secretlevel = FALSE;
+			secretlevel = false;
 			clientnum = 0;
 			introstage = 1;
-			intro = TRUE;
+			intro = true;
 			selected_spell = NULL; //So you don't start off with a spell when the game restarts.
 			client_classes[0] = 0;
 			spellcastingAnimationManager_deactivate(&cast_animation);
@@ -4146,11 +4146,11 @@ void handleMainMenu(bool mode)
 			{
 				if ( c > 0 )
 				{
-					client_disconnected[c] = TRUE;
+					client_disconnected[c] = true;
 				}
 				else
 				{
-					client_disconnected[c] = FALSE;
+					client_disconnected[c] = false;
 				}
 				players[c]->entity = nullptr; //TODO: PLAYERSWAP VERIFY. Need to do anything else?
 				stats[c]->sex = static_cast<sex_t>(0);
@@ -4208,13 +4208,13 @@ void handleMainMenu(bool mode)
 			numplayers = 0;
 			assignActions(&map);
 			generatePathMaps();
-			gamePaused = FALSE;
+			gamePaused = false;
 			if ( !victory )
 			{
-				fadefinished = FALSE;
-				fadeout = FALSE;
+				fadefinished = false;
+				fadeout = false;
 #ifdef MUSIC
-				playmusic(intromusic, TRUE, FALSE, FALSE);
+				playmusic(intromusic, true, false, false);
 #endif
 			}
 			else
@@ -4262,13 +4262,13 @@ void handleMainMenu(bool mode)
 		}
 		else if ( introstage == 6 )     // introduction cutscene
 		{
-			fadefinished = FALSE;
-			fadeout = FALSE;
+			fadefinished = false;
+			fadeout = false;
 			intromoviestage++;
 			if ( intromoviestage >= 9 )
 			{
 #ifdef MUSIC
-				playmusic(intromusic, TRUE, FALSE, FALSE);
+				playmusic(intromusic, true, false, false);
 #endif
 				introstage = 1;
 				intromovietime = 0;
@@ -4278,12 +4278,12 @@ void handleMainMenu(bool mode)
 				{
 					intromoviealpha[c] = 0;
 				}
-				movie = FALSE;
+				movie = false;
 			}
 			else
 			{
 				intromovietime = 0;
-				movie = TRUE;
+				movie = true;
 			}
 		}
 		else if ( introstage == 7 )     // win game sequence (herx)
@@ -4291,7 +4291,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( firstendmoviestage == 0 )
 			{
-				playmusic(endgamemusic, TRUE, TRUE, FALSE);
+				playmusic(endgamemusic, true, true, false);
 			}
 #endif
 			firstendmoviestage++;
@@ -4305,14 +4305,14 @@ void handleMainMenu(bool mode)
 				{
 					firstendmoviealpha[c] = 0;
 				}
-				fadeout = TRUE;
+				fadeout = true;
 			}
 			else
 			{
-				fadefinished = FALSE;
-				fadeout = FALSE;
+				fadefinished = false;
+				fadeout = false;
 				firstendmovietime = 0;
-				movie = TRUE;
+				movie = true;
 			}
 		}
 		else if ( introstage == 8 )     // win game sequence (devil)
@@ -4320,7 +4320,7 @@ void handleMainMenu(bool mode)
 #ifdef MUSIC
 			if ( secondendmoviestage == 0 )
 			{
-				playmusic(endgamemusic, TRUE, TRUE, FALSE);
+				playmusic(endgamemusic, true, true, false);
 			}
 #endif
 			secondendmoviestage++;
@@ -4334,14 +4334,14 @@ void handleMainMenu(bool mode)
 				{
 					secondendmoviealpha[c] = 0;
 				}
-				fadeout = TRUE;
+				fadeout = true;
 			}
 			else
 			{
-				fadefinished = FALSE;
-				fadeout = FALSE;
+				fadefinished = false;
+				fadeout = false;
 				secondendmovietime = 0;
-				movie = TRUE;
+				movie = true;
 			}
 		}
 	}
@@ -4358,7 +4358,7 @@ void handleMainMenu(bool mode)
 				*inputPressed(joyimpulses[INJOY_MENU_NEXT]) = 0;
 			}
 			introstage = 4;
-			fadeout = TRUE;
+			fadeout = true;
 		}
 
 		// stages
@@ -4484,7 +4484,7 @@ void handleMainMenu(bool mode)
 			else
 			{
 				introstage = 6;
-				fadeout = TRUE;
+				fadeout = true;
 			}
 		}
 
@@ -4493,63 +4493,63 @@ void handleMainMenu(bool mode)
 			intromoviealpha[8] = std::min(intromoviealpha[8] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, TRUE, language[1414]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
 		}
 		if ( intromoviestage >= 2 )
 		{
 			intromoviealpha[0] = std::min(intromoviealpha[0] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1415]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1415]);
 		}
 		if ( intromoviestage >= 3 )
 		{
 			intromoviealpha[1] = std::min(intromoviealpha[1] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1416]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1416]);
 		}
 		if ( intromoviestage >= 4 )
 		{
 			intromoviealpha[2] = std::min(intromoviealpha[2] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1417]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1417]);
 		}
 		if ( intromoviestage >= 5 )
 		{
 			intromoviealpha[3] = std::min(intromoviealpha[3] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1418]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1418]);
 		}
 		if ( intromoviestage >= 6 )
 		{
 			intromoviealpha[4] = std::min(intromoviealpha[4] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[4]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1419]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1419]);
 		}
 		if ( intromoviestage >= 7 )
 		{
 			intromoviealpha[5] = std::min(intromoviealpha[5] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[5]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1420]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1420]);
 		}
 		if ( intromoviestage >= 8 )
 		{
 			intromoviealpha[6] = std::min(intromoviealpha[6] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[6]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1421]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1421]);
 		}
 		if ( intromoviestage == 9 )
 		{
 			intromoviealpha[7] = std::min(intromoviealpha[7] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, intromoviealpha[7]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1422]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1422]);
 		}
 	}
 
@@ -4575,7 +4575,7 @@ void handleMainMenu(bool mode)
 			else
 			{
 				introstage = 7;
-				fadeout = TRUE;
+				fadeout = true;
 			}
 		}
 
@@ -4584,35 +4584,35 @@ void handleMainMenu(bool mode)
 			firstendmoviealpha[8] = std::min(firstendmoviealpha[8] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, TRUE, language[1414]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
 		}
 		if ( firstendmoviestage >= 2 )
 		{
 			firstendmoviealpha[0] = std::min(firstendmoviealpha[0] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1423]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1423]);
 		}
 		if ( firstendmoviestage >= 3 )
 		{
 			firstendmoviealpha[1] = std::min(firstendmoviealpha[1] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1424]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1424]);
 		}
 		if ( firstendmoviestage >= 4 )
 		{
 			firstendmoviealpha[2] = std::min(firstendmoviealpha[2] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1425]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1425]);
 		}
 		if ( firstendmoviestage == 5 )
 		{
 			firstendmoviealpha[3] = std::min(firstendmoviealpha[3] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, firstendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1426]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1426]);
 		}
 	}
 
@@ -4638,7 +4638,7 @@ void handleMainMenu(bool mode)
 			else
 			{
 				introstage = 8;
-				fadeout = TRUE;
+				fadeout = true;
 			}
 		}
 
@@ -4647,49 +4647,49 @@ void handleMainMenu(bool mode)
 			secondendmoviealpha[8] = std::min(secondendmoviealpha[8] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, TRUE, language[1414]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[1414]);
 		}
 		if ( secondendmoviestage >= 2 )
 		{
 			secondendmoviealpha[0] = std::min(secondendmoviealpha[0] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, TRUE, language[1427]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, language[1427]);
 		}
 		if ( secondendmoviestage >= 3 )
 		{
 			secondendmoviealpha[1] = std::min(secondendmoviealpha[1] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1428]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1428]);
 		}
 		if ( secondendmoviestage >= 4 )
 		{
 			secondendmoviealpha[2] = std::min(secondendmoviealpha[2] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1429]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1429]);
 		}
 		if ( secondendmoviestage >= 5 )
 		{
 			secondendmoviealpha[3] = std::min(secondendmoviealpha[3] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1430]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1430]);
 		}
 		if ( secondendmoviestage >= 6 )
 		{
 			secondendmoviealpha[4] = std::min(secondendmoviealpha[4] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[4]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1431]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1431]);
 		}
 		if ( secondendmoviestage == 7 )
 		{
 			secondendmoviealpha[5] = std::min(secondendmoviealpha[5] + 2, 255);
 			Uint32 color = 0x00FFFFFF;
 			color += std::min(std::max(0, secondendmoviealpha[5]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, TRUE, language[1432]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[1432]);
 		}
 	}
 }
@@ -4721,21 +4721,21 @@ void openGameoverWindow()
 	snprintf(scorenum, 16, "%d\n\n", total);
 	scoreDeconstructor((void*)score);
 
-	bool madetop = FALSE;
+	bool madetop = false;
 	if ( !list_Size(&topscores) )
 	{
-		madetop = TRUE;
+		madetop = true;
 	}
 	else if ( list_Size(&topscores) < MAXTOPSCORES )
 	{
-		madetop = TRUE;
+		madetop = true;
 	}
 	else if ( totalScore((score_t*)topscores.last->element) < total )
 	{
-		madetop = TRUE;
+		madetop = true;
 	}
 
-	shootmode = FALSE;
+	shootmode = false;
 	if ( multiplayer == SINGLE )
 	{
 		strcpy(subtext, language[1133]);
@@ -4758,7 +4758,7 @@ void openGameoverWindow()
 		for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 		{
 			Item* item = (Item*)node->element;
-			item->identified = TRUE;
+			item->identified = true;
 		}
 
 		// Restart
@@ -4789,13 +4789,13 @@ void openGameoverWindow()
 	{
 		strcpy(subtext, language[1140]);
 
-		bool survivingPlayer = FALSE;
+		bool survivingPlayer = false;
 		int c;
 		for (c = 0; c < MAXPLAYERS; c++)
 		{
 			if (!client_disconnected[c] && players[c]->entity)
 			{
-				survivingPlayer = TRUE;
+				survivingPlayer = true;
 				break;
 			}
 		}
@@ -4897,7 +4897,7 @@ void openSettingsWindow()
 	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;
 
 	// create settings window
-	settings_window = TRUE;
+	settings_window = true;
 	subwindow = 1;
 	//subx1 = xres/2-256;
 	subx1 = xres / 2 - 352;
@@ -5080,7 +5080,7 @@ void openFailedConnectionWindow(int mode)
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 
 	// create new window
 	subwindow = 1;
@@ -5189,12 +5189,12 @@ void openSteamLobbyWaitWindow(button_t* my)
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 
 	// create new window
 	subwindow = 1;
 #ifdef STEAMWORKS
-	requestingLobbies = TRUE;
+	requestingLobbies = true;
 #endif
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -5240,7 +5240,7 @@ void openSteamLobbyBrowserWindow(button_t* my)
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 
 	// create new window
 	subwindow = 1;
@@ -5316,7 +5316,7 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 		int temp2 = connectingToLobbyWindow;
 		//buttonCloseSubwindow(my);
 		list_FreeAll(&button_l);
-		deleteallbuttons = TRUE;
+		deleteallbuttons = true;
 		connectingToLobby = temp1;
 		connectingToLobbyWindow = temp2;
 
@@ -5352,8 +5352,8 @@ void buttonSteamLobbyBrowserJoinGame(button_t* my)
 		button->visible = 1;
 		button->focused = 1;
 
-		connectingToLobby = TRUE;
-		connectingToLobbyWindow = TRUE;
+		connectingToLobby = true;
+		connectingToLobbyWindow = true;
 		strncpy( currentLobbyName, lobbyText[lobbyIndex], 31 );
 		cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyIDs[lobbyIndex]));
 	}
@@ -5375,7 +5375,7 @@ void buttonQuitConfirm(button_t* my)
 {
 	subwindow = 0;
 	introstage = 2; // prepares to quit the whole game
-	fadeout = TRUE;
+	fadeout = true;
 }
 
 // quit game button (no save)
@@ -5389,13 +5389,13 @@ void buttonQuitNoSaveConfirm(button_t* my)
 }
 
 // end game button
-bool savethisgame = FALSE;
+bool savethisgame = false;
 void buttonEndGameConfirm(button_t* my)
 {
-	savethisgame = FALSE;
+	savethisgame = false;
 	subwindow = 0;
 	introstage = 5; // prepares to end the current game (throws to main menu)
-	fadeout = TRUE;
+	fadeout = true;
 	//Edge case for freeing channeled spells on a client.
 	if (multiplayer == CLIENT)
 	{
@@ -5403,7 +5403,7 @@ void buttonEndGameConfirm(button_t* my)
 	}
 	if ( !intro )
 	{
-		pauseGame(2, FALSE);
+		pauseGame(2, false);
 	}
 }
 
@@ -5411,11 +5411,11 @@ void buttonEndGameConfirmSave(button_t* my)
 {
 	subwindow = 0;
 	introstage = 5; // prepares to end the current game (throws to main menu)
-	fadeout = TRUE;
-	savethisgame = TRUE;
+	fadeout = true;
+	savethisgame = true;
 	if ( !intro )
 	{
-		pauseGame(2, FALSE);
+		pauseGame(2, false);
 	}
 }
 
@@ -5444,11 +5444,11 @@ void buttonCloseSubwindow(button_t* my)
 	}
 	rebindkey = -1;
 #ifdef STEAMWORKS
-	requestingLobbies = FALSE;
+	requestingLobbies = false;
 #endif
 	score_window = 0;
-	lobby_window = FALSE;
-	settings_window = FALSE;
+	lobby_window = false;
+	settings_window = false;
 	connect_window = 0;
 #ifdef STEAMWORKS
 	if ( charcreation_step )
@@ -5460,8 +5460,8 @@ void buttonCloseSubwindow(button_t* my)
 			lobbyToConnectTo = NULL;
 		}
 	}
-	connectingToLobbyWindow = FALSE;
-	connectingToLobby = FALSE;
+	connectingToLobbyWindow = false;
+	connectingToLobby = false;
 #endif
 	charcreation_step = 0;
 	subwindow = 0;
@@ -5534,7 +5534,7 @@ void buttonContinue(button_t* my)
 			int temp2 = connectingToLobbyWindow;
 			//buttonCloseSubwindow(my);
 			list_FreeAll(&button_l);
-			deleteallbuttons = TRUE;
+			deleteallbuttons = true;
 			connectingToLobby = temp1;
 			connectingToLobbyWindow = temp2;
 
@@ -5570,8 +5570,8 @@ void buttonContinue(button_t* my)
 			button->visible = 1;
 			button->focused = 1;
 
-			connectingToLobby = TRUE;
-			connectingToLobbyWindow = TRUE;
+			connectingToLobby = true;
+			connectingToLobbyWindow = true;
 			strncpy( currentLobbyName, "", 31 );
 			cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID*>(lobbyToConnectTo));
 			cpp_Free_CSteamID(lobbyToConnectTo); //TODO: Bugger this.
@@ -5588,30 +5588,30 @@ void buttonContinue(button_t* my)
 		else if ( multiplayerselect == SERVER )
 		{
 #ifdef STEAMWORKS
-			directConnect = FALSE;
+			directConnect = false;
 #else
-			directConnect = TRUE;
+			directConnect = true;
 #endif
 			buttonHostMultiplayer(my);
 		}
 		else if ( multiplayerselect == CLIENT )
 		{
 #ifndef STEAMWORKS
-			directConnect = TRUE;
+			directConnect = true;
 			buttonJoinMultiplayer(my);
 #else
-			directConnect = FALSE;
+			directConnect = false;
 			openSteamLobbyWaitWindow(my);
 #endif
 		}
 		else if ( multiplayerselect == DIRECTSERVER )
 		{
-			directConnect = TRUE;
+			directConnect = true;
 			buttonHostMultiplayer(my);
 		}
 		else if ( multiplayerselect == DIRECTCLIENT )
 		{
-			directConnect = TRUE;
+			directConnect = true;
 			buttonJoinMultiplayer(my);
 		}
 	}
@@ -5623,7 +5623,7 @@ void buttonBack(button_t* my)
 	charcreation_step--;
 	if (charcreation_step < 4)
 	{
-		playing_random_char = FALSE;
+		playing_random_char = false;
 	}
 	if (charcreation_step == 3)
 	{
@@ -5644,10 +5644,10 @@ void buttonStartSingleplayer(button_t* my)
 	multiplayer = SINGLE;
 	numplayers = 0;
 	introstage = 3;
-	fadeout = TRUE;
+	fadeout = true;
 	if ( !intro )
 	{
-		pauseGame(2, FALSE);
+		pauseGame(2, false);
 	}
 }
 
@@ -5673,7 +5673,7 @@ void buttonHostMultiplayer(button_t* my)
 		// close current window
 		buttonCloseSubwindow(my);
 		list_FreeAll(&button_l);
-		deleteallbuttons = TRUE;
+		deleteallbuttons = true;
 
 		// open port window
 		connect_window = SERVER;
@@ -5733,7 +5733,7 @@ void buttonJoinMultiplayer(button_t* my)
 	// close current window
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 
 	// open port window
 	connect_window = CLIENT;
@@ -5793,7 +5793,7 @@ void buttonHostLobby(button_t* my)
 	// close current window
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 	portnumber = atoi(portnumber_char); // get the port number from the text field
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
@@ -5874,7 +5874,7 @@ void buttonHostLobby(button_t* my)
 
 	// open lobby window
 	multiplayer = SERVER;
-	lobby_window = TRUE;
+	lobby_window = true;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
 	subx2 = xres / 2 + 400;
@@ -5967,7 +5967,7 @@ void buttonJoinLobby(button_t* my)
 		buttonCloseSubwindow(my);
 	}
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 #ifdef STEAMWORKS
 	connectingToLobby = temp1;
 	connectingToLobbyWindow = temp2;
@@ -6140,10 +6140,10 @@ void buttonStartServer(button_t* my)
 	buttonCloseSubwindow(my);
 
 	multiplayer = SERVER;
-	intro = TRUE;
+	intro = true;
 	introstage = 3;
 	numplayers = 0;
-	fadeout = TRUE;
+	fadeout = true;
 
 	// send the ok to start
 	for ( c = 1; c < MAXPLAYERS; c++ )
@@ -6233,10 +6233,10 @@ void buttonDisconnect(button_t* my)
 	client_classes[0] = client_classes[clientnum];
 	strcpy(stats[0]->name, stats[clientnum]->name);
 	clientnum = 0;
-	client_disconnected[0] = FALSE;
+	client_disconnected[0] = false;
 	for ( c = 1; c < MAXPLAYERS; c++ )
 	{
-		client_disconnected[c] = TRUE;
+		client_disconnected[c] = true;
 	}
 
 	// close any existing net interfaces
@@ -6441,7 +6441,7 @@ void buttonAcceptResolution(button_t* my)
 	confirmResolutionWindow = false;
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 	revertResolutionButton = nullptr;
 
 	applySettings();
@@ -6454,7 +6454,7 @@ void buttonRevertResolution(button_t* my)
 	confirmResolutionWindow = false;
 	buttonCloseSubwindow(my);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 	revertResolutionButton = nullptr;
 }
 
@@ -6476,7 +6476,7 @@ void buttonSettingsAccept(button_t* my)
 		buttonCloseSettingsSubwindow(my);
 		resolutionChanged = false;
 		list_FreeAll(&button_l);
-		deleteallbuttons = TRUE;
+		deleteallbuttons = true;
 		openConfirmResolutionWindow();
 	}
 	else
@@ -6484,7 +6484,7 @@ void buttonSettingsAccept(button_t* my)
 		// we need to reposition the settings window now.
 		buttonCloseSubwindow(my);
 		list_FreeAll(&button_l);
-		deleteallbuttons = TRUE;
+		deleteallbuttons = true;
 		openSettingsWindow();
 	}
 }
@@ -6603,7 +6603,7 @@ void openLoadGameWindow(button_t* my)
 	// close current window
 	buttonCloseSubwindow(NULL);
 	list_FreeAll(&button_l);
-	deleteallbuttons = TRUE;
+	deleteallbuttons = true;
 
 	// create confirmation window
 	subwindow = 1;
@@ -6660,7 +6660,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 {
 	button_t* button;
 
-	playing_random_char = FALSE;
+	playing_random_char = false;
 	loadingsavegame = 0;
 
 	// reset class loadout
@@ -6678,7 +6678,7 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	{
 		buttonCloseSubwindow(NULL);
 		list_FreeAll(&button_l);
-		deleteallbuttons = TRUE;
+		deleteallbuttons = true;
 	}
 
 	// create character creation window
@@ -6784,7 +6784,7 @@ void buttonLoadGame(button_t* button)
 				int temp2 = connectingToLobbyWindow;
 				//buttonCloseSubwindow(button);
 				list_FreeAll(&button_l);
-				deleteallbuttons = TRUE;
+				deleteallbuttons = true;
 				connectingToLobby = temp1;
 				connectingToLobbyWindow = temp2;
 
@@ -6820,8 +6820,8 @@ void buttonLoadGame(button_t* button)
 				button->visible = 1;
 				button->focused = 1;
 
-				connectingToLobby = TRUE;
-				connectingToLobbyWindow = TRUE;
+				connectingToLobby = true;
+				connectingToLobbyWindow = true;
 				strncpy( currentLobbyName, "", 31 );
 				cpp_SteamMatchmaking_JoinLobby(*static_cast<CSteamID* >(lobbyToConnectTo));
 				cpp_Free_CSteamID(lobbyToConnectTo);
@@ -6838,7 +6838,7 @@ void buttonLoadGame(button_t* button)
 
 void buttonRandomCharacter(button_t* my)
 {
-	playing_random_char = TRUE;
+	playing_random_char = true;
 	charcreation_step = 4;
 	stats[0]->sex = static_cast<sex_t>(rand() % 2);
 	client_classes[0] = rand() % NUMCLASSES;
