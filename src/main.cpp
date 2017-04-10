@@ -12,6 +12,7 @@
 #include "main.hpp"
 #include "hash.hpp"
 #include "entity.hpp"
+#include "prng.hpp"
 
 // main definitions
 Sint32 xres = 960;
@@ -312,7 +313,7 @@ int numdigits_sint16(Sint16 x)
 
 -------------------------------------------------------------------------------*/
 
-void printlog(char* str, ...)
+void printlog(const char* str, ...)
 {
 	char newstr[1024] = { 0 };
 	va_list argptr;

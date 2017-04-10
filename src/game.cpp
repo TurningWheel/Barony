@@ -43,6 +43,8 @@
 
 const unsigned STACK_SIZE = 10;
 
+std::vector<std::string> randomPlayerNames;
+
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
 	printf("Caught segfault at address %p\n", si->si_addr);
@@ -1495,9 +1497,22 @@ void handleButtons(void)
 			list_RemoveNode(button->node);
 			continue;
 		}
+		//Hide "Random Character" button if not on first character creation step.
 		if (!strcmp(button->label, language[733]))
 		{
 			if (charcreation_step > 1)
+			{
+				button->visible = 0;
+			}
+			else
+			{
+				button->visible = 1;
+			}
+		}
+		//Hide "Random Name" button if not on character naming screen.
+		if ( !strcmp(button->label, language[2050]) )
+		{
+			if ( charcreation_step != 4 )
 			{
 				button->visible = 0;
 			}

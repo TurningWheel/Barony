@@ -659,6 +659,11 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_MAGIC_TAB] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_MAGIC_TAB: %d\n", atoi(&command_str[9]));
 		}
+		else if ( strstr(command_str, "INJOY_MENU_RANDOM_NAME") )
+		{
+			joyimpulses[INJOY_MENU_RANDOM_NAME] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_RANDOM_NAME: %d\n", atoi(&command_str[9]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");

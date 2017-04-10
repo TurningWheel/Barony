@@ -34,6 +34,7 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "cppfuncs.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -1109,7 +1110,6 @@ void handleMainMenu(bool mode)
 			}
 		}
 
-		//TODO: Loop through buttons. Disable the random character button if charcreation_step != 1;
 		// sexes
 		if ( charcreation_step == 1 )
 		{
@@ -1892,11 +1892,11 @@ void handleMainMenu(bool mode)
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1981]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2001]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1981]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2001]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1909,11 +1909,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_lefty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1982]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2002]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1982]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2002]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1926,11 +1926,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_rightx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1983]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2003]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1983]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2003]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1943,11 +1943,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_righty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1984]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2004]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1984]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2004]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1960,11 +1960,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menux_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1985]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2005]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1985]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2005]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1977,11 +1977,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menuy_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1986]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2006]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1986]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2006]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1992,28 +1992,28 @@ void handleMainMenu(bool mode)
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1987]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2007]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_rightx_sensitivity, font8x8_bmp, 12); //Doesn't like any fonts besides the default.
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_rightx_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1988]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2008]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_righty_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_righty_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1989]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2009]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menux_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menux_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1990]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2010]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
@@ -5039,17 +5039,17 @@ void openSettingsWindow()
 
 	//Gamepad settings tab.
 	button = newButton();
-	strcpy(button->label, language[1980]);
+	strcpy(button->label, language[2000]);
 	button->x = tabx_so_far;
 	button->y = suby1 + 24;
-	button->sizex = strlen(language[1980]) * 12 + 8;
+	button->sizex = strlen(language[2000]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonGamepadSettingsTab;
 	button->visible = 1;
 	button->focused = 1;
 	button_gamepad_settings_tab = button;
 
-	tabx_so_far += strlen(language[1980]) * 12 + 8;
+	tabx_so_far += strlen(language[2000]) * 12 + 8;
 
 	// misc tab
 	button = newButton();
@@ -6742,6 +6742,18 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->focused = 1;
 	button->key = SDL_SCANCODE_R; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //random character => "y" button
+
+	//Random Name.
+	button = newButton();
+	strcpy(button->label, language[2050]);
+	button->x = button_back_x + button_back_width + 4;
+	button->y = suby2 - 24;
+	button->sizex = strlen(language[2050]) * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonRandomName;
+	button->visible = 1;
+	button->focused = 1;
+	button->joykey = joyimpulses[INJOY_MENU_RANDOM_NAME];
 }
 
 void buttonLoadGame(button_t* button)
@@ -6845,4 +6857,35 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
+}
+
+void buttonRandomName(button_t* my)
+{
+	if ( !SDL_IsTextInputActive() || charcreation_step != 4 )
+	{
+		return;
+	}
+	if ( !randomPlayerNames.size() )
+	{
+		printlog("Warning: Random Name: Need names to pick from!");
+		return;
+	}
+	std::string name;
+	try
+	{
+		name = randomEntryFromVector(randomPlayerNames);
+	}
+	catch ( const char* e )
+	{
+		printlog("Error: Random Name: \"%s\"", e);
+		return;
+	}
+	catch ( ... )
+	{
+		printlog("Error: Failed to choose random name.");
+		return;
+	}
+
+	strncpy(inputstr, name.c_str(), std::min<size_t>(name.length(), inputlen));
+	inputstr[std::min<size_t>(name.length(), inputlen)] = '\0';
 }
