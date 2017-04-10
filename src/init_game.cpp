@@ -29,6 +29,7 @@
 #include "menu.hpp"
 #include "paths.hpp"
 #include "player.hpp"
+#include "cppfuncs.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -289,6 +290,8 @@ int initGame()
 
 	createBooks();
 	setupSpells();
+
+	randomPlayerNames = getLinesFromFile(PLAYERNAMES_FILE);
 
 	// print a loading message
 	drawClearBuffers();

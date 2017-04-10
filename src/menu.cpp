@@ -34,6 +34,7 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "cppfuncs.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -1109,7 +1110,6 @@ void handleMainMenu(bool mode)
 			}
 		}
 
-		//TODO: Loop through buttons. Disable the random character button if charcreation_step != 1;
 		// sexes
 		if ( charcreation_step == 1 )
 		{
@@ -6742,6 +6742,18 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->focused = 1;
 	button->key = SDL_SCANCODE_R; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //random character => "y" button
+
+	//Random Name.
+	button = newButton();
+	strcpy(button->label, language[2050]);
+	button->x = button_back_x + button_back_width + 4;
+	button->y = suby2 - 24;
+	button->sizex = strlen(language[2050]) * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonRandomName;
+	button->visible = 1;
+	button->focused = 1;
+	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //TODO: Change to "INJOY_MENU_RANDOM_NAME.
 }
 
 void buttonLoadGame(button_t* button)
@@ -6845,4 +6857,35 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
+}
+
+void buttonRandomName(button_t* my)
+{
+	if ( !SDL_IsTextInputActive() || charcreation_step != 4 )
+	{
+		return;
+	}
+	if ( !randomPlayerNames.size() )
+	{
+		printlog("Warning: Random Name: Need names to pick from!");
+		return;
+	}
+	std::string name;
+	try
+	{
+		name = randomEntryFromVector(randomPlayerNames);
+	}
+	catch ( const char* e )
+	{
+		printlog("Error: Random Name: \"%s\"", e);
+		return;
+	}
+	catch ( ... )
+	{
+		printlog("Error: Failed to choose random name.");
+		return;
+	}
+
+	strncpy(inputstr, name.c_str(), std::min<size_t>(name.length(), inputlen));
+	inputstr[std::min<size_t>(name.length(), inputlen)] = '\0';
 }

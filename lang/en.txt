@@ -2768,4 +2768,7 @@ client (player %d) (direct ip)#
 1997 auto appraise items#
 1998 right click protection#
 
-1999 end#
+#More character creation screen stuff.
+2050 Random Name#
+
+2499 end#

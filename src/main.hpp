@@ -437,7 +437,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 2000
+#define NUMLANGENTRIES 2500
 extern char languageCode[32];
 extern char** language;
 
@@ -510,7 +510,7 @@ int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char* str);
 int concatedStringLength(char* str, ...);
-void printlog(char* str, ...);
+void printlog(const char* str, ...);
 
 // function prototypes for init.c:
 int initApp(char* title, int fullscreen);
