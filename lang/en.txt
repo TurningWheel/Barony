@@ -2748,20 +2748,21 @@ client (player %d) (direct ip)#
 1977 Previous Settings Tab#
 1978 Previous Inventory Tab#
 1979 Next Inventory Tab#
+1980 Random Name#
 
-1980 Gamepad#
+2000 Gamepad#
 
-1981 Invert Left Analog Stick X-Axis#
-1982 Invert Left Analog Stick Y-Axis#
-1983 Invert Right Analog Stick X-Axis#
-1984 Invert Right Analog Stick Y-Axis#
-1985 Invert X-Axis in GUI#
-1986 Invert Y-Axis in GUI#
+2001 Invert Left Analog Stick X-Axis#
+2002 Invert Left Analog Stick Y-Axis#
+2003 Invert Right Analog Stick X-Axis#
+2004 Invert Right Analog Stick Y-Axis#
+2005 Invert X-Axis in GUI#
+2006 Invert Y-Axis in GUI#
 
-1987 Right Analog Stick X-Axis Sensitivity#
-1988 Right Analog Stick Y-Axis Sensitivity#
-1989 Menu X-Axis Sensitivity#
-1990 Menu Y-Axis Sensitivity#
+2007 Right Analog Stick X-Axis Sensitivity#
+2008 Right Analog Stick Y-Axis Sensitivity#
+2009 Menu X-Axis Sensitivity#
+2010 Menu Y-Axis Sensitivity#
 
 
 

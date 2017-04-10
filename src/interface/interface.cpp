@@ -469,6 +469,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_SETTINGS_PREV] = 310;
 	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
 	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
+	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
 }
 
 void defaultConfig()
@@ -553,6 +554,7 @@ void defaultConfig()
 	consoleCommand("/joybind 310 INJOY_MENU_SETTINGS_PREV");
 	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
 	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
+	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -618,7 +620,8 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"MENU_SETTINGS_NEXT",
 	"MENU_SETTINGS_PREV",
 	"MENU_INVENTORY_TAB",
-	"MENU_MAGIC_TAB"
+	"MENU_MAGIC_TAB",
+	"MENU_RANDOM_NAME"
 };
 
 /*-------------------------------------------------------------------------------
