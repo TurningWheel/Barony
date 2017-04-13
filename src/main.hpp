@@ -163,46 +163,46 @@ extern bool stop;
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
 
 //Bifunctional:
-#define INJOY_STATUS 0
-#define INJOY_SPELL_LIST 1
-#define INJOY_PAUSE_MENU 6 //Also acts as the back key/escape key in limited situations.
-#define INJOY_DPAD_LEFT 8
-#define INJOY_DPAD_RIGHT 9
-#define INJOY_DPAD_UP 10
-#define INJOY_DPAD_DOWN 11
-#define INJOY_HOTBAR_NEXT 13
-#define INJOY_HOTBAR_PREV 14
+static const unsigned INJOY_STATUS = 0;
+static const unsigned INJOY_SPELL_LIST = 1;
+static const unsigned INJOY_PAUSE_MENU = 6; //Also acts as the back key/escape key in limited situations.
+static const unsigned INJOY_DPAD_LEFT = 8;
+static const unsigned INJOY_DPAD_RIGHT = 9;
+static const unsigned INJOY_DPAD_UP = 10;
+static const unsigned INJOY_DPAD_DOWN = 11;
+static const unsigned INJOY_HOTBAR_NEXT = 13;
+static const unsigned INJOY_HOTBAR_PREV = 14;
 
 //Menu Exclusive:
-#define INJOY_MENU_LEFT_CLICK 7
-#define INJOY_MENU_NEXT 12
-#define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
-#define INJOY_MENU_USE 17 //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
-#define INJOY_MENU_HOTBAR_CLEAR 18 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_REFRESH_LOBBY 19 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_LOAD_SAVE 20 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_DROP_ITEM 22
-#define INJOY_MENU_CHEST_GRAB_ALL 23
-#define INJOY_MENU_CYCLE_SHOP_LEFT 24
-#define INJOY_MENU_CYCLE_SHOP_RIGHT 25
-#define INJOY_MENU_BOOK_NEXT 26
-#define INJOY_MENU_BOOK_PREV 27
-#define INJOY_MENU_SETTINGS_NEXT 28
-#define INJOY_MENU_SETTINGS_PREV 29 //TODO: Only one "cycle tabs" binding?
-#define INJOY_MENU_INVENTORY_TAB 30 //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
-#define INJOY_MENU_MAGIC_TAB 31
+static const unsigned INJOY_MENU_LEFT_CLICK = 7;
+static const unsigned INJOY_MENU_NEXT = 12;
+static const unsigned INJOY_MENU_CANCEL = 16; //Basically the "b" button. Go back, cancel things, close dialogues...etc.
+static const unsigned INJOY_MENU_USE = 17; //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
+static const unsigned INJOY_MENU_HOTBAR_CLEAR = 18; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_REFRESH_LOBBY = 19; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_LOAD_SAVE = 20; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_RANDOM_CHAR = 21; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_DROP_ITEM = 22;
+static const unsigned INJOY_MENU_CHEST_GRAB_ALL = 23;
+static const unsigned INJOY_MENU_CYCLE_SHOP_LEFT = 24;
+static const unsigned INJOY_MENU_CYCLE_SHOP_RIGHT = 25;
+static const unsigned INJOY_MENU_BOOK_NEXT = 26;
+static const unsigned INJOY_MENU_BOOK_PREV = 27;
+static const unsigned INJOY_MENU_SETTINGS_NEXT = 28;
+static const unsigned INJOY_MENU_SETTINGS_PREV = 29; //TODO: Only one "cycle tabs" binding?
+static const unsigned INJOY_MENU_INVENTORY_TAB = 30; //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
+static const unsigned INJOY_MENU_MAGIC_TAB = 31;
 static const unsigned INJOY_MENU_RANDOM_NAME = 32;
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
-#define INJOY_GAME_CAST_SPELL 2
-#define INJOY_GAME_DEFEND 3
-#define INJOY_GAME_ATTACK 4
-#define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
-#define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
+static const unsigned INJOY_GAME_CAST_SPELL = 2;
+static const unsigned INJOY_GAME_DEFEND = 3;
+static const unsigned INJOY_GAME_ATTACK = 4;
+static const unsigned INJOY_GAME_USE = 5; //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
+static const unsigned INJOY_GAME_HOTBAR_ACTIVATE = 15; //Activates hotbar slot in-game.
 
-#define NUM_JOY_IMPULSES 33
+static const unsigned NUM_JOY_IMPULSES = 33;
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
