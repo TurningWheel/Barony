@@ -291,7 +291,8 @@ int initGame()
 	createBooks();
 	setupSpells();
 
-	randomPlayerNames = getLinesFromFile(PLAYERNAMES_FILE);
+	randomPlayerNamesMale = getLinesFromFile(PLAYERNAMES_MALE_FILE);
+	randomPlayerNamesFemale = getLinesFromFile(PLAYERNAMES_FEMALE_FILE);
 
 	// print a loading message
 	drawClearBuffers();

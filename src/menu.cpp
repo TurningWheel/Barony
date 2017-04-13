@@ -6865,7 +6865,19 @@ void buttonRandomName(button_t* my)
 	{
 		return;
 	}
-	if ( !randomPlayerNames.size() )
+
+	std::vector<std::string> *names;
+
+	if ( stats[0]->sex == MALE )
+	{
+		names = &randomPlayerNamesMale;
+	}
+	else
+	{
+		names = &randomPlayerNamesFemale;
+	}
+
+	if ( !names->size() )
 	{
 		printlog("Warning: Random Name: Need names to pick from!");
 		return;
@@ -6873,7 +6885,7 @@ void buttonRandomName(button_t* my)
 	std::string name;
 	try
 	{
-		name = randomEntryFromVector(randomPlayerNames);
+		name = randomEntryFromVector(*names);
 	}
 	catch ( const char* e )
 	{

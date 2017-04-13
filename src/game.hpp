@@ -200,6 +200,8 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 
 #define TICKS_PER_SECOND 50
 
-static const std::string PLAYERNAMES_FILE = "playernames.txt";
-extern std::vector<std::string> randomPlayerNames;
+static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
+static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
+extern std::vector<std::string> randomPlayerNamesMale;
+extern std::vector<std::string> randomPlayerNamesFemale;
 void loadRandomNames();

@@ -43,7 +43,8 @@
 
 const unsigned STACK_SIZE = 10;
 
-std::vector<std::string> randomPlayerNames;
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
 
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
