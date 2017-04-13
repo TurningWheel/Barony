@@ -2339,7 +2339,7 @@ bool isPotionBad(const Item& potion)
 	return false;
 }
 
-void generateCustomInventory(Stat* stats, int itemLimit)
+void createCustomInventory(Stat* stats, int itemLimit)
 {
 	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
 	int i = 0;

@@ -4670,7 +4670,6 @@ void createMonsterEquipment(Stat* stats) //MOD TODO
 	int itemCount;
 	int chance = 1;
 	bool itemIdentified;
-
 	if ( stats != NULL )
 	{
 		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
@@ -4746,259 +4745,14 @@ void createMonsterEquipment(Stat* stats) //MOD TODO
 	}
 }
 
-//Not for client, only host, run only during MONSTER INIT
-void setDefaultMonsterEquipment(Entity* my)
-{
-	Stat* myStats;
-	int x = 0;
-	int c = 0;
-	int customItems = 0;
-	int defaultItems = 0;
-	int customItemLimit = 6;
-
-	if ( my != NULL )
-	{
-		myStats = my->getStats();
-		if ( myStats != NULL )
-		{
-			createMonsterEquipment(myStats);
-			customItems = countCustomItems(myStats); //max limit of 6 items per entity.
-			defaultItems = countDefaultItems(myStats);
-			switch ( myStats->type )
-			{
-				//monsters that don't wear equipment
-				case DEVIL:
-					break;
-				case SPIDER:
-					if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
-					{
-						strcpy(myStats->name, "Shelob");
-						myStats->HP = 150;
-						myStats->MAXHP = 150;
-						myStats->OLDHP = myStats->HP;
-						myStats->STR = 10;
-						myStats->DEX = 10;
-						myStats->CON = 8;
-						myStats->INT = 5;
-						myStats->PER = 10;
-						myStats->CHR = 10;
-						myStats->LVL = 15;
-						newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), false, &myStats->inventory);
-						newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), false, &myStats->inventory);
-						customItemLimit = customItemLimit - 2;
-						int c;
-						for ( c = 0; c < 3; c++ )
-						{
-							Entity* entity = summonMonster(SPIDER, my->x, my->y);
-							if ( entity )
-							{
-								entity->parent = my->getUID();
-							}
-						}
-					}
-					break;
-				case TROLL:
-					if ( rand() % 4 == 0 )
-					{
-						myStats->EFFECTS[EFF_ASLEEP] = true;
-						myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
-					}
-
-					switch ( defaultItems )
-					{
-						case 6:
-						case 5:
-						case 4:
-						case 3:
-						case 2:
-						case 1:
-							if ( rand() % 3 == 0 )
-							{
-								int i = 1 + rand() % 3;
-								for ( c = 0; c < i; c++ )
-								{
-									newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
-								}
-							}
-							break;
-						default:
-							break;
-					}
-
-					if ( rand() % 50 || my->flags[USERFLAG2] )
-					{
-						strcpy(myStats->name, "");
-					}
-					else
-					{
-						strcpy(myStats->name, "Thumpus the Troll");
-						for ( c = 0; c < 3; c++ )
-						{
-							Entity* entity = summonMonster(GNOME, my->x, my->y);
-							if ( entity )
-							{
-								entity->parent = my->getUID();
-							}
-						}
-						myStats->HP *= 2;
-						myStats->MAXHP *= 2;
-						myStats->OLDHP = myStats->HP;
-						myStats->GOLD += 300;
-						myStats->LVL += 10;
-					}
-					break;
-				case RAT:
-					break;
-				case SLIME:
-					break;
-				case SUCCUBUS:
-					break;
-				case SCORPION:
-					break;
-				case MINOTAUR:
-					break;
-				case GHOUL:
-					break;
-
-					//monsters with weapons only (incl. spellbooks)
-				case LICH:
-				case CREATURE_IMP:
-				case DEMON:
-					
-					break;
-
-					//monsters with cloak/weapon/shield/boots
-				case GNOME:
-					if ( rand() % 8 == 0 )
-					{
-						myStats->EFFECTS[EFF_ASLEEP] = true;
-						myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
-					}
-
-					switch ( defaultItems )
-					{
-						case 6:
-						case 5:
-						case 4:
-						case 3:
-							if ( rand() % 50 == 0 )
-							{
-								newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
-							}
-						case 2:
-							if ( rand() % 10 == 0 )
-							{
-								int i = 1 + rand() % 4;
-								for ( c = 0; c < i; c++ )
-								{
-									newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
-								}
-							}
-						case 1:
-							if ( rand() % 3 == 0 )
-							{
-								newItem(FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
-							}
-							break;
-						default:
-							break;
-					}
-					
-					//give shield
-					if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-					{
-						switch ( rand() % 10 )
-						{
-						case 0:
-						case 1:
-							myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-							break;
-						case 2:
-						case 3:
-						case 4:
-						case 5:
-						case 6:
-							break;
-						case 7:
-						case 8:
-						case 9:
-							myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
-							break;
-						}
-					}
-
-					//give weapon
-					if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-					{
-						switch ( rand() % 10 )
-						{
-						case 0:
-						case 1:
-						case 2:
-						case 3:
-						case 4:
-							myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-							break;
-						case 5:
-						case 6:
-						case 7:
-						case 8:
-						case 9:
-							myStats->GOLD += 100;
-							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-							break;
-						}
-					}
-					
-					// give cloak
-					if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
-					{
-						switch ( rand() % 10 )
-						{
-							case 0:
-							case 1:
-							case 2:
-							case 3:
-							case 4:
-							case 5:
-								break;
-							case 6:
-							case 7:
-							case 8:
-							case 9:
-								myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-								break;
-						}
-					}
-					break;
-
-					//monsters with cloak/weapon/shield/boots/helm/armor
-				case GOBLIN:
-				case HUMAN:
-				case SKELETON:
-				case SHOPKEEPER:
-					
-					break;
-
-				default:
-					
-					break;
-				
-			}
-			generateCustomInventory(myStats, customItemLimit);
-		}
-	}
-}
-
 int countCustomItems(Stat* stats)
 {
 	int x = 0;
-	int slotItem1 = 35;
 	int customItemSlotCount = 0;
 
-	for ( x = 0; x < 6; x = x + 6 )
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
 	{
-		if ( stats->EDITOR_ITEMS[slotItem1 + x] != 1 )
+		if ( stats->EDITOR_ITEMS[x] != 1 )
 		{
 			customItemSlotCount++; //found a custom item in inventory
 		}
@@ -5010,16 +4764,117 @@ int countCustomItems(Stat* stats)
 int countDefaultItems(Stat* stats)
 {
 	int x = 0;
-	int slotItem1 = 35;
 	int defaultItemSlotCount = 0;
 
-	for ( x = 0; x < 6; x = x + 6 )
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
 	{
-		if ( stats->EDITOR_ITEMS[slotItem1 + x] == 1 )
+		if ( stats->EDITOR_ITEMS[x] == 1 )
 		{
 			defaultItemSlotCount++; //found a default item in inventory
 		}
 	}
 
 	return defaultItemSlotCount;
+}
+
+void setRandomMonsterStats(Stat* stats)
+{
+	if ( stats != NULL )
+	{
+		//**************************************
+		// HEALTH
+		//**************************************
+
+		if ( stats->MAXHP == stats->HP )
+		{
+			stats->MAXHP += rand() % (stats->RANDOM_MAXHP + 1);
+
+			if ( stats->RANDOM_MAXHP == stats->RANDOM_HP )
+			{
+				// if the max hp and normal hp range is the same, hp follows the roll of maxhp.
+				stats->HP = stats->MAXHP;		
+			}
+			else
+			{
+				// roll the current hp
+				stats->HP += rand() % (stats->RANDOM_HP + 1);
+			}
+		}
+		else
+		{
+			// roll both ranges independently
+			stats->MAXHP += rand() % (stats->RANDOM_MAXHP + 1);
+			stats->HP += rand() % (stats->RANDOM_HP + 1);
+		}
+
+		if ( stats->HP > stats->MAXHP )
+		{
+			// check if hp exceeds maximums
+			stats->HP = stats->MAXHP;
+		}
+		stats->OLDHP = stats->HP;
+
+		//**************************************
+		// MANA
+		//**************************************
+
+		if ( stats->MAXMP == stats->MP )
+		{
+			stats->MAXMP += rand() % (stats->RANDOM_MAXMP + 1);
+
+			if ( stats->RANDOM_MAXMP == stats->RANDOM_MP )
+			{
+				// if the max mp and normal mp range is the same, mp follows the roll of maxmp.
+				stats->MP = stats->MAXMP;
+			}
+			else
+			{
+				// roll the current mp
+				stats->MP += rand() % (stats->RANDOM_MP + 1);
+			}
+		}
+		else
+		{
+			// roll both ranges independently
+			stats->MAXMP += rand() % (stats->RANDOM_MAXMP + 1);
+			stats->MP += rand() % (stats->RANDOM_MP + 1);
+		}
+
+		if ( stats->MP > stats->MAXMP )
+		{
+			// check if mp exceeds maximums
+			stats->MP = stats->MAXMP;
+		}
+
+		//**************************************
+		// REST OF STATS
+		//**************************************
+
+		stats->STR += rand() % (stats->RANDOM_STR + 1);
+		stats->DEX += rand() % (stats->RANDOM_DEX + 1);
+		stats->CON += rand() % (stats->RANDOM_CON + 1);
+		stats->INT += rand() % (stats->RANDOM_INT + 1);
+		stats->PER += rand() % (stats->RANDOM_PER + 1);
+		stats->CHR += rand() % (stats->RANDOM_CHR + 1);
+
+		stats->LVL += rand() % (stats->RANDOM_LVL + 1);
+		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
+	}
+
+	messagePlayer(0, "Set stats to: ");
+	messagePlayer(0, "MAXHP: %d", stats->MAXHP);
+	messagePlayer(0, "HP: %d", stats->HP);
+	messagePlayer(0, "MAXMP: %d", stats->MAXMP);
+	messagePlayer(0, "MP: %d", stats->MP);
+	messagePlayer(0, "Str: %d", stats->STR);
+	messagePlayer(0, "Dex: %d", stats->DEX);
+	messagePlayer(0, "Con: %d", stats->CON);
+	messagePlayer(0, "Int: %d", stats->INT);
+	messagePlayer(0, "Per: %d", stats->PER);
+	messagePlayer(0, "Chr: %d", stats->CHR);
+	messagePlayer(0, "LVL: %d", stats->LVL);
+	messagePlayer(0, "GOLD: %d", stats->GOLD);
+
+
+	return;
 }

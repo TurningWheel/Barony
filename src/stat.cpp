@@ -203,6 +203,11 @@ void Stat::clearStats()
 		this->EDITOR_ITEMS[x + 5] = 1;
 	}
 
+	for ( x = 0; x < 32; x++ )
+	{
+		this->EDITOR_FLAGS[x] = 0;
+	}
+
 	list_FreeAll(&this->inventory);
 	this->helmet = NULL;
 	this->breastplate = NULL;
@@ -362,7 +367,9 @@ Stat* Stat::copyStats()
 	node_t* node;
 	int c;
 
-	Stat* newStat = new Stat(0);
+	// create new stat, using the type (HUMAN, SKELETON) as a reference.
+	// this is handled in stat_shared.cpp by adding 1000 to the type.
+	Stat* newStat = new Stat(this->type + 1000);
 
 	newStat->type = this->type;
 	newStat->sex = this->sex;
@@ -396,9 +403,14 @@ Stat* Stat::copyStats()
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
 
-	for ( c = 0; c < 90; c++ )
+	for ( c = 0; c < 96; c++ )
 	{
 		newStat->EDITOR_ITEMS[c] = this->EDITOR_ITEMS[c];
+	}
+
+	for ( c = 0; c < 32; c++ )
+	{
+		newStat->EDITOR_FLAGS[c] = this->EDITOR_FLAGS[c] = 0;
 	}
 
 	newStat->defending = this->defending;

@@ -2006,6 +2006,7 @@ void assignActions(map_t* map)
 						// monster is random, but generated from editor
 						// stat struct is already created, need to set stats
 						setDefaultMonsterStats(myStats, monsterType + 1000);
+						setRandomMonsterStats(myStats);
 					}
 				}
 

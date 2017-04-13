@@ -114,6 +114,7 @@ const int NUMPROFICIENCIES = 14;
 #define ITEM_SLOT_INV_5 84
 #define ITEM_SLOT_INV_6 90
 #define ITEM_CHANCE 5
+#define ITEM_CUSTOM_SLOT_LIMIT 6
 
 typedef enum
 {
@@ -137,7 +138,13 @@ public:
 	Sint32 STR, DEX, CON, INT, PER, CHR;
 	Sint32 EXP, LVL;
 	Sint32 GOLD, HUNGER;
-	Sint32 RANDOMGOLD;
+	// randomised additional values to add to attributes
+	Sint32 RANDOM_STR, RANDOM_DEX, RANDOM_CON, RANDOM_INT, RANDOM_PER, RANDOM_CHR;
+	Sint32 RANDOM_MAXHP, RANDOM_HP, RANDOM_MAXMP, RANDOM_MP;
+	Sint32 RANDOM_LVL;
+	Sint32 RANDOM_GOLD;
+	// flags to set for future entity behaviour
+	Sint32 EDITOR_FLAGS[32];
 
 	// skills and effects
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];

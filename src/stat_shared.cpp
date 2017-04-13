@@ -43,6 +43,20 @@ Stat::Stat(Sint32 sprite)
 	this->LVL = 1;
 	this->GOLD = 0;
 	this->HUNGER = 800;
+
+	//random variables to add to base
+	this->RANDOM_LVL = 0;
+	this->RANDOM_GOLD = 0;
+	this->RANDOM_STR = 0;
+	this->RANDOM_DEX = 0;
+	this->RANDOM_CON = 0;
+	this->RANDOM_INT = 0;
+	this->RANDOM_PER = 0;
+	this->RANDOM_CHR = 0;
+	this->RANDOM_MAXHP = 0;
+	this->RANDOM_HP = 0;
+	this->RANDOM_MAXMP = 0;
+	this->RANDOM_MP = 0;
 	int c;
 	for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
 	{
@@ -68,6 +82,10 @@ Stat::Stat(Sint32 sprite)
 		this->EDITOR_ITEMS[c + 3] = 1;
 		this->EDITOR_ITEMS[c + 4] = 1;
 		this->EDITOR_ITEMS[c + 5] = 100;
+	}
+	for ( c = 0; c < 16; c++ )
+	{
+		EDITOR_FLAGS[c] = 0;
 	}
 
 	this->leader_uid = 0;
@@ -124,8 +142,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->CHR = -1;
 			stats->EXP = 0;
 			stats->LVL = 5;
-			stats->RANDOMGOLD = 20;
-			stats->GOLD = 40 + rand() % stats->RANDOMGOLD;
+			stats->RANDOM_GOLD = 20;
+			stats->GOLD = 40;
 			stats->HUNGER = 900;
 
 			stats->PROFICIENCIES[PRO_SWORD] = 35;
@@ -254,11 +272,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 6;
 			if ( rand() % 3 == 0 )
 			{
-				stats->GOLD = 10 + rand() % 20;
+				stats->GOLD = 10;
+				stats->RANDOM_GOLD = 20;
 			}
 			else
 			{
 				stats->GOLD = 0;
+				stats->RANDOM_GOLD = 0;
 			}
 			stats->HUNGER = 900;
 
@@ -288,10 +308,12 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->CON = 10;
 			stats->INT = 7;
 			stats->PER = 7;
-			stats->CHR = 3 + rand() % 4;
+			stats->CHR = 3;
+			stats->RANDOM_CHR = 3;
 			stats->EXP = 0;
 			stats->LVL = 10;
-			stats->GOLD = 300 + rand() % 200;
+			stats->GOLD = 300;
+			stats->RANDOM_GOLD = 200;
 			stats->HUNGER = 900;
 
 			stats->FOLLOWERS.first = NULL;
@@ -309,8 +331,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->HP = 100 + rand() % 20;
+			stats->HP = 100;
+			stats->RANDOM_HP = 20;
 			stats->MAXHP = stats->HP;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
 			stats->MP = 30;
 			stats->MAXMP = 30;
 			stats->OLDHP = stats->HP;
@@ -328,6 +352,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Random Items
 
+
 			break;
 		case 27:
 		case (1000 + HUMAN):
@@ -337,22 +362,33 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->HP = 30 + rand() % 20;
+			stats->HP = 30;
+			stats->RANDOM_HP = 20;
 			stats->MAXHP = stats->HP;
-			stats->MP = 20 + rand() % 20;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->MP = 20;
+			stats->RANDOM_MP = 20;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			stats->MAXMP = stats->MP;
 			stats->OLDHP = stats->HP;
-			stats->STR = -1 + rand() % 4;
-			stats->DEX = 4 + rand() % 4;
-			stats->CON = -2 + rand() % 4;
-			stats->INT = -1 + rand() % 4;
-			stats->PER = -2 + rand() % 4;
-			stats->CHR = -3 + rand() % 4;
+			stats->STR = -1;
+			stats->RANDOM_STR = 3;
+			stats->DEX = 4;
+			stats->RANDOM_DEX = 3;
+			stats->CON = -2;
+			stats->RANDOM_CON = 3;
+			stats->INT = -1;
+			stats->RANDOM_INT = 3;
+			stats->PER = -2;
+			stats->RANDOM_PER = 3;
+			stats->CHR = -3;
+			stats->RANDOM_CHR = 3;
 			stats->EXP = 0;
 			stats->LVL = 3;
 			if ( rand() % 2 == 0 )
 			{
-				stats->GOLD = 20 + rand() % 20;
+				stats->GOLD = 20;
+				stats->RANDOM_GOLD = 20;
 			}
 			else
 			{
@@ -457,6 +493,27 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
 			break;
+		case (1000 + GHOUL):
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 90;
+			stats->MAXHP = 90;
+			stats->MP = 10;
+			stats->MAXMP = 10;
+			stats->OLDHP = stats->HP;
+			stats->STR = 8;
+			stats->DEX = -3;
+			stats->CON = -1;
+			stats->INT = -2;
+			stats->PER = -1;
+			stats->CHR = -5;
+			stats->EXP = 0;
+			stats->LVL = 7;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+			break;
 		case 10:
 		default:
 			break;
@@ -533,3 +590,4 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 //		}
 //	}
 //}
+

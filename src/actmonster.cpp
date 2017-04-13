@@ -182,7 +182,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		node->element = NULL;
 		node->deconstructor = &emptyDeconstructor;
 
-		myStats = new Stat(entity->sprite);
+		myStats = new Stat(creature + 1000);
 		node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->size = sizeof(myStats);
@@ -192,7 +192,6 @@ Entity* summonMonster(Monster creature, long x, long y)
 			myStats->leader_uid = entity->parent;
 			entity->parent = 0;
 		}
-
 		myStats->type = creature;
 	}
 
@@ -995,6 +994,7 @@ void actMonster(Entity* my)
 					break; //This should never be reached.
 			}
 		}
+
 		MONSTER_INIT = 2;
 		if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
@@ -1265,11 +1265,11 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( hitstats->type < 21 ) //Original monster count
+					if ( myStats->type < 21 ) //Original monster count
 					{
 						snprintf(whatever, 255, language[1499], stats[c]->name, language[90 + myStats->type], myStats->obituary);
 					}
-					else if ( hitstats->type >= 21 ) //New monsters
+					else if ( myStats->type >= 21 ) //New monsters
 					{
 						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - 21)], myStats->obituary);
 					}
@@ -1746,11 +1746,11 @@ void actMonster(Entity* my)
 		{
 			if ( !strcmp(myStats->name, "") )
 			{
-				if ( hitstats->type < 21 ) //Original monster count
+				if ( myStats->type < 21 ) //Original monster count
 				{
 					messagePlayer(monsterclicked, language[514], language[90 + myStats->type]);
 				}
-				else if ( hitstats->type >= 21 ) //New monsters
+				else if ( myStats->type >= 21 ) //New monsters
 				{
 					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - 21)]);
 				}
@@ -1813,11 +1813,11 @@ void actMonster(Entity* my)
 									}
 									else
 									{
-										if ( hitstats->type < 21 ) //Original monster count
+										if ( myStats->type < 21 ) //Original monster count
 										{
 											messagePlayer(monsterclicked, language[529], language[90 + myStats->type]);
 										}
-										else if ( hitstats->type >= 21 ) //New monsters
+										else if ( myStats->type >= 21 ) //New monsters
 										{
 											messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - 21)]);
 										}

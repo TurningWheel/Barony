@@ -1385,6 +1385,10 @@ int main(int argc, char** argv)
 							{
 								makeUndo();
 								selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+								// create a temporary stat struct for the copied sprite
+								Stat* tmpStats = lastSelectedEntity->getStats();
+
 								lastSelectedEntity = selectedEntity;
 								int spriteType = checkSpriteType(selectedEntity->sprite);
 								if ( spriteType == 1 )
@@ -1401,7 +1405,15 @@ int main(int argc, char** argv)
 
 										myStats = new Stat(selectedEntity->sprite);
 										node2 = list_AddNodeLast(&selectedEntity->children);
-										node2->element = myStats;
+										if ( tmpStats != NULL )
+										{
+											node2->element = tmpStats->copyStats();
+										}
+										else
+										{
+											// if for some reason the previous sprite did not have stats initialised
+											node2->element = myStats;
+										}
 										//					node2->deconstructor = &myStats->~Stat;
 										node2->size = sizeof(myStats);
 									}
@@ -1443,6 +1455,9 @@ int main(int argc, char** argv)
 									// duplicate sprite
 									makeUndo();
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+									Stat* tmpStats = lastSelectedEntity->getStats();
+
 									lastSelectedEntity = selectedEntity;
 									int spriteType = checkSpriteType(selectedEntity->sprite);
 									if ( spriteType == 1 )
@@ -1459,7 +1474,15 @@ int main(int argc, char** argv)
 
 											myStats = new Stat(selectedEntity->sprite);
 											node2 = list_AddNodeLast(&selectedEntity->children);
-											node2->element = myStats;
+											if ( tmpStats != NULL )
+											{
+												node2->element = tmpStats->copyStats();
+											}
+											else
+											{
+												// if for some reason the previous sprite did not have stats initialised
+												node2->element = myStats;
+											}
 											//					node2->deconstructor = &myStats->~Stat;
 											node2->size = sizeof(myStats);
 										}
@@ -2138,18 +2161,34 @@ int main(int argc, char** argv)
 											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
 										}
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
+										// draw another box side by side, spaced by pad_x3 + 16
+										drawDepressed(pad_x1 + pad_x2 - 4 + (pad_x3 + 16), pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16), pad_y1 + 16 - 4);
 										// print values on top of boxes
+										// print property name
 										printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
+										// print dash between boxes
+										printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 - 4 + (pad_x3 + 4), pad_y1, color, "-");
+										// print left text
 										printText(font8x8_bmp, pad_x1 + pad_x2, pad_y1, spriteProperties[i]);
+										// print right text
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 16), pad_y1, spriteProperties[i + 12]);
 									}
 									else
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 										pad_y1 += spacing + 10;
 										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
+										// draw another box side by side, spaced by pad_x3 + 16
+										drawDepressed(pad_x1 + pad_x2 - 4 + (pad_x3 + 16), pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16), pad_y1 + 16 - 4);
 										// print values on top of boxes
+										// print property name
 										printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
+										// print dash between boxes
+										printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 - 4 + (pad_x3 + 4), pad_y1, color, "-");
+										// print left text
 										printText(font8x8_bmp, pad_x1 + pad_x2, pad_y1, spriteProperties[i]);
+										// print right text
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 16), pad_y1, spriteProperties[i + 12]);
 									}
 								}
 							}
@@ -2161,13 +2200,16 @@ int main(int argc, char** argv)
 								keystatus[SDL_SCANCODE_TAB] = 0;
 								cursorflash = ticks;
 								editproperty++;
-								if ( editproperty == numProperties )
+								if ( editproperty == numProperties * 2 - 1 )
 								{
+									// limit of properties is twice the vertical count, minus 1 for name (every property has a random component)
 									editproperty = 0;
 								}
 								
 								inputstr = spriteProperties[editproperty];
 							}
+							// TODO - add escape and return key functionality
+							/*
 							if ( keystatus[SDL_SCANCODE_ESCAPE] )
 							{
 								keystatus[SDL_SCANCODE_ESCAPE] = 0;
@@ -2178,7 +2220,7 @@ int main(int argc, char** argv)
 								keystatus[SDL_SCANCODE_RETURN] = 0;
 								buttonSpritePropertiesConfirm(NULL);
 							}
-
+							*/
 							// select a textbox
 							if ( mousestatus[SDL_BUTTON_LEFT] )
 							{
@@ -2199,20 +2241,36 @@ int main(int argc, char** argv)
 										pad_y1 += spacing;
 										if ( i < 7 )
 										{
+											// check if mouse is in left property box
 											if ( omousex >= pad_x1 + pad_x2 - 4 && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 && omousey < pad_y1 + 16 - 4 )
 											{
 												inputstr = spriteProperties[i];
 												editproperty = i;
 												cursorflash = ticks;
 											}
+											// check if mouse is in right property box (offset from above by pad_x3 + 16)
+											else if ( omousex >= pad_x1 + pad_x2 - 4 + (pad_x3 + 16) && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16) && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i + 12];
+												editproperty = i + 12;
+												cursorflash = ticks;
+											}
 										}
 										else
 										{
 											pad_y1 += spacing + 10;
+											// check if mouse is in left property box
 											if ( omousex >= pad_x1 + pad_x2 - 4 && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 && omousey < pad_y1 + 16 - 4 )
 											{
 												inputstr = spriteProperties[i];
 												editproperty = i;
+												cursorflash = ticks;
+											}
+											// check if mouse is in right property box (offset from above by pad_x3 + 16)
+											else if ( omousex >= pad_x1 + pad_x2 - 4 + (pad_x3 + 16) && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16) && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i + 12];
+												editproperty = i + 12;
 												cursorflash = ticks;
 											}
 										}
@@ -2268,8 +2326,9 @@ int main(int argc, char** argv)
 							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Inventory");
 
 
-							if ( editproperty < numProperties )   // edit map name
+							if ( editproperty < numProperties * 2 - 1 )   // edit property values
 							{
+								// limit of properties is twice the vertical count, minus 1 for name  (every property has a random component)
 								if ( !SDL_IsTextInputActive() )
 								{
 									SDL_StartTextInput();
@@ -2297,13 +2356,30 @@ int main(int argc, char** argv)
 									else if ( editproperty < 7 )
 									{
 										pad_y1 += spacing;
+										// left box
 										printText(font8x8_bmp, pad_x1 + pad_x2 + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
 									}
-									else
+									else if ( editproperty < 13 )
 									{
 										pad_y1 += spacing;
 										pad_y1 += spacing + 10;
+										// left box
 										printText(font8x8_bmp, pad_x1 + pad_x2 + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+									else if ( editproperty < 19 )
+									{
+										pad_y1 = suby1 + 28 + (editproperty - 12) * spacing;
+										pad_y1 += spacing;
+										// right box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 20) + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+									else if ( editproperty < 25 )
+									{
+										pad_y1 = suby1 + 28 + (editproperty - 12) * spacing;
+										pad_y1 += spacing;
+										pad_y1 += spacing + 10;
+										// right box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 20) + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
 									}
 								}
 							}

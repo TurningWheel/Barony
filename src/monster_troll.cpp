@@ -40,11 +40,83 @@ void initTroll(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
+			{
+				strcpy(myStats->name, "");
+			}
+			else
+			{
+				strcpy(myStats->name, "Thumpus the Troll");
+				for ( c = 0; c < 3; c++ )
+				{
+					Entity* entity = summonMonster(GNOME, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
+				}
+				myStats->HP *= 2;
+				myStats->MAXHP *= 2;
+				myStats->OLDHP = myStats->HP;
+				myStats->GOLD += 300;
+				myStats->LVL += 10;
+			}
+
+			// random effects
+			if ( rand() % 4 == 0 )
+			{
+				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+			}
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					if ( rand() % 3 == 0 )
+					{
+						int i = 1 + rand() % 3;
+						for ( c = 0; c < i; c++ )
+						{
+							newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						}
+					}
+					break;
+				default:
+					break;
+			}
 		}
-		setDefaultMonsterEquipment(my);
 	}
 
 	// torso

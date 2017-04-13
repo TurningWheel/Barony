@@ -357,4 +357,4 @@ bool itemIsEquipped(const Item* item, int player);
  */
 bool isPotionBad(const Item& potion);
 
-void generateCustomInventory(Stat* stats, int itemLimit);
+void createCustomInventory(Stat* stats, int itemLimit);

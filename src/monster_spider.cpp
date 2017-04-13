@@ -37,11 +37,76 @@ void initSpider(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+			{
+				strcpy(myStats->name, "Shelob");
+				myStats->HP = 150;
+				myStats->MAXHP = 150;
+				myStats->OLDHP = myStats->HP;
+				myStats->STR = 10;
+				myStats->DEX = 10;
+				myStats->CON = 8;
+				myStats->INT = 5;
+				myStats->PER = 10;
+				myStats->CHR = 10;
+				myStats->LVL = 15;
+				newItem(RING_INVISIBILITY, EXCELLENT, -5, 1, rand(), false, &myStats->inventory);
+				newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), false, &myStats->inventory);
+				customItemsToGenerate -= 2;
+				int c;
+				for ( c = 0; c < 3; c++ )
+				{
+					Entity* entity = summonMonster(SPIDER, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
+				}
+			}
+
+			// random effects
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); 
+			//max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					break;
+				default:
+					break;
+			}
 		}
-		setDefaultMonsterEquipment(my);
 	}
 
 	// right pedipalp

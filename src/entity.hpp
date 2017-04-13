@@ -259,6 +259,7 @@ extern char itemStringsByType[10][55][32];
 extern char itemNameStrings[170][32];
 int canWearEquip(Entity* entity, int category);
 void createMonsterEquipment(Stat* stats);
-void setDefaultMonsterEquipment(Entity* my);
 int countCustomItems(Stat* stats);
 int countDefaultItems(Stat* stats);
+void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
+void setRandomMonsterStats(Stat* stats);

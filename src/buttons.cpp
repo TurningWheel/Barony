@@ -1037,30 +1037,9 @@ void buttonSpriteProperties(button_t* my)
 			tmpSpriteStats = selectedEntity->getStats();
 			if ( tmpSpriteStats != nullptr )
 			{
-				strcpy(spriteProperties[0], tmpSpriteStats->name);
-				snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
-				snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
-				snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
-				snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
-				snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
-				snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
-				snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
-				snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
-				snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
-				snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
-				snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
-				snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
+				copyMonsterStatToPropertyStrings(tmpSpriteStats);
 				inputstr = spriteProperties[0];
-
-				cursorflash = ticks;
-				menuVisible = 0;
-				subwindow = 1;
-				newwindow = 2;
-				subx1 = xres / 2 - 160;
-				subx2 = xres / 2 + 160;
-				suby1 = yres / 2 - 170;
-				suby2 = yres / 2 + 170;
-				strcpy(subtext, "Sprite properties:");
+				initMonsterPropertiesWindow();
 			}
 			tmpSpriteStats = NULL;
 			break;
@@ -1739,6 +1718,67 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						tmpSpriteStats->INT = (Sint32)atoi(spriteProperties[10]);
 						tmpSpriteStats->PER = (Sint32)atoi(spriteProperties[11]);
 						tmpSpriteStats->CHR = (Sint32)atoi(spriteProperties[12]);
+
+						tmpSpriteStats->RANDOM_MAXHP = (Sint32)atoi(spriteProperties[13]) - tmpSpriteStats->MAXHP;
+						if ( tmpSpriteStats->RANDOM_MAXHP < 0 )
+						{
+							tmpSpriteStats->RANDOM_MAXHP = 0;
+						}
+						tmpSpriteStats->RANDOM_HP = (Sint32)atoi(spriteProperties[14]) - tmpSpriteStats->HP;
+						if ( tmpSpriteStats->RANDOM_HP < 0 )
+						{
+							tmpSpriteStats->RANDOM_HP = 0;
+						}
+						tmpSpriteStats->RANDOM_MAXMP = (Sint32)atoi(spriteProperties[15]) - tmpSpriteStats->MAXMP;
+						if ( tmpSpriteStats->RANDOM_MAXMP < 0 )
+						{
+							tmpSpriteStats->RANDOM_MAXMP = 0;
+						}
+						tmpSpriteStats->RANDOM_MP = (Sint32)atoi(spriteProperties[16]) - tmpSpriteStats->MP;
+						if ( tmpSpriteStats->RANDOM_MP < 0 )
+						{
+							tmpSpriteStats->RANDOM_MP = 0;
+						}
+						tmpSpriteStats->RANDOM_LVL = (Sint32)atoi(spriteProperties[17]) - tmpSpriteStats->LVL;
+						if ( tmpSpriteStats->RANDOM_LVL < 0 )
+						{
+							tmpSpriteStats->RANDOM_LVL = 0;
+						}
+						tmpSpriteStats->RANDOM_GOLD = (Sint32)atoi(spriteProperties[18]) - tmpSpriteStats->GOLD;
+						if ( tmpSpriteStats->RANDOM_GOLD < 0 )
+						{
+							tmpSpriteStats->RANDOM_GOLD = 0;
+						}
+						tmpSpriteStats->RANDOM_STR = (Sint32)atoi(spriteProperties[19]) - tmpSpriteStats->STR;
+						if ( tmpSpriteStats->RANDOM_STR < 0 )
+						{
+							tmpSpriteStats->RANDOM_STR = 0;
+						}
+						tmpSpriteStats->RANDOM_DEX = (Sint32)atoi(spriteProperties[20]) - tmpSpriteStats->DEX;
+						if ( tmpSpriteStats->RANDOM_DEX < 0 )
+						{
+							tmpSpriteStats->RANDOM_DEX = 0;
+						}
+						tmpSpriteStats->RANDOM_CON = (Sint32)atoi(spriteProperties[21]) - tmpSpriteStats->CON;
+						if ( tmpSpriteStats->RANDOM_CON < 0 )
+						{
+							tmpSpriteStats->RANDOM_CON = 0;
+						}
+						tmpSpriteStats->RANDOM_INT = (Sint32)atoi(spriteProperties[22]) - tmpSpriteStats->INT;
+						if ( tmpSpriteStats->RANDOM_INT < 0 )
+						{
+							tmpSpriteStats->RANDOM_INT = 0;
+						}
+						tmpSpriteStats->RANDOM_PER = (Sint32)atoi(spriteProperties[23]) - tmpSpriteStats->PER;
+						if ( tmpSpriteStats->RANDOM_PER < 0 )
+						{
+							tmpSpriteStats->RANDOM_PER = 0;
+						}
+						tmpSpriteStats->RANDOM_CHR = (Sint32)atoi(spriteProperties[24]) - tmpSpriteStats->CHR;
+						if ( tmpSpriteStats->RANDOM_CHR < 0 )
+						{
+							tmpSpriteStats->RANDOM_CHR = 0;
+						}
 					}
 				}
 				break;
@@ -1776,31 +1816,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 
 	if ( my == butMonsterItemOK && tmpSpriteStats != NULL )
 	{
-		strcpy(spriteProperties[0], tmpSpriteStats->name);
-		snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
-		snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
-		snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
-		snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
-		snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
-		snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
-		snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
-		snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
-		snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
-		snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
-		snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
-		snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
-
+		copyMonsterStatToPropertyStrings(tmpSpriteStats);
 		inputstr = spriteProperties[0];
+		initMonsterPropertiesWindow();
 
-		cursorflash = ticks;
-		menuVisible = 0;
-		subwindow = 1;
-		newwindow = 2;
-		subx1 = xres / 2 - 160;
-		subx2 = xres / 2 + 160;
-		suby1 = yres / 2 - 170;
-		suby2 = yres / 2 + 170;
-		strcpy(subtext, "Sprite properties:");
 		buttonSpriteProperties(my);
 		itemSlotSelected = -1;
 	}
@@ -1822,31 +1841,10 @@ void buttonCloseSpriteSubwindow(button_t* my)
 		}
 		if ( tmpSpriteStats != NULL )
 		{
-			strcpy(spriteProperties[0], tmpSpriteStats->name);
-			snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
-			snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
-			snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
-			snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
-			snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
-			snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
-			snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
-			snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
-			snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
-			snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
-			snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
-			snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
-
+			copyMonsterStatToPropertyStrings(tmpSpriteStats);
 			inputstr = spriteProperties[0];
+			initMonsterPropertiesWindow();
 
-			cursorflash = ticks;
-			menuVisible = 0;
-			subwindow = 1;
-			newwindow = 2;
-			subx1 = xres / 2 - 160;
-			subx2 = xres / 2 + 160;
-			suby1 = yres / 2 - 170;
-			suby2 = yres / 2 + 170;
-			strcpy(subtext, "Sprite properties:");
 			buttonSpriteProperties(my);
 			itemSlotSelected = -1;
 			if ( butMonsterItemOK != NULL )
@@ -2088,4 +2086,50 @@ void buttonMonsterItems(button_t* my)
 	butMonsterItemX->action = &buttonCloseSpriteSubwindow;
 	butMonsterItemX->visible = 1;
 	butMonsterItemX->focused = 1;
+}
+
+void initMonsterPropertiesWindow() {
+	cursorflash = ticks;
+	menuVisible = 0;
+	subwindow = 1;
+	newwindow = 2;
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 180;
+	suby2 = yres / 2 + 180;
+	strcpy(subtext, "Sprite properties: ");
+	strcat(subtext, spriteEditorName(selectedEntity->sprite));
+}
+
+void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)
+{
+	if ( tmpSpriteStats != NULL )
+	{
+		strcpy(spriteProperties[0], tmpSpriteStats->name);
+		snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->MAXHP);
+		snprintf(spriteProperties[2], 5, "%d", tmpSpriteStats->HP);
+		snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->MAXMP);
+		snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->MP);
+		snprintf(spriteProperties[5], 4, "%d", tmpSpriteStats->LVL);
+		snprintf(spriteProperties[6], 4, "%d", tmpSpriteStats->GOLD);
+		snprintf(spriteProperties[7], 4, "%d", tmpSpriteStats->STR);
+		snprintf(spriteProperties[8], 4, "%d", tmpSpriteStats->DEX);
+		snprintf(spriteProperties[9], 4, "%d", tmpSpriteStats->CON);
+		snprintf(spriteProperties[10], 4, "%d", tmpSpriteStats->INT);
+		snprintf(spriteProperties[11], 4, "%d", tmpSpriteStats->PER);
+		snprintf(spriteProperties[12], 4, "%d", tmpSpriteStats->CHR);
+		snprintf(spriteProperties[13], 5, "%d", tmpSpriteStats->RANDOM_MAXHP + tmpSpriteStats->MAXHP);
+		snprintf(spriteProperties[14], 5, "%d", tmpSpriteStats->RANDOM_HP + tmpSpriteStats->HP);
+		snprintf(spriteProperties[15], 5, "%d", tmpSpriteStats->RANDOM_MAXMP + tmpSpriteStats->MAXMP);
+		snprintf(spriteProperties[16], 5, "%d", tmpSpriteStats->RANDOM_MP + tmpSpriteStats->MP);
+		snprintf(spriteProperties[17], 4, "%d", tmpSpriteStats->RANDOM_LVL + tmpSpriteStats->LVL);
+		snprintf(spriteProperties[18], 4, "%d", tmpSpriteStats->RANDOM_GOLD + tmpSpriteStats->GOLD);
+		snprintf(spriteProperties[19], 4, "%d", tmpSpriteStats->RANDOM_STR + tmpSpriteStats->STR);
+		snprintf(spriteProperties[20], 4, "%d", tmpSpriteStats->RANDOM_DEX + tmpSpriteStats->DEX);
+		snprintf(spriteProperties[21], 4, "%d", tmpSpriteStats->RANDOM_CON + tmpSpriteStats->CON);
+		snprintf(spriteProperties[22], 4, "%d", tmpSpriteStats->RANDOM_INT + tmpSpriteStats->INT);
+		snprintf(spriteProperties[23], 4, "%d", tmpSpriteStats->RANDOM_PER + tmpSpriteStats->PER);
+		snprintf(spriteProperties[24], 4, "%d", tmpSpriteStats->RANDOM_CHR + tmpSpriteStats->CHR);
+	}
+	return;
 }
