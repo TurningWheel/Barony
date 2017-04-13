@@ -1892,11 +1892,11 @@ void handleMainMenu(bool mode)
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2001]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2401]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2001]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2401]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1909,11 +1909,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_lefty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2002]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2402]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2002]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2402]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1926,11 +1926,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_rightx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2003]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2403]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2003]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2403]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1943,11 +1943,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_righty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2004]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2404]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2004]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2404]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1960,11 +1960,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menux_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2005]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2405]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2005]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2405]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1977,11 +1977,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menuy_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2006]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2406]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2006]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2406]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1992,28 +1992,28 @@ void handleMainMenu(bool mode)
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2007]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2407]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_rightx_sensitivity, font8x8_bmp, 12); //Doesn't like any fonts besides the default.
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_rightx_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2008]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2408]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_righty_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_righty_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2009]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2409]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menux_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menux_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[2010]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2410]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
@@ -5039,17 +5039,17 @@ void openSettingsWindow()
 
 	//Gamepad settings tab.
 	button = newButton();
-	strcpy(button->label, language[2000]);
+	strcpy(button->label, language[2400]);
 	button->x = tabx_so_far;
 	button->y = suby1 + 24;
-	button->sizex = strlen(language[2000]) * 12 + 8;
+	button->sizex = strlen(language[2400]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonGamepadSettingsTab;
 	button->visible = 1;
 	button->focused = 1;
 	button_gamepad_settings_tab = button;
 
-	tabx_so_far += strlen(language[2000]) * 12 + 8;
+	tabx_so_far += strlen(language[2400]) * 12 + 8;
 
 	// misc tab
 	button = newButton();
@@ -6745,10 +6745,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	//Random Name.
 	button = newButton();
-	strcpy(button->label, language[2050]);
+	strcpy(button->label, language[2450]);
 	button->x = button_back_x + button_back_width + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[2050]) * 12 + 8;
+	button->sizex = strlen(language[2450]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonRandomName;
 	button->visible = 1;

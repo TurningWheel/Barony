@@ -2750,26 +2750,28 @@ client (player %d) (direct ip)#
 1979 Next Inventory Tab#
 1980 Random Name#
 
-2000 Gamepad#
-
-2001 Invert Left Analog Stick X-Axis#
-2002 Invert Left Analog Stick Y-Axis#
-2003 Invert Right Analog Stick X-Axis#
-2004 Invert Right Analog Stick Y-Axis#
-2005 Invert X-Axis in GUI#
-2006 Invert Y-Axis in GUI#
-
-2007 Right Analog Stick X-Axis Sensitivity#
-2008 Right Analog Stick Y-Axis Sensitivity#
-2009 Menu X-Axis Sensitivity#
-2010 Menu Y-Axis Sensitivity#
-
-
-
 1997 auto appraise items#
 1998 right click protection#
 
+
+
+2400 Gamepad#
+
+2401 Invert Left Analog Stick X-Axis#
+2402 Invert Left Analog Stick Y-Axis#
+2403 Invert Right Analog Stick X-Axis#
+2404 Invert Right Analog Stick Y-Axis#
+2405 Invert X-Axis in GUI#
+2406 Invert Y-Axis in GUI#
+
+2407 Right Analog Stick X-Axis Sensitivity#
+2408 Right Analog Stick Y-Axis Sensitivity#
+2409 Menu X-Axis Sensitivity#
+2410 Menu Y-Axis Sensitivity#
+
+
+
 #More character creation screen stuff.
-2050 Random Name#
+2450 Random Name#
 
 2499 end#
