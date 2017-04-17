@@ -49,6 +49,7 @@ score_t* scoreConstructor()
 		printlog( "failed to allocate memory for new score!\n" );
 		exit(1);
 	}
+	// Stat set to 0 as monster type not needed, values will be overwritten by the player data
 	score->stats = new Stat(0);
 	if ( !score->stats )
 	{
@@ -724,6 +725,7 @@ void loadAllScores()
 			printlog( "failed to allocate memory for new score!\n" );
 			exit(1);
 		}
+		// Stat set to 0 as monster type not needed, values will be overwritten by the savegame data
 		score->stats = new Stat(0);
 		if ( !score->stats )
 		{
@@ -2020,6 +2022,7 @@ list_t* loadGameFollowers()
 		int i;
 		for ( i = 0; i < numFollowers; i++ )
 		{
+			// Stat set to 0 as monster type not needed, values will be overwritten by the saved follower data
 			Stat* followerStats = new Stat(0);
 
 			node_t* node = list_AddNodeLast(followerList);
