@@ -1265,13 +1265,13 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( myStats->type < 21 ) //Original monster count
+					if ( myStats->type < KOBOLD ) //Original monster count
 					{
 						snprintf(whatever, 255, language[1499], stats[c]->name, language[90 + myStats->type], myStats->obituary);
 					}
-					else if ( myStats->type >= 21 ) //New monsters
+					else if ( myStats->type >= KOBOLD ) //New monsters
 					{
-						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - 21)], myStats->obituary);
+						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - KOBOLD)], myStats->obituary);
 					}
 				}
 				messagePlayer(c, whatever);
@@ -1711,13 +1711,13 @@ void actMonster(Entity* my)
 	char namesays[32];
 	if ( !strcmp(myStats->name, "") )
 	{
-		if ( (int)myStats->type < 21 ) //Original monster count
+		if ( myStats->type < KOBOLD ) //Original monster count
 		{
-			snprintf(namesays, 31, language[513], language[90 + (int)myStats->type]);
+			snprintf(namesays, 31, language[513], language[90 + myStats->type]);
 		}
-		else if ( (int)myStats->type >= 21 ) //New monsters
+		else if ( myStats->type >= KOBOLD ) //New monsters
 		{
-			snprintf(namesays, 31, language[513], language[2000 + ((int)myStats->type - 21)]);
+			snprintf(namesays, 31, language[513], language[2000 + myStats->type - KOBOLD)]);
 		}
 	}
 	else
@@ -1746,13 +1746,13 @@ void actMonster(Entity* my)
 		{
 			if ( !strcmp(myStats->name, "") )
 			{
-				if ( myStats->type < 21 ) //Original monster count
+				if ( myStats->type < KOBOLD ) //Original monster count
 				{
 					messagePlayer(monsterclicked, language[514], language[90 + myStats->type]);
 				}
-				else if ( myStats->type >= 21 ) //New monsters
+				else if ( myStats->type >= KOBOLD ) //New monsters
 				{
-					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - 21)]);
+					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - KOBOLD)]);
 				}
 			}
 			else
@@ -1813,13 +1813,13 @@ void actMonster(Entity* my)
 									}
 									else
 									{
-										if ( myStats->type < 21 ) //Original monster count
+										if ( myStats->type < KOBOLD ) //Original monster count
 										{
 											messagePlayer(monsterclicked, language[529], language[90 + myStats->type]);
 										}
-										else if ( myStats->type >= 21 ) //New monsters
+										else if ( myStats->type >= KOBOLD ) //New monsters
 										{
-											messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - 21)]);
+											messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - KOBOLD)]);
 										}
 									}
 									monsterMoveAside(my, players[monsterclicked]->entity);

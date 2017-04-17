@@ -2008,26 +2008,26 @@ void item_ScrollSummon(Item* item, int player)
 		{
 			if ( numCreatures <= 1 )
 			{
-				if ( creature < 21 ) //Original monster count
+				if ( creature < KOBOLD ) //Original monster count
 				{
 					messagePlayer(player, language[877], language[90 + creature]);
 
 				}
-				else if ( creature >= 21 ) //New monsters
+				else if ( creature >= KOBOLD ) //New monsters
 				{
-					messagePlayer(player, language[877], language[2000 + (creature - 21)]);
+					messagePlayer(player, language[877], language[2000 + (creature - KOBOLD)]);
 				}
 			}
 			else
 			{
-				if ( creature < 21 ) //Original monster count
+				if ( creature < KOBOLD ) //Original monster count
 				{
 					messagePlayer(player, language[878], language[111 + creature]);
 
 				}
-				else if ( creature >= 21 ) //New monsters
+				else if ( creature >= KOBOLD ) //New monsters
 				{
-					messagePlayer(player, language[878], language[2050 + (creature - 21)]);
+					messagePlayer(player, language[878], language[2050 + (creature - KOBOLD)]);
 				}
 			}
 		}
@@ -2035,14 +2035,14 @@ void item_ScrollSummon(Item* item, int player)
 		{
 			if ( numCreatures <= 1 )
 			{
-				if ( creature < 21 ) //Original monster count
+				if ( creature < KOBOLD ) //Original monster count
 				{
 					messagePlayer(player, language[879], language[90 + creature]);
 
 				}
-				else if ( creature >= 21 ) //New monsters
+				else if ( creature >= KOBOLD ) //New monsters
 				{
-					messagePlayer(player, language[879], language[2000 + (creature - 21)]);
+					messagePlayer(player, language[879], language[2000 + (creature - KOBOLD)]);
 				}
 				if ( item->beatitude >= 2 )
 				{
@@ -2051,14 +2051,14 @@ void item_ScrollSummon(Item* item, int player)
 			}
 			else
 			{
-				if ( creature < 21 ) //Original monster count
+				if ( creature < KOBOLD ) //Original monster count
 				{
 					messagePlayer(player, language[881], language[111 + creature]);
 
 				}
-				else if ( creature >= 21 ) //New monsters
+				else if ( creature >= KOBOLD ) //New monsters
 				{
-					messagePlayer(player, language[881], language[2050 + (creature - 21)]);
+					messagePlayer(player, language[881], language[2050 + (creature - KOBOLD)]);
 				}
 				if ( item->beatitude >= 2 )
 				{

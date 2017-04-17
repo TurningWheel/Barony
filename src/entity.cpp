@@ -266,24 +266,24 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	{
 		if ( hitstats->sex == MALE )
 		{
-			if ( hitstats->type < 21 ) //Original monster count
+			if ( hitstats->type < KOBOLD ) //Original monster count
 			{
 				snprintf(tempstr, 256, language[1509], language[90 + hitstats->type]);
 			}
-			else if ( hitstats->type >= 21 ) //New monsters
+			else if ( hitstats->type >= KOBOLD ) //New monsters
 			{
-				snprintf(tempstr, 256, language[1509], language[2000 + (hitstats->type - 21)]);
+				snprintf(tempstr, 256, language[1509], language[2000 + (hitstats->type - KOBOLD)]);
 			}
 		}
 		else
 		{
-			if ( hitstats->type < 21 ) //Original monster count
+			if ( hitstats->type < KOBOLD ) //Original monster count
 			{
 				snprintf(tempstr, 256, language[1510], language[90 + hitstats->type]);
 			}
-			else if ( hitstats->type >= 21 ) //New monsters
+			else if ( hitstats->type >= KOBOLD ) //New monsters
 			{
-				snprintf(tempstr, 256, language[1510], language[2000 + (hitstats->type - 21)]);
+				snprintf(tempstr, 256, language[1510], language[2000 + (hitstats->type - KOBOLD)]);
 			}
 		}
 		victim->setObituary(tempstr);
@@ -3522,13 +3522,13 @@ void Entity::attack(int pose, int charge)
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{
-						if ( hitstats->type < 21 ) //Original monster count
+						if ( hitstats->type < KOBOLD ) //Original monster count
 						{
 							updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
 						}
-						else if ( hitstats->type >= 21 ) //New monsters
+						else if ( hitstats->type >= KOBOLD ) //New monsters
 						{
-							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - 21)], hitstats->HP, hitstats->MAXHP);
+							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
 						}
 					}
 					else
@@ -3816,25 +3816,25 @@ void Entity::attack(int pose, int charge)
 							if ( damage > olddamage )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < 21 ) //Original monster count
+								if ( hitstats->type < KOBOLD ) //Original monster count
 								{
 									messagePlayerColor(player, color, language[689], language[90 + hitstats->type]);
 								}
-								else if ( hitstats->type >= 21 ) //New monsters
+								else if ( hitstats->type >= KOBOLD ) //New monsters
 								{
-									messagePlayerColor(player, color, language[689], language[2000 + (hitstats->type - 21)]);
+									messagePlayerColor(player, color, language[689], language[2000 + (hitstats->type - KOBOLD)]);
 								}	
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < 21 ) //Original monster count
+								if ( hitstats->type < KOBOLD ) //Original monster count
 								{
 									messagePlayerColor(player, color, language[690], language[90 + hitstats->type]);
 								}
-								else if ( hitstats->type >= 21 ) //New monsters
+								else if ( hitstats->type >= KOBOLD ) //New monsters
 								{
-									messagePlayerColor(player, color, language[690], language[2000 + (hitstats->type - 21)]);
+									messagePlayerColor(player, color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
 								}
 							}
 							if ( damage == 0 )
@@ -3845,13 +3845,13 @@ void Entity::attack(int pose, int charge)
 						else
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( hitstats->type < 21 ) //Original monster count
+							if ( hitstats->type < KOBOLD ) //Original monster count
 							{
 								messagePlayerColor(player, color, language[692], language[90 + hitstats->type]);
 							}
-							else if ( hitstats->type >= 21 ) //New monsters
+							else if ( hitstats->type >= KOBOLD ) //New monsters
 							{
-								messagePlayerColor(player, color, language[692], language[2000 + (hitstats->type - 21)]);
+								messagePlayerColor(player, color, language[692], language[2000 + (hitstats->type - KOBOLD)]);
 							}
 							awardXP( hit.entity, true, true );
 						}
@@ -3915,25 +3915,25 @@ void Entity::attack(int pose, int charge)
 					if ( !strcmp(myStats->name, "") )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( myStats->type < 21 ) //Original monster count
+						if ( myStats->type < KOBOLD ) //Original monster count
 						{
 							messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
 						}
-						else if ( myStats->type >= 21 ) //New monsters
+						else if ( myStats->type >= KOBOLD ) //New monsters
 						{
-							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - 21)], language[2100 + (myStats->type - 21)]);
+							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - KOBOLD)], language[2100 + (myStats->type - KOBOLD)]);
 						}
 					}
 					else
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( myStats->type < 21 ) //Original monster count
+						if ( myStats->type < KOBOLD ) //Original monster count
 						{
 							messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
 						}
-						else if ( myStats->type >= 21 ) //New monsters
+						else if ( myStats->type >= KOBOLD ) //New monsters
 						{
-							messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - 21)]);
+							messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - KOBOLD)]);
 						}
 					}
 					if ( damage > 0 )
@@ -3970,13 +3970,13 @@ void Entity::attack(int pose, int charge)
 									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 									if ( !strcmp(hitstats->name, "") )
 									{
-										if ( hitstats->type < 21 ) //Original monster count
+										if ( hitstats->type < KOBOLD ) //Original monster count
 										{
 											messagePlayerColor(player, color, language[702], language[90 + hitstats->type]);
 										}
-										else if ( hitstats->type >= 21 ) //New monsters
+										else if ( hitstats->type >= KOBOLD ) //New monsters
 										{
-											messagePlayerColor(player, color, language[702], language[2000 + (hitstats->type - 21)]);
+											messagePlayerColor(player, color, language[702], language[2000 + (hitstats->type - KOBOLD)]);
 										}
 									}
 									else

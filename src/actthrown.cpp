@@ -294,13 +294,13 @@ void actThrown(Entity* my)
 				// update enemy bar for attacker
 				if ( !strcmp(hitstats->name, "") )
 				{
-					if ( hitstats->type < 21 ) //Original monster count
+					if ( hitstats->type < KOBOLD ) //Original monster count
 					{
 						updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
 					}
-					else if ( hitstats->type >= 21 ) //New monsters
+					else if ( hitstats->type >= KOBOLD ) //New monsters
 					{
-						updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - 21)], hitstats->HP, hitstats->MAXHP);
+						updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
 					}
 				}
 				else
@@ -382,13 +382,13 @@ void actThrown(Entity* my)
 					{
 						if ( !strcmp(hitstats->name, "") )
 						{
-							if ( hitstats->type < 21 ) //Original monster count
+							if ( hitstats->type < KOBOLD ) //Original monster count
 							{
 								messagePlayerColor(parent->skill[2], color, language[690], language[90 + hitstats->type]);
 							}
-							else if ( hitstats->type >= 21 ) //New monsters
+							else if ( hitstats->type >= KOBOLD ) //New monsters
 							{
-								messagePlayerColor(parent->skill[2], color, language[690], language[2000 + (hitstats->type - 21)]);
+								messagePlayerColor(parent->skill[2], color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
 							}
 							if ( damage == 0 )
 							{
