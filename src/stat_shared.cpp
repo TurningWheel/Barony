@@ -154,9 +154,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 
-			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1; //Pick/Lightningstaff
-			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1; //Lantern/Wooden Shield
-			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1; //Cloak
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1; 
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1; 
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Fish
@@ -220,9 +220,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->GOLD = 100;
 			stats->HUNGER = 900;
 
-			stats->EFFECTS[EFF_LEVITATING] = true;
-			stats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
-
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			break;
 		case 48:
 		case (1000 + SPIDER):
@@ -282,6 +280,12 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			}
 			stats->HUNGER = 900;
 
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+
 			stats->PROFICIENCIES[PRO_SWORD] = 35;
 			stats->PROFICIENCIES[PRO_MACE] = 50;
 			stats->PROFICIENCIES[PRO_AXE] = 45;
@@ -322,6 +326,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_SPELLCASTING] = 50;
 			stats->PROFICIENCIES[PRO_TRADING] = 75;
 			stats->PROFICIENCIES[PRO_APPRAISAL] = 75;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 
 			break;
 		case 30:
@@ -396,6 +402,14 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			}
 			stats->HUNGER = 900;
 
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+
 			stats->PROFICIENCIES[PRO_SWORD] = 45;
 			stats->PROFICIENCIES[PRO_MACE] = 35;
 			stats->PROFICIENCIES[PRO_AXE] = 35;
@@ -468,6 +482,11 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_POLEARM] = 25;
 			stats->PROFICIENCIES[PRO_RANGED] = 35;
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+
 			break;
 		case 96:
 		case (1000 + RAT):
@@ -492,8 +511,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 1;
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 25; //Random Items
 			break;
+		case 97:
 		case (1000 + GHOUL):
+			stats->type = GHOUL;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
 			stats->inventory.first = NULL;
@@ -513,6 +537,186 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 7;
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 5; //Random Items
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Items
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 25; //Random Items
+			break;
+		case 75:
+		case (1000 + DEMON):
+			stats->type = DEMON;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 120;
+			stats->MAXHP = stats->HP;
+			stats->MP = 200;
+			stats->MAXMP = 200;
+			stats->OLDHP = stats->HP;
+			stats->STR = 30;
+			stats->DEX = 10;
+			stats->CON = 10;
+			stats->INT = 5;
+			stats->PER = 50;
+			stats->CHR = -4;
+			stats->EXP = 0;
+			stats->LVL = 20;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 50; //Random Items
+			break;
+		case 76:
+		case (1000 + CREATURE_IMP):
+			stats->type = CREATURE_IMP;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 80;
+			stats->MAXHP = stats->HP;
+			stats->MP = 80;
+			stats->MAXMP = 80;
+			stats->OLDHP = stats->HP;
+			stats->STR = 20;
+			stats->DEX = 7;
+			stats->CON = 9;
+			stats->INT = -2;
+			stats->PER = 50;
+			stats->CHR = -3;
+			stats->EXP = 0;
+			stats->LVL = 14;
+			if ( rand() % 10 )
+			{
+				stats->GOLD = 0;
+				stats->RANDOM_GOLD = 0;
+			}
+			else
+			{
+				stats->GOLD = 20;
+				stats->RANDOM_GOLD = 20;
+			}
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; //Random Items
+			break;
+		case 77:
+		case 37:
+		case (1000 + MINOTAUR):
+			stats->type = MINOTAUR;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 400;
+			stats->MAXHP = 400;
+			stats->MP = 100;
+			stats->MAXMP = 100;
+			stats->OLDHP = stats->HP;
+			stats->STR = 50;
+			stats->DEX = 20;
+			stats->CON = 20;
+			stats->INT = 5;
+			stats->PER = 5;
+			stats->CHR = -5;
+			stats->EXP = 0;
+			stats->LVL = 20;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; //Random Items
+			break;
+		case 78:
+		case (1000 + SCORPION):
+			stats->type = SCORPION;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 70;
+			stats->MAXHP = 70;
+			stats->MP = 10;
+			stats->MAXMP = 10;
+			stats->OLDHP = stats->HP;
+			stats->STR = 13;
+			stats->DEX = 3;
+			stats->CON = 4;
+			stats->INT = -3;
+			stats->PER = -3;
+			stats->CHR = -4;
+			stats->EXP = 0;
+			stats->LVL = 7;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+			break;
+		case 79:
+		case (1000 + SLIME):
+			stats->type = SLIME;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			if ( stats->LVL == 7 )   // blue slime
+			{
+				stats->HP = 70;
+				stats->MAXHP = 70;
+				stats->MP = 70;
+				stats->MAXMP = 70;
+				stats->STR = 10;
+			}
+			else     // green slime
+			{
+				stats->STR = 3;
+				stats->HP = 60;
+				stats->MAXHP = 60;
+				stats->MP = 60;
+				stats->MAXMP = 60;
+			}
+			stats->OLDHP = stats->HP;
+			stats->DEX = -4;
+			stats->CON = 3;
+			stats->INT = -4;
+			stats->PER = -2;
+			stats->CHR = -4;
+			stats->EXP = 0;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+			break;
+		case 80:
+		case (1000 + SUCCUBUS):
+			stats->type = SUCCUBUS;
+			stats->sex = FEMALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->HP = 60;
+			stats->MAXHP = 60;
+			stats->MP = 40;
+			stats->MAXMP = 40;
+			stats->OLDHP = stats->HP;
+			stats->STR = 7;
+			stats->DEX = 3;
+			stats->CON = 3;
+			stats->INT = 2;
+			stats->PER = 2;
+			stats->CHR = 5;
+			stats->EXP = 0;
+			stats->LVL = 10;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+			
 			break;
 		case 10:
 		default:

@@ -152,7 +152,7 @@ void initGnome(Entity* my, Stat* myStats)
 			}
 
 			// give cloak
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
 				switch ( rand() % 10 )
 				{

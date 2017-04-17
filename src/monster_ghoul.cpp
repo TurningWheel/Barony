@@ -40,47 +40,83 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-
-		if ( rand() % 50 || my->flags[USERFLAG2] )
-		{
-			strcpy(myStats->name, "");
-		}
-		else
-		{
-			strcpy(myStats->name, "Coral Grimes");
-			for ( c = 0; c < 3; c++ )
+			if ( !myStats->leader_uid )
 			{
-				Entity* entity = summonMonster(GHOUL, my->x, my->y);
-				if ( entity )
-				{
-					entity->parent = my->getUID();
-				}
+				myStats->leader_uid = 0;
 			}
-			myStats->HP *= 3;
-			myStats->MAXHP *= 3;
-			myStats->OLDHP = myStats->HP;
-			myStats->LVL = 15;
-			newItem( GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory );
-		}
 
-		if ( rand() % 20 == 0 )
-		{
-			newItem( POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory );
-		}
-		if ( rand() % 10 == 0 )
-		{
-			newItem( itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory );
-		}
-		if ( rand() % 4 == 0 )
-		{
-			newItem( FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory );
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
+			{
+				strcpy(myStats->name, "");
+			}
+			else
+			{
+				strcpy(myStats->name, "Coral Grimes");
+				for ( c = 0; c < 3; c++ )
+				{
+					Entity* entity = summonMonster(GHOUL, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
+				}
+				myStats->HP *= 3;
+				myStats->MAXHP *= 3;
+				myStats->OLDHP = myStats->HP;
+				myStats->LVL = 15;
+				newItem(GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+				customItemsToGenerate -= 1;
+			}
+
+			// random effects
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			// max limit of 6 custom items per entity.
+			int customItems = countCustomItems(myStats); 
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+					if ( rand() % 20 == 0 )
+					{
+						newItem(POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory);
+					}
+				case 2:
+					if ( rand() % 10 == 0 )
+					{
+						newItem(itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+					}
+				case 1:
+					if ( rand() % 4 == 0 )
+					{
+						newItem(FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory);
+					}
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
