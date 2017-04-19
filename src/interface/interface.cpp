@@ -458,7 +458,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_USE] = 301;
 	joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = 304;
 	joyimpulses[INJOY_MENU_REFRESH_LOBBY] = 304;
-	joyimpulses[INJOY_MENU_LOAD_SAVE] = 304;
+	joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = 304;
 	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
 	joyimpulses[INJOY_MENU_DROP_ITEM] = 302;
 	joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT] = 310;
@@ -541,7 +541,7 @@ void defaultConfig()
 	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
 	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
 	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
-	consoleCommand("/joybind 304 INJOY_MENU_LOAD_SAVE");
+	consoleCommand("/joybind 304 INJOY_MENU_DONT_LOAD_SAVE");
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
 	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
@@ -589,39 +589,44 @@ static char impulsenames[NUMIMPULSES][12] =
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 {
+	//Bi-functional:
 	"STATUS",
 	"SPELL_LIST",
-	"GAME_CAST_SPELL",
-	"GAME_DEFEND",
-	"GAME_ATTACK",
-	"GAME_USE",
 	"PAUSE_MENU",
-	"MENU_LEFT_CLICK",
 	"DPAD_LEFT",
 	"DPAD_RIGHT",
 	"DPAD_UP",
 	"DPAD_DOWN",
-	"MENU_NEXT",
 	"HOTBAR_NEXT",
 	"HOTBAR_PREV",
-	"GAME_HOTBAR_ACTIVATE",
+
+	//Menu exclusive:
+	"MENU_LEFT_CLICK",
+	"MENU_NEXT",
 	"MENU_CANCEL",
-	"MENU_USE",
-	"MENU_HOTBAR_CLEAR",
+	"MENU_SETTINGS_NEXT",
+	"MENU_SETTINGS_PREV",
 	"MENU_REFRESH_LOBBY",
-	"MENU_LOAD_SAVE",
+	"MENU_DONT_LOAD_SAVE",
+	"MENU_RANDOM_NAME",
 	"MENU_RANDOM_CHAR",
+	"MENU_INVENTORY_TAB",
+	"MENU_MAGIC_TAB",
+	"MENU_USE",
 	"MENU_DROP_ITEM",
+	"MENU_HOTBAR_CLEAR",
 	"MENU_CHEST_GRAB_ALL",
 	"MENU_CYCLE_SHOP_LEFT",
 	"MENU_CYCLE_SHOP_RIGHT",
 	"MENU_BOOK_NEXT",
 	"MENU_BOOK_PREV",
-	"MENU_SETTINGS_NEXT",
-	"MENU_SETTINGS_PREV",
-	"MENU_INVENTORY_TAB",
-	"MENU_MAGIC_TAB",
-	"MENU_RANDOM_NAME"
+
+	//Game Exclusive:
+	"GAME_USE",
+	"GAME_DEFEND",
+	"GAME_ATTACK",
+	"GAME_CAST_SPELL",
+	"GAME_HOTBAR_ACTIVATE"
 };
 
 /*-------------------------------------------------------------------------------

@@ -6653,7 +6653,7 @@ void openLoadGameWindow(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_LOAD_SAVE]; //load save games no => "y" button
+	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save games no => "y" button
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
