@@ -599,10 +599,10 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_REFRESH_LOBBY] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_REFRESH_LOBBY: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_MENU_LOAD_SAVE"))
+		else if (strstr(command_str, "INJOY_MENU_DONT_LOAD_SAVE"))
 		{
-			joyimpulses[INJOY_MENU_LOAD_SAVE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_MENU_LOAD_SAVE: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_DONT_LOAD_SAVE: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_MENU_RANDOM_CHAR"))
 		{
