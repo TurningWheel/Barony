@@ -2758,6 +2758,7 @@ client (player %d) (direct ip)#
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
 1991 Game exclusive bindings:#
+1992 Click to unbind. Click an unbound action to assign binding.#
 
 
 1997 auto appraise items#

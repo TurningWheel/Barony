@@ -326,9 +326,16 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 			if ( omousey >= currentPos.y && omousey < currentPos.y + 12 )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
-				lastkeypressed = 0;
-				rebindingaction = true;
-				rebindaction = c;
+				if ( settings_joyimpulses[c] != UNBOUND_JOYBINDING )
+				{
+					settings_joyimpulses[c] = UNBOUND_JOYBINDING; //Unbind the joybinding if clicked on.
+				}
+				else
+				{
+					lastkeypressed = 0;
+					rebindingaction = true;
+					rebindaction = c;
+				}
 			}
 		}
 	}
@@ -1858,7 +1865,7 @@ void handleMainMenu(bool mode)
 			startPos.x = subx1 + 24;
 			startPos.y = suby1 + 60;
 			SDL_Rect currentPos = startPos;
-			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1350]);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1992]);
 			currentPos.y += 24;
 
 			bool rebindingaction = false;

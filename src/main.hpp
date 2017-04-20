@@ -208,6 +208,8 @@ static const unsigned INDEX_JOYBINDINGS_START_GAME = 28;
 
 static const unsigned NUM_JOY_IMPULSES = 33;
 
+static const unsigned UNBOUND_JOYBINDING = 399;
+
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
 #define SDL_BUTTON_WHEELDOWN 5
