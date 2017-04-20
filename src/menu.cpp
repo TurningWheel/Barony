@@ -3745,6 +3745,7 @@ void handleMainMenu(bool mode)
 				{
 					stats[0]->clearStats();
 					initClass(0);
+					mapseed = 0;
 				}
 				else
 				{
@@ -3762,7 +3763,6 @@ void handleMainMenu(bool mode)
 					entity = (Entity*)node->element;
 					entity->flags[NOUPDATE] = true;
 				}
-				mapseed = 0;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
 				if ( loadingmap == false )
@@ -6691,7 +6691,7 @@ void openLoadGameWindow(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save games no => "y" button
+	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
