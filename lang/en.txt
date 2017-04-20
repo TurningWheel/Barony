@@ -2755,6 +2755,10 @@ client (player %d) (direct ip)#
 1979 Cast Spell#
 1980 Activate Hotbar Slot#
 
+# More stuff on the gamepad bindings screen.
+1990 Menu exclusive bindings:#
+1991 Game exclusive bindings:#
+
 
 1997 auto appraise items#
 1998 right click protection#

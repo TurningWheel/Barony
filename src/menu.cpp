@@ -35,6 +35,7 @@
 #include "collision.hpp"
 #include "player.hpp"
 #include "cppfuncs.hpp"
+#include "colors.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -312,6 +313,33 @@ void navigateMainMenuItems(bool mode)
 			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
 		}
+	}
+}
+
+void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebindingaction)
+{
+	ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1948 + c]);
+	if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingaction )
+	{
+		if ( omousex >= currentPos.x && omousex < subx2 - 24 )
+		{
+			if ( omousey >= currentPos.y && omousey < currentPos.y + 12 )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				lastkeypressed = 0;
+				rebindingaction = true;
+				rebindaction = c;
+			}
+		}
+	}
+
+	if ( c != rebindaction )
+	{
+		ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, getInputName(settings_joyimpulses[c]));
+	}
+	else
+	{
+		ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, "...");
 	}
 }
 
@@ -1826,7 +1854,12 @@ void handleMainMenu(bool mode)
 		//Gamepad tab
 		if (settings_tab == SETTINGS_GAMEPAD_BINDINGS_TAB)
 		{
-			ttfPrintText(ttf8, subx1 + 24, suby1 + 60, language[1350]);
+			SDL_Rect startPos;
+			startPos.x = subx1 + 24;
+			startPos.y = suby1 + 60;
+			SDL_Rect currentPos = startPos;
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1350]);
+			currentPos.y += 24;
 
 			bool rebindingaction = false;
 			if (rebindaction != -1)
@@ -1834,32 +1867,30 @@ void handleMainMenu(bool mode)
 				rebindingaction = true;
 			}
 
-			int c;
-			for (c = 0; c < NUM_JOY_IMPULSES; ++c)
+			//Print out the bi-functional bindings.
+			for ( int c = 0; c < INDEX_JOYBINDINGS_START_MENU; ++c, currentPos.y += 12 )
 			{
-				ttfPrintText(ttf8, subx1 + 24, suby1 + 84 + 12 * c, language[1948 + c]);
-				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction)
-				{
-					if (omousex >= subx1 + 24 && omousex < subx2 - 24)
-					{
-						if (omousey >= suby1 + 84 + c * 12 && omousey < suby1 + 96 + c * 12)
-						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
-							lastkeypressed = 0;
-							rebindingaction = true;
-							rebindaction = c;
-						}
-					}
-				}
+				printJoybindingNames(currentPos, c, rebindingaction);
+			}
 
-				if (c != rebindaction)
-				{
-					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c * 12, getInputName(settings_joyimpulses[c]));
-				}
-				else
-				{
-					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c * 12, "...");
-				}
+			//Print out the menu-exclusive bindings.
+			currentPos.y += 12;
+			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1990]);
+			currentPos.y += 18;
+			for ( c = INDEX_JOYBINDINGS_START_MENU; c < INDEX_JOYBINDINGS_START_GAME; ++c, currentPos.y += 12 )
+			{
+				printJoybindingNames(currentPos, c, rebindingaction);
+			}
+
+			//Print out the game-exclusive bindings.
+			currentPos.y += 12;
+			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1991]);
+			currentPos.y += 18;
+			for ( c = INDEX_JOYBINDINGS_START_GAME; c < NUM_JOY_IMPULSES; ++c, currentPos.y += 12 )
+			{
+				printJoybindingNames(currentPos, c, rebindingaction);
 			}
 
 			if (rebindaction != -1 && lastkeypressed)

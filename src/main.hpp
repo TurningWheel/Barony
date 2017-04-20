@@ -194,6 +194,8 @@ static const unsigned INJOY_MENU_CYCLE_SHOP_RIGHT = 25;
 static const unsigned INJOY_MENU_BOOK_NEXT = 26;
 static const unsigned INJOY_MENU_BOOK_PREV = 27;
 
+static const unsigned INDEX_JOYBINDINGS_START_MENU = 9;
+
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
 static const unsigned INJOY_GAME_USE = 28; //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
@@ -201,6 +203,8 @@ static const unsigned INJOY_GAME_DEFEND = 29;
 static const unsigned INJOY_GAME_ATTACK = 30;
 static const unsigned INJOY_GAME_CAST_SPELL = 31;
 static const unsigned INJOY_GAME_HOTBAR_ACTIVATE = 32; //Activates hotbar slot in-game.
+
+static const unsigned INDEX_JOYBINDINGS_START_GAME = 28;
 
 static const unsigned NUM_JOY_IMPULSES = 33;
 
