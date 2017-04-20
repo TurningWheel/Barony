@@ -377,7 +377,7 @@ void actMagiclightBall(Entity* my)
 				//messagePlayer(0, "****Moving.");
 				double tangent = atan2(parent->y - my->y, parent->x - my->x);
 				lineTraceTarget(my, my->x, my->y, tangent, 1024, IGNORE_ENTITIES, false, parent);
-				if (hit.entity && hit.entity == parent)   //Line of sight to caster?
+				if ( !hit.entity || hit.entity == parent )   //Line of sight to caster?
 				{
 					if (my->path != NULL)
 					{
