@@ -229,6 +229,7 @@ void actVampireLimb(Entity* my);
 void actIncubusLimb(Entity* my);
 void actInsectoidLimb(Entity* my);
 void actGoatmanLimb(Entity* my);
+void actScarabLimb(Entity* my);
 
 //--*Die functions--
 void humanDie(Entity* my);
@@ -280,7 +281,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist);
-void scarabAnimate(Entity* my, double dist);
+void scarabAnimate(Entity* my, Stat* myStats, double dist);
 void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist);
 void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist);

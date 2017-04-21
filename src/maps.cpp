@@ -1848,6 +1848,14 @@ void assignActions(map_t* map)
 			case 30:
 			case 27:
 			case 10:
+			case 75:
+			case 76:
+			case 77:
+			case 78:
+			case 79:
+			case 80:
+			case 81:
+			case 82:
 			case 83:
 			case 84:
 			case 85:
@@ -1861,7 +1869,6 @@ void assignActions(map_t* map)
 			case 93:
 			case 94:
 			case 95:
-			case 96:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -1963,6 +1970,38 @@ void assignActions(map_t* map)
 				else if ( entity->sprite == 95 )     // devil.png
 				{
 					monsterType = SKELETON;
+				}
+				else if ( entity->sprite == 81 )     // devil.png
+				{
+					monsterType = RAT;
+				}
+				else if ( entity->sprite == 75 )     // devil.png
+				{
+					monsterType = DEMON;
+				}
+				else if ( entity->sprite == 76 )     // devil.png
+				{
+					monsterType = CREATURE_IMP;
+				}
+				else if ( entity->sprite == 77 )     // devil.png
+				{
+					monsterType = MINOTAUR;
+				}
+				else if ( entity->sprite == 78 )     // devil.png
+				{
+					monsterType = SCORPION;
+				}
+				else if ( entity->sprite == 79 )     // devil.png
+				{
+					monsterType = SLIME;
+				}
+				else if ( entity->sprite == 80 )     // devil.png
+				{
+					monsterType = SUCCUBUS;
+				}
+				else if ( entity->sprite == 82 )     // devil.png
+				{
+					monsterType = GHOUL;
 				}
 				else if ( entity->sprite == 96 )     // devil.png
 				{
@@ -2142,7 +2181,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[INCUBUS][0][2]; // -1.5
 						break;
 					case VAMPIRE:
-						entity->z = -.5;
+						entity->z = -1;
 						entity->focalx = limbs[VAMPIRE][0][0]; // 0
 						entity->focaly = limbs[VAMPIRE][0][1]; // 0
 						entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
@@ -2870,47 +2909,6 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				break;
-			//Chests with fixed content categories.
-			case 75: 
-			case 76:
-			case 77:
-			case 78:
-			case 79:
-			case 80:
-			case 81: 
-			case 82:
-			{
-				entity->sizex = 3;
-				entity->sizey = 2;
-				entity->x += 8;
-				entity->y += 8;
-				entity->z = 5.5;
-				entity->yaw = PI / 2;
-				entity->skill[9] = entity->sprite - 75; //Set chest type to category value between 0 and 7 depending on case entity->sprite.
-				entity->behavior = &actChest;
-				entity->sprite = 188;
-
-				childEntity = newEntity(216, 0, map->entities);
-				childEntity->parent = entity->getUID();
-				entity->parent = childEntity->getUID();
-				childEntity->x = entity->x;
-				childEntity->y = entity->y - 3;
-				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-				childEntity->z = entity->z - 2.75;
-				childEntity->focalx = 3;
-				childEntity->focalz = -.75;
-				childEntity->yaw = PI / 2;
-				childEntity->sizex = 2;
-				childEntity->sizey = 2;
-				childEntity->behavior = &actChestLid;
-				childEntity->flags[PASSABLE] = true;
-
-				//Chest inventory.
-				node_t* tempNode = list_AddNodeFirst(&entity->children);
-				tempNode->element = NULL;
-				tempNode->deconstructor = &emptyDeconstructor;
-				break;
-			}
 			default:
 				break;
 		}

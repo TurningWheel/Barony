@@ -155,8 +155,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1; 
-			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1; 
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Fish
@@ -421,36 +421,100 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 83:
 		case (1000 + KOBOLD):
 			stats->type = KOBOLD;
+			break;
 		case 84:
 		case (1000 + SCARAB):
 			stats->type = SCARAB;
+			break;
 		case 85:
 		case (1000 + CRYSTALGOLEM):
 			stats->type = CRYSTALGOLEM;
+			break;
 		case 86:
 		case (1000 + INCUBUS):
 			stats->type = INCUBUS;
+			break;
 		case 87:
 		case (1000 + VAMPIRE):
 			stats->type = VAMPIRE;
+			stats->sex = MALE;
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 30;
+			stats->RANDOM_HP = 20;
+			stats->MAXHP = stats->HP;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->MP = 20;
+			stats->RANDOM_MP = 20;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->MAXMP = stats->MP;
+			stats->OLDHP = stats->HP;
+			stats->STR = -1;
+			stats->RANDOM_STR = 3;
+			stats->DEX = 4;
+			stats->RANDOM_DEX = 3;
+			stats->CON = -2;
+			stats->RANDOM_CON = 3;
+			stats->INT = -1;
+			stats->RANDOM_INT = 3;
+			stats->PER = -2;
+			stats->RANDOM_PER = 3;
+			stats->CHR = -3;
+			stats->RANDOM_CHR = 3;
+			stats->EXP = 0;
+			stats->LVL = 3;
+			if ( rand() % 2 == 0 )
+			{
+				stats->GOLD = 20;
+				stats->RANDOM_GOLD = 20;
+			}
+			else
+			{
+				stats->GOLD = 0;
+			}
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+
+			stats->PROFICIENCIES[PRO_SWORD] = 45;
+			stats->PROFICIENCIES[PRO_MACE] = 35;
+			stats->PROFICIENCIES[PRO_AXE] = 35;
+			stats->PROFICIENCIES[PRO_POLEARM] = 45;
+			stats->PROFICIENCIES[PRO_RANGED] = 40;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
+			break;
 		case 88:
 		case (1000 + SHADOW):
 			stats->type = SHADOW;
+			break;
 		case 89:
 		case (1000 + COCKATRICE):
 			stats->type = COCKATRICE;
+			break;
 		case 90:
 		case (1000 + INSECTOID):
 			stats->type = INSECTOID;
+			break;
 		case 91:
 		case (1000 + GOATMAN):
 			stats->type = GOATMAN;
+			break;
 		case 92:
 		case (1000 + AUTOMATON):
 			stats->type = AUTOMATON;
+			break;
 		case 93:
 		case (1000 + LICH_ICE):
 			stats->type = LICH_ICE;
+			break;
 		case 94:
 		case (1000 + LICH_FIRE):
 			stats->type = LICH_FIRE;
@@ -488,63 +552,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
 
 			break;
-		case 96:
-		case (1000 + RAT):
-			stats->type = RAT;
-			stats->sex = static_cast<sex_t>(rand() % 2);
-			stats->appearance = rand();
-			strcpy(stats->name, "");
-			stats->inventory.first = NULL;
-			stats->inventory.last = NULL;
-			stats->HP = 30;
-			stats->MAXHP = 30;
-			stats->MP = 10;
-			stats->MAXMP = 10;
-			stats->OLDHP = stats->HP;
-			stats->STR = 0;
-			stats->DEX = 2;
-			stats->CON = 1;
-			stats->INT = -2;
-			stats->PER = 0;
-			stats->CHR = -1;
-			stats->EXP = 0;
-			stats->LVL = 1;
-			stats->GOLD = 0;
-			stats->HUNGER = 900;
 
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 25; //Random Items
-			break;
-		case 97:
-		case (1000 + GHOUL):
-			stats->type = GHOUL;
-			stats->sex = static_cast<sex_t>(rand() % 2);
-			stats->appearance = rand();
-			stats->inventory.first = NULL;
-			stats->inventory.last = NULL;
-			stats->HP = 90;
-			stats->MAXHP = 90;
-			stats->MP = 10;
-			stats->MAXMP = 10;
-			stats->OLDHP = stats->HP;
-			stats->STR = 8;
-			stats->DEX = -3;
-			stats->CON = -1;
-			stats->INT = -2;
-			stats->PER = -1;
-			stats->CHR = -5;
-			stats->EXP = 0;
-			stats->LVL = 7;
-			stats->GOLD = 0;
-			stats->HUNGER = 900;
-
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 5; //Random Items
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Items
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 25; //Random Items
-			break;
 		case 75:
 		case (1000 + DEMON):
 			stats->type = DEMON;
@@ -610,7 +618,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; //Random Items
 			break;
 		case 77:
-		case 37:
+		//case 37:
 		case (1000 + MINOTAUR):
 			stats->type = MINOTAUR;
 			stats->sex = MALE;
@@ -623,9 +631,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 100;
 			stats->MAXMP = 100;
 			stats->OLDHP = stats->HP;
-			stats->STR = 50;
-			stats->DEX = 20;
-			stats->CON = 20;
+			stats->STR = 35;
+			stats->DEX = 15;
+			stats->CON = 15;
 			stats->INT = 5;
 			stats->PER = 5;
 			stats->CHR = -5;
@@ -716,82 +724,67 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->LVL = 10;
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
-			
+
+			break;
+		case 81:
+		case (1000 + RAT):
+			stats->type = RAT;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			strcpy(stats->name, "");
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 30;
+			stats->MAXHP = 30;
+			stats->MP = 10;
+			stats->MAXMP = 10;
+			stats->OLDHP = stats->HP;
+			stats->STR = 0;
+			stats->DEX = 2;
+			stats->CON = 1;
+			stats->INT = -2;
+			stats->PER = 0;
+			stats->CHR = -1;
+			stats->EXP = 0;
+			stats->LVL = 1;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 25; //Random Items
+			break;
+		case 82:
+		case (1000 + GHOUL):
+			stats->type = GHOUL;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 90;
+			stats->MAXHP = 90;
+			stats->MP = 10;
+			stats->MAXMP = 10;
+			stats->OLDHP = stats->HP;
+			stats->STR = 8;
+			stats->DEX = -3;
+			stats->CON = -1;
+			stats->INT = -2;
+			stats->PER = -1;
+			stats->CHR = -5;
+			stats->EXP = 0;
+			stats->LVL = 7;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 5; //Random Items
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Items
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 25; //Random Items
 			break;
 		case 10:
 		default:
 			break;
 	}
 }
-
-//void setDefaultMonsterItemSlots ( Stat* stats )
-//{
-//	if ( multiplayer != CLIENT )
-//	{
-//		switch ( stats->type )
-//		{
-//			case HUMAN:
-//				break;
-//			case RAT:
-//				break;
-//			case GOBLIN:
-//				break;
-//			case SLIME:
-//				break;
-//			case SCORPION:
-//				break;
-//			case SUCCUBUS:
-//				break;
-//			case TROLL:
-//				break;
-//			case SHOPKEEPER:
-//				break;
-//			case SKELETON:
-//				break;
-//			case MINOTAUR:
-//				break;
-//			case GHOUL:
-//				break;
-//			case DEMON:
-//				break;
-//			case SPIDER:
-//				break;
-//			case LICH:
-//				break;
-//			case CREATURE_IMP:
-//				break;
-//			case GNOME:
-//
-//				break;
-//			case DEVIL:
-//				break;
-//			case KOBOLD:
-//				break;
-//			case SCARAB:
-//				break;
-//			case CRYSTALGOLEM:
-//				break;
-//			case INCUBUS:
-//				break;
-//			case VAMPIRE:
-//				break;
-//			case SHADOW:
-//				break;
-//			case COCKATRICE:
-//				break;
-//			case INSECTOID:
-//				break;
-//			case GOATMAN:
-//				break;
-//			case AUTOMATON:
-//				break;
-//			case LICH_ICE:
-//				break;
-//			case LICH_FIRE:
-//				break;
-//			default:
-//				break; //This should never be reached.
-//		}
-//	}
-//}
-

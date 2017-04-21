@@ -56,11 +56,11 @@ void initMinotaur(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( strcmp(map.name, "Hell Boss") )
+			if ( strcmp(map.name, "Hell Boss") == 0 )
 			{
-				myStats->STR = 35;
-				myStats->DEX = 15;
-				myStats->CON = 15;
+				myStats->STR = 50;
+				myStats->DEX = 20;
+				myStats->CON = 20;
 			}
 
 			// random effects
@@ -81,6 +81,9 @@ void initMinotaur(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			
+			ItemType gemtype = GEM_RUBY;
+			
 			switch ( defaultItems )
 			{
 				case 6:
@@ -89,7 +92,6 @@ void initMinotaur(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					ItemType gemtype = GEM_RUBY;
 					switch ( rand() % 4 )
 					{
 						case 0:

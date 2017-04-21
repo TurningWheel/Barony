@@ -394,10 +394,10 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[INCUBUS][0][2]; // -1.5
 				break;
 			case VAMPIRE:
-				entity->z = -.5;
-				entity->focalx = limbs[VAMPIRE][0][0]; // 0
-				entity->focaly = limbs[VAMPIRE][0][1]; // 0
-				entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
+				entity->z = -1;
+				entity->focalx = limbs[HUMAN][0][0]; // 0
+				entity->focaly = limbs[HUMAN][0][1]; // 0
+				entity->focalz = limbs[HUMAN][0][2]; // -1.5
 				break;
 			case SHADOW:
 				entity->z = -1;
@@ -821,7 +821,7 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
 			{
-				scarabAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+				scarabAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else if ( my->sprite == 475 )     // crystal golem head
 			{
@@ -1717,7 +1717,7 @@ void actMonster(Entity* my)
 		}
 		else if ( myStats->type >= KOBOLD ) //New monsters
 		{
-			snprintf(namesays, 31, language[513], language[2000 + myStats->type - KOBOLD)]);
+			snprintf(namesays, 31, language[513], language[2000 + myStats->type - KOBOLD]);
 		}
 	}
 	else
@@ -4303,7 +4303,7 @@ timeToGoAgain:
 		}
 		else if ( myStats->type == SCARAB )
 		{
-			scarabAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			scarabAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 		else if ( myStats->type == KOBOLD )
 		{

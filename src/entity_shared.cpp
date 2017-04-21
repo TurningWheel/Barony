@@ -40,6 +40,17 @@ int checkSpriteType(Sint32 sprite)
 	case 94:
 	case 95:
 	case 96:
+	case 75:
+	case 76:
+	case 77:
+	// to test case 37
+	case 37:
+	case 78:
+	case 79:
+	case 80:
+	case 81:
+	case 82:
+	
 		//monsters
 		return 1;
 		break;
@@ -131,8 +142,29 @@ char* spriteEditorName(Sint32 sprite)
 	case 95:
 		strcpy(tmpStr, "SKELETON");
 		break;
-	case 96:
+	case 81:
 		strcpy(tmpStr, "RAT");
+		break;
+	case 75:
+		strcpy(tmpStr, "DEMON");
+		break;
+	case 76:
+		strcpy(tmpStr, "IMP");
+		break;
+	case 77:
+		strcpy(tmpStr, "MINOTAUR");
+		break;
+	case 78:
+		strcpy(tmpStr, "SCORPION");
+		break;
+	case 79:
+		strcpy(tmpStr, "SLIME");
+		break;
+	case 80:
+		strcpy(tmpStr, "SUCCUBUS");
+		break;
+	case 82:
+		strcpy(tmpStr, "GHOUL");
 		break;
 		//monsters
 		break;
@@ -635,6 +667,7 @@ int canWearEquip(Entity* entity, int category)
 				//monsters with cloak/weapon/shield/boots/helm/armor/mask/gloves
 				case GOBLIN:
 				case HUMAN:
+				case VAMPIRE:
 				case SKELETON:
 				case SHOPKEEPER:
 					equipType = 3;

@@ -4861,7 +4861,9 @@ void setRandomMonsterStats(Stat* stats)
 		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
 	}
 
-	messagePlayer(0, "Set stats to: ");
+	// debug print out each monster spawned
+
+	/*messagePlayer(0, "Set stats to: ");
 	messagePlayer(0, "MAXHP: %d", stats->MAXHP);
 	messagePlayer(0, "HP: %d", stats->HP);
 	messagePlayer(0, "MAXMP: %d", stats->MAXMP);
@@ -4873,7 +4875,7 @@ void setRandomMonsterStats(Stat* stats)
 	messagePlayer(0, "Per: %d", stats->PER);
 	messagePlayer(0, "Chr: %d", stats->CHR);
 	messagePlayer(0, "LVL: %d", stats->LVL);
-	messagePlayer(0, "GOLD: %d", stats->GOLD);
+	messagePlayer(0, "GOLD: %d", stats->GOLD);*/
 
 
 	return;
