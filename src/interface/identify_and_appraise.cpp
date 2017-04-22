@@ -360,17 +360,31 @@ void identifyGUIIdentify(Item* item)
 	else
 	{
 		//Appraising.
-		messagePlayer(clientnum, language[321], item->description());
 
-		//Tick the timer in act player.
-		//Once the timer hits zero, roll to see if the item is identified.
-		//If it is identified, identify it and print out a message for the player.
+		//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
+		if ( stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] >= SKILL_LEVEL_LEGENDARY )
+		{
+			item->identified = true;
+			messagePlayer(clientnum, language[320], item->description());
+			if (appraisal_timer > 0 && appraisal_item && appraisal_item == item->uid)
+			{
+				appraisal_timer = 0;
+				appraisal_item = 0;
+			}
+		}
+		else
+		{
+			messagePlayer(clientnum, language[321], item->description());
 
-		identifygui_appraising = false;
-		appraisal_timer = getAppraisalTime(item);
-		appraisal_timermax = appraisal_timer;
-		appraisal_item = item->uid;
-		//printlog( "DEBUGGING: Appraisal timer = %i.\n", appraisal_timer);
+			//Tick the timer in act player.
+			//Once the timer hits zero, roll to see if the item is identified.
+			//If it is identified, identify it and print out a message for the player.
+
+			identifygui_appraising = false;
+			appraisal_timer = getAppraisalTime(item);
+			appraisal_timermax = appraisal_timer;
+			appraisal_item = item->uid;
+		}
 	}
 	identifygui_active = false;
 
