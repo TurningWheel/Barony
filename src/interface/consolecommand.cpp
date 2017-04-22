@@ -1084,7 +1084,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 		}
 	}
-	else if (!strncmp(command_str, "/minotaurlevel", 10))
+	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{
 		if ( multiplayer != SINGLE )
 		{
