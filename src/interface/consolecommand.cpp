@@ -1099,6 +1099,28 @@ void consoleCommand(char* command_str)
 			}
 		}
 	}
+	else if ( !strncmp(command_str, "/levelskill ", 12) )
+	{
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+		else
+		{
+			int skill = atoi(&command_str[12]);
+			if ( skill >= NUMPROFICIENCIES )
+			{
+				messagePlayer(clientnum, language[2451]); //Skill out of range.
+			}
+			else
+			{
+				for ( int i = 0; i < 10; ++i )
+				{
+					players[clientnum]->entity->increaseSkill(skill);
+				}
+			}
+		}
+	}
 	else
 	{
 		messagePlayer(clientnum, language[305], command_str);

@@ -2785,4 +2785,6 @@ client (player %d) (direct ip)#
 #More character creation screen stuff.
 2450 Random Name#
 
+2451 Skill out of range.#
+
 2499 end#
