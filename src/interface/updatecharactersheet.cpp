@@ -189,27 +189,27 @@ void drawSkillsSheet()
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[363]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] < 20 )
+		else if ( stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_BASIC )
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[364]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= 20 && stats[clientnum]->PROFICIENCIES[i] < 40 )
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_BASIC && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_SKILLED )
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[365]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= 40 && stats[clientnum]->PROFICIENCIES[i] < 60 )
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_SKILLED && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_EXPERT )
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[366]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= 60 && stats[clientnum]->PROFICIENCIES[i] < 80 )
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_EXPERT && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_MASTER )
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[367]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= 80 && stats[clientnum]->PROFICIENCIES[i] < 100 )
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_MASTER && stats[clientnum]->PROFICIENCIES[i] < SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[368]);
 		}
-		else if ( stats[clientnum]->PROFICIENCIES[i] >= 100 )
+		else if ( stats[clientnum]->PROFICIENCIES[i] >= SKILL_LEVEL_LEGENDARY )
 		{
 			ttfPrintTextFormatted(ttf12, pos.x + 4, pos.y, language[369]);
 		}
