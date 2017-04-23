@@ -2338,3 +2338,58 @@ bool isPotionBad(const Item& potion)
 
 	return false;
 }
+
+void createCustomInventory(Stat* stats, int itemLimit)
+{
+	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
+	int i = 0;
+	ItemType itemId;
+	Status itemStatus;
+	int itemBless;
+	int itemAppearance = rand();
+	int itemCount;
+	bool itemIdentified;
+	int itemsGenerated = 0;
+	int chance = 1;
+
+	if ( stats != NULL )
+	{
+		for ( i = 0; i < 6 && itemsGenerated <= itemLimit; i++ )
+		{
+			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
+			if ( itemId >= 0 )
+			{
+				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
+				if ( itemStatus == 0 )
+				{
+					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+				}
+				itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
+				if ( itemBless == 10 )
+				{
+					itemBless = -1 + rand() % 3;
+				}
+				itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
+				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
+				{
+					itemIdentified = false;
+				}
+				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
+				{
+					itemIdentified = true;
+				}
+				else
+				{
+					itemIdentified = rand() % 2;
+				}
+				itemAppearance = rand();
+				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
+				if ( rand() % 100 < chance )
+				{
+					newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
+				}
+				itemsGenerated++;
+			}
+		}
+	}
+}

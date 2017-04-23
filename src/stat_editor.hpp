@@ -79,51 +79,23 @@ extern int kills[NUMMONSTERS];
 #define NUMEFFECTS 16
 
 // proficiencies
-static const int PRO_LOCKPICKING = 0;   // base attribute: dex
-static const int PRO_STEALTH = 1;       // base attribute: dex
-static const int PRO_TRADING = 2;       // base attribute: chr
-static const int PRO_APPRAISAL = 3;     // base attribute: per
-static const int PRO_SWIMMING = 4;      // base attribute: con
-static const int PRO_LEADERSHIP = 5;    // base attribute: chr
-static const int PRO_SPELLCASTING = 6;  // base attribute: int
-static const int PRO_MAGIC = 7;         // base attribute: int
-static const int PRO_RANGED = 8;        // base attribute: dex
-static const int PRO_SWORD = 9;         // base attribute: str
-static const int PRO_MACE = 10;         // base attribute: str
-static const int PRO_AXE = 11;          // base attribute: str
-static const int PRO_POLEARM = 12;      // base attribute: str
-static const int PRO_SHIELD = 13;       // base attribute: con
-static const int NUMPROFICIENCIES = 14;
-
-//Start levels for the various proficiency ranges.
-//0 = "none"
-static const int SKILL_LEVEL_NOVICE = 1;
-static const int SKILL_LEVEL_BASIC = 20;
-static const int SKILL_LEVEL_SKILLED = 40;
-static const int SKILL_LEVEL_EXPERT = 60;
-static const int SKILL_LEVEL_MASTER = 80;
-static const int SKILL_LEVEL_LEGENDARY = 100;
+#define PRO_LOCKPICKING 0   // base attribute: dex
+#define PRO_STEALTH 1       // base attribute: dex
+#define PRO_TRADING 2       // base attribute: chr
+#define PRO_APPRAISAL 3     // base attribute: per
+#define PRO_SWIMMING 4      // base attribute: con
+#define PRO_LEADERSHIP 5    // base attribute: chr
+#define PRO_SPELLCASTING 6  // base attribute: int
+#define PRO_MAGIC 7         // base attribute: int
+#define PRO_RANGED 8        // base attribute: dex
+#define PRO_SWORD 9         // base attribute: str
+#define PRO_MACE 10         // base attribute: str
+#define PRO_AXE 11          // base attribute: str
+#define PRO_POLEARM 12      // base attribute: str
+#define PRO_SHIELD 13       // base attribute: con
+const int NUMPROFICIENCIES = 14;
 
 #define NUMCATEGORIES 13
-
-#define ITEM_SLOT_HELM 0
-#define ITEM_SLOT_WEAPON 6
-#define ITEM_SLOT_SHIELD 12
-#define ITEM_SLOT_ARMOR 18
-#define ITEM_SLOT_BOOTS 24
-#define ITEM_SLOT_RING 30
-#define ITEM_SLOT_AMULET 36
-#define ITEM_SLOT_CLOAK 42
-#define ITEM_SLOT_MASK 48
-#define ITEM_SLOT_GLOVES 54
-#define ITEM_SLOT_INV_1 60
-#define ITEM_SLOT_INV_2 66
-#define ITEM_SLOT_INV_3 72
-#define ITEM_SLOT_INV_4 78
-#define ITEM_SLOT_INV_5 84
-#define ITEM_SLOT_INV_6 90
-#define ITEM_CHANCE 5
-#define ITEM_CUSTOM_SLOT_LIMIT 6
 
 typedef enum
 {
@@ -147,13 +119,6 @@ public:
 	Sint32 STR, DEX, CON, INT, PER, CHR;
 	Sint32 EXP, LVL;
 	Sint32 GOLD, HUNGER;
-	// randomised additional values to add to attributes
-	Sint32 RANDOM_STR, RANDOM_DEX, RANDOM_CON, RANDOM_INT, RANDOM_PER, RANDOM_CHR;
-	Sint32 RANDOM_MAXHP, RANDOM_HP, RANDOM_MAXMP, RANDOM_MP;
-	Sint32 RANDOM_LVL;
-	Sint32 RANDOM_GOLD;
-	// flags to set for future entity behaviour
-	Sint32 EDITOR_FLAGS[32];
 
 	// skills and effects
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
@@ -189,14 +154,11 @@ public:
 	int monster_idlevar;
 
 	list_t magic_effects; //Makes things like the invisibility spell work.
-	Stat(Sint32 sprite);
+	Stat();
 	~Stat();
 	void clearStats();
 	void freePlayerEquipment();
 	Stat* copyStats();
 	void printStats();
-	Sint32 EDITOR_ITEMS[96];
 };
-extern Stat* stats[MAXPLAYERS];
-
-void setDefaultMonsterStats(Stat* stats, int sprite);
+//extern Stat* stats[MAXPLAYERS];

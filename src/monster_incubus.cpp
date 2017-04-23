@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: monster_demon.cpp
-	Desc: implements all of the demon monster's code
+	File: monster_incubus.cpp
+	Desc: implements all of the incubus monster's code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -20,106 +20,108 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initDemon(Entity* my, Stat* myStats)
+void initIncubus(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 258;
+	my->sprite = 445; //incubus head sprite
 
-	//my->flags[GENIUS]=true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 210;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 214;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_SPOTSND = 70;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 1;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		myStats->sex = FEMALE;
+		myStats->appearance = rand();
+		if ( rand() % 50 || my->flags[USERFLAG2] )
 		{
-			if ( !myStats->leader_uid )
+			myStats->DEX = 3;
+			strcpy(myStats->name, "");
+		}
+		else
+		{
+			myStats->DEX = 10;
+			strcpy(myStats->name, "Lilith");
+			for ( c = 0; c < 2; c++ )
 			{
-				myStats->leader_uid = 0;
-			}
-
-			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
-
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
-			{
-				strcpy(myStats->name, "");
-			}
-			else
-			{
-				strcpy(myStats->name, "Deu De'Breau");
-				myStats->LVL = 30;
-				for ( c = 0; c < 3; c++ )
+				Entity* entity = summonMonster(INCUBUS, my->x, my->y);
+				if ( entity )
 				{
-					Entity* entity = summonMonster(DEMON, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
+					entity->parent = my->getUID();
 				}
 			}
-
-			// random effects
-
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
-
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
-
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); 
-			//max limit of 6 custom items per entity.
-
-			// count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
-
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
+		}
+		myStats->inventory.first = NULL;
+		myStats->inventory.last = NULL;
+		myStats->HP = 60;
+		myStats->MAXHP = 60;
+		myStats->MP = 40;
+		myStats->MAXMP = 40;
+		myStats->OLDHP = myStats->HP;
+		myStats->STR = 7;
+		myStats->DEX = 3;
+		myStats->CON = 3;
+		myStats->INT = 2;
+		myStats->PER = 2;
+		myStats->CHR = 5;
+		myStats->EXP = 0;
+		myStats->LVL = 10;
+		myStats->GOLD = 0;
+		myStats->HUNGER = 900;
+		if ( !myStats->leader_uid )
+		{
+			myStats->leader_uid = 0;
+		}
+		myStats->FOLLOWERS.first = NULL;
+		myStats->FOLLOWERS.last = NULL;
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
 			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-				case 2:
-				case 1:
-					if ( rand() % 2 == 0 )
-					{
-						myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
-					}
-					break;
-				default:
-					break;
+				myStats->PROFICIENCIES[c] = 0;
+			}
+			if ( c < NUMEFFECTS )
+			{
+				myStats->EFFECTS[c] = false;
+			}
+			if ( c < NUMEFFECTS )
+			{
+				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
+		myStats->helmet = NULL;
+		myStats->breastplate = NULL;
+		myStats->gloves = NULL;
+		myStats->shoes = NULL;
+		myStats->shield = NULL;
+		myStats->weapon = NULL;
+		myStats->cloak = NULL;
+		myStats->amulet = NULL;
+		myStats->ring = NULL;
+		myStats->mask = NULL;
 	}
 
 	// torso
-	Entity* entity = newEntity(264, 0, map.entities);
+	Entity* entity = newEntity(446, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][1][0]; // 0
-	entity->focaly = limbs[DEMON][1][1]; // 0
-	entity->focalz = limbs[DEMON][1][2]; // 0
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[INCUBUS][1][0]; // 0
+	entity->focaly = limbs[INCUBUS][1][1]; // 0
+	entity->focalz = limbs[INCUBUS][1][2]; // 0
+	entity->behavior = &actIncubusLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -127,17 +129,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(263, 0, map.entities);
+	entity = newEntity(450, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][2][0]; // 1
-	entity->focaly = limbs[DEMON][2][1]; // 0
-	entity->focalz = limbs[DEMON][2][2]; // 5
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[INCUBUS][2][0]; // 1
+	entity->focaly = limbs[INCUBUS][2][1]; // 0
+	entity->focalz = limbs[INCUBUS][2][2]; // 2
+	entity->behavior = &actIncubusLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -145,17 +147,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(262, 0, map.entities);
+	entity = newEntity(449, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][3][0]; // 1
-	entity->focaly = limbs[DEMON][3][1]; // 0
-	entity->focalz = limbs[DEMON][3][2]; // 5
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[INCUBUS][3][0]; // 1
+	entity->focaly = limbs[INCUBUS][3][1]; // 0
+	entity->focalz = limbs[INCUBUS][3][2]; // 2
+	entity->behavior = &actIncubusLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -163,17 +165,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(261, 0, map.entities);
+	entity = newEntity(448, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][4][0]; // -.25
-	entity->focaly = limbs[DEMON][4][1]; // 0
-	entity->focalz = limbs[DEMON][4][2]; // 4
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[INCUBUS][4][0]; // -.25
+	entity->focaly = limbs[INCUBUS][4][1]; // 0
+	entity->focalz = limbs[INCUBUS][4][2]; // 1.5
+	entity->behavior = &actIncubusLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -181,35 +183,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(260, 0, map.entities);
+	entity = newEntity(447, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][5][0]; // -.25
-	entity->focaly = limbs[DEMON][5][1]; // 0
-	entity->focalz = limbs[DEMON][5][2]; // 4
-	entity->behavior = &actDemonLimb;
-	entity->parent = my->getUID();
-	node = list_AddNodeLast(&my->children);
-	node->element = entity;
-	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity*);
-
-	// jaw
-	entity = newEntity(259, 0, map.entities);
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = true;
-	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][6][0]; // 1.5
-	entity->focaly = limbs[DEMON][6][1]; // 0
-	entity->focalz = limbs[DEMON][6][2]; // 1
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[INCUBUS][5][0]; // -.25
+	entity->focaly = limbs[INCUBUS][5][1]; // 0
+	entity->focalz = limbs[INCUBUS][5][2]; // 1.5
+	entity->behavior = &actIncubusLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -217,7 +201,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 }
 
-void actDemonLimb(Entity* my)
+void actIncubusLimb(Entity* my)
 {
 	int i;
 
@@ -248,7 +232,7 @@ void actDemonLimb(Entity* my)
 	return;
 }
 
-void demonDie(Entity* my)
+void incubusDie(Entity* my)
 {
 	node_t* node, *nextnode;
 
@@ -280,7 +264,7 @@ void demonDie(Entity* my)
 			}
 		}
 	}
-	playSoundEntity(my, 213, 128);
+	playSoundEntity(my, 71, 128);
 	int i = 0;
 	for (node = my->children.first; node != NULL; node = nextnode)
 	{
@@ -298,9 +282,9 @@ void demonDie(Entity* my)
 	return;
 }
 
-#define DEMONWALKSPEED .125
+#define INCUBUSWALKSPEED .25
 
-void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
+void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	Entity* entity = NULL;
@@ -360,6 +344,16 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		// sleeping
+		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		{
+			my->z = 1.5;
+		}
+		else
+		{
+			my->z = -1;
+		}
 	}
 
 	//Move bodyparts
@@ -380,83 +374,43 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( bodypart == 3 || !MONSTER_ATTACK )
+			if ( dist > 0.1 )
 			{
-				if ( dist > 0.1 )
+				if ( !rightbody->skill[0] )
 				{
-					if ( !rightbody->skill[0] )
+					entity->pitch -= dist * INCUBUSWALKSPEED;
+					if ( entity->pitch < -PI / 4.0 )
 					{
-						entity->pitch -= dist * DEMONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 1;
-							}
-						}
-					}
-					else
-					{
-						entity->pitch += dist * DEMONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 0;
-							}
-						}
+						entity->pitch = -PI / 4.0;
+						entity->skill[0] = 1;
 					}
 				}
 				else
 				{
-					if ( entity->pitch < 0 )
+					entity->pitch += dist * INCUBUSWALKSPEED;
+					if ( entity->pitch > PI / 4.0 )
 					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
+						entity->pitch = PI / 4.0;
+						entity->skill[0] = 0;
 					}
 				}
 			}
 			else
 			{
-				// vertical chop
-				if ( MONSTER_ATTACKTIME == 0 )
+				if ( entity->pitch < 0 )
 				{
-					MONSTER_ARMBENDED = 0;
-					MONSTER_WEAPONYAW = 0;
-					entity->pitch = -3 * PI / 4;
-					entity->roll = 0;
+					entity->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( entity->pitch > 0 )
+					{
+						entity->pitch = 0;
+					}
 				}
-				else
+				else if ( entity->pitch > 0 )
 				{
-					if ( entity->pitch >= -PI / 2 )
+					entity->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( entity->pitch < 0 )
 					{
-						MONSTER_ARMBENDED = 1;
-					}
-					if ( entity->pitch >= PI / 4 )
-					{
-						entity->skill[0] = rightbody->skill[0];
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = rightbody->pitch;
-						entity->roll = 0;
-						MONSTER_ARMBENDED = 0;
-						MONSTER_ATTACK = 0;
-					}
-					else
-					{
-						entity->pitch += .25;
+						entity->pitch = 0;
 					}
 				}
 			}
@@ -465,7 +419,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			if ( bodypart == 5 )
 			{
-				if ( MONSTER_ATTACK )
+				if ( MONSTER_ATTACK == 1 )
 				{
 					// vertical chop
 					if ( MONSTER_ATTACKTIME == 0 )
@@ -488,10 +442,66 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->pitch = rightbody->pitch;
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
+							MONSTER_ATTACK = 0;
 						}
 						else
 						{
 							entity->pitch += .25;
+						}
+					}
+				}
+				else if ( MONSTER_ATTACK == 2 )
+				{
+					// horizontal chop
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
+						MONSTER_ARMBENDED = 1;
+						MONSTER_WEAPONYAW = -3 * PI / 4;
+						entity->pitch = 0;
+						entity->roll = -PI / 2;
+					}
+					else
+					{
+						if ( MONSTER_WEAPONYAW >= PI / 8 )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							MONSTER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							MONSTER_ARMBENDED = 0;
+							MONSTER_ATTACK = 0;
+						}
+						else
+						{
+							MONSTER_WEAPONYAW += .25;
+						}
+					}
+				}
+				else if ( MONSTER_ATTACK == 3 )
+				{
+					// stab
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
+						MONSTER_ARMBENDED = 0;
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = 2 * PI / 3;
+						entity->roll = 0;
+					}
+					else
+					{
+						if ( MONSTER_ATTACKTIME >= 5 )
+						{
+							MONSTER_ARMBENDED = 1;
+							entity->pitch = -PI / 6;
+						}
+						if ( MONSTER_ATTACKTIME >= 10 )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							MONSTER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							MONSTER_ARMBENDED = 0;
+							MONSTER_ATTACK = 0;
 						}
 					}
 				}
@@ -503,7 +513,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[0] )
 					{
-						entity->pitch -= dist * DEMONWALKSPEED;
+						entity->pitch -= dist * INCUBUSWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->skill[0] = 0;
@@ -512,7 +522,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * DEMONWALKSPEED;
+						entity->pitch += dist * INCUBUSWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->skill[0] = 1;
@@ -541,52 +551,58 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
-		else if ( bodypart == 7 )
-		{
-			// jaw
-			if ( MONSTER_ATTACK )
-			{
-				entity->pitch += 0.04;
-			}
-			else
-			{
-				entity->pitch = 0;
-			}
-		}
 		switch ( bodypart )
 		{
 			// torso
 			case 2:
 				entity->x -= .5 * cos(my->yaw);
 				entity->y -= .5 * sin(my->yaw);
-				entity->z += 5;
+				entity->z += 2.5;
 				break;
 			// right leg
 			case 3:
-				entity->x += 2.25 * cos(my->yaw + PI / 2) - 1.25 * cos(my->yaw);
-				entity->y += 2.25 * sin(my->yaw + PI / 2) - 1.25 * sin(my->yaw);
-				entity->z += 7.5;
+				entity->x += 1 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
+				entity->y += 1 * sin(my->yaw + PI / 2) - .75 * sin(my->yaw);
+				entity->z += 5;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->yaw += PI / 8;
+					entity->pitch = -PI / 2;
+				}
 				break;
 			// left leg
 			case 4:
-				entity->x -= 2.25 * cos(my->yaw + PI / 2) + 1.25 * cos(my->yaw);
-				entity->y -= 2.25 * sin(my->yaw + PI / 2) + 1.25 * sin(my->yaw);
-				entity->z += 7.5;
+				entity->x -= 1 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);
+				entity->y -= 1 * sin(my->yaw + PI / 2) + .75 * sin(my->yaw);
+				entity->z += 5;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->yaw -= PI / 8;
+					entity->pitch = -PI / 2;
+				}
 				break;
 			// right arm
 			case 5:
-				entity->x += 5 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
-				entity->y += 5 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
-				entity->z += 2.75;
+				entity->x += 2 * cos(my->yaw + PI / 2); //-.20*cos(my->yaw);
+				entity->y += 2 * sin(my->yaw + PI / 2); //-.20*sin(my->yaw);
+				entity->z += 1;
+				entity->roll = -PI / 8;
 				entity->yaw += MONSTER_WEAPONYAW;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left arm
 			case 6:
-				entity->x -= 5 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
-				entity->y -= 5 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
-				entity->z += 2.75;
-				break;
-			default:
+				entity->x -= 2 * cos(my->yaw + PI / 2); //+.20*cos(my->yaw);
+				entity->y -= 2 * sin(my->yaw + PI / 2); //+.20*sin(my->yaw);
+				entity->z += 1;
+				entity->roll = PI / 8;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 		}
 	}
@@ -597,60 +613,5 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		MONSTER_ATTACKTIME = 0;
-	}
-}
-
-void actDemonCeilingBuster(Entity* my)
-{
-	double x, y;
-
-	// bust ceilings
-	for ( x = my->x - my->sizex - 1; x <= my->x + my->sizex + 1; x += 1 )
-	{
-		for ( y = my->y - my->sizey - 1; y <= my->y + my->sizey + 1; y += 1 )
-		{
-			if ( x >= 0 && y >= 0 && x < map.width << 4 && y < map.height << 4 )
-			{
-				int index = (MAPLAYERS - 1) + ((int)floor(y / 16)) * MAPLAYERS + ((int)floor(x / 16)) * MAPLAYERS * map.height;
-				if ( map.tiles[index] )
-				{
-					map.tiles[index] = 0;
-					if ( multiplayer != CLIENT )
-					{
-						playSoundEntity(my, 67, 128);
-						MONSTER_ATTACK = 1;
-						Stat* myStats = my->getStats();
-						if ( myStats )
-						{
-							// easy hack to stop the demon while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = true;
-							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = TICKS_PER_SECOND / 2;
-						}
-					}
-
-					// spawn several rock particles (NOT items)
-					int c, i = 6 + rand() % 4;
-					for ( c = 0; c < i; c++ )
-					{
-						Entity* entity = spawnGib(my);
-						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-						entity->z = -8;
-						entity->flags[PASSABLE] = true;
-						entity->flags[INVISIBLE] = false;
-						entity->flags[NOUPDATE] = true;
-						entity->flags[UPDATENEEDED] = false;
-						entity->sprite = items[GEM_ROCK].index;
-						entity->yaw = rand() % 360 * PI / 180;
-						entity->pitch = rand() % 360 * PI / 180;
-						entity->roll = rand() % 360 * PI / 180;
-						entity->vel_x = (rand() % 20 - 10) / 10.0;
-						entity->vel_y = (rand() % 20 - 10) / 10.0;
-						entity->vel_z = -.25;
-						entity->fskill[3] = 0.03;
-					}
-				}
-			}
-		}
 	}
 }

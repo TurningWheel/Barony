@@ -2764,6 +2764,65 @@ client (player %d) (direct ip)#
 1997 auto appraise items#
 1998 right click protection#
 
+# START DLC
+# monsters, reserve 2000-2049 for monster names, 2050 - 2099 for plurals, 2100-2150 for injury types
+
+2000 kobold#
+2001 scarab#
+2002 crystal golem#
+2003 incubus#
+2004 vampire#
+2005 shadow#
+2006 cockatrice#
+2007 insectoid#
+2008 goatman#
+2009 automaton#
+2010 lich ice#
+2011 lich fire#
+
+# monster plurals
+
+2050 kobolds#
+2051 scarabs#
+2052 crystal golems#
+2053 incubi#
+2054 vampires#
+2055 shadows#
+2056 cockatrices#
+2057 insectoids#
+2058 goatmen#
+2059 automatons#
+2060 liches#
+2061 liches#
+
+# injury types (2100-2149)
+
+2100 hits#
+2101 bites#
+2102 thumps#
+2103 slaps#
+2104 mauls#
+2105 strikes#
+2106 scratches#
+2107 stings#
+2108 pounds#
+2109 thumps#
+2110 hits#
+2111 hits#
+
+# additional obituary messages (2150-2199)
+2150 is dispatched by a kobold.#
+2151 is dispatched by a scarab.#
+2152 is dispatched by a crystal golem.#
+2153 is dispatched by an incubus.#
+2154 is dispatched by a vampire.#
+2155 is dispatched by a shadow.#
+2156 is dispatched by a cockatrice.#
+2157 is dispatched by an insectoid.#
+2158 is dispatched by a goatman.#
+2159 is dispatched by an automaton.#
+2160 is dispatched by the icy lich.#
+2161 is dispatched by the fiery lich.#
 
 
 2400 Gamepad#

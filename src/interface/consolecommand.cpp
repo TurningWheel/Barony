@@ -952,12 +952,25 @@ void consoleCommand(char* command_str)
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if (strstr(language[90 + i], name))
+				if ( i < KOBOLD ) //Search original monsters
 				{
-					creature = i;
-					found = true;
-					break;
+					if ( strstr(language[90 + i], name) )
+					{
+						creature = i;
+						found = true;
+						break;
+					}
 				}
+				else if ( i >= KOBOLD ) //Search additional monsters
+				{
+					if ( strstr(language[2000 + (i - KOBOLD)], name) )
+					{
+						creature = i;
+						found = true;
+						break;
+					}
+				}
+				
 			}
 
 			if (found)
@@ -968,11 +981,25 @@ void consoleCommand(char* command_str)
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					messagePlayer(clientnum, language[302], language[90 + creature]);
+					if ( i < KOBOLD ) 
+					{
+						messagePlayer(clientnum, language[302], language[90 + creature]);
+					}
+					else if ( i >= KOBOLD )
+					{
+						messagePlayer(clientnum, language[302], language[2000 + (creature-21)]);
+					}
 				}
 				else
 				{
-					messagePlayer(clientnum, language[303], language[90 + creature]);
+					if ( i < KOBOLD )
+					{
+						messagePlayer(clientnum, language[303], language[90 + creature]);
+					}
+					else if ( i >= KOBOLD )
+					{
+						messagePlayer(clientnum, language[303], language[2000 + (creature - KOBOLD)]);
+					}
 				}
 			}
 			else

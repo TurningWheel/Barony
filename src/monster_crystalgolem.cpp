@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: monster_demon.cpp
-	Desc: implements all of the demon monster's code
+	File: monster_crystalgolem.cpp
+	Desc: implements all of the crystal golem monster's code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -20,106 +20,127 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initDemon(Entity* my, Stat* myStats)
+void initCrystalgolem(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 258;
+	my->sprite = 475;
 
-	//my->flags[GENIUS]=true;
 	my->flags[UPDATENEEDED] = true;
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = 210;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 214;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_SPOTSND = 79;
+		MONSTER_SPOTVAR = 1;
+		MONSTER_IDLESND = -1;
+		MONSTER_IDLEVAR = 1;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		myStats->sex = static_cast<sex_t>(rand() % 2);
+		myStats->appearance = rand();
+		myStats->inventory.first = NULL;
+		myStats->inventory.last = NULL;
+		myStats->HP = 100 + rand() % 20;
+		myStats->MAXHP = myStats->HP;
+		myStats->MP = 30;
+		myStats->MAXMP = 30;
+		myStats->OLDHP = myStats->HP;
+		myStats->STR = 15;
+		myStats->DEX = -2;
+		myStats->CON = 5;
+		myStats->INT = -4;
+		myStats->PER = -2;
+		myStats->CHR = -1;
+		myStats->EXP = 0;
+		myStats->LVL = 12;
+		myStats->GOLD = 0;
+		myStats->HUNGER = 900;
+		if ( !myStats->leader_uid )
 		{
-			if ( !myStats->leader_uid )
+			myStats->leader_uid = 0;
+		}
+		myStats->FOLLOWERS.first = NULL;
+		myStats->FOLLOWERS.last = NULL;
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
 			{
-				myStats->leader_uid = 0;
+				myStats->PROFICIENCIES[c] = 0;
 			}
-
-			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
-
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
+			if ( c < NUMEFFECTS )
 			{
-				strcpy(myStats->name, "");
+				myStats->EFFECTS[c] = false;
 			}
-			else
+			if ( c < NUMEFFECTS )
 			{
-				strcpy(myStats->name, "Deu De'Breau");
-				myStats->LVL = 30;
-				for ( c = 0; c < 3; c++ )
+				myStats->EFFECTS_TIMERS[c] = 0;
+			}
+		}
+		myStats->helmet = NULL;
+		myStats->breastplate = NULL;
+		myStats->gloves = NULL;
+		myStats->shoes = NULL;
+		myStats->shield = NULL;
+		myStats->weapon = NULL;
+		myStats->cloak = NULL;
+		myStats->amulet = NULL;
+		myStats->ring = NULL;
+		myStats->mask = NULL;
+
+		if ( rand() % 4 == 0 )
+		{
+			myStats->EFFECTS[EFF_ASLEEP] = true;
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+		}
+
+		if ( rand() % 3 == 0 )
+		{
+			int i = 1 + rand() % 3;
+			for ( c = 0; c < i; c++ )
+			{
+				newItem( static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
+			}
+		}
+
+		if ( rand() % 50 || my->flags[USERFLAG2] )
+		{
+			strcpy(myStats->name, "");
+		}
+		else
+		{
+			strcpy(myStats->name, "Thumpus the Troll");
+			for ( c = 0; c < 3; c++ )
+			{
+				Entity* entity = summonMonster(GNOME, my->x, my->y);
+				if ( entity )
 				{
-					Entity* entity = summonMonster(DEMON, my->x, my->y);
-					if ( entity )
-					{
-						entity->parent = my->getUID();
-					}
+					entity->parent = my->getUID();
 				}
 			}
-
-			// random effects
-
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
-
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
-
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); 
-			//max limit of 6 custom items per entity.
-
-			// count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
-
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
-			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-				case 2:
-				case 1:
-					if ( rand() % 2 == 0 )
-					{
-						myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
-					}
-					break;
-				default:
-					break;
-			}
+			myStats->HP *= 2;
+			myStats->MAXHP *= 2;
+			myStats->OLDHP = myStats->HP;
+			myStats->GOLD += 300;
+			myStats->LVL += 10;
 		}
 	}
 
 	// torso
-	Entity* entity = newEntity(264, 0, map.entities);
+	Entity* entity = newEntity(476, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][1][0]; // 0
-	entity->focaly = limbs[DEMON][1][1]; // 0
-	entity->focalz = limbs[DEMON][1][2]; // 0
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[CRYSTALGOLEM][1][0]; // 0
+	entity->focaly = limbs[CRYSTALGOLEM][1][1]; // 0
+	entity->focalz = limbs[CRYSTALGOLEM][1][2]; // 0
+	entity->behavior = &actCrystalgolemLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -127,17 +148,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(263, 0, map.entities);
+	entity = newEntity(480, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][2][0]; // 1
-	entity->focaly = limbs[DEMON][2][1]; // 0
-	entity->focalz = limbs[DEMON][2][2]; // 5
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[CRYSTALGOLEM][2][0]; // 1
+	entity->focaly = limbs[CRYSTALGOLEM][2][1]; // 0
+	entity->focalz = limbs[CRYSTALGOLEM][2][2]; // 2
+	entity->behavior = &actCrystalgolemLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -145,17 +166,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(262, 0, map.entities);
+	entity = newEntity(479, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][3][0]; // 1
-	entity->focaly = limbs[DEMON][3][1]; // 0
-	entity->focalz = limbs[DEMON][3][2]; // 5
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[CRYSTALGOLEM][3][0]; // 1
+	entity->focaly = limbs[CRYSTALGOLEM][3][1]; // 0
+	entity->focalz = limbs[CRYSTALGOLEM][3][2]; // 2
+	entity->behavior = &actCrystalgolemLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -163,17 +184,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(261, 0, map.entities);
+	entity = newEntity(478, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][4][0]; // -.25
-	entity->focaly = limbs[DEMON][4][1]; // 0
-	entity->focalz = limbs[DEMON][4][2]; // 4
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[CRYSTALGOLEM][4][0]; // -.25
+	entity->focaly = limbs[CRYSTALGOLEM][4][1]; // 0
+	entity->focalz = limbs[CRYSTALGOLEM][4][2]; // 3
+	entity->behavior = &actCrystalgolemLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -181,35 +202,17 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(260, 0, map.entities);
+	entity = newEntity(477, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][5][0]; // -.25
-	entity->focaly = limbs[DEMON][5][1]; // 0
-	entity->focalz = limbs[DEMON][5][2]; // 4
-	entity->behavior = &actDemonLimb;
-	entity->parent = my->getUID();
-	node = list_AddNodeLast(&my->children);
-	node->element = entity;
-	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity*);
-
-	// jaw
-	entity = newEntity(259, 0, map.entities);
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = true;
-	entity->flags[NOUPDATE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[DEMON][6][0]; // 1.5
-	entity->focaly = limbs[DEMON][6][1]; // 0
-	entity->focalz = limbs[DEMON][6][2]; // 1
-	entity->behavior = &actDemonLimb;
+	entity->focalx = limbs[CRYSTALGOLEM][5][0]; // -.25
+	entity->focaly = limbs[CRYSTALGOLEM][5][1]; // 0
+	entity->focalz = limbs[CRYSTALGOLEM][5][2]; // 3
+	entity->behavior = &actCrystalgolemLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -217,7 +220,7 @@ void initDemon(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 }
 
-void actDemonLimb(Entity* my)
+void actCrystalgolemLimb(Entity* my)
 {
 	int i;
 
@@ -248,7 +251,7 @@ void actDemonLimb(Entity* my)
 	return;
 }
 
-void demonDie(Entity* my)
+void crystalgolemDie(Entity* my)
 {
 	node_t* node, *nextnode;
 
@@ -280,7 +283,7 @@ void demonDie(Entity* my)
 			}
 		}
 	}
-	playSoundEntity(my, 213, 128);
+	playSoundEntity(my, 80, 128);
 	int i = 0;
 	for (node = my->children.first; node != NULL; node = nextnode)
 	{
@@ -298,9 +301,9 @@ void demonDie(Entity* my)
 	return;
 }
 
-#define DEMONWALKSPEED .125
+#define CRYSTALGOLEMWALKSPEED .12
 
-void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
+void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	Entity* entity = NULL;
@@ -360,6 +363,16 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				bodypart++;
 			}
 		}
+
+		// sleeping
+		if ( myStats->EFFECTS[EFF_ASLEEP] )
+		{
+			my->z = 1.5;
+		}
+		else
+		{
+			my->z = -1.5;
+		}
 	}
 
 	//Move bodyparts
@@ -386,24 +399,26 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( !rightbody->skill[0] )
 					{
-						entity->pitch -= dist * DEMONWALKSPEED;
+						entity->pitch -= dist * CRYSTALGOLEMWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
 							if (bodypart == 3)
 							{
+								playSoundEntityLocal(my, 115, 64);
 								entity->skill[0] = 1;
 							}
 						}
 					}
 					else
 					{
-						entity->pitch += dist * DEMONWALKSPEED;
+						entity->pitch += dist * CRYSTALGOLEMWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
 							if (bodypart == 3)
 							{
+								playSoundEntityLocal(my, 115, 64);
 								entity->skill[0] = 0;
 							}
 						}
@@ -503,7 +518,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[0] )
 					{
-						entity->pitch -= dist * DEMONWALKSPEED;
+						entity->pitch -= dist * CRYSTALGOLEMWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->skill[0] = 0;
@@ -512,7 +527,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * DEMONWALKSPEED;
+						entity->pitch += dist * CRYSTALGOLEMWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->skill[0] = 1;
@@ -541,52 +556,56 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 			}
 		}
-		else if ( bodypart == 7 )
-		{
-			// jaw
-			if ( MONSTER_ATTACK )
-			{
-				entity->pitch += 0.04;
-			}
-			else
-			{
-				entity->pitch = 0;
-			}
-		}
 		switch ( bodypart )
 		{
 			// torso
 			case 2:
 				entity->x -= .5 * cos(my->yaw);
 				entity->y -= .5 * sin(my->yaw);
-				entity->z += 5;
+				entity->z += 2.25;
 				break;
 			// right leg
 			case 3:
-				entity->x += 2.25 * cos(my->yaw + PI / 2) - 1.25 * cos(my->yaw);
-				entity->y += 2.25 * sin(my->yaw + PI / 2) - 1.25 * sin(my->yaw);
-				entity->z += 7.5;
+				entity->x += 2 * cos(my->yaw + PI / 2) - 1.25 * cos(my->yaw);
+				entity->y += 2 * sin(my->yaw + PI / 2) - 1.25 * sin(my->yaw);
+				entity->z += 5;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->yaw += PI / 8;
+					entity->pitch = -PI / 2;
+				}
 				break;
 			// left leg
 			case 4:
-				entity->x -= 2.25 * cos(my->yaw + PI / 2) + 1.25 * cos(my->yaw);
-				entity->y -= 2.25 * sin(my->yaw + PI / 2) + 1.25 * sin(my->yaw);
-				entity->z += 7.5;
+				entity->x -= 2 * cos(my->yaw + PI / 2) + 1.25 * cos(my->yaw);
+				entity->y -= 2 * sin(my->yaw + PI / 2) + 1.25 * sin(my->yaw);
+				entity->z += 5;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->yaw -= PI / 8;
+					entity->pitch = -PI / 2;
+				}
 				break;
 			// right arm
 			case 5:
-				entity->x += 5 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
-				entity->y += 5 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
-				entity->z += 2.75;
+				entity->x += 3.5 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
+				entity->y += 3.5 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
+				entity->z += .1;
 				entity->yaw += MONSTER_WEAPONYAW;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 			// left arm
 			case 6:
-				entity->x -= 5 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
-				entity->y -= 5 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
-				entity->z += 2.75;
-				break;
-			default:
+				entity->x -= 3.5 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
+				entity->y -= 3.5 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
+				entity->z += .1;
+				if ( my->z >= 1.4 && my->z <= 1.6 )
+				{
+					entity->pitch = 0;
+				}
 				break;
 		}
 	}
@@ -597,60 +616,5 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	else
 	{
 		MONSTER_ATTACKTIME = 0;
-	}
-}
-
-void actDemonCeilingBuster(Entity* my)
-{
-	double x, y;
-
-	// bust ceilings
-	for ( x = my->x - my->sizex - 1; x <= my->x + my->sizex + 1; x += 1 )
-	{
-		for ( y = my->y - my->sizey - 1; y <= my->y + my->sizey + 1; y += 1 )
-		{
-			if ( x >= 0 && y >= 0 && x < map.width << 4 && y < map.height << 4 )
-			{
-				int index = (MAPLAYERS - 1) + ((int)floor(y / 16)) * MAPLAYERS + ((int)floor(x / 16)) * MAPLAYERS * map.height;
-				if ( map.tiles[index] )
-				{
-					map.tiles[index] = 0;
-					if ( multiplayer != CLIENT )
-					{
-						playSoundEntity(my, 67, 128);
-						MONSTER_ATTACK = 1;
-						Stat* myStats = my->getStats();
-						if ( myStats )
-						{
-							// easy hack to stop the demon while he breaks stuff
-							myStats->EFFECTS[EFF_PARALYZED] = true;
-							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = TICKS_PER_SECOND / 2;
-						}
-					}
-
-					// spawn several rock particles (NOT items)
-					int c, i = 6 + rand() % 4;
-					for ( c = 0; c < i; c++ )
-					{
-						Entity* entity = spawnGib(my);
-						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-						entity->z = -8;
-						entity->flags[PASSABLE] = true;
-						entity->flags[INVISIBLE] = false;
-						entity->flags[NOUPDATE] = true;
-						entity->flags[UPDATENEEDED] = false;
-						entity->sprite = items[GEM_ROCK].index;
-						entity->yaw = rand() % 360 * PI / 180;
-						entity->pitch = rand() % 360 * PI / 180;
-						entity->roll = rand() % 360 * PI / 180;
-						entity->vel_x = (rand() % 20 - 10) / 10.0;
-						entity->vel_y = (rand() % 20 - 10) / 10.0;
-						entity->vel_z = -.25;
-						entity->fskill[3] = 0.03;
-					}
-				}
-			}
-		}
 	}
 }

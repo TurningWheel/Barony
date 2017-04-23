@@ -154,11 +154,25 @@ void clickDescription(int player, Entity* entity)
 							{
 								if ( strcmp(stats->name, "") )
 								{
-									messagePlayer(player, language[253], language[90 + stats->type], stats->name);
+									if ( stats->type < KOBOLD ) //Original monster count
+									{
+										messagePlayer(player, language[253], language[90 + stats->type], stats->name);
+									}
+									else if ( stats->type >= KOBOLD ) //New monsters
+									{
+										messagePlayer(player, language[253], language[2000 + (stats->type - KOBOLD)], stats->name);
+									}
 								}
 								else
 								{
-									messagePlayer(player, language[254], language[90 + stats->type]);
+									if ( stats->type < KOBOLD ) //Original monster count
+									{
+										messagePlayer(player, language[254], language[90 + stats->type]);
+									}
+									else if ( stats->type >= KOBOLD ) //New monsters
+									{
+										messagePlayer(player, language[254], language[2000 + (stats->type - KOBOLD)]);
+									}
 								}
 							}
 						}
@@ -256,11 +270,25 @@ void clickDescription(int player, Entity* entity)
 			{
 				if ( !strcmp(stat->name, "") )
 				{
-					messagePlayer(player, language[254], language[90 + stat->type]);
+					if ( stat->type < KOBOLD ) //Original monster count
+					{
+						messagePlayer(player, language[254], language[90 + stat->type]);
+					}
+					else if ( stat->type >= KOBOLD ) //New monsters
+					{
+						messagePlayer(player, language[254], language[2000 + (stat->type - KOBOLD)]);
+					}
 				}
 				else
 				{
-					messagePlayer(player, language[253], language[90 + stat->type], stat->name);
+					if ( stat->type < KOBOLD ) //Original monster count
+					{
+						messagePlayer(player, language[253], language[90 + stat->type]);
+					}
+					else if ( stat->type >= KOBOLD ) //New monsters
+					{
+						messagePlayer(player, language[253], language[2000 + (stat->type - KOBOLD)]);
+					}
 				}
 			}
 		}

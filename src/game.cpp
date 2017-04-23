@@ -788,7 +788,14 @@ void gameLogic(void)
 									}
 									else
 									{
-										messagePlayer(c, language[721], language[90 + (int)monsterStats->type]);
+										if ( monsterStats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayer(c, language[721], language[90 + monsterStats->type]);
+										}
+										else if ( monsterStats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayer(c, language[721], language[2000 + (monsterStats->type - KOBOLD)]);
+										}
 									}
 									if (!monsterally[HUMAN][monsterStats->type])
 									{
@@ -819,7 +826,14 @@ void gameLogic(void)
 									}
 									else
 									{
-										messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
+										if ( (int)tempStats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
+										}
+										else if ( (int)tempStats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayer(c, language[723], language[2000 + ((int)tempStats->type - KOBOLD)]);
+										}
 									}
 								}
 							}

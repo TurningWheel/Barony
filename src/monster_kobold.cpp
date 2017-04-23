@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: monster_skeleton.cpp
-	Desc: implements all of the skeleton monster's code
+	File: monster_kobold.cpp
+	Desc: implements all of the kobold monster's code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -16,16 +16,17 @@
 #include "items.hpp"
 #include "monster.hpp"
 #include "sound.hpp"
+#include "book.hpp"
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
 
-void initSkeleton(Entity* my, Stat* myStats)
+void initKobold(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 229; //Skeleton head model
+	my->sprite = 421; //Kobold head model
 
 	my->flags[UPDATENEEDED] = true;
 	my->flags[BLOCKSIGHT] = true;
@@ -33,179 +34,126 @@ void initSkeleton(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
-		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_SPOTSND = 220;
+		MONSTER_SPOTVAR = 5;
+		MONSTER_IDLESND = 217;
+		MONSTER_IDLEVAR = 3;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		myStats->sex = static_cast<sex_t>(rand() % 2);
+		myStats->appearance = rand();
+		strcpy(myStats->name, "");
+		myStats->inventory.first = NULL;
+		myStats->inventory.last = NULL;
+		myStats->HP = 50;
+		myStats->MAXHP = 50;
+		myStats->MP = 50;
+		myStats->MAXMP = 50;
+		myStats->OLDHP = myStats->HP;
+		myStats->STR = 2;
+		myStats->DEX = 0;
+		myStats->CON = 4;
+		myStats->INT = 0;
+		myStats->PER = 2;
+		myStats->CHR = -1;
+		myStats->EXP = 0;
+		myStats->LVL = 5;
+		myStats->GOLD = 40 + rand() % 20;
+		myStats->HUNGER = 900;
+		if ( !myStats->leader_uid )
 		{
-			if ( !myStats->leader_uid )
+			myStats->leader_uid = 0;
+		}
+		myStats->FOLLOWERS.first = NULL;
+		myStats->FOLLOWERS.last = NULL;
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
 			{
-				myStats->leader_uid = 0;
+				myStats->PROFICIENCIES[c] = 0;
 			}
-
-			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
-
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
+			if ( c < NUMEFFECTS )
 			{
-				if ( strncmp(map.name, "Underworld", 10) )
+				myStats->EFFECTS[c] = false;
+			}
+			if ( c < NUMEFFECTS )
+			{
+				myStats->EFFECTS_TIMERS[c] = 0;
+			}
+		}
+		myStats->PROFICIENCIES[PRO_SWORD] = 35;
+		myStats->PROFICIENCIES[PRO_MACE] = 50;
+		myStats->PROFICIENCIES[PRO_AXE] = 45;
+		myStats->PROFICIENCIES[PRO_POLEARM] = 25;
+		myStats->PROFICIENCIES[PRO_RANGED] = 35;
+		myStats->PROFICIENCIES[PRO_SHIELD] = 35;
+		myStats->helmet = NULL;
+		myStats->breastplate = NULL;
+		myStats->gloves = NULL;
+		myStats->shoes = NULL;
+		myStats->shield = NULL;
+		myStats->weapon = NULL;
+		myStats->cloak = NULL;
+		myStats->amulet = NULL;
+		myStats->ring = NULL;
+		myStats->mask = NULL;
+
+		if ( rand() % 8 == 0 )
+		{
+			myStats->EFFECTS[EFF_ASLEEP] = true;
+			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+		}
+
+		if ( rand() % 3 == 0 )
+		{
+			newItem( FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory );
+		}
+
+		if ( rand() % 50 == 0 )
+		{
+			newItem( READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory );
+		}
+
+		if ( rand() % 10 == 0 )
+		{
+			int i = 1 + rand() % 4;
+			for ( c = 0; c < i; c++ )
+			{
+				newItem( static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory );
+			}
+		}
+
+		if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
+		{
+			strcpy(myStats->name, "Rumplewort");
+			myStats->LVL += 10;
+			newItem( GEM_DIAMOND, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
+
+			int c;
+			for ( c = 0; c < 3; c++ )
+			{
+				Entity* entity = summonMonster(KOBOLD, my->x, my->y);
+				if ( entity )
 				{
-					switch ( rand() % 10 )
-					{
-						case 0:
-						case 1:
-							myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 2:
-						case 3:
-							myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 4:
-						case 5:
-							myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 6:
-						case 7:
-							myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 8:
-						case 9:
-							myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-					}
-				}
-			}
-			else
-			{
-				myStats->HP = 100;
-				myStats->MAXHP = 100;
-				strcpy(myStats->name, "Funny Bones");
-				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
-			}
-
-			// random effects
-
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
-
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
-
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
-
-														 // count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
-
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
-			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-				case 2:
-				case 1:
-					break;
-				default:
-					break;
-			}
-
-			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-						myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			//give helmet
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-						myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
-						break;
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
-						break;
-				}
-			}
-
-			//give shield
-			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
+					entity->parent = my->getUID();
 				}
 			}
 		}
 	}
 
 	// torso
-	Entity* entity = newEntity(230, 0, map.entities);
+	Entity* entity = newEntity(422, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][1][0]; // 0
-	entity->focaly = limbs[SKELETON][1][1]; // 0
-	entity->focalz = limbs[SKELETON][1][2]; // 0
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][1][0]; // 0
+	entity->focaly = limbs[KOBOLD][1][1]; // 0
+	entity->focalz = limbs[KOBOLD][1][2]; // 0
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -213,17 +161,17 @@ void initSkeleton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(236, 0, map.entities);
+	entity = newEntity(423, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][2][0]; // 0
-	entity->focaly = limbs[SKELETON][2][1]; // 0
-	entity->focalz = limbs[SKELETON][2][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][2][0]; // .25
+	entity->focaly = limbs[KOBOLD][2][1]; // 0
+	entity->focalz = limbs[KOBOLD][2][2]; // 1.5
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -231,17 +179,17 @@ void initSkeleton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(235, 0, map.entities);
+	entity = newEntity(424, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][3][0]; // 0
-	entity->focaly = limbs[SKELETON][3][1]; // 0
-	entity->focalz = limbs[SKELETON][3][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][3][0]; // .25
+	entity->focaly = limbs[KOBOLD][3][1]; // 0
+	entity->focalz = limbs[KOBOLD][3][2]; // 1.5
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -249,17 +197,17 @@ void initSkeleton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(233, 0, map.entities);
+	entity = newEntity(425, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][4][0]; // 0
-	entity->focaly = limbs[SKELETON][4][1]; // 0
-	entity->focalz = limbs[SKELETON][4][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][4][0]; // 0
+	entity->focaly = limbs[KOBOLD][4][1]; // 0
+	entity->focalz = limbs[KOBOLD][4][2]; // 2
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -267,17 +215,17 @@ void initSkeleton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(231, 0, map.entities);
+	entity = newEntity(427, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][5][0]; // 0
-	entity->focaly = limbs[SKELETON][5][1]; // 0
-	entity->focalz = limbs[SKELETON][5][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][5][0]; // 0
+	entity->focaly = limbs[KOBOLD][5][1]; // 0
+	entity->focalz = limbs[KOBOLD][5][2]; // 2
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -293,10 +241,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][6][0]; // 2.5
-	entity->focaly = limbs[SKELETON][6][1]; // 0
-	entity->focalz = limbs[SKELETON][6][2]; // 0
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][6][0]; // 2
+	entity->focaly = limbs[KOBOLD][6][1]; // 0
+	entity->focalz = limbs[KOBOLD][6][2]; // -.5
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	entity->pitch = .25;
 	node = list_AddNodeLast(&my->children);
@@ -313,10 +261,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][7][0]; // 2
-	entity->focaly = limbs[SKELETON][7][1]; // 0
-	entity->focalz = limbs[SKELETON][7][2]; // 0
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][7][0]; // 0
+	entity->focaly = limbs[KOBOLD][7][1]; // 0
+	entity->focalz = limbs[KOBOLD][7][2]; // 1.5
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -335,51 +283,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][8][0]; // 0
-	entity->focaly = limbs[SKELETON][8][1]; // 0
-	entity->focalz = limbs[SKELETON][8][2]; // 4
-	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->getUID();
-	node = list_AddNodeLast(&my->children);
-	node->element = entity;
-	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity*);
-
-	// helmet
-	entity = newEntity(-1, 0, map.entities);
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->skill[2] = my->getUID();
-	entity->scalex = 1.01;
-	entity->scaley = 1.01;
-	entity->scalez = 1.01;
-	entity->flags[PASSABLE] = true;
-	entity->flags[NOUPDATE] = true;
-	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][9][0]; // 0
-	entity->focaly = limbs[SKELETON][9][1]; // 0
-	entity->focalz = limbs[SKELETON][9][2]; // -2
-	entity->behavior = &actSkeletonLimb;
-	entity->parent = my->getUID();
-	node = list_AddNodeLast(&my->children);
-	node->element = entity;
-	node->deconstructor = &emptyDeconstructor;
-	node->size = sizeof(Entity*);
-
-	// mask
-	entity = newEntity(-1, 0, map.entities);
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->skill[2] = my->getUID();
-	entity->flags[PASSABLE] = true;
-	entity->flags[NOUPDATE] = true;
-	entity->flags[INVISIBLE] = true;
-	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][10][0]; // 0
-	entity->focaly = limbs[SKELETON][10][1]; // 0
-	entity->focalz = limbs[SKELETON][10][2]; // .5
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[KOBOLD][8][0]; // 0
+	entity->focaly = limbs[KOBOLD][8][1]; // 0
+	entity->focalz = limbs[KOBOLD][8][2]; // 4
+	entity->behavior = &actKoboldLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -390,9 +297,67 @@ void initSkeleton(Entity* my, Stat* myStats)
 	{
 		return;
 	}
+
+	// give shield
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+			myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+			break;
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+		case 6:
+			break;
+		case 7:
+		case 8:
+		case 9:
+			myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
+			break;
+	}
+
+	// give weapon
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+			myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+			break;
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+			myStats->GOLD += 100;
+			//myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+			break;
+	}
+
+	// give cloak
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			break;
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+			myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
+			break;
+	}
 }
 
-void actSkeletonLimb(Entity* my)
+void actKoboldLimb(Entity* my)
 {
 	int i;
 
@@ -445,9 +410,40 @@ void actSkeletonLimb(Entity* my)
 	}
 }
 
-void skeletonDie(Entity* my)
+void koboldDie(Entity* my)
 {
 	node_t* node, *nextnode;
+	int c;
+	for ( c = 0; c < 6; c++ )
+	{
+		Entity* entity = spawnGib(my);
+		if ( entity )
+		{
+			serverSpawnGibForClient(entity);
+		}
+	}
+	if (spawn_blood)
+	{
+		int x, y;
+		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
+		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
+		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+		{
+			if ( !checkObstacle(my->x, my->y, my, NULL) )
+			{
+				Entity* entity = newEntity(160, 1, map.entities);
+				entity->x = my->x;
+				entity->y = my->y;
+				entity->z = 7.4 + (rand() % 20) / 100.f;
+				entity->parent = my->getUID();
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+		}
+	}
 	int i = 0;
 	for ( node = my->children.first; node != NULL; node = nextnode )
 	{
@@ -465,44 +461,14 @@ void skeletonDie(Entity* my)
 		list_RemoveNode(node);
 		i++;
 	}
-	int c;
-	for ( c = 0; c < 6; c++ )
-	{
-		Entity* entity = spawnGib(my);
-		if ( entity )
-		{
-			switch ( c )
-			{
-				case 0:
-					entity->sprite = 229;
-					break;
-				case 1:
-					entity->sprite = 230;
-					break;
-				case 2:
-					entity->sprite = 231;
-					break;
-				case 3:
-					entity->sprite = 233;
-					break;
-				case 4:
-					entity->sprite = 235;
-					break;
-				case 5:
-					entity->sprite = 236;
-					break;
-			}
-			serverSpawnGibForClient(entity);
-		}
-	}
-	playSoundEntity(my, 94, 128);
+	playSoundEntity(my, 225 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
 }
 
-#define SKELETONWALKSPEED .13
+#define KOBOLDWALKSPEED .13
 
-void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
+void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	Entity* entity = NULL, *entity2 = NULL;
@@ -578,12 +544,12 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		// sleeping
 		if ( myStats->EFFECTS[EFF_ASLEEP] )
 		{
-			my->z = 2;
+			my->z = 4;
 			my->pitch = PI / 4;
 		}
 		else
 		{
-			my->z = -.5;
+			my->z = 2.25;
 			my->pitch = 0;
 		}
 	}
@@ -614,32 +580,32 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( !rightbody->skill[0] )
 					{
-						entity->pitch -= dist * SKELETONWALKSPEED;
+						entity->pitch -= dist * KOBOLDWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
 							if (bodypart == 3)
 							{
 								entity->skill[0] = 1;
-								if ( dist > .1 )
+								if ( dist > .4 )
 								{
-									playSoundEntityLocal(my, 95, 32);
+									playSoundEntityLocal(my, rand() % 7, 32);
 								}
 							}
 						}
 					}
 					else
 					{
-						entity->pitch += dist * SKELETONWALKSPEED;
+						entity->pitch += dist * KOBOLDWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
 							if (bodypart == 3)
 							{
 								entity->skill[0] = 0;
-								if ( dist > .1 )
+								if ( dist > .4 )
 								{
-									playSoundEntityLocal(my, 95, 32);
+									playSoundEntityLocal(my, rand() % 7, 32);
 								}
 							}
 						}
@@ -769,7 +735,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[0] )
 					{
-						entity->pitch -= dist * SKELETONWALKSPEED;
+						entity->pitch -= dist * KOBOLDWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->skill[0] = 0;
@@ -778,7 +744,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * SKELETONWALKSPEED;
+						entity->pitch += dist * KOBOLDWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->skill[0] = 1;
@@ -817,41 +783,16 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case 2:
-				if ( multiplayer != CLIENT )
-				{
-					if ( myStats->breastplate == NULL )
-					{
-						entity->sprite = 230;
-					}
-					else
-					{
-						entity->sprite = itemModel(myStats->breastplate);
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
-				entity->z += 2;
+				entity->z += 1.25;
 				break;
 			// right leg
 			case 3:
-				entity->sprite = 236;
-				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
-				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
+				entity->x += 1.25 * cos(my->yaw + PI / 2);
+				entity->y += 1.25 * sin(my->yaw + PI / 2);
+				entity->z += 2.75;
+				if ( my->z >= 3.9 && my->z <= 4.1 )
 				{
 					entity->yaw += PI / 8;
 					entity->pitch = -PI / 2;
@@ -859,11 +800,10 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
-				entity->sprite = 235;
-				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
-				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
-				entity->z += 4;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
+				entity->x -= 1.25 * cos(my->yaw + PI / 2);
+				entity->y -= 1.25 * sin(my->yaw + PI / 2);
+				entity->z += 2.75;
+				if ( my->z >= 3.9 && my->z <= 4.1 )
 				{
 					entity->yaw -= PI / 8;
 					entity->pitch = -PI / 2;
@@ -872,33 +812,31 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 233;
+				;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( !MONSTER_ARMBENDED )
-					{
-						entity->sprite += (weapon->flags[INVISIBLE] != true);
-					}
 					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[SKELETON][4][0]; // 0
-						entity->focaly = limbs[SKELETON][4][1]; // 0
-						entity->focalz = limbs[SKELETON][4][2]; // 2
+						entity->focalx = limbs[KOBOLD][4][0]; // 0
+						entity->focaly = limbs[KOBOLD][4][1]; // 0
+						entity->focalz = limbs[KOBOLD][4][2]; // 2
+						entity->sprite = 425;
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][4][0] + 1; // 1
-						entity->focaly = limbs[SKELETON][4][1]; // 0
-						entity->focalz = limbs[SKELETON][4][2] - 1; // 1
+						entity->focalx = limbs[KOBOLD][4][0] + 1; // 1
+						entity->focaly = limbs[KOBOLD][4][1]; // 0
+						entity->focalz = limbs[KOBOLD][4][2] - 1; // 1
+						entity->sprite = 426;
 					}
 				}
-				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 1.75 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += .5;
+				entity->x += 2.5 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
+				entity->y += 2.5 * sin(my->yaw + PI / 2) - .75 * sin(my->yaw);
+				entity->z -= .25;
 				entity->yaw += MONSTER_WEAPONYAW;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
+				if ( my->z >= 3.9 && my->z <= 4.1 )
 				{
 					entity->pitch = 0;
 				}
@@ -907,29 +845,30 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 231;
+				;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					entity->sprite += (shield->flags[INVISIBLE] != true);
 					if ( shield->flags[INVISIBLE] )
 					{
-						entity->focalx = limbs[SKELETON][5][0]; // 0
-						entity->focaly = limbs[SKELETON][5][1]; // 0
-						entity->focalz = limbs[SKELETON][5][2]; // 2
+						entity->focalx = limbs[KOBOLD][5][0]; // 0
+						entity->focaly = limbs[KOBOLD][5][1]; // 0
+						entity->focalz = limbs[KOBOLD][5][2]; // 2
+						entity->sprite = 427;
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][5][0] + 1; // 1
-						entity->focaly = limbs[SKELETON][5][1]; // 0
-						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
+						entity->focalx = limbs[KOBOLD][5][0] + 1; // 1
+						entity->focaly = limbs[KOBOLD][5][1]; // 0
+						entity->focalz = limbs[KOBOLD][5][2] - 1; // 1
+						entity->sprite = 428;
 					}
 				}
-				entity->x -= 1.75 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 1.75 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += .5;
-				if ( my->z >= 1.9 && my->z <= 2.1 )
+				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);
+				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .75 * sin(my->yaw);
+				entity->z -= .25;
+				if ( my->z >= 3.9 && my->z <= 4.1 )
 				{
 					entity->pitch = 0;
 				}
@@ -1011,19 +950,19 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->roll = weaponarm->roll;
 					if ( !MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[SKELETON][6][0]; // 2.5
+						entity->focalx = limbs[KOBOLD][6][0];
 						if ( entity->sprite == items[CROSSBOW].index )
 						{
 							entity->focalx += 2;
 						}
-						entity->focaly = limbs[SKELETON][6][1]; // 0
-						entity->focalz = limbs[SKELETON][6][2]; // -.5
+						entity->focaly = limbs[KOBOLD][6][1];
+						entity->focalz = limbs[KOBOLD][6][2];
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][6][0] + 1; // 3.5
-						entity->focaly = limbs[SKELETON][6][1]; // 0
-						entity->focalz = limbs[SKELETON][6][2] - 2; // -2.5
+						entity->focalx = limbs[KOBOLD][6][0] + 1;
+						entity->focaly = limbs[KOBOLD][6][1];
+						entity->focalz = limbs[KOBOLD][6][2] - 2;
 						entity->yaw -= sin(weaponarm->roll) * PI / 2;
 						entity->pitch += cos(weaponarm->roll) * PI / 2;
 					}
@@ -1068,7 +1007,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 2.5;
+				entity->z += 1;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
 					entity2 = spawnFlame(entity);
@@ -1117,142 +1056,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= cos(my->yaw);
-				entity->y -= sin(my->yaw);
+				entity->x -= cos(my->yaw) * 1.5;
+				entity->y -= sin(my->yaw) * 1.5;
 				entity->yaw += PI / 2;
-				break;
-			// helm
-			case 10:
-				entity->focalx = limbs[SKELETON][9][0]; // 0
-				entity->focaly = limbs[SKELETON][9][1]; // 0
-				entity->focalz = limbs[SKELETON][9][2]; // -2
-				entity->pitch = my->pitch;
-				entity->roll = 0;
-				if ( multiplayer != CLIENT )
-				{
-					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-					else
-					{
-						entity->flags[INVISIBLE] = false;
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				if ( entity->sprite != items[STEEL_HELM].index )
-				{
-					if ( entity->sprite == items[HAT_PHRYGIAN].index )
-					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 3.25; // -3.25
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
-					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 2.5; // -2.5
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // 2.5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_WIZARD].index )
-					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-					else if ( entity->sprite == items[HAT_JESTER].index )
-					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
-						entity->roll = PI / 2;
-					}
-				}
-				else
-				{
-					my->flags[INVISIBLE] = true;
-				}
-				break;
-			// mask
-			case 11:
-				entity->focalx = limbs[SKELETON][10][0]; // 0
-				entity->focaly = limbs[SKELETON][10][1]; // 0
-				entity->focalz = limbs[SKELETON][10][2]; // .5
-				entity->pitch = my->pitch;
-				entity->roll = PI / 2;
-				if ( multiplayer != CLIENT )
-				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
-					{
-						entity->flags[INVISIBLE] = true;
-					}
-					else
-					{
-						entity->flags[INVISIBLE] = false;
-					}
-					if ( myStats->mask != NULL )
-					{
-						if ( myStats->mask->type == TOOL_GLASSES )
-						{
-							entity->sprite = 165; // GlassesWorn.vox
-						}
-						else
-						{
-							entity->sprite = itemModel(myStats->mask);
-						}
-					}
-					if ( multiplayer == SERVER )
-					{
-						// update sprites for clients
-						if ( entity->skill[10] != entity->sprite )
-						{
-							entity->skill[10] = entity->sprite;
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] )
-						{
-							entity->skill[11] = entity->flags[INVISIBLE];
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
-						{
-							serverUpdateEntityBodypart(my, bodypart);
-						}
-					}
-				}
-				if ( entity->sprite != 165 )
-				{
-					entity->focalx = limbs[SKELETON][10][0] + .35; // .35
-					entity->focaly = limbs[SKELETON][10][1] - 2; // -2
-					entity->focalz = limbs[SKELETON][10][2]; // .5
-				}
-				else
-				{
-					entity->focalx = limbs[SKELETON][10][0] + .25; // .25
-					entity->focaly = limbs[SKELETON][10][1] - 2.25; // -2.25
-					entity->focalz = limbs[SKELETON][10][2]; // .5
-				}
 				break;
 		}
 	}

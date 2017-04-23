@@ -1,8 +1,8 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: monster_skeleton.cpp
-	Desc: implements all of the skeleton monster's code
+	File: monster_automaton.cpp
+	Desc: implements all of the automaton monster's code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -20,12 +20,12 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-void initSkeleton(Entity* my, Stat* myStats)
+void initAutomaton(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
 
-	my->sprite = 229; //Skeleton head model
+	my->sprite = 467; //Automaton head model
 
 	my->flags[UPDATENEEDED] = true;
 	my->flags[BLOCKSIGHT] = true;
@@ -40,158 +40,63 @@ void initSkeleton(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		myStats->sex = static_cast<sex_t>(rand() % 2);
+		myStats->appearance = rand();
+		strcpy(myStats->name, "");
+		myStats->inventory.first = NULL;
+		myStats->inventory.last = NULL;
+		myStats->HP = 40;
+		myStats->MAXHP = 40;
+		myStats->MP = 30;
+		myStats->MAXMP = 30;
+		myStats->OLDHP = myStats->HP;
+		myStats->STR = 1;
+		myStats->DEX = -1;
+		myStats->CON = 0;
+		myStats->INT = -1;
+		myStats->PER = 1;
+		myStats->CHR = -3;
+		myStats->EXP = 0;
+		myStats->LVL = 2;
+		myStats->GOLD = 0;
+		myStats->HUNGER = 900;
+		if ( !myStats->leader_uid )
 		{
-			if ( !myStats->leader_uid )
+			myStats->leader_uid = 0;
+		}
+		myStats->FOLLOWERS.first = NULL;
+		myStats->FOLLOWERS.last = NULL;
+		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		{
+			if ( c < NUMPROFICIENCIES )
 			{
-				myStats->leader_uid = 0;
+				myStats->PROFICIENCIES[c] = 0;
 			}
-
-			// apply random stat increases if set in stat_shared.cpp or editor
-			setRandomMonsterStats(myStats);
-
-			// generate 6 items max, less if there are any forced items from boss variants
-			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
-
-			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
+			if ( c < NUMEFFECTS )
 			{
-				if ( strncmp(map.name, "Underworld", 10) )
-				{
-					switch ( rand() % 10 )
-					{
-						case 0:
-						case 1:
-							myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 2:
-						case 3:
-							myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 4:
-						case 5:
-							myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 6:
-						case 7:
-							myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 8:
-						case 9:
-							myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-					}
-				}
+				myStats->EFFECTS[c] = false;
 			}
-			else
+			if ( c < NUMEFFECTS )
 			{
-				myStats->HP = 100;
-				myStats->MAXHP = 100;
-				strcpy(myStats->name, "Funny Bones");
-				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
-			}
-
-			// random effects
-
-			// generates equipment and weapons if available from editor
-			createMonsterEquipment(myStats);
-
-			// create any custom inventory items from editor if available
-			createCustomInventory(myStats, customItemsToGenerate);
-
-			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
-
-														 // count any inventory items set to default in edtior
-			int defaultItems = countDefaultItems(myStats);
-
-			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			switch ( defaultItems )
-			{
-				case 6:
-				case 5:
-				case 4:
-				case 3:
-				case 2:
-				case 1:
-					break;
-				default:
-					break;
-			}
-
-			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 4:
-					case 5:
-					case 6:
-					case 7:
-						myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			//give helmet
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-						myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
-						break;
-					case 6:
-					case 7:
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
-						break;
-				}
-			}
-
-			//give shield
-			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
-						break;
-				}
+				myStats->EFFECTS_TIMERS[c] = 0;
 			}
 		}
+		myStats->PROFICIENCIES[PRO_SWORD] = 35;
+		myStats->PROFICIENCIES[PRO_MACE] = 50;
+		myStats->PROFICIENCIES[PRO_AXE] = 45;
+		myStats->PROFICIENCIES[PRO_POLEARM] = 25;
+		myStats->PROFICIENCIES[PRO_RANGED] = 35;
+		myStats->PROFICIENCIES[PRO_SHIELD] = 35;
+		myStats->helmet = NULL;
+		myStats->breastplate = NULL;
+		myStats->gloves = NULL;
+		myStats->shoes = NULL;
+		myStats->shield = NULL;
+		myStats->weapon = NULL;
+		myStats->cloak = NULL;
+		myStats->amulet = NULL;
+		myStats->ring = NULL;
+		myStats->mask = NULL;
 	}
 
 	// torso
@@ -202,10 +107,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][1][0]; // 0
-	entity->focaly = limbs[SKELETON][1][1]; // 0
-	entity->focalz = limbs[SKELETON][1][2]; // 0
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][1][0]; // 0
+	entity->focaly = limbs[AUTOMATON][1][1]; // 0
+	entity->focalz = limbs[AUTOMATON][1][2]; // 0
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -220,10 +125,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][2][0]; // 0
-	entity->focaly = limbs[SKELETON][2][1]; // 0
-	entity->focalz = limbs[SKELETON][2][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][2][0]; // 0
+	entity->focaly = limbs[AUTOMATON][2][1]; // 0
+	entity->focalz = limbs[AUTOMATON][2][2]; // 2
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -238,10 +143,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][3][0]; // 0
-	entity->focaly = limbs[SKELETON][3][1]; // 0
-	entity->focalz = limbs[SKELETON][3][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][3][0]; // 0
+	entity->focaly = limbs[AUTOMATON][3][1]; // 0
+	entity->focalz = limbs[AUTOMATON][3][2]; // 2
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -256,10 +161,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][4][0]; // 0
-	entity->focaly = limbs[SKELETON][4][1]; // 0
-	entity->focalz = limbs[SKELETON][4][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][4][0]; // 0
+	entity->focaly = limbs[AUTOMATON][4][1]; // 0
+	entity->focalz = limbs[AUTOMATON][4][2]; // 2
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -274,10 +179,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][5][0]; // 0
-	entity->focaly = limbs[SKELETON][5][1]; // 0
-	entity->focalz = limbs[SKELETON][5][2]; // 2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][5][0]; // 0
+	entity->focaly = limbs[AUTOMATON][5][1]; // 0
+	entity->focalz = limbs[AUTOMATON][5][2]; // 2
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -293,10 +198,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][6][0]; // 2.5
-	entity->focaly = limbs[SKELETON][6][1]; // 0
-	entity->focalz = limbs[SKELETON][6][2]; // 0
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
+	entity->focaly = limbs[AUTOMATON][6][1]; // 0
+	entity->focalz = limbs[AUTOMATON][6][2]; // 0
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	entity->pitch = .25;
 	node = list_AddNodeLast(&my->children);
@@ -313,10 +218,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][7][0]; // 2
-	entity->focaly = limbs[SKELETON][7][1]; // 0
-	entity->focalz = limbs[SKELETON][7][2]; // 0
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][7][0]; // 2
+	entity->focaly = limbs[AUTOMATON][7][1]; // 0
+	entity->focalz = limbs[AUTOMATON][7][2]; // 0
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -335,10 +240,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][8][0]; // 0
-	entity->focaly = limbs[SKELETON][8][1]; // 0
-	entity->focalz = limbs[SKELETON][8][2]; // 4
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][8][0]; // 0
+	entity->focaly = limbs[AUTOMATON][8][1]; // 0
+	entity->focalz = limbs[AUTOMATON][8][2]; // 4
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -357,10 +262,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][9][0]; // 0
-	entity->focaly = limbs[SKELETON][9][1]; // 0
-	entity->focalz = limbs[SKELETON][9][2]; // -2
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][9][0]; // 0
+	entity->focaly = limbs[AUTOMATON][9][1]; // 0
+	entity->focalz = limbs[AUTOMATON][9][2]; // -2
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -376,10 +281,10 @@ void initSkeleton(Entity* my, Stat* myStats)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
-	entity->focalx = limbs[SKELETON][10][0]; // 0
-	entity->focaly = limbs[SKELETON][10][1]; // 0
-	entity->focalz = limbs[SKELETON][10][2]; // .5
-	entity->behavior = &actSkeletonLimb;
+	entity->focalx = limbs[AUTOMATON][10][0]; // 0
+	entity->focaly = limbs[AUTOMATON][10][1]; // 0
+	entity->focalz = limbs[AUTOMATON][10][2]; // .5
+	entity->behavior = &actAutomatonLimb;
 	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
@@ -390,9 +295,112 @@ void initSkeleton(Entity* my, Stat* myStats)
 	{
 		return;
 	}
+
+	// give helmet
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+			break;
+		case 5:
+			myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
+			break;
+		case 6:
+		case 7:
+		case 8:
+		case 9:
+			myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
+			break;
+	}
+
+	// give shield
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+		case 4:
+		case 5:
+			break;
+		case 6:
+		case 7:
+			myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
+			break;
+		case 8:
+			myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
+			break;
+		case 9:
+			myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
+			break;
+	}
+
+	// give weapon
+	if ( rand() % 50 || my->flags[USERFLAG2] )
+	{
+		if ( strncmp(map.name, "Underworld", 10) )
+		{
+			switch ( rand() % 10 )
+			{
+				case 0:
+				case 1:
+					myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+				case 2:
+				case 3:
+					myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+				case 4:
+				case 5:
+					myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+				case 6:
+				case 7:
+					myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+				case 8:
+				case 9:
+					myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+			}
+		}
+		else
+		{
+			switch ( rand() % 10 )
+			{
+				case 0:
+				case 1:
+				case 2:
+				case 3:
+					myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+				case 4:
+				case 5:
+				case 6:
+				case 7:
+					myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+				case 8:
+				case 9:
+					myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
+					break;
+			}
+		}
+	}
+	else
+	{
+		myStats->HP = 100;
+		myStats->MAXHP = 100;
+		strcpy(myStats->name, "Funny Bones");
+		myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
+		myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
+	}
 }
 
-void actSkeletonLimb(Entity* my)
+void actAutomatonLimb(Entity* my)
 {
 	int i;
 
@@ -445,7 +453,7 @@ void actSkeletonLimb(Entity* my)
 	}
 }
 
-void skeletonDie(Entity* my)
+void automatonDie(Entity* my)
 {
 	node_t* node, *nextnode;
 	int i = 0;
@@ -474,22 +482,22 @@ void skeletonDie(Entity* my)
 			switch ( c )
 			{
 				case 0:
-					entity->sprite = 229;
+					entity->sprite = 467;
 					break;
 				case 1:
-					entity->sprite = 230;
+					entity->sprite = 468;
 					break;
 				case 2:
-					entity->sprite = 231;
+					entity->sprite = 469;
 					break;
 				case 3:
-					entity->sprite = 233;
+					entity->sprite = 470;
 					break;
 				case 4:
-					entity->sprite = 235;
+					entity->sprite = 471;
 					break;
 				case 5:
-					entity->sprite = 236;
+					entity->sprite = 472;
 					break;
 			}
 			serverSpawnGibForClient(entity);
@@ -500,9 +508,9 @@ void skeletonDie(Entity* my)
 	return;
 }
 
-#define SKELETONWALKSPEED .13
+#define AUTOMATONWALKSPEED .13
 
-void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
+void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	Entity* entity = NULL, *entity2 = NULL;
@@ -614,7 +622,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( !rightbody->skill[0] )
 					{
-						entity->pitch -= dist * SKELETONWALKSPEED;
+						entity->pitch -= dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
@@ -630,7 +638,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * SKELETONWALKSPEED;
+						entity->pitch += dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
@@ -769,7 +777,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->skill[0] )
 					{
-						entity->pitch -= dist * SKELETONWALKSPEED;
+						entity->pitch -= dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->skill[0] = 0;
@@ -778,7 +786,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						entity->pitch += dist * SKELETONWALKSPEED;
+						entity->pitch += dist * AUTOMATONWALKSPEED;
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->skill[0] = 1;
@@ -821,7 +829,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == NULL )
 					{
-						entity->sprite = 230;
+						entity->sprite = 468;
 					}
 					else
 					{
@@ -847,7 +855,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case 3:
-				entity->sprite = 236;
+				entity->sprite = 474;
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -859,7 +867,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
-				entity->sprite = 235;
+				entity->sprite = 473;
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -872,7 +880,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 233;
+				entity->sprite = 471;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
@@ -883,15 +891,15 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[SKELETON][4][0]; // 0
-						entity->focaly = limbs[SKELETON][4][1]; // 0
-						entity->focalz = limbs[SKELETON][4][2]; // 2
+						entity->focalx = limbs[AUTOMATON][4][0]; // 0
+						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						entity->focalz = limbs[AUTOMATON][4][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][4][0] + 1; // 1
-						entity->focaly = limbs[SKELETON][4][1]; // 0
-						entity->focalz = limbs[SKELETON][4][2] - 1; // 1
+						entity->focalx = limbs[AUTOMATON][4][0] + 1; // 1
+						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						entity->focalz = limbs[AUTOMATON][4][2] - 1; // 1
 					}
 				}
 				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -907,7 +915,7 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 231;
+				entity->sprite = 469;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
@@ -915,15 +923,15 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->sprite += (shield->flags[INVISIBLE] != true);
 					if ( shield->flags[INVISIBLE] )
 					{
-						entity->focalx = limbs[SKELETON][5][0]; // 0
-						entity->focaly = limbs[SKELETON][5][1]; // 0
-						entity->focalz = limbs[SKELETON][5][2]; // 2
+						entity->focalx = limbs[AUTOMATON][5][0]; // 0
+						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						entity->focalz = limbs[AUTOMATON][5][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][5][0] + 1; // 1
-						entity->focaly = limbs[SKELETON][5][1]; // 0
-						entity->focalz = limbs[SKELETON][5][2] - 1; // 1
+						entity->focalx = limbs[AUTOMATON][5][0] + 1; // 1
+						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						entity->focalz = limbs[AUTOMATON][5][2] - 1; // 1
 					}
 				}
 				entity->x -= 1.75 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -1011,19 +1019,19 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->roll = weaponarm->roll;
 					if ( !MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[SKELETON][6][0]; // 2.5
+						entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
 						if ( entity->sprite == items[CROSSBOW].index )
 						{
 							entity->focalx += 2;
 						}
-						entity->focaly = limbs[SKELETON][6][1]; // 0
-						entity->focalz = limbs[SKELETON][6][2]; // -.5
+						entity->focaly = limbs[AUTOMATON][6][1]; // 0
+						entity->focalz = limbs[AUTOMATON][6][2]; // -.5
 					}
 					else
 					{
-						entity->focalx = limbs[SKELETON][6][0] + 1; // 3.5
-						entity->focaly = limbs[SKELETON][6][1]; // 0
-						entity->focalz = limbs[SKELETON][6][2] - 2; // -2.5
+						entity->focalx = limbs[AUTOMATON][6][0] + 1; // 3.5
+						entity->focaly = limbs[AUTOMATON][6][1]; // 0
+						entity->focalz = limbs[AUTOMATON][6][2] - 2; // -2.5
 						entity->yaw -= sin(weaponarm->roll) * PI / 2;
 						entity->pitch += cos(weaponarm->roll) * PI / 2;
 					}
@@ -1123,9 +1131,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// helm
 			case 10:
-				entity->focalx = limbs[SKELETON][9][0]; // 0
-				entity->focaly = limbs[SKELETON][9][1]; // 0
-				entity->focalz = limbs[SKELETON][9][2]; // -2
+				entity->focalx = limbs[AUTOMATON][9][0]; // 0
+				entity->focaly = limbs[AUTOMATON][9][1]; // 0
+				entity->focalz = limbs[AUTOMATON][9][2]; // -2
 				entity->pitch = my->pitch;
 				entity->roll = 0;
 				if ( multiplayer != CLIENT )
@@ -1162,30 +1170,30 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( entity->sprite == items[HAT_PHRYGIAN].index )
 					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 3.25; // -3.25
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // .5
+						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
+						entity->focaly = limbs[AUTOMATON][9][1] - 3.25; // -3.25
+						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // .5
 						entity->roll = PI / 2;
 					}
 					else if ( entity->sprite >= items[HAT_HOOD].index && entity->sprite < items[HAT_HOOD].index + items[HAT_HOOD].variations )
 					{
-						entity->focalx = limbs[SKELETON][9][0] - .5; // -.5
-						entity->focaly = limbs[SKELETON][9][1] - 2.5; // -2.5
-						entity->focalz = limbs[SKELETON][9][2] + 2.5; // 2.5
+						entity->focalx = limbs[AUTOMATON][9][0] - .5; // -.5
+						entity->focaly = limbs[AUTOMATON][9][1] - 2.5; // -2.5
+						entity->focalz = limbs[AUTOMATON][9][2] + 2.5; // 2.5
 						entity->roll = PI / 2;
 					}
 					else if ( entity->sprite == items[HAT_WIZARD].index )
 					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
+						entity->focalx = limbs[AUTOMATON][9][0]; // 0
+						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
+						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
 						entity->roll = PI / 2;
 					}
 					else if ( entity->sprite == items[HAT_JESTER].index )
 					{
-						entity->focalx = limbs[SKELETON][9][0]; // 0
-						entity->focaly = limbs[SKELETON][9][1] - 4.75; // -4.75
-						entity->focalz = limbs[SKELETON][9][2] + .5; // .5
+						entity->focalx = limbs[AUTOMATON][9][0]; // 0
+						entity->focaly = limbs[AUTOMATON][9][1] - 4.75; // -4.75
+						entity->focalz = limbs[AUTOMATON][9][2] + .5; // .5
 						entity->roll = PI / 2;
 					}
 				}
@@ -1196,9 +1204,9 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// mask
 			case 11:
-				entity->focalx = limbs[SKELETON][10][0]; // 0
-				entity->focaly = limbs[SKELETON][10][1]; // 0
-				entity->focalz = limbs[SKELETON][10][2]; // .5
+				entity->focalx = limbs[AUTOMATON][10][0]; // 0
+				entity->focaly = limbs[AUTOMATON][10][1]; // 0
+				entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
@@ -1243,15 +1251,15 @@ void skeletonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( entity->sprite != 165 )
 				{
-					entity->focalx = limbs[SKELETON][10][0] + .35; // .35
-					entity->focaly = limbs[SKELETON][10][1] - 2; // -2
-					entity->focalz = limbs[SKELETON][10][2]; // .5
+					entity->focalx = limbs[AUTOMATON][10][0] + .35; // .35
+					entity->focaly = limbs[AUTOMATON][10][1] - 2; // -2
+					entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				}
 				else
 				{
-					entity->focalx = limbs[SKELETON][10][0] + .25; // .25
-					entity->focaly = limbs[SKELETON][10][1] - 2.25; // -2.25
-					entity->focalz = limbs[SKELETON][10][2]; // .5
+					entity->focalx = limbs[AUTOMATON][10][0] + .25; // .25
+					entity->focaly = limbs[AUTOMATON][10][1] - 2.25; // -2.25
+					entity->focalz = limbs[AUTOMATON][10][2]; // .5
 				}
 				break;
 		}
