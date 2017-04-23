@@ -74,27 +74,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
-#ifdef PANDORA
-int resolutions[NUMRESOLUTIONS][2] =
-{
-	{ 800, 480 },
-	{ 960, 600 }
-};
-#else
-int resolutions[NUMRESOLUTIONS][2] =
-{
-	{ 960, 600 },
-	{ 1024, 768 },
-	{ 1280, 720 },
-	{ 1280, 800 },
-	{ 1280, 960 },
-	{ 1366, 768 },
-	{ 1600, 900 },
-	{ 1600, 1000 },
-	{ 1920, 1080 },
-	{ 1920, 1200 }
-};
-#endif
+struct videomodes resolutions;
 int settings_xres, settings_yres;
 Uint32 settings_fov;
 bool settings_smoothlighting;
@@ -1621,15 +1601,18 @@ void handleMainMenu(bool mode)
 		{
 			// resolution
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
-			for ( c = 0; c < NUMRESOLUTIONS; c++ )
+			for ( c = 0; c < resolutions.num; c++ )
 			{
-				if ( settings_xres == resolutions[c][0] && settings_yres == resolutions[c][1] )
+				struct videomode *cur = &resolutions.modes[c];
+				
+				
+				if ( settings_xres == cur->width && settings_yres == cur->height )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", resolutions[c][0], resolutions[c][1]);
+					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", cur->width, cur->height);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", resolutions[c][0], resolutions[c][1]);
+					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", cur->width, cur->height);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -1638,8 +1621,8 @@ void handleMainMenu(bool mode)
 						if ( omousey >= suby1 + 84 + c * 16 && omousey < suby1 + 96 + c * 16 )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							settings_xres = resolutions[c][0];
-							settings_yres = resolutions[c][1];
+							settings_xres = cur->width;
+							settings_yres = cur->height;
 							resolutionChanged = true;
 						}
 					}
@@ -4884,12 +4867,37 @@ void openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
+void getResolutionMap()
+{
+	// for now just use the resolution modes on the first
+	// display.
+	int numdisplays = SDL_GetNumVideoDisplays();
+	int nummodes = SDL_GetNumDisplayModes(0);
+	
+	printlog("display count: %d.\n", numdisplays);
+	printlog("display mode count: %d.\n", nummodes);
+	
+	resolutions.num = nummodes;
+	resolutions.modes = (struct videomode *)
+		calloc(nummodes, sizeof(struct videomode));
+	
+	for (int im = 0; im < nummodes; im++)
+	{
+		SDL_DisplayMode mode;
+		SDL_GetDisplayMode(0, im, &mode);
+		resolutions.modes[im].width = mode.w;
+		resolutions.modes[im].height = mode.h;
+	}
+}
+
 // sets up the settings window
 void openSettingsWindow()
 {
 	button_t* button;
 	int c;
 
+	getResolutionMap();
+	
 	// set the "settings" variables
 	settings_xres = xres;
 	settings_yres = yres;

@@ -11,13 +11,15 @@
 
 #pragma once
 
-#ifdef PANDORA
-#define NUMRESOLUTIONS 2
-#else
-#define NUMRESOLUTIONS 10
-#endif
+struct videomode {
+	int width;
+	int height;
+};
 
-extern int resolutions[NUMRESOLUTIONS][2];
+struct videomodes {
+	int num;
+	struct videomode *modes;
+};
 
 extern bool savethisgame;
 
