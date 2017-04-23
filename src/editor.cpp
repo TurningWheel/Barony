@@ -1452,56 +1452,59 @@ int main(int argc, char** argv)
 								}
 								else if ( mousestatus[SDL_BUTTON_RIGHT] )
 								{
-									// duplicate sprite
-									makeUndo();
-									selectedEntity = newEntity(entity->sprite, 0, map.entities);
-
-									Stat* tmpStats = lastSelectedEntity->getStats();
-
-									lastSelectedEntity = selectedEntity;
-									int spriteType = checkSpriteType(selectedEntity->sprite);
-									if ( spriteType == 1 )
+									if ( lastSelectedEntity )
 									{
-										//STAT ASSIGNMENT
-										Stat* myStats = NULL;
-										if ( multiplayer != CLIENT )
+										// duplicate sprite
+										makeUndo();
+										selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+										Stat* tmpStats = lastSelectedEntity->getStats();
+
+										lastSelectedEntity = selectedEntity;
+										int spriteType = checkSpriteType(selectedEntity->sprite);
+										if ( spriteType == 1 )
 										{
-											// need to give the entity its list stuff.
-											// create an empty first node for traversal purposes
-											node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
-											node2->element = NULL;
-											node2->deconstructor = &emptyDeconstructor;
+											//STAT ASSIGNMENT
+											Stat* myStats = NULL;
+											if ( multiplayer != CLIENT )
+											{
+												// need to give the entity its list stuff.
+												// create an empty first node for traversal purposes
+												node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
+												node2->element = NULL;
+												node2->deconstructor = &emptyDeconstructor;
 
-											myStats = new Stat(selectedEntity->sprite);
-											node2 = list_AddNodeLast(&selectedEntity->children);
-											if ( tmpStats != NULL )
-											{
-												node2->element = tmpStats->copyStats();
+												myStats = new Stat(selectedEntity->sprite);
+												node2 = list_AddNodeLast(&selectedEntity->children);
+												if ( tmpStats != NULL )
+												{
+													node2->element = tmpStats->copyStats();
+												}
+												else
+												{
+													// if for some reason the previous sprite did not have stats initialised
+													node2->element = myStats;
+												}
+												//					node2->deconstructor = &myStats->~Stat;
+												node2->size = sizeof(myStats);
 											}
-											else
-											{
-												// if for some reason the previous sprite did not have stats initialised
-												node2->element = myStats;
-											}
-											//					node2->deconstructor = &myStats->~Stat;
-											node2->size = sizeof(myStats);
 										}
+										else if ( spriteType == 2 )
+										{
+											selectedEntity->yaw = 1;
+										}
+										else if ( spriteType == 3 )
+										{
+											selectedEntity->skill[10] = 1;
+											selectedEntity->skill[11] = 0;
+											selectedEntity->skill[12] = 10;
+											selectedEntity->skill[13] = 1;
+											selectedEntity->skill[15] = 1;
+										}
+										selectedEntity->x = entity->x;
+										selectedEntity->y = entity->y;
+										mousestatus[SDL_BUTTON_RIGHT] = 0;
 									}
-									else if ( spriteType == 2 )
-									{
-										selectedEntity->yaw = 1;
-									}
-									else if ( spriteType == 3 )
-									{
-										selectedEntity->skill[10] = 1;
-										selectedEntity->skill[11] = 0;
-										selectedEntity->skill[12] = 10;
-										selectedEntity->skill[13] = 1;
-										selectedEntity->skill[15] = 1;
-									}
-									selectedEntity->x = entity->x;
-									selectedEntity->y = entity->y;
-									mousestatus[SDL_BUTTON_RIGHT] = 0;
 								}
 							}
 						}
