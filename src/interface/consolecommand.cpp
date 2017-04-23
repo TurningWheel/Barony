@@ -1146,23 +1146,27 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/levelskill ", 12) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int skill = atoi(&command_str[12]);
+		if ( skill >= NUMPROFICIENCIES )
+		{
+			messagePlayer(clientnum, language[2451]); //Skill out of range.
 		}
 		else
 		{
-			int skill = atoi(&command_str[12]);
-			if ( skill >= NUMPROFICIENCIES )
+			for ( int i = 0; i < 10; ++i )
 			{
-				messagePlayer(clientnum, language[2451]); //Skill out of range.
-			}
-			else
-			{
-				for ( int i = 0; i < 10; ++i )
-				{
-					players[clientnum]->entity->increaseSkill(skill);
-				}
+				players[clientnum]->entity->increaseSkill(skill);
 			}
 		}
 	}
