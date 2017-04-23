@@ -38,34 +38,6 @@ void spell_magicMap(int player)
 		return;
 	}
 
-	int x, y;
-
 	messagePlayer(player, language[412]);
-	for ( y = 0; y < 64; y++ )
-	{
-		for ( x = 0; x < 64; x++ )
-		{
-			if ( x < map.width && y < map.height )
-			{
-				if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
-				{
-					if ( !minimap[y][x] )
-					{
-						minimap[y][x] = 4;
-					}
-				}
-				else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-				{
-					if ( !minimap[y][x] )
-					{
-						minimap[y][x] = 3;
-					}
-				}
-				else
-				{
-					minimap[y][x] = 0;
-				}
-			}
-		}
-	}
+	mapLevel(player);
 }

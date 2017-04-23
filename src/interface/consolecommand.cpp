@@ -1170,6 +1170,24 @@ void consoleCommand(char* command_str)
 			}
 		}
 	}
+	else if ( !strncmp(command_str, "/maplevel", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		messagePlayer(clientnum, language[412]);
+		printlog("Made it this far...");
+
+		mapLevel(clientnum);
+	}
 	else
 	{
 		messagePlayer(clientnum, language[305], command_str);

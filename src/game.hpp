@@ -205,3 +205,5 @@ static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
 void loadRandomNames();
+
+void mapLevel(int player);
