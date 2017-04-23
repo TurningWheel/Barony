@@ -76,6 +76,8 @@ button_t* butItemOK;
 button_t* butItemCancel;
 button_t* butItemX;
 
+bool exitFromItemWindow = false;
+
 // Corner buttons
 
 void buttonExit(button_t* my)
@@ -1037,7 +1039,20 @@ void buttonSpriteProperties(button_t* my)
 			tmpSpriteStats = selectedEntity->getStats();
 			if ( tmpSpriteStats != nullptr )
 			{
-				copyMonsterStatToPropertyStrings(tmpSpriteStats);
+				if ( exitFromItemWindow == true )
+				{
+					exitFromItemWindow = false;
+					// retreives any modified monster stats, to be restored when window is closed.
+
+					for ( int i = 0; i < sizeof(spriteProperties) / sizeof(spriteProperties[0]); i++ )
+					{
+						strcpy(spriteProperties[i], tmpSpriteProperties[i]);
+					}
+				}
+				else
+				{
+					copyMonsterStatToPropertyStrings(tmpSpriteStats);
+				}
 				inputstr = spriteProperties[0];
 				initMonsterPropertiesWindow();
 			}
@@ -1702,6 +1717,13 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						{
 							butMonsterItemCancel->visible = 0;
 						}
+
+						// retrieves any modified monster stats, restored when window is closed.
+
+						for ( int i = 0; i < sizeof(spriteProperties) / sizeof(spriteProperties[0]); i++ )
+						{
+							strcpy(spriteProperties[i], tmpSpriteProperties[i]);
+						}
 					}
 					else
 					{
@@ -1816,7 +1838,8 @@ void buttonSpritePropertiesConfirm(button_t* my)
 
 	if ( my == butMonsterItemOK && tmpSpriteStats != NULL )
 	{
-		copyMonsterStatToPropertyStrings(tmpSpriteStats);
+		//copyMonsterStatToPropertyStrings(tmpSpriteStats);
+		exitFromItemWindow = true;
 		inputstr = spriteProperties[0];
 		initMonsterPropertiesWindow();
 
@@ -1841,7 +1864,8 @@ void buttonCloseSpriteSubwindow(button_t* my)
 		}
 		if ( tmpSpriteStats != NULL )
 		{
-			copyMonsterStatToPropertyStrings(tmpSpriteStats);
+			//copyMonsterStatToPropertyStrings(tmpSpriteStats);
+			exitFromItemWindow = true;
 			inputstr = spriteProperties[0];
 			initMonsterPropertiesWindow();
 
@@ -1894,6 +1918,12 @@ void buttonMonsterItems(button_t* my)
 
 	Stat* tmpSpriteStats = selectedEntity->getStats();
 
+	// stores any modified monster stats, to be restored when window is closed.
+
+	for ( int i = 0; i < sizeof(spriteProperties) / sizeof(spriteProperties[0]); i++ )
+	{
+		strcpy(tmpSpriteProperties[i], spriteProperties[i]);
+	}
 
 	if ( my == butMonsterHelm )
 	{

@@ -41,7 +41,6 @@ void initScarab(Entity* my, Stat* myStats)
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
-		strcpy(myStats->name, "");
 		myStats->inventory.first = NULL;
 		myStats->inventory.last = NULL;
 		myStats->HP = 30;

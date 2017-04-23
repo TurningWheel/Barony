@@ -1455,10 +1455,11 @@ int main(int argc, char** argv)
 									// duplicate sprite
 									makeUndo();
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
+									lastSelectedEntity = entity;
 
 									Stat* tmpStats = lastSelectedEntity->getStats();
 
-									lastSelectedEntity = selectedEntity;
+									
 									int spriteType = checkSpriteType(selectedEntity->sprite);
 									if ( spriteType == 1 )
 									{
