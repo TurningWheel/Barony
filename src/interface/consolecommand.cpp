@@ -190,6 +190,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
+
 		strcpy(name, command_str + 11);
 		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), true, &stats[clientnum]->inventory), 0);
 	}
@@ -683,6 +684,12 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/mana", 4) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			stats[clientnum]->MP = stats[clientnum]->MAXMP;
@@ -694,6 +701,12 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/heal", 4) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			stats[clientnum]->HP = stats[clientnum]->MAXHP;
@@ -739,6 +752,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/levelup", 8))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			if (players[clientnum] && players[clientnum]->entity)
@@ -753,6 +772,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/maxout", 7))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			int c;
@@ -781,6 +806,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/hunger", 7))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
@@ -808,6 +839,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/levelmagic", 11))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			int i = 0;
@@ -1071,32 +1108,40 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/gold ", 5) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
 		}
-		else
-		{
-			int amount = atoi(&command_str[5]);
-			stats[clientnum]->GOLD += amount;
-			stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
 
-			messagePlayer(clientnum, "Giving %d gold pieces.", amount);
-		}
+		int amount = atoi(&command_str[5]);
+		stats[clientnum]->GOLD += amount;
+		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+
+		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 	}
-	else if (!strncmp(command_str, "/minotaurlevel", 10))
+	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
 		}
-		else
+
+		if ( !minotaurlevel )
 		{
-			if ( !minotaurlevel )
-			{
-				minotaurlevel = 1;
-				createMinotaurTimer(players[0]->entity, &map);
-			}
+			minotaurlevel = 1;
+			createMinotaurTimer(players[0]->entity, &map);
 		}
 	}
 	else
