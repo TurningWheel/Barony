@@ -45,7 +45,6 @@ void initIncubus(Entity* my, Stat* myStats)
 		if ( rand() % 50 || my->flags[USERFLAG2] )
 		{
 			myStats->DEX = 3;
-			strcpy(myStats->name, "");
 		}
 		else
 		{

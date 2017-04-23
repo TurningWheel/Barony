@@ -227,7 +227,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SPIDER;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 50;
@@ -252,7 +251,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = GOBLIN;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 60;
@@ -365,7 +363,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = HUMAN;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand() % 18; //NUMAPPEARANCES = 18
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 30;
@@ -439,7 +436,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = VAMPIRE;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 30;
@@ -584,7 +580,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = CREATURE_IMP;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 80;
@@ -623,7 +618,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = MINOTAUR;
 			stats->sex = MALE;
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 400;
@@ -650,7 +644,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SCORPION;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 70;
@@ -674,10 +667,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SLIME;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			if ( stats->LVL == 7 )   // blue slime
+			if ( stats->LVL >= 7 )   // blue slime
 			{
 				stats->HP = 70;
 				stats->MAXHP = 70;
@@ -708,7 +700,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SUCCUBUS;
 			stats->sex = FEMALE;
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->HP = 60;
 			stats->MAXHP = 60;
 			stats->MP = 40;
@@ -731,7 +722,6 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = RAT;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
-			strcpy(stats->name, "");
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
 			stats->HP = 30;

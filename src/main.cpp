@@ -167,6 +167,7 @@ char message[48];
 int messagetime = 0;
 char widthtext[4], heighttext[4], nametext[32], authortext[32];
 char spriteProperties[32][128];
+char tmpSpriteProperties[32][128];
 int editproperty = 0;
 SDL_Cursor* cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
 int* palette;
