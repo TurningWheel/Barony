@@ -57,7 +57,6 @@ void initDemon(Entity* my, Stat* myStats)
 			// boss variants
 			if ( rand() % 50 || my->flags[USERFLAG2] )
 			{
-				strcpy(myStats->name, "");
 			}
 			else
 			{

@@ -108,7 +108,6 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 
 		if ( rand() % 50 || my->flags[USERFLAG2] )
 		{
-			strcpy(myStats->name, "");
 		}
 		else
 		{
