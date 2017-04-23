@@ -1180,7 +1180,7 @@ void drawEntities2D(long camx, long camy)
 						case 1: //monsters
 							pady += 10;
 							if ( entity->getStats() != nullptr ) {
-								strcpy(tmpStr, spriteEditorName(selectedEntity->sprite));
+								strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 								ttfPrintText(ttf8, padx, pady - 10, tmpStr);
 								snprintf(tmpStr, sizeof(entity->getStats()->name), "Name: %s", entity->getStats()->name);
 								ttfPrintText(ttf8, padx, pady, tmpStr);
@@ -1196,7 +1196,7 @@ void drawEntities2D(long camx, long camy)
 							break;
 						case 2: //chest
 							pady += 5;
-							strcpy(tmpStr, spriteEditorName(selectedEntity->sprite));
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 							ttfPrintText(ttf8, padx, pady, tmpStr);
 							switch ( (int)entity->yaw )
 							{
@@ -1341,7 +1341,7 @@ void drawEntities2D(long camx, long camy)
 							break;
 
 						default:
-							strcpy(tmpStr, spriteEditorName(selectedEntity->sprite));
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
 							break;
 

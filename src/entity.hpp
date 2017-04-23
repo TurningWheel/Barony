@@ -254,7 +254,7 @@ void actMagiclightBall(Entity* my);
 //checks if a sprite falls in certain sprite ranges
 
 int checkSpriteType(Sint32 sprite);
-char* spriteEditorName(Sint32 sprite);
+extern char spriteEditorNameStrings[96][28];
 extern char itemStringsByType[10][55][32];
 extern char itemNameStrings[170][32];
 int canWearEquip(Entity* entity, int category);

@@ -2098,7 +2098,7 @@ void initMonsterPropertiesWindow() {
 	suby1 = yres / 2 - 180;
 	suby2 = yres / 2 + 180;
 	strcpy(subtext, "Sprite properties: ");
-	strcat(subtext, spriteEditorName(selectedEntity->sprite));
+	strcat(subtext, spriteEditorNameStrings[selectedEntity->sprite]);
 }
 
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)
