@@ -9,7 +9,6 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
-
 #include "entity.hpp"
 
 
@@ -110,3 +109,18 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 }
 
 Entity::~Entity() { }
+
+Stat* Entity::getStats()
+{
+		if ( this->children.first != nullptr )
+		{
+			if ( this->children.first->next != nullptr )
+			{
+				return (Stat*)this->children.first->next->element;
+			}
+		}
+	
+
+	return nullptr;
+}
+

@@ -869,7 +869,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					if ( myStats->breastplate == NULL )
 					{
-						entity->sprite = 183;
+						entity->sprite = 466;
 					}
 					else
 					{
@@ -895,7 +895,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case 3:
-				entity->sprite = 182;
+				entity->sprite = 465;
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -907,7 +907,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
-				entity->sprite = 181;
+				entity->sprite = 464;
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -920,7 +920,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 178;
+				entity->sprite = 461;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
@@ -955,7 +955,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 176;
+				entity->sprite = 459;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{

@@ -40,92 +40,82 @@ void initTroll(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 100 + rand() % 20;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 30;
-		myStats->MAXMP = 30;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 15;
-		myStats->DEX = -2;
-		myStats->CON = 5;
-		myStats->INT = -4;
-		myStats->PER = -2;
-		myStats->CHR = -1;
-		myStats->EXP = 0;
-		myStats->LVL = 12;
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 
-		if ( rand() % 4 == 0 )
-		{
-			myStats->EFFECTS[EFF_ASLEEP] = true;
-			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
-		}
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
 
-		if ( rand() % 3 == 0 )
-		{
-			int i = 1 + rand() % 3;
-			for ( c = 0; c < i; c++ )
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
 			{
-				newItem( static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
+				strcpy(myStats->name, "");
 			}
-		}
-
-		if ( rand() % 50 || my->flags[USERFLAG2] )
-		{
-			strcpy(myStats->name, "");
-		}
-		else
-		{
-			strcpy(myStats->name, "Thumpus the Troll");
-			for ( c = 0; c < 3; c++ )
+			else
 			{
-				Entity* entity = summonMonster(GNOME, my->x, my->y);
-				if ( entity )
+				strcpy(myStats->name, "Thumpus the Troll");
+				for ( c = 0; c < 3; c++ )
 				{
-					entity->parent = my->getUID();
+					Entity* entity = summonMonster(GNOME, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
 				}
+				myStats->HP *= 2;
+				myStats->MAXHP *= 2;
+				myStats->OLDHP = myStats->HP;
+				myStats->GOLD += 300;
+				myStats->LVL += 10;
 			}
-			myStats->HP *= 2;
-			myStats->MAXHP *= 2;
-			myStats->OLDHP = myStats->HP;
-			myStats->GOLD += 300;
-			myStats->LVL += 10;
+
+			// random effects
+			if ( rand() % 4 == 0 )
+			{
+				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+			}
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					if ( rand() % 3 == 0 )
+					{
+						int i = 1 + rand() % 3;
+						for ( c = 0; c < i; c++ )
+						{
+							newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						}
+					}
+					break;
+				default:
+					break;
+			}
 		}
 	}
 

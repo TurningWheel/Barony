@@ -40,58 +40,6 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "Baphomet");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 1250 + 250 * numplayers;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 2000;
-		myStats->MAXMP = 2000;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = -50;
-		myStats->DEX = -20;
-		myStats->CON = 10;
-		myStats->INT = 50;
-		myStats->PER = 500;
-		myStats->CHR = 50;
-		myStats->EXP = 0;
-		myStats->LVL = 30;
-		myStats->HUNGER = 900;
-		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
-			{
-				myStats->PROFICIENCIES[c] = 0;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
-
-		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
-		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
 		if (players[0] && players[0]->entity)
 		{

@@ -356,3 +356,5 @@ bool itemIsEquipped(const Item* item, int player);
  * Returns true if potion is harmful to the player.
  */
 bool isPotionBad(const Item& potion);
+
+void createCustomInventory(Stat* stats, int itemLimit);

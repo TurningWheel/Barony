@@ -822,14 +822,14 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[KOBOLD][4][0]; // 0
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2]; // 2
-						entity->sprite = 299;
+						entity->sprite = 425;
 					}
 					else
 					{
 						entity->focalx = limbs[KOBOLD][4][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2] - 1; // 1
-						entity->sprite = 300;
+						entity->sprite = 426;
 					}
 				}
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
@@ -855,14 +855,14 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focalx = limbs[KOBOLD][5][0]; // 0
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2]; // 2
-						entity->sprite = 301;
+						entity->sprite = 427;
 					}
 					else
 					{
 						entity->focalx = limbs[KOBOLD][5][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2] - 1; // 1
-						entity->sprite = 302;
+						entity->sprite = 428;
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);

@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#pragma once
+
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -21,6 +23,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "paths.hpp"
+#include "book.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #endif
@@ -263,24 +266,24 @@ void Entity::killedByMonsterObituary(Entity* victim)
 	{
 		if ( hitstats->sex == MALE )
 		{
-			if ( hitstats->type < 21 ) //Original monster count
+			if ( hitstats->type < KOBOLD ) //Original monster count
 			{
 				snprintf(tempstr, 256, language[1509], language[90 + hitstats->type]);
 			}
-			else if ( hitstats->type >= 21 ) //New monsters
+			else if ( hitstats->type >= KOBOLD ) //New monsters
 			{
-				snprintf(tempstr, 256, language[1509], language[2000 + (hitstats->type - 21)]);
+				snprintf(tempstr, 256, language[1509], language[2000 + (hitstats->type - KOBOLD)]);
 			}
 		}
 		else
 		{
-			if ( hitstats->type < 21 ) //Original monster count
+			if ( hitstats->type < KOBOLD ) //Original monster count
 			{
 				snprintf(tempstr, 256, language[1510], language[90 + hitstats->type]);
 			}
-			else if ( hitstats->type >= 21 ) //New monsters
+			else if ( hitstats->type >= KOBOLD ) //New monsters
 			{
-				snprintf(tempstr, 256, language[1510], language[2000 + (hitstats->type - 21)]);
+				snprintf(tempstr, 256, language[1510], language[2000 + (hitstats->type - KOBOLD)]);
 			}
 		}
 		victim->setObituary(tempstr);
@@ -3519,13 +3522,13 @@ void Entity::attack(int pose, int charge)
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{
-						if ( hitstats->type < 21 ) //Original monster count
+						if ( hitstats->type < KOBOLD ) //Original monster count
 						{
 							updateEnemyBar(this, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
 						}
-						else if ( hitstats->type >= 21 ) //New monsters
+						else if ( hitstats->type >= KOBOLD ) //New monsters
 						{
-							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - 21)], hitstats->HP, hitstats->MAXHP);
+							updateEnemyBar(this, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
 						}
 					}
 					else
@@ -3813,25 +3816,25 @@ void Entity::attack(int pose, int charge)
 							if ( damage > olddamage )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < 21 ) //Original monster count
+								if ( hitstats->type < KOBOLD ) //Original monster count
 								{
 									messagePlayerColor(player, color, language[689], language[90 + hitstats->type]);
 								}
-								else if ( hitstats->type >= 21 ) //New monsters
+								else if ( hitstats->type >= KOBOLD ) //New monsters
 								{
-									messagePlayerColor(player, color, language[689], language[2000 + (hitstats->type - 21)]);
+									messagePlayerColor(player, color, language[689], language[2000 + (hitstats->type - KOBOLD)]);
 								}	
 							}
 							else
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								if ( hitstats->type < 21 ) //Original monster count
+								if ( hitstats->type < KOBOLD ) //Original monster count
 								{
 									messagePlayerColor(player, color, language[690], language[90 + hitstats->type]);
 								}
-								else if ( hitstats->type >= 21 ) //New monsters
+								else if ( hitstats->type >= KOBOLD ) //New monsters
 								{
-									messagePlayerColor(player, color, language[690], language[2000 + (hitstats->type - 21)]);
+									messagePlayerColor(player, color, language[690], language[2000 + (hitstats->type - KOBOLD)]);
 								}
 							}
 							if ( damage == 0 )
@@ -3842,13 +3845,13 @@ void Entity::attack(int pose, int charge)
 						else
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( hitstats->type < 21 ) //Original monster count
+							if ( hitstats->type < KOBOLD ) //Original monster count
 							{
 								messagePlayerColor(player, color, language[692], language[90 + hitstats->type]);
 							}
-							else if ( hitstats->type >= 21 ) //New monsters
+							else if ( hitstats->type >= KOBOLD ) //New monsters
 							{
-								messagePlayerColor(player, color, language[692], language[2000 + (hitstats->type - 21)]);
+								messagePlayerColor(player, color, language[692], language[2000 + (hitstats->type - KOBOLD)]);
 							}
 							awardXP( hit.entity, true, true );
 						}
@@ -3912,25 +3915,25 @@ void Entity::attack(int pose, int charge)
 					if ( !strcmp(myStats->name, "") )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( myStats->type < 21 ) //Original monster count
+						if ( myStats->type < KOBOLD ) //Original monster count
 						{
 							messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
 						}
-						else if ( myStats->type >= 21 ) //New monsters
+						else if ( myStats->type >= KOBOLD ) //New monsters
 						{
-							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - 21)], language[2100 + (myStats->type - 21)]);
+							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - KOBOLD)], language[2100 + (myStats->type - KOBOLD)]);
 						}
 					}
 					else
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( myStats->type < 21 ) //Original monster count
+						if ( myStats->type < KOBOLD ) //Original monster count
 						{
 							messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
 						}
-						else if ( myStats->type >= 21 ) //New monsters
+						else if ( myStats->type >= KOBOLD ) //New monsters
 						{
-							messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - 21)]);
+							messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - KOBOLD)]);
 						}
 					}
 					if ( damage > 0 )
@@ -3967,13 +3970,13 @@ void Entity::attack(int pose, int charge)
 									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 									if ( !strcmp(hitstats->name, "") )
 									{
-										if ( hitstats->type < 21 ) //Original monster count
+										if ( hitstats->type < KOBOLD ) //Original monster count
 										{
 											messagePlayerColor(player, color, language[702], language[90 + hitstats->type]);
 										}
-										else if ( hitstats->type >= 21 ) //New monsters
+										else if ( hitstats->type >= KOBOLD ) //New monsters
 										{
-											messagePlayerColor(player, color, language[702], language[2000 + (hitstats->type - 21)]);
+											messagePlayerColor(player, color, language[702], language[2000 + (hitstats->type - KOBOLD)]);
 										}
 									}
 									else
@@ -4654,4 +4657,226 @@ bool Entity::checkFriend(Entity* your)
 	}
 
 	return result;
+}
+
+
+void createMonsterEquipment(Stat* stats) //MOD TODO
+{
+	int itemIndex = 0;
+	ItemType itemId;
+	Status itemStatus;
+	int itemBless;
+	int itemAppearance = rand();
+	int itemCount;
+	int chance = 1;
+	bool itemIdentified;
+	if ( stats != NULL )
+	{
+		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
+		{
+			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * 6] - 2);
+			if ( itemId >= 0 )
+			{
+				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * 6 + 1]);
+				if ( itemStatus == 0 )
+				{
+					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+				}
+				itemBless = stats->EDITOR_ITEMS[itemIndex * 6 + 2];
+				if ( itemBless == 10 )
+				{
+					itemBless = -2 + rand() % 5;
+				}
+				itemCount = stats->EDITOR_ITEMS[itemIndex * 6 + 3];
+				if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 1 )
+				{
+					itemIdentified = false;
+				}
+				else if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 2 )
+				{
+					itemIdentified = true;
+				}
+				else
+				{
+					itemIdentified = rand() % 2;
+				}
+				itemAppearance = rand();
+				chance = stats->EDITOR_ITEMS[itemIndex * 6 + 5];
+
+				if ( rand() % 100 < chance )
+				{
+					switch ( itemIndex ) {
+					case 0:
+						stats->helmet = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 1:
+						stats->weapon = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 2:
+						stats->shield = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 3:
+						stats->breastplate = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 4:
+						stats->shoes = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 5:
+						stats->ring = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 6:
+						stats->amulet = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 7:
+						stats->cloak = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 8:
+						stats->mask = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					case 9:
+						stats->gloves = newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, NULL);
+						break;
+					default:
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+int countCustomItems(Stat* stats)
+{
+	int x = 0;
+	int customItemSlotCount = 0;
+
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
+	{
+		if ( stats->EDITOR_ITEMS[x] != 1 )
+		{
+			customItemSlotCount++; //found a custom item in inventory
+		}
+	}
+
+	return customItemSlotCount; //use custom items from editor instead of default generation
+}
+
+int countDefaultItems(Stat* stats)
+{
+	int x = 0;
+	int defaultItemSlotCount = 0;
+
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
+	{
+		if ( stats->EDITOR_ITEMS[x] == 1 )
+		{
+			defaultItemSlotCount++; //found a default item in inventory
+		}
+	}
+
+	return defaultItemSlotCount;
+}
+
+void setRandomMonsterStats(Stat* stats)
+{
+	if ( stats != NULL )
+	{
+		//**************************************
+		// HEALTH
+		//**************************************
+
+		if ( stats->MAXHP == stats->HP )
+		{
+			stats->MAXHP += rand() % (stats->RANDOM_MAXHP + 1);
+
+			if ( stats->RANDOM_MAXHP == stats->RANDOM_HP )
+			{
+				// if the max hp and normal hp range is the same, hp follows the roll of maxhp.
+				stats->HP = stats->MAXHP;		
+			}
+			else
+			{
+				// roll the current hp
+				stats->HP += rand() % (stats->RANDOM_HP + 1);
+			}
+		}
+		else
+		{
+			// roll both ranges independently
+			stats->MAXHP += rand() % (stats->RANDOM_MAXHP + 1);
+			stats->HP += rand() % (stats->RANDOM_HP + 1);
+		}
+
+		if ( stats->HP > stats->MAXHP )
+		{
+			// check if hp exceeds maximums
+			stats->HP = stats->MAXHP;
+		}
+		stats->OLDHP = stats->HP;
+
+		//**************************************
+		// MANA
+		//**************************************
+
+		if ( stats->MAXMP == stats->MP )
+		{
+			stats->MAXMP += rand() % (stats->RANDOM_MAXMP + 1);
+
+			if ( stats->RANDOM_MAXMP == stats->RANDOM_MP )
+			{
+				// if the max mp and normal mp range is the same, mp follows the roll of maxmp.
+				stats->MP = stats->MAXMP;
+			}
+			else
+			{
+				// roll the current mp
+				stats->MP += rand() % (stats->RANDOM_MP + 1);
+			}
+		}
+		else
+		{
+			// roll both ranges independently
+			stats->MAXMP += rand() % (stats->RANDOM_MAXMP + 1);
+			stats->MP += rand() % (stats->RANDOM_MP + 1);
+		}
+
+		if ( stats->MP > stats->MAXMP )
+		{
+			// check if mp exceeds maximums
+			stats->MP = stats->MAXMP;
+		}
+
+		//**************************************
+		// REST OF STATS
+		//**************************************
+
+		stats->STR += rand() % (stats->RANDOM_STR + 1);
+		stats->DEX += rand() % (stats->RANDOM_DEX + 1);
+		stats->CON += rand() % (stats->RANDOM_CON + 1);
+		stats->INT += rand() % (stats->RANDOM_INT + 1);
+		stats->PER += rand() % (stats->RANDOM_PER + 1);
+		stats->CHR += rand() % (stats->RANDOM_CHR + 1);
+
+		stats->LVL += rand() % (stats->RANDOM_LVL + 1);
+		stats->GOLD += rand() % (stats->RANDOM_GOLD + 1);
+	}
+
+	// debug print out each monster spawned
+
+	/*messagePlayer(0, "Set stats to: ");
+	messagePlayer(0, "MAXHP: %d", stats->MAXHP);
+	messagePlayer(0, "HP: %d", stats->HP);
+	messagePlayer(0, "MAXMP: %d", stats->MAXMP);
+	messagePlayer(0, "MP: %d", stats->MP);
+	messagePlayer(0, "Str: %d", stats->STR);
+	messagePlayer(0, "Dex: %d", stats->DEX);
+	messagePlayer(0, "Con: %d", stats->CON);
+	messagePlayer(0, "Int: %d", stats->INT);
+	messagePlayer(0, "Per: %d", stats->PER);
+	messagePlayer(0, "Chr: %d", stats->CHR);
+	messagePlayer(0, "LVL: %d", stats->LVL);
+	messagePlayer(0, "GOLD: %d", stats->GOLD);*/
+
+
+	return;
 }

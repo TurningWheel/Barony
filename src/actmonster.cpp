@@ -182,7 +182,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		node->element = NULL;
 		node->deconstructor = &emptyDeconstructor;
 
-		myStats = new Stat();
+		myStats = new Stat(creature + 1000);
 		node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->size = sizeof(myStats);
@@ -192,7 +192,6 @@ Entity* summonMonster(Monster creature, long x, long y)
 			myStats->leader_uid = entity->parent;
 			entity->parent = 0;
 		}
-
 		myStats->type = creature;
 	}
 
@@ -395,16 +394,16 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[INCUBUS][0][2]; // -1.5
 				break;
 			case VAMPIRE:
-				entity->z = -.5;
-				entity->focalx = limbs[VAMPIRE][0][0]; // 0
-				entity->focaly = limbs[VAMPIRE][0][1]; // 0
-				entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
+				entity->z = -1;
+				entity->focalx = limbs[HUMAN][0][0]; // 0
+				entity->focaly = limbs[HUMAN][0][1]; // 0
+				entity->focalz = limbs[HUMAN][0][2]; // -1.5
 				break;
 			case SHADOW:
 				entity->z = -1;
 				entity->focalx = limbs[SHADOW][0][0]; // 0
 				entity->focaly = limbs[SHADOW][0][1]; // 0
-				entity->focalz = limbs[SHADOW][0][2]; // -1.5
+				entity->focalz = limbs[SHADOW][0][2]; // -1.75
 				break;
 			case COCKATRICE:
 				entity->z = -4.5;
@@ -715,7 +714,7 @@ void actMonster(Entity* my)
 			{
 				initKobold(my, NULL);
 			}
-			else if ( my->sprite == 431 )     // shadow head
+			else if ( my->sprite == 481 )     // shadow head
 			{
 				initShadow(my, NULL);
 			}
@@ -822,7 +821,7 @@ void actMonster(Entity* my)
 			}
 			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
 			{
-				scarabAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+				scarabAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else if ( my->sprite == 475 )     // crystal golem head
 			{
@@ -836,7 +835,7 @@ void actMonster(Entity* my)
 			{
 				vampireMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
-			else if ( my->sprite == 431 )     // shadow head
+			else if ( my->sprite == 481 )     // shadow head
 			{
 				shadowMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
@@ -995,6 +994,7 @@ void actMonster(Entity* my)
 					break; //This should never be reached.
 			}
 		}
+
 		MONSTER_INIT = 2;
 		if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
@@ -1265,13 +1265,13 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					if ( hitstats->type < 21 ) //Original monster count
+					if ( myStats->type < KOBOLD ) //Original monster count
 					{
 						snprintf(whatever, 255, language[1499], stats[c]->name, language[90 + myStats->type], myStats->obituary);
 					}
-					else if ( hitstats->type >= 21 ) //New monsters
+					else if ( myStats->type >= KOBOLD ) //New monsters
 					{
-						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - 21)], myStats->obituary);
+						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - KOBOLD)], myStats->obituary);
 					}
 				}
 				messagePlayer(c, whatever);
@@ -1711,13 +1711,13 @@ void actMonster(Entity* my)
 	char namesays[32];
 	if ( !strcmp(myStats->name, "") )
 	{
-		if ( (int)myStats->type < 21 ) //Original monster count
+		if ( myStats->type < KOBOLD ) //Original monster count
 		{
-			snprintf(namesays, 31, language[513], language[90 + (int)myStats->type]);
+			snprintf(namesays, 31, language[513], language[90 + myStats->type]);
 		}
-		else if ( (int)myStats->type >= 21 ) //New monsters
+		else if ( myStats->type >= KOBOLD ) //New monsters
 		{
-			snprintf(namesays, 31, language[513], language[2000 + ((int)myStats->type - 21)]);
+			snprintf(namesays, 31, language[513], language[2000 + myStats->type - KOBOLD]);
 		}
 	}
 	else
@@ -1746,13 +1746,13 @@ void actMonster(Entity* my)
 		{
 			if ( !strcmp(myStats->name, "") )
 			{
-				if ( hitstats->type < 21 ) //Original monster count
+				if ( myStats->type < KOBOLD ) //Original monster count
 				{
 					messagePlayer(monsterclicked, language[514], language[90 + myStats->type]);
 				}
-				else if ( hitstats->type >= 21 ) //New monsters
+				else if ( myStats->type >= KOBOLD ) //New monsters
 				{
-					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - 21)]);
+					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - KOBOLD)]);
 				}
 			}
 			else
@@ -1813,13 +1813,13 @@ void actMonster(Entity* my)
 									}
 									else
 									{
-										if ( hitstats->type < 21 ) //Original monster count
+										if ( myStats->type < KOBOLD ) //Original monster count
 										{
 											messagePlayer(monsterclicked, language[529], language[90 + myStats->type]);
 										}
-										else if ( hitstats->type >= 21 ) //New monsters
+										else if ( myStats->type >= KOBOLD ) //New monsters
 										{
-											messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - 21)]);
+											messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - KOBOLD)]);
 										}
 									}
 									monsterMoveAside(my, players[monsterclicked]->entity);
@@ -4303,7 +4303,7 @@ timeToGoAgain:
 		}
 		else if ( myStats->type == SCARAB )
 		{
-			scarabAnimate(my, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			scarabAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 		else if ( myStats->type == KOBOLD )
 		{

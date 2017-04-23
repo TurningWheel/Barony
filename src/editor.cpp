@@ -9,6 +9,8 @@
 
 -------------------------------------------------------------------------------*/
 
+#pragma once
+
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
@@ -18,10 +20,13 @@
 //#include "player.hpp"
 
 Entity* selectedEntity = nullptr;
+Entity* lastSelectedEntity = nullptr;
 Sint32 mousex = 0, mousey = 0;
 Sint32 omousex = 0, omousey = 0;
 Sint32 mousexrel = 0, mouseyrel = 0;
-
+int itemSelect = 0;
+int itemSlotSelected = -1;
+char itemName[128];
 bool splitscreen = false; //Unused variable, for game only.
 
 int game = 0;
@@ -31,6 +36,54 @@ void handleEvents(void);
 void mainLogic(void);
 
 map_t copymap;
+
+int errorMessage = 0;
+int errorArr[8] =
+{
+	0, 0, 0, 0, 0, 0, 0, 0
+};
+
+char monsterPropertyNames[13][11] = 
+{
+	"Name:",
+	"MAX HP:",
+	"HP:",
+	"MAX MP:",
+	"MP:",
+	"LEVEL:",
+	"GOLD:",
+	"STR:",
+	"DEX:",
+	"CON:",
+	"INT:",
+	"PER:",
+	"CHR:"
+};
+
+char chestPropertyNames[2][20] =
+{
+	"Orientation: (0-3)",
+	"Chest Type: (0-7)"
+};
+
+char itemPropertyNames[5][32] =
+{
+	"Item ID: (1-255)",
+	"Status: (0-5)",
+	"Blessing: (-9 to +9)",
+	"Quantity: (1-9)",
+	"Identified: (0-2)"
+};
+
+char monsterItemPropertyNames[6][32] =
+{
+	"Item ID: (0-255)",
+	"Status: (0-5)",
+	"Blessing: (-9 to +9)",
+	"Quantity: (1-9)",
+	"Identified: (0-2)",
+	"Chance (1-100)"
+};
 
 void closeNetworkInterfaces()
 {
@@ -54,6 +107,17 @@ void mainLogic(void)
 	{
 		messagetime--;
 	}
+
+	if ( errorMessage > 0 )
+	{
+		errorMessage--;
+		if ( errorMessage == 0 )
+		{
+			for ( int i = 0; i < sizeof(errorArr) / sizeof(int); i++ )
+				errorArr[i] = 0;
+		}
+	}
+	
 
 	// basic editing functions are not available under these cases
 	if ( subwindow || tilepalette || spritepalette )
@@ -337,6 +401,11 @@ void handleEvents(void)
 						inputstr[strlen(inputstr) - 1] = 0;
 						cursorflash = ticks;
 					}
+					else if ( event.key.keysym.sym == SDLK_BACKQUOTE && strlen(inputstr) > 0 )
+					{
+						inputstr[strlen(inputstr) - 1] = 0;
+						cursorflash = ticks;
+					}
 #endif
 					else if ( event.key.keysym.sym == SDLK_c && SDL_GetModState()&KMOD_CTRL )
 					{
@@ -360,8 +429,11 @@ void handleEvents(void)
 				{
 					if ( (event.text.text[0] != 'v' && event.text.text[0] != 'V') || !(SDL_GetModState()&KMOD_CTRL) )
 					{
-						strncat(inputstr, event.text.text, std::max<size_t>(0, inputlen - strlen(inputstr)));
-						cursorflash = ticks;
+						if ( event.text.text[0] != '`' )
+						{
+							strncat(inputstr, event.text.text, std::max<size_t>(0, inputlen - strlen(inputstr)));
+							cursorflash = ticks;
+						}
 					}
 				}
 				break;
@@ -781,6 +853,8 @@ int main(int argc, char** argv)
 	light_t* light = NULL;
 	bool savedundo = false;
 	smoothlighting = true;
+
+	Stat* spriteStats = NULL;
 
 	processCommandLine(argc, argv);
 
@@ -1311,6 +1385,51 @@ int main(int argc, char** argv)
 							{
 								makeUndo();
 								selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+								// create a temporary stat struct for the copied sprite
+								Stat* tmpStats = lastSelectedEntity->getStats();
+
+								lastSelectedEntity = selectedEntity;
+								int spriteType = checkSpriteType(selectedEntity->sprite);
+								if ( spriteType == 1 )
+								{
+									//STAT ASSIGNMENT
+									Stat* myStats = NULL;
+									if ( multiplayer != CLIENT )
+									{
+										// need to give the entity its list stuff.
+										// create an empty first node for traversal purposes
+										node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
+										node2->element = NULL;
+										node2->deconstructor = &emptyDeconstructor;
+
+										myStats = new Stat(selectedEntity->sprite);
+										node2 = list_AddNodeLast(&selectedEntity->children);
+										if ( tmpStats != NULL )
+										{
+											node2->element = tmpStats->copyStats();
+										}
+										else
+										{
+											// if for some reason the previous sprite did not have stats initialised
+											node2->element = myStats;
+										}
+										//					node2->deconstructor = &myStats->~Stat;
+										node2->size = sizeof(myStats);
+									}
+								}
+								else if ( spriteType == 2 )
+								{
+									selectedEntity->yaw = 1;
+								}
+								else if ( spriteType == 3 )
+								{
+									selectedEntity->skill[10] = 1;
+									selectedEntity->skill[11] = 0;
+									selectedEntity->skill[12] = 10;
+									selectedEntity->skill[13] = 1;
+									selectedEntity->skill[15] = 1;
+								}
 								selectedEntity->x = entity->x;
 								selectedEntity->y = entity->y;
 								mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -1328,6 +1447,7 @@ int main(int argc, char** argv)
 									// select sprite
 									makeUndo();
 									selectedEntity = entity;
+									lastSelectedEntity = selectedEntity;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
 								}
 								else if ( mousestatus[SDL_BUTTON_RIGHT] )
@@ -1335,6 +1455,50 @@ int main(int argc, char** argv)
 									// duplicate sprite
 									makeUndo();
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
+
+									Stat* tmpStats = lastSelectedEntity->getStats();
+
+									lastSelectedEntity = selectedEntity;
+									int spriteType = checkSpriteType(selectedEntity->sprite);
+									if ( spriteType == 1 )
+									{
+										//STAT ASSIGNMENT
+										Stat* myStats = NULL;
+										if ( multiplayer != CLIENT )
+										{
+											// need to give the entity its list stuff.
+											// create an empty first node for traversal purposes
+											node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
+											node2->element = NULL;
+											node2->deconstructor = &emptyDeconstructor;
+
+											myStats = new Stat(selectedEntity->sprite);
+											node2 = list_AddNodeLast(&selectedEntity->children);
+											if ( tmpStats != NULL )
+											{
+												node2->element = tmpStats->copyStats();
+											}
+											else
+											{
+												// if for some reason the previous sprite did not have stats initialised
+												node2->element = myStats;
+											}
+											//					node2->deconstructor = &myStats->~Stat;
+											node2->size = sizeof(myStats);
+										}
+									}
+									else if ( spriteType == 2 )
+									{
+										selectedEntity->yaw = 1;
+									}
+									else if ( spriteType == 3 )
+									{
+										selectedEntity->skill[10] = 1;
+										selectedEntity->skill[11] = 0;
+										selectedEntity->skill[12] = 10;
+										selectedEntity->skill[13] = 1;
+										selectedEntity->skill[15] = 1;
+									}
 									selectedEntity->x = entity->x;
 									selectedEntity->y = entity->y;
 									mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -1817,7 +1981,7 @@ int main(int argc, char** argv)
 				}
 
 				// new map and attributes windows
-				if ( newwindow )
+				if ( newwindow == 1 )
 				{
 					printText(font8x8_bmp, subx1 + 8, suby1 + 28, "Map name:");
 					drawDepressed(subx1 + 4, suby1 + 40, subx2 - 4, suby1 + 56);
@@ -1942,6 +2106,842 @@ int main(int argc, char** argv)
 						{
 							printText(font8x8_bmp, subx1 + 108 + strlen(heighttext) * 8, suby2 - 20, "\26");
 						}
+					}
+				}
+				else if ( newwindow == 2 ) 
+				{
+					if ( selectedEntity != NULL ) 
+					{
+						spriteStats = selectedEntity->getStats();
+						if ( spriteStats != nullptr )
+						{
+							int numProperties = sizeof(monsterPropertyNames) / sizeof(monsterPropertyNames[0]); //find number of entries in property list
+							const int lenProperties = sizeof(monsterPropertyNames[0]) / sizeof(char); //find length of entry in property list
+							int spacing = 20; // px between each item in the list.
+							int pad_y1 = suby1 + 28; // 28 px spacing from subwindow start.
+							int pad_x1 = subx1 + 8; // 8px spacing from subwindow start.
+							int pad_x2 = 64;
+							int pad_y2 = suby1 + 28 + 2 * spacing;
+							int pad_x3 = 44; //property field width
+							int pad_x4;
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+							char tmpPropertyName[lenProperties] = "";
+							for ( int i = 0; i < numProperties; i++ )
+							{
+								strcpy(tmpPropertyName, monsterPropertyNames[i]);
+								pad_y1 = suby1 + 28 + i * spacing;
+
+								// value of 0 is name field, should be longer
+								if ( i == 0 )
+								{
+									drawDepressed(pad_x1 - 4, pad_y1 + 16 - 4, subx2 - 4, pad_y1 + 28);
+									// print values on top of boxes
+									printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
+									printText(font8x8_bmp, pad_x1, pad_y1 + 16, spriteProperties[i]);
+								}
+								else
+								{
+									pad_y1 += spacing;
+									if ( i < 7 )
+									{
+										if ( i < 3 ) //hp
+										{
+											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										}
+										else if ( i < 5 ) //mp
+										{
+											color = SDL_MapRGB(mainsurface->format, 0, 255, 228);
+										}
+										else if ( i == 5 ) //level
+										{
+											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
+										}
+										else if ( i == 6 ) //gold
+										{
+											color = SDL_MapRGB(mainsurface->format, 255, 192, 0);
+										}
+										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
+										// draw another box side by side, spaced by pad_x3 + 16
+										drawDepressed(pad_x1 + pad_x2 - 4 + (pad_x3 + 16), pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16), pad_y1 + 16 - 4);
+										// print values on top of boxes
+										// print property name
+										printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
+										// print dash between boxes
+										printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 - 4 + (pad_x3 + 4), pad_y1, color, "-");
+										// print left text
+										printText(font8x8_bmp, pad_x1 + pad_x2, pad_y1, spriteProperties[i]);
+										// print right text
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 16), pad_y1, spriteProperties[i + 12]);
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										pad_y1 += spacing + 10;
+										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
+										// draw another box side by side, spaced by pad_x3 + 16
+										drawDepressed(pad_x1 + pad_x2 - 4 + (pad_x3 + 16), pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16), pad_y1 + 16 - 4);
+										// print values on top of boxes
+										// print property name
+										printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
+										// print dash between boxes
+										printTextFormattedColor(font8x8_bmp, pad_x1 + pad_x2 - 4 + (pad_x3 + 4), pad_y1, color, "-");
+										// print left text
+										printText(font8x8_bmp, pad_x1 + pad_x2, pad_y1, spriteProperties[i]);
+										// print right text
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 16), pad_y1, spriteProperties[i + 12]);
+									}
+								}
+							}
+
+							
+							// Cycle properties with TAB.
+							if ( keystatus[SDL_SCANCODE_TAB] )
+							{
+								keystatus[SDL_SCANCODE_TAB] = 0;
+								cursorflash = ticks;
+								editproperty++;
+								if ( editproperty == numProperties * 2 - 1 )
+								{
+									// limit of properties is twice the vertical count, minus 1 for name (every property has a random component)
+									editproperty = 0;
+								}
+								
+								inputstr = spriteProperties[editproperty];
+							}
+							// TODO - add escape and return key functionality
+							/*
+							if ( keystatus[SDL_SCANCODE_ESCAPE] )
+							{
+								keystatus[SDL_SCANCODE_ESCAPE] = 0;
+								buttonCloseSpriteSubwindow(NULL);
+							}
+							if ( keystatus[SDL_SCANCODE_RETURN] )
+							{
+								keystatus[SDL_SCANCODE_RETURN] = 0;
+								buttonSpritePropertiesConfirm(NULL);
+							}
+							*/
+							// select a textbox
+							if ( mousestatus[SDL_BUTTON_LEFT] )
+							{
+								for ( int i = 0; i < numProperties; i++ )
+								{
+									pad_y1 = suby1 + 28 + i * spacing;
+									if ( i == 0 )
+									{
+										if ( omousex >= pad_x1 - 4 && omousey >= pad_y1 + 16 - 4 && omousex < subx2 - 4 && omousey < pad_y1 + 32 - 4 )
+										{
+											inputstr = spriteProperties[i];
+											editproperty = i;
+											cursorflash = ticks;
+										}
+									}
+									else
+									{
+										pad_y1 += spacing;
+										if ( i < 7 )
+										{
+											// check if mouse is in left property box
+											if ( omousex >= pad_x1 + pad_x2 - 4 && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i];
+												editproperty = i;
+												cursorflash = ticks;
+											}
+											// check if mouse is in right property box (offset from above by pad_x3 + 16)
+											else if ( omousex >= pad_x1 + pad_x2 - 4 + (pad_x3 + 16) && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16) && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i + 12];
+												editproperty = i + 12;
+												cursorflash = ticks;
+											}
+										}
+										else
+										{
+											pad_y1 += spacing + 10;
+											// check if mouse is in left property box
+											if ( omousex >= pad_x1 + pad_x2 - 4 && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i];
+												editproperty = i;
+												cursorflash = ticks;
+											}
+											// check if mouse is in right property box (offset from above by pad_x3 + 16)
+											else if ( omousex >= pad_x1 + pad_x2 - 4 + (pad_x3 + 16) && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 + (pad_x3 + 16) && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i + 12];
+												editproperty = i + 12;
+												cursorflash = ticks;
+											}
+										}
+									}
+								}
+
+							}
+
+							//items for monster
+							pad_y2 = suby1 + 28 + 2 * spacing;
+							pad_x3 = 40;
+							pad_x4 = subx2 - 112;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, " Helm");
+							
+							//pad_y2 += spacing * 2 - 16;
+							pad_y2 += spacing * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Amulet");
+
+							//pad_x4 += 64 * 2;
+							pad_y2 += spacing * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 4, pad_y2, color, "Armor");
+
+							//pad_x4 -= 64;
+							//pad_y2 += spacing * 2 - 16;
+							pad_y2 += spacing * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8 - 4, pad_y2, color, " Boots");
+
+							pad_y2 = suby1 + 28 + 2 * spacing;
+							pad_y2 += 16;
+							pad_x4 -= 64;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8 - 4, pad_y2, color, " Cloak");
+
+							pad_x4 += 64 * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, " Mask");
+
+							pad_x4 -= 64 * 2;
+							pad_y2 += spacing * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Weapon");
+
+							pad_x4 += 64 * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Shield");
+
+							pad_x4 -= 64 * 2;
+							pad_y2 += spacing * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, " Ring");
+
+							pad_x4 += 64 * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Gloves");
+
+							pad_x4 -= 64 * 2;
+
+							pad_y2 += 32 + spacing * 2;
+							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Inventory");
+
+
+							if ( editproperty < numProperties * 2 - 1 )   // edit property values
+							{
+								// limit of properties is twice the vertical count, minus 1 for name  (every property has a random component)
+								if ( !SDL_IsTextInputActive() )
+								{
+									SDL_StartTextInput();
+									inputstr = spriteProperties[0];
+								}
+								//strncpy(nametext,inputstr,31);
+
+								// value of 0 is the name field, else the input is a number
+								if ( editproperty == 0 )
+								{
+									inputlen = 31;
+								}
+								else
+								{
+									inputlen = 4;
+								}
+								if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+								{
+									pad_y1 = suby1 + 28 + editproperty * spacing;
+
+									if ( editproperty == 0 )
+									{
+										printText(font8x8_bmp, pad_x1 + strlen(spriteProperties[editproperty]) * 8, pad_y1 + 16, "\26");
+									}
+									else if ( editproperty < 7 )
+									{
+										pad_y1 += spacing;
+										// left box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+									else if ( editproperty < 13 )
+									{
+										pad_y1 += spacing;
+										pad_y1 += spacing + 10;
+										// left box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+									else if ( editproperty < 19 )
+									{
+										pad_y1 = suby1 + 28 + (editproperty - 12) * spacing;
+										pad_y1 += spacing;
+										// right box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 20) + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+									else if ( editproperty < 25 )
+									{
+										pad_y1 = suby1 + 28 + (editproperty - 12) * spacing;
+										pad_y1 += spacing;
+										pad_y1 += spacing + 10;
+										// right box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 20) + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+								}
+							}
+						}
+					}
+				}
+				else if ( newwindow == 3 )
+				{
+					if ( selectedEntity != NULL )
+					{
+						int numProperties = sizeof(chestPropertyNames) / sizeof(chestPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(chestPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int pad_y1 = suby1 + 28; // 28 px spacing from subwindow start.
+						int pad_x1 = subx1 + 8; // 8px spacing from subwindow start.
+						int pad_x2 = 64;
+						char tmpPropertyName[lenProperties] = "";
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							strcpy(tmpPropertyName, chestPropertyNames[i]);
+							pad_y1 = suby1 + 28 + i * spacing;
+
+							// box outlines then text
+							drawDepressed(pad_x1 - 4, suby1 + 40 + i * spacing, pad_x1 - 4 + pad_x2, suby1 + 56 + i * spacing);
+							// print values on top of boxes
+							printText(font8x8_bmp, pad_x1, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, pad_x1, pad_y1, tmpPropertyName);
+							pad_x1 = subx1 + 8;
+						}
+
+						pad_y1 = suby1 + 28 + 2 * spacing + 18;
+						pad_x1 += 18;
+						spacing = 18;
+						printText(font8x8_bmp, pad_x1 + 16, pad_y1, "Chest Facing");
+						pad_y1 = suby1 + 28 + 6 * spacing;
+						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "NORTH(3)");
+						pad_y1 = suby1 + 28 + 7 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "WEST(2)");
+						printText(font8x8_bmp, pad_x1 + 96 - 16, pad_y1, "EAST(0)");
+						pad_y1 = suby1 + 28 + 8 * spacing;
+						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "SOUTH(1)");
+
+						spacing = 14;
+						pad_y1 = suby1 + 14 + 14 * spacing;
+						pad_x1 = subx1 + 8 + 192;
+						pad_y1 = suby1 + 14 + 1 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "Chest Types");
+						pad_y1 = suby1 + 14 + 2 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "0 - Random");
+						pad_y1 = suby1 + 14 + 3 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "1 - Garbage");
+						pad_y1 = suby1 + 14 + 4 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "2 - Food");
+						pad_y1 = suby1 + 14 + 5 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "3 - Jewelry");
+						pad_y1 = suby1 + 14 + 6 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "4 - Equipment");
+						pad_y1 = suby1 + 14 + 7 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "5 - Tools");
+						pad_y1 = suby1 + 14 + 8 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "6 - Magical");
+						pad_y1 = suby1 + 14 + 9 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "7 - Potions");
+
+						pad_x1 = subx1 + 8;
+						pad_y1 = suby1 + 28;
+						spacing = 36;
+
+						// Cycle properties with TAB.
+						if ( keystatus[SDL_SCANCODE_TAB] )
+						{
+							keystatus[SDL_SCANCODE_TAB] = 0;
+							cursorflash = ticks;
+							editproperty++;
+							if ( editproperty == numProperties )
+							{
+								editproperty = 0;
+							}
+
+							inputstr = spriteProperties[editproperty];
+						}
+						if ( keystatus[SDL_SCANCODE_ESCAPE] )
+						{
+							keystatus[SDL_SCANCODE_ESCAPE] = 0;
+							buttonCloseSpriteSubwindow(NULL);
+						}
+						if ( keystatus[SDL_SCANCODE_RETURN] )
+						{
+							keystatus[SDL_SCANCODE_RETURN] = 0;
+							buttonSpritePropertiesConfirm(NULL);
+						}
+						// select a textbox
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( int i = 0; i < numProperties; i++ )
+							{
+								if ( omousex >= pad_x1 - 4 && omousey >= suby1 + 40 + i * spacing && omousex < pad_x1 - 4 + pad_x2 && omousey < suby1 + 56 + i * spacing )
+								{
+									inputstr = spriteProperties[i];
+									editproperty = i;
+									cursorflash = ticks;
+								}
+								pad_x1 = subx1 + 8;
+							}
+						}
+						if ( editproperty < numProperties )   // edit map name
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+							inputlen = 1;
+							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+							{
+								printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing, "\26");
+							}
+						}
+					}
+				}
+				else if ( newwindow == 4 || newwindow == 5 )
+				{
+					if ( selectedEntity != NULL )
+					{
+						int numProperties;
+
+						if ( newwindow == 4 )
+						{
+							numProperties = sizeof(itemPropertyNames) / sizeof(itemPropertyNames[0]); //find number of entries in property list
+						}
+						else if ( newwindow == 5 )
+						{
+							numProperties = sizeof(monsterItemPropertyNames) / sizeof(monsterItemPropertyNames[0]); //find number of entries in property list
+						}
+						const int lenProperties = 32;
+
+						int spacing = 36; // 36 px between each item in the list.
+						int verticalOffset = 20;
+						int pad_x1 = subx1 + 8 + 96 + 80; // 104 px spacing from subwindow start. handles right side item list
+						int pad_y1 = suby1 + 20 + verticalOffset; // 20 px spacing from subwindow start. handles right side item list
+						int pad_x2 = 64; // handles right side item list
+
+						int pad_y2 = (suby2 - 52) + verticalOffset - 4; //handles right side item list
+						int pad_x3 = subx1 + 8; //handles left side menu
+						int pad_y3 = suby1 + 28; // 28 px spacing from subwindow start, handles left side menu
+						int pad_x4 = 64; //handles left side menu-end
+						int pad_y4; //handles left side menu-end
+						int totalNumItems = (sizeof(itemNameStrings) / sizeof(itemNameStrings[0]));
+						int editorNumItems = totalNumItems + 1;
+						switch ( itemSlotSelected )
+						{
+							case -1:
+								break;
+							default:
+								if ( itemSlotSelected < 10 )
+								{
+									editorNumItems = 0;
+									for ( int i = 0; i < (sizeof(itemStringsByType[itemSlotSelected]) / sizeof(itemStringsByType[itemSlotSelected][0])); i++ )
+									{
+										if ( strcmp(itemStringsByType[itemSlotSelected][i], "") == 0) //look for the end of the array
+										{
+											i = totalNumItems;
+										}
+										editorNumItems++;
+									}
+								}
+								break;
+						}
+						int propertyInt = 0;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							if ( newwindow == 4 )
+							{
+								strcpy(tmpPropertyName, itemPropertyNames[i]);
+
+							}
+							else if ( newwindow == 5 )
+							{
+								strcpy(tmpPropertyName, monsterItemPropertyNames[i]);
+							}
+							pad_y3 = suby1 + 40 + spacing + i * spacing;
+							pad_y4 = suby1 + 44 + 12 + spacing + i * spacing;
+							// box outlines then text
+							drawDepressed(pad_x3 - 4, pad_y3, pad_x3 - 4 + pad_x2, pad_y4);
+							// print values on top of boxes
+							printText(font8x8_bmp, pad_x3, pad_y3 - 12, tmpPropertyName);
+							printText(font8x8_bmp, pad_x3, pad_y3 + 4, spriteProperties[i]);
+
+							propertyInt = atoi(spriteProperties[i]);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( newwindow == 4 )
+									{
+										if ( propertyInt > totalNumItems - 1 || propertyInt < 1 )
+										{
+											errorMessage = 60;
+											errorArr[i] = 1;
+											if ( propertyInt < 1 )
+											{
+												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1);
+											}
+											else
+											{
+												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 1);
+											}
+										}
+									}
+									else
+									{
+										if ( propertyInt > totalNumItems - 1 || propertyInt < 0 )
+										{
+											errorMessage = 60;
+											errorArr[i] = 1;
+											if ( propertyInt < 0 )
+											{
+												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0);
+											}
+											else
+											{
+												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 1);
+											}
+										}
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt == 2 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 200, 128, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Decrepit");
+									}
+									else if ( propertyInt == 3 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Worn");
+									}
+									else if ( propertyInt == 4 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 128, 200, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Servicable");
+									}
+									else if ( propertyInt == 5 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Excellent");
+									}
+									else if ( propertyInt == 1 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Broken");
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, colorRandom, "Random");
+									}
+									else if ( propertyInt < 0 || propertyInt > 5 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( strcmp(spriteProperties[i], "00") == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, colorRandom, "Random");
+									}
+									else if ( propertyInt > 9 || propertyInt < -9 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 9 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
+									}
+								}
+								else if ( i == 4 )
+								{
+									if ( propertyInt == 2 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Identified");
+									}
+									else if ( propertyInt == 1 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Unidentified");
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, colorRandom, "Random");
+									}
+									else
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0);
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 100 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 100); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										strcpy(tmpStr, spriteProperties[i]); //reset
+										strcat(tmpStr, " %%");
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, tmpStr);
+									}
+								}
+							}
+
+							if ( errorMessage )
+							{
+								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Invalid ID!");
+								}
+							}
+
+						}
+
+
+
+						drawDepressed(pad_x1, pad_y1, subx2 - 20, pad_y2);
+						drawDepressed(subx2 - 20, pad_y1, subx2 - 4, pad_y2);
+						slidersize = std::min<int>(((pad_y2 - 1) - (pad_y1 + 1)), ((pad_y2 - 1) - (pad_y1 + 1)) / ((real_t)(editorNumItems) / 20)); //TODO: Why are int and real_t being compared?
+						slidery = std::min(std::max(pad_y1, slidery), pad_y2 - 1 - slidersize);
+						drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
+
+						// directory list offset from slider
+						y2 = ((real_t)(slidery - (pad_y1)) / (pad_y2 - (pad_y1))) * editorNumItems;
+						if ( scroll )
+						{
+							slidery -= 8 * scroll;
+							slidery = std::min(std::max(pad_y1, slidery), pad_y2 - 1 - slidersize);
+							y2 = ((real_t)(slidery - (pad_y1)) / ((pad_y2) - (pad_y1))) * editorNumItems;
+							itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							scroll = 0;
+						}
+						if ( mousestatus[SDL_BUTTON_LEFT] && omousex >= subx2 - 20 && omousex < subx2 - 4 && omousey >= (pad_y1) && omousey < pad_y2 )
+						{
+							slidery = oslidery + mousey - omousey;
+							slidery = std::min(std::max(pad_y1, slidery), pad_y2 - 1 - slidersize);
+							y2 = ((real_t)(slidery - (pad_y1)) / ((pad_y2) - (pad_y1))) * editorNumItems;
+							mclick = 1;
+							itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+						}
+						else
+						{
+							oslidery = slidery;
+						}
+
+						pos.x = pad_x1 ;
+						pos.y = pad_y1 + 4 + (itemSelect - y2) * 8;
+						pos.w = subx2 - pad_x1 - 24;
+						pos.h = 8;
+						drawRect(&pos, SDL_MapRGB(mainsurface->format, 64, 64, 64), 255);
+
+						// print all the items
+						x = pad_x1;
+						y = pad_y1 + 4;
+						if ( newwindow == 4 )
+						{
+							c = std::min<long unsigned int>(editorNumItems, 20 + y2); //TODO: Why are long unsigned int and int being compared?
+						}
+						else
+						{
+							c = std::min<long unsigned int>(editorNumItems, 24 + y2); //TODO: Why are long unsigned int and int being compared?
+						}
+						for ( z = y2; z < c; z++ )
+						{
+							if ( newwindow == 5 && z == 1 )
+							{
+								printText(font8x8_bmp, x, y, "default_random");
+							}
+							else
+							{
+								switch ( itemSlotSelected )
+								{
+									case -1:
+										printText(font8x8_bmp, x, y, itemNameStrings[z]);
+										break;
+									default:
+										if ( itemSlotSelected < 10 )
+										{
+											printText(font8x8_bmp, x, y, itemStringsByType[itemSlotSelected][z]);
+										}
+										else
+										{
+											printText(font8x8_bmp, x, y, itemNameStrings[z]);
+										}
+										break;
+								}
+									
+							}
+							y += 8;
+						}
+
+						// item selection box
+						pad_y3 = suby1 + 40;
+						pad_y4 = suby1 + 44 + 12;
+						// box outlines then text
+						drawDepressed(pad_x3 - 4, pad_y3, pad_x3 - 4 + pad_x2 + 112, pad_y4);
+						// print values on top of boxes
+						printText(font8x8_bmp, pad_x3, pad_y3 - 12, "Item Name");
+						printText(font8x8_bmp, pad_x1, pad_y3 - 12, "Click to select item");
+						printText(font8x8_bmp, pad_x3, pad_y3 + 4, itemName);
+						//drawDepressed(pad_x1, suby2 - 48, subx2 - 4, suby2 - 32);
+						//printText(font8x8_bmp, pad_x1, suby2 - 44, itemName);
+
+						// select a file
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							if ( omousex >= pad_x1 && omousex < subx2 - 24 && omousey >= pad_y1 + 4 && omousey < pad_y2 - 4 )
+							{
+								itemSelect = y2 + ((omousey - (pad_y1 + 4)) >> 3);
+								if ( newwindow == 4 )
+								{
+									itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+								}
+								else
+								{
+									itemSelect = std::min<long unsigned int>(std::max(y2, itemSelect), std::min<long unsigned int>(editorNumItems - 1, y2 + 23)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+								}
+								switch ( itemSlotSelected )
+								{
+									case -1:
+										strcpy(itemName, itemNameStrings[itemSelect]);
+										break;
+									default:
+										if ( itemSlotSelected < 10 )
+										{
+											strcpy(itemName, itemStringsByType[itemSlotSelected][itemSelect]);
+										}
+										else
+										{
+											strcpy(itemName, itemNameStrings[itemSelect]);
+										}
+										break;
+								}
+								//inputstr = itemName;
+								editorNumItems = (sizeof(itemNameStrings) / sizeof(itemNameStrings[0]));
+								for ( z = 0; z < editorNumItems; z++ )
+								{
+									if ( strcmp(itemName, itemNameStrings[z]) == 0 )
+									{
+										char tmpStr[5];
+										snprintf(tmpStr, sizeof(tmpStr), "%d", z);
+										strcpy(spriteProperties[0], tmpStr);
+										
+										z = editorNumItems;
+									}
+								}
+							}
+
+							for ( int i = 0; i < numProperties; i++ )
+							{
+								if ( omousex >= pad_x3 - 4 && omousey >= suby1 + 40 + spacing + i * spacing && omousex < pad_x3 - 4 + pad_x4 && omousey < suby1 + 56 + spacing + i * spacing )
+								{
+									inputstr = spriteProperties[i];
+									editproperty = i;
+									cursorflash = ticks;
+								}
+							}
+						}
+
+						// Cycle properties with TAB.
+						if ( keystatus[SDL_SCANCODE_TAB] )
+						{
+							keystatus[SDL_SCANCODE_TAB] = 0;
+							cursorflash = ticks;
+							editproperty++;
+							if ( editproperty == numProperties )
+							{
+								editproperty = 0;
+							}
+
+							inputstr = spriteProperties[editproperty];
+						}
+						if ( keystatus[SDL_SCANCODE_ESCAPE] )
+						{
+							keystatus[SDL_SCANCODE_ESCAPE] = 0;
+							buttonCloseSpriteSubwindow(NULL);
+						}
+						if ( keystatus[SDL_SCANCODE_RETURN] )
+						{
+							keystatus[SDL_SCANCODE_RETURN] = 0;
+							buttonSpritePropertiesConfirm(NULL);
+						}
+						
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							if ( editproperty == 0 )
+							{
+								inputlen = 3;
+								//update the item name when the ID changes.
+								if ( newwindow == 5 && atoi(spriteProperties[0]) == 1 )
+								{
+									strcpy(itemName, "default_random");
+								}
+								else
+								{
+									strcpy(itemName, itemNameStrings[atoi(spriteProperties[0])]);
+								}
+							}
+							else if( editproperty == 2 )
+							{
+								inputlen = 2;
+							}
+							else if ( editproperty == 5 )
+							{
+								inputlen = 3;
+							}
+							else
+							{
+								inputlen = 1;
+							}
+
+							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+							{
+								printText(font8x8_bmp, pad_x3 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + spacing + editproperty * spacing, "\26");
+							}
+						}
+						
 					}
 				}
 			}
@@ -2117,6 +3117,11 @@ int main(int argc, char** argv)
 					selectedTool = 3;
 					selectedarea = false;
 				}
+				if ( keystatus[SDL_SCANCODE_F2] )
+				{
+					keystatus[SDL_SCANCODE_F2] = 0;
+					buttonSpriteProperties(NULL);
+				}
 			}
 			// process and draw buttons
 			handleButtons();
@@ -2214,6 +3219,39 @@ int main(int argc, char** argv)
 				{
 					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities);
 					selectedEntity = entity;
+					lastSelectedEntity = selectedEntity;
+					int spriteType = checkSpriteType(selectedEntity->sprite);
+					if ( spriteType == 1 )
+					{
+						//STAT ASSIGNMENT
+						Stat* myStats = NULL;
+						if ( multiplayer != CLIENT )
+						{
+							// need to give the entity its list stuff.
+							// create an empty first node for traversal purposes
+							node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
+							node2->element = NULL;
+							node2->deconstructor = &emptyDeconstructor;
+
+							myStats = new Stat(selectedEntity->sprite);
+							node2 = list_AddNodeLast(&selectedEntity->children);
+							node2->element = myStats;
+							//					node2->deconstructor = &myStats->~Stat;
+							node2->size = sizeof(myStats);
+						}
+					}
+					else if ( spriteType == 2 )
+					{
+						selectedEntity->yaw = 1;
+					}
+					else if ( spriteType == 3 )
+					{
+						selectedEntity->skill[10] = 1;
+						selectedEntity->skill[11] = 0;
+						selectedEntity->skill[12] = 10;
+						selectedEntity->skill[13] = 1;
+						selectedEntity->skill[15] = 1;
+					}
 				}
 
 				mclick = 0;
@@ -2341,3 +3379,6 @@ int main(int argc, char** argv)
 	list_FreeAll(&undolist);
 	return deinitApp();
 }
+
+
+

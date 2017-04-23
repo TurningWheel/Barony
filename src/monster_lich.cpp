@@ -37,57 +37,56 @@ void initLich(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = MALE;
-		myStats->appearance = rand();
-		strcpy(myStats->name, "Baron Herx");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 1000 + 250 * numplayers;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 1000;
-		myStats->MAXMP = 1000;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 20;
-		myStats->DEX = 8;
-		myStats->CON = 8;
-		myStats->INT = 20;
-		myStats->PER = 80;
-		myStats->CHR = 50;
-		myStats->EXP = 0;
-		myStats->LVL = 25;
-		myStats->GOLD = 100;
-		myStats->HUNGER = 900;
-		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		if ( myStats != NULL )
 		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+
+			// random effects
+			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+														 // count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
 			{
-				myStats->EFFECTS[c] = false;
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+				default:
+					break;
 			}
-			if ( c < NUMEFFECTS )
+
+			//give weapon
+			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->EFFECTS_TIMERS[c] = 0;
+				myStats->weapon = newItem(SPELLBOOK_LIGHTNING, EXCELLENT, 0, 1, 0, false, NULL);
 			}
 		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		myStats->weapon = newItem(SPELLBOOK_LIGHTNING, EXCELLENT, 0, 1, 0, false, NULL);
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
 	// right arm

@@ -154,24 +154,24 @@ void clickDescription(int player, Entity* entity)
 							{
 								if ( strcmp(stats->name, "") )
 								{
-									if ( stats->type < 21 ) //Original monster count
+									if ( stats->type < KOBOLD ) //Original monster count
 									{
 										messagePlayer(player, language[253], language[90 + stats->type], stats->name);
 									}
-									else if ( stats->type >= 21 ) //New monsters
+									else if ( stats->type >= KOBOLD ) //New monsters
 									{
-										messagePlayer(player, language[253], language[2000 + (stats->type - 21)], stats->name);
+										messagePlayer(player, language[253], language[2000 + (stats->type - KOBOLD)], stats->name);
 									}
 								}
 								else
 								{
-									if ( stats->type < 21 ) //Original monster count
+									if ( stats->type < KOBOLD ) //Original monster count
 									{
 										messagePlayer(player, language[254], language[90 + stats->type]);
 									}
-									else if ( stats->type >= 21 ) //New monsters
+									else if ( stats->type >= KOBOLD ) //New monsters
 									{
-										messagePlayer(player, language[254], language[2000 + (stats->type - 21)]);
+										messagePlayer(player, language[254], language[2000 + (stats->type - KOBOLD)]);
 									}
 								}
 							}
@@ -270,24 +270,24 @@ void clickDescription(int player, Entity* entity)
 			{
 				if ( !strcmp(stat->name, "") )
 				{
-					if ( stat->type < 21 ) //Original monster count
+					if ( stat->type < KOBOLD ) //Original monster count
 					{
 						messagePlayer(player, language[254], language[90 + stat->type]);
 					}
-					else if ( stat->type >= 21 ) //New monsters
+					else if ( stat->type >= KOBOLD ) //New monsters
 					{
-						messagePlayer(player, language[254], language[2000 + (stat->type - 21)]);
+						messagePlayer(player, language[254], language[2000 + (stat->type - KOBOLD)]);
 					}
 				}
 				else
 				{
-					if ( stat->type < 21 ) //Original monster count
+					if ( stat->type < KOBOLD ) //Original monster count
 					{
 						messagePlayer(player, language[253], language[90 + stat->type]);
 					}
-					else if ( stat->type >= 21 ) //New monsters
+					else if ( stat->type >= KOBOLD ) //New monsters
 					{
-						messagePlayer(player, language[253], language[2000 + (stat->type - 21)]);
+						messagePlayer(player, language[253], language[2000 + (stat->type - KOBOLD)]);
 					}
 				}
 			}

@@ -40,21 +40,6 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats )
-		{
-			for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-			{
-				if ( c < NUMPROFICIENCIES )
-				{
-					myStats->PROFICIENCIES[c] = 0;
-				}
-				if ( c < NUMEFFECTS )
-				{
-					myStats->EFFECTS[c] = false;
-					myStats->EFFECTS_TIMERS[c] = 0;
-				}
-			}
-		}
 
 		int x, y;
 		MONSTER_SHOPXS = my->x / 16;
@@ -116,52 +101,59 @@ void initShopkeeper(Entity* my, Stat* myStats)
 			}
 		}
 
-		myStats->sex = MALE;
-		myStats->appearance = rand();
-		strcpy(myStats->name, language[158 + rand() % 26]);
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 300;
-		myStats->MAXHP = 300;
-		myStats->MP = 200;
-		myStats->MAXMP = 200;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 10;
-		myStats->DEX = 4;
-		myStats->CON = 10;
-		myStats->INT = 7;
-		myStats->PER = 7;
-		myStats->CHR = 3 + rand() % 4;
-		myStats->EXP = 0;
-		myStats->LVL = 10;
-		myStats->GOLD = 300 + rand() % 200;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		myStats->PROFICIENCIES[PRO_MAGIC] = 50;
-		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 50;
-		myStats->PROFICIENCIES[PRO_TRADING] = 75;
-		myStats->PROFICIENCIES[PRO_APPRAISAL] = 75;
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		myStats->weapon = newItem(SPELLBOOK_MAGICMISSILE, EXCELLENT, 0, 1, 0, false, NULL);
+			if ( !myStats->leader_uid )
+			{
+				myStats->leader_uid = 0;
+			}
 
-		if ( rand() % 20 == 0 )
-		{
-			myStats->EFFECTS[EFF_ASLEEP] = true;
-			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+
+			// random effects
+			if ( rand() % 20 == 0 )
+			{
+				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
+			}
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+														 // count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					break;
+				default:
+					break;
+			}
+
+			//give weapon
+			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				myStats->weapon = newItem(SPELLBOOK_MAGICMISSILE, EXCELLENT, 0, 1, 0, false, NULL);
+			}
 		}
 
 		// give shopkeeper items

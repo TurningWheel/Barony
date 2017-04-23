@@ -97,25 +97,6 @@ const int NUMPROFICIENCIES = 14;
 
 #define NUMCATEGORIES 13
 
-#define ITEM_SLOT_HELM 0
-#define ITEM_SLOT_WEAPON 6
-#define ITEM_SLOT_SHIELD 12
-#define ITEM_SLOT_ARMOR 18
-#define ITEM_SLOT_BOOTS 24
-#define ITEM_SLOT_RING 30
-#define ITEM_SLOT_AMULET 36
-#define ITEM_SLOT_CLOAK 42
-#define ITEM_SLOT_MASK 48
-#define ITEM_SLOT_GLOVES 54
-#define ITEM_SLOT_INV_1 60
-#define ITEM_SLOT_INV_2 66
-#define ITEM_SLOT_INV_3 72
-#define ITEM_SLOT_INV_4 78
-#define ITEM_SLOT_INV_5 84
-#define ITEM_SLOT_INV_6 90
-#define ITEM_CHANCE 5
-#define ITEM_CUSTOM_SLOT_LIMIT 6
-
 typedef enum
 {
 	MALE,
@@ -138,13 +119,6 @@ public:
 	Sint32 STR, DEX, CON, INT, PER, CHR;
 	Sint32 EXP, LVL;
 	Sint32 GOLD, HUNGER;
-	// randomised additional values to add to attributes
-	Sint32 RANDOM_STR, RANDOM_DEX, RANDOM_CON, RANDOM_INT, RANDOM_PER, RANDOM_CHR;
-	Sint32 RANDOM_MAXHP, RANDOM_HP, RANDOM_MAXMP, RANDOM_MP;
-	Sint32 RANDOM_LVL;
-	Sint32 RANDOM_GOLD;
-	// flags to set for future entity behaviour
-	Sint32 EDITOR_FLAGS[32];
 
 	// skills and effects
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
@@ -180,13 +154,11 @@ public:
 	int monster_idlevar;
 
 	list_t magic_effects; //Makes things like the invisibility spell work.
-	Stat(Sint32 sprite);
+	Stat();
 	~Stat();
 	void clearStats();
 	void freePlayerEquipment();
 	Stat* copyStats();
 	void printStats();
-	Sint32 EDITOR_ITEMS[96];
 };
-extern Stat* stats[MAXPLAYERS];
-void setDefaultMonsterStats(Stat* stats, int sprite);
+//extern Stat* stats[MAXPLAYERS];

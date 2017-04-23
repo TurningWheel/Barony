@@ -1680,7 +1680,7 @@ void assignActions(map_t* map)
 					entity->x += 8;
 					entity->y += 8;
 				}
-				else
+				else if ( entity->skill[10] == 0 || entity->skill[10] == 1 )
 				{
 					if ( !itemsdonebefore && !strcmp(map->name, "Start Map") )
 					{
@@ -1746,9 +1746,20 @@ void assignActions(map_t* map)
 						}
 					}
 				}
+				else if ( entity->skill[10] != 0 && entity->skill[10] != 1 ) //editor set the item type
+				{
+					entity->skill[10] = entity->skill[10] - 2; //reduce by 2 as the editor treats 1 as random, 0 is NULL
+				}
 				if ( entity->sprite == 8 )
 				{
-					entity->skill[11] = 1 + rand() % 4; // status
+					if ( entity->skill[11] == 0 ) //random
+					{
+						entity->skill[11] = 1 + rand() % 4; // status
+					}
+					else
+					{
+						entity->skill[11]--; //editor set number, sets this value to 0-5, with 1 being BROKEN, 5 being EXCELLENT
+					}
 				}
 				else
 				{
@@ -1756,16 +1767,22 @@ void assignActions(map_t* map)
 				}
 				if ( entity->sprite == 8 )
 				{
-					if ( rand() % 2 == 0 )   // 50% chance of curse/bless
+					if ( entity->skill[12] == 10 ) //random, else the value of this variable is the curse/bless
 					{
-						entity->skill[12] = -2 + rand() % 5;
+						if ( rand() % 2 == 0 )   // 50% chance of curse/bless
+						{
+							entity->skill[12] = -2 + rand() % 5;
+						}
 					}
 				}
 				else
 				{
 					entity->skill[12] = 1;
 				}
-				entity->skill[13] = 1; // count
+				if ( entity->sprite == 8 && entity->skill[13] == 0 )
+				{
+					entity->skill[13] = 1; // count set by maps.cpp, otherwise set by editor
+				}
 				if ( !itemsdonebefore && !strcmp(map->name, "Start Map") )
 				{
 					entity->skill[14] = getBook("My Journal");
@@ -1780,6 +1797,18 @@ void assignActions(map_t* map)
 					{
 						entity->skill[14] = 0;    // appearance
 					}
+				}
+				if ( entity->skill[15] == 2 ) //editor set as identified
+				{
+					entity->skill[15] = 1;
+				}
+				else if ( entity->skill[15] == 1 ) //editor set as unidentified
+				{
+					entity->skill[15] = 0;
+				}
+				else //editor set as random
+				{
+					entity->skill[15] = rand() % 2;
 				}
 				item = newItemFromEntity(entity);
 				entity->sprite = itemModel(item);
@@ -1819,6 +1848,14 @@ void assignActions(map_t* map)
 			case 30:
 			case 27:
 			case 10:
+			case 75:
+			case 76:
+			case 77:
+			case 78:
+			case 79:
+			case 80:
+			case 81:
+			case 82:
 			case 83:
 			case 84:
 			case 85:
@@ -1831,6 +1868,7 @@ void assignActions(map_t* map)
 			case 92:
 			case 93:
 			case 94:
+			case 95:
 			{
 				entity->sizex = 4;
 				entity->sizey = 4;
@@ -1842,20 +1880,9 @@ void assignActions(map_t* map)
 				entity->flags[UPDATENEEDED] = true;
 				entity->skill[5] = -1;
 				Stat* myStats = NULL;
-
 				if ( multiplayer != CLIENT )
 				{
-					// need to give the entity its list stuff.
-					// create an empty first node for traversal purposes
-					node_t* node2 = list_AddNodeFirst(&entity->children);
-					node2->element = NULL;
-					node2->deconstructor = &emptyDeconstructor;
-
-					myStats = new Stat();
-					node2 = list_AddNodeLast(&entity->children);
-					node2->element = myStats;
-//					node2->deconstructor = &myStats->~Stat;
-					node2->size = sizeof(myStats);
+					myStats = entity->getStats();
 				}
 
 				Monster monsterType = SKELETON;
@@ -1940,9 +1967,86 @@ void assignActions(map_t* map)
 				{
 					monsterType = LICH_FIRE;
 				}
+				else if ( entity->sprite == 95 )     // devil.png
+				{
+					monsterType = SKELETON;
+				}
+				else if ( entity->sprite == 81 )     // devil.png
+				{
+					monsterType = RAT;
+				}
+				else if ( entity->sprite == 75 )     // devil.png
+				{
+					monsterType = DEMON;
+				}
+				else if ( entity->sprite == 76 )     // devil.png
+				{
+					monsterType = CREATURE_IMP;
+				}
+				else if ( entity->sprite == 77 )     // devil.png
+				{
+					monsterType = MINOTAUR;
+				}
+				else if ( entity->sprite == 78 )     // devil.png
+				{
+					monsterType = SCORPION;
+				}
+				else if ( entity->sprite == 79 )     // devil.png
+				{
+					monsterType = SLIME;
+				}
+				else if ( entity->sprite == 80 )     // devil.png
+				{
+					monsterType = SUCCUBUS;
+				}
+				else if ( entity->sprite == 82 )     // devil.png
+				{
+					monsterType = GHOUL;
+				}
+				else if ( entity->sprite == 96 )     // devil.png
+				{
+					monsterType = RAT;
+				}
 				else
 				{
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
+
+				}
+				
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats == nullptr )
+					{
+						// need to give the entity its list stuff.
+						// create an empty first node for traversal purposes
+						node_t* node2 = list_AddNodeFirst(&entity->children);
+						node2->element = NULL;
+						node2->deconstructor = &emptyDeconstructor;
+
+						if ( entity->sprite == 10 )
+						{
+							// if the sprite is 10, then choose from monsterCurve. 
+							// Create the stat struct again for the new monster
+							myStats = new Stat(monsterType + 1000);
+						}
+						else
+						{
+							// if monster not random, then create the stat struct here
+							// should not occur
+							myStats = new Stat(entity->sprite);
+						}
+						node2 = list_AddNodeLast(&entity->children);
+						node2->element = myStats;
+						//					node2->deconstructor = &myStats->~Stat;
+						node2->size = sizeof(myStats);
+					}	
+					else if ( entity->sprite == 10 )
+					{
+						// monster is random, but generated from editor
+						// stat struct is already created, need to set stats
+						setDefaultMonsterStats(myStats, monsterType + 1000);
+						setRandomMonsterStats(myStats);
+					}
 				}
 
 				switch ( monsterType )
@@ -2077,7 +2181,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[INCUBUS][0][2]; // -1.5
 						break;
 					case VAMPIRE:
-						entity->z = -.5;
+						entity->z = -1;
 						entity->focalx = limbs[VAMPIRE][0][0]; // 0
 						entity->focaly = limbs[VAMPIRE][0][1]; // 0
 						entity->focalz = limbs[VAMPIRE][0][2]; // -1.5
@@ -2086,7 +2190,7 @@ void assignActions(map_t* map)
 						entity->z = -1;
 						entity->focalx = limbs[SHADOW][0][0]; // 0
 						entity->focaly = limbs[SHADOW][0][1]; // 0
-						entity->focalz = limbs[SHADOW][0][2]; // -1.5
+						entity->focalz = limbs[SHADOW][0][2]; // -1.75
 						break;
 					case COCKATRICE:
 						entity->z = -4.5;
@@ -2377,21 +2481,44 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 5.5;
-				entity->yaw = PI / 2;
+				entity->yaw = entity->yaw * (PI / 2); //set to 0 by default in editor, can be set 0-3
 				entity->behavior = &actChest;
 				entity->sprite = 188;
-				entity->skill[9] = -1; //Set default chest as random category < 0
+				//entity->skill[9] = -1; //Set default chest as random category < 0
 
 				childEntity = newEntity(216, 0, map->entities);
 				childEntity->parent = entity->getUID();
 				entity->parent = childEntity->getUID();
-				childEntity->x = entity->x;
-				childEntity->y = entity->y - 3;
+				if ( entity->yaw == 0 ) //EAST FACING
+				{
+					childEntity->x = entity->x - 3;
+					childEntity->y = entity->y;
+				} 
+				else if ( entity->yaw == PI / 2 ) //SOUTH FACING
+				{
+					childEntity->x = entity->x;
+					childEntity->y = entity->y - 3;
+				}
+				else if ( entity->yaw == PI ) //WEST FACING
+				{
+					childEntity->x = entity->x + 3;
+					childEntity->y = entity->y;
+				}
+				else if (entity->yaw == 3 * PI/2 ) //NORTH FACING
+				{
+						childEntity->x = entity->x;
+						childEntity->y = entity->y + 3;
+				}
+				else 
+				{
+					childEntity->x = entity->x;
+					childEntity->y = entity->y - 3;
+				}
 				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = entity->z - 2.75;
 				childEntity->focalx = 3;
 				childEntity->focalz = -.75;
-				childEntity->yaw = PI / 2;
+				childEntity->yaw = entity->yaw;
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actChestLid;
@@ -2782,47 +2909,6 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				break;
-			//Chests with fixed content categories.
-			case 75: 
-			case 76:
-			case 77:
-			case 78:
-			case 79:
-			case 80:
-			case 81: 
-			case 82:
-			{
-				entity->sizex = 3;
-				entity->sizey = 2;
-				entity->x += 8;
-				entity->y += 8;
-				entity->z = 5.5;
-				entity->yaw = PI / 2;
-				entity->skill[9] = entity->sprite - 75; //Set chest type to category value between 0 and 7 depending on case entity->sprite.
-				entity->behavior = &actChest;
-				entity->sprite = 188;
-
-				childEntity = newEntity(216, 0, map->entities);
-				childEntity->parent = entity->getUID();
-				entity->parent = childEntity->getUID();
-				childEntity->x = entity->x;
-				childEntity->y = entity->y - 3;
-				//printlog("29 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
-				childEntity->z = entity->z - 2.75;
-				childEntity->focalx = 3;
-				childEntity->focalz = -.75;
-				childEntity->yaw = PI / 2;
-				childEntity->sizex = 2;
-				childEntity->sizey = 2;
-				childEntity->behavior = &actChestLid;
-				childEntity->flags[PASSABLE] = true;
-
-				//Chest inventory.
-				node_t* tempNode = list_AddNodeFirst(&entity->children);
-				tempNode->element = NULL;
-				tempNode->deconstructor = &emptyDeconstructor;
-				break;
-			}
 			default:
 				break;
 		}
