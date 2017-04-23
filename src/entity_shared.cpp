@@ -70,225 +70,6 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-
-char* spriteEditorName(Sint32 sprite)
-{
-	char tmpStr[32] = "";
-	switch ( sprite )
-	{
-	case 71:
-		strcpy(tmpStr, "DEVIL");
-		break;
-	case 70:
-		strcpy(tmpStr, "GNOME");
-		break;
-	case 62:
-		strcpy(tmpStr, "LICH");
-		break;
-	case 48:
-		strcpy(tmpStr, "SPIDER");
-		break;
-	case 36:
-		strcpy(tmpStr, "GOBLIN");
-		break;
-	case 35:
-		strcpy(tmpStr, "SHOPKEEPER");
-		break;
-	case 30:
-		strcpy(tmpStr, "TROLL");
-		break;
-	case 27:
-		strcpy(tmpStr, "HUMAN");
-		break;
-	case 10:
-		strcpy(tmpStr, "RANDOM (Dependent on Level)");
-		break;
-	case 83:
-		strcpy(tmpStr, "KOBOLD");
-		break;
-	case 84:
-		strcpy(tmpStr, "SCARAB");
-		break;
-	case 85:
-		strcpy(tmpStr, "CRYSTALGOLEM");
-		break;
-	case 86:
-		strcpy(tmpStr, "INCUBUS");
-		break;
-	case 87:
-		strcpy(tmpStr, "VAMPIRE");
-		break;
-	case 88:
-		strcpy(tmpStr, "SHADOW");
-		break;
-	case 89:
-		strcpy(tmpStr, "COCKATRICE");
-		break;
-	case 90:
-		strcpy(tmpStr, "INSECTOID");
-		break;
-	case 91:
-		strcpy(tmpStr, "GOATMAN");
-		break;
-	case 92:
-		strcpy(tmpStr, "AUTOMATON");
-		break;
-	case 93:
-		strcpy(tmpStr, "LICH ICE");
-		break;
-	case 94:
-		strcpy(tmpStr, "LICH FIRE");
-		break;
-	case 95:
-		strcpy(tmpStr, "SKELETON");
-		break;
-	case 81:
-		strcpy(tmpStr, "RAT");
-		break;
-	case 75:
-		strcpy(tmpStr, "DEMON");
-		break;
-	case 76:
-		strcpy(tmpStr, "IMP");
-		break;
-	case 77:
-		strcpy(tmpStr, "MINOTAUR");
-		break;
-	case 78:
-		strcpy(tmpStr, "SCORPION");
-		break;
-	case 79:
-		strcpy(tmpStr, "SLIME");
-		break;
-	case 80:
-		strcpy(tmpStr, "SUCCUBUS");
-		break;
-	case 82:
-		strcpy(tmpStr, "GHOUL");
-		break;
-		//monsters
-		break;
-	case 21:
-		strcpy(tmpStr, "CHEST");
-		break;
-	case 63:
-		strcpy(tmpStr, "END PORTAL");
-		break;
-	case 64:
-		strcpy(tmpStr, "SPEAR TRAP");
-		break;
-	case 65:
-		strcpy(tmpStr, "MAGIC TRAP");
-		break;
-	case 66:
-		strcpy(tmpStr, "WALL BUSTER");
-		break;
-	case 67:
-		strcpy(tmpStr, "WALL BUILDER");
-		break;
-	case 68:
-		strcpy(tmpStr, "MAGIC BOW");
-		break;
-	case 69:
-		strcpy(tmpStr, "MAGIC SPEAR");
-		break;
-	case 59:
-		strcpy(tmpStr, "TABLE");
-		break;
-	case 60:
-		strcpy(tmpStr, "CHAIR");
-		break;
-	case 45:
-		strcpy(tmpStr, "PORTAL");
-		break;
-	case 44:
-		strcpy(tmpStr, "BOULDER");
-		break;
-	case 38:
-		strcpy(tmpStr, "BOULDER TRAP");
-		break;
-	case 39:
-		strcpy(tmpStr, "HEADSTONE");
-		break;
-	case 8:
-		strcpy(tmpStr, "ITEM");
-		break;
-	case 9:
-		strcpy(tmpStr, "GOLD");
-		break;
-	case 11:
-		strcpy(tmpStr, "LADDER");
-		break;
-	case 12:
-		strcpy(tmpStr, "FIREPLACE");
-		break;
-	case 14:
-		strcpy(tmpStr, "FOUNTAIN");
-		break;
-	case 15:
-		strcpy(tmpStr, "SINK");
-		break;
-	case 19:
-		strcpy(tmpStr, "GATE (North-South)");
-		break;
-	case 20:
-		strcpy(tmpStr, "GATE (East-West)");
-		break;
-	case 2:
-		strcpy(tmpStr, "DOOR (East-West)");
-		break;
-	case 3:
-		strcpy(tmpStr, "DOOR (North-South)");
-		break;
-	case 4:
-		strcpy(tmpStr, "TORCH (West Wall)");
-		break;
-	case 5:
-		strcpy(tmpStr, "TORCH (North Wall)");
-		break;
-	case 6:
-		strcpy(tmpStr, "TORCH (East Wall)");
-		break;
-	case 7:
-		strcpy(tmpStr, "TORCH (South Wall)");
-		break;
-	case 1:
-		strcpy(tmpStr, "PLAYER START");
-		break;
-	case 33:
-		strcpy(tmpStr, "PRESSURE PLATE");
-		break;
-	case 34:
-		strcpy(tmpStr, "PRESSURE PLATE (Latch On)");
-		break;
-	case 37:
-		strcpy(tmpStr, "MINOTAUR SPAWN TRAP");
-		break;
-	case 41:
-		strcpy(tmpStr, "LAVA");
-		break;
-	case 43:
-		strcpy(tmpStr, "LADDER HOLE");
-		break;
-	case 46:
-		strcpy(tmpStr, "SECRET LADDER");
-		break;
-	case 72:
-		strcpy(tmpStr, "DEVIL TELEPORT LOCATION");
-		break;
-	case 73:
-		strcpy(tmpStr, "DEVIL TELEPORT LOCATION");
-		break;
-	case 74:
-		strcpy(tmpStr, "DEVIL TELEPORT LOCATION");
-		break;
-	default:
-		break;
-	}
-
-	return tmpStr;
-}
-
 char itemNameStrings[170][32] =
 {
 	"NULL",
@@ -623,6 +404,106 @@ char itemStringsByType[10][55][32] =
 		""
 	}
 	
+};
+
+char spriteEditorNameStrings[96][28] = 
+{
+	"NULL",	
+	"PLAYER START",
+	"DOOR (East-West)",
+	"DOOR (North-South)",
+	"TORCH (West Wall)",
+	"TORCH (North Wall)",
+	"TORCH (East Wall)",
+	"TORCH (South Wall)",
+	"ITEM",
+	"GOLD",
+	"RANDOM (Dependent on Level)",
+	"LADDER",
+	"FIREPLACE",
+	"Flame Sprite (Not Used)",
+	"FOUNTAIN",
+	"SINK",
+	"Flame Sprite (Not Used)",
+	"Lever",
+	"Wire",
+	"GATE (North-South)",
+	"GATE (East-West)",
+	"CHEST",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"HUMAN",
+	"NOT USED",
+	"NOT USED",
+	"TROLL",
+	"NOT USED",
+	"ARROW TRAP",
+	"PRESSURE PLATE",
+	"PRESSURE PLATE (Latch On)",
+	"SHOPKEEPER",
+	"GOBLIN",
+	"MINOTAUR SPAWN TRAP",
+	"BOULDER TRAP",
+	"HEADSTONE",
+	"NULL",
+	"LAVA",
+	"NOT USED",
+	"LADDER HOLE",
+	"BOULDER",
+	"PORTAL",
+	"SECRET LADDER",
+	"NOT USED",
+	"SPIDER",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"NOT USED",
+	"TABLE",
+	"CHAIR",
+	"DIAMOND PICKAXE",
+	"LICH",
+	"END PORTAL",
+	"SPEAR TRAP",
+	"MAGIC TRAP",
+	"WALL BUSTER",
+	"WALL BUILDER",
+	"MAGIC BOW",
+	"MAGIC SPEAR",
+	"GNOME",
+	"DEVIL",
+	"DEVIL TELEPORT LOCATION",
+	"DEVIL TELEPORT LOCATION",
+	"DEVIL TELEPORT LOCATION",
+	"DEMON",
+	"IMP",
+	"MINOTAUR",
+	"SCORPION",
+	"SLIME",
+	"SUCCUBUS",
+	"RAT",
+	"GHOUL",
+	"KOBOLD",
+	"SCARAB",
+	"CRYSTALGOLEM",
+	"INCUBUS",
+	"VAMPIRE",
+	"SHADOW",
+	"COCKATRICE",
+	"INSECTOID",
+	"GOATMAN",
+	"AUTOMATON",
+	"LICH ICE",
+	"LICH FIRE",
+	"SKELETON",
 };
 
 int canWearEquip(Entity* entity, int category)
