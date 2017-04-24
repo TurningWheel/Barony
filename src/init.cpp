@@ -14,6 +14,7 @@
 #include "prng.hpp"
 #include "hash.hpp"
 #include "net.hpp"
+#include "editor.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"

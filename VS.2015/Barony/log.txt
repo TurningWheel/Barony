@@ -1,0 +1,2 @@
+[18-08-13] error: unable to locate language file: 'lang/en.txt'
+[18-08-13] Fatal error: failed to load default language file!

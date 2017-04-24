@@ -16,6 +16,7 @@
 #include "entity.hpp"
 #include "player.hpp"
 #include "editor.hpp"
+#include "items.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -1188,8 +1189,6 @@ void drawEntities2D(long camx, long camy)
 								ttfPrintText(ttf8, padx, pady + 10, tmpStr);
 								snprintf(tmpStr, 10, "Level: %d", entity->getStats()->LVL);
 								ttfPrintText(ttf8, padx, pady + 20, tmpStr);
-								//snprintf(tmpStr, 10, "Slot: %d", itemSlotSelected);
-								//ttfPrintText(ttf8, padx, pady - 20, tmpStr);
 							}
 
 
@@ -1346,8 +1345,6 @@ void drawEntities2D(long camx, long camy)
 							break;
 
 					}
-					
-
 
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
 					box.w = TEXTURESIZE - 2;
@@ -1356,7 +1353,18 @@ void drawEntities2D(long camx, long camy)
 					box.y = pos.y + 1;
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
 				}
-				drawImageScaled(sprites[entity->sprite], NULL, &pos);
+				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
+				if ( entity->sprite == 8 && entity->skill[10] > 1 )
+				{
+					// draw the item sprite in the editor layout
+					Item* tmpItem = newItem(static_cast<ItemType>(entity->skill[10] - 2), static_cast<Status>(0), 0, 0, 0, 0, NULL);
+					drawImageScaled(itemSprite(tmpItem), NULL, &pos);
+				}
+				else
+				{
+					// draw sprite normally from sprites list
+					drawImageScaled(sprites[entity->sprite], NULL, &pos);
+				}			
 			}
 			else
 			{
