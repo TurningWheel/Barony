@@ -452,8 +452,8 @@ void defaultImpulses()
 	joyimpulses[INJOY_DPAD_UP] = 312;
 	joyimpulses[INJOY_DPAD_DOWN] = 313;
 	joyimpulses[INJOY_MENU_NEXT] = 301;
-	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
-	joyimpulses[INJOY_HOTBAR_PREV] = 310;
+	joyimpulses[INJOY_GAME_HOTBAR_NEXT] = 311;
+	joyimpulses[INJOY_GAME_HOTBAR_PREV] = 310;
 	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 304;
 	joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = 304;
 	joyimpulses[INJOY_MENU_CANCEL] = 302;
@@ -537,8 +537,8 @@ void defaultConfig()
 	consoleCommand("/joybind 312 INJOY_DPAD_UP");
 	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
-	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
+	consoleCommand("/joybind 311 INJOY_GAME_HOTBAR_NEXT");
+	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_PREV");
 	consoleCommand("/joybind 304 INJOY_GAME_HOTBAR_ACTIVATE");
 	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
 	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
@@ -599,8 +599,6 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"DPAD_RIGHT",
 	"DPAD_UP",
 	"DPAD_DOWN",
-	"HOTBAR_NEXT",
-	"HOTBAR_PREV",
 
 	//Menu exclusive:
 	"MENU_LEFT_CLICK",
@@ -628,7 +626,9 @@ static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 	"GAME_DEFEND",
 	"GAME_ATTACK",
 	"GAME_CAST_SPELL",
-	"GAME_HOTBAR_ACTIVATE"
+	"GAME_HOTBAR_ACTIVATE",
+	"GAME_HOTBAR_PREV",
+	"GAME_HOTBAR_NEXT"
 };
 
 /*-------------------------------------------------------------------------------
