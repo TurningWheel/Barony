@@ -302,7 +302,6 @@ void select_inventory_slot(int x, int y)
 		{
 			hotbarHasFocus = true; //Warp to hotbar.
 			warpMouseToSelectedHotbarSlot();
-			printlog("Wraparound top: Granting hotbar focus."); //DEBUG.
 		}
 	}
 	if ( y >= INVENTORY_SIZEY )   //Hit bottom. Wrap around or go to shop/chest?
@@ -367,7 +366,6 @@ void select_inventory_slot(int x, int y)
 			{
 				hotbarHasFocus = true;
 				warpMouseToSelectedHotbarSlot();
-				printlog("Wraparound bottom: Granting hotbar focus."); //DEBUG.
 			}
 		}
 	}
@@ -691,7 +689,6 @@ void updatePlayerInventory()
 			{
 				if ( !hotbarHasFocus )
 				{
-					printlog("Hotbar does not have focus, warping mouse to inventory slot."); //DEBUG.
 					warpMouseToSelectedInventorySlot();
 				}
 			}
@@ -778,7 +775,6 @@ void updatePlayerInventory()
 				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
-					printlog("Revoking hotbar focus: moused over inventory slot."); //DEBUG.
 					hotbarHasFocus = false;
 				}
 

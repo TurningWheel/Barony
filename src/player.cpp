@@ -491,7 +491,6 @@ bool GameController::handleInventoryMovement()
 	if ( hotbarHasFocus && !hotbarGamepadControlEnabled() )
 	{
 		hotbarHasFocus = false;
-		printlog("Automatically reset hotbar focus."); //DEBUG.
 	}
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
@@ -536,7 +535,6 @@ bool GameController::handleInventoryMovement()
 		{
 			//Warp back to top of inventory.
 			hotbarHasFocus = false;
-			printlog("Revoking hotbar focus: left hotbar via up."); //DEBUG.
 			select_inventory_slot(selected_inventory_slot_x, INVENTORY_SIZEY - 1);
 		}
 		else
@@ -554,7 +552,6 @@ bool GameController::handleInventoryMovement()
 		{
 			//Warp back to bottom of inventory.
 			hotbarHasFocus = false;
-			printlog("Revoking hotbar focus: left hotbar via down."); //DEBUG.
 			select_inventory_slot(selected_inventory_slot_x, 0);
 		}
 		else
