@@ -438,7 +438,7 @@ void defaultImpulses()
 	impulses[IN_USE] = 285;
 
 	joyimpulses[INJOY_STATUS] = 307;
-	joyimpulses[INJOY_SPELL_LIST] = 399;
+	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
 	joyimpulses[INJOY_GAME_CAST_SPELL] = 309;
 	joyimpulses[INJOY_GAME_DEFEND] = 299;
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
@@ -522,7 +522,7 @@ void defaultConfig()
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/joybind 307 INJOY_STATUS");
-	consoleCommand("/joybind 399 INJOY_SPELL_LIST");
+	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 309 INJOY_GAME_CAST_SPELL");
 	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
 	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
@@ -976,6 +976,10 @@ const char* getInputName(Uint32 scancode)
 	}
 	else
 	{
+		if ( scancode == SCANCODE_UNASSIGNED_BINDING )
+		{
+			return "Unassigned key";
+		}
 		return "Unknown key";
 	}
 }

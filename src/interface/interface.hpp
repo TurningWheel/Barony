@@ -357,3 +357,6 @@ Sint8* inputPressed(Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
 void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+
+static const int SCANCODE_UNASSIGNED_BINDING = 399;
+

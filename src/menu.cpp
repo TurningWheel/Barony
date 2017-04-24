@@ -342,11 +342,22 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 
 	if ( c != rebindaction )
 	{
-		ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, getInputName(settings_joyimpulses[c]));
+		if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unassigned key" ))
+		{
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+		}
+		else if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unknown key") || !strcmp(getInputName(settings_joyimpulses[c]), "Unknown trigger") )
+		{
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorRed(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+		}
+		else
+		{
+			ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, getInputName(settings_joyimpulses[c]));
+		}
 	}
 	else
 	{
-		ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, "...");
+		ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorGreen(*mainsurface), true, "...");
 	}
 }
 
@@ -1789,11 +1800,22 @@ void handleMainMenu(bool mode)
 				}
 				if ( c != rebindkey )
 				{
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, getInputName(settings_impulses[c]));
+					if ( !strcmp(getInputName(settings_impulses[c]), "Unassigned key" ))
+					{
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_impulses[c]));
+					}
+					else if ( !strcmp(getInputName(settings_impulses[c]), "Unknown key") || !strcmp(getInputName(settings_impulses[c]), "Unknown trigger") )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorRed(*mainsurface), true, getInputName(settings_impulses[c]));
+					}
+					else
+					{
+						ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, getInputName(settings_impulses[c]));
+					}
 				}
 				else
 				{
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, "...");
+					ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorGreen(*mainsurface), true, "...");
 				}
 			}
 
