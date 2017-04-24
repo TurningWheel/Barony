@@ -22,8 +22,8 @@ void initSlime(Entity* my, Stat* myStats)
 {
 	int c;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -86,7 +86,7 @@ void initSlime(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -165,12 +165,12 @@ void slimeDie(Entity* my)
 				entity->x = my->x;
 				entity->y = my->y;
 				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->uid;
+				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = TRUE;
-				entity->flags[PASSABLE] = TRUE;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}

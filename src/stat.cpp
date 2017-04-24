@@ -42,7 +42,7 @@ Stat::Stat()
 	this->LVL = 1;
 	this->GOLD = 0;
 	this->HUNGER = 800;
-	this->defending = FALSE;
+	this->defending = false;
 
 	int c;
 	for (c = 0; c < NUMPROFICIENCIES; c++)
@@ -73,7 +73,7 @@ Stat::Stat()
 	this->amulet = NULL;
 	this->ring = NULL;
 	this->mask = NULL;
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 	this->monster_sound = NULL;
 #endif
 	this->monster_idlevar = 1;
@@ -248,7 +248,7 @@ void Stat::clearStats()
 		}
 		if (x < NUMEFFECTS)
 		{
-			this->EFFECTS[x] = FALSE;
+			this->EFFECTS[x] = false;
 			this->EFFECTS_TIMERS[x] = 0;
 		}
 	}
@@ -635,7 +635,7 @@ Stat* Stat::copyStats()
 		newStat->mask = NULL;
 	}
 
-#ifdef HAVE_FMOD
+#if defined(HAVE_FMOD) || defined(HAVE_OPENAL)
 	newStat->monster_sound = NULL;
 #endif
 	newStat->monster_idlevar = this->monster_idlevar;

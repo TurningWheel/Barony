@@ -17,6 +17,69 @@
 #include "../player.hpp"
 #include "interface.hpp"
 
+
+//Remove curse GUI definitions.
+bool removecursegui_active = false;
+bool removecursegui_appraising = false;
+int removecursegui_offset_x = 0;
+int removecursegui_offset_y = 0;
+bool dragging_removecurseGUI = false;
+int removecursescroll = 0;
+Item* removecurse_items[NUM_REMOVE_CURSE_GUI_ITEMS];
+SDL_Surface* removecurseGUI_img;
+
+int selectedRemoveCurseSlot = -1;
+
+void rebuildRemoveCurseGUIInventory()
+{
+	list_t* removecurse_inventory = &stats[clientnum]->inventory;
+	node_t* node = nullptr;
+	Item* item = nullptr;
+	int c = 0;
+
+	if ( removecurse_inventory )
+	{
+		//Count the number of items in the Remove Curse GUI "inventory".
+		for ( node = removecurse_inventory->first; node != nullptr; node = node->next )
+		{
+			item = (Item*) node->element;
+			if ( item && item->identified && item->beatitude < 0 )
+			{
+				++c;
+			}
+		}
+		removecursescroll = std::max(0, std::min(removecursescroll, c - 4));
+		for ( c = 0; c < 4; ++c )
+		{
+			removecurse_items[c] = nullptr;
+		}
+		c = 0;
+
+		//Assign the visible items to the GUI slots.
+		for ( node = removecurse_inventory->first; node != nullptr; node = node->next )
+		{
+			if ( node->element )
+			{
+				item = (Item*) node->element;
+				if ( item && item->identified && item->beatitude < 0 ) //Skip over all unidentified or uncursed items.
+				{
+					++c;
+					if ( c <= removecursescroll )
+					{
+						continue;
+					}
+					removecurse_items[c - removecursescroll - 1] = item;
+					if ( c > 3 + removecursescroll )
+					{
+						break;
+					}
+				}
+			}
+		}
+	}
+}
+
+
 void updateRemoveCurseGUI()
 {
 	SDL_Rect pos;
@@ -64,8 +127,8 @@ void updateRemoveCurseGUI()
 				}
 				if (omousex >= REMOVECURSE_GUI_X && omousex < REMOVECURSE_GUI_X + 377 && omousey >= REMOVECURSE_GUI_Y && omousey < REMOVECURSE_GUI_Y + 15)
 				{
-					gui_clickdrag = TRUE;
-					dragging_removecurseGUI = TRUE;
+					gui_clickdrag = true;
+					dragging_removecurseGUI = true;
 					dragoffset_x = omousex - REMOVECURSE_GUI_X;
 					dragoffset_y = omousey - REMOVECURSE_GUI_Y;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -116,7 +179,7 @@ void updateRemoveCurseGUI()
 			}
 			else
 			{
-				dragging_removecurseGUI = FALSE;
+				dragging_removecurseGUI = false;
 			}
 		}
 
@@ -162,52 +225,56 @@ void updateRemoveCurseGUI()
 				closeRemoveCurseGUI();
 			}
 
-			Item* item = NULL;
-			if (omousex >= REMOVECURSE_GUI_X && omousex < REMOVECURSE_GUI_X + (identifyGUI_img->w - 28))
+			Item *item = nullptr;
+
+			bool selectingSlot = false;
+			SDL_Rect slotPos;
+			slotPos.x = REMOVECURSE_GUI_X;
+			slotPos.w = inventoryoptionChest_bmp->w;
+			slotPos.y = REMOVECURSE_GUI_Y + 16;
+			slotPos.h = inventoryoptionChest_bmp->h;
+
+			for ( int i = 0; i < NUM_REMOVE_CURSE_GUI_ITEMS; ++i, slotPos.y += slotPos.h )
 			{
-				pos.x = REMOVECURSE_GUI_X + 12;
+				pos.x = slotPos.x + 12;
 				pos.w = 0;
 				pos.h = 0;
-				if (omousey >= REMOVECURSE_GUI_Y + 16 && omousey < REMOVECURSE_GUI_Y + 34)   //First inventory slot.
+
+				if ( omousey >= slotPos.y && omousey < slotPos.y + slotPos.h && removecurse_items[i] )
 				{
-					pos.y = REMOVECURSE_GUI_Y + 16;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if (mousestatus[SDL_BUTTON_LEFT])
+					pos.y = slotPos.y;
+					drawImage(inventoryoptionChest_bmp, nullptr, &pos);
+					selectedRemoveCurseSlot = i;
+					selectingSlot = true;
+					if ( mousestatus[SDL_BUTTON_LEFT] || *inputPressed(joyimpulses[INJOY_MENU_USE]) )
 					{
+						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
 						mousestatus[SDL_BUTTON_LEFT] = 0;
-						removecurseGUIRemoveCurse(removecurse_items[0]);
+						removecurseGUIRemoveCurse(removecurse_items[i]);
+
+						rebuildRemoveCurseGUIInventory();
+						if ( removecurse_items[i] == nullptr )
+						{
+							if ( removecurse_items[0] == nullptr )
+							{
+								//Go back to inventory.
+								selectedRemoveCurseSlot = -1;
+								warpMouseToSelectedInventorySlot();
+							}
+							else
+							{
+								//Move up one slot.
+								--selectedRemoveCurseSlot;
+								warpMouseToSelectedRemoveCurseSlot();
+							}
+						}
 					}
 				}
-				else if (omousey >= REMOVECURSE_GUI_Y + 34 && omousey < REMOVECURSE_GUI_Y + 52)
-				{
-					pos.y = REMOVECURSE_GUI_Y + 34;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if (mousestatus[SDL_BUTTON_LEFT])
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						removecurseGUIRemoveCurse(removecurse_items[1]);
-					}
-				}
-				else if (omousey >= REMOVECURSE_GUI_Y + 52 && omousey < REMOVECURSE_GUI_Y + 70 )
-				{
-					pos.y = REMOVECURSE_GUI_Y + 52;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if ( mousestatus[SDL_BUTTON_LEFT] )
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						removecurseGUIRemoveCurse(removecurse_items[2]);
-					}
-				}
-				else if (omousey >= REMOVECURSE_GUI_Y + 70 && omousey < REMOVECURSE_GUI_Y + 88)
-				{
-					pos.y = REMOVECURSE_GUI_Y + 70;
-					drawImage(inventoryoptionChest_bmp, NULL, &pos);
-					if ( mousestatus[SDL_BUTTON_LEFT] )
-					{
-						mousestatus[SDL_BUTTON_LEFT] = 0;
-						removecurseGUIRemoveCurse(removecurse_items[3]);
-					}
-				}
+			}
+
+			if ( !selectingSlot )
+			{
+				selectedRemoveCurseSlot = -1;
 			}
 
 			//Okay, now prepare to render all the items.
@@ -215,22 +282,10 @@ void updateRemoveCurseGUI()
 			c = 0;
 			if (removecurse_inventory)
 			{
-				for (node = removecurse_inventory->first; node != NULL; node = node->next)
-				{
-					item = (Item*) node->element;
-					if (item && item->identified && item->beatitude < 0)
-					{
-						c++;
-					}
-				}
-				removecursescroll = std::max(0, std::min(removecursescroll, c - 4));
-				for (c = 0; c < 4; ++c)
-				{
-					removecurse_items[c] = NULL;
-				}
-				c = 0;
+				rebuildRemoveCurseGUIInventory();
 
 				//Actually render the items.
+				c = 0;
 				for (node = removecurse_inventory->first; node != NULL; node = node->next)
 				{
 					if (node->element)
@@ -243,7 +298,6 @@ void updateRemoveCurseGUI()
 							{
 								continue;
 							}
-							removecurse_items[c - removecursescroll - 1] = item;
 							char tempstr[64] = { 0 };
 							strncpy(tempstr, item->description(), 46);
 							if ( strlen(tempstr) == 46 )
@@ -340,6 +394,114 @@ void removecurseGUIRemoveCurse(Item* item)
 
 void closeRemoveCurseGUI()
 {
-	//TODO: Clean up Remove Curse GUI gamepad code here.
 	removecursegui_active = false;
+
+	selectedRemoveCurseSlot = -1;
+}
+
+inline Item* getItemInfoFromRemoveCurseGUI(int slot)
+{
+	if ( slot >= 4 )
+	{
+		return nullptr; //Out of bounds,
+	}
+
+	return removecurse_items[slot];
+}
+
+void selectRemoveCurseSlot(int slot)
+{
+	if ( slot < selectedRemoveCurseSlot )
+	{
+		//Moving up.
+
+		/*
+		 * Possible cases:
+		 * * 1) Move cursor up the GUI through different selectedRemoveCurseSlot.
+		 * * 2) Page up through removecursescroll--
+		 * * 3) Scrolling up past top of Remove Curse GUI, no removecursescroll (move back to inventory)
+		 */
+
+		if ( selectedRemoveCurseSlot <= 0 )
+		{
+			//Covers cases 2 & 3.
+
+			/*
+			 * Possible cases:
+			 * * A) Hit very top of Remove Curse "inventory", can't go any further. Return to inventory.
+			 * * B) Page up, scrolling through removecursescroll.
+			 */
+
+			if ( removecursescroll <= 0 )
+			{
+				//Case 3/A: Return to inventory.
+				selectedRemoveCurseSlot = -1;
+			}
+			else
+			{
+				//Case 2/B: Page up through Remove Curse "inventory".
+				--removecursescroll;
+			}
+		}
+		else
+		{
+			//Covers case 1.
+
+			//Move cursor up the GUI through different selectedRemoveCurseSlot (--selectedRemoveCurseSlot).
+			--selectedRemoveCurseSlot;
+			warpMouseToSelectedRemoveCurseSlot();
+		}
+	}
+	else if ( slot > selectedRemoveCurseSlot )
+	{
+		//Moving down.
+
+		/*
+		 * Possible cases:
+		 * * 1) Moving cursor down through GUI through different selectedRemoveCurseSlot.
+		 * * 2) Scrolling down past bottom of Remove Curse GUI through removecursescroll++
+		 * * 3) Scrolling down past bottom of Remove Curse GUI, max Remove Curse scroll (revoke move -- can't go beyond limit of Remove Curse GUI).
+		 */
+
+		if ( selectedRemoveCurseSlot >= NUM_REMOVE_CURSE_GUI_ITEMS - 1 )
+		{
+			//Covers cases 2 & 3.
+			++removecursescroll; //removecursescroll is automatically sanitized in updateRemoveCurseGUI().
+		}
+		else
+		{
+			//Covers case 1.
+			//Move cursor down through the GUI through different selectedRemoveCurseSlot (++selectedRemoveCurseSlot).
+			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
+
+			/*
+			 * Two possible cases:
+			 * * A) Items below this. Advance selectedRemoveCurseSlot to them.
+			 * * B) On last item already. Do nothing (revoke movement).
+			 */
+
+			Item* item = getItemInfoFromRemoveCurseGUI(selectedRemoveCurseSlot + 1);
+
+			if ( item )
+			{
+				++selectedRemoveCurseSlot;
+				warpMouseToSelectedRemoveCurseSlot();
+			}
+			else
+			{
+				//No more items. Stop.
+			}
+		}
+	}
+}
+
+void warpMouseToSelectedRemoveCurseSlot()
+{
+	SDL_Rect slotPos;
+	slotPos.x = REMOVECURSE_GUI_X;
+	slotPos.w = inventoryoptionChest_bmp->w;
+	slotPos.h = inventoryoptionChest_bmp->h;
+	slotPos.y = REMOVECURSE_GUI_Y + 16 + (slotPos.h * selectedRemoveCurseSlot);
+
+	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }

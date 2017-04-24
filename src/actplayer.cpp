@@ -25,8 +25,8 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-bool smoothmouse = FALSE;
-bool settings_smoothmouse = FALSE;
+bool smoothmouse = false;
+bool settings_smoothmouse = false;
 
 /*-------------------------------------------------------------------------------
 
@@ -62,7 +62,7 @@ void actDeathCam(Entity* my)
 		}
 		else
 		{
-			DEATHCAM_ROTX = std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+			DEATHCAM_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 		}
 		my->yaw += DEATHCAM_ROTX;
 		if ( my->yaw >= PI * 2 )
@@ -81,7 +81,7 @@ void actDeathCam(Entity* my)
 		}
 		else
 		{
-			DEATHCAM_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+			DEATHCAM_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 		}
 		my->pitch -= DEATHCAM_ROTY;
 		if ( my->pitch > PI / 2 )
@@ -200,8 +200,8 @@ void actPlayer(Entity* my)
 	double dist = 0;
 	double weightratio;
 	int weight;
-	bool wearingring = FALSE;
-	bool levitating = FALSE;
+	bool wearingring = false;
+	bool levitating = false;
 
 	if ( PLAYER_NUM < 0 || PLAYER_NUM >= MAXPLAYERS )
 	{
@@ -212,14 +212,14 @@ void actPlayer(Entity* my)
 	{
 		if ( PLAYER_NUM != clientnum )
 		{
-			my->flags[UPDATENEEDED] = TRUE;
+			my->flags[UPDATENEEDED] = true;
 		}
 		// request entity update (check if I've been deleted)
-		if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) )
+		if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 		{
 			strcpy((char*)net_packet->data, "ENTE");
 			net_packet->data[4] = clientnum;
-			SDLNet_Write32(my->uid, &net_packet->data[5]);
+			SDLNet_Write32(my->getUID(), &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 9;
@@ -230,21 +230,21 @@ void actPlayer(Entity* my)
 	if ( !PLAYER_INIT )
 	{
 		PLAYER_INIT = 1;
-		my->flags[BURNABLE] = TRUE;
+		my->flags[BURNABLE] = true;
 
 		// hud weapon
 		if ( PLAYER_NUM == clientnum )
 		{
 			if ( multiplayer == CLIENT )
 			{
-				my->flags[UPDATENEEDED] = FALSE;
+				my->flags[UPDATENEEDED] = false;
 			}
 
 			entity = newEntity(-1, 1, map.entities);
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[OVERDRAW] = TRUE;
-			entity->flags[NOUPDATE] = TRUE;
-			entity->flags[INVISIBLE] = TRUE;
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actHudWeapon;
 			entity->focalz = -4;
 			node = list_AddNodeLast(&my->children);
@@ -256,29 +256,29 @@ void actPlayer(Entity* my)
 
 			//Left hand.
 			entity = newEntity(-1, 1, map.entities);
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[OVERDRAW] = TRUE;
-			entity->flags[NOUPDATE] = TRUE;
-			entity->flags[INVISIBLE] = TRUE;
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actLeftHandMagic;
 			entity->focalz = -4;
 			magicLeftHand = entity;
 			//Right hand.
 			entity = newEntity(-1, 1, map.entities);
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[OVERDRAW] = TRUE;
-			entity->flags[NOUPDATE] = TRUE;
-			entity->flags[INVISIBLE] = TRUE;
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actRightHandMagic;
 			entity->focalz = -4;
 			magicRightHand = entity;
 
 			// hud shield
 			entity = newEntity(-1, 1, map.entities);
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[OVERDRAW] = TRUE;
-			entity->flags[NOUPDATE] = TRUE;
-			entity->flags[INVISIBLE] = TRUE;
+			entity->flags[PASSABLE] = true;
+			entity->flags[OVERDRAW] = true;
+			entity->flags[NOUPDATE] = true;
+			entity->flags[INVISIBLE] = true;
 			entity->behavior = &actHudShield;
 		}
 		else
@@ -298,14 +298,14 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
 		entity->focalx = limbs[HUMAN][1][0];
 		entity->focaly = limbs[HUMAN][1][1];
 		entity->focalz = limbs[HUMAN][1][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -316,14 +316,14 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
 		entity->focalx = limbs[HUMAN][2][0];
 		entity->focaly = limbs[HUMAN][2][1];
 		entity->focalz = limbs[HUMAN][2][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -334,14 +334,14 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
 		entity->focalx = limbs[HUMAN][3][0];
 		entity->focaly = limbs[HUMAN][3][1];
 		entity->focalz = limbs[HUMAN][3][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -352,14 +352,14 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
 		entity->focalx = limbs[HUMAN][4][0];
 		entity->focaly = limbs[HUMAN][4][1];
 		entity->focalz = limbs[HUMAN][4][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -370,14 +370,14 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
 		entity->focalx = limbs[HUMAN][5][0];
 		entity->focaly = limbs[HUMAN][5][1];
 		entity->focalz = limbs[HUMAN][5][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -388,15 +388,15 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
-		entity->flags[INVISIBLE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
 		entity->focalx = limbs[HUMAN][6][0];
 		entity->focaly = limbs[HUMAN][6][1];
 		entity->focalz = limbs[HUMAN][6][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -407,15 +407,15 @@ void actPlayer(Entity* my)
 		entity->sizex = 4;
 		entity->sizey = 4;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
-		entity->flags[INVISIBLE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
 		entity->focalx = limbs[HUMAN][7][0];
 		entity->focaly = limbs[HUMAN][7][1];
 		entity->focalz = limbs[HUMAN][7][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		entity->focalx = 2;
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
@@ -430,15 +430,15 @@ void actPlayer(Entity* my)
 		entity->scaley = 1.01;
 		entity->scalez = 1.01;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
-		entity->flags[INVISIBLE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
 		entity->focalx = limbs[HUMAN][8][0];
 		entity->focaly = limbs[HUMAN][8][1];
 		entity->focalz = limbs[HUMAN][8][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -452,15 +452,15 @@ void actPlayer(Entity* my)
 		entity->scaley = 1.01;
 		entity->scalez = 1.01;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
-		entity->flags[INVISIBLE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
 		entity->focalx = limbs[HUMAN][9][0];
 		entity->focaly = limbs[HUMAN][9][1];
 		entity->focalz = limbs[HUMAN][9][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -474,15 +474,15 @@ void actPlayer(Entity* my)
 		entity->scaley = .99;
 		entity->scalez = .99;
 		entity->skill[2] = PLAYER_NUM;
-		entity->flags[PASSABLE] = TRUE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[GENIUS] = TRUE;
-		entity->flags[INVISIBLE] = TRUE;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[GENIUS] = true;
+		entity->flags[INVISIBLE] = true;
 		entity->focalx = limbs[HUMAN][10][0];
 		entity->focaly = limbs[HUMAN][10][1];
 		entity->focalz = limbs[HUMAN][10][2];
 		entity->behavior = &actPlayerLimb;
-		entity->parent = my->uid;
+		entity->parent = my->getUID();
 		node = list_AddNodeLast(&my->children);
 		node->element = entity;
 		node->deconstructor = &emptyDeconstructor;
@@ -495,16 +495,16 @@ void actPlayer(Entity* my)
 		PLAYER_ALIVETIME++;
 		if ( PLAYER_NUM == clientnum )
 		{
-			clientplayer = my->uid;
+			clientplayer = my->getUID();
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{
-				bool foundherx = FALSE;
+				bool foundherx = false;
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->sprite == 274 )
 					{
-						foundherx = TRUE;
+						foundherx = true;
 						break;
 					}
 				}
@@ -602,7 +602,7 @@ void actPlayer(Entity* my)
 		}
 		if ( multiplayer == SERVER )
 		{
-			if ( my->uid % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3) )
+			if ( my->getUID() % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3) )
 			{
 				serverUpdateBodypartIDs(my);
 
@@ -628,7 +628,7 @@ void actPlayer(Entity* my)
 			else if ( tempItem->type == GEM_ROCK )
 			{
 				//Auto-succeed on rocks.
-				tempItem->identified = TRUE;
+				tempItem->identified = true;
 				messagePlayer(clientnum, language[570], tempItem->description());
 				appraisal_item = 0;
 				appraisal_timer = 0;
@@ -641,7 +641,7 @@ void actPlayer(Entity* my)
 					appraisal_timer = 0;
 
 					//Cool. Time to identify the item.
-					bool success = FALSE;
+					bool success = false;
 					if ( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
 					{
 						if ( tempItem->type != GEM_GLASS )
@@ -655,11 +655,11 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						success = TRUE; // always succeed when appraisal is maxed out
+						success = true; // always succeed when appraisal is maxed out
 					}
 					if ( success )
 					{
-						tempItem->identified = TRUE;
+						tempItem->identified = true;
 						messagePlayer(clientnum, language[570], tempItem->description());
 					}
 					else
@@ -756,21 +756,21 @@ void actPlayer(Entity* my)
 			if ( stats[PLAYER_NUM]->ring != NULL )
 				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
 				{
-					wearingring = TRUE;
+					wearingring = true;
 				}
 			if ( stats[PLAYER_NUM]->cloak != NULL )
 				if ( stats[PLAYER_NUM]->cloak->type == CLOAK_INVISIBILITY )
 				{
-					wearingring = TRUE;
+					wearingring = true;
 				}
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == TRUE || wearingring == TRUE )
+			if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
 			{
 				if ( !my->flags[INVISIBLE] )
 				{
-					my->flags[INVISIBLE] = TRUE;
+					my->flags[INVISIBLE] = true;
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
-				my->flags[BLOCKSIGHT] = FALSE;
+				my->flags[BLOCKSIGHT] = false;
 				if ( multiplayer != CLIENT )
 				{
 					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
@@ -786,7 +786,7 @@ void actPlayer(Entity* my)
 						entity = (Entity*)node->element;
 						if ( !entity->flags[INVISIBLE] )
 						{
-							entity->flags[INVISIBLE] = TRUE;
+							entity->flags[INVISIBLE] = true;
 							serverUpdateEntityBodypart(my, i);
 						}
 					}
@@ -796,10 +796,10 @@ void actPlayer(Entity* my)
 			{
 				if ( my->flags[INVISIBLE] )
 				{
-					my->flags[INVISIBLE] = FALSE;
+					my->flags[INVISIBLE] = false;
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
-				my->flags[BLOCKSIGHT] = TRUE;
+				my->flags[BLOCKSIGHT] = true;
 				if ( multiplayer != CLIENT )
 				{
 					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
@@ -815,7 +815,7 @@ void actPlayer(Entity* my)
 						entity = (Entity*)node->element;
 						if ( entity->flags[INVISIBLE] )
 						{
-							entity->flags[INVISIBLE] = FALSE;
+							entity->flags[INVISIBLE] = false;
 							serverUpdateEntityBodypart(my, i);
 						}
 					}
@@ -826,12 +826,12 @@ void actPlayer(Entity* my)
 
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		bool prevlevitating = FALSE;
+		bool prevlevitating = false;
 		if ( multiplayer != CLIENT )
 		{
 			if ( (my->z >= -2.05 && my->z <= -1.95) || (my->z >= -1.55 && my->z <= -1.45) )
 			{
-				prevlevitating = TRUE;
+				prevlevitating = true;
 			}
 		}
 
@@ -847,19 +847,19 @@ void actPlayer(Entity* my)
 		}
 
 		// levitation
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_LEVITATING] == TRUE )
+		if ( stats[PLAYER_NUM]->EFFECTS[EFF_LEVITATING] == true )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 		if ( stats[PLAYER_NUM]->ring != NULL )
 			if ( stats[PLAYER_NUM]->ring->type == RING_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		if ( stats[PLAYER_NUM]->shoes != NULL )
 			if ( stats[PLAYER_NUM]->shoes->type == STEEL_BOOTS_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		if ( levitating )
 		{
@@ -891,13 +891,13 @@ void actPlayer(Entity* my)
 	}
 
 	// swimming
-	bool waterwalkingboots = FALSE;
+	bool waterwalkingboots = false;
 	if ( stats[PLAYER_NUM]->shoes != NULL )
 		if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
 		{
-			waterwalkingboots = TRUE;
+			waterwalkingboots = true;
 		}
-	bool swimming = FALSE;
+	bool swimming = false;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
 		if ( !levitating && !waterwalkingboots )
@@ -910,7 +910,7 @@ void actPlayer(Entity* my)
 				{
 					my->increaseSkill(PRO_SWIMMING);
 				}
-				swimming = TRUE;
+				swimming = true;
 				my->z = 7;
 				if ( !PLAYER_INWATER && PLAYER_NUM == clientnum )
 				{
@@ -930,7 +930,7 @@ void actPlayer(Entity* my)
 					{
 						if ( my->flags[BURNING] )
 						{
-							my->flags[BURNING] = FALSE;
+							my->flags[BURNING] = false;
 							messagePlayer(PLAYER_NUM, language[574]);
 							if ( PLAYER_NUM > 0 )
 							{
@@ -944,7 +944,7 @@ void actPlayer(Entity* my)
 						my->setObituary(language[1506]);
 						if ( !my->flags[BURNING] )
 						{
-							my->flags[BURNING] = TRUE;
+							my->flags[BURNING] = true;
 							if ( PLAYER_NUM > 0 )
 							{
 								serverUpdateEntityFlag(my, BURNING);
@@ -1057,26 +1057,20 @@ void actPlayer(Entity* my)
 		}
 
 		// object interaction
-		if ( intro == FALSE )
+		if ( intro == false )
 		{
-			if ( softwaremode == FALSE )
-			{
-				// generate object buffer
-				glClear( GL_COLOR_BUFFER_BIT | GL_DEPTH_BUFFER_BIT );
-				glDrawWorld(&camera, ENTITYUIDS);
-				drawEntities3D(&camera, ENTITYUIDS);
-			}
 			clickDescription(PLAYER_NUM, NULL); // inspecting objects
 			selectedEntity = entityClicked(); // using objects
+
 			if ( selectedEntity != NULL )
 			{
 				if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
 				{
-					inrange[PLAYER_NUM] = TRUE;
+					inrange[PLAYER_NUM] = true;
 				}
 				else
 				{
-					inrange[PLAYER_NUM] = FALSE;
+					inrange[PLAYER_NUM] = false;
 				}
 				if ( multiplayer == CLIENT )
 				{
@@ -1091,7 +1085,7 @@ void actPlayer(Entity* my)
 					net_packet->data[4] = PLAYER_NUM;
 					if (selectedEntity->behavior == &actPlayerLimb)
 					{
-						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->uid, &net_packet->data[5]);
+						SDLNet_Write32((Uint32)players[selectedEntity->skill[2]]->entity->getUID(), &net_packet->data[5]);
 					}
 					else
 					{
@@ -1100,16 +1094,16 @@ void actPlayer(Entity* my)
 						{
 							if (tempEntity->behavior == &actMonster)
 							{
-								SDLNet_Write32((Uint32)tempEntity->uid, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)tempEntity->getUID(), &net_packet->data[5]);
 							}
 							else
 							{
-								SDLNet_Write32((Uint32)selectedEntity->uid, &net_packet->data[5]);
+								SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
 							}
 						}
 						else
 						{
-							SDLNet_Write32((Uint32)selectedEntity->uid, &net_packet->data[5]);
+							SDLNet_Write32((Uint32)selectedEntity->getUID(), &net_packet->data[5]);
 						}
 					}
 					net_packet->address.host = net_server.host;
@@ -1286,12 +1280,12 @@ void actPlayer(Entity* my)
 								entity->x = my->x;
 								entity->y = my->y;
 								entity->z = 7.4 + (rand() % 20) / 100.f;
-								entity->parent = my->uid;
+								entity->parent = my->getUID();
 								entity->sizex = 2;
 								entity->sizey = 2;
 								entity->yaw = (rand() % 360) * PI / 180.0;
-								entity->flags[UPDATENEEDED] = TRUE;
-								entity->flags[PASSABLE] = TRUE;
+								entity->flags[UPDATENEEDED] = true;
+								entity->flags[PASSABLE] = true;
 							}
 						}
 					}
@@ -1334,9 +1328,9 @@ void actPlayer(Entity* my)
 						entity->x = my->x;
 						entity->y = my->y;
 						entity->z = -2;
-						entity->flags[NOUPDATE] = TRUE;
-						entity->flags[PASSABLE] = TRUE;
-						entity->flags[INVISIBLE] = TRUE;
+						entity->flags[NOUPDATE] = true;
+						entity->flags[PASSABLE] = true;
+						entity->flags[INVISIBLE] = true;
 						entity->behavior = &actDeathCam;
 						entity->yaw = my->yaw;
 						entity->pitch = PI / 8;
@@ -1347,13 +1341,13 @@ void actPlayer(Entity* my)
 						closeBookGUI();
 
 #ifdef SOUND
-						levelmusicplaying = TRUE;
-						combatmusicplaying = FALSE;
+						levelmusicplaying = true;
+						combatmusicplaying = false;
 						fadein_increment = default_fadein_increment * 4;
 						fadeout_increment = default_fadeout_increment * 4;
-						playmusic(sounds[209], FALSE, TRUE, FALSE);
+						playmusic(sounds[209], false, true, false);
 #endif
-						combat = FALSE;
+						combat = false;
 						for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
 						{
 							nextnode = node->next;
@@ -1366,8 +1360,8 @@ void actPlayer(Entity* my)
 							for (c = item->count; c > 0; c--)
 							{
 								entity = newEntity(-1, 1, map.entities);
-								entity->flags[INVISIBLE] = TRUE;
-								entity->flags[UPDATENEEDED] = TRUE;
+								entity->flags[INVISIBLE] = true;
+								entity->flags[UPDATENEEDED] = true;
 								entity->x = my->x;
 								entity->y = my->y;
 								entity->sizex = 4;
@@ -1376,8 +1370,8 @@ void actPlayer(Entity* my)
 								entity->vel_x = (rand() % 20 - 10) / 10.0;
 								entity->vel_y = (rand() % 20 - 10) / 10.0;
 								entity->vel_z = -.5;
-								entity->flags[PASSABLE] = TRUE;
-								entity->flags[USERFLAG1] = TRUE;
+								entity->flags[PASSABLE] = true;
+								entity->flags[USERFLAG1] = true;
 								entity->behavior = &actItem;
 								entity->skill[10] = item->type;
 								entity->skill[11] = item->status;
@@ -1524,10 +1518,10 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum && intro == FALSE )
+	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// effects of drunkenness
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] == TRUE )
+		if ( stats[PLAYER_NUM]->EFFECTS[EFF_DRUNK] == true )
 		{
 			CHAR_DRUNK++;
 			if ( CHAR_DRUNK >= 180 )
@@ -1624,11 +1618,11 @@ void actPlayer(Entity* my)
 		}
 
 		// swimming slows you down
-		bool amuletwaterbreathing = FALSE;
+		bool amuletwaterbreathing = false;
 		if ( stats[PLAYER_NUM]->amulet != NULL )
 			if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
 			{
-				amuletwaterbreathing = TRUE;
+				amuletwaterbreathing = true;
 			}
 		if ( swimming && !amuletwaterbreathing )
 		{
@@ -1665,7 +1659,7 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+						PLAYER_ROTX = std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 					else
 					{
@@ -1679,16 +1673,16 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX -= mousexrel * .006 * (mousespeed / 128.f);
+						PLAYER_ROTX -= mousexrel * .006f * (mousespeed / 128.f);
 					}
-					PLAYER_ROTX = fmin(fmax(-0.35, PLAYER_ROTX), 0.35);
+					PLAYER_ROTX = fmin(fmax(-0.35f, PLAYER_ROTX), 0.35f);
 					PLAYER_ROTX *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTX = -std::min(std::max(-0.35, (double)mousexrel * .01 * (mousespeed / 128.f)), 0.35);
+						PLAYER_ROTX = -std::min<float>(std::max<float>(-0.35f, mousexrel * .01f * (mousespeed / 128.f)), 0.35f);
 					}
 					else
 					{
@@ -1744,7 +1738,7 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 					}
 					else
 					{
@@ -1758,16 +1752,16 @@ void actPlayer(Entity* my)
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY -= mouseyrel * .006 * (mousespeed / 128.f) * (reversemouse * 2 - 1);
+						PLAYER_ROTY -= mouseyrel * .006f * (mousespeed / 128.f) * (reversemouse * 2 - 1);
 					}
-					PLAYER_ROTY = fmin(fmax(-0.35, PLAYER_ROTY), 0.35);
+					PLAYER_ROTY = fmin(fmax(-0.35f, PLAYER_ROTY), 0.35f);
 					PLAYER_ROTY *= .5;
 				}
 				else
 				{
 					if ( my->isMobile() )
 					{
-						PLAYER_ROTY = std::min(std::max(-0.35, (double)mouseyrel * .01 * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35);
+						PLAYER_ROTY = std::min<float>(std::max<float>(-0.35f, mouseyrel * .01f * (mousespeed / 128.f) * (reversemouse * 2 - 1)), 0.35f);
 					}
 					else
 					{
@@ -1827,7 +1821,7 @@ void actPlayer(Entity* my)
 		}
 
 		// move
-		if ( noclip == FALSE )
+		if ( noclip == false )
 		{
 			// perform collision detection
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
@@ -1865,7 +1859,7 @@ void actPlayer(Entity* my)
 		// PLAYER_VEL* skills updated by messages sent to server from client
 
 		// move (dead reckoning)
-		if ( noclip == FALSE )
+		if ( noclip == false )
 		{
 			dist = clipMove(&my->x, &my->y, PLAYER_VELX, PLAYER_VELY, my);
 
@@ -2382,7 +2376,7 @@ void actPlayer(Entity* my)
 							if( entity->skill[7]==0 )
 								entity->skill[7] = entity->sprite;
 							entity->sprite = entity->skill[7];
-							entity->sprite += 2*(weapon->flags[INVISIBLE]!=TRUE);
+							entity->sprite += 2*(weapon->flags[INVISIBLE]!=true);
 						}
 					}*/
 					if ( weapon->flags[INVISIBLE] || PLAYER_ARMBENDED )
@@ -2490,24 +2484,24 @@ void actPlayer(Entity* my)
 				{
 					if ( swimming )
 					{
-						entity->flags[INVISIBLE] = TRUE;
+						entity->flags[INVISIBLE] = true;
 					}
 					else
 					{
 						if ( stats[PLAYER_NUM]->weapon == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 						{
-							entity->flags[INVISIBLE] = TRUE;
+							entity->flags[INVISIBLE] = true;
 						}
 						else
 						{
 							entity->sprite = itemModel(stats[PLAYER_NUM]->weapon);
 							if ( itemCategory(stats[PLAYER_NUM]->weapon) == SPELLBOOK )
 							{
-								entity->flags[INVISIBLE] = TRUE;
+								entity->flags[INVISIBLE] = true;
 							}
 							else
 							{
-								entity->flags[INVISIBLE] = FALSE;
+								entity->flags[INVISIBLE] = false;
 							}
 						}
 					}
@@ -2599,23 +2593,23 @@ void actPlayer(Entity* my)
 				{
 					if ( swimming )
 					{
-						entity->flags[INVISIBLE] = TRUE;
+						entity->flags[INVISIBLE] = true;
 					}
 					else
 					{
 						if ( stats[PLAYER_NUM]->shield == NULL )
 						{
-							entity->flags[INVISIBLE] = TRUE;
+							entity->flags[INVISIBLE] = true;
 							entity->sprite = 0;
 						}
 						else
 						{
-							entity->flags[INVISIBLE] = FALSE;
+							entity->flags[INVISIBLE] = false;
 							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
 						}
 						if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 						{
-							entity->flags[INVISIBLE] = TRUE;
+							entity->flags[INVISIBLE] = true;
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -2645,18 +2639,18 @@ void actPlayer(Entity* my)
 					entity2 = spawnFlame(entity);
 					if ( PLAYER_NUM == clientnum )
 					{
-						entity2->flags[GENIUS] = TRUE;
+						entity2->flags[GENIUS] = true;
 					}
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z -= 2;
 					if ( my->skill[2] == clientnum )
 					{
-						entity2->uid = -4;
+						entity2->setUID(-4);
 					}
 					else
 					{
-						entity2->uid = -3;
+						entity2->setUID(-3);
 					}
 				}
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
@@ -2665,18 +2659,18 @@ void actPlayer(Entity* my)
 					entity2 = spawnFlame(entity);
 					if ( PLAYER_NUM == clientnum )
 					{
-						entity2->flags[GENIUS] = TRUE;
+						entity2->flags[GENIUS] = true;
 					}
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z += 1;
 					if ( my->skill[2] == clientnum )
 					{
-						entity2->uid = -4;
+						entity2->setUID(-4);
 					}
 					else
 					{
-						entity2->uid = -3;
+						entity2->setUID(-3);
 					}
 				}
 				break;
@@ -2686,11 +2680,11 @@ void actPlayer(Entity* my)
 				{
 					if ( stats[PLAYER_NUM]->cloak == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
-						entity->flags[INVISIBLE] = TRUE;
+						entity->flags[INVISIBLE] = true;
 					}
 					else
 					{
-						entity->flags[INVISIBLE] = FALSE;
+						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
 					}
 					if ( multiplayer == SERVER )
@@ -2728,11 +2722,11 @@ void actPlayer(Entity* my)
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
 					if ( stats[PLAYER_NUM]->helmet == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
-						entity->flags[INVISIBLE] = TRUE;
+						entity->flags[INVISIBLE] = true;
 					}
 					else
 					{
-						entity->flags[INVISIBLE] = FALSE;
+						entity->flags[INVISIBLE] = false;
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -2794,19 +2788,19 @@ void actPlayer(Entity* my)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					bool hasSteelHelm = FALSE;
+					bool hasSteelHelm = false;
 					if ( stats[PLAYER_NUM]->helmet )
 						if ( stats[PLAYER_NUM]->helmet->type == STEEL_HELM )
 						{
-							hasSteelHelm = TRUE;
+							hasSteelHelm = true;
 						}
 					if ( stats[PLAYER_NUM]->mask == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm )
 					{
-						entity->flags[INVISIBLE] = TRUE;
+						entity->flags[INVISIBLE] = true;
 					}
 					else
 					{
-						entity->flags[INVISIBLE] = FALSE;
+						entity->flags[INVISIBLE] = false;
 					}
 					if ( stats[PLAYER_NUM]->mask != NULL )
 					{
@@ -2872,7 +2866,7 @@ void actPlayer(Entity* my)
 		PLAYER_ATTACKTIME = 0;
 	}
 
-	if ( PLAYER_NUM == clientnum && intro == FALSE )
+	if ( PLAYER_NUM == clientnum && intro == false )
 	{
 		// camera
 		if ( !PLAYER_DEBUGCAM )
@@ -2904,7 +2898,7 @@ void actPlayerLimb(Entity* my)
 	{
 		if ( stats[PLAYER_NUM]->HP <= 0 )
 		{
-			my->flags[INVISIBLE] = TRUE;
+			my->flags[INVISIBLE] = true;
 			return;
 		}
 	}

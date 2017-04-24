@@ -43,7 +43,7 @@ SDL_Surface* inventoryChest_bmp = NULL;
 SDL_Surface* invclose_bmp = NULL;
 SDL_Surface* invgraball_bmp = NULL;
 SDL_Surface* button_bmp = NULL, *smallbutton_bmp = NULL, *invup_bmp = NULL, *invdown_bmp = NULL;
-bool gui_clickdrag = FALSE;
+bool gui_clickdrag = false;
 int dragoffset_x = 0;
 int dragoffset_y = 0;
 
@@ -51,21 +51,11 @@ int chestitemscroll = 0;
 list_t chestInv;
 int chestgui_offset_x = 0;
 int chestgui_offset_y = 0;
-bool dragging_chestGUI = FALSE;
+bool dragging_chestGUI = false;
 int selectedChestSlot = -1;
 
 int selected_inventory_slot_x = 0;
 int selected_inventory_slot_y = 0;
-
-//Remove curse GUI definitions.
-bool removecursegui_active = FALSE;
-bool removecursegui_appraising = FALSE;
-int removecursegui_offset_x = 0;
-int removecursegui_offset_y = 0;
-bool dragging_removecurseGUI = FALSE;
-int removecursescroll = 0;
-Item* removecurse_items[4];
-SDL_Surface* removecurseGUI_img;
 
 SDL_Surface* rightsidebar_titlebar_img = NULL;
 SDL_Surface* rightsidebar_slot_img = NULL;
@@ -83,8 +73,8 @@ SDL_Surface* bookgui_img = NULL;
 node_t* book_page = NULL;
 int bookgui_offset_x = 0;
 int bookgui_offset_y = 0;
-bool dragging_book_GUI = FALSE;
-bool book_open = FALSE;
+bool dragging_book_GUI = false;
+bool book_open = false;
 book_t* open_book = NULL;
 Item* open_book_item = NULL;
 //int book_characterspace_x = 0;
@@ -112,7 +102,7 @@ SDL_Surface* damage_bmp = NULL;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
-bool dragging_magicspell_list_GUI = FALSE;
+bool dragging_magicspell_list_GUI = false;
 int magic_GUI_state = 0;
 SDL_Rect magic_gui_pos;
 SDL_Surface* sustained_spell_generic_icon = NULL;
@@ -125,12 +115,14 @@ hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 int current_hotbar = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
+bool hotbarHasFocus = false;
+
 list_t damageIndicators;
 
-bool auto_hotbar_new_items = TRUE;
-bool disable_messages = FALSE;
-bool right_click_protect = FALSE;
-bool auto_appraise_new_items = FALSE;
+bool auto_hotbar_new_items = true;
+bool disable_messages = false;
+bool right_click_protect = false;
+bool auto_appraise_new_items = false;
 
 
 bool loadInterfaceResources()
@@ -145,7 +137,7 @@ bool loadInterfaceResources()
 	status_bmp = loadImage("images/system/StatusBar.png");
 	character_bmp = loadImage("images/system/CharacterSheet.png");
 	hunger_bmp = loadImage("images/system/Hunger.png");
-	minotaur_bmp = loadImage("images/system/minotaur.png");
+	minotaur_bmp = loadImage("images/system/minotaur.png"); // the file "images/system/minotaur.png" doesn't exist in current Data
 	//textup_bmp = loadImage("images/system/TextBoxUpHighlighted.png");
 	//textdown_bmp = loadImage("images/system/TextBoxDownHighlighted.png");
 	attributesleft_bmp = loadImage("images/system/AttributesLeftHighlighted.png");
@@ -194,17 +186,17 @@ bool loadInterfaceResources()
 	/*rightsidebar_titlebar_img = loadImage("images/system/rightSidebarTitlebar.png");
 	if (!rightsidebar_titlebar_img) {
 		printlog( "Failed to load \"images/system/rightSidebarTitlebar.png\".");
-		return FALSE;
+		return false;
 	}
 	rightsidebar_slot_img = loadImage("images/system/rightSidebarSlot.png");
 	if (!rightsidebar_slot_img) {
 		printlog( "Failed to load \"images/system/rightSidebarSlot.png\".");
-		return FALSE;
+		return false;
 	}
 	rightsidebar_slot_highlighted_img = loadImage("images/system/rightSidebarSlotHighlighted.png");
 	if (!rightsidebar_slot_highlighted_img) {
 		printlog( "Failed to load \"images/system/rightSidebarSlotHighlighted.png\".");
-		return FALSE;
+		return false;
 	}*/
 	rightsidebar_titlebar_img = spell_list_titlebar_bmp;
 	rightsidebar_slot_img = spell_list_gui_slot_bmp;
@@ -230,7 +222,7 @@ bool loadInterfaceResources()
 	damageIndicators.first = nullptr;
 	damageIndicators.last = nullptr;
 
-	return TRUE;
+	return true;
 }
 
 void freeInterfaceResources()
@@ -417,10 +409,17 @@ void freeInterfaceResources()
 
 void defaultImpulses()
 {
+#ifdef PANDORA
+	impulses[IN_FORWARD] = 82;
+	impulses[IN_LEFT] = 80;
+	impulses[IN_BACK] = 81;
+	impulses[IN_RIGHT] = 79;
+#else
 	impulses[IN_FORWARD] = 26;
 	impulses[IN_LEFT] = 4;
 	impulses[IN_BACK] = 22;
 	impulses[IN_RIGHT] = 7;
+#endif
 	impulses[IN_TURNL] = 20;
 	impulses[IN_TURNR] = 8;
 	impulses[IN_UP] = 6;
@@ -428,14 +427,20 @@ void defaultImpulses()
 	impulses[IN_CHAT] = 40;
 	impulses[IN_COMMAND] = 56;
 	impulses[IN_STATUS] = 43;
+#ifdef PANDORA
+	impulses[IN_SPELL_LIST] = 75;
+	impulses[IN_CAST_SPELL] = 77;
+	impulses[IN_DEFEND] = 78;
+#else
 	impulses[IN_SPELL_LIST] = 16;
 	impulses[IN_CAST_SPELL] = 9;
 	impulses[IN_DEFEND] = 44;
+#endif
 	impulses[IN_ATTACK] = 283;
 	impulses[IN_USE] = 285;
 
 	joyimpulses[INJOY_STATUS] = 307;
-	joyimpulses[INJOY_SPELL_LIST] = 399;
+	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
 	joyimpulses[INJOY_GAME_CAST_SPELL] = 309;
 	joyimpulses[INJOY_GAME_DEFEND] = 299;
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
@@ -447,15 +452,15 @@ void defaultImpulses()
 	joyimpulses[INJOY_DPAD_UP] = 312;
 	joyimpulses[INJOY_DPAD_DOWN] = 313;
 	joyimpulses[INJOY_MENU_NEXT] = 301;
-	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
-	joyimpulses[INJOY_HOTBAR_PREV] = 310;
+	joyimpulses[INJOY_GAME_HOTBAR_NEXT] = 311;
+	joyimpulses[INJOY_GAME_HOTBAR_PREV] = 310;
 	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 304;
 	joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = 304;
 	joyimpulses[INJOY_MENU_CANCEL] = 302;
 	joyimpulses[INJOY_MENU_USE] = 301;
 	joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = 304;
 	joyimpulses[INJOY_MENU_REFRESH_LOBBY] = 304;
-	joyimpulses[INJOY_MENU_LOAD_SAVE] = 304;
+	joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = 304;
 	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
 	joyimpulses[INJOY_MENU_DROP_ITEM] = 302;
 	joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT] = 310;
@@ -466,23 +471,40 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_SETTINGS_PREV] = 310;
 	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
 	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
+	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
 }
 
 void defaultConfig()
 {
+#ifdef PANDORA
+	consoleCommand("/res 960x600");
+	consoleCommand("/gamma 2.000");
+	consoleCommand("/smoothlighting");
+	consoleCommand("/fullscreen");
+#else
 	consoleCommand("/res 1280x720");
 	consoleCommand("/gamma 1.000");
 	consoleCommand("/smoothlighting");
+#endif
 	consoleCommand("/shaking");
 	consoleCommand("/bobbing");
 	consoleCommand("/sfxvolume 64");
 	consoleCommand("/musvolume 32");
+#ifdef PANDORA
+	consoleCommand("/mousespeed 105");
+	consoleCommand("/svflags 30");
+	consoleCommand("/bind 82 IN_FORWARD");
+	consoleCommand("/bind 80 IN_LEFT");
+	consoleCommand("/bind 81 IN_BACK");
+	consoleCommand("/bind 79 IN_RIGHT");
+#else
 	consoleCommand("/mousespeed 16");
 	consoleCommand("/svflags 30");
 	consoleCommand("/bind 26 IN_FORWARD");
 	consoleCommand("/bind 4 IN_LEFT");
 	consoleCommand("/bind 22 IN_BACK");
 	consoleCommand("/bind 7 IN_RIGHT");
+#endif
 	consoleCommand("/bind 20 IN_TURNL");
 	consoleCommand("/bind 8 IN_TURNR");
 	consoleCommand("/bind 6 IN_UP");
@@ -490,13 +512,19 @@ void defaultConfig()
 	consoleCommand("/bind 40 IN_CHAT");
 	consoleCommand("/bind 56 IN_COMMAND");
 	consoleCommand("/bind 43 IN_STATUS");
+#ifdef PANDORA
+	consoleCommand("/bind 75 IN_SPELL_LIST");
+	consoleCommand("/bind 77 IN_CAST_SPELL");
+	consoleCommand("/bind 78 IN_DEFEND");
+#else
 	consoleCommand("/bind 16 IN_SPELL_LIST");
 	consoleCommand("/bind 9 IN_CAST_SPELL");
 	consoleCommand("/bind 44 IN_DEFEND");
+#endif
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/joybind 307 INJOY_STATUS");
-	consoleCommand("/joybind 399 INJOY_SPELL_LIST");
+	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 309 INJOY_GAME_CAST_SPELL");
 	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
 	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
@@ -509,13 +537,13 @@ void defaultConfig()
 	consoleCommand("/joybind 312 INJOY_DPAD_UP");
 	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
-	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
+	consoleCommand("/joybind 311 INJOY_GAME_HOTBAR_NEXT");
+	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_PREV");
 	consoleCommand("/joybind 304 INJOY_GAME_HOTBAR_ACTIVATE");
 	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
 	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
 	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
-	consoleCommand("/joybind 304 INJOY_MENU_LOAD_SAVE");
+	consoleCommand("/joybind 304 INJOY_MENU_DONT_LOAD_SAVE");
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
 	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
@@ -528,6 +556,7 @@ void defaultConfig()
 	consoleCommand("/joybind 310 INJOY_MENU_SETTINGS_PREV");
 	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
 	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
+	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -562,38 +591,44 @@ static char impulsenames[NUMIMPULSES][12] =
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 {
+	//Bi-functional:
 	"STATUS",
 	"SPELL_LIST",
-	"GAME_CAST_SPELL",
-	"GAME_DEFEND",
-	"GAME_ATTACK",
-	"GAME_USE",
 	"PAUSE_MENU",
-	"MENU_LEFT_CLICK",
 	"DPAD_LEFT",
 	"DPAD_RIGHT",
 	"DPAD_UP",
 	"DPAD_DOWN",
+
+	//Menu exclusive:
+	"MENU_LEFT_CLICK",
 	"MENU_NEXT",
-	"HOTBAR_NEXT",
-	"HOTBAR_PREV",
-	"GAME_HOTBAR_ACTIVATE",
 	"MENU_CANCEL",
+	"MENU_SETTINGS_NEXT",
+	"MENU_SETTINGS_PREV",
+	"MENU_REFRESH_LOBBY",
+	"MENU_DONT_LOAD_SAVE",
+	"MENU_RANDOM_NAME",
+	"MENU_RANDOM_CHAR",
+	"MENU_INVENTORY_TAB",
+	"MENU_MAGIC_TAB",
 	"MENU_USE",
 	"MENU_HOTBAR_CLEAR",
-	"MENU_REFRESH_LOBBY",
-	"MENU_LOAD_SAVE",
-	"MENU_RANDOM_CHAR",
 	"MENU_DROP_ITEM",
 	"MENU_CHEST_GRAB_ALL",
 	"MENU_CYCLE_SHOP_LEFT",
 	"MENU_CYCLE_SHOP_RIGHT",
 	"MENU_BOOK_NEXT",
 	"MENU_BOOK_PREV",
-	"MENU_SETTINGS_NEXT",
-	"MENU_SETTINGS_PREV",
-	"MENU_INVENTORY_TAB",
-	"MENU_MAGIC_TAB"
+
+	//Game Exclusive:
+	"GAME_USE",
+	"GAME_DEFEND",
+	"GAME_ATTACK",
+	"GAME_CAST_SPELL",
+	"GAME_HOTBAR_ACTIVATE",
+	"GAME_HOTBAR_PREV",
+	"GAME_HOTBAR_NEXT"
 };
 
 /*-------------------------------------------------------------------------------
@@ -624,7 +659,7 @@ int loadConfig(char* filename)
 
 	char str[1024];
 	FILE* fp;
-	bool mallocd = FALSE;
+	bool mallocd = false;
 
 	printlog("Loading config '%s'...\n", filename);
 
@@ -633,7 +668,7 @@ int loadConfig(char* filename)
 		char* filename2 = filename;
 		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, filename2);
-		mallocd = TRUE;
+		mallocd = true;
 		strcat(filename, ".cfg");
 	}
 
@@ -677,7 +712,7 @@ int saveConfig(char* filename)
 	struct tm tm = *localtime(&t);
 	FILE* fp;
 	int c;
-	bool mallocd = FALSE;
+	bool mallocd = false;
 
 	printlog("Saving config '%s'...\n", filename);
 
@@ -686,7 +721,7 @@ int saveConfig(char* filename)
 		char* filename2 = filename;
 		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, filename2);
-		mallocd = TRUE;
+		mallocd = true;
 		strcat(filename, ".cfg");
 	}
 
@@ -854,10 +889,10 @@ bool mouseInBounds(int x1, int x2, int y1, int y2)
 	if (omousey >= y1 && omousey < y2)
 		if (omousex >= x1 && omousex < x2)
 		{
-			return TRUE;
+			return true;
 		}
 
-	return FALSE;
+	return false;
 }
 
 hotbar_slot_t* getHotbar(int x, int y)
@@ -943,6 +978,10 @@ const char* getInputName(Uint32 scancode)
 	}
 	else
 	{
+		if ( scancode == SCANCODE_UNASSIGNED_BINDING )
+		{
+			return "Unassigned key";
+		}
 		return "Unknown key";
 	}
 }
@@ -1001,6 +1040,8 @@ void selectHotbarSlot(int slot)
 	}
 
 	current_hotbar = slot;
+
+	hotbarHasFocus = true;
 }
 
 void openStatusScreen(int whichGUIMode, int whichInventoryMode)

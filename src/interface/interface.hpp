@@ -195,11 +195,11 @@ void updateMagicGUI();
 //sust_spells_x & sust_spells_y define the top left corner of where the sustained spells icons start drawing.
 #define SUST_SPELLS_X 32
 #define SUST_SPELLS_Y 32
-#define SUST_SPELLS_RIGHT_ALIGN TRUE //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
+#define SUST_SPELLS_RIGHT_ALIGN true //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
 void drawSustainedSpells(); //Draws an icon for every sustained spell.
 
 //Identify GUI definitions.
-//NOTE: Make sure to always reset identifygui_appraising back to FALSE.
+//NOTE: Make sure to always reset identifygui_appraising back to false.
 #define IDENTIFY_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + identifygui_offset_x)
 #define IDENTIFY_GUI_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + identifygui_offset_y)
 extern bool identifygui_active;
@@ -230,12 +230,19 @@ extern int removecursegui_offset_x;
 extern int removecursegui_offset_y;
 extern bool dragging_removecurseGUI; //The remove curse GUI is being dragged.
 extern int removecursescroll;
-extern Item* removecurse_items[4];
+static const int NUM_REMOVE_CURSE_GUI_ITEMS = 4;
+extern Item* removecurse_items[NUM_REMOVE_CURSE_GUI_ITEMS];
 //extern SDL_Surface *removecurseGUI_img; //Nah, just use the identify GUI's image. It works well enough. No need to double the resources.
 
 void closeRemoveCurseGUI();
 void updateRemoveCurseGUI(); //Updates the remove curse GUI.
 void removecurseGUIRemoveCurse(Item* item); //Uncurse the given item.
+
+//Gamepad-support related stuff.
+extern int selectedRemoveCurseSlot;
+void selectRemoveCurseSlot(int slot);
+void warpMouseToSelectedRemoveCurseSlot();
+
 
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
@@ -332,6 +339,8 @@ extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TOD
 hotbar_slot_t* getHotbar(int x, int y);
 
 void selectHotbarSlot(int slot);
+extern bool hotbarHasFocus;
+void warpMouseToSelectedHotbarSlot();
 
 /*
  * True = automatically place items you pick up in your hotbar.
@@ -350,3 +359,11 @@ Sint8* inputPressed(Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
 void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+
+static const int SCANCODE_UNASSIGNED_BINDING = 399;
+
+inline bool hotbarGamepadControlEnabled()
+{
+	return ( !openedChest[clientnum] && gui_mode != GUI_MODE_SHOP && !identifygui_active && !removecursegui_active );
+}
+

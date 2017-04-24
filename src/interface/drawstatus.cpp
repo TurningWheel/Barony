@@ -205,6 +205,14 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 
 bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
 
+void warpMouseToSelectedHotbarSlot()
+{
+	SDL_Rect pos;
+	pos.x = STATUS_X + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
+	pos.y = STATUS_Y - (hotbar_img->h / 2);
+	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+}
+
 void drawStatus()
 {
 	SDL_Rect pos, initial_position;
@@ -314,7 +322,7 @@ void drawStatus()
 			}
 		}
 		Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 0, 0, 255); // black color
-		ttfPrintTextColor(ttf12, x, y, color, FALSE, string->data);
+		ttfPrintTextColor(ttf12, x, y, color, false, string->data);
 	}
 	if ( mousestatus[SDL_BUTTON_LEFT] )
 	{
@@ -522,7 +530,7 @@ void drawStatus()
 		item = uidToItem(hotbar[num].item);
 		if (item)
 		{
-			bool used = FALSE;
+			bool used = false;
 			pos.w = hotbar_img->w;
 			pos.h = hotbar_img->h;
 			drawImageScaled(itemSprite(item), NULL, &pos);
@@ -530,9 +538,9 @@ void drawStatus()
 			{
 				if (!shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
 				{
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active)) && !selectedItem )
+					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
 					{
-						toggleclick = FALSE;
+						toggleclick = false;
 						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
 						{
 							hotbar[num].item = 0;
@@ -557,17 +565,17 @@ void drawStatus()
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active) )
+					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active) )
 					{
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
 						*inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
-						bool badpotion = FALSE;
+						bool badpotion = false;
 						if ( itemCategory(item) == POTION && item->identified )
 						{
 							if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
 							{
-								badpotion = TRUE;
+								badpotion = true;
 							}
 						}
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -605,7 +613,7 @@ void drawStatus()
 								}
 								equipItem(item, &stats[clientnum]->weapon, clientnum);
 							}
-							used = TRUE;
+							used = true;
 						}
 					}
 				}
@@ -833,36 +841,34 @@ void drawStatus()
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active)
+		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
 		{
-			*inputPressed(joyimpulses[INJOY_HOTBAR_NEXT]) = 0;
+			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if (*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active)
+		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
 		{
-			*inputPressed(joyimpulses[INJOY_HOTBAR_PREV]) = 0;
+			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active)
+		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active)
 		{
-			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
-			pos.y = initial_position.y - (hotbar_img->h / 2);
-			SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open  && !identifygui_active )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open  && !identifygui_active && !removecursegui_active )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
 				item = uidToItem(hotbar[current_hotbar].item);
 			}
 
-			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) && !book_open )
+			if ( !shootmode && *inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) && !book_open ) //TODO: Don't activate if any of the previous if statement's conditions are true?
 			{
 				//Clear a hotbar slot if in-inventory.
 				*inputPressed(joyimpulses[INJOY_MENU_HOTBAR_CLEAR]) = 0;
@@ -886,12 +892,12 @@ void drawStatus()
 
 		if ( item )
 		{
-			bool badpotion = FALSE;
+			bool badpotion = false;
 			if ( itemCategory(item) == POTION && item->identified )
 			{
 				if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
 				{
-					badpotion = TRUE;
+					badpotion = true;
 				}
 			}
 			if ( !badpotion )

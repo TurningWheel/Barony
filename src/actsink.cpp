@@ -43,12 +43,12 @@ void actSink(Entity* my)
 	if ( my->skill[2] > 0 )
 	{
 		Entity* entity = spawnGib(my);
-		entity->flags[INVISIBLE] = FALSE;
+		entity->flags[INVISIBLE] = false;
 		entity->x += .5;
 		entity->z -= 3;
-		entity->flags[SPRITE] = FALSE;
-		entity->flags[NOUPDATE] = TRUE;
-		entity->flags[UPDATENEEDED] = FALSE;
+		entity->flags[SPRITE] = false;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UPDATENEEDED] = false;
 		entity->skill[4] = 6;
 		entity->sprite = 4;
 		entity->yaw = (rand() % 360) * PI / 180.0;
@@ -123,7 +123,7 @@ void actSink(Entity* my)
 							int beatitude = rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
 
 							//Actually create the item, put it in the player's inventory, and then free the memory of the temp item.
-							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), FALSE, NULL);
+							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), false, NULL);
 							if (item)
 							{
 								itemPickup(i, item);
@@ -145,7 +145,7 @@ void actSink(Entity* my)
 								Stat* monsterStats = monster->getStats();
 								monsterStats->LVL = 4;
 								monster->sprite = 210;
-								monster->flags[INVISIBLE] = FALSE;
+								monster->flags[INVISIBLE] = false;
 							}
 							break;
 						}

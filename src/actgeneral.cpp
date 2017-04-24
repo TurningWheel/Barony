@@ -60,7 +60,7 @@ void actAnimator(Entity* my)
 void actRotate(Entity* my)
 {
 	my->yaw += 0.1;
-	my->flags[PASSABLE] = TRUE; // this entity should always be passable
+	my->flags[PASSABLE] = true; // this entity should always be passable
 
 #ifdef TESTSPRITES
 	if ( keystatus[SDL_SCANCODE_HOME] )
@@ -122,7 +122,7 @@ void actLiquid(Entity* my)
 	}
 	if ( LIQUID_LAVA && !LIQUID_LAVANOBUBBLE )
 	{
-		if ( ticks % 40 == my->uid % 40 && rand() % 3 == 0 )
+		if ( ticks % 40 == my->getUID() % 40 && rand() % 3 == 0 )
 		{
 			int c, j = 1 + rand() % 2;
 			for ( c = 0; c < j; c++ )
@@ -130,7 +130,7 @@ void actLiquid(Entity* my)
 				Entity* entity = spawnGib( my );
 				entity->x += rand() % 16 - 8;
 				entity->y += rand() % 16 - 8;
-				entity->flags[SPRITE] = TRUE;
+				entity->flags[SPRITE] = true;
 				entity->sprite = 42;
 				entity->fskill[3] = 0.01;
 				double vel = (rand() % 10) / 20.f;
@@ -168,7 +168,7 @@ void actFurniture(Entity* my)
 			FURNITURE_HEALTH = 4 + rand() % 4;
 		}
 		FURNITURE_MAXHEALTH = FURNITURE_HEALTH;
-		my->flags[BURNABLE] = TRUE;
+		my->flags[BURNABLE] = true;
 	}
 	else
 	{
@@ -190,7 +190,7 @@ void actFurniture(Entity* my)
 				for ( c = 0; c < 5; c++ )
 				{
 					Entity* entity = spawnGib(my);
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					entity->sprite = 187; // Splinter.vox
 					entity->x = floor(my->x / 16) * 16 + 8;
 					entity->y = floor(my->y / 16) * 16 + 8;

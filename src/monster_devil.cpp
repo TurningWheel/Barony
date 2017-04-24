@@ -27,9 +27,9 @@ void initDevil(Entity* my, Stat* myStats)
 
 	my->sprite = 304;
 
-	my->flags[UPDATENEEDED] = TRUE;
-	my->flags[BLOCKSIGHT] = TRUE;
-	my->flags[INVISIBLE] = FALSE;
+	my->flags[UPDATENEEDED] = true;
+	my->flags[BLOCKSIGHT] = true;
+	my->flags[INVISIBLE] = false;
 
 	if ( multiplayer != CLIENT )
 	{
@@ -62,7 +62,7 @@ void initDevil(Entity* my, Stat* myStats)
 		myStats->leader_uid = 0;
 		myStats->FOLLOWERS.first = NULL;
 		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
+		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
 		{
 			if ( c < NUMPROFICIENCIES )
 			{
@@ -70,7 +70,7 @@ void initDevil(Entity* my, Stat* myStats)
 			}
 			if ( c < NUMEFFECTS )
 			{
-				myStats->EFFECTS[c] = FALSE;
+				myStats->EFFECTS[c] = false;
 			}
 			if ( c < NUMEFFECTS )
 			{
@@ -87,7 +87,7 @@ void initDevil(Entity* my, Stat* myStats)
 		myStats->amulet = NULL;
 		myStats->ring = NULL;
 		myStats->mask = NULL;
-		myStats->EFFECTS[EFF_LEVITATING] = TRUE;
+		myStats->EFFECTS[EFF_LEVITATING] = true;
 		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
@@ -95,7 +95,7 @@ void initDevil(Entity* my, Stat* myStats)
 
 		if (players[0] && players[0]->entity)
 		{
-			MONSTER_TARGET = players[0]->entity->uid;
+			MONSTER_TARGET = players[0]->entity->getUID();
 			MONSTER_TARGETX = players[0]->entity->x;
 			MONSTER_TARGETY = players[0]->entity->y;
 		}
@@ -105,15 +105,15 @@ void initDevil(Entity* my, Stat* myStats)
 	Entity* entity = newEntity(303, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][1][0]; // 2.5
 	entity->focaly = limbs[DEVIL][1][1]; // 0
 	entity->focalz = limbs[DEVIL][1][2]; // -4
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -123,15 +123,15 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(305, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][2][0]; // 0
 	entity->focaly = limbs[DEVIL][2][1]; // 18
 	entity->focalz = limbs[DEVIL][2][2]; // 6
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -141,15 +141,15 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(306, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][3][0]; // 0
 	entity->focaly = limbs[DEVIL][3][1]; // 17
 	entity->focalz = limbs[DEVIL][3][2]; // 26
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -159,15 +159,15 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(307, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][4][0]; // 0
 	entity->focaly = limbs[DEVIL][4][1]; // -18
 	entity->focalz = limbs[DEVIL][4][2]; // 6
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -177,15 +177,15 @@ void initDevil(Entity* my, Stat* myStats)
 	entity = newEntity(308, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
-	entity->skill[2] = my->uid;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[NOUPDATE] = TRUE;
+	entity->skill[2] = my->getUID();
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
 	entity->flags[USERFLAG2] = my->flags[USERFLAG2];
 	entity->focalx = limbs[DEVIL][5][0]; // 0
 	entity->focaly = limbs[DEVIL][5][1]; // -17
 	entity->focalz = limbs[DEVIL][5][2]; // 26
 	entity->behavior = &actDevilLimb;
-	entity->parent = my->uid;
+	entity->parent = my->getUID();
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -241,7 +241,7 @@ void devilDie(Entity* my)
 		if (node->element != NULL && i >= 2)
 		{
 			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = FALSE;
+			entity->flags[UPDATENEEDED] = false;
 			list_RemoveNode(entity->mynode);
 		}
 		list_RemoveNode(node);
@@ -327,10 +327,10 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == TRUE )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
-			my->flags[INVISIBLE] = TRUE;
-			my->flags[BLOCKSIGHT] = FALSE;
+			my->flags[INVISIBLE] = true;
+			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -346,7 +346,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( !entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = TRUE;
+					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -354,8 +354,8 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->flags[INVISIBLE] = FALSE;
-			my->flags[BLOCKSIGHT] = TRUE;
+			my->flags[INVISIBLE] = false;
+			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
@@ -371,7 +371,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity = (Entity*)node->element;
 				if ( entity->flags[INVISIBLE] )
 				{
-					entity->flags[INVISIBLE] = FALSE;
+					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
 				bodypart++;
@@ -423,13 +423,13 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( MONSTER_ATTACKTIME < 30 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 2);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 2);
 				}
 				else if ( MONSTER_ATTACKTIME > 40 )
 				{
 					if ( entity->pitch < 0 )
 					{
-						entity->pitch = std::min(entity->pitch + .4, 0.0);
+						entity->pitch = std::min<real_t>(entity->pitch + .4, 0.0);
 						if ( entity->pitch >= 0 )
 						{
 							playSound(181, 64);
@@ -439,7 +439,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else if ( MONSTER_ATTACK == 4 )
 			{
-				entity->pitch = std::max(entity->pitch - .1, -4 * PI / 5);
+				entity->pitch = std::max<real_t>(entity->pitch - .1, -4 * PI / 5);
 			}
 			else if ( MONSTER_ATTACK == 5 )
 			{
@@ -456,13 +456,13 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( MONSTER_ATTACKTIME < 30 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 2);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 2);
 				}
 				else if ( MONSTER_ATTACKTIME > 40 )
 				{
 					if ( entity->pitch < 0 )
 					{
-						entity->pitch = std::min(entity->pitch + .4, 0.0);
+						entity->pitch = std::min<real_t>(entity->pitch + .4, 0.0);
 						if ( entity->pitch >= 0 )
 						{
 							playSound(181, 64);
@@ -472,7 +472,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else if ( MONSTER_ATTACK == 4 )
 			{
-				entity->pitch = std::max(entity->pitch - .1, -4 * PI / 5);
+				entity->pitch = std::max<real_t>(entity->pitch - .1, -4 * PI / 5);
 			}
 			else if ( MONSTER_ATTACK == 6 )
 			{
@@ -570,21 +570,21 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						if ( MONSTER_ATTACK == 1 )
 						{
-							entity->yaw = std::min(entity->yaw + .1, my->yaw + PI / 6);
+							entity->yaw = std::min<real_t>(entity->yaw + .1, my->yaw + PI / 6);
 						}
 						else if ( MONSTER_ATTACK == 2 )
 						{
-							entity->yaw = std::max(entity->yaw - .1, my->yaw - PI / 6);
+							entity->yaw = std::max<real_t>(entity->yaw - .1, my->yaw - PI / 6);
 						}
 					}
 				}
 				if ( MONSTER_ATTACK == 4 )
 				{
-					entity->pitch = std::max(entity->pitch - .1, -PI / 6);
+					entity->pitch = std::max<real_t>(entity->pitch - .1, -PI / 6);
 				}
 				else
 				{
-					entity->pitch = std::min(entity->pitch + .1, 0.0);
+					entity->pitch = std::min<real_t>(entity->pitch + .1, 0.0);
 				}
 				break;
 			}

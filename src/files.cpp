@@ -262,10 +262,10 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			nummonsters = 0;
 			minotaurlevel = 0;
 
-#ifdef HAVE_FMOD
+#if defined (HAVE_FMOD) || defined(HAVE_OPENAL)
 			if ( strcmp(oldmapname, map.name) )
 			{
-				levelmusicplaying = FALSE;
+				levelmusicplaying = false;
 			}
 #endif
 
@@ -331,7 +331,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			for ( x = 0; x < destmap->width; x++ )
 				for ( y = 0; y < destmap->height; y++ )
 				{
-					shoparea[y + x * destmap->height] = FALSE;
+					shoparea[y + x * destmap->height] = false;
 				}
 		}
 

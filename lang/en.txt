@@ -2716,56 +2716,73 @@ client (player %d) (direct ip)#
 # Gamepad settings menu stuff.
 1947 Gamepad Bindings#
 
+# Bifunctional bindings.
 1948 Character Status#
 1949 Spell List#
-1950 Cast Spell#
-1951 Raise Shield#
-1952 Attack#
-1953 Use#
-1954 Menu/Escape#
+1950 Menu/Escape#
+1951 D-Pad Left#
+1952 D-Pad Right#
+1953 D-Pad Up#
+1954 D-Pad Down#
+
+# Menu exclusive bindings.
 1955 "Left Click" (in MENUs)#
-1956 D-Pad Left#
-1957 D-Pad Right#
-1958 D-Pad Up#
-1959 D-Pad Down#
-1960 Next (in MENUs)#
-1961 Next Hotbar Slot#
-1962 Previous Hotbar Slot#
-1963 Activate Hotbar Slot#
-1964 Cancel#
-1965 Item Context Menu#
-1966 Clear Hotbar Slot#
-1967 Refresh Lobby#
-1968 Don't Load Save (New Game)#
-1969 Random Character#
-1970 Drop Item#
-1971 Grab All From Chest#
-1972 Previous Shop Category#
-1973 Next Shop Category#
-1974 Previous Book Page#
-1975 Next Book Page#
-1976 Next Settings Tab#
-1977 Previous Settings Tab#
-1978 Previous Inventory Tab#
-1979 Next Inventory Tab#
+1956 Next (in MENUs)#
+1957 Cancel#
+1958 Next Settings Tab#
+1959 Previous Settings Tab#
+1960 Refresh Lobby#
+1961 Don't Load Save (New Game)#
+1962 Random Name#
+1963 Random Character#
+1964 Previous Inventory Tab#
+1965 Next Inventory Tab#
+1966 Item Context Menu#
+1967 Clear Hotbar Slot#
+1968 Drop Item#
+1969 Grab All From Chest#
+1970 Previous Shop Category#
+1971 Next Shop Category#
+1972 Previous Book Page#
+1973 Next Book Page#
 
-1980 Gamepad#
+# Game exclusive bindings.
+1974 Use#
+1975 Raise Shield#
+1976 Attack#
+1977 Cast Spell#
+1978 Activate Hotbar Slot#
+1979 Previous Hotbar Slot#
+1980 Next Hotbar Slot#
 
-1981 Invert Left Analog Stick X-Axis#
-1982 Invert Left Analog Stick Y-Axis#
-1983 Invert Right Analog Stick X-Axis#
-1984 Invert Right Analog Stick Y-Axis#
-1985 Invert X-Axis in GUI#
-1986 Invert Y-Axis in GUI#
-
-1987 Right Analog Stick X-Axis Sensitivity#
-1988 Right Analog Stick Y-Axis Sensitivity#
-1989 Menu X-Axis Sensitivity#
-1990 Menu Y-Axis Sensitivity#
-
+# More stuff on the gamepad bindings screen.
+1990 Menu exclusive bindings:#
+1991 Game exclusive bindings:#
+1992 Click to unbind. Click an unbound action to assign binding.#
 
 
 1997 auto appraise items#
 1998 right click protection#
 
-1999 end#
+
+
+2400 Gamepad#
+
+2401 Invert Left Analog Stick X-Axis#
+2402 Invert Left Analog Stick Y-Axis#
+2403 Invert Right Analog Stick X-Axis#
+2404 Invert Right Analog Stick Y-Axis#
+2405 Invert X-Axis in GUI#
+2406 Invert Y-Axis in GUI#
+
+2407 Right Analog Stick X-Axis Sensitivity#
+2408 Right Analog Stick Y-Axis Sensitivity#
+2409 Menu X-Axis Sensitivity#
+2410 Menu Y-Axis Sensitivity#
+
+
+
+#More character creation screen stuff.
+2450 Random Name#
+
+2499 end#

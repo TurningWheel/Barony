@@ -93,7 +93,7 @@ void item_PotionWater(Item* item, Entity* entity)
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
 			Item* target = (Item*)node->element;
-			if ( target->identified == FALSE )
+			if ( target->identified == false )
 			{
 				items++;
 			}
@@ -108,7 +108,7 @@ void item_PotionWater(Item* item, Entity* entity)
 		for ( node = stats->inventory.first; node != NULL; node = node->next )
 		{
 			Item* target = (Item*)node->element;
-			if ( target->identified == FALSE )
+			if ( target->identified == false )
 			{
 				if ( items == itemToCurse )
 				{
@@ -165,7 +165,7 @@ void item_PotionBooze(Item* item, Entity* entity)
 
 	messagePlayer(player, language[758]);
 	messagePlayer(player, language[759]);
-	stats->EFFECTS[EFF_DRUNK] = TRUE;
+	stats->EFFECTS[EFF_DRUNK] = true;
 	stats->EFFECTS_TIMERS[EFF_DRUNK] = 3600;
 	stats->HUNGER += 100;
 	serverUpdateEffects(player);
@@ -276,7 +276,7 @@ void item_PotionSickness(Item* item, Entity* entity)
 
 	messagePlayer(player, language[761]);
 	entity->modHP(-2);
-	stats->EFFECTS[EFF_POISONED] = TRUE;
+	stats->EFFECTS[EFF_POISONED] = true;
 	playSoundEntity(entity, 28, 64);
 	serverUpdateEffects(player);
 
@@ -330,7 +330,7 @@ void item_PotionConfusion(Item* item, Entity* entity)
 	}
 
 	messagePlayer(player, language[762]);
-	stats->EFFECTS[EFF_CONFUSED] = TRUE;
+	stats->EFFECTS[EFF_CONFUSED] = true;
 	stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
 	if ( entity->behavior == &actMonster )
 	{
@@ -394,7 +394,7 @@ void item_PotionCureAilment(Item* item, Entity* entity)
 	messagePlayerColor(player, color, language[763]);
 	for ( c = 0; c < NUMEFFECTS; c++ )   //This does a whole lot more than just cure ailments.
 	{
-		stats->EFFECTS[c] = FALSE;
+		stats->EFFECTS[c] = false;
 		stats->EFFECTS_TIMERS[c] = 0;
 	}
 	serverUpdateEffects(player);
@@ -446,7 +446,7 @@ void item_PotionBlindness(Item* item, Entity* entity)
 	}
 
 	messagePlayer(player, language[765]);
-	stats->EFFECTS[EFF_BLIND] = TRUE;
+	stats->EFFECTS[EFF_BLIND] = true;
 	stats->EFFECTS_TIMERS[EFF_BLIND] = 660 + rand() % 480;
 	serverUpdateEffects(player);
 
@@ -497,7 +497,7 @@ void item_PotionInvisibility(Item* item, Entity* entity)
 	}
 
 	messagePlayer(player, language[766]);
-	stats->EFFECTS[EFF_INVISIBLE] = TRUE;
+	stats->EFFECTS[EFF_INVISIBLE] = true;
 	stats->EFFECTS_TIMERS[EFF_INVISIBLE] = 1800 + rand() % 1800;
 	serverUpdateEffects(player);
 
@@ -548,7 +548,7 @@ void item_PotionLevitation(Item* item, Entity* entity)
 	}
 
 	messagePlayer(player, language[767]);
-	stats->EFFECTS[EFF_LEVITATING] = TRUE;
+	stats->EFFECTS[EFF_LEVITATING] = true;
 	stats->EFFECTS_TIMERS[EFF_LEVITATING] = 1800;
 	serverUpdateEffects(player);
 
@@ -601,13 +601,13 @@ void item_PotionSpeed(Item* item, Entity* entity)
 	if ( !stats->EFFECTS[EFF_SLOW] )
 	{
 		messagePlayer(player, language[768]);
-		stats->EFFECTS[EFF_FAST] = TRUE;
+		stats->EFFECTS[EFF_FAST] = true;
 		stats->EFFECTS_TIMERS[EFF_FAST] = 600;
 	}
 	else
 	{
 		messagePlayer(player, language[769]);
-		stats->EFFECTS[EFF_SLOW] = FALSE;
+		stats->EFFECTS[EFF_SLOW] = false;
 		stats->EFFECTS_TIMERS[EFF_SLOW] = 0;
 	}
 	serverUpdateEffects(player);
@@ -721,7 +721,7 @@ void item_PotionParalysis(Item* item, Entity* entity)
 	}
 
 	messagePlayer(player, language[771]);
-	stats->EFFECTS[EFF_PARALYZED] = TRUE;
+	stats->EFFECTS[EFF_PARALYZED] = true;
 	stats->EFFECTS_TIMERS[EFF_PARALYZED] = 420 + rand() % 180;
 	serverUpdateEffects(player);
 
@@ -796,7 +796,7 @@ void item_PotionHealing(Item* item, Entity* entity)
 	// stop bleeding
 	if ( stats->EFFECTS[EFF_BLEEDING] )
 	{
-		stats->EFFECTS[EFF_BLEEDING] = FALSE;
+		stats->EFFECTS[EFF_BLEEDING] = false;
 		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		if ( multiplayer == SERVER && player > 0 )
 		{
@@ -872,7 +872,7 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	// stop bleeding
 	if ( stats->EFFECTS[EFF_BLEEDING] )
 	{
-		stats->EFFECTS[EFF_BLEEDING] = FALSE;
+		stats->EFFECTS[EFF_BLEEDING] = false;
 		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		if ( multiplayer == SERVER && player > 0 )
 		{
@@ -967,7 +967,7 @@ void item_ScrollMail(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	switch ( item->appearance % 25 )
@@ -1071,7 +1071,7 @@ void item_ScrollIdentify(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[848]);
@@ -1089,7 +1089,7 @@ void item_ScrollIdentify(Item* item, int player)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			target = (Item*)node->element;
-			if ( target && target->identified == FALSE )
+			if ( target && target->identified == false )
 			{
 				items++;
 			}
@@ -1107,11 +1107,11 @@ void item_ScrollIdentify(Item* item, int player)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			target = (Item*)node->element;
-			if ( target && target->identified == FALSE )
+			if ( target && target->identified == false )
 			{
 				if ( items == itemToIdentify )
 				{
-					target->identified = TRUE;
+					target->identified = true;
 					numIdentified++;
 					messagePlayer(player, " * %s.", target->description());
 					break;
@@ -1144,7 +1144,7 @@ void item_ScrollLight(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[848]);
@@ -1157,7 +1157,7 @@ void item_ScrollLight(Item* item, int player)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
-			if (client_disconnected[c] == TRUE)
+			if (client_disconnected[c] == true)
 			{
 				continue;
 			}
@@ -1194,7 +1194,7 @@ void item_ScrollBlank(Item* item, int player)
 
 	if (player == clientnum)
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[852]);
@@ -1218,7 +1218,7 @@ void item_ScrollEnchantWeapon(Item* item, int player)
 
 	if (player == clientnum)
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	if (player == clientnum)
@@ -1280,7 +1280,7 @@ void item_ScrollEnchantArmor(Item* item, int player)
 
 	if (player == clientnum)
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	if (player == clientnum)
@@ -1372,7 +1372,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 
 	if (player == clientnum)
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	if (player == clientnum)
@@ -1461,7 +1461,7 @@ void item_ScrollFire(Item* item, int player)
 
 	if (player == clientnum)
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	if (item->beatitude < 0)
@@ -1472,7 +1472,7 @@ void item_ScrollFire(Item* item, int player)
 	{
 		playSoundEntity(players[player]->entity, 153, 128);
 		messagePlayer(player, language[864]);
-		players[player]->entity->flags[BURNING] = TRUE;
+		players[player]->entity->flags[BURNING] = true;
 		int c;
 		for (c = 0; c < 100; c++)
 		{
@@ -1516,18 +1516,18 @@ void item_ScrollFood(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[848]);
 	if ( item->beatitude >= 0 )
 	{
 		messagePlayer(player, language[865]);
-		dropItem(newItem(FOOD_FISH, EXCELLENT, item->beatitude, 1, rand(), TRUE, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_BREAD, EXCELLENT, item->beatitude, 1, rand(), TRUE, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, rand(), TRUE, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, rand(), TRUE, &stats[player]->inventory), player);
-		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, rand(), TRUE, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_FISH, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_BREAD, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_APPLE, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_CHEESE, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
+		dropItem(newItem(FOOD_MEAT, EXCELLENT, item->beatitude, 1, rand(), true, &stats[player]->inventory), player);
 		return;
 	}
 	else
@@ -1579,7 +1579,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[848]);
@@ -1646,7 +1646,7 @@ void item_ScrollRepair(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	if ( player == clientnum )
@@ -1727,7 +1727,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	if ( player == clientnum )
@@ -1822,7 +1822,7 @@ void item_ScrollTeleportation(Item* item, int player)
 
 	if (player == clientnum)
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[848]);
@@ -1858,7 +1858,7 @@ void item_ScrollSummon(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductIlliterate = FALSE;
+		conductIlliterate = false;
 	}
 	item->identified = 1;
 	messagePlayer(player, language[848]);
@@ -1962,13 +1962,13 @@ void item_ScrollSummon(Item* item, int player)
 	}
 
 	int i;
-	bool spawnedMonster = FALSE;
+	bool spawnedMonster = false;
 	for (i = 0; i < numCreatures; ++i)
 	{
 		Entity* monster = summonMonster(creature, floor(players[player]->entity->x / 16) * 16 + 8, floor(players[player]->entity->y / 16) * 16 + 8);
 		if ( monster )
 		{
-			spawnedMonster = TRUE;
+			spawnedMonster = true;
 			if ( item->beatitude >= 2 && creature == HUMAN )
 			{
 				monster->skill[29] = 1; // zap brigadier
@@ -1976,10 +1976,10 @@ void item_ScrollSummon(Item* item, int player)
 			Stat* monsterStats = monster->getStats();
 			if ( item->beatitude >= 0 && monsterStats )
 			{
-				monsterStats->leader_uid = players[player]->entity->uid;
+				monsterStats->leader_uid = players[player]->entity->getUID();
 				if ( !monsterally[HUMAN][monsterStats->type] )
 				{
-					monster->flags[USERFLAG2] = TRUE;
+					monster->flags[USERFLAG2] = true;
 				}
 
 				// update followers for this player
@@ -1987,13 +1987,13 @@ void item_ScrollSummon(Item* item, int player)
 				newNode->deconstructor = &defaultDeconstructor;
 				Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
 				newNode->element = myuid;
-				*myuid = monster->uid;
+				*myuid = monster->getUID();
 
 				// update client followers
 				if ( player > 0 && multiplayer == SERVER )
 				{
 					strcpy((char*)net_packet->data, "LEAD");
-					SDLNet_Write32((Uint32)monster->uid, &net_packet->data[4]);
+					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
 					net_packet->address.host = net_clients[player - 1].host;
 					net_packet->address.port = net_clients[player - 1].port;
 					net_packet->len = 8;
@@ -2045,8 +2045,8 @@ void item_ToolTowel(Item* item, int player)
 	}
 	if ( multiplayer != CLIENT )
 	{
-		stats[player]->EFFECTS[EFF_GREASY] = FALSE;
-		stats[player]->EFFECTS[EFF_MESSY] = FALSE;
+		stats[player]->EFFECTS[EFF_GREASY] = false;
+		stats[player]->EFFECTS[EFF_MESSY] = false;
 	}
 
 	// stop bleeding
@@ -2059,7 +2059,7 @@ void item_ToolTowel(Item* item, int player)
 		}
 		if ( multiplayer != CLIENT )
 		{
-			stats[player]->EFFECTS[EFF_BLEEDING] = FALSE;
+			stats[player]->EFFECTS[EFF_BLEEDING] = false;
 			stats[player]->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
 		}
 		consumeItem(item);
@@ -2207,25 +2207,25 @@ void item_ToolBeartrap(Item* item, int player)
 		consumeItem(item);
 		return;
 	}
-	bool failed = FALSE;
+	bool failed = false;
 	switch ( item->status )
 	{
 		case SERVICABLE:
 			if ( rand() % 25 == 0 )
 			{
-				failed = TRUE;
+				failed = true;
 			}
 			break;
 		case WORN:
 			if ( rand() % 10 == 0 )
 			{
-				failed = TRUE;
+				failed = true;
 			}
 			break;
 		case DECREPIT:
 			if ( rand() % 4 == 0 )
 			{
-				failed = TRUE;
+				failed = true;
 			}
 			break;
 		default:
@@ -2246,14 +2246,14 @@ void item_ToolBeartrap(Item* item, int player)
 	}
 	entity = newEntity(98, 1, map.entities);
 	entity->behavior = &actBeartrap;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[UPDATENEEDED] = TRUE;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UPDATENEEDED] = true;
 	entity->x = players[player]->entity->x;
 	entity->y = players[player]->entity->y;
 	entity->z = 6.75;
 	entity->yaw = players[player]->entity->yaw;
 	entity->roll = -PI / 2; // flip the model
-	entity->parent = players[player]->entity->uid;
+	entity->parent = players[player]->entity->getUID();
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[11] = item->status;
@@ -2294,10 +2294,10 @@ void item_Food(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductFoodless = FALSE;
+		conductFoodless = false;
 		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH )
 		{
-			conductVegetarian = FALSE;
+			conductVegetarian = false;
 		}
 	}
 
@@ -2350,7 +2350,7 @@ void item_Food(Item* item, int player)
 	{
 		messagePlayer(player, language[909]);
 		messagePlayer(player, language[910]);
-		stats[player]->EFFECTS[EFF_MESSY] = TRUE;
+		stats[player]->EFFECTS[EFF_MESSY] = true;
 		stats[player]->EFFECTS_TIMERS[EFF_MESSY] = 600; // ten seconds
 		serverUpdateEffects(player);
 		consumeItem(item);
@@ -2438,7 +2438,7 @@ void item_FoodTin(Item* item, int player)
 {
 	int oldcount;
 	int pukeChance;
-	bool slippery = FALSE;
+	bool slippery = false;
 
 	if ( stats[player]->amulet != NULL )
 	{
@@ -2464,8 +2464,8 @@ void item_FoodTin(Item* item, int player)
 
 	if ( player == clientnum )
 	{
-		conductFoodless = FALSE;
-		conductVegetarian = FALSE;
+		conductFoodless = false;
+		conductVegetarian = false;
 	}
 
 	if ( multiplayer == CLIENT )
@@ -2484,7 +2484,7 @@ void item_FoodTin(Item* item, int player)
 	strcpy(tempstr, language[918]);
 	if ( word == 6 || word == 15 )
 	{
-		slippery = TRUE;
+		slippery = true;
 	}
 
 	// second word
@@ -2492,7 +2492,7 @@ void item_FoodTin(Item* item, int player)
 	strcat(tempstr, language[934]);
 	if ( word == 1 || word == 7 || word == 8 || word == 12 )
 	{
-		slippery = TRUE;
+		slippery = true;
 	}
 
 	// third word
@@ -2500,7 +2500,7 @@ void item_FoodTin(Item* item, int player)
 	strcat(tempstr, language[950]);
 	if ( word == 1 || word == 8 )
 	{
-		slippery = TRUE;
+		slippery = true;
 	}
 
 	messagePlayer(player, language[764], tempstr);
@@ -2558,7 +2558,7 @@ void item_FoodTin(Item* item, int player)
 	if ( slippery )
 	{
 		messagePlayer(player, language[966]);
-		stats[player]->EFFECTS[EFF_GREASY] = TRUE;
+		stats[player]->EFFECTS[EFF_GREASY] = true;
 		serverUpdateEffects(player);
 	}
 
@@ -2637,7 +2637,7 @@ void item_Spellbook(Item* item, int player)
 {
 	node_t* node, *nextnode;
 
-	item->identified = TRUE;
+	item->identified = true;
 	if (player != clientnum)
 	{
 		return;
@@ -2649,7 +2649,7 @@ void item_Spellbook(Item* item, int player)
 		return;
 	}
 
-	conductIlliterate = FALSE;
+	conductIlliterate = false;
 
 	if ( item->beatitude < 0 )
 	{

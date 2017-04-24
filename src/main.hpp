@@ -11,11 +11,18 @@
 
 #pragma once
 
+#ifdef __arm__
+typedef float real_t;
+#else
+typedef double real_t;
+#endif
+
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 #include <iostream>
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
+#include <unordered_map>
 
 #include "Config.hpp"
 
@@ -80,11 +87,6 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #endif
 //#include "sprig.h"
 #include "savepng.hpp"
-
-#ifndef APPLE
-#define FALSE false
-#define TRUE true
-#endif
 
 //Ifdef steam or something?
 #ifdef STEAMWORKS
@@ -161,45 +163,52 @@ extern bool stop;
 //TODO: Split bindings into three subcategories: Bifunctional, Game Exclusive, Menu Exclusive.
 
 //Bifunctional:
-#define INJOY_STATUS 0
-#define INJOY_SPELL_LIST 1
-#define INJOY_PAUSE_MENU 6 //Also acts as the back key/escape key in limited situations.
-#define INJOY_DPAD_LEFT 8
-#define INJOY_DPAD_RIGHT 9
-#define INJOY_DPAD_UP 10
-#define INJOY_DPAD_DOWN 11
-#define INJOY_HOTBAR_NEXT 13
-#define INJOY_HOTBAR_PREV 14
+static const unsigned INJOY_STATUS = 0;
+static const unsigned INJOY_SPELL_LIST = 1;
+static const unsigned INJOY_PAUSE_MENU = 2; //Also acts as the back key/escape key in limited situations.
+static const unsigned INJOY_DPAD_LEFT = 3;
+static const unsigned INJOY_DPAD_RIGHT = 4;
+static const unsigned INJOY_DPAD_UP = 5;
+static const unsigned INJOY_DPAD_DOWN = 6;
 
 //Menu Exclusive:
-#define INJOY_MENU_LEFT_CLICK 7
-#define INJOY_MENU_NEXT 12
-#define INJOY_MENU_CANCEL 16 //Basically the "b" button. Go back, cancel things, close dialogues...etc.
-#define INJOY_MENU_USE 17 //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
-#define INJOY_MENU_HOTBAR_CLEAR 18 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_REFRESH_LOBBY 19 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_LOAD_SAVE 20 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_RANDOM_CHAR 21 //Clears hotbar slot in-inventory.
-#define INJOY_MENU_DROP_ITEM 22
-#define INJOY_MENU_CHEST_GRAB_ALL 23
-#define INJOY_MENU_CYCLE_SHOP_LEFT 24
-#define INJOY_MENU_CYCLE_SHOP_RIGHT 25
-#define INJOY_MENU_BOOK_NEXT 26
-#define INJOY_MENU_BOOK_PREV 27
-#define INJOY_MENU_SETTINGS_NEXT 28
-#define INJOY_MENU_SETTINGS_PREV 29 //TODO: Only one "cycle tabs" binding?
-#define INJOY_MENU_INVENTORY_TAB 30 //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
-#define INJOY_MENU_MAGIC_TAB 31
+static const unsigned INJOY_MENU_LEFT_CLICK = 7;
+static const unsigned INJOY_MENU_NEXT = 8;
+static const unsigned INJOY_MENU_CANCEL = 9; //Basically the "b" button. Go back, cancel things, close dialogues...etc.
+static const unsigned INJOY_MENU_SETTINGS_NEXT = 10;
+static const unsigned INJOY_MENU_SETTINGS_PREV = 11; //TODO: Only one "cycle tabs" binding?
+static const unsigned INJOY_MENU_REFRESH_LOBBY = 12;
+static const unsigned INJOY_MENU_DONT_LOAD_SAVE = 13;
+static const unsigned INJOY_MENU_RANDOM_NAME = 14;
+static const unsigned INJOY_MENU_RANDOM_CHAR = 15; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_INVENTORY_TAB = 16; //Optimally, I'd like to just use one trigger to toggle between the two, but there's some issues with analog triggers.
+static const unsigned INJOY_MENU_MAGIC_TAB = 17;
+static const unsigned INJOY_MENU_USE = 18; //Opens the context menu in the inventory. Also grabs the highlighted item from a chest.
+static const unsigned INJOY_MENU_HOTBAR_CLEAR = 19; //Clears hotbar slot in-inventory.
+static const unsigned INJOY_MENU_DROP_ITEM = 20;
+static const unsigned INJOY_MENU_CHEST_GRAB_ALL = 21;
+static const unsigned INJOY_MENU_CYCLE_SHOP_LEFT = 22;
+static const unsigned INJOY_MENU_CYCLE_SHOP_RIGHT = 23;
+static const unsigned INJOY_MENU_BOOK_PREV = 24;
+static const unsigned INJOY_MENU_BOOK_NEXT = 25;
+
+static const unsigned INDEX_JOYBINDINGS_START_MENU = 9;
 
 //Game Exclusive:
 //These should not trigger if the in-game interfaces are brought up (!shootmode). Inventory, books, shops, chests, etc.
-#define INJOY_GAME_CAST_SPELL 2
-#define INJOY_GAME_DEFEND 3
-#define INJOY_GAME_ATTACK 4
-#define INJOY_GAME_USE 5 //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
-#define INJOY_GAME_HOTBAR_ACTIVATE 15 //Activates hotbar slot in-game.
+static const unsigned INJOY_GAME_USE = 26; //Used in-game for right click. NOTE: Not used in-inventory for in-world identification. Because clicking is disabled and whatnot. (Or can be done?)
+static const unsigned INJOY_GAME_DEFEND = 27;
+static const unsigned INJOY_GAME_ATTACK = 28;
+static const unsigned INJOY_GAME_CAST_SPELL = 29;
+static const unsigned INJOY_GAME_HOTBAR_ACTIVATE = 30; //Activates hotbar slot in-game.
+static const unsigned INJOY_GAME_HOTBAR_PREV = 31;
+static const unsigned INJOY_GAME_HOTBAR_NEXT = 32;
 
-#define NUM_JOY_IMPULSES 32
+static const unsigned INDEX_JOYBINDINGS_START_GAME = 28;
+
+static const unsigned NUM_JOY_IMPULSES = 33;
+
+static const unsigned UNBOUND_JOYBINDING = 399;
 
 // since SDL2 gets rid of these and we're too lazy to fix them...
 #define SDL_BUTTON_WHEELUP 4
@@ -211,9 +220,9 @@ extern bool stop;
 // view structure
 typedef struct view_t
 {
-	double x, y, z;
-	double ang;
-	double vang;
+	real_t x, y, z;
+	real_t ang;
+	real_t vang;
 	Sint32 winx, winy, winw, winh;
 } view_t;
 
@@ -248,6 +257,7 @@ typedef struct map_t
 	char author[32]; // author of the map
 	unsigned int width, height;  // size of the map
 	Sint32* tiles;
+	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
 } map_t;
 
@@ -289,7 +299,7 @@ typedef struct pathnode_t
 #define VERTICAL 2
 typedef struct hit_t
 {
-	double x, y;
+	real_t x, y;
 	int mapx, mapy;
 	Entity* entity;
 	int side;
@@ -327,7 +337,7 @@ typedef struct voxel_t
 // vertex structure
 typedef struct vertex_t
 {
-	double x, y, z;
+	real_t x, y, z;
 } vertex_t;
 
 // quad structure
@@ -416,9 +426,9 @@ extern int subwindow;
 extern int subx1, subx2, suby1, suby2;
 extern char subtext[1024];
 extern int rscale;
-extern double vidgamma;
+extern real_t vidgamma;
 extern bool softwaremode;
-extern double* zbuffer;
+extern real_t* zbuffer;
 extern Sint32* lightmap;
 extern bool* vismap;
 extern Entity** clickmap;
@@ -434,7 +444,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 2000
+#define NUMLANGENTRIES 2500
 extern char languageCode[32];
 extern char** language;
 
@@ -503,11 +513,11 @@ extern Uint32 mapseed;
 extern bool* shoparea;
 
 // function prototypes for main.c:
-int sgn(double x);
+int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
 int longestline(char* str);
 int concatedStringLength(char* str, ...);
-void printlog(char* str, ...);
+void printlog(const char* str, ...);
 
 // function prototypes for init.c:
 int initApp(char* title, int fullscreen);
@@ -553,18 +563,18 @@ pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Si
 #define FLIP_VERTICAL 1
 #define FLIP_HORIZONTAL 2
 SDL_Surface* flipSurface(SDL_Surface* surface, int flags);
-void drawCircle(int x, int y, double radius, Uint32 color, Uint8 alpha);
-void drawArc(int x, int y, double radius, double angle1, double angle2, Uint32 color, Uint8 alpha);
+void drawCircle(int x, int y, real_t radius, Uint32 color, Uint8 alpha);
+void drawArc(int x, int y, real_t radius, real_t angle1, real_t angle2, Uint32 color, Uint8 alpha);
 void drawLine(int x1, int y1, int x2, int y2, Uint32 color, Uint8 alpha);
 int drawRect(SDL_Rect* src, Uint32 color, Uint8 alpha);
 int drawBox(SDL_Rect* src, Uint32 color, Uint8 alpha);
-void drawGear(Sint16 x, Sint16 y, double size, Sint32 rotation);
+void drawGear(Sint16 x, Sint16 y, real_t size, Sint32 rotation);
 void drawImage(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
 void drawImageScaled(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos);
 void drawImageAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint8 alpha);
 void drawImageColor(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, Uint32 color);
-void drawImageFancy(SDL_Surface* image, Uint32 color, double angle, SDL_Rect* src, SDL_Rect* pos);
-void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, double angle, Uint8 alpha);
+void drawImageFancy(SDL_Surface* image, Uint32 color, real_t angle, SDL_Rect* src, SDL_Rect* pos);
+void drawImageRotatedAlpha(SDL_Surface* image, SDL_Rect* src, SDL_Rect* pos, real_t angle, Uint8 alpha);
 SDL_Surface* scaleSurface(SDL_Surface* Surface, Uint16 Width, Uint16 Height);
 void drawSky3D(view_t* camera, SDL_Surface* tex);
 void drawLayer(long camx, long camy, int z, map_t* map);
@@ -590,7 +600,7 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... );
 void printTextFormatted( SDL_Surface* font_bmp, int x, int y, char* fmt, ... );
 void printTextFormattedAlpha(SDL_Surface* font_bmp, int x, int y, Uint8 alpha, char* fmt, ...);
 void printTextFormattedColor(SDL_Surface* font_bmp, int x, int y, Uint32 color, char* fmt, ...);
-void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, double angle, double scale, char* fmt, ...);
+void printTextFormattedFancy(SDL_Surface* font_bmp, int x, int y, Uint32 color, real_t angle, real_t scale, char* fmt, ...);
 void printText( SDL_Surface* font_bmp, int x, int y, char* str );
 void drawSprite(view_t* camera, Entity* entity);
 void drawTooltip(SDL_Rect* src);
@@ -598,10 +608,10 @@ void drawTooltip(SDL_Rect* src);
 // function prototypes for opengl.c:
 #define REALCOLORS 0
 #define ENTITYUIDS 1
-double getLightForEntity(double x, double y);
+real_t getLightForEntity(real_t x, real_t y);
 void glDrawVoxel(view_t* camera, Entity* entity, int mode);
 void glDrawSprite(view_t* camera, Entity* entity, int mode);
-double getLightAt(int x, int y);
+real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for files.c:
@@ -631,3 +641,12 @@ list_t* directoryContents(char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
+
+#ifdef PANDORA
+// Pandora: FBO variables
+extern GLuint fbo_fbo;
+extern GLuint fbo_tex;
+extern GLuint fbo_ren;
+#endif
+void GO_SwapBuffers(SDL_Window* screen);
+unsigned int GO_GetPixelU32(int x, int y);

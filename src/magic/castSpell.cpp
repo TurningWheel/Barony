@@ -78,7 +78,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 					{
 						//list_RemoveNode(node);
 						//node = NULL;
-						spell_search->sustain = FALSE;
+						spell_search->sustain = false;
 						//if (spell->magic_effects)
 						//	list_RemoveNode(spell->magic_effects);
 						messagePlayer(player, language[408], spell->name);
@@ -134,7 +134,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 
 	//Hand the torch off to the spell animator. And stuff. Stuff. I mean spell animation handler thingymabobber.
-	fireOffSpellAnimation(&cast_animation, caster->uid, spell);
+	fireOffSpellAnimation(&cast_animation, caster->getUID(), spell);
 
 	//castSpell(caster, spell); //For now, do this while the spell animations are worked on.
 }
@@ -194,12 +194,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-	bool newbie = FALSE;
+	bool newbie = false;
 	if ( !using_magicstaff && !trap)
 	{
 		if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)
 		{
-			newbie = TRUE; //The caster has lower spellcasting skill. Cue happy fun times.
+			newbie = true; //The caster has lower spellcasting skill. Cue happy fun times.
 		}
 
 		/*magiccost = getCostOfSpell(spell);
@@ -229,7 +229,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if (chance >= spellcasting / 10)   //At skill 20, there's an 80% chance you'll use extra mana. At 70, there's a 30% chance.
 		{
 			extramagic = rand() % (300 / (spellcasting + 1)); //Use up extra mana. More mana used the lower your spellcasting skill.
-			extramagic = std::min(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
+			extramagic = std::min<real_t>(extramagic, stat->MP / 10); //To make sure it doesn't draw, say, 5000 mana. Cause dammit, if you roll a 1 here...you're doomed.
 			caster->drainMP(extramagic);
 		}
 
@@ -252,33 +252,33 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	}
 
 	//Check if the bugger is levitating.
-	bool levitating = FALSE;
+	bool levitating = false;
 	if (!trap)
 	{
-		if (stat->EFFECTS[EFF_LEVITATING] == TRUE )
+		if (stat->EFFECTS[EFF_LEVITATING] == true )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 		if (stat->ring != NULL )
 			if (stat->ring->type == RING_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		if (stat->shoes != NULL)
 			if (stat->shoes->type == STEEL_BOOTS_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 	}
 
 	//Water walking boots
-	bool waterwalkingboots = FALSE;
+	bool waterwalkingboots = false;
 	if (!trap)
 	{
 		if (stat->shoes != NULL)
 			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
 			{
-				waterwalkingboots = TRUE;
+				waterwalkingboots = true;
 			}
 	}
 
@@ -286,14 +286,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//Check if swimming.
 	if (!waterwalkingboots && !levitating && !trap && player >= 0)
 	{
-		bool swimming = FALSE;
+		bool swimming = false;
 		if (players[player] && players[player]->entity)
 		{
-			int x = std::min<int>(std::max(0.0, floor(caster->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0.0, floor(caster->y / 16)), map.height - 1);
+			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
 			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
 			{
-				swimming = TRUE;
+				swimming = true;
 			}
 		}
 		if (swimming)
@@ -355,7 +355,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->name, spellElement_light.name))
 		{
 			entity = newEntity(175, 1, map.entities); // black magic ball
-			entity->parent = caster->uid;
+			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
 			entity->z = -5.5 + ((-6.5f + -4.5f) / 2) * sin(0);
@@ -363,9 +363,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->sizex = 1;
 			entity->sizey = 1;
 			entity->yaw = caster->yaw;
-			entity->flags[UPDATENEEDED] = TRUE;
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[BRIGHT] = TRUE;
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[PASSABLE] = true;
+			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagiclightBall;
 			entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 			entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
@@ -374,10 +374,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
 			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->getUID();
 			if ( using_magicstaff )
 			{
-				((spell_t*)spellnode->element)->magicstaff = TRUE;
+				((spell_t*)spellnode->element)->magicstaff = true;
 			}
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie)
@@ -397,7 +397,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			if (using_magicstaff || trap)
 			{
 				entity->skill[12] = MAGICSTAFF_LIGHT_DURATION; //TODO: Grab the duration from the magicstaff or trap?
-				((spell_t*)spellnode->element)->sustain = FALSE;
+				((spell_t*)spellnode->element)->sustain = false;
 			}
 			else
 			{
@@ -417,7 +417,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell = (spell_t*)(spellnode->element);
 			channeled_spell->magic_effects_node = spellnode;
 			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie)
 			{
@@ -434,7 +434,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_INVISIBLE] = TRUE;
+			stat->EFFECTS[EFF_INVISIBLE] = true;
 			stat->EFFECTS_TIMERS[EFF_INVISIBLE] = duration;
 			for (i = 0; i < numplayers; ++i)
 			{
@@ -456,7 +456,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			channeled_spell = (spell_t*)(spellnode->element);
 			channeled_spell->magic_effects_node = spellnode;
 			spellnode->size = sizeof(spell_t);
-			((spell_t*)spellnode->element)->caster = caster->uid;
+			((spell_t*)spellnode->element)->caster = caster->getUID();
 			spellnode->deconstructor = &spellDeconstructor;
 			if (newbie)
 			{
@@ -473,7 +473,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_LEVITATING] = TRUE;
+			stat->EFFECTS[EFF_LEVITATING] = true;
 			stat->EFFECTS_TIMERS[EFF_LEVITATING] = duration;
 			for (i = 0; i < numplayers; ++i)
 			{
@@ -509,7 +509,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Identify an item.
-						shootmode = FALSE;
+						shootmode = false;
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						identifygui_active = true;
 						identifygui_appraising = false;
@@ -521,7 +521,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						{
 							openedChest[i]->closeChest();
 						}
-						//identifygui_mode = TRUE;
+						//identifygui_mode = true;
 
 						//Initialize Identify GUI game controller code here.
 						initIdentifyGUIControllerCode();
@@ -550,14 +550,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					else
 					{
 						//Uncurse an item
-						shootmode = FALSE;
+						shootmode = false;
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
-						removecursegui_active = TRUE;
+						removecursegui_active = true;
 						identifygui_active = false;
 						if ( openedChest[i] )
 						{
 							openedChest[i]->closeChest();
 						}
+
+						initRemoveCurseGUIControllerCode();
 					}
 				}
 			}
@@ -637,7 +639,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					int c = 0;
 					for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 					{
-						stats[i]->EFFECTS[c] = FALSE;
+						stats[i]->EFFECTS[c] = false;
 						stats[i]->EFFECTS_TIMERS[c] = 0;
 					}
 					if ( players[clientnum]->entity->flags[BURNING] )
@@ -666,7 +668,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 							{
 								for (c = 0; c < NUMEFFECTS; ++c)   //This does a whole lot more than just cure ailments.
 								{
-									target_stat->EFFECTS[c] = FALSE;
+									target_stat->EFFECTS[c] = false;
 									target_stat->EFFECTS_TIMERS[c] = 0;
 								}
 								if ( entity->behavior == &actPlayer )
@@ -694,16 +696,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		if (propulsion == PROPULSION_MISSILE)
 		{
 			entity = newEntity(168, 1, map.entities); // red magic ball
-			entity->parent = caster->uid;
+			entity->parent = caster->getUID();
 			entity->x = caster->x;
 			entity->y = caster->y;
 			entity->z = -1;
 			entity->sizex = 1;
 			entity->sizey = 1;
 			entity->yaw = caster->yaw;
-			entity->flags[UPDATENEEDED] = TRUE;
-			entity->flags[PASSABLE] = TRUE;
-			entity->flags[BRIGHT] = TRUE;
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[PASSABLE] = true;
+			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagicMissile;
 
 			double missile_speed = 4 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
@@ -714,7 +716,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->skill[5] = traveltime;
 			node = list_AddNodeFirst(&entity->children);
 			node->element = copySpell(spell);
-			((spell_t*)node->element)->caster = caster->uid;
+			((spell_t*)node->element)->caster = caster->getUID();
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 

@@ -64,10 +64,10 @@ void startTradingServer(Entity* entity, int player)
 
 	if ( player == 0 )
 	{
-		shootmode = FALSE;
+		shootmode = false;
 		gui_mode = GUI_MODE_SHOP;
 		shopInv = &stats->inventory;
-		shopkeeper = entity->uid;
+		shopkeeper = entity->getUID();
 		shoptimer = ticks - 1;
 		shopspeech = language[194 + rand() % 3];
 		shopinventorycategory = 7;
@@ -77,6 +77,7 @@ void startTradingServer(Entity* entity, int player)
 		shopkeepername = stats->name;
 		shopitemscroll = 0;
 		identifygui_active = false;
+		closeRemoveCurseGUI();
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
@@ -94,7 +95,7 @@ void startTradingServer(Entity* entity, int player)
 		// open shop on client
 		Stat* entitystats = entity->getStats();
 		strcpy((char*)net_packet->data, "SHOP");
-		SDLNet_Write32((Uint32)entity->uid, &net_packet->data[4]);
+		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[4]);
 		net_packet->data[8] = entity->skill[18];
 		strcpy((char*)(&net_packet->data[9]), entitystats->name);
 		net_packet->data[9 + strlen(entitystats->name)] = 0;
@@ -129,7 +130,7 @@ void startTradingServer(Entity* entity, int player)
 		}
 	}
 	entity->skill[0] = 4; // talk state
-	entity->skill[1] = players[player]->entity->uid;
+	entity->skill[1] = players[player]->entity->getUID();
 	messagePlayer(player, language[1122], stats->name);
 }
 
@@ -234,56 +235,56 @@ void sellItemToShop(Item* item)
 		return;
 	}
 
-	bool deal = TRUE;
+	bool deal = true;
 	switch ( shopkeepertype )
 	{
 		case 0: // arms & armor
 			if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 1: // hats
 			if ( itemCategory(item) != ARMOR )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 2: // jewelry
 			if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 3: // bookstore
 			if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 4: // potion shop
 			if ( itemCategory(item) != POTION )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 5: // magicstaffs
 			if ( itemCategory(item) != MAGICSTAFF )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 6: // food
 			if ( itemCategory(item) != FOOD )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		case 7: // tools
 		case 8: // lights
 			if ( itemCategory(item) != TOOL )
 			{
-				deal = FALSE;
+				deal = false;
 			}
 			break;
 		default:

@@ -488,9 +488,24 @@ bool GameController::handleInventoryMovement()
 		return false;
 	}
 
+	if ( hotbarHasFocus && !hotbarGamepadControlEnabled() )
+	{
+		hotbarHasFocus = false;
+	}
+
 	if (*inputPressed(joyimpulses[INJOY_DPAD_LEFT]))
 	{
-		select_inventory_slot(selected_inventory_slot_x - 1, selected_inventory_slot_y);
+		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		{
+			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
+			selectHotbarSlot(current_hotbar - 1);
+			warpMouseToSelectedHotbarSlot();
+		}
+		else
+		{
+			//Navigate inventory.
+			select_inventory_slot(selected_inventory_slot_x - 1, selected_inventory_slot_y);
+		}
 		*inputPressed(joyimpulses[INJOY_DPAD_LEFT]) = 0;
 
 		dpad_moved = true;
@@ -498,7 +513,17 @@ bool GameController::handleInventoryMovement()
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]))
 	{
-		select_inventory_slot(selected_inventory_slot_x + 1, selected_inventory_slot_y);
+		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		{
+			//If hotbar is focused and chest, etc, not opened, navigate hotbar.
+			selectHotbarSlot(current_hotbar + 1);
+			warpMouseToSelectedHotbarSlot();
+		}
+		else
+		{
+			//Navigate inventory.
+			select_inventory_slot(selected_inventory_slot_x + 1, selected_inventory_slot_y);
+		}
 		*inputPressed(joyimpulses[INJOY_DPAD_RIGHT]) = 0;
 
 		dpad_moved = true;
@@ -506,7 +531,16 @@ bool GameController::handleInventoryMovement()
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
 	{
-		select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y - 1);
+		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		{
+			//Warp back to top of inventory.
+			hotbarHasFocus = false;
+			select_inventory_slot(selected_inventory_slot_x, INVENTORY_SIZEY - 1);
+		}
+		else
+		{
+			select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y - 1); //Will handle warping to hotbar.
+		}
 		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 
 		dpad_moved = true;
@@ -514,7 +548,16 @@ bool GameController::handleInventoryMovement()
 
 	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
 	{
-		select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y + 1);
+		if ( hotbarHasFocus && hotbarGamepadControlEnabled() )
+		{
+			//Warp back to bottom of inventory.
+			hotbarHasFocus = false;
+			select_inventory_slot(selected_inventory_slot_x, 0);
+		}
+		else
+		{
+			select_inventory_slot(selected_inventory_slot_x, selected_inventory_slot_y + 1);
+		}
 		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 
 		dpad_moved = true;
@@ -657,6 +700,42 @@ bool GameController::handleIdentifyMovement()
 	return false;
 }
 
+bool GameController::handleRemoveCurseMovement()
+{
+	bool dpad_moved = false;
+
+	if ( itemMenuOpen )
+	{
+		return false;
+	}
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_UP]))
+	{
+		selectRemoveCurseSlot(selectedRemoveCurseSlot - 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]))
+	{
+		selectRemoveCurseSlot(selectedRemoveCurseSlot + 1);
+		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+
+		dpad_moved = true;
+	}
+
+	if (dpad_moved)
+	{
+		dpad_moved = false;
+		draw_cursor = false;
+
+		return true;
+	}
+
+	return false;
+}
+
 bool GameController::handleItemContextMenu(const Item& item)
 {
 	bool dpad_moved = false;
@@ -750,6 +829,19 @@ void initIdentifyGUIControllerCode()
 	else
 	{
 		selectedIdentifySlot = -1;
+	}
+}
+
+void initRemoveCurseGUIControllerCode()
+{
+	if ( removecurse_items[0] )
+	{
+		selectedRemoveCurseSlot = 0;
+		warpMouseToSelectedRemoveCurseSlot();
+	}
+	else
+	{
+		selectedRemoveCurseSlot = -1;
 	}
 }
 

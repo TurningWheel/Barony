@@ -68,14 +68,14 @@ void mainLogic(void)
 		{
 			if ( omousey >= 24 && omousey < 136 )
 			{
-				camx = ((long)map.width << TEXTUREPOWER) * (double)(mousex - xres + 120) / 112 - xres / 2;
-				camy = ((long)map.height << TEXTUREPOWER) * (double)(mousey - 24) / 112 - yres / 2;
+				camx = ((long)map.width << TEXTUREPOWER) * (real_t)(mousex - xres + 120) / 112 - xres / 2;
+				camy = ((long)map.height << TEXTUREPOWER) * (real_t)(mousey - 24) / 112 - yres / 2;
 			}
 		}
 	}
 
 	// basic editor functions
-	if ( mode3d == FALSE )
+	if ( mode3d == false )
 	{
 		camx += (keystatus[SDL_SCANCODE_RIGHT] - keystatus[SDL_SCANCODE_LEFT]) * TEXTURESIZE;
 		camy += (keystatus[SDL_SCANCODE_DOWN] - keystatus[SDL_SCANCODE_UP]) * TEXTURESIZE;
@@ -218,7 +218,7 @@ void handleButtons(void)
 					}
 					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
-						button->pressed = TRUE;
+						button->pressed = true;
 					}
 				}
 			}
@@ -232,7 +232,7 @@ void handleButtons(void)
 						printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 						if ( !mousestatus[SDL_BUTTON_LEFT] )   // releasing the mouse over the button
 						{
-							button->pressed = FALSE;
+							button->pressed = false;
 							if ( button->action != NULL )
 							{
 								(*button->action)(button); // run the button's assigned action
@@ -249,7 +249,7 @@ void handleButtons(void)
 						printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 						if ( !mousestatus[SDL_BUTTON_LEFT] )   // releasing the mouse over nothing
 						{
-							button->pressed = FALSE;
+							button->pressed = false;
 						}
 					}
 				}
@@ -259,7 +259,7 @@ void handleButtons(void)
 					printText(font8x8_bmp, button->x + (button->sizex - w) / 2, button->y + (button->sizey - h) / 2, button->label);
 					if ( !mousestatus[SDL_BUTTON_LEFT] )   // releasing the mouse over nothing
 					{
-						button->pressed = FALSE;
+						button->pressed = false;
 					}
 				}
 			}
@@ -290,7 +290,7 @@ void handleButtons(void)
 
 void handleEvents(void)
 {
-	double d;
+	real_t d;
 	int j;
 
 	// calculate app rate
@@ -415,7 +415,7 @@ void handleEvents(void)
 					{
 						free(zbuffer);
 					}
-					zbuffer = (double*) malloc(sizeof(double) * xres * yres);
+					zbuffer = (real_t*) malloc(sizeof(real_t) * xres * yres);
 					if ( clickmap != NULL )
 					{
 						free(clickmap);
@@ -728,11 +728,11 @@ void processCommandLine(int argc, char** argv)
 
 -------------------------------------------------------------------------------*/
 
-bool selectingspace = FALSE;
+bool selectingspace = false;
 int selectedarea_x1, selectedarea_x2;
 int selectedarea_y1, selectedarea_y2;
-bool selectedarea = FALSE;
-bool pasting = FALSE;
+bool selectedarea = false;
+bool pasting = false;
 
 #ifdef APPLE
 #include <mach-o/dyld.h> //For _NSGetExecutablePath()
@@ -779,8 +779,8 @@ int main(int argc, char** argv)
 	//char action[32];
 	int oslidery = 0;
 	light_t* light = NULL;
-	bool savedundo = FALSE;
-	smoothlighting = TRUE;
+	bool savedundo = false;
+	smoothlighting = true;
 
 	processCommandLine(argc, argv);
 
@@ -1351,7 +1351,7 @@ int main(int argc, char** argv)
 					{
 						if ( !savedundo )
 						{
-							savedundo = TRUE;
+							savedundo = true;
 							makeUndo();
 						}
 						if ( !pasting )   // not pasting, normal editing mode
@@ -1375,20 +1375,20 @@ int main(int argc, char** argv)
 							}
 							else if ( selectedTool == 2 )     // select tool
 							{
-								if ( selectingspace == FALSE )
+								if ( selectingspace == false )
 								{
 									if ( drawx >= 0 && drawy >= 0 && drawx < map.width && drawy < map.height )
 									{
-										selectingspace = TRUE;
+										selectingspace = true;
 										selectedarea_x1 = drawx;
 										selectedarea_x2 = drawx;
 										selectedarea_y1 = drawy;
 										selectedarea_y2 = drawy;
-										selectedarea = TRUE;
+										selectedarea = true;
 									}
 									else
 									{
-										selectedarea = FALSE;
+										selectedarea = false;
 									}
 								}
 								else
@@ -1426,7 +1426,7 @@ int main(int argc, char** argv)
 						else
 						{
 							// pasting from copymap
-							mousestatus[SDL_BUTTON_LEFT] = FALSE;
+							mousestatus[SDL_BUTTON_LEFT] = false;
 							for ( x = 0; x < copymap.width; x++ )
 							{
 								for ( y = 0; y < copymap.height; y++ )
@@ -1441,14 +1441,14 @@ int main(int argc, char** argv)
 									}
 								}
 							}
-							pasting = FALSE;
+							pasting = false;
 						}
 					}
 				}
 				else if ( !mousestatus[SDL_BUTTON_LEFT] )
 				{
-					selectingspace = FALSE;
-					savedundo = FALSE;
+					selectingspace = false;
+					savedundo = false;
 				}
 				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL )
 				{
@@ -1461,7 +1461,7 @@ int main(int argc, char** argv)
 					}
 					else
 					{
-						selectedarea = FALSE;
+						selectedarea = false;
 					}
 				}
 			}
@@ -1472,7 +1472,7 @@ int main(int argc, char** argv)
 
 			// main drawing
 			drawClearBuffers();
-			if ( mode3d == FALSE )
+			if ( mode3d == false )
 			{
 				if ( alllayers )
 					for (c = 0; c <= drawlayer; c++)
@@ -1514,7 +1514,7 @@ int main(int argc, char** argv)
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity = (Entity*)node->element;
-					entity->flags[SPRITE] = TRUE; // all entities rendered as SPRITES in the editor
+					entity->flags[SPRITE] = true; // all entities rendered as SPRITES in the editor
 					entity->x += 8;
 					entity->y += 8;
 				}
@@ -1740,17 +1740,17 @@ int main(int argc, char** argv)
 				{
 					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 52);
 					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 52);
-					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((double)d_names_length / 20)); //TODO: Why are int and double being compared?
+					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)d_names_length / 20)); //TODO: Why are int and real_t being compared?
 					slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
 					drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
 
 					// directory list offset from slider
-					y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
+					y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
 					if ( scroll )
 					{
 						slidery -= 8 * scroll;
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
 						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(d_names_length - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 						strcpy(filename, d_names[selectedFile]);
 						inputstr = filename;
@@ -1760,7 +1760,7 @@ int main(int argc, char** argv)
 					{
 						slidery = oslidery + mousey - omousey;
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((double)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
 						mclick = 1;
 						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(d_names_length - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
 						strcpy(filename, d_names[selectedFile]);
@@ -2097,25 +2097,25 @@ int main(int argc, char** argv)
 				{
 					keystatus[SDL_SCANCODE_1] = 0;
 					selectedTool = 0;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_2] )
 				{
 					keystatus[SDL_SCANCODE_2] = 0;
 					selectedTool = 1;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_3] )
 				{
 					keystatus[SDL_SCANCODE_3] = 0;
 					selectedTool = 2;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_4] )
 				{
 					keystatus[SDL_SCANCODE_4] = 0;
 					selectedTool = 3;
-					selectedarea = FALSE;
+					selectedarea = false;
 				}
 			}
 			// process and draw buttons
@@ -2321,7 +2321,7 @@ int main(int argc, char** argv)
 		}
 
 		// flip screen
-		SDL_GL_SwapWindow(screen);
+		GO_SwapBuffers(screen);
 		cycles++;
 	}
 

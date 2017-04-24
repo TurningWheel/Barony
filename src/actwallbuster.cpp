@@ -38,8 +38,8 @@ void actWallBuster(Entity* my)
 	// received on signal
 	if ( my->skill[28] == 2)
 	{
-		Uint16 x = std::min<Uint16>(std::max(0.0, my->x / 16), map.width - 1);
-		Uint16 y = std::min<Uint16>(std::max(0.0, my->y / 16), map.height - 1);
+		Uint16 x = std::min<Uint16>(std::max<int>(0.0, my->x / 16), map.width - 1);
+		Uint16 y = std::min<Uint16>(std::max<int>(0.0, my->y / 16), map.height - 1);
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
 		map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
 		spawnExplosion(my->x, my->y, my->z - 8);
@@ -47,7 +47,7 @@ void actWallBuster(Entity* my)
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == TRUE )
+				if ( client_disconnected[c] == true )
 				{
 					continue;
 				}
@@ -77,14 +77,14 @@ void actWallBuilder(Entity* my)
 	if ( my->skill[28] == 2)
 	{
 		playSoundEntity( my, 182, 64 );
-		Uint16 x = std::min<Uint16>(std::max(0.0, my->x / 16), map.width - 1);
-		Uint16 y = std::min<Uint16>(std::max(0.0, my->y / 16), map.height - 1);
+		Uint16 x = std::min<Uint16>(std::max<int>(0.0, my->x / 16), map.width - 1);
+		Uint16 y = std::min<Uint16>(std::max<int>(0.0, my->y / 16), map.height - 1);
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
 		if ( multiplayer == SERVER )
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
-				if ( client_disconnected[c] == TRUE )
+				if ( client_disconnected[c] == true )
 				{
 					continue;
 				}

@@ -49,7 +49,7 @@ void actItem(Entity* my)
 
 	if ( multiplayer == CLIENT )
 	{
-		my->flags[NOUPDATE] = TRUE;
+		my->flags[NOUPDATE] = true;
 		if ( ITEM_LIFE == 0 )
 		{
 			Entity* tempEntity = uidToEntity(clientplayer);
@@ -57,7 +57,7 @@ void actItem(Entity* my)
 			{
 				if ( entityInsideEntity(my, tempEntity) )
 				{
-					my->parent = tempEntity->uid;
+					my->parent = tempEntity->getUID();
 				}
 				else
 				{
@@ -69,7 +69,7 @@ void actItem(Entity* my)
 						{
 							if ( entityInsideEntity(my, entity) )
 							{
-								my->parent = entity->uid;
+								my->parent = entity->getUID();
 								break;
 							}
 						}
@@ -86,7 +86,7 @@ void actItem(Entity* my)
 					{
 						if ( entityInsideEntity(my, entity) )
 						{
-							my->parent = entity->uid;
+							my->parent = entity->getUID();
 							break;
 						}
 					}
@@ -95,11 +95,11 @@ void actItem(Entity* my)
 		}
 
 		// request entity update (check if I've been deleted)
-		if ( ticks % (TICKS_PER_SECOND * 5) == my->uid % (TICKS_PER_SECOND * 5) )
+		if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 		{
 			strcpy((char*)net_packet->data, "ENTE");
 			net_packet->data[4] = clientnum;
-			SDLNet_Write32(my->uid, &net_packet->data[5]);
+			SDLNet_Write32(my->getUID(), &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 9;
@@ -110,7 +110,7 @@ void actItem(Entity* my)
 	{
 		// select appropriate model
 		my->skill[2] = -5;
-		my->flags[INVISIBLE] = FALSE;
+		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
 		my->sprite = itemModel(item);
 		free(item);
@@ -170,7 +170,7 @@ void actItem(Entity* my)
 	}
 
 	// gravity
-	bool onground = FALSE;
+	bool onground = false;
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
@@ -194,7 +194,7 @@ void actItem(Entity* my)
 				}
 				else
 				{
-					onground = TRUE;
+					onground = true;
 					my->z = 7.5 - models[my->sprite]->sizey * .25 - .0001;
 				}
 			}
@@ -227,7 +227,7 @@ void actItem(Entity* my)
 	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
 	{
 		ITEM_NOTMOVING = 1;
-		my->flags[UPDATENEEDED] = FALSE;
+		my->flags[UPDATENEEDED] = false;
 		return;
 	}
 

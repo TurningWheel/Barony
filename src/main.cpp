@@ -12,14 +12,15 @@
 #include "main.hpp"
 #include "hash.hpp"
 #include "entity.hpp"
+#include "prng.hpp"
 
 // main definitions
 Sint32 xres = 960;
 Sint32 yres = 600;
 int mainloop = 1;
-bool initialized = FALSE;
+bool initialized = false;
 Uint32 ticks = 0;
-bool stop = FALSE;
+bool stop = false;
 
 // language stuff
 char languageCode[32] = { 0 };
@@ -27,7 +28,7 @@ char** language = NULL;
 
 // input stuff
 int reversemouse = 0;
-double mousespeed = 32;
+real_t mousespeed = 32;
 Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
@@ -38,7 +39,7 @@ Sint8 mousestatus[6];
 Sint8 joystatus[NUM_JOY_STATUS];
 Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
 Entity** clickmap = NULL;
-bool capture_mouse = TRUE;
+bool capture_mouse = true;
 string lastname;
 
 // net stuff
@@ -47,9 +48,9 @@ int numplayers = 0;
 int clientnum = 0;
 int multiplayer = -1;
 #ifdef STEAMWORKS
-bool directConnect = FALSE;
+bool directConnect = false;
 #else
-bool directConnect = TRUE;
+bool directConnect = true;
 #endif
 char address[64];
 IPaddress net_server;
@@ -60,9 +61,9 @@ UDPpacket* net_packet = NULL;
 TCPsocket* net_tcpclients = NULL;
 SDLNet_SocketSet tcpset = NULL;
 list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
-bool receivedclientnum = FALSE;
+bool receivedclientnum = false;
 char* window_title = NULL;
-bool softwaremode = FALSE;
+bool softwaremode = false;
 SDL_TimerID timer;
 SDL_Window* screen = NULL;
 #ifdef APPLE
@@ -72,9 +73,9 @@ SDL_GLContext renderer;
 #endif
 SDL_Surface* mainsurface = NULL;
 SDL_Event event;
-bool firstmouseevent = TRUE;
+bool firstmouseevent = true;
 int fullscreen = 0;
-bool smoothlighting = FALSE;
+bool smoothlighting = false;
 list_t removedEntities;
 list_t entitiesToDelete[MAXPLAYERS];
 Entity* client_selected[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
@@ -86,11 +87,11 @@ bool client_disconnected[MAXPLAYERS];
 list_t entitiesdeleted;
 
 // fps
-bool showfps = FALSE;
-double t, ot = 0.0, frameval[AVERAGEFRAMES];
+bool showfps = false;
+real_t t, ot = 0.0, frameval[AVERAGEFRAMES];
 Uint32 cycles = 0, pingtime = 0;
 Uint32 timesync = 0;
-double fps = 0.0;
+real_t fps = 0.0;
 
 // world sim data
 Sint32 camx = 0, camy = 0;
@@ -106,33 +107,33 @@ Uint32 mapseed;
 bool* shoparea = NULL;
 
 // game variables
-bool shootmode = FALSE;
+bool shootmode = false;
 Sint8 minimap[64][64];
-bool loadnextlevel = FALSE;
-bool loading = FALSE;
+bool loadnextlevel = false;
+bool loading = false;
 int currentlevel = 0, minotaurlevel = 0;
-bool secretlevel = FALSE;
-bool darkmap = FALSE;
-bool skipintro = FALSE;
-bool broadcast = FALSE;
-bool nohud = FALSE;
-bool noclip = FALSE, godmode = FALSE, buddhamode = FALSE;
-bool everybodyfriendly = FALSE;
-bool combat = FALSE, combattoggle = FALSE;
+bool secretlevel = false;
+bool darkmap = false;
+bool skipintro = false;
+bool broadcast = false;
+bool nohud = false;
+bool noclip = false, godmode = false, buddhamode = false;
+bool everybodyfriendly = false;
+bool combat = false, combattoggle = false;
 bool assailant[MAXPLAYERS];
 bool oassailant[MAXPLAYERS];
 Uint32 nummonsters = 0;
-bool gamePaused = FALSE;
-bool intro = TRUE;
+bool gamePaused = false;
+bool intro = true;
 int introstage = -1;
-bool movie = FALSE;
+bool movie = false;
 int kills[NUMMONSTERS];
 
 // messages
 list_t messages;
 list_t command_history;
 node_t* chosen_command = NULL;
-bool command = FALSE;
+bool command = false;
 char command_str[128];
 
 // editor variables
@@ -183,18 +184,18 @@ SDL_Surface** sprites = NULL;
 SDL_Surface** tiles = NULL;
 Uint32 imgref = 1, vboref = 1;
 GLuint* texid = NULL;
-bool disablevbos = FALSE;
+bool disablevbos = false;
 Uint32 fov = 65;
 //GLuint *vboid=NULL, *vaoid=NULL;
 SDL_Surface** allsurfaces;
 Uint32 numsprites, numtiles, nummodels;
 bool* animatedtiles = NULL, *lavatiles = NULL;
 int rscale = 1;
-double vidgamma = 1.0f;
-double* zbuffer = NULL;
+real_t vidgamma = 1.0f;
+real_t* zbuffer = NULL;
 Sint32* lightmap = NULL;
 bool* vismap = NULL;
-bool mode3d = FALSE;
+bool mode3d = false;
 
 // audio definitions
 int audio_rate = 22050;
@@ -210,21 +211,21 @@ SDL_Surface* logo_bmp = NULL;
 SDL_Surface* cursor_bmp = NULL;
 SDL_Surface* cross_bmp = NULL;
 int shaking = 0, bobbing = 0;
-bool fadeout = FALSE, fadefinished = FALSE;
+bool fadeout = false, fadefinished = false;
 int fadealpha = 0;
-double camera_shakex;
-double camera_shakex2;
+real_t camera_shakex;
+real_t camera_shakex2;
 int camera_shakey;
 int camera_shakey2;
 
 // misc definitions
 char tempstr[1024];
 char maptoload[256], configtoload[256];
-bool loadingmap = FALSE, genmap = FALSE, loadingconfig = FALSE;
-bool deleteallbuttons = FALSE;
+bool loadingmap = false, genmap = false, loadingconfig = false;
+bool deleteallbuttons = false;
 Uint32 cursorflash = 0;
 
-bool no_sound = FALSE;
+bool no_sound = false;
 
 //Entity *players[4];
 
@@ -286,7 +287,7 @@ int concatedStringLength(char* str, ...)
 
 -------------------------------------------------------------------------------*/
 
-int sgn(double x)
+int sgn(real_t x)
 {
 	return (x > 0) - (x < 0);
 }
@@ -312,7 +313,7 @@ int numdigits_sint16(Sint16 x)
 
 -------------------------------------------------------------------------------*/
 
-void printlog(char* str, ...)
+void printlog(const char* str, ...)
 {
 	char newstr[1024] = { 0 };
 	va_list argptr;

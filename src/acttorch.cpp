@@ -46,8 +46,8 @@ void actTorch(Entity* my)
 	entity->x += .25 * cos(my->yaw);
 	entity->y += .25 * sin(my->yaw);
 	entity->z -= 2.5;
-	entity->flags[GENIUS] = FALSE;
-	entity->uid = -3;
+	entity->flags[GENIUS] = false;
+	entity->setUID(-3);
 
 	// check wall
 	if ( !checkObstacle( my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL ) )
@@ -103,7 +103,7 @@ void actTorch(Entity* my)
 					messagePlayer(i, language[589]);
 					list_RemoveNode(my->light->node);
 					list_RemoveNode(my->mynode);
-					Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, TRUE, NULL);
+					Item* item = newItem(TOOL_TORCH, WORN, 0, 1, 0, true, NULL);
 					itemPickup(i, item);
 					free(item);
 					return;

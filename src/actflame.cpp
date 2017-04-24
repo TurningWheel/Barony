@@ -57,7 +57,7 @@ Entity* spawnFlame(Entity* parentent)
 	entity = newEntity(13, 1, map.entities); // flame particle
 	if ( intro )
 	{
-		entity->uid = 0;
+		entity->setUID(0);
 	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
@@ -72,17 +72,17 @@ Entity* spawnFlame(Entity* parentent)
 	entity->vel_y = vel * sin(entity->yaw) * .1;
 	entity->vel_z = -.25;
 	entity->skill[0] = 5;
-	entity->flags[NOUPDATE] = TRUE;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[SPRITE] = TRUE;
-	entity->flags[BRIGHT] = TRUE;
-	entity->flags[UNCLICKABLE] = TRUE;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[SPRITE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actFlame;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
 	}
-	entity->uid = -3;
+	entity->setUID(-3);
 
 	return entity;
 }

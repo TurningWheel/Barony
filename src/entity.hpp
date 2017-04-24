@@ -55,29 +55,31 @@ class Entity
 
 	static const int SWITCH_UNPOWERED = 0;
 	static const int SWITCH_POWERED = 1;
+	Uint32 uid;                    // entity uid
 public:
 	Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist);
 	~Entity();
 
 
-	Uint32 uid;                    // entity uid
+	Uint32 getUID() const {return uid;}
+	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence
-	double x, y, z;                // world coordinates
-	double yaw, pitch, roll;       // rotation
-	double focalx, focaly, focalz; // focal point for rotation, movement, etc.
-	double scalex, scaley, scalez; // stretches/squashes the entity visually
+	real_t x, y, z;                // world coordinates
+	real_t yaw, pitch, roll;       // rotation
+	real_t focalx, focaly, focalz; // focal point for rotation, movement, etc.
+	real_t scalex, scaley, scalez; // stretches/squashes the entity visually
 	Sint32 sizex, sizey;           // entity bounding box size
 	Sint32 sprite;                 // the entity's sprite index
 
 	// network stuff
 	Uint32 lastupdate;                   // last time since the entity was updated
 	Uint32 lastupdateserver;             // used to sort out old packets
-	double vel_x, vel_y, vel_z;          // entity velocity vector
-	double new_x, new_y, new_z;          // world coordinates
-	double new_yaw, new_pitch, new_roll; // rotation
+	real_t vel_x, vel_y, vel_z;          // entity velocity vector
+	real_t new_x, new_y, new_z;          // world coordinates
+	real_t new_yaw, new_pitch, new_roll; // rotation
 
 	// entity attributes
-	double fskill[30]; // floating point general purpose variables
+	real_t fskill[30]; // floating point general purpose variables
 	Sint32 skill[30];  // general purpose variables
 	bool flags[16];    // engine flags
 	char* string;      // general purpose string
@@ -189,7 +191,7 @@ Sint32 statGetPER(Stat* entitystats);
 Sint32 statGetCHR(Stat* entitystats);
 int AC(Stat* stat);
 
-Entity* uidToEntity(Uint32 uidnum);
+Entity* uidToEntity(Sint32 uidnum);
 list_t* checkTileForEntity(int x, int y); //Don't forget to free the list returned when you're done with it. Also, provide x and y in map, not entity, units.
 /*
  * Don't forget to free the list returned when you're done with it.

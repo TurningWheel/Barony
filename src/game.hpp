@@ -11,6 +11,8 @@
 
 #pragma once
 
+#include <vector>
+
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #define VERSION "v2.0.5"
 #define GAME_CODE
@@ -29,13 +31,13 @@ extern list_t steamAchievements;
 extern Uint32 impulses[NUMIMPULSES];
 extern Uint32 joyimpulses[NUM_JOY_IMPULSES]; //Joystick/gamepad only impulses.
 extern int reversemouse;
-extern double mousespeed;
+extern real_t mousespeed;
 
 void handleEvents(void);
 void startMessages();
 
-extern double camera_shakex;
-extern double camera_shakex2;
+extern real_t camera_shakex;
+extern real_t camera_shakex2;
 extern int camera_shakey;
 extern int camera_shakey2;
 
@@ -88,10 +90,10 @@ extern Uint32 uniqueGameKey;
 
 // definitions
 extern bool showfps;
-extern double t, ot, frameval[AVERAGEFRAMES];
+extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
-extern double fps;
+extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 10
 extern char classnames[10][10];
@@ -197,3 +199,9 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 #define LENGTH_OF_LEVEL_REGION 5
 
 #define TICKS_PER_SECOND 50
+
+static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
+static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
+extern std::vector<std::string> randomPlayerNamesMale;
+extern std::vector<std::string> randomPlayerNamesFemale;
+void loadRandomNames();

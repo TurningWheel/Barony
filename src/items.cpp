@@ -73,12 +73,12 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	if ( inventory )
 	{
 		int x, y;
-		bool notfree = FALSE, foundaspot = FALSE;
+		bool notfree = false, foundaspot = false;
 
-		bool is_spell = FALSE;
+		bool is_spell = false;
 		if (itemCategory(item) == SPELL_CAT)
 		{
-			is_spell = TRUE;
+			is_spell = true;
 		}
 
 		x = 0;
@@ -100,23 +100,23 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 						{
 							if (is_spell && itemCategory(tempItem) == SPELL_CAT)
 							{
-								notfree = TRUE;  //Both spells. Can't fit in the same slot.
+								notfree = true;  //Both spells. Can't fit in the same slot.
 							}
 							else if (!is_spell && itemCategory(tempItem) != SPELL_CAT)
 							{
-								notfree = TRUE;  //Both not spells. Can't fit in the same slot.
+								notfree = true;  //Both not spells. Can't fit in the same slot.
 							}
 						}
 					}
 				}
 				if ( notfree )
 				{
-					notfree = FALSE;
+					notfree = false;
 					continue;
 				}
 				item->x = x;
 				item->y = y;
-				foundaspot = TRUE;
+				foundaspot = true;
 				break;
 			}
 			if ( foundaspot )
@@ -220,10 +220,10 @@ ItemType itemCurve(Category cat)
 		// these item categories will spawn anything of their type
 		for ( c = 0; c < numitems; c++ )
 		{
-			chances[c] = FALSE;
+			chances[c] = false;
 			if ( items[c].category == cat )
 			{
-				chances[c] = TRUE;
+				chances[c] = true;
 			}
 		}
 	}
@@ -232,7 +232,7 @@ ItemType itemCurve(Category cat)
 		// this category will spawn specific items more frequently regardless of level
 		for ( c = 0; c < numitems; c++ )
 		{
-			chances[c] = FALSE;
+			chances[c] = false;
 			if ( items[c].category == cat )
 			{
 				switch ( (ItemType)c )
@@ -240,20 +240,20 @@ ItemType itemCurve(Category cat)
 					case TOOL_TINOPENER:
 						if ( prng_get_uint() % 2 )   // 50% chance
 						{
-							chances[c] = TRUE;
+							chances[c] = true;
 						}
 						break;
 					case TOOL_LANTERN:
 						if ( prng_get_uint() % 4 )   // 75% chance
 						{
-							chances[c] = TRUE;
+							chances[c] = true;
 						}
 						break;
 					case TOOL_SKELETONKEY:
-						chances[c] = FALSE; // 0% chance
+						chances[c] = false; // 0% chance
 						break;
 					default:
-						chances[c] = TRUE;
+						chances[c] = true;
 						break;
 				}
 			}
@@ -265,10 +265,10 @@ ItemType itemCurve(Category cat)
 		int acceptablehigh = std::max<Uint32>(highestvalue * fmin(1.0, (currentlevel + 10) / 25.0), lowestvalue); //TODO: Why are double and Uint32 being compared?
 		for ( c = 0; c < numitems; c++ )
 		{
-			chances[c] = FALSE;
+			chances[c] = false;
 			if ( items[c].category == cat && items[c].value <= acceptablehigh )
 			{
-				chances[c] = TRUE;
+				chances[c] = true;
 			}
 		}
 	}
@@ -277,7 +277,7 @@ ItemType itemCurve(Category cat)
 	Uint32 numleft = 0;
 	for ( c = 0; c < numitems; c++ )
 	{
-		if ( chances[c] == TRUE )
+		if ( chances[c] == true )
 		{
 			numleft++;
 		}
@@ -302,7 +302,7 @@ ItemType itemCurve(Category cat)
 	{
 		if ( items[c].category == cat )
 		{
-			if ( chances[c] == TRUE )
+			if ( chances[c] == true )
 			{
 				if ( pick == 0 )
 				{
@@ -331,7 +331,7 @@ char* Item::description()
 {
 	int c = 0;
 
-	if ( identified == TRUE )
+	if ( identified == true )
 	{
 		if ( count < 2 )
 		{
@@ -798,8 +798,8 @@ void dropItem(Item* item, int player)
 			closeBookGUI();
 		}
 		entity = newEntity(-1, 1, map.entities);
-		entity->flags[INVISIBLE] = TRUE;
-		entity->flags[UPDATENEEDED] = TRUE;
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
 		entity->x = players[player]->entity->x;
 		entity->y = players[player]->entity->y;
 		entity->sizex = 4;
@@ -808,7 +808,7 @@ void dropItem(Item* item, int player)
 		entity->vel_x = (1.5 + .025 * (rand() % 11)) * cos(players[player]->entity->yaw);
 		entity->vel_y = (1.5 + .025 * (rand() % 11)) * sin(players[player]->entity->yaw);
 		entity->vel_z = (-10 - rand() % 20) * .01;
-		entity->flags[PASSABLE] = TRUE;
+		entity->flags[PASSABLE] = true;
 		entity->behavior = &actItem;
 		entity->skill[10] = item->type;
 		entity->skill[11] = item->status;
@@ -816,7 +816,7 @@ void dropItem(Item* item, int player)
 		entity->skill[13] = 1;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
-		entity->parent = players[player]->entity->uid;
+		entity->parent = players[player]->entity->getUID();
 
 		// play sound
 		playSoundEntity( players[player]->entity, 47 + rand() % 3, 64 );
@@ -862,8 +862,8 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 	}
 
 	entity = newEntity(-1, 1, map.entities);
-	entity->flags[INVISIBLE] = TRUE;
-	entity->flags[UPDATENEEDED] = TRUE;
+	entity->flags[INVISIBLE] = true;
+	entity->flags[UPDATENEEDED] = true;
 	entity->x = monster->x;
 	entity->y = monster->y;
 	entity->sizex = 4;
@@ -872,8 +872,8 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 	entity->vel_x = (rand() % 20 - 10) / 10.0;
 	entity->vel_y = (rand() % 20 - 10) / 10.0;
 	entity->vel_z = -.5;
-	entity->flags[PASSABLE] = TRUE;
-	entity->flags[USERFLAG1] = TRUE; // speeds up game when many items are dropped
+	entity->flags[PASSABLE] = true;
+	entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
 	entity->behavior = &actItem;
 	entity->skill[10] = item->type;
 	entity->skill[11] = item->status;
@@ -881,7 +881,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 	entity->skill[13] = 1;
 	entity->skill[14] = item->appearance;
 	entity->skill[15] = item->identified;
-	entity->parent = monster->uid;
+	entity->parent = monster->getUID();
 
 	item->count--;
 	Item** slot;
@@ -976,7 +976,7 @@ void equipItem(Item* item, Item** slot, int player)
 				{
 					messagePlayer(player, language[1089], (*slot)->getName());
 				}
-				(*slot)->identified = TRUE;
+				(*slot)->identified = true;
 				return;
 			}
 		}
@@ -1023,7 +1023,7 @@ void equipItem(Item* item, Item** slot, int player)
 		{
 			oldcount = item->count;
 			item->count = 1;
-			if ( intro == FALSE )
+			if ( intro == false )
 			{
 				messagePlayer(player, language[1090], item->description());
 			}
@@ -1034,11 +1034,11 @@ void equipItem(Item* item, Item** slot, int player)
 		{
 			if ( slot == &stats[player]->weapon )
 			{
-				weaponSwitch = TRUE;
+				weaponSwitch = true;
 			}
 			else if ( slot == &stats[player]->shield )
 			{
-				shieldSwitch = TRUE;
+				shieldSwitch = true;
 			}
 		}
 	}
@@ -1052,7 +1052,7 @@ void equipItem(Item* item, Item** slot, int player)
 				{
 					messagePlayer(player, language[1089], (*slot)->getName());
 				}
-				(*slot)->identified = TRUE;
+				(*slot)->identified = true;
 				return;
 			}
 		}
@@ -1095,7 +1095,7 @@ void equipItem(Item* item, Item** slot, int player)
 		{
 			oldcount = item->count;
 			item->count = 1;
-			if ( intro == FALSE && !fadeout )
+			if ( intro == false && !fadeout )
 			{
 				messagePlayer(player, language[1091], item->description());
 			}
@@ -1123,61 +1123,61 @@ void useItem(Item* item, int player)
 	if (openedChest[player] && itemCategory(item) != SPELL_CAT)
 	{
 		//If a chest is open, put the item in the chest.
-		openedChest[player]->addItemToChestFromInventory(player, item, FALSE);
+		openedChest[player]->addItemToChestFromInventory(player, item, false);
 		return;
 	}
 	else if ( gui_mode == GUI_MODE_SHOP && player == clientnum && itemCategory(item) != SPELL_CAT)
 	{
-		bool deal = TRUE;
+		bool deal = true;
 		switch ( shopkeepertype )
 		{
 			case 0: // arms & armor
 				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 1: // hats
 				if ( itemCategory(item) != ARMOR )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 2: // jewelry
 				if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 3: // bookstore
 				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 4: // potion shop
 				if ( itemCategory(item) != POTION )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 5: // magicstaffs
 				if ( itemCategory(item) != MAGICSTAFF )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 6: // food
 				if ( itemCategory(item) != FOOD )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			case 7: // tools
 			case 8: // lights
 				if ( itemCategory(item) != TOOL )
 				{
-					deal = FALSE;
+					deal = false;
 				}
 				break;
 			default:
@@ -1208,7 +1208,7 @@ void useItem(Item* item, int player)
 	{
 		if ( item->type == FOOD_TIN )
 		{
-			bool havetinopener = FALSE;
+			bool havetinopener = false;
 			node_t* node;
 			for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 			{
@@ -1217,7 +1217,7 @@ void useItem(Item* item, int player)
 				{
 					if ( tempitem->status != BROKEN )
 					{
-						havetinopener = TRUE;
+						havetinopener = true;
 						break;
 					}
 				}
@@ -1598,7 +1598,7 @@ void useItem(Item* item, int player)
 					if (!players[player]->entity->isBlind())
 					{
 						openBook(books[item->appearance % numbooks], item);
-						conductIlliterate = FALSE;
+						conductIlliterate = false;
 					}
 					else
 					{
@@ -1776,46 +1776,46 @@ bool itemIsEquipped(const Item* item, int player)
 {
 	if ( !itemCompare(item, stats[player]->helmet) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->breastplate) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->gloves) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->shoes) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->shield) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->weapon) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->cloak) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->amulet) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->ring) )
 	{
-		return TRUE;
+		return true;
 	}
 	if ( !itemCompare(item, stats[player]->mask) )
 	{
-		return TRUE;
+		return true;
 	}
 
-	return FALSE;
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2010,7 +2010,7 @@ Sint32 Item::armorGetAC()
 
 	Item::canUnequip
 
-	returns TRUE if the item may be unequipped (ie it isn't cursed)
+	returns true if the item may be unequipped (ie it isn't cursed)
 
 -------------------------------------------------------------------------------*/
 
@@ -2019,16 +2019,16 @@ bool Item::canUnequip()
 	/*
 	//Spellbooks are no longer equipable.
 	if (type >= 100 && type <= 121) { //Spellbooks always unequipable regardless of cursed.
-		return TRUE;
+		return true;
 	}*/
 
 	if (beatitude < 0)
 	{
-		identified = TRUE;
-		return FALSE;
+		identified = true;
+		return false;
 	}
 
-	return TRUE;
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -2141,7 +2141,7 @@ void Item::apply(int player, Entity* entity)
 		SDLNet_Write32((Uint32)appearance, &net_packet->data[20]);
 		net_packet->data[24] = identified;
 		net_packet->data[25] = player;
-		SDLNet_Write32((Uint32)entity->uid, &net_packet->data[26]);
+		SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[26]);
 		net_packet->address.host = net_server.host;
 		net_packet->address.port = net_server.port;
 		net_packet->len = 30;

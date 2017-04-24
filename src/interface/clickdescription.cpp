@@ -131,9 +131,7 @@ void clickDescription(int player, Entity* entity)
 		}
 		else
 		{
-			GLubyte pixel[4];
-			glReadPixels(omousex, yres - omousey, 1, 1, GL_RGBA, GL_UNSIGNED_BYTE, (void*)pixel);
-			uidnum = pixel[0] + (((Uint32)pixel[1]) << 8) + (((Uint32)pixel[2]) << 16) + (((Uint32)pixel[3]) << 24);
+			uidnum = GO_GetPixelU32(omousex, yres - omousey);
 			entity = uidToEntity(uidnum);
 		}
 	}
@@ -176,7 +174,7 @@ void clickDescription(int player, Entity* entity)
 				}
 				else if ( entity->behavior == &actItem )
 				{
-					item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], FALSE, NULL);
+					item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], false, NULL);
 					if (item)
 					{
 						messagePlayer(player, language[257], item->description());
@@ -271,7 +269,7 @@ void clickDescription(int player, Entity* entity)
 			// send spot command to server
 			strcpy((char*)net_packet->data, "SPOT");
 			net_packet->data[4] = player;
-			SDLNet_Write32((Uint32)entity->uid, &net_packet->data[5]);
+			SDLNet_Write32((Uint32)entity->getUID(), &net_packet->data[5]);
 			net_packet->address.host = net_server.host;
 			net_packet->address.port = net_server.port;
 			net_packet->len = 9;

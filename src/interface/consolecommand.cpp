@@ -116,7 +116,7 @@ void consoleCommand(char* command_str)
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
-				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), TRUE, &stats[clientnum]->inventory), 0);
+				dropItem(newItem(static_cast<ItemType>(c), EXCELLENT, 0, 1, rand(), true, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
@@ -137,7 +137,7 @@ void consoleCommand(char* command_str)
 		{
 			if ( strstr(items[c].name_identified, name) )
 			{
-				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), FALSE, &stats[clientnum]->inventory), 0);
+				dropItem(newItem(static_cast<ItemType>(c), WORN, -2, 1, rand(), false, &stats[clientnum]->inventory), 0);
 				break;
 			}
 		}
@@ -155,7 +155,7 @@ void consoleCommand(char* command_str)
 			{
 				if ( !client_disconnected[c] && !strncmp(name, stats[c]->name, 128) )
 				{
-					client_disconnected[c] = TRUE;
+					client_disconnected[c] = true;
 					strcpy((char*)net_packet->data, "KICK");
 					net_packet->address.host = net_clients[c - 1].host;
 					net_packet->address.port = net_clients[c - 1].port;
@@ -190,8 +190,9 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
+
 		strcpy(name, command_str + 11);
-		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), TRUE, &stats[clientnum]->inventory), 0);
+		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), true, &stats[clientnum]->inventory), 0);
 	}
 	else if ( !strncmp(command_str, "/savemap ", 9) )
 	{
@@ -215,7 +216,7 @@ void consoleCommand(char* command_str)
 		else
 		{
 			messagePlayer(clientnum, language[285]);
-			loadnextlevel = TRUE;
+			loadnextlevel = true;
 		}
 	}
 	else if ( !strncmp(command_str, "/pos", 4) )
@@ -236,8 +237,8 @@ void consoleCommand(char* command_str)
 		}
 		if (players[clientnum] && players[clientnum]->entity)
 		{
-			int x = std::min<int>(std::max(0.0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max(0.0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
+			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
+			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
 			messagePlayer(clientnum, "pathMapGrounded value: %d", pathMapGrounded[y + x * map.height]);
 			messagePlayer(clientnum, "pathMapFlying value: %d", pathMapFlying[y + x * map.height]);
 		}
@@ -248,7 +249,7 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/showfps", 8) )
 	{
-		showfps = (showfps == FALSE);
+		showfps = (showfps == false);
 	}
 	else if ( !strncmp(command_str, "/noclip", 7) )
 	{
@@ -258,7 +259,7 @@ void consoleCommand(char* command_str)
 		}
 		else
 		{
-			noclip = (noclip == FALSE);
+			noclip = (noclip == false);
 			if ( noclip )
 			{
 				messagePlayer(clientnum, language[288]);
@@ -282,7 +283,7 @@ void consoleCommand(char* command_str)
 		}
 		else
 		{
-			godmode = (godmode == FALSE);
+			godmode = (godmode == false);
 			if ( godmode )
 			{
 				messagePlayer(clientnum, language[291]);
@@ -301,7 +302,7 @@ void consoleCommand(char* command_str)
 		}
 		else
 		{
-			buddhamode = (buddhamode == FALSE);
+			buddhamode = (buddhamode == false);
 			if ( buddhamode )
 			{
 				messagePlayer(clientnum, language[294]);
@@ -324,7 +325,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[284]);
 			return;
 		}
-		everybodyfriendly = (everybodyfriendly == FALSE);
+		everybodyfriendly = (everybodyfriendly == false);
 		if ( everybodyfriendly )
 		{
 			messagePlayer(clientnum, language[296]);
@@ -569,15 +570,15 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_NEXT] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_NEXT: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_HOTBAR_NEXT"))
+		else if (strstr(command_str, "INJOY_GAME_HOTBAR_NEXT"))
 		{
-			joyimpulses[INJOY_HOTBAR_NEXT] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_NEXT: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_HOTBAR_NEXT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_NEXT: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_HOTBAR_PREV"))
+		else if (strstr(command_str, "INJOY_GAME_HOTBAR_PREV"))
 		{
-			joyimpulses[INJOY_HOTBAR_PREV] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_HOTBAR_PREV] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_GAME_HOTBAR_ACTIVATE"))
 		{
@@ -599,10 +600,10 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_REFRESH_LOBBY] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_REFRESH_LOBBY: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_MENU_LOAD_SAVE"))
+		else if (strstr(command_str, "INJOY_MENU_DONT_LOAD_SAVE"))
 		{
-			joyimpulses[INJOY_MENU_LOAD_SAVE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_MENU_LOAD_SAVE: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_DONT_LOAD_SAVE: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_MENU_RANDOM_CHAR"))
 		{
@@ -659,6 +660,11 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_MAGIC_TAB] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_MAGIC_TAB: %d\n", atoi(&command_str[9]));
 		}
+		else if ( strstr(command_str, "INJOY_MENU_RANDOM_NAME") )
+		{
+			joyimpulses[INJOY_MENU_RANDOM_NAME] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_RANDOM_NAME: %d\n", atoi(&command_str[9]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");
@@ -674,10 +680,16 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/smoothmouse", 12) )
 	{
-		smoothmouse = (smoothmouse == FALSE);
+		smoothmouse = (smoothmouse == false);
 	}
 	else if ( !strncmp(command_str, "/mana", 4) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			stats[clientnum]->MP = stats[clientnum]->MAXMP;
@@ -689,6 +701,12 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/heal", 4) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			stats[clientnum]->HP = stats[clientnum]->MAXHP;
@@ -716,11 +734,11 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/noblood", 8))
 	{
-		spawn_blood = (spawn_blood == FALSE);
+		spawn_blood = (spawn_blood == false);
 	}
 	else if (!strncmp(command_str, "/colorblind", 11))
 	{
-		colorblind = (colorblind == FALSE);
+		colorblind = (colorblind == false);
 	}
 	else if (!strncmp(command_str, "/gamma", 6))
 	{
@@ -730,10 +748,16 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/capturemouse", 13))
 	{
-		capture_mouse = (capture_mouse == FALSE);
+		capture_mouse = (capture_mouse == false);
 	}
 	else if (!strncmp(command_str, "/levelup", 8))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			if (players[clientnum] && players[clientnum]->entity)
@@ -748,6 +772,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/maxout", 7))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			int c;
@@ -776,6 +806,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/hunger", 7))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
@@ -799,10 +835,16 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/skipintro", 10))
 	{
-		skipintro = (skipintro == FALSE);
+		skipintro = (skipintro == false);
 	}
 	else if (!strncmp(command_str, "/levelmagic", 11))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			int i = 0;
@@ -906,14 +948,14 @@ void consoleCommand(char* command_str)
 		{
 			strcpy(name, command_str + 8);
 			int i, creature;
-			bool found = FALSE;
+			bool found = false;
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
 				if (strstr(language[90 + i], name))
 				{
 					creature = i;
-					found = TRUE;
+					found = true;
 					break;
 				}
 			}
@@ -941,15 +983,15 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/broadcast", 10))
 	{
-		broadcast = (broadcast == FALSE);
+		broadcast = (broadcast == false);
 	}
 	else if (!strncmp(command_str, "/nohud", 6))
 	{
-		nohud = (nohud == FALSE);
+		nohud = (nohud == false);
 	}
 	else if (!strncmp(command_str, "/disablehotbarnewitems", 15))
 	{
-		auto_hotbar_new_items = (auto_hotbar_new_items == FALSE);
+		auto_hotbar_new_items = (auto_hotbar_new_items == false);
 	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
@@ -962,15 +1004,15 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/disablemessages", 15))
 	{
-		disable_messages = TRUE;
+		disable_messages = true;
 	}
 	else if (!strncmp(command_str, "/right_click_protect", 19))
 	{
-		right_click_protect = TRUE;
+		right_click_protect = true;
 	}
 	else if (!strncmp(command_str, "/autoappraisenewitems", 21))
 	{
-		auto_appraise_new_items = TRUE;
+		auto_appraise_new_items = true;
 	}
 	else if (!strncmp(command_str, "/startfloor ", 12))
 	{
@@ -1066,32 +1108,40 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/gold ", 5) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
 		}
-		else
-		{
-			int amount = atoi(&command_str[5]);
-			stats[clientnum]->GOLD += amount;
-			stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
 
-			messagePlayer(clientnum, "Giving %d gold pieces.", amount);
-		}
+		int amount = atoi(&command_str[5]);
+		stats[clientnum]->GOLD += amount;
+		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+
+		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
 	}
-	else if (!strncmp(command_str, "/minotaurlevel", 10))
+	else if (!strncmp(command_str, "/minotaurlevel", 14))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
 		}
-		else
+
+		if ( !minotaurlevel )
 		{
-			if ( !minotaurlevel )
-			{
-				minotaurlevel = 1;
-				createMinotaurTimer(players[0]->entity, &map);
-			}
+			minotaurlevel = 1;
+			createMinotaurTimer(players[0]->entity, &map);
 		}
 	}
 	else

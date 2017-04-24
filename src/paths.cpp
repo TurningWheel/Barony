@@ -172,7 +172,7 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 
 -------------------------------------------------------------------------------*/
 
-list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
+list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target, bool lavaIsPassable)
 {
 	if (!my)
 	{
@@ -191,7 +191,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 
 	int* pathMap = (int*) calloc(map.width * map.height, sizeof(int));
 
-	bool levitating = FALSE;
+	bool levitating = false;
 
 	x1 = std::min<unsigned int>(std::max(0, x1), map.width - 1);
 	y1 = std::min<unsigned int>(std::max(0, y1), map.height - 1);
@@ -202,26 +202,26 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 	Stat* stats = my->getStats();
 	if ( stats )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == TRUE )
+		if ( stats->EFFECTS[EFF_LEVITATING] == true )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 		if ( stats->ring != NULL )
 			if ( stats->ring->type == RING_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 		if ( stats->shoes != NULL )
 			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
 			{
-				levitating = TRUE;
+				levitating = true;
 			}
 	}
 	if ( my )
 	{
 		if ( my->behavior == &actItem || my->behavior == &actArrowTrap || my->behavior == &actBoulderTrap )
 		{
-			levitating = TRUE;
+			levitating = true;
 		}
 	}
 
@@ -264,6 +264,11 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 		}
 		if ( my->checkFriend(target) )
 		{
+			continue;
+		}
+		if ( entity->sprite == 41 && lavaIsPassable )
+		{
+			//Fix to make ladders generate in hell.
 			continue;
 		}
 		int x = std::min<unsigned int>(std::max<int>(0, entity->x / 16), map.width - 1); //TODO: Why are int and double being compared? And why are int and unsigned int being compared?
@@ -379,13 +384,13 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 				}
 				if ( !z )
 				{
-					alreadyadded = FALSE;
+					alreadyadded = false;
 					for ( node = closedList->first; node != NULL; node = node->next )
 					{
 						childnode = (pathnode_t*)node->element;
 						if ( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y )
 						{
-							alreadyadded = TRUE;
+							alreadyadded = true;
 							break;
 						}
 					}
@@ -394,7 +399,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 						childnode = (pathnode_t*)node->element;
 						if ( childnode->x == pathnode->x + x && childnode->y == pathnode->y + y )
 						{
-							alreadyadded = TRUE;
+							alreadyadded = true;
 							if ( x && y )
 							{
 								if ( childnode->g > pathnode->g + DIAGONALCOST )
@@ -414,7 +419,7 @@ list_t* generatePath(int x1, int y1, int x2, int y2, Entity* my, Entity* target)
 							break;
 						}
 					}
-					if ( alreadyadded == FALSE )
+					if ( alreadyadded == false )
 					{
 						if ( list_Size(openList) >= 1000 )
 						{
@@ -495,18 +500,18 @@ void generatePathMaps()
 
 void fillPathMap(int* pathMap, int x, int y, int zone)
 {
-	bool obstacle = TRUE;
+	bool obstacle = true;
 
 	int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
 	if ( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] && !animatedtiles[map.tiles[index]] )
 	{
-		obstacle = FALSE;
+		obstacle = false;
 	}
 	else if ( pathMap == pathMapFlying && !map.tiles[OBSTACLELAYER + index] )
 	{
-		obstacle = FALSE;
+		obstacle = false;
 	}
-	if ( obstacle == FALSE )
+	if ( obstacle == false )
 	{
 		node_t* node;
 		list_t* list = checkTileForEntity(x, y);
@@ -519,12 +524,12 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 				{
 					if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
 					{
-						obstacle = TRUE;
+						obstacle = true;
 						break;
 					}
 					else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 					{
-						obstacle = FALSE;
+						obstacle = false;
 						break;
 					}
 				}
@@ -543,7 +548,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 	bool repeat;
 	do
 	{
-		repeat = FALSE;
+		repeat = false;
 
 		int u, v;
 		for ( u = 0; u < map.width; u++ )
@@ -556,8 +561,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 					{
 						if ( !pathMap[v + (u + 1)*map.height] )
 						{
-							bool foundObstacle = FALSE;
-							bool foundWallModifier = FALSE;
+							bool foundObstacle = false;
+							bool foundWallModifier = false;
 							list_t* list = checkTileForEntity(u + 1, v);
 							if ( list )
 							{
@@ -569,12 +574,12 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									{
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
 										{
-											foundObstacle = TRUE;
+											foundObstacle = true;
 											break;
 										}
 										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
-											foundWallModifier = TRUE;
+											foundWallModifier = true;
 											break;
 										}
 									}
@@ -582,7 +587,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( foundWallModifier )
 								{
 									pathMap[v + (u + 1)*map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 								list_FreeAll(list);
 								free(list);
@@ -593,7 +598,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
 								{
 									pathMap[v + (u + 1)*map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 							}
 						}
@@ -602,8 +607,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 					{
 						if ( !pathMap[v + (u - 1)*map.height] )
 						{
-							bool foundObstacle = FALSE;
-							bool foundWallModifier = FALSE;
+							bool foundObstacle = false;
+							bool foundWallModifier = false;
 							list_t* list = checkTileForEntity(u - 1, v);
 							if ( list )
 							{
@@ -615,12 +620,12 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									{
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
 										{
-											foundObstacle = TRUE;
+											foundObstacle = true;
 											break;
 										}
 										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
-											foundWallModifier = TRUE;
+											foundWallModifier = true;
 											break;
 										}
 									}
@@ -628,7 +633,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( foundWallModifier )
 								{
 									pathMap[v + (u - 1)*map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 								list_FreeAll(list);
 								free(list);
@@ -639,7 +644,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
 								{
 									pathMap[v + (u - 1)*map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 							}
 						}
@@ -648,8 +653,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 					{
 						if ( !pathMap[(v + 1) + u * map.height] )
 						{
-							bool foundObstacle = FALSE;
-							bool foundWallModifier = FALSE;
+							bool foundObstacle = false;
+							bool foundWallModifier = false;
 							list_t* list = checkTileForEntity(u, v + 1);
 							if ( list )
 							{
@@ -661,12 +666,12 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									{
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
 										{
-											foundObstacle = TRUE;
+											foundObstacle = true;
 											break;
 										}
 										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
-											foundWallModifier = TRUE;
+											foundWallModifier = true;
 											break;
 										}
 									}
@@ -674,7 +679,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( foundWallModifier )
 								{
 									pathMap[(v + 1) + u * map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 								list_FreeAll(list);
 								free(list);
@@ -685,7 +690,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
 								{
 									pathMap[(v + 1) + u * map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 							}
 						}
@@ -694,8 +699,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 					{
 						if ( !pathMap[(v - 1) + u * map.height] )
 						{
-							bool foundObstacle = FALSE;
-							bool foundWallModifier = FALSE;
+							bool foundObstacle = false;
+							bool foundWallModifier = false;
 							list_t* list = checkTileForEntity(u, v - 1);
 							if ( list )
 							{
@@ -707,12 +712,12 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									{
 										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
 										{
-											foundObstacle = TRUE;
+											foundObstacle = true;
 											break;
 										}
 										else if ( entity->behavior == &actWallBuilder || entity->behavior == &actWallBuster )
 										{
-											foundWallModifier = TRUE;
+											foundWallModifier = true;
 											break;
 										}
 									}
@@ -720,7 +725,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( foundWallModifier )
 								{
 									pathMap[(v - 1) + u * map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 								list_FreeAll(list);
 								free(list);
@@ -731,7 +736,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
 								{
 									pathMap[(v - 1) + u * map.height] = zone;
-									repeat = TRUE;
+									repeat = true;
 								}
 							}
 						}

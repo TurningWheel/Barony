@@ -18,11 +18,11 @@
 #include "interface.hpp"
 
 //Identify GUI definitions.
-bool identifygui_active = FALSE;
-bool identifygui_appraising = FALSE;
+bool identifygui_active = false;
+bool identifygui_appraising = false;
 int identifygui_offset_x = 0;
 int identifygui_offset_y = 0;
-bool dragging_identifyGUI = FALSE;
+bool dragging_identifyGUI = false;
 int identifyscroll = 0;
 Item* identify_items[NUM_IDENTIFY_GUI_ITEMS];
 SDL_Surface* identifyGUI_img;
@@ -128,8 +128,8 @@ void updateIdentifyGUI()
 				}
 				if (omousex >= IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + 377 && omousey >= IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + 15)
 				{
-					gui_clickdrag = TRUE;
-					dragging_identifyGUI = TRUE;
+					gui_clickdrag = true;
+					dragging_identifyGUI = true;
 					dragoffset_x = omousex - IDENTIFY_GUI_X;
 					dragoffset_y = omousey - IDENTIFY_GUI_Y;
 					mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -180,7 +180,7 @@ void updateIdentifyGUI()
 			}
 			else
 			{
-				dragging_identifyGUI = FALSE;
+				dragging_identifyGUI = false;
 			}
 		}
 
@@ -193,8 +193,6 @@ void updateIdentifyGUI()
 		else
 		{
 			//Print the window label signifying this as the identify GUI.
-			//char *window_name = (char*)malloc(sizeof(char));
-			//strcpy(window_name, "Identify Item");
 			char* window_name;
 			if (identifygui_appraising)
 			{
@@ -232,11 +230,12 @@ void updateIdentifyGUI()
 				pos.w = 0;
 				pos.h = 0;
 				drawImage(invclose_bmp, NULL, &pos);
-				identifygui_active = FALSE;
-				identifygui_appraising = FALSE;
+				identifygui_active = false;
+				identifygui_appraising = false;
 
 				//Cleanup identify GUI gamecontroller code here.
 				selectedIdentifySlot = -1;
+				//TODO: closeIdentifyGUI() instead.
 			}
 
 			Item* item = NULL;
@@ -350,7 +349,7 @@ void identifyGUIIdentify(Item* item)
 
 	if (!identifygui_appraising)
 	{
-		item->identified = TRUE;
+		item->identified = true;
 		messagePlayer(clientnum, language[320], item->description());
 		if (appraisal_timer > 0 && appraisal_item && appraisal_item == item->uid)
 		{
@@ -367,13 +366,13 @@ void identifyGUIIdentify(Item* item)
 		//Once the timer hits zero, roll to see if the item is identified.
 		//If it is identified, identify it and print out a message for the player.
 
-		identifygui_appraising = FALSE;
+		identifygui_appraising = false;
 		appraisal_timer = getAppraisalTime(item);
 		appraisal_timermax = appraisal_timer;
 		appraisal_item = item->uid;
 		//printlog( "DEBUGGING: Appraisal timer = %i.\n", appraisal_timer);
 	}
-	identifygui_active = FALSE;
+	identifygui_active = false;
 
 	//Cleanup identify GUI gamecontroller code here.
 	selectedIdentifySlot = -1;
