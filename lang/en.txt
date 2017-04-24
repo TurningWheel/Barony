@@ -2740,8 +2740,8 @@ client (player %d) (direct ip)#
 1966 Previous Inventory Tab#
 1967 Next Inventory Tab#
 1968 Item Context Menu#
-1969 Drop Item#
-1970 Clear Hotbar Slot#
+1969 Clear Hotbar Slot#
+1970 Drop Item#
 1971 Grab All From Chest#
 1972 Previous Shop Category#
 1973 Next Shop Category#
