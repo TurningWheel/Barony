@@ -115,6 +115,8 @@ hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 int current_hotbar = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
+bool hotbarHasFocus = false;
+
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = true;
@@ -1038,6 +1040,8 @@ void selectHotbarSlot(int slot)
 	}
 
 	current_hotbar = slot;
+
+	hotbarHasFocus = true;
 }
 
 void openStatusScreen(int whichGUIMode, int whichInventoryMode)

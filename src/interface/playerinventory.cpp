@@ -298,6 +298,12 @@ void select_inventory_slot(int x, int y)
 	if ( y < 0 )   //Wrap around top.
 	{
 		y = INVENTORY_SIZEY - 1;
+		if ( hotbarGamepadControlEnabled() )
+		{
+			hotbarHasFocus = true; //Warp to hotbar.
+			warpMouseToSelectedHotbarSlot();
+			printlog("Wraparound top: Granting hotbar focus."); //DEBUG.
+		}
 	}
 	if ( y >= INVENTORY_SIZEY )   //Hit bottom. Wrap around or go to shop/chest?
 	{
@@ -356,6 +362,13 @@ void select_inventory_slot(int x, int y)
 		if ( warpInv )   //Wrap around to top.
 		{
 			y = 0;
+
+			if ( hotbarGamepadControlEnabled() )
+			{
+				hotbarHasFocus = true;
+				warpMouseToSelectedHotbarSlot();
+				printlog("Wraparound bottom: Granting hotbar focus."); //DEBUG.
+			}
 		}
 	}
 
@@ -676,7 +689,11 @@ void updatePlayerInventory()
 		{
 			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
-				warpMouseToSelectedInventorySlot();
+				if ( !hotbarHasFocus )
+				{
+					printlog("Hotbar does not have focus, warping mouse to inventory slot."); //DEBUG.
+					warpMouseToSelectedInventorySlot();
+				}
 			}
 		}
 		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controller->handleChestMovement() )
@@ -761,9 +778,11 @@ void updatePlayerInventory()
 				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
+					printlog("Revoking hotbar focus: moused over inventory slot."); //DEBUG.
+					hotbarHasFocus = false;
 				}
 
-				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y )
+				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y && !hotbarHasFocus )
 				{
 					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
 					drawBox(&pos, color, 127);

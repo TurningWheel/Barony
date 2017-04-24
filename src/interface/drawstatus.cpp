@@ -205,6 +205,14 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 
 bool mouseInBoundsRealtimeCoords(int, int, int, int); //Defined in playerinventory.cpp. Dirty hack, you should be ashamed of yourself.
 
+void warpMouseToSelectedHotbarSlot()
+{
+	SDL_Rect pos;
+	pos.x = STATUS_X + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
+	pos.y = STATUS_Y - (hotbar_img->h / 2);
+	SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+}
+
 void drawStatus()
 {
 	SDL_Rect pos, initial_position;
@@ -848,9 +856,7 @@ void drawStatus()
 
 		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active)
 		{
-			pos.x = initial_position.x + (current_hotbar * hotbar_img->w) + (hotbar_img->w / 2);
-			pos.y = initial_position.y - (hotbar_img->h / 2);
-			SDL_WarpMouseInWindow(screen, pos.x, pos.y);
+			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
