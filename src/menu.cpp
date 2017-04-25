@@ -74,7 +74,7 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
-struct videomodes resolutions;
+struct resolutions resolutions;
 int settings_xres, settings_yres;
 Uint32 settings_fov;
 bool settings_smoothlighting;
@@ -1603,7 +1603,7 @@ void handleMainMenu(bool mode)
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
 			for ( c = 0; c < resolutions.num; c++ )
 			{
-				struct videomode *cur = &resolutions.modes[c];
+				struct resolution *cur = &resolutions.modes[c];
 				
 				
 				if ( settings_xres == cur->width && settings_yres == cur->height )
@@ -4867,7 +4867,8 @@ void openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
-void getResolutionMap()
+// get 
+void getResolutionList()
 {
 	// for now just use the resolution modes on the first
 	// display.
@@ -4878,8 +4879,8 @@ void getResolutionMap()
 	printlog("display mode count: %d.\n", nummodes);
 	
 	resolutions.num = nummodes;
-	resolutions.modes = (struct videomode *)
-		calloc(nummodes, sizeof(struct videomode));
+	resolutions.modes = (struct resolution *)
+		calloc(nummodes, sizeof(struct resolution));
 	
 	for (int im = 0; im < nummodes; im++)
 	{
@@ -4896,7 +4897,7 @@ void openSettingsWindow()
 	button_t* button;
 	int c;
 
-	getResolutionMap();
+	getResolutionList();
 	
 	// set the "settings" variables
 	settings_xres = xres;

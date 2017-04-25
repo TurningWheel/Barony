@@ -11,14 +11,14 @@
 
 #pragma once
 
-struct videomode {
+struct resolution {
 	int width;
 	int height;
 };
 
-struct videomodes {
+struct resolutions {
 	int num;
-	struct videomode *modes;
+	struct resolution *modes;
 };
 
 extern bool savethisgame;
