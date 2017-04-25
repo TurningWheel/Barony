@@ -4874,20 +4874,38 @@ void getResolutionList()
 	// display.
 	int numdisplays = SDL_GetNumVideoDisplays();
 	int nummodes = SDL_GetNumDisplayModes(0);
+	int im;
+	int c;
 	
 	printlog("display count: %d.\n", numdisplays);
 	printlog("display mode count: %d.\n", nummodes);
+	
+	for (im = 0; im < nummodes; im++)
+	{
+		SDL_DisplayMode mode;
+		SDL_GetDisplayMode(0, im, &mode);
+		// resolutions below 960x600 are not supported
+		if (mode.w < 960 || mode.h < 600)
+		{
+			nummodes--;
+		}
+	}
 	
 	resolutions.num = nummodes;
 	resolutions.modes = (struct resolution *)
 		calloc(nummodes, sizeof(struct resolution));
 	
-	for (int im = 0; im < nummodes; im++)
+	for (im = 0, c = 0; im < nummodes; im++)
 	{
 		SDL_DisplayMode mode;
 		SDL_GetDisplayMode(0, im, &mode);
-		resolutions.modes[im].width = mode.w;
-		resolutions.modes[im].height = mode.h;
+		if (mode.w < 960 || mode.h < 600)
+		{
+			continue;
+		}
+		resolutions.modes[c].width = mode.w;
+		resolutions.modes[c].height = mode.h;
+		c++;
 	}
 }
 
