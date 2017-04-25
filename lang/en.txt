@@ -581,12 +581,12 @@ thou makest use of them.#
 # skill levels
 
 363                 none#
-364                 novice#
-365                 basic#
-366                 skilled#
-367                 expert#
-368                 master#
-369                 legend#
+364               novice#
+365                basic#
+366              skilled#
+367               expert#
+368               master#
+369               legend#
 
 
 # rest of the character sheet
@@ -962,7 +962,7 @@ thou makest use of them.#
 575 You bump %s. %d/%d HP | %d/%d MP#
 576 %s bumps you.#
 577 You die...#
-578 
+578
 You will be revived if your party
 survives to the next level.#
 579 *hic*#
@@ -1146,7 +1146,7 @@ You should call a plumber!#
  Auto disconnect in 15 seconds...#
 730 Connection to server lost.
  Disconnecting.#
-731 
+731
 Connection to server lost.
 
 Press 'Okay' to return to the main menu.#
@@ -1649,24 +1649,24 @@ Thank you!#
 
 # some window and button text
 
-1126 
+1126
 The remote server has shut down.
 
 Press 'Okay' to return to the main menu.#
-1127 
+1127
 You have been kicked from the game server.
 
 Press 'Okay' to return to the main menu.#
-1128 
+1128
      Are you sure you
        want to quit?#
-1129 
+1129
       Are you sure you
    want to end this game?#
-1130 
+1130
           Are you sure you
      want to restart this game?#
-1131 
+1131
        Do you wish to save before
           you quit to desktop?
       Progress will be saved up to
@@ -1682,7 +1682,7 @@ Press 'Okay' to return to the main menu.#
 You made the top ten.
 
 #
-1137 
+1137
 
 
 
@@ -1704,46 +1704,46 @@ current one to continue.#
 
 # death tips
 
-1145 
+1145
 Beware of all unidentified items. They may
 damage rather than aid you.#
-1146 
+1146
 Never engage enemies while weak. You may be
 easily overwhelmed.#
-1147 
+1147
 Use darkness to hide yourself from enemies.#
-1148 
+1148
 Rats make a good food source early on.#
-1149 
+1149
 Do not be discouraged. Learn from your
 mistakes and you will eventually succeed.#
-1150 
+1150
 Hold the left-mouse button to perform a
 critical strike.#
-1151 
+1151
 Raise your shield for a large defensive boost.#
-1152 
+1152
 Make use of your minimap to navigate the
 dungeon's treacherous mazes.#
-1153 
+1153
 Shift click on hotbar items to instantly
 remove them.#
-1154 
+1154
 Your character's skill with a weapon has a
 large effect on your effectiveness with it.#
-1155 
+1155
 Exercise your different skills to increase
 them.#
-1156 
+1156
 Baron Herx loves to talk about his minotaur
 when it is nearby.#
-1157 
+1157
 Do you hear the sound of a rock rolling in the
 distance? RUN!#
-1158 
+1158
 Potions can be thrown at enemies to varying
 effect.#
-1159 
+1159
 Be inventive. Every item has its use.#
 
 
@@ -1759,7 +1759,7 @@ Be inventive. Every item has its use.#
 
 # main menu
 
-1303 New Game#
+1303 Start Game#
 1304 Introduction#
 1305 Statistics#
 1306 Settings#
@@ -1799,7 +1799,7 @@ Be inventive. Every item has its use.#
 
 1334 Lobby Browser#
 1335 Server flags:#
-1336 
+1336
 None#
 1337 No lobbies found.#
 
@@ -1858,7 +1858,7 @@ use object, use item#
 
 1375 Gameflags#
 
-1376 
+1376
 ***   %s has left the game   ***
 #
 
@@ -1874,7 +1874,7 @@ Connection denied:
 1383 client seed does not match server seed.#
 1384 bad response from server.#
 
-1385 
+1385
 Waiting for the server to start the game.
 Address connected to: #
 
@@ -1887,7 +1887,7 @@ Waiting for the host to start the game.
 Player list:
 #
 
-1388 
+1388
 ***   %s has joined the game   ***
 #
 
@@ -1929,19 +1929,19 @@ Player list:
 
 1415 Once upon a time in a far away land, there stood a town called Hamlet.#
 
-1416 
+1416
 
 For generations, Hamlet served as a thriving center of commerce for all the
 neighboring cities, and the luck of its people was second to none.#
 
-1417 
+1417
 
 
 
 
 That was, until Baron Herx came to rule the land.#
 
-1418 
+1418
 
 
 
@@ -1951,7 +1951,7 @@ That was, until Baron Herx came to rule the land.#
 The Baron, in his endless greed, forced his citizens to dig the surrounding
 hills for gold, though the earth had never yielded such treasure before.#
 
-1419 
+1419
 
 
 
@@ -1965,7 +1965,7 @@ Meanwhile, as the people were forced to work, they schemed to undo their
 unjust leader. Eventually, they were able to trick him with a promise of gold
 and sealed him within the mines themselves.#
 
-1420 
+1420
 
 
 
@@ -1982,7 +1982,7 @@ and sealed him within the mines themselves.#
 However, in the years that passed since the people of Hamlet did away with
 their ruler, things did not go well for the people of the village.#
 
-1421 
+1421
 
 
 
@@ -2004,7 +2004,7 @@ around the town. Some thought it to be Herx exacting his revenge from beyond
 the grave, but none could be sure, and eventually, all trade in and out of
 town stopped completely.#
 
-1422 
+1422
 
 
 
@@ -2033,7 +2033,7 @@ the town still exists...#
 are awash with relief. Somehow, you know that the Baron's curse has been
 lifted from this land.#
 
-1424 
+1424
 
 
 
@@ -2042,7 +2042,7 @@ once more. But something is different; the howls of distant monsters have
 vanished, and the skies, once a menacing black, are clearing to show the
 light of day once again.#
 
-1425 
+1425
 
 
 
@@ -2055,7 +2055,7 @@ Suddenly, the doors to the mine open wide. Sealed for centuries to contain
 the evil within, they swing out from the inside, as a hundred grateful humans
 rush out to greet the one who destroyed the Baron.#
 
-1426 
+1426
 
 
 
@@ -2077,7 +2077,7 @@ merriment of the people you just saved...#
 portal without a moment's hesitation. Anywhere is better than here - or so
 you think.#
 
-1428 
+1428
 
 
 
@@ -2085,7 +2085,7 @@ Suddenly, you find yourself standing wearily in an endless white hall dotted
 with enormous pillars that stretch higher than you can see. Out of
 exhaustion, you drop your weapons and step forward.#
 
-1429 
+1429
 
 
 
@@ -2096,7 +2096,7 @@ exhaustion, you drop your weapons and step forward.#
 Surely, if anything were to happen now you would be finished; yet without
 explanation, you suddenly sense power coming back to you. A voice booms out:#
 
-1430 
+1430
 
 
 
@@ -2111,7 +2111,7 @@ explanation, you suddenly sense power coming back to you. A voice booms out:#
 infinitely impressed by your fortitude and strength of will. Therefore, we
 have a proposition for you..."#
 
-1431 
+1431
 
 
 
@@ -2130,7 +2130,7 @@ As the voice addresses you, you find yourself either unwilling or unable to
 reject what it tells you. Eventually, there is an inexplicable shift in your
 mortal being, and you feel yourself fading away...#
 
-1432 
+1432
 
 
 
@@ -2159,11 +2159,11 @@ will come again."#
 1433   OK  #
 1434 Video#
 1435 Audio#
-1436 Keyboard#
+1436 Bindings#
 1437 Mouse#
 1438 Misc#
 
-1439 
+1439
 Failed to connect to server:
 
 #
@@ -2178,7 +2178,7 @@ Failed to join the selected lobby.
 
 #
 
-1442 
+1442
 Failed to create the lobby.
 
 #
@@ -2214,7 +2214,7 @@ Address:Port#
 compatible save games can join.
 #
 
-1454 
+1454
 Press "Start Game" when everyone has joined.
 Port hosted on: #
 
@@ -2234,7 +2234,7 @@ Player list:
 Connecting to server. Please wait...
 #
 
-1460 
+1460
 We've found a save file for a character:
 
 #
@@ -2254,7 +2254,7 @@ NOTE: Starting a new game will erase this save file!#
 1465 Back#
 1466 Random Character#
 
-1467 
+1467
 Connecting to steam lobby...
 #
 
@@ -2713,6 +2713,76 @@ client (player %d) (direct ip)#
 # Traps.
 1946 NOTE: Only removes generated traps#
 
-1960 right click protection#
+# Gamepad settings menu stuff.
+1947 Gamepad Bindings#
 
-1999 end#
+# Bifunctional bindings.
+1948 Character Status#
+1949 Spell List#
+1950 Menu/Escape#
+1951 D-Pad Left#
+1952 D-Pad Right#
+1953 D-Pad Up#
+1954 D-Pad Down#
+1955 Next Hotbar Slot#
+1956 Previous Hotbar Slot#
+
+# Menu exclusive bindings.
+1957 "Left Click" (in MENUs)#
+1958 Next (in MENUs)#
+1959 Cancel#
+1960 Next Settings Tab#
+1961 Previous Settings Tab#
+1962 Refresh Lobby#
+1963 Don't Load Save (New Game)#
+1964 Random Name#
+1965 Random Character#
+1966 Previous Inventory Tab#
+1967 Next Inventory Tab#
+1968 Item Context Menu#
+1969 Drop Item#
+1970 Clear Hotbar Slot#
+1971 Grab All From Chest#
+1972 Previous Shop Category#
+1973 Next Shop Category#
+1974 Previous Book Page#
+1975 Next Book Page#
+
+# Game exclusive bindings.
+1976 Use#
+1977 Raise Shield#
+1978 Attack#
+1979 Cast Spell#
+1980 Activate Hotbar Slot#
+
+# More stuff on the gamepad bindings screen.
+1990 Menu exclusive bindings:#
+1991 Game exclusive bindings:#
+1992 Click to unbind. Click an unbound action to assign binding.#
+
+
+1997 auto appraise items#
+1998 right click protection#
+
+
+
+2400 Gamepad#
+
+2401 Invert Left Analog Stick X-Axis#
+2402 Invert Left Analog Stick Y-Axis#
+2403 Invert Right Analog Stick X-Axis#
+2404 Invert Right Analog Stick Y-Axis#
+2405 Invert X-Axis in GUI#
+2406 Invert Y-Axis in GUI#
+
+2407 Right Analog Stick X-Axis Sensitivity#
+2408 Right Analog Stick Y-Axis Sensitivity#
+2409 Menu X-Axis Sensitivity#
+2410 Menu Y-Axis Sensitivity#
+
+
+
+#More character creation screen stuff.
+2450 Random Name#
+
+2499 end#

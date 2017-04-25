@@ -28,8 +28,10 @@
 #define FLAME_VELY my->vel_y
 #define FLAME_VELZ my->vel_z
 
-void actFlame(Entity *my) {
-	if( FLAME_LIFE <= 0 ) {
+void actFlame(Entity* my)
+{
+	if ( FLAME_LIFE <= 0 )
+	{
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -47,35 +49,40 @@ void actFlame(Entity *my) {
 
 -------------------------------------------------------------------------------*/
 
-Entity *spawnFlame(Entity *parentent) {
-	Entity *entity;
+Entity* spawnFlame(Entity* parentent)
+{
+	Entity* entity;
 	double vel;
 
 	entity = newEntity(13, 1, map.entities); // flame particle
-	if( intro )
-		entity->uid = 0;
+	if ( intro )
+	{
+		entity->setUID(0);
+	}
 	entity->x = parentent->x;
 	entity->y = parentent->y;
 	entity->z = parentent->z;
 	entity->sizex = 6;
 	entity->sizey = 6;
-	entity->yaw = (rand()%360)*PI/180.0;
-	entity->pitch = (rand()%360)*PI/180.0;
-	entity->roll = (rand()%360)*PI/180.0;
-	vel = (rand()%10)/10.0;
-	entity->vel_x = vel*cos(entity->yaw)*.1;
-	entity->vel_y = vel*sin(entity->yaw)*.1;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->pitch = (rand() % 360) * PI / 180.0;
+	entity->roll = (rand() % 360) * PI / 180.0;
+	vel = (rand() % 10) / 10.0;
+	entity->vel_x = vel * cos(entity->yaw) * .1;
+	entity->vel_y = vel * sin(entity->yaw) * .1;
 	entity->vel_z = -.25;
 	entity->skill[0] = 5;
-	entity->flags[NOUPDATE]=TRUE;
-	entity->flags[PASSABLE]=TRUE;
-	entity->flags[SPRITE]=TRUE;
-	entity->flags[BRIGHT]=TRUE;
-	entity->flags[UNCLICKABLE]=TRUE;
-	entity->behavior=&actFlame;
-	if( multiplayer != CLIENT )
+	entity->flags[NOUPDATE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[SPRITE] = true;
+	entity->flags[BRIGHT] = true;
+	entity->flags[UNCLICKABLE] = true;
+	entity->behavior = &actFlame;
+	if ( multiplayer != CLIENT )
+	{
 		entity_uids--;
-	entity->uid = -3;
-	
+	}
+	entity->setUID(-3);
+
 	return entity;
 }

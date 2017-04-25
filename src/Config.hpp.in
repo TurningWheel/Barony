@@ -15,6 +15,22 @@
 	#define STEAMWORKS
 #endif
 
+#if @FMOD@
+	#define HAVE_FMOD
+#endif
+
+#if @OPENAL@
+	#define HAVE_OPENAL
+#endif
+
+#if @TREMOR@
+	#define USE_TREMOR
+#endif
+
+#if @PANDORA@
+	#define PANDORA
+#endif
+
 #if @NOT_DWORD_DEFINED@
 	/*
 	 * https://msdn.microsoft.com/en-us/library/cc230318.aspx

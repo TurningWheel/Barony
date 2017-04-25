@@ -22,23 +22,23 @@ extern list_t lobbyChatboxMessages;
 
 // function prototypes for net.c:
 int power(int a, int b);
-int sendPacket(UDPsocket sock, int channel, UDPpacket *packet, int hostnum);
-int sendPacketSafe(UDPsocket sock, int channel, UDPpacket *packet, int hostnum);
-void messagePlayer(int player, char *message, ...);
-void messagePlayerColor(int player, Uint32 color, char *message, ...);
-void sendEntityUDP(Entity *entity, int c, bool guarantee);
-void sendEntityTCP(Entity *entity, int c);
+int sendPacket(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
+int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum);
+void messagePlayer(int player, char* message, ...);
+void messagePlayerColor(int player, Uint32 color, char* message, ...);
+void sendEntityUDP(Entity* entity, int c, bool guarantee);
+void sendEntityTCP(Entity* entity, int c);
 void sendMapSeedTCP(int c);
 void sendMapTCP(int c);
-void serverUpdateEntitySprite(Entity *entity);
-void serverUpdateEntitySkill(Entity *entity, int skill);
-void serverUpdateEntityFlag(Entity *entity, int flag);
-void serverUpdateBodypartIDs(Entity *entity);
-void serverUpdateEntityBodypart(Entity *entity, int bodypart);
+void serverUpdateEntitySprite(Entity* entity);
+void serverUpdateEntitySkill(Entity* entity, int skill);
+void serverUpdateEntityFlag(Entity* entity, int flag);
+void serverUpdateBodypartIDs(Entity* entity);
+void serverUpdateEntityBodypart(Entity* entity, int bodypart);
 void serverUpdateEffects(int player);
 void serverUpdateHunger(int player);
-Entity *receiveEntity(Entity *entity);
-void clientActions(Entity *entity);
+Entity* receiveEntity(Entity* entity);
+void clientActions(Entity* entity);
 void clientHandleMessages();
 void serverHandleMessages();
 bool handleSafePacket();
@@ -56,11 +56,11 @@ const Uint32 SV_FLAG_TRAPS = 16;
 
 class SteamPacketWrapper
 {
-	Uint8 *_data;
+	Uint8* _data;
 	int _len;
 	//TODO: Encapsulate CSteam ID?
 public:
-	SteamPacketWrapper(Uint8 *data, int len);
+	SteamPacketWrapper(Uint8* data, int len);
 	~SteamPacketWrapper(); //NOTE: DOES free _data. Don't keep it somewhere else or segfaults will ensue. If you're lucky.
 
 	Uint8*& data();
@@ -94,6 +94,6 @@ public:
 	SteamPacketWrapper* getGamePacket();
 
 	SDL_mutex* continue_multithreading_steam_packets_lock;
-} extern *net_handler;
+} extern* net_handler;
 
 int steamPacketThread(void* data);

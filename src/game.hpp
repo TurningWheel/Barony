@@ -11,11 +11,13 @@
 
 #pragma once
 
+#include <vector>
+
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
-#define VERSION "v2.0.3"
+#define VERSION "v2.0.5"
 #define GAME_CODE
 
-#define MAX_FPS_LIMIT 60
+#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 
 class Entity;
 
@@ -25,24 +27,26 @@ extern list_t steamAchievements;
 #define ENTITY_PACKET_LENGTH 46
 #define NET_PACKET_SIZE 512
 
-// impulses (bound keystrokes)
+// impulses (bound keystrokes, mousestrokes, and joystick/game controller strokes) //TODO: Player-by-player basis.
 extern Uint32 impulses[NUMIMPULSES];
+extern Uint32 joyimpulses[NUM_JOY_IMPULSES]; //Joystick/gamepad only impulses.
 extern int reversemouse;
-extern double mousespeed;
+extern real_t mousespeed;
 
 void handleEvents(void);
 void startMessages();
 
-extern double camera_shakex;
-extern double camera_shakex2;
+extern real_t camera_shakex;
+extern real_t camera_shakex2;
 extern int camera_shakey;
 extern int camera_shakey2;
 
 // net packet send
-typedef struct packetsend_t {
+typedef struct packetsend_t
+{
 	UDPsocket sock;
 	int channel;
-	UDPpacket *packet;
+	UDPpacket* packet;
 	int num;
 	int tries;
 	int hostnum;
@@ -50,7 +54,7 @@ typedef struct packetsend_t {
 extern list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
 extern bool receivedclientnum;
 
-extern Entity *hudweapon, *hudarm;
+extern Entity* hudweapon, *hudarm;
 
 extern Uint32 clientplayer;
 extern Sint32 numplayers;
@@ -60,7 +64,7 @@ extern int introstage;
 extern bool gamePaused;
 extern bool fadeout, fadefinished;
 extern int fadealpha;
-extern Entity *client_selected[MAXPLAYERS];
+extern Entity* client_selected[MAXPLAYERS];
 extern bool inrange[MAXPLAYERS];
 extern bool deleteallbuttons;
 extern Sint32 client_classes[MAXPLAYERS];
@@ -68,7 +72,7 @@ extern Uint32 client_keepalive[MAXPLAYERS];
 extern Uint32 portnumber;
 extern list_t messages;
 extern list_t command_history;
-extern node_t *chosen_command;
+extern node_t* chosen_command;
 extern bool command;
 extern bool noclip, godmode, buddhamode;
 extern bool everybodyfriendly;
@@ -86,10 +90,10 @@ extern Uint32 uniqueGameKey;
 
 // definitions
 extern bool showfps;
-extern double t, ot, frameval[AVERAGEFRAMES];
+extern real_t t, ot, frameval[AVERAGEFRAMES];
 extern Uint32 cycles, pingtime;
 extern Uint32 timesync;
-extern double fps;
+extern real_t fps;
 extern bool shootmode;
 #define NUMCLASSES 10
 extern char classnames[10][10];
@@ -100,69 +104,68 @@ extern bool secretlevel;
 extern bool darkmap;
 extern int shaking, bobbing;
 extern int musvolume;
-extern Entity* openedChest[4];
-extern SDL_Surface *title_bmp;
-extern SDL_Surface *logo_bmp;
-extern SDL_Surface *cursor_bmp;
-extern SDL_Surface *cross_bmp;
+extern SDL_Surface* title_bmp;
+extern SDL_Surface* logo_bmp;
+extern SDL_Surface* cursor_bmp;
+extern SDL_Surface* cross_bmp;
 
-bool achievementUnlocked(const char *achName);
-void steamAchievement(const char *achName);
-void steamAchievementClient(int player, const char *achName);
+bool achievementUnlocked(const char* achName);
+void steamAchievement(const char* achName);
+void steamAchievementClient(int player, const char* achName);
 void freePlayerEquipment(int x);
 void pauseGame(int mode, int ignoreplayer);
 int initGame();
 void deinitGame();
-Uint32 timerCallback(Uint32 interval, void *param);
+Uint32 timerCallback(Uint32 interval, void* param);
 void handleButtons(void);
 void gameLogic(void);
 
 // behavior function prototypes:
-void actAnimator(Entity *my);
-void actRotate(Entity *my);
-void actLiquid(Entity *my);
-void actEmpty(Entity *my);
-void actFurniture(Entity *my);
-void actMCaxe(Entity *my);
-void actDoorFrame(Entity *my);
-void actDeathCam(Entity *my);
-void actPlayer(Entity *my);
-void actPlayerLimb(Entity *my);
-void actTorch(Entity *my);
-void actDoor(Entity *my);
-void actHudWeapon(Entity *my);
-void actHudShield(Entity *my);
-void actItem(Entity *my);
-void actGoldBag(Entity *my);
-void actMonster(Entity *my);
-void actGib(Entity *my);
-Entity *spawnGib(Entity *parentent);
-Entity *spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
-void serverSpawnGibForClient(Entity *gib);
-void actLadder(Entity *my);
-void actLadderUp(Entity *my);
-void actPortal(Entity *my);
-void actWinningPortal(Entity *my);
-void actFlame(Entity *my);
-void actCampfire(Entity *my);
-Entity *spawnFlame(Entity *parentent);
-void actMagic(Entity *my);
-Entity *castMagic(Entity *parentent);
-void actSprite(Entity *my);
-void actSleepZ(Entity *my);
-Entity *spawnBang(Sint16 x, Sint16 y, Sint16 z);
-Entity *spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
-Entity *spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
-void actArrow(Entity *my);
-void actBoulder(Entity *my);
-void actBoulderTrap(Entity *my);
-void actHeadstone(Entity *my);
-void actThrown(Entity *my);
-void actBeartrap(Entity *my);
-void actBeartrapLaunched(Entity *my);
-void actSpearTrap(Entity *my);
-void actWallBuster(Entity *my);
-void actWallBuilder(Entity *my);
+void actAnimator(Entity* my);
+void actRotate(Entity* my);
+void actLiquid(Entity* my);
+void actEmpty(Entity* my);
+void actFurniture(Entity* my);
+void actMCaxe(Entity* my);
+void actDoorFrame(Entity* my);
+void actDeathCam(Entity* my);
+void actPlayer(Entity* my);
+void actPlayerLimb(Entity* my);
+void actTorch(Entity* my);
+void actDoor(Entity* my);
+void actHudWeapon(Entity* my);
+void actHudShield(Entity* my);
+void actItem(Entity* my);
+void actGoldBag(Entity* my);
+void actMonster(Entity* my);
+void actGib(Entity* my);
+Entity* spawnGib(Entity* parentent);
+Entity* spawnGibClient(Sint16 x, Sint16 y, Sint16 z, Sint16 sprite);
+void serverSpawnGibForClient(Entity* gib);
+void actLadder(Entity* my);
+void actLadderUp(Entity* my);
+void actPortal(Entity* my);
+void actWinningPortal(Entity* my);
+void actFlame(Entity* my);
+void actCampfire(Entity* my);
+Entity* spawnFlame(Entity* parentent);
+void actMagic(Entity* my);
+Entity* castMagic(Entity* parentent);
+void actSprite(Entity* my);
+void actSleepZ(Entity* my);
+Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z);
+Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z);
+Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
+void actArrow(Entity* my);
+void actBoulder(Entity* my);
+void actBoulderTrap(Entity* my);
+void actHeadstone(Entity* my);
+void actThrown(Entity* my);
+void actBeartrap(Entity* my);
+void actBeartrapLaunched(Entity* my);
+void actSpearTrap(Entity* my);
+void actWallBuster(Entity* my);
+void actWallBuilder(Entity* my);
 
 void startMessages();
 
@@ -196,3 +199,9 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 #define LENGTH_OF_LEVEL_REGION 5
 
 #define TICKS_PER_SECOND 50
+
+static const std::string PLAYERNAMES_MALE_FILE = "playernames-male.txt";
+static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
+extern std::vector<std::string> randomPlayerNamesMale;
+extern std::vector<std::string> randomPlayerNamesFemale;
+void loadRandomNames();

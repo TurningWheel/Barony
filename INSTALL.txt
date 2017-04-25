@@ -1,11 +1,15 @@
 You will need the following libraries to build Barony:
 
- * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it)
  * libpng
  * SDL2
  * SDL2_image
  * SDL2_net
  * SDL2_ttf
+
+Optional dependencies required for sound:
+ * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it).
+You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF.
+Building without FMOD Ex will result in no sound.
 
 You will also need the following tools:
 
