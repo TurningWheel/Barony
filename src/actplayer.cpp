@@ -1154,6 +1154,10 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_TORCH = 10 + my->getPER() / 3;
 					}
+					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
+					{
+						PLAYER_TORCH = 5 + my->getPER() / 3;
+					}
 					else if ( !PLAYER_DEBUGCAM )
 					{
 						PLAYER_TORCH = 3 + my->getPER() / 3;
@@ -1172,6 +1176,10 @@ void actPlayer(Entity* my)
 					else if ( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN )
 					{
 						PLAYER_TORCH = 10;
+					}
+					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
+					{
+						PLAYER_TORCH = 5;
 					}
 					else
 					{
@@ -2609,6 +2617,25 @@ void actPlayer(Entity* my)
 						entity2->setUID(-3);
 					}
 				}
+				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
+					if ( PLAYER_NUM == clientnum )
+					{
+						entity2->flags[GENIUS] = true;
+					}
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+					if ( my->skill[2] == clientnum )
+					{
+						entity2->setUID(-4);
+					}
+					else
+					{
+						entity2->setUID(-3);
+					}
+				}
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
@@ -2808,7 +2835,7 @@ void actPlayer(Entity* my)
 	if ( shieldNode )
 	{
 		Entity* shieldEntity = (Entity*)shieldNode->element;
-		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index )
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
 		{
 			shieldEntity->yaw -= PI / 6;
 		}

@@ -70,7 +70,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[189][32] =
+char itemNameStrings[190][32] =
 {
 	"NULL",
 	"random_item",
@@ -255,7 +255,7 @@ char itemNameStrings[189][32] =
 	"vampire_doublet",
 	"wizard_doublet",
 	"healer_doublet",
-	"mirror_shield"
+	"mirror_shield",
 	"brass_knuckles",
 	"iron_knuckles",
 	"spiked_gauntlets",

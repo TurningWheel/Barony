@@ -1781,10 +1781,10 @@ void Entity::handleEffects(Stat* myStats)
 	// torches/lamps burn down
 	if ( myStats->shield != NULL )
 	{
-		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
+		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN || myStats->shield->type == TOOL_CRYSTALSHARD )
 		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || this->char_torchtime >= 10260 )
+			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260 && myStats->shield->type == TOOL_LANTERN) || this->char_torchtime >= 20520 )
 			{
 				this->char_torchtime = 0;
 				if ( player == clientnum )
