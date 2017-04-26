@@ -1502,7 +1502,7 @@ void actHudShield(Entity* my)
 		}
 		if ( stats[clientnum]->shield )
 		{
-			if ( stats[clientnum]->shield->type == TOOL_TORCH )
+			if ( stats[clientnum]->shield->type == TOOL_TORCH || stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
 			{
 				if ( HUDSHIELD_MOVEX < 1.5 )
 				{
@@ -1591,7 +1591,15 @@ void actHudShield(Entity* my)
 		{
 			if (stats[clientnum]->shield->type == TOOL_TORCH)
 			{
-				Entity* entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
+				entity->flags[OVERDRAW] = true;
+				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				my->flags[BRIGHT] = true;
+			}
+			if ( stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
+			{
+				Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
 				entity->flags[OVERDRAW] = true;
 				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
@@ -1599,7 +1607,7 @@ void actHudShield(Entity* my)
 			}
 			else if (stats[clientnum]->shield->type == TOOL_LANTERN)
 			{
-				Entity* entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
 				entity->flags[OVERDRAW] = true;
 				entity->z += 1;
 				my->flags[BRIGHT] = true;

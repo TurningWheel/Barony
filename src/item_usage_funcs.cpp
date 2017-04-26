@@ -1476,7 +1476,7 @@ void item_ScrollFire(Item* item, int player)
 		int c;
 		for (c = 0; c < 100; c++)
 		{
-			Entity* entity = spawnFlame(players[player]->entity);
+			Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
 			double vel = rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
@@ -2327,7 +2327,7 @@ void item_Food(Item* item, int player)
 	if ( player == clientnum )
 	{
 		conductFoodless = false;
-		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH )
+		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH || item->type == FOOD_TOMALLEY )
 		{
 			conductVegetarian = false;
 		}
@@ -2411,6 +2411,9 @@ void item_Food(Item* item, int player)
 				break;
 			case FOOD_FISH:
 				stats[player]->HUNGER += 500;
+				break;
+			case FOOD_TOMALLEY:
+				stats[player]->HUNGER += 400;
 				break;
 			default:
 				stats[player]->HUNGER += 10;

@@ -57,12 +57,12 @@ void actCampfire(Entity* my)
 		// spew flame particles
 		for ( i = 0; i < 3; i++ )
 		{
-			entity = spawnFlame(my);
+			entity = spawnFlame(my, SPRITE_FLAME);
 			entity->x += ((rand() % 30) - 10) / 10.f;
 			entity->y += ((rand() % 30) - 10) / 10.f;
 			entity->z -= 1;
 		}
-		entity = spawnFlame(my);
+		entity = spawnFlame(my, SPRITE_FLAME);
 		entity->z -= 2;
 
 		// light environment

@@ -42,7 +42,7 @@ void actTorch(Entity* my)
 		TORCH_FIRE = 480;
 		playSoundEntityLocal( my, 133, 32 );
 	}
-	Entity* entity = spawnFlame(my);
+	Entity* entity = spawnFlame(my, SPRITE_FLAME);
 	entity->x += .25 * cos(my->yaw);
 	entity->y += .25 * sin(my->yaw);
 	entity->z -= 2.5;
