@@ -139,6 +139,21 @@ void drawMinimap()
 						//glEnd();
 					}
 				}
+				else if ( stats[clientnum]->shoes != NULL )
+				{
+					if ( stats[clientnum]->shoes->type == ARTIFACT_BOOTS )
+					{
+						x = floor(entity->x / 16);
+						y = floor(entity->y / 16);
+						glColor4f(.5, .25, .5, 1);
+						//glBegin(GL_QUADS);
+						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
+						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE - MINIMAPSCALE);
+						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE + MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
+						glVertex2f(x * MINIMAPSCALE + xres - map.width * MINIMAPSCALE, map.height * MINIMAPSCALE - y * MINIMAPSCALE);
+						//glEnd();
+					}
+				}
 			}
 			else if ( entity->sprite == 245 )     // boulder.vox
 			{
