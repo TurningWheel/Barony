@@ -70,6 +70,7 @@ char* itemUseString(const Item* item)
 			case IRON_SHIELD:
 			case STEEL_SHIELD:
 			case STEEL_SHIELD_RESISTANCE:
+			case CRYSTAL_SHIELD:
 				if ( itemIsEquipped(item, clientnum) )
 				{
 					return language[325];

@@ -70,7 +70,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[170][32] =
+char itemNameStrings[184][32] =
 {
 	"NULL",
 	"random_item",
@@ -241,7 +241,21 @@ char itemNameStrings[170][32] =
 	"artifact_mace",
 	"artifact_spear",
 	"artifact_axe",
-	"artifact_bow"
+	"artifact_bow",
+	"artifact_breastpiece",
+	"artifact_helm",
+	"artifact_boots",
+	"artifact_cloak",
+	"artifact_gloves",
+	"crystal_breastpiece",
+	"crystal_helm",
+	"crystal_boots",
+	"crystal_shield",
+	"crystal_gloves",
+	"vampire_doublet",
+	"wizard_doublet",
+	"healer_doublet",
+	"mirror_shield"
 };
 
 
@@ -257,6 +271,8 @@ char itemStringsByType[10][55][32] =
 		"leather_helm",
 		"iron_helm",
 		"steel_helm",
+		"crystal_helm",
+		"artifact_helm"
 		""
 	},
 	{
@@ -324,6 +340,8 @@ char itemStringsByType[10][55][32] =
 		"iron_shield",
 		"steel_shield",
 		"steel_shield_resistance",
+		"crystal_shield",
+		"mirror_shield",
 		"tool_torch",
 		"tool_lantern",
 		""
@@ -334,6 +352,11 @@ char itemStringsByType[10][55][32] =
 		"leather_breastpiece",
 		"iron_breastpiece",
 		"steel_breastpiece",
+		"crystal_breastpiece",
+		"artifact_breastpiece",
+		"vampire_doublet",
+		"wizard_doublet",
+		"healer_doublet",
 		""
 	},
 	{
@@ -346,6 +369,8 @@ char itemStringsByType[10][55][32] =
 		"steel_boots",
 		"steel_boots_levitation",
 		"steel_boots_feather",
+		"crystal_boots",
+		"artifact_boots",
 		""
 	},
 	{
@@ -383,6 +408,7 @@ char itemStringsByType[10][55][32] =
 		"cloak_magicreflection",
 		"cloak_invisibility",
 		"cloak_protection",
+		"artifact_cloak",
 		""
 	},
 	{
@@ -401,6 +427,8 @@ char itemStringsByType[10][55][32] =
 		"bracers_constitution",
 		"gauntlets",
 		"gauntlets_strength",
+		"crystal_gloves",
+		"artifact_gloves",
 		""
 	}
 	

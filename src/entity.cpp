@@ -926,7 +926,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 					}
 					else if ( itemCategory(item) == ARMOR )
 					{
-						if ( item->type == HAT_PHRYGIAN || item->type == HAT_WIZARD || item->type == HAT_JESTER || item->type == HAT_HOOD )   // hats
+						if ( checkEquipType(item) == TYPE_HAT )  // hats
 						{
 							if (myStats->helmet == NULL)   // nothing on head currently
 							{
@@ -936,7 +936,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								list_RemoveNode(entity->mynode);
 							}
 						}
-						else if ( item->type == LEATHER_HELM || item->type == IRON_HELM || item->type == STEEL_HELM )     // helmets
+						else if ( checkEquipType(item) == TYPE_HELM )     // helmets
 						{
 							if (myStats->helmet == NULL)   // nothing on head currently
 							{
@@ -967,7 +967,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								}
 							}
 						}
-						else if ( item->type == WOODEN_SHIELD || item->type == BRONZE_SHIELD || item->type == IRON_SHIELD || item->type == STEEL_SHIELD || item->type == STEEL_SHIELD_RESISTANCE || item->type == TOOL_TORCH || item->type == TOOL_LANTERN )     // shields
+						else if ( checkEquipType(item) == TYPE_SHIELD )     // shields
 						{
 							if (myStats->shield == NULL)   // nothing in left hand currently
 							{
@@ -998,7 +998,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								}
 							}
 						}
-						else if ( item->type == LEATHER_BREASTPIECE || item->type == IRON_BREASTPIECE || item->type == STEEL_BREASTPIECE )     // breastpieces
+						else if ( checkEquipType(item) == TYPE_BREASTPIECE )     // breastpieces
 						{
 							if (myStats->breastplate == NULL)   // nothing on torso currently
 							{
@@ -1029,7 +1029,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								}
 							}
 						}
-						else if ( item->type == CLOAK || item->type == CLOAK_MAGICREFLECTION || item->type == CLOAK_INVISIBILITY || item->type == CLOAK_PROTECTION )     // cloaks
+						else if ( checkEquipType(item) == TYPE_CLOAK )     // cloaks
 						{
 							if (myStats->cloak == NULL)   // nothing on back currently
 							{
@@ -1062,7 +1062,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 						}
 						if ( glovesandshoes && item != NULL )
 						{
-							if ( item->type >= LEATHER_BOOTS && item->type <= STEEL_BOOTS_FEATHER )   // boots
+							if ( checkEquipType(item) == TYPE_BOOTS )   // boots
 							{
 								if (myStats->shoes == NULL)
 								{
@@ -1093,7 +1093,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 									}
 								}
 							}
-							else if ( item->type >= GLOVES && item->type <= GAUNTLETS_STRENGTH )
+							else if ( checkEquipType(item) == TYPE_GLOVES )
 							{
 								if (myStats->gloves == NULL)
 								{
@@ -4879,4 +4879,152 @@ void setRandomMonsterStats(Stat* stats)
 
 
 	return;
+}
+
+int checkEquipType(Item *item)
+{
+	switch ( item->type ) {
+
+		case LEATHER_BOOTS:
+		case LEATHER_BOOTS_SPEED:
+		case IRON_BOOTS:
+		case IRON_BOOTS_WATERWALKING:
+		case STEEL_BOOTS:
+		case STEEL_BOOTS_LEVITATION:
+		case STEEL_BOOTS_FEATHER:
+		case CRYSTAL_BOOTS:
+		case ARTIFACT_BOOTS:
+			return TYPE_BOOTS;
+			break;
+
+		case LEATHER_HELM:
+		case IRON_HELM:
+		case STEEL_HELM:
+		case CRYSTAL_HELM:
+		case ARTIFACT_HELM:
+			return TYPE_HELM;
+			break;
+
+		case LEATHER_BREASTPIECE:
+		case IRON_BREASTPIECE:
+		case STEEL_BREASTPIECE:
+		case CRYSTAL_BREASTPIECE:
+		case WIZARD_DOUBLET:
+		case HEALER_DOUBLET:
+		case VAMPIRE_DOUBLET:
+		case ARTIFACT_BREASTPIECE:
+			return TYPE_BREASTPIECE;
+			break;
+
+		case CRYSTAL_SHIELD:
+		case WOODEN_SHIELD:
+		case BRONZE_SHIELD:
+		case IRON_SHIELD:
+		case STEEL_SHIELD:
+		case STEEL_SHIELD_RESISTANCE:
+		case MIRROR_SHIELD:
+			return TYPE_SHIELD;
+			break;
+
+		case TOOL_TORCH:
+		case TOOL_LANTERN:
+			return TYPE_OFFHAND;
+			break;
+
+		case CLOAK:
+		case CLOAK_MAGICREFLECTION:
+		case CLOAK_INVISIBILITY:
+		case CLOAK_PROTECTION:
+		case ARTIFACT_CLOAK:
+			return TYPE_CLOAK;
+			break;
+
+		case GLOVES:
+		case GLOVES_DEXTERITY:
+		case GAUNTLETS:
+		case GAUNTLETS_STRENGTH:
+		case BRACERS:
+		case BRACERS_CONSTITUTION:
+		case CRYSTAL_GLOVES:
+		case ARTIFACT_GLOVES:
+			return TYPE_GLOVES;
+			break;
+
+		case HAT_HOOD:
+		case HAT_JESTER:
+		case HAT_PHRYGIAN:
+		case HAT_WIZARD:
+			return TYPE_HAT;
+			break;
+
+		default:
+			break;	
+	}
+
+	return TYPE_NONE;
+}
+
+//int checkWeaponProf(Stat *myStats) { //returns PRO_WEAPON if valid, else 0 if unarmed/ranged
+//	int weaponskill = -1;
+//
+//	if ( myStats->weapon != NULL ) {
+//		if ( myStats->weapon->type == QUARTERSTAFF || myStats->weapon->type == IRON_SPEAR || myStats->weapon->type == STEEL_HALBERD || myStats->weapon->type == ARTIFACT_SPEAR )
+//			weaponskill = PRO_POLEARM;
+//		if ( myStats->weapon->type == BRONZE_SWORD || myStats->weapon->type == IRON_SWORD || myStats->weapon->type == STEEL_SWORD || myStats->weapon->type == ARTIFACT_SWORD )
+//			weaponskill = PRO_SWORD;
+//		if ( myStats->weapon->type == BRONZE_MACE || myStats->weapon->type == IRON_MACE || myStats->weapon->type == STEEL_MACE || myStats->weapon->type == ARTIFACT_MACE )
+//			weaponskill = PRO_MACE;
+//		if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE || myStats->weapon->type == ARTIFACT_AXE )
+//			weaponskill = PRO_AXE;
+//	}
+//	return weaponskill;
+//
+//}
+
+int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
+{
+	if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY) {
+		ent->sprite = 132 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION ) {
+		ent->sprite = 323 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH ) {
+		ent->sprite = 140 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == CRYSTAL_GLOVES )
+	{
+		ent->sprite = 491 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == ARTIFACT_GLOVES )
+	{
+		ent->sprite = 513 + myStats->sex + spriteOffset;
+	}
+	else {
+		return 0;
+	}
+	return 1;
+}
+
+int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
+{
+	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
+		ent->sprite = 148 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING ) {
+		ent->sprite = 152 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER ) {
+		ent->sprite = 156 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type == CRYSTAL_BOOTS ) {
+		ent->sprite = 499 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type == ARTIFACT_BOOTS ) {
+		ent->sprite = 521 + myStats->sex + spriteOffset;
+	}
+	else {
+		return 0;
+	}
+	return 1;
 }

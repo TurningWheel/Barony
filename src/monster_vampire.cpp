@@ -1007,20 +1007,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 148;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 152;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 156;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1056,20 +1045,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 150;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 154;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 158;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1106,20 +1084,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setBootSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 132;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 323;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 140;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1190,20 +1157,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setBootSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 136;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 327;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 144;
+							// successfully set sprite for the human model
 						}
 					}
 					entity->sprite += 2 * (myStats->shield != NULL);

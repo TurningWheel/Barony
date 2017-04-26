@@ -1292,20 +1292,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 148 + myStats->sex;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 152 + myStats->sex;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 156 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1352,20 +1341,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 150 + myStats->sex;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 154 + myStats->sex;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 158 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1413,20 +1391,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 132 + myStats->sex;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 323 + myStats->sex;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 140 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1508,20 +1475,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 136 + myStats->sex;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 327 + myStats->sex;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 144 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					entity->sprite += 2 * (myStats->shield != NULL);

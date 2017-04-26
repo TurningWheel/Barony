@@ -1632,6 +1632,32 @@ void useItem(Item* item, int player)
 		case ARTIFACT_BOW:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
+		case CRYSTAL_BREASTPIECE:
+		case VAMPIRE_DOUBLET:
+		case WIZARD_DOUBLET:
+		case HEALER_DOUBLET:
+		case ARTIFACT_BREASTPIECE:
+			equipItem(item, &stats[player]->breastplate, player);
+			break;
+		case CRYSTAL_HELM:
+		case ARTIFACT_HELM:
+			equipItem(item, &stats[player]->helmet, player);
+			break;
+		case ARTIFACT_BOOTS:
+		case CRYSTAL_BOOTS:
+			equipItem(item, &stats[player]->shoes, player);
+			break;
+		case MIRROR_SHIELD:
+		case CRYSTAL_SHIELD:
+			equipItem(item, &stats[player]->shield, player);
+			break;
+		case ARTIFACT_GLOVES:
+		case CRYSTAL_GLOVES:
+			equipItem(item, &stats[player]->gloves, player);
+			break;
+		case ARTIFACT_CLOAK:
+			equipItem(item, &stats[player]->cloak, player);
+			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
 			break;
@@ -1953,6 +1979,14 @@ Sint32 Item::armorGetAC()
 	{
 		armor += 4;
 	}
+	else if ( type == WIZARD_DOUBLET || type == HEALER_DOUBLET )
+	{
+		armor += 0;
+	}
+	else if ( type == VAMPIRE_DOUBLET )
+	{
+		armor += 1;
+	}
 	else if ( type == GLOVES || type == GLOVES_DEXTERITY )
 	{
 		armor += 1;
@@ -2000,6 +2034,50 @@ Sint32 Item::armorGetAC()
 	else if ( type == RING_PROTECTION )
 	{
 		armor += 1;
+	}
+	else if ( type == CRYSTAL_BREASTPIECE )
+	{
+		armor += 5;
+	}
+	else if ( type == CRYSTAL_HELM )
+	{
+		armor += 4;
+	}
+	else if ( type == CRYSTAL_BOOTS )
+	{
+		armor += 4;
+	}
+	else if ( type == CRYSTAL_SHIELD )
+	{
+		armor += 5;
+	}
+	else if ( type == CRYSTAL_GLOVES )
+	{
+		armor += 4;
+	}
+	else if ( type == ARTIFACT_BREASTPIECE )
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_HELM)
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_BOOTS )
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_GLOVES )
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_CLOAK )
+	{
+		armor += 0;
+	}
+	else if ( type == MIRROR_SHIELD )
+	{
+		armor += 0;
 	}
 	//armor *= (double)(item->status/5.0);
 

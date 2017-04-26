@@ -188,9 +188,23 @@ typedef enum ItemType
 	ARTIFACT_MACE,
 	ARTIFACT_SPEAR,
 	ARTIFACT_AXE,
-	ARTIFACT_BOW
+	ARTIFACT_BOW,
+	ARTIFACT_BREASTPIECE,
+	ARTIFACT_HELM,
+	ARTIFACT_BOOTS,
+	ARTIFACT_CLOAK,
+	ARTIFACT_GLOVES,
+	CRYSTAL_BREASTPIECE,
+	CRYSTAL_HELM,
+	CRYSTAL_BOOTS,
+	CRYSTAL_SHIELD,
+	CRYSTAL_GLOVES,
+	VAMPIRE_DOUBLET,
+	WIZARD_DOUBLET,
+	HEALER_DOUBLET,
+	MIRROR_SHIELD
 } ItemType;
-const int NUMITEMS = 168;
+const int NUMITEMS = 182;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -218,6 +232,28 @@ typedef enum Status
 	SERVICABLE,
 	EXCELLENT
 } Status;
+
+typedef enum EquipmentType
+{
+	TYPE_NONE,
+	TYPE_HELM,
+	TYPE_HAT,
+	TYPE_BREASTPIECE,
+	TYPE_BOOTS,
+	TYPE_SHIELD,
+	TYPE_GLOVES,
+	TYPE_CLOAK,
+	TYPE_RING,
+	TYPE_AMULET,
+	TYPE_MASK,
+	TYPE_SWORD,
+	TYPE_AXE,
+	TYPE_SPEAR,
+	TYPE_MACE,
+	TYPE_BOW,
+	TYPE_PROJECTILE,
+	TYPE_OFFHAND
+} EquipmentType;
 
 class SummonProperties
 {

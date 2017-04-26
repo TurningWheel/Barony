@@ -68,17 +68,9 @@ void actHudArm(Entity* my)
 	}
 	else
 	{
-		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
+		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 		{
-			my->sprite = 132 + stats[clientnum]->sex;
-		}
-		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
-		{
-			my->sprite = 323 + stats[clientnum]->sex;
-		}
-		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
-		{
-			my->sprite = 140 + stats[clientnum]->sex;
+			// successfully set sprite for the human model
 		}
 		else
 		{

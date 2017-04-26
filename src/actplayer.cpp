@@ -2209,20 +2209,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather boots
-						if ( stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 148 + stats[PLAYER_NUM]->sex;
-						}
-						// iron boots
-						if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS || stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 152 + stats[PLAYER_NUM]->sex;
-						}
-						// steel boots
-						if ( stats[PLAYER_NUM]->shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM]->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 156 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -2269,20 +2258,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather boots
-						if ( stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 150 + stats[PLAYER_NUM]->sex;
-						}
-						// iron boots
-						if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS || stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 154 + stats[PLAYER_NUM]->sex;
-						}
-						// steel boots
-						if ( stats[PLAYER_NUM]->shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM]->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 158 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -2330,20 +2308,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather gloves
-						if ( stats[PLAYER_NUM]->gloves->type == GLOVES || stats[PLAYER_NUM]->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 132 + stats[PLAYER_NUM]->sex;
-						}
-						// iron bracers
-						if ( stats[PLAYER_NUM]->gloves->type == BRACERS || stats[PLAYER_NUM]->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 323 + stats[PLAYER_NUM]->sex;
-						}
-						// steel gauntlets
-						if ( stats[PLAYER_NUM]->gloves->type == GAUNTLETS || stats[PLAYER_NUM]->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 140 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( !PLAYER_ARMBENDED )
@@ -2421,20 +2388,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather gloves
-						if ( stats[PLAYER_NUM]->gloves->type == GLOVES || stats[PLAYER_NUM]->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 136 + stats[PLAYER_NUM]->sex;
-						}
-						// iron bracers
-						if ( stats[PLAYER_NUM]->gloves->type == BRACERS || stats[PLAYER_NUM]->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 327 + stats[PLAYER_NUM]->sex;
-						}
-						// steel gauntlets
-						if ( stats[PLAYER_NUM]->gloves->type == GAUNTLETS || stats[PLAYER_NUM]->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 144 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
