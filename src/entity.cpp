@@ -1693,26 +1693,54 @@ void Entity::handleEffects(Stat* myStats)
 
 	// healing over time
 	int healring = 0;
+	int healthRegenInterval = 0;
 	if ( myStats->ring != NULL )
 	{
 		if ( myStats->ring->type == RING_REGENERATION )
 		{
 			if ( myStats->ring->beatitude >= 0 )
 			{
-				healring = 1;
+				healring++;
 			}
 			else
 			{
-				healring = -1;
+				healring--;
 			}
 		}
+	}
+	if ( myStats->breastplate != NULL )
+	{
+		if ( myStats->breastplate->type == ARTIFACT_BREASTPIECE )
+		{
+			if ( myStats->breastplate->beatitude >= 0 )
+			{
+				healring++;
+			}
+			else
+			{
+				healring--;
+			}
+		}
+	}
+
+	if ( healring > 0 )
+	{
+		healthRegenInterval = HEAL_TIME / (healring * 8);
+	}
+	else if ( healring < 0 )
+	{
+		healthRegenInterval = healring * HEAL_TIME * 4;
+	}
+	else if ( healring == 0 )
+	{
+		healthRegenInterval = HEAL_TIME;
 	}
 	if ( myStats->HP < myStats->MAXHP )
 	{
 		this->char_heal++;
 		if ( healring > 0 || svFlags & SV_FLAG_HUNGER )
 		{
-			if ( (this->char_heal >= HEAL_TIME && !healring) || (this->char_heal >= HEAL_TIME * 4 && healring < 0) || (this->char_heal >= HEAL_TIME / 8 && healring > 0) )
+			if ( this->char_heal >= healthRegenInterval )
 			{
 				this->char_heal = 0;
 				this->modHP(1);
@@ -1737,10 +1765,54 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// regaining energy over time
+	int manaring = 0;
+	int manaRegenInterval = 0;
+	if ( myStats->breastplate != NULL )
+	{
+		if ( myStats->breastplate->type == VAMPIRE_DOUBLET )
+		{
+			if ( myStats->breastplate->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( myStats->cloak != NULL )
+	{
+		if ( myStats->cloak->type == ARTIFACT_CLOAK )
+		{
+			if ( myStats->cloak->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+
+	if ( manaring > 0 )
+	{
+		manaRegenInterval = MAGIC_REGEN_TIME / (manaring * 8);
+	}
+	else if ( manaring < 0 )
+	{
+		manaRegenInterval = manaring * MAGIC_REGEN_TIME * 4;
+	}
+	else if ( manaring == 0 )
+	{
+		manaRegenInterval = MAGIC_REGEN_TIME;
+	}
+	
 	if ( myStats->MP < myStats->MAXMP )
 	{
 		this->char_energize++;
-		if ( this->char_energize >= MAGIC_REGEN_TIME )
+		if ( this->char_energize >= manaRegenInterval )
 		{
 			this->char_energize = 0;
 			this->modMP(1);
@@ -1798,11 +1870,25 @@ void Entity::handleEffects(Stat* myStats)
 				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
 				if ( myStats->shield->status > BROKEN )
 				{
-					messagePlayer(player, language[637], myStats->shield->getName());
+					if ( myStats->shield->type == TOOL_CRYSTALSHARD )
+					{
+						messagePlayer(player, language[2350], myStats->shield->getName());
+					}
+					else
+					{
+						messagePlayer(player, language[637], myStats->shield->getName());
+					}
 				}
 				else
 				{
-					messagePlayer(player, language[638], myStats->shield->getName());
+					if ( myStats->shield->type == TOOL_CRYSTALSHARD )
+					{
+						messagePlayer(player, language[2351], myStats->shield->getName());
+					}
+					else
+					{
+						messagePlayer(player, language[638], myStats->shield->getName());
+					}
 				}
 				if ( multiplayer == SERVER && player > 0 )
 				{
@@ -2219,6 +2305,25 @@ Sint32 Entity::getAttack()
 	{
 		attack += entitystats->weapon->weaponGetAttack();
 	}
+	else if ( entitystats->weapon == NULL )
+	{
+		// bare handed.
+		if ( entitystats->gloves )
+		{
+			if ( entitystats->gloves->type == BRASS_KNUCKLES )
+			{
+				attack += 1;
+			}
+			else if (entitystats->gloves->type == IRON_KNUCKLES)
+			{
+				attack += 2;
+			}
+			else if (entitystats->gloves->type == SPIKED_GAUNTLETS)
+			{
+				attack += 3;
+			}
+		}
+	}
 	attack += this->getSTR();
 
 	return attack;
@@ -2445,10 +2550,16 @@ Sint32 statGetINT(Stat* entitystats)
 		INT--;
 	}
 	if ( entitystats->helmet != NULL )
+	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
 			INT++;
 		}
+		else if ( entitystats->helmet->type == ARTIFACT_HELM )
+		{
+			INT += 5;
+		}
+	}
 	return INT;
 }
 
@@ -3625,6 +3736,20 @@ void Entity::attack(int pose, int charge)
 								break;
 							default:
 								break;
+						}
+					}
+					else if ( hitstats->shield != NULL )
+					{
+						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
+						{
+							// shards degrade by 1 stage each hit.
+							hit.entity->char_torchtime += 20520;
+						}
+						else if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+						{
+							// mirror shield degrade by 1 stage each hit.
+							armor = hitstats->shield;
+							armornum = 4;
 						}
 					}
 					else
