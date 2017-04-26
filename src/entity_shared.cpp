@@ -70,7 +70,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[184][32] =
+char itemNameStrings[189][32] =
 {
 	"NULL",
 	"random_item",
@@ -256,6 +256,12 @@ char itemNameStrings[184][32] =
 	"wizard_doublet",
 	"healer_doublet",
 	"mirror_shield"
+	"brass_knuckles",
+	"iron_knuckles",
+	"spiked_gauntlets",
+	"food_tomalley",
+	"tool_crystalshard",
+	""
 };
 
 
@@ -344,6 +350,7 @@ char itemStringsByType[10][55][32] =
 		"mirror_shield",
 		"tool_torch",
 		"tool_lantern",
+		"tool_crystalshard",
 		""
 	},
 	{
@@ -429,6 +436,9 @@ char itemStringsByType[10][55][32] =
 		"gauntlets_strength",
 		"crystal_gloves",
 		"artifact_gloves",
+		"brass_knuckles",
+		"iron_knuckles",
+		"spiked_gauntlets"
 		""
 	}
 	

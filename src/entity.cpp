@@ -4660,7 +4660,7 @@ bool Entity::checkFriend(Entity* your)
 }
 
 
-void createMonsterEquipment(Stat* stats) //MOD TODO
+void createMonsterEquipment(Stat* stats)
 {
 	int itemIndex = 0;
 	ItemType itemId;
@@ -4928,6 +4928,7 @@ int checkEquipType(Item *item)
 
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
+		case TOOL_CRYSTALSHARD:
 			return TYPE_OFFHAND;
 			break;
 
@@ -4947,6 +4948,9 @@ int checkEquipType(Item *item)
 		case BRACERS_CONSTITUTION:
 		case CRYSTAL_GLOVES:
 		case ARTIFACT_GLOVES:
+		case SPIKED_GAUNTLETS:
+		case IRON_KNUCKLES:
+		case BRASS_KNUCKLES:
 			return TYPE_GLOVES;
 			break;
 
@@ -5000,7 +5004,20 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	{
 		ent->sprite = 513 + myStats->sex + spriteOffset;
 	}
-	else {
+	else if ( myStats->gloves->type == BRASS_KNUCKLES )
+	{
+		ent->sprite = 531 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == IRON_KNUCKLES )
+	{
+		ent->sprite = 539 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == SPIKED_GAUNTLETS )
+	{
+		ent->sprite = 547 + myStats->sex + spriteOffset;
+	}
+	else 
+	{
 		return 0;
 	}
 	return 1;

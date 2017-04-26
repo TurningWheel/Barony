@@ -2592,7 +2592,7 @@ void actPlayer(Entity* my)
 				entity->z += 2.5;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					if ( PLAYER_NUM == clientnum )
 					{
 						entity2->flags[GENIUS] = true;
@@ -2612,7 +2612,7 @@ void actPlayer(Entity* my)
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					if ( PLAYER_NUM == clientnum )
 					{
 						entity2->flags[GENIUS] = true;

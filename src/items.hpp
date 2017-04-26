@@ -202,9 +202,14 @@ typedef enum ItemType
 	VAMPIRE_DOUBLET,
 	WIZARD_DOUBLET,
 	HEALER_DOUBLET,
-	MIRROR_SHIELD
+	MIRROR_SHIELD,
+	BRASS_KNUCKLES,
+	IRON_KNUCKLES,
+	SPIKED_GAUNTLETS,
+	FOOD_TOMALLEY,
+	TOOL_CRYSTALSHARD
 } ItemType;
-const int NUMITEMS = 182;
+const int NUMITEMS = 187;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

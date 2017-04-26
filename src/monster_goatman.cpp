@@ -1118,7 +1118,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z += 2.5;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z -= 2;
@@ -1126,7 +1126,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z += 1;
