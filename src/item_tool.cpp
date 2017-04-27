@@ -59,14 +59,14 @@ void Item::applyLockpick(int player, Entity& entity)
 	bool capstoneUnlocked = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= CAPSTONE_LOCKPICKING_UNLOCK);
 	if ( entity.behavior == &actChest )
 	{
-		if ( entity.CHEST_LOCKED )
+		if ( entity.chestLocked )
 		{
 			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
 			{
 				//Unlock chest.
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, language[1097]);
-				if ( capstoneUnlocked && !entity.CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT )
+				if ( capstoneUnlocked && !entity.chestPreventLockpickCapstoneExploit )
 				{
 					//TODO: Add 25 gold to chest.
 					messagePlayer(player, "This is my gold chest. Goldy goldy gold!");

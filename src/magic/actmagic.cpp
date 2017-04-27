@@ -1839,7 +1839,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							//Lock chest
 							playSoundEntity(hit.entity, 92, 64);
-							if ( !hit.entity->CHEST_LOCKED )
+							if ( !hit.entity->chestLocked )
 							{
 								hit.entity->lockChest();
 								if ( parent )
@@ -1912,7 +1912,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Unlock chest
-							if ( hit.entity->CHEST_LOCKED )
+							if ( hit.entity->chestLocked )
 							{
 								playSoundEntity(hit.entity, 91, 64);
 								hit.entity->unlockChest();

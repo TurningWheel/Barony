@@ -48,26 +48,26 @@ class Entity
 
 	//Chest skills.
 	//skill[0]
-	Sint32& CHEST_INIT;
+	Sint32& chestInit;
 	//skill[1]
 	//0 = closed. 1 = open.
 	//0 = closed. 1 = open.
-	Sint32& CHEST_STATUS;
+	Sint32& chestStatus;
 	//skill[2] is reserved for all entities.
 	//skill[3]
-	Sint32& CHEST_HEALTH;
+	Sint32& chestHealth;
 	//skill[5]
 	//Index of the player the chest was opened by.
-	Sint32& CHEST_OPENER;
+	Sint32& chestOpener;
 	//skill[6]
-	Sint32& CHEST_LIDCLICKED;
+	Sint32& chestLidClicked;
 	//skill[7]
-	Sint32& CHEST_AMBIENCE;
+	Sint32& chestAmbience;
 	//skill[8]
-	Sint32& CHEST_MAXHEALTH;
+	Sint32& chestMaxHealth;
 	//skill[9]
 	//field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
-	Sint32& CHEST_TYPE;
+	Sint32& chestType;
 
 	//--- Mechanism defines ---
 	static const int CIRCUIT_OFF = 1;
@@ -111,7 +111,7 @@ public:
 
 	//skill[4]
 	//0 = unlocked. 1 = locked.
-	Sint32& CHEST_LOCKED;
+	Sint32& chestLocked;
 	/*
 	 * skill[10]
 	 * 1 = chest already has been unlocked, or spawned in unlocked (prevent spell exploit)
@@ -120,7 +120,7 @@ public:
 	 * Also doesn't spawn gold for chests that didn't spawn locked
 	 * (e.g. you locked a chest with a spell...sorry, no gold for you)
 	 */
-	Sint32& CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT;
+	Sint32& chestPreventLockpickCapstoneExploit;
 
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
