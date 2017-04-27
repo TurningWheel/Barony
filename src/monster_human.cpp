@@ -801,6 +801,10 @@ void actHumanLimb(Entity* my)
 		{
 			torch = 9;
 		}
+		else if ( my->sprite == 529 )	// crystal shard
+		{
+			torch = 4;
+		}
 	}
 	if ( torch != 0 )
 	{

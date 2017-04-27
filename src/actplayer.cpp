@@ -2923,6 +2923,11 @@ void actPlayerLimb(Entity* my)
 		my->skill[4] = 1;
 		players[my->skill[2]]->entity->skill[1] = 9;
 	}
+	else if ( my->sprite == 529 )	// crystal shard
+	{
+		my->skill[4] = 1;
+		players[my->skill[2]]->entity->skill[1] = 4;
+	}
 	else
 	{
 		if (my->skill[4] == 1)
