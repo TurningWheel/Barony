@@ -894,11 +894,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( hitstats->defending )
 							{
-								resistance += 1;
+								resistance += 2;
 							}
 							else
 							{
-								resistance += 2;
+								resistance += 1;
 							}
 						}
 					}
