@@ -2161,7 +2161,6 @@ void Item::apply(int player, Entity* entity)
 	}
 	else if ( type == TOOL_LOCKPICK )
 	{
-		// lockpicks
 		applyLockpick(player, *entity);
 	}
 }

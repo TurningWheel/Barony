@@ -104,6 +104,8 @@ static const int SKILL_LEVEL_EXPERT = 60;
 static const int SKILL_LEVEL_MASTER = 80;
 static const int SKILL_LEVEL_LEGENDARY = 100;
 
+static const int CAPSTONE_LOCKPICKING_UNLOCK = SKILL_LEVEL_LEGENDARY;
+
 #define NUMCATEGORIES 13
 
 #define ITEM_SLOT_HELM 0

@@ -318,7 +318,7 @@ void gameLogic(void)
 		{
 			nextnode = node->next;
 			entity = (Entity*)node->element;
-			if ( !entity->ranbehavior )
+			if ( entity && !entity->ranbehavior )
 			{
 				entity->ticks++;
 				if ( entity->behavior != NULL )
@@ -523,7 +523,7 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
@@ -560,6 +560,7 @@ void gameLogic(void)
 						}
 					}
 				}
+
 				if ( loadnextlevel == true )
 				{
 					for ( node = map.entities->first; node != NULL; node = node->next )
@@ -1242,7 +1243,7 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{

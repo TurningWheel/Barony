@@ -46,8 +46,25 @@ class Entity
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
-	Sint32& chest_status; //0 = closed. 1 = open.
-	Sint32& chest_opener; //Index of the player the chest was opened by.
+//#define CHEST_INIT my->skill[0]
+	Sint32& CHEST_INIT;
+//#define CHEST_STATUS my->skill[1] //0 = closed. 1 = open.
+	Sint32& CHEST_STATUS; //0 = closed. 1 = open.
+	//skill[2] is reserved for all entities.
+//#define CHEST_HEALTH my->skill[3]
+	Sint32& CHEST_HEALTH;
+//#define CHEST_LOCKED my->skill[4] //0 = unlocked. 1 = locked.
+	Sint32& CHEST_LOCKED;
+//#define CHEST_OPENER my->skill[5] //Index of the player the chest was opened by.
+	Sint32& CHEST_OPENER; //Index of the player the chest was opened by.
+//#define CHEST_LIDCLICKED my->skill[6]
+	Sint32& CHEST_LIDCLICKED;
+//#define CHEST_AMBIENCE my->skill[7]
+	Sint32& CHEST_AMBIENCE;
+//#define CHEST_MAXHEALTH my->skill[8]
+	Sint32& CHEST_MAXHEALTH;
+//#define CHEST_TYPE my->skill[9] //field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
+	Sint32& CHEST_TYPE;
 
 	//--- Mechanism defines ---
 	static const int CIRCUIT_OFF = 1;
@@ -164,6 +181,9 @@ public:
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
+
+	//Act functions.
+	void actChest();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
