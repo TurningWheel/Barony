@@ -752,11 +752,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						if (hitstats->shield)
 						{
-							if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending )
-							{
-								reflection = 3;
-							}
-							else if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+							if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
 							{
 								reflection = 3;
 							}
@@ -896,21 +892,28 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE )
 						{
-							resistance++;
+							if ( hitstats->defending )
+							{
+								resistance += 1;
+							}
+							else
+							{
+								resistance += 2;
+							}
 						}
 					}
 					if ( hitstats->ring )
 					{
 						if ( hitstats->ring->type == RING_MAGICRESISTANCE )
 						{
-							resistance++;
+							resistance += 1;
 						}
 					}
 					if ( hitstats->gloves )
 					{
 						if ( hitstats->gloves->type == ARTIFACT_GLOVES )
 						{
-							resistance++;
+							resistance += 1;
 						}
 					}
 				}
