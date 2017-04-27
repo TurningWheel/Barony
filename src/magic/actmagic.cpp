@@ -1828,23 +1828,27 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 92, 64);
 							hit.entity->skill[5] = 1; //Lock the door.
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], language[399]);
 								}
+							}
 						}
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Lock chest
 							playSoundEntity(hit.entity, 92, 64);
-							if ( !hit.entity->skill[4] )
+							if ( !hit.entity->CHEST_LOCKED )
 							{
-								hit.entity->skill[4] = 1;
+								hit.entity->lockChest();
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayer(parent->skill[2], language[400]);
 									}
+								}
 							}
 						}
 						else
@@ -1908,15 +1912,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Unlock chest
-							if ( hit.entity->skill[4] )
+							if ( hit.entity->CHEST_LOCKED )
 							{
 								playSoundEntity(hit.entity, 91, 64);
-								hit.entity->skill[4] = 0;
+								hit.entity->unlockChest();
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer)
 									{
 										messagePlayer(parent->skill[2], language[404]);
 									}
+								}
 							}
 						}
 						else

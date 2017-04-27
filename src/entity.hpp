@@ -46,24 +46,27 @@ class Entity
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
-//#define CHEST_INIT my->skill[0]
+	//Chest skills.
+	//skill[0]
 	Sint32& CHEST_INIT;
-//#define CHEST_STATUS my->skill[1] //0 = closed. 1 = open.
-	Sint32& CHEST_STATUS; //0 = closed. 1 = open.
+	//skill[1]
+	//0 = closed. 1 = open.
+	//0 = closed. 1 = open.
+	Sint32& CHEST_STATUS;
 	//skill[2] is reserved for all entities.
-//#define CHEST_HEALTH my->skill[3]
+	//skill[3]
 	Sint32& CHEST_HEALTH;
-//#define CHEST_LOCKED my->skill[4] //0 = unlocked. 1 = locked.
-	Sint32& CHEST_LOCKED;
-//#define CHEST_OPENER my->skill[5] //Index of the player the chest was opened by.
-	Sint32& CHEST_OPENER; //Index of the player the chest was opened by.
-//#define CHEST_LIDCLICKED my->skill[6]
+	//skill[5]
+	//Index of the player the chest was opened by.
+	Sint32& CHEST_OPENER;
+	//skill[6]
 	Sint32& CHEST_LIDCLICKED;
-//#define CHEST_AMBIENCE my->skill[7]
+	//skill[7]
 	Sint32& CHEST_AMBIENCE;
-//#define CHEST_MAXHEALTH my->skill[8]
+	//skill[8]
 	Sint32& CHEST_MAXHEALTH;
-//#define CHEST_TYPE my->skill[9] //field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
+	//skill[9]
+	//field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
 	Sint32& CHEST_TYPE;
 
 	//--- Mechanism defines ---
@@ -103,6 +106,22 @@ public:
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
+
+	//--PUBLIC CHEST SKILLS--
+
+	//skill[4]
+	//0 = unlocked. 1 = locked.
+	Sint32& CHEST_LOCKED;
+	/*
+	 * skill[10]
+	 * 1 = chest already has been unlocked, or spawned in unlocked (prevent spell exploit)
+	 * 0 = chest spawned in locked and is still ripe for harvest.
+	 * Purpose: To prevent exploits with repeatedly locking and unlocking a chest.
+	 * Also doesn't spawn gold for chests that didn't spawn locked
+	 * (e.g. you locked a chest with a spell...sorry, no gold for you)
+	 */
+	Sint32& CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT;
+
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -178,6 +197,8 @@ public:
 	void addItemToChestFromInventory(int player, Item* item, bool all);
 	void addItemToChestServer(Item* item); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
 	void removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
+	void unlockChest();
+	void lockChest();
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);

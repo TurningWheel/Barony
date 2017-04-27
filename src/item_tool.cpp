@@ -25,12 +25,12 @@ void Item::applySkeletonKey(int player, Entity& entity)
 		if ( entity.skill[4] )
 		{
 			messagePlayer(player, language[1097]);
-			entity.skill[4] = 0;
+			entity.unlockChest();
 		}
 		else
 		{
 			messagePlayer(player, language[1098]);
-			entity.skill[4] = 1;
+			entity.lockChest();
 		}
 	}
 	else if ( entity.behavior == &actDoor )
@@ -59,21 +59,20 @@ void Item::applyLockpick(int player, Entity& entity)
 	bool capstoneUnlocked = (stats[player]->PROFICIENCIES[PRO_LOCKPICKING] >= CAPSTONE_LOCKPICKING_UNLOCK);
 	if ( entity.behavior == &actChest )
 	{
-		if ( entity.skill[4] )
+		if ( entity.CHEST_LOCKED )
 		{
 			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
 			{
 				//Unlock chest.
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, language[1097]);
-				entity.skill[4] = 0;
-				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-				if ( capstoneUnlocked )
+				if ( capstoneUnlocked && !entity.CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT )
 				{
 					//TODO: Add 25 gold to chest.
-					//TODO: Ensure chests are not exploitable by constantly locking & relocking.
-					//TODO: Only if chest spawns naturally locked can you get the capstone effect? So no using locking spell on every chest you see just to get rich...
+					messagePlayer(player, "This is my gold chest. Goldy goldy gold!");
 				}
+				entity.unlockChest();
+				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
 			}
 			else
 			{
@@ -128,8 +127,9 @@ void Item::applyLockpick(int player, Entity& entity)
 	{
 		if ( entity.skill[5] )
 		{
-			if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
+			if ( capstoneUnlocked || stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
 			{
+				//Unlock door.
 				playSoundEntity(&entity, 91, 64);
 				messagePlayer(player, language[1099]);
 				entity.skill[5] = 0;
@@ -137,6 +137,7 @@ void Item::applyLockpick(int player, Entity& entity)
 			}
 			else
 			{
+				//Failed to unlock door.
 				playSoundEntity(&entity, 92, 64);
 				messagePlayer(player, language[1106]);
 				if ( rand() % 10 == 0 )

@@ -75,9 +75,11 @@ void Entity::actChest()
 		CHEST_INIT = 1;
 		CHEST_HEALTH = 90 + rand() % 20;
 		CHEST_MAXHEALTH = CHEST_HEALTH;
-		if (rand() % 10 == 0)   // 10% chance
+		CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT = 1;
+		if (rand() % 10 == 0)   // 10% chance //TODO: This should be weighted, depending on chest type.
 		{
 			CHEST_LOCKED = 1;
+			CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT = 0;
 		}
 
 		node_t* node = NULL;
@@ -1070,4 +1072,15 @@ void Entity::removeItemFromChestServer(Item* item, int count)
 			return;
 		}
 	}
+}
+
+void Entity::unlockChest()
+{
+	CHEST_LOCKED = 0;
+	CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT = 1;
+}
+
+void Entity::lockChest()
+{
+	CHEST_LOCKED = 1;
 }

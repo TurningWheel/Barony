@@ -33,7 +33,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	CHEST_LIDCLICKED(skill[6]),
 	CHEST_AMBIENCE(skill[7]),
 	CHEST_MAXHEALTH(skill[8]),
-	CHEST_TYPE(skill[9])
+	CHEST_TYPE(skill[9]),
+	CHEST_PREVENT_LOCKPICK_CAPSTONE_EXPLOIT(skill[10])
 {
 	int c;
 	// add the entity to the entity list
