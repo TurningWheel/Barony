@@ -535,7 +535,8 @@ bool GameController::handleInventoryMovement()
 		{
 			//Warp back to top of inventory.
 			hotbarHasFocus = false;
-			select_inventory_slot(selected_inventory_slot_x, INVENTORY_SIZEY - 1);
+			float percentage = static_cast<float>(current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS);
+			select_inventory_slot((percentage) * INVENTORY_SIZEX - 1, INVENTORY_SIZEY - 1);
 		}
 		else
 		{
@@ -552,7 +553,8 @@ bool GameController::handleInventoryMovement()
 		{
 			//Warp back to bottom of inventory.
 			hotbarHasFocus = false;
-			select_inventory_slot(selected_inventory_slot_x, 0);
+			float percentage = static_cast<float>(current_hotbar + 1) / static_cast<float>(NUM_HOTBAR_SLOTS - 1);
+			select_inventory_slot((percentage) * INVENTORY_SIZEX - 1, 0);
 		}
 		else
 		{

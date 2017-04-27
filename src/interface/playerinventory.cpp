@@ -295,12 +295,14 @@ void select_inventory_slot(int x, int y)
 
 	bool warpInv = true;
 
-	if ( y < 0 )   //Wrap around top.
+	if ( y < 0 )   //Wrap around top to bottom.
 	{
 		y = INVENTORY_SIZEY - 1;
 		if ( hotbarGamepadControlEnabled() )
 		{
 			hotbarHasFocus = true; //Warp to hotbar.
+			float percentage = static_cast<float>(x + 1) / static_cast<float>(INVENTORY_SIZEX);
+			selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 			warpMouseToSelectedHotbarSlot();
 		}
 	}
@@ -365,6 +367,8 @@ void select_inventory_slot(int x, int y)
 			if ( hotbarGamepadControlEnabled() )
 			{
 				hotbarHasFocus = true;
+				float percentage = static_cast<float>(x + 1) / static_cast<float>(INVENTORY_SIZEX);
+				selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
 				warpMouseToSelectedHotbarSlot();
 			}
 		}
