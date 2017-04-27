@@ -570,15 +570,15 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_NEXT] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_NEXT: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_HOTBAR_NEXT"))
+		else if (strstr(command_str, "INJOY_GAME_HOTBAR_NEXT"))
 		{
-			joyimpulses[INJOY_HOTBAR_NEXT] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_NEXT: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_HOTBAR_NEXT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_NEXT: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_HOTBAR_PREV"))
+		else if (strstr(command_str, "INJOY_GAME_HOTBAR_PREV"))
 		{
-			joyimpulses[INJOY_HOTBAR_PREV] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_HOTBAR_PREV] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_GAME_HOTBAR_ACTIVATE"))
 		{

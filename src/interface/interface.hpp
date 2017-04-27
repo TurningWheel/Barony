@@ -339,6 +339,8 @@ extern SDL_Surface* hotbar_spell_img; //Drawn when a spell is in the hotbar. TOD
 hotbar_slot_t* getHotbar(int x, int y);
 
 void selectHotbarSlot(int slot);
+extern bool hotbarHasFocus;
+void warpMouseToSelectedHotbarSlot();
 
 /*
  * True = automatically place items you pick up in your hotbar.
@@ -357,3 +359,11 @@ Sint8* inputPressed(Uint32 scancode);
 
 //All the code that sets shootmode = false. Display chests, inventory, books, shopkeeper, identify, whatever.
 void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make all the everything use this. //TODO: Make an accompanying closeStatusScreen() function.
+
+static const int SCANCODE_UNASSIGNED_BINDING = 399;
+
+inline bool hotbarGamepadControlEnabled()
+{
+	return ( !openedChest[clientnum] && gui_mode != GUI_MODE_SHOP && !identifygui_active && !removecursegui_active );
+}
+
