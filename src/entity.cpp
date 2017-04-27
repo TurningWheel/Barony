@@ -3692,8 +3692,11 @@ void Entity::attack(int pose, int charge)
 					// damage opponent armor if applicable
 					Item* armor = NULL;
 					int armornum = 0;
-					if ( damage > 0 && ((rand() % 25 == 0 && weaponskill != PRO_MACE) || (rand() % 10 == 0 && weaponskill == PRO_MACE)) )
+					bool isWeakArmor = false;
+
+					if ( damage > 0 )
 					{
+						// choose random piece of equipment to target
 						switch ( rand() % 6 )
 						{
 							case 0:
@@ -3723,8 +3726,70 @@ void Entity::attack(int pose, int charge)
 							default:
 								break;
 						}
+
+						if ( armor != NULL )
+						{
+							switch ( armor->type )
+							{
+								case CRYSTAL_HELM:
+								case CRYSTAL_SHIELD:
+								case CRYSTAL_BREASTPIECE:
+								case CRYSTAL_BOOTS:
+								case CRYSTAL_GLOVES:
+									isWeakArmor = true;
+									break;
+								default:
+									isWeakArmor = false;
+									break;
+							}
+						}
+
+						if ( weaponskill == PRO_MACE )
+						{
+							if ( isWeakArmor )
+							{
+								// 80% chance to be deselected from degrading.
+								if ( rand() % 5 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+							else
+							{
+								// 90% chance to be deselected from degrading.
+								if ( rand() % 10 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}		
+						}
+						else 
+						{
+							if ( isWeakArmor )
+							{
+								// 93% chance to be deselected from degrading.
+								if ( rand() % 15 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+							else
+							{
+								// 96% chance to be deselected from degrading.
+								if ( rand() % 25 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+						}
 					}
-					else if ( hitstats->shield != NULL )
+					
+					// if nothing chosen to degrade, check extra shield chances to degrade
+					if ( hitstats->shield != NULL && armor == NULL )
 					{
 						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 						{
@@ -3738,11 +3803,9 @@ void Entity::attack(int pose, int charge)
 							armor = hitstats->shield;
 							armornum = 4;
 						}
-					}
-					else
-					{
-						if ( hitstats->shield != NULL )
+						else
 						{
+							// if no armor piece was chosen to break, grant chance to improve shield skill.
 							if ( itemCategory(hitstats->shield) == ARMOR )
 							{
 								if ( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) )
@@ -3750,13 +3813,16 @@ void Entity::attack(int pose, int charge)
 									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 								}
 							}
+
+							// shield still has chance to degrade after raising skill.
+							if ( hitstats->defending && rand() % 10 == 0 && armor == NULL )
+							{
+								armor = hitstats->shield;
+								armornum = 4;
+							}
 						}
 					}
-					if ( hitstats->defending && rand() % 10 == 0 && !armor )
-					{
-						armor = hitstats->shield;
-						armornum = 4;
-					}
+
 					if ( armor != NULL )
 					{
 						if ( playerhit == clientnum || playerhit < 0 )
@@ -5177,7 +5243,7 @@ int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
 
 /*-------------------------------------------------------------------------------
 
-isLevitating
+sLevitating
 
 returns true if the given entity is levitating, or false if it cannot
 
