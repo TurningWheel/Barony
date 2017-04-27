@@ -362,7 +362,7 @@ void identifyGUIIdentify(Item* item)
 		//Appraising.
 
 		//If appraisal skill >= LEGENDARY, then auto-complete appraisal. Else, do the normal routine.
-		if ( stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] >= SKILL_LEVEL_LEGENDARY )
+		if ( stats[clientnum]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
 		{
 			item->identified = true;
 			messagePlayer(clientnum, language[320], item->description());
