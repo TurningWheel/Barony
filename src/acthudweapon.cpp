@@ -215,21 +215,7 @@ void actHudWeapon(Entity* my)
 	}
 
 	// check levitating value
-	bool levitating = false;
-	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( stats[clientnum]->ring != NULL )
-		if ( stats[clientnum]->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( stats[clientnum]->shoes != NULL )
-		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(stats[clientnum]);
 
 	// water walking boots
 	bool waterwalkingboots = false;
@@ -1331,21 +1317,7 @@ void actHudShield(Entity* my)
 	}
 
 	// check levitating value
-	bool levitating = false;
-	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( stats[clientnum]->ring != NULL )
-		if ( stats[clientnum]->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( stats[clientnum]->shoes != NULL )
-		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(stats[clientnum]);
 
 	// water walking boots
 	bool waterwalkingboots = false;

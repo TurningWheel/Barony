@@ -847,20 +847,8 @@ void actPlayer(Entity* my)
 		}
 
 		// levitation
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats[PLAYER_NUM]->ring != NULL )
-			if ( stats[PLAYER_NUM]->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( stats[PLAYER_NUM]->shoes != NULL )
-			if ( stats[PLAYER_NUM]->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stats[PLAYER_NUM]);
+
 		if ( levitating )
 		{
 			my->z -= 1; // floating

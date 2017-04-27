@@ -1853,10 +1853,10 @@ void Entity::handleEffects(Stat* myStats)
 	// torches/lamps burn down
 	if ( myStats->shield != NULL )
 	{
-		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN || myStats->shield->type == TOOL_CRYSTALSHARD )
+		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
 		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260 && myStats->shield->type == TOOL_LANTERN) || this->char_torchtime >= 20520 )
+			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260) )
 			{
 				this->char_torchtime = 0;
 				if ( player == clientnum )
@@ -1870,25 +1870,11 @@ void Entity::handleEffects(Stat* myStats)
 				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
 				if ( myStats->shield->status > BROKEN )
 				{
-					if ( myStats->shield->type == TOOL_CRYSTALSHARD )
-					{
-						messagePlayer(player, language[2350], myStats->shield->getName());
-					}
-					else
-					{
-						messagePlayer(player, language[637], myStats->shield->getName());
-					}
+					messagePlayer(player, language[637], myStats->shield->getName());
 				}
 				else
 				{
-					if ( myStats->shield->type == TOOL_CRYSTALSHARD )
-					{
-						messagePlayer(player, language[2351], myStats->shield->getName());
-					}
-					else
-					{
-						messagePlayer(player, language[638], myStats->shield->getName());
-					}
+					messagePlayer(player, language[638], myStats->shield->getName());
 				}
 				if ( multiplayer == SERVER && player > 0 )
 				{
@@ -3743,7 +3729,8 @@ void Entity::attack(int pose, int charge)
 						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
 						{
 							// shards degrade by 1 stage each hit.
-							hit.entity->char_torchtime += 20520;
+							armor = hitstats->shield;
+							armornum = 4;
 						}
 						else if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
 						{
@@ -3783,12 +3770,28 @@ void Entity::attack(int pose, int charge)
 						armor->status = static_cast<Status>(armor->status - 1);
 						if ( armor->status > BROKEN )
 						{
-							messagePlayer(playerhit, language[681], armor->getName());
+							if ( armor->type == TOOL_CRYSTALSHARD )
+							{
+								messagePlayer(playerhit, language[2350], armor->getName());
+							}
+							else
+							{
+								messagePlayer(playerhit, language[681], armor->getName());
+							}
 						}
 						else
 						{
-							playSoundEntity(hit.entity, 76, 64);
-							messagePlayer(playerhit, language[682], armor->getName());
+							
+							if ( armor->type == TOOL_CRYSTALSHARD )
+							{
+								playSoundEntity(hit.entity, 162, 64);
+								messagePlayer(playerhit, language[2351], armor->getName());
+							}
+							else
+							{
+								playSoundEntity(hit.entity, 76, 64);
+								messagePlayer(playerhit, language[682], armor->getName());
+							}
 						}
 						if ( playerhit > 0 && multiplayer == SERVER )
 						{
@@ -5169,4 +5172,51 @@ int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
 		return 0;
 	}
 	return 1;
+}
+
+
+/*-------------------------------------------------------------------------------
+
+isLevitating
+
+returns true if the given entity is levitating, or false if it cannot
+
+-------------------------------------------------------------------------------*/
+
+bool isLevitating(Stat* mystats)
+{
+	if ( mystats == NULL )
+	{
+		return false;
+	}
+
+	// check levitating value
+	bool levitating = false;
+	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
+	{
+		return true;
+	}
+	if ( mystats->ring != NULL )
+	{
+		if ( mystats->ring->type == RING_LEVITATION )
+		{
+			return true;
+		}
+	}
+	if ( mystats->shoes != NULL )
+	{
+		if ( mystats->shoes->type == STEEL_BOOTS_LEVITATION )
+		{
+			return true;
+		}
+	}
+	if ( mystats->cloak != NULL )
+	{
+		if ( mystats->cloak->type == ARTIFACT_CLOAK )
+		{
+			return true;
+		}
+	}
+
+	return false;
 }

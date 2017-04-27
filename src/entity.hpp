@@ -272,3 +272,4 @@ int checkEquipType(Item *ITEM);
 
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
+bool isLevitating(Stat * myStats);

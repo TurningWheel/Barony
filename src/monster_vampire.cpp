@@ -687,21 +687,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// levitation
-		bool levitating = false;
-		if ( myStats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( myStats->ring != NULL )
-			if ( myStats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( myStats->shoes != NULL )
-			if ( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		bool levitating = isLevitating(myStats);
 		if ( levitating )
 		{
 			my->z -= 1; // floating
