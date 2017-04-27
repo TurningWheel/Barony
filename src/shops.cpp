@@ -236,7 +236,7 @@ void sellItemToShop(Item* item)
 	}
 
 	bool deal = true;
-	if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] >= SKILL_LEVEL_LEGENDARY )
+	if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
 		//Skill capstone: Can sell anything to any shop.
 	}

@@ -93,6 +93,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/player.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/item_tool.cpp"
 )
 
 if( WIN32 )

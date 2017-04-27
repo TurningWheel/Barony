@@ -104,6 +104,27 @@ static const int SKILL_LEVEL_EXPERT = 60;
 static const int SKILL_LEVEL_MASTER = 80;
 static const int SKILL_LEVEL_LEGENDARY = 100;
 
+static const int CAPSTONE_LOCKPICKING_UNLOCK = SKILL_LEVEL_LEGENDARY;
+static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
+{
+		100,
+		101,
+		100,
+		100,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101
+};
+
+static const int CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT = 25;
+
 #define NUMCATEGORIES 13
 
 #define ITEM_SLOT_HELM 0
@@ -198,5 +219,10 @@ public:
 	Sint32 EDITOR_ITEMS[96];
 };
 extern Stat* stats[MAXPLAYERS];
+
+inline bool skillCapstoneUnlocked(int player, int proficiency)
+{
+	return (stats[player]->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+}
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
