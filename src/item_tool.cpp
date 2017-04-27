@@ -15,6 +15,7 @@
 #include "net.hpp"
 #include "player.hpp"
 #include "stat.hpp"
+#include "colors.hpp"
 #include "items.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
@@ -68,8 +69,9 @@ void Item::applyLockpick(int player, Entity& entity)
 				messagePlayer(player, language[1097]);
 				if ( capstoneUnlocked && !entity.chestPreventLockpickCapstoneExploit )
 				{
-					//TODO: Add 25 gold to chest.
-					messagePlayer(player, "This is my gold chest. Goldy goldy gold!");
+					int goldAmount = CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT;
+					stats[player]->GOLD += goldAmount;
+					messagePlayerColor(player, uint32ColorGreen(*mainsurface), "You found %d gold pieces in the chest!", goldAmount);
 				}
 				entity.unlockChest();
 				players[player]->entity->increaseSkill(PRO_LOCKPICKING);
