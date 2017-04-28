@@ -119,6 +119,7 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/items_editor.cpp"
 )
 
 add_subdirectory(magic)
