@@ -298,3 +298,4 @@ void actDemonCeilingBuster(Entity* my);
 void actDevilTeleport(Entity* my);
 
 void createMinotaurTimer(Entity* entity, map_t* map);
+

@@ -934,7 +934,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 					}
 					else if ( itemCategory(item) == ARMOR )
 					{
-						if ( item->type == HAT_PHRYGIAN || item->type == HAT_WIZARD || item->type == HAT_JESTER || item->type == HAT_HOOD )   // hats
+						if ( checkEquipType(item) == TYPE_HAT )  // hats
 						{
 							if (myStats->helmet == NULL)   // nothing on head currently
 							{
@@ -944,7 +944,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								list_RemoveNode(entity->mynode);
 							}
 						}
-						else if ( item->type == LEATHER_HELM || item->type == IRON_HELM || item->type == STEEL_HELM )     // helmets
+						else if ( checkEquipType(item) == TYPE_HELM )     // helmets
 						{
 							if (myStats->helmet == NULL)   // nothing on head currently
 							{
@@ -975,7 +975,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								}
 							}
 						}
-						else if ( item->type == WOODEN_SHIELD || item->type == BRONZE_SHIELD || item->type == IRON_SHIELD || item->type == STEEL_SHIELD || item->type == STEEL_SHIELD_RESISTANCE || item->type == TOOL_TORCH || item->type == TOOL_LANTERN )     // shields
+						else if ( checkEquipType(item) == TYPE_SHIELD )     // shields
 						{
 							if (myStats->shield == NULL)   // nothing in left hand currently
 							{
@@ -1006,7 +1006,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								}
 							}
 						}
-						else if ( item->type == LEATHER_BREASTPIECE || item->type == IRON_BREASTPIECE || item->type == STEEL_BREASTPIECE )     // breastpieces
+						else if ( checkEquipType(item) == TYPE_BREASTPIECE )     // breastpieces
 						{
 							if (myStats->breastplate == NULL)   // nothing on torso currently
 							{
@@ -1037,7 +1037,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 								}
 							}
 						}
-						else if ( item->type == CLOAK || item->type == CLOAK_MAGICREFLECTION || item->type == CLOAK_INVISIBILITY || item->type == CLOAK_PROTECTION )     // cloaks
+						else if ( checkEquipType(item) == TYPE_CLOAK )     // cloaks
 						{
 							if (myStats->cloak == NULL)   // nothing on back currently
 							{
@@ -1070,7 +1070,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 						}
 						if ( glovesandshoes && item != NULL )
 						{
-							if ( item->type >= LEATHER_BOOTS && item->type <= STEEL_BOOTS_FEATHER )   // boots
+							if ( checkEquipType(item) == TYPE_BOOTS )   // boots
 							{
 								if (myStats->shoes == NULL)
 								{
@@ -1101,7 +1101,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 									}
 								}
 							}
-							else if ( item->type >= GLOVES && item->type <= GAUNTLETS_STRENGTH )
+							else if ( checkEquipType(item) == TYPE_GLOVES )
 							{
 								if (myStats->gloves == NULL)
 								{
@@ -1701,26 +1701,54 @@ void Entity::handleEffects(Stat* myStats)
 
 	// healing over time
 	int healring = 0;
+	int healthRegenInterval = 0;
 	if ( myStats->ring != NULL )
 	{
 		if ( myStats->ring->type == RING_REGENERATION )
 		{
 			if ( myStats->ring->beatitude >= 0 )
 			{
-				healring = 1;
+				healring++;
 			}
 			else
 			{
-				healring = -1;
+				healring--;
 			}
 		}
+	}
+	if ( myStats->breastplate != NULL )
+	{
+		if ( myStats->breastplate->type == ARTIFACT_BREASTPIECE )
+		{
+			if ( myStats->breastplate->beatitude >= 0 )
+			{
+				healring++;
+			}
+			else
+			{
+				healring--;
+			}
+		}
+	}
+
+	if ( healring > 0 )
+	{
+		healthRegenInterval = HEAL_TIME / (healring * 8);
+	}
+	else if ( healring < 0 )
+	{
+		healthRegenInterval = healring * HEAL_TIME * 4;
+	}
+	else if ( healring == 0 )
+	{
+		healthRegenInterval = HEAL_TIME;
 	}
 	if ( myStats->HP < myStats->MAXHP )
 	{
 		this->char_heal++;
 		if ( healring > 0 || svFlags & SV_FLAG_HUNGER )
 		{
-			if ( (this->char_heal >= HEAL_TIME && !healring) || (this->char_heal >= HEAL_TIME * 4 && healring < 0) || (this->char_heal >= HEAL_TIME / 8 && healring > 0) )
+			if ( this->char_heal >= healthRegenInterval )
 			{
 				this->char_heal = 0;
 				this->modHP(1);
@@ -1745,10 +1773,54 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// regaining energy over time
+	int manaring = 0;
+	int manaRegenInterval = 0;
+	if ( myStats->breastplate != NULL )
+	{
+		if ( myStats->breastplate->type == VAMPIRE_DOUBLET )
+		{
+			if ( myStats->breastplate->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( myStats->cloak != NULL )
+	{
+		if ( myStats->cloak->type == ARTIFACT_CLOAK )
+		{
+			if ( myStats->cloak->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+
+	if ( manaring > 0 )
+	{
+		manaRegenInterval = MAGIC_REGEN_TIME / (manaring * 8);
+	}
+	else if ( manaring < 0 )
+	{
+		manaRegenInterval = manaring * MAGIC_REGEN_TIME * 4;
+	}
+	else if ( manaring == 0 )
+	{
+		manaRegenInterval = MAGIC_REGEN_TIME;
+	}
+	
 	if ( myStats->MP < myStats->MAXMP )
 	{
 		this->char_energize++;
-		if ( this->char_energize >= MAGIC_REGEN_TIME )
+		if ( this->char_energize >= manaRegenInterval )
 		{
 			this->char_energize = 0;
 			this->modMP(1);
@@ -1792,7 +1864,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( myStats->shield->type == TOOL_TORCH || myStats->shield->type == TOOL_LANTERN )
 		{
 			this->char_torchtime++;
-			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || this->char_torchtime >= 10260 )
+			if ( (this->char_torchtime >= 7200 && myStats->shield->type == TOOL_TORCH) || (this->char_torchtime >= 10260) )
 			{
 				this->char_torchtime = 0;
 				if ( player == clientnum )
@@ -2227,6 +2299,25 @@ Sint32 Entity::getAttack()
 	{
 		attack += entitystats->weapon->weaponGetAttack();
 	}
+	else if ( entitystats->weapon == NULL )
+	{
+		// bare handed.
+		if ( entitystats->gloves )
+		{
+			if ( entitystats->gloves->type == BRASS_KNUCKLES )
+			{
+				attack += 1;
+			}
+			else if (entitystats->gloves->type == IRON_KNUCKLES)
+			{
+				attack += 2;
+			}
+			else if (entitystats->gloves->type == SPIKED_GAUNTLETS)
+			{
+				attack += 3;
+			}
+		}
+	}
 	attack += this->getSTR();
 
 	return attack;
@@ -2453,10 +2544,16 @@ Sint32 statGetINT(Stat* entitystats)
 		INT--;
 	}
 	if ( entitystats->helmet != NULL )
+	{
 		if ( entitystats->helmet->type == HAT_WIZARD )
 		{
 			INT++;
 		}
+		else if ( entitystats->helmet->type == ARTIFACT_HELM )
+		{
+			INT += 5;
+		}
+	}
 	return INT;
 }
 
@@ -3603,8 +3700,11 @@ void Entity::attack(int pose, int charge)
 					// damage opponent armor if applicable
 					Item* armor = NULL;
 					int armornum = 0;
-					if ( damage > 0 && ((rand() % 25 == 0 && weaponskill != PRO_MACE) || (rand() % 10 == 0 && weaponskill == PRO_MACE)) )
+					bool isWeakArmor = false;
+
+					if ( damage > 0 )
 					{
+						// choose random piece of equipment to target
 						switch ( rand() % 6 )
 						{
 							case 0:
@@ -3634,11 +3734,86 @@ void Entity::attack(int pose, int charge)
 							default:
 								break;
 						}
-					}
-					else
-					{
-						if ( hitstats->shield != NULL )
+
+						if ( armor != NULL )
 						{
+							switch ( armor->type )
+							{
+								case CRYSTAL_HELM:
+								case CRYSTAL_SHIELD:
+								case CRYSTAL_BREASTPIECE:
+								case CRYSTAL_BOOTS:
+								case CRYSTAL_GLOVES:
+									isWeakArmor = true;
+									break;
+								default:
+									isWeakArmor = false;
+									break;
+							}
+						}
+
+						if ( weaponskill == PRO_MACE )
+						{
+							if ( isWeakArmor )
+							{
+								// 80% chance to be deselected from degrading.
+								if ( rand() % 5 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+							else
+							{
+								// 90% chance to be deselected from degrading.
+								if ( rand() % 10 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}		
+						}
+						else 
+						{
+							if ( isWeakArmor )
+							{
+								// 93% chance to be deselected from degrading.
+								if ( rand() % 15 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+							else
+							{
+								// 96% chance to be deselected from degrading.
+								if ( rand() % 25 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+						}
+					}
+					
+					// if nothing chosen to degrade, check extra shield chances to degrade
+					if ( hitstats->shield != NULL && armor == NULL )
+					{
+						if ( hitstats->shield->type == TOOL_CRYSTALSHARD && hitstats->defending )
+						{
+							// shards degrade by 1 stage each hit.
+							armor = hitstats->shield;
+							armornum = 4;
+						}
+						else if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
+						{
+							// mirror shield degrade by 1 stage each hit.
+							armor = hitstats->shield;
+							armornum = 4;
+						}
+						else
+						{
+							// if no armor piece was chosen to break, grant chance to improve shield skill.
 							if ( itemCategory(hitstats->shield) == ARMOR )
 							{
 								if ( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) )
@@ -3646,13 +3821,16 @@ void Entity::attack(int pose, int charge)
 									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 								}
 							}
+
+							// shield still has chance to degrade after raising skill.
+							if ( hitstats->defending && rand() % 10 == 0 && armor == NULL )
+							{
+								armor = hitstats->shield;
+								armornum = 4;
+							}
 						}
 					}
-					if ( hitstats->defending && rand() % 10 == 0 && !armor )
-					{
-						armor = hitstats->shield;
-						armornum = 4;
-					}
+
 					if ( armor != NULL )
 					{
 						if ( playerhit == clientnum || playerhit < 0 )
@@ -3666,12 +3844,28 @@ void Entity::attack(int pose, int charge)
 						armor->status = static_cast<Status>(armor->status - 1);
 						if ( armor->status > BROKEN )
 						{
-							messagePlayer(playerhit, language[681], armor->getName());
+							if ( armor->type == TOOL_CRYSTALSHARD )
+							{
+								messagePlayer(playerhit, language[2350], armor->getName());
+							}
+							else
+							{
+								messagePlayer(playerhit, language[681], armor->getName());
+							}
 						}
 						else
 						{
-							playSoundEntity(hit.entity, 76, 64);
-							messagePlayer(playerhit, language[682], armor->getName());
+							
+							if ( armor->type == TOOL_CRYSTALSHARD )
+							{
+								playSoundEntity(hit.entity, 162, 64);
+								messagePlayer(playerhit, language[2351], armor->getName());
+							}
+							else
+							{
+								playSoundEntity(hit.entity, 76, 64);
+								messagePlayer(playerhit, language[682], armor->getName());
+							}
 						}
 						if ( playerhit > 0 && multiplayer == SERVER )
 						{
@@ -4668,7 +4862,7 @@ bool Entity::checkFriend(Entity* your)
 }
 
 
-void createMonsterEquipment(Stat* stats) //MOD TODO
+void createMonsterEquipment(Stat* stats)
 {
 	int itemIndex = 0;
 	ItemType itemId;
@@ -4888,3 +5082,217 @@ void setRandomMonsterStats(Stat* stats)
 
 	return;
 }
+
+
+int checkEquipType(Item *item)
+{
+	switch ( item->type ) {
+
+		case LEATHER_BOOTS:
+		case LEATHER_BOOTS_SPEED:
+		case IRON_BOOTS:
+		case IRON_BOOTS_WATERWALKING:
+		case STEEL_BOOTS:
+		case STEEL_BOOTS_LEVITATION:
+		case STEEL_BOOTS_FEATHER:
+		case CRYSTAL_BOOTS:
+		case ARTIFACT_BOOTS:
+			return TYPE_BOOTS;
+			break;
+
+		case LEATHER_HELM:
+		case IRON_HELM:
+		case STEEL_HELM:
+		case CRYSTAL_HELM:
+		case ARTIFACT_HELM:
+			return TYPE_HELM;
+			break;
+
+		case LEATHER_BREASTPIECE:
+		case IRON_BREASTPIECE:
+		case STEEL_BREASTPIECE:
+		case CRYSTAL_BREASTPIECE:
+		case WIZARD_DOUBLET:
+		case HEALER_DOUBLET:
+		case VAMPIRE_DOUBLET:
+		case ARTIFACT_BREASTPIECE:
+			return TYPE_BREASTPIECE;
+			break;
+
+		case CRYSTAL_SHIELD:
+		case WOODEN_SHIELD:
+		case BRONZE_SHIELD:
+		case IRON_SHIELD:
+		case STEEL_SHIELD:
+		case STEEL_SHIELD_RESISTANCE:
+		case MIRROR_SHIELD:
+			return TYPE_SHIELD;
+			break;
+
+		case TOOL_TORCH:
+		case TOOL_LANTERN:
+		case TOOL_CRYSTALSHARD:
+			return TYPE_OFFHAND;
+			break;
+
+		case CLOAK:
+		case CLOAK_MAGICREFLECTION:
+		case CLOAK_INVISIBILITY:
+		case CLOAK_PROTECTION:
+		case ARTIFACT_CLOAK:
+			return TYPE_CLOAK;
+			break;
+
+		case GLOVES:
+		case GLOVES_DEXTERITY:
+		case GAUNTLETS:
+		case GAUNTLETS_STRENGTH:
+		case BRACERS:
+		case BRACERS_CONSTITUTION:
+		case CRYSTAL_GLOVES:
+		case ARTIFACT_GLOVES:
+		case SPIKED_GAUNTLETS:
+		case IRON_KNUCKLES:
+		case BRASS_KNUCKLES:
+			return TYPE_GLOVES;
+			break;
+
+		case HAT_HOOD:
+		case HAT_JESTER:
+		case HAT_PHRYGIAN:
+		case HAT_WIZARD:
+			return TYPE_HAT;
+			break;
+
+		default:
+			break;	
+	}
+
+	return TYPE_NONE;
+}
+
+//int checkWeaponProf(Stat *myStats) { //returns PRO_WEAPON if valid, else 0 if unarmed/ranged
+//	int weaponskill = -1;
+//
+//	if ( myStats->weapon != NULL ) {
+//		if ( myStats->weapon->type == QUARTERSTAFF || myStats->weapon->type == IRON_SPEAR || myStats->weapon->type == STEEL_HALBERD || myStats->weapon->type == ARTIFACT_SPEAR )
+//			weaponskill = PRO_POLEARM;
+//		if ( myStats->weapon->type == BRONZE_SWORD || myStats->weapon->type == IRON_SWORD || myStats->weapon->type == STEEL_SWORD || myStats->weapon->type == ARTIFACT_SWORD )
+//			weaponskill = PRO_SWORD;
+//		if ( myStats->weapon->type == BRONZE_MACE || myStats->weapon->type == IRON_MACE || myStats->weapon->type == STEEL_MACE || myStats->weapon->type == ARTIFACT_MACE )
+//			weaponskill = PRO_MACE;
+//		if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE || myStats->weapon->type == ARTIFACT_AXE )
+//			weaponskill = PRO_AXE;
+//	}
+//	return weaponskill;
+//
+//}
+
+int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
+{
+	if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY) {
+		ent->sprite = 132 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION ) {
+		ent->sprite = 323 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH ) {
+		ent->sprite = 140 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == CRYSTAL_GLOVES )
+	{
+		ent->sprite = 491 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == ARTIFACT_GLOVES )
+	{
+		ent->sprite = 513 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == BRASS_KNUCKLES )
+	{
+		ent->sprite = 531 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == IRON_KNUCKLES )
+	{
+		ent->sprite = 539 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->gloves->type == SPIKED_GAUNTLETS )
+	{
+		ent->sprite = 547 + myStats->sex + spriteOffset;
+	}
+	else 
+	{
+		return 0;
+	}
+	return 1;
+}
+
+int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
+{
+	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
+		ent->sprite = 148 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING ) {
+		ent->sprite = 152 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER ) {
+		ent->sprite = 156 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type == CRYSTAL_BOOTS ) {
+		ent->sprite = 499 + myStats->sex + spriteOffset;
+	}
+	else if ( myStats->shoes->type == ARTIFACT_BOOTS ) {
+		ent->sprite = 521 + myStats->sex + spriteOffset;
+	}
+	else {
+		return 0;
+	}
+	return 1;
+}
+
+
+/*-------------------------------------------------------------------------------
+
+sLevitating
+
+returns true if the given entity is levitating, or false if it cannot
+
+-------------------------------------------------------------------------------*/
+
+bool isLevitating(Stat* mystats)
+{
+	if ( mystats == NULL )
+	{
+		return false;
+	}
+
+	// check levitating value
+	bool levitating = false;
+	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
+	{
+		return true;
+	}
+	if ( mystats->ring != NULL )
+	{
+		if ( mystats->ring->type == RING_LEVITATION )
+		{
+			return true;
+		}
+	}
+	if ( mystats->shoes != NULL )
+	{
+		if ( mystats->shoes->type == STEEL_BOOTS_LEVITATION )
+		{
+			return true;
+		}
+	}
+	if ( mystats->cloak != NULL )
+	{
+		if ( mystats->cloak->type == ARTIFACT_CLOAK )
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+

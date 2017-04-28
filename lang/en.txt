@@ -2724,36 +2724,36 @@ client (player %d) (direct ip)#
 1952 D-Pad Right#
 1953 D-Pad Up#
 1954 D-Pad Down#
+1955 Next Hotbar Slot#
+1956 Previous Hotbar Slot#
 
 # Menu exclusive bindings.
-1955 "Left Click" (in MENUs)#
-1956 Next (in MENUs)#
-1957 Cancel#
-1958 Next Settings Tab#
-1959 Previous Settings Tab#
-1960 Refresh Lobby#
-1961 Don't Load Save (New Game)#
-1962 Random Name#
-1963 Random Character#
-1964 Previous Inventory Tab#
-1965 Next Inventory Tab#
-1966 Item Context Menu#
-1967 Clear Hotbar Slot#
-1968 Drop Item#
-1969 Grab All From Chest#
-1970 Previous Shop Category#
-1971 Next Shop Category#
-1972 Previous Book Page#
-1973 Next Book Page#
+1957 "Left Click" (in MENUs)#
+1958 Next (in MENUs)#
+1959 Cancel#
+1960 Next Settings Tab#
+1961 Previous Settings Tab#
+1962 Refresh Lobby#
+1963 Don't Load Save (New Game)#
+1964 Random Name#
+1965 Random Character#
+1966 Previous Inventory Tab#
+1967 Next Inventory Tab#
+1968 Item Context Menu#
+1969 Drop Item#
+1970 Clear Hotbar Slot#
+1971 Grab All From Chest#
+1972 Previous Shop Category#
+1973 Next Shop Category#
+1974 Previous Book Page#
+1975 Next Book Page#
 
 # Game exclusive bindings.
-1974 Use#
-1975 Raise Shield#
-1976 Attack#
-1977 Cast Spell#
-1978 Activate Hotbar Slot#
-1979 Previous Hotbar Slot#
-1980 Next Hotbar Slot#
+1976 Use#
+1977 Raise Shield#
+1978 Attack#
+1979 Cast Spell#
+1980 Activate Hotbar Slot#
 
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
@@ -2824,6 +2824,49 @@ client (player %d) (direct ip)#
 2160 is dispatched by the icy lich.#
 2161 is dispatched by the fiery lich.#
 
+#items, reserve 2200-2399 for new items
+2200 artifact breastpiece#
+2201 artifact breastpiece#
+2202 artifact helm#
+2203 artifact helm#
+2204 artifact boots#
+2205 artifact boots#
+2206 artifact cloak#
+2207 artifact cloak#
+2208 Djinni's Brace#
+2209 artifact gloves#
+2210 crystal breastpiece#
+2211 crystal breastpiece#
+2212 crystal helm#
+2213 crystal helm#
+2214 crystal boots#
+2215 crystal boots#
+2216 crystal shield#
+2217 crystal shield#
+2218 crystal gloves#
+2219 crystal gloves#
+2220 vampire doublet#
+2221 doublet#
+2222 wizard doublet#
+2223 doublet#
+2224 healer doublet#
+2225 doublet#
+2226 mirror shield#
+2227 mirror shield#
+2228 brass knuckles#
+2229 knuckles#
+2230 iron knuckles#
+2231 knuckles#
+2232 spiked gauntlets#
+2233 knuckles#
+2234 tomalley#
+2235 tomalley#
+2236 crystal shard#
+2237 crystal shard#
+
+#Additional ingame text.
+2350 A fragment breaks away from your %s.#
+2351 Your %s shatters completely!#
 
 2400 Gamepad#
 

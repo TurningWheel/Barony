@@ -924,7 +924,7 @@ void consoleCommand(char* command_str)
 		players[clientnum]->entity->flags[BURNING] = true;
 		for ( c = 0; c < 100; c++ )
 		{
-			entity = spawnFlame(players[clientnum]->entity);
+			entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
 			double vel = rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;

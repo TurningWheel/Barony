@@ -14,6 +14,9 @@
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
+#include "items.hpp"
+#include "player.hpp"
+#include "interface/interface.hpp"
 
 #define EDITOR
 
@@ -1258,6 +1261,8 @@ int main(int argc, char** argv)
 		}
 	}
 
+	loadItems();
+
 	// main loop
 	printlog( "running main loop.\n");
 	while (mainloop)
@@ -1420,15 +1425,16 @@ int main(int argc, char** argv)
 								}
 								else if ( spriteType == 2 )
 								{
-									selectedEntity->yaw = 1;
+									selectedEntity->yaw = entity->yaw;
+									selectedEntity->skill[9] = entity->skill[9];
 								}
 								else if ( spriteType == 3 )
 								{
-									selectedEntity->skill[10] = 1;
-									selectedEntity->skill[11] = 0;
-									selectedEntity->skill[12] = 10;
-									selectedEntity->skill[13] = 1;
-									selectedEntity->skill[15] = 1;
+									selectedEntity->skill[10] = entity->skill[10];
+									selectedEntity->skill[11] = entity->skill[11];
+									selectedEntity->skill[12] = entity->skill[12];
+									selectedEntity->skill[13] = entity->skill[13];
+									selectedEntity->skill[15] = entity->skill[15];
 								}
 								selectedEntity->x = entity->x;
 								selectedEntity->y = entity->y;
@@ -1455,10 +1461,9 @@ int main(int argc, char** argv)
 									// duplicate sprite
 									makeUndo();
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
-									lastSelectedEntity = entity;
+									lastSelectedEntity = selectedEntity;
 
-									Stat* tmpStats = lastSelectedEntity->getStats();
-
+									Stat* tmpStats = entity->getStats();
 									
 									int spriteType = checkSpriteType(selectedEntity->sprite);
 									if ( spriteType == 1 )
@@ -1490,15 +1495,16 @@ int main(int argc, char** argv)
 									}
 									else if ( spriteType == 2 )
 									{
-										selectedEntity->yaw = 1;
+										selectedEntity->yaw = entity->yaw;
+										selectedEntity->skill[9] = entity->skill[9];
 									}
 									else if ( spriteType == 3 )
 									{
-										selectedEntity->skill[10] = 1;
-										selectedEntity->skill[11] = 0;
-										selectedEntity->skill[12] = 10;
-										selectedEntity->skill[13] = 1;
-										selectedEntity->skill[15] = 1;
+										selectedEntity->skill[10] = entity->skill[10];
+										selectedEntity->skill[11] = entity->skill[11];
+										selectedEntity->skill[12] = entity->skill[12];
+										selectedEntity->skill[13] = entity->skill[13];
+										selectedEntity->skill[15] = entity->skill[15];
 									}
 									selectedEntity->x = entity->x;
 									selectedEntity->y = entity->y;
@@ -3244,6 +3250,7 @@ int main(int argc, char** argv)
 					else if ( spriteType == 2 )
 					{
 						selectedEntity->yaw = 1;
+						selectedEntity->skill[9] = 0;
 					}
 					else if ( spriteType == 3 )
 					{
@@ -3274,6 +3281,42 @@ int main(int argc, char** argv)
 			if ( palette[mousey + mousex * yres] >= 0 )
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
+				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", spriteEditorNameStrings[palette[mousey + mousex * yres]]);
+
+				char hoverTextString[32] = "";
+				snprintf(hoverTextString, 5, "%d: ", palette[mousey + mousex * yres]);
+				strcat(hoverTextString, spriteEditorNameStrings[palette[mousey + mousex * yres]]);
+				int hoverTextWidth = strlen(hoverTextString);
+
+				if ( mousey - 20 <= 0 )
+				{
+					if ( mousex + 16 + 8 * hoverTextWidth >= xres )
+					{
+						// stop text being drawn above y = 0 and past window width (xres)
+						drawWindowFancy(mousex - 16 - (8 + 8 * hoverTextWidth), 0, mousex - 16, 16);
+						printTextFormatted(font8x8_bmp, mousex - 16 - (4 + 8 * hoverTextWidth), 4, "%s", hoverTextString);
+					}
+					else
+					{
+						// stop text being drawn above y = 0 
+						drawWindowFancy(mousex + 16, 0, 16 + 8 + mousex + 8 * hoverTextWidth, 16);
+						printTextFormatted(font8x8_bmp, mousex + 16 + 4, 4, "%s", hoverTextString);
+					}
+				}
+				else
+				{
+					if ( mousex + 16 + 8 * hoverTextWidth >= xres )
+					{
+						// stop text being drawn past window width (xres)
+						drawWindowFancy(xres - (8 + 8 * hoverTextWidth), mousey - 20, xres, mousey - 4);
+						printTextFormatted(font8x8_bmp, xres - (4 + 8 * hoverTextWidth), mousey - 16, "%s", hoverTextString);
+					}
+					else
+					{
+						drawWindowFancy(mousex + 16, mousey - 20, 16 + 8 + mousex + 8 * hoverTextWidth, mousey - 4);
+						printTextFormatted(font8x8_bmp, mousex + 16 + 4, mousey - 16, "%s", hoverTextString);
+					}
+				}
 			}
 			else
 			{

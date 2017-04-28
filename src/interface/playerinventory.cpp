@@ -70,6 +70,8 @@ char* itemUseString(const Item* item)
 			case IRON_SHIELD:
 			case STEEL_SHIELD:
 			case STEEL_SHIELD_RESISTANCE:
+			case CRYSTAL_SHIELD:
+			case MIRROR_SHIELD:
 				if ( itemIsEquipped(item, clientnum) )
 				{
 					return language[325];
@@ -175,6 +177,7 @@ char* itemUseString(const Item* item)
 				}
 			case TOOL_TORCH:
 			case TOOL_LANTERN:
+			case TOOL_CRYSTALSHARD:
 				if ( itemIsEquipped(item, clientnum) )
 				{
 					return language[335];

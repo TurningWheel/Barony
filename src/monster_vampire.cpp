@@ -538,6 +538,10 @@ void actVampireLimb(Entity* my)
 		{
 			torch = 9;
 		}
+		else if ( my->sprite == 529 )	// crystal shard
+		{
+			torch = 4;
+		}
 	}
 	if ( torch != 0 )
 	{
@@ -687,21 +691,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// levitation
-		bool levitating = false;
-		if ( myStats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( myStats->ring != NULL )
-			if ( myStats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( myStats->shoes != NULL )
-			if ( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		bool levitating = isLevitating(myStats);
 		if ( levitating )
 		{
 			my->z -= 1; // floating
@@ -1007,20 +997,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 148;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 152;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 156;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1056,20 +1035,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 150;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 154;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 158;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1106,20 +1074,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setBootSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 132;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 323;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 140;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1190,20 +1147,9 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setBootSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 136;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 327;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 144;
+							// successfully set sprite for the human model
 						}
 					}
 					entity->sprite += 2 * (myStats->shield != NULL);
@@ -1387,7 +1333,14 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z += 2.5;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+				}
+				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z -= 2;
@@ -1395,7 +1348,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z += 1;
@@ -1573,7 +1526,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	if ( shieldNode )
 	{
 		Entity* shieldEntity = (Entity*)shieldNode->element;
-		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index )
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
 		{
 			shieldEntity->yaw -= PI / 6;
 		}

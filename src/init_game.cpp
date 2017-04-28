@@ -147,13 +147,22 @@ int initGame()
 
 	GO_SwapBuffers(screen);
 
+	int newItems = 0;
+
 	// load item types
 	printlog( "loading items...\n");
 	fp = fopen("items/items.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
-		items[c].name_identified = language[1545 + c * 2];
-		items[c].name_unidentified = language[1546 + c * 2];
+		if ( c > ARTIFACT_BOW ) {
+			newItems = c - ARTIFACT_BOW - 1;
+			items[c].name_identified = language[2200 + newItems * 2];
+			items[c].name_unidentified = language[2201 + newItems * 2];
+		}
+		else {
+			items[c].name_identified = language[1545 + c * 2];
+			items[c].name_unidentified = language[1546 + c * 2];
+		}
 		fscanf(fp, "%d", &items[c].index);
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
 			{
