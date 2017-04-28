@@ -253,7 +253,7 @@ void gameLogic(void)
 				j = 1 + rand() % 4;
 				for ( c = 0; c < j; c++ )
 				{
-					Entity* flame = spawnFlame(entity);
+					Entity* flame = spawnFlame(entity, SPRITE_FLAME);
 					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
 					flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
 					flame->z += rand() % 5 - 2;

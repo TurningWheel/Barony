@@ -68,17 +68,9 @@ void actHudArm(Entity* my)
 	}
 	else
 	{
-		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
+		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 		{
-			my->sprite = 132 + stats[clientnum]->sex;
-		}
-		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
-		{
-			my->sprite = 323 + stats[clientnum]->sex;
-		}
-		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
-		{
-			my->sprite = 140 + stats[clientnum]->sex;
+			// successfully set sprite for the human model
 		}
 		else
 		{
@@ -223,21 +215,7 @@ void actHudWeapon(Entity* my)
 	}
 
 	// check levitating value
-	bool levitating = false;
-	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( stats[clientnum]->ring != NULL )
-		if ( stats[clientnum]->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( stats[clientnum]->shoes != NULL )
-		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(stats[clientnum]);
 
 	// water walking boots
 	bool waterwalkingboots = false;
@@ -1339,21 +1317,7 @@ void actHudShield(Entity* my)
 	}
 
 	// check levitating value
-	bool levitating = false;
-	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( stats[clientnum]->ring != NULL )
-		if ( stats[clientnum]->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( stats[clientnum]->shoes != NULL )
-		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(stats[clientnum]);
 
 	// water walking boots
 	bool waterwalkingboots = false;
@@ -1510,7 +1474,7 @@ void actHudShield(Entity* my)
 		}
 		if ( stats[clientnum]->shield )
 		{
-			if ( stats[clientnum]->shield->type == TOOL_TORCH )
+			if ( stats[clientnum]->shield->type == TOOL_TORCH || stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
 			{
 				if ( HUDSHIELD_MOVEX < 1.5 )
 				{
@@ -1599,7 +1563,15 @@ void actHudShield(Entity* my)
 		{
 			if (stats[clientnum]->shield->type == TOOL_TORCH)
 			{
-				Entity* entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
+				entity->flags[OVERDRAW] = true;
+				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				my->flags[BRIGHT] = true;
+			}
+			if ( stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
+			{
+				Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
 				entity->flags[OVERDRAW] = true;
 				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
@@ -1607,7 +1579,7 @@ void actHudShield(Entity* my)
 			}
 			else if (stats[clientnum]->shield->type == TOOL_LANTERN)
 			{
-				Entity* entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
 				entity->flags[OVERDRAW] = true;
 				entity->z += 1;
 				my->flags[BRIGHT] = true;

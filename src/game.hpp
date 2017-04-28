@@ -148,7 +148,7 @@ void actPortal(Entity* my);
 void actWinningPortal(Entity* my);
 void actFlame(Entity* my);
 void actCampfire(Entity* my);
-Entity* spawnFlame(Entity* parentent);
+Entity* spawnFlame(Entity* parentent, Sint32 sprite);
 void actMagic(Entity* my);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
@@ -188,6 +188,9 @@ extern char last_port[64];
 #define DEFAULT_MP 30
 #define HP_MOD 5
 #define MP_MOD 5
+
+#define SPRITE_FLAME 13
+#define SPRITE_CRYSTALFLAME 96
 
 #define MAXCHARGE 30 // charging up weapons
 

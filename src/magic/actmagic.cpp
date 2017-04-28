@@ -735,6 +735,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( !reflection )
 					{
+						// reflection is set 1, 2 or 3 depending on the item slot. reflection of 3 does not degrade.
 						if (hitstats->amulet)
 						{
 							if (hitstats->amulet->type == AMULET_MAGICREFLECTION)
@@ -751,7 +752,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						if (hitstats->shield)
 						{
-							if (hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending)
+							if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
 							{
 								reflection = 3;
 							}
@@ -786,8 +787,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						my->parent = hit.entity->getUID();
 					}
+					// reflection of 3 does not degrade.
 					if ( rand() % 2 == 0 && hitstats && reflection < 3 )
 					{
+						// set armornum to the relevant equipment slot to send to clients
 						int armornum = 5 + reflection;
 						if ( player == clientnum || player < 0 )
 						{
@@ -881,25 +884,40 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				// check for magic resistance...
-				bool resistance = false;
+				// resistance stacks diminishingly
+				int resistance = 0;
 				if ( hitstats )
 				{
 					if ( hitstats->shield )
 					{
 						if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE )
 						{
-							resistance = true;
+							if ( hitstats->defending )
+							{
+								resistance += 2;
+							}
+							else
+							{
+								resistance += 1;
+							}
 						}
 					}
 					if ( hitstats->ring )
 					{
 						if ( hitstats->ring->type == RING_MAGICRESISTANCE )
 						{
-							resistance = true;
+							resistance += 1;
+						}
+					}
+					if ( hitstats->gloves )
+					{
+						if ( hitstats->gloves->type == ARTIFACT_GLOVES )
+						{
+							resistance += 1;
 						}
 					}
 				}
-				if ( resistance )
+				if ( resistance > 0 )
 				{
 					if ( parent )
 					{

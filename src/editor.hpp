@@ -185,5 +185,6 @@ void initMonsterPropertiesWindow();
 extern char itemName[128];
 extern int itemSelect;
 extern int itemSlotSelected;
+int loadItems();
 
 #define TICKS_PER_SECOND 50

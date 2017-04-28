@@ -255,20 +255,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool levitating = false;
 	if (!trap)
 	{
-		if (stat->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if (stat->ring != NULL )
-			if (stat->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if (stat->shoes != NULL)
-			if (stat->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stat);
 	}
 
 	//Water walking boots
