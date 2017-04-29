@@ -43,8 +43,7 @@
 
 const unsigned STACK_SIZE = 10;
 
-std::vector<std::string> randomPlayerNamesMale;
-std::vector<std::string> randomPlayerNamesFemale;
+
 
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
@@ -76,6 +75,8 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
 
 /*-------------------------------------------------------------------------------
 
