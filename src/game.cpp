@@ -2327,6 +2327,7 @@ int main(int argc, char** argv)
 
 			if ( intro )
 			{
+				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
 				if ( introstage == -1 )
 				{
 					// hack to fix these things from breaking everything...
