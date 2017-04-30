@@ -43,6 +43,9 @@
 
 const unsigned STACK_SIZE = 10;
 
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
+
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
 	printf("Caught segfault at address %p\n", si->si_addr);
@@ -315,7 +318,7 @@ void gameLogic(void)
 		{
 			nextnode = node->next;
 			entity = (Entity*)node->element;
-			if ( !entity->ranbehavior )
+			if ( entity && !entity->ranbehavior )
 			{
 				entity->ticks++;
 				if ( entity->behavior != NULL )
@@ -520,7 +523,7 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
@@ -557,6 +560,7 @@ void gameLogic(void)
 						}
 					}
 				}
+
 				if ( loadnextlevel == true )
 				{
 					for ( node = map.entities->first; node != NULL; node = node->next )
@@ -1239,7 +1243,7 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
@@ -1509,9 +1513,22 @@ void handleButtons(void)
 			list_RemoveNode(button->node);
 			continue;
 		}
+		//Hide "Random Character" button if not on first character creation step.
 		if (!strcmp(button->label, language[733]))
 		{
 			if (charcreation_step > 1)
+			{
+				button->visible = 0;
+			}
+			else
+			{
+				button->visible = 1;
+			}
+		}
+		//Hide "Random Name" button if not on character naming screen.
+		if ( !strcmp(button->label, language[2450]) )
+		{
+			if ( charcreation_step != 4 )
 			{
 				button->visible = 0;
 			}

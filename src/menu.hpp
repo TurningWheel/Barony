@@ -72,6 +72,7 @@ void buttonScorePrev(button_t* my);
 void buttonOpenCharacterCreationWindow(button_t* my);
 void buttonLoadGame(button_t* my);
 void buttonRandomCharacter(button_t* my);
+void buttonRandomName(button_t* my);
 
 #ifdef STEAMWORKS
 void buttonInviteFriends(button_t* my);

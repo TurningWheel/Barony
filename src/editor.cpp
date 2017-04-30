@@ -16,7 +16,7 @@
 #include "entity.hpp"
 #include "items.hpp"
 #include "player.hpp"
-#include "interface\interface.hpp"
+#include "interface/interface.hpp"
 
 #define EDITOR
 

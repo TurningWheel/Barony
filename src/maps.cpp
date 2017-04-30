@@ -1201,12 +1201,13 @@ int generateDungeon(char* levelset, Uint32 seed)
 			if ( strncmp(map.name, "Underworld", 10) )
 			{
 				bool nopath = false;
+				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
 					if ( entity2->sprite == 1 )
 					{
-						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2);
+						list_t* path = generatePath(x, y, entity2->x / 16, entity2->y / 16, entity, entity2, hellLadderFix);
 						if ( path == NULL )
 						{
 							nopath = true;
@@ -2915,6 +2916,38 @@ void assignActions(map_t* map)
 		if ( entity )
 		{
 			nextnode = node->next;
+		}
+	}
+}
+
+void mapLevel(int player)
+{
+	int x, y;
+	for ( y = 0; y < 64; ++y )
+	{
+		for ( x = 0; x < 64; ++x )
+		{
+			if ( x < map.width && y < map.height )
+			{
+				if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					if ( !minimap[y][x] )
+					{
+						minimap[y][x] = 4;
+					}
+				}
+				else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
+				{
+					if ( !minimap[y][x] )
+					{
+						minimap[y][x] = 3;
+					}
+				}
+				else
+				{
+					minimap[y][x] = 0;
+				}
+			}
 		}
 	}
 }

@@ -57,6 +57,18 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/monster_imp.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/monster_gnome.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/monster_devil.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_automaton.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_cockatrice.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_crystalgolem.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_goatman.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_incubus.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_insectoid.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_kobold.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_lichfire.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_lichice.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_scarab.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_shadow.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_vampire.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/shops.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/mechanisms.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actgate.cpp"
@@ -79,6 +91,9 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/steam.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/hash.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/player.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/item_tool.cpp"
 )
 
 if( WIN32 )
@@ -101,6 +116,10 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/files.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/stat_editor.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/items_editor.cpp"
 )
 
 add_subdirectory(magic)

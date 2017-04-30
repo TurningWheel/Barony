@@ -52,8 +52,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
-	chest_status(skill[1]),
-	chest_opener(skill[5])
+	chestInit(skill[0]),
+	chestStatus(skill[1]),
+	chestHealth(skill[3]),
+	chestLocked(skill[4]),
+	chestOpener(skill[5]),
+	chestLidClicked(skill[6]),
+	chestAmbience(skill[7]),
+	chestMaxHealth(skill[8]),
+	chestType(skill[9]),
+	chestPreventLockpickCapstoneExploit(skill[10])
 {
 	int c;
 	// add the entity to the entity list
@@ -3372,7 +3380,7 @@ void Entity::attack(int pose, int charge)
 					hit.entity = ohitentity;
 				}
 			}
-			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &actChest )
+			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &::actChest )
 			{
 				int axe = 0;
 				if ( myStats->weapon )
@@ -3382,7 +3390,7 @@ void Entity::attack(int pose, int charge)
 						axe = 1; // axes do extra damage to doors :)
 					}
 				}
-				if ( hit.entity->behavior != &actChest )
+				if ( hit.entity->behavior != &::actChest )
 				{
 					if ( charge < MAXCHARGE / 2 )
 					{
@@ -3405,13 +3413,13 @@ void Entity::attack(int pose, int charge)
 					}
 				}
 				playSoundEntity(hit.entity, 28, 64);
-				if ( (hit.entity->behavior != &actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &actChest && hit.entity->skill[3] > 0) )
+				if ( (hit.entity->behavior != &::actChest && hit.entity->skill[4] > 0) || (hit.entity->behavior == &::actChest && hit.entity->skill[3] > 0) )
 				{
 					if ( hit.entity->behavior == &actDoor )
 					{
 						messagePlayer(player, language[666]);
 					}
-					else if ( hit.entity->behavior == &actChest )
+					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, language[667]);
 					}
@@ -3442,7 +3450,7 @@ void Entity::attack(int pose, int charge)
 							hit.entity->skill[6] = (y < hit.entity->y);
 						}
 					}
-					else if ( hit.entity->behavior == &actChest )
+					else if ( hit.entity->behavior == &::actChest )
 					{
 						messagePlayer(player, language[671]);
 					}
@@ -3462,7 +3470,7 @@ void Entity::attack(int pose, int charge)
 				{
 					updateEnemyBar(this, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 				}
-				else if ( hit.entity->behavior == &actChest )
+				else if ( hit.entity->behavior == &::actChest )
 				{
 					updateEnemyBar(this, hit.entity, language[675], hit.entity->skill[3], hit.entity->skill[8]);
 				}
@@ -5075,6 +5083,7 @@ void setRandomMonsterStats(Stat* stats)
 	return;
 }
 
+
 int checkEquipType(Item *item)
 {
 	switch ( item->type ) {
@@ -5286,3 +5295,4 @@ bool isLevitating(Stat* mystats)
 
 	return false;
 }
+

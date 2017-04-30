@@ -2824,6 +2824,49 @@ client (player %d) (direct ip)#
 2160 is dispatched by the icy lich.#
 2161 is dispatched by the fiery lich.#
 
+#items, reserve 2200-2399 for new items
+2200 artifact breastpiece#
+2201 artifact breastpiece#
+2202 artifact helm#
+2203 artifact helm#
+2204 artifact boots#
+2205 artifact boots#
+2206 artifact cloak#
+2207 artifact cloak#
+2208 Djinni's Brace#
+2209 artifact gloves#
+2210 crystal breastpiece#
+2211 crystal breastpiece#
+2212 crystal helm#
+2213 crystal helm#
+2214 crystal boots#
+2215 crystal boots#
+2216 crystal shield#
+2217 crystal shield#
+2218 crystal gloves#
+2219 crystal gloves#
+2220 vampire doublet#
+2221 doublet#
+2222 wizard doublet#
+2223 doublet#
+2224 healer doublet#
+2225 doublet#
+2226 mirror shield#
+2227 mirror shield#
+2228 brass knuckles#
+2229 knuckles#
+2230 iron knuckles#
+2231 knuckles#
+2232 spiked gauntlets#
+2233 knuckles#
+2234 tomalley#
+2235 tomalley#
+2236 crystal shard#
+2237 crystal shard#
+
+#Additional ingame text.
+2350 A fragment breaks away from your %s.#
+2351 Your %s shatters completely!#
 
 2400 Gamepad#
 
@@ -2843,5 +2886,7 @@ client (player %d) (direct ip)#
 
 #More character creation screen stuff.
 2450 Random Name#
+
+2451 Skill out of range.#
 
 2499 end#

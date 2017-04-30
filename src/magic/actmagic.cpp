@@ -377,7 +377,7 @@ void actMagiclightBall(Entity* my)
 				//messagePlayer(0, "****Moving.");
 				double tangent = atan2(parent->y - my->y, parent->x - my->x);
 				lineTraceTarget(my, my->x, my->y, tangent, 1024, IGNORE_ENTITIES, false, parent);
-				if (hit.entity && hit.entity == parent)   //Line of sight to caster?
+				if ( !hit.entity || hit.entity == parent )   //Line of sight to caster?
 				{
 					if (my->path != NULL)
 					{
@@ -1846,23 +1846,27 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 92, 64);
 							hit.entity->skill[5] = 1; //Lock the door.
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], language[399]);
 								}
+							}
 						}
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Lock chest
 							playSoundEntity(hit.entity, 92, 64);
-							if ( !hit.entity->skill[4] )
+							if ( !hit.entity->chestLocked )
 							{
-								hit.entity->skill[4] = 1;
+								hit.entity->lockChest();
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayer(parent->skill[2], language[400]);
 									}
+								}
 							}
 						}
 						else
@@ -1926,15 +1930,17 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Unlock chest
-							if ( hit.entity->skill[4] )
+							if ( hit.entity->chestLocked )
 							{
 								playSoundEntity(hit.entity, 91, 64);
-								hit.entity->skill[4] = 0;
+								hit.entity->unlockChest();
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer)
 									{
 										messagePlayer(parent->skill[2], language[404]);
 									}
+								}
 							}
 						}
 						else

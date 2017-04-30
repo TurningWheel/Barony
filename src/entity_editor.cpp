@@ -25,8 +25,16 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
-	chest_status(skill[1]),
-	chest_opener(skill[5])
+	chestInit(skill[0]),
+	chestStatus(skill[1]),
+	chestHealth(skill[3]),
+	chestLocked(skill[4]),
+	chestOpener(skill[5]),
+	chestLidClicked(skill[6]),
+	chestAmbience(skill[7]),
+	chestMaxHealth(skill[8]),
+	chestType(skill[9]),
+	chestPreventLockpickCapstoneExploit(skill[10])
 {
 	int c;
 	// add the entity to the entity list

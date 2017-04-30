@@ -46,8 +46,28 @@ class Entity
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
-	Sint32& chest_status; //0 = closed. 1 = open.
-	Sint32& chest_opener; //Index of the player the chest was opened by.
+	//Chest skills.
+	//skill[0]
+	Sint32& chestInit;
+	//skill[1]
+	//0 = closed. 1 = open.
+	//0 = closed. 1 = open.
+	Sint32& chestStatus;
+	//skill[2] is reserved for all entities.
+	//skill[3]
+	Sint32& chestHealth;
+	//skill[5]
+	//Index of the player the chest was opened by.
+	Sint32& chestOpener;
+	//skill[6]
+	Sint32& chestLidClicked;
+	//skill[7]
+	Sint32& chestAmbience;
+	//skill[8]
+	Sint32& chestMaxHealth;
+	//skill[9]
+	//field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
+	Sint32& chestType;
 
 	//--- Mechanism defines ---
 	static const int CIRCUIT_OFF = 1;
@@ -86,6 +106,22 @@ public:
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
+
+	//--PUBLIC CHEST SKILLS--
+
+	//skill[4]
+	//0 = unlocked. 1 = locked.
+	Sint32& chestLocked;
+	/*
+	 * skill[10]
+	 * 1 = chest already has been unlocked, or spawned in unlocked (prevent spell exploit)
+	 * 0 = chest spawned in locked and is still ripe for harvest.
+	 * Purpose: To prevent exploits with repeatedly locking and unlocking a chest.
+	 * Also doesn't spawn gold for chests that didn't spawn locked
+	 * (e.g. you locked a chest with a spell...sorry, no gold for you)
+	 */
+	Sint32& chestPreventLockpickCapstoneExploit;
+
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -161,9 +197,14 @@ public:
 	void addItemToChestFromInventory(int player, Item* item, bool all);
 	void addItemToChestServer(Item* item); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
 	void removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
+	void unlockChest();
+	void lockChest();
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
+
+	//Act functions.
+	void actChest();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -263,6 +304,7 @@ int countCustomItems(Stat* stats);
 int countDefaultItems(Stat* stats);
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
 void setRandomMonsterStats(Stat* stats);
+
 int checkEquipType(Item *ITEM);
 
 #define SPRITE_GLOVE_RIGHT_OFFSET 0
@@ -273,3 +315,4 @@ int checkEquipType(Item *ITEM);
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
+

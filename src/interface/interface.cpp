@@ -115,6 +115,8 @@ hotbar_slot_t hotbar[NUM_HOTBAR_SLOTS];
 int current_hotbar = 0;
 SDL_Surface* hotbar_img = NULL;
 SDL_Surface* hotbar_spell_img = NULL;
+bool hotbarHasFocus = false;
+
 list_t damageIndicators;
 
 bool auto_hotbar_new_items = true;
@@ -438,7 +440,7 @@ void defaultImpulses()
 	impulses[IN_USE] = 285;
 
 	joyimpulses[INJOY_STATUS] = 307;
-	joyimpulses[INJOY_SPELL_LIST] = 399;
+	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
 	joyimpulses[INJOY_GAME_CAST_SPELL] = 309;
 	joyimpulses[INJOY_GAME_DEFEND] = 299;
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
@@ -450,15 +452,15 @@ void defaultImpulses()
 	joyimpulses[INJOY_DPAD_UP] = 312;
 	joyimpulses[INJOY_DPAD_DOWN] = 313;
 	joyimpulses[INJOY_MENU_NEXT] = 301;
-	joyimpulses[INJOY_HOTBAR_NEXT] = 311;
-	joyimpulses[INJOY_HOTBAR_PREV] = 310;
+	joyimpulses[INJOY_GAME_HOTBAR_NEXT] = 311;
+	joyimpulses[INJOY_GAME_HOTBAR_PREV] = 310;
 	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 304;
 	joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = 304;
 	joyimpulses[INJOY_MENU_CANCEL] = 302;
 	joyimpulses[INJOY_MENU_USE] = 301;
 	joyimpulses[INJOY_MENU_HOTBAR_CLEAR] = 304;
 	joyimpulses[INJOY_MENU_REFRESH_LOBBY] = 304;
-	joyimpulses[INJOY_MENU_LOAD_SAVE] = 304;
+	joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = 304;
 	joyimpulses[INJOY_MENU_RANDOM_CHAR] = 304;
 	joyimpulses[INJOY_MENU_DROP_ITEM] = 302;
 	joyimpulses[INJOY_MENU_CYCLE_SHOP_LEFT] = 310;
@@ -469,6 +471,7 @@ void defaultImpulses()
 	joyimpulses[INJOY_MENU_SETTINGS_PREV] = 310;
 	joyimpulses[INJOY_MENU_INVENTORY_TAB] = 299;
 	joyimpulses[INJOY_MENU_MAGIC_TAB] = 300;
+	joyimpulses[INJOY_MENU_RANDOM_NAME] = 304;
 }
 
 void defaultConfig()
@@ -521,7 +524,7 @@ void defaultConfig()
 	consoleCommand("/bind 283 IN_ATTACK");
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/joybind 307 INJOY_STATUS");
-	consoleCommand("/joybind 399 INJOY_SPELL_LIST");
+	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
 	consoleCommand("/joybind 309 INJOY_GAME_CAST_SPELL");
 	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
 	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
@@ -534,13 +537,13 @@ void defaultConfig()
 	consoleCommand("/joybind 312 INJOY_DPAD_UP");
 	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 311 INJOY_HOTBAR_NEXT");
-	consoleCommand("/joybind 310 INJOY_HOTBAR_PREV");
+	consoleCommand("/joybind 311 INJOY_GAME_HOTBAR_NEXT");
+	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_PREV");
 	consoleCommand("/joybind 304 INJOY_GAME_HOTBAR_ACTIVATE");
 	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
 	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
 	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
-	consoleCommand("/joybind 304 INJOY_MENU_LOAD_SAVE");
+	consoleCommand("/joybind 304 INJOY_MENU_DONT_LOAD_SAVE");
 	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_CHAR");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
 	consoleCommand("/joybind 302 INJOY_MENU_CANCEL");
@@ -553,6 +556,7 @@ void defaultConfig()
 	consoleCommand("/joybind 310 INJOY_MENU_SETTINGS_PREV");
 	consoleCommand("/joybind 299 INJOY_MENU_INVENTORY_TAB");
 	consoleCommand("/joybind 300 INJOY_MENU_MAGIC_TAB");
+	consoleCommand("/joybind 304 INJOY_MENU_RANDOM_NAME");
 	consoleCommand("/gamepad_deadzone 8000");
 	consoleCommand("/gamepad_trigger_deadzone 18000");
 	consoleCommand("/gamepad_leftx_sensitivity 1400");
@@ -587,38 +591,44 @@ static char impulsenames[NUMIMPULSES][12] =
 
 static char joyimpulsenames[NUM_JOY_IMPULSES][30] =
 {
+	//Bi-functional:
 	"STATUS",
 	"SPELL_LIST",
-	"GAME_CAST_SPELL",
-	"GAME_DEFEND",
-	"GAME_ATTACK",
-	"GAME_USE",
 	"PAUSE_MENU",
-	"MENU_LEFT_CLICK",
 	"DPAD_LEFT",
 	"DPAD_RIGHT",
 	"DPAD_UP",
 	"DPAD_DOWN",
+
+	//Menu exclusive:
+	"MENU_LEFT_CLICK",
 	"MENU_NEXT",
-	"HOTBAR_NEXT",
-	"HOTBAR_PREV",
-	"GAME_HOTBAR_ACTIVATE",
 	"MENU_CANCEL",
+	"MENU_SETTINGS_NEXT",
+	"MENU_SETTINGS_PREV",
+	"MENU_REFRESH_LOBBY",
+	"MENU_DONT_LOAD_SAVE",
+	"MENU_RANDOM_NAME",
+	"MENU_RANDOM_CHAR",
+	"MENU_INVENTORY_TAB",
+	"MENU_MAGIC_TAB",
 	"MENU_USE",
 	"MENU_HOTBAR_CLEAR",
-	"MENU_REFRESH_LOBBY",
-	"MENU_LOAD_SAVE",
-	"MENU_RANDOM_CHAR",
 	"MENU_DROP_ITEM",
 	"MENU_CHEST_GRAB_ALL",
 	"MENU_CYCLE_SHOP_LEFT",
 	"MENU_CYCLE_SHOP_RIGHT",
 	"MENU_BOOK_NEXT",
 	"MENU_BOOK_PREV",
-	"MENU_SETTINGS_NEXT",
-	"MENU_SETTINGS_PREV",
-	"MENU_INVENTORY_TAB",
-	"MENU_MAGIC_TAB"
+
+	//Game Exclusive:
+	"GAME_USE",
+	"GAME_DEFEND",
+	"GAME_ATTACK",
+	"GAME_CAST_SPELL",
+	"GAME_HOTBAR_ACTIVATE",
+	"GAME_HOTBAR_PREV",
+	"GAME_HOTBAR_NEXT"
 };
 
 /*-------------------------------------------------------------------------------
@@ -968,6 +978,10 @@ const char* getInputName(Uint32 scancode)
 	}
 	else
 	{
+		if ( scancode == SCANCODE_UNASSIGNED_BINDING )
+		{
+			return "Unassigned key";
+		}
 		return "Unknown key";
 	}
 }
@@ -1026,6 +1040,8 @@ void selectHotbarSlot(int slot)
 	}
 
 	current_hotbar = slot;
+
+	hotbarHasFocus = true;
 }
 
 void openStatusScreen(int whichGUIMode, int whichInventoryMode)

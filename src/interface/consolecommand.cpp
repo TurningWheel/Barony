@@ -190,6 +190,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
+
 		strcpy(name, command_str + 11);
 		dropItem(newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook(name), true, &stats[clientnum]->inventory), 0);
 	}
@@ -569,15 +570,15 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_NEXT] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_NEXT: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_HOTBAR_NEXT"))
+		else if (strstr(command_str, "INJOY_GAME_HOTBAR_NEXT"))
 		{
-			joyimpulses[INJOY_HOTBAR_NEXT] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_NEXT: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_HOTBAR_NEXT] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_NEXT: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_HOTBAR_PREV"))
+		else if (strstr(command_str, "INJOY_GAME_HOTBAR_PREV"))
 		{
-			joyimpulses[INJOY_HOTBAR_PREV] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_GAME_HOTBAR_PREV] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_GAME_HOTBAR_PREV: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_GAME_HOTBAR_ACTIVATE"))
 		{
@@ -599,10 +600,10 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_REFRESH_LOBBY] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_REFRESH_LOBBY: %d\n", atoi(&command_str[9]));
 		}
-		else if (strstr(command_str, "INJOY_MENU_LOAD_SAVE"))
+		else if (strstr(command_str, "INJOY_MENU_DONT_LOAD_SAVE"))
 		{
-			joyimpulses[INJOY_MENU_LOAD_SAVE] = atoi(&command_str[9]);
-			printlog("[GAMEPAD] Bound INJOY_MENU_LOAD_SAVE: %d\n", atoi(&command_str[9]));
+			joyimpulses[INJOY_MENU_DONT_LOAD_SAVE] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_DONT_LOAD_SAVE: %d\n", atoi(&command_str[9]));
 		}
 		else if (strstr(command_str, "INJOY_MENU_RANDOM_CHAR"))
 		{
@@ -659,6 +660,11 @@ void consoleCommand(char* command_str)
 			joyimpulses[INJOY_MENU_MAGIC_TAB] = atoi(&command_str[9]);
 			printlog("[GAMEPAD] Bound INJOY_MENU_MAGIC_TAB: %d\n", atoi(&command_str[9]));
 		}
+		else if ( strstr(command_str, "INJOY_MENU_RANDOM_NAME") )
+		{
+			joyimpulses[INJOY_MENU_RANDOM_NAME] = atoi(&command_str[9]);
+			printlog("[GAMEPAD] Bound INJOY_MENU_RANDOM_NAME: %d\n", atoi(&command_str[9]));
+		}
 		else
 		{
 			messagePlayer(clientnum, "Invalid binding.");
@@ -678,6 +684,12 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/mana", 4) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			stats[clientnum]->MP = stats[clientnum]->MAXMP;
@@ -689,6 +701,12 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/heal", 4) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			stats[clientnum]->HP = stats[clientnum]->MAXHP;
@@ -734,6 +752,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/levelup", 8))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			if (players[clientnum] && players[clientnum]->entity)
@@ -748,6 +772,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/maxout", 7))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if ( multiplayer == SINGLE )
 		{
 			int c;
@@ -776,6 +806,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/hunger", 7))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
@@ -803,6 +839,12 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/levelmagic", 11))
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
 		if (multiplayer == SINGLE)
 		{
 			int i = 0;
@@ -1093,33 +1135,85 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/gold ", 5) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
 		}
-		else
-		{
-			int amount = atoi(&command_str[5]);
-			stats[clientnum]->GOLD += amount;
-			stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
 
-			messagePlayer(clientnum, "Giving %d gold pieces.", amount);
+		int amount = atoi(&command_str[5]);
+		stats[clientnum]->GOLD += amount;
+		stats[clientnum]->GOLD = std::max(stats[clientnum]->GOLD, 0);
+
+		messagePlayer(clientnum, "Giving %d gold pieces.", amount);
+	}
+	else if (!strncmp(command_str, "/minotaurlevel", 14))
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		if ( !minotaurlevel )
+		{
+			minotaurlevel = 1;
+			createMinotaurTimer(players[0]->entity, &map);
 		}
 	}
-	else if (!strncmp(command_str, "/minotaurlevel", 10))
+	else if ( !strncmp(command_str, "/levelskill ", 12) )
 	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
 		if ( multiplayer != SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int skill = atoi(&command_str[12]);
+		if ( skill >= NUMPROFICIENCIES )
+		{
+			messagePlayer(clientnum, language[2451]); //Skill out of range.
 		}
 		else
 		{
-			if ( !minotaurlevel )
+			for ( int i = 0; i < 10; ++i )
 			{
-				minotaurlevel = 1;
-				createMinotaurTimer(players[0]->entity, &map);
+				players[clientnum]->entity->increaseSkill(skill);
 			}
 		}
+	}
+	else if ( !strncmp(command_str, "/maplevel", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		messagePlayer(clientnum, language[412]);
+		printlog("Made it this far...");
+
+		mapLevel(clientnum);
 	}
 	else
 	{

@@ -303,7 +303,12 @@ public:
 	bool canUnequip(); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
+
 	void apply(int player, Entity* entity);
+
+	//Item usage functions.
+	void applySkeletonKey(int player, Entity& entity);
+	void applyLockpick(int player, Entity& entity);
 };
 extern Uint32 itemuids;
 

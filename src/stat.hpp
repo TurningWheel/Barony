@@ -79,21 +79,51 @@ extern int kills[NUMMONSTERS];
 #define NUMEFFECTS 16
 
 // proficiencies
-#define PRO_LOCKPICKING 0   // base attribute: dex
-#define PRO_STEALTH 1       // base attribute: dex
-#define PRO_TRADING 2       // base attribute: chr
-#define PRO_APPRAISAL 3     // base attribute: per
-#define PRO_SWIMMING 4      // base attribute: con
-#define PRO_LEADERSHIP 5    // base attribute: chr
-#define PRO_SPELLCASTING 6  // base attribute: int
-#define PRO_MAGIC 7         // base attribute: int
-#define PRO_RANGED 8        // base attribute: dex
-#define PRO_SWORD 9         // base attribute: str
-#define PRO_MACE 10         // base attribute: str
-#define PRO_AXE 11          // base attribute: str
-#define PRO_POLEARM 12      // base attribute: str
-#define PRO_SHIELD 13       // base attribute: con
-const int NUMPROFICIENCIES = 14;
+static const int PRO_LOCKPICKING = 0;   // base attribute: dex
+static const int PRO_STEALTH = 1;       // base attribute: dex
+static const int PRO_TRADING = 2;       // base attribute: chr
+static const int PRO_APPRAISAL = 3;     // base attribute: per
+static const int PRO_SWIMMING = 4;      // base attribute: con
+static const int PRO_LEADERSHIP = 5;    // base attribute: chr
+static const int PRO_SPELLCASTING = 6;  // base attribute: int
+static const int PRO_MAGIC = 7;         // base attribute: int
+static const int PRO_RANGED = 8;        // base attribute: dex
+static const int PRO_SWORD = 9;         // base attribute: str
+static const int PRO_MACE = 10;         // base attribute: str
+static const int PRO_AXE = 11;          // base attribute: str
+static const int PRO_POLEARM = 12;      // base attribute: str
+static const int PRO_SHIELD = 13;       // base attribute: con
+static const int NUMPROFICIENCIES = 14;
+
+//Start levels for the various proficiency ranges.
+//0 = "none"
+static const int SKILL_LEVEL_NOVICE = 1;
+static const int SKILL_LEVEL_BASIC = 20;
+static const int SKILL_LEVEL_SKILLED = 40;
+static const int SKILL_LEVEL_EXPERT = 60;
+static const int SKILL_LEVEL_MASTER = 80;
+static const int SKILL_LEVEL_LEGENDARY = 100;
+
+static const int CAPSTONE_LOCKPICKING_UNLOCK = SKILL_LEVEL_LEGENDARY;
+static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
+{
+		100,
+		101,
+		100,
+		100,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101,
+		101
+};
+
+static const int CAPSTONE_LOCKPICKING_CHEST_GOLD_AMOUNT = 25;
 
 #define NUMCATEGORIES 13
 
@@ -189,4 +219,10 @@ public:
 	Sint32 EDITOR_ITEMS[96];
 };
 extern Stat* stats[MAXPLAYERS];
+
+inline bool skillCapstoneUnlocked(int player, int proficiency)
+{
+	return (stats[player]->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+}
+
 void setDefaultMonsterStats(Stat* stats, int sprite);

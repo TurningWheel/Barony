@@ -34,6 +34,8 @@
 #include "paths.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "cppfuncs.hpp"
+#include "colors.hpp"
 
 #ifdef STEAMWORKS
 //Helper func. //TODO: Bugger.
@@ -311,6 +313,51 @@ void navigateMainMenuItems(bool mode)
 			warpy = (((yres / 4) + 80 + (18 / 2)) + ((menuselect - 1) * 24));
 			SDL_WarpMouseInWindow(screen, warpx, warpy);
 		}
+	}
+}
+
+void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebindingaction)
+{
+	ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1948 + c]);
+	if ( mousestatus[SDL_BUTTON_LEFT] && !rebindingaction )
+	{
+		if ( omousex >= currentPos.x && omousex < subx2 - 24 )
+		{
+			if ( omousey >= currentPos.y && omousey < currentPos.y + 12 )
+			{
+				mousestatus[SDL_BUTTON_LEFT] = 0;
+				if ( settings_joyimpulses[c] != UNBOUND_JOYBINDING )
+				{
+					settings_joyimpulses[c] = UNBOUND_JOYBINDING; //Unbind the joybinding if clicked on.
+				}
+				else
+				{
+					lastkeypressed = 0;
+					rebindingaction = true;
+					rebindaction = c;
+				}
+			}
+		}
+	}
+
+	if ( c != rebindaction )
+	{
+		if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unassigned key" ))
+		{
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+		}
+		else if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unknown key") || !strcmp(getInputName(settings_joyimpulses[c]), "Unknown trigger") )
+		{
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorRed(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+		}
+		else
+		{
+			ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, getInputName(settings_joyimpulses[c]));
+		}
+	}
+	else
+	{
+		ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorGreen(*mainsurface), true, "...");
 	}
 }
 
@@ -1109,7 +1156,6 @@ void handleMainMenu(bool mode)
 			}
 		}
 
-		//TODO: Loop through buttons. Disable the random character button if charcreation_step != 1;
 		// sexes
 		if ( charcreation_step == 1 )
 		{
@@ -1754,11 +1800,22 @@ void handleMainMenu(bool mode)
 				}
 				if ( c != rebindkey )
 				{
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, getInputName(settings_impulses[c]));
+					if ( !strcmp(getInputName(settings_impulses[c]), "Unassigned key" ))
+					{
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_impulses[c]));
+					}
+					else if ( !strcmp(getInputName(settings_impulses[c]), "Unknown key") || !strcmp(getInputName(settings_impulses[c]), "Unknown trigger") )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorRed(*mainsurface), true, getInputName(settings_impulses[c]));
+					}
+					else
+					{
+						ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, getInputName(settings_impulses[c]));
+					}
 				}
 				else
 				{
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, "...");
+					ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorGreen(*mainsurface), true, "...");
 				}
 			}
 
@@ -1826,7 +1883,12 @@ void handleMainMenu(bool mode)
 		//Gamepad tab
 		if (settings_tab == SETTINGS_GAMEPAD_BINDINGS_TAB)
 		{
-			ttfPrintText(ttf8, subx1 + 24, suby1 + 60, language[1350]);
+			SDL_Rect startPos;
+			startPos.x = subx1 + 24;
+			startPos.y = suby1 + 60;
+			SDL_Rect currentPos = startPos;
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1992]);
+			currentPos.y += 24;
 
 			bool rebindingaction = false;
 			if (rebindaction != -1)
@@ -1834,32 +1896,30 @@ void handleMainMenu(bool mode)
 				rebindingaction = true;
 			}
 
-			int c;
-			for (c = 0; c < NUM_JOY_IMPULSES; ++c)
+			//Print out the bi-functional bindings.
+			for ( int c = 0; c < INDEX_JOYBINDINGS_START_MENU; ++c, currentPos.y += 12 )
 			{
-				ttfPrintText(ttf8, subx1 + 24, suby1 + 84 + 12 * c, language[1948 + c]);
-				if (mousestatus[SDL_BUTTON_LEFT] && !rebindingaction)
-				{
-					if (omousex >= subx1 + 24 && omousex < subx2 - 24)
-					{
-						if (omousey >= suby1 + 84 + c * 12 && omousey < suby1 + 96 + c * 12)
-						{
-							mousestatus[SDL_BUTTON_LEFT] = 0;
-							lastkeypressed = 0;
-							rebindingaction = true;
-							rebindaction = c;
-						}
-					}
-				}
+				printJoybindingNames(currentPos, c, rebindingaction);
+			}
 
-				if (c != rebindaction)
-				{
-					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c * 12, getInputName(settings_joyimpulses[c]));
-				}
-				else
-				{
-					ttfPrintText(ttf8, subx1 + 256, suby1 + 84 + c * 12, "...");
-				}
+			//Print out the menu-exclusive bindings.
+			currentPos.y += 12;
+			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1990]);
+			currentPos.y += 18;
+			for ( c = INDEX_JOYBINDINGS_START_MENU; c < INDEX_JOYBINDINGS_START_GAME; ++c, currentPos.y += 12 )
+			{
+				printJoybindingNames(currentPos, c, rebindingaction);
+			}
+
+			//Print out the game-exclusive bindings.
+			currentPos.y += 12;
+			drawLine(subx1 + 24, currentPos.y - 6, subx2 - 24, currentPos.y - 6, uint32ColorGray(*mainsurface), 255);
+			ttfPrintText(ttf8, currentPos.x, currentPos.y, language[1991]);
+			currentPos.y += 18;
+			for ( c = INDEX_JOYBINDINGS_START_GAME; c < NUM_JOY_IMPULSES; ++c, currentPos.y += 12 )
+			{
+				printJoybindingNames(currentPos, c, rebindingaction);
 			}
 
 			if (rebindaction != -1 && lastkeypressed)
@@ -1892,11 +1952,11 @@ void handleMainMenu(bool mode)
 			//Checkboxes.
 			if (settings_gamepad_leftx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1981]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2401]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1981]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2401]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1909,11 +1969,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_lefty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1982]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2402]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1982]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2402]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1926,11 +1986,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_rightx_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1983]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2403]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1983]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2403]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1943,11 +2003,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_righty_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1984]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2404]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1984]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2404]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1960,11 +2020,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menux_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1985]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2405]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1985]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2405]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1977,11 +2037,11 @@ void handleMainMenu(bool mode)
 
 			if (settings_gamepad_menuy_invert)
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[1986]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[x] %s", language[2406]);
 			}
 			else
 			{
-				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[1986]);
+				ttfPrintTextFormatted(ttf12, current_option_x, current_option_y, "[ ] %s", language[2406]);
 			}
 
 			if (mousestatus[SDL_BUTTON_LEFT] && mouseInBounds(current_option_x, current_option_x + strlen("[x]")*TTF12_WIDTH, current_option_y, current_option_y + TTF12_HEIGHT))
@@ -1992,28 +2052,28 @@ void handleMainMenu(bool mode)
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1987]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2407]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_rightx_sensitivity, font8x8_bmp, 12); //Doesn't like any fonts besides the default.
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_rightx_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1988]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2408]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_righty_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_righty_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1989]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2409]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menux_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menux_sensitivity);
 
 			current_option_y += 24;
 
-			ttfPrintText(ttf12, current_option_x, current_option_y, language[1990]);
+			ttfPrintText(ttf12, current_option_x, current_option_y, language[2410]);
 			current_option_y += 24;
 			//doSlider(current_option_x, current_option_y, 11, 1, 2000, 200, &settings_gamepad_menuy_sensitivity, font8x8_bmp, 12);
 			doSlider(current_option_x, current_option_y, 11, 1, 4096, 100, &settings_gamepad_menuy_sensitivity);
@@ -3707,6 +3767,7 @@ void handleMainMenu(bool mode)
 				{
 					stats[0]->clearStats();
 					initClass(0);
+					mapseed = 0;
 				}
 				else
 				{
@@ -3724,7 +3785,6 @@ void handleMainMenu(bool mode)
 					entity = (Entity*)node->element;
 					entity->flags[NOUPDATE] = true;
 				}
-				mapseed = 0;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
 				if ( loadingmap == false )
@@ -5039,17 +5099,17 @@ void openSettingsWindow()
 
 	//Gamepad settings tab.
 	button = newButton();
-	strcpy(button->label, language[1980]);
+	strcpy(button->label, language[2400]);
 	button->x = tabx_so_far;
 	button->y = suby1 + 24;
-	button->sizex = strlen(language[1980]) * 12 + 8;
+	button->sizex = strlen(language[2400]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonGamepadSettingsTab;
 	button->visible = 1;
 	button->focused = 1;
 	button_gamepad_settings_tab = button;
 
-	tabx_so_far += strlen(language[1980]) * 12 + 8;
+	tabx_so_far += strlen(language[2400]) * 12 + 8;
 
 	// misc tab
 	button = newButton();
@@ -6653,7 +6713,7 @@ void openLoadGameWindow(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_LOAD_SAVE]; //load save games no => "y" button
+	button->joykey = joyimpulses[INJOY_MENU_DONT_LOAD_SAVE]; //load save game no => "y" button
 }
 
 void buttonOpenCharacterCreationWindow(button_t* my)
@@ -6742,6 +6802,18 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 	button->focused = 1;
 	button->key = SDL_SCANCODE_R; //NOTE: This might cause the character to randomly R when you're typing a name. So far, exactly one user has reported something like this happening exactly once in the entirety of existence.
 	button->joykey = joyimpulses[INJOY_MENU_RANDOM_CHAR]; //random character => "y" button
+
+	//Random Name.
+	button = newButton();
+	strcpy(button->label, language[2450]);
+	button->x = button_back_x + button_back_width + 4;
+	button->y = suby2 - 24;
+	button->sizex = strlen(language[2450]) * 12 + 8;
+	button->sizey = 20;
+	button->action = &buttonRandomName;
+	button->visible = 1;
+	button->focused = 1;
+	button->joykey = joyimpulses[INJOY_MENU_RANDOM_NAME];
 }
 
 void buttonLoadGame(button_t* button)
@@ -6845,4 +6917,47 @@ void buttonRandomCharacter(button_t* my)
 	stats[0]->clearStats();
 	initClass(0);
 	stats[0]->appearance = rand() % NUMAPPEARANCES;
+}
+
+void buttonRandomName(button_t* my)
+{
+	if ( !SDL_IsTextInputActive() || charcreation_step != 4 )
+	{
+		return;
+	}
+
+	std::vector<std::string> *names;
+
+	if ( stats[0]->sex == MALE )
+	{
+		names = &randomPlayerNamesMale;
+	}
+	else
+	{
+		names = &randomPlayerNamesFemale;
+	}
+
+	if ( !names->size() )
+	{
+		printlog("Warning: Random Name: Need names to pick from!");
+		return;
+	}
+	std::string name;
+	try
+	{
+		name = randomEntryFromVector(*names);
+	}
+	catch ( const char* e )
+	{
+		printlog("Error: Random Name: \"%s\"", e);
+		return;
+	}
+	catch ( ... )
+	{
+		printlog("Error: Failed to choose random name.");
+		return;
+	}
+
+	strncpy(inputstr, name.c_str(), std::min<size_t>(name.length(), inputlen));
+	inputstr[std::min<size_t>(name.length(), inputlen)] = '\0';
 }
