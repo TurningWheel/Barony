@@ -441,7 +441,7 @@ void defaultImpulses()
 
 	joyimpulses[INJOY_STATUS] = 307;
 	joyimpulses[INJOY_SPELL_LIST] = SCANCODE_UNASSIGNED_BINDING;
-	joyimpulses[INJOY_GAME_CAST_SPELL] = 309;
+	joyimpulses[INJOY_GAME_CAST_SPELL] = 311;
 	joyimpulses[INJOY_GAME_DEFEND] = 299;
 	joyimpulses[INJOY_GAME_ATTACK] = 300;
 	joyimpulses[INJOY_GAME_USE] = 301;
@@ -452,9 +452,9 @@ void defaultImpulses()
 	joyimpulses[INJOY_DPAD_UP] = 312;
 	joyimpulses[INJOY_DPAD_DOWN] = 313;
 	joyimpulses[INJOY_MENU_NEXT] = 301;
-	joyimpulses[INJOY_GAME_HOTBAR_NEXT] = 311;
-	joyimpulses[INJOY_GAME_HOTBAR_PREV] = 310;
-	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 304;
+	joyimpulses[INJOY_GAME_HOTBAR_NEXT] = 315;
+	joyimpulses[INJOY_GAME_HOTBAR_PREV] = 314;
+	joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE] = 310;
 	joyimpulses[INJOY_MENU_CHEST_GRAB_ALL] = 304;
 	joyimpulses[INJOY_MENU_CANCEL] = 302;
 	joyimpulses[INJOY_MENU_USE] = 301;
@@ -525,7 +525,7 @@ void defaultConfig()
 	consoleCommand("/bind 285 IN_USE");
 	consoleCommand("/joybind 307 INJOY_STATUS");
 	consoleCommand("/joybind 399 INJOY_SPELL_LIST"); //SCANCODE_UNASSIGNED_BINDING
-	consoleCommand("/joybind 309 INJOY_GAME_CAST_SPELL");
+	consoleCommand("/joybind 311 INJOY_GAME_CAST_SPELL");
 	consoleCommand("/joybind 299 INJOY_GAME_DEFEND");
 	consoleCommand("/joybind 300 INJOY_GAME_ATTACK");
 	consoleCommand("/joybind 301 INJOY_GAME_USE");
@@ -537,9 +537,9 @@ void defaultConfig()
 	consoleCommand("/joybind 312 INJOY_DPAD_UP");
 	consoleCommand("/joybind 313 INJOY_DPAD_DOWN");
 	consoleCommand("/joybind 301 INJOY_MENU_NEXT");
-	consoleCommand("/joybind 311 INJOY_GAME_HOTBAR_NEXT");
-	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_PREV");
-	consoleCommand("/joybind 304 INJOY_GAME_HOTBAR_ACTIVATE");
+	consoleCommand("/joybind 315 INJOY_GAME_HOTBAR_NEXT");
+	consoleCommand("/joybind 314 INJOY_GAME_HOTBAR_PREV");
+	consoleCommand("/joybind 310 INJOY_GAME_HOTBAR_ACTIVATE");
 	consoleCommand("/joybind 304 INJOY_MENU_CHEST_GRAB_ALL");
 	consoleCommand("/joybind 304 INJOY_MENU_HOTBAR_CLEAR");
 	consoleCommand("/joybind 304 INJOY_MENU_REFRESH_LOBBY");
