@@ -43,8 +43,7 @@
 
 const unsigned STACK_SIZE = 10;
 
-std::vector<std::string> randomPlayerNamesMale;
-std::vector<std::string> randomPlayerNamesFemale;
+
 
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
@@ -76,6 +75,8 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
 
 /*-------------------------------------------------------------------------------
 
@@ -2341,6 +2342,7 @@ int main(int argc, char** argv)
 
 			if ( intro )
 			{
+				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
 				if ( introstage == -1 )
 				{
 					// hack to fix these things from breaking everything...
@@ -2550,6 +2552,7 @@ int main(int argc, char** argv)
 						fadeout = false;
 						numplayers = 0;
 
+						//TODO: Replace all of this with centralized startGameRoutine().
 						// setup game
 						shootmode = true;
 
