@@ -31,7 +31,9 @@ int itemSelect = 0;
 int itemSlotSelected = -1;
 char itemName[128];
 bool splitscreen = false; //Unused variable, for game only.
-
+real_t prev_x = 0;
+real_t prev_y = 0;
+bool duplicatedSprite = false;
 int game = 0;
 // function prototypes
 Uint32 timerCallback(Uint32 interval, void* param);
@@ -674,6 +676,50 @@ void makeUndo()
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities);
 		entity->x = ((Entity*)node->element)->x;
 		entity->y = ((Entity*)node->element)->y;
+
+		Stat* tmpStats = ((Entity*)node->element)->getStats();
+
+		int spriteType = checkSpriteType(((Entity*)node->element)->sprite);
+		if ( spriteType == 1 )
+		{
+			//STAT ASSIGNMENT
+			Stat* myStats = NULL;
+			if ( multiplayer != CLIENT )
+			{
+				// need to give the entity its list stuff.
+				// create an empty first node for traversal purposes
+				node_t* node2 = list_AddNodeFirst(&entity->children);
+				node2->element = NULL;
+				node2->deconstructor = &emptyDeconstructor;
+
+				myStats = new Stat(((Entity*)node->element)->sprite);
+				node2 = list_AddNodeLast(&entity->children);
+				if ( tmpStats != NULL )
+				{
+					node2->element = tmpStats->copyStats();
+				}
+				else
+				{
+					// if for some reason the previous sprite did not have stats initialised
+					node2->element = myStats;
+				}
+				//					node2->deconstructor = &myStats->~Stat;
+				node2->size = sizeof(myStats);
+			}
+		}
+		else if ( spriteType == 2 )
+		{
+			entity->yaw = ((Entity*)node->element)->yaw;
+			entity->skill[9] = ((Entity*)node->element)->skill[9];
+		}
+		else if ( spriteType == 3 )
+		{
+			entity->skill[10] = ((Entity*)node->element)->skill[10];
+			entity->skill[11] = ((Entity*)node->element)->skill[11];
+			entity->skill[12] = ((Entity*)node->element)->skill[12];
+			entity->skill[13] = ((Entity*)node->element)->skill[13];
+			entity->skill[15] = ((Entity*)node->element)->skill[15];
+		}
 	}
 
 	// add the new node to the undo list
@@ -706,7 +752,6 @@ void clearUndos()
 void undo()
 {
 	node_t* node;
-
 	if ( undospot == NULL )
 	{
 		return;
@@ -730,6 +775,51 @@ void undo()
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
 		entity->x = ((Entity*)node->element)->x;
 		entity->y = ((Entity*)node->element)->y;
+
+		Stat* tmpStats = ((Entity*)node->element)->getStats();
+
+		int spriteType = checkSpriteType(((Entity*)node->element)->sprite);
+		if ( spriteType == 1 )
+		{
+			//STAT ASSIGNMENT
+			Stat* myStats = NULL;
+			if ( multiplayer != CLIENT )
+			{
+				// need to give the entity its list stuff.
+				// create an empty first node for traversal purposes
+				node_t* node2 = list_AddNodeFirst(&entity->children);
+				node2->element = NULL;
+				node2->deconstructor = &emptyDeconstructor;
+
+				myStats = new Stat(((Entity*)node->element)->sprite);
+				node2 = list_AddNodeLast(&entity->children);
+				if ( tmpStats != NULL )
+				{
+					node2->element = tmpStats->copyStats();
+				}
+				else
+				{
+					// if for some reason the previous sprite did not have stats initialised
+					node2->element = myStats;
+				}
+				//					node2->deconstructor = &myStats->~Stat;
+				node2->size = sizeof(myStats);
+			}
+		}
+		else if ( spriteType == 2 )
+		{
+			entity->yaw = ((Entity*)node->element)->yaw;
+			entity->skill[9] = ((Entity*)node->element)->skill[9];
+		}
+		else if ( spriteType == 3 )
+		{
+			entity->skill[10] = ((Entity*)node->element)->skill[10];
+			entity->skill[11] = ((Entity*)node->element)->skill[11];
+			entity->skill[12] = ((Entity*)node->element)->skill[12];
+			entity->skill[13] = ((Entity*)node->element)->skill[13];
+			entity->skill[15] = ((Entity*)node->element)->skill[15];
+		}
+
 	}
 	if ( redospot != NULL )
 	{
@@ -763,6 +853,50 @@ void redo()
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
 		entity->x = ((Entity*)node->element)->x;
 		entity->y = ((Entity*)node->element)->y;
+
+		Stat* tmpStats = ((Entity*)node->element)->getStats();
+
+		int spriteType = checkSpriteType(((Entity*)node->element)->sprite);
+		if ( spriteType == 1 )
+		{
+			//STAT ASSIGNMENT
+			Stat* myStats = NULL;
+			if ( multiplayer != CLIENT )
+			{
+				// need to give the entity its list stuff.
+				// create an empty first node for traversal purposes
+				node_t* node2 = list_AddNodeFirst(&entity->children);
+				node2->element = NULL;
+				node2->deconstructor = &emptyDeconstructor;
+
+				myStats = new Stat(((Entity*)node->element)->sprite);
+				node2 = list_AddNodeLast(&entity->children);
+				if ( tmpStats != NULL )
+				{
+					node2->element = tmpStats->copyStats();
+				}
+				else
+				{
+					// if for some reason the previous sprite did not have stats initialised
+					node2->element = myStats;
+				}
+				//					node2->deconstructor = &myStats->~Stat;
+				node2->size = sizeof(myStats);
+			}
+		}
+		else if ( spriteType == 2 )
+		{
+			entity->yaw = ((Entity*)node->element)->yaw;
+			entity->skill[9] = ((Entity*)node->element)->skill[9];
+		}
+		else if ( spriteType == 3 )
+		{
+			entity->skill[10] = ((Entity*)node->element)->skill[10];
+			entity->skill[11] = ((Entity*)node->element)->skill[11];
+			entity->skill[12] = ((Entity*)node->element)->skill[12];
+			entity->skill[13] = ((Entity*)node->element)->skill[13];
+			entity->skill[15] = ((Entity*)node->element)->skill[15];
+		}
 	}
 	if ( undospot != NULL )
 	{
@@ -1382,13 +1516,33 @@ int main(int argc, char** argv)
 						{
 							if ( mousestatus[SDL_BUTTON_LEFT] )
 							{
+								if ( newwindow == 0 )
+								{
+									// if the entity moved from where it was picked up, or if the sprite was right click duplicated, store an undo.
+									if ( selectedEntity->x / 16 != prev_x || selectedEntity->y / 16 != prev_y || duplicatedSprite )
+									{
+										duplicatedSprite = false;
+										makeUndo();
+									}
+									else
+									{
+									}
+								}
 								mousestatus[SDL_BUTTON_LEFT] = 0;
 								selectedEntity = NULL;
 								break;
 							}
 							else if ( mousestatus[SDL_BUTTON_RIGHT] )
 							{
-								makeUndo();
+								if ( newwindow == 0 )
+								{
+									// if previous sprite was duplicated and another right click is registered, store an undo.
+									if ( duplicatedSprite )
+									{
+										makeUndo();
+									}
+									duplicatedSprite = true;
+								}
 								selectedEntity = newEntity(entity->sprite, 0, map.entities);
 
 								// create a temporary stat struct for the copied sprite
@@ -1451,15 +1605,24 @@ int main(int argc, char** argv)
 								if ( mousestatus[SDL_BUTTON_LEFT] )
 								{
 									// select sprite
-									makeUndo();
 									selectedEntity = entity;
 									lastSelectedEntity = selectedEntity;
+									prev_x = entity->x / 16;
+									prev_y = entity->y / 16;
 									mousestatus[SDL_BUTTON_LEFT] = 0;
+									if ( newwindow == 0 && selectedEntity != NULL )
+									{
+										makeUndo();
+									}
 								}
 								else if ( mousestatus[SDL_BUTTON_RIGHT] )
 								{
 									// duplicate sprite
-									makeUndo();
+									duplicatedSprite = true;
+									if ( newwindow == 0 )
+									{
+										makeUndo();
+									}
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
 									lastSelectedEntity = selectedEntity;
 
@@ -3127,6 +3290,7 @@ int main(int argc, char** argv)
 				if ( keystatus[SDL_SCANCODE_F2] )
 				{
 					keystatus[SDL_SCANCODE_F2] = 0;
+					makeUndo();
 					buttonSpriteProperties(NULL);
 				}
 			}

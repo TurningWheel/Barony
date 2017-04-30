@@ -1848,6 +1848,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 	}
 	else
 	{
+		if ( my == butMonsterOK )
+		{
+			makeUndo();
+		}
 		buttonCloseSpriteSubwindow(my);
 	}
 }
