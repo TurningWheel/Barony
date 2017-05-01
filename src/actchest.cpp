@@ -66,10 +66,31 @@ void Entity::actChest()
 		chestHealth = 90 + rand() % 20;
 		chestMaxHealth = chestHealth;
 		chestPreventLockpickCapstoneExploit = 1;
-		if (rand() % 10 == 0)   // 10% chance //TODO: This should be weighted, depending on chest type.
+		int roll = 0;
+
+		if ( chestLocked == -1 )
 		{
-			chestLocked = 1;
-			chestPreventLockpickCapstoneExploit = 0;
+			roll = rand() % 10;
+			if ( roll == 0 )   // 10% chance //TODO: This should be weighted, depending on chest type.
+			{
+				chestLocked = 1;
+				chestPreventLockpickCapstoneExploit = 0;
+			}
+		}
+		else  if ( chestLocked >= 0 )
+		{
+			roll = rand() % 100;
+			if ( roll < chestLocked )
+			{
+				chestLocked = 1;
+				chestPreventLockpickCapstoneExploit = 0;
+			}
+			else
+			{
+				chestLocked = 0;
+			}
+
+			messagePlayer(0, "Chest rolled: %d, locked: %d", roll, chestLocked); //debug print
 		}
 
 		node_t* node = NULL;

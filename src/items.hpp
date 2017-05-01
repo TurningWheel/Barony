@@ -207,9 +207,13 @@ typedef enum ItemType
 	IRON_KNUCKLES,
 	SPIKED_GAUNTLETS,
 	FOOD_TOMALLEY,
-	TOOL_CRYSTALSHARD
+	TOOL_CRYSTALSHARD,
+	CRYSTAL_SWORD,
+	CRYSTAL_HALBERD,
+	CRYSTAL_BATTLEAXE,
+	CRYSTAL_MACE
 } ItemType;
-const int NUMITEMS = 187;
+const int NUMITEMS = 191;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

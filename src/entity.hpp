@@ -296,8 +296,8 @@ void actMagiclightBall(Entity* my);
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[96][28];
-extern char itemStringsByType[10][55][32];
-extern char itemNameStrings[190][32];
+extern char itemStringsByType[10][59][32];
+extern char itemNameStrings[194][32];
 int canWearEquip(Entity* entity, int category);
 void createMonsterEquipment(Stat* stats);
 int countCustomItems(Stat* stats);
@@ -315,4 +315,5 @@ int checkEquipType(Item *ITEM);
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
-
+int getWeaponSkill(Item* weapon);
+void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);

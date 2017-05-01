@@ -65,10 +65,11 @@ char monsterPropertyNames[13][11] =
 	"CHR:"
 };
 
-char chestPropertyNames[2][20] =
+char chestPropertyNames[3][40] =
 {
 	"Orientation: (0-3)",
-	"Chest Type: (0-7)"
+	"Chest Type: (0-7)",
+	"Locked Chance: (0-100%)"
 };
 
 char itemPropertyNames[5][32] =
@@ -674,52 +675,8 @@ void makeUndo()
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, undomap->entities);
-		entity->x = ((Entity*)node->element)->x;
-		entity->y = ((Entity*)node->element)->y;
 
-		Stat* tmpStats = ((Entity*)node->element)->getStats();
-
-		int spriteType = checkSpriteType(((Entity*)node->element)->sprite);
-		if ( spriteType == 1 )
-		{
-			//STAT ASSIGNMENT
-			Stat* myStats = NULL;
-			if ( multiplayer != CLIENT )
-			{
-				// need to give the entity its list stuff.
-				// create an empty first node for traversal purposes
-				node_t* node2 = list_AddNodeFirst(&entity->children);
-				node2->element = NULL;
-				node2->deconstructor = &emptyDeconstructor;
-
-				myStats = new Stat(((Entity*)node->element)->sprite);
-				node2 = list_AddNodeLast(&entity->children);
-				if ( tmpStats != NULL )
-				{
-					node2->element = tmpStats->copyStats();
-				}
-				else
-				{
-					// if for some reason the previous sprite did not have stats initialised
-					node2->element = myStats;
-				}
-				//					node2->deconstructor = &myStats->~Stat;
-				node2->size = sizeof(myStats);
-			}
-		}
-		else if ( spriteType == 2 )
-		{
-			entity->yaw = ((Entity*)node->element)->yaw;
-			entity->skill[9] = ((Entity*)node->element)->skill[9];
-		}
-		else if ( spriteType == 3 )
-		{
-			entity->skill[10] = ((Entity*)node->element)->skill[10];
-			entity->skill[11] = ((Entity*)node->element)->skill[11];
-			entity->skill[12] = ((Entity*)node->element)->skill[12];
-			entity->skill[13] = ((Entity*)node->element)->skill[13];
-			entity->skill[15] = ((Entity*)node->element)->skill[15];
-		}
+		setSpriteAttributes(entity, (Entity*)node->element, (Entity*)node->element);
 	}
 
 	// add the new node to the undo list
@@ -773,53 +730,8 @@ void undo()
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
-		entity->x = ((Entity*)node->element)->x;
-		entity->y = ((Entity*)node->element)->y;
 
-		Stat* tmpStats = ((Entity*)node->element)->getStats();
-
-		int spriteType = checkSpriteType(((Entity*)node->element)->sprite);
-		if ( spriteType == 1 )
-		{
-			//STAT ASSIGNMENT
-			Stat* myStats = NULL;
-			if ( multiplayer != CLIENT )
-			{
-				// need to give the entity its list stuff.
-				// create an empty first node for traversal purposes
-				node_t* node2 = list_AddNodeFirst(&entity->children);
-				node2->element = NULL;
-				node2->deconstructor = &emptyDeconstructor;
-
-				myStats = new Stat(((Entity*)node->element)->sprite);
-				node2 = list_AddNodeLast(&entity->children);
-				if ( tmpStats != NULL )
-				{
-					node2->element = tmpStats->copyStats();
-				}
-				else
-				{
-					// if for some reason the previous sprite did not have stats initialised
-					node2->element = myStats;
-				}
-				//					node2->deconstructor = &myStats->~Stat;
-				node2->size = sizeof(myStats);
-			}
-		}
-		else if ( spriteType == 2 )
-		{
-			entity->yaw = ((Entity*)node->element)->yaw;
-			entity->skill[9] = ((Entity*)node->element)->skill[9];
-		}
-		else if ( spriteType == 3 )
-		{
-			entity->skill[10] = ((Entity*)node->element)->skill[10];
-			entity->skill[11] = ((Entity*)node->element)->skill[11];
-			entity->skill[12] = ((Entity*)node->element)->skill[12];
-			entity->skill[13] = ((Entity*)node->element)->skill[13];
-			entity->skill[15] = ((Entity*)node->element)->skill[15];
-		}
-
+		setSpriteAttributes(entity, (Entity*)node->element, (Entity*)node->element);
 	}
 	if ( redospot != NULL )
 	{
@@ -851,52 +763,8 @@ void redo()
 	for ( node = undomap->entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = newEntity(((Entity*)node->element)->sprite, 1, map.entities);
-		entity->x = ((Entity*)node->element)->x;
-		entity->y = ((Entity*)node->element)->y;
 
-		Stat* tmpStats = ((Entity*)node->element)->getStats();
-
-		int spriteType = checkSpriteType(((Entity*)node->element)->sprite);
-		if ( spriteType == 1 )
-		{
-			//STAT ASSIGNMENT
-			Stat* myStats = NULL;
-			if ( multiplayer != CLIENT )
-			{
-				// need to give the entity its list stuff.
-				// create an empty first node for traversal purposes
-				node_t* node2 = list_AddNodeFirst(&entity->children);
-				node2->element = NULL;
-				node2->deconstructor = &emptyDeconstructor;
-
-				myStats = new Stat(((Entity*)node->element)->sprite);
-				node2 = list_AddNodeLast(&entity->children);
-				if ( tmpStats != NULL )
-				{
-					node2->element = tmpStats->copyStats();
-				}
-				else
-				{
-					// if for some reason the previous sprite did not have stats initialised
-					node2->element = myStats;
-				}
-				//					node2->deconstructor = &myStats->~Stat;
-				node2->size = sizeof(myStats);
-			}
-		}
-		else if ( spriteType == 2 )
-		{
-			entity->yaw = ((Entity*)node->element)->yaw;
-			entity->skill[9] = ((Entity*)node->element)->skill[9];
-		}
-		else if ( spriteType == 3 )
-		{
-			entity->skill[10] = ((Entity*)node->element)->skill[10];
-			entity->skill[11] = ((Entity*)node->element)->skill[11];
-			entity->skill[12] = ((Entity*)node->element)->skill[12];
-			entity->skill[13] = ((Entity*)node->element)->skill[13];
-			entity->skill[15] = ((Entity*)node->element)->skill[15];
-		}
+		setSpriteAttributes(entity, (Entity*)node->element, (Entity*)node->element);
 	}
 	if ( undospot != NULL )
 	{
@@ -1544,54 +1412,11 @@ int main(int argc, char** argv)
 									duplicatedSprite = true;
 								}
 								selectedEntity = newEntity(entity->sprite, 0, map.entities);
-
-								// create a temporary stat struct for the copied sprite
-								Stat* tmpStats = lastSelectedEntity->getStats();
+								
+								setSpriteAttributes(selectedEntity, entity, lastSelectedEntity);
 
 								lastSelectedEntity = selectedEntity;
-								int spriteType = checkSpriteType(selectedEntity->sprite);
-								if ( spriteType == 1 )
-								{
-									//STAT ASSIGNMENT
-									Stat* myStats = NULL;
-									if ( multiplayer != CLIENT )
-									{
-										// need to give the entity its list stuff.
-										// create an empty first node for traversal purposes
-										node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
-										node2->element = NULL;
-										node2->deconstructor = &emptyDeconstructor;
 
-										myStats = new Stat(selectedEntity->sprite);
-										node2 = list_AddNodeLast(&selectedEntity->children);
-										if ( tmpStats != NULL )
-										{
-											node2->element = tmpStats->copyStats();
-										}
-										else
-										{
-											// if for some reason the previous sprite did not have stats initialised
-											node2->element = myStats;
-										}
-										//					node2->deconstructor = &myStats->~Stat;
-										node2->size = sizeof(myStats);
-									}
-								}
-								else if ( spriteType == 2 )
-								{
-									selectedEntity->yaw = entity->yaw;
-									selectedEntity->skill[9] = entity->skill[9];
-								}
-								else if ( spriteType == 3 )
-								{
-									selectedEntity->skill[10] = entity->skill[10];
-									selectedEntity->skill[11] = entity->skill[11];
-									selectedEntity->skill[12] = entity->skill[12];
-									selectedEntity->skill[13] = entity->skill[13];
-									selectedEntity->skill[15] = entity->skill[15];
-								}
-								selectedEntity->x = entity->x;
-								selectedEntity->y = entity->y;
 								mousestatus[SDL_BUTTON_RIGHT] = 0;
 								break;
 							}
@@ -1626,51 +1451,8 @@ int main(int argc, char** argv)
 									selectedEntity = newEntity(entity->sprite, 0, map.entities);
 									lastSelectedEntity = selectedEntity;
 
-									Stat* tmpStats = entity->getStats();
-									
-									int spriteType = checkSpriteType(selectedEntity->sprite);
-									if ( spriteType == 1 )
-									{
-										//STAT ASSIGNMENT
-										Stat* myStats = NULL;
-										if ( multiplayer != CLIENT )
-										{
-											// need to give the entity its list stuff.
-											// create an empty first node for traversal purposes
-											node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
-											node2->element = NULL;
-											node2->deconstructor = &emptyDeconstructor;
+									setSpriteAttributes(selectedEntity, entity, entity);
 
-											myStats = new Stat(selectedEntity->sprite);
-											node2 = list_AddNodeLast(&selectedEntity->children);
-											if ( tmpStats != NULL )
-											{
-												node2->element = tmpStats->copyStats();
-											}
-											else
-											{
-												// if for some reason the previous sprite did not have stats initialised
-												node2->element = myStats;
-											}
-											//					node2->deconstructor = &myStats->~Stat;
-											node2->size = sizeof(myStats);
-										}
-									}
-									else if ( spriteType == 2 )
-									{
-										selectedEntity->yaw = entity->yaw;
-										selectedEntity->skill[9] = entity->skill[9];
-									}
-									else if ( spriteType == 3 )
-									{
-										selectedEntity->skill[10] = entity->skill[10];
-										selectedEntity->skill[11] = entity->skill[11];
-										selectedEntity->skill[12] = entity->skill[12];
-										selectedEntity->skill[13] = entity->skill[13];
-										selectedEntity->skill[15] = entity->skill[15];
-									}
-									selectedEntity->x = entity->x;
-									selectedEntity->y = entity->y;
 									mousestatus[SDL_BUTTON_RIGHT] = 0;
 								}
 							}
@@ -2566,30 +2348,103 @@ int main(int argc, char** argv)
 						int pad_y1 = suby1 + 28; // 28 px spacing from subwindow start.
 						int pad_x1 = subx1 + 8; // 8px spacing from subwindow start.
 						int pad_x2 = 64;
+						int pad_x3 = pad_x1 + pad_x2 + 8;
+						int pad_y2 = 0;
 						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+
 						for ( int i = 0; i < numProperties; i++ )
 						{
+							int propertyInt = atoi(spriteProperties[i]);
+
 							strcpy(tmpPropertyName, chestPropertyNames[i]);
 							pad_y1 = suby1 + 28 + i * spacing;
-
+							pad_y2 = suby1 + 44 + i * spacing;
 							// box outlines then text
 							drawDepressed(pad_x1 - 4, suby1 + 40 + i * spacing, pad_x1 - 4 + pad_x2, suby1 + 56 + i * spacing);
 							// print values on top of boxes
 							printText(font8x8_bmp, pad_x1, suby1 + 44 + i * spacing, spriteProperties[i]);
 							printText(font8x8_bmp, pad_x1, pad_y1, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										if ( propertyInt == 0 )
+										{
+											strcpy(tmpStr, "EAST");
+										}
+										else if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "SOUTH");
+										}
+										else if ( propertyInt == 2 )
+										{
+											strcpy(tmpStr, "WEST");
+										}
+										else if ( propertyInt == 3 )
+										{
+											strcpy(tmpStr, "NORTH");
+										}
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
+									}
+								} 
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 100 || propertyInt < -1 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else if ( propertyInt == -1 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Default 10%");
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										strcpy(tmpStr, spriteProperties[i]); //reset
+										strcat(tmpStr, " %%");
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
+									}
+								}
+							}
+
+							if ( errorMessage )
+							{
+								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
+								}
+							}
+
 							pad_x1 = subx1 + 8;
 						}
 
-						pad_y1 = suby1 + 28 + 2 * spacing + 18;
+						pad_y1 = suby1 + 28 + 4 * spacing + 18;
 						pad_x1 += 18;
 						spacing = 18;
-						printText(font8x8_bmp, pad_x1 + 16, pad_y1, "Chest Facing");
-						pad_y1 = suby1 + 28 + 6 * spacing;
-						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "NORTH(3)");
+						//printText(font8x8_bmp, pad_x1 + 16, pad_y1, "Chest Facing");
 						pad_y1 = suby1 + 28 + 7 * spacing;
+						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "NORTH(3)");
+						pad_y1 = suby1 + 28 + 8 * spacing;
 						printText(font8x8_bmp, pad_x1, pad_y1, "WEST(2)");
 						printText(font8x8_bmp, pad_x1 + 96 - 16, pad_y1, "EAST(0)");
-						pad_y1 = suby1 + 28 + 8 * spacing;
+						pad_y1 = suby1 + 28 + 9 * spacing;
 						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "SOUTH(1)");
 
 						spacing = 14;
@@ -2655,14 +2510,21 @@ int main(int argc, char** argv)
 								pad_x1 = subx1 + 8;
 							}
 						}
-						if ( editproperty < numProperties )   // edit map name
+						if ( editproperty < numProperties )   // edit
 						{
 							if ( !SDL_IsTextInputActive() )
 							{
 								SDL_StartTextInput();
 								inputstr = spriteProperties[0];
 							}
-							inputlen = 1;
+							if ( editproperty == 2 )
+							{
+								inputlen = 3;
+							}
+							else
+							{
+								inputlen = 1;
+							}
 							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 							{
 								printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing, "\26");
@@ -3391,39 +3253,7 @@ int main(int argc, char** argv)
 					entity = newEntity(palette[mousey + mousex * yres], 0, map.entities);
 					selectedEntity = entity;
 					lastSelectedEntity = selectedEntity;
-					int spriteType = checkSpriteType(selectedEntity->sprite);
-					if ( spriteType == 1 )
-					{
-						//STAT ASSIGNMENT
-						Stat* myStats = NULL;
-						if ( multiplayer != CLIENT )
-						{
-							// need to give the entity its list stuff.
-							// create an empty first node for traversal purposes
-							node_t* node2 = list_AddNodeFirst(&selectedEntity->children);
-							node2->element = NULL;
-							node2->deconstructor = &emptyDeconstructor;
-
-							myStats = new Stat(selectedEntity->sprite);
-							node2 = list_AddNodeLast(&selectedEntity->children);
-							node2->element = myStats;
-							//					node2->deconstructor = &myStats->~Stat;
-							node2->size = sizeof(myStats);
-						}
-					}
-					else if ( spriteType == 2 )
-					{
-						selectedEntity->yaw = 1;
-						selectedEntity->skill[9] = 0;
-					}
-					else if ( spriteType == 3 )
-					{
-						selectedEntity->skill[10] = 1;
-						selectedEntity->skill[11] = 0;
-						selectedEntity->skill[12] = 10;
-						selectedEntity->skill[13] = 1;
-						selectedEntity->skill[15] = 1;
-					}
+					setSpriteAttributes(selectedEntity, nullptr, nullptr);
 				}
 
 				mclick = 0;
@@ -3587,6 +3417,4 @@ int main(int argc, char** argv)
 	list_FreeAll(&undolist);
 	return deinitApp();
 }
-
-
 

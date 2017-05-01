@@ -1274,6 +1274,10 @@ void useItem(Item* item, int player)
 		case STEEL_SWORD:
 		case STEEL_MACE:
 		case STEEL_AXE:
+		case CRYSTAL_SWORD:
+		case CRYSTAL_HALBERD:
+		case CRYSTAL_BATTLEAXE:
+		case CRYSTAL_MACE:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:
@@ -1931,6 +1935,22 @@ Sint32 Item::weaponGetAttack()
 	else if ( type == ARTIFACT_BOW )
 	{
 		attack += 15;
+	}
+	else if ( type == CRYSTAL_SWORD )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_HALBERD )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_BATTLEAXE )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_MACE )
+	{
+		attack += 7;
 	}
 	attack *= (double)(status / 5.0);
 

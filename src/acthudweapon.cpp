@@ -1045,8 +1045,8 @@ void actHudWeapon(Entity* my)
 			// one more swing...
 			if ( stats[clientnum]->weapon )
 			{
-				type = stats[clientnum]->weapon->type;
-				if ( type == BRONZE_SWORD || type == IRON_SWORD || type == STEEL_SWORD || type == ARTIFACT_SWORD || type == STEEL_HALBERD )
+				int weaponSkill = getWeaponSkill(stats[clientnum]->weapon);
+				if ( weaponSkill == PRO_SWORD || weaponSkill == PRO_POLEARM )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				}
