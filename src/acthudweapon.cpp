@@ -862,7 +862,7 @@ void actHudWeapon(Entity* my)
 			Item* item = stats[clientnum]->weapon;
 			if ( item )
 			{
-				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM )
+				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM && itemCategory(item) != THROWN )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )
 					{

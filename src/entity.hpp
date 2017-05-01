@@ -296,8 +296,8 @@ void actMagiclightBall(Entity* my);
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[96][28];
-extern char itemStringsByType[10][59][32];
-extern char itemNameStrings[194][32];
+extern char itemStringsByType[10][63][32];
+extern char itemNameStrings[198][32];
 int canWearEquip(Entity* entity, int category);
 void createMonsterEquipment(Stat* stats);
 int countCustomItems(Stat* stats);

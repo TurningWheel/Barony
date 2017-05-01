@@ -209,7 +209,26 @@ void actThrown(Entity* my)
 			}
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
-				int damage = std::max(0, 10 - AC(hit.entity->getStats()) + item->beatitude);
+				int damage = (10 - AC(hit.entity->getStats()) + item->beatitude);
+				switch ( item->type )
+				{
+					case BRONZE_TOMAHAWK:
+						damage += 2;
+						break;
+					case IRON_DAGGER:
+						damage += 4;
+						break;
+					case STEEL_CHAKRAM:
+						damage += 6;
+						break;
+					case CRYSTAL_SHURIKEN:
+						damage += 8;
+						break;
+					default:
+						break;
+				}
+				damage = std::max(0, damage);
+
 				hit.entity->modHP(-damage);
 
 				// set the obituary

@@ -70,7 +70,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[194][32] =
+char itemNameStrings[198][32] =
 {
 	"NULL",
 	"random_item",
@@ -265,11 +265,15 @@ char itemNameStrings[194][32] =
 	"crystal_halberd",
 	"crystal_battleaxe",
 	"crystal_mace",
+	"bronze_tomahawk",
+	"iron_dagger",
+	"steel_chakram",
+	"crystal_shuriken",
 	""
 };
 
 
-char itemStringsByType[10][59][32] =
+char itemStringsByType[10][63][32] =
 {
 	{
 		"NULL",
@@ -307,6 +311,10 @@ char itemStringsByType[10][59][32] =
 		"crystal_battleaxe",
 		"crystal_mace",
 		"crossbow",
+		"bronze_tomahawk",
+		"iron_dagger",
+		"steel_chakram",
+		"crystal_shuriken",
 		"magicstaff_light",
 		"magicstaff_digging",
 		"magicstaff_locking",

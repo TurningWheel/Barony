@@ -335,7 +335,7 @@ char* Item::description()
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[982 + status], beatitude);
 			}
@@ -378,7 +378,7 @@ char* Item::description()
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
 			}
@@ -424,7 +424,7 @@ char* Item::description()
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1034 + status]);
 			}
@@ -474,7 +474,7 @@ char* Item::description()
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1060 + status], count);
 			}
@@ -1132,7 +1132,7 @@ void useItem(Item* item, int player)
 		switch ( shopkeepertype )
 		{
 			case 0: // arms & armor
-				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
 				{
 					deal = false;
 				}
@@ -1278,6 +1278,10 @@ void useItem(Item* item, int player)
 		case CRYSTAL_HALBERD:
 		case CRYSTAL_BATTLEAXE:
 		case CRYSTAL_MACE:
+		case BRONZE_TOMAHAWK:
+		case IRON_DAGGER:
+		case STEEL_CHAKRAM:
+		case CRYSTAL_SHURIKEN:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:

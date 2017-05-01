@@ -3153,7 +3153,7 @@ void Entity::attack(int pose, int charge)
 			}
 
 			// potions and gems (throwing)
-			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM )
+			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
 			{
 				playSoundEntity(this, 75, 64);
 				entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
