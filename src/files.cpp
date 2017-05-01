@@ -276,10 +276,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 				switch ( checkSpriteType(sprite) )
 				{
 					case 1:
-						break;
 					case 2:
-						setSpriteAttributes(entity, nullptr, nullptr);
-						break;
 					case 3:
 						setSpriteAttributes(entity, nullptr, nullptr);
 						break;

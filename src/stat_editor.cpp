@@ -62,18 +62,18 @@ Stat* Stat::copyStats()
 	newStat->HUNGER = this->HUNGER;
 
 	//random variables to add to base
-	newStat->RANDOM_LVL = this->RANDOM_LVL = 0;
-	newStat->RANDOM_GOLD = this->RANDOM_GOLD = 0;
-	newStat->RANDOM_STR = this->RANDOM_STR = 0;
-	newStat->RANDOM_DEX = this->RANDOM_DEX = 0;
-	newStat->RANDOM_CON = this->RANDOM_CON = 0;
-	newStat->RANDOM_INT = this->RANDOM_INT = 0;
-	newStat->RANDOM_PER = this->RANDOM_PER = 0;
-	newStat->RANDOM_CHR = this->RANDOM_CHR = 0;
-	newStat->RANDOM_MAXHP = this->RANDOM_MAXHP = 0;
-	newStat->RANDOM_HP = this->RANDOM_HP = 0;
-	newStat->RANDOM_MAXMP = this->RANDOM_MAXMP = 0;
-	newStat->RANDOM_MP = this->RANDOM_MP = 0;
+	newStat->RANDOM_LVL = this->RANDOM_LVL;
+	newStat->RANDOM_GOLD = this->RANDOM_GOLD;
+	newStat->RANDOM_STR = this->RANDOM_STR;
+	newStat->RANDOM_DEX = this->RANDOM_DEX;
+	newStat->RANDOM_CON = this->RANDOM_CON;
+	newStat->RANDOM_INT = this->RANDOM_INT;
+	newStat->RANDOM_PER = this->RANDOM_PER;
+	newStat->RANDOM_CHR = this->RANDOM_CHR;
+	newStat->RANDOM_MAXHP = this->RANDOM_MAXHP;
+	newStat->RANDOM_HP = this->RANDOM_HP;
+	newStat->RANDOM_MAXMP = this->RANDOM_MAXMP;
+	newStat->RANDOM_MP = this->RANDOM_MP;
 
 	for ( c = 0; c < NUMPROFICIENCIES; c++ )
 	{
@@ -92,7 +92,7 @@ Stat* Stat::copyStats()
 
 	for ( c = 0; c < 32; c++ )
 	{
-		newStat->EDITOR_FLAGS[c] = this->EDITOR_FLAGS[c] = 0;
+		newStat->EDITOR_FLAGS[c] = this->EDITOR_FLAGS[c];
 	}
 
 	return newStat;
