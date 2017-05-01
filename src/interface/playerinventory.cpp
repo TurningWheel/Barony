@@ -657,6 +657,7 @@ void drawBlueInventoryBorder(const Item& item, int x, int y)
 
 void updatePlayerInventory()
 {
+	bool disableMouseDisablingHotbarFocus = false;
 	SDL_Rect pos, mode_pos;
 	node_t* node, *nextnode;
 	int x, y;
@@ -694,6 +695,10 @@ void updatePlayerInventory()
 				if ( !hotbarHasFocus )
 				{
 					warpMouseToSelectedInventorySlot();
+				}
+				else
+				{
+					disableMouseDisablingHotbarFocus = true;
 				}
 			}
 		}
@@ -779,7 +784,10 @@ void updatePlayerInventory()
 				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
-					hotbarHasFocus = false;
+					if ( hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+					{
+						hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+					}
 				}
 
 				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y && !hotbarHasFocus )

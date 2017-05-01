@@ -2537,6 +2537,7 @@ int main(int argc, char** argv)
 						fadeout = false;
 						numplayers = 0;
 
+						//TODO: Replace all of this with centralized startGameRoutine().
 						// setup game
 						shootmode = true;
 
