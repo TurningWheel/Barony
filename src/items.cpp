@@ -1275,7 +1275,7 @@ void useItem(Item* item, int player)
 		case STEEL_MACE:
 		case STEEL_AXE:
 		case CRYSTAL_SWORD:
-		case CRYSTAL_HALBERD:
+		case CRYSTAL_SPEAR:
 		case CRYSTAL_BATTLEAXE:
 		case CRYSTAL_MACE:
 		case BRONZE_TOMAHAWK:
@@ -1944,7 +1944,7 @@ Sint32 Item::weaponGetAttack()
 	{
 		attack += 7;
 	}
-	else if ( type == CRYSTAL_HALBERD )
+	else if ( type == CRYSTAL_SPEAR )
 	{
 		attack += 7;
 	}

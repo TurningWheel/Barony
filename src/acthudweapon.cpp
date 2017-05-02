@@ -1046,7 +1046,7 @@ void actHudWeapon(Entity* my)
 			if ( stats[clientnum]->weapon )
 			{
 				int weaponSkill = getWeaponSkill(stats[clientnum]->weapon);
-				if ( weaponSkill == PRO_SWORD || weaponSkill == PRO_POLEARM )
+				if ( weaponSkill == PRO_SWORD || stats[clientnum]->weapon->type == STEEL_HALBERD )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				}
@@ -1176,7 +1176,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR )
+					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != CRYSTAL_SPEAR && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 1;
 					}
