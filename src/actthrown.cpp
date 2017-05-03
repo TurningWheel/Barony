@@ -110,10 +110,19 @@ void actThrown(Entity* my)
 	// gravity
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
+		if ( itemCategory(item) != THROWN )
+		{
+			THROWN_VELZ += 0.04;
+			my->z += THROWN_VELZ;
+			my->roll += 0.04;
+
+		}
+		else
+		{
+			/*THROWN_VELZ += 0.01;
+			my->z += THROWN_VELZ;*/
+		}
 		// fall
-		THROWN_VELZ += 0.04;
-		my->z += THROWN_VELZ;
-		my->roll += 0.04;
 	}
 	else
 	{
@@ -121,6 +130,7 @@ void actThrown(Entity* my)
 		{
 			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
 			{
+				messagePlayer(0, "Fell on floor");
 				item = newItemFromEntity(my);
 				if ( itemCategory(item) == POTION )
 				{
@@ -128,6 +138,10 @@ void actThrown(Entity* my)
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
+				}
+				else if ( itemCategory(item) == THROWN )
+				{
+
 				}
 				else
 				{
@@ -160,18 +174,26 @@ void actThrown(Entity* my)
 			}
 			else
 			{
+				if ( itemCategory(item) != THROWN )
+				{
+					THROWN_VELZ += 0.04;
+					my->z += THROWN_VELZ;
+					my->roll += 0.04;
+
+				}
 				// fall
-				THROWN_VELZ += 0.04;
-				my->z += THROWN_VELZ;
-				my->roll += 0.04;
 			}
 		}
 		else
 		{
+			if ( itemCategory(item) != THROWN )
+			{
+				THROWN_VELZ += 0.04;
+				my->z += THROWN_VELZ;
+				my->roll += 0.04;
+
+			}
 			// fall
-			THROWN_VELZ += 0.04;
-			my->z += THROWN_VELZ;
-			my->roll += 0.04;
 		}
 	}
 
@@ -191,6 +213,17 @@ void actThrown(Entity* my)
 	bool usedpotion = false;
 	if ( result != sqrt( THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY ) )
 	{
+		//messagePlayer(0, "Hit wall?");
+		if ( hit.side == HORIZONTAL )
+			THROWN_VELX = -THROWN_VELX;
+		else if ( hit.side == VERTICAL )
+			THROWN_VELY = -THROWN_VELY;
+		else if ( hit.side == 0 )
+		{
+			THROWN_VELY = -THROWN_VELY;
+			THROWN_VELX = -THROWN_VELX;
+		}
+
 		item = newItemFromEntity(my);
 		cat = itemCategory(item);
 		itemname = item->getName();
@@ -453,6 +486,10 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+		else if ( itemCategory(item) == THROWN && hit.entity == NULL )
+		{
+
+		}
 		else
 		{
 			Entity* entity = newEntity(-1, 1, map.entities);
@@ -482,7 +519,21 @@ void actThrown(Entity* my)
 			return;
 		}
 	}
+	if ( itemCategory(item) != THROWN )
+	{
+
+	// fall
 	THROWN_VELX = THROWN_VELX * .99;
 	THROWN_VELY = THROWN_VELY * .99;
 	my->pitch += result * .01;
+
+	}
+	else
+	{
+		int dir = 0;
+		my->yaw += 0.2;
+		
+		//THROWN_VELX = THROWN_VELX * .99;
+		//THROWN_VELY = THROWN_VELY * .99;
+	}
 }

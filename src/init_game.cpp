@@ -227,6 +227,10 @@ int initGame()
 		{
 			items[c].category = BOOK;
 		}
+		else if ( !strcmp(name, "THROWN") )
+		{
+			items[c].category = THROWN;
+		}
 		else if ( !strcmp(name, "SPELL_CAT") )
 		{
 			items[c].category = SPELL_CAT;

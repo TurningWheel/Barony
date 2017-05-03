@@ -3173,9 +3173,22 @@ void Entity::attack(int pose, int charge)
 				entity->skill[13] = 1;
 				entity->skill[14] = myStats->weapon->appearance;
 				entity->skill[15] = myStats->weapon->identified;
-				entity->vel_x = 5 * cos(players[player]->entity->yaw);
-				entity->vel_y = 5 * sin(players[player]->entity->yaw);
-				entity->vel_z = -.5;
+				if ( itemCategory(myStats->weapon) == THROWN )
+				{
+					entity->vel_x = 3 * cos(players[player]->entity->yaw);
+					entity->vel_y = 3 * sin(players[player]->entity->yaw);
+					entity->vel_z = 0;
+					messagePlayer(0, "%f", players[player]->entity->yaw);
+					entity->pitch = 0.2;
+					entity->roll = 0;
+				}
+				else
+				{
+					entity->vel_x = 5 * cos(players[player]->entity->yaw);
+					entity->vel_y = 5 * sin(players[player]->entity->yaw);
+					entity->vel_z = -.5;
+					
+				}
 
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )

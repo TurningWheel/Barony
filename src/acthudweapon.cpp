@@ -574,7 +574,7 @@ void actHudWeapon(Entity* my)
 								messagePlayer(clientnum, language[503], item->getName());
 							}
 						}
-						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM) && !throwGimpTimer)
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN) && !throwGimpTimer)
 						{
 							throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
 							HUDWEAPON_MOVEZ = 3;
