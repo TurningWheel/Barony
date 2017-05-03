@@ -339,7 +339,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			isMonster = true;
 		}
 	if ( isMonster && multiplayer == CLIENT )
-		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
+		if ( my->sprite == 289 || my->sprite == 274 || my->sprite == 413 )   // imp and lich and cockatrice
 		{
 			levitating = true;
 		}
