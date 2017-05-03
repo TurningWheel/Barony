@@ -675,6 +675,9 @@ SDL_Surface* itemSprite(Item* item)
 
 int itemCompare(const Item* item1, const Item* item2)
 {
+	Sint32 model1 = 0;
+	Sint32 model2 = 0;
+
 	// null cases
 	if ( item1 == NULL )
 	{
@@ -708,9 +711,20 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	if (item1->appearance != item2->appearance)
+	/*if ( item1->appearance != item2->appearance )
 	{
 		return 1;
+	}*/
+	model1 = items[item1->type].index + item1->appearance % items[item1->type].variations;
+	model2 = items[item2->type].index + item2->appearance % items[item2->type].variations;
+	//messagePlayer(0, "item1- %d, item2 - %d", model1, model2);
+	if ( model1 != model2 )
+	{
+		return 1;
+	}
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK )
+	{
+		return 1; // these items do not stack
 	}
 	if (item1->identified != item2->identified)
 	{
@@ -1702,6 +1716,10 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
+			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+			{
+				item->identified = true;
+			}
 			if (!itemCompare(item, item2))
 			{
 				item2->count += item->count;
