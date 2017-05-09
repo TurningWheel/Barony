@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include "main.hpp"
 #include "sound.hpp"
@@ -475,7 +476,9 @@ out_input_file:
 list_t* directoryContents(char* directory)
 {
 	list_t* list = NULL; // list of strings
-	DIR* dir = openDataDir(directory);
+	char fullPath[1024];
+	completePath(fullPath, directory);
+	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
 
 	if ( !dir )
@@ -488,19 +491,20 @@ list_t* directoryContents(char* directory)
 	list->first = NULL;
 	list->last = NULL;
 
+	struct stat cur;
+	char curPath[1024];
 	while ((entry = readdir(dir)) != NULL)
 	{
-		strcpy(tempstr, directory);
-		strcat(tempstr, entry->d_name);
+		strcpy(curPath, fullPath);
+		strcat(curPath, entry->d_name);
 
-		DIR* newdir = NULL;
-		if ( (newdir = openDataDir(tempstr)) == NULL )
+		if (stat(curPath, &cur) != 0)
+		{
+			continue;
+		}
+		if (cur.st_mode & S_IFMT == S_IFREG)
 		{
 			newString(list, 0xFFFFFFFF, entry->d_name);
-		}
-		else
-		{
-			closedir(newdir);
 		}
 	}
 
