@@ -61,7 +61,6 @@ bool completePath(char *dest, const char * const filename) {
 FILE* openDataFile(const char * const filename, const char * const mode) {
 	char path[1024];
 	completePath(path, filename);
-	printlog("Opening %s", path);
 	FILE * result = fopen(path, mode);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
@@ -72,7 +71,6 @@ FILE* openDataFile(const char * const filename, const char * const mode) {
 DIR* openDataDir(const char * const name) {
 	char path[1024];
 	completePath(path, name);
-	printlog("Opening %s", path);
 	DIR * result = opendir(path);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
