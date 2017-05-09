@@ -90,7 +90,7 @@ void Entity::actChest()
 				chestLocked = 0;
 			}
 
-			messagePlayer(0, "Chest rolled: %d, locked: %d", roll, chestLocked); //debug print
+			//messagePlayer(0, "Chest rolled: %d, locked: %d", roll, chestLocked); //debug print
 		}
 
 		node_t* node = NULL;

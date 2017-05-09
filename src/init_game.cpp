@@ -227,6 +227,10 @@ int initGame()
 		{
 			items[c].category = BOOK;
 		}
+		else if ( !strcmp(name, "THROWN") )
+		{
+			items[c].category = THROWN;
+		}
 		else if ( !strcmp(name, "SPELL_CAT") )
 		{
 			items[c].category = SPELL_CAT;
@@ -245,6 +249,11 @@ int initGame()
 			{
 				break;
 			}
+		fscanf(fp, "%d", &items[c].rarity);
+		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+		{
+			break;
+		}
 		items[c].images.first = NULL;
 		items[c].images.last = NULL;
 		while ( 1 )
