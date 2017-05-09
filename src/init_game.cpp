@@ -249,11 +249,6 @@ int initGame()
 			{
 				break;
 			}
-		fscanf(fp, "%d", &items[c].rarity);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-		{
-			break;
-		}
 		items[c].images.first = NULL;
 		items[c].images.last = NULL;
 		while ( 1 )
