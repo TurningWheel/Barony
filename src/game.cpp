@@ -76,8 +76,6 @@ std::vector<std::string> randomPlayerNamesFemale;
 int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
-std::vector<std::string> randomPlayerNamesMale;
-std::vector<std::string> randomPlayerNamesFemale;
 
 /*-------------------------------------------------------------------------------
 
