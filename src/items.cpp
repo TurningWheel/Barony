@@ -335,7 +335,7 @@ char* Item::description()
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[982 + status], beatitude);
 			}
@@ -378,7 +378,7 @@ char* Item::description()
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
 			}
@@ -424,7 +424,7 @@ char* Item::description()
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				strncpy(tempstr, language[1034 + status], 1024);
 			}
@@ -474,7 +474,7 @@ char* Item::description()
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1060 + status], count);
 			}
@@ -675,6 +675,9 @@ SDL_Surface* itemSprite(Item* item)
 
 int itemCompare(const Item* item1, const Item* item2)
 {
+	Sint32 model1 = 0;
+	Sint32 model2 = 0;
+
 	// null cases
 	if ( item1 == NULL )
 	{
@@ -708,9 +711,20 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	if (item1->appearance != item2->appearance)
+	/*if ( item1->appearance != item2->appearance )
 	{
 		return 1;
+	}*/
+	model1 = items[item1->type].index + item1->appearance % items[item1->type].variations;
+	model2 = items[item2->type].index + item2->appearance % items[item2->type].variations;
+	//messagePlayer(0, "item1- %d, item2 - %d", model1, model2);
+	if ( model1 != model2 )
+	{
+		return 1;
+	}
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK )
+	{
+		return 1; // these items do not stack
 	}
 	if (item1->identified != item2->identified)
 	{
@@ -1132,7 +1146,7 @@ void useItem(Item* item, int player)
 		switch ( shopkeepertype )
 		{
 			case 0: // arms & armor
-				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
 				{
 					deal = false;
 				}
@@ -1274,6 +1288,14 @@ void useItem(Item* item, int player)
 		case STEEL_SWORD:
 		case STEEL_MACE:
 		case STEEL_AXE:
+		case CRYSTAL_SWORD:
+		case CRYSTAL_SPEAR:
+		case CRYSTAL_BATTLEAXE:
+		case CRYSTAL_MACE:
+		case BRONZE_TOMAHAWK:
+		case IRON_DAGGER:
+		case STEEL_CHAKRAM:
+		case CRYSTAL_SHURIKEN:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:
@@ -1694,6 +1716,10 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
+			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+			{
+				item->identified = true;
+			}
 			if (!itemCompare(item, item2))
 			{
 				item2->count += item->count;
@@ -1931,6 +1957,22 @@ Sint32 Item::weaponGetAttack()
 	else if ( type == ARTIFACT_BOW )
 	{
 		attack += 15;
+	}
+	else if ( type == CRYSTAL_SWORD )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_SPEAR )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_BATTLEAXE )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_MACE )
+	{
+		attack += 7;
 	}
 	attack *= (double)(status / 5.0);
 

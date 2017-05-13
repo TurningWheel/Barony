@@ -574,7 +574,7 @@ void actHudWeapon(Entity* my)
 								messagePlayer(clientnum, language[503], item->getName());
 							}
 						}
-						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM) && !throwGimpTimer)
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
 						{
 							throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
 							HUDWEAPON_MOVEZ = 3;
@@ -862,7 +862,7 @@ void actHudWeapon(Entity* my)
 			Item* item = stats[clientnum]->weapon;
 			if ( item )
 			{
-				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM )
+				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM && itemCategory(item) != THROWN )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )
 					{
@@ -1045,8 +1045,8 @@ void actHudWeapon(Entity* my)
 			// one more swing...
 			if ( stats[clientnum]->weapon )
 			{
-				type = stats[clientnum]->weapon->type;
-				if ( type == BRONZE_SWORD || type == IRON_SWORD || type == STEEL_SWORD || type == ARTIFACT_SWORD || type == STEEL_HALBERD )
+				int weaponSkill = getWeaponSkill(stats[clientnum]->weapon);
+				if ( weaponSkill == PRO_SWORD || stats[clientnum]->weapon->type == STEEL_HALBERD )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				}
@@ -1176,7 +1176,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR )
+					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != CRYSTAL_SPEAR && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 1;
 					}

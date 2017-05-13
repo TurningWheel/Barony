@@ -70,7 +70,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[190][32] =
+char itemNameStrings[198][32] =
 {
 	"NULL",
 	"random_item",
@@ -261,11 +261,19 @@ char itemNameStrings[190][32] =
 	"spiked_gauntlets",
 	"food_tomalley",
 	"tool_crystalshard",
+	"crystal_sword",
+	"crystal_spear",
+	"crystal_battleaxe",
+	"crystal_mace",
+	"bronze_tomahawk",
+	"iron_dagger",
+	"steel_chakram",
+	"crystal_shuriken",
 	""
 };
 
 
-char itemStringsByType[10][55][32] =
+char itemStringsByType[10][63][32] =
 {
 	{
 		"NULL",
@@ -298,7 +306,15 @@ char itemStringsByType[10][55][32] =
 		"steel_sword",
 		"steel_mace",
 		"steel_axe",
+		"crystal_sword",
+		"crystal_spear",
+		"crystal_battleaxe",
+		"crystal_mace",
 		"crossbow",
+		"bronze_tomahawk",
+		"iron_dagger",
+		"steel_chakram",
+		"crystal_shuriken",
 		"magicstaff_light",
 		"magicstaff_digging",
 		"magicstaff_locking",
@@ -670,4 +686,95 @@ int canWearEquip(Entity* entity, int category)
 	break;*/
 
 	return 0;
+}
+
+void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entityStatToCopy)
+{
+	Stat* tmpStats = nullptr;
+
+	if ( entityStatToCopy != nullptr )
+	{
+		tmpStats = entityStatToCopy->getStats();
+	}
+
+	int spriteType = checkSpriteType(entityNew->sprite);
+	// monsters.
+	if ( spriteType == 1 )
+	{
+		//STAT ASSIGNMENT
+		Stat* myStats = nullptr;
+		if ( multiplayer != CLIENT )
+		{
+			// need to give the entity its list stuff.
+			// create an empty first node for traversal purposes
+			node_t* node2 = list_AddNodeFirst(&entityNew->children);
+			node2->element = nullptr;
+			node2->deconstructor = &emptyDeconstructor;
+
+			myStats = new Stat(entityNew->sprite);
+			node2 = list_AddNodeLast(&entityNew->children);
+			if ( tmpStats != nullptr )
+			{
+				node2->element = tmpStats->copyStats();
+			}
+			else
+			{
+				// if the previous sprite did not have stats initialised, or creating a new entity.
+				node2->element = myStats;
+			}
+			//					node2->deconstructor = &myStats->~Stat;
+			node2->size = sizeof(myStats);
+		}
+	}
+	// chests.
+	else if ( spriteType == 2 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->yaw = entityToCopy->yaw;
+			entityNew->skill[9] = entityToCopy->skill[9];
+			entityNew->chestLocked = entityToCopy->chestLocked;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->yaw = 1;
+			entityNew->skill[9] = 0;
+			entityNew->chestLocked = -1;
+		}
+	}
+	// items.
+	else if ( spriteType == 3 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[10] = entityToCopy->skill[10];
+			entityNew->skill[11] = entityToCopy->skill[11];
+			entityNew->skill[12] = entityToCopy->skill[12];
+			entityNew->skill[13] = entityToCopy->skill[13];
+			entityNew->skill[15] = entityToCopy->skill[15];
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[10] = 1;
+			entityNew->skill[11] = 0;
+			entityNew->skill[12] = 10;
+			entityNew->skill[13] = 1;
+			entityNew->skill[15] = 1;
+		}
+	}
+
+	if ( entityToCopy != nullptr )
+	{
+		// if we are duplicating sprite, then copy the x and y coordinates.
+		entityNew->x = entityToCopy->x;
+		entityNew->y = entityToCopy->y;
+	}
+	else
+	{
+		// new entity, will follow the mouse movements when created.
+	}
 }

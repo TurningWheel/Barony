@@ -43,8 +43,6 @@
 
 const unsigned STACK_SIZE = 10;
 
-
-
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
 	printf("Caught segfault at address %p\n", si->si_addr);
@@ -66,6 +64,9 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 }
 
 #endif
+
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
 
 // recommended for valgrind debugging:
 // res of 480x270
