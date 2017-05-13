@@ -1061,6 +1061,7 @@ void buttonSpriteProperties(button_t* my)
 		case 2: //chests
 			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->yaw);
 			snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
+			snprintf(spriteProperties[2], 4, "%d", selectedEntity->chestLocked);
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1807,6 +1808,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 			case 2: //chest
 				selectedEntity->yaw = (real_t)atoi(spriteProperties[0]);
 				selectedEntity->skill[9] = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->chestLocked = (Sint32)atoi(spriteProperties[2]);
 				break;
 			case 3: //items
 				selectedEntity->skill[10] = (Sint32)atoi(spriteProperties[0]); //id
@@ -1848,6 +1850,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 	}
 	else
 	{
+		if ( my == butMonsterOK )
+		{
+			makeUndo();
+		}
 		buttonCloseSpriteSubwindow(my);
 	}
 }

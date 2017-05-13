@@ -273,6 +273,16 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			switch( editorVersion )
 			{	case 1:
 					// V1.0 of editor version
+				switch ( checkSpriteType(sprite) )
+				{
+					case 1:
+					case 2:
+					case 3:
+						setSpriteAttributes(entity, nullptr, nullptr);
+						break;
+					default:
+						break;
+				}
 					break;
 				case 2:
 					// V2.0 of editor version
@@ -366,6 +376,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						case 2:
 							fread(&entity->yaw, sizeof(real_t), 1, fp);
 							fread(&entity->skill[9], sizeof(Sint32), 1, fp);
+							fread(&entity->chestLocked, sizeof(Sint32), 1, fp);
 							break;
 						case 3:
 							fread(&entity->skill[10], sizeof(Sint32), 1, fp);
@@ -572,6 +583,7 @@ int saveMap(char* filename2)
 					// chests
 					fwrite(&entity->yaw, sizeof(real_t), 1, fp);
 					fwrite(&entity->skill[9], sizeof(Sint32), 1, fp);
+					fwrite(&entity->chestLocked, sizeof(Sint32), 1, fp);
 					break;
 				case 3:
 					// items

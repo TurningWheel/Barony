@@ -1337,6 +1337,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 							break; //Sink
 						case 3:
 							entity = newEntity(21, 1, map.entities);
+							entity->chestLocked = -1;
 							break; //Chest
 						case 4:
 							entity = newEntity(39, 1, map.entities);
@@ -1773,6 +1774,10 @@ void assignActions(map_t* map)
 						if ( rand() % 2 == 0 )   // 50% chance of curse/bless
 						{
 							entity->skill[12] = -2 + rand() % 5;
+						}
+						else
+						{
+							entity->skill[12] = 0;
 						}
 					}
 				}

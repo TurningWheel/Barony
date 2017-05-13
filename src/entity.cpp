@@ -3153,7 +3153,7 @@ void Entity::attack(int pose, int charge)
 			}
 
 			// potions and gems (throwing)
-			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM )
+			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
 			{
 				playSoundEntity(this, 75, 64);
 				entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
@@ -3532,25 +3532,9 @@ void Entity::attack(int pose, int charge)
 			{
 				// hit chance
 				//int hitskill=5; // for unarmed combat
-				if ( myStats->weapon != NULL )
-				{
-					if ( myStats->weapon->type == QUARTERSTAFF || myStats->weapon->type == IRON_SPEAR || myStats->weapon->type == STEEL_HALBERD || myStats->weapon->type == ARTIFACT_SPEAR )
-					{
-						weaponskill = PRO_POLEARM;
-					}
-					if ( myStats->weapon->type == BRONZE_SWORD || myStats->weapon->type == IRON_SWORD || myStats->weapon->type == STEEL_SWORD || myStats->weapon->type == ARTIFACT_SWORD )
-					{
-						weaponskill = PRO_SWORD;
-					}
-					if ( myStats->weapon->type == BRONZE_MACE || myStats->weapon->type == IRON_MACE || myStats->weapon->type == STEEL_MACE || myStats->weapon->type == ARTIFACT_MACE )
-					{
-						weaponskill = PRO_MACE;
-					}
-					if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE || myStats->weapon->type == ARTIFACT_AXE )
-					{
-						weaponskill = PRO_AXE;
-					}
-				}
+				
+				weaponskill = getWeaponSkill(myStats->weapon);
+
 				/*if( weaponskill>=0 )
 					hitskill = myStats->PROFICIENCIES[weaponskill]/5;
 				c = rand()%20 + hitskill + (weaponskill==PRO_POLEARM);
@@ -3642,28 +3626,39 @@ void Entity::attack(int pose, int charge)
 					}
 
 					// damage weapon if applicable
-					if ( (rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0) )
+
+					bool isWeakWeapon = false;
+					bool artifactWeapon = false;
+					bool degradeWeapon = false;
+					ItemType weaponType = static_cast<ItemType>(WOODEN_SHIELD);
+
+					if ( myStats->weapon != NULL )
 					{
-						if ( myStats->weapon != NULL )
+						weaponType = myStats->weapon->type;
+						if ( weaponType == ARTIFACT_AXE || weaponType == ARTIFACT_MACE || weaponType == ARTIFACT_SPEAR || weaponType == ARTIFACT_SWORD )
 						{
-							bool artifactWeapon = false;
-							if ( myStats->weapon->type == ARTIFACT_AXE )
+							artifactWeapon = true;
+						}
+						else if ( weaponType == CRYSTAL_BATTLEAXE || weaponType == CRYSTAL_MACE || weaponType == CRYSTAL_SWORD || weaponType == CRYSTAL_SPEAR )
+						{
+							// crystal weapons degrade faster.
+							isWeakWeapon = true;
+						}
+
+						if ( !artifactWeapon )
+						{
+							// crystal weapons chance to not degrade 66% chance on 0 dmg, else 96%
+							if ( isWeakWeapon && ((rand() % 3 == 0 && damage == 0) || (rand() % 25 == 0 && damage > 0)) )
 							{
-								artifactWeapon = true;
+								degradeWeapon = true;
 							}
-							if ( myStats->weapon->type == ARTIFACT_MACE )
+							// other weapons chance to not degrade 75% chance on 0 dmg, else 98%
+							else if ( !isWeakWeapon && ((rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0)) )
 							{
-								artifactWeapon = true;
+								degradeWeapon = true;
 							}
-							if ( myStats->weapon->type == ARTIFACT_SPEAR )
-							{
-								artifactWeapon = true;
-							}
-							if ( myStats->weapon->type == ARTIFACT_SWORD )
-							{
-								artifactWeapon = true;
-							}
-							if ( !artifactWeapon )
+
+							if ( degradeWeapon )
 							{
 								if ( player == clientnum || player < 0 )
 								{
@@ -5171,23 +5166,6 @@ int checkEquipType(Item *item)
 	return TYPE_NONE;
 }
 
-//int checkWeaponProf(Stat *myStats) { //returns PRO_WEAPON if valid, else 0 if unarmed/ranged
-//	int weaponskill = -1;
-//
-//	if ( myStats->weapon != NULL ) {
-//		if ( myStats->weapon->type == QUARTERSTAFF || myStats->weapon->type == IRON_SPEAR || myStats->weapon->type == STEEL_HALBERD || myStats->weapon->type == ARTIFACT_SPEAR )
-//			weaponskill = PRO_POLEARM;
-//		if ( myStats->weapon->type == BRONZE_SWORD || myStats->weapon->type == IRON_SWORD || myStats->weapon->type == STEEL_SWORD || myStats->weapon->type == ARTIFACT_SWORD )
-//			weaponskill = PRO_SWORD;
-//		if ( myStats->weapon->type == BRONZE_MACE || myStats->weapon->type == IRON_MACE || myStats->weapon->type == STEEL_MACE || myStats->weapon->type == ARTIFACT_MACE )
-//			weaponskill = PRO_MACE;
-//		if ( myStats->weapon->type == BRONZE_AXE || myStats->weapon->type == IRON_AXE || myStats->weapon->type == STEEL_AXE || myStats->weapon->type == ARTIFACT_AXE )
-//			weaponskill = PRO_AXE;
-//	}
-//	return weaponskill;
-//
-//}
-
 int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 {
 	if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY) {
@@ -5294,5 +5272,31 @@ bool isLevitating(Stat* mystats)
 	}
 
 	return false;
+}
+
+int getWeaponSkill(Item* weapon)
+{
+	if ( weapon == NULL )
+	{
+		return -1;
+	}
+
+	if ( weapon->type == QUARTERSTAFF || weapon->type == IRON_SPEAR || weapon->type == STEEL_HALBERD || weapon->type == ARTIFACT_SPEAR || weapon->type == CRYSTAL_SPEAR )
+	{
+		return PRO_POLEARM;
+	}
+	if ( weapon->type == BRONZE_SWORD || weapon->type == IRON_SWORD || weapon->type == STEEL_SWORD || weapon->type == ARTIFACT_SWORD || weapon->type == CRYSTAL_SWORD )
+	{
+		return PRO_SWORD;
+	}
+	if ( weapon->type == BRONZE_MACE || weapon->type == IRON_MACE || weapon->type == STEEL_MACE || weapon->type == ARTIFACT_MACE || weapon->type == CRYSTAL_MACE )
+	{
+		return PRO_MACE;
+	}
+	if ( weapon->type == BRONZE_AXE || weapon->type == IRON_AXE || weapon->type == STEEL_AXE || weapon->type == ARTIFACT_AXE || weapon->type == CRYSTAL_BATTLEAXE)
+	{
+		return PRO_AXE;
+	}
+	return -1;
 }
 

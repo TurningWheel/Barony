@@ -148,6 +148,17 @@ char* itemUseString(const Item* item)
 			return language[324];
 		}
 	}
+	else if ( itemCategory(item) == THROWN )
+	{
+		if ( itemIsEquipped(item, clientnum) )
+		{
+			return language[323];
+		}
+		else
+		{
+			return language[324];
+		}
+	}
 	else if ( itemCategory(item) == TOOL )
 	{
 		switch ( item->type )
