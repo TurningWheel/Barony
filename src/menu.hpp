@@ -11,16 +11,6 @@
 
 #pragma once
 
-struct resolution {
-	int width;
-	int height;
-};
-
-struct resolutions {
-	int num;
-	struct resolution *modes;
-};
-
 extern bool savethisgame;
 
 // main menu code

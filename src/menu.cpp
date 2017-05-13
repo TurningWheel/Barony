@@ -9,6 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <list>
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -74,8 +75,10 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
-struct resolutions resolutions;
 int settings_xres, settings_yres;
+
+typedef std::tuple<int, int> resolution;
+std::list<resolution> resolutions;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
@@ -1601,18 +1604,18 @@ void handleMainMenu(bool mode)
 		{
 			// resolution
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
-			for ( c = 0; c < resolutions.num; c++ )
+			c=0;
+			for ( auto cur : resolutions )
 			{
-				struct resolution *cur = &resolutions.modes[c];
-				
-				
-				if ( settings_xres == cur->width && settings_yres == cur->height )
+				int width, height;
+				std::tie (width, height) = cur;
+				if ( settings_xres == width && settings_yres == height )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", cur->width, cur->height);
+					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", width, height);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", cur->width, cur->height);
+					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", width, height);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -1621,12 +1624,13 @@ void handleMainMenu(bool mode)
 						if ( omousey >= suby1 + 84 + c * 16 && omousey < suby1 + 96 + c * 16 )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							settings_xres = cur->width;
-							settings_yres = cur->height;
+							settings_xres = width;
+							settings_yres = height;
 							resolutionChanged = true;
 						}
 					}
 				}
+				c++;
 			}
 
 			// extra options
@@ -4885,28 +4889,18 @@ void getResolutionList()
 		SDL_DisplayMode mode;
 		SDL_GetDisplayMode(0, im, &mode);
 		// resolutions below 960x600 are not supported
-		if (mode.w < 960 || mode.h < 600)
+		if (mode.w > 960 && mode.h > 600)
 		{
-			nummodes--;
+			resolution res(mode.w, mode.h);
+			resolutions.push_back(res);
 		}
 	}
 	
-	resolutions.num = nummodes;
-	resolutions.modes = (struct resolution *)
-		calloc(nummodes, sizeof(struct resolution));
-	
-	for (im = 0, c = 0; im < nummodes; im++)
-	{
-		SDL_DisplayMode mode;
-		SDL_GetDisplayMode(0, im, &mode);
-		if (mode.w < 960 || mode.h < 600)
-		{
-			continue;
-		}
-		resolutions.modes[c].width = mode.w;
-		resolutions.modes[c].height = mode.h;
-		c++;
-	}
+	// Sort by total number of pixels
+	resolutions.sort([](resolution a, resolution b) {
+		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
+	});
+	resolutions.unique();
 }
 
 // sets up the settings window
