@@ -672,11 +672,11 @@ void gameLogic(void)
 					numplayers = 0;
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					for ( i = 0; i < currentlevel; i++ )
 						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -2184,14 +2184,7 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		// load default language file (english)
-		if ( loadLanguage("en") )
-		{
-			printlog("Fatal error: failed to load default language file!\n");
-			fclose(logfile);
-			exit(1);
-		}
-
+		strcpy(datadir, "./");
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2229,8 +2222,22 @@ int main(int argc, char** argv)
 					{
 						strcpy(classtoquickstart, argv[c] + 12);
 					}
+					else if (!strncmp(argv[c], "-datadir=", 9))
+					{
+						strcpy(datadir, argv[c] + 9);
+					}
 				}
 			}
+		}
+		printlog("Data path is %s", datadir);
+
+
+		// load default language file (english)
+		if ( loadLanguage("en") )
+		{
+			printlog("Fatal error: failed to load default language file!\n");
+			fclose(logfile);
+			exit(1);
 		}
 
 		// load config file
@@ -2556,11 +2563,11 @@ int main(int argc, char** argv)
 						{
 							if ( !secretlevel )
 							{
-								fp = fopen(LEVELSFILE, "r");
+								fp = openDataFile(LEVELSFILE, "r");
 							}
 							else
 							{
-								fp = fopen(SECRETLEVELSFILE, "r");
+								fp = openDataFile(SECRETLEVELSFILE, "r");
 							}
 							fscanf(fp, "%s", tempstr);
 							while ( fgetc(fp) != ' ' ) if ( feof(fp) )

@@ -21,6 +21,7 @@ int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
 bool stop = false;
+char datadir[1024];
 
 // language stuff
 char languageCode[32] = { 0 };

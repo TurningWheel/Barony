@@ -101,7 +101,7 @@ int initGame()
 		strcpy(filename, "models/creatures/");
 		strcat(filename, monstertypename[c]);
 		strcat(filename, "/limbs.txt");
-		if ( (fp = fopen(filename, "r")) == NULL )
+		if ( (fp = openDataFile(filename, "r")) == NULL )
 		{
 			continue;
 		}
@@ -149,7 +149,7 @@ int initGame()
 
 	// load item types
 	printlog( "loading items...\n");
-	fp = fopen("items/items.txt", "r");
+	fp = openDataFile("items/items.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		items[c].name_identified = language[1545 + c * 2];
@@ -291,8 +291,8 @@ int initGame()
 	createBooks();
 	setupSpells();
 
-	randomPlayerNamesMale = getLinesFromFile(PLAYERNAMES_MALE_FILE);
-	randomPlayerNamesFemale = getLinesFromFile(PLAYERNAMES_FEMALE_FILE);
+	randomPlayerNamesMale = getLinesFromFile(datadir + PLAYERNAMES_MALE_FILE);
+	randomPlayerNamesFemale = getLinesFromFile(datadir + PLAYERNAMES_FEMALE_FILE);
 
 	// print a loading message
 	drawClearBuffers();
