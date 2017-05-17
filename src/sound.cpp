@@ -264,7 +264,7 @@ static long int openal_oggtell(void* datasource) {
 }
 
 static int openal_oggopen(OPENAL_SOUND *self, const char* oggfile) {
-	FILE *f = openDataFile(oggfile, "rb");
+	FILE *f = fopen(oggfile, "rb");
 	int err;
 
 	ov_callbacks oggcb = {openal_oggread, openal_oggseek, openal_oggclose, openal_oggtell};
@@ -700,7 +700,7 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 	*buffer = (OPENAL_BUFFER*)malloc(sizeof(OPENAL_BUFFER));
 	strcpy((*buffer)->oggfile, name);	// for debugging purpose
 	(*buffer)->stream = false;
-	FILE *f = openDataFile(name, "rb");
+	FILE *f = fopen(name, "rb");
 	if(!f) {
 		printlog("Error loading sound %s\n", name);
 		return 0;
