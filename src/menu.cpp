@@ -4889,7 +4889,7 @@ void getResolutionList()
 		SDL_DisplayMode mode;
 		SDL_GetDisplayMode(0, im, &mode);
 		// resolutions below 960x600 are not supported
-		if (mode.w > 960 && mode.h > 600)
+		if ( mode.w >= 960 && mode.h >= 600 )
 		{
 			resolution res(mode.w, mode.h);
 			resolutions.push_back(res);
