@@ -888,7 +888,7 @@ void actPlayer(Entity* my)
 	bool swimming = false;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		if ( !levitating && !waterwalkingboots )
+		if ( !levitating && !waterwalkingboots && !noclip)
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
