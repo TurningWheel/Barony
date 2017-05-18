@@ -2341,6 +2341,7 @@ int main(int argc, char** argv)
 
 			if ( intro )
 			{
+				shootmode = false; //Hack because somebody put a shootmode = true where it don't belong, which might and does break stuff.
 				if ( introstage == -1 )
 				{
 					// hack to fix these things from breaking everything...
@@ -2550,6 +2551,7 @@ int main(int argc, char** argv)
 						fadeout = false;
 						numplayers = 0;
 
+						//TODO: Replace all of this with centralized startGameRoutine().
 						// setup game
 						shootmode = true;
 
