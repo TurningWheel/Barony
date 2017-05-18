@@ -584,6 +584,10 @@ int canWearEquip(Entity* entity, int category)
 				case SCORPION:
 				case MINOTAUR:
 				case GHOUL:
+				case SCARAB:
+				case CRYSTALGOLEM:
+				case INCUBUS:
+				case COCKATRICE:
 					equipType = 0;
 					break;
 
@@ -596,6 +600,9 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
+				case INSECTOID:
+				case LICH_FIRE:
+				case LICH_ICE:
 					equipType = 2;
 					break;
 
@@ -605,6 +612,10 @@ int canWearEquip(Entity* entity, int category)
 				case VAMPIRE:
 				case SKELETON:
 				case SHOPKEEPER:
+				case SHADOW:
+				case AUTOMATON:
+				case GOATMAN:
+				case KOBOLD:
 					equipType = 3;
 					break;
 
@@ -646,44 +657,6 @@ int canWearEquip(Entity* entity, int category)
 	{
 		return 0;
 	}
-
-	// TODO
-	/*case 83:
-	strcpy(tmpStr, "KOBOLD");
-	break;
-	case 84:
-	strcpy(tmpStr, "SCARAB");
-	break;
-	case 85:
-	strcpy(tmpStr, "CRYSTALGOLEM");
-	break;
-	case 86:
-	strcpy(tmpStr, "INCUBUS");
-	break;
-	case 87:
-	strcpy(tmpStr, "VAMPIRE");
-	break;
-	case 88:
-	strcpy(tmpStr, "SHADOW");
-	break;
-	case 89:
-	strcpy(tmpStr, "COCKATRICE");
-	break;
-	case 90:
-	strcpy(tmpStr, "INSECTOID");
-	break;
-	case 91:
-	strcpy(tmpStr, "GOATMAN");
-	break;
-	case 92:
-	strcpy(tmpStr, "AUTOMATON");
-	break;
-	case 93:
-	strcpy(tmpStr, "LICH ICE");
-	break;
-	case 94:
-	strcpy(tmpStr, "LICH FIRE");
-	break;*/
 
 	return 0;
 }
