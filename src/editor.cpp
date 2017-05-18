@@ -2979,6 +2979,11 @@ int main(int argc, char** argv)
 			}
 			else
 			{
+				if ( SDL_IsTextInputActive() )
+				{
+					SDL_StopTextInput();
+				}
+
 				// handle hotkeys
 				if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
 				{
