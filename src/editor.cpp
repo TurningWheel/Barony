@@ -1221,6 +1221,15 @@ int main(int argc, char** argv)
 	button->action = &button3DMode;
 	button->visible = 0;
 
+	butHoverText = button = newButton();
+	strcpy(button->label, "Hover Text  Ctrl+H");
+	button->x = 96;
+	button->y = 112;
+	button->sizex = 152;
+	button->sizey = 16;
+	button->action = &buttonHoverText;
+	button->visible = 0;
+
 	// map menu
 	butAttributes = button = newButton();
 	strcpy(button->label, "Attributes ...  Ctrl+M      ");
@@ -1318,7 +1327,7 @@ int main(int argc, char** argv)
 			}
 			else if ( menuVisible == 3 )
 			{
-				if ((omousex > 96 + butToolbox->sizex || omousex < 80 || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 96 + butToolbox->sizex || omousex < 80 || omousey > 128 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
@@ -1780,10 +1789,11 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 3 )
 			{
-				drawWindowFancy(80, 16, 96, 112);
+				drawWindowFancy(80, 16, 96, 128);
 				butToolbox->visible = 1;
 				butStatusBar->visible = 1;
 				butAllLayers->visible = 1;
+				butHoverText->visible = 1;
 				butViewSprites->visible = 1;
 				butGrid->visible = 1;
 				but3DMode->visible = 1;
@@ -1811,12 +1821,17 @@ int main(int argc, char** argv)
 				{
 					printText(font8x8_bmp, 84, 100, "x");
 				}
+				if ( hovertext )
+				{
+					printText(font8x8_bmp, 84, 116, "x");
+				}
 			}
 			else
 			{
 				butToolbox->visible = 0;
 				butStatusBar->visible = 0;
 				butAllLayers->visible = 0;
+				butHoverText->visible = 0;
 				butViewSprites->visible = 0;
 				butGrid->visible = 0;
 				but3DMode->visible = 0;
@@ -3051,6 +3066,11 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_L] = 0;
 						buttonAllLayers(NULL);
+					}
+					if ( keystatus[SDL_SCANCODE_H] )
+					{
+						keystatus[SDL_SCANCODE_H] = 0;
+						buttonHoverText(NULL);
 					}
 					if ( keystatus[SDL_SCANCODE_I] )
 					{

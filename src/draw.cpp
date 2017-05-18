@@ -1140,6 +1140,7 @@ void drawEntities2D(long camx, long camy)
 	node_t* node;
 	Entity* entity;
 	SDL_Rect pos, box;
+	int offset = 0;
 
 	if ( map.entities->first == NULL )
 	{
@@ -1158,6 +1159,8 @@ void drawEntities2D(long camx, long camy)
 		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
 		pos.w = TEXTURESIZE;
 		pos.h = TEXTURESIZE;
+		//ttfPrintText(ttf8, 100, 100, inputstr); debug any errant text input in editor
+
 		if ( entity->sprite >= 0 && entity->sprite < numsprites )
 		{
 			if ( sprites[entity->sprite] != NULL )
@@ -1352,6 +1355,15 @@ void drawEntities2D(long camx, long camy)
 					box.x = pos.x + 1;
 					box.y = pos.y + 1;
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+				} 
+				else if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y &&
+							selectedEntity == NULL && hovertext )
+				{
+					// handle mouseover sprite name tooltip in main editor screen
+					int padx = pos.x + 10;
+					int pady = pos.y - 20;
+					ttfPrintText(ttf8, padx, pady - offset, spriteEditorNameStrings[entity->sprite]);
+					offset += 10;
 				}
 				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
 				if ( entity->sprite == 8 && entity->skill[10] > 1 )
