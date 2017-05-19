@@ -42,6 +42,7 @@ button_t* butView;
 button_t* butToolbox;
 button_t* butStatusBar;
 button_t* butAllLayers;
+button_t* butHoverText;
 button_t* butViewSprites;
 button_t* butGrid;
 button_t* but3DMode;
@@ -724,6 +725,11 @@ void buttonGrid(button_t* my)
 void button3DMode(button_t* my)
 {
 	mode3d = (mode3d == false);
+}
+
+void buttonHoverText(button_t* my)
+{
+	hovertext = (hovertext == false);
 }
 
 // Map menu

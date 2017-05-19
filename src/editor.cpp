@@ -1221,6 +1221,15 @@ int main(int argc, char** argv)
 	button->action = &button3DMode;
 	button->visible = 0;
 
+	butHoverText = button = newButton();
+	strcpy(button->label, "Hover Text  Ctrl+H");
+	button->x = 96;
+	button->y = 112;
+	button->sizex = 152;
+	button->sizey = 16;
+	button->action = &buttonHoverText;
+	button->visible = 0;
+
 	// map menu
 	butAttributes = button = newButton();
 	strcpy(button->label, "Attributes ...  Ctrl+M      ");
@@ -1318,7 +1327,7 @@ int main(int argc, char** argv)
 			}
 			else if ( menuVisible == 3 )
 			{
-				if ((omousex > 96 + butToolbox->sizex || omousex < 80 || omousey > 112 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
+				if ((omousex > 96 + butToolbox->sizex || omousex < 80 || omousey > 128 || (omousey < 16 && omousex > 192)) && mousestatus[SDL_BUTTON_LEFT])
 				{
 					menuVisible = 0;
 					menuDisappear = 1;
@@ -1780,10 +1789,11 @@ int main(int argc, char** argv)
 			}
 			if ( menuVisible == 3 )
 			{
-				drawWindowFancy(80, 16, 96, 112);
+				drawWindowFancy(80, 16, 96, 128);
 				butToolbox->visible = 1;
 				butStatusBar->visible = 1;
 				butAllLayers->visible = 1;
+				butHoverText->visible = 1;
 				butViewSprites->visible = 1;
 				butGrid->visible = 1;
 				but3DMode->visible = 1;
@@ -1811,12 +1821,17 @@ int main(int argc, char** argv)
 				{
 					printText(font8x8_bmp, 84, 100, "x");
 				}
+				if ( hovertext )
+				{
+					printText(font8x8_bmp, 84, 116, "x");
+				}
 			}
 			else
 			{
 				butToolbox->visible = 0;
 				butStatusBar->visible = 0;
 				butAllLayers->visible = 0;
+				butHoverText->visible = 0;
 				butViewSprites->visible = 0;
 				butGrid->visible = 0;
 				but3DMode->visible = 0;
@@ -2979,6 +2994,11 @@ int main(int argc, char** argv)
 			}
 			else
 			{
+				if ( SDL_IsTextInputActive() )
+				{
+					SDL_StopTextInput();
+				}
+
 				// handle hotkeys
 				if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
 				{
@@ -3046,6 +3066,11 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_L] = 0;
 						buttonAllLayers(NULL);
+					}
+					if ( keystatus[SDL_SCANCODE_H] )
+					{
+						keystatus[SDL_SCANCODE_H] = 0;
+						buttonHoverText(NULL);
 					}
 					if ( keystatus[SDL_SCANCODE_I] )
 					{
@@ -3272,7 +3297,10 @@ int main(int argc, char** argv)
 				case 75:	strcpy(action,"TROLL"); break;
 				default:	strcpy(action,"STATIC"); break;
 			}*/
-			if ( palette[mousey + mousex * yres] >= 0 )
+
+			int numsprites = (int)sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]);
+
+			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", spriteEditorNameStrings[palette[mousey + mousex * yres]]);
@@ -3386,9 +3414,48 @@ int main(int argc, char** argv)
 				mclick = 0;
 				tilepalette = 0;
 			}
-			if ( palette[mousey + mousex * yres] >= 0 )
+
+			int numtiles = (int)sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]);
+
+			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Tile index:%5d", palette[mousey + mousex * yres]);
+				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", tileEditorNameStrings[palette[mousey + mousex * yres]]);
+
+				char hoverTextString[32] = "";
+				snprintf(hoverTextString, 5, "%d: ", palette[mousey + mousex * yres]);
+				strcat(hoverTextString, tileEditorNameStrings[palette[mousey + mousex * yres]]);
+				int hoverTextWidth = strlen(hoverTextString);
+
+				if ( mousey - 20 <= 0 )
+				{
+					if ( mousex + 16 + 8 * hoverTextWidth >= xres )
+					{
+						// stop text being drawn above y = 0 and past window width (xres)
+						drawWindowFancy(mousex - 16 - (8 + 8 * hoverTextWidth), 0, mousex - 16, 16);
+						printTextFormatted(font8x8_bmp, mousex - 16 - (4 + 8 * hoverTextWidth), 4, "%s", hoverTextString);
+					}
+					else
+					{
+						// stop text being drawn above y = 0 
+						drawWindowFancy(mousex + 16, 0, 16 + 8 + mousex + 8 * hoverTextWidth, 16);
+						printTextFormatted(font8x8_bmp, mousex + 16 + 4, 4, "%s", hoverTextString);
+					}
+				}
+				else
+				{
+					if ( mousex + 16 + 8 * hoverTextWidth >= xres )
+					{
+						// stop text being drawn past window width (xres)
+						drawWindowFancy(xres - (8 + 8 * hoverTextWidth), mousey - 20, xres, mousey - 4);
+						printTextFormatted(font8x8_bmp, xres - (4 + 8 * hoverTextWidth), mousey - 16, "%s", hoverTextString);
+					}
+					else
+					{
+						drawWindowFancy(mousex + 16, mousey - 20, 16 + 8 + mousex + 8 * hoverTextWidth, mousey - 4);
+						printTextFormatted(font8x8_bmp, mousex + 16 + 4, mousey - 16, "%s", hoverTextString);
+					}
+				}
 			}
 			else
 			{

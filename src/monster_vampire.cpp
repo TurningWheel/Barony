@@ -55,14 +55,46 @@ void initVampire(Entity* my, Stat* myStats)
 			// generate 6 items max, less if there are any forced items from boss variants
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
-			// boss variants	
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
+			{
+				if ( strncmp(map.name, "Underworld", 10) )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+							break;
+						case 2:
+						case 3:
+							//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+							break;
+						case 4:
+						case 5:
+							//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+							break;
+						case 6:
+						case 7:
+							//myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+							break;
+						case 8:
+						case 9:
+							//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+							break;
+					}
+				}
+			}
+			else
+			{
+				myStats->HP = 100;
+				myStats->MAXHP = 100;
+				strcpy(myStats->name, "Funny Bones");
+				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
+				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
+			}
 
 			// random effects
-			if ( rand() % 10 == 0 )
-			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
-			}
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);
@@ -71,10 +103,9 @@ void initVampire(Entity* my, Stat* myStats)
 			createCustomInventory(myStats, customItemsToGenerate);
 
 			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats);
-			//max limit of 6 custom items per entity.
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
 
-			// count any inventory items set to default in edtior
+														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
@@ -91,6 +122,53 @@ void initVampire(Entity* my, Stat* myStats)
 					break;
 			}
 
+			//give weapon
+			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						//myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+						break;
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						//myStats->weapon = newItem(CROSSBOW, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+						break;
+					case 8:
+					case 9:
+						//myStats->weapon = newItem(MAGICSTAFF_COLD, EXCELLENT, -1 + rand() % 2, 1, rand(), false, NULL);
+						break;
+				}
+			}
+
+			//give helmet
+			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						break;
+					case 5:
+						//myStats->helmet = newItem(LEATHER_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
+						break;
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+						//myStats->helmet = newItem(IRON_HELM, DECREPIT, -1 + rand() % 2, 1, 0, false, NULL);
+						break;
+				}
+			}
+
 			//give shield
 			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
@@ -99,174 +177,19 @@ void initVampire(Entity* my, Stat* myStats)
 					case 0:
 					case 1:
 					case 2:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, NULL);
-						break;
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-						myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 2:
-					case 3:
-						myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 4:
-					case 5:
-						myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 6:
-						myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 7:
-						myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-						myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			// give helmet
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-						break;
-					case 3:
-						myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, NULL);
-						break;
-					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, 0, false, NULL);
-						break;
-					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, 0, false, NULL);
-						break;
-					case 6:
-					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, 0, false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, 0, false, NULL);
-						break;
-				}
-			}
-
-			// give cloak
-			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
 					case 3:
 					case 4:
 					case 5:
 						break;
 					case 6:
 					case 7:
-					case 8:
-						myStats->cloak = newItem(CLOAK, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			// give armor
-			if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
+						//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
 						break;
 					case 8:
+						//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
+						break;
 					case 9:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			// give gloves
-			if ( myStats->gloves == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->gloves = newItem(GLOVES, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			// give boots
-			if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rand(), false, NULL);
+						//myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 2, 1, rand(), false, NULL);
 						break;
 				}
 			}
@@ -468,28 +391,6 @@ void initVampire(Entity* my, Stat* myStats)
 		my->sprite = 437; // vampire head model
 		return;
 	}
-
-	// set head model
-	//if ( myStats->appearance < 5 )
-	//{
-	//	my->sprite = 113 + 12 * myStats->sex + myStats->appearance;
-	//}
-	//else if ( myStats->appearance == 5 )
-	//{
-	//	my->sprite = 332 + myStats->sex;
-	//}
-	//else if ( myStats->appearance >= 6 && myStats->appearance < 12 )
-	//{
-	//	my->sprite = 341 + myStats->sex * 13 + myStats->appearance - 6;
-	//}
-	//else if ( myStats->appearance >= 12 )
-	//{
-	//	my->sprite = 367 + myStats->sex * 13 + myStats->appearance - 12;
-	//}
-	//else
-	//{
-	//	my->sprite = 113; // default
-	//}
 }
 
 void actVampireLimb(Entity* my)

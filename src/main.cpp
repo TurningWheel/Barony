@@ -149,6 +149,7 @@ int toolbox = 1;
 int statusbar = 1;
 int viewsprites = 1;
 int showgrid = 0;
+int hovertext = 1;
 int selectedTile = 0;
 int tilepalette = 0;
 int spritepalette = 0;

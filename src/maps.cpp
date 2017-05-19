@@ -177,6 +177,74 @@ int monsterCurve(int level)
 				return DEMON;
 		}
 	}
+	else if ( !strncmp(map.name, "Caves", 5) )
+	{
+		switch ( rand() % 20 )
+		{
+			case 0:
+			case 1:
+			case 2:
+			case 3:
+				return KOBOLD;
+			case 4:
+			case 5:
+			case 6:
+			case 7:
+				return SCARAB;
+			case 8:
+			case 9:
+			case 10:
+			case 11:
+				return AUTOMATON;
+			case 12:
+			case 13:
+			case 14:
+				return INSECTOID;
+			case 15:
+			case 16:
+				return CRYSTALGOLEM;
+			case 17:
+				return GOATMAN;
+			case 18:
+				return INCUBUS;
+			case 19:
+				return COCKATRICE;
+		}
+	}
+	else if ( !strncmp(map.name, "Citadel", 7) )
+	{
+		switch ( rand() % 20 )
+		{
+			case 0:
+			case 1:
+				return KOBOLD;
+			case 2:
+			case 3:
+				return SCARAB;
+			case 4:
+			case 5:
+			case 6:
+				return CRYSTALGOLEM;
+			case 7:
+				return VAMPIRE;
+			case 8:
+			case 9:
+			case 10:
+				return SHADOW;
+			case 11:
+			case 12:
+			case 13:
+			case 14:
+				return AUTOMATON;
+			case 15:
+			case 16:
+			case 17:
+				return GOATMAN;
+			case 18:
+			case 19:
+				return COCKATRICE;
+		}
+	}
 	return SKELETON; // basic monster
 }
 
