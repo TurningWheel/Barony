@@ -194,7 +194,7 @@ voxel_t* loadVoxel(char* filename)
 int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 {
 	FILE* fp;
-	char valid_data[11];
+	char valid_data[16];
 	Uint32 numentities;
 	Uint32 c;
 	Sint32 x, y;
