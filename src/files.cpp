@@ -318,7 +318,6 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 					printlog("error: main map failed to load, aborting.\n");
 					mainloop = 0;
 				}
-				free(filename);
 				return -1;
 			}
 		}
@@ -472,7 +471,6 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			entity->x = x;
 			entity->y = y;
 		}
-		free(filename);
 		fclose(fp);
 
 		if ( destmap == &map )
@@ -550,13 +548,12 @@ int saveMap(char* filename2)
 	Uint32 numentities = 0;
 	node_t* node;
 	Entity* entity;
-	char* filename;
+	char filename[256];
 	Sint32 x, y;
 	Stat* myStats;
 
 	if ( filename2 != NULL && strcmp(filename2, "") )
 	{
-		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, "maps/");
 		strcat(filename, filename2);
 
@@ -646,7 +643,6 @@ int saveMap(char* filename2)
 			fwrite(&y, sizeof(Sint32), 1, fp);
 		}
 		fclose(fp);
-		free(filename);
 		return 0;
 	}
 	else
