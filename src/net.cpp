@@ -1767,11 +1767,11 @@ void clientHandlePacket()
 		printlog("Received map seed: %d. Entity UID start: %d\n", mapseed, entity_uids);
 		if ( !secretlevel )
 		{
-			fp = fopen(LEVELSFILE, "r");
+			fp = openDataFile(LEVELSFILE, "r");
 		}
 		else
 		{
-			fp = fopen(SECRETLEVELSFILE, "r");
+			fp = openDataFile(SECRETLEVELSFILE, "r");
 		}
 		for ( i = 0; i < currentlevel; i++ )
 			while ( fgetc(fp) != '\n' ) if ( feof(fp) )

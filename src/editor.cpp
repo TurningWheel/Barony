@@ -780,6 +780,7 @@ void redo()
 void processCommandLine(int argc, char** argv)
 {
 	int c = 0;
+	strcpy(datadir, "./");
 	if ( argc > 1 )
 	{
 		for ( c = 1; c < argc; c++ )
@@ -791,9 +792,14 @@ void processCommandLine(int argc, char** argv)
 					strcpy(maptoload, argv[c] + 5);
 					loadingmap = true;
 				}
+				else if (!strncmp(argv[c], "-datadir=", 9))
+				{
+					strcpy(datadir, argv[c] + 9);
+				}
 			}
 		}
 	}
+	printlog("Data path is %s", datadir);
 }
 
 /*-------------------------------------------------------------------------------

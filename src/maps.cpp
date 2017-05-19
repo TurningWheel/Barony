@@ -352,7 +352,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			snprintf(sublevelnum, 3, "%02d", numlevels);
 			strcat(sublevelname, sublevelnum);
 			snprintf(fullname, strlen(levelset) + 13, "maps/%s.lmp", sublevelname);
-			if ( access( fullname, F_OK ) == -1 )
+			if ( !dataPathExists(fullname) )
 			{
 				break;    // no more levels to load
 			}
@@ -398,7 +398,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 		// check if there is another sublevel to load
 		snprintf(fullname, strlen(levelset) + 13, "maps/%s.lmp", sublevelname);
-		if ( access( fullname, F_OK ) == -1 )
+		if ( !dataPathExists(fullname) )
 		{
 			break;    // no more levels to load
 		}
