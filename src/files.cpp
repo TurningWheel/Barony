@@ -275,7 +275,6 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		entity->x = x;
 		entity->y = y;
 	}
-	fclose(fp);
 
 	if ( destmap == &map )
 	{
