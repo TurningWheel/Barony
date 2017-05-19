@@ -473,13 +473,22 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		}
 		fclose(fp);
 
-		if ( destmap == &map )
+		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
+		if ( strncmp(map.name, "Hell", 4) )
+		{
+			for (c = 0; c < destmap->width * destmap->height; c++ )
+			{
+				lightmap[c] = 0;
+			}
+		}
+		else
 		{
 			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
 				lightmap[c] = 32;
 			}
 		}
+
 
 		// create a new vismap
 		if (vismap != NULL)
