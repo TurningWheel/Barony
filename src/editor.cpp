@@ -3298,7 +3298,7 @@ int main(int argc, char** argv)
 				default:	strcpy(action,"STATIC"); break;
 			}*/
 
-			int numsprites = (int)sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]);
+			int numsprites = static_cast<int>(sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]));
 
 			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
 			{
@@ -3415,7 +3415,7 @@ int main(int argc, char** argv)
 				tilepalette = 0;
 			}
 
-			int numtiles = (int)sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]);
+			int numtiles = static_cast<int>(sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]));
 
 			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
 			{
