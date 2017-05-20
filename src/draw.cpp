@@ -1362,8 +1362,32 @@ void drawEntities2D(long camx, long camy)
 					// handle mouseover sprite name tooltip in main editor screen
 					int padx = pos.x + 10;
 					int pady = pos.y - 20;
-					ttfPrintText(ttf8, padx, pady - offset, spriteEditorNameStrings[entity->sprite]);
-					offset += 10;
+					int spriteType = checkSpriteType(entity->sprite);
+					Stat* tmpStats = nullptr;
+					if ( spriteType == 1 )
+					{
+						tmpStats = entity->getStats();
+						if ( tmpStats != nullptr )
+						{
+							if ( strcmp(tmpStats->name, "") != 0 )
+							{
+								ttfPrintText(ttf8, padx, pady - offset, tmpStats->name);
+								offset += 10;
+							}
+							ttfPrintText(ttf8, padx, pady - offset, spriteEditorNameStrings[entity->sprite]);
+							offset += 10;
+						}
+					}
+					else if ( spriteType == 3 )
+					{
+						ttfPrintText(ttf8, padx, pady - offset, itemNameStrings[entity->skill[10]]);
+						offset += 10;
+					}
+					else
+					{
+						ttfPrintText(ttf8, padx, pady - offset, spriteEditorNameStrings[entity->sprite]);
+						offset += 10;
+					}
 				}
 				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
 				if ( entity->sprite == 8 && entity->skill[10] > 1 )
