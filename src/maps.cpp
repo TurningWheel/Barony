@@ -1995,55 +1995,55 @@ void assignActions(map_t* map)
 				}
 				else if ( entity->sprite == 83 )     // devil.png
 				{
-					monsterType = KOBOLD;
+					monsterType = SKELETON;
 				}
 				else if ( entity->sprite == 84 )     // devil.png
 				{
-					monsterType = SCARAB;
+					monsterType = KOBOLD;
 				}
 				else if ( entity->sprite == 85 )     // devil.png
 				{
-					monsterType = CRYSTALGOLEM;
+					monsterType = SCARAB;
 				}
 				else if ( entity->sprite == 86 )     // devil.png
 				{
-					monsterType = INCUBUS;
+					monsterType = CRYSTALGOLEM;
 				}
 				else if ( entity->sprite == 87 )     // devil.png
 				{
-					monsterType = VAMPIRE;
+					monsterType = INCUBUS;
 				}
 				else if ( entity->sprite == 88 )     // devil.png
 				{
-					monsterType = SHADOW;
+					monsterType = VAMPIRE;
 				}
 				else if ( entity->sprite == 89 )     // devil.png
 				{
-					monsterType = COCKATRICE;
+					monsterType = SHADOW;
 				}
 				else if ( entity->sprite == 90 )     // devil.png
 				{
-					monsterType = INSECTOID;
+					monsterType = COCKATRICE;
 				}
 				else if ( entity->sprite == 91 )     // devil.png
 				{
-					monsterType = GOATMAN;
+					monsterType = INSECTOID;
 				}
 				else if ( entity->sprite == 92 )     // devil.png
 				{
-					monsterType = AUTOMATON;
+					monsterType = GOATMAN;
 				}
 				else if ( entity->sprite == 93 )     // devil.png
 				{
-					monsterType = LICH_ICE;
+					monsterType = AUTOMATON;
 				}
 				else if ( entity->sprite == 94 )     // devil.png
 				{
-					monsterType = LICH_FIRE;
+					monsterType = LICH_ICE;
 				}
 				else if ( entity->sprite == 95 )     // devil.png
 				{
-					monsterType = SKELETON;
+					monsterType = LICH_FIRE;
 				}
 				else if ( entity->sprite == 81 )     // devil.png
 				{
@@ -2076,10 +2076,6 @@ void assignActions(map_t* map)
 				else if ( entity->sprite == 82 )     // devil.png
 				{
 					monsterType = GHOUL;
-				}
-				else if ( entity->sprite == 96 )     // devil.png
-				{
-					monsterType = RAT;
 				}
 				else
 				{

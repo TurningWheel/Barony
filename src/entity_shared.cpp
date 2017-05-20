@@ -39,7 +39,6 @@ int checkSpriteType(Sint32 sprite)
 	case 93:
 	case 94:
 	case 95:
-	case 96:
 	case 75:
 	case 76:
 	case 77:
@@ -545,6 +544,7 @@ char spriteEditorNameStrings[96][28] =
 	"SUCCUBUS",
 	"RAT",
 	"GHOUL",
+	"SKELETON",
 	"KOBOLD",
 	"SCARAB",
 	"CRYSTALGOLEM",
@@ -556,8 +556,7 @@ char spriteEditorNameStrings[96][28] =
 	"GOATMAN",
 	"AUTOMATON",
 	"LICH ICE",
-	"LICH FIRE",
-	"SKELETON"
+	"LICH FIRE"
 };
 
 char tileEditorNameStrings[201][44] =
