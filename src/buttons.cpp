@@ -343,7 +343,7 @@ void buttonOpen(button_t* my)
 	button->focused = 1;
 
 	// file list
-	if ( (dir = opendir("maps/")) != NULL )
+	if ( (dir = openDataDir("maps/")) != NULL )
 	{
 		while ( (ent = readdir(dir)) != NULL )
 		{
@@ -370,7 +370,7 @@ void buttonOpen(button_t* my)
 			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
 		}
 		c = 0;
-		if ( (dir = opendir("maps/")) != NULL )
+		if ( (dir = openDataDir("maps/")) != NULL )
 		{
 			while ( (ent = readdir(dir)) != NULL )
 			{
@@ -514,7 +514,7 @@ void buttonSaveAs(button_t* my)
 	button->focused = 1;
 
 	// file list
-	if ( (dir = opendir("maps/")) != NULL )
+	if ( (dir = openDataDir("maps/")) != NULL )
 	{
 		while ( (ent = readdir(dir)) != NULL )
 		{
@@ -541,7 +541,7 @@ void buttonSaveAs(button_t* my)
 			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
 		}
 		c = 0;
-		if ( (dir = opendir("maps/")) != NULL )
+		if ( (dir = openDataDir("maps/")) != NULL )
 		{
 			while ( (ent = readdir(dir)) != NULL )
 			{
