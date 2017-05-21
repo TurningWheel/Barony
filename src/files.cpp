@@ -278,6 +278,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 					case 1:
 					case 2:
 					case 3:
+					case 4:
 						setSpriteAttributes(entity, nullptr, nullptr);
 						break;
 					default:
@@ -384,6 +385,14 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 							fread(&entity->skill[12], sizeof(Sint32), 1, fp);
 							fread(&entity->skill[13], sizeof(Sint32), 1, fp);
 							fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+							break;
+						case 4:
+							fread(&entity->skill[0], sizeof(Sint32), 1, fp);
+							fread(&entity->skill[1], sizeof(Sint32), 1, fp);
+							fread(&entity->skill[2], sizeof(Sint32), 1, fp);
+							fread(&entity->skill[3], sizeof(Sint32), 1, fp);
+							fread(&entity->skill[4], sizeof(Sint32), 1, fp);
+							fread(&entity->skill[5], sizeof(Sint32), 1, fp);
 							break;
 						default:
 							break;
@@ -592,6 +601,14 @@ int saveMap(char* filename2)
 					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[13], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					break;
+				case 4:
+					fwrite(&entity->skill[0], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[1], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[2], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[3], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[4], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[5], sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

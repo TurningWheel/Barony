@@ -49,7 +49,6 @@ int checkSpriteType(Sint32 sprite)
 	case 80:
 	case 81:
 	case 82:
-	
 		//monsters
 		return 1;
 		break;
@@ -60,6 +59,10 @@ int checkSpriteType(Sint32 sprite)
 	case 8:
 		//items
 		return 3;
+		break;
+	case 97:
+		//summon trap
+		return 4;
 		break;
 	default:
 		return 0;
@@ -459,7 +462,7 @@ char itemStringsByType[10][63][32] =
 	
 };
 
-char spriteEditorNameStrings[96][28] = 
+char spriteEditorNameStrings[98][28] = 
 {
 	"NULL",	
 	"PLAYER START",
@@ -556,7 +559,46 @@ char spriteEditorNameStrings[96][28] =
 	"GOATMAN",
 	"AUTOMATON",
 	"LICH ICE",
-	"LICH FIRE"
+	"LICH FIRE",
+	"NOT USED",
+	"SUMMON TRAP"
+};
+
+char monsterEditorNameStrings[NUMMONSTERS][13] =
+{
+	"nothing",
+	"human",
+	"rat",
+	"goblin",
+	"slime",
+	"troll",
+	"invalid",
+	"spider",
+	"ghoul",
+	"skeleton",
+	"scorpion",
+	"imp",
+	"invalid",
+	"gnome",
+	"demon",
+	"succubus",
+	"invalid",
+	"lich",
+	"minotaur",
+	"devil",
+	"shopkeeper",
+	"kobold",
+	"scarab",
+	"crystalgolem",
+	"incubus",
+	"vampire",
+	"shadow",
+	"cockatrice",
+	"insectoid",
+	"goatman",
+	"automaton",
+	"lich_ice",
+	"lich_fire"
 };
 
 char tileEditorNameStrings[201][44] =
@@ -941,6 +983,30 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[12] = 10;
 			entityNew->skill[13] = 1;
 			entityNew->skill[15] = 1;
+		}
+	}
+	// summoning trap.
+	else if ( spriteType == 4 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[0] = entityToCopy->skill[0];
+			entityNew->skill[1] = entityToCopy->skill[1];
+			entityNew->skill[2] = entityToCopy->skill[2];
+			entityNew->skill[3] = entityToCopy->skill[3];
+			entityNew->skill[4] = entityToCopy->skill[4];
+			entityNew->skill[5] = entityToCopy->skill[5];
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[0] = 0;
+			entityNew->skill[1] = 1;
+			entityNew->skill[2] = 1;
+			entityNew->skill[3] = 1;
+			entityNew->skill[4] = 0;
+			entityNew->skill[5] = 0;
 		}
 	}
 

@@ -299,3 +299,6 @@ void actDevilTeleport(Entity* my);
 
 void createMinotaurTimer(Entity* entity, map_t* map);
 
+void actSummonTrap(Entity* my);
+extern int monsterCurve(int level);
+

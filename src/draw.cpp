@@ -1341,7 +1341,23 @@ void drawEntities2D(long camx, long camy)
 							}
 							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 0, tmpStr2);
 							break;
-
+						case 4: //summoning trap
+							pady += 5;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady - 20, tmpStr);
+							strcpy(tmpStr, monsterEditorNameStrings[entity->skill[0]]);
+							ttfPrintText(ttf8, padx, pady - 10, tmpStr);
+							strcpy(tmpStr, monsterEditorNameStrings[entity->skill[1]]);
+							ttfPrintText(ttf8, padx, pady, tmpStr);
+							strcpy(tmpStr, monsterEditorNameStrings[entity->skill[2]]);
+							ttfPrintText(ttf8, padx, pady + 10, tmpStr);
+							strcpy(tmpStr, monsterEditorNameStrings[entity->skill[3]]);
+							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
+							strcpy(tmpStr, monsterEditorNameStrings[entity->skill[4]]);
+							ttfPrintText(ttf8, padx, pady + 30, tmpStr);
+							strcpy(tmpStr, monsterEditorNameStrings[entity->skill[5]]);
+							ttfPrintText(ttf8, padx, pady + 40, tmpStr);
+							break;
 						default:
 							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
