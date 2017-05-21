@@ -740,7 +740,7 @@ list_t* directoryContents(char* directory)
 		{
 			continue;
 		}
-		if (cur.st_mode & S_IFMT == S_IFREG)
+		if ((cur.st_mode & S_IFMT) == S_IFREG)
 		{
 			newString(list, 0xFFFFFFFF, entry->d_name);
 		}
