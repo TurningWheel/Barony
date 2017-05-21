@@ -722,7 +722,7 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK )
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
 		return 1; // these items do not stack
 	}
