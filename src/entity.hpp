@@ -150,7 +150,7 @@ public:
 	void effectTimes();
 	void increaseSkill(int skill);
 
-	Stat* getStats();
+	Stat* getStats() const;
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
