@@ -11,14 +11,6 @@
 
 #pragma once
 
-#ifdef PANDORA
-#define NUMRESOLUTIONS 2
-#else
-#define NUMRESOLUTIONS 10
-#endif
-
-extern int resolutions[NUMRESOLUTIONS][2];
-
 extern bool savethisgame;
 
 // main menu code
