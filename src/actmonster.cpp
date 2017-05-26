@@ -1786,8 +1786,10 @@ void actMonster(Entity* my)
 						{
 							if (myStats->leader_uid == 0)
 							{
-								if (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS))
+								//Skill level legendary in leadership always gets the girl.
+								if ( stats[clientnum]->PROFICIENCIES[PRO_LEADERSHIP] >= SKILL_LEVEL_LEGENDARY || ( stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS) ) )
 								{
+									//Monster is now a follower.
 									node_t* newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
 									newNode->deconstructor = &defaultDeconstructor;
 									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
@@ -1824,6 +1826,7 @@ void actMonster(Entity* my)
 								}
 								else
 								{
+									//This one does not want to join your ever-enlargening cult.
 									if (my->getINT() > -2)
 									{
 										messagePlayer(monsterclicked, language[530 + rand() % 4], namesays);
