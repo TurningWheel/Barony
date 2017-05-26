@@ -70,12 +70,12 @@ static const int SKILL_LEVEL_LEGENDARY = 100;
 static const int CAPSTONE_LOCKPICKING_UNLOCK = SKILL_LEVEL_LEGENDARY;
 static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 {
-		100,
-		101,
-		100,
-		100,
-		101,
-		101,
+		100,		//Lockpicking
+		101,		//Stealth
+		100,		//Trading
+		100,		//Appraisal
+		101,		//Swimming
+		100,		//Leadership
 		101,
 		101,
 		101,
