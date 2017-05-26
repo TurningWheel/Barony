@@ -206,6 +206,18 @@ public:
 
 	//Act functions.
 	void actChest();
+
+	Monster getRace() const
+	{
+		Stat* myStats = getStats();
+
+		if ( !myStats )
+		{
+			return NOTHING;
+		}
+
+		return myStats->type;
+	}
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
