@@ -296,7 +296,7 @@ void actMagiclightBall(Entity* my);
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[98][28];
-extern char tileEditorNameStrings[201][44];
+extern char tileEditorNameStrings[202][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][63][32];
 extern char itemNameStrings[198][32];

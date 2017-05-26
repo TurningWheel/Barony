@@ -2734,17 +2734,17 @@ int main(int argc, char** argv)
 								}
 								else if ( i == 4 )
 								{
-									if ( propertyInt == 2 )
+									if ( propertyInt == 1 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Identified");
 									}
-									else if ( propertyInt == 1 )
+									else if ( propertyInt == 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Unidentified");
 									}
-									else if ( propertyInt == 0 )
+									else if ( propertyInt == 2 )
 									{
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, colorRandom, "Random");
 									}

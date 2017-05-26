@@ -1324,12 +1324,12 @@ void drawEntities2D(long camx, long camy)
 							pady += 2;
 							strcpy(tmpStr, "Identified: ");
 							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 0, tmpStr);
-							if ( (int)selectedEntity->skill[15] == 1 )
+							if ( (int)selectedEntity->skill[15] == 0 )
 							{
 								strcpy(tmpStr2, "No");
 								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 							}
-							else if ( (int)selectedEntity->skill[15] == 2 )
+							else if ( (int)selectedEntity->skill[15] == 1 )
 							{
 								strcpy(tmpStr2, "Yes");
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);

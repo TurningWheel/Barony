@@ -601,7 +601,7 @@ char monsterEditorNameStrings[NUMMONSTERS][13] =
 	"lich_fire"
 };
 
-char tileEditorNameStrings[201][44] =
+char tileEditorNameStrings[202][44] =
 {
 	"backdrop.png",
 	"bback.png",
@@ -803,7 +803,8 @@ char tileEditorNameStrings[201][44] =
 	"Crystal Wall Column Left.png",
 	"Crystal Wall Column Right.png",
 	"Bronze Columns.png",
-	"Bronze Columns Alcove.png"
+	"Bronze Columns Alcove.png",
+	"Submap.png"
 };
 
 int canWearEquip(Entity* entity, int category)
