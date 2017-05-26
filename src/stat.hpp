@@ -16,48 +16,11 @@
 #endif
 
 class Item;
+enum Monster : int;
 //enum Item;
 //enum Status;
 //enum Category;
 
-typedef enum
-{
-	NOTHING,
-	HUMAN,
-	RAT,
-	GOBLIN,
-	SLIME,
-	TROLL,
-	OCTOPUS,
-	SPIDER,
-	GHOUL,
-	SKELETON,
-	SCORPION,
-	CREATURE_IMP, //Because Apple so unkindly is already using the IMP keyword.
-	BUGBEAR,
-	GNOME,
-	DEMON,
-	SUCCUBUS,
-	MIMIC,
-	LICH,
-	MINOTAUR,
-	DEVIL,
-	SHOPKEEPER,
-	KOBOLD,
-	SCARAB,
-	CRYSTALGOLEM,
-	INCUBUS,
-	VAMPIRE,
-	SHADOW,
-	COCKATRICE,
-	INSECTOID,
-	GOATMAN,
-	AUTOMATON,
-	LICH_ICE,
-	LICH_FIRE
-} Monster;
-#define NUMMONSTERS 33
-extern int kills[NUMMONSTERS];
 
 // effects
 #define EFF_ASLEEP 0

@@ -14,6 +14,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
+#include "monster.hpp"
 
 // entity flags
 #define BRIGHT 1
