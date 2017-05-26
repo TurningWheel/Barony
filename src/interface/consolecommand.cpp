@@ -1171,6 +1171,34 @@ void consoleCommand(char* command_str)
 			createMinotaurTimer(players[0]->entity, &map);
 		}
 	}
+	else if ( !strncmp(command_str, "/minotaurnow", 12) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		if ( minotaurlevel )
+		{
+			node_t *tmpNode = NULL;
+			Entity *tmpEnt = NULL;
+			for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
+			{
+				tmpEnt = (Entity*)tmpNode->element;
+				if ( tmpEnt->sprite == 37 )
+				{
+					tmpEnt->skill[0] += TICKS_PER_SECOND * 150;
+					return;
+				}
+			}
+		}
+	}
 	else if ( !strncmp(command_str, "/levelskill ", 12) )
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
