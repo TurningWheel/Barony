@@ -14,6 +14,7 @@
 #include "stat.hpp"
 #include "net.hpp"
 #include "menu.hpp"
+#include "monster.hpp"
 #include "scores.hpp"
 #include "interface/interface.hpp"
 #include <SDL_thread.h>

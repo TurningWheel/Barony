@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include <sys/types.h>
+#include <sys/stat.h>
 #include <dirent.h>
 #include "main.hpp"
 #include "sound.hpp"
@@ -42,6 +43,50 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 	SDL_UnlockSurface(image);
 }
 
+
+bool completePath(char *dest, const char * const filename) {
+	if (!(filename && filename[0])) {
+		return false;
+	}
+
+	// Already absolute
+	if (filename[0] == '/') {
+		strncpy(dest, filename, 1024);
+		return true;
+	}
+
+	snprintf(dest, 1024, "%s/%s", datadir, filename);
+	return true;
+}
+
+FILE* openDataFile(const char * const filename, const char * const mode) {
+	char path[1024];
+	completePath(path, filename);
+	FILE * result = fopen(path, mode);
+	if (!result) {
+		printlog("Could not open '%s': %s", path, strerror(errno));
+	}
+	return result;
+}
+
+DIR* openDataDir(const char * const name) {
+	char path[1024];
+	completePath(path, name);
+	DIR * result = opendir(path);
+	if (!result) {
+		printlog("Could not open '%s': %s", path, strerror(errno));
+	}
+	return result;
+}
+
+
+bool dataPathExists(const char * const path) {
+	char full_path[1024];
+	completePath(full_path, path);
+	return access(full_path, F_OK) != -1;
+}
+
+
 /*-------------------------------------------------------------------------------
 
 	loadImage
@@ -53,6 +98,8 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 
 SDL_Surface* loadImage(char* filename)
 {
+	char full_path[1024];
+	completePath(full_path, filename);
 	SDL_Surface* originalSurface;
 
 	if ( imgref >= MAXTEXTURES )
@@ -61,9 +108,9 @@ SDL_Surface* loadImage(char* filename)
 		printlog("aborting...\n");
 		exit(1);
 	}
-	if ( (originalSurface = IMG_Load(filename)) == NULL )
+	if ( (originalSurface = IMG_Load(full_path)) == NULL )
 	{
-		printlog("error: failed to load image '%s'\n", filename);
+		printlog("error: failed to load image '%s'\n", full_path);
 		exit(1); // critical error
 		return NULL;
 	}
@@ -93,28 +140,19 @@ SDL_Surface* loadImage(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-voxel_t* loadVoxel(char* filename2)
+voxel_t* loadVoxel(char* filename)
 {
-	char* filename;
+	//char filename2[1024];
 	FILE* file;
 	voxel_t* model;
 
-	if (filename2 != NULL)
+	if (filename != NULL)
 	{
-		if ( strstr(filename2, ".vox") == NULL )
+		//bool has_ext = strstr(filename, ".vox") == NULL;
+		//snprintf(filename2, 1024, "%s%s", filename, has_ext ? "" : ".vox");
+
+		if ((file = openDataFile(filename, "rb")) == NULL)
 		{
-			filename = (char*) malloc(sizeof(char) * 256);
-			strcpy(filename, filename2);
-			strcat(filename, ".vox");
-		}
-		else
-		{
-			filename = (char*) malloc(sizeof(char) * 256);
-			strcpy(filename, filename2);
-		}
-		if ((file = fopen(filename, "rb")) == NULL)
-		{
-			free(filename);
 			return NULL;
 		}
 		model = (voxel_t*) malloc(sizeof(voxel_t));
@@ -136,7 +174,6 @@ voxel_t* loadVoxel(char* filename2)
 			model->palette[c][2] = model->palette[c][2] << 2;
 		}
 		fclose(file);
-		free(filename);
 
 		return model;
 	}
@@ -157,67 +194,104 @@ voxel_t* loadVoxel(char* filename2)
 int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 {
 	FILE* fp;
-	char valid_data[11];
+	char valid_data[16];
 	Uint32 numentities;
 	Uint32 c;
 	Sint32 x, y;
 	Entity* entity;
 	Sint32 sprite;
-	char* filename;
 	Stat* myStats;
 	Stat* dummyStats;
 	sex_t s;
 	int editorVersion = 0;
+	char filename[256];
 
 	char oldmapname[64];
 	strcpy(oldmapname, map.name);
 
-	if ( filename2 != NULL && strcmp(filename2, "") )
+	printlog("LoadMap %s", filename2);
+
+	if (! (filename2 && filename2[0])) {
+		printlog("map filename empty or null");
+		return -1;
+	}
+
+	strcpy(filename, "maps/");
+	strcat(filename, filename2);
+
+	// add extension if missing
+	if ( strstr(filename, ".lmp") == NULL )
 	{
-		c = 0;
-		while (1)
-		{
-			if (filename2[c] == 0)
-			{
-				break;
-			}
-			c++;
-		}
-		filename = (char*) malloc(sizeof(char) * 256);
-		strcpy(filename, "maps/");
-		strcat(filename, filename2);
+		strcat(filename, ".lmp");
+	}
 
-		if ( strcmp(filename, "..") && strcmp(filename, ".") )
+	// load the file!
+	if ((fp = openDataFile(filename, "rb")) == NULL)
+	{
+		printlog("warning: failed to open file '%s' for map loading!\n", filename);
+		if ( destmap == &map && game )
 		{
-			// add extension if missing
-			if ( strstr(filename, ".lmp") == NULL )
-			{
-				strcat(filename, ".lmp");
-			}
-
-			// load the file!
-			if ((fp = fopen(filename, "rb")) == NULL)
-			{
-				printlog("warning: failed to open file '%s' for map loading!\n", filename);
-				if ( destmap == &map && game )
-				{
-					printlog("error: main map failed to load, aborting.\n");
-					mainloop = 0;
-				}
-				free(filename);
-				return -1;
-			}
+			printlog("error: main map failed to load, aborting.\n");
+			mainloop = 0;
 		}
-		else
+		return -1;
+	}
+
+	fread(valid_data, sizeof(char), strlen("BARONY"), fp);
+	if ( strncmp(valid_data, "BARONY", strlen("BARONY")) )
+	{
+		printlog("warning: file '%s' is an invalid map file.\n", filename);
+		fclose(fp);
+		if ( destmap == &map && game )
 		{
-			printlog("warning: failed to open file '%s' for map loading!\n", filename);
-			if ( destmap == &map && game )
-			{
-				printlog("error: main map failed to load, aborting.\n");
-				mainloop = 0;
-			}
-			free(filename);
-			return -1;
+			printlog("error: main map failed to load, aborting.\n");
+			mainloop = 0;
+		}
+		return -1;
+	}
+	list_FreeAll(entlist);
+	if ( destmap == &map )
+	{
+		// remove old lights
+		list_FreeAll(&light_l);
+	}
+	if ( destmap->tiles != NULL )
+	{
+		free(destmap->tiles);
+	}
+	fread(destmap->name, sizeof(char), 32, fp); // map name
+	fread(destmap->author, sizeof(char), 32, fp); // map author
+	fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
+	fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
+	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
+	fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
+	fread(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
+	for (c = 0; c < numentities; c++)
+	{
+		fread(&sprite, sizeof(Sint32), 1, fp);
+		entity = newEntity(sprite, 0, entlist);
+		fread(&x, sizeof(Sint32), 1, fp);
+		fread(&y, sizeof(Sint32), 1, fp);
+		entity->x = x;
+		entity->y = y;
+	}
+
+	if ( destmap == &map )
+	{
+		nummonsters = 0;
+		minotaurlevel = 0;
+
+#if defined (HAVE_FMOD) || defined(HAVE_OPENAL)
+		if ( strcmp(oldmapname, map.name) )
+		{
+			levelmusicplaying = false;
+		}
+#endif
+
+		// create new lightmap
+		if (lightmap != NULL)
+		{
+			free(lightmap);
 		}
 
 		fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
@@ -244,7 +318,6 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 					printlog("error: main map failed to load, aborting.\n");
 					mainloop = 0;
 				}
-				free(filename);
 				return -1;
 			}
 		}
@@ -407,98 +480,76 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			entity->x = x;
 			entity->y = y;
 		}
-		free(filename);
 		fclose(fp);
 
-		if ( destmap == &map )
+		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
+		if ( strncmp(map.name, "Hell", 4) )
 		{
-			nummonsters = 0;
-			minotaurlevel = 0;
-
-#if defined (HAVE_FMOD) || defined(HAVE_OPENAL)
-			if ( strcmp(oldmapname, map.name) )
+			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
-				levelmusicplaying = false;
+				lightmap[c] = 0;
 			}
-#endif
-
-			// create new lightmap
-			if (lightmap != NULL)
+		}
+		else
+		{
+			for (c = 0; c < destmap->width * destmap->height; c++ )
 			{
-				free(lightmap);
+				lightmap[c] = 32;
 			}
-			lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
-			if ( strncmp(map.name, "Hell", 4) )
-			{
-				for (c = 0; c < destmap->width * destmap->height; c++ )
-				{
-					lightmap[c] = 0;
-				}
-			}
-			else
-			{
-				for (c = 0; c < destmap->width * destmap->height; c++ )
-				{
-					lightmap[c] = 32;
-				}
-			}
-
-			// create a new vismap
-			if (vismap != NULL)
-			{
-				free(vismap);
-			}
-			vismap = (bool*) calloc(destmap->width * destmap->height, sizeof(bool));
-
-			// reset minimap
-			for ( x = 0; x < 64; x++ )
-				for ( y = 0; y < 64; y++ )
-				{
-					minimap[y][x] = 0;
-				}
-
-			// reset camera
-			if ( game )
-			{
-				camera.x = -32;
-				camera.y = -32;
-				camera.z = 0;
-				camera.ang = 3 * PI / 2;
-				camera.vang = 0;
-			}
-			else
-			{
-				camera.x = 2;
-				camera.y = 2;
-				camera.z = 0;
-				camera.ang = 0;
-				camera.vang = 0;
-			}
-
-			// shoparea
-			if ( shoparea )
-			{
-				free(shoparea);
-			}
-			shoparea = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
-			for ( x = 0; x < destmap->width; x++ )
-				for ( y = 0; y < destmap->height; y++ )
-				{
-					shoparea[y + x * destmap->height] = false;
-				}
 		}
 
-		for ( c = 0; c < 512; c++ )
+
+		// create a new vismap
+		if (vismap != NULL)
 		{
-			keystatus[c] = 0;
+			free(vismap);
+		}
+		vismap = (bool*) calloc(destmap->width * destmap->height, sizeof(bool));
+
+		// reset minimap
+		for ( x = 0; x < 64; x++ )
+			for ( y = 0; y < 64; y++ )
+			{
+				minimap[y][x] = 0;
+			}
+
+		// reset camera
+		if ( game )
+		{
+			camera.x = -32;
+			camera.y = -32;
+			camera.z = 0;
+			camera.ang = 3 * PI / 2;
+			camera.vang = 0;
+		}
+		else
+		{
+			camera.x = 2;
+			camera.y = 2;
+			camera.z = 0;
+			camera.ang = 0;
+			camera.vang = 0;
 		}
 
-		return numentities;
+		// shoparea
+		if ( shoparea )
+		{
+			free(shoparea);
+		}
+		shoparea = (bool*) malloc(sizeof(bool) * destmap->width * destmap->height);
+		for ( x = 0; x < destmap->width; x++ )
+			for ( y = 0; y < destmap->height; y++ )
+			{
+				shoparea[y + x * destmap->height] = false;
+			}
 	}
-	else
+
+	for ( c = 0; c < 512; c++ )
 	{
-		return -1;
+		keystatus[c] = 0;
 	}
+
+	return numentities;
 }
 
 /*-------------------------------------------------------------------------------
@@ -515,13 +566,12 @@ int saveMap(char* filename2)
 	Uint32 numentities = 0;
 	node_t* node;
 	Entity* entity;
-	char* filename;
+	char filename[256];
 	Sint32 x, y;
 	Stat* myStats;
 
 	if ( filename2 != NULL && strcmp(filename2, "") )
 	{
-		filename = (char*) malloc(sizeof(char) * 256);
 		strcpy(filename, "maps/");
 		strcat(filename, filename2);
 
@@ -529,7 +579,7 @@ int saveMap(char* filename2)
 		{
 			strcat(filename, ".lmp");
 		}
-		if ((fp = fopen(filename, "wb")) == NULL)
+		if ((fp = openDataFile(filename, "wb")) == NULL)
 		{
 			printlog("warning: failed to open file '%s' for map saving!\n", filename);
 			return 1;
@@ -619,7 +669,6 @@ int saveMap(char* filename2)
 			fwrite(&y, sizeof(Sint32), 1, fp);
 		}
 		fclose(fp);
-		free(filename);
 		return 0;
 	}
 	else
@@ -640,18 +689,34 @@ char* readFile(char* filename)
 {
 	char* file_contents = NULL;
 	long input_file_size;
-	FILE* input_file = fopen(filename, "rb");
-	if ( input_file )
-	{
-		fseek(input_file, 0, SEEK_END);
-		input_file_size = ftell(input_file);
-		rewind(input_file);
-		file_contents = static_cast<char*>(malloc((input_file_size + 1) * sizeof(char)));
-		fread(file_contents, sizeof(char), input_file_size, input_file);
-		file_contents[input_file_size] = 0;
-		fclose(input_file);
+	FILE* input_file = openDataFile(filename, "rb");
+	if (!input_file) {
+		printlog("Open failed: %s", strerror(errno));
+		goto out_input_file;
 	}
 
+	if (fseek(input_file, 0, SEEK_END) != 0) {
+		printlog("Seek failed");
+		goto out_input_file;
+	}
+
+	if ((input_file_size = ftell(input_file)) == -1) {
+		printlog("ftell failed");
+		goto out_input_file;
+	}
+
+	if (input_file_size > (1<<30)) {
+		printlog("Unreasonable size: %ld", input_file_size);
+		goto out_input_file;
+	}
+	
+	rewind(input_file);
+	file_contents = static_cast<char*>(malloc((input_file_size + 1) * sizeof(char)));
+	fread(file_contents, sizeof(char), input_file_size, input_file);
+	file_contents[input_file_size] = 0;
+
+out_input_file:
+	fclose(input_file);
 	return file_contents;
 }
 
@@ -666,9 +731,10 @@ char* readFile(char* filename)
 list_t* directoryContents(char* directory)
 {
 	list_t* list = NULL; // list of strings
-	DIR* dir = NULL;
+	char fullPath[1024];
+	completePath(fullPath, directory);
+	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
-	dir = opendir(directory);
 
 	if ( !dir )
 	{
@@ -680,19 +746,20 @@ list_t* directoryContents(char* directory)
 	list->first = NULL;
 	list->last = NULL;
 
+	struct stat cur;
+	char curPath[1024];
 	while ((entry = readdir(dir)) != NULL)
 	{
-		strcpy(tempstr, directory);
-		strcat(tempstr, entry->d_name);
+		strcpy(curPath, fullPath);
+		strcat(curPath, entry->d_name);
 
-		DIR* newdir = NULL;
-		if ( (newdir = opendir(tempstr)) == NULL )
+		if (stat(curPath, &cur) != 0)
+		{
+			continue;
+		}
+		if ((cur.st_mode & S_IFMT) == S_IFREG)
 		{
 			newString(list, 0xFFFFFFFF, entry->d_name);
-		}
-		else
-		{
-			closedir(newdir);
 		}
 	}
 
