@@ -14,6 +14,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
+#include "monster.hpp"
 
 // entity flags
 #define BRIGHT 1
@@ -150,7 +151,7 @@ public:
 	void effectTimes();
 	void increaseSkill(int skill);
 
-	Stat* getStats();
+	Stat* getStats() const;
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
@@ -205,6 +206,18 @@ public:
 
 	//Act functions.
 	void actChest();
+
+	Monster getRace() const
+	{
+		Stat* myStats = getStats();
+
+		if ( !myStats )
+		{
+			return NOTHING;
+		}
+
+		return myStats->type;
+	}
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

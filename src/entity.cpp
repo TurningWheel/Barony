@@ -817,7 +817,7 @@ void Entity::increaseSkill(int skill)
 
 -------------------------------------------------------------------------------*/
 
-Stat* Entity::getStats()
+Stat* Entity::getStats() const
 {
 	if (this->behavior == &actMonster)   // monsters
 	{
