@@ -675,6 +675,7 @@ void makeUndo()
 	map_t* undomap = (map_t*) malloc(sizeof(map_t));
 	strcpy(undomap->author, map.author);
 	strcpy(undomap->name, map.name);
+	undomap->skybox = map.skybox;
 	undomap->width = map.width;
 	undomap->height = map.height;
 	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
@@ -922,6 +923,7 @@ int main(int argc, char** argv)
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
+	map.skybox = 0;
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -1972,6 +1974,9 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, subx1 + 8, suby1 + 64, "Author name:");
 					drawDepressed(subx1 + 4, suby1 + 76, subx2 - 4, suby1 + 92);
 					printText(font8x8_bmp, subx1 + 8, suby1 + 80, authortext);
+					printText(font8x8_bmp, subx1 + 8, suby1 + 104, "Map skybox:");
+					drawDepressed(subx1 + 104, suby1 + 100, subx1 + 168, suby1 + 116);
+					printText(font8x8_bmp, subx1 + 108, suby1 + 104, skyboxtext);
 					printText(font8x8_bmp, subx1 + 8, suby2 - 44, "Map width:");
 					drawDepressed(subx1 + 104, suby2 - 48, subx1 + 168, suby2 - 32);
 					printText(font8x8_bmp, subx1 + 108, suby2 - 44, widthtext);
@@ -1984,7 +1989,7 @@ int main(int argc, char** argv)
 						keystatus[SDL_SCANCODE_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 4 )
+						if ( editproperty == 5 )
 						{
 							editproperty = 0;
 						}
@@ -1997,9 +2002,12 @@ int main(int argc, char** argv)
 								inputstr = authortext;
 								break;
 							case 2:
-								inputstr = widthtext;
+								inputstr = skyboxtext;
 								break;
 							case 3:
+								inputstr = widthtext;
+								break;
+							case 4:
 								inputstr = heighttext;
 								break;
 						}
@@ -2020,16 +2028,22 @@ int main(int argc, char** argv)
 							editproperty = 1;
 							cursorflash = ticks;
 						}
+						if ( omousex >= subx1 + 104 && omousey >= suby1 + 94 && omousex < subx1 + 168 && omousey < suby1 + 110 )
+						{
+							inputstr = skyboxtext;
+							editproperty = 2;
+							cursorflash = ticks;
+						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 2;
+							editproperty = 3;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 3;
+							editproperty = 4;
 							cursorflash = ticks;
 						}
 					}
@@ -2062,7 +2076,21 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 8 + strlen(authortext) * 8, suby1 + 80, "\26");
 						}
 					}
-					if ( editproperty == 2 )   // edit map width
+					if ( editproperty == 2 )   // edit map skybox
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = skyboxtext;
+						}
+						//strncpy(widthtext,inputstr,3);
+						inputlen = 3;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(skyboxtext) * 8, suby1 + 104, "\26");
+						}
+					}
+					if ( editproperty == 3 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -2076,7 +2104,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 3 )   // edit map height
+					if ( editproperty == 4 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{

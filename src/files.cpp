@@ -238,12 +238,17 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	}
 
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.0", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.1", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.1 version of editor
+		editorVersion = 21;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.0", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.0 version of editor
 		editorVersion = 2;
 	}
-	else 
+	else
 	{
 		rewind(fp);
 		fread(valid_data, sizeof(char), strlen("BARONY"), fp);
@@ -279,6 +284,22 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	fread(destmap->author, sizeof(char), 32, fp); // map author
 	fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
 	fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
+
+	if ( editorVersion == 1 || editorVersion == 2 )
+	{
+		if ( strncmp(destmap->name, "Hell", 4) == 0 )
+		{
+			destmap->skybox = 77;
+		}
+		else
+		{
+			destmap->skybox = 0;
+		}
+	}
+	else
+	{
+		fread(&destmap->skybox, sizeof(Uint32), 1, fp); // map skybox
+	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
 	fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
 	fread(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
@@ -302,7 +323,8 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			}
 				break;
 			case 2:
-				// V2.0 of editor version
+			case 21:
+				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
 					case 1:
@@ -423,6 +445,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		entity->x = x;
 		entity->y = y;
 	}
+
 	fclose(fp);
 
 	if ( destmap == &map )
@@ -546,11 +569,12 @@ int saveMap(char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.0", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.1", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
 		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
+		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
 		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{

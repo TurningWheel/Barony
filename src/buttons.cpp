@@ -192,14 +192,15 @@ void buttonNew(button_t* my)
 	snprintf(heighttext, 4, "%d", map.height);
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
+	snprintf(skyboxtext, 4, "%d", map.skybox);
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
 	subx1 = xres / 2 - 160;
 	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 80;
-	suby2 = yres / 2 + 80;
+	suby1 = yres / 2 - 100;
+	suby2 = yres / 2 + 100;
 	strcpy(subtext, "New map:");
 
 	button = newButton();
@@ -241,6 +242,7 @@ void buttonNewConfirm(button_t* my)
 	list_FreeAll(map.entities);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
+	map.skybox = atoi(skyboxtext);
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -756,14 +758,15 @@ void buttonAttributes(button_t* my)
 	snprintf(heighttext, 4, "%d", map.height);
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
+	snprintf(skyboxtext, 4, "%d", map.skybox);
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
 	subx1 = xres / 2 - 160;
 	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 80;
-	suby2 = yres / 2 + 80;
+	suby1 = yres / 2 - 100;
+	suby2 = yres / 2 + 100;
 	strcpy(subtext, "Map properties:");
 
 	button = newButton();
@@ -824,6 +827,7 @@ void buttonAttributesConfirm(button_t* my)
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
+	map.skybox = atoi(skyboxtext);
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);

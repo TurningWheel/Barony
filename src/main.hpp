@@ -256,7 +256,7 @@ typedef struct map_t
 {
 	char name[32];   // name of the map
 	char author[32]; // author of the map
-	unsigned int width, height;  // size of the map
+	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
