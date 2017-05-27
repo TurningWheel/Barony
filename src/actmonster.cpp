@@ -2063,7 +2063,7 @@ void actMonster(Entity* my)
 							{
 								light = TOUCHRANGE;
 							}
-							if ( myStats->type >= LICH )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
 								light = 1000;
 							}
@@ -2106,7 +2106,7 @@ void actMonster(Entity* my)
 							}
 							if ( visiontest )   // vision cone
 							{
-								if ( myStats->type >= LICH )
+								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 								{
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
@@ -2191,7 +2191,7 @@ void actMonster(Entity* my)
 			// minotaurs and liches chase players relentlessly.
 			if (myReflex)
 			{
-				if (myStats->type == MINOTAUR || myStats->type == LICH || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+				if (myStats->type == MINOTAUR || myStats->type == LICH || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 				{
 					double distToPlayer = 0;
 					int c, playerToChase = -1;
@@ -2530,7 +2530,7 @@ void actMonster(Entity* my)
 				{
 					light = TOUCHRANGE;
 				}
-				if ( myStats->type >= LICH )
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 				{
 					light = 1000;
 				}
@@ -3064,7 +3064,7 @@ timeToGoAgain:
 							{
 								light = TOUCHRANGE;
 							}
-							if ( myStats->type >= LICH )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
 								light = 1000;
 							}
