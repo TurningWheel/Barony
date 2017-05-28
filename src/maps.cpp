@@ -2099,7 +2099,23 @@ void assignActions(map_t* map)
 				free(item);
 				if ( !entity->skill[18] )
 				{
-					entity->z = 7.5 - models[entity->sprite]->sizey * .25;
+					// shurikens and chakrams need to lie flat on floor as their models are rotated.
+					if ( item->type == CRYSTAL_SHURIKEN || item->type == STEEL_CHAKRAM )
+					{
+						entity->roll = PI;
+						if ( item->type == CRYSTAL_SHURIKEN )
+						{
+							entity->z = 8.5 - models[entity->sprite]->sizey * .25;
+						}
+						else
+						{
+							entity->z = 8.75 - models[entity->sprite]->sizey * .25;
+						}
+					}
+					else
+					{
+						entity->z = 7.5 - models[entity->sprite]->sizey * .25;
+					}
 				}
 				entity->skill[18] = 1; // so the item retains its position
 				itemsdonebefore = true;

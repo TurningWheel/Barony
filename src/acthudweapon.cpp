@@ -576,7 +576,15 @@ void actHudWeapon(Entity* my)
 						}
 						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
 						{
-							throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+							if ( itemCategory(item) == THROWN )
+							{
+								// possibility to change to be unique.
+								throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+							}
+							else
+							{
+								throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+							}
 							HUDWEAPON_MOVEZ = 3;
 							HUDWEAPON_CHOP = 3;
 							players[clientnum]->entity->attack(0, 0);
