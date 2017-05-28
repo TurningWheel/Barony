@@ -3189,9 +3189,31 @@ void Entity::attack(int pose, int charge)
 				entity->skill[13] = 1;
 				entity->skill[14] = myStats->weapon->appearance;
 				entity->skill[15] = myStats->weapon->identified;
-				entity->vel_x = 5 * cos(players[player]->entity->yaw);
-				entity->vel_y = 5 * sin(players[player]->entity->yaw);
-				entity->vel_z = -.5;
+
+				if ( itemCategory(myStats->weapon) == THROWN )
+				{
+					// thrown items have slightly faster velocities
+					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
+					{
+						// todo: change velocity of chakram/shuriken?
+						entity->vel_x = 6 * cos(players[player]->entity->yaw);
+						entity->vel_y = 6 * sin(players[player]->entity->yaw);
+						entity->vel_z = -.3;
+					}
+					else
+					{
+						entity->vel_x = 6 * cos(players[player]->entity->yaw);
+						entity->vel_y = 6 * sin(players[player]->entity->yaw);
+						entity->vel_z = -.3;
+					}
+				}
+				else
+				{
+					entity->vel_x = 5 * cos(players[player]->entity->yaw);
+					entity->vel_y = 5 * sin(players[player]->entity->yaw);
+					entity->vel_z = -.5;
+
+				}
 
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )
