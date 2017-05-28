@@ -817,7 +817,7 @@ void Entity::increaseSkill(int skill)
 
 -------------------------------------------------------------------------------*/
 
-Stat* Entity::getStats()
+Stat* Entity::getStats() const
 {
 	if (this->behavior == &actMonster)   // monsters
 	{
@@ -1483,7 +1483,23 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 
 		// now pick three attributes to increase
+		// changed rolls to be unique for each possibility.
 		increasestat[0] = rand() % 6;
+		int r = rand() % 6;
+		while ( r == increasestat[0] ) {
+			r = rand() % 6;
+		}
+		increasestat[1] = r;
+		r = rand() % 6;
+		while ( r == increasestat[0] || r == increasestat[1] ) {
+			r = rand() % 6;
+		}
+		increasestat[2] = r;
+
+		// debug
+		// messagePlayer(0, "Stats rolled: %d %d %d", increasestat[0], increasestat[1], increasestat[2]);
+
+		/*increasestat[0] = rand() % 6;
 		increasestat[1] = rand() % 5;
 		increasestat[2] = rand() % 4;
 		if ( increasestat[1] >= increasestat[0] )
@@ -1497,7 +1513,7 @@ void Entity::handleEffects(Stat* myStats)
 		if ( increasestat[2] >= increasestat[1] )
 		{
 			increasestat[2]++;
-		}
+		}*/
 		for ( i = 0; i < 3; i++ )
 		{
 			messagePlayerColor(player, color, language[623 + increasestat[i]]);
@@ -3173,22 +3189,9 @@ void Entity::attack(int pose, int charge)
 				entity->skill[13] = 1;
 				entity->skill[14] = myStats->weapon->appearance;
 				entity->skill[15] = myStats->weapon->identified;
-				if ( itemCategory(myStats->weapon) == THROWN )
-				{
-					entity->vel_x = 3 * cos(players[player]->entity->yaw);
-					entity->vel_y = 3 * sin(players[player]->entity->yaw);
-					entity->vel_z = 0;
-					messagePlayer(0, "%f", players[player]->entity->yaw);
-					entity->pitch = 0.2;
-					entity->roll = 0;
-				}
-				else
-				{
-					entity->vel_x = 5 * cos(players[player]->entity->yaw);
-					entity->vel_y = 5 * sin(players[player]->entity->yaw);
-					entity->vel_z = -.5;
-					
-				}
+				entity->vel_x = 5 * cos(players[player]->entity->yaw);
+				entity->vel_y = 5 * sin(players[player]->entity->yaw);
+				entity->vel_z = -.5;
 
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )

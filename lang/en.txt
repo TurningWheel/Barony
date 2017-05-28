@@ -2843,8 +2843,8 @@ client (player %d) (direct ip)#
 2215 crystal boots#
 2216 crystal shield#
 2217 crystal shield#
-2218 crystal gloves#
-2219 crystal gloves#
+2218 crystal gauntlets#
+2219 crystal gauntlets#
 2220 vampire doublet#
 2221 doublet#
 2222 wizard doublet#
@@ -2863,6 +2863,23 @@ client (player %d) (direct ip)#
 2235 tomalley#
 2236 crystal shard#
 2237 crystal shard#
+2238 crystal sword#
+2239 crystal sword#
+2240 crystal spear#
+2241 crystal spear#
+2242 crystal axe#
+2243 crystal axe#
+2244 crystal mace#
+2245 crystal mace#
+2246 bronze tomahawk#
+2247 bronze tomahawk#
+2248 iron dagger#
+2249 iron dagger#
+2250 steel chakram#
+2251 steel chakram#
+2252 crystal shuriken#
+2253 crystal shuriken#
+
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2886,7 +2903,5 @@ client (player %d) (direct ip)#
 
 #More character creation screen stuff.
 2450 Random Name#
-
-2451 Skill out of range.#
 
 2499 end#

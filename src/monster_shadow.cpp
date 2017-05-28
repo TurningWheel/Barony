@@ -41,74 +41,65 @@ void initShadow(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 60;
-		myStats->MAXHP = 60;
-		myStats->MP = 20;
-		myStats->MAXMP = 20;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 6;
-		myStats->DEX = 0;
-		myStats->CON = 2;
-		myStats->INT = -1;
-		myStats->PER = 0;
-		myStats->CHR = -1;
-		myStats->EXP = 0;
-		myStats->LVL = 6;
-		if ( rand() % 3 == 0 )
+		if ( myStats != NULL )
 		{
-			myStats->GOLD = 10 + rand() % 20;
-		}
-		else
-		{
-			myStats->GOLD = 0;
-		}
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
-		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->PROFICIENCIES[PRO_SWORD] = 35;
-		myStats->PROFICIENCIES[PRO_MACE] = 50;
-		myStats->PROFICIENCIES[PRO_AXE] = 45;
-		myStats->PROFICIENCIES[PRO_POLEARM] = 25;
-		myStats->PROFICIENCIES[PRO_RANGED] = 35;
-		myStats->PROFICIENCIES[PRO_SHIELD] = 35;
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 
-		if ( rand() % 8 == 0 )
-		{
-			myStats->EFFECTS[EFF_ASLEEP] = true;
-			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
+			{
+
+			}
+			else
+			{
+				myStats->DEX = 10;
+				strcpy(myStats->name, "Lilith");
+				for ( c = 0; c < 2; c++ )
+				{
+					Entity* entity = summonMonster(SUCCUBUS, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
+				}
+			}
+
+			// random effects
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+														 // count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
@@ -302,141 +293,6 @@ void initShadow(Entity* my, Stat* myStats)
 	if ( multiplayer == CLIENT || MONSTER_INIT )
 	{
 		return;
-	}
-
-	// give cloak
-	switch ( rand() % 10 )
-	{
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-	case 5:
-		break;
-	case 6:
-	case 7:
-	case 8:
-		//myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	case 9:
-		//myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
-		break;
-	}
-
-	// give shield
-	switch ( rand() % 10 )
-	{
-	case 0:
-	case 1:
-		//myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	case 2:
-	case 3:
-	case 4:
-		break;
-	case 5:
-	case 6:
-		//myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	case 7:
-	case 8:
-		//myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	case 9:
-		//->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	}
-
-	// give armor
-	switch ( rand() % 10 )
-	{
-	case 0:
-	case 1:
-	case 2:
-	case 3:
-	case 4:
-		break;
-	case 5:
-	case 6:
-	case 7:
-		//myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	case 8:
-	case 9:
-		//myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-		break;
-	}
-
-	if ( rand() % 50 || my->flags[USERFLAG2] )
-	{
-		// give weapon
-		switch ( rand() % 10 )
-		{
-		case 0:
-		case 1:
-		case 2:
-			//myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		case 3:
-		case 4:
-		case 5:
-			myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		case 6:
-		case 7:
-			myStats->weapon = newItem(IRON_MACE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		case 8:
-			myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		case 9:
-			//myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		}
-
-		// give helmet
-		switch ( rand() % 10 )
-		{
-		case 0:
-		case 1:
-		case 2:
-			break;
-		case 3:
-		case 4:
-			//myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, NULL);
-			break;
-		case 5:
-			//myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
-			break;
-		case 6:
-		case 7:
-			//myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
-			break;
-		case 8:
-		case 9:
-			//myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
-			break;
-		}
-	}
-	else
-	{
-		myStats->HP = 120;
-		myStats->MAXHP = 120;
-		myStats->OLDHP = myStats->HP;
-		strcpy(myStats->name, "The Potato King");
-		myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, NULL);
-		myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, 0, false, NULL);
-
-		int c;
-		for ( c = 0; c < 3; c++ )
-		{
-			Entity* entity = summonMonster(SHADOW, my->x, my->y);
-			if ( entity )
-			{
-				entity->parent = my->getUID();
-			}
-		}
 	}
 }
 

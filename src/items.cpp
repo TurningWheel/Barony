@@ -426,11 +426,11 @@ char* Item::description()
 		{
 			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
-				snprintf(tempstr, 1024, language[1034 + status]);
+				strncpy(tempstr, language[1034 + status], 1024);
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[1039 + status]);
+				strncpy(tempstr, language[1039 + status], 1024);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
@@ -438,11 +438,11 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[1049 + status]);
+				strncpy(tempstr, language[1049 + status], 1024);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1054 + status]);
+				strncpy(tempstr, language[1054 + status], 1024);
 			}
 			for ( c = 0; c < 1024; c++ )
 				if ( tempstr[c] == 0 )
@@ -675,6 +675,9 @@ SDL_Surface* itemSprite(Item* item)
 
 int itemCompare(const Item* item1, const Item* item2)
 {
+	Sint32 model1 = 0;
+	Sint32 model2 = 0;
+
 	// null cases
 	if ( item1 == NULL )
 	{
@@ -708,9 +711,20 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	if (item1->appearance != item2->appearance)
+	/*if ( item1->appearance != item2->appearance )
 	{
 		return 1;
+	}*/
+	model1 = items[item1->type].index + item1->appearance % items[item1->type].variations;
+	model2 = items[item2->type].index + item2->appearance % items[item2->type].variations;
+	//messagePlayer(0, "item1- %d, item2 - %d", model1, model2);
+	if ( model1 != model2 )
+	{
+		return 1;
+	}
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
+	{
+		return 1; // these items do not stack
 	}
 	if (item1->identified != item2->identified)
 	{
@@ -1702,6 +1716,10 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
+			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+			{
+				item->identified = true;
+			}
 			if (!itemCompare(item, item2))
 			{
 				item2->count += item->count;

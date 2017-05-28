@@ -30,6 +30,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define STEAM_APPID 371970
 #endif
 
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -255,7 +256,7 @@ typedef struct map_t
 {
 	char name[32];   // name of the map
 	char author[32]; // author of the map
-	unsigned int width, height;  // size of the map
+	unsigned int width, height, skybox;  // size of the map + skybox
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
@@ -650,3 +651,8 @@ extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y);
+extern char datadir[1024];
+FILE *openDataFile(const char *const filename, const char * const mode);
+DIR * openDataDir(const char *const);
+bool dataPathExists(const char *const);
+bool completePath(char *dest, const char * const path);

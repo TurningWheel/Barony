@@ -841,7 +841,7 @@ void actPlayer(Entity* my)
 			my->z = 1.5;
 			my->pitch = PI / 4;
 		}
-		else
+		else if ( !noclip )
 		{
 			my->z = -1;
 		}
@@ -888,7 +888,7 @@ void actPlayer(Entity* my)
 	bool swimming = false;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		if ( !levitating && !waterwalkingboots )
+		if ( !levitating && !waterwalkingboots && !noclip)
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
@@ -1555,6 +1555,14 @@ void actPlayer(Entity* my)
 				//Normal controls.
 				x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
 				y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * .25);
+				if ( noclip )
+				{
+					if ( keystatus[SDL_SCANCODE_LSHIFT] )
+					{
+						x_force = x_force * 0.5;
+						y_force = y_force * 0.5;
+					}
+				}
 			}
 			else
 			{
@@ -1631,7 +1639,14 @@ void actPlayer(Entity* my)
 		{
 			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 			{
-				my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05;
+				if ( noclip )
+				{
+					my->z -= (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .25;
+				}
+				else
+				{
+					my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05;
+				}
 			}
 			else
 			{

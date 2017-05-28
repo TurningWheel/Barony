@@ -21,6 +21,7 @@ int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
 bool stop = false;
+char datadir[1024];
 
 // language stuff
 char languageCode[32] = { 0 };
@@ -149,6 +150,7 @@ int toolbox = 1;
 int statusbar = 1;
 int viewsprites = 1;
 int showgrid = 0;
+int hovertext = 1;
 int selectedTile = 0;
 int tilepalette = 0;
 int spritepalette = 0;
@@ -165,7 +167,7 @@ char filename[128];
 char oldfilename[128];
 char message[48];
 int messagetime = 0;
-char widthtext[4], heighttext[4], nametext[32], authortext[32];
+char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[32];
 char spriteProperties[32][128];
 char tmpSpriteProperties[32][128];
 int editproperty = 0;
