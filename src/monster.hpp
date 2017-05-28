@@ -11,6 +11,45 @@
 
 #pragma once
 
+enum Monster : int
+{
+	NOTHING,
+	HUMAN,
+	RAT,
+	GOBLIN,
+	SLIME,
+	TROLL,
+	OCTOPUS,
+	SPIDER,
+	GHOUL,
+	SKELETON,
+	SCORPION,
+	CREATURE_IMP, //Because Apple so unkindly is already using the IMP keyword.
+	BUGBEAR,
+	GNOME,
+	DEMON,
+	SUCCUBUS,
+	MIMIC,
+	LICH,
+	MINOTAUR,
+	DEVIL,
+	SHOPKEEPER,
+	KOBOLD,
+	SCARAB,
+	CRYSTALGOLEM,
+	INCUBUS,
+	VAMPIRE,
+	SHADOW,
+	COCKATRICE,
+	INSECTOID,
+	GOATMAN,
+	AUTOMATON,
+	LICH_ICE,
+	LICH_FIRE
+};
+const int NUMMONSTERS = 33;
+extern int kills[NUMMONSTERS];
+
 static char monstertypename[][15] =
 {
 	"nothing",
@@ -298,4 +337,7 @@ void actDemonCeilingBuster(Entity* my);
 void actDevilTeleport(Entity* my);
 
 void createMinotaurTimer(Entity* entity, map_t* map);
+
+void actSummonTrap(Entity* my);
+extern int monsterCurve(int level);
 

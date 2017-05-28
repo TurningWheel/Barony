@@ -42,6 +42,7 @@ button_t* butView;
 button_t* butToolbox;
 button_t* butStatusBar;
 button_t* butAllLayers;
+button_t* butHoverText;
 button_t* butViewSprites;
 button_t* butGrid;
 button_t* but3DMode;
@@ -191,14 +192,15 @@ void buttonNew(button_t* my)
 	snprintf(heighttext, 4, "%d", map.height);
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
+	snprintf(skyboxtext, 4, "%d", map.skybox);
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
 	subx1 = xres / 2 - 160;
 	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 80;
-	suby2 = yres / 2 + 80;
+	suby1 = yres / 2 - 100;
+	suby2 = yres / 2 + 100;
 	strcpy(subtext, "New map:");
 
 	button = newButton();
@@ -240,6 +242,7 @@ void buttonNewConfirm(button_t* my)
 	list_FreeAll(map.entities);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
+	map.skybox = atoi(skyboxtext);
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -342,7 +345,7 @@ void buttonOpen(button_t* my)
 	button->focused = 1;
 
 	// file list
-	if ( (dir = opendir("maps/")) != NULL )
+	if ( (dir = openDataDir("maps/")) != NULL )
 	{
 		while ( (ent = readdir(dir)) != NULL )
 		{
@@ -369,7 +372,7 @@ void buttonOpen(button_t* my)
 			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
 		}
 		c = 0;
-		if ( (dir = opendir("maps/")) != NULL )
+		if ( (dir = openDataDir("maps/")) != NULL )
 		{
 			while ( (ent = readdir(dir)) != NULL )
 			{
@@ -513,7 +516,7 @@ void buttonSaveAs(button_t* my)
 	button->focused = 1;
 
 	// file list
-	if ( (dir = opendir("maps/")) != NULL )
+	if ( (dir = openDataDir("maps/")) != NULL )
 	{
 		while ( (ent = readdir(dir)) != NULL )
 		{
@@ -540,7 +543,7 @@ void buttonSaveAs(button_t* my)
 			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
 		}
 		c = 0;
-		if ( (dir = opendir("maps/")) != NULL )
+		if ( (dir = openDataDir("maps/")) != NULL )
 		{
 			while ( (ent = readdir(dir)) != NULL )
 			{
@@ -726,6 +729,11 @@ void button3DMode(button_t* my)
 	mode3d = (mode3d == false);
 }
 
+void buttonHoverText(button_t* my)
+{
+	hovertext = (hovertext == false);
+}
+
 // Map menu
 
 void buttonMap(button_t* my)
@@ -750,14 +758,15 @@ void buttonAttributes(button_t* my)
 	snprintf(heighttext, 4, "%d", map.height);
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
+	snprintf(skyboxtext, 4, "%d", map.skybox);
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
 	subx1 = xres / 2 - 160;
 	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 80;
-	suby2 = yres / 2 + 80;
+	suby1 = yres / 2 - 100;
+	suby2 = yres / 2 + 100;
 	strcpy(subtext, "Map properties:");
 
 	button = newButton();
@@ -818,6 +827,7 @@ void buttonAttributesConfirm(button_t* my)
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
+	map.skybox = atoi(skyboxtext);
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
@@ -1071,7 +1081,7 @@ void buttonSpriteProperties(button_t* my)
 			subx2 = xres / 2 + 160;
 			suby1 = yres / 2 - 105;
 			suby2 = yres / 2 + 105;
-			strcpy(subtext, "Sprite Properties:");
+			strcpy(subtext, "Chest Properties:");
 			break;
 		case 3: //items
 			itemSelect = 1;
@@ -1098,6 +1108,24 @@ void buttonSpriteProperties(button_t* my)
 			suby1 = yres / 2 - 122;
 			suby2 = yres / 2 + 122;
 			strcpy(subtext, "Item Properties:");
+			break;
+		case 4:
+			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->skill[0]); //Monster to Spawn
+			snprintf(spriteProperties[1], 4, "%d", (int)selectedEntity->skill[1]); //Qty
+			snprintf(spriteProperties[2], 4, "%d", (int)selectedEntity->skill[2]); //Time Between Spawns
+			snprintf(spriteProperties[3], 4, "%d", (int)selectedEntity->skill[3]); //Amount of Spawns 
+			snprintf(spriteProperties[4], 4, "%d", (int)selectedEntity->skill[4]); //Requires Power
+			snprintf(spriteProperties[5], 4, "%d", (int)selectedEntity->skill[5]); //Chance to Stop Working
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 6;
+			subx1 = xres / 2 - 210;
+			subx2 = xres / 2 + 210;
+			suby1 = yres / 2 - 140;
+			suby2 = yres / 2 + 140;
+			strcpy(subtext, "Summoning Trap Properties:");
 			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
@@ -1830,6 +1858,46 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					selectedEntity->skill[13] = (Sint32)atoi(spriteProperties[3]); //quantity
 				}
 				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[4]); //identified
+				break;
+			case 4: //summoning traps
+				if ( (Sint32)atoi(spriteProperties[0]) < -1 || (Sint32)atoi(spriteProperties[0]) == 6
+					|| (Sint32)atoi(spriteProperties[0]) == 12 || (Sint32)atoi(spriteProperties[0]) == 16 )
+				{
+					selectedEntity->skill[0] = 0;
+				}
+				else
+				{
+					selectedEntity->skill[0] = (Sint32)atoi(spriteProperties[0]); //Monster to Spawn
+				}
+
+				if ( (Sint32)atoi(spriteProperties[1]) == 0 )
+				{
+					selectedEntity->skill[1] = 1;
+				}
+				else
+				{
+					selectedEntity->skill[1] = (Sint32)atoi(spriteProperties[1]); //Qty
+				}
+
+				if ( (Sint32)atoi(spriteProperties[2]) == 0 )
+				{
+					selectedEntity->skill[2] = 1;
+				}
+				else
+				{
+					selectedEntity->skill[2] = (Sint32)atoi(spriteProperties[2]); //Time Between Spawns
+				}
+
+				if ( (Sint32)atoi(spriteProperties[3]) == 0 )
+				{
+					selectedEntity->skill[3] = 1;
+				}
+				else
+				{
+					selectedEntity->skill[3] = (Sint32)atoi(spriteProperties[3]); //Amount of Spawns 
+				}
+				selectedEntity->skill[4] = (Sint32)atoi(spriteProperties[4]); //Requires Power
+				selectedEntity->skill[5] = (Sint32)atoi(spriteProperties[5]); //Chance to Stop Working
 				break;
 			default:
 				break;

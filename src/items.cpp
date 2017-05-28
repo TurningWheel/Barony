@@ -426,11 +426,11 @@ char* Item::description()
 		{
 			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
-				snprintf(tempstr, 1024, language[1034 + status]);
+				strncpy(tempstr, language[1034 + status], 1024);
 			}
 			else if ( itemCategory(this) == AMULET || itemCategory(this) == RING || itemCategory(this) == GEM )
 			{
-				snprintf(tempstr, 1024, language[1039 + status]);
+				strncpy(tempstr, language[1039 + status], 1024);
 			}
 			else if ( itemCategory(this) == POTION )
 			{
@@ -438,11 +438,11 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
-				snprintf(tempstr, 1024, language[1049 + status]);
+				strncpy(tempstr, language[1049 + status], 1024);
 			}
 			else if ( itemCategory(this) == FOOD )
 			{
-				snprintf(tempstr, 1024, language[1054 + status]);
+				strncpy(tempstr, language[1054 + status], 1024);
 			}
 			for ( c = 0; c < 1024; c++ )
 				if ( tempstr[c] == 0 )
@@ -722,7 +722,7 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK )
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
 		return 1; // these items do not stack
 	}

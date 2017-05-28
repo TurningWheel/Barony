@@ -415,23 +415,23 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 			break;
-		case 83:
+		case 84:
 		case (1000 + KOBOLD):
 			stats->type = KOBOLD;
 			break;
-		case 84:
+		case 85:
 		case (1000 + SCARAB):
 			stats->type = SCARAB;
 			break;
-		case 85:
+		case 86:
 		case (1000 + CRYSTALGOLEM):
 			stats->type = CRYSTALGOLEM;
 			break;
-		case 86:
+		case 87:
 		case (1000 + INCUBUS):
 			stats->type = INCUBUS;
 			break;
-		case 87:
+		case 88:
 		case (1000 + VAMPIRE):
 			stats->type = VAMPIRE;
 			stats->sex = MALE;
@@ -487,35 +487,35 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_RANGED] = 40;
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 			break;
-		case 88:
+		case 89:
 		case (1000 + SHADOW):
 			stats->type = SHADOW;
 			break;
-		case 89:
+		case 90:
 		case (1000 + COCKATRICE):
 			stats->type = COCKATRICE;
 			break;
-		case 90:
+		case 91:
 		case (1000 + INSECTOID):
 			stats->type = INSECTOID;
 			break;
-		case 91:
+		case 92:
 		case (1000 + GOATMAN):
 			stats->type = GOATMAN;
 			break;
-		case 92:
+		case 93:
 		case (1000 + AUTOMATON):
 			stats->type = AUTOMATON;
 			break;
-		case 93:
+		case 94:
 		case (1000 + LICH_ICE):
 			stats->type = LICH_ICE;
 			break;
-		case 94:
+		case 95:
 		case (1000 + LICH_FIRE):
 			stats->type = LICH_FIRE;
 			break;
-		case 95:
+		case 83:
 		case (1000 + SKELETON):
 			stats->type = SKELETON;
 			stats->sex = static_cast<sex_t>(rand() % 2);

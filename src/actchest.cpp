@@ -76,6 +76,11 @@ void Entity::actChest()
 				chestLocked = 1;
 				chestPreventLockpickCapstoneExploit = 0;
 			}
+			else
+			{
+				chestLocked = 0;
+			}
+			//messagePlayer(0, "Chest rolled: %d, locked: %d", roll, chestLocked); //debug print
 		}
 		else  if ( chestLocked >= 0 )
 		{
@@ -90,7 +95,7 @@ void Entity::actChest()
 				chestLocked = 0;
 			}
 
-			messagePlayer(0, "Chest rolled: %d, locked: %d", roll, chestLocked); //debug print
+			//messagePlayer(0, "Chest rolled: %d, locked: %d", roll, chestLocked); //debug print
 		}
 
 		node_t* node = NULL;

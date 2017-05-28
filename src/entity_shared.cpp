@@ -39,7 +39,6 @@ int checkSpriteType(Sint32 sprite)
 	case 93:
 	case 94:
 	case 95:
-	case 96:
 	case 75:
 	case 76:
 	case 77:
@@ -50,7 +49,6 @@ int checkSpriteType(Sint32 sprite)
 	case 80:
 	case 81:
 	case 82:
-	
 		//monsters
 		return 1;
 		break;
@@ -61,6 +59,10 @@ int checkSpriteType(Sint32 sprite)
 	case 8:
 		//items
 		return 3;
+		break;
+	case 97:
+		//summon trap
+		return 4;
 		break;
 	default:
 		return 0;
@@ -460,7 +462,7 @@ char itemStringsByType[10][63][32] =
 	
 };
 
-char spriteEditorNameStrings[96][28] = 
+char spriteEditorNameStrings[98][28] = 
 {
 	"NULL",	
 	"PLAYER START",
@@ -545,6 +547,7 @@ char spriteEditorNameStrings[96][28] =
 	"SUCCUBUS",
 	"RAT",
 	"GHOUL",
+	"SKELETON",
 	"KOBOLD",
 	"SCARAB",
 	"CRYSTALGOLEM",
@@ -557,7 +560,251 @@ char spriteEditorNameStrings[96][28] =
 	"AUTOMATON",
 	"LICH ICE",
 	"LICH FIRE",
-	"SKELETON",
+	"NOT USED",
+	"SUMMON TRAP"
+};
+
+char monsterEditorNameStrings[NUMMONSTERS][13] =
+{
+	"nothing",
+	"human",
+	"rat",
+	"goblin",
+	"slime",
+	"troll",
+	"invalid",
+	"spider",
+	"ghoul",
+	"skeleton",
+	"scorpion",
+	"imp",
+	"invalid",
+	"gnome",
+	"demon",
+	"succubus",
+	"invalid",
+	"lich",
+	"minotaur",
+	"devil",
+	"shopkeeper",
+	"kobold",
+	"scarab",
+	"crystalgolem",
+	"incubus",
+	"vampire",
+	"shadow",
+	"cockatrice",
+	"insectoid",
+	"goatman",
+	"automaton",
+	"lich_ice",
+	"lich_fire"
+};
+
+char tileEditorNameStrings[202][44] =
+{
+	"backdrop.png",
+	"bback.png",
+	"bbrick.png",
+	"greenbrick.png",
+	"graysquare.png",
+	"sand.png",
+	"rock.png",
+	"arrow.png",
+	" Smooth Stone Wall.png",
+	" Wood.png",
+	" Cobblestone Mine Wall.png",
+	" Cobblestone Mine Support Wall.png",
+	"Gray Brick.png",
+	"Dirt.png",
+	"Grass.png",
+	"Green Cobblestone.png",
+	"Red Diamond Tiles.png",
+	"Blue Pillar.png",
+	"Tan Brick Wall.png",
+	"Mossy Tan Brick Wall.png",
+	"Red Cobblestone Mine Wall.png",
+	"Red Cobblestone Mine Support Wall.png",
+	"water1.png",
+	"water2.png",
+	"water3.png",
+	"water4.png",
+	"water5.png",
+	"water6.png",
+	"water7.png",
+	"water8.png",
+	"Plank Ceiling.png",
+	"Plankand Rafter Ceiling.png",
+	"Fancy Brick Wall.png",
+	"Fancy Gray Brick Wall.png",
+	"sandfloor.png",
+	"sandfloordark.png",
+	"graytiles.png",
+	"Roots.png",
+	"greenbrick Crack.png",
+	"Green Cobblestone Vine.png",
+	"Green Cobblestone No Grass.png",
+	"rd A.png",
+	"rd B.png",
+	"rd C.png",
+	"rd D.png",
+	"rd E.png",
+	"rd F.png",
+	"rd G.png",
+	"rd H.png",
+	"rd I.png",
+	"Hard Stone.png",
+	"Plankand Rafter Ceiling Horiz.png",
+	"Red Square Tiles.png",
+	"Trap Wall.png",
+	"shopsign.png",
+	"Shelf.png",
+	"Dirt Two.png",
+	"Purple Square Tiles.png",
+	"Grass Two.png",
+	"Purple Diamond Tiles.png",
+	"Dull Green Brick.png",
+	"Dull Green Brick Skull.png",
+	"Dull Green Square.png",
+	"Gray Dirt.png",
+	"Lava1.png",
+	"Lava2.png",
+	"Lava3.png",
+	"Lava4.png",
+	"Lava5.png",
+	"Lava6.png",
+	"Lava7.png",
+	"Lava8.png",
+	"Big Orange Stone.png",
+	"Red Pillar.png",
+	"Red Brick.png",
+	"Red Square.png",
+	"Red Brick Face.png",
+	"clouds.png",
+	"Magic Trap Wall1.png",
+	"Magic Trap Wall2.png",
+	"Magic Trap Wall3.png",
+	"Magic Trap Wall4.png",
+	"clouds.png",
+	"Leaves.png",
+	"Cobblestone.png",
+	"Cobblestone Mine Support Sides.png",
+	"Cobblestone Mine Support Side L.png",
+	"Cobblestone Mine Support Side R.png",
+	"Cobblestone Mine Wall Two.png",
+	"Cobblestone Mossy.png",
+	"Cobblestone Mine Support Wall Mossy.png",
+	"Cobblestone Mine Support Sides Mossy.png",
+	"Cobblestone Mine Wall Mossy.png",
+	"Cobblestone Mine Wall Two Mossy.png",
+	"Red Cobblestone Mine Wall Support Sides.png",
+	"Red Cobblestone Mine Wall Support L.png",
+	"Red Cobblestone Mine Wall Support R.png",
+	"Wood Two.png",
+	"Wood Corner NE.png",
+	"Wood Corner NW.png",
+	"Wood Corner SE.png",
+	"Wood Corner SW.png",
+	"Plankand Rafter Ceiling Cross.png",
+	"Gray Brick Block.png",
+	"Gray Brick Columns.png",
+	"Gray Brick Column R.png",
+	"Gray Brick Column L.png",
+	"Gray Brick Column Center.png",
+	"Swamp Logs.png",
+	"Swamp Logs Two.png",
+	"Swamp Log Ends.png",
+	"Roots Treetop.png",
+	"Swamp Log L.png",
+	"Swamp Log R.png",
+	"greenbricktwo.png",
+	"Green Cobblestone Two.png",
+	"Green Cobblestone Column.png",
+	"Green Cobblestone Column No Grass.png",
+	"Fancy Sandstone Wall.png",
+	"Orange Square Tiles.png",
+	"Ruin Tiles.png",
+	"Red Brick Face1.png",
+	"Red Brick Face2.png",
+	"Red Brick Face3.png",
+	"Red Brick Face4.png",
+	"Red Brick Face5.png",
+	"Red Brick Face6.png",
+	"Red Brick Face7.png",
+	"Hell Tiles.png",
+	"Skull Lava1.png",
+	"Skull Lava2.png",
+	"Skull Lava3.png",
+	"Skull Lava4.png",
+	"Skull Lava5.png",
+	"Skull Lava6.png",
+	"bonewall.png",
+	"Lavafall1.png",
+	"Lavafall2.png",
+	"Lavafall3.png",
+	"bonewallwithgrass.png",
+	"bonewallpillar.png",
+	"decayedstone.png",
+	"Dirt Path -  E.png",
+	"Dirt Path -  S.png",
+	"Dirt Path -  W.png",
+	"Dirt Path -  N.png",
+	"Dirt Path -  NE.png",
+	"Dirt Path -  SE.png",
+	"Dirt Path -  SW.png",
+	"Dirt Path -  NW.png",
+	"Dirt Path -  NE O.png",
+	"Dirt Path -  SE O.png",
+	"Dirt Path -  SW O.png",
+	"Dirt Path -  NW O.png",
+	"Cave Floor.png",
+	"Cave Floor Rough.png",
+	"Cave Wall.png",
+	"Cave Wall Decor.png",
+	"Cave Wall Crystal.png",
+	"Cave Wall Reinforced.png",
+	"Cave Wall Reinforced Left.png",
+	"Cave Wall Reinforced Right.png",
+	"Cave Wall Reinforced Center.png",
+	"Cave Wall Reinforced High.png",
+	"Cave Wall Alcove.png",
+	"Cave Wall Columns.png",
+	"Cave Wall Column Center.png",
+	"Cave Wall Column Left.png",
+	"Cave Wall Column Right.png",
+	"Caves To Crystal Wall Left.png",
+	"Caves To Crystal Wall Right.png",
+	"Caves To Crystal Floor -  W.png",
+	"Caves To Crystal Floor -  E.png",
+	"Caves To Crystal Floor -  S.png",
+	"Caves To Crystal Floor -  N.png",
+	"Caves To Crystal Floor -  SW.png",
+	"Caves To Crystal Floor -  NW.png",
+	"Caves To Crystal Floor -  SE.png",
+	"Caves To Crystal Floor -  NE.png",
+	"Caves To Crystal Floor -  SW O.png",
+	"Caves To Crystal Floor -  NW O.png",
+	"Caves To Crystal Floor -  SE O.png",
+	"Caves To Crystal Floor -  NE O.png",
+	"Crystal Floor.png",
+	"Crystal Floor Rough.png",
+	"Crystal Wall.png",
+	"Crystal Wall Decor1.png",
+	"Crystal Wall Decor2.png",
+	"Crystal Wall Decor3.png",
+	"Crystal Wall Decor4.png",
+	"Crystal Wall Reinforced.png",
+	"Crystal Wall Reinforced Left.png",
+	"Crystal Wall Reinforced Right.png",
+	"Crystal Wall Reinforced Center.png",
+	"Crystal Wall Reinforced High.png",
+	"Crystal Wall Columns.png",
+	"Crystal Wall Column Center.png",
+	"Crystal Wall Column Left.png",
+	"Crystal Wall Column Right.png",
+	"Bronze Columns.png",
+	"Bronze Columns Alcove.png",
+	"Submap.png"
 };
 
 int canWearEquip(Entity* entity, int category)
@@ -584,6 +831,10 @@ int canWearEquip(Entity* entity, int category)
 				case SCORPION:
 				case MINOTAUR:
 				case GHOUL:
+				case SCARAB:
+				case CRYSTALGOLEM:
+				case INCUBUS:
+				case COCKATRICE:
 					equipType = 0;
 					break;
 
@@ -596,6 +847,9 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
+				case INSECTOID:
+				case LICH_FIRE:
+				case LICH_ICE:
 					equipType = 2;
 					break;
 
@@ -605,6 +859,10 @@ int canWearEquip(Entity* entity, int category)
 				case VAMPIRE:
 				case SKELETON:
 				case SHOPKEEPER:
+				case SHADOW:
+				case AUTOMATON:
+				case GOATMAN:
+				case KOBOLD:
 					equipType = 3;
 					break;
 
@@ -646,44 +904,6 @@ int canWearEquip(Entity* entity, int category)
 	{
 		return 0;
 	}
-
-	// TODO
-	/*case 83:
-	strcpy(tmpStr, "KOBOLD");
-	break;
-	case 84:
-	strcpy(tmpStr, "SCARAB");
-	break;
-	case 85:
-	strcpy(tmpStr, "CRYSTALGOLEM");
-	break;
-	case 86:
-	strcpy(tmpStr, "INCUBUS");
-	break;
-	case 87:
-	strcpy(tmpStr, "VAMPIRE");
-	break;
-	case 88:
-	strcpy(tmpStr, "SHADOW");
-	break;
-	case 89:
-	strcpy(tmpStr, "COCKATRICE");
-	break;
-	case 90:
-	strcpy(tmpStr, "INSECTOID");
-	break;
-	case 91:
-	strcpy(tmpStr, "GOATMAN");
-	break;
-	case 92:
-	strcpy(tmpStr, "AUTOMATON");
-	break;
-	case 93:
-	strcpy(tmpStr, "LICH ICE");
-	break;
-	case 94:
-	strcpy(tmpStr, "LICH FIRE");
-	break;*/
 
 	return 0;
 }
@@ -764,6 +984,30 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[12] = 10;
 			entityNew->skill[13] = 1;
 			entityNew->skill[15] = 1;
+		}
+	}
+	// summoning trap.
+	else if ( spriteType == 4 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[0] = entityToCopy->skill[0];
+			entityNew->skill[1] = entityToCopy->skill[1];
+			entityNew->skill[2] = entityToCopy->skill[2];
+			entityNew->skill[3] = entityToCopy->skill[3];
+			entityNew->skill[4] = entityToCopy->skill[4];
+			entityNew->skill[5] = entityToCopy->skill[5];
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[0] = 0;
+			entityNew->skill[1] = 1;
+			entityNew->skill[2] = 1;
+			entityNew->skill[3] = 1;
+			entityNew->skill[4] = 0;
+			entityNew->skill[5] = 0;
 		}
 	}
 

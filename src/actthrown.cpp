@@ -95,7 +95,7 @@ void actThrown(Entity* my)
 	else
 	{
 		// select appropriate model
-		my->skill[2] = -5;
+		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
 		my->sprite = itemModel(item);
@@ -111,9 +111,28 @@ void actThrown(Entity* my)
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
-		THROWN_VELZ += 0.04;
-		my->z += THROWN_VELZ;
-		my->roll += 0.04;
+		if ( itemCategory(item) == THROWN )
+		{
+			// todo: adjust falling rates for thrown items if need be
+			THROWN_VELZ += 0.03;
+			my->z += THROWN_VELZ;
+			if ( item->type == BRONZE_TOMAHAWK || item->type == IRON_DAGGER )
+			{
+				// axe and dagger spin vertically
+				my->pitch += 0.2;
+			}
+			else
+			{
+				my->roll += 0.01;
+				my->yaw += 0.5;
+			}
+		}
+		else
+		{
+			THROWN_VELZ += 0.04;
+			my->z += THROWN_VELZ;
+			my->roll += 0.04;
+		}
 	}
 	else
 	{
@@ -161,17 +180,37 @@ void actThrown(Entity* my)
 			else
 			{
 				// fall
-				THROWN_VELZ += 0.04;
-				my->z += THROWN_VELZ;
-				my->roll += 0.04;
+				if ( itemCategory(item) == THROWN )
+				{
+					// todo: adjust falling rates for thrown items if need be
+					THROWN_VELZ += 0.04;
+					my->z += THROWN_VELZ;
+					my->roll += 0.04;
+				}
+				else
+				{
+					THROWN_VELZ += 0.04;
+					my->z += THROWN_VELZ;
+					my->roll += 0.04;
+				}
 			}
 		}
 		else
 		{
-			// fall
-			THROWN_VELZ += 0.04;
-			my->z += THROWN_VELZ;
-			my->roll += 0.04;
+			// fall out of x and y bounds
+			if ( itemCategory(item) == THROWN )
+			{
+				// todo: adjust falling rates for thrown items if need be
+				THROWN_VELZ += 0.04;
+				my->z += THROWN_VELZ;
+				my->roll += 0.04;
+			}
+			else
+			{
+				THROWN_VELZ += 0.04;
+				my->z += THROWN_VELZ;
+				my->roll += 0.04;
+			}
 		}
 	}
 
@@ -189,8 +228,27 @@ void actThrown(Entity* my)
 	double result = clipMove(&my->x, &my->y, THROWN_VELX, THROWN_VELY, my);
 
 	bool usedpotion = false;
-	if ( result != sqrt( THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY ) )
+	if ( result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
+		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
+		{
+			real_t bouncePenalty = 0.7;
+			// shurikens and chakrams bounce off walls.
+			if ( hit.side == HORIZONTAL )
+			{
+				THROWN_VELX = -THROWN_VELX * bouncePenalty;
+			}
+			else if ( hit.side == VERTICAL )
+			{
+				THROWN_VELY = -THROWN_VELY * bouncePenalty;
+			}
+			else if ( hit.side == 0 )
+			{
+				THROWN_VELY = -THROWN_VELY * bouncePenalty;
+				THROWN_VELX = -THROWN_VELX * bouncePenalty;
+			}
+		}
+
 		item = newItemFromEntity(my);
 		cat = itemCategory(item);
 		itemname = item->getName();
@@ -355,9 +413,9 @@ void actThrown(Entity* my)
 						parent->increaseSkill(PRO_RANGED);
 					}
 				}
-				if ( hitstats->HP <= 0 && parent)
+				if ( hitstats->HP <= 0 && parent )
 				{
-					parent->awardXP( hit.entity, true, true );
+					parent->awardXP(hit.entity, true, true);
 				}
 
 				// alert the monster
@@ -382,7 +440,7 @@ void actThrown(Entity* my)
 							{
 								if ( entity->skill[0] == 0 )   // monster is waiting
 								{
-									double tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
+									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
 									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 									if ( hit.entity == entity )
 									{
@@ -453,6 +511,10 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) && hit.entity == NULL )
+		{
+			// chakram, shurikens bounce off walls until entity or floor is hit.
+		}
 		else
 		{
 			Entity* entity = newEntity(-1, 1, map.entities);
@@ -482,7 +544,17 @@ void actThrown(Entity* my)
 			return;
 		}
 	}
-	THROWN_VELX = THROWN_VELX * .99;
-	THROWN_VELY = THROWN_VELY * .99;
-	my->pitch += result * .01;
+
+	if ( itemCategory(item) == THROWN )
+	{
+		THROWN_VELX = THROWN_VELX * .99;
+		THROWN_VELY = THROWN_VELY * .99;
+		//my->pitch += result * .01;
+	}
+	else
+	{
+		THROWN_VELX = THROWN_VELX * .99;
+		THROWN_VELY = THROWN_VELY * .99;
+		my->pitch += result * .01;
+	}
 }

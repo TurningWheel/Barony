@@ -118,7 +118,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 
 Entity::~Entity() { }
 
-Stat* Entity::getStats()
+Stat* Entity::getStats() const
 {
 		if ( this->children.first != nullptr )
 		{
