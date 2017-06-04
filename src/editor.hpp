@@ -16,8 +16,8 @@
 
 static const unsigned int MAXWIDTH = 2000;
 static const unsigned int MAXHEIGHT = 2000;
-static const unsigned int MINWIDTH = 2;
-static const unsigned int MINHEIGHT =  2;
+static const unsigned int MINWIDTH = 1;
+static const unsigned int MINHEIGHT =  1;
 
 extern int drawlayer, drawx, drawy, odrawx, odrawy;
 extern int alllayers;

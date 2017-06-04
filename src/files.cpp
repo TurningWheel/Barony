@@ -238,7 +238,12 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	}
 
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.1", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.2", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.2 version of editor
+		editorVersion = 22;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.1", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.1 version of editor
 		editorVersion = 21;
@@ -324,6 +329,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 				break;
 			case 2:
 			case 21:
+			case 22:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -372,7 +378,15 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 							fread(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
 							fread(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
 
-							fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+							if ( editorVersion >= 22 )
+							{
+								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+							}
+							else
+							{
+								// read old map formats
+								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+							}
 							fread(&myStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
 						}
 						//Read dummy values to move fp for the client
@@ -408,7 +422,14 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 							fread(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
 							fread(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
 
-							fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+							if ( editorVersion >= 22 )
+							{
+								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+							}
+							else
+							{
+								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+							}
 							fread(&dummyStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
 						}
 						break;
@@ -423,6 +444,10 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->skill[12], sizeof(Sint32), 1, fp);
 						fread(&entity->skill[13], sizeof(Sint32), 1, fp);
 						fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+						if ( editorVersion >= 22 )
+						{
+							fread(&entity->skill[16], sizeof(Sint32), 1, fp);
+						}
 						break;
 					case 4:
 						fread(&entity->skill[0], sizeof(Sint32), 1, fp);
@@ -569,7 +594,7 @@ int saveMap(char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.1", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.2", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
@@ -620,7 +645,7 @@ int saveMap(char* filename2)
 					fwrite(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
 
-					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
 					fwrite(&myStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
 					break;
 				case 2:
@@ -636,6 +661,7 @@ int saveMap(char* filename2)
 					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[13], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[16], sizeof(Sint32), 1, fp);
 					break;
 				case 4:
 					fwrite(&entity->skill[0], sizeof(Sint32), 1, fp);

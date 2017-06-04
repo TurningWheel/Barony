@@ -1097,6 +1097,7 @@ void buttonSpriteProperties(button_t* my)
 			}
 			snprintf(spriteProperties[3], 4, "%d", (int)selectedEntity->skill[13]); //count
 			snprintf(spriteProperties[4], 4, "%d", (int)selectedEntity->skill[15]); //identified
+			snprintf(spriteProperties[5], 4, "%d", (int)selectedEntity->skill[16]); //category if random
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1105,8 +1106,8 @@ void buttonSpriteProperties(button_t* my)
 			slidery = 0;
 			subx1 = xres / 2 - 200;
 			subx2 = xres / 2 + 200;
-			suby1 = yres / 2 - 122;
-			suby2 = yres / 2 + 122;
+			suby1 = yres / 2 - 140;
+			suby2 = yres / 2 + 140;
 			strcpy(subtext, "Item Properties:");
 			break;
 		case 4:
@@ -1175,17 +1176,17 @@ void buttonSpriteProperties(button_t* my)
 					pad_x3 = 40;
 					pad_x4 = subx2 - 112;
 					itemIndex = 0;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
 					if ( canWearEquip(selectedEntity, itemIndex) )
@@ -1203,17 +1204,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_y2 += spacing * 2;
 					itemIndex = 6;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					if ( canWearEquip(selectedEntity, itemIndex) )
 					{
@@ -1230,17 +1231,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_y2 += spacing * 2;
 					itemIndex = 3;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					if ( canWearEquip(selectedEntity, itemIndex) )
 					{
@@ -1257,17 +1258,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_y2 += spacing * 2;
 					itemIndex = 4;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					if ( canWearEquip(selectedEntity, itemIndex) )
 					{
@@ -1286,17 +1287,17 @@ void buttonSpriteProperties(button_t* my)
 					pad_y2 += 16;
 					pad_x4 -= 64;
 					itemIndex = 7;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
 					if ( canWearEquip(selectedEntity, itemIndex) )
@@ -1315,17 +1316,17 @@ void buttonSpriteProperties(button_t* my)
 					pad_x4 += 64 * 2;
 					itemIndex = 8;
 
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
 					if ( canWearEquip(selectedEntity, itemIndex) )
@@ -1343,17 +1344,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_y2 += spacing * 2;
 					itemIndex = 2;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					if ( canWearEquip(selectedEntity, itemIndex) )
 					{
@@ -1370,17 +1371,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_x4 -= 64 * 2;
 					itemIndex = 1;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					if ( canWearEquip(selectedEntity, itemIndex) )
 					{
@@ -1397,17 +1398,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_y2 += spacing * 2;
 					itemIndex = 5;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 
 					if ( canWearEquip(selectedEntity, itemIndex) )
@@ -1424,17 +1425,17 @@ void buttonSpriteProperties(button_t* my)
 					}
 					pad_x4 += 64 * 2;
 					itemIndex = 9;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					if ( canWearEquip(selectedEntity, itemIndex) )
 					{
@@ -1451,17 +1452,17 @@ void buttonSpriteProperties(button_t* my)
 					
 					pad_y2 += 32 + spacing * 2;
 					itemIndex = 12;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					butMonsterItem3 = newButton();
 					strcpy(butMonsterItem3->label, tmpStr);
@@ -1474,17 +1475,17 @@ void buttonSpriteProperties(button_t* my)
 					butMonsterItem3->focused = 1;
 
 					itemIndex = 15;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					butMonsterItem6 = newButton();
 					strcpy(butMonsterItem6->label, tmpStr);
@@ -1498,17 +1499,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_x4 -= 64;
 					itemIndex = 11;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					butMonsterItem2 = newButton();
 					strcpy(butMonsterItem2->label, tmpStr);
@@ -1521,17 +1522,17 @@ void buttonSpriteProperties(button_t* my)
 					butMonsterItem2->focused = 1;
 
 					itemIndex = 14;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					butMonsterItem5 = newButton();
 					strcpy(butMonsterItem5->label, tmpStr);
@@ -1545,17 +1546,17 @@ void buttonSpriteProperties(button_t* my)
 
 					pad_x4 -= 64;
 					itemIndex = 10;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					}
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					butMonsterItem1 = newButton();
 					strcpy(butMonsterItem1->label, tmpStr);
@@ -1568,17 +1569,17 @@ void buttonSpriteProperties(button_t* my)
 					butMonsterItem1->focused = 1;
 
 					itemIndex = 13;
-					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 0 )
+					if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 0 )
 					{
 						strcpy(tmpStr, "NULL");
 					} 
-					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6] == 1 )
+					else if ( tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
 					{
 						strcpy(tmpStr, "RAND");
 					}
 					else
 					{
-						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * 6]);
+						snprintf(tmpStr, 4, "%d", tmpSpriteStats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES]);
 					}
 					butMonsterItem4 = newButton();
 					strcpy(butMonsterItem4->label, tmpStr);
@@ -1675,30 +1676,35 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				{
 					if ( my == butMonsterItemOK )
 					{
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6] = (Sint32)atoi(spriteProperties[0]);
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 1] = (Sint32)atoi(spriteProperties[1]);
+						if ( strcmp(spriteProperties[0], "0") < 0 )
+						{
+							strcpy(spriteProperties[0], "1");
+						}
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES] = (Sint32)atoi(spriteProperties[0]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 1] = (Sint32)atoi(spriteProperties[1]);
 						if ( strcmp(spriteProperties[2], "00") == 0 )
 						{
 							selectedEntity->skill[12] = 10; //bless random
 						}
 						else
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 2] = (Sint32)atoi(spriteProperties[2]); //bless
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 2] = (Sint32)atoi(spriteProperties[2]); //bless
 						}
 						if ( strcmp(spriteProperties[3], "0") == 0 )
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 2] = 1; //reset quantity to 1
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 2] = 1; //reset quantity to 1
 						}
 						if ( strcmp(spriteProperties[3], "0") == 0 )
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 3] = 1; //reset quantity to 1
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 3] = 1; //reset quantity to 1
 						}
 						else
 						{
-							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 3] = (Sint32)atoi(spriteProperties[3]); //quantity
+							tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 3] = (Sint32)atoi(spriteProperties[3]); //quantity
 						}
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 4] = (Sint32)atoi(spriteProperties[4]);
-						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * 6 + 5] = (Sint32)atoi(spriteProperties[5]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 4] = (Sint32)atoi(spriteProperties[4]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected) * ITEM_SLOT_NUMPROPERTIES + 5] = (Sint32)atoi(spriteProperties[5]);
+						tmpSpriteStats->EDITOR_ITEMS[(itemSlotSelected)* ITEM_SLOT_NUMPROPERTIES + 6] = (Sint32)atoi(spriteProperties[6]);
 						newwindow = 2;
 						
 						/*button = newButton();
@@ -1839,6 +1845,10 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->chestLocked = (Sint32)atoi(spriteProperties[2]);
 				break;
 			case 3: //items
+				if ( strcmp(spriteProperties[0], "0") == 0 )
+				{
+					strcpy(spriteProperties[0], "1");
+				}
 				selectedEntity->skill[10] = (Sint32)atoi(spriteProperties[0]); //id
 				selectedEntity->skill[11] = (Sint32)atoi(spriteProperties[1]); //status
 				if ( strcmp(spriteProperties[2], "00") == 0 )
@@ -1858,6 +1868,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 					selectedEntity->skill[13] = (Sint32)atoi(spriteProperties[3]); //quantity
 				}
 				selectedEntity->skill[15] = (Sint32)atoi(spriteProperties[4]); //identified
+				selectedEntity->skill[16] = (Sint32)atoi(spriteProperties[5]); //cateogry if random
 				break;
 			case 4: //summoning traps
 				if ( (Sint32)atoi(spriteProperties[0]) < -1 || (Sint32)atoi(spriteProperties[0]) == 6
@@ -1986,8 +1997,8 @@ void buttonMonsterItems(button_t* my)
 	slidery = 0;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 140;
-	suby2 = yres / 2 + 140;
+	suby1 = yres / 2 - 158;
+	suby2 = yres / 2 + 158;
 	strcpy(subtext, "Monster Item Properties:");
 
 	Stat* tmpSpriteStats = selectedEntity->getStats();
@@ -2147,19 +2158,20 @@ void buttonMonsterItems(button_t* my)
 	{
 		butMonsterX->visible = 0;
 	}
-	snprintf(spriteProperties[0], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 0]);
-	snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 1]);
-	if ( (int)tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 2] == 10 )
+	snprintf(spriteProperties[0], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 0]);
+	snprintf(spriteProperties[1], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 1]);
+	if ( (int)tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 2] == 10 )
 	{
 		strcpy(spriteProperties[2], "00"); //bless random
 	}
 	else
 	{
-		snprintf(spriteProperties[2], 4, "%d", (int)tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 2]); //bless
+		snprintf(spriteProperties[2], 4, "%d", (int)tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 2]); //bless
 	}
-	snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 3]);
-	snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 4]);
-	snprintf(spriteProperties[5], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * 6 + 5]);
+	snprintf(spriteProperties[3], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 3]);
+	snprintf(spriteProperties[4], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 4]);
+	snprintf(spriteProperties[5], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 5]);
+	snprintf(spriteProperties[6], 5, "%d", tmpSpriteStats->EDITOR_ITEMS[itemSlotSelected * ITEM_SLOT_NUMPROPERTIES + 6]);
 
 	butMonsterItemOK = newButton();
 	strcpy(butMonsterItemOK->label, "  OK  ");

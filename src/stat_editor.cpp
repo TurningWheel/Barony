@@ -85,7 +85,7 @@ Stat* Stat::copyStats()
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
 
-	for ( c = 0; c < 96; c++ )
+	for ( c = 0; c < ITEM_SLOT_NUM; c++ )
 	{
 		newStat->EDITOR_ITEMS[c] = this->EDITOR_ITEMS[c];
 	}

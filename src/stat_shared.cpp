@@ -74,7 +74,7 @@ Stat::Stat(Sint32 sprite)
 		}
 	}
 
-	for ( c = 0; c < 96; c = c + 6 )
+	for ( c = 0; c < ITEM_SLOT_NUM; c = c + ITEM_SLOT_NUMPROPERTIES )
 	{
 		this->EDITOR_ITEMS[c] = 0;
 		this->EDITOR_ITEMS[c + 1] = 0;
@@ -82,6 +82,7 @@ Stat::Stat(Sint32 sprite)
 		this->EDITOR_ITEMS[c + 3] = 1;
 		this->EDITOR_ITEMS[c + 4] = 1;
 		this->EDITOR_ITEMS[c + 5] = 100;
+		this->EDITOR_ITEMS[c + 6] = 0;
 	}
 	for ( c = 0; c < 16; c++ )
 	{
@@ -418,18 +419,26 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 84:
 		case (1000 + KOBOLD):
 			stats->type = KOBOLD;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 85:
 		case (1000 + SCARAB):
 			stats->type = SCARAB;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 86:
 		case (1000 + CRYSTALGOLEM):
 			stats->type = CRYSTALGOLEM;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 87:
 		case (1000 + INCUBUS):
 			stats->type = INCUBUS;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 88:
 		case (1000 + VAMPIRE):
@@ -490,30 +499,44 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 89:
 		case (1000 + SHADOW):
 			stats->type = SHADOW;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 90:
 		case (1000 + COCKATRICE):
 			stats->type = COCKATRICE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 91:
 		case (1000 + INSECTOID):
 			stats->type = INSECTOID;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 92:
 		case (1000 + GOATMAN):
 			stats->type = GOATMAN;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 93:
 		case (1000 + AUTOMATON):
 			stats->type = AUTOMATON;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 94:
 		case (1000 + LICH_ICE):
 			stats->type = LICH_ICE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 95:
 		case (1000 + LICH_FIRE):
 			stats->type = LICH_FIRE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 83:
 		case (1000 + SKELETON):

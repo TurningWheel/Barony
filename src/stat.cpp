@@ -193,7 +193,7 @@ void Stat::clearStats()
 		}
 	}
 
-	for ( x = 0; x < 96; x = x + 6 )
+	for ( x = 0; x < ITEM_SLOT_NUM; x = x + ITEM_SLOT_NUMPROPERTIES )
 	{
 		this->EDITOR_ITEMS[x] = 0;
 		this->EDITOR_ITEMS[x + 1] = 0;
@@ -201,6 +201,7 @@ void Stat::clearStats()
 		this->EDITOR_ITEMS[x + 3] = 1;
 		this->EDITOR_ITEMS[x + 4] = 1;
 		this->EDITOR_ITEMS[x + 5] = 1;
+		this->EDITOR_ITEMS[x + 6] = 0;
 	}
 
 	for ( x = 0; x < 32; x++ )
@@ -403,7 +404,7 @@ Stat* Stat::copyStats()
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
 
-	for ( c = 0; c < 96; c++ )
+	for ( c = 0; c < ITEM_SLOT_NUM; c++ )
 	{
 		newStat->EDITOR_ITEMS[c] = this->EDITOR_ITEMS[c];
 	}

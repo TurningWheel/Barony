@@ -2324,6 +2324,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	int itemBless;
 	int itemAppearance = rand();
 	int itemCount;
+	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
 	int chance = 1;
@@ -2332,7 +2333,67 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	{
 		for ( i = 0; i < 6 && itemsGenerated <= itemLimit; i++ )
 		{
-			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
+			
+			category = stats->EDITOR_ITEMS[itemSlots[i] + ITEM_SLOT_CATEGORY];
+			if ( category > 0 && stats->EDITOR_ITEMS[itemSlots[i]] == 1 )
+			{
+				if ( category > 0 && category <= 13 )
+				{
+					itemId = itemCurve(static_cast<Category>(category - 1));
+				}
+				else
+				{
+					int randType = 0;
+					if ( category == 14 )
+					{
+						// equipment
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(WEAPON));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(ARMOR));
+						}
+					}
+					else if ( category == 15 )
+					{
+						// jewelry
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(AMULET));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(RING));
+						}
+					}
+					else if ( category == 16 )
+					{
+						// magical
+						randType = rand() % 3;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(SCROLL));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+						}
+					}
+				}
+			}
+			else
+			{
+				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
+			}
+			
 			if ( itemId >= 0 )
 			{
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
