@@ -4904,30 +4904,90 @@ void createMonsterEquipment(Stat* stats)
 	int itemAppearance = rand();
 	int itemCount;
 	int chance = 1;
+	int category = 0;
 	bool itemIdentified;
 	if ( stats != NULL )
 	{
 		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
 		{
-			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * 6] - 2);
+			category = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + ITEM_SLOT_CATEGORY];
+			if ( category > 0 && stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
+			{
+				if ( category > 0 && category <= 13 )
+				{
+					itemId = itemCurve(static_cast<Category>(category - 1));
+				}
+				else
+				{
+					int randType = 0;
+					if ( category == 14 )
+					{
+						// equipment
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(WEAPON));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(ARMOR));
+						}
+					}
+					else if ( category == 15 )
+					{
+						// jewelry
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(AMULET));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(RING));
+						}
+					}
+					else if ( category == 16 )
+					{
+						// magical
+						randType = rand() % 3;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(SCROLL));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+						}
+					}
+				}
+			}
+			else
+			{
+				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2);
+			}
+
 			if ( itemId >= 0 )
 			{
-				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * 6 + 1]);
+				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 1]);
 				if ( itemStatus == 0 )
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
 				}
-				itemBless = stats->EDITOR_ITEMS[itemIndex * 6 + 2];
+				itemBless = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 2];
 				if ( itemBless == 10 )
 				{
 					itemBless = -2 + rand() % 5;
 				}
-				itemCount = stats->EDITOR_ITEMS[itemIndex * 6 + 3];
-				if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 1 )
+				itemCount = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 3];
+				if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 1 )
 				{
 					itemIdentified = false;
 				}
-				else if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 2 )
+				else if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 2 )
 				{
 					itemIdentified = true;
 				}
@@ -4936,7 +4996,7 @@ void createMonsterEquipment(Stat* stats)
 					itemIdentified = rand() % 2;
 				}
 				itemAppearance = rand();
-				chance = stats->EDITOR_ITEMS[itemIndex * 6 + 5];
+				chance = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 5];
 
 				if ( rand() % 100 < chance )
 				{
@@ -4985,9 +5045,9 @@ int countCustomItems(Stat* stats)
 	int x = 0;
 	int customItemSlotCount = 0;
 
-	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + ITEM_SLOT_NUMPROPERTIES )
 	{
-		if ( stats->EDITOR_ITEMS[x] != 1 )
+		if ( stats->EDITOR_ITEMS[x] != 1 || (stats->EDITOR_ITEMS[x] == 1 && stats->EDITOR_ITEMS[x + ITEM_SLOT_CATEGORY] != 0) )
 		{
 			customItemSlotCount++; //found a custom item in inventory
 		}
@@ -5001,9 +5061,9 @@ int countDefaultItems(Stat* stats)
 	int x = 0;
 	int defaultItemSlotCount = 0;
 
-	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + ITEM_SLOT_NUMPROPERTIES )
 	{
-		if ( stats->EDITOR_ITEMS[x] == 1 )
+		if ( stats->EDITOR_ITEMS[x] == 1 && stats->EDITOR_ITEMS[x + ITEM_SLOT_CATEGORY] == 0 )
 		{
 			defaultItemSlotCount++; //found a default item in inventory
 		}

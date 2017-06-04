@@ -37,7 +37,7 @@ int startfloor = 0;
 
 int monsterCurve(int level)
 {
-	if ( !strncmp(map.name, "The Mines", 9) )   // the mines
+	if ( !strncmp(map.name, "The Mines", 9) || !strncmp(map.name, "Caves", 5) )   // the mines
 	{
 		switch ( rand() % 10 )
 		{
@@ -519,7 +519,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			node->deconstructor = &mapDeconstructor;
 
 			// more nodes are created to record the exit points on the sublevel
-			for ( y = 0; y < subRoomMap->height; y++ )
+			/*for ( y = 0; y < subRoomMap->height; y++ )
 			{
 				for ( x = 0; x < subRoomMap->width; x++ )
 				{
@@ -552,7 +552,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						}
 					}
 				}
-			}
+			}*/
 		}
 	}
 
@@ -1701,6 +1701,7 @@ void assignActions(map_t* map)
 	}
 
 	// seed the random generator
+
 	prng_seed_bytes(&mapseed, sizeof(mapseed));
 
 	// assign entity behaviors
@@ -1958,67 +1959,126 @@ void assignActions(map_t* map)
 				}
 				else if ( entity->skill[10] == 0 || entity->skill[10] == 1 )
 				{
-					if ( !itemsdonebefore && !strcmp(map->name, "Start Map") )
+					if ( entity->skill[16] == 0 )
 					{
-						entity->skill[10] = READABLE_BOOK;
-					}
-					else
-					{
-						int balance = 0;
-						int i;
-						for ( i = 0; i < MAXPLAYERS; i++ )
+						// random category default, either set by editor or spawn naturally.
+						if ( !itemsdonebefore && !strcmp(map->name, "Start Map") )
 						{
-							if ( !client_disconnected[i] )
-							{
-								balance++;
-							}
-						}
-						bool extrafood = false;
-						switch ( balance )
-						{
-							case 2:
-								if ( prng_get_uint() % 8 == 0 )
-								{
-									extrafood = true;
-								}
-								break;
-							case 3:
-								if ( prng_get_uint() % 5 == 0 )
-								{
-									extrafood = true;
-								}
-								break;
-							case 4:
-								if ( prng_get_uint() % 4 == 0 )
-								{
-									extrafood = true;
-								}
-								break;
-							default:
-								extrafood = false;
-								break;
-						}
-						if ( !extrafood )
-						{
-							if ( prng_get_uint() % 2 == 0 )
-							{
-								// possible magicstaff
-								entity->skill[10] = itemCurve(static_cast<Category>(prng_get_uint() % (NUMCATEGORIES - 1)));
-							}
-							else
-							{
-								// impossible magicstaff
-								int randType = prng_get_uint() % (NUMCATEGORIES - 2);
-								if ( randType >= MAGICSTAFF )
-								{
-									randType++;
-								}
-								entity->skill[10] = itemCurve(static_cast<Category>(randType));
-							}
+							entity->skill[10] = READABLE_BOOK;
 						}
 						else
 						{
-							entity->skill[10] = itemCurve(FOOD);
+							int balance = 0;
+							int i;
+							for ( i = 0; i < MAXPLAYERS; i++ )
+							{
+								if ( !client_disconnected[i] )
+								{
+									balance++;
+								}
+							}
+							bool extrafood = false;
+							switch ( balance )
+							{
+								case 2:
+									if ( prng_get_uint() % 8 == 0 )
+									{
+										extrafood = true;
+									}
+									break;
+								case 3:
+									if ( prng_get_uint() % 5 == 0 )
+									{
+										extrafood = true;
+									}
+									break;
+								case 4:
+									if ( prng_get_uint() % 4 == 0 )
+									{
+										extrafood = true;
+									}
+									break;
+								default:
+									extrafood = false;
+									break;
+							}
+							if ( !extrafood )
+							{
+								if ( prng_get_uint() % 2 == 0 )
+								{
+									// possible magicstaff
+									entity->skill[10] = itemCurve(static_cast<Category>(prng_get_uint() % (NUMCATEGORIES - 1)));
+								}
+								else
+								{
+									// impossible magicstaff
+									int randType = prng_get_uint() % (NUMCATEGORIES - 2);
+									if ( randType >= MAGICSTAFF )
+									{
+										randType++;
+									}
+									entity->skill[10] = itemCurve(static_cast<Category>(randType));
+								}
+							}
+							else
+							{
+								entity->skill[10] = itemCurve(FOOD);
+							}
+						}
+					}
+					else
+					{
+						// editor set the random category of the item to be spawned.
+						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
+						{
+							entity->skill[10] = itemCurve(static_cast<Category>(entity->skill[16] - 1));
+						}
+						else
+						{
+							int randType = 0;
+							if ( entity->skill[16] == 14 )
+							{
+								// equipment
+								randType = prng_get_uint() % 2;
+								if ( randType == 0 )
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(WEAPON));
+								}
+								else if ( randType == 1 )
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(ARMOR));
+								}
+							}
+							else if ( entity->skill[16] == 15 )
+							{
+								// jewelry
+								randType = prng_get_uint() % 2;
+								if ( randType == 0 )
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(AMULET));
+								}
+								else
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(RING));
+								}
+							}
+							else if ( entity->skill[16] == 16 )
+							{
+								// magical
+								randType = prng_get_uint() % 3;
+								if ( randType == 0 )
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(SCROLL));
+								}
+								else if ( randType == 1 )
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(MAGICSTAFF));
+								}
+								else
+								{
+									entity->skill[10] = itemCurve(static_cast<Category>(SPELLBOOK));
+								}
+							}
 						}
 					}
 				}
@@ -2026,6 +2086,7 @@ void assignActions(map_t* map)
 				{
 					entity->skill[10] = entity->skill[10] - 2; //reduce by 2 as the editor treats 1 as random, 0 is NULL
 				}
+
 				if ( entity->sprite == 8 )
 				{
 					if ( entity->skill[11] == 0 ) //random
@@ -3243,6 +3304,234 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				break;
+			
+			// east crystal shard:
+			case 98:
+			{
+				if ( darkmap )
+				{
+					list_RemoveNode(entity->mynode);
+					entity = NULL;
+					break;
+				}
+				entity->behavior = &actCrystalShard;
+				entity->x += 1;
+				entity->y += 8;
+				entity->z -= 1;
+				entity->sprite = 3;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				break;
+			}
+			// south crystal shard:
+			case 99:
+			{
+				if ( darkmap )
+				{
+					list_RemoveNode(entity->mynode);
+					entity = NULL;
+					break;
+				}
+				entity->behavior = &actCrystalShard;
+				entity->x += 8;
+				entity->y += 1;
+				entity->z -= 1;
+				entity->yaw += PI / 2.0;
+				entity->sprite = 3;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				break;
+			}
+			// west crystal shard:
+			case 100:
+			{
+				if ( darkmap )
+				{
+					list_RemoveNode(entity->mynode);
+					entity = NULL;
+					break;
+				}
+				entity->behavior = &actCrystalShard;
+				entity->x += 15;
+				entity->y += 8;
+				entity->z -= 1;
+				entity->yaw += PI;
+				entity->sprite = 3;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				break;
+			}
+			// north crystal shard:
+			case 101:
+			{
+				if ( darkmap )
+				{
+					list_RemoveNode(entity->mynode);
+					entity = NULL;
+					break;
+				}
+				entity->behavior = &actCrystalShard;
+				entity->x += 8;
+				entity->y += 15;
+				entity->z -= 1;
+				entity->yaw += 3 * PI / 2.0;
+				entity->sprite = 3;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				break;
+			}
+
+			// boulder trap east
+			case 102:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actBoulderTrapEast;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+
+				x = ((int)(entity->x)) >> 4;
+				y = ((int)(entity->y)) >> 4;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						Entity* childEntity = newEntity(252, 1, map->entities);
+						childEntity->x = (x << 4) + 8;
+						childEntity->y = (y << 4) + 8;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						entity->flags[PASSABLE] = true;
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							childEntity->z = -26.99;
+						}
+						else
+						{
+							childEntity->z = -10.99;
+						}
+					}
+				}
+				break;
+			}
+
+			// boulder trap south
+			case 103:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actBoulderTrapSouth;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+
+				x = ((int)(entity->x)) >> 4;
+				y = ((int)(entity->y)) >> 4;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						Entity* childEntity = newEntity(252, 1, map->entities);
+						childEntity->x = (x << 4) + 8;
+						childEntity->y = (y << 4) + 8;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						entity->flags[PASSABLE] = true;
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							childEntity->z = -26.99;
+						}
+						else
+						{
+							childEntity->z = -10.99;
+						}
+					}
+				}
+				break;
+			}
+
+			// boulder trap west
+			case 104:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actBoulderTrapWest;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+
+				x = ((int)(entity->x)) >> 4;
+				y = ((int)(entity->y)) >> 4;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						Entity* childEntity = newEntity(252, 1, map->entities);
+						childEntity->x = (x << 4) + 8;
+						childEntity->y = (y << 4) + 8;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						entity->flags[PASSABLE] = true;
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							childEntity->z = -26.99;
+						}
+						else
+						{
+							childEntity->z = -10.99;
+						}
+					}
+				}
+				break;
+			}
+
+			// boulder trap north
+			case 105:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actBoulderTrapNorth;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+
+				x = ((int)(entity->x)) >> 4;
+				y = ((int)(entity->y)) >> 4;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						Entity* childEntity = newEntity(252, 1, map->entities);
+						childEntity->x = (x << 4) + 8;
+						childEntity->y = (y << 4) + 8;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						entity->flags[PASSABLE] = true;
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							childEntity->z = -26.99;
+						}
+						else
+						{
+							childEntity->z = -10.99;
+						}
+					}
+				}
+				break;
+			}
 			default:
 				break;
 		}

@@ -863,6 +863,10 @@ void consoleCommand(char* command_str)
 	{
 		messagePlayer(clientnum, language[300], list_Size(map.entities));
 	}
+	else if ( !strncmp(command_str, "/nummonsters", 12) )
+	{
+		messagePlayer(clientnum, language[2353], nummonsters);
+	}
 	else if (!strncmp(command_str, "/killmonsters", 13))
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )

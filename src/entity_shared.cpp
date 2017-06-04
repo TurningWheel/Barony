@@ -462,7 +462,7 @@ char itemStringsByType[10][63][32] =
 	
 };
 
-char spriteEditorNameStrings[98][28] = 
+char spriteEditorNameStrings[106][64] = 
 {
 	"NULL",	
 	"PLAYER START",
@@ -561,7 +561,15 @@ char spriteEditorNameStrings[98][28] =
 	"LICH ICE",
 	"LICH FIRE",
 	"NOT USED",
-	"SUMMON TRAP"
+	"SUMMON TRAP",
+	"CRYSTAL SHARD (West Wall)",
+	"CRYSTAL SHARD (North Wall)",
+	"CRYSTAL SHARD (East Wall)",
+	"CRYSTAL SHARD (South Wall)",
+	"BOULDER TRAP SINGLE (Roll West)",
+	"BOULDER TRAP SINGLE (Roll South)",
+	"BOULDER TRAP SINGLE (Roll East)",
+	"BOULDER TRAP SINGLE (Roll North)"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -975,6 +983,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[12] = entityToCopy->skill[12];
 			entityNew->skill[13] = entityToCopy->skill[13];
 			entityNew->skill[15] = entityToCopy->skill[15];
+			entityNew->skill[16] = entityToCopy->skill[16];
 		}
 		else
 		{
@@ -984,6 +993,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[12] = 10;
 			entityNew->skill[13] = 1;
 			entityNew->skill[15] = 1;
+			entityNew->skill[16] = 0;
 		}
 	}
 	// summoning trap.
