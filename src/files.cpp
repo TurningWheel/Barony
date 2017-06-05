@@ -9,6 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -766,7 +767,7 @@ char* readFile(char* filename)
 		printlog("Unreasonable size: %ld", input_file_size);
 		goto out_input_file;
 	}
-	
+
 	rewind(input_file);
 	file_contents = static_cast<char*>(malloc((input_file_size + 1) * sizeof(char)));
 	fread(file_contents, sizeof(char), input_file_size, input_file);
@@ -819,4 +820,32 @@ std::list<std::string> directoryContents(const char* directory)
 	closedir(dir);
 
 	return list;
+}
+
+std::vector<std::string> getLinesFromDataFile(std::string filename)
+{
+	std::vector<std::string> lines;
+	FILE *file = fopen(filename.c_str(), "r");
+	if ( !file )
+	{
+		printlog("Error: Failed to open file \"%s\": ", filename.c_str(), strerror(errno));
+		return lines;
+	}
+	size_t line_size = 0, line_length;
+	char *line = NULL;
+	while ( (line_length = getline(&line, &line_size, file)) != -1 )
+	{
+		if (line[line_length-1] == '\n') line[line_length-1] = '\0';
+		std::string cxxline(line);
+		if ( !cxxline.empty() )
+		{
+			lines.push_back(cxxline);
+		}
+		free(line);
+		line = NULL;
+		line_size = 0;
+	}
+	fclose(file);
+
+	return lines;
 }
