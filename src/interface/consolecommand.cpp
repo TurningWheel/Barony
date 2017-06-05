@@ -14,6 +14,7 @@
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../items.hpp"
+#include "../init.hpp"
 #include "../book.hpp"
 #include "../sound.hpp"
 #include "../menu.hpp"
