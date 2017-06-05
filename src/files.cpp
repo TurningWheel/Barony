@@ -49,7 +49,7 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 }
 
 
-bool completePath(char *dest, const char * const filename) {
+bool completeDataPath(char *dest, const char * const filename) {
 	if (!(filename && filename[0])) {
 		return false;
 	}
@@ -66,7 +66,7 @@ bool completePath(char *dest, const char * const filename) {
 
 FILE* openDataFile(const char * const filename, const char * const mode) {
 	char path[1024];
-	completePath(path, filename);
+	completeDataPath(path, filename);
 	FILE * result = fopen(path, mode);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
@@ -76,7 +76,7 @@ FILE* openDataFile(const char * const filename, const char * const mode) {
 
 DIR* openDataDir(const char * const name) {
 	char path[1024];
-	completePath(path, name);
+	completeDataPath(path, name);
 	DIR * result = opendir(path);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
@@ -87,7 +87,7 @@ DIR* openDataDir(const char * const name) {
 
 bool dataPathExists(const char * const path) {
 	char full_path[1024];
-	completePath(full_path, path);
+	completeDataPath(full_path, path);
 	return access(full_path, F_OK) != -1;
 }
 
@@ -104,7 +104,7 @@ bool dataPathExists(const char * const path) {
 SDL_Surface* loadImage(char* filename)
 {
 	char full_path[1024];
-	completePath(full_path, filename);
+	completeDataPath(full_path, filename);
 	SDL_Surface* originalSurface;
 
 	if ( imgref >= MAXTEXTURES )
@@ -783,7 +783,7 @@ std::list<std::string> directoryContents(const char* directory)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
-	completePath(fullPath, directory);
+	completeDataPath(fullPath, directory);
 	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
 

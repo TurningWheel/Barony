@@ -606,7 +606,7 @@ int loadLanguage(char* lang)
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
-	completePath(fontPath, fontName);
+	completeDataPath(fontPath, fontName);
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
