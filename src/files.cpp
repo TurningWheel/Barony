@@ -45,7 +45,7 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 }
 
 
-bool completeDataPath(char *dest, const char * const filename) {
+static bool completeDataPath(char *dest, const char * const filename) {
 	if (!(filename && filename[0])) {
 		return false;
 	}
@@ -78,6 +78,12 @@ DIR* openDataDir(const char * const name) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
 	return result;
+}
+
+SDL_RWops * openDataFileSDL(const char * filename, const char * mode) {
+	char path[1024];
+	completeDataPath(path, filename);
+	return SDL_RWFromFile(path, mode);
 }
 
 
