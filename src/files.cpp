@@ -13,6 +13,7 @@
 #include <sys/stat.h>
 #include <dirent.h>
 #include "main.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
 

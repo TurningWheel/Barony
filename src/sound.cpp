@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "files.hpp"
 //#include "game.hpp"
 #include "sound.hpp"
 

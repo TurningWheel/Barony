@@ -615,14 +615,6 @@ void glDrawSprite(view_t* camera, Entity* entity, int mode);
 real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
-// function prototypes for files.c:
-void glLoadTexture(SDL_Surface* image, int texnum);
-SDL_Surface* loadImage(char* filename);
-voxel_t* loadVoxel(char* filename2);
-int loadMap(char* filename, map_t* destmap, list_t* entlist);
-int loadConfig(char* filename);
-int saveMap(char* filename);
-
 // function prototypes for cursors.c:
 SDL_Cursor* newCursor(char* image[]);
 
@@ -637,9 +629,6 @@ extern char* cursor_fill[];
 
 GLuint create_shader(const char* filename, GLenum type);
 
-char* readFile(char* filename);
-list_t* directoryContents(char* directory);
-
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
 
@@ -651,8 +640,3 @@ extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y);
-extern char datadir[1024];
-FILE *openDataFile(const char *const filename, const char * const mode);
-DIR * openDataDir(const char *const);
-bool dataPathExists(const char *const);
-bool completePath(char *dest, const char * const path);
