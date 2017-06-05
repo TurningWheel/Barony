@@ -108,6 +108,8 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define access _access
 #endif
 
+#include "list.hpp"
+
 #define PI 3.14159265358979323846
 
 extern FILE* logfile;
@@ -233,22 +235,8 @@ extern view_t camera;
 class Entity; //TODO: Bugger?
 
 // node structure
-typedef struct node_t
-{
-	struct node_t* next;
-	struct node_t* prev;
-	struct list_t* list;
-	void* element;
-	void (*deconstructor)(void* data);
-	Uint32 size;
-} node_t;
 
 // list structure
-typedef struct list_t
-{
-	node_t* first;
-	node_t* last;
-} list_t;
 extern list_t button_l;
 extern list_t light_l;
 
@@ -525,29 +513,6 @@ int numdigits_sint16(Sint16 x);
 int longestline(char* str);
 int concatedStringLength(char* str, ...);
 void printlog(const char* str, ...);
-
-void list_FreeAll(list_t* list);
-void list_RemoveNode(node_t* node);
-template <typename T>
-void list_RemoveNodeWithElement(list_t &list, T element)
-{
-	for ( node_t *node = list.first; node != nullptr; node = node->next )
-	{
-		if ( *static_cast<T*>(node->element) == element )
-		{
-			list_RemoveNode(node);
-			return;
-		}
-	}
-}
-node_t* list_AddNodeFirst(list_t* list);
-node_t* list_AddNodeLast(list_t* list);
-node_t* list_AddNode(list_t* list, int index);
-Uint32 list_Size(list_t* list);
-list_t* list_Copy(list_t* destlist, list_t* srclist);
-list_t* list_CopyNew(list_t* srclist);
-Uint32 list_Index(node_t* node);
-node_t* list_Node(list_t* list, int index);
 
 // function prototypes for light.c:
 light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
