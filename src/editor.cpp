@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
 #include "items.hpp"

@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "files.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
