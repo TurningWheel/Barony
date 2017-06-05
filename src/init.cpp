@@ -14,6 +14,7 @@
 #include "sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
+#include "init.hpp"
 #include "net.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>

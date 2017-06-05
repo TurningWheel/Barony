@@ -520,16 +520,6 @@ int longestline(char* str);
 int concatedStringLength(char* str, ...);
 void printlog(const char* str, ...);
 
-// function prototypes for init.c:
-int initApp(char* title, int fullscreen);
-int deinitApp();
-bool initVideo();
-bool changeVideoMode();
-void generatePolyModels();
-void generateVBOs();
-int loadLanguage(char* lang);
-int reloadLanguage();
-
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
 void list_RemoveNode(node_t* node);

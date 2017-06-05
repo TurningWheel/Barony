@@ -13,6 +13,7 @@
 #include "editor.hpp"
 #include "entity.hpp"
 #include "files.hpp"
+#include "init.hpp"
 
 #define EDITOR
 
