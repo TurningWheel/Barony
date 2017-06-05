@@ -547,6 +547,22 @@ int initApp(char* title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
+static void loadFont(TTF_Font** dest, SDL_RWops* file, int size) {
+	file->seek(file, 0, 0);
+	if (*dest)
+		TTF_CloseFont(*dest);
+	*dest = TTF_OpenFontRW(file, false, size);
+	if (!*dest)
+	{
+		printlog("Could not load size %d TTF font: %s", size, TTF_GetError());
+	}
+	else
+	{
+		TTF_SetFontKerning(*dest, 0);
+		TTF_SetFontHinting(*dest, TTF_HINTING_MONO);
+	}
+}
+
 int loadLanguage(char* lang)
 {
 	char filename[128] = { 0 };
@@ -589,50 +605,22 @@ int loadLanguage(char* lang)
 
 	// load fonts
 	char fontName[64] = { 0 };
-	char fontPath[1024];
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
 	if ( !dataPathExists(fontName) )
 	{
 		strncpy(fontName, "lang/en.ttf", 63);
 	}
-	if ( !dataPathExists(fontName) )
-	{
-		printlog("error: default game font 'lang/en.ttf' not found");
+	SDL_RWops *fontFile = openDataFileSDL(fontName, "rb");
+	if (!fontFile) {
+		printlog("Could not open font file: %s", SDL_GetError());
+	}
+
+	loadFont(&ttf8, fontFile, TTF8_HEIGHT);
+	loadFont(&ttf12, fontFile, TTF12_HEIGHT);
+	loadFont(&ttf16, fontFile, TTF16_HEIGHT);
+
+	if (!(ttf8 && ttf12 && ttf16))
 		return 1;
-	}
-	if ( ttf8 )
-	{
-		TTF_CloseFont(ttf8);
-	}
-	if ((ttf8 = TTF_OpenFontRW(openDataFileSDL(fontName, "rb"), true, TTF8_HEIGHT)) == NULL )
-	{
-		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
-		return 1;
-	}
-	TTF_SetFontKerning(ttf8, 0);
-	TTF_SetFontHinting(ttf8, TTF_HINTING_MONO);
-	if ( ttf12 )
-	{
-		TTF_CloseFont(ttf12);
-	}
-	if ((ttf12 = TTF_OpenFontRW(openDataFileSDL(fontName, "rb"), true, TTF12_HEIGHT)) == NULL )
-	{
-		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
-		return 1;
-	}
-	TTF_SetFontKerning(ttf12, 0);
-	TTF_SetFontHinting(ttf12, TTF_HINTING_MONO);
-	if ( ttf16 )
-	{
-		TTF_CloseFont(ttf16);
-	}
-	if ((ttf16 = TTF_OpenFontRW(openDataFileSDL(fontName, "rb"), true, TTF16_HEIGHT)) == NULL )
-	{
-		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
-		return 1;
-	}
-	TTF_SetFontKerning(ttf16, 0);
-	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
 	if ( (fp = openDataFile(filename, "r")) == NULL )
