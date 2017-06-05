@@ -13,6 +13,7 @@
 
 #include "main.hpp"
 #include "game.hpp"
+#include "light.hpp"
 #include "stat.hpp"
 #include "monster.hpp"
 
