@@ -1,4 +1,6 @@
 #pragma once
+#include <string>
+#include <vector>
 
 void glLoadTexture(SDL_Surface* image, int texnum);
 SDL_Surface* loadImage(char* filename);
@@ -13,3 +15,4 @@ DIR * openDataDir(const char *const);
 bool dataPathExists(const char *const);
 extern char datadir[1024];
 SDL_RWops * openDataFileSDL(const char * filename, const char * mode);
+std::vector<std::string> getLinesFromDataFile(std::string path);

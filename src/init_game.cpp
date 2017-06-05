@@ -293,8 +293,8 @@ int initGame()
 	createBooks();
 	setupSpells();
 
-	randomPlayerNamesMale = getLinesFromFile(datadir + PLAYERNAMES_MALE_FILE);
-	randomPlayerNamesFemale = getLinesFromFile(datadir + PLAYERNAMES_FEMALE_FILE);
+	randomPlayerNamesMale = getLinesFromDataFile(PLAYERNAMES_MALE_FILE);
+	randomPlayerNamesFemale = getLinesFromDataFile(PLAYERNAMES_FEMALE_FILE);
 
 	// print a loading message
 	drawClearBuffers();
