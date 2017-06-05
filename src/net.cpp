@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "net.hpp"

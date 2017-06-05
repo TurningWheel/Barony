@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "entity.hpp"
 
 #ifdef WINDOWS
