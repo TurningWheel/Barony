@@ -258,18 +258,6 @@ typedef struct map_t
 #define OBSTACLELAYER 1 // obstacle layer in map
 #define MAPFLAGS 16 // map flags for custom properties
 
-// light structure
-typedef struct light_t
-{
-	Sint32 x, y;
-	Sint32 radius;
-	Sint32 intensity;
-	Sint32* tiles;
-
-	// a pointer to the light's location in a list
-	node_t* node;
-} light_t;
-
 // delete entity structure
 typedef struct deleteent_t
 {
@@ -514,10 +502,6 @@ int longestline(char* str);
 int concatedStringLength(char* str, ...);
 void printlog(const char* str, ...);
 
-// function prototypes for light.c:
-light_t* lightSphereShadow(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-light_t* lightSphere(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
-
 // function prototypes for objects.c:
 void defaultDeconstructor(void* data);
 void emptyDeconstructor(void* data);
@@ -528,7 +512,6 @@ void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist);
 button_t* newButton(void);
-light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity);
 string_t* newString(list_t* list, Uint32 color, char* content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
