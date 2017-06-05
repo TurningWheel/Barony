@@ -22,6 +22,7 @@
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
