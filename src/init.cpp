@@ -606,12 +606,11 @@ int loadLanguage(char* lang)
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
-	completeDataPath(fontPath, fontName);
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
 	}
-	if ((ttf8 = TTF_OpenFont(fontPath, TTF8_HEIGHT)) == NULL )
+	if ((ttf8 = TTF_OpenFontRW(openDataFileSDL(fontName, "rb"), true, TTF8_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -622,7 +621,7 @@ int loadLanguage(char* lang)
 	{
 		TTF_CloseFont(ttf12);
 	}
-	if ((ttf12 = TTF_OpenFont(fontPath, TTF12_HEIGHT)) == NULL )
+	if ((ttf12 = TTF_OpenFontRW(openDataFileSDL(fontName, "rb"), true, TTF12_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -633,7 +632,7 @@ int loadLanguage(char* lang)
 	{
 		TTF_CloseFont(ttf16);
 	}
-	if ((ttf16 = TTF_OpenFont(fontPath, TTF16_HEIGHT)) == NULL )
+	if ((ttf16 = TTF_OpenFontRW(openDataFileSDL(fontName, "rb"), true, TTF16_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
 		return 1;
