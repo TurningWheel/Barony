@@ -172,6 +172,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	//node_t *node = spell->types->first;
 
 #define PROPULSION_MISSILE 1
+#define PROPULSION_MISSILE_TRIO 2
 	int i = 0;
 	int chance = 0;
 	int propulsion = 0;
@@ -333,6 +334,26 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					traveltime -= rand() % (1000 / (spellcasting + 1));
 				}
 				if (traveltime < 30)
+				{
+					traveltime = 30;    //Range checking.
+				}
+			}
+			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+		}
+		else if ( !strcmp(element->name, spellElement_missile_trio.name) )
+		{
+			//Set the propulsion to missile.
+			propulsion = PROPULSION_MISSILE_TRIO;
+			traveltime = element->duration;
+			if ( newbie )
+			{
+				//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+				chance = rand() % 10;
+				if ( chance >= spellcasting / 10 )
+				{
+					traveltime -= rand() % (1000 / (spellcasting + 1));
+				}
+				if ( traveltime < 30 )
 				{
 					traveltime = 30;    //Range checking.
 				}
@@ -679,6 +700,18 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			playSoundEntity(caster, 168, 128 );
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
 		}
+		else if ( !strcmp(element->name, spellElement_summon.name) )
+		{
+			for ( i = 0; i < numplayers; ++i )
+			{
+				if ( caster == players[i]->entity )
+				{
+					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					spell_summonFamiliar(i);
+				}
+			}
+			playSoundEntity(caster, 167, 128);
+		}
 
 		if (propulsion == PROPULSION_MISSILE)
 		{
@@ -719,11 +752,106 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				playSoundEntity(entity, 172, 128 );
 			}
+			else if ( !strcmp(spell->name, spell_bleed.name) )
+			{
+				playSoundEntity(entity, 171, 128);
+			}
+			else if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				playSoundEntity(entity, 171, 128);
+			}
 			else
 			{
 				playSoundEntity(entity, 169, 128 );
 			}
 			result = entity;
+		}
+		else if ( propulsion == PROPULSION_MISSILE_TRIO )
+		{
+			entity = newEntity(168, 1, map.entities); // red magic ball
+			entity->parent = caster->getUID();
+			entity->x = caster->x;
+			entity->y = caster->y;
+			entity->z = -1;
+			entity->sizex = 1;
+			entity->sizey = 1;
+			entity->yaw = caster->yaw;
+			entity->flags[UPDATENEEDED] = true;
+			entity->flags[PASSABLE] = true;
+			entity->flags[BRIGHT] = true;
+			entity->behavior = &actMagicMissile;
+			entity->sprite = 170;
+
+			double missile_speed = 2 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			entity->vel_x = cos(entity->yaw) * (missile_speed);
+			entity->vel_y = sin(entity->yaw) * (missile_speed);
+			
+			entity->skill[4] = 0;
+			entity->skill[5] = traveltime;
+			node = list_AddNodeFirst(&entity->children);
+			node->element = copySpell(spell);
+			((spell_t*)node->element)->caster = caster->getUID();
+			node->deconstructor = &spellDeconstructor;
+			node->size = sizeof(spell_t);
+
+			result = entity;
+
+			Entity* entity1 = newEntity(168, 1, map.entities); // red magic ball
+			entity1->parent = caster->getUID();
+			entity1->x = caster->x;
+			entity1->y = caster->y;
+			entity1->z = -1;
+			entity1->sizex = 1;
+			entity1->sizey = 1;
+			entity1->yaw = caster->yaw - (PI / 6);
+			entity1->flags[UPDATENEEDED] = true;
+			entity1->flags[PASSABLE] = true;
+			entity1->flags[BRIGHT] = true;
+			entity1->behavior = &actMagicMissile;
+			entity1->sprite = 170;
+
+			missile_speed = 1 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			entity1->vel_x = cos(entity1->yaw) * (missile_speed);
+			entity1->vel_y = sin(entity1->yaw) * (missile_speed);
+
+			entity1->skill[4] = 0;
+			entity1->skill[5] = traveltime;
+			node = list_AddNodeFirst(&entity1->children);
+			node->element = copySpell(spell);
+			((spell_t*)node->element)->caster = caster->getUID();
+			node->deconstructor = &spellDeconstructor;
+			node->size = sizeof(spell_t);
+
+			Entity* entity2 = newEntity(168, 1, map.entities); // red magic ball
+			entity2->parent = caster->getUID();
+			entity2->x = caster->x;
+			entity2->y = caster->y;
+			entity2->z = -1;
+			entity2->sizex = 1;
+			entity2->sizey = 1;
+			entity2->yaw = caster->yaw + (PI / 6);
+			entity2->flags[UPDATENEEDED] = true;
+			entity2->flags[PASSABLE] = true;
+			entity2->flags[BRIGHT] = true;
+			entity2->behavior = &actMagicMissile;
+			entity2->sprite = 170;
+
+			missile_speed = 1 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			entity2->vel_x = cos(entity2->yaw) * (missile_speed);
+			entity2->vel_y = sin(entity2->yaw) * (missile_speed);
+
+			entity2->skill[4] = 0;
+			entity2->skill[5] = traveltime;
+			node = list_AddNodeFirst(&entity2->children);
+			node->element = copySpell(spell);
+			((spell_t*)node->element)->caster = caster->getUID();
+			node->deconstructor = &spellDeconstructor;
+			node->size = sizeof(spell_t);
+			
+			if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				playSoundEntity(entity, 171, 128);
+			}
 		}
 
 		extramagic_to_use = 0;
@@ -791,24 +919,38 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 				}
 			}
-			else if (!strcmp(element->name, spellElement_lightning.name))
+			else if ( !strcmp(element->name, spellElement_lightning.name) )
 			{
-				if (propulsion == PROPULSION_MISSILE)
+				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 170;
 				}
-				if (newbie)
+				if ( newbie )
 				{
 					//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
 					chance = rand() % 10;
-					if (chance >= spellcasting / 10)
+					if ( chance >= spellcasting / 10 )
 					{
 						element->damage -= rand() % (100 / (spellcasting + 1));
 					}
-					if (element->damage < 10)
+					if ( element->damage < 10 )
 					{
 						element->damage = 10;    //Range checking.
 					}
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_stoneblood.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 170;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_bleed.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 173;
 				}
 			}
 			else if (!strcmp(element->name, spellElement_confuse.name))

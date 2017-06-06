@@ -307,12 +307,15 @@ void actMagiclightBall(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
+const int NUM_ITEM_STRINGS = 207;
+const int NUM_ITEM_STRINGS_BY_TYPE = 69;
+
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[106][64];
 extern char tileEditorNameStrings[202][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
-extern char itemStringsByType[10][63][32];
-extern char itemNameStrings[198][32];
+extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
+extern char itemNameStrings[NUM_ITEM_STRINGS][32];
 int canWearEquip(Entity* entity, int category);
 void createMonsterEquipment(Stat* stats);
 int countCustomItems(Stat* stats);

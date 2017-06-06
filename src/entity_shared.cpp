@@ -72,7 +72,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[198][32] =
+char itemNameStrings[NUM_ITEM_STRINGS][32] =
 {
 	"NULL",
 	"random_item",
@@ -271,11 +271,19 @@ char itemNameStrings[198][32] =
 	"iron_dagger",
 	"steel_chakram",
 	"crystal_shuriken",
+	"cloak_black",
+	"magicstaff_stoneblood",
+	"magicstaff_bleed",
+	"magicstaff_summon",
+	"tool_blindfold_focus",
+	"tool_blindfold_telepathy",
+	"spellbook_summon",
+	"spellbook_stoneblood",
+	"spellbook_bleed",
 	""
 };
 
-
-char itemStringsByType[10][63][32] =
+char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 {
 	{
 		"NULL",
@@ -327,6 +335,9 @@ char itemStringsByType[10][63][32] =
 		"magicstaff_fire",
 		"magicstaff_lightning",
 		"magicstaff_sleep",
+		"magicstaff_stoneblood",
+		"magicstaff_bleed",
+		"magicstaff_summon",
 		"spellbook_forcebolt",
 		"spellbook_magicmissile",
 		"spellbook_cold",
@@ -347,6 +358,9 @@ char itemStringsByType[10][63][32] =
 		"spellbook_healing",
 		"spellbook_extrahealing",
 		"spellbook_cureailment",
+		"spellbook_summon",
+		"spellbook_stoneblood",
+		"spellbook_bleed",
 		"spellbook_dig",
 		"tool_pickaxe",
 		"artifact_sword",
@@ -430,6 +444,7 @@ char itemStringsByType[10][63][32] =
 		"NULL",
 		"random_item",
 		"cloak",
+		"cloak_black",
 		"cloak_magicreflection",
 		"cloak_invisibility",
 		"cloak_protection",
@@ -441,6 +456,8 @@ char itemStringsByType[10][63][32] =
 		"random_item",
 		"tool_blindfold",
 		"tool_glasses",
+		"tool_blindfold_focus",
+		"tool_blindfold_telepathy",
 		""
 	},
 	{

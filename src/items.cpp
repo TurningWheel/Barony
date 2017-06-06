@@ -1321,6 +1321,7 @@ void useItem(Item* item, int player)
 			equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
+		case CLOAK_BLACK:
 		case CLOAK_MAGICREFLECTION:
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
@@ -1525,6 +1526,9 @@ void useItem(Item* item, int player)
 		case MAGICSTAFF_FIRE:
 		case MAGICSTAFF_LIGHTNING:
 		case MAGICSTAFF_SLEEP:
+		case MAGICSTAFF_STONEBLOOD:
+		case MAGICSTAFF_BLEED:
+		case MAGICSTAFF_SUMMON:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:
@@ -1562,6 +1566,9 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_EXTRAHEALING:
 		case SPELLBOOK_CUREAILMENT:
 		case SPELLBOOK_DIG:
+		case SPELLBOOK_SUMMON:
+		case SPELLBOOK_STONEBLOOD:
+		case SPELLBOOK_BLEED:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
@@ -1603,6 +1610,8 @@ void useItem(Item* item, int player)
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
+		case TOOL_BLINDFOLD_FOCUS:
+		case TOOL_BLINDFOLD_TELEPATHY:
 			equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_TOWEL:

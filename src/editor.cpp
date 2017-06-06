@@ -2970,7 +2970,7 @@ int main(int argc, char** argv)
 						int pad_x4 = 64; //handles left side menu-end
 						int pad_y4; //handles left side menu-end
 						int totalNumItems = (sizeof(itemNameStrings) / sizeof(itemNameStrings[0]));
-						int editorNumItems = totalNumItems + 1;
+						int editorNumItems = totalNumItems /* - 1*/;
 						switch ( itemSlotSelected )
 						{
 							case -1:
@@ -3042,7 +3042,7 @@ int main(int argc, char** argv)
 									}
 									else if ( newwindow == 5 )
 									{
-										if ( propertyInt > totalNumItems - 1 || propertyInt < 0 )
+										if ( propertyInt > totalNumItems - 2 || propertyInt < 0 )
 										{
 											errorMessage = 60;
 											errorArr[i] = 1;

@@ -2274,14 +2274,16 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// unparalyze certain boss characters
-	if ( myStats->EFFECTS[EFF_PARALYZED] && myStats->type >= LICH )
+	if ( myStats->EFFECTS[EFF_PARALYZED] && ( (myStats->type >= LICH && myStats->type < KOBOLD) 
+		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		myStats->EFFECTS[EFF_PARALYZED] = false;
 		myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 0;
 	}
 
 	// wake up
-	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || myStats->type >= LICH) )
+	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || (myStats->type >= LICH && myStats->type < KOBOLD) 
+		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		messagePlayer(player, language[658]);
 		myStats->EFFECTS[EFF_ASLEEP] = false;
@@ -2999,6 +3001,15 @@ void Entity::attack(int pose, int charge)
 						case MAGICSTAFF_SLEEP:
 							castSpell(uid, &spell_sleep, true, false);
 							break;
+						case MAGICSTAFF_SUMMON:
+							castSpell(uid, &spell_summon, true, false);
+							break;
+						case MAGICSTAFF_STONEBLOOD:
+							castSpell(uid, &spell_stoneblood, true, false);
+							break;
+						case MAGICSTAFF_BLEED:
+							castSpell(uid, &spell_bleed, true, false);
+							break;
 						default:
 							messagePlayer(player, "This is my wish stick! Wishy wishy wish!");
 							break;
@@ -3067,6 +3078,15 @@ void Entity::attack(int pose, int charge)
 							break;
 						case SPELLBOOK_DIG:
 							castSpell(uid, &spell_dig, true, false);
+							break;
+						case SPELLBOOK_STONEBLOOD:
+							castSpell(uid, &spell_stoneblood, true, false);
+							break;
+						case SPELLBOOK_BLEED:
+							castSpell(uid, &spell_bleed, true, false);
+							break;
+						case SPELLBOOK_SUMMON:
+							castSpell(uid, &spell_summon, true, false);
 							break;
 						default:
 							break;

@@ -2766,6 +2766,15 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_DIG:
 				addSpell(SPELL_DIG, player);
 				break;
+			case SPELLBOOK_SUMMON:
+				addSpell(SPELL_SUMMON, player);
+				break;
+			case SPELLBOOK_STONEBLOOD:
+				addSpell(SPELL_STONEBLOOD, player);
+				break;
+			case SPELLBOOK_BLEED:
+				addSpell(SPELL_BLEED, player);
+				break;
 			default:
 				addSpell(SPELL_FORCEBOLT, player);
 				break;
