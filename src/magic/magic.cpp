@@ -141,6 +141,7 @@ void spell_summonFamiliar(int player)
 	for ( i = 0; i < numCreatures; ++i )
 	{
 		Entity* monster = summonMonster(creature, floor(players[player]->entity->x / 16) * 16 + 8, floor(players[player]->entity->y / 16) * 16 + 8);
+		
 		if ( monster )
 		{
 			spawnedMonster = true;

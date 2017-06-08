@@ -374,6 +374,11 @@ void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
+void createParticle1(Entity* caster, int player);
+void createParticle2(Entity* parent);
+void actParticleCircle(Entity* my);
+void actParticleDot(Entity* my);
+void createParticleDot(Entity* parent);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);

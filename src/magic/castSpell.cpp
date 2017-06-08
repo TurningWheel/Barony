@@ -706,8 +706,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( caster == players[i]->entity )
 				{
-					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					spell_summonFamiliar(i);
+					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
+					createParticle1(caster, i);
 				}
 			}
 			playSoundEntity(caster, 167, 128);
