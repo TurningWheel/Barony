@@ -140,7 +140,7 @@ public:
 	Sint32 RANDOM_LVL;
 	Sint32 RANDOM_GOLD;
 	// flags to set for future entity behaviour
-	Sint32 EDITOR_FLAGS[32];
+	Sint32 MISC_FLAGS[32];
 
 	// skills and effects
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];

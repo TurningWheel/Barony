@@ -86,7 +86,7 @@ Stat::Stat(Sint32 sprite)
 	}
 	for ( c = 0; c < 16; c++ )
 	{
-		EDITOR_FLAGS[c] = 0;
+		MISC_FLAGS[c] = 0;
 	}
 
 	this->leader_uid = 0;

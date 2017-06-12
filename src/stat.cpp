@@ -206,7 +206,7 @@ void Stat::clearStats()
 
 	for ( x = 0; x < 32; x++ )
 	{
-		this->EDITOR_FLAGS[x] = 0;
+		this->MISC_FLAGS[x] = 0;
 	}
 
 	list_FreeAll(&this->inventory);
@@ -387,7 +387,8 @@ Stat* Stat::copyStats()
 	newStat->STR = this->STR;
 	newStat->DEX = this->DEX;
 	newStat->CON = this->CON;
-	newStat->INT = this->PER;
+	newStat->INT = this->INT;
+	newStat->PER = this->PER;
 	newStat->CHR = this->CHR;
 	newStat->EXP = this->EXP;
 	newStat->LVL = this->LVL;
@@ -411,7 +412,7 @@ Stat* Stat::copyStats()
 
 	for ( c = 0; c < 32; c++ )
 	{
-		newStat->EDITOR_FLAGS[c] = this->EDITOR_FLAGS[c] = 0;
+		newStat->MISC_FLAGS[c] = this->MISC_FLAGS[c] = 0;
 	}
 
 	newStat->defending = this->defending;
