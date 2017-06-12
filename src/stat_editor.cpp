@@ -96,6 +96,8 @@ Stat* Stat::copyStats()
 		newStat->MISC_FLAGS[c] = this->MISC_FLAGS[c];
 	}
 
+	// skip the player stat variables PLAYER_LVL_STAT_BONUS & PLAYER_LVL_STAT_TIMER
+
 	return newStat;
 }
 

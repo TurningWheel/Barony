@@ -334,4 +334,5 @@ int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
+int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);

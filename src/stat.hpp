@@ -41,6 +41,16 @@ enum Monster : int;
 #define EFF_SLOW 15
 #define NUMEFFECTS 16
 
+// stats
+static const int STAT_STR = 0;
+static const int STAT_DEX = 1;
+static const int STAT_CON = 2;
+static const int STAT_INT = 3;
+static const int STAT_PER = 4;
+static const int STAT_CHR = 5;
+
+static const int NUMSTATS = 6;
+
 // proficiencies
 static const int PRO_LOCKPICKING = 0;   // base attribute: dex
 static const int PRO_STEALTH = 1;       // base attribute: dex
@@ -141,6 +151,10 @@ public:
 	Sint32 RANDOM_GOLD;
 	// flags to set for future entity behaviour
 	Sint32 MISC_FLAGS[32];
+
+	// flags for player stats only
+	Sint32 PLAYER_LVL_STAT_BONUS[NUMSTATS];
+	Sint32 PLAYER_LVL_STAT_TIMER[NUMSTATS * 2];
 
 	// skills and effects
 	Sint32 PROFICIENCIES[NUMPROFICIENCIES];

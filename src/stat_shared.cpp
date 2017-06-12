@@ -84,9 +84,19 @@ Stat::Stat(Sint32 sprite)
 		this->EDITOR_ITEMS[c + 5] = 100;
 		this->EDITOR_ITEMS[c + 6] = 0;
 	}
-	for ( c = 0; c < 16; c++ )
+	for ( c = 0; c < 32; c++ )
 	{
-		MISC_FLAGS[c] = 0;
+		this->MISC_FLAGS[c] = 0;
+	}
+
+	for ( c = 0; c < NUMSTATS; c++ )
+	{
+		this->PLAYER_LVL_STAT_BONUS[c] = -1;
+	}
+
+	for ( c = 0; c < NUMSTATS * 2; c++ )
+	{
+		this->PLAYER_LVL_STAT_TIMER[c] = 0;
 	}
 
 	this->leader_uid = 0;

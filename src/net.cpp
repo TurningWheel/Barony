@@ -1668,6 +1668,16 @@ void clientHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "SKIL", 4))
 	{
 		stats[clientnum]->PROFICIENCIES[net_packet->data[5]] = net_packet->data[6];
+
+		int statBonusSkill = getStatForProficiency(net_packet->data[5]);
+
+		if ( statBonusSkill >= STAT_STR )
+		{
+			// stat has chance for bonus point if the relevant proficiency has been trained.
+			// write the last proficiency that effected the skill.
+			stats[clientnum]->PLAYER_LVL_STAT_BONUS[statBonusSkill] = net_packet->data[5];
+		}
+
 		return;
 	}
 

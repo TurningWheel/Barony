@@ -775,6 +775,16 @@ void Entity::increaseSkill(int skill)
 		}
 	}
 	myStats->EXP += 2;
+	
+	int statBonusSkill = getStatForProficiency(skill);
+
+	if ( statBonusSkill >= STAT_STR )
+	{
+		// stat has chance for bonus point if the relevant proficiency has been trained.
+		// write the last proficiency that effected the skill.
+		myStats->PLAYER_LVL_STAT_BONUS[statBonusSkill] = skill;
+	}
+	
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		// update SKILL
@@ -1514,28 +1524,103 @@ void Entity::handleEffects(Stat* myStats)
 		{
 			increasestat[2]++;
 		}*/
+
+		for ( i = 0; i < 6; i++ )
+		{
+			myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
+		}
+
+		bool rolledBonusStat = false;
+		int statIconTicks = 250;
+
 		for ( i = 0; i < 3; i++ )
 		{
 			messagePlayerColor(player, color, language[623 + increasestat[i]]);
 			switch ( increasestat[i] )
 			{
-				case 0: // STR
+				case STAT_STR: // STR
 					myStats->STR++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat)
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->STR++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 1: // DEX
+				case STAT_DEX: // DEX
 					myStats->DEX++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->DEX++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 2: // CON
+				case STAT_CON: // CON
 					myStats->CON++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->CON++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 3: // INT
+				case STAT_INT: // INT
 					myStats->INT++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->INT++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 4: // PER
+				case STAT_PER: // PER
 					myStats->PER++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->PER++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 5: // CHR
+				case STAT_CHR: // CHR
 					myStats->CHR++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->CHR++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
 			}
 		}
@@ -1561,6 +1646,11 @@ void Entity::handleEffects(Stat* myStats)
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 21;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+
+		for ( i = 0; i < NUMSTATS; i++ )
+		{
+			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
 	}
 
@@ -5392,6 +5482,14 @@ bool isLevitating(Stat* mystats)
 	return false;
 }
 
+/*-------------------------------------------------------------------------------
+
+getWeaponSkill
+
+returns the proficiency for the weapon equipped.
+
+-------------------------------------------------------------------------------*/
+
 int getWeaponSkill(Item* weapon)
 {
 	if ( weapon == NULL )
@@ -5416,5 +5514,53 @@ int getWeaponSkill(Item* weapon)
 		return PRO_AXE;
 	}
 	return -1;
+}
+
+/*-------------------------------------------------------------------------------
+
+getStatForProficiency
+
+returns the stat associated with the given proficiency.
+
+-------------------------------------------------------------------------------*/
+
+int getStatForProficiency(int skill)
+{
+	int statForProficiency = -1;
+
+	switch ( skill )
+	{
+		case PRO_SWORD:			// base attribute: str
+		case PRO_MACE:			// base attribute: str
+		case PRO_AXE:			// base attribute: str
+		case PRO_POLEARM:		// base attribute: str
+			statForProficiency = STAT_STR;
+			break;
+		case PRO_LOCKPICKING:	// base attribute: dex
+		case PRO_STEALTH:		// base attribute: dex
+		case PRO_RANGED:        // base attribute: dex
+			statForProficiency = STAT_DEX;
+			break;
+		case PRO_SWIMMING:      // base attribute: con
+		case PRO_SHIELD:		// base attribute: con
+			statForProficiency = STAT_CON;
+			break;
+		case PRO_SPELLCASTING:  // base attribute: int
+		case PRO_MAGIC:         // base attribute: int
+			statForProficiency = STAT_INT;
+			break;
+		case PRO_APPRAISAL:		// base attribute: per
+			statForProficiency = STAT_PER;
+			break;
+		case PRO_TRADING:       // base attribute: chr
+		case PRO_LEADERSHIP:    // base attribute: chr
+			statForProficiency = STAT_CHR;
+			break;
+		default:
+			statForProficiency = -1;
+			break;
+	}
+
+	return statForProficiency;
 }
 

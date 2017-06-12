@@ -209,6 +209,16 @@ void Stat::clearStats()
 		this->MISC_FLAGS[x] = 0;
 	}
 
+	for ( x = 0; x < NUMSTATS; x++ )
+	{
+		this->PLAYER_LVL_STAT_BONUS[x] = -1;
+	}
+
+	for ( x = 0; x < NUMSTATS * 2; x++ )
+	{
+		this->PLAYER_LVL_STAT_TIMER[x] = -1;
+	}
+
 	list_FreeAll(&this->inventory);
 	this->helmet = NULL;
 	this->breastplate = NULL;
@@ -412,7 +422,17 @@ Stat* Stat::copyStats()
 
 	for ( c = 0; c < 32; c++ )
 	{
-		newStat->MISC_FLAGS[c] = this->MISC_FLAGS[c] = 0;
+		newStat->MISC_FLAGS[c] = this->MISC_FLAGS[c];
+	}
+
+	for ( c = 0; c < NUMSTATS; c++ )
+	{
+		newStat->PLAYER_LVL_STAT_BONUS[c] = this->PLAYER_LVL_STAT_BONUS[c];
+	}
+
+	for ( c = 0; c < NUMSTATS * 2; c++ )
+	{
+		newStat->PLAYER_LVL_STAT_TIMER[c] = this->PLAYER_LVL_STAT_TIMER[c];
 	}
 
 	newStat->defending = this->defending;

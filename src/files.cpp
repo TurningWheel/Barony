@@ -387,7 +387,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 								// read old map formats
 								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 							}
-							fread(&myStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
+							fread(&myStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
 						}
 						//Read dummy values to move fp for the client
 						else
@@ -430,7 +430,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 							{
 								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
 							}
-							fread(&dummyStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
+							fread(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
 						}
 						break;
 					case 2:
@@ -646,7 +646,7 @@ int saveMap(char* filename2)
 					fwrite(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
 
 					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
-					fwrite(&myStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
+					fwrite(&myStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
 					break;
 				case 2:
 					// chests
