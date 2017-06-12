@@ -925,4 +925,56 @@ void drawStatus()
 			}
 		}
 	}
+
+	// stat increase icons
+	pos.w = 64;
+	pos.h = 64;
+	pos.x = xres - pos.w * 3 - 9;
+	pos.y = 32 + 64 + 64 + 3 + (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3); // 131px from end of prof window.
+	SDL_Surface *tmp_bmp = NULL;
+
+	for ( i = 0; i < NUMSTATS; i++ )
+	{
+		if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
+		{
+
+			stats[clientnum]->PLAYER_LVL_STAT_TIMER[i]--;
+
+			switch ( i )
+			{
+				// prepare the stat image.
+				case STAT_STR:
+					tmp_bmp = str_bmp64u;
+					break;
+				case STAT_DEX:
+					tmp_bmp = dex_bmp64u;
+					break;
+				case STAT_CON:
+					tmp_bmp = con_bmp64u;
+					break;
+				case STAT_INT:
+					tmp_bmp = int_bmp64u;
+					break;
+				case STAT_PER:
+					tmp_bmp = per_bmp64u;
+					break;
+				case STAT_CHR:
+					tmp_bmp = chr_bmp64u;
+					break;
+				default:
+					break;
+			}
+			drawImageScaled(tmp_bmp, NULL, &pos);
+			if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS] > 0 )
+			{
+				// bonus stat acheived, draw additional stat icon above.
+				pos.y -= 64 + 3;
+				drawImageScaled(tmp_bmp, NULL, &pos);
+				pos.y += 64 + 3;
+				stats[clientnum]->PLAYER_LVL_STAT_TIMER[i + NUMSTATS]--;
+			}
+
+			pos.x += pos.h + 3;
+		}
+	}
 }

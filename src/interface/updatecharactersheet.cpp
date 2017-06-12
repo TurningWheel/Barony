@@ -18,6 +18,7 @@
 #include "interface.hpp"
 
 void drawSkillsSheet();
+void statsHoverText();
 
 /*-------------------------------------------------------------------------------
 
@@ -159,6 +160,7 @@ void updateCharacterSheet()
 	ttfPrintTextFormatted(ttf12, 8, 370, language[372], weight);
 
 	drawSkillsSheet();
+	statsHoverText();
 }
 
 void drawSkillsSheet()
@@ -225,4 +227,127 @@ void drawSkillsSheet()
 			ttfPrintTextFormattedColor(ttf12, pos.x + 4, pos.y, color, language[369]);
 		}
 	}
+}
+
+void statsHoverText()
+{
+	int pad_y = 262; // 262 px.
+	int pad_x = 8; // 8 px.
+	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
+	int off_w = 216; // 216px. width of stat line.
+	int i = 0;
+	int j = 0;
+	SDL_Rect src;
+	SDL_Rect pos;
+
+	int tooltip_offset_x = 16; // 16px.
+	int tooltip_offset_y = 16; // 16px.
+	int tooltip_base_h = TTF12_HEIGHT;
+	int tooltip_pad_h = 8;
+	int tooltip_text_pad_x = 8;
+
+	char tooltipHeader[6][128] =
+	{
+		"strength bonuses: ",
+		"dexterity bonuses: ",
+		"constitution bonuses: ",
+		"intelligence bonuses: ",
+		"perception bonuses: ",
+		"charisma bonuses: "
+	};
+
+	int numInfoLines = 0;
+	
+	SDL_Surface *tmp_bmp = NULL;
+
+	if ( attributespage == 0 )
+	{
+		for ( i = 0; i < 6; i++ ) // cycle through 6 stats.
+		{
+			switch ( i )
+			{
+				// prepare the stat image.
+				case 0:
+					numInfoLines = 3;
+					tmp_bmp = str_bmp64u;
+					break;
+				case 1:
+					numInfoLines = 1;
+					tmp_bmp = dex_bmp64u;
+					break;
+				case 2:
+					tmp_bmp = con_bmp64u;
+					break;
+				case 3:
+					tmp_bmp = int_bmp64u;
+					break;
+				case 4:
+					tmp_bmp = per_bmp64u;
+					break;
+				case 5:
+					tmp_bmp = chr_bmp64u;
+					break;
+				default:
+					numInfoLines = 0;
+					break;
+			}
+
+			if ( mouseInBounds(pad_x, pad_x + off_w, pad_y, pad_y + off_h) )
+			{
+				src.x = mousex + tooltip_offset_x;
+				src.y = mousey + tooltip_offset_y;
+				src.h = tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h;
+				src.w = 256;
+				drawTooltip(&src);
+
+				pos.x = src.x + 6;
+				pos.y = src.y + 4;
+				pos.h = 32;
+				pos.w = 32;
+
+				drawImageScaled(tmp_bmp, NULL, &pos);
+				
+				src.x = pos.x + 16;
+				src.y += 2;
+
+				ttfPrintText(ttf12, src.x + 4, src.y + 4, tooltipHeader[i]);
+
+				for ( j = numInfoLines; j > 0; j-- )
+				{
+					ttfPrintText(ttf12, src.x + 4 + tooltip_text_pad_x, src.y + 4 + (tooltip_base_h * (numInfoLines - j + 1)), "test");
+				}
+			}
+
+			numInfoLines = 0;
+			pad_y += 12;
+		}
+	}
+
+
+	//if ( mouseInBounds(8, 224, 310, 310 + TTF12_HEIGHT - 4) && attributespage == 0 ) { //draw tooltip for PER
+	//																				   //Tooltip
+	//	SDL_Rect src;
+	//	src.x = mousex + 16; src.y = mousey + 8;
+	//	src.h = (TTF12_HEIGHT * 3 + 8);
+	//	src.w = longestline("perception bonuses")*TTF12_WIDTH + 16 + 8;
+	//	drawTooltip(&src);
+	//	ttfPrintText(ttf12, src.x + 4, src.y + 4, "perception bonuses");
+	//	ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT, language[2066], mod_getCritChance(stats[clientnum]));
+	//	ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT * 2, language[2067], mod_getCritDamage(stats[clientnum]));
+	//}
+	//else if ( mouseInBounds(8, 224, 262, 262 + TTF12_HEIGHT - 4) && attributespage == 0 ) { //draw tooltip for STR
+	//	SDL_Rect src;
+	//	src.x = mousex + 16; src.y = mousey + 8;
+	//	src.h = (TTF12_HEIGHT * 3 + 8);
+	//	src.w = longestline("strength bonuses")*TTF12_WIDTH + 8;
+	//	drawTooltip(&src);
+	//	ttfPrintText(ttf12, src.x + 4, src.y + 4, "strength bonuses");
+	//	if ( stats[clientnum]->weapon != NULL ) {
+	//		ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT, language[2068], stats[clientnum]->weapon->weaponGetAttack());
+	//	}
+	//	else {
+	//		ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT, language[2068], 0);
+	//	}
+	//	ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT * 2, language[2069], statGetAttack(stats[clientnum]));
+	//}
 }
