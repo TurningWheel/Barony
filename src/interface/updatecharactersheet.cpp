@@ -290,23 +290,23 @@ void statsHoverText()
 				// prepare the stat image.
 				case 0:
 					numInfoLines = 3;
-					tmp_bmp = str_bmp64u;
+					tmp_bmp = str_bmp64;
 					break;
 				case 1:
 					numInfoLines = 1;
-					tmp_bmp = dex_bmp64u;
+					tmp_bmp = dex_bmp64;
 					break;
 				case 2:
-					tmp_bmp = con_bmp64u;
+					tmp_bmp = con_bmp64;
 					break;
 				case 3:
-					tmp_bmp = int_bmp64u;
+					tmp_bmp = int_bmp64;
 					break;
 				case 4:
-					tmp_bmp = per_bmp64u;
+					tmp_bmp = per_bmp64;
 					break;
 				case 5:
-					tmp_bmp = chr_bmp64u;
+					tmp_bmp = chr_bmp64;
 					break;
 				default:
 					numInfoLines = 0;
@@ -317,7 +317,7 @@ void statsHoverText()
 			{
 				src.x = mousex + tooltip_offset_x;
 				src.y = mousey + tooltip_offset_y;
-				src.h = tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h;
+				src.h = std::max(tooltip_base_h * (numInfoLines + 1) + tooltip_pad_h, tooltip_base_h * (2) + tooltip_pad_h);
 				src.w = 256;
 				drawTooltip(&src);
 
@@ -328,7 +328,7 @@ void statsHoverText()
 
 				drawImageScaled(tmp_bmp, NULL, &pos);
 				
-				src.x = pos.x + 16;
+				src.x = pos.x + pos.w;
 				src.y += 2;
 
 				ttfPrintText(ttf12, src.x + 4, src.y + 4, tooltipHeader[i]);

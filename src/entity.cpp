@@ -1553,7 +1553,7 @@ void Entity::handleEffects(Stat* myStats)
 							myStats->STR++;
 							rolledBonusStat = true;
 							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 						}
 					}
 					break;
@@ -1567,7 +1567,7 @@ void Entity::handleEffects(Stat* myStats)
 							myStats->DEX++;
 							rolledBonusStat = true;
 							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 						}
 					}
 					break;
@@ -1581,7 +1581,7 @@ void Entity::handleEffects(Stat* myStats)
 							myStats->CON++;
 							rolledBonusStat = true;
 							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 						}
 					}
 					break;
@@ -1595,7 +1595,7 @@ void Entity::handleEffects(Stat* myStats)
 							myStats->INT++;
 							rolledBonusStat = true;
 							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 						}
 					}
 					break;
@@ -1609,7 +1609,7 @@ void Entity::handleEffects(Stat* myStats)
 							myStats->PER++;
 							rolledBonusStat = true;
 							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 						}
 					}
 					break;
@@ -1623,7 +1623,7 @@ void Entity::handleEffects(Stat* myStats)
 							myStats->CHR++;
 							rolledBonusStat = true;
 							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
 						}
 					}
 					break;
