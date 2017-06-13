@@ -140,12 +140,33 @@ void updateCharacterSheet()
 	ttfPrintTextFormatted(ttf12, 8, 238, language[361], currentlevel);
 
 	// attributes
-	ttfPrintTextFormatted(ttf12, 8, 262, language[1200], statGetSTR(stats[clientnum]), stats[clientnum]->STR);
-	ttfPrintTextFormatted(ttf12, 8, 274, language[1201], statGetDEX(stats[clientnum]), stats[clientnum]->DEX);
-	ttfPrintTextFormatted(ttf12, 8, 286, language[1202], statGetCON(stats[clientnum]), stats[clientnum]->CON);
-	ttfPrintTextFormatted(ttf12, 8, 298, language[1203], statGetINT(stats[clientnum]), stats[clientnum]->INT);
-	ttfPrintTextFormatted(ttf12, 8, 310, language[1204], statGetPER(stats[clientnum]), stats[clientnum]->PER);
-	ttfPrintTextFormatted(ttf12, 8, 322, language[1205], statGetCHR(stats[clientnum]), stats[clientnum]->CHR);
+	Sint32 statModifier = 0;
+	char statText[64] = "";
+	//Uint32 statColor = uint32ColorWhite(*mainsurface);
+	//,
+	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
+	ttfPrintTextFormatted(ttf12, 8, 262, statText);
+	printStatBonus(ttf12, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 262);
+
+	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
+	ttfPrintTextFormatted(ttf12, 8, 274, statText);
+	printStatBonus(ttf12, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 274);
+
+	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
+	ttfPrintTextFormatted(ttf12, 8, 286, statText);
+	printStatBonus(ttf12, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 286);
+
+	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
+	ttfPrintTextFormatted(ttf12, 8, 298, statText);
+	printStatBonus(ttf12, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 298);
+
+	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
+	ttfPrintTextFormatted(ttf12, 8, 310, statText);
+	printStatBonus(ttf12, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 310);
+
+	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
+	ttfPrintTextFormatted(ttf12, 8, 322, statText);
+	printStatBonus(ttf12, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 322);
 
 	// armor, gold, and weight
 	ttfPrintTextFormatted(ttf12, 8, 346, language[370], stats[clientnum]->GOLD);
@@ -322,32 +343,28 @@ void statsHoverText()
 			pad_y += 12;
 		}
 	}
+}
 
+void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y)
+{
+	Uint32 color = 0;
+	char bonusText[7] = "";
 
-	//if ( mouseInBounds(8, 224, 310, 310 + TTF12_HEIGHT - 4) && attributespage == 0 ) { //draw tooltip for PER
-	//																				   //Tooltip
-	//	SDL_Rect src;
-	//	src.x = mousex + 16; src.y = mousey + 8;
-	//	src.h = (TTF12_HEIGHT * 3 + 8);
-	//	src.w = longestline("perception bonuses")*TTF12_WIDTH + 16 + 8;
-	//	drawTooltip(&src);
-	//	ttfPrintText(ttf12, src.x + 4, src.y + 4, "perception bonuses");
-	//	ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT, language[2066], mod_getCritChance(stats[clientnum]));
-	//	ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT * 2, language[2067], mod_getCritDamage(stats[clientnum]));
-	//}
-	//else if ( mouseInBounds(8, 224, 262, 262 + TTF12_HEIGHT - 4) && attributespage == 0 ) { //draw tooltip for STR
-	//	SDL_Rect src;
-	//	src.x = mousex + 16; src.y = mousey + 8;
-	//	src.h = (TTF12_HEIGHT * 3 + 8);
-	//	src.w = longestline("strength bonuses")*TTF12_WIDTH + 8;
-	//	drawTooltip(&src);
-	//	ttfPrintText(ttf12, src.x + 4, src.y + 4, "strength bonuses");
-	//	if ( stats[clientnum]->weapon != NULL ) {
-	//		ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT, language[2068], stats[clientnum]->weapon->weaponGetAttack());
-	//	}
-	//	else {
-	//		ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT, language[2068], 0);
-	//	}
-	//	ttfPrintTextFormatted(ttf12, src.x + 4 + 8, src.y + 4 + TTF12_HEIGHT * 2, language[2069], statGetAttack(stats[clientnum]));
-	//}
+	if ( statWithModifiers - stat == 0 )
+	{
+		color = uint32ColorWhite(*mainsurface);
+		snprintf(bonusText, 7, "  + %2d", abs(statWithModifiers - stat));
+	}
+	else if ( statWithModifiers - stat < 0 )
+	{
+		color = uint32ColorRed(*mainsurface);
+		snprintf(bonusText, 7, "  - %2d", abs(statWithModifiers - stat));
+	}
+	if ( statWithModifiers - stat > 0 )
+	{
+		color = uint32ColorGreen(*mainsurface);
+		snprintf(bonusText, 7, "  + %2d", abs(statWithModifiers - stat));
+	}
+
+	ttfPrintTextFormattedColor(outputFont, x, y, color, bonusText);
 }

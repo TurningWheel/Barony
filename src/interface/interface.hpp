@@ -374,3 +374,5 @@ extern SDL_Surface *int_bmp64u;
 extern SDL_Surface *per_bmp64u;
 extern SDL_Surface *chr_bmp64u;
 
+void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
+
