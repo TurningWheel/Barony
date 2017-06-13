@@ -2187,7 +2187,6 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		strcpy(datadir, "./");
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2227,12 +2226,15 @@ int main(int argc, char** argv)
 					}
 					else if (!strncmp(argv[c], "-datadir=", 9))
 					{
-						strcpy(datadir, argv[c] + 9);
+						setDataDir(argv[c] + 9);
+					}
+					else if (!strncmp(argv[c], "-userdir=", 9))
+					{
+						setUserDir(argv[c] + 9);
 					}
 				}
 			}
 		}
-		printlog("Data path is %s", datadir);
 
 
 		// load default language file (english)

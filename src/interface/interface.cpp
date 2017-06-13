@@ -674,7 +674,7 @@ int loadConfig(char* filename)
 	}
 
 	// open the config file
-	if ( (fp = fopen(filename, "rb")) == NULL )
+	if ( (fp = openUserFile(filename, "rb")) == NULL )
 	{
 		printlog("warning: config file '%s' does not exist!\n", filename);
 		defaultConfig(); //Set up the game with the default config.
@@ -727,7 +727,7 @@ int saveConfig(char* filename)
 	}
 
 	// open the config file
-	if ( (fp = fopen(filename, "wb")) == NULL )
+	if ( (fp = openUserFile(filename, "wb")) == NULL )
 	{
 		printlog("ERROR: failed to save config file '%s'!\n", filename);
 		return 1;

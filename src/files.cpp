@@ -18,6 +18,8 @@
 #include "sound.hpp"
 #include "entity.hpp"
 
+static char userDir[1024] = {0};
+static char datadir[1024] = {0};
 /*-------------------------------------------------------------------------------
 
 	glLoadTexture
@@ -56,14 +58,65 @@ static bool completeDataPath(char *dest, const char * const filename) {
 		strncpy(dest, filename, 1024);
 		return true;
 	}
-
 	snprintf(dest, 1024, "%s/%s", datadir, filename);
 	return true;
+}
+
+int makeDirsRecursive(const char * path) {
+	const char * copying = path;
+	char soFar[1024] = {0};
+	while (*copying) {
+		char cur = *copying;
+		soFar[copying - path] = *copying;
+		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST) {
+			printlog("Failed to create %s: %s", soFar, strerror(errno));
+			return errno;
+		}
+		++copying;
+	}
+	if (mkdir(path, 0700) != 0 && errno != EEXIST)
+		return errno;
+	return 0;
 }
 
 FILE* openDataFile(const char * const filename, const char * const mode) {
 	char path[1024];
 	completeDataPath(path, filename);
+	FILE * result = fopen(path, mode);
+	if (!result) {
+		printlog("Could not open '%s': %s", path, strerror(errno));
+	}
+	return result;
+}
+
+void setUserDir(const char * const dir) {
+	strncpy(userDir, dir, 1024);
+}
+
+void setDataDir(const char * const dir) {
+	strncpy(datadir, dir, 1024);
+}
+
+FILE* openUserFile(const char * const filename, const char * const mode) {
+	// Initialise user dir only if it hasn't already been
+	if (userDir[0] == NULL) {
+		char *xdg_config_home = getenv("XDG_CONFIG_HOME");
+		char *home = getenv("HOME");
+		if (xdg_config_home && *xdg_config_home)
+			snprintf(userDir, 1024, "%s/barony", xdg_config_home);
+		else if (home && *home)
+			snprintf(userDir, 1024, "%s/.config/barony", home);
+		else
+			strncpy(userDir, ".", 1024);
+		int err = makeDirsRecursive(userDir);
+		if (err != 0)
+		{
+			printlog("Could not create user directory %s: %s", userDir, strerror(err));
+		}
+		printlog("Initialised userDir to %s", userDir);
+	}
+	char path[1024];
+	snprintf(path, 1024, "%s/%s", userDir, filename);
 	FILE * result = fopen(path, mode);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
