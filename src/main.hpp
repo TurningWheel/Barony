@@ -19,6 +19,7 @@ typedef double real_t;
 
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 #include <iostream>
+#include <list>
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
@@ -638,7 +639,7 @@ extern char* cursor_fill[];
 GLuint create_shader(const char* filename, GLenum type);
 
 char* readFile(char* filename);
-list_t* directoryContents(char* directory);
+std::list<std::string> directoryContents(const char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
