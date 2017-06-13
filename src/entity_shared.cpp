@@ -1009,7 +1009,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[11] = 0;
 			entityNew->skill[12] = 10;
 			entityNew->skill[13] = 1;
-			entityNew->skill[15] = 1;
+			entityNew->skill[15] = 0;
 			entityNew->skill[16] = 0;
 		}
 	}

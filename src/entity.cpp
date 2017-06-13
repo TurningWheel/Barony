@@ -142,6 +142,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	ranbehavior = false;
 	parent = 0;
 	path = NULL;
+
+	if ( checkSpriteType(this->sprite) > 1 )
+	{
+		setSpriteAttributes(this, nullptr, nullptr);
+	}
 }
 
 void Entity::setUID(Uint32 new_uid) {
