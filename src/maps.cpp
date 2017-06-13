@@ -2143,7 +2143,7 @@ void assignActions(map_t* map)
 				{
 					entity->skill[15] = 1;
 				}
-				else if ( entity->skill[15] == 0 ) // editor set as unidentified
+				else if ( entity->skill[15] == 0 ) // unidentified (default)
 				{
 					entity->skill[15] = 0;
 				}
