@@ -348,22 +348,22 @@ void statsHoverText()
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y)
 {
 	Uint32 color = 0;
-	char bonusText[7] = "";
+	char bonusText[4] = "";
 
 	if ( statWithModifiers - stat == 0 )
 	{
 		color = uint32ColorWhite(*mainsurface);
-		snprintf(bonusText, 7, "  + %2d", abs(statWithModifiers - stat));
+		snprintf(bonusText, 4, "%2d", statWithModifiers);
 	}
 	else if ( statWithModifiers - stat < 0 )
 	{
 		color = uint32ColorRed(*mainsurface);
-		snprintf(bonusText, 7, "  - %2d", abs(statWithModifiers - stat));
+		snprintf(bonusText, 4, "%2d", statWithModifiers);
 	}
 	if ( statWithModifiers - stat > 0 )
 	{
 		color = uint32ColorGreen(*mainsurface);
-		snprintf(bonusText, 7, "  + %2d", abs(statWithModifiers - stat));
+		snprintf(bonusText, 4, "%2d", statWithModifiers);
 	}
 
 	ttfPrintTextFormattedColor(outputFont, x, y, color, bonusText);
