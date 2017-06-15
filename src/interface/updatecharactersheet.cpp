@@ -18,7 +18,7 @@
 #include "interface.hpp"
 
 void drawSkillsSheet();
-void statsHoverText();
+void statsHoverText(Stat* tmpStat);
 
 /*-------------------------------------------------------------------------------
 
@@ -181,7 +181,7 @@ void updateCharacterSheet()
 	ttfPrintTextFormatted(ttf12, 8, 370, language[372], weight);
 
 	drawSkillsSheet();
-	statsHoverText();
+	statsHoverText(stats[clientnum]);
 }
 
 void drawSkillsSheet()
@@ -250,8 +250,13 @@ void drawSkillsSheet()
 	}
 }
 
-void statsHoverText()
+void statsHoverText(Stat* tmpStat)
 {
+	if ( tmpStat == nullptr )
+	{
+		return;
+	}
+
 	int pad_y = 262; // 262 px.
 	int pad_x = 8; // 8 px.
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
@@ -269,15 +274,46 @@ void statsHoverText()
 
 	char tooltipHeader[6][128] =
 	{
-		"strength bonuses: ",
-		"dexterity bonuses: ",
-		"constitution bonuses: ",
-		"intelligence bonuses: ",
-		"perception bonuses: ",
-		"charisma bonuses: "
+		"strength: ",
+		"dexterity: ",
+		"constitution: ",
+		"intelligence: ",
+		"perception: ",
+		"charisma: "
 	};
 
+	char tooltipText[6][2][128] =
+	{
+		{
+			"base:  %2d",
+			"bonus: %2d"
+		},
+		{
+			"base:  %2d",
+			"bonus: %2d"
+		},
+		{
+			"base:  %2d",
+			"bonus: %2d"
+		},
+		{
+			"base:  %2d",
+			"bonus: %2d"
+		},
+		{
+			"base:  %2d",
+			"bonus: %2d"
+		},
+		{
+			"base:  %2d",
+			"bonus: %2d"
+		}
+	};
+
+	char buf[128] = "";
 	int numInfoLines = 0;
+	Sint32 statBase = 0;
+	Sint32 statBonus = 0;
 	
 	SDL_Surface *tmp_bmp = NULL;
 
@@ -289,24 +325,40 @@ void statsHoverText()
 			{
 				// prepare the stat image.
 				case 0:
-					numInfoLines = 3;
+					numInfoLines = 2;
 					tmp_bmp = str_bmp64;
+					statBase = tmpStat->STR;
+					statBonus = statGetSTR(tmpStat) - statBase;
 					break;
 				case 1:
-					numInfoLines = 1;
+					numInfoLines = 2;
 					tmp_bmp = dex_bmp64;
+					statBase = tmpStat->DEX;
+					statBonus = statGetDEX(tmpStat) - statBase;
 					break;
 				case 2:
+					numInfoLines = 2;
 					tmp_bmp = con_bmp64;
+					statBase = tmpStat->CON;
+					statBonus = statGetCON(tmpStat) - statBase;
 					break;
 				case 3:
+					numInfoLines = 2;
 					tmp_bmp = int_bmp64;
+					statBase = tmpStat->INT;
+					statBonus = statGetINT(tmpStat) - statBase;
 					break;
 				case 4:
+					numInfoLines = 2;
 					tmp_bmp = per_bmp64;
+					statBase = tmpStat->PER;
+					statBonus = statGetPER(tmpStat) - statBase;
 					break;
 				case 5:
+					numInfoLines = 2;
 					tmp_bmp = chr_bmp64;
+					statBase = tmpStat->CON;
+					statBonus = statGetCON(tmpStat) - statBase;
 					break;
 				default:
 					numInfoLines = 0;
@@ -333,9 +385,29 @@ void statsHoverText()
 
 				ttfPrintText(ttf12, src.x + 4, src.y + 4, tooltipHeader[i]);
 
-				for ( j = numInfoLines; j > 0; j-- )
+				for ( j = 0; j < numInfoLines && numInfoLines > 0; j++ )
 				{
-					ttfPrintText(ttf12, src.x + 4 + tooltip_text_pad_x, src.y + 4 + (tooltip_base_h * (numInfoLines - j + 1)), "test");
+					int infoText_x = src.x + 4 + tooltip_text_pad_x;
+					int infoText_y = src.y + 4 + (tooltip_base_h * (j + 1));
+					Uint32 color = uint32ColorWhite(*mainsurface);
+
+					if ( j == 0 )
+					{
+						snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], statBase);
+					}
+					else if ( j == 1 )
+					{
+						snprintf(buf, longestline(tooltipText[i][j]), tooltipText[i][j], statBonus);
+						if ( statBonus > 0 )
+						{
+							color = uint32ColorGreen(*mainsurface);
+						}
+						else if ( statBonus < 0 )
+						{
+							color = uint32ColorRed(*mainsurface);
+						}
+					}
+					ttfPrintTextColor(ttf12, infoText_x, infoText_y, color, false, buf);
 				}
 			}
 
