@@ -79,6 +79,32 @@ button_t* butItemX;
 
 bool exitFromItemWindow = false;
 
+static void updateMapNames()
+{
+	DIR* dir;
+	struct dirent* ent;
+	mapNames.clear();
+	// file list
+	if ( (dir = openDataDir("maps/")) != NULL )
+	{
+		while ( (ent = readdir(dir)) != NULL )
+		{
+			if ( strstr(ent->d_name, ".lmp") != NULL || !strcmp(ent->d_name, "..") || !strcmp(ent->d_name, ".") )
+			{
+				mapNames.push_back(ent->d_name);
+			}
+		}
+		closedir(dir);
+	}
+	else
+	{
+		// could not open directory
+		printlog("failed to open map directory for viewing!\n");
+		return;
+	}
+	std::sort(mapNames.begin(), mapNames.end());
+}
+
 // Corner buttons
 
 void buttonExit(button_t* my)
@@ -428,7 +454,6 @@ void buttonOpen(button_t* my)
 
 	inputstr = filename;
 	cursorflash = ticks;
-	d_names_length = 0;
 	menuVisible = 0;
 	subwindow = 1;
 	openwindow = 1;
@@ -470,51 +495,7 @@ void buttonOpen(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 
-	// file list
-	if ( (dir = openDataDir("maps/")) != NULL )
-	{
-		while ( (ent = readdir(dir)) != NULL )
-		{
-			if ( strstr(ent->d_name, ".lmp") != NULL || !strcmp(ent->d_name, "..") || !strcmp(ent->d_name, ".") )
-			{
-				d_names_length++;
-			}
-		}
-		closedir(dir);
-	}
-	else
-	{
-		// could not open directory
-		printlog("failed to open map directory for viewing!\n");
-		d_names = NULL;
-		d_names_length = 0;
-		return;
-	}
-	if ( d_names_length > 0 )
-	{
-		d_names = (char**) malloc(sizeof(char*)*d_names_length);
-		for ( c = 0; c < d_names_length; c++ )
-		{
-			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
-		}
-		c = 0;
-		if ( (dir = openDataDir("maps/")) != NULL )
-		{
-			while ( (ent = readdir(dir)) != NULL )
-			{
-				if ( strstr(ent->d_name, ".lmp") != NULL || !strcmp(ent->d_name, "..") || !strcmp(ent->d_name, ".") )
-				{
-					strcpy(d_names[c], ent->d_name);
-					c++;
-				}
-			}
-			closedir(dir);
-		}
-	}
-	else
-	{
-		d_names = NULL;
-	}
+	updateMapNames();
 }
 
 void buttonOpenConfirm(button_t* my)
@@ -594,12 +575,8 @@ void buttonSave(button_t* my)
 void buttonSaveAs(button_t* my)
 {
 	button_t* button;
-	DIR* dir;
-	struct dirent* ent;
-	unsigned long c = 0;
 
 	cursorflash = ticks;
-	d_names_length = 0;
 	menuVisible = 0;
 	subwindow = 1;
 	savewindow = 1;
@@ -641,51 +618,7 @@ void buttonSaveAs(button_t* my)
 	button->visible = 1;
 	button->focused = 1;
 
-	// file list
-	if ( (dir = openDataDir("maps/")) != NULL )
-	{
-		while ( (ent = readdir(dir)) != NULL )
-		{
-			if ( strstr(ent->d_name, ".lmp") != NULL || !strcmp(ent->d_name, "..") || !strcmp(ent->d_name, ".") )
-			{
-				d_names_length++;
-			}
-		}
-		closedir(dir);
-	}
-	else
-	{
-		// could not open directory
-		printlog("failed to open map directory for viewing!\n");
-		d_names = NULL;
-		d_names_length = 0;
-		return;
-	}
-	if ( d_names_length > 0 )
-	{
-		d_names = (char**) malloc(sizeof(char*)*d_names_length);
-		for ( c = 0; c < d_names_length; c++ )
-		{
-			d_names[c] = (char*) malloc(sizeof(char) * FILENAME_MAX);
-		}
-		c = 0;
-		if ( (dir = openDataDir("maps/")) != NULL )
-		{
-			while ( (ent = readdir(dir)) != NULL )
-			{
-				if ( strstr(ent->d_name, ".lmp") != NULL || !strcmp(ent->d_name, "..") || !strcmp(ent->d_name, ".") )
-				{
-					strcpy(d_names[c], ent->d_name);
-					c++;
-				}
-			}
-			closedir(dir);
-		}
-	}
-	else
-	{
-		d_names = NULL;
-	}
+	updateMapNames();
 }
 
 // Edit menu
@@ -1330,17 +1263,6 @@ void buttonCloseSubwindow(button_t* my)
 	openwindow = 0;
 	savewindow = 0;
 	editproperty = 0;
-	if ( d_names != NULL )
-	{
-		for ( c = 0; c < d_names_length; c++ )
-			if ( d_names[c] != NULL )
-			{
-				free(d_names[c]);
-				d_names[c] = NULL;
-			}
-		free(d_names);
-		d_names = NULL;
-	}
 	strcpy(filename, oldfilename);
 }
 
