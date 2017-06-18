@@ -1964,7 +1964,7 @@ SDL_Rect ttfPrintTextFormatted( TTF_Font* font, int x, int y, char* fmt, ... )
 
 -------------------------------------------------------------------------------*/
 
-void printText( SDL_Surface* font_bmp, int x, int y, char* str )
+void printText( SDL_Surface* font_bmp, int x, int y, const char* str )
 {
 	int c;
 	int numbytes;

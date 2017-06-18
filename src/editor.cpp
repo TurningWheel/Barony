@@ -9,8 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "draw.hpp"
 #include "editor.hpp"
@@ -42,6 +40,7 @@ int game = 0;
 Uint32 timerCallback(Uint32 interval, void* param);
 void handleEvents(void);
 void mainLogic(void);
+std::vector<std::string> mapNames;
 
 map_t copymap;
 
@@ -2275,23 +2274,23 @@ int main(int argc, char** argv)
 				}
 
 				// open and save windows
-				if ( (openwindow || savewindow) && d_names != NULL )
+				if ( (openwindow || savewindow) && !mapNames.empty() )
 				{
 					drawDepressed(subx1 + 4, suby1 + 20, subx2 - 20, suby2 - 52);
 					drawDepressed(subx2 - 20, suby1 + 20, subx2 - 4, suby2 - 52);
-					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)d_names_length / 20)); //TODO: Why are int and real_t being compared?
+					slidersize = std::min<int>(((suby2 - 53) - (suby1 + 21)), ((suby2 - 53) - (suby1 + 21)) / ((real_t)mapNames.size() / 20)); //TODO: Why are int and real_t being compared?
 					slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
 					drawWindowFancy(subx2 - 19, slidery, subx2 - 5, slidery + slidersize);
 
 					// directory list offset from slider
-					y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
+					y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
 					if ( scroll )
 					{
 						slidery -= 8 * scroll;
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
-						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(d_names_length - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-						strcpy(filename, d_names[selectedFile]);
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
+						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+						strcpy(filename, mapNames[selectedFile].c_str());
 						inputstr = filename;
 						scroll = 0;
 					}
@@ -2299,10 +2298,10 @@ int main(int argc, char** argv)
 					{
 						slidery = oslidery + mousey - omousey;
 						slidery = std::min(std::max(suby1 + 21, slidery), suby2 - 53 - slidersize);
-						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * d_names_length;
+						y2 = ((real_t)(slidery - suby1 - 20) / ((suby2 - 52) - (suby1 + 20))) * mapNames.size();
 						mclick = 1;
-						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(d_names_length - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-						strcpy(filename, d_names[selectedFile]);
+						selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+						strcpy(filename, mapNames[selectedFile].c_str());
 						inputstr = filename;
 					}
 					else
@@ -2316,8 +2315,8 @@ int main(int argc, char** argv)
 						if ( omousex >= subx1 + 8 && omousex < subx2 - 24 && omousey >= suby1 + 24 && omousey < suby2 - 56 )
 						{
 							selectedFile = y2 + ((omousey - suby1 - 24) >> 3);
-							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(d_names_length - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
-							strcpy(filename, d_names[selectedFile]);
+							selectedFile = std::min<long unsigned int>(std::max(y2, selectedFile), std::min<long unsigned int>(mapNames.size() - 1, y2 + 19)); //TODO: Why are long unsigned int and int being compared? TWICE. On the same line.
+							strcpy(filename, mapNames[selectedFile].c_str());
 							inputstr = filename;
 						}
 					}
@@ -2330,10 +2329,10 @@ int main(int argc, char** argv)
 					// print all the files within the directory
 					x = subx1 + 8;
 					y = suby1 + 24;
-					c = std::min<long unsigned int>(d_names_length, 20 + y2); //TODO: Why are long unsigned int and int being compared?
+					c = std::min<long unsigned int>(mapNames.size(), 20 + y2); //TODO: Why are long unsigned int and int being compared?
 					for (z = y2; z < c; z++)
 					{
-						printText(font8x8_bmp, x, y, d_names[z]);
+						printText(font8x8_bmp, x, y, mapNames[z].c_str());
 						y += 8;
 					}
 
