@@ -579,17 +579,7 @@ void gameLogic(void)
 					magicRightHand = NULL;
 
 					// stop all sounds
-#ifdef HAVE_FMOD
-					if ( sound_group )
-					{
-						FMOD_ChannelGroup_Stop(sound_group);
-					}
-#elif defined HAVE_OPENAL
-					if ( sound_group )
-					{
-						OPENAL_ChannelGroup_Stop(sound_group);
-					}
-#endif
+					ChannelGroup_Stop(sound_group);
 
 					// show loading message
 					loading = true;

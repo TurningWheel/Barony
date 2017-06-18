@@ -3760,17 +3760,10 @@ void handleMainMenu(bool mode)
 			if ( multiplayer != CLIENT )
 			{
 				// stop all sounds
-#ifdef HAVE_FMOD
 				if ( sound_group )
 				{
-					FMOD_ChannelGroup_Stop(sound_group);
+					ChannelGroup_Stop(sound_group);
 				}
-#elif defined HAVE_OPENAL
-				if ( sound_group )
-				{
-					OPENAL_ChannelGroup_Stop(sound_group);
-				}
-#endif
 
 				// generate a unique game key (used to identify compatible save games)
 				prng_seed_time();
@@ -3954,17 +3947,7 @@ void handleMainMenu(bool mode)
 				}
 
 				// stop all sounds
-#ifdef HAVE_FMOD
-				if ( sound_group )
-				{
-					FMOD_ChannelGroup_Stop(sound_group);
-				}
-#elif defined HAVE_OPENAL
-				if ( sound_group )
-				{
-					OPENAL_ChannelGroup_Stop(sound_group);
-				}
-#endif
+				ChannelGroup_Stop(sound_group);
 				// load next level
 				entity_uids = 1;
 				lastEntityUIDs = entity_uids;
@@ -4126,17 +4109,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// stop all sounds
-#ifdef HAVE_FMOD
-			if ( sound_group )
-			{
-				FMOD_ChannelGroup_Stop(sound_group);
-			}
-#elif defined HAVE_OPENAL
-			if ( sound_group )
-			{
-				OPENAL_ChannelGroup_Stop(sound_group);
-			}
-#endif
+			ChannelGroup_Stop(sound_group);
 
 			// send disconnect messages
 			if (multiplayer == CLIENT)
@@ -6458,13 +6431,8 @@ void applySettings()
 	sfxvolume = settings_sfxvolume;
 	musvolume = settings_musvolume;
 
-#ifdef HAVE_FMOD
-	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-#elif defined HAVE_OPENAL
-	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-#endif
+	ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+	ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
 
 	// set keyboard options
 	for (c = 0; c < NUMIMPULSES; c++)

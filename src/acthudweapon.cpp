@@ -127,12 +127,9 @@ void actHudArm(Entity* my)
 	my->pitch = -17 * PI / 32;
 }
 
-#ifdef HAVE_FMOD
-FMOD_CHANNEL* bowDrawingSound = NULL;
-FMOD_BOOL bowDrawingSoundPlaying = 0;
-#elif defined HAVE_OPENAL
-OPENAL_SOUND* bowDrawingSound = NULL;
-ALboolean bowDrawingSoundPlaying = 0;
+#ifdef SOUND
+Channel* bowDrawingSound = NULL;
+bool bowDrawingSoundPlaying = 0;
 #else
 // implement bow drawing timer via SDL_GetTicks()
 bool bowDrawingSound = false;
@@ -298,16 +295,8 @@ void actHudWeapon(Entity* my)
 #ifdef SOUND
 			if ( bowDrawingSoundPlaying && bowDrawingSound )
 			{
-				unsigned int position = 0;
-				unsigned int length = 0;
-#ifdef HAVE_OPENAL
-				OPENAL_Channel_GetPosition(bowDrawingSound, &position);
-				OPENAL_Sound_GetLength(sounds[246], &length);
-
-#else
-				FMOD_Channel_GetPosition(bowDrawingSound, &position, FMOD_TIMEUNIT_MS);
-				FMOD_Sound_GetLength(sounds[246], &length, FMOD_TIMEUNIT_MS);
-#endif
+				unsigned int position = Channel_GetPosition(bowDrawingSound);
+				unsigned int length = Sound_GetLength(sounds[246]);
 				if ( position >= length / 4 )
 				{
 					my->sprite++;
@@ -395,13 +384,7 @@ void actHudWeapon(Entity* my)
 #ifdef SOUND
 	if ( bowDrawingSound )
 	{
-#ifdef HAVE_OPENAL
-		ALboolean tempBool = bowDrawingSoundPlaying;
-		OPENAL_Channel_IsPlaying(bowDrawingSound, &bowDrawingSoundPlaying);
-#else
-		FMOD_BOOL tempBool = bowDrawingSoundPlaying;
-		FMOD_Channel_IsPlaying(bowDrawingSound, &bowDrawingSoundPlaying);
-#endif
+		bool tempBool = Channel_IsPlaying(bowDrawingSound);
 		if ( tempBool && !bowDrawingSoundPlaying )
 		{
 			bowFire = true;
@@ -629,11 +612,7 @@ void actHudWeapon(Entity* my)
 #ifdef SOUND
 						if ( bowDrawingSoundPlaying && bowDrawingSound )
 						{
-#ifdef HAVE_OPENAL
-							OPENAL_Channel_Stop(bowDrawingSound);
-#else
-							FMOD_Channel_Stop(bowDrawingSound);
-#endif
+							Channel_Stop(bowDrawingSound);
 							bowDrawingSoundPlaying = 0;
 							bowDrawingSound = NULL;
 						}

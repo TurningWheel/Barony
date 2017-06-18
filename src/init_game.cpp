@@ -318,11 +318,7 @@ int initGame()
 
 	GO_SwapBuffers(screen);
 
-#ifdef HAVE_FMOD
-	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-#elif defined HAVE_OPENAL
-	OPENAL_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-#endif
+	ChannelGroup_SetVolume(music_group, musvolume / 128.f);
 	removedEntities.first = NULL;
 	removedEntities.last = NULL;
 	safePacketsSent.first = NULL;
@@ -380,91 +376,83 @@ int initGame()
 
 	// load music
 #ifdef SOUND
-#ifdef HAVE_OPENAL
-#define FMOD_ChannelGroup_SetVolume OPENAL_ChannelGroup_SetVolume
-#define fmod_system 0
-#define FMOD_SOFTWARE 0
-#define FMOD_System_CreateStream(A, B, C, D, E) OPENAL_CreateStreamSound(B, E)
-#define FMOD_SOUND OPENAL_BUFFER
-int fmod_result;
-#endif
 
-	FMOD_ChannelGroup_SetVolume(music_group, musvolume / 128.f);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intro.ogg", FMOD_SOFTWARE, NULL, &intromusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/introduction.ogg", FMOD_SOFTWARE, NULL, &introductionmusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/intermission.ogg", FMOD_SOFTWARE, NULL, &intermissionmusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/minetown.ogg", FMOD_SOFTWARE, NULL, &minetownmusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/splash.ogg", FMOD_SOFTWARE, NULL, &splashmusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/library.ogg", FMOD_SOFTWARE, NULL, &librarymusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/shop.ogg", FMOD_SOFTWARE, NULL, &shopmusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/herxboss.ogg", FMOD_SOFTWARE, NULL, &herxmusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/temple.ogg", FMOD_SOFTWARE, NULL, &templemusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/endgame.ogg", FMOD_SOFTWARE, NULL, &endgamemusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/escape.ogg", FMOD_SOFTWARE, NULL, &escapemusic);
-	fmod_result = FMOD_System_CreateStream(fmod_system, "music/devil.ogg", FMOD_SOFTWARE, NULL, &devilmusic);
+	ChannelGroup_SetVolume(music_group, musvolume / 128.f);
+	intromusic = CreateMusic("music/intro.ogg");
+	introductionmusic = CreateMusic("music/introduction.ogg");
+	intermissionmusic = CreateMusic("music/intermission.ogg");
+	minetownmusic = CreateMusic("music/minetown.ogg");
+	splashmusic = CreateMusic("music/splash.ogg");
+	librarymusic = CreateMusic("music/library.ogg");
+	shopmusic = CreateMusic("music/shop.ogg");
+	herxmusic = CreateMusic("music/herxboss.ogg");
+	templemusic = CreateMusic("music/temple.ogg");
+	endgamemusic = CreateMusic("music/endgame.ogg");
+	escapemusic = CreateMusic("music/escape.ogg");
+	devilmusic = CreateMusic("music/devil.ogg");
 	//fmod_result = FMOD_System_CreateStream(fmod_system, "music/story.ogg", FMOD_SOFTWARE, NULL, &storymusic);
 
 	if ( NUMMINESMUSIC > 0 )
 	{
-		minesmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMMINESMUSIC);
+		minesmusic = (Sound**) malloc(sizeof(Sound*)*NUMMINESMUSIC);
 		for ( c = 0; c < NUMMINESMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/mines%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minesmusic[c]);
+			minesmusic[c] = CreateMusic(tempstr);
 		}
 	}
 	if ( NUMSWAMPMUSIC > 0 )
 	{
-		swampmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMSWAMPMUSIC);
+		swampmusic = (Sound**) malloc(sizeof(Sound*)*NUMSWAMPMUSIC);
 		for ( c = 0; c < NUMSWAMPMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/swamp%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &swampmusic[c]);
+			swampmusic[c] = CreateMusic(tempstr);
 		}
 	}
 	if ( NUMLABYRINTHMUSIC > 0 )
 	{
-		labyrinthmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMLABYRINTHMUSIC);
+		labyrinthmusic = (Sound**) malloc(sizeof(Sound*)*NUMLABYRINTHMUSIC);
 		for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/labyrinth%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &labyrinthmusic[c]);
+			labyrinthmusic[c] = CreateMusic(tempstr);
 		}
 	}
 	if ( NUMRUINSMUSIC > 0 )
 	{
-		ruinsmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMRUINSMUSIC);
+		ruinsmusic = (Sound**) malloc(sizeof(Sound*)*NUMRUINSMUSIC);
 		for ( c = 0; c < NUMRUINSMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/ruins%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &ruinsmusic[c]);
+			ruinsmusic[c] = CreateMusic(tempstr);
 		}
 	}
 	if ( NUMUNDERWORLDMUSIC > 0 )
 	{
-		underworldmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMUNDERWORLDMUSIC);
+		underworldmusic = (Sound**) malloc(sizeof(Sound*)*NUMUNDERWORLDMUSIC);
 		for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/underworld%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &underworldmusic[c]);
+			underworldmusic[c] = CreateMusic(tempstr);
 		}
 	}
 	if ( NUMHELLMUSIC > 0 )
 	{
-		hellmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMHELLMUSIC);
+		hellmusic = (Sound**) malloc(sizeof(Sound*)*NUMHELLMUSIC);
 		for ( c = 0; c < NUMHELLMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/hell%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &hellmusic[c]);
+			hellmusic[c] = CreateMusic(tempstr);
 		}
 	}
 	if ( NUMMINOTAURMUSIC > 0 )
 	{
-		minotaurmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMMINOTAURMUSIC);
+		minotaurmusic = (Sound**) malloc(sizeof(Sound*)*NUMMINOTAURMUSIC);
 		for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
 		{
 			snprintf(tempstr, 1000, "music/minotaur%02d.ogg", c);
-			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
+			minotaurmusic[c] = CreateMusic(tempstr);
 		}
 	}
 #ifdef HAVE_OPENAL
@@ -665,27 +653,23 @@ void deinitGame()
 		list_FreeAll(&safePacketsReceived[c]);
 	}
 #ifdef SOUND
-#ifdef HAVE_OPENAL
-#define FMOD_Channel_Stop OPENAL_Channel_Stop
-#define FMOD_Sound_Release OPENAL_Sound_Release
-#endif
-	FMOD_Channel_Stop(music_channel);
-	FMOD_Channel_Stop(music_channel2);
-	FMOD_Sound_Release(intromusic);
-	FMOD_Sound_Release(introductionmusic);
-	FMOD_Sound_Release(intermissionmusic);
-	FMOD_Sound_Release(minetownmusic);
-	FMOD_Sound_Release(splashmusic);
-	FMOD_Sound_Release(librarymusic);
-	FMOD_Sound_Release(shopmusic);
-	FMOD_Sound_Release(herxmusic);
-	FMOD_Sound_Release(templemusic);
-	FMOD_Sound_Release(endgamemusic);
-	FMOD_Sound_Release(escapemusic);
-	FMOD_Sound_Release(devilmusic);
+	Channel_Stop(music_channel);
+	Channel_Stop(music_channel2);
+	Sound_Release(intromusic);
+	Sound_Release(introductionmusic);
+	Sound_Release(intermissionmusic);
+	Sound_Release(minetownmusic);
+	Sound_Release(splashmusic);
+	Sound_Release(librarymusic);
+	Sound_Release(shopmusic);
+	Sound_Release(herxmusic);
+	Sound_Release(templemusic);
+	Sound_Release(endgamemusic);
+	Sound_Release(escapemusic);
+	Sound_Release(devilmusic);
 	for ( c = 0; c < NUMMINESMUSIC; c++ )
 	{
-		FMOD_Sound_Release(minesmusic[c]);
+		Sound_Release(minesmusic[c]);
 	}
 	if ( minesmusic )
 	{
@@ -693,7 +677,7 @@ void deinitGame()
 	}
 	for ( c = 0; c < NUMSWAMPMUSIC; c++ )
 	{
-		FMOD_Sound_Release(swampmusic[c]);
+		Sound_Release(swampmusic[c]);
 	}
 	if ( swampmusic )
 	{
@@ -701,7 +685,7 @@ void deinitGame()
 	}
 	for ( c = 0; c < NUMLABYRINTHMUSIC; c++ )
 	{
-		FMOD_Sound_Release(labyrinthmusic[c]);
+		Sound_Release(labyrinthmusic[c]);
 	}
 	if ( labyrinthmusic )
 	{
@@ -709,7 +693,7 @@ void deinitGame()
 	}
 	for ( c = 0; c < NUMRUINSMUSIC; c++ )
 	{
-		FMOD_Sound_Release(ruinsmusic[c]);
+		Sound_Release(ruinsmusic[c]);
 	}
 	if ( ruinsmusic )
 	{
@@ -717,7 +701,7 @@ void deinitGame()
 	}
 	for ( c = 0; c < NUMUNDERWORLDMUSIC; c++ )
 	{
-		FMOD_Sound_Release(underworldmusic[c]);
+		Sound_Release(underworldmusic[c]);
 	}
 	if ( underworldmusic )
 	{
@@ -725,7 +709,7 @@ void deinitGame()
 	}
 	for ( c = 0; c < NUMHELLMUSIC; c++ )
 	{
-		FMOD_Sound_Release(hellmusic[c]);
+		Sound_Release(hellmusic[c]);
 	}
 	if ( hellmusic )
 	{
@@ -733,16 +717,12 @@ void deinitGame()
 	}
 	for ( c = 0; c < NUMMINOTAURMUSIC; c++ )
 	{
-		FMOD_Sound_Release(minotaurmusic[c]);
+		Sound_Release(minotaurmusic[c]);
 	}
 	if ( minotaurmusic )
 	{
 		free(minotaurmusic);
 	}
-#ifdef HAVE_OPENAL
-#undef FMOD_Channel_Stop
-#undef FMOD_Sound_Release
-#endif
 #endif
 
 	// free items

@@ -3,11 +3,17 @@ if( WIN32 )
 		"${CMAKE_CURRENT_SOURCE_DIR}/wingameicon.o"
 	)
 endif()
+if (FMOD)
+	list(APPEND GAME_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sound_fmod.cpp")
+elseif(OPENAL)
+	list(APPEND GAME_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sound_openal.cpp")
+else()
+	list(APPEND GAME_SOURCES "${CMAKE_CURRENT_SOURCE_DIR}/sound_null.cpp")
+endif()
+
 list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/main.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/init.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound_game.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/collision.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/light.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/maps.cpp"
@@ -15,6 +21,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/draw.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/opengl.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/objects.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/sound_common.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/list.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/files.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/items.cpp"
@@ -118,7 +125,7 @@ list(APPEND EDITOR_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/hash.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/files.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/editor.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/sound.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/sound_null.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/entity_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_editor.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/stat_shared.cpp"

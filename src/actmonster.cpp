@@ -1239,17 +1239,10 @@ void actMonster(Entity* my)
 			}
 			if ( foundlights )
 			{
-#ifdef HAVE_FMOD
 				if ( MONSTER_SOUND )
 				{
-					FMOD_Channel_Stop(MONSTER_SOUND);
+					Channel_Stop(MONSTER_SOUND);
 				}
-#elif defined HAVE_OPENAL
-				if ( MONSTER_SOUND )
-				{
-					OPENAL_Channel_Stop(MONSTER_SOUND);
-				}
-#endif
 				int c;
 				for ( c = 0; c < MAXPLAYERS; c++ )
 				{
@@ -1439,17 +1432,10 @@ void actMonster(Entity* my)
 		}
 
 		// die
-#ifdef HAVE_FMOD
 		if ( MONSTER_SOUND )
 		{
-			FMOD_Channel_Stop(MONSTER_SOUND);
+			Channel_Stop(MONSTER_SOUND);
 		}
-#elif defined HAVE_OPENAL
-		if ( MONSTER_SOUND )
-		{
-			OPENAL_Channel_Stop(MONSTER_SOUND);
-		}
-#endif
 		myStats = my->getStats();
 		switch ( myStats->type )
 		{
@@ -1569,51 +1555,10 @@ void actMonster(Entity* my)
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
 	{
-#ifdef HAVE_FMOD
-		FMOD_BOOL playing;
-		FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
-		if (!playing)
+		if (!Channel_IsPlaying(MONSTER_SOUND))
 		{
 			MONSTER_SOUND = NULL;
 		}
-		else
-		{
-			for ( c = 0; c < numsounds; c++ )
-			{
-				/*if( sounds[c] == Mix_GetChunk(MONSTER_SOUND) && ( c<MONSTER_SPOTSND || c>=MONSTER_SPOTSND+MONSTER_SPOTVAR ) ) { //TODO: Is this necessary? If so, port it to FMOD or find a workaround.
-					MONSTER_SOUND = -1;
-					break;
-				}*/
-				FMOD_BOOL playing = true;
-				FMOD_Channel_IsPlaying(MONSTER_SOUND, &playing);
-				if (!playing)
-				{
-					MONSTER_SOUND = NULL;
-					break;
-				}
-			}
-		}
-#elif defined HAVE_OPENAL
-		ALboolean playing;
-		OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
-		if (!playing)
-		{
-			MONSTER_SOUND = NULL;
-		}
-		else
-		{
-			for ( c = 0; c < numsounds; c++ )
-			{
-				ALboolean playing = true;
-				OPENAL_Channel_IsPlaying(MONSTER_SOUND, &playing);
-				if (!playing)
-				{
-					MONSTER_SOUND = NULL;
-					break;
-				}
-			}
-		}
-#endif
 	}
 
 	// remove broken equipment
