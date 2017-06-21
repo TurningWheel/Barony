@@ -2989,7 +2989,7 @@ void getItemsOnTile(int x, int y, list_t** list)
 
 -------------------------------------------------------------------------------*/
 
-void Entity::attack(int pose, int charge)
+void Entity::attack(int pose, int charge, Entity* target)
 {
 	Stat* hitstats = NULL;
 	Stat* myStats;
@@ -3036,6 +3036,15 @@ void Entity::attack(int pose, int charge)
 			if (myStats->weapon != nullptr)
 			{
 				monster_attack = pose;
+			}
+			else if ( pose > 3 && pose < 10)
+			{
+				// special monster attacks
+				monster_attack = pose;
+				monster_attacktime = 0;
+				//createParticle2(this);
+				createParticleDot(this);
+				return;
 			}
 			else
 			{
@@ -3348,8 +3357,16 @@ void Entity::attack(int pose, int charge)
 		}
 
 		// normal attacks
-		playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
-		dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+		if ( target == nullptr )
+		{
+			playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
+			dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+		}
+		else
+		{
+			hit.entity = target;
+		}
+		
 		if ( hit.entity != NULL )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )

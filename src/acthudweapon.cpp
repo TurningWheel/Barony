@@ -467,7 +467,7 @@ void actHudWeapon(Entity* my)
 									if (bowFire)
 									{
 										bowFire = false;
-										players[clientnum]->entity->attack(0, 0);
+										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = TICKS_PER_SECOND / 4;
 									}
@@ -534,7 +534,7 @@ void actHudWeapon(Entity* my)
 						else
 						{
 							// crossbows and slings
-							players[clientnum]->entity->attack(0, 0);
+							players[clientnum]->entity->attack(0, 0, nullptr);
 							HUDWEAPON_MOVEX = -4;
 							HUDWEAPON_CHOP = 3;
 						}
@@ -552,7 +552,7 @@ void actHudWeapon(Entity* my)
 						if (itemCategory(item) == SPELLBOOK)
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							players[clientnum]->entity->attack(2, 0); // will need to add some delay to this so you can't rapid fire spells
+							players[clientnum]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
 						else if (itemCategory(item) == MAGICSTAFF)
 						{
@@ -587,7 +587,7 @@ void actHudWeapon(Entity* my)
 							}
 							HUDWEAPON_MOVEZ = 3;
 							HUDWEAPON_CHOP = 3;
-							players[clientnum]->entity->attack(0, 0);
+							players[clientnum]->entity->attack(0, 0, nullptr);
 							if (multiplayer == CLIENT)
 							{
 								item->count--;
@@ -828,7 +828,7 @@ void actHudWeapon(Entity* my)
 				if ( !swingweapon )
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE);
+					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -891,7 +891,7 @@ void actHudWeapon(Entity* my)
 				{
 					if (bowFire)
 					{
-						players[clientnum]->entity->attack(0, 0);
+						players[clientnum]->entity->attack(0, 0, nullptr);
 						HUDWEAPON_MOVEX = -2;
 					}
 				}
@@ -1020,7 +1020,7 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE);
+					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -1131,7 +1131,7 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE);
+					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF

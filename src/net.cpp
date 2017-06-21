@@ -2980,7 +2980,7 @@ void serverHandlePacket()
 	{
 		if (players[net_packet->data[4]] && players[net_packet->data[4]]->entity)
 		{
-			players[net_packet->data[4]]->entity->attack(net_packet->data[5], net_packet->data[6]);
+			players[net_packet->data[4]]->entity->attack(net_packet->data[5], net_packet->data[6], nullptr);
 		}
 		return;
 	}

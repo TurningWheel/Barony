@@ -31,7 +31,6 @@
 #define PASSABLE 12
 #define USERFLAG1 14
 #define USERFLAG2 15
-
 // entity class
 class Entity
 {
@@ -169,7 +168,7 @@ public:
 
 	bool isMobile();
 
-	void attack(int pose, int charge);
+	void attack(int pose, int charge, Entity* target);
 
 	void teleport(int x, int y);
 	void teleportRandom();
