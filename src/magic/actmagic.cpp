@@ -2636,7 +2636,7 @@ void actParticleCircle(Entity* my)
 			//spell_summonFamiliar(PARTICLE_CASTER);
 			playSoundEntity(my, 164, 128);
 			spawnExplosion(my->x, my->y, 0);
-			summonMonster(SKELETON, my->x, my->y);
+			//summonMonster(SKELETON, my->x, my->y);
 		}
 		if ( my->light != NULL )
 		{
