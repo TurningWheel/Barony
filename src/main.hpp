@@ -257,6 +257,7 @@ typedef struct map_t
 	char name[32];   // name of the map
 	char author[32]; // author of the map
 	unsigned int width, height, skybox;  // size of the map + skybox
+	Sint32 flags[16];
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
@@ -264,6 +265,7 @@ typedef struct map_t
 
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
+#define MAPFLAGS 16 // map flags for custom properties
 
 // light structure
 typedef struct light_t
@@ -525,8 +527,8 @@ int initApp(char* title, int fullscreen);
 int deinitApp();
 bool initVideo();
 bool changeVideoMode();
-void generatePolyModels();
-void generateVBOs();
+void generatePolyModels(int start, int end);
+void generateVBOs(int start, int end);
 int loadLanguage(char* lang);
 int reloadLanguage();
 

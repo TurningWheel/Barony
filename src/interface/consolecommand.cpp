@@ -867,6 +867,51 @@ void consoleCommand(char* command_str)
 	{
 		messagePlayer(clientnum, language[2353], nummonsters);
 	}
+	else if ( !strncmp(command_str, "/loadmodels ", 12) )
+	{
+		char name2[128];
+		char buf[16] = "";
+		int startIndex = 0;
+		int endIndex = nummodels;
+		int i = 0;
+		strcpy(name, command_str + 12);
+		for ( c = 0; name[c] != '\0'; c++ )
+		{
+			if ( name[c] == ' ' && startIndex == 0 )
+			{
+				startIndex = atoi(buf);
+				strcpy(buf, "");
+				i = 0;
+				continue;
+			}
+			buf[i] = name[c];
+			i++;
+		}
+
+		if ( startIndex != 0 )
+		{
+			endIndex = atoi(buf);
+			if ( endIndex > nummodels || endIndex < startIndex )
+			{
+				endIndex = nummodels;
+			}
+		}
+
+		FILE *fp = openDataFile("models/models.txt", "r");
+		for ( c = 0; !feof(fp); c++ )
+		{
+			fscanf(fp, "%s", name2);
+			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+			models[c] = loadVoxel(name2);
+		}
+		fclose(fp);
+		messagePlayer(clientnum, language[2354]);
+		messagePlayer(clientnum, language[2355], startIndex, endIndex);
+		generatePolyModels(startIndex, endIndex);
+	}
 	else if (!strncmp(command_str, "/killmonsters", 13))
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )

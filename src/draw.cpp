@@ -1174,8 +1174,8 @@ void drawEntities2D(long camx, long camy)
 					box.x = pos.x;
 					box.y = pos.y;
 					int spriteType = checkSpriteType(selectedEntity->sprite);
-					char tmpStr[128] = "";
-					char tmpStr2[128] = "";
+					char tmpStr[1024] = "";
+					char tmpStr2[1024] = "";
 					int padx = pos.x + 10;
 					int pady = pos.y - 40;
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);

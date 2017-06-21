@@ -747,6 +747,10 @@ void makeUndo()
 	undomap->skybox = map.skybox;
 	undomap->width = map.width;
 	undomap->height = map.height;
+	for ( int c = 0; c < MAPFLAGS; c++ )
+	{
+		undomap->flags[c] = map.flags[c];
+	}
 	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
 	memcpy(undomap->tiles, map.tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	undomap->entities = (list_t*) malloc(sizeof(list_t));
@@ -1229,6 +1233,10 @@ int main(int argc, char** argv)
 	strcpy(map.name, "");
 	strcpy(map.author, "");
 	map.skybox = 0;
+	for ( c = 0; c < MAPFLAGS; c++ )
+	{
+		map.flags[c] = 0;
+	}
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -4023,7 +4031,7 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", spriteEditorNameStrings[palette[mousey + mousex * yres]]);
 
-				char hoverTextString[32] = "";
+				char hoverTextString[1024] = "";
 				snprintf(hoverTextString, 5, "%d: ", palette[mousey + mousex * yres]);
 				strcat(hoverTextString, spriteEditorNameStrings[palette[mousey + mousex * yres]]);
 				int hoverTextWidth = strlen(hoverTextString);

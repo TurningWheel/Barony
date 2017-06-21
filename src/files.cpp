@@ -237,15 +237,21 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		return -1;
 	}
 
+	// read map version number
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.2", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.3", strlen("BARONY LMPV2.0")) == 0 )
 	{
-		// V2.2 version of editor
+		// V2.3 version of editor - map flags
+		editorVersion = 23;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.2", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.2 version of editor - submaps
 		editorVersion = 22;
 	}
 	else if ( strncmp(valid_data, "BARONY LMPV2.1", strlen("BARONY LMPV2.0")) == 0 )
 	{
-		// V2.1 version of editor
+		// V2.1 version of editor - skybox
 		editorVersion = 21;
 	}
 	else if ( strncmp(valid_data, "BARONY LMPV2.0", strlen("BARONY LMPV2.0")) == 0 )
@@ -290,6 +296,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
 	fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
 
+	// map skybox
 	if ( editorVersion == 1 || editorVersion == 2 )
 	{
 		if ( strncmp(destmap->name, "Hell", 4) == 0 )
@@ -304,6 +311,19 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	else
 	{
 		fread(&destmap->skybox, sizeof(Uint32), 1, fp); // map skybox
+	}
+
+	// misc map flags
+	if ( editorVersion == 1 || editorVersion == 2 || editorVersion == 21 || editorVersion == 22 )
+	{
+		for ( c = 0; c < MAPFLAGS; c++ )
+		{
+			destmap->flags[c] = 0;
+		}
+	}
+	else
+	{
+		fread(destmap->flags, sizeof(Sint32), MAPFLAGS, fp); // map skybox
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
 	fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
@@ -594,12 +614,13 @@ int saveMap(char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.2", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.3", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
 		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
 		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
+		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp);
 		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{
