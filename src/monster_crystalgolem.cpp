@@ -371,7 +371,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( bodypart < 2 )
 		{
 			// post-swing head animation.
-			limbAnimateWithOvershoot(my, ANIMATE_PITCH, 1, PI, 0.001, 0, ANIMATE_DIR_POSITIVE);
+			limbAnimateWithOvershoot(my, ANIMATE_PITCH, 0.2, PI / 4, 0.1, 0, ANIMATE_DIR_POSITIVE);
 			continue;
 		}
 		entity = (Entity*)node->element;

@@ -357,8 +357,8 @@ void statsHoverText(Stat* tmpStat)
 				case 5:
 					numInfoLines = 2;
 					tmp_bmp = chr_bmp64;
-					statBase = tmpStat->CON;
-					statBonus = statGetCON(tmpStat) - statBase;
+					statBase = tmpStat->CHR;
+					statBonus = statGetCHR(tmpStat) - statBase;
 					break;
 				default:
 					numInfoLines = 0;
