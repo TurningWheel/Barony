@@ -323,7 +323,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	}
 	else
 	{
-		fread(destmap->flags, sizeof(Sint32), MAPFLAGS, fp); // map skybox
+		fread(destmap->flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
 	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
 	fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
@@ -350,6 +350,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			case 2:
 			case 21:
 			case 22:
+			case 23:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -620,7 +621,7 @@ int saveMap(char* filename2)
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
 		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
 		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
-		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp);
+		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
 		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{
