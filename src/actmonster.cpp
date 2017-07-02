@@ -4386,7 +4386,11 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 						}
 					}
 
-					if ( myStats->type == CRYSTALGOLEM && rand() % 2 )
+					if ( myStats->type == CRYSTALGOLEM )
+					{
+						pose = 5;
+					}
+					else if ( myStats->type == CRYSTALGOLEM && rand() % 2 )
 					{
 						pose = GOLEM_SMASH;
 					}
@@ -4517,6 +4521,48 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			}
 		}	
 	}
+	else if ( axis == ANIMATE_ROLL )
+	{
+		if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->roll += setpointRate * dir;
+			while ( limb->roll < 0 )
+			{
+				limb->roll += 2 * PI;
+			}
+			while ( limb->roll >= 2 * PI )
+			{
+				limb->roll -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->roll, setpointRate, setpoint) )
+			{
+				limb->roll = setpoint;
+				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->roll -= endpointRate * dir;
+			while ( limb->roll < 0 )
+			{
+				limb->roll += 2 * PI;
+			}
+			while ( limb->roll >= 2 * PI )
+			{
+				limb->roll -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->roll, endpointRate, endpoint) )
+			{
+				limb->roll = endpoint;
+				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+	
 
 	return -1;
 }
@@ -4548,7 +4594,7 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			limb->pitch -= 2 * PI;
 		}
 
-		if ( limb->pitch >= setpoint )
+		if ( limbAngleWithinRange(limb->pitch, rate, setpoint) )
 		{
 			limb->pitch = setpoint;
 			if ( shake )

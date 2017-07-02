@@ -380,6 +380,19 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->z = my->z;
 		entity->yaw = my->yaw;
 
+		// torso
+		if ( bodypart == 2 )
+		{
+			if ( MONSTER_ATTACK == GOLEM_SMASH && MONSTER_ATTACKTIME > 0 )
+			{
+				//limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, -15 * PI / 8, false, 0);
+			}
+			else
+			{
+				entity->pitch = 0;
+			}
+		}
+
 		if ( bodypart == 3 || bodypart == 6 )
 		{
 
@@ -455,6 +468,13 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->pitch = 0;
 						entity->roll = 0;
 					}
+					else if ( MONSTER_ATTACK == 5 )
+					{
+						entity->pitch = -3 * PI / 4;
+						entity->roll = -PI / 4;
+						entity->fskill[21] = ANIMATE_OVERSHOOT_TO_SETPOINT;
+
+					}
 					else
 					{
 						entity->pitch = -3 * PI / 4;
@@ -493,11 +513,32 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 						else if ( MONSTER_ATTACKTIME > 50 )
 						{
-							// reset the head.
+							// set overshoot for head animation
 							my->fskill[21] = ANIMATE_OVERSHOOT_TO_SETPOINT;
-							//limbAnimateToLimit(my, ANIMATE_PITCH, 0, 0, false, 0);
 							my->attack(10, 0, nullptr);
 						}
+					}
+					else if ( MONSTER_ATTACK == 5 )
+					{
+						limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 0, false, 0);
+						if ( limbAnimateWithOvershoot(entity, ANIMATE_ROLL, 0.25, PI / 2, 0.1, 0, ANIMATE_DIR_POSITIVE) == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+						{
+							my->attack(10, 0, nullptr);
+							MONSTER_ATTACK = 0;
+						}
+						/*if ( entity->pitch <= -PI / 4 )
+						{
+							// reset limbs
+							entity->skill[0] = rightbody->skill[0];
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							MONSTER_ATTACK = 0;
+						}
+						else
+						{
+							entity->pitch += .25;
+							entity->roll -= .25;
+						}*/
 					}
 					else
 					{
