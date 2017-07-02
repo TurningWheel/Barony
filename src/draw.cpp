@@ -1140,7 +1140,8 @@ void drawEntities2D(long camx, long camy)
 	node_t* node;
 	Entity* entity;
 	SDL_Rect pos, box;
-	int offset = 0;
+	int offsetx = 0;
+	int offsety = 0;
 
 	if ( map.entities->first == NULL )
 	{
@@ -1173,8 +1174,8 @@ void drawEntities2D(long camx, long camy)
 					box.x = pos.x;
 					box.y = pos.y;
 					int spriteType = checkSpriteType(selectedEntity->sprite);
-					char tmpStr[128] = "";
-					char tmpStr2[128] = "";
+					char tmpStr[1024] = "";
+					char tmpStr2[1024] = "";
 					int padx = pos.x + 10;
 					int pady = pos.y - 40;
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
@@ -1324,12 +1325,12 @@ void drawEntities2D(long camx, long camy)
 							pady += 2;
 							strcpy(tmpStr, "Identified: ");
 							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 0, tmpStr);
-							if ( (int)selectedEntity->skill[15] == 1 )
+							if ( (int)selectedEntity->skill[15] == 0 )
 							{
 								strcpy(tmpStr2, "No");
 								color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 							}
-							else if ( (int)selectedEntity->skill[15] == 2 )
+							else if ( (int)selectedEntity->skill[15] == 1 )
 							{
 								strcpy(tmpStr2, "Yes");
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
@@ -1341,7 +1342,61 @@ void drawEntities2D(long camx, long camy)
 							}
 							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 0, tmpStr2);
 							break;
+						case 4: //summoning trap
+							pady += 5;
+							offsety = -40;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
 
+							offsety += 10;
+							strcpy(tmpStr, "Type: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							strcpy(tmpStr2, monsterEditorNameStrings[entity->skill[0]]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Qty: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[1]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Time: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[2]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Amount: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[3]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Power to: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							if ( selectedEntity->skill[4] == 1 )
+							{
+								strcpy(tmpStr2, "Spawn");
+							}
+							else
+							{
+								strcpy(tmpStr2, "Disable");
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Stop Chance: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[5]);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+							break;
 						default:
 							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);
@@ -1362,8 +1417,33 @@ void drawEntities2D(long camx, long camy)
 					// handle mouseover sprite name tooltip in main editor screen
 					int padx = pos.x + 10;
 					int pady = pos.y - 20;
-					ttfPrintText(ttf8, padx, pady - offset, spriteEditorNameStrings[entity->sprite]);
-					offset += 10;
+					int spriteType = checkSpriteType(entity->sprite);
+					offsety = 0;
+					Stat* tmpStats = nullptr;
+					if ( spriteType == 1 )
+					{
+						tmpStats = entity->getStats();
+						if ( tmpStats != nullptr )
+						{
+							if ( strcmp(tmpStats->name, "") != 0 )
+							{
+								ttfPrintText(ttf8, padx, pady - offsety, tmpStats->name);
+								offsety += 10;
+							}
+							ttfPrintText(ttf8, padx, pady - offsety, spriteEditorNameStrings[entity->sprite]);
+							offsety += 10;
+						}
+					}
+					else if ( spriteType == 3 )
+					{
+						ttfPrintText(ttf8, padx, pady - offsety, itemNameStrings[entity->skill[10]]);
+						offsety += 10;
+					}
+					else
+					{
+						ttfPrintText(ttf8, padx, pady - offsety, spriteEditorNameStrings[entity->sprite]);
+						offsety += 10;
+					}
 				}
 				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
 				if ( entity->sprite == 8 && entity->skill[10] > 1 )

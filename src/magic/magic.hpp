@@ -38,8 +38,14 @@
 //#define SPELL_RESTOREABILITY 20
 #define SPELL_CUREAILMENT 20
 #define SPELL_DIG 21
+#define SPELL_SUMMON 22
+#define SPELL_STONEBLOOD 23
+#define SPELL_BLEED 24
+
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
+#define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
+#define SPELLELEMENT_STONEBLOOD_BASE_DURATION 5//In seconds.
 
 //Definitions for actMagic(note that other functions may use this)
 #define MAGIC_TYPE (Item)my->skill[10] //TODO: OLD.
@@ -267,6 +273,26 @@ extern spellElement_t spellElement_magicmissile;
  */
 extern spellElement_t spellElement_removecurse;
 
+/*
+* Summons familiars.
+*/
+extern spellElement_t spellElement_summon;
+/*
+* Paralysis effect.
+*/
+extern spellElement_t spellElement_stoneblood;
+/*
+* Damage and bleed effect.
+*/
+extern spellElement_t spellElement_bleed;
+
+/*
+* The missile element gives propulsion to a spell; it makes a spell a projectile.
+* Base cost: 1 mana.
+* Shoots 3 projectiles.
+* Overload: Every additional mana put into this spell increases speed & lifetime. //TODO: Separately control speed & lifetime? E.g. put mana into each separately, must have at least one in each
+*/
+extern spellElement_t spellElement_missile_trio;
 
 /*
  */
@@ -328,6 +354,9 @@ extern spell_t spell_extrahealing; //Done. //TODO: AoE heal? Or target modes (se
 //extern spell_t spell_restoreability; //--CUT--
 extern spell_t spell_cureailment; //Done. //TODO: Generalize for NPCs?
 extern spell_t spell_dig; //Done.
+extern spell_t spell_summon;
+extern spell_t spell_stoneblood;
+extern spell_t spell_bleed;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -338,13 +367,18 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 void castSpellInit(Uint32 caster_uid, spell_t* spell); //Initiates the spell animation, then hands off the torch to it, which, when finished, calls castSpell.
 
 void actMagicTrap(Entity* my);
-void actMagicStatuseffect(Entity* my);
+void actMagicStatusEffect(Entity* my);
 void actMagicMissile(Entity* my);
 void actMagicClient(Entity* my);
 void actMagicClientNoLight(Entity* my);
 void actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
+void createParticle1(Entity* caster, int player);
+void createParticle2(Entity* parent);
+void actParticleCircle(Entity* my);
+void actParticleDot(Entity* my);
+void createParticleDot(Entity* parent);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
@@ -366,7 +400,7 @@ bool spellInList(list_t* list, spell_t* spell);
 
 //-----Implementations of spell effects-----
 void spell_magicMap(int player); //Magics the map. I mean maps the magic. I mean magically maps the level.
-
+void spell_summonFamiliar(int player); // summons some familiars.
 void spell_changeHealth(Entity* entity, int amount); //This function changes an entity's health.
 
 //-----Spell Casting Animation-----

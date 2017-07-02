@@ -193,7 +193,7 @@ void Stat::clearStats()
 		}
 	}
 
-	for ( x = 0; x < 96; x = x + 6 )
+	for ( x = 0; x < ITEM_SLOT_NUM; x = x + ITEM_SLOT_NUMPROPERTIES )
 	{
 		this->EDITOR_ITEMS[x] = 0;
 		this->EDITOR_ITEMS[x + 1] = 0;
@@ -201,11 +201,22 @@ void Stat::clearStats()
 		this->EDITOR_ITEMS[x + 3] = 1;
 		this->EDITOR_ITEMS[x + 4] = 1;
 		this->EDITOR_ITEMS[x + 5] = 1;
+		this->EDITOR_ITEMS[x + 6] = 0;
 	}
 
 	for ( x = 0; x < 32; x++ )
 	{
-		this->EDITOR_FLAGS[x] = 0;
+		this->MISC_FLAGS[x] = 0;
+	}
+
+	for ( x = 0; x < NUMSTATS; x++ )
+	{
+		this->PLAYER_LVL_STAT_BONUS[x] = -1;
+	}
+
+	for ( x = 0; x < NUMSTATS * 2; x++ )
+	{
+		this->PLAYER_LVL_STAT_TIMER[x] = -1;
 	}
 
 	list_FreeAll(&this->inventory);
@@ -386,7 +397,8 @@ Stat* Stat::copyStats()
 	newStat->STR = this->STR;
 	newStat->DEX = this->DEX;
 	newStat->CON = this->CON;
-	newStat->INT = this->PER;
+	newStat->INT = this->INT;
+	newStat->PER = this->PER;
 	newStat->CHR = this->CHR;
 	newStat->EXP = this->EXP;
 	newStat->LVL = this->LVL;
@@ -403,14 +415,24 @@ Stat* Stat::copyStats()
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
 
-	for ( c = 0; c < 96; c++ )
+	for ( c = 0; c < ITEM_SLOT_NUM; c++ )
 	{
 		newStat->EDITOR_ITEMS[c] = this->EDITOR_ITEMS[c];
 	}
 
 	for ( c = 0; c < 32; c++ )
 	{
-		newStat->EDITOR_FLAGS[c] = this->EDITOR_FLAGS[c] = 0;
+		newStat->MISC_FLAGS[c] = this->MISC_FLAGS[c];
+	}
+
+	for ( c = 0; c < NUMSTATS; c++ )
+	{
+		newStat->PLAYER_LVL_STAT_BONUS[c] = this->PLAYER_LVL_STAT_BONUS[c];
+	}
+
+	for ( c = 0; c < NUMSTATS * 2; c++ )
+	{
+		newStat->PLAYER_LVL_STAT_TIMER[c] = this->PLAYER_LVL_STAT_TIMER[c];
 	}
 
 	newStat->defending = this->defending;

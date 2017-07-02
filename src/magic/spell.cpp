@@ -26,6 +26,7 @@ spell_t* selected_spell = NULL;
 
 spellElement_t spellElement_unintelligible;
 spellElement_t spellElement_missile;
+spellElement_t spellElement_missile_trio;
 spellElement_t spellElement_force;
 spellElement_t spellElement_fire;
 spellElement_t spellElement_lightning;
@@ -46,6 +47,9 @@ spellElement_t spellElement_levitation;
 spellElement_t spellElement_teleportation;
 spellElement_t spellElement_magicmissile;
 spellElement_t spellElement_removecurse;
+spellElement_t spellElement_summon;
+spellElement_t spellElement_stoneblood;
+spellElement_t spellElement_bleed;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -69,6 +73,9 @@ spell_t spell_extrahealing;
 //spell_t spell_restoreability;
 spell_t spell_cureailment;
 spell_t spell_dig;
+spell_t spell_summon;
+spell_t spell_stoneblood;
+spell_t spell_bleed;
 
 void addSpell(int spell, int player)
 {
@@ -146,6 +153,15 @@ void addSpell(int spell, int player)
 			break;
 		case SPELL_DIG:
 			new_spell = copySpell(&spell_dig);
+			break;
+		case SPELL_STONEBLOOD:
+			new_spell = copySpell(&spell_stoneblood);
+			break;
+		case SPELL_BLEED:
+			new_spell = copySpell(&spell_bleed);
+			break;
+		case SPELL_SUMMON:
+			new_spell = copySpell(&spell_summon);
 			break;
 		default:
 			return;
@@ -451,6 +467,15 @@ spell_t* getSpellFromID(int ID)
 			break;
 		case SPELL_DIG:
 			spell = &spell_dig;
+			break;
+		case SPELL_SUMMON:
+			spell = &spell_summon;
+			break;
+		case SPELL_STONEBLOOD:
+			spell = &spell_stoneblood;
+			break;
+		case SPELL_BLEED:
+			spell = &spell_bleed;
 			break;
 	}
 

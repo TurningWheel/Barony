@@ -54,7 +54,8 @@ Stat* Stat::copyStats()
 	newStat->STR = this->STR;
 	newStat->DEX = this->DEX;
 	newStat->CON = this->CON;
-	newStat->INT = this->PER;
+	newStat->INT = this->INT;
+	newStat->PER = this->PER;
 	newStat->CHR = this->CHR;
 	newStat->EXP = this->EXP;
 	newStat->LVL = this->LVL;
@@ -85,15 +86,17 @@ Stat* Stat::copyStats()
 		newStat->EFFECTS_TIMERS[c] = this->EFFECTS_TIMERS[c];
 	}
 
-	for ( c = 0; c < 96; c++ )
+	for ( c = 0; c < ITEM_SLOT_NUM; c++ )
 	{
 		newStat->EDITOR_ITEMS[c] = this->EDITOR_ITEMS[c];
 	}
 
 	for ( c = 0; c < 32; c++ )
 	{
-		newStat->EDITOR_FLAGS[c] = this->EDITOR_FLAGS[c];
+		newStat->MISC_FLAGS[c] = this->MISC_FLAGS[c];
 	}
+
+	// skip the player stat variables PLAYER_LVL_STAT_BONUS & PLAYER_LVL_STAT_TIMER
 
 	return newStat;
 }

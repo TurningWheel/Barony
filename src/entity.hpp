@@ -31,7 +31,6 @@
 #define PASSABLE 12
 #define USERFLAG1 14
 #define USERFLAG2 15
-
 // entity class
 class Entity
 {
@@ -169,7 +168,7 @@ public:
 
 	bool isMobile();
 
-	void attack(int pose, int charge);
+	void attack(int pose, int charge, Entity* target);
 
 	void teleport(int x, int y);
 	void teleportRandom();
@@ -307,11 +306,15 @@ void actMagiclightBall(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
+const int NUM_ITEM_STRINGS = 207;
+const int NUM_ITEM_STRINGS_BY_TYPE = 69;
+
 int checkSpriteType(Sint32 sprite);
-extern char spriteEditorNameStrings[96][28];
-extern char tileEditorNameStrings[201][44];
-extern char itemStringsByType[10][63][32];
-extern char itemNameStrings[198][32];
+extern char spriteEditorNameStrings[106][64];
+extern char tileEditorNameStrings[202][44];
+extern char monsterEditorNameStrings[NUMMONSTERS][13];
+extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
+extern char itemNameStrings[NUM_ITEM_STRINGS][32];
 int canWearEquip(Entity* entity, int category);
 void createMonsterEquipment(Stat* stats);
 int countCustomItems(Stat* stats);
@@ -330,4 +333,5 @@ int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
+int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);

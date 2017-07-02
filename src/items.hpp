@@ -215,9 +215,18 @@ typedef enum ItemType
 	BRONZE_TOMAHAWK,
 	IRON_DAGGER,
 	STEEL_CHAKRAM,
-	CRYSTAL_SHURIKEN
+	CRYSTAL_SHURIKEN,
+	CLOAK_BLACK,
+	MAGICSTAFF_STONEBLOOD,
+	MAGICSTAFF_BLEED,
+	MAGICSTAFF_SUMMON,
+	TOOL_BLINDFOLD_FOCUS,
+	TOOL_BLINDFOLD_TELEPATHY,
+	SPELLBOOK_SUMMON,
+	SPELLBOOK_STONEBLOOD,
+	SPELLBOOK_BLEED
 } ItemType;
-const int NUMITEMS = 195;
+const int NUMITEMS = 204;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category

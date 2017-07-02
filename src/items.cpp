@@ -722,7 +722,7 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK )
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
 	{
 		return 1; // these items do not stack
 	}
@@ -1321,6 +1321,7 @@ void useItem(Item* item, int player)
 			equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
+		case CLOAK_BLACK:
 		case CLOAK_MAGICREFLECTION:
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
@@ -1525,6 +1526,9 @@ void useItem(Item* item, int player)
 		case MAGICSTAFF_FIRE:
 		case MAGICSTAFF_LIGHTNING:
 		case MAGICSTAFF_SLEEP:
+		case MAGICSTAFF_STONEBLOOD:
+		case MAGICSTAFF_BLEED:
+		case MAGICSTAFF_SUMMON:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:
@@ -1562,6 +1566,9 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_EXTRAHEALING:
 		case SPELLBOOK_CUREAILMENT:
 		case SPELLBOOK_DIG:
+		case SPELLBOOK_SUMMON:
+		case SPELLBOOK_STONEBLOOD:
+		case SPELLBOOK_BLEED:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
@@ -1603,6 +1610,8 @@ void useItem(Item* item, int player)
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
+		case TOOL_BLINDFOLD_FOCUS:
+		case TOOL_BLINDFOLD_TELEPATHY:
 			equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_TOWEL:
@@ -2324,6 +2333,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	int itemBless;
 	int itemAppearance = rand();
 	int itemCount;
+	int category = 0;
 	bool itemIdentified;
 	int itemsGenerated = 0;
 	int chance = 1;
@@ -2332,7 +2342,67 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	{
 		for ( i = 0; i < 6 && itemsGenerated <= itemLimit; i++ )
 		{
-			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
+			
+			category = stats->EDITOR_ITEMS[itemSlots[i] + ITEM_SLOT_CATEGORY];
+			if ( category > 0 && stats->EDITOR_ITEMS[itemSlots[i]] == 1 )
+			{
+				if ( category > 0 && category <= 13 )
+				{
+					itemId = itemCurve(static_cast<Category>(category - 1));
+				}
+				else
+				{
+					int randType = 0;
+					if ( category == 14 )
+					{
+						// equipment
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(WEAPON));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(ARMOR));
+						}
+					}
+					else if ( category == 15 )
+					{
+						// jewelry
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(AMULET));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(RING));
+						}
+					}
+					else if ( category == 16 )
+					{
+						// magical
+						randType = rand() % 3;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(SCROLL));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+						}
+					}
+				}
+			}
+			else
+			{
+				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
+			}
+			
 			if ( itemId >= 0 )
 			{
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
