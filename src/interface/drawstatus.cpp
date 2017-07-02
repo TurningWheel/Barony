@@ -274,7 +274,7 @@ void drawStatus()
 		// name
 		int x = xres / 2 - longestline(enemy_name) * TTF12_WIDTH / 2 + 2;
 		int y = yres - 221 + 16 - TTF12_HEIGHT / 2 + 2;
-		ttfPrintText(ttf12, x, y, enemy_name );
+		ttfPrintText(ttf12, x, y, enemy_name);
 	}
 
 	// messages
@@ -289,7 +289,7 @@ void drawStatus()
 		{
 			continue;
 		}
-		string = (string_t*) node->element;
+		string = (string_t*)node->element;
 		y -= TTF12_HEIGHT * string->lines;
 		if ( y < yres - status_bmp->h + 4 )
 		{
@@ -310,7 +310,7 @@ void drawStatus()
 			{
 				if ( string->data[i] != 10 )
 				{
-					char* tempString = (char*) malloc(sizeof(char) * (strlen(string->data) + 2));
+					char* tempString = (char*)malloc(sizeof(char) * (strlen(string->data) + 2));
 					strcpy(tempString, string->data);
 					strcpy((char*)(tempString + i + 1), (char*)(string->data + i));
 					tempString[i] = 10;
@@ -483,7 +483,7 @@ void drawStatus()
 		drawRect(&pos, color, 255);
 	}
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
-	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr );
+	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
 	// magic
 	pos.x = 12;
@@ -506,7 +506,7 @@ void drawStatus()
 		drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 128), 255);
 	}
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
-	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr );
+	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
 	Item* item = NULL;
 	//Now the hotbar.
@@ -514,7 +514,7 @@ void drawStatus()
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
 	pos.x = initial_position.x;
 	pos.y = initial_position.y - hotbar_img->h;
-	for (num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w)
+	for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w )
 	{
 		Uint32 color;
 		if ( current_hotbar == num && !openedChest[clientnum] )
@@ -528,7 +528,7 @@ void drawStatus()
 		drawImageColor(hotbar_img, NULL, &pos, color);
 
 		item = uidToItem(hotbar[num].item);
-		if (item)
+		if ( item )
 		{
 			bool used = false;
 			pos.w = hotbar_img->w;
@@ -536,12 +536,12 @@ void drawStatus()
 			drawImageScaled(itemSprite(item), NULL, &pos);
 			if ( stats[clientnum]->HP > 0 )
 			{
-				if (!shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
 					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !identifygui_active && !removecursegui_active)) && !selectedItem )
 					{
 						toggleclick = false;
-						if (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT])
+						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
 							hotbar[num].item = 0;
 						}
@@ -622,7 +622,7 @@ void drawStatus()
 			// item count
 			if ( !used )
 			{
-				if (item->count > 1)
+				if ( item->count > 1 )
 				{
 					int digits = numdigits_sint16(item->count);
 					printTextFormatted(font12x12_bmp, pos.x + hotbar_img->w - (14 * digits), pos.y + hotbar_img->h - 14, "%d", item->count);
@@ -659,39 +659,39 @@ void drawStatus()
 		printTextFormatted(font12x12_bmp, pos.x + 2, pos.y + 2, "%d", (num + 1) % 10); // slot number
 	}
 
-	if (!shootmode)
+	if ( !shootmode )
 	{
 		pos.x = initial_position.x;
 		//Go back through all of the hotbar slots and draw the tooltips.
-		for (num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w)
+		for ( num = 0; num < NUM_HOTBAR_SLOTS; ++num, pos.x += hotbar_img->w )
 		{
 			item = uidToItem(hotbar[num].item);
-			if (item)
+			if ( item )
 			{
-				if (mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if ( mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
 					//Tooltip
 					SDL_Rect src;
 					src.x = mousex + 16;
 					src.y = mousey + 8;
-					if (itemCategory(item) == SPELL_CAT)
+					if ( itemCategory(item) == SPELL_CAT )
 					{
 						spell_t* spell = getSpellFromItem(item);
-						if (spell)
+						if ( spell )
 						{
 							char tempstr[32];
 							snprintf(tempstr, 31, language[308], getCostOfSpell(spell));
 							src.w = std::max(longestline(spell->name), longestline(tempstr)) * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT * 2 + 8;
 							drawTooltip(&src);
-							ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
+							ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s\n%s", spell->name, tempstr);
 						}
 						else
 						{
 							src.w = longestline("Error: Spell doesn't exist!") * TTF12_WIDTH + 8;
 							src.h = TTF12_HEIGHT + 8;
 							drawTooltip(&src);
-							ttfPrintTextFormatted( ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
+							ttfPrintTextFormatted(ttf12, src.x + 4, src.y + 4, "%s", "Error: Spell doesn't exist!");
 						}
 					}
 					else
@@ -709,33 +709,33 @@ void drawStatus()
 						if ( !item->identified )
 						{
 							color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
-							ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309] );
+							ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[309]);
 						}
 						else
 						{
 							if ( item->beatitude < 0 )
 							{
 								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310] );
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[310]);
 							}
 							else if ( item->beatitude == 0 )
 							{
 								color = 0xFFFFFFFF;
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311] );
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[311]);
 							}
 							else
 							{
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312] );
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT, color, language[312]);
 							}
 						}
 						if ( item->beatitude == 0 || !item->identified )
 						{
 							color = 0xFFFFFFFF;
 						}
-						ttfPrintTextFormattedColor( ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
-						ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
-						ttfPrintTextFormatted( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
+						ttfPrintTextFormattedColor(ttf12, src.x + 4, src.y + 4, color, "%s", item->description());
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 2, language[313], items[item->type].weight * item->count);
+						ttfPrintTextFormatted(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 3, language[314], item->sellValue(clientnum));
 
 						if ( item->identified )
 						{
@@ -749,7 +749,7 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[315], item->weaponGetAttack());
 							}
 							else if ( itemCategory(item) == ARMOR )
 							{
@@ -761,7 +761,7 @@ void drawStatus()
 								{
 									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 								}
-								ttfPrintTextFormattedColor( ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
+								ttfPrintTextFormattedColor(ttf12, src.x + 4 + TTF12_WIDTH, src.y + 4 + TTF12_HEIGHT * 4, color, language[316], item->armorGetAC());
 							}
 						}
 					}
@@ -826,13 +826,13 @@ void drawStatus()
 		}
 
 		//Moving the cursor changes the currently selected hotbar slot.
-		if ((mousexrel || mouseyrel) && !shootmode)
+		if ( (mousexrel || mouseyrel) && !shootmode )
 		{
 			pos.x = initial_position.x;
 			pos.y = initial_position.y - hotbar_img->h;
-			for (c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w)
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; ++c, pos.x += hotbar_img->w )
 			{
-				if (mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h))
+				if ( mouseInBoundsRealtimeCoords(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
 					selectHotbarSlot(c);
 				}
@@ -854,14 +854,14 @@ void drawStatus()
 			bumper_moved = true;
 		}
 
-		if (bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active)
+		if ( bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
 		{
 			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open  && !identifygui_active && !removecursegui_active )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && !identifygui_active && !removecursegui_active )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;
@@ -930,7 +930,13 @@ void drawStatus()
 	pos.w = 64;
 	pos.h = 64;
 	pos.x = xres - pos.w * 3 - 9;
-	pos.y = 32 + 64 + 64 + 3 + (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3); // 131px from end of prof window.
+	pos.y = (NUMPROFICIENCIES * TTF12_HEIGHT) + (TTF12_HEIGHT * 3) + (32 + 64 + 64 + 3); // 131px from end of prof window.
+
+	if ( pos.y + pos.h > (yres - map.height * 4) ) // check if overlapping minimap
+	{
+		pos.y = (yres - map.height * 4) - (64 + 3); // align above minimap
+	}
+	
 	SDL_Surface *tmp_bmp = NULL;
 
 	for ( i = 0; i < NUMSTATS; i++ )
