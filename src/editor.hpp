@@ -16,8 +16,8 @@
 
 static const unsigned int MAXWIDTH = 2000;
 static const unsigned int MAXHEIGHT = 2000;
-static const unsigned int MINWIDTH = 2;
-static const unsigned int MINHEIGHT =  2;
+static const unsigned int MINWIDTH = 1;
+static const unsigned int MINHEIGHT =  1;
 
 extern int drawlayer, drawx, drawy, odrawx, odrawy;
 extern int alllayers;
@@ -48,7 +48,7 @@ extern char filename[128];
 extern char oldfilename[128];
 extern char message[48];
 extern int messagetime;
-extern char widthtext[4], heighttext[4], nametext[32], authortext[32];
+extern char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[4];
 extern int editproperty;
 extern SDL_Cursor* cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
 extern int* palette;
@@ -109,7 +109,7 @@ extern int selectedFile;
 extern int messagetime;
 extern char message[48];
 extern Uint32 cursorflash;
-extern char widthtext[4], heighttext[4], nametext[32], authortext[32];
+extern char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[4];
 extern char spriteProperties[32][128];
 extern char tmpSpriteProperties[32][128];
 extern int editproperty;

@@ -198,6 +198,11 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_SHOPYE my->skill[17]
 #define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
+
+//--monster animation storage.
+#define MONSTER_LIMB_DIR limb->skill[20]
+#define MONSTER_LIMB_OVERSHOOT limb->fskill[21]
+
 #define MONSTER_SPECIAL my->skill[29]
 #define MONSTER_IDLEVAR myStats->monster_idlevar
 #define MONSTER_SOUND myStats->monster_sound
@@ -338,3 +343,28 @@ void actDevilTeleport(Entity* my);
 
 void createMinotaurTimer(Entity* entity, map_t* map);
 
+void actSummonTrap(Entity* my);
+extern int monsterCurve(int level);
+void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist, int hasrangedweapon);
+
+//--special monster attack constants
+static const int GOLEM_SMASH = 4;
+
+//--monster animation handler
+static const int ANIMATE_YAW = 1;
+static const int ANIMATE_PITCH = 2;
+static const int ANIMATE_ROLL = 3;
+
+static const int ANIMATE_DIR_POSITIVE = 1;
+static const int ANIMATE_DIR_NEGATIVE = -1;
+static const int ANIMATE_DIR_NONE = 0;
+
+static const int ANIMATE_OVERSHOOT_TO_SETPOINT = 1;
+static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
+static const int ANIMATE_OVERSHOOT_NONE = 0;
+
+//--animates the selected limb to setpoint along the axis, at the given rate.
+int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
+//--animates the selected limb to setpoint, then endpoint along the axis, provided skill[21]/MONSTER_LIMB_OVERSHOOT is set
+int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
+int limbAngleWithinRange(real_t angle, double rate, double setpoint);

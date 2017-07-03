@@ -2566,7 +2566,7 @@ int main(int argc, char** argv)
 						startMessages();
 
 						// load dungeon
-						mapseed = 0;
+						mapseed = rand();
 						lastEntityUIDs = entity_uids;
 						for ( node = map.entities->first; node != NULL; node = node->next )
 						{

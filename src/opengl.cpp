@@ -563,15 +563,24 @@ void glDrawWorld(view_t* camera, int mode)
 	int index;
 	real_t s;
 	bool clouds = false;
+	int cloudtile = 0;
 
 	if ( softwaremode == true )
 	{
 		return;
 	}
 
-	if ( !strncmp(map.name, "Hell", 4) && smoothlighting )
+	if ( (!strncmp(map.name, "Hell", 4) || map.skybox != 0) && smoothlighting )
 	{
 		clouds = true;
+		if ( !strncmp(map.name, "Hell", 4) )
+		{
+			cloudtile = 77;
+		}
+		else
+		{
+			cloudtile = map.skybox;
+		}
 	}
 
 	if ( clouds && mode == REALCOLORS )
@@ -595,7 +604,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// first (higher) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 60) / 60, (real_t)(ticks % 60) / 60);
 		glVertex3f(-CLIPFAR * 16, 64, -CLIPFAR * 16);
@@ -612,7 +621,7 @@ void glDrawWorld(view_t* camera, int mode)
 
 		// second (closer) sky layer
 		glColor4f(1.f, 1.f, 1.f, .5);
-		glBindTexture(GL_TEXTURE_2D, texid[tiles[77]->refcount]); // sky tile
+		glBindTexture(GL_TEXTURE_2D, texid[tiles[cloudtile]->refcount]); // sky tile
 		glBegin( GL_QUADS );
 		glTexCoord2f((real_t)(ticks % 240) / 240, (real_t)(ticks % 240) / 240);
 		glVertex3f(-CLIPFAR * 16, 32, -CLIPFAR * 16);

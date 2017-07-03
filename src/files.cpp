@@ -237,18 +237,50 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		return -1;
 	}
 
-	fread(valid_data, sizeof(char), strlen("BARONY"), fp);
-	if ( strncmp(valid_data, "BARONY", strlen("BARONY")) )
+	// read map version number
+	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
+	if ( strncmp(valid_data, "BARONY LMPV2.3", strlen("BARONY LMPV2.0")) == 0 )
 	{
-		printlog("warning: file '%s' is an invalid map file.\n", filename);
-		fclose(fp);
-		if ( destmap == &map && game )
-		{
-			printlog("error: main map failed to load, aborting.\n");
-			mainloop = 0;
-		}
-		return -1;
+		// V2.3 version of editor - map flags
+		editorVersion = 23;
 	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.2", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.2 version of editor - submaps
+		editorVersion = 22;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.1", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.1 version of editor - skybox
+		editorVersion = 21;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.0", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.0 version of editor
+		editorVersion = 2;
+	}
+	else
+	{
+		rewind(fp);
+		fread(valid_data, sizeof(char), strlen("BARONY"), fp);
+		if ( strncmp(valid_data, "BARONY", strlen("BARONY")) == 0 )
+		{
+			// V1.0 version of editor
+			editorVersion = 1;
+		}
+		else
+		{
+			printlog("warning: file '%s' is an invalid map file.\n", filename);
+			fclose(fp);
+			if ( destmap == &map && game )
+			{
+				printlog("error: main map failed to load, aborting.\n");
+				mainloop = 0;
+			}
+			return -1;
+		}
+	}
+
 	list_FreeAll(entlist);
 	if ( destmap == &map )
 	{
@@ -263,6 +295,36 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	fread(destmap->author, sizeof(char), 32, fp); // map author
 	fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
 	fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
+
+	// map skybox
+	if ( editorVersion == 1 || editorVersion == 2 )
+	{
+		if ( strncmp(destmap->name, "Hell", 4) == 0 )
+		{
+			destmap->skybox = 77;
+		}
+		else
+		{
+			destmap->skybox = 0;
+		}
+	}
+	else
+	{
+		fread(&destmap->skybox, sizeof(Uint32), 1, fp); // map skybox
+	}
+
+	// misc map flags
+	if ( editorVersion == 1 || editorVersion == 2 || editorVersion == 21 || editorVersion == 22 )
+	{
+		for ( c = 0; c < MAPFLAGS; c++ )
+		{
+			destmap->flags[c] = 0;
+		}
+	}
+	else
+	{
+		fread(destmap->flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
+	}
 	destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
 	fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
 	fread(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
@@ -270,11 +332,167 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 	{
 		fread(&sprite, sizeof(Sint32), 1, fp);
 		entity = newEntity(sprite, 0, entlist);
+		switch( editorVersion )
+		{	case 1:
+				// V1.0 of editor version
+			switch ( checkSpriteType(sprite) )
+			{
+				case 1:
+				case 2:
+				case 3:
+				case 4:
+					setSpriteAttributes(entity, nullptr, nullptr);
+					break;
+				default:
+					break;
+			}
+				break;
+			case 2:
+			case 21:
+			case 22:
+			case 23:
+				// V2.0+ of editor version
+				switch ( checkSpriteType(sprite) )
+				{
+					case 1:
+						if ( multiplayer != CLIENT )
+						{
+							// need to give the entity its list stuff.
+							// create an empty first node for traversal purposes
+							node_t* node2 = list_AddNodeFirst(&entity->children);
+							node2->element = NULL;
+							node2->deconstructor = &emptyDeconstructor;
+
+							myStats = new Stat(entity->sprite);
+							node2 = list_AddNodeLast(&entity->children);
+							node2->element = myStats;
+							//					node2->deconstructor = &myStats->~Stat;
+							node2->size = sizeof(myStats);
+
+
+							fread(&myStats->sex, sizeof(sex_t), 1, fp);
+							fread(&myStats->name, sizeof(char[128]), 1, fp);
+							fread(&myStats->HP, sizeof(Sint32), 1, fp);
+							fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
+							fread(&myStats->OLDHP, sizeof(Sint32), 1, fp);
+							fread(&myStats->MP, sizeof(Sint32), 1, fp);
+							fread(&myStats->MAXMP, sizeof(Sint32), 1, fp);
+							fread(&myStats->STR, sizeof(Sint32), 1, fp);
+							fread(&myStats->DEX, sizeof(Sint32), 1, fp);
+							fread(&myStats->CON, sizeof(Sint32), 1, fp);
+							fread(&myStats->INT, sizeof(Sint32), 1, fp);
+							fread(&myStats->PER, sizeof(Sint32), 1, fp);
+							fread(&myStats->CHR, sizeof(Sint32), 1, fp);
+							fread(&myStats->LVL, sizeof(Sint32), 1, fp);
+							fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
+
+							fread(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_HP, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_MP, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_STR, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_CON, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_INT, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_PER, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
+							fread(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
+
+							if ( editorVersion >= 22 )
+							{
+								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+							}
+							else
+							{
+								// read old map formats
+								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+							}
+							fread(&myStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+						}
+						//Read dummy values to move fp for the client
+						else
+						{
+							dummyStats = new Stat(entity->sprite);
+							fread(&dummyStats->sex, sizeof(sex_t), 1, fp);
+							fread(&dummyStats->name, sizeof(char[128]), 1, fp);
+							fread(&dummyStats->HP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->MAXHP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->OLDHP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->MP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->MAXMP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->STR, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->DEX, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->CON, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->INT, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->PER, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->CHR, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->LVL, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->GOLD, sizeof(Sint32), 1, fp);
+
+							fread(&dummyStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_HP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_MP, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_STR, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_CON, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_INT, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_PER, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
+							fread(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
+
+							if ( editorVersion >= 22 )
+							{
+								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+							}
+							else
+							{
+								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
+							}
+							fread(&dummyStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
+						}
+						break;
+					case 2:
+						fread(&entity->yaw, sizeof(real_t), 1, fp);
+						fread(&entity->skill[9], sizeof(Sint32), 1, fp);
+						fread(&entity->chestLocked, sizeof(Sint32), 1, fp);
+						break;
+					case 3:
+						fread(&entity->skill[10], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[11], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[12], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[13], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[15], sizeof(Sint32), 1, fp);
+						if ( editorVersion >= 22 )
+						{
+							fread(&entity->skill[16], sizeof(Sint32), 1, fp);
+						}
+						break;
+					case 4:
+						fread(&entity->skill[0], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[1], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[2], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[3], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[4], sizeof(Sint32), 1, fp);
+						fread(&entity->skill[5], sizeof(Sint32), 1, fp);
+						break;
+					default:
+						break;
+				}
+				break;
+			default:
+				break;
+		}
+
 		fread(&x, sizeof(Sint32), 1, fp);
 		fread(&y, sizeof(Sint32), 1, fp);
 		entity->x = x;
 		entity->y = y;
 	}
+
+	fclose(fp);
 
 	if ( destmap == &map )
 	{
@@ -289,189 +507,10 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 #endif
 
 		// create new lightmap
-		if (lightmap != NULL)
+		if ( lightmap != NULL )
 		{
 			free(lightmap);
 		}
-
-		fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-		if ( strncmp(valid_data, "BARONY LMPV2.0", strlen("BARONY LMPV2.0")) == 0 )
-		{
-			// V2.0 version of editor
-			editorVersion = 2;
-		}
-		else 
-		{
-			rewind(fp);
-			fread(valid_data, sizeof(char), strlen("BARONY"), fp);
-			if ( strncmp(valid_data, "BARONY", strlen("BARONY")) == 0 )
-			{
-				// V1.0 version of editor
-				editorVersion = 1;
-			}
-			else
-			{
-				printlog("warning: file '%s' is an invalid map file.\n", filename);
-				fclose(fp);
-				if ( destmap == &map && game )
-				{
-					printlog("error: main map failed to load, aborting.\n");
-					mainloop = 0;
-				}
-				return -1;
-			}
-		}
-
-		list_FreeAll(entlist);
-		if ( destmap == &map )
-		{
-			// remove old lights
-			list_FreeAll(&light_l);
-		}
-		if ( destmap->tiles != NULL )
-		{
-			free(destmap->tiles);
-		}
-		fread(destmap->name, sizeof(char), 32, fp); // map name
-		fread(destmap->author, sizeof(char), 32, fp); // map author
-		fread(&destmap->width, sizeof(Uint32), 1, fp); // map width
-		fread(&destmap->height, sizeof(Uint32), 1, fp); // map height
-		destmap->tiles = (Sint32*) malloc(sizeof(Sint32) * destmap->width * destmap->height * MAPLAYERS);
-		fread(destmap->tiles, sizeof(Sint32), destmap->width * destmap->height * MAPLAYERS, fp);
-		fread(&numentities, sizeof(Uint32), 1, fp); // number of entities on the map
-		for (c = 0; c < numentities; c++)
-		{
-			fread(&sprite, sizeof(Sint32), 1, fp);
-			entity = newEntity(sprite, 0, entlist);
-			switch( editorVersion )
-			{	case 1:
-					// V1.0 of editor version
-				switch ( checkSpriteType(sprite) )
-				{
-					case 1:
-					case 2:
-					case 3:
-						setSpriteAttributes(entity, nullptr, nullptr);
-						break;
-					default:
-						break;
-				}
-					break;
-				case 2:
-					// V2.0 of editor version
-					switch ( checkSpriteType(sprite) )
-					{
-						case 1:
-							if ( multiplayer != CLIENT )
-							{
-								// need to give the entity its list stuff.
-								// create an empty first node for traversal purposes
-								node_t* node2 = list_AddNodeFirst(&entity->children);
-								node2->element = NULL;
-								node2->deconstructor = &emptyDeconstructor;
-
-								myStats = new Stat(entity->sprite);
-								node2 = list_AddNodeLast(&entity->children);
-								node2->element = myStats;
-								//					node2->deconstructor = &myStats->~Stat;
-								node2->size = sizeof(myStats);
-
-
-								fread(&myStats->sex, sizeof(sex_t), 1, fp);
-								fread(&myStats->name, sizeof(char[128]), 1, fp);
-								fread(&myStats->HP, sizeof(Sint32), 1, fp);
-								fread(&myStats->MAXHP, sizeof(Sint32), 1, fp);
-								fread(&myStats->OLDHP, sizeof(Sint32), 1, fp);
-								fread(&myStats->MP, sizeof(Sint32), 1, fp);
-								fread(&myStats->MAXMP, sizeof(Sint32), 1, fp);
-								fread(&myStats->STR, sizeof(Sint32), 1, fp);
-								fread(&myStats->DEX, sizeof(Sint32), 1, fp);
-								fread(&myStats->CON, sizeof(Sint32), 1, fp);
-								fread(&myStats->INT, sizeof(Sint32), 1, fp);
-								fread(&myStats->PER, sizeof(Sint32), 1, fp);
-								fread(&myStats->CHR, sizeof(Sint32), 1, fp);
-								fread(&myStats->LVL, sizeof(Sint32), 1, fp);
-								fread(&myStats->GOLD, sizeof(Sint32), 1, fp);
-
-								fread(&myStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_HP, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_MP, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_STR, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_CON, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_INT, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_PER, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
-								fread(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
-
-								fread(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
-								fread(&myStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
-							}
-							//Read dummy values to move fp for the client
-							else
-							{
-								dummyStats = new Stat(entity->sprite);
-								fread(&dummyStats->sex, sizeof(sex_t), 1, fp);
-								fread(&dummyStats->name, sizeof(char[128]), 1, fp);
-								fread(&dummyStats->HP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->MAXHP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->OLDHP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->MP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->MAXMP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->STR, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->DEX, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->CON, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->INT, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->PER, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->CHR, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->LVL, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->GOLD, sizeof(Sint32), 1, fp);
-
-								fread(&dummyStats->RANDOM_MAXHP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_HP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_MAXMP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_MP, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_STR, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_CON, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_DEX, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_INT, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_PER, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_CHR, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
-								fread(&dummyStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
-
-								fread(&dummyStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
-								fread(&dummyStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
-							}
-							break;
-						case 2:
-							fread(&entity->yaw, sizeof(real_t), 1, fp);
-							fread(&entity->skill[9], sizeof(Sint32), 1, fp);
-							fread(&entity->chestLocked, sizeof(Sint32), 1, fp);
-							break;
-						case 3:
-							fread(&entity->skill[10], sizeof(Sint32), 1, fp);
-							fread(&entity->skill[11], sizeof(Sint32), 1, fp);
-							fread(&entity->skill[12], sizeof(Sint32), 1, fp);
-							fread(&entity->skill[13], sizeof(Sint32), 1, fp);
-							fread(&entity->skill[15], sizeof(Sint32), 1, fp);
-							break;
-						default:
-							break;
-					}
-					break;
-				default:
-					break;
-			}
-
-			fread(&x, sizeof(Sint32), 1, fp);
-			fread(&y, sizeof(Sint32), 1, fp);
-			entity->x = x;
-			entity->y = y;
-		}
-		fclose(fp);
 
 		lightmap = (int*) malloc(sizeof(Sint32) * destmap->width * destmap->height);
 		if ( strncmp(map.name, "Hell", 4) )
@@ -576,11 +615,13 @@ int saveMap(char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.0", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.3", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
 		fwrite(&map.height, sizeof(Uint32), 1, fp); // map height
+		fwrite(&map.skybox, sizeof(Uint32), 1, fp); // map skybox
+		fwrite(map.flags, sizeof(Sint32), MAPFLAGS, fp); // map flags
 		fwrite(map.tiles, sizeof(Sint32), map.width * map.height * MAPLAYERS, fp);
 		for (node = map.entities->first; node != NULL; node = node->next)
 		{
@@ -626,8 +667,8 @@ int saveMap(char* filename2)
 					fwrite(&myStats->RANDOM_LVL, sizeof(Sint32), 1, fp);
 					fwrite(&myStats->RANDOM_GOLD, sizeof(Sint32), 1, fp);
 
-					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), 96, fp);
-					fwrite(&myStats->EDITOR_FLAGS, sizeof(Sint32), 32, fp);
+					fwrite(&myStats->EDITOR_ITEMS, sizeof(Sint32), ITEM_SLOT_NUM, fp);
+					fwrite(&myStats->MISC_FLAGS, sizeof(Sint32), 32, fp);
 					break;
 				case 2:
 					// chests
@@ -642,6 +683,15 @@ int saveMap(char* filename2)
 					fwrite(&entity->skill[12], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[13], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[15], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[16], sizeof(Sint32), 1, fp);
+					break;
+				case 4:
+					fwrite(&entity->skill[0], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[1], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[2], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[3], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[4], sizeof(Sint32), 1, fp);
+					fwrite(&entity->skill[5], sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

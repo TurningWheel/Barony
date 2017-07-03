@@ -559,7 +559,7 @@ void actBoulderTrap(Entity* my)
 	if ( BOULDERTRAP_AMBIENCE <= 0 )
 	{
 		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
-		playSoundEntity( my, 149, 64 );
+		playSoundEntity(my, 149, 64);
 	}
 
 	if ( !my->skill[28] )
@@ -568,7 +568,7 @@ void actBoulderTrap(Entity* my)
 	}
 
 	// received on signal
-	if ( my->skill[28] == 2)
+	if ( my->skill[28] == 2 )
 	{
 		if ( !BOULDERTRAP_FIRED )
 		{
@@ -613,7 +613,7 @@ void actBoulderTrap(Entity* my)
 						entity->yaw = c * (PI / 2.f);
 						entity->sizex = 7;
 						entity->sizey = 7;
-						if ( checkObstacle( entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL ) )
+						if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
 						{
 							entity->yaw += PI * (rand() % 2) - PI / 2;
 							if ( entity->yaw >= PI * 2 )
@@ -630,6 +630,254 @@ void actBoulderTrap(Entity* my)
 						entity->flags[PASSABLE] = true;
 					}
 				}
+			}
+		}
+	}
+}
+
+void actBoulderTrapEast(Entity* my)
+{
+	int x, y;
+	int c;
+
+	BOULDERTRAP_AMBIENCE--;
+	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	{
+		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !BOULDERTRAP_FIRED )
+		{
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			BOULDERTRAP_FIRED = 1;
+
+			c = 0; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+		}
+	}
+}
+
+void actBoulderTrapSouth(Entity* my)
+{
+	int x, y;
+	int c;
+
+	BOULDERTRAP_AMBIENCE--;
+	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	{
+		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !BOULDERTRAP_FIRED )
+		{
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			BOULDERTRAP_FIRED = 1;
+
+			c = 1; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+		}
+	}
+}
+
+void actBoulderTrapWest(Entity* my)
+{
+	int x, y;
+	int c;
+
+	BOULDERTRAP_AMBIENCE--;
+	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	{
+		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !BOULDERTRAP_FIRED )
+		{
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			BOULDERTRAP_FIRED = 1;
+
+			c = 2; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
+			}
+		}
+	}
+}
+
+void actBoulderTrapNorth(Entity* my)
+{
+	int x, y;
+	int c;
+
+	BOULDERTRAP_AMBIENCE--;
+	if ( BOULDERTRAP_AMBIENCE <= 0 )
+	{
+		BOULDERTRAP_AMBIENCE = TICKS_PER_SECOND * 30;
+		playSoundEntity(my, 149, 64);
+	}
+
+	if ( !my->skill[28] )
+	{
+		return;
+	}
+
+	// received on signal
+	if ( my->skill[28] == 2 )
+	{
+		if ( !BOULDERTRAP_FIRED )
+		{
+			playSoundEntity(my, 150, 128);
+			for ( c = 0; c < MAXPLAYERS; c++ )
+			{
+				playSoundPlayer(c, 150, 64);
+			}
+			BOULDERTRAP_FIRED = 1;
+
+			c = 3; // direction
+			x = ((int)(my->x)) >> 4;
+			y = ((int)(my->y)) >> 4;
+			if ( !map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
+			{
+				Entity* entity = newEntity(245, 1, map.entities); // boulder
+				entity->parent = my->getUID();
+				entity->x = (x << 4) + 8;
+				entity->y = (y << 4) + 8;
+				entity->z = -64;
+				entity->yaw = c * (PI / 2.f);
+				entity->sizex = 7;
+				entity->sizey = 7;
+				if ( checkObstacle(entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL) )
+				{
+					entity->yaw += PI * (rand() % 2) - PI / 2;
+					if ( entity->yaw >= PI * 2 )
+					{
+						entity->yaw -= PI * 2;
+					}
+					else if ( entity->yaw < 0 )
+					{
+						entity->yaw += PI * 2;
+					}
+				}
+				entity->behavior = &actBoulder;
+				entity->flags[UPDATENEEDED] = true;
+				entity->flags[PASSABLE] = true;
 			}
 		}
 	}

@@ -174,9 +174,20 @@ void actItem(Entity* my)
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
-		ITEM_VELZ += 0.04;
-		my->z += ITEM_VELZ;
-		my->roll += 0.04;
+		// chakram and shuriken lie flat, needs to use sprites for client
+		if ( my->sprite == 567 || my->sprite == 569 )
+		{
+			// todo: adjust falling rates for thrown items if need be
+			ITEM_VELZ += 0.04;
+			my->z += ITEM_VELZ;
+			my->roll += 0.08;
+		}
+		else
+		{
+			ITEM_VELZ += 0.04;
+			my->z += ITEM_VELZ;
+			my->roll += 0.04;
+		}
 	}
 	else
 	{
@@ -188,8 +199,25 @@ void actItem(Entity* my)
 				ITEM_VELZ *= -.7;
 				if ( ITEM_VELZ > -.35 )
 				{
-					my->roll = PI / 2.0;
-					my->z = 7.5 - models[my->sprite]->sizey * .25;
+					// chakram and shuriken lie flat, needs to use sprites for client
+					if ( my->sprite == 567 || my->sprite == 569 )
+					{
+						my->roll = PI;
+						my->pitch = 0;
+						if ( my->sprite == 569 )
+						{
+							my->z = 8.5 - models[my->sprite]->sizey * .25;
+						}
+						else
+						{
+							my->z = 8.75 - models[my->sprite]->sizey * .25;
+						}
+					}
+					else
+					{
+						my->roll = PI / 2.0;
+						my->z = 7.5 - models[my->sprite]->sizey * .25;
+					}
 					ITEM_VELZ = 0;
 				}
 				else

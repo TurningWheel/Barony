@@ -197,6 +197,39 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_removecurse.duration = 0;
 	strcpy(spellElement_removecurse.name, language[434]);
 
+	spellElementConstructor(&spellElement_summon);
+	spellElement_summon.mana = 20;
+	spellElement_summon.base_mana = 20;
+	spellElement_summon.overload_multiplier = 1;
+	spellElement_summon.damage = 0;
+	spellElement_summon.duration = 0;
+	strcpy(spellElement_summon.name, language[2390]);
+
+	spellElementConstructor(&spellElement_stoneblood);
+	spellElement_stoneblood.mana = 20;
+	spellElement_stoneblood.base_mana = 20;
+	spellElement_stoneblood.overload_multiplier = 1;
+	spellElement_stoneblood.damage = 0;
+	spellElement_stoneblood.duration = TICKS_PER_SECOND * SPELLELEMENT_STONEBLOOD_BASE_DURATION;
+	strcpy(spellElement_stoneblood.name, language[2391]);
+
+	spellElementConstructor(&spellElement_bleed);
+	spellElement_bleed.mana = 10;
+	spellElement_bleed.base_mana = 10;
+	spellElement_bleed.overload_multiplier = 1;
+	spellElement_bleed.damage = 25;
+	spellElement_bleed.duration = TICKS_PER_SECOND * SPELLELEMENT_BLEED_BASE_DURATION; //TODO: Decide on something.;
+	strcpy(spellElement_bleed.name, language[2392]);
+
+	spellElementConstructor(&spellElement_missile_trio);
+	spellElement_missile_trio.mana = 1;
+	spellElement_missile_trio.base_mana = 1;
+	spellElement_missile_trio.overload_multiplier = 1;
+	spellElement_missile_trio.damage = 0;
+	spellElement_missile_trio.duration = 25; //1 second.
+	strcpy(spellElement_missile_trio.name, language[2426]);
+
+
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
 	spell_forcebolt.ID = SPELL_FORCEBOLT;
@@ -563,5 +596,60 @@ void setupSpells()   ///TODO: Verify this function.
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
+	element->node = node;
+
+	spellConstructor(&spell_stoneblood);
+	strcpy(spell_stoneblood.name, language[2391]);
+	spell_stoneblood.ID = SPELL_STONEBLOOD;
+	spell_stoneblood.difficulty = 75;
+	node = list_AddNodeLast(&spell_stoneblood.elements);
+	node->element = copySpellElement(&spellElement_missile_trio);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_stoneblood);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 5; //Set the spell's mana to 15 so that it lasts ~30 seconds.
+
+	spellConstructor(&spell_bleed);
+	strcpy(spell_bleed.name, language[2392]);
+	spell_bleed.ID = SPELL_BLEED;
+	spell_bleed.difficulty = 75;
+	node = list_AddNodeLast(&spell_bleed.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_bleed);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+	element->mana = 15; //Set the spell's mana to 15 so that it lasts ~30 seconds.
+
+	spellConstructor(&spell_summon);
+	strcpy(spell_summon.name, language[2390]);
+	spell_summon.ID = SPELL_SUMMON;
+	spell_summon.difficulty = 75;
+	spell_summon.elements.first = NULL;
+	spell_summon.elements.last = NULL;
+	node = list_AddNodeLast(&spell_summon.elements);
+	node->element = copySpellElement(&spellElement_summon);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
 	element->node = node;
 }

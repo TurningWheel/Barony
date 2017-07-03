@@ -142,6 +142,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	ranbehavior = false;
 	parent = 0;
 	path = NULL;
+
+	if ( checkSpriteType(this->sprite) > 1 )
+	{
+		setSpriteAttributes(this, nullptr, nullptr);
+	}
 }
 
 void Entity::setUID(Uint32 new_uid) {
@@ -775,6 +780,16 @@ void Entity::increaseSkill(int skill)
 		}
 	}
 	myStats->EXP += 2;
+	
+	int statBonusSkill = getStatForProficiency(skill);
+
+	if ( statBonusSkill >= STAT_STR )
+	{
+		// stat has chance for bonus point if the relevant proficiency has been trained.
+		// write the last proficiency that effected the skill.
+		myStats->PLAYER_LVL_STAT_BONUS[statBonusSkill] = skill;
+	}
+	
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		// update SKILL
@@ -1483,7 +1498,23 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 
 		// now pick three attributes to increase
+		// changed rolls to be unique for each possibility.
 		increasestat[0] = rand() % 6;
+		int r = rand() % 6;
+		while ( r == increasestat[0] ) {
+			r = rand() % 6;
+		}
+		increasestat[1] = r;
+		r = rand() % 6;
+		while ( r == increasestat[0] || r == increasestat[1] ) {
+			r = rand() % 6;
+		}
+		increasestat[2] = r;
+
+		// debug
+		// messagePlayer(0, "Stats rolled: %d %d %d", increasestat[0], increasestat[1], increasestat[2]);
+
+		/*increasestat[0] = rand() % 6;
 		increasestat[1] = rand() % 5;
 		increasestat[2] = rand() % 4;
 		if ( increasestat[1] >= increasestat[0] )
@@ -1497,29 +1528,104 @@ void Entity::handleEffects(Stat* myStats)
 		if ( increasestat[2] >= increasestat[1] )
 		{
 			increasestat[2]++;
+		}*/
+
+		for ( i = 0; i < 6; i++ )
+		{
+			myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
 		}
+
+		bool rolledBonusStat = false;
+		int statIconTicks = 250;
+
 		for ( i = 0; i < 3; i++ )
 		{
 			messagePlayerColor(player, color, language[623 + increasestat[i]]);
 			switch ( increasestat[i] )
 			{
-				case 0: // STR
+				case STAT_STR: // STR
 					myStats->STR++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat)
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->STR++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 1: // DEX
+				case STAT_DEX: // DEX
 					myStats->DEX++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->DEX++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 2: // CON
+				case STAT_CON: // CON
 					myStats->CON++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->CON++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 3: // INT
+				case STAT_INT: // INT
 					myStats->INT++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->INT++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 4: // PER
+				case STAT_PER: // PER
 					myStats->PER++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->PER++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
-				case 5: // CHR
+				case STAT_CHR: // CHR
 					myStats->CHR++;
+					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+					{
+						if ( rand() % 5 == 0 )
+						{
+							myStats->CHR++;
+							rolledBonusStat = true;
+							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+						}
+					}
 					break;
 			}
 		}
@@ -1545,6 +1651,11 @@ void Entity::handleEffects(Stat* myStats)
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 21;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+
+		for ( i = 0; i < NUMSTATS; i++ )
+		{
+			myStats->PLAYER_LVL_STAT_BONUS[i] = -1;
 		}
 	}
 
@@ -2258,14 +2369,16 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// unparalyze certain boss characters
-	if ( myStats->EFFECTS[EFF_PARALYZED] && myStats->type >= LICH )
+	if ( myStats->EFFECTS[EFF_PARALYZED] && ( (myStats->type >= LICH && myStats->type < KOBOLD) 
+		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		myStats->EFFECTS[EFF_PARALYZED] = false;
 		myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 0;
 	}
 
 	// wake up
-	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || myStats->type >= LICH) )
+	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || (myStats->type >= LICH && myStats->type < KOBOLD) 
+		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		messagePlayer(player, language[658]);
 		myStats->EFFECTS[EFF_ASLEEP] = false;
@@ -2876,7 +2989,7 @@ void getItemsOnTile(int x, int y, list_t** list)
 
 -------------------------------------------------------------------------------*/
 
-void Entity::attack(int pose, int charge)
+void Entity::attack(int pose, int charge, Entity* target)
 {
 	Stat* hitstats = NULL;
 	Stat* myStats;
@@ -2923,6 +3036,15 @@ void Entity::attack(int pose, int charge)
 			if (myStats->weapon != nullptr)
 			{
 				monster_attack = pose;
+			}
+			else if ( pose > 3 && pose < 10)
+			{
+				// special monster attacks
+				monster_attack = pose;
+				monster_attacktime = 0;
+				//createParticle2(this);
+				createParticleDot(this);
+				return;
 			}
 			else
 			{
@@ -2982,6 +3104,15 @@ void Entity::attack(int pose, int charge)
 							break;
 						case MAGICSTAFF_SLEEP:
 							castSpell(uid, &spell_sleep, true, false);
+							break;
+						case MAGICSTAFF_SUMMON:
+							castSpell(uid, &spell_summon, true, false);
+							break;
+						case MAGICSTAFF_STONEBLOOD:
+							castSpell(uid, &spell_stoneblood, true, false);
+							break;
+						case MAGICSTAFF_BLEED:
+							castSpell(uid, &spell_bleed, true, false);
 							break;
 						default:
 							messagePlayer(player, "This is my wish stick! Wishy wishy wish!");
@@ -3051,6 +3182,15 @@ void Entity::attack(int pose, int charge)
 							break;
 						case SPELLBOOK_DIG:
 							castSpell(uid, &spell_dig, true, false);
+							break;
+						case SPELLBOOK_STONEBLOOD:
+							castSpell(uid, &spell_stoneblood, true, false);
+							break;
+						case SPELLBOOK_BLEED:
+							castSpell(uid, &spell_bleed, true, false);
+							break;
+						case SPELLBOOK_SUMMON:
+							castSpell(uid, &spell_summon, true, false);
 							break;
 						default:
 							break;
@@ -3173,9 +3313,31 @@ void Entity::attack(int pose, int charge)
 				entity->skill[13] = 1;
 				entity->skill[14] = myStats->weapon->appearance;
 				entity->skill[15] = myStats->weapon->identified;
-				entity->vel_x = 5 * cos(players[player]->entity->yaw);
-				entity->vel_y = 5 * sin(players[player]->entity->yaw);
-				entity->vel_z = -.5;
+
+				if ( itemCategory(myStats->weapon) == THROWN )
+				{
+					// thrown items have slightly faster velocities
+					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
+					{
+						// todo: change velocity of chakram/shuriken?
+						entity->vel_x = 6 * cos(players[player]->entity->yaw);
+						entity->vel_y = 6 * sin(players[player]->entity->yaw);
+						entity->vel_z = -.3;
+					}
+					else
+					{
+						entity->vel_x = 6 * cos(players[player]->entity->yaw);
+						entity->vel_y = 6 * sin(players[player]->entity->yaw);
+						entity->vel_z = -.3;
+					}
+				}
+				else
+				{
+					entity->vel_x = 5 * cos(players[player]->entity->yaw);
+					entity->vel_y = 5 * sin(players[player]->entity->yaw);
+					entity->vel_z = -.5;
+
+				}
 
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )
@@ -3195,8 +3357,16 @@ void Entity::attack(int pose, int charge)
 		}
 
 		// normal attacks
-		playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
-		dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+		if ( target == nullptr )
+		{
+			playSoundEntity(this, 23 + rand() % 5, 128); // whoosh noise
+			dist = lineTrace(this, x, y, yaw, STRIKERANGE, 0, false);
+		}
+		else
+		{
+			hit.entity = target;
+		}
+		
 		if ( hit.entity != NULL )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -4866,30 +5036,90 @@ void createMonsterEquipment(Stat* stats)
 	int itemAppearance = rand();
 	int itemCount;
 	int chance = 1;
+	int category = 0;
 	bool itemIdentified;
 	if ( stats != NULL )
 	{
 		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
 		{
-			itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * 6] - 2);
+			category = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + ITEM_SLOT_CATEGORY];
+			if ( category > 0 && stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
+			{
+				if ( category > 0 && category <= 13 )
+				{
+					itemId = itemCurve(static_cast<Category>(category - 1));
+				}
+				else
+				{
+					int randType = 0;
+					if ( category == 14 )
+					{
+						// equipment
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(WEAPON));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(ARMOR));
+						}
+					}
+					else if ( category == 15 )
+					{
+						// jewelry
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(AMULET));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(RING));
+						}
+					}
+					else if ( category == 16 )
+					{
+						// magical
+						randType = rand() % 3;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(SCROLL));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+						}
+					}
+				}
+			}
+			else
+			{
+				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] - 2);
+			}
+
 			if ( itemId >= 0 )
 			{
-				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * 6 + 1]);
+				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 1]);
 				if ( itemStatus == 0 )
 				{
 					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
 				}
-				itemBless = stats->EDITOR_ITEMS[itemIndex * 6 + 2];
+				itemBless = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 2];
 				if ( itemBless == 10 )
 				{
 					itemBless = -2 + rand() % 5;
 				}
-				itemCount = stats->EDITOR_ITEMS[itemIndex * 6 + 3];
-				if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 1 )
+				itemCount = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 3];
+				if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 1 )
 				{
 					itemIdentified = false;
 				}
-				else if ( stats->EDITOR_ITEMS[itemIndex * 6 + 4] == 2 )
+				else if ( stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 4] == 2 )
 				{
 					itemIdentified = true;
 				}
@@ -4898,7 +5128,7 @@ void createMonsterEquipment(Stat* stats)
 					itemIdentified = rand() % 2;
 				}
 				itemAppearance = rand();
-				chance = stats->EDITOR_ITEMS[itemIndex * 6 + 5];
+				chance = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + 5];
 
 				if ( rand() % 100 < chance )
 				{
@@ -4947,9 +5177,9 @@ int countCustomItems(Stat* stats)
 	int x = 0;
 	int customItemSlotCount = 0;
 
-	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + ITEM_SLOT_NUMPROPERTIES )
 	{
-		if ( stats->EDITOR_ITEMS[x] != 1 )
+		if ( stats->EDITOR_ITEMS[x] != 1 || (stats->EDITOR_ITEMS[x] == 1 && stats->EDITOR_ITEMS[x + ITEM_SLOT_CATEGORY] != 0) )
 		{
 			customItemSlotCount++; //found a custom item in inventory
 		}
@@ -4963,9 +5193,9 @@ int countDefaultItems(Stat* stats)
 	int x = 0;
 	int defaultItemSlotCount = 0;
 
-	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + 6 )
+	for ( x = ITEM_SLOT_INV_1; x <= ITEM_SLOT_INV_6; x = x + ITEM_SLOT_NUMPROPERTIES )
 	{
-		if ( stats->EDITOR_ITEMS[x] == 1 )
+		if ( stats->EDITOR_ITEMS[x] == 1 && stats->EDITOR_ITEMS[x + ITEM_SLOT_CATEGORY] == 0 )
 		{
 			defaultItemSlotCount++; //found a default item in inventory
 		}
@@ -5274,6 +5504,14 @@ bool isLevitating(Stat* mystats)
 	return false;
 }
 
+/*-------------------------------------------------------------------------------
+
+getWeaponSkill
+
+returns the proficiency for the weapon equipped.
+
+-------------------------------------------------------------------------------*/
+
 int getWeaponSkill(Item* weapon)
 {
 	if ( weapon == NULL )
@@ -5298,5 +5536,53 @@ int getWeaponSkill(Item* weapon)
 		return PRO_AXE;
 	}
 	return -1;
+}
+
+/*-------------------------------------------------------------------------------
+
+getStatForProficiency
+
+returns the stat associated with the given proficiency.
+
+-------------------------------------------------------------------------------*/
+
+int getStatForProficiency(int skill)
+{
+	int statForProficiency = -1;
+
+	switch ( skill )
+	{
+		case PRO_SWORD:			// base attribute: str
+		case PRO_MACE:			// base attribute: str
+		case PRO_AXE:			// base attribute: str
+		case PRO_POLEARM:		// base attribute: str
+			statForProficiency = STAT_STR;
+			break;
+		case PRO_LOCKPICKING:	// base attribute: dex
+		case PRO_STEALTH:		// base attribute: dex
+		case PRO_RANGED:        // base attribute: dex
+			statForProficiency = STAT_DEX;
+			break;
+		case PRO_SWIMMING:      // base attribute: con
+		case PRO_SHIELD:		// base attribute: con
+			statForProficiency = STAT_CON;
+			break;
+		case PRO_SPELLCASTING:  // base attribute: int
+		case PRO_MAGIC:         // base attribute: int
+			statForProficiency = STAT_INT;
+			break;
+		case PRO_APPRAISAL:		// base attribute: per
+			statForProficiency = STAT_PER;
+			break;
+		case PRO_TRADING:       // base attribute: chr
+		case PRO_LEADERSHIP:    // base attribute: chr
+			statForProficiency = STAT_CHR;
+			break;
+		default:
+			statForProficiency = -1;
+			break;
+	}
+
+	return statForProficiency;
 }
 

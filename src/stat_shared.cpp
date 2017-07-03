@@ -74,7 +74,7 @@ Stat::Stat(Sint32 sprite)
 		}
 	}
 
-	for ( c = 0; c < 96; c = c + 6 )
+	for ( c = 0; c < ITEM_SLOT_NUM; c = c + ITEM_SLOT_NUMPROPERTIES )
 	{
 		this->EDITOR_ITEMS[c] = 0;
 		this->EDITOR_ITEMS[c + 1] = 0;
@@ -82,10 +82,21 @@ Stat::Stat(Sint32 sprite)
 		this->EDITOR_ITEMS[c + 3] = 1;
 		this->EDITOR_ITEMS[c + 4] = 1;
 		this->EDITOR_ITEMS[c + 5] = 100;
+		this->EDITOR_ITEMS[c + 6] = 0;
 	}
-	for ( c = 0; c < 16; c++ )
+	for ( c = 0; c < 32; c++ )
 	{
-		EDITOR_FLAGS[c] = 0;
+		this->MISC_FLAGS[c] = 0;
+	}
+
+	for ( c = 0; c < NUMSTATS; c++ )
+	{
+		this->PLAYER_LVL_STAT_BONUS[c] = -1;
+	}
+
+	for ( c = 0; c < NUMSTATS * 2; c++ )
+	{
+		this->PLAYER_LVL_STAT_TIMER[c] = 0;
 	}
 
 	this->leader_uid = 0;
@@ -415,23 +426,31 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 			break;
-		case 83:
+		case 84:
 		case (1000 + KOBOLD):
 			stats->type = KOBOLD;
-			break;
-		case 84:
-		case (1000 + SCARAB):
-			stats->type = SCARAB;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 85:
-		case (1000 + CRYSTALGOLEM):
-			stats->type = CRYSTALGOLEM;
+		case (1000 + SCARAB):
+			stats->type = SCARAB;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 86:
-		case (1000 + INCUBUS):
-			stats->type = INCUBUS;
+		case (1000 + CRYSTALGOLEM):
+			stats->type = CRYSTALGOLEM;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 87:
+		case (1000 + INCUBUS):
+			stats->type = INCUBUS;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			break;
+		case 88:
 		case (1000 + VAMPIRE):
 			stats->type = VAMPIRE;
 			stats->sex = MALE;
@@ -487,35 +506,49 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_RANGED] = 40;
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 			break;
-		case 88:
+		case 89:
 		case (1000 + SHADOW):
 			stats->type = SHADOW;
-			break;
-		case 89:
-		case (1000 + COCKATRICE):
-			stats->type = COCKATRICE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 90:
-		case (1000 + INSECTOID):
-			stats->type = INSECTOID;
+		case (1000 + COCKATRICE):
+			stats->type = COCKATRICE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 91:
-		case (1000 + GOATMAN):
-			stats->type = GOATMAN;
+		case (1000 + INSECTOID):
+			stats->type = INSECTOID;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 92:
-		case (1000 + AUTOMATON):
-			stats->type = AUTOMATON;
+		case (1000 + GOATMAN):
+			stats->type = GOATMAN;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 93:
-		case (1000 + LICH_ICE):
-			stats->type = LICH_ICE;
+		case (1000 + AUTOMATON):
+			stats->type = AUTOMATON;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 94:
-		case (1000 + LICH_FIRE):
-			stats->type = LICH_FIRE;
+		case (1000 + LICH_ICE):
+			stats->type = LICH_ICE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			break;
 		case 95:
+		case (1000 + LICH_FIRE):
+			stats->type = LICH_FIRE;
+			stats->RANDOM_MAXHP = stats->RANDOM_HP;
+			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			break;
+		case 83:
 		case (1000 + SKELETON):
 			stats->type = SKELETON;
 			stats->sex = static_cast<sex_t>(rand() % 2);

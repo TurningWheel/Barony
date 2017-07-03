@@ -39,7 +39,6 @@ int checkSpriteType(Sint32 sprite)
 	case 93:
 	case 94:
 	case 95:
-	case 96:
 	case 75:
 	case 76:
 	case 77:
@@ -50,7 +49,6 @@ int checkSpriteType(Sint32 sprite)
 	case 80:
 	case 81:
 	case 82:
-	
 		//monsters
 		return 1;
 		break;
@@ -62,6 +60,10 @@ int checkSpriteType(Sint32 sprite)
 		//items
 		return 3;
 		break;
+	case 97:
+		//summon trap
+		return 4;
+		break;
 	default:
 		return 0;
 		break;
@@ -70,7 +72,7 @@ int checkSpriteType(Sint32 sprite)
 	return 0;
 }
 
-char itemNameStrings[198][32] =
+char itemNameStrings[NUM_ITEM_STRINGS][32] =
 {
 	"NULL",
 	"random_item",
@@ -269,11 +271,19 @@ char itemNameStrings[198][32] =
 	"iron_dagger",
 	"steel_chakram",
 	"crystal_shuriken",
+	"cloak_black",
+	"magicstaff_stoneblood",
+	"magicstaff_bleed",
+	"magicstaff_summon",
+	"tool_blindfold_focus",
+	"tool_blindfold_telepathy",
+	"spellbook_summon",
+	"spellbook_stoneblood",
+	"spellbook_bleed",
 	""
 };
 
-
-char itemStringsByType[10][63][32] =
+char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 {
 	{
 		"NULL",
@@ -325,6 +335,9 @@ char itemStringsByType[10][63][32] =
 		"magicstaff_fire",
 		"magicstaff_lightning",
 		"magicstaff_sleep",
+		"magicstaff_stoneblood",
+		"magicstaff_bleed",
+		"magicstaff_summon",
 		"spellbook_forcebolt",
 		"spellbook_magicmissile",
 		"spellbook_cold",
@@ -345,6 +358,9 @@ char itemStringsByType[10][63][32] =
 		"spellbook_healing",
 		"spellbook_extrahealing",
 		"spellbook_cureailment",
+		"spellbook_summon",
+		"spellbook_stoneblood",
+		"spellbook_bleed",
 		"spellbook_dig",
 		"tool_pickaxe",
 		"artifact_sword",
@@ -428,6 +444,7 @@ char itemStringsByType[10][63][32] =
 		"NULL",
 		"random_item",
 		"cloak",
+		"cloak_black",
 		"cloak_magicreflection",
 		"cloak_invisibility",
 		"cloak_protection",
@@ -439,6 +456,8 @@ char itemStringsByType[10][63][32] =
 		"random_item",
 		"tool_blindfold",
 		"tool_glasses",
+		"tool_blindfold_focus",
+		"tool_blindfold_telepathy",
 		""
 	},
 	{
@@ -460,7 +479,7 @@ char itemStringsByType[10][63][32] =
 	
 };
 
-char spriteEditorNameStrings[96][28] = 
+char spriteEditorNameStrings[106][64] = 
 {
 	"NULL",	
 	"PLAYER START",
@@ -545,6 +564,7 @@ char spriteEditorNameStrings[96][28] =
 	"SUCCUBUS",
 	"RAT",
 	"GHOUL",
+	"SKELETON",
 	"KOBOLD",
 	"SCARAB",
 	"CRYSTALGOLEM",
@@ -557,10 +577,56 @@ char spriteEditorNameStrings[96][28] =
 	"AUTOMATON",
 	"LICH ICE",
 	"LICH FIRE",
-	"SKELETON"
+	"NOT USED",
+	"SUMMON TRAP",
+	"CRYSTAL SHARD (West Wall)",
+	"CRYSTAL SHARD (North Wall)",
+	"CRYSTAL SHARD (East Wall)",
+	"CRYSTAL SHARD (South Wall)",
+	"BOULDER TRAP SINGLE (Roll West)",
+	"BOULDER TRAP SINGLE (Roll South)",
+	"BOULDER TRAP SINGLE (Roll East)",
+	"BOULDER TRAP SINGLE (Roll North)"
 };
 
-char tileEditorNameStrings[201][44] =
+char monsterEditorNameStrings[NUMMONSTERS][13] =
+{
+	"nothing",
+	"human",
+	"rat",
+	"goblin",
+	"slime",
+	"troll",
+	"invalid",
+	"spider",
+	"ghoul",
+	"skeleton",
+	"scorpion",
+	"imp",
+	"invalid",
+	"gnome",
+	"demon",
+	"succubus",
+	"invalid",
+	"lich",
+	"minotaur",
+	"devil",
+	"shopkeeper",
+	"kobold",
+	"scarab",
+	"crystalgolem",
+	"incubus",
+	"vampire",
+	"shadow",
+	"cockatrice",
+	"insectoid",
+	"goatman",
+	"automaton",
+	"lich_ice",
+	"lich_fire"
+};
+
+char tileEditorNameStrings[202][44] =
 {
 	"backdrop.png",
 	"bback.png",
@@ -762,7 +828,8 @@ char tileEditorNameStrings[201][44] =
 	"Crystal Wall Column Left.png",
 	"Crystal Wall Column Right.png",
 	"Bronze Columns.png",
-	"Bronze Columns Alcove.png"
+	"Bronze Columns Alcove.png",
+	"Submap.png"
 };
 
 int canWearEquip(Entity* entity, int category)
@@ -933,6 +1000,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[12] = entityToCopy->skill[12];
 			entityNew->skill[13] = entityToCopy->skill[13];
 			entityNew->skill[15] = entityToCopy->skill[15];
+			entityNew->skill[16] = entityToCopy->skill[16];
 		}
 		else
 		{
@@ -941,7 +1009,32 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[11] = 0;
 			entityNew->skill[12] = 10;
 			entityNew->skill[13] = 1;
-			entityNew->skill[15] = 1;
+			entityNew->skill[15] = 0;
+			entityNew->skill[16] = 0;
+		}
+	}
+	// summoning trap.
+	else if ( spriteType == 4 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->skill[0] = entityToCopy->skill[0];
+			entityNew->skill[1] = entityToCopy->skill[1];
+			entityNew->skill[2] = entityToCopy->skill[2];
+			entityNew->skill[3] = entityToCopy->skill[3];
+			entityNew->skill[4] = entityToCopy->skill[4];
+			entityNew->skill[5] = entityToCopy->skill[5];
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->skill[0] = 0;
+			entityNew->skill[1] = 1;
+			entityNew->skill[2] = 1;
+			entityNew->skill[3] = 1;
+			entityNew->skill[4] = 0;
+			entityNew->skill[5] = 0;
 		}
 	}
 

@@ -787,6 +787,9 @@ void deinitGame()
 	list_FreeAll(&spell_extrahealing.elements);
 	list_FreeAll(&spell_cureailment.elements);
 	list_FreeAll(&spell_dig.elements);
+	list_FreeAll(&spell_summon.elements);
+	list_FreeAll(&spell_stoneblood.elements);
+	list_FreeAll(&spell_bleed.elements);
 
 	// pathmaps
 	if ( pathMapGrounded )

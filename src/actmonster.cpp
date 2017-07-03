@@ -2063,7 +2063,7 @@ void actMonster(Entity* my)
 							{
 								light = TOUCHRANGE;
 							}
-							if ( myStats->type >= LICH )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
 								light = 1000;
 							}
@@ -2106,7 +2106,7 @@ void actMonster(Entity* my)
 							}
 							if ( visiontest )   // vision cone
 							{
-								if ( myStats->type >= LICH )
+								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 								{
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
@@ -2191,7 +2191,7 @@ void actMonster(Entity* my)
 			// minotaurs and liches chase players relentlessly.
 			if (myReflex)
 			{
-				if (myStats->type == MINOTAUR || myStats->type == LICH || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+				if (myStats->type == MINOTAUR || myStats->type == LICH || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 				{
 					double distToPlayer = 0;
 					int c, playerToChase = -1;
@@ -2530,7 +2530,7 @@ void actMonster(Entity* my)
 				{
 					light = TOUCHRANGE;
 				}
-				if ( myStats->type >= LICH )
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 				{
 					light = 1000;
 				}
@@ -2766,88 +2766,7 @@ timeToGoAgain:
 								}
 							}
 
-							if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
-							{
-								MONSTER_HITTIME++;
-								int bow = 1;
-								if ( hasrangedweapon )
-									if ( myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
-									{
-										bow = 2;
-									}
-								if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
-								{
-									if ( myStats->type == LICH )
-									{
-										MONSTER_SPECIAL++;
-										if ( MONSTER_SPECIAL >= 5 )
-										{
-											MONSTER_SPECIAL = 90;
-											MONSTER_TARGET = 0;
-											MONSTER_TARGETX = my->x - 50 + rand() % 100;
-											MONSTER_TARGETY = my->y - 50 + rand() % 100;
-											MONSTER_STATE = 2; // path state
-										}
-									}
-									MONSTER_HITTIME = 0;
-									int tracedist;
-									if (hasrangedweapon)
-									{
-										tracedist = 160;
-									}
-									else
-									{
-										tracedist = STRIKERANGE;
-									}
-									double newTangent = atan2(entity->y - my->y, entity->x - my->x);
-									lineTrace(my, my->x, my->y, newTangent, tracedist, 0, false);
-									if (hit.entity != nullptr)
-									{
-										hitstats = hit.entity->getStats();
-										if (hit.entity->behavior == &actMonster && !hasrangedweapon)
-										{
-											// alert the monster!
-											if (hit.entity->skill[0] != 1)
-											{
-												//hit.entity->skill[0]=0;
-												//hit.entity->skill[4]=0;
-												//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
-												hit.entity->skill[0] = 2;
-												hit.entity->skill[1] = my->getUID();
-												hit.entity->fskill[2] = my->x;
-												hit.entity->fskill[3] = my->y;
-											}
-										}
-										if ( hit.entity->getStats() != NULL )
-										{
-											int pose = 0;
-											if ( myStats->weapon )
-											{
-												if ( itemCategory(myStats->weapon) == MAGICSTAFF )
-												{
-													pose = 3;  // jab
-												}
-												else if ( itemCategory(myStats->weapon) == SPELLBOOK )
-												{
-													pose = 1;  // vertical swing
-												}
-												else if ( hasrangedweapon )
-												{
-													pose = 0;
-												}
-												else
-												{
-													pose = rand() % 3 + 1;
-												}
-											}
-											double oYaw = my->yaw;
-											my->yaw = newTangent;
-											my->attack(pose, 1); // attacku! D:<
-											my->yaw = oYaw;
-										}
-									}
-								}
-							}
+							handleMonsterAttack(my, myStats, entity, dist, hasrangedweapon);
 
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
@@ -3064,7 +2983,7 @@ timeToGoAgain:
 							{
 								light = TOUCHRANGE;
 							}
-							if ( myStats->type >= LICH )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
 								light = 1000;
 							}
@@ -4368,4 +4287,382 @@ timeToGoAgain:
 			vampireMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
 	}
+}
+
+void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon)
+{
+	node_t* node = nullptr;
+	Entity* entity = nullptr;
+	Stat* hitstats = nullptr;
+
+	// check the range to the target, depending on ranged weapon or melee.
+	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
+	{
+		// increment the hit time, don't attack until this reaches the hitrate of the weapon
+		MONSTER_HITTIME++;
+		int bow = 1;
+		if ( hasrangedweapon )
+		{
+			if ( myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
+			{
+				bow = 2;
+			}
+		}
+		if ( myStats->type == CRYSTALGOLEM )
+		{
+			bow = 1;
+		}
+
+		// check if ready to attack
+		if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
+		{
+			if ( myStats->type == LICH )
+			{
+				MONSTER_SPECIAL++;
+				if ( MONSTER_SPECIAL >= 5 )
+				{
+					MONSTER_SPECIAL = 90;
+					MONSTER_TARGET = 0;
+					MONSTER_TARGETX = my->x - 50 + rand() % 100;
+					MONSTER_TARGETY = my->y - 50 + rand() % 100;
+					MONSTER_STATE = 2; // path state
+				}
+			}
+
+			// reset the hit timer
+			MONSTER_HITTIME = 0;
+			int tracedist;
+			if ( hasrangedweapon )
+			{
+				tracedist = 160;
+			}
+			else
+			{
+				tracedist = STRIKERANGE;
+			}
+
+			// check again for the target in attack range. return the result into hit.entity.
+			double newTangent = atan2(target->y - my->y, target->x - my->x);
+			lineTrace(my, my->x, my->y, newTangent, tracedist, 0, false);
+			if ( hit.entity != nullptr )
+			{
+				// found the target in range
+				hitstats = hit.entity->getStats();
+				if ( hit.entity->behavior == &actMonster && !hasrangedweapon )
+				{
+					// alert the monster!
+					if ( hit.entity->skill[0] != 1 )
+					{
+						//hit.entity->skill[0]=0;
+						//hit.entity->skill[4]=0;
+						//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
+						hit.entity->skill[0] = 2;
+						hit.entity->skill[1] = my->getUID();
+						hit.entity->fskill[2] = my->x;
+						hit.entity->fskill[3] = my->y;
+					}
+				}
+				if ( hit.entity->getStats() != NULL )
+				{
+					// prepare attack, set the animation of the attack based on the current weapon.
+					int pose = 0;
+					if ( myStats->weapon )
+					{
+						if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+						{
+							pose = 3;  // jab
+						}
+						else if ( itemCategory(myStats->weapon) == SPELLBOOK )
+						{
+							pose = 1;  // vertical swing
+						}
+						else if ( hasrangedweapon )
+						{
+							pose = 0;
+						}
+						else
+						{
+							pose = rand() % 3 + 1;
+						}
+					}
+
+					if ( myStats->type == CRYSTALGOLEM )
+					{
+						pose = 5;
+					}
+					else if ( myStats->type == CRYSTALGOLEM && rand() % 2 )
+					{
+						pose = GOLEM_SMASH;
+					}
+
+					// turn to the target, then reset my yaw.
+					double oYaw = my->yaw;
+					my->yaw = newTangent;
+					my->attack(pose, 1, nullptr); // attacku! D:<
+					my->yaw = oYaw;
+				}
+			}
+		}
+	}
+
+	//if ( myStats->type == CRYSTALGOLEM )
+	//{
+	//	Entity* tmpEntity = hit.entity;
+
+	//	// aoe
+	//	for ( node = map.entities->first; node != NULL; node = node->next )
+	//	{
+	//		entity = (Entity*)node->element;
+	//		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != tmpEntity && entity != my )
+	//		{
+	//			double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
+	//			int dir = my->yaw - aoeTangent;
+	//			while ( dir >= PI )
+	//			{
+	//				dir -= PI * 2;
+	//			}
+	//			while ( dir < -PI )
+	//			{
+	//				dir += PI * 2;
+	//			}
+	//			if ( dir >= -1 * PI / 2 && dir <= 1 * PI / 2 )
+	//			{
+	//				// 60 degree arc to check.
+	//				//lineTrace(my, my->x, my->y, aoeTangent, 64, 0, true);
+	//				double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+	//				//messagePlayer(0, "dist %f", dist);
+	//				if ( dist < 32 )
+	//				{
+	//					//messagePlayer(0, "hit enemy type %d", hit.entity->getStats()->type);
+	//					my->attack(pose, 1, entity); // attacku! D:<
+
+	//												 //Entity* entity2 = newEntity(-1, 1, map.entities);
+	//												 //entity2->flags[INVISIBLE] = false;
+	//												 //entity2->flags[UPDATENEEDED] = true;
+	//												 //entity2->x = entity->x - 4 + rand() % 8;
+	//												 //entity2->y = entity->y - 4 + rand() % 8;
+	//												 //entity2->z = 4;
+	//												 //entity2->sizex = 4;
+	//												 //entity2->sizey = 4;
+	//												 //entity2->yaw = rand() % 360 * PI / 180;
+	//												 //entity2->vel_x = (rand() % 20 - 10) / 10.0;
+	//												 //entity2->vel_y = (rand() % 20 - 10) / 10.0;
+	//												 //entity2->vel_z = -.75 - (rand() % 5) / 10.0;
+	//												 //entity2->flags[PASSABLE] = true;
+	//												 //entity2->behavior = &actItem;
+	//												 //entity2->flags[USERFLAG1] = true; // no collision: helps performance
+	//												 //entity2->skill[10] = GEM_ROCK;    // type
+	//												 //entity2->skill[11] = WORN;        // status
+	//												 //entity2->skill[12] = 0;           // beatitude
+	//												 //entity2->skill[13] = 1;           // count
+	//												 //entity2->skill[14] = 0;           // appearance
+	//												 //entity2->skill[15] = false;       // identified
+	//				}
+	//			}
+	//		}
+	//	}
+	//}
+
+
+
+
+
+
+
+	return;
+}
+
+int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir)
+{
+	if ( axis == 0 || MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_NONE || dir == ANIMATE_DIR_NONE )
+	{
+		// no animation required.
+		return -1;
+	}
+
+	if ( axis == ANIMATE_PITCH )
+	{
+		if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->pitch += setpointRate * dir;
+			while ( limb->pitch < 0 )
+			{
+				limb->pitch += 2 * PI;
+			}
+			while ( limb->pitch >= 2 * PI )
+			{
+				limb->pitch -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->pitch, setpointRate, setpoint) )
+			{
+				limb->pitch = setpoint;
+				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->pitch -= endpointRate * dir;
+			while ( limb->pitch < 0 )
+			{
+				limb->pitch += 2 * PI;
+			}
+			while ( limb->pitch >= 2 * PI )
+			{
+				limb->pitch -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->pitch, endpointRate, endpoint) )
+			{
+				limb->pitch = endpoint;
+				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}	
+	}
+	else if ( axis == ANIMATE_ROLL )
+	{
+		if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->roll += setpointRate * dir;
+			while ( limb->roll < 0 )
+			{
+				limb->roll += 2 * PI;
+			}
+			while ( limb->roll >= 2 * PI )
+			{
+				limb->roll -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->roll, setpointRate, setpoint) )
+			{
+				limb->roll = setpoint;
+				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->roll -= endpointRate * dir;
+			while ( limb->roll < 0 )
+			{
+				limb->roll += 2 * PI;
+			}
+			while ( limb->roll >= 2 * PI )
+			{
+				limb->roll -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->roll, endpointRate, endpoint) )
+			{
+				limb->roll = endpoint;
+				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+	
+
+	return -1;
+}
+
+int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate)
+{
+	if ( axis == 0 )
+	{
+		return -1;
+	}
+
+	if ( axis == ANIMATE_YAW )
+	{
+		limb->yaw += rate;
+		if ( limb->yaw >= setpoint )
+		{
+			limb->yaw = setpoint;
+			return 1; //reached setpoint
+		}
+	} else if ( axis == ANIMATE_PITCH )
+	{
+		limb->pitch += rate;
+		while ( limb->pitch < 0 )
+		{
+			limb->pitch += 2 * PI;
+		}
+		while ( limb->pitch >= 2 * PI )
+		{
+			limb->pitch -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->pitch, rate, setpoint) )
+		{
+			limb->pitch = setpoint;
+			if ( shake )
+			{
+				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+				}
+				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_POSITIVE )
+				{
+					limb->pitch += shakerate;
+					MONSTER_LIMB_DIR = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->pitch -= shakerate;
+					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+	} else if ( axis == ANIMATE_ROLL )
+	{
+		limb->roll += rate;
+		while ( limb->roll < 0 )
+		{
+			limb->roll += 2 * PI;
+		}
+		while ( limb->roll >= 2 * PI )
+		{
+			limb->roll -= 2 * PI;
+		}
+
+		if ( limb->roll >= setpoint )
+		{
+			limb->roll = setpoint;
+			if ( shake )
+			{
+				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+				}
+				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_POSITIVE )
+				{
+					limb->roll += shakerate;
+					MONSTER_LIMB_DIR = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->roll -= shakerate;
+					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+	}
+
+	return 0;
+}
+
+int limbAngleWithinRange(real_t angle, double rate, double setpoint)
+{
+	if ( (angle <= (setpoint + rate)) && (angle >= (setpoint - rate)) )
+	{
+		return 1;
+	}
+
+	return 0;
 }

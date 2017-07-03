@@ -72,24 +72,62 @@ char chestPropertyNames[3][40] =
 	"Locked Chance: (0-100%)"
 };
 
-char itemPropertyNames[5][32] =
+char summonTrapPropertyNames[6][44] =
+{
+	"Monster To Spawn: (-1 to 32)",
+	"Quantity Per Spawn: (1-9)",
+	"Time Between Spawns: (1-999s)",
+	"Amount of Spawn Instances: (1-99)",
+	"Requires Power to Disable: (0-1)",
+	"Chance to Stop Working Each Spawn: (0-100%)"
+};
+
+char itemPropertyNames[6][36] =
 {
 	"Item ID: (1-255)",
 	"Status: (0-5)",
 	"Blessing: (-9 to +9)",
 	"Quantity: (1-9)",
-	"Identified: (0-2)"
+	"Identified: (0-2)",
+	"Category: (0-16, if random_item)"
 };
 
-char monsterItemPropertyNames[6][32] =
+char itemCategoryNames[17][32] =
+{
+	"random",
+	"weapon",
+	"armor",
+	"amulet",
+	"potion",
+	"scroll",
+	"magicstaff",
+	"ring",
+	"spellbook",
+	"gem",
+	"thrown",
+	"tool",
+	"food",
+	"book",
+	"equipment",
+	"jewelry",
+	"magical"
+};
+
+char monsterItemPropertyNames[7][36] =
 {
 	"Item ID: (0-255)",
 	"Status: (0-5)",
 	"Blessing: (-9 to +9)",
 	"Quantity: (1-9)",
 	"Identified: (0-2)",
-	"Chance (1-100)"
+	"Chance (1-100)",
+	"Category: (0-16, if default_random)"
 };
+
+int recentUsedTiles[9][9] = { 0 };
+int recentUsedTilePalette = 0;
+int lockTilePalette[9] = { 0 };
+int lastPaletteTileSelected = 0;
 
 void closeNetworkInterfaces()
 {
@@ -195,14 +233,55 @@ void mainLogic(void)
 		camy = ((long)map.height << TEXTUREPOWER) - ((long)yres / 2);
 	}
 
-	if (scroll < 0)   // mousewheel up
+	if (scroll < 0 )   // mousewheel up
 	{
-		drawlayer = std::min(drawlayer + 1, MAPLAYERS - 1);
+		if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
+		{
+			recentUsedTilePalette++; //scroll through palettes 1-9
+			if ( recentUsedTilePalette == 9 )
+			{
+				recentUsedTilePalette = 0;
+			}
+		}
+		else if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+		{
+			drawlayer = std::min(drawlayer + 1, MAPLAYERS - 1);
+		}
+		else
+		{
+			lastPaletteTileSelected++; //scroll through tiles 1-9
+			if ( lastPaletteTileSelected == 9 )
+			{
+				lastPaletteTileSelected = 0;
+			}
+			selectedTile = selectedTile = recentUsedTiles[recentUsedTilePalette][lastPaletteTileSelected];
+		}
 		scroll = 0;
 	}
-	if (scroll > 0)   // mousewheel down
+	if (scroll > 0 )   // mousewheel down
 	{
-		drawlayer = std::max(drawlayer - 1, 0);
+		if ( keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL] )
+		{
+			recentUsedTilePalette--; //scroll through palettes 1-9
+			if ( recentUsedTilePalette == -1 )
+			{
+				recentUsedTilePalette = 8;
+			}
+		}
+		else if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+		{
+			drawlayer = std::max(drawlayer - 1, 0);
+		}
+		else
+		{
+			lastPaletteTileSelected--; //scroll through tiles 1-9
+			if ( lastPaletteTileSelected == -1 )
+			{
+				lastPaletteTileSelected = 8;
+			}
+			selectedTile = selectedTile = recentUsedTiles[recentUsedTilePalette][lastPaletteTileSelected];
+
+		}
 		scroll = 0;
 	}
 
@@ -665,8 +744,13 @@ void makeUndo()
 	map_t* undomap = (map_t*) malloc(sizeof(map_t));
 	strcpy(undomap->author, map.author);
 	strcpy(undomap->name, map.name);
+	undomap->skybox = map.skybox;
 	undomap->width = map.width;
 	undomap->height = map.height;
+	for ( int c = 0; c < MAPFLAGS; c++ )
+	{
+		undomap->flags[c] = map.flags[c];
+	}
 	undomap->tiles = (Sint32*) malloc(sizeof(Sint32) * undomap->width * undomap->height * MAPLAYERS);
 	memcpy(undomap->tiles, map.tiles, sizeof(Sint32)*undomap->width * undomap->height * MAPLAYERS);
 	undomap->entities = (list_t*) malloc(sizeof(list_t));
@@ -804,6 +888,242 @@ void processCommandLine(int argc, char** argv)
 
 /*-------------------------------------------------------------------------------
 
+loadTilePalettes
+
+loads the tile palette file for the editor.
+
+-------------------------------------------------------------------------------*/
+
+int loadTilePalettes()
+{
+	char filename[128] = { 0 };
+	FILE* fp;
+	int c;
+
+	// open log file
+	if ( !logfile )
+	{
+		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
+
+	// compose filename
+	strcpy(filename, "editor/tilepalettes.txt");
+
+	// check if palette file is valid
+	if ( !dataPathExists(filename) )
+	{
+		// palette file doesn't exist
+		printlog("error: unable to locate tile palette file: '%s'", filename);
+		return 1;
+	}
+
+	// open palette file
+	if ( (fp = openDataFile(filename, "r")) == NULL )
+	{
+		printlog("error: unable to load tile palette file: '%s'", filename);
+		return 1;
+	}
+
+	// read file
+	int paletteNumber = 0;
+	int paletteTile = 0;
+	bool lockValueEntry = 0;
+	for (; !feof(fp); )
+	{
+		//printlog( "loading line %d...\n", line);
+		char data[1024];
+
+		// read line from file
+		int i;
+		bool fileEnd = false;
+		for ( i = 0; ; i++ )
+		{
+			data[i] = fgetc(fp);
+			if ( feof(fp) )
+			{
+				fileEnd = true;
+				break;
+			}
+
+			// blank or comment lines stop reading at a newline
+			if ( data[i] == '\n' )
+			{
+				break;
+			}
+		}
+
+		if ( fileEnd )
+		{
+			break;
+		}
+
+		// skip blank and comment lines
+		if ( data[0] == '\n' || data[0] == '#' )
+		{
+			continue;
+		}
+
+		// process line
+		if ( !lockValueEntry )
+		{
+			recentUsedTiles[paletteNumber][paletteTile] = atoi(data);
+			//printlog("read tile number '%d', pattern '%d', data '%d' \n", paletteTile, paletteNumber, atoi(data));
+			++paletteTile;
+			if ( paletteTile == 9 )
+			{
+				paletteTile = 0;
+				paletteNumber++;
+				lockValueEntry = true;
+			}
+		}
+		else
+		{
+			lockTilePalette[paletteNumber - 1] = atoi(data);
+			//printlog("read lock value for palette '%d', data '%d' \n", paletteNumber - 1, atoi(data));
+			lockValueEntry = false;
+		}
+	}
+
+	// close file
+	fclose(fp);
+	printlog("successfully loaded tile palette file '%s'\n", filename);
+	return 0;
+}
+
+/*-------------------------------------------------------------------------------
+
+saveTilePalettes()
+
+saves the tile palette file for the editor.
+
+-------------------------------------------------------------------------------*/
+
+int saveTilePalettes()
+{
+	char filename[128] = { 0 };
+	FILE* fp;
+	int c;
+
+	// open log file
+	if ( !logfile )
+	{
+		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
+
+	// compose filename
+	strcpy(filename, "editor/tilepalettes.txt");
+
+	// check if palette file is valid
+	if ( !dataPathExists(filename) )
+	{
+		// palette file doesn't exist
+		printlog("error: unable to locate existing tile palette file: '%s'...\ncreating...", filename);
+	}
+
+	// open/create palette file
+	if ( (fp = openDataFile(filename, "w")) == NULL )
+	{
+		printlog("error: unable to save or create tile palette file: '%s'", filename);
+		return 1;
+	}
+
+	// write file
+	Uint32 line;
+	int paletteNumber = 0;
+	int paletteTile = 0;
+	bool lockValueEntry = 0;
+	char data[128];
+
+	fputs("# Tile palette file\n", fp);
+	fputs("# lines beginning with pound character are a comment\n", fp);
+	fputs("# blank lines are ignored\n", fp);
+	fputs("", fp);
+
+	for ( paletteNumber = 0; paletteNumber < 9; paletteNumber++ )
+	{
+		paletteTile = 0;
+		snprintf(data, sizeof(data), "# palette %d tiles\n", paletteNumber + 1);
+		fputs(data, fp);
+		fputs("\n", fp);
+		for ( paletteTile = 0; paletteTile < 9; paletteTile++ )
+		{
+			if ( paletteTile == 3 || paletteTile == 6 )
+			{
+				fputs("\n", fp);
+			}
+			snprintf(data, sizeof(data), "%d\n", recentUsedTiles[paletteNumber][paletteTile]);
+			fputs(data, fp);
+		}
+		fputs("\n", fp);
+		snprintf(data, sizeof(data), "# palette %d locked (1) or unlocked (0)\n", paletteNumber + 1);
+		fputs(data, fp);
+		fputs("\n", fp);
+		snprintf(data, sizeof(data), "%d\n", lockTilePalette[paletteNumber]);
+		fputs(data, fp);
+		fputs("\n", fp);
+	}
+
+	fputs("# end\n", fp);
+
+	// close file
+	fclose(fp);
+	printlog("saved tile palette file '%s'\n", filename);
+	return 0;
+}
+
+/*-------------------------------------------------------------------------------
+
+updateRecentTileList
+
+Updates the tile palette in the editor if not locked, takes tile as input and either 
+inserts into an empty slot, or shifts the palette to accomodate. 
+
+-------------------------------------------------------------------------------*/
+
+void updateRecentTileList(int tile)
+{
+	int checkEmpty = -1;
+
+	for ( int i = 0; i < 9; i++ )
+	{
+		if ( recentUsedTiles[recentUsedTilePalette][i] == tile )
+		{
+			lastPaletteTileSelected = i;
+			return; // tile exists in recent list.
+		}
+
+		if ( recentUsedTiles[recentUsedTilePalette][i] == 0 && checkEmpty == -1 )
+		{
+			checkEmpty = i; // index of next empty tile.
+			lastPaletteTileSelected = checkEmpty;
+		}
+	}
+
+	if ( lockTilePalette[recentUsedTilePalette] == 1 )
+	{
+		return; // palette locked, don't change.
+	}
+
+	if ( checkEmpty == -1 )
+	{
+		checkEmpty == 0;
+		for ( int j = 8; j > 0; j-- )
+		{
+			recentUsedTiles[recentUsedTilePalette][j] = recentUsedTiles[recentUsedTilePalette][j - 1]; // shift array by 1 to insert new tile as the array is full.
+		}
+		recentUsedTiles[recentUsedTilePalette][0] = tile; // insert tile into array.
+		lastPaletteTileSelected = 0;
+	}
+	else
+	{
+		recentUsedTiles[recentUsedTilePalette][checkEmpty] = tile; // insert tile into array.
+	}
+
+	return;
+}
+
+/*-------------------------------------------------------------------------------
+
 	main
 
 	Initializes program resources, harbors main loop, and cleans up
@@ -912,6 +1232,11 @@ int main(int argc, char** argv)
 	map.tiles = (int*) malloc(sizeof(int) * map.width * map.height * MAPLAYERS);
 	strcpy(map.name, "");
 	strcpy(map.author, "");
+	map.skybox = 0;
+	for ( c = 0; c < MAPFLAGS; c++ )
+	{
+		map.flags[c] = 0;
+	}
 	for ( z = 0; z < MAPLAYERS; z++ )
 	{
 		for ( y = 0; y < map.height; y++ )
@@ -1279,6 +1604,7 @@ int main(int argc, char** argv)
 	}
 
 	loadItems();
+	loadTilePalettes();
 
 	// main loop
 	printlog( "running main loop.\n");
@@ -1588,6 +1914,7 @@ int main(int argc, char** argv)
 						if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 						{
 							selectedTile = map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height];
+							updateRecentTileList(selectedTile);
 						}
 					}
 					else
@@ -1742,6 +2069,72 @@ int main(int argc, char** argv)
 					case 3:
 						printText(font8x8_bmp, xres - 80, 276, "FILL");
 						break;
+				}
+
+				int recentTileStartx = xres - 114;
+				int recentTileStarty = 420;
+				int recentIndex = 0;
+				int pad_x = 34;
+				int pad_y = 34;
+				char tmpStr[32] = "PALETTE: ";
+				char tmpStr2[2] = "";
+				pos.x = recentTileStartx;
+				pos.y = recentTileStarty;
+				pos.w = 32;
+				pos.h = 32;
+				SDL_Rect boxPos;
+				snprintf(tmpStr2, sizeof(tmpStr2), "%d", recentUsedTilePalette + 1); //reset
+				strcat(tmpStr, tmpStr2);
+				printText(font8x8_bmp, xres - 110, recentTileStarty - 16, tmpStr);
+
+				for ( recentIndex = 0; recentIndex < 9; recentIndex++ )
+				{
+					if ( recentIndex == 3 || recentIndex == 6 )
+					{
+						pos.x = recentTileStartx;
+						pos.y += pad_y;
+					}
+					
+
+					if ( mousestatus[SDL_BUTTON_LEFT] )
+					{
+						if ( omousex >= pos.x && omousex < pos.x + 32 && omousey >= pos.y && omousey < pos.y + 32 )
+						{
+							selectedTile = recentUsedTiles[recentUsedTilePalette][recentIndex];
+							lastPaletteTileSelected = recentIndex;
+						}
+					}
+					if ( mousestatus[SDL_BUTTON_RIGHT] )
+					{
+						if ( omousex >= pos.x && omousex < pos.x + 32 && omousey >= pos.y && omousey < pos.y + 32 )
+						{
+							if ( lockTilePalette[recentUsedTilePalette] != 1 )
+							{
+								recentUsedTiles[recentUsedTilePalette][recentIndex] = 0;
+							}
+						}
+					}
+
+					boxPos.x = pos.x - 2;
+					boxPos.y = pos.y - 2;
+					boxPos.w = pos.w + 4;
+					boxPos.h = pos.h + 4;
+
+					if ( lastPaletteTileSelected == recentIndex )
+					{
+						drawRect(&boxPos, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					}
+					drawImage(tiles[recentUsedTiles[recentUsedTilePalette][recentIndex]], NULL, &pos);
+					pos.x += pad_x;
+				}
+
+				if ( lockTilePalette[recentUsedTilePalette] == 1 )
+				{
+					printText(font8x8_bmp, xres - 100, pos.y + 40, "LOCKED");
+				}
+				else
+				{
+					printText(font8x8_bmp, xres - 100, pos.y + 40, "UNLOCKED");
 				}
 			}
 			if ( statusbar )
@@ -1962,6 +2355,9 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, subx1 + 8, suby1 + 64, "Author name:");
 					drawDepressed(subx1 + 4, suby1 + 76, subx2 - 4, suby1 + 92);
 					printText(font8x8_bmp, subx1 + 8, suby1 + 80, authortext);
+					printText(font8x8_bmp, subx1 + 8, suby1 + 104, "Map skybox:");
+					drawDepressed(subx1 + 104, suby1 + 100, subx1 + 168, suby1 + 116);
+					printText(font8x8_bmp, subx1 + 108, suby1 + 104, skyboxtext);
 					printText(font8x8_bmp, subx1 + 8, suby2 - 44, "Map width:");
 					drawDepressed(subx1 + 104, suby2 - 48, subx1 + 168, suby2 - 32);
 					printText(font8x8_bmp, subx1 + 108, suby2 - 44, widthtext);
@@ -1974,7 +2370,7 @@ int main(int argc, char** argv)
 						keystatus[SDL_SCANCODE_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 4 )
+						if ( editproperty == 5 )
 						{
 							editproperty = 0;
 						}
@@ -1987,9 +2383,12 @@ int main(int argc, char** argv)
 								inputstr = authortext;
 								break;
 							case 2:
-								inputstr = widthtext;
+								inputstr = skyboxtext;
 								break;
 							case 3:
+								inputstr = widthtext;
+								break;
+							case 4:
 								inputstr = heighttext;
 								break;
 						}
@@ -2010,16 +2409,22 @@ int main(int argc, char** argv)
 							editproperty = 1;
 							cursorflash = ticks;
 						}
+						if ( omousex >= subx1 + 104 && omousey >= suby1 + 94 && omousex < subx1 + 168 && omousey < suby1 + 110 )
+						{
+							inputstr = skyboxtext;
+							editproperty = 2;
+							cursorflash = ticks;
+						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 2;
+							editproperty = 3;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 3;
+							editproperty = 4;
 							cursorflash = ticks;
 						}
 					}
@@ -2052,7 +2457,21 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 8 + strlen(authortext) * 8, suby1 + 80, "\26");
 						}
 					}
-					if ( editproperty == 2 )   // edit map width
+					if ( editproperty == 2 )   // edit map skybox
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = skyboxtext;
+						}
+						//strncpy(widthtext,inputstr,3);
+						inputlen = 3;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(skyboxtext) * 8, suby1 + 104, "\26");
+						}
+					}
+					if ( editproperty == 3 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -2066,7 +2485,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 3 )   // edit map height
+					if ( editproperty == 4 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -2181,19 +2600,6 @@ int main(int argc, char** argv)
 								
 								inputstr = spriteProperties[editproperty];
 							}
-							// TODO - add escape and return key functionality
-							/*
-							if ( keystatus[SDL_SCANCODE_ESCAPE] )
-							{
-								keystatus[SDL_SCANCODE_ESCAPE] = 0;
-								buttonCloseSpriteSubwindow(NULL);
-							}
-							if ( keystatus[SDL_SCANCODE_RETURN] )
-							{
-								keystatus[SDL_SCANCODE_RETURN] = 0;
-								buttonSpritePropertiesConfirm(NULL);
-							}
-							*/
 							// select a textbox
 							if ( mousestatus[SDL_BUTTON_LEFT] )
 							{
@@ -2507,16 +2913,7 @@ int main(int argc, char** argv)
 
 							inputstr = spriteProperties[editproperty];
 						}
-						if ( keystatus[SDL_SCANCODE_ESCAPE] )
-						{
-							keystatus[SDL_SCANCODE_ESCAPE] = 0;
-							buttonCloseSpriteSubwindow(NULL);
-						}
-						if ( keystatus[SDL_SCANCODE_RETURN] )
-						{
-							keystatus[SDL_SCANCODE_RETURN] = 0;
-							buttonSpritePropertiesConfirm(NULL);
-						}
+
 						// select a textbox
 						if ( mousestatus[SDL_BUTTON_LEFT] )
 						{
@@ -2575,13 +2972,13 @@ int main(int argc, char** argv)
 						int pad_y1 = suby1 + 20 + verticalOffset; // 20 px spacing from subwindow start. handles right side item list
 						int pad_x2 = 64; // handles right side item list
 
-						int pad_y2 = (suby2 - 52) + verticalOffset - 4; //handles right side item list
+						int pad_y2 = (suby2 - 52 - 36) + verticalOffset - 4; //handles right side item list
 						int pad_x3 = subx1 + 8; //handles left side menu
 						int pad_y3 = suby1 + 28; // 28 px spacing from subwindow start, handles left side menu
 						int pad_x4 = 64; //handles left side menu-end
 						int pad_y4; //handles left side menu-end
 						int totalNumItems = (sizeof(itemNameStrings) / sizeof(itemNameStrings[0]));
-						int editorNumItems = totalNumItems + 1;
+						int editorNumItems = totalNumItems /* - 1*/;
 						switch ( itemSlotSelected )
 						{
 							case -1:
@@ -2632,7 +3029,7 @@ int main(int argc, char** argv)
 								{
 									if ( newwindow == 4 )
 									{
-										if ( propertyInt > totalNumItems - 1 || propertyInt < 1 )
+										if ( propertyInt > totalNumItems - 2 || propertyInt < 0 )
 										{
 											errorMessage = 60;
 											errorArr[i] = 1;
@@ -2645,10 +3042,15 @@ int main(int argc, char** argv)
 												snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", editorNumItems - 1);
 											}
 										}
+										else if ( propertyInt == 0 )
+										{
+											errorMessage = 60;
+											errorArr[i] = 1;
+										}
 									}
-									else
+									else if ( newwindow == 5 )
 									{
-										if ( propertyInt > totalNumItems - 1 || propertyInt < 0 )
+										if ( propertyInt > totalNumItems - 2 || propertyInt < 0 )
 										{
 											errorMessage = 60;
 											errorArr[i] = 1;
@@ -2730,17 +3132,17 @@ int main(int argc, char** argv)
 								}
 								else if ( i == 4 )
 								{
-									if ( propertyInt == 2 )
+									if ( propertyInt == 1 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Identified");
 									}
-									else if ( propertyInt == 1 )
+									else if ( propertyInt == 0 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 255, 0);
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, "Unidentified");
 									}
-									else if ( propertyInt == 0 )
+									else if ( propertyInt == 2 )
 									{
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, colorRandom, "Random");
 									}
@@ -2751,7 +3153,7 @@ int main(int argc, char** argv)
 										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0);
 									}
 								}
-								else if ( i == 5 )
+								else if ( i == 5 && newwindow == 5)
 								{
 									if ( propertyInt > 100 || propertyInt < 0 )
 									{
@@ -2771,6 +3173,28 @@ int main(int argc, char** argv)
 										strcpy(tmpStr, spriteProperties[i]); //reset
 										strcat(tmpStr, " %%");
 										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, tmpStr);
+									}
+								}
+								else if ( (i == 5 && newwindow == 4) || (i == 6 && newwindow == 5) )
+								{
+									if ( propertyInt > 16 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt >= 0 && propertyInt <= (static_cast<int>(sizeof(itemCategoryNames[propertyInt])) / static_cast<int>(sizeof(itemCategoryNames[propertyInt][0]))) )
+									{
+										if ( propertyInt == 0 )
+										{
+											color = colorRandom;
+										}
+										else
+										{
+											color = SDL_MapRGB(mainsurface->format, 200, 64, 220);
+										}
+
+										printTextFormattedColor(font8x8_bmp, pad_x3 + pad_x4 + 8, pad_y3 + 4, color, itemCategoryNames[propertyInt]);
 									}
 								}
 							}
@@ -2944,16 +3368,6 @@ int main(int argc, char** argv)
 
 							inputstr = spriteProperties[editproperty];
 						}
-						if ( keystatus[SDL_SCANCODE_ESCAPE] )
-						{
-							keystatus[SDL_SCANCODE_ESCAPE] = 0;
-							buttonCloseSpriteSubwindow(NULL);
-						}
-						if ( keystatus[SDL_SCANCODE_RETURN] )
-						{
-							keystatus[SDL_SCANCODE_RETURN] = 0;
-							buttonSpritePropertiesConfirm(NULL);
-						}
 						
 						if ( editproperty < numProperties )   // edit
 						{
@@ -2995,6 +3409,244 @@ int main(int argc, char** argv)
 							}
 						}
 						
+					}
+				}
+				else if ( newwindow == 6 )
+				{
+					if ( selectedEntity != NULL )
+					{
+						int numProperties = sizeof(summonTrapPropertyNames) / sizeof(summonTrapPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(summonTrapPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int pad_y1 = suby1 + 28; // 28 px spacing from subwindow start.
+						int pad_x1 = subx1 + 8; // 8px spacing from subwindow start.
+						int pad_x2 = 64;
+						int pad_x3 = pad_x1 + pad_x2 + 8;
+						int pad_y2 = 0;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 color2 = SDL_MapRGB(mainsurface->format, 255, 255, 0);
+						Uint32 colorBad = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, summonTrapPropertyNames[i]);
+							pad_y1 = suby1 + 28 + i * spacing;
+							pad_y2 = suby1 + 44 + i * spacing;
+							// box outlines then text
+							drawDepressed(pad_x1 - 4, suby1 + 40 + i * spacing, pad_x1 - 4 + pad_x2, suby1 + 56 + i * spacing);
+							// print values on top of boxes
+							printText(font8x8_bmp, pad_x1, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, pad_x1, pad_y1, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 ) //check input for valid entries, correct or notify the user if out of bounds.
+								{
+									if ( propertyInt > 32 || propertyInt < -1 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Random monster to match level curve");
+									}
+									else if ( propertyInt == -1 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Completely random monster");
+									}
+									else if ( propertyInt == 6 || propertyInt == 12 || propertyInt == 16 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorBad, "Error: Unused monster ID, will reset to 0");
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										strcpy(tmpStr, monsterEditorNameStrings[atoi(spriteProperties[i])]);
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 9 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorBad, "Error: Must be > 0");
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 999 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorBad, "Error: Must be > 0");
+									}
+									else
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "%d seconds", atoi(spriteProperties[i]));
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 99 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorBad, "Error: Must be > 0");
+									}
+									else
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "%d instances", atoi(spriteProperties[i]));
+									}
+								}
+								else if ( i == 4 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color2, "No - power to enable");
+									}
+									else if ( propertyInt == 1 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Yes - power to disable");
+									}
+								}
+								else if ( i == 5 )
+								{
+									if ( propertyInt > 100 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										strcpy(tmpStr, spriteProperties[i]); //reset
+										strcat(tmpStr, " %%");
+										printTextFormatted(font8x8_bmp, pad_x3, pad_y2, tmpStr);
+									}
+								}
+							}
+
+							if ( errorMessage )
+							{
+								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
+								}
+							}
+
+							pad_x1 = subx1 + 8;
+						}
+						// Cycle properties with TAB.
+						if ( keystatus[SDL_SCANCODE_TAB] )
+						{
+							keystatus[SDL_SCANCODE_TAB] = 0;
+							cursorflash = ticks;
+							editproperty++;
+							if ( editproperty == numProperties )
+							{
+								editproperty = 0;
+							}
+
+							inputstr = spriteProperties[editproperty];
+						}
+
+						// select a textbox
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( int i = 0; i < numProperties; i++ )
+							{
+								if ( omousex >= pad_x1 - 4 && omousey >= suby1 + 40 + i * spacing && omousex < pad_x1 - 4 + pad_x2 && omousey < suby1 + 56 + i * spacing )
+								{
+									inputstr = spriteProperties[i];
+									editproperty = i;
+									cursorflash = ticks;
+								}
+								pad_x1 = subx1 + 8;
+							}
+						}
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+							if ( editproperty == 0 || editproperty == 3) //length of text field allowed to enter
+							{
+								inputlen = 2;
+							}
+							else if ( editproperty == 2 || editproperty == 5 )
+							{
+								inputlen = 3;
+							}
+							else
+							{
+								inputlen = 1;
+							}
+							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+							{
+								printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing, "\26");
+							}
+						}
+					}
+				}
+
+				if ( keystatus[SDL_SCANCODE_ESCAPE] )
+				{
+					keystatus[SDL_SCANCODE_ESCAPE] = 0;
+					if ( newwindow > 1 )
+					{
+						//buttonCloseSpriteSubwindow(NULL);
+					}
+					else if ( openwindow == 1 || savewindow == 1 )
+					{
+						buttonCloseSubwindow(NULL);
+					}
+				}
+				if ( keystatus[SDL_SCANCODE_RETURN] )
+				{
+					keystatus[SDL_SCANCODE_RETURN] = 0;
+					if ( newwindow > 1 )
+					{
+						//buttonSpritePropertiesConfirm(NULL);
+					}
+					else if ( openwindow == 1 )
+					{
+						buttonOpenConfirm(NULL);
+					}
+					else if ( savewindow == 1 )
+					{
+						//buttonSaveConfirm(NULL);
 					}
 				}
 			}
@@ -3083,11 +3735,6 @@ int main(int argc, char** argv)
 						keystatus[SDL_SCANCODE_I] = 0;
 						buttonStatusBar(NULL);
 					}
-					if ( keystatus[SDL_SCANCODE_F] )
-					{
-						keystatus[SDL_SCANCODE_F] = 0;
-						button3DMode(NULL);
-					}
 					if ( keystatus[SDL_SCANCODE_M] )
 					{
 						keystatus[SDL_SCANCODE_M] = 0;
@@ -3111,6 +3758,11 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_T] = 0;
 						tilepalette = 1;
+					}
+					if ( keystatus[SDL_SCANCODE_F] )
+					{
+						keystatus[SDL_SCANCODE_F] = 0;
+						button3DMode(NULL);
 					}
 				}
 				if ( keystatus[SDL_SCANCODE_LALT] || keystatus[SDL_SCANCODE_RALT] )
@@ -3185,6 +3837,74 @@ int main(int argc, char** argv)
 					keystatus[SDL_SCANCODE_F2] = 0;
 					makeUndo();
 					buttonSpriteProperties(NULL);
+				}
+				if ( keystatus[SDL_SCANCODE_KP_7] )
+				{
+					keystatus[SDL_SCANCODE_KP_7] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][0];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_8] )
+				{
+					keystatus[SDL_SCANCODE_KP_8] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][1];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_9] )
+				{
+					keystatus[SDL_SCANCODE_KP_9] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][2];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_4] )
+				{
+					keystatus[SDL_SCANCODE_KP_4] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][3];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_5] )
+				{
+					keystatus[SDL_SCANCODE_KP_5] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][4];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_6] )
+				{
+					keystatus[SDL_SCANCODE_KP_6] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][5];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_1] )
+				{
+					keystatus[SDL_SCANCODE_KP_1] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][6];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_2] )
+				{
+					keystatus[SDL_SCANCODE_KP_2] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][7];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_3] )
+				{
+					keystatus[SDL_SCANCODE_KP_3] = 0;
+					selectedTile = recentUsedTiles[recentUsedTilePalette][8];
+				}
+				if ( keystatus[SDL_SCANCODE_KP_PLUS] )
+				{
+					keystatus[SDL_SCANCODE_KP_PLUS] = 0;
+					recentUsedTilePalette++; //scroll through palettes 1-9
+					if ( recentUsedTilePalette == 9 )
+					{
+						recentUsedTilePalette = 0;
+					}
+				}
+				if ( keystatus[SDL_SCANCODE_KP_MINUS] )
+				{
+					keystatus[SDL_SCANCODE_KP_MINUS] = 0;
+					recentUsedTilePalette--; //scroll through palettes 1-9
+					if ( recentUsedTilePalette == -1 )
+					{
+						recentUsedTilePalette = 8;
+					}
+				}
+				if ( keystatus[SDL_SCANCODE_KP_MULTIPLY] )
+				{
+					keystatus[SDL_SCANCODE_KP_MULTIPLY] = 0;
+					lockTilePalette[recentUsedTilePalette] = !lockTilePalette[recentUsedTilePalette]; // toggle lock/unlock
 				}
 			}
 			// process and draw buttons
@@ -3304,14 +4024,14 @@ int main(int argc, char** argv)
 				default:	strcpy(action,"STATIC"); break;
 			}*/
 
-			int numsprites = (int)sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]);
+			int numsprites = static_cast<int>(sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]));
 
 			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", spriteEditorNameStrings[palette[mousey + mousex * yres]]);
 
-				char hoverTextString[32] = "";
+				char hoverTextString[1024] = "";
 				snprintf(hoverTextString, 5, "%d: ", palette[mousey + mousex * yres]);
 				strcat(hoverTextString, spriteEditorNameStrings[palette[mousey + mousex * yres]]);
 				int hoverTextWidth = strlen(hoverTextString);
@@ -3411,6 +4131,7 @@ int main(int argc, char** argv)
 				if (palette[mousey + mousex * yres] >= 0)
 				{
 					selectedTile = palette[mousey + mousex * yres];
+					updateRecentTileList(selectedTile);
 				}
 				mclick = 0;
 				tilepalette = 0;
@@ -3421,7 +4142,7 @@ int main(int argc, char** argv)
 				tilepalette = 0;
 			}
 
-			int numtiles = (int)sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]);
+			int numtiles = static_cast<int>(sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]));
 
 			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
 			{
@@ -3488,6 +4209,7 @@ int main(int argc, char** argv)
 		free(copymap.tiles);
 	}
 	list_FreeAll(&undolist);
+	saveTilePalettes();
 	return deinitApp();
 }
 

@@ -390,9 +390,9 @@ int initApp(char* title, int fullscreen)
 	}
 	if ( !softwaremode )
 	{
-		generatePolyModels();
+		generatePolyModels(0, nummodels);
 	}
-
+	fclose(fp);
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR3, &w, &h);
@@ -772,7 +772,7 @@ int reloadLanguage()
 
 -------------------------------------------------------------------------------*/
 
-void generatePolyModels()
+void generatePolyModels(int start, int end)
 {
 	Sint32 x, y, z;
 	Sint32 c, i;
@@ -787,20 +787,26 @@ void generatePolyModels()
 	quads.last = NULL;
 
 	printlog("generating poly models...\n");
-	polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-	for ( c = 0; c < nummodels; ++c )
+	if ( start == 0 && end == nummodels )
+	{
+		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
+	}
+
+	for ( c = start; c < end; ++c )
 	{
 		char loadText[128];
 		snprintf(loadText, 127, language[745], c, nummodels);
 
 		// print a loading message
-		drawClearBuffers();
-		int w, h;
-		TTF_SizeUTF8(ttf16, loadText, &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
+		if ( start == 0 && end == nummodels )
+		{
+			drawClearBuffers();
+			int w, h;
+			TTF_SizeUTF8(ttf16, loadText, &w, &h);
+			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
 
-		GO_SwapBuffers(screen);
-
+			GO_SwapBuffers(screen);
+		}
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -1716,7 +1722,7 @@ void generatePolyModels()
 	// now store models into VBOs
 	if ( !disablevbos )
 	{
-		generateVBOs();
+		generateVBOs(start, end);
 	}
 }
 
@@ -1728,11 +1734,11 @@ void generatePolyModels()
 
 -------------------------------------------------------------------------------*/
 
-void generateVBOs()
+void generateVBOs(int start, int end)
 {
 	int i, c;
 
-	for ( c = 0; c < nummodels; ++c )
+	for ( c = start; c < end; ++c )
 	{
 		/*if( c>0 )
 			break;*/
@@ -2353,7 +2359,7 @@ bool changeVideoMode()
 	// regenerate vbos
 	if ( !disablevbos )
 	{
-		generateVBOs();
+		generateVBOs(0, nummodels);
 	}
 #endif
 	// success

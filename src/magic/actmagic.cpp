@@ -2095,6 +2095,179 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_stoneblood.name) )
+				{
+					if ( hit.entity )
+					{
+						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+						{
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								// test for friendly fire
+								if ( parent && parent->checkFriend(hit.entity) )
+								{
+									if ( my->light != NULL )
+									{
+										list_RemoveNode(my->light->node);
+										my->light = NULL;
+									}
+									list_RemoveNode(my->mynode);
+									return;
+								}
+							}
+							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
+							hitstats->EFFECTS[EFF_PARALYZED] = true;
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] /= (1 + (int)resistance);
+							// update enemy bar for attacker
+							if ( parent )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer )
+								{
+									if ( strcmp(hitstats->name, "") )
+									{
+										messagePlayerColor(parent->skill[2], color, language[2420], hitstats->name);
+									}
+									else
+									{
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[2421], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[2421], language[2000 + (hitstats->type - KOBOLD)]);
+										}
+									}
+								}
+							}
+
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 )
+							{
+								messagePlayerColor(player, color, language[2422]);
+							}
+							if ( my->light != NULL )
+							{
+								list_RemoveNode(my->light->node);
+								my->light = NULL;
+							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
+				else if ( !strcmp(element->name, spellElement_bleed.name) )
+				{
+					playSoundEntity(my, 173, 128);
+					if ( hit.entity )
+					{
+						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+						{
+							Entity* parent = uidToEntity(my->parent);
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								// test for friendly fire
+								if ( parent && parent->checkFriend(hit.entity) )
+								{
+									if ( my->light != NULL )
+									{
+										list_RemoveNode(my->light->node);
+										my->light = NULL;
+									}
+									list_RemoveNode(my->mynode);
+									return;
+								}
+							}
+							playSoundEntity(my, 173, 64);
+							playSoundEntity(hit.entity, 28, 128);
+							int damage = element->damage;
+							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							damage *= damagetables[hitstats->type][5];
+							damage /= (1 + (int)resistance);
+							hit.entity->modHP(-damage);
+
+							// write the obituary
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
+
+							hitstats->EFFECTS[EFF_BLEEDING] = true;
+							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] /= (1 + (int)resistance);
+							hitstats->EFFECTS[EFF_SLOW] = true;
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+							// update enemy bar for attacker
+							if ( parent )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer )
+								{
+									if ( strcmp(hitstats->name, "") )
+									{
+										messagePlayerColor(parent->skill[2], color, language[2423], hitstats->name);
+									}
+									else
+									{
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[2424], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[2424], language[2000 + (hitstats->type - KOBOLD)]);
+										}
+									}
+								}
+							}
+
+							// write the obituary
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
+
+							// update enemy bar for attacker
+							if ( !strcmp(hitstats->name, "") )
+							{
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
+							}
+							else
+							{
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
+
+							if ( hitstats->HP <= 0 && parent )
+							{
+								parent->awardXP(hit.entity, true, true);
+							}
+
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 )
+							{
+								messagePlayerColor(player, color, language[2425]);
+							}
+							if ( my->light != NULL )
+							{
+								list_RemoveNode(my->light->node);
+								my->light = NULL;
+							}
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
 				if ( my->light != NULL )
 				{
 					list_RemoveNode(my->light->node);
@@ -2300,3 +2473,261 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->setUID(-3);
 	}
 }
+
+void createParticle1(Entity* caster, int player)
+{
+	Entity* entity = newEntity(-1, 1, map.entities);
+	entity->sizex = 0;
+	entity->sizey = 0;
+	entity->x = caster->x + 32 * cos(caster->yaw);
+	entity->y = caster->y + 32 * sin(caster->yaw);
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 50;
+	entity->skill[1] = player;
+	entity->fskill[0] = 0.03;
+	entity->light = lightSphereShadow(entity->x / 16, entity->y / 16, 3, 192);
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->setUID(-3);
+
+	createParticle2(entity);
+	createParticleDot(entity);
+	/*entity = newEntity(574, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = x;
+	entity->y = y;
+	entity->z = 0;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 1000;
+	entity->behavior = &actParticleCircle;
+	entity->sprite = 574;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);*/
+}
+
+void createParticle2(Entity* parent)
+{
+	Entity* entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 8;
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = -0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	real_t tmp = entity->yaw;
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 8;
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = tmp + (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = -0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 8;
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = tmp - (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = -0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 16;
+	entity->z = -12;
+	entity->vel_z = 0.4;
+	entity->yaw = tmp;
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = 0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 16;
+	entity->z = -12;
+	entity->vel_z = 0.4;
+	entity->yaw = tmp + (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = 0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 16;
+	entity->z = -12;
+	entity->vel_z = 0.4;
+	entity->yaw = tmp - (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = 0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+}
+
+#define PARTICLE_LIFE my->skill[0]
+#define PARTICLE_CASTER my->skill[1]
+
+void actParticleCircle(Entity* my)
+{
+	//Entity* entity = newEntity(sprite, 1, map.entities);
+	if ( PARTICLE_LIFE < 0 )
+	{
+		if ( PARTICLE_CASTER != -1 )
+		{
+			//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+			//spell_summonFamiliar(PARTICLE_CASTER);
+			playSoundEntity(my, 164, 128);
+			spawnExplosion(my->x, my->y, 0);
+			//summonMonster(SKELETON, my->x, my->y);
+		}
+		if ( my->light != NULL )
+		{
+			list_RemoveNode(my->light->node);
+		}
+		my->light = NULL;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->yaw += my->fskill[0];
+		if ( my->fskill[0] < 0.4 && my->fskill[0] > (-0.4) )
+		{
+			my->fskill[0] = my->fskill[0] * 1.05;
+		}
+		my->z += my->vel_z;
+		if ( PARTICLE_CASTER == -1 )
+		{
+			
+			if ( my->focalx > 0.05 )
+			{
+				if ( my->vel_z == 0.3 )
+				{
+					my->focalx = my->focalx * 0.98;
+				}
+				else
+				{
+					my->focalx = my->focalx * 0.95;
+				}
+			}
+			my->scalex *= 0.99;
+			my->scaley *= 0.99;
+			my->scalez *= 0.99;
+			//my->scalex = my->scalex * 1.1;
+			//my->scaley = my->scaley * 1.1;
+		}
+		//my->z -= 0.01;
+	}
+}
+
+void createParticleDot(Entity* parent)
+{
+	for ( int c = 0; c < 50; c++ )
+	{
+		Entity* entity = newEntity(576, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x + (-4 + rand() % 9);
+		entity->y = parent->y + (-4 + rand() % 9);
+		entity->z = 7.5 + rand()%50;
+		entity->vel_z = -1;
+		//entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->skill[0] = 10 + rand()% 50;
+		entity->behavior = &actParticleDot;
+		entity->flags[PASSABLE] = true;
+		entity->setUID(-3);
+	}
+}
+
+void actParticleDot(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->z += my->vel_z;
+		//my->z -= 0.01;
+	}
+}
+
+//void actParticleDrop(Entity* my)
+//{
+//	//Entity* entity = newEntity(sprite, 1, map.entities);
+//	if ( PARTICLE_LIFE < 0 )
+//	{
+//		spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+//		spell_summonFamiliar(PARTICLE_CASTER);
+//		list_RemoveNode(my->mynode);
+//		return;
+//	}
+//	else
+//	{
+//		--PARTICLE_LIFE;
+//		my->yaw += std::min(my->fskill[0], 0.5);
+//		my->fskill[0] = my->fskill[0] * 1.1;
+//		//my->z -= 0.01;
+//	}
+//}
