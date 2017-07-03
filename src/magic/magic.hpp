@@ -423,6 +423,7 @@ typedef struct spellcastingAnimationManager
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.
 	int mana_left; //How much mana is left to consume.
+	bool consumeMana; //If false, goes through the motions, even casts the spell -- just doesn't consume any mana.
 
 	float lefthand_movex;
 	float lefthand_movey;

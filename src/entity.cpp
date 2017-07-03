@@ -778,9 +778,29 @@ void Entity::increaseSkill(int skill)
 			default:
 				break;
 		}
+
+		if ( skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+		{
+			//Spellcasting capstone = free casting of magic missile.
+			//Give the player the spell if they haven't learned it yet.
+			if ( player > 0 && multiplayer == SERVER )
+			{
+				strcpy((char*)net_packet->data, "ASPL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = SPELL_MAGICMISSILE;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+			else
+			{
+				addSpell(SPELL_MAGICMISSILE, player);
+			}
+		}
 	}
 	myStats->EXP += 2;
-	
+
 	int statBonusSkill = getStatForProficiency(skill);
 
 	if ( statBonusSkill >= STAT_STR )
@@ -789,7 +809,7 @@ void Entity::increaseSkill(int skill)
 		// write the last proficiency that effected the skill.
 		myStats->PLAYER_LVL_STAT_BONUS[statBonusSkill] = skill;
 	}
-	
+
 	if ( player > 0 && multiplayer == SERVER )
 	{
 		// update SKILL
@@ -1927,7 +1947,7 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		manaRegenInterval = MAGIC_REGEN_TIME;
 	}
-	
+
 	if ( myStats->MP < myStats->MAXMP )
 	{
 		this->char_energize++;
@@ -2369,7 +2389,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// unparalyze certain boss characters
-	if ( myStats->EFFECTS[EFF_PARALYZED] && ( (myStats->type >= LICH && myStats->type < KOBOLD) 
+	if ( myStats->EFFECTS[EFF_PARALYZED] && ( (myStats->type >= LICH && myStats->type < KOBOLD)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		myStats->EFFECTS[EFF_PARALYZED] = false;
@@ -2377,7 +2397,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// wake up
-	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || (myStats->type >= LICH && myStats->type < KOBOLD) 
+	if ( myStats->EFFECTS[EFF_ASLEEP] && (myStats->OLDHP != myStats->HP || (myStats->type >= LICH && myStats->type < KOBOLD)
 		|| myStats->type == COCKATRICE || myStats->type == LICH_FIRE || myStats->type == LICH_ICE) )
 	{
 		messagePlayer(player, language[658]);
@@ -2886,7 +2906,7 @@ list_t* checkTileForEntity(int x, int y)
 	#ifdef __ARM_NEON__
 	const int32x2_t xy = {x, y};
 	#endif
-	
+
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		if (node->element)
@@ -3366,7 +3386,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			hit.entity = target;
 		}
-		
+
 		if ( hit.entity != NULL )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -3702,7 +3722,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				// hit chance
 				//int hitskill=5; // for unarmed combat
-				
+
 				weaponskill = getWeaponSkill(myStats->weapon);
 
 				/*if( weaponskill>=0 )
@@ -3936,9 +3956,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 									armor = NULL;
 									armornum = 0;
 								}
-							}		
+							}
 						}
-						else 
+						else
 						{
 							if ( isWeakArmor )
 							{
@@ -3960,7 +3980,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 						}
 					}
-					
+
 					// if nothing chosen to degrade, check extra shield chances to degrade
 					if ( hitstats->shield != NULL && armor == NULL )
 					{
@@ -4020,7 +4040,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 						else
 						{
-							
+
 							if ( armor->type == TOOL_CRYSTALSHARD )
 							{
 								playSoundEntity(hit.entity, 162, 64);
@@ -4190,7 +4210,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								else if ( hitstats->type >= KOBOLD ) //New monsters
 								{
 									messagePlayerColor(player, color, language[689], language[2000 + (hitstats->type - KOBOLD)]);
-								}	
+								}
 							}
 							else
 							{
@@ -5219,7 +5239,7 @@ void setRandomMonsterStats(Stat* stats)
 			if ( stats->RANDOM_MAXHP == stats->RANDOM_HP )
 			{
 				// if the max hp and normal hp range is the same, hp follows the roll of maxhp.
-				stats->HP = stats->MAXHP;		
+				stats->HP = stats->MAXHP;
 			}
 			else
 			{
@@ -5390,7 +5410,7 @@ int checkEquipType(Item *item)
 			break;
 
 		default:
-			break;	
+			break;
 	}
 
 	return TYPE_NONE;
@@ -5427,7 +5447,7 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	{
 		ent->sprite = 547 + myStats->sex + spriteOffset;
 	}
-	else 
+	else
 	{
 		return 0;
 	}
@@ -5585,4 +5605,3 @@ int getStatForProficiency(int skill)
 
 	return statForProficiency;
 }
-

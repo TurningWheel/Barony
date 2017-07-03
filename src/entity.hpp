@@ -217,6 +217,16 @@ public:
 
 		return myStats->type;
 	}
+
+	bool inline skillCapstoneUnlockedEntity(int proficiency) const
+	{
+		if ( !getStats() )
+		{
+			return false;
+		}
+
+		return (getStats()->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+	}
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

@@ -86,8 +86,8 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		100,		//Appraisal
 		100,		//Swimming
 		100,		//Leadership
-		101,
-		101,
+		100,		//Spellcasting
+		101,		//Magic
 		101,
 		101,
 		101,

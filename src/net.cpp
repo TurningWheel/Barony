@@ -1681,6 +1681,19 @@ void clientHandlePacket()
 		return;
 	}
 
+	else if ( !strncmp((char*)net_packet->data, "ASPL", 4) )
+	{
+		if ( net_packet->len != 6 ) //Need to get the actual length, not reported...Should be a generic check at the top of the function, if len != actual len, then abort.
+		{
+			printlog("Received malformed ASPL packet.");
+			return;
+		}
+
+		addSpell(net_packet->data[5], clientnum);
+
+		return;
+	}
+
 	// update hunger
 	else if (!strncmp((char*)net_packet->data, "HNGR", 4))
 	{
