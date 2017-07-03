@@ -4149,7 +4149,7 @@ int main(int argc, char** argv)
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Tile index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", tileEditorNameStrings[palette[mousey + mousex * yres]]);
 
-				char hoverTextString[32] = "";
+				char hoverTextString[1024] = "";
 				snprintf(hoverTextString, 5, "%d: ", palette[mousey + mousex * yres]);
 				strcat(hoverTextString, tileEditorNameStrings[palette[mousey + mousex * yres]]);
 				int hoverTextWidth = strlen(hoverTextString);
