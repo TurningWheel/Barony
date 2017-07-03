@@ -13,34 +13,34 @@
 
 #pragma once
 
-#define SPELLCASTING_BEGINNER 40 //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
+static const int SPELLCASTING_BEGINNER = 40; //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
 
-#define SPELL_NONE 0 //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
-#define SPELL_FORCEBOLT 1
-#define SPELL_MAGICMISSILE 2
-#define SPELL_COLD 3
-#define SPELL_FIREBALL 4
-#define SPELL_LIGHTNING 5
-#define SPELL_REMOVECURSE 6
-#define SPELL_LIGHT 7
-#define SPELL_IDENTIFY 8
-#define SPELL_MAGICMAPPING 9
-#define SPELL_SLEEP 10
-#define SPELL_CONFUSE 11
-#define SPELL_SLOW 12
-#define SPELL_OPENING 13
-#define SPELL_LOCKING 14
-#define SPELL_LEVITATION 15
-#define SPELL_INVISIBILITY 16
-#define SPELL_TELEPORTATION 17
-#define SPELL_HEALING 18
-#define SPELL_EXTRAHEALING 19
+static const int SPELL_NONE = 0; //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
+static const int SPELL_FORCEBOLT = 1;
+static const int SPELL_MAGICMISSILE = 2;
+static const int SPELL_COLD = 3;
+static const int SPELL_FIREBALL = 4;
+static const int SPELL_LIGHTNING = 5;
+static const int SPELL_REMOVECURSE = 6;
+static const int SPELL_LIGHT = 7;
+static const int SPELL_IDENTIFY = 8;
+static const int SPELL_MAGICMAPPING = 9;
+static const int SPELL_SLEEP = 10;
+static const int SPELL_CONFUSE = 11;
+static const int SPELL_SLOW = 12;
+static const int SPELL_OPENING = 13;
+static const int SPELL_LOCKING = 14;
+static const int SPELL_LEVITATION = 15;
+static const int SPELL_INVISIBILITY = 16;
+static const int SPELL_TELEPORTATION = 17;
+static const int SPELL_HEALING = 18;
+static const int SPELL_EXTRAHEALING = 19;
 //#define SPELL_RESTOREABILITY 20
-#define SPELL_CUREAILMENT 20
-#define SPELL_DIG 21
-#define SPELL_SUMMON 22
-#define SPELL_STONEBLOOD 23
-#define SPELL_BLEED 24
+static const int SPELL_CUREAILMENT = 20;
+static const int SPELL_DIG = 21;
+static const int SPELL_SUMMON = 22;
+static const int SPELL_STONEBLOOD = 23;
+static const int SPELL_BLEED = 24;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
