@@ -84,7 +84,7 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		101,		//Stealth
 		100,		//Trading
 		100,		//Appraisal
-		101,		//Swimming
+		100,		//Swimming
 		100,		//Leadership
 		101,
 		101,
