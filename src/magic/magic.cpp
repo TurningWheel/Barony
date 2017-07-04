@@ -245,13 +245,11 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 {
 	if ( !hit.entity )
 	{
-		printlog("Dominate did not hit anything");
 		return false;
 	}
 
 	if ( hit.entity->behavior != &actMonster )
 	{
-		printlog("Not a monster, cannot dominate!");
 		return false;
 	}
 
@@ -259,7 +257,6 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	Stat* hitstats = hit.entity->getStats();
 	if ( !hitstats )
 	{
-		printlog("No hitstats!");
 		return false;
 	}
 
