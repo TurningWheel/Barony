@@ -97,9 +97,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 #ifdef _MSC_VER
 #include <io.h>
-#define F_OK 0	// check for existence 
-#define X_OK 1	// check for execute permission 
-#define W_OK 2	// check for write permission 
+#define F_OK 0	// check for existence
+#define X_OK 1	// check for execute permission
+#define W_OK 2	// check for write permission
 #define R_OK 4	// check for read permission
 
 #if _MSC_VER != 1900 //Don't need this if running visual studio 2015.
@@ -536,6 +536,18 @@ int reloadLanguage();
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
 void list_RemoveNode(node_t* node);
+template <typename T>
+void list_RemoveNodeWithElement(list_t &list, T element)
+{
+	for ( node_t *node = list.first; node != nullptr; node = node->next )
+	{
+		if ( *static_cast<T*>(node->element) == element )
+		{
+			list_RemoveNode(node);
+			return;
+		}
+	}
+}
 node_t* list_AddNodeFirst(list_t* list);
 node_t* list_AddNodeLast(list_t* list);
 node_t* list_AddNode(list_t* list, int index);

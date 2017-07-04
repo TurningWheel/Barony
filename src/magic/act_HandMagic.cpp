@@ -82,6 +82,12 @@ void fireOffSpellAnimation(spellcasting_animation_manager_t* animation_manager, 
 	animation_manager->circle_count = 0;
 	animation_manager->times_to_circle = (getCostOfSpell(spell) / 10) + 1; //Circle once for every 10 mana the spell costs.
 	animation_manager->mana_left = getCostOfSpell(spell);
+	animation_manager->consumeMana = true;
+	if ( spell->ID == SPELL_MAGICMISSILE && caster->skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
+	{
+		animation_manager->consumeMana = false;
+	}
+
 	if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)   //There's a chance that caster is newer to magic (and thus takes longer to cast a spell).
 	{
 		int chance = rand() % 10;
@@ -262,15 +268,15 @@ void actLeftHandMagic(Entity* my)
 					entity->fskill[3] = 0.01;
 				}
 				cast_animation.consume_timer--;
-				if (cast_animation.consume_timer < 0 && cast_animation.mana_left > 0)
+				if ( cast_animation.consume_timer < 0 && cast_animation.mana_left > 0 )
 				{
 					//Time to consume mana and reset the ticker!
 					cast_animation.consume_timer = cast_animation.consume_interval;
-					if (multiplayer == SINGLE)
+					if ( multiplayer == SINGLE && cast_animation.consumeMana )
 					{
 						players[clientnum]->entity->drainMP(1);
 					}
-					cast_animation.mana_left--;
+					--cast_animation.mana_left;
 				}
 
 				cast_animation.lefthand_angle += HANDMAGIC_CIRCLE_SPEED;

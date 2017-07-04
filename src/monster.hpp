@@ -130,7 +130,7 @@ static char gibtype[NUMMONSTERS] =
 	0,	//AUTOMATON,
 	2,	//LICH_ICE,
 	2	//LICH_FIRE
-	
+
 };
 
 // columns go like this:
@@ -179,8 +179,8 @@ static double damagetables[NUMMONSTERS][6] =
 
 #define HITRATE 45
 
-#define MONSTER_STATE my->skill[0]
-#define MONSTER_TARGET my->skill[1]
+#define MONSTER_STATE my->skill[0] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
+#define MONSTER_TARGET my->skill[1] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
 #define MONSTER_INIT my->skill[3]
 #define MONSTER_LOOKTIME my->skill[4]
 #define MONSTER_NUMBER my->skill[5]
@@ -346,6 +346,8 @@ void createMinotaurTimer(Entity* entity, map_t* map);
 void actSummonTrap(Entity* my);
 extern int monsterCurve(int level);
 void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist, int hasrangedweapon);
+
+bool forceFollower(Entity& leader, Entity& follower);
 
 //--special monster attack constants
 static const int GOLEM_SMASH = 4;

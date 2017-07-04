@@ -653,7 +653,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								else if ( hitstats->type >= KOBOLD ) //New monsters
 								{
 									messagePlayerColor(parent->skill[2], color, language[378], language[2000 + (hitstats->type - KOBOLD)]);
-								}						
+								}
 							}
 						}
 					}
@@ -2268,6 +2268,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_dominate.name) )
+				{
+					Entity *caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						if ( spellEffectDominate(*my, *element, *caster, parent) )
+						{
+							//Abort if successfully run, since do not need to execute the proceeding code..
+							return;
+						}
+					}
+				}
+
 				if ( my->light != NULL )
 				{
 					list_RemoveNode(my->light->node);
@@ -2657,7 +2670,7 @@ void actParticleCircle(Entity* my)
 		my->z += my->vel_z;
 		if ( PARTICLE_CASTER == -1 )
 		{
-			
+
 			if ( my->focalx > 0.05 )
 			{
 				if ( my->vel_z == 0.3 )

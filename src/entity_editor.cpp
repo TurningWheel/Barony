@@ -34,7 +34,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestAmbience(skill[7]),
 	chestMaxHealth(skill[8]),
 	chestType(skill[9]),
-	chestPreventLockpickCapstoneExploit(skill[10])
+	chestPreventLockpickCapstoneExploit(skill[10]),
+	monsterState(skill[0]),
+	monsterTarget(skill[1])
 {
 	int c;
 	// add the entity to the entity list
@@ -127,8 +129,7 @@ Stat* Entity::getStats() const
 				return (Stat*)this->children.first->next->element;
 			}
 		}
-	
+
 
 	return nullptr;
 }
-

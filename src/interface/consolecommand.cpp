@@ -796,7 +796,12 @@ void consoleCommand(char* command_str)
 			consoleCommand("/spawnitem magicstaff of lightning");
 			for ( c = 0; c < NUMPROFICIENCIES; c++ )
 			{
-				stats[clientnum]->PROFICIENCIES[c] = 100;
+				//for ( int j = 0; j < 100; ++j )
+				while ( stats[clientnum]->PROFICIENCIES[c] < 100 )
+				{
+					//++stats[clientnum]->PROFICIENCIES[c];
+					players[clientnum]->entity->increaseSkill(c);
+				}
 			}
 		}
 		else
@@ -1019,7 +1024,7 @@ void consoleCommand(char* command_str)
 						break;
 					}
 				}
-				
+
 			}
 
 			if (found)
@@ -1030,7 +1035,7 @@ void consoleCommand(char* command_str)
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					if ( i < KOBOLD ) 
+					if ( i < KOBOLD )
 					{
 						messagePlayer(clientnum, language[302], language[90 + creature]);
 					}
