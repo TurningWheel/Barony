@@ -3912,6 +3912,7 @@ void handleMainMenu(bool mode)
 				{
 					stats[clientnum]->clearStats();
 					initClass(clientnum);
+					mapseed = 0;
 				}
 				else
 				{
@@ -3931,7 +3932,6 @@ void handleMainMenu(bool mode)
 				}
 #endif
 				// load next level
-				mapseed = 0;
 				entity_uids = 1;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
