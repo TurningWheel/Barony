@@ -122,6 +122,10 @@ public:
 	 */
 	Sint32& chestPreventLockpickCapstoneExploit;
 
+	//--PUBLIC MONSTER SKILLS--
+	Sint32& monsterState;
+	Sint32& monsterTarget;
+
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -227,6 +231,11 @@ public:
 
 		return (getStats()->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
 	}
+
+	/*
+	 * Returns -1 if not a player.
+	 */
+	int isEntityPlayer() const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

@@ -50,6 +50,7 @@ spellElement_t spellElement_removecurse;
 spellElement_t spellElement_summon;
 spellElement_t spellElement_stoneblood;
 spellElement_t spellElement_bleed;
+spellElement_t spellElement_dominate;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -76,8 +77,9 @@ spell_t spell_dig;
 spell_t spell_summon;
 spell_t spell_stoneblood;
 spell_t spell_bleed;
+spell_t spell_dominate;
 
-void addSpell(int spell, int player)
+void addSpell(int spell, int player, bool ignoreSkill)
 {
 	node_t* node = NULL;
 
@@ -163,6 +165,9 @@ void addSpell(int spell, int player)
 		case SPELL_SUMMON:
 			new_spell = copySpell(&spell_summon);
 			break;
+		case SPELL_DOMINATE:
+			new_spell = copySpell(&spell_dominate);
+			break;
 		default:
 			return;
 	}
@@ -172,7 +177,7 @@ void addSpell(int spell, int player)
 		spellDeconstructor((void*)new_spell);
 		return;
 	}
-	if ( stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
+	if ( !ignoreSkill && stats[player]->PROFICIENCIES[PRO_MAGIC] + statGetINT(stats[player]) < new_spell->difficulty )
 	{
 		messagePlayer(player, language[440]);
 		spellDeconstructor((void*)new_spell);
@@ -476,6 +481,9 @@ spell_t* getSpellFromID(int ID)
 			break;
 		case SPELL_BLEED:
 			spell = &spell_bleed;
+			break;
+		case SPELL_DOMINATE:
+			spell = &spell_dominate;
 			break;
 	}
 

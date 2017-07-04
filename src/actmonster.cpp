@@ -4519,7 +4519,7 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
 				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
 			}
-		}	
+		}
 	}
 	else if ( axis == ANIMATE_ROLL )
 	{
@@ -4562,7 +4562,7 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			}
 		}
 	}
-	
+
 
 	return -1;
 }
@@ -4665,4 +4665,52 @@ int limbAngleWithinRange(real_t angle, double rate, double setpoint)
 	}
 
 	return 0;
+}
+
+bool forceFollower(Entity& leader, Entity& follower)
+{
+	//TODO: What if already have a leader?
+	Stat* leaderStats = leader.getStats();
+	Stat* followerStats = follower.getStats();
+	if ( !leaderStats || !followerStats )
+	{
+		printlog("Error: No stat for dominate.");
+		return false;
+	}
+
+	if ( followerStats->leader_uid != 0 )
+	{
+		printlog("Already has allegiance of another!"); //TODO: Dominate should steal them anyway...
+		return false;
+	}
+
+	printlog("Making follower.");
+
+	//monsterclicked = player.
+	//my = the monster
+	node_t* newNode = list_AddNodeLast(&leaderStats->FOLLOWERS);
+	newNode->deconstructor = &defaultDeconstructor;
+	Uint32* myuid = (Uint32*) (malloc(sizeof(Uint32)));
+	newNode->element = myuid;
+	*myuid = follower.getUID();
+
+	//follower.skill[0] = 0; //MONSTER_STATE = 0; // be ready to follow //TODO: make MONSTER_STATE work here.
+	follower.monsterState = 0;
+	follower.monsterTarget = 0;
+	followerStats->leader_uid = leader.getUID();
+
+	int player = leader.isEntityPlayer();
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		printlog("Sending dominate pocket.");
+		//Tell the client he suckered somebody into his cult.
+		strcpy((char*) (net_packet->data), "LEAD");
+		SDLNet_Write32((Uint32 )follower.getUID(), &net_packet->data[4]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+
+	return true;
 }

@@ -61,7 +61,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestAmbience(skill[7]),
 	chestMaxHealth(skill[8]),
 	chestType(skill[9]),
-	chestPreventLockpickCapstoneExploit(skill[10])
+	chestPreventLockpickCapstoneExploit(skill[10]),
+	monsterState(skill[0]),
+	monsterTarget(skill[1])
 {
 	int c;
 	// add the entity to the entity list
@@ -779,7 +781,7 @@ void Entity::increaseSkill(int skill)
 				break;
 		}
 
-		if ( skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+		if ( skill == PRO_SPELLCASTING && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
 		{
 			//Spellcasting capstone = free casting of magic missile.
 			//Give the player the spell if they haven't learned it yet.
@@ -795,7 +797,26 @@ void Entity::increaseSkill(int skill)
 			}
 			else
 			{
-				addSpell(SPELL_MAGICMISSILE, player);
+				addSpell(SPELL_MAGICMISSILE, player, true);
+			}
+		}
+
+		if ( skill == PRO_MAGIC && skillCapstoneUnlocked(player, PRO_MAGIC) )
+		{
+			//magic capstone = bonus spell: Dominate.
+			if ( player > 0 && multiplayer == SERVER )
+			{
+				strcpy((char*)net_packet->data, "ASPL");
+				net_packet->data[4] = clientnum;
+				net_packet->data[5] = SPELL_DOMINATE;
+				net_packet->address.host = net_clients[player - 1].host;
+				net_packet->address.port = net_clients[player - 1].port;
+				net_packet->len = 6;
+				sendPacketSafe(net_sock, -1, net_packet, player - 1);
+			}
+			else
+			{
+				addSpell(SPELL_DOMINATE, player, true);
 			}
 		}
 	}
@@ -5604,4 +5625,18 @@ int getStatForProficiency(int skill)
 	}
 
 	return statForProficiency;
+}
+
+
+int Entity::isEntityPlayer() const
+{
+   for ( int i = 0; i < numplayers; ++i )
+   {
+	   if ( this == players[i]->entity )
+	   {
+		   return i;
+	   }
+   }
+
+   return -1;
 }

@@ -41,6 +41,7 @@ static const int SPELL_DIG = 21;
 static const int SPELL_SUMMON = 22;
 static const int SPELL_STONEBLOOD = 23;
 static const int SPELL_BLEED = 24;
+static const int SPELL_DOMINATE = 25;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -84,7 +85,7 @@ static const int SPELL_BLEED = 24;
 
 #define HEAL_RADIUS 128
 
-void addSpell(int spell, int player); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
+void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
 
@@ -295,6 +296,11 @@ extern spellElement_t spellElement_bleed;
 extern spellElement_t spellElement_missile_trio;
 
 /*
+ * Turns a non-boss non-player creature into one of your followers.
+ */
+extern spellElement_t spellElement_dominate;
+
+/*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
 //TODO: Support setting how a spell resolves? Eg teleportation: Click, shoot ball, end up where ball hits wall or end of teleport range, or, bring up map, click where you want to teleport to, etc. Or maybe just make different spells for each one. Eg teleporting step could be click and appear at end of path, while teleportation itself could bring up a map and you click on where you want to teleport to.
@@ -357,6 +363,7 @@ extern spell_t spell_dig; //Done.
 extern spell_t spell_summon;
 extern spell_t spell_stoneblood;
 extern spell_t spell_bleed;
+extern spell_t spell_dominate;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -440,3 +447,8 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 class Item;
 
 spell_t* getSpellFromItem(Item* item);
+
+//Spell implementation stuff.
+bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
+
+void freeSpells();

@@ -87,7 +87,7 @@ static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 		100,		//Swimming
 		100,		//Leadership
 		100,		//Spellcasting
-		101,		//Magic
+		100,		//Magic
 		101,
 		101,
 		101,
@@ -206,3 +206,8 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 }
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
+
+inline char* getSkillName(int skill)
+{
+	return language[236 + skill];
+}

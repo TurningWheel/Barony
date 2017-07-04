@@ -2904,4 +2904,12 @@ client (player %d) (direct ip)#
 #More character creation screen stuff.
 2450 Random Name#
 
+#New spells.
+2460 Dominate#
+2461 You feel energy go out from you as you
+dominate %s into your service!#
+2462 You feel energy go out from you as you
+dominate the %s into your service!#
+2463 You are unable to dominate this one.#
+
 2499 end#

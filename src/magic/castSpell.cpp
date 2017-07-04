@@ -1018,6 +1018,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					entity->sprite = 173;
 				}
 			}
+			else if ( !strcmp(spell->name, spell_dominate.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 168;
+				}
+			}
 		}
 	}
 

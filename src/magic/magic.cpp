@@ -20,6 +20,35 @@
 #include "../player.hpp"
 #include "magic.hpp"
 
+void freeSpells()
+{
+	list_FreeAll(&spell_forcebolt.elements);
+	list_FreeAll(&spell_magicmissile.elements);
+	list_FreeAll(&spell_cold.elements);
+	list_FreeAll(&spell_fireball.elements);
+	list_FreeAll(&spell_lightning.elements);
+	list_FreeAll(&spell_removecurse.elements);
+	list_FreeAll(&spell_light.elements);
+	list_FreeAll(&spell_identify.elements);
+	list_FreeAll(&spell_magicmapping.elements);
+	list_FreeAll(&spell_sleep.elements);
+	list_FreeAll(&spell_confuse.elements);
+	list_FreeAll(&spell_slow.elements);
+	list_FreeAll(&spell_opening.elements);
+	list_FreeAll(&spell_locking.elements);
+	list_FreeAll(&spell_levitation.elements);
+	list_FreeAll(&spell_invisibility.elements);
+	list_FreeAll(&spell_teleportation.elements);
+	list_FreeAll(&spell_healing.elements);
+	list_FreeAll(&spell_extrahealing.elements);
+	list_FreeAll(&spell_cureailment.elements);
+	list_FreeAll(&spell_dig.elements);
+	list_FreeAll(&spell_summon.elements);
+	list_FreeAll(&spell_stoneblood.elements);
+	list_FreeAll(&spell_bleed.elements);
+	list_FreeAll(&spell_dominate.elements);
+}
+
 void spell_magicMap(int player)
 {
 	if (players[player] == nullptr || players[player]->entity == nullptr)
@@ -133,7 +162,7 @@ void spell_summonFamiliar(int player)
 	//		numCreatures = rand() % 2 + 4;
 	//		creature = DEMON;
 	//		break;
-	//	
+	//
 	//}
 
 	int i;
@@ -141,7 +170,7 @@ void spell_summonFamiliar(int player)
 	for ( i = 0; i < numCreatures; ++i )
 	{
 		Entity* monster = summonMonster(creature, floor(players[player]->entity->x / 16) * 16 + 8, floor(players[player]->entity->y / 16) * 16 + 8);
-		
+
 		if ( monster )
 		{
 			spawnedMonster = true;
@@ -210,4 +239,74 @@ void spell_summonFamiliar(int player)
 			//}
 		}
 	}
+}
+
+bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent)
+{
+	if ( !hit.entity )
+	{
+		printlog("Dominate did not hit anything");
+		return false;
+	}
+
+	if ( hit.entity->behavior != &actMonster )
+	{
+		printlog("Not a monster, cannot dominate!");
+		return false;
+	}
+
+	//Abort if invalid creature (boss, shopkeep, etc).
+	Stat* hitstats = hit.entity->getStats();
+	if ( !hitstats )
+	{
+		printlog("No hitstats!");
+		return false;
+	}
+
+	if ( hitstats->type ==  MINOTAUR || hitstats->type == LICH || hitstats->type == DEVIL || hitstats->type == SHOPKEEPER || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+	{
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+		messagePlayerColor(parent->skill[2], color, language[2463]);
+		return false;
+	}
+
+	playSoundEntity(hit.entity, 174, 64); //TODO: Dominate spell sound effect.
+
+	//Make the monster a follower.
+	bool dominated = forceFollower(caster, *hit.entity);
+
+	//TODO: Update lang entries.
+	if ( parent && dominated )
+	{
+		Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+		if ( parent->behavior == &actPlayer )
+		{
+			if ( strcmp(hitstats->name, "") )
+			{
+				messagePlayerColor(parent->skill[2], color, language[2461], hitstats->name);
+			}
+			else
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					messagePlayerColor(parent->skill[2], color, language[2462], language[90 + hitstats->type]);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					messagePlayerColor(parent->skill[2], color, language[2462], language[2000 + (hitstats->type - KOBOLD)]);
+				}
+			}
+		}
+
+		caster.drainMP(hitstats->HP); //Drain additional MP equal to health of monster.
+	}
+
+	if ( my.light != NULL )
+	{
+		list_RemoveNode(my.light->node);
+		my.light = NULL;
+	}
+	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	list_RemoveNode(my.mynode);
+	return true;
 }

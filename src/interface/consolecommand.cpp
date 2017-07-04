@@ -796,7 +796,8 @@ void consoleCommand(char* command_str)
 			consoleCommand("/spawnitem magicstaff of lightning");
 			for ( c = 0; c < NUMPROFICIENCIES; c++ )
 			{
-				for ( int j = 0; j < 100; ++j )
+				//for ( int j = 0; j < 100; ++j )
+				while ( stats[clientnum]->PROFICIENCIES[c] < 100 )
 				{
 					//++stats[clientnum]->PROFICIENCIES[c];
 					players[clientnum]->entity->increaseSkill(c);
