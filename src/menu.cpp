@@ -9,6 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <list>
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -74,28 +75,10 @@ button_t* button_gamepad_settings_tab = nullptr;
 button_t* button_misc_tab = nullptr;
 
 int score_window = 0;
-#ifdef PANDORA
-int resolutions[NUMRESOLUTIONS][2] =
-{
-	{ 800, 480 },
-	{ 960, 600 }
-};
-#else
-int resolutions[NUMRESOLUTIONS][2] =
-{
-	{ 960, 600 },
-	{ 1024, 768 },
-	{ 1280, 720 },
-	{ 1280, 800 },
-	{ 1280, 960 },
-	{ 1366, 768 },
-	{ 1600, 900 },
-	{ 1600, 1000 },
-	{ 1920, 1080 },
-	{ 1920, 1200 }
-};
-#endif
 int settings_xres, settings_yres;
+
+typedef std::tuple<int, int> resolution;
+std::list<resolution> resolutions;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
@@ -342,11 +325,22 @@ void inline printJoybindingNames(const SDL_Rect& currentPos, int c, bool &rebind
 
 	if ( c != rebindaction )
 	{
-		ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, getInputName(settings_joyimpulses[c]));
+		if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unassigned key" ))
+		{
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+		}
+		else if ( !strcmp(getInputName(settings_joyimpulses[c]), "Unknown key") || !strcmp(getInputName(settings_joyimpulses[c]), "Unknown trigger") )
+		{
+			ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorRed(*mainsurface), true, getInputName(settings_joyimpulses[c]));
+		}
+		else
+		{
+			ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, getInputName(settings_joyimpulses[c]));
+		}
 	}
 	else
 	{
-		ttfPrintText(ttf8, currentPos.x + 232, currentPos.y, "...");
+		ttfPrintTextColor(ttf8, currentPos.x + 232, currentPos.y, uint32ColorGreen(*mainsurface), true, "...");
 	}
 }
 
@@ -1621,15 +1615,18 @@ void handleMainMenu(bool mode)
 		{
 			// resolution
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
-			for ( c = 0; c < NUMRESOLUTIONS; c++ )
+			c=0;
+			for ( auto cur : resolutions )
 			{
-				if ( settings_xres == resolutions[c][0] && settings_yres == resolutions[c][1] )
+				int width, height;
+				std::tie (width, height) = cur;
+				if ( settings_xres == width && settings_yres == height )
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", resolutions[c][0], resolutions[c][1]);
+					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[o] %dx%d", width, height);
 				}
 				else
 				{
-					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", resolutions[c][0], resolutions[c][1]);
+					ttfPrintTextFormatted(ttf12, subx1 + 32, suby1 + 84 + c * 16, "[ ] %dx%d", width, height);
 				}
 				if ( mousestatus[SDL_BUTTON_LEFT] )
 				{
@@ -1638,12 +1635,13 @@ void handleMainMenu(bool mode)
 						if ( omousey >= suby1 + 84 + c * 16 && omousey < suby1 + 96 + c * 16 )
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							settings_xres = resolutions[c][0];
-							settings_yres = resolutions[c][1];
+							settings_xres = width;
+							settings_yres = height;
 							resolutionChanged = true;
 						}
 					}
 				}
+				c++;
 			}
 
 			// extra options
@@ -1789,11 +1787,22 @@ void handleMainMenu(bool mode)
 				}
 				if ( c != rebindkey )
 				{
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, getInputName(settings_impulses[c]));
+					if ( !strcmp(getInputName(settings_impulses[c]), "Unassigned key" ))
+					{
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorBaronyBlue(*mainsurface), true, getInputName(settings_impulses[c]));
+					}
+					else if ( !strcmp(getInputName(settings_impulses[c]), "Unknown key") || !strcmp(getInputName(settings_impulses[c]), "Unknown trigger") )
+					{
+						ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorRed(*mainsurface), true, getInputName(settings_impulses[c]));
+					}
+					else
+					{
+						ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, getInputName(settings_impulses[c]));
+					}
 				}
 				else
 				{
-					ttfPrintText(ttf12, subx1 + 256, suby1 + 84 + c * 16, "...");
+					ttfPrintTextColor(ttf12, subx1 + 256, suby1 + 84 + c * 16, uint32ColorGreen(*mainsurface), true, "...");
 				}
 			}
 
@@ -4884,12 +4893,46 @@ void openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
+// get 
+void getResolutionList()
+{
+	// for now just use the resolution modes on the first
+	// display.
+	int numdisplays = SDL_GetNumVideoDisplays();
+	int nummodes = SDL_GetNumDisplayModes(0);
+	int im;
+	int c;
+	
+	printlog("display count: %d.\n", numdisplays);
+	printlog("display mode count: %d.\n", nummodes);
+	
+	for (im = 0; im < nummodes; im++)
+	{
+		SDL_DisplayMode mode;
+		SDL_GetDisplayMode(0, im, &mode);
+		// resolutions below 960x600 are not supported
+		if ( mode.w >= 960 && mode.h >= 600 )
+		{
+			resolution res(mode.w, mode.h);
+			resolutions.push_back(res);
+		}
+	}
+	
+	// Sort by total number of pixels
+	resolutions.sort([](resolution a, resolution b) {
+		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
+	});
+	resolutions.unique();
+}
+
 // sets up the settings window
 void openSettingsWindow()
 {
 	button_t* button;
 	int c;
 
+	getResolutionList();
+	
 	// set the "settings" variables
 	settings_xres = xres;
 	settings_yres = yres;

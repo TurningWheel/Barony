@@ -295,9 +295,16 @@ void select_inventory_slot(int x, int y)
 
 	bool warpInv = true;
 
-	if ( y < 0 )   //Wrap around top.
+	if ( y < 0 )   //Wrap around top to bottom.
 	{
 		y = INVENTORY_SIZEY - 1;
+		if ( hotbarGamepadControlEnabled() )
+		{
+			hotbarHasFocus = true; //Warp to hotbar.
+			float percentage = static_cast<float>(x + 1) / static_cast<float>(INVENTORY_SIZEX);
+			selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+			warpMouseToSelectedHotbarSlot();
+		}
 	}
 	if ( y >= INVENTORY_SIZEY )   //Hit bottom. Wrap around or go to shop/chest?
 	{
@@ -356,6 +363,14 @@ void select_inventory_slot(int x, int y)
 		if ( warpInv )   //Wrap around to top.
 		{
 			y = 0;
+
+			if ( hotbarGamepadControlEnabled() )
+			{
+				hotbarHasFocus = true;
+				float percentage = static_cast<float>(x + 1) / static_cast<float>(INVENTORY_SIZEX);
+				selectHotbarSlot((percentage + 0.09) * NUM_HOTBAR_SLOTS - 1);
+				warpMouseToSelectedHotbarSlot();
+			}
 		}
 	}
 
@@ -642,6 +657,7 @@ void drawBlueInventoryBorder(const Item& item, int x, int y)
 
 void updatePlayerInventory()
 {
+	bool disableMouseDisablingHotbarFocus = false;
 	SDL_Rect pos, mode_pos;
 	node_t* node, *nextnode;
 	int x, y;
@@ -676,7 +692,14 @@ void updatePlayerInventory()
 		{
 			if ( selectedChestSlot < 0 && selectedShopSlot < 0 && selectedIdentifySlot < 0 && selectedRemoveCurseSlot < 0 ) //This second check prevents the extra mouse warp.
 			{
-				warpMouseToSelectedInventorySlot();
+				if ( !hotbarHasFocus )
+				{
+					warpMouseToSelectedInventorySlot();
+				}
+				else
+				{
+					disableMouseDisablingHotbarFocus = true;
+				}
 			}
 		}
 		else if ( selectedChestSlot >= 0 && !itemMenuOpen && game_controller->handleChestMovement() )
@@ -761,9 +784,13 @@ void updatePlayerInventory()
 				{
 					selected_inventory_slot_x = x;
 					selected_inventory_slot_y = y;
+					if ( hotbarHasFocus && !disableMouseDisablingHotbarFocus )
+					{
+						hotbarHasFocus = false; //Utter bodge to fix hotbar nav on OS X.
+					}
 				}
 
-				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y )
+				if ( x == selected_inventory_slot_x && y == selected_inventory_slot_y && !hotbarHasFocus )
 				{
 					Uint32 color = SDL_MapRGBA(mainsurface->format, 255, 255, 0, 127);
 					drawBox(&pos, color, 127);
