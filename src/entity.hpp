@@ -73,15 +73,10 @@ class Entity
 	Sint32& crystalInitialised; // 1 if init, else 0
 	Sint32& crystalTurning; // 1 if currently rotating, else 0
 	Sint32& crystalTurnStartDir; // when rotating, the previous facing direction stored here 0-3
+	
 	Sint32& crystalGeneratedElectricityNodes; // 1 if electricity nodes generated previously, else 0
-	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
-
-	real_t& crystalStartZ; // mid point of animation, starting height.
-	real_t& crystalMaxZVelocity;
-	real_t& crystalMinZVelocity;
-	real_t& crystalTurnVelocity; // how fast to turn on click.
 
 	static const int CRYSTAL_HOVER_UP = 0;
 	static const int CRYSTAL_HOVER_UP_WAIT = 1;
@@ -141,6 +136,15 @@ public:
 	 */
 	Sint32& chestPreventLockpickCapstoneExploit;
 
+	//--PUBLIC POWER CRYSTAL SKILLS--
+	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
+	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
+	Sint32& crystalSpellToActivate; // If 1, must be hit by unlocking spell to start generating electricity.
+
+	real_t& crystalStartZ; // mid point of animation, starting height.
+	real_t& crystalMaxZVelocity;
+	real_t& crystalMinZVelocity;
+	real_t& crystalTurnVelocity; // how fast to turn on click.
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;

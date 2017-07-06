@@ -1943,6 +1943,27 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 						}
+						else if ( hit.entity->behavior == &actPowerCrystalBase )
+						{
+							Entity* childentity = static_cast<Entity*>((&hit.entity->children)->first->element);
+							if ( childentity != nullptr )
+							{
+								
+								//Unlock crystal
+								if ( childentity->crystalSpellToActivate )
+								{
+									playSoundEntity(hit.entity, 151, 128);
+									childentity->crystalSpellToActivate = 0;
+									if ( parent )
+									{
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayer(parent->skill[2], language[2358]);
+										}
+									}
+								}
+							}
+						}
 						else
 						{
 							if ( parent )

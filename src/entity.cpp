@@ -69,6 +69,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalNumElectricityNodes(skill[6]),
 	crystalHoverDirection(skill[7]),
 	crystalHoverWaitTimer(skill[8]),
+	crystalTurnReverse(skill[9]),
+	crystalSpellToActivate(skill[10]),
 	crystalStartZ(fskill[0]),
 	crystalMaxZVelocity(fskill[1]),
 	crystalMinZVelocity(fskill[2]),

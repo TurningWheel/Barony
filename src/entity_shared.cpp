@@ -64,6 +64,10 @@ int checkSpriteType(Sint32 sprite)
 		//summon trap
 		return 4;
 		break;
+	case 106:
+		//power crystal
+		return 5;
+		break;
 	default:
 		return 0;
 		break;
@@ -1036,6 +1040,26 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[3] = 1;
 			entityNew->skill[4] = 0;
 			entityNew->skill[5] = 0;
+		}
+	}
+	// power crystal
+	else if ( spriteType == 5 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->yaw = entityToCopy->yaw;
+			entityNew->crystalNumElectricityNodes = entityToCopy->crystalNumElectricityNodes;
+			entityNew->crystalTurnReverse = entityToCopy->crystalTurnReverse;
+			entityNew->crystalSpellToActivate = entityToCopy->crystalSpellToActivate;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->yaw = 0;
+			entityNew->crystalNumElectricityNodes = 5;
+			entityNew->crystalTurnReverse = 0;
+			entityNew->crystalSpellToActivate = 0;
 		}
 	}
 

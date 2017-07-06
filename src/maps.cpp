@@ -2863,8 +2863,8 @@ void assignActions(map_t* map)
 				}
 				else if (entity->yaw == 3 * PI/2 ) //NORTH FACING
 				{
-						childEntity->x = entity->x;
-						childEntity->y = entity->y + 3;
+					childEntity->x = entity->x;
+					childEntity->y = entity->y + 3;
 				}
 				else 
 				{
@@ -3543,24 +3543,38 @@ void assignActions(map_t* map)
 				entity->z = 6.5;
 				entity->behavior = &actPowerCrystalBase;
 				entity->sprite = 577; //crystal base
+				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 
 				childEntity = newEntity(578, 0, map->entities); //floating crystal
 				childEntity->parent = entity->getUID();
 
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
-				childEntity->fskill[0] = entity->z - 10; //start position
-				childEntity->z = childEntity->fskill[0] - 0.4 + ((prng_get_uint() % 8) * 0.1); // start the height randomly
-				childEntity->fskill[1] = 0.02; //max velocity
-				childEntity->fskill[2] = 0.001; //min velocity
-				childEntity->fskill[3] = 0.2; //yaw turning velocity
-				childEntity->skill[6] = 3; //number of electricity nodes to generate in facing direction.
-				childEntity->vel_z = childEntity->fskill[1] * ((prng_get_uint() % 100) * 0.01); // start the velocity randomly
+				childEntity->crystalStartZ = entity->z - 10; //start position
+				childEntity->z = childEntity->crystalStartZ - 0.4 + ((prng_get_uint() % 8) * 0.1); // start the height randomly
+				childEntity->crystalMaxZVelocity = 0.02; //max velocity
+				childEntity->crystalMinZVelocity = 0.001; //min velocity
+				childEntity->crystalTurnVelocity = 0.2; //yaw turning velocity
+				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((prng_get_uint() % 100) * 0.01); // start the velocity randomly
+				
+				childEntity->crystalNumElectricityNodes = entity->crystalNumElectricityNodes; //number of electricity nodes to generate in facing direction.
+				childEntity->crystalTurnReverse = entity->crystalTurnReverse;
+				childEntity->crystalSpellToActivate = entity->crystalSpellToActivate;
+				if ( childEntity->crystalSpellToActivate )
+				{
+					childEntity->z = childEntity->crystalStartZ + 5;
+					childEntity->vel_z = childEntity->crystalMaxZVelocity * 2;
+				}
 				childEntity->yaw = entity->yaw;
 				childEntity->sizex = 4;
 				childEntity->sizey = 4;
 				childEntity->behavior = &actPowerCrystal;
 				childEntity->flags[PASSABLE] = true;
+
+				node_t* tempNode = list_AddNodeLast(&entity->children);
+				tempNode->element = childEntity; // add the node to the children list.
+				tempNode->deconstructor = &emptyDeconstructor;
+				tempNode->size = sizeof(Entity*);
 
 				break;
 			}
