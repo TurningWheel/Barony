@@ -345,6 +345,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 				case 2:
 				case 3:
 				case 4:
+				case 5:
 					setSpriteAttributes(entity, nullptr, nullptr);
 					break;
 				default:
@@ -481,6 +482,12 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->skill[3], sizeof(Sint32), 1, fp);
 						fread(&entity->skill[4], sizeof(Sint32), 1, fp);
 						fread(&entity->skill[5], sizeof(Sint32), 1, fp);
+						break;
+					case 5:
+						fread(&entity->yaw, sizeof(real_t), 1, fp);
+						fread(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1, fp);
+						fread(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
+						fread(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
 						break;
 					default:
 						break;
@@ -696,6 +703,12 @@ int saveMap(char* filename2)
 					fwrite(&entity->skill[3], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[4], sizeof(Sint32), 1, fp);
 					fwrite(&entity->skill[5], sizeof(Sint32), 1, fp);
+					break;
+				case 5:
+					fwrite(&entity->yaw, sizeof(real_t), 1, fp);
+					fwrite(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1, fp);
+					fwrite(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
+					fwrite(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

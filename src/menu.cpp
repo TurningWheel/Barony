@@ -80,6 +80,7 @@ int settings_xres, settings_yres;
 typedef std::tuple<int, int> resolution;
 std::list<resolution> resolutions;
 Uint32 settings_fov;
+Uint32 settings_fps;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
 real_t settings_gamma;
@@ -1733,12 +1734,16 @@ void handleMainMenu(bool mode)
 			}
 
 			// fov slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, language[1346]);
-			doSlider(subx1 + 24, suby2 - 104, 14, 40, 100, 1, (int*)(&settings_fov));
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 174, language[1346]);
+			doSlider(subx1 + 24, suby2 - 148, 14, 40, 100, 1, (int*)(&settings_fov));
 
 			// gamma slider
-			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[1347]);
-			doSliderF(subx1 + 24, suby2 - 56, 14, 0.25, 2.f, 0.25, &settings_gamma);
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 128, language[1347]);
+			doSliderF(subx1 + 24, suby2 - 104, 14, 0.25, 2.f, 0.25, &settings_gamma);
+
+			// fps slider
+			ttfPrintText(ttf12, subx1 + 24, suby2 - 80, language[2411]);
+			doSlider(subx1 + 24, suby2 - 56, 14, 60, 144, 1, (int*)(&settings_fps));
 		}
 
 		// audio tab
@@ -3912,6 +3917,7 @@ void handleMainMenu(bool mode)
 				{
 					stats[clientnum]->clearStats();
 					initClass(clientnum);
+					mapseed = 0;
 				}
 				else
 				{
@@ -3931,7 +3937,6 @@ void handleMainMenu(bool mode)
 				}
 #endif
 				// load next level
-				mapseed = 0;
 				entity_uids = 1;
 				lastEntityUIDs = entity_uids;
 				numplayers = 0;
@@ -4944,6 +4949,7 @@ void openSettingsWindow()
 	settings_spawn_blood = spawn_blood;
 	settings_colorblind = colorblind;
 	settings_gamma = vidgamma;
+	settings_fps = fpsLimit;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
 	for (c = 0; c < NUMIMPULSES; c++)
@@ -4981,9 +4987,9 @@ void openSettingsWindow()
 	settings_window = true;
 	subwindow = 1;
 	//subx1 = xres/2-256;
-	subx1 = xres / 2 - 352;
+	subx1 = xres / 2 - 448;
 	//subx2 = xres/2+256;
-	subx2 = xres / 2 + 352;
+	subx2 = xres / 2 + 448;
 	//suby1 = yres/2-192;
 	//suby2 = yres/2+192;
 #ifdef PANDORA
@@ -6392,6 +6398,7 @@ void applySettings()
 	colorblind = settings_colorblind;
 	oldGamma = vidgamma;
 	vidgamma = settings_gamma;
+	fpsLimit = settings_fps;
 	oldXres = xres;
 	oldYres = yres;
 	xres = settings_xres;

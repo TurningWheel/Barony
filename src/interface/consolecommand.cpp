@@ -65,6 +65,11 @@ void consoleCommand(char* command_str)
 		fov = atoi(&command_str[5]);
 		fov = std::min(std::max<Uint32>(40, fov), 100u);
 	}
+	else if ( !strncmp(command_str, "/fps", 4) )
+	{
+		fpsLimit = atoi(&command_str[5]);
+		fpsLimit = std::min(std::max<Uint32>(60, fpsLimit), 144u);
+	}
 	else if (!strncmp(command_str, "/svflags ", 9))
 	{
 		if ( multiplayer == CLIENT )

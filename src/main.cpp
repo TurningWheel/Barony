@@ -190,6 +190,7 @@ Uint32 imgref = 1, vboref = 1;
 GLuint* texid = NULL;
 bool disablevbos = false;
 Uint32 fov = 65;
+Uint32 fpsLimit = 60;
 //GLuint *vboid=NULL, *vaoid=NULL;
 SDL_Surface** allsurfaces;
 Uint32 numsprites, numtiles, nummodels;

@@ -97,6 +97,7 @@ extern Sint32 slidery, slidersize, oslidery;
 
 // settings window
 extern Uint32 settings_fov;
+extern Uint32 settings_fps;
 extern int settings_xres, settings_yres;
 extern bool settings_smoothlighting;
 extern int settings_fullscreen, settings_shaking, settings_bobbing;

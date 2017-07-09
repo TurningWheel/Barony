@@ -2104,13 +2104,21 @@ Uint32 lastGameTickCount = 0;
 bool frameRateLimit( Uint32 maxFrameRate )
 {
 	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
+	
+	if ( (1000.0f / std::ceilf(desiredFrameMilliseconds)) < maxFrameRate )
+	{
+		// check if our fps limiter will calculate the fps to be below the target.
+		// if below target, then set our milisecond target to be 1 less millisecond
+		desiredFrameMilliseconds = desiredFrameMilliseconds - 1;
+	}
+
 	Uint32 gameTickCount = SDL_GetTicks();
 
 	float millisecondsElapsed = (float)(gameTickCount - lastGameTickCount);
 	if ( millisecondsElapsed < desiredFrameMilliseconds )
 	{
 		// if enough time is left sleep, otherwise just keep spinning so we don't go over the limit...
-		if ( desiredFrameMilliseconds - millisecondsElapsed > 3.0f )
+		if ( desiredFrameMilliseconds - millisecondsElapsed > 5.0f )
 		{
 #ifndef WINDOWS
 			usleep( 5000 );
@@ -3211,7 +3219,7 @@ int main(int argc, char** argv)
 			}
 
 			// frame rate limiter
-			while ( frameRateLimit(MAX_FPS_LIMIT) )
+			while ( frameRateLimit(fpsLimit) )
 			{
 				if ( !intro )
 				{
