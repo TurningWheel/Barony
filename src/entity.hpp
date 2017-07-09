@@ -269,6 +269,8 @@ public:
 	void actMonsterLimb(bool processLight = false);
 
 	void removeMonsterDeathNodes();
+
+	void spawnBlood(int bloodsprite = 160);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
