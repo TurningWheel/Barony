@@ -86,7 +86,7 @@ void initGhoul(Entity* my, Stat* myStats)
 
 			// count if any custom inventory items from editor
 			// max limit of 6 custom items per entity.
-			int customItems = countCustomItems(myStats); 
+			int customItems = countCustomItems(myStats);
 
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
@@ -306,7 +306,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

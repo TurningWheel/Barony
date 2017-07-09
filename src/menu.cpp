@@ -1108,7 +1108,7 @@ void handleMainMenu(bool mode)
 			players[clientnum]->entity->flags[BRIGHT] = true;
 			if (!playing_random_char)
 			{
-				if ( !players[clientnum]->entity->flags[INVISIBLE] )
+				if ( !players[clientnum]->entity->flags[INVISIBLE] ) //TODO: isInvisible()?
 				{
 					real_t ofov = fov;
 					fov = 50;
@@ -3492,7 +3492,7 @@ void handleMainMenu(bool mode)
 				drawRect(&pos, 0, 255);
 				b = players[clientnum]->entity->flags[BRIGHT];
 				players[clientnum]->entity->flags[BRIGHT] = true;
-				if ( !players[clientnum]->entity->flags[INVISIBLE] )
+				if ( !players[clientnum]->entity->flags[INVISIBLE] ) //TODO: isInvisible()?
 				{
 					real_t ofov = fov;
 					fov = 50;
@@ -4893,7 +4893,7 @@ void openGameoverWindow()
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 }
 
-// get 
+// get
 void getResolutionList()
 {
 	// for now just use the resolution modes on the first
@@ -4902,10 +4902,10 @@ void getResolutionList()
 	int nummodes = SDL_GetNumDisplayModes(0);
 	int im;
 	int c;
-	
+
 	printlog("display count: %d.\n", numdisplays);
 	printlog("display mode count: %d.\n", nummodes);
-	
+
 	for (im = 0; im < nummodes; im++)
 	{
 		SDL_DisplayMode mode;
@@ -4917,7 +4917,7 @@ void getResolutionList()
 			resolutions.push_back(res);
 		}
 	}
-	
+
 	// Sort by total number of pixels
 	resolutions.sort([](resolution a, resolution b) {
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
@@ -4932,7 +4932,7 @@ void openSettingsWindow()
 	int c;
 
 	getResolutionList();
-	
+
 	// set the "settings" variables
 	settings_xres = xres;
 	settings_yres = yres;

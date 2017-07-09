@@ -301,7 +301,7 @@ void lichAnimate(Entity* my, double dist)
 		my->light = NULL;
 	}
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		Stat* myStats = my->getStats();

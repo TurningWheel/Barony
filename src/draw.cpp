@@ -1079,7 +1079,7 @@ void drawEntities3D(view_t* camera, int mode)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		entity = (Entity*)node->element;
-		if ( entity->flags[INVISIBLE] )
+		if ( entity->flags[INVISIBLE] ) //TODO: isInvisible()?
 		{
 			continue;
 		}
@@ -1152,7 +1152,7 @@ void drawEntities2D(long camx, long camy)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		entity = (Entity*)node->element;
-		if ( entity->flags[INVISIBLE] )
+		if ( entity->flags[INVISIBLE] ) //TODO: isInvisible()?
 		{
 			continue;
 		}
@@ -1410,7 +1410,7 @@ void drawEntities2D(long camx, long camy)
 					box.x = pos.x + 1;
 					box.y = pos.y + 1;
 					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
-				} 
+				}
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y &&
 							selectedEntity == NULL && hovertext )
 				{
@@ -1456,7 +1456,7 @@ void drawEntities2D(long camx, long camy)
 				{
 					// draw sprite normally from sprites list
 					drawImageScaled(sprites[entity->sprite], NULL, &pos);
-				}			
+				}
 			}
 			else
 			{

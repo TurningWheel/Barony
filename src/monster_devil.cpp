@@ -272,7 +272,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* leftbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

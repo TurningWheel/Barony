@@ -225,7 +225,7 @@ void actLeftHandMagic(Entity* my)
 
 	bool wearingring = false;
 
-	//Select model
+	//Select model //TODO: Will this section need isInvisible()?
 	if (stats[clientnum]->ring != NULL)
 		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
 		{
@@ -236,7 +236,7 @@ void actLeftHandMagic(Entity* my)
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible //TODO: isInvisible() here?
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -425,7 +425,7 @@ void actRightHandMagic(Entity* my)
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
+	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible //TODO: isInvisible()?
 	{
 		my->flags[INVISIBLE] = true;
 	}

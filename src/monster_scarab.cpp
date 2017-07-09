@@ -163,7 +163,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	bool wearingring = false;
 	Entity* entity = NULL;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->ring != NULL )
@@ -238,7 +238,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 		//messagePlayer(0, "bodypart - %d", bodypart);
 		if ( bodypart < 2 )
 		{
-			
+
 		}
 		else
 		{
