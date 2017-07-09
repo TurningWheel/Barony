@@ -337,7 +337,7 @@ const int NUM_ITEM_STRINGS = 207;
 const int NUM_ITEM_STRINGS_BY_TYPE = 69;
 
 int checkSpriteType(Sint32 sprite);
-extern char spriteEditorNameStrings[107][64];
+extern char spriteEditorNameStrings[108][64];
 extern char tileEditorNameStrings[202][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];

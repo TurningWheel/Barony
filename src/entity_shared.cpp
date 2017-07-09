@@ -483,7 +483,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 	
 };
 
-char spriteEditorNameStrings[107][64] = 
+char spriteEditorNameStrings[108][64] = 
 {
 	"NULL",	
 	"PLAYER START",
@@ -591,7 +591,8 @@ char spriteEditorNameStrings[107][64] =
 	"BOULDER TRAP SINGLE (Roll South)",
 	"BOULDER TRAP SINGLE (Roll West)",
 	"BOULDER TRAP SINGLE (Roll North)",
-	"POWER CRYSTAL"
+	"POWER CRYSTAL",
+	"ARMED BEAR TRAP"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =

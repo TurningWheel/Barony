@@ -3578,6 +3578,35 @@ void assignActions(map_t* map)
 
 				break;
 			}
+			// set beartrap
+			case 107:
+			{
+				entity->skill[0] = 1; // so everything knows I'm a chair
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 6.75;
+
+				entity->focalz = -5;
+				entity->sprite = 98;
+
+				entity->behavior = &actBeartrap;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				if ( !entity->yaw )
+				{
+					entity->yaw = (prng_get_uint() % 360) * (PI / 180.f);
+				}
+				entity->roll = -PI / 2; // flip the model
+
+				entity->skill[11] = EXCELLENT; //status
+				entity->skill[12] = 0; //beatitude
+				entity->skill[13] = 1; //qty
+				entity->skill[14] = 0; //appearance
+				entity->skill[15] = 0; //identified
+				break;
+			}
 			default:
 				break;
 		}
