@@ -501,6 +501,7 @@ extern Uint32 imgref, vboref;
 extern GLuint* texid;
 extern bool disablevbos;
 extern Uint32 fov;
+extern Uint32 fpsLimit;
 //extern GLuint *vboid, *vaoid;
 extern SDL_Surface** allsurfaces;
 extern Uint32 numsprites;
