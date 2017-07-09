@@ -1397,6 +1397,82 @@ void drawEntities2D(long camx, long camy)
 							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[5]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 							break;
+						case 5: //power crystal
+							pady += 5;
+							offsety = -20;
+							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
+							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
+
+							offsety += 10;
+							strcpy(tmpStr, "Facing: ");
+							ttfPrintText(ttf8, padx, pady + offsety, tmpStr);
+							offsetx = strlen(tmpStr) * 8 - 8;
+							switch ( (int)entity->yaw )
+							{
+								case 0:
+									strcpy(tmpStr2, "EAST");
+									break;
+								case 1:
+									strcpy(tmpStr2, "SOUTH");
+									break;
+								case 2:
+									strcpy(tmpStr2, "WEST");
+									break;
+								case 3:
+									strcpy(tmpStr2, "NORTH");
+									break;
+								default:
+									strcpy(tmpStr2, "Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Nodes: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							snprintf(tmpStr2, 10, "%d", selectedEntity->crystalNumElectricityNodes);
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Rotation: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							switch ( (int)entity->crystalTurnReverse )
+							{
+								case 0:
+									strcpy(tmpStr2, "Clockwise");
+									break;
+								case 1:
+									strcpy(tmpStr2, "Anti-Clockwise");
+									break;
+								default:
+									strcpy(tmpStr2, "Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+
+							offsety += 10;
+							strcpy(tmpStr, "Spell to Activate: ");
+							offsetx = strlen(tmpStr) * 8 - 8;
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							switch ( (int)entity->crystalTurnReverse )
+							{
+								case 0:
+									strcpy(tmpStr2, "No");
+									break;
+								case 1:
+									strcpy(tmpStr2, "Yes");
+									break;
+								default:
+									strcpy(tmpStr2, "Invalid");
+									break;
+
+							}
+							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
+							break;
 						default:
 							strcpy(tmpStr, spriteEditorNameStrings[selectedEntity->sprite]);
 							ttfPrintText(ttf8, padx, pady + 20, tmpStr);

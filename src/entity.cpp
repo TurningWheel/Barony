@@ -63,7 +63,20 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestType(skill[9]),
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	monsterState(skill[0]),
-	monsterTarget(skill[1])
+	monsterTarget(skill[1]),
+	crystalInitialised(skill[1]),
+	crystalTurning(skill[3]),
+	crystalTurnStartDir(skill[4]),
+	crystalGeneratedElectricityNodes(skill[5]),
+	crystalNumElectricityNodes(skill[6]),
+	crystalHoverDirection(skill[7]),
+	crystalHoverWaitTimer(skill[8]),
+	crystalTurnReverse(skill[9]),
+	crystalSpellToActivate(skill[10]),
+	crystalStartZ(fskill[0]),
+	crystalMaxZVelocity(fskill[1]),
+	crystalMinZVelocity(fskill[2]),
+	crystalTurnVelocity(fskill[3])
 {
 	int c;
 	// add the entity to the entity list

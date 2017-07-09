@@ -897,6 +897,9 @@ void clientActions(Entity* entity)
 		case 282:
 			entity->behavior = &actSpearTrap;
 			break;
+		case 578:
+			entity->behavior = &actPowerCrystal;
+			break;
 		default:
 			break;
 	}

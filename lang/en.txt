@@ -570,12 +570,12 @@ thou makest use of them.#
 359 Level %d %s#
 360 Exp:%3d/100#
 361 Dungeon Level: %d#
-1200 STR:            %2d (%2d)#
-1201 DEX:            %2d (%2d)#
-1202 CON:            %2d (%2d)#
-1203 INT:            %2d (%2d)#
-1204 PER:            %2d (%2d)#
-1205 CHR:            %2d (%2d)#
+1200 STR:          %2d -> #
+1201 DEX:          %2d -> #
+1202 CON:          %2d -> #
+1203 INT:          %2d -> #
+1204 PER:          %2d -> #
+1205 CHR:          %2d -> #
 
 
 # skill levels
@@ -2824,7 +2824,7 @@ client (player %d) (direct ip)#
 2160 is dispatched by the icy lich.#
 2161 is dispatched by the fiery lich.#
 
-#items, reserve 2200-2399 for new items
+#items, reserve 2200-2349 for new items
 2200 artifact breastpiece#
 2201 artifact breastpiece#
 2202 artifact helm#
@@ -2879,11 +2879,47 @@ client (player %d) (direct ip)#
 2251 steel chakram#
 2252 crystal shuriken#
 2253 crystal shuriken#
-
+2254 black cloak#
+2255 black cloak#
+2256 magicstaff of stoneblood#
+2257 magicstaff#
+2258 magicstaff of bloodletting#
+2259 magicstaff#
+2260 magicstaff of conjure familiar#
+2261 magicstaff#
+2262 blindfold of focus#
+2263 blindfold#
+2264 blindfold of telepathy#
+2265 blindfold#
+2266 spellbook of conjure familiar#
+2267 spellbook#
+2268 spellbook of stoneblood#
+2269 spellbook#
+2270 spellbook of bloodletting#
+2271 spellbook#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
 2351 Your %s shatters completely!#
+2352 You set off a %s trap!#
+2353 Number of monsters in level: %d#
+2354 WARNING: Experimental - May cause crashing on exit! For model testing only.#
+2355 Reloading models from index %d to %d#
+2356 You rotate the floating crystal.#
+2357 The crystal seems locked in place.#
+2358 The crystal begins to move!#
+
+#New spells 2390-2399.
+2390 Conjure Familiar#
+2391 Stonebleed#
+2392 Bloodletting#
+2393 blank#
+2394 blank#
+2395 blank#
+2396 blank#
+2397 blank#
+2398 blank#
+2399 blank#
 
 2400 Gamepad#
 
@@ -2899,7 +2935,16 @@ client (player %d) (direct ip)#
 2409 Menu X-Axis Sensitivity#
 2410 Menu Y-Axis Sensitivity#
 
+2411 Frames Per Second (FPS)#
 
+#New spell effects 2420-2440.
+2420 %s is paralyzed!#
+2421 The %s is paralyzed!# 
+2422 Your limbs suddenly refuse to move!#
+2423 %s is severely wounded!#
+2424 The %s is severely wounded!#
+2425 You are severely wounded!#
+2426 Trio Missile#
 
 #More character creation screen stuff.
 2450 Random Name#
