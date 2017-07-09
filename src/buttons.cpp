@@ -1069,7 +1069,7 @@ void buttonSpriteProperties(button_t* my)
 			tmpSpriteStats = NULL;
 			break;
 		case 2: //chests
-			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->yaw);
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw));
 			snprintf(spriteProperties[1], 4, "%d", selectedEntity->skill[9]);
 			snprintf(spriteProperties[2], 4, "%d", selectedEntity->chestLocked);
 			inputstr = spriteProperties[0];
@@ -1085,19 +1085,19 @@ void buttonSpriteProperties(button_t* my)
 			break;
 		case 3: //items
 			itemSelect = 1;
-			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->skill[10]); //ID
-			snprintf(spriteProperties[1], 4, "%d", (int)selectedEntity->skill[11]); //status
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[10])); //ID
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[11])); //status
 			if ( (int)selectedEntity->skill[12] == 10 )
 			{
 				strcpy(spriteProperties[2], "00"); //bless random
 			}
 			else
 			{
-				snprintf(spriteProperties[2], 4, "%d", (int)selectedEntity->skill[12]); //bless
+				snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[12])); //bless
 			}
-			snprintf(spriteProperties[3], 4, "%d", (int)selectedEntity->skill[13]); //count
-			snprintf(spriteProperties[4], 4, "%d", (int)selectedEntity->skill[15]); //identified
-			snprintf(spriteProperties[5], 4, "%d", (int)selectedEntity->skill[16]); //category if random
+			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[13])); //count
+			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[15])); //identified
+			snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[16])); //category if random
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1111,12 +1111,12 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(subtext, "Item Properties:");
 			break;
 		case 4:
-			snprintf(spriteProperties[0], 4, "%d", (int)selectedEntity->skill[0]); //Monster to Spawn
-			snprintf(spriteProperties[1], 4, "%d", (int)selectedEntity->skill[1]); //Qty
-			snprintf(spriteProperties[2], 4, "%d", (int)selectedEntity->skill[2]); //Time Between Spawns
-			snprintf(spriteProperties[3], 4, "%d", (int)selectedEntity->skill[3]); //Amount of Spawns 
-			snprintf(spriteProperties[4], 4, "%d", (int)selectedEntity->skill[4]); //Requires Power
-			snprintf(spriteProperties[5], 4, "%d", (int)selectedEntity->skill[5]); //Chance to Stop Working
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->skill[0])); //Monster to Spawn
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->skill[1])); //Qty
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->skill[2])); //Time Between Spawns
+			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->skill[3])); //Amount of Spawns 
+			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->skill[4])); //Requires Power
+			snprintf(spriteProperties[5], 4, "%d", static_cast<int>(selectedEntity->skill[5])); //Chance to Stop Working
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1127,6 +1127,22 @@ void buttonSpriteProperties(button_t* my)
 			suby1 = yres / 2 - 140;
 			suby2 = yres / 2 + 140;
 			strcpy(subtext, "Summoning Trap Properties:");
+			break;
+		case 5:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->yaw)); //Orientation
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->crystalNumElectricityNodes)); //Powered Distance
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->crystalTurnReverse)); //Rotation direction
+			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->crystalSpellToActivate)); //Spell to activate
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 7;
+			subx1 = xres / 2 - 210;
+			subx2 = xres / 2 + 210;
+			suby1 = yres / 2 - 120;
+			suby2 = yres / 2 + 120;
+			strcpy(subtext, "Power Crystal Properties:");
 			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
@@ -1909,6 +1925,12 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				}
 				selectedEntity->skill[4] = (Sint32)atoi(spriteProperties[4]); //Requires Power
 				selectedEntity->skill[5] = (Sint32)atoi(spriteProperties[5]); //Chance to Stop Working
+				break;
+			case 5: //power crystal
+				selectedEntity->yaw = (real_t)atoi(spriteProperties[0]);
+				selectedEntity->crystalNumElectricityNodes = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->crystalTurnReverse = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->crystalSpellToActivate = (Sint32)atoi(spriteProperties[3]);
 				break;
 			default:
 				break;

@@ -533,10 +533,15 @@ void actHudWeapon(Entity* my)
 						}
 						else
 						{
-							// crossbows and slings
-							players[clientnum]->entity->attack(0, 0, nullptr);
-							HUDWEAPON_MOVEX = -4;
-							HUDWEAPON_CHOP = 3;
+							// crossbows
+							if ( throwGimpTimer == 0 )
+							{
+								players[clientnum]->entity->attack(0, 0, nullptr);
+								HUDWEAPON_MOVEX = -4;
+								HUDWEAPON_CHOP = 3;
+								// set delay before crossbow can fire again
+								throwGimpTimer = 40;
+							}
 						}
 					}
 					else

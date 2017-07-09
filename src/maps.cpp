@@ -2863,8 +2863,8 @@ void assignActions(map_t* map)
 				}
 				else if (entity->yaw == 3 * PI/2 ) //NORTH FACING
 				{
-						childEntity->x = entity->x;
-						childEntity->y = entity->y + 3;
+					childEntity->x = entity->x;
+					childEntity->y = entity->y + 3;
 				}
 				else 
 				{
@@ -3530,6 +3530,81 @@ void assignActions(map_t* map)
 						}
 					}
 				}
+				break;
+			}
+
+			// power crystal
+			case 106:
+			{
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 6.5;
+				entity->behavior = &actPowerCrystalBase;
+				entity->sprite = 577; //crystal base
+				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
+
+				childEntity = newEntity(578, 0, map->entities); //floating crystal
+				childEntity->parent = entity->getUID();
+
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				childEntity->crystalStartZ = entity->z - 10; //start position
+				childEntity->z = childEntity->crystalStartZ - 0.4 + ((prng_get_uint() % 8) * 0.1); // start the height randomly
+				childEntity->crystalMaxZVelocity = 0.02; //max velocity
+				childEntity->crystalMinZVelocity = 0.001; //min velocity
+				childEntity->crystalTurnVelocity = 0.2; //yaw turning velocity
+				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((prng_get_uint() % 100) * 0.01); // start the velocity randomly
+				
+				childEntity->crystalNumElectricityNodes = entity->crystalNumElectricityNodes; //number of electricity nodes to generate in facing direction.
+				childEntity->crystalTurnReverse = entity->crystalTurnReverse;
+				childEntity->crystalSpellToActivate = entity->crystalSpellToActivate;
+				if ( childEntity->crystalSpellToActivate )
+				{
+					childEntity->z = childEntity->crystalStartZ + 5;
+					childEntity->vel_z = childEntity->crystalMaxZVelocity * 2;
+				}
+				childEntity->yaw = entity->yaw;
+				childEntity->sizex = 4;
+				childEntity->sizey = 4;
+				childEntity->behavior = &actPowerCrystal;
+				childEntity->flags[PASSABLE] = true;
+
+				node_t* tempNode = list_AddNodeLast(&entity->children);
+				tempNode->element = childEntity; // add the node to the children list.
+				tempNode->deconstructor = &emptyDeconstructor;
+				tempNode->size = sizeof(Entity*);
+
+				break;
+			}
+			// set beartrap
+			case 107:
+			{
+				entity->skill[0] = 1; // so everything knows I'm a chair
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 6.75;
+
+				entity->focalz = -5;
+				entity->sprite = 98;
+
+				entity->behavior = &actBeartrap;
+				entity->flags[PASSABLE] = true;
+				entity->flags[UPDATENEEDED] = true;
+				if ( !entity->yaw )
+				{
+					entity->yaw = (prng_get_uint() % 360) * (PI / 180.f);
+				}
+				entity->roll = -PI / 2; // flip the model
+
+				entity->skill[11] = EXCELLENT; //status
+				entity->skill[12] = 0; //beatitude
+				entity->skill[13] = 1; //qty
+				entity->skill[14] = 0; //appearance
+				entity->skill[15] = 0; //identified
 				break;
 			}
 			default:

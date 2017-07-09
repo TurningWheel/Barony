@@ -17,8 +17,7 @@
 #define VERSION "v2.0.5"
 #define GAME_CODE
 
-#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
-
+//#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 class Entity;
 
 extern list_t steamAchievements;
@@ -171,6 +170,9 @@ void actBeartrapLaunched(Entity* my);
 void actSpearTrap(Entity* my);
 void actWallBuster(Entity* my);
 void actWallBuilder(Entity* my);
+void actPowerCrystalBase(Entity* my);
+void actPowerCrystal(Entity* my);
+void actPowerCrystalParticleIdle(Entity* my);
 
 void startMessages();
 

@@ -64,6 +64,10 @@ int checkSpriteType(Sint32 sprite)
 		//summon trap
 		return 4;
 		break;
+	case 106:
+		//power crystal
+		return 5;
+		break;
 	default:
 		return 0;
 		break;
@@ -479,7 +483,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 	
 };
 
-char spriteEditorNameStrings[106][64] = 
+char spriteEditorNameStrings[108][64] = 
 {
 	"NULL",	
 	"PLAYER START",
@@ -583,10 +587,12 @@ char spriteEditorNameStrings[106][64] =
 	"CRYSTAL SHARD (North Wall)",
 	"CRYSTAL SHARD (East Wall)",
 	"CRYSTAL SHARD (South Wall)",
-	"BOULDER TRAP SINGLE (Roll West)",
-	"BOULDER TRAP SINGLE (Roll South)",
 	"BOULDER TRAP SINGLE (Roll East)",
-	"BOULDER TRAP SINGLE (Roll North)"
+	"BOULDER TRAP SINGLE (Roll South)",
+	"BOULDER TRAP SINGLE (Roll West)",
+	"BOULDER TRAP SINGLE (Roll North)",
+	"POWER CRYSTAL",
+	"ARMED BEAR TRAP"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1035,6 +1041,26 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->skill[3] = 1;
 			entityNew->skill[4] = 0;
 			entityNew->skill[5] = 0;
+		}
+	}
+	// power crystal
+	else if ( spriteType == 5 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->yaw = entityToCopy->yaw;
+			entityNew->crystalNumElectricityNodes = entityToCopy->crystalNumElectricityNodes;
+			entityNew->crystalTurnReverse = entityToCopy->crystalTurnReverse;
+			entityNew->crystalSpellToActivate = entityToCopy->crystalSpellToActivate;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->yaw = 0;
+			entityNew->crystalNumElectricityNodes = 5;
+			entityNew->crystalTurnReverse = 0;
+			entityNew->crystalSpellToActivate = 0;
 		}
 	}
 

@@ -814,6 +814,7 @@ int saveConfig(char* filename)
 	fprintf(fp, "/res %dx%d\n", xres, yres);
 	fprintf(fp, "/gamma %3.3f\n", vidgamma);
 	fprintf(fp, "/fov %d\n", fov);
+	fprintf(fp, "/fps %d\n", fpsLimit);
 	fprintf(fp, "/svflags %d\n", svFlags);
 	if ( lastname != "" )
 	{
