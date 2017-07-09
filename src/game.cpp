@@ -2104,8 +2104,8 @@ Uint32 lastGameTickCount = 0;
 bool frameRateLimit( Uint32 maxFrameRate )
 {
 	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
-	
-	if ( (1000.0f / std::ceilf(desiredFrameMilliseconds)) < maxFrameRate )
+
+	if ( (1000.0f / std::ceil(desiredFrameMilliseconds)) < maxFrameRate )
 	{
 		// check if our fps limiter will calculate the fps to be below the target.
 		// if below target, then set our milisecond target to be 1 less millisecond
