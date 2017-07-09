@@ -1809,6 +1809,7 @@ void actMonster(Entity* my)
 	}
 	if ( handleinvisible )
 	{
+		//TODO: Should this use isInvisible()?
 		if ( myStats->EFFECTS[EFF_INVISIBLE] )
 		{
 			my->flags[INVISIBLE] = true;

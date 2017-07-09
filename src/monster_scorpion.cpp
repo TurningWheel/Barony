@@ -214,7 +214,7 @@ void scorpionAnimate(Entity* my, double dist)
 	Entity* entity;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		Stat* myStats = my->getStats();

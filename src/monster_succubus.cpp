@@ -73,7 +73,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 			}
 
 			// random effects
-			
+
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);
 
@@ -99,7 +99,7 @@ void initSuccubus(Entity* my, Stat* myStats)
 				default:
 					break;
 			}
-		}		
+		}
 	}
 
 	// torso
@@ -283,7 +283,7 @@ void succubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

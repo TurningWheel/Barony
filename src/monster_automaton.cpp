@@ -428,7 +428,7 @@ void actAutomatonLimb(Entity* my)
 	}
 
 	int torch = 0;
-	if ( my->flags[INVISIBLE] == false )
+	if ( my->flags[INVISIBLE] == false ) //TODO: isInvisible()?
 	{
 		if ( my->sprite == 93 )   // torch
 		{
@@ -515,7 +515,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
-	// set invisibility
+	// set invisibility //TODO: use isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->ring != NULL )
@@ -943,7 +943,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 7:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -980,7 +980,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( weaponarm != NULL )
 				{
-					if ( entity->flags[INVISIBLE] != true )
+					if ( entity->flags[INVISIBLE] != true ) //TODO: isInvisible()?
 					{
 						if ( entity->sprite == items[SHORTBOW].index )
 						{
@@ -1047,7 +1047,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1100,7 +1100,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 9:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1142,7 +1142,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1214,7 +1214,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

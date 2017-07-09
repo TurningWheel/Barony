@@ -81,9 +81,9 @@ void initMinotaur(Entity* my, Stat* myStats)
 			int defaultItems = countDefaultItems(myStats);
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
-			
+
 			ItemType gemtype = GEM_RUBY;
-			
+
 			switch ( defaultItems )
 			{
 				case 6:
@@ -319,7 +319,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* chest = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

@@ -81,7 +81,7 @@ void initDemon(Entity* my, Stat* myStats)
 			createCustomInventory(myStats, customItemsToGenerate);
 
 			// count if any custom inventory items from editor
-			int customItems = countCustomItems(myStats); 
+			int customItems = countCustomItems(myStats);
 			//max limit of 6 custom items per entity.
 
 			// count any inventory items set to default in edtior
@@ -306,7 +306,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
