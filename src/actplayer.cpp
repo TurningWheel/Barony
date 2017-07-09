@@ -749,7 +749,6 @@ void actPlayer(Entity* my)
 	}
 
 	// invisibility
-	//TODO: Should not use isInvisible()?
 	if ( !intro )
 	{
 		if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
@@ -764,7 +763,8 @@ void actPlayer(Entity* my)
 				{
 					wearingring = true;
 				}
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+			//if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+			if ( my->isInvisible() )
 			{
 				if ( !my->flags[INVISIBLE] )
 				{
@@ -774,7 +774,7 @@ void actPlayer(Entity* my)
 				my->flags[BLOCKSIGHT] = false;
 				if ( multiplayer != CLIENT )
 				{
-					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
+					for ( i = 0, node = my->children.first; node != NULL; node = node->next, ++i )
 					{
 						if ( i == 0 )
 						{
@@ -2456,7 +2456,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( stats[PLAYER_NUM]->weapon == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: No isInvisible()?
+						if ( stats[PLAYER_NUM]->weapon == NULL || my->isInvisible() )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2481,7 +2481,7 @@ void actPlayer(Entity* my)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] ) //TODO: Use isInvisible()?
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
 						{
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
@@ -2575,7 +2575,7 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = false;
 							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
 						}
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: Why no isInvisible()?
+						if ( my->isInvisible() )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2588,7 +2588,7 @@ void actPlayer(Entity* my)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] ) //TODO: No isInvisible()?
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
 						{
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
@@ -2665,7 +2665,7 @@ void actPlayer(Entity* my)
 			case 8:
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->cloak == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: No isInvisible()?
+					if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2682,7 +2682,7 @@ void actPlayer(Entity* my)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] ) //TODO: No isInvisible()?
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
 						{
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
@@ -2707,7 +2707,7 @@ void actPlayer(Entity* my)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-					if ( stats[PLAYER_NUM]->helmet == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( stats[PLAYER_NUM]->helmet == NULL || my->isInvisible() )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2723,7 +2723,7 @@ void actPlayer(Entity* my)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
 						{
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);
@@ -2781,7 +2781,7 @@ void actPlayer(Entity* my)
 						{
 							hasSteelHelm = true;
 						}
-					if ( stats[PLAYER_NUM]->mask == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm ) //TODO: isInvisible()?
+					if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2808,7 +2808,7 @@ void actPlayer(Entity* my)
 							entity->skill[10] = entity->sprite;
 							serverUpdateEntityBodypart(my, bodypart);
 						}
-						if ( entity->skill[11] != entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+						if ( entity->skill[11] != entity->flags[INVISIBLE] )
 						{
 							entity->skill[11] = entity->flags[INVISIBLE];
 							serverUpdateEntityBodypart(my, bodypart);

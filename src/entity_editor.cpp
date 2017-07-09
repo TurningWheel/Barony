@@ -146,3 +146,9 @@ Stat* Entity::getStats() const
 
 	return nullptr;
 }
+
+bool Entity::isInvisible() const
+{
+	//Dummy function.
+	return false;
+}

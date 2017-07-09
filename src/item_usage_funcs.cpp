@@ -2137,7 +2137,7 @@ void item_ToolMirror(Item* item, int player)
 		messagePlayer(player, language[892]);
 		return;
 	}
-	if ( stats[player]->EFFECTS[EFF_INVISIBLE] ) //TODO: Definitely need isInvisible()!
+	if ( players[player]->entity->isInvisible() )
 	{
 		messagePlayer(player, language[893]);
 		return;

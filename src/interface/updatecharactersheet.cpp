@@ -76,7 +76,7 @@ void updateCharacterSheet()
 		camera_charsheet.winh = 180;
 		b = players[clientnum]->entity->flags[BRIGHT];
 		players[clientnum]->entity->flags[BRIGHT] = true;
-		if (!players[clientnum]->entity->flags[INVISIBLE]) //TODO: isInvisible()?
+		if ( !players[clientnum]->entity->flags[INVISIBLE] ) //TODO: isInvisible()?
 		{
 			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 		}
