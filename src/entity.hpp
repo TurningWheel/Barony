@@ -263,6 +263,10 @@ public:
 	 * Returns -1 if not a player.
 	 */
 	int isEntityPlayer() const;
+
+	void initMonster(int mySprite);
+
+	void actMonsterLimb(bool processLight = false);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

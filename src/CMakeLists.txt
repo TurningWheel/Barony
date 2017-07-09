@@ -96,6 +96,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/item_tool.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actsummontrap.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actpowercrystal.cpp"
+	"${CMAKE_CURRENT_SOURCE_DIR}/monster_shared.cpp"
 )
 
 if( WIN32 )

@@ -26,12 +26,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 239;
-
-	//my->flags[GENIUS]=true;
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(239);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -226,33 +221,7 @@ void initMinotaur(Entity* my, Stat* myStats)
 
 void actMinotaurLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void minotaurDie(Entity* my)
