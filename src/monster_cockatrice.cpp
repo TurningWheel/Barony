@@ -230,6 +230,7 @@ void initCockatrice(Entity* my, Stat* myStats)
 void actCockatriceLimb(Entity* my)
 {
 	my->actMonsterLimb();
+}
 
 void cockatriceDie(Entity* my)
 {
