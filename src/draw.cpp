@@ -1079,7 +1079,7 @@ void drawEntities3D(view_t* camera, int mode)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		entity = (Entity*)node->element;
-		if ( entity->flags[INVISIBLE] ) //TODO: isInvisible()? Probably not.
+		if ( entity->flags[INVISIBLE] )
 		{
 			continue;
 		}
@@ -1152,7 +1152,7 @@ void drawEntities2D(long camx, long camy)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		entity = (Entity*)node->element;
-		if ( entity->flags[INVISIBLE] ) //TODO: isInvisible()? Probably not.
+		if ( entity->flags[INVISIBLE] )
 		{
 			continue;
 		}

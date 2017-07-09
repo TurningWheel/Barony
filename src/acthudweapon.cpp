@@ -245,17 +245,21 @@ void actHudWeapon(Entity* my)
 	}
 
 	// select model
-	if (stats[clientnum]->ring != nullptr)
-		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
+	if ( stats[clientnum]->ring != nullptr )
+	{
+		if ( stats[clientnum]->ring->type == RING_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (stats[clientnum]->cloak != nullptr)
-		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
+	}
+	if ( stats[clientnum]->cloak != nullptr )
+	{
+		if ( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring)   // debug cam or player invisible
+	}
+	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 		if (parent != nullptr)
@@ -299,7 +303,7 @@ void actHudWeapon(Entity* my)
 #ifdef HAVE_OPENAL
 				OPENAL_Channel_GetPosition(bowDrawingSound, &position);
 				OPENAL_Sound_GetLength(sounds[246], &length);
-				
+
 #else
 				FMOD_Channel_GetPosition(bowDrawingSound, &position, FMOD_TIMEUNIT_MS);
 				FMOD_Sound_GetLength(sounds[246], &length, FMOD_TIMEUNIT_MS);
@@ -1342,17 +1346,21 @@ void actHudShield(Entity* my)
 
 	// select model
 	bool wearingring = false;
-	if (stats[clientnum]->ring != nullptr)
-		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
+	if ( stats[clientnum]->ring != nullptr )
+	{
+		if ( stats[clientnum]->ring->type == RING_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (stats[clientnum]->cloak != nullptr)
-		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
+	}
+	if ( stats[clientnum]->cloak != nullptr )
+	{
+		if ( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
+	}
+	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -1388,7 +1396,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots)
+		if (!levitating && !waterwalkingboots) //TODO: Swimming capstone?
 		{
 			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);

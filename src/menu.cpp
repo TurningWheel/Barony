@@ -1109,7 +1109,7 @@ void handleMainMenu(bool mode)
 			players[clientnum]->entity->flags[BRIGHT] = true;
 			if (!playing_random_char)
 			{
-				if ( !players[clientnum]->entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
 					real_t ofov = fov;
 					fov = 50;
@@ -3497,7 +3497,7 @@ void handleMainMenu(bool mode)
 				drawRect(&pos, 0, 255);
 				b = players[clientnum]->entity->flags[BRIGHT];
 				players[clientnum]->entity->flags[BRIGHT] = true;
-				if ( !players[clientnum]->entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+				if ( !players[clientnum]->entity->flags[INVISIBLE] )
 				{
 					real_t ofov = fov;
 					fov = 50;

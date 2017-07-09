@@ -441,7 +441,7 @@ void updateShopWindow()
 	if ( uidToEntity(shopkeeper) )
 	{
 		Entity* entity = uidToEntity(shopkeeper);
-		if ( !entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+		if ( !entity->flags[INVISIBLE] )
 		{
 			pos.x = x1 + 16;
 			pos.y = y1 + 16;

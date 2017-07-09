@@ -76,7 +76,7 @@ void updateCharacterSheet()
 		camera_charsheet.winh = 180;
 		b = players[clientnum]->entity->flags[BRIGHT];
 		players[clientnum]->entity->flags[BRIGHT] = true;
-		if ( !players[clientnum]->entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+		if ( !players[clientnum]->entity->flags[INVISIBLE] )
 		{
 			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 		}
@@ -92,7 +92,7 @@ void updateCharacterSheet()
 					continue;
 				}
 				entity = (Entity*) node->element;
-				if ( !entity->flags[INVISIBLE] ) //TODO: isInvisible()?
+				if ( !entity->flags[INVISIBLE] )
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
@@ -115,7 +115,7 @@ void updateCharacterSheet()
 			for ( node = map.entities->first; node != NULL; node = node->next )
 			{
 				entity = (Entity*) node->element;
-				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 ) //TODO: isInvisible()?
+				if ( (entity->behavior == &actPlayerLimb && entity->skill[2] == clientnum && !entity->flags[INVISIBLE]) || (Sint32)entity->getUID() == -4 )
 				{
 					b = entity->flags[BRIGHT];
 					entity->flags[BRIGHT] = true;
