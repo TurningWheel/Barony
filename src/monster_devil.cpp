@@ -143,7 +143,7 @@ void actDevilLimb(Entity* my)
 
 void devilDie(Entity* my)
 {
-	node_t* node, *nextnode;
+	node_t* node;
 
 	int c;
 	for ( c = 0; c < 5; c++ )
@@ -152,19 +152,9 @@ void devilDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 	//playSoundEntity(my, 28, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	if ( multiplayer == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )

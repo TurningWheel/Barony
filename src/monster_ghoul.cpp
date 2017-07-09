@@ -213,7 +213,6 @@ void actGhoulLimb(Entity* my)
 
 void ghoulDie(Entity* my)
 {
-	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 10; c++ )
 	{
@@ -249,19 +248,9 @@ void ghoulDie(Entity* my)
 			}
 		}
 	}
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	playSoundEntity(my, 145, 128);
 	list_RemoveNode(my->mynode);
 	return;

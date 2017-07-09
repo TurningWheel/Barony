@@ -335,7 +335,6 @@ void actGnomeLimb(Entity* my)
 
 void gnomeDie(Entity* my)
 {
-	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 6; c++ )
 	{
@@ -367,23 +366,9 @@ void gnomeDie(Entity* my)
 			}
 		}
 	}
-	int i = 0;
-	for ( node = my->children.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		if ( node->element != NULL && i >= 2 )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->light != NULL )
-			{
-				list_RemoveNode(entity->light->node);
-			}
-			entity->light = NULL;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		i++;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	playSoundEntity(my, 225 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;

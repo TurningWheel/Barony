@@ -267,6 +267,8 @@ public:
 	void initMonster(int mySprite);
 
 	void actMonsterLimb(bool processLight = false);
+
+	void removeMonsterDeathNodes();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

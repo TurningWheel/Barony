@@ -85,3 +85,26 @@ void Entity::actMonsterLimb(bool processLight)
 		}
 	}
 }
+
+void Entity::removeMonsterDeathNodes()
+{
+	int i = 0;
+	node_t *nextnode = nullptr;
+	for ( node_t *node = children.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( node->element != nullptr && i >= 2 )
+		{
+			Entity* entity = (Entity*)node->element;
+			if ( entity->light != nullptr )
+			{
+				list_RemoveNode(entity->light->node);
+			}
+			entity->light = nullptr;
+			entity->flags[UPDATENEEDED] = false; //TODO: Do only demon & baphy need this?
+			list_RemoveNode(entity->mynode);
+		}
+		list_RemoveNode(node);
+		++i;
+	}
+}
