@@ -454,7 +454,7 @@ void Entity::effectTimes()
 	}
 
 
-	spell_t* invisibility_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things.
+	spell_t* invisibility_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things. //TODO: Incorporate the spell into isInvisible() instead?
 	spell_t* levitation_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
 	//Handle magic effects (like invisibility)
 	for (node = myStats->magic_effects.first; node; node = node->next, ++count)
@@ -2844,7 +2844,7 @@ bool Entity::isBlind()
 
 -------------------------------------------------------------------------------*/
 
-bool Entity::isInvisible()
+bool Entity::isInvisible() const
 {
 	Stat* entitystats;
 	if ( (entitystats = getStats()) == NULL )
@@ -2860,17 +2860,26 @@ bool Entity::isInvisible()
 
 	// wearing invisibility cloaks
 	if ( entitystats->cloak != NULL )
+	{
 		if ( entitystats->cloak->type == CLOAK_INVISIBILITY )
 		{
 			return true;
 		}
+	}
 
 	// wearing invisibility ring
 	if ( entitystats->ring != NULL )
+	{
 		if ( entitystats->ring->type == RING_INVISIBILITY )
 		{
 			return true;
 		}
+	}
+
+	if ( skillCapstoneUnlockedEntity(PRO_STEALTH) )
+	{
+		return true;
+	}
 
 	return false;
 }

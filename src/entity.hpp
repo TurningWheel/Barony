@@ -168,7 +168,7 @@ public:
 	Sint32 getAttack();
 	bool isBlind();
 
-	bool isInvisible();
+	bool isInvisible() const;
 
 	bool isMobile();
 
