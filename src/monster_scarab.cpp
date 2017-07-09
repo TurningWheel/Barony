@@ -468,38 +468,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 
 void actScarabLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
+	my->actMonsterLimb(true); //Can create light, but can't hold a lightsource.
 }
 
 void scarabDie(Entity* my)

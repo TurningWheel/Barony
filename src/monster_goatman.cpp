@@ -25,12 +25,8 @@ void initGoatman(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 463; //Goatman head model
-
-	//my->flags[GENIUS] = true;
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	//Sprite 463 = Goatman head model
+	my->initMonster(463);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -437,59 +433,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 void actGoatmanLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-
-	int torch = 0;
-	if ( my->flags[INVISIBLE] == false ) //TODO: isInvisible()?
-	{
-		if ( my->sprite == 93 )   // torch
-		{
-			torch = 6;
-		}
-		else if ( my->sprite == 94 )     // lantern
-		{
-			torch = 9;
-		}
-		else if ( my->sprite == 529 )	// crystal shard
-		{
-			torch = 4;
-		}
-	}
-	if ( torch != 0 )
-	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, torch, 50 + 15 * torch);
-	}
+	my->actMonsterLimb(true);
 }
 
 void goatmanDie(Entity* my)

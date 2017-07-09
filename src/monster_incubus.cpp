@@ -25,11 +25,8 @@ void initIncubus(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 445; //incubus head sprite
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	//Sprite 445 = incubus head sprite
+	my->initMonster(445);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -195,33 +192,7 @@ void initIncubus(Entity* my, Stat* myStats)
 
 void actIncubusLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void incubusDie(Entity* my)
