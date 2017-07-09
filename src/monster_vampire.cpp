@@ -26,12 +26,8 @@ void initVampire(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 437; //Vampire head model
-
-	//my->flags[GENIUS] = true;
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	//Sprite 437 = Vampire head model
+	my->initMonster(437);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -395,111 +391,24 @@ void initVampire(Entity* my, Stat* myStats)
 
 void actVampireLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-
-	int torch = 0;
-	if ( my->flags[INVISIBLE] == false ) //TODO: isInvisible()
-	{
-		if ( my->sprite == 93 )   // torch
-		{
-			torch = 6;
-		}
-		else if ( my->sprite == 94 )     // lantern
-		{
-			torch = 9;
-		}
-		else if ( my->sprite == 529 )	// crystal shard
-		{
-			torch = 4;
-		}
-	}
-	if ( torch != 0 )
-	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, torch, 50 + 15 * torch);
-	}
+	my->actMonsterLimb(true);
 }
 
 void vampireDie(Entity* my)
 {
-	node_t* node, *nextnode;
-
 	int c;
 	for ( c = 0; c < 5; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if ( spawn_blood )
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(160, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
+
+	my->spawnBlood();
+
 	playSoundEntity(my, 28, 128);
-	int i = 0;
-	for ( node = my->children.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		if ( node->element != NULL && i >= 2 )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->light != NULL )
-			{
-				list_RemoveNode(entity->light->node);
-			}
-			entity->light = NULL;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		i++;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }

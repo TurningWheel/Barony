@@ -25,11 +25,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 475;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(475);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -211,39 +207,11 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 
 void actCrystalgolemLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void crystalgolemDie(Entity* my)
 {
-	node_t* node, *nextnode;
-
 	int c;
 	for ( c = 0; c < 5; c++ )
 	{
@@ -273,19 +241,9 @@ void crystalgolemDie(Entity* my)
 		}
 	}
 	playSoundEntity(my, 80, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }

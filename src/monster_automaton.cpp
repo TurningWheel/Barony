@@ -25,11 +25,8 @@ void initAutomaton(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 467; //Automaton head model
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	 //Sprite 467 = Automaton head model
+	my->initMonster(467);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -394,81 +391,13 @@ void initAutomaton(Entity* my, Stat* myStats)
 
 void actAutomatonLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-
-	int torch = 0;
-	if ( my->flags[INVISIBLE] == false ) //TODO: isInvisible()?
-	{
-		if ( my->sprite == 93 )   // torch
-		{
-			torch = 6;
-		}
-		else if ( my->sprite == 94 )     // lantern
-		{
-			torch = 9;
-		}
-		else if ( my->sprite == 529 )	// crystal shard
-		{
-			torch = 4;
-		}
-	}
-	if ( torch != 0 )
-	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, torch, 50 + 15 * torch);
-	}
+	my->actMonsterLimb(true);
 }
 
 void automatonDie(Entity* my)
 {
-	node_t* node, *nextnode;
-	int i = 0;
-	for ( node = my->children.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		if ( node->element != NULL && i >= 2 )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->light != NULL )
-			{
-				list_RemoveNode(entity->light->node);
-			}
-			entity->light = NULL;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		i++;
-	}
+	my->removeMonsterDeathNodes();
+
 	int c;
 	for ( c = 0; c < 6; c++ )
 	{

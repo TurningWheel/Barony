@@ -189,23 +189,9 @@ void lichDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	int i = 0;
-	for ( node = my->children.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		if ( node->element != NULL && i >= 2 )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->light != NULL )
-			{
-				list_RemoveNode(entity->light->node);
-			}
-			entity->light = NULL;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		i++;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	//playSoundEntity(my, 94, 128);
 	if ( my->light )
 	{
@@ -259,33 +245,7 @@ void lichDie(Entity* my)
 
 void actLichLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void lichAnimate(Entity* my, double dist)

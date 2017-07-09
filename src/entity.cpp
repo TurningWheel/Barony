@@ -794,7 +794,7 @@ void Entity::increaseSkill(int skill)
 				break;
 		}
 
-		if ( skill == PRO_SPELLCASTING && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+		if ( skill == PRO_SPELLCASTING && skillCapstoneUnlockedEntity(PRO_SPELLCASTING) )
 		{
 			//Spellcasting capstone = free casting of magic missile.
 			//Give the player the spell if they haven't learned it yet.
@@ -808,13 +808,13 @@ void Entity::increaseSkill(int skill)
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			else
+			else if ( player >= 0 )
 			{
 				addSpell(SPELL_MAGICMISSILE, player, true);
 			}
 		}
 
-		if ( skill == PRO_MAGIC && skillCapstoneUnlocked(player, PRO_MAGIC) )
+		if ( skill == PRO_MAGIC && skillCapstoneUnlockedEntity(PRO_MAGIC) )
 		{
 			//magic capstone = bonus spell: Dominate.
 			if ( player > 0 && multiplayer == SERVER )
@@ -827,7 +827,7 @@ void Entity::increaseSkill(int skill)
 				net_packet->len = 6;
 				sendPacketSafe(net_sock, -1, net_packet, player - 1);
 			}
-			else
+			else if ( player >= 0 )
 			{
 				addSpell(SPELL_DOMINATE, player, true);
 			}
