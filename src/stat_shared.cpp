@@ -445,10 +445,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MAXMP = 20;
 			stats->OLDHP = stats->HP;
 			stats->STR = 5;
-			stats->DEX = 4;
+			stats->DEX = 12;
 			stats->CON = 2;
 			stats->INT = -1;
-			stats->PER = 0;
+			stats->PER = 4;
 			stats->CHR = 0;
 			stats->EXP = 0;
 			stats->LVL = 5;
