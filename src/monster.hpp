@@ -160,7 +160,7 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
 	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1 }, // kobold
-	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f }, // scarab
+	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
 	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
@@ -344,7 +344,7 @@ void actDevilTeleport(Entity* my);
 void createMinotaurTimer(Entity* entity, map_t* map);
 
 void actSummonTrap(Entity* my);
-extern int monsterCurve(int level);
+int monsterCurve(int level);
 void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist, int hasrangedweapon);
 
 bool forceFollower(Entity& leader, Entity& follower);
