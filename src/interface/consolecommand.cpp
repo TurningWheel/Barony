@@ -787,7 +787,7 @@ void consoleCommand(char* command_str)
 		{
 			int c;
 			Stat* myStats = stats[0];
-			for ( c = 0; c < 25; c++ )
+			for ( c = 0; c < 24; c++ )
 			{
 				consoleCommand("/levelup");
 			}
