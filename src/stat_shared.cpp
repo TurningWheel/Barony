@@ -431,7 +431,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = KOBOLD;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = 0;
-			
+
 			stats->HP = 100;
 			stats->MAXHP = stats->HP;
 			stats->RANDOM_HP = 20;
@@ -485,19 +485,19 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->HP = 30;
-			stats->MAXHP = 30;
+			stats->HP = 40;
+			stats->MAXHP = 40;
 			stats->MP = 20;
 			stats->MAXMP = 20;
 			stats->OLDHP = stats->HP;
-			stats->STR = 7;
+			stats->STR = 10;
 			stats->DEX = 12;
 			stats->CON = 2;
 			stats->INT = -1;
 			stats->PER = 8;
 			stats->CHR = 0;
 			stats->EXP = 0;
-			stats->LVL = 5;
+			stats->LVL = 10;
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
 
