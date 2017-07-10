@@ -87,7 +87,7 @@ void initKobold(Entity* my, Stat* myStats)
 					if ( rand() % 10 == 0 )
 					{
 						int i = 1 + rand() % 4;
-						for ( c = 0; c < i; c++ )
+						for ( c = 0; c < i; ++c )
 						{
 							newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
 						}
@@ -109,18 +109,23 @@ void initKobold(Entity* my, Stat* myStats)
 				{
 					case 0:
 					case 1:
-						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(WORN + rand() % 2), -2 + rand() % 5, 1, rand(), false, nullptr);
 						break;
 					case 2:
 					case 3:
 					case 4:
 					case 5:
-					case 6:
+						myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
+					case 6:
 					case 7:
+						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
 					case 8:
+						myStats->shield = newItem(TOOL_CRYSTALSHARD, SERVICABLE, -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
 					case 9:
-						myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
+						// nothing
 						break;
 				}
 			}
@@ -134,16 +139,19 @@ void initKobold(Entity* my, Stat* myStats)
 					case 1:
 					case 2:
 					case 3:
-					case 4:
-						myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
+					case 4:
 					case 5:
+						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
 					case 6:
 					case 7:
 					case 8:
+						//myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						//break;
 					case 9:
-						myStats->GOLD += 100;
-						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, nullptr);
 						break;
 				}
 			}
@@ -158,13 +166,36 @@ void initKobold(Entity* my, Stat* myStats)
 					case 2:
 					case 3:
 					case 4:
-					case 5:
 						break;
+					case 5:
 					case 6:
 					case 7:
 					case 8:
 					case 9:
-						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+				}
+			}
+
+			// give helm
+			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						break;
+					case 5:
+					case 6:
+						myStats->helmet = newItem(HAT_HOOD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 7:
+					case 8:
+					case 9:
+						myStats->helmet = newItem(STEEL_HELM, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 				}
 			}
@@ -336,7 +367,7 @@ void actKoboldLimb(Entity* my)
 void koboldDie(Entity* my)
 {
 	int c;
-	for ( c = 0; c < 6; c++ )
+	for ( c = 0; c < 6; ++c )
 	{
 		Entity* entity = spawnGib(my);
 		if ( entity )
@@ -387,7 +418,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( bodypart < 2 )
 				{
-					bodypart++;
+					++bodypart;
 					continue;
 				}
 				if ( bodypart >= 7 )
@@ -400,7 +431,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
-				bodypart++;
+				++bodypart;
 			}
 		}
 		else
@@ -412,7 +443,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				if ( bodypart < 2 )
 				{
-					bodypart++;
+					++bodypart;
 					continue;
 				}
 				if ( bodypart >= 7 )
@@ -425,7 +456,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
-				bodypart++;
+				++bodypart;
 			}
 		}
 
@@ -443,7 +474,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, ++bodypart)
 	{
 		if ( bodypart < 2 )
 		{
@@ -456,8 +487,10 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->yaw = my->yaw;
 		if ( bodypart == 3 || bodypart == 6 )
 		{
+			// right leg, left arm.
 			if ( bodypart == 3 )
 			{
+				// set rightbody to left leg.
 				rightbody = (Entity*)node->next->element;
 			}
 			node_t* shieldNode = list_Node(&my->children, 7);
@@ -522,26 +555,39 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
 		{
+			// left leg, right arm, cloak.
 			if ( bodypart == 5 )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK == 1 )
+
+				if ( MONSTER_ATTACKTIME == 0 )
 				{
 					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
+					MONSTER_ARMBENDED = 0;
+					MONSTER_WEAPONYAW = 0;
+					entity->roll = 0;
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0) )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(1, 0, nullptr);
+						}
 					}
-					else
+					//entity->pitch = -3 * PI / 4;
+					}
+				}
+
+				if ( MONSTER_ATTACK == 1 )
+				{
+					if ( MONSTER_ATTACKTIME > 0 )
 					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( entity->pitch >= 3 * PI / 2 )
 						{
 							MONSTER_ARMBENDED = 1;
 						}
-						if ( entity->pitch >= PI / 4 )
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.25, PI / 4, false, 0) )
 						{
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
@@ -549,10 +595,6 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
 							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
 						}
 					}
 				}
@@ -957,7 +999,8 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK != 0 && MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP1 && MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP2
+		&& MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}

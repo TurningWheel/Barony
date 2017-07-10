@@ -4387,6 +4387,11 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 						}
 					}
 
+					if ( myStats->type == KOBOLD )
+					{
+						pose = MONSTER_POSE_MELEE_WINDUP1;
+					}
+
 					if ( myStats->type == CRYSTALGOLEM )
 					{
 						pose = 5;
@@ -4660,9 +4665,19 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 
 int limbAngleWithinRange(real_t angle, double rate, double setpoint)
 {
-	if ( (angle <= (setpoint + rate)) && (angle >= (setpoint - rate)) )
+	if ( rate > 0 )
 	{
-		return 1;
+		if ( (angle <= (setpoint + rate)) && (angle >= (setpoint - rate)) )
+		{
+			return 1;
+		}
+	}
+	else if ( rate < 0 )
+	{
+		if ( (angle >= (setpoint + rate)) && (angle <= (setpoint - rate)) )
+		{
+			return 1;
+		}
 	}
 
 	return 0;

@@ -350,7 +350,11 @@ void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist,
 bool forceFollower(Entity& leader, Entity& follower);
 
 //--special monster attack constants
-static const int GOLEM_SMASH = 4;
+static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
+static const int MONSTER_POSE_MELEE_WINDUP2 = 5;
+static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
+static const int MONSTER_POSE_MELEE_STRIKE = 7;
+static const int GOLEM_SMASH = 8;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;

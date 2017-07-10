@@ -3102,11 +3102,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if (myStats->weapon != nullptr)
+			if ( pose == MONSTER_POSE_MELEE_WINDUP1 || pose == MONSTER_POSE_MELEE_WINDUP2 || pose == MONSTER_POSE_MELEE_WINDUP3 )
+			{
+				monster_attack = pose;
+				monster_attacktime = 0;
+				if ( multiplayer == SERVER )
+				{
+					// be sure to update the clients with the new wind-up pose.
+					serverUpdateEntitySkill(this, 8);
+					serverUpdateEntitySkill(this, 9);
+				}
+				return; // don't execute the attack, let the monster animation call the attack() function again.
+			}
+			else if (myStats->weapon != nullptr)
 			{
 				monster_attack = pose;
 			}
-			else if ( pose > 3 && pose < 10)
+			else if ( pose > MONSTER_POSE_MELEE_WINDUP3 && pose < 10)
 			{
 				// special monster attacks
 				monster_attack = pose;
@@ -3121,6 +3133,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			monster_attacktime = 0;
 		}
+
 		if (multiplayer == SERVER)
 		{
 			if (player >= 0 && player < MAXPLAYERS)
