@@ -734,6 +734,12 @@ void Entity::effectTimes()
 					case EFF_BLEEDING:
 						messagePlayer(player, language[614]);
 						break;
+					case EFF_MAGICRESIST:
+						messagePlayer(player, language[2470]);
+						break;
+					case EFF_MAGICREFLECT:
+						messagePlayer(player, language[2471]);
+						break;
 					default:
 						break;
 				}
@@ -5661,4 +5667,40 @@ int Entity::isEntityPlayer() const
    }
 
    return -1;
+}
+
+int Entity::getReflection() const
+{
+	Stat *stats = getStats();
+	if ( !stats )
+	{
+		return 0;
+	}
+
+	if ( stats->EFFECTS[EFF_MAGICREFLECT] )
+	{
+		return 3;
+	}
+
+	if ( stats->amulet )
+	{
+		if ( stats->amulet->type == AMULET_MAGICREFLECTION )
+		{
+			return 2;
+		}
+	}
+	if ( stats->cloak )
+	{
+		if ( stats->cloak->type == CLOAK_MAGICREFLECTION )
+		{
+			return 1;
+		}
+	}
+	if ( stats->shield )
+	{
+		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
+		{
+			return 3;
+		}
+	}
 }

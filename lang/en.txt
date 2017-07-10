@@ -2939,7 +2939,7 @@ client (player %d) (direct ip)#
 
 #New spell effects 2420-2440.
 2420 %s is paralyzed!#
-2421 The %s is paralyzed!# 
+2421 The %s is paralyzed!#
 2422 Your limbs suddenly refuse to move!#
 2423 %s is severely wounded!#
 2424 The %s is severely wounded!#
@@ -2956,5 +2956,11 @@ dominate %s into your service!#
 2462 You feel energy go out from you as you
 dominate the %s into your service!#
 2463 You are unable to dominate this one.#
+
+#New effects.
+2470 You no longer feel magic weaken against you.#
+2471 You no longer feel magic bounce off you.#
+2472 You feel magic weaken against you.#
+2473 You feel magic bounce off you.#
 
 2499 end#
