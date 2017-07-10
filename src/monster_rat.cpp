@@ -120,6 +120,8 @@ void initRat(Entity* my, Stat* myStats)
 
 void ratAnimate(Entity* my, double dist)
 {
+	//TODO: Invisibility check.
+
 	// move legs
 	if ( (ticks % 10 == 0 && dist > 0.1) || (MONSTER_ATTACKTIME != MONSTER_ATTACK) )
 	{
