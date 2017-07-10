@@ -439,8 +439,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->HP = 20;
-			stats->MAXHP = 20;
+			stats->HP = 30;
+			stats->MAXHP = 30;
 			stats->MP = 20;
 			stats->MAXMP = 20;
 			stats->OLDHP = stats->HP;
