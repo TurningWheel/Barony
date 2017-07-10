@@ -19,6 +19,7 @@ typedef double real_t;
 
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 #include <iostream>
+#include <list>
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
@@ -96,9 +97,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 #ifdef _MSC_VER
 #include <io.h>
-#define F_OK 0	// check for existence 
-#define X_OK 1	// check for execute permission 
-#define W_OK 2	// check for write permission 
+#define F_OK 0	// check for existence
+#define X_OK 1	// check for execute permission
+#define W_OK 2	// check for write permission
 #define R_OK 4	// check for read permission
 
 #if _MSC_VER != 1900 //Don't need this if running visual studio 2015.
@@ -536,6 +537,18 @@ int reloadLanguage();
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
 void list_RemoveNode(node_t* node);
+template <typename T>
+void list_RemoveNodeWithElement(list_t &list, T element)
+{
+	for ( node_t *node = list.first; node != nullptr; node = node->next )
+	{
+		if ( *static_cast<T*>(node->element) == element )
+		{
+			list_RemoveNode(node);
+			return;
+		}
+	}
+}
 node_t* list_AddNodeFirst(list_t* list);
 node_t* list_AddNodeLast(list_t* list);
 node_t* list_AddNode(list_t* list, int index);
@@ -641,7 +654,7 @@ extern char* cursor_fill[];
 GLuint create_shader(const char* filename, GLenum type);
 
 char* readFile(char* filename);
-list_t* directoryContents(char* directory);
+std::list<std::string> directoryContents(const char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?

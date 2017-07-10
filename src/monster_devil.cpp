@@ -25,11 +25,7 @@ void initDevil(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 304;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(304);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -142,38 +138,12 @@ void initDevil(Entity* my, Stat* myStats)
 
 void actDevilLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void devilDie(Entity* my)
 {
-	node_t* node, *nextnode;
+	node_t* node;
 
 	int c;
 	for ( c = 0; c < 5; c++ )
@@ -182,19 +152,9 @@ void devilDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 	//playSoundEntity(my, 28, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	if ( multiplayer == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -272,7 +232,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* leftbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

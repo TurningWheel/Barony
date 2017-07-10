@@ -137,6 +137,7 @@ Entity* spawnGib(Entity* parentent)
 					gibsprite = 215;
 				}
 				break;
+			//TODO: Gear gibs for automatons, and crystal gibs for golem.
 			default:
 				gibsprite = 5;
 				break;

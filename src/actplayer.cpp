@@ -763,7 +763,8 @@ void actPlayer(Entity* my)
 				{
 					wearingring = true;
 				}
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+			//if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+			if ( my->isInvisible() )
 			{
 				if ( !my->flags[INVISIBLE] )
 				{
@@ -773,7 +774,7 @@ void actPlayer(Entity* my)
 				my->flags[BLOCKSIGHT] = false;
 				if ( multiplayer != CLIENT )
 				{
-					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
+					for ( i = 0, node = my->children.first; node != NULL; node = node->next, ++i )
 					{
 						if ( i == 0 )
 						{
@@ -888,7 +889,7 @@ void actPlayer(Entity* my)
 	bool swimming = false;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		if ( !levitating && !waterwalkingboots && !noclip)
+		if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
@@ -2455,7 +2456,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( stats[PLAYER_NUM]->weapon == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+						if ( stats[PLAYER_NUM]->weapon == NULL || my->isInvisible() )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2574,7 +2575,7 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = false;
 							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
 						}
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+						if ( my->isInvisible() )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2664,7 +2665,7 @@ void actPlayer(Entity* my)
 			case 8:
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->cloak == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2706,7 +2707,7 @@ void actPlayer(Entity* my)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-					if ( stats[PLAYER_NUM]->helmet == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( stats[PLAYER_NUM]->helmet == NULL || my->isInvisible() )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2780,7 +2781,7 @@ void actPlayer(Entity* my)
 						{
 							hasSteelHelm = true;
 						}
-					if ( stats[PLAYER_NUM]->mask == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm )
+					if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 					{
 						entity->flags[INVISIBLE] = true;
 					}

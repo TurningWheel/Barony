@@ -25,11 +25,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 246;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(246);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -86,7 +82,7 @@ void initGhoul(Entity* my, Stat* myStats)
 
 			// count if any custom inventory items from editor
 			// max limit of 6 custom items per entity.
-			int customItems = countCustomItems(myStats); 
+			int customItems = countCustomItems(myStats);
 
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
@@ -212,38 +208,11 @@ void initGhoul(Entity* my, Stat* myStats)
 
 void actGhoulLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void ghoulDie(Entity* my)
 {
-	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 10; c++ )
 	{
@@ -257,41 +226,11 @@ void ghoulDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	if (spawn_blood)
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(212, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->spawnBlood(212);
+
+	my->removeMonsterDeathNodes();
+
 	playSoundEntity(my, 145, 128);
 	list_RemoveNode(my->mynode);
 	return;
@@ -306,7 +245,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

@@ -1809,6 +1809,7 @@ void actMonster(Entity* my)
 	}
 	if ( handleinvisible )
 	{
+		//TODO: Should this use isInvisible()?
 		if ( myStats->EFFECTS[EFF_INVISIBLE] )
 		{
 			my->flags[INVISIBLE] = true;
@@ -4519,7 +4520,7 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
 				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
 			}
-		}	
+		}
 	}
 	else if ( axis == ANIMATE_ROLL )
 	{
@@ -4562,7 +4563,7 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			}
 		}
 	}
-	
+
 
 	return -1;
 }
@@ -4665,4 +4666,54 @@ int limbAngleWithinRange(real_t angle, double rate, double setpoint)
 	}
 
 	return 0;
+}
+
+bool forceFollower(Entity& leader, Entity& follower)
+{
+	Stat* leaderStats = leader.getStats();
+	Stat* followerStats = follower.getStats();
+	if ( !leaderStats || !followerStats )
+	{
+		printlog("[forceFollower] Error: Either leader or follower did not have stats.");
+		return false;
+	}
+
+	Uint32* myuid = (Uint32*) (malloc(sizeof(Uint32)));
+	*myuid = follower.getUID();
+
+	//Deal with the old leader.
+	if ( followerStats->leader_uid != 0 )
+	{
+		Entity* oldLeader = uidToEntity(followerStats->leader_uid);
+		if ( oldLeader )
+		{
+			Stat* oldLeaderStats = oldLeader->getStats();
+			if ( oldLeaderStats )
+			{
+				list_RemoveNodeWithElement<Uint32>(oldLeaderStats->FOLLOWERS, *myuid);
+			}
+		}
+	}
+
+	node_t* newNode = list_AddNodeLast(&leaderStats->FOLLOWERS);
+	newNode->deconstructor = &defaultDeconstructor;
+	newNode->element = myuid;
+
+	follower.monsterState = 0;
+	follower.monsterTarget = 0;
+	followerStats->leader_uid = leader.getUID();
+
+	int player = leader.isEntityPlayer();
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		//Tell the client he suckered somebody into his cult.
+		strcpy((char*) (net_packet->data), "LEAD");
+		SDLNet_Write32((Uint32 )follower.getUID(), &net_packet->data[4]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+
+	return true;
 }

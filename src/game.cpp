@@ -1767,7 +1767,7 @@ void handleEvents(void)
 				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else 
+				} else
 #endif
 				{
 					lastkeypressed = event.key.keysym.scancode;
@@ -1782,7 +1782,7 @@ void handleEvents(void)
 				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else 
+				} else
 #endif
 				{
 					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
@@ -1829,7 +1829,7 @@ void handleEvents(void)
 				mousex = event.motion.x;
 				mousey = event.motion.y;
 #ifdef PANDORA
-				if(xres!=800 || yres!=480) {	// SEB Pandora 
+				if(xres!=800 || yres!=480) {	// SEB Pandora
 					mousex = (mousex*xres)/800;
 					mousey = (mousey*yres)/480;
 				}
@@ -2104,8 +2104,8 @@ Uint32 lastGameTickCount = 0;
 bool frameRateLimit( Uint32 maxFrameRate )
 {
 	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
-	
-	if ( (1000.0f / std::ceilf(desiredFrameMilliseconds)) < maxFrameRate )
+
+	if ( (1000.0f / std::ceil(desiredFrameMilliseconds)) < maxFrameRate )
 	{
 		// check if our fps limiter will calculate the fps to be below the target.
 		// if below target, then set our milisecond target to be 1 less millisecond
@@ -2574,7 +2574,7 @@ int main(int argc, char** argv)
 						startMessages();
 
 						// load dungeon
-						mapseed = rand();
+						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
 						for ( node = map.entities->first; node != NULL; node = node->next )
 						{
