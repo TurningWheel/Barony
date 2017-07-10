@@ -73,7 +73,7 @@ class Entity
 	Sint32& crystalInitialised; // 1 if init, else 0
 	Sint32& crystalTurning; // 1 if currently rotating, else 0
 	Sint32& crystalTurnStartDir; // when rotating, the previous facing direction stored here 0-3
-	
+
 	Sint32& crystalGeneratedElectricityNodes; // 1 if electricity nodes generated previously, else 0
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
@@ -136,6 +136,10 @@ public:
 	 */
 	Sint32& chestPreventLockpickCapstoneExploit;
 
+	//--PUBLIC MONSTER SKILLS--
+	Sint32& monsterState;
+	Sint32& monsterTarget;
+
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
 	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
@@ -187,7 +191,7 @@ public:
 	Sint32 getAttack();
 	bool isBlind();
 
-	bool isInvisible();
+	bool isInvisible() const;
 
 	bool isMobile();
 
@@ -244,6 +248,29 @@ public:
 
 		return myStats->type;
 	}
+
+	bool inline skillCapstoneUnlockedEntity(int proficiency) const
+	{
+		if ( !getStats() )
+		{
+			return false;
+		}
+
+		return (getStats()->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+	}
+
+	/*
+	 * Returns -1 if not a player.
+	 */
+	int isEntityPlayer() const;
+
+	void initMonster(int mySprite);
+
+	void actMonsterLimb(bool processLight = false);
+
+	void removeMonsterDeathNodes();
+
+	void spawnBlood(int bloodsprite = 160);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

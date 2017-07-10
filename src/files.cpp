@@ -12,6 +12,10 @@
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
+
+#include <list>
+#include <string>
+
 #include "main.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
@@ -774,9 +778,9 @@ out_input_file:
 
 -------------------------------------------------------------------------------*/
 
-list_t* directoryContents(char* directory)
+std::list<std::string> directoryContents(const char* directory)
 {
-	list_t* list = NULL; // list of strings
+	std::list<std::string> list;
 	char fullPath[1024];
 	completePath(fullPath, directory);
 	DIR* dir = opendir(fullPath);
@@ -785,12 +789,8 @@ list_t* directoryContents(char* directory)
 	if ( !dir )
 	{
 		printlog( "[directoryContents()] Failed to open directory \"%s\".\n", directory);
-		return NULL;
+		return list;
 	}
-
-	list = (list_t*) malloc(sizeof(list_t));
-	list->first = NULL;
-	list->last = NULL;
 
 	struct stat cur;
 	char curPath[1024];
@@ -805,7 +805,7 @@ list_t* directoryContents(char* directory)
 		}
 		if ((cur.st_mode & S_IFMT) == S_IFREG)
 		{
-			newString(list, 0xFFFFFFFF, entry->d_name);
+			list.push_back(entry->d_name);
 		}
 	}
 

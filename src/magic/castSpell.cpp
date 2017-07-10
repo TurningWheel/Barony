@@ -25,26 +25,26 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 {
 	Entity* caster = uidToEntity(caster_uid);
 	node_t* node = NULL;
-	if (!caster || !spell)
+	if ( !caster || !spell )
 	{
 		//Need a spell and caster to cast a spell.
 		return;
 	}
 
-	if (!spell->elements.first)
+	if ( !spell->elements.first )
 	{
 		return;
 	}
 
-	if (hudweapon)
+	if ( hudweapon )
 	{
-		if (hudweapon->skill[0] != 0)   //HUDWEAPON_CHOP.
+		if ( hudweapon->skill[0] != 0 )   //HUDWEAPON_CHOP.
 		{
 			return; //Can't cast spells while attacking.
 		}
 	}
 
-	if (cast_animation.active)
+	if ( cast_animation.active )
 	{
 		//Already casting spell.
 		return;
@@ -52,15 +52,15 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 
 	int player = -1;
 	int i = 0;
-	for (i = 0; i < numplayers; ++i)
+	for ( i = 0; i < numplayers; ++i )
 	{
-		if (caster == players[i]->entity)
+		if ( caster == players[i]->entity )
 		{
 			player = i; //Set the player.
 		}
 	}
 
-	if (player > -1)
+	if ( player > -1 )
 	{
 		if ( stats[player]->defending )
 		{
@@ -110,13 +110,22 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
-	if (stat->EFFECTS[EFF_PARALYZED])
+	if ( stat->EFFECTS[EFF_PARALYZED] )
 	{
 		return;
 	}
 
-	magiccost = getCostOfSpell(spell);
-	if (magiccost > stat->MP)
+	if ( spell->ID == SPELL_MAGICMISSILE && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
+	{
+		//Spellcasting capstone.
+		magiccost = 0;
+	}
+	else
+	{
+		magiccost = getCostOfSpell(spell);
+	}
+
+	if ( magiccost > stat->MP )
 	{
 		if (player >= 0)
 		{
@@ -785,7 +794,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			double missile_speed = 2 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
-			
+
 			entity->skill[4] = 0;
 			entity->skill[5] = traveltime;
 			node = list_AddNodeFirst(&entity->children);
@@ -847,7 +856,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			((spell_t*)node->element)->caster = caster->getUID();
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
-			
+
 			if ( !strcmp(spell->name, spell_stoneblood.name) )
 			{
 				playSoundEntity(entity, 171, 128);
@@ -1007,6 +1016,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if (propulsion == PROPULSION_MISSILE)
 				{
 					entity->sprite = 173;
+				}
+			}
+			else if ( !strcmp(spell->name, spell_dominate.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 168;
 				}
 			}
 		}

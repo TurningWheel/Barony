@@ -76,7 +76,7 @@ void updateCharacterSheet()
 		camera_charsheet.winh = 180;
 		b = players[clientnum]->entity->flags[BRIGHT];
 		players[clientnum]->entity->flags[BRIGHT] = true;
-		if (!players[clientnum]->entity->flags[INVISIBLE])
+		if ( !players[clientnum]->entity->flags[INVISIBLE] )
 		{
 			glDrawVoxel(&camera_charsheet, players[clientnum]->entity, REALCOLORS);
 		}
@@ -314,7 +314,7 @@ void statsHoverText(Stat* tmpStat)
 	int numInfoLines = 0;
 	Sint32 statBase = 0;
 	Sint32 statBonus = 0;
-	
+
 	SDL_Surface *tmp_bmp = NULL;
 
 	if ( attributespage == 0 )
@@ -379,7 +379,7 @@ void statsHoverText(Stat* tmpStat)
 				pos.w = 32;
 
 				drawImageScaled(tmp_bmp, NULL, &pos);
-				
+
 				src.x = pos.x + pos.w;
 				src.y += 2;
 

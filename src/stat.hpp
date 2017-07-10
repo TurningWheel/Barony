@@ -81,13 +81,13 @@ static const int CAPSTONE_LOCKPICKING_UNLOCK = SKILL_LEVEL_LEGENDARY;
 static const int CAPSTONE_UNLOCK_LEVEL[NUMPROFICIENCIES] =
 {
 		100,		//Lockpicking
-		101,		//Stealth
+		100,		//Stealth
 		100,		//Trading
 		100,		//Appraisal
-		101,		//Swimming
+		100,		//Swimming
 		100,		//Leadership
-		101,
-		101,
+		100,		//Spellcasting
+		100,		//Magic
 		101,
 		101,
 		101,
@@ -206,3 +206,8 @@ inline bool skillCapstoneUnlocked(int player, int proficiency)
 }
 
 void setDefaultMonsterStats(Stat* stats, int sprite);
+
+inline char* getSkillName(int skill)
+{
+	return language[236 + skill];
+}

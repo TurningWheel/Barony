@@ -229,6 +229,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_missile_trio.duration = 25; //1 second.
 	strcpy(spellElement_missile_trio.name, language[2426]);
 
+	spellElementConstructor(&spellElement_dominate);
+	spellElement_dominate.mana = 20;
+	spellElement_dominate.base_mana = 20;
+	spellElement_dominate.overload_multiplier = 1;
+	spellElement_dominate.damage = 0;
+	spellElement_dominate.duration = 0;
+	strcpy(spellElement_dominate.name, language[2460]);
+
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
@@ -651,5 +659,25 @@ void setupSpells()   ///TODO: Verify this function.
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_dominate);
+	strcpy(spell_dominate.name, language[2460]);
+	spell_dominate.ID = SPELL_DOMINATE;
+	spell_dominate.difficulty = 100;
+	node = list_AddNodeLast(&spell_dominate.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*) node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_dominate);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*) node->element;
 	element->node = node;
 }

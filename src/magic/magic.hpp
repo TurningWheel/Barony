@@ -13,34 +13,35 @@
 
 #pragma once
 
-#define SPELLCASTING_BEGINNER 40 //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
+static const int SPELLCASTING_BEGINNER = 40; //If the player's spellcasting skill is below this, they're a newbie and will suffer various penalties to their spellcasting.
 
-#define SPELL_NONE 0 //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
-#define SPELL_FORCEBOLT 1
-#define SPELL_MAGICMISSILE 2
-#define SPELL_COLD 3
-#define SPELL_FIREBALL 4
-#define SPELL_LIGHTNING 5
-#define SPELL_REMOVECURSE 6
-#define SPELL_LIGHT 7
-#define SPELL_IDENTIFY 8
-#define SPELL_MAGICMAPPING 9
-#define SPELL_SLEEP 10
-#define SPELL_CONFUSE 11
-#define SPELL_SLOW 12
-#define SPELL_OPENING 13
-#define SPELL_LOCKING 14
-#define SPELL_LEVITATION 15
-#define SPELL_INVISIBILITY 16
-#define SPELL_TELEPORTATION 17
-#define SPELL_HEALING 18
-#define SPELL_EXTRAHEALING 19
+static const int SPELL_NONE = 0; //This define is not meant to be used. Rather, it is to signify that a spell type of 0 means no spell, which is of particular use in the Spell struct.
+static const int SPELL_FORCEBOLT = 1;
+static const int SPELL_MAGICMISSILE = 2;
+static const int SPELL_COLD = 3;
+static const int SPELL_FIREBALL = 4;
+static const int SPELL_LIGHTNING = 5;
+static const int SPELL_REMOVECURSE = 6;
+static const int SPELL_LIGHT = 7;
+static const int SPELL_IDENTIFY = 8;
+static const int SPELL_MAGICMAPPING = 9;
+static const int SPELL_SLEEP = 10;
+static const int SPELL_CONFUSE = 11;
+static const int SPELL_SLOW = 12;
+static const int SPELL_OPENING = 13;
+static const int SPELL_LOCKING = 14;
+static const int SPELL_LEVITATION = 15;
+static const int SPELL_INVISIBILITY = 16;
+static const int SPELL_TELEPORTATION = 17;
+static const int SPELL_HEALING = 18;
+static const int SPELL_EXTRAHEALING = 19;
 //#define SPELL_RESTOREABILITY 20
-#define SPELL_CUREAILMENT 20
-#define SPELL_DIG 21
-#define SPELL_SUMMON 22
-#define SPELL_STONEBLOOD 23
-#define SPELL_BLEED 24
+static const int SPELL_CUREAILMENT = 20;
+static const int SPELL_DIG = 21;
+static const int SPELL_SUMMON = 22;
+static const int SPELL_STONEBLOOD = 23;
+static const int SPELL_BLEED = 24;
+static const int SPELL_DOMINATE = 25;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -84,7 +85,7 @@
 
 #define HEAL_RADIUS 128
 
-void addSpell(int spell, int player); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
+void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
 
@@ -295,6 +296,11 @@ extern spellElement_t spellElement_bleed;
 extern spellElement_t spellElement_missile_trio;
 
 /*
+ * Turns a non-boss non-player creature into one of your followers.
+ */
+extern spellElement_t spellElement_dominate;
+
+/*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
 //TODO: Support setting how a spell resolves? Eg teleportation: Click, shoot ball, end up where ball hits wall or end of teleport range, or, bring up map, click where you want to teleport to, etc. Or maybe just make different spells for each one. Eg teleporting step could be click and appear at end of path, while teleportation itself could bring up a map and you click on where you want to teleport to.
@@ -357,6 +363,7 @@ extern spell_t spell_dig; //Done.
 extern spell_t spell_summon;
 extern spell_t spell_stoneblood;
 extern spell_t spell_bleed;
+extern spell_t spell_dominate;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -423,6 +430,7 @@ typedef struct spellcastingAnimationManager
 	int consume_interval; //Every consume_interval ticks, eat a mana.
 	int consume_timer; //How many ticks left till next mana consume.
 	int mana_left; //How much mana is left to consume.
+	bool consumeMana; //If false, goes through the motions, even casts the spell -- just doesn't consume any mana.
 
 	float lefthand_movex;
 	float lefthand_movey;
@@ -439,3 +447,8 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 class Item;
 
 spell_t* getSpellFromItem(Item* item);
+
+//Spell implementation stuff.
+bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
+
+void freeSpells();
