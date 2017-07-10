@@ -429,8 +429,54 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 84:
 		case (1000 + KOBOLD):
 			stats->type = KOBOLD;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = 0;
+			
+			stats->HP = 100;
+			stats->MAXHP = stats->HP;
+			stats->RANDOM_HP = 20;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->MP = 60;
+			stats->MAXMP = 60;
+			stats->OLDHP = stats->HP;
+			stats->STR = 25;
+			stats->RANDOM_STR = 5;
+			stats->DEX = 5;
+			stats->RANDOM_DEX = 5;
+			stats->CON = 3;
+			stats->RANDOM_CON = 2;
+			stats->INT = -2;
+			stats->RANDOM_INT = 4;
+			stats->PER = 0;
+			stats->RANDOM_PER = 5;
+			stats->CHR = 3;
+			stats->RANDOM_CHR = 2;
+
+			stats->EXP = 0;
+			stats->LVL = 15;
+			stats->GOLD = 80;
+			stats->RANDOM_GOLD = 40;
+			stats->HUNGER = 900;
+
+			stats->PROFICIENCIES[PRO_SWORD] = 75;
+			stats->PROFICIENCIES[PRO_AXE] = 50;
+			stats->PROFICIENCIES[PRO_POLEARM] = 50;
+			stats->PROFICIENCIES[PRO_RANGED] = 75;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
+
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Fish
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Gems
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 2; //Winny's report
 			break;
 		case 85:
 		case (1000 + SCARAB):
