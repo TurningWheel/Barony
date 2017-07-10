@@ -450,18 +450,13 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->INT = -1;
 			stats->PER = 0;
 			stats->CHR = 0;
-			STATS->EXP = 0;
-			STATS->LVL = 5;
+			stats->EXP = 0;
+			stats->LVL = 5;
 			stats->GOLD = 0;
 			stats->HUNGER = 900;
 
-			/*
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Tomalley.
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Gems
-			//No, I want only one or the other dropped.
-			 */
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 50;
 
 			stats->PROFICIENCIES[PRO_MAGIC] = 50;
 			stats->PROFICIENCIES[PRO_SPELLCASTING] = 50;

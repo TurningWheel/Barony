@@ -59,6 +59,8 @@ void initScarab(Entity* my, Stat* myStats)
 				myStats->HP = 70;
 				myStats->MAXHP = 70;
 				myStats->OLDHP = myStats->HP;
+				myStats->MP = 40;
+				myStats->MAXMP = 40;
 				myStats->STR = -1;
 				myStats->DEX = 20;
 				myStats->CON = 2;
@@ -66,12 +68,13 @@ void initScarab(Entity* my, Stat* myStats)
 				myStats->PER = -2;
 				myStats->CHR = 5;
 				myStats->LVL = 10;
-				newItem(GEM_EMERALD, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory);
+				newItem(GEM_AMBER, static_cast<Status>(1 + rand() % 4), 1, 1, rand(), true, &myStats->inventory);
+				myStats->weapon = newItem(SPELLBOOK_COLD, EXCELLENT, 0, 1, 0, false, NULL);
 				customItemsToGenerate = customItemsToGenerate - 1;
 				int c;
-				for ( c = 0; c < 6; c++ )
+				for ( c = 0; c < 6; ++c )
 				{
-					Entity* entity = summonMonster(RAT, my->x, my->y);
+					Entity* entity = summonMonster(SCARAB, my->x, my->y);
 					if ( entity )
 					{
 						entity->parent = my->getUID();
@@ -101,15 +104,40 @@ void initScarab(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( rand() % 4 )
+					if ( rand() % 2 )
 					{
-						if ( rand() % 2 )
+						if ( rand() % 3 > 0 )
 						{
-							newItem(FOOD_MEAT, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+							newItem(FOOD_TOMALLEY, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
 						}
 						else
 						{
-							newItem(FOOD_CHEESE, DECREPIT, 0, 1, rand(), false, &myStats->inventory);
+							ItemType gem = GEM_GLASS;
+							switch( rand() % 7 )
+							{
+								case 0:
+									gem = GEM_OPAL;
+									break;
+								case 1:
+									gem = GEM_JADE;
+									break;
+								case 2:
+									gem = GEM_AMETHYST;
+									break;
+								case 3:
+									gem = GEM_FLUORITE;
+									break;
+								case 4:
+									gem = GEM_JETSTONE;
+									break;
+								case 5:
+									gem = GEM_OBSIDIAN;
+									break;
+								default:
+									gem = GEM_GLASS;
+									break;
+							}
+							newItem(gem, static_cast<Status>(0 + rand()%2), (rand()%4 == 0), 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;
