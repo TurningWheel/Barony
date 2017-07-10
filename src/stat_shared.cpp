@@ -183,8 +183,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
 			strcpy(stats->name, "Baphomet");
-			stats->inventory.first = NULL;
-			stats->inventory.last = NULL;
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
 			stats->HP = 1250 + 250 * numplayers;
 			stats->MAXHP = stats->HP;
 			stats->MP = 2000;
@@ -435,8 +435,37 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 85:
 		case (1000 + SCARAB):
 			stats->type = SCARAB;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = NULL;
+			stats->inventory.last = NULL;
+			stats->HP = 40;
+			stats->MAXHP = 40;
+			stats->MP = 20;
+			stats->MAXMP = 20;
+			stats->OLDHP = stats->HP;
+			stats->STR = 5;
+			stats->DEX = 4;
+			stats->CON = 2;
+			stats->INT = -1;
+			stats->PER = 0;
+			stats->CHR = 0;
+			STATS->EXP = 0;
+			STATS->LVL = 5;
+			stats->GOLD = 0;
+			stats->HUNGER = 900;
+
+			/*
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Tomalley.
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Gems
+			//No, I want only one or the other dropped.
+			 */
+
+			stats->PROFICIENCIES[PRO_MAGIC] = 50;
+			stats->PROFICIENCIES[PRO_SPELLCASTING] = 50;
+
 			break;
 		case 86:
 		case (1000 + CRYSTALGOLEM):

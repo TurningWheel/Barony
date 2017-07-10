@@ -32,9 +32,9 @@ void initScarab(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		//MONSTER_SPOTSND = 29;
+		//MONSTER_SPOTSND = 29; //TODO: Scarab spot sound effect.
 		MONSTER_SPOTVAR = 1;
-		//MONSTER_IDLESND = 29;
+		//MONSTER_IDLESND = 29; //TODO: Scarab idle soundefect.
 		MONSTER_IDLEVAR = 1;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -55,9 +55,9 @@ void initScarab(Entity* my, Stat* myStats)
 			// boss variants
 			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
 			{
-				strcpy(myStats->name, "Algernon");
-				myStats->HP = 60;
-				myStats->MAXHP = 60;
+				strcpy(myStats->name, "Xyggi");
+				myStats->HP = 70;
+				myStats->MAXHP = 70;
 				myStats->OLDHP = myStats->HP;
 				myStats->STR = -1;
 				myStats->DEX = 20;
@@ -474,7 +474,7 @@ void actScarabLimb(Entity* my)
 void scarabDie(Entity* my)
 {
 	int c = 0;
-	for ( c = 0; c < 5; c++ )
+	for ( c = 0; c < 2; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
@@ -482,7 +482,7 @@ void scarabDie(Entity* my)
 
 	my->spawnBlood(212);
 
-	playSoundEntity(my, 30, 64);
+	playSoundEntity(my, 30, 64); //TODO: Scarab death sound effect.
 	list_RemoveNode(my->mynode);
 	return;
 }
