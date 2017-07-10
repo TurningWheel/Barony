@@ -188,28 +188,17 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	int bodypart;
-	bool wearingring = false;
-	Entity* entity = NULL;
+	Entity* entity = nullptr;
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->ring != NULL )
-			if ( myStats->ring->type == RING_INVISIBILITY )
-			{
-				wearingring = true;
-			}
-		if ( myStats->cloak != NULL )
-			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
-			{
-				wearingring = true;
-			}
-		if ( myStats->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for ( node = my->children.first; node != NULL; node = node->next )
+			for ( node = my->children.first; node != nullptr; node = node->next )
 			{
 				if ( bodypart >= 3 )
 				{
@@ -221,13 +210,13 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 					entity->flags[INVISIBLE] = true;
 					serverUpdateEntityBodypart(my, bodypart);
 				}
-				bodypart++;
+				++bodypart;
 			}
 		}
 		else
 		{
 			my->flags[INVISIBLE] = false;
-			my->flags[BLOCKSIGHT] = true;
+			//my->flags[BLOCKSIGHT] = true; //No. It never blocks sight.
 			bodypart = 0;
 			for ( node = my->children.first; node != NULL; node = node->next )
 			{
@@ -261,7 +250,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 	}
 
 	// move wings
-	for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart )
 	{
 		//messagePlayer(0, "bodypart - %d", bodypart);
 		if ( bodypart < 2 )
