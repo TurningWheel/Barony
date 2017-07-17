@@ -2747,6 +2747,23 @@ void actParticleDot(Entity* my)
 	}
 }
 
+void actParticleTest(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		my->z += my->vel_z;
+		//my->z -= 0.01;
+	}
+}
+
 //void actParticleDrop(Entity* my)
 //{
 //	//Entity* entity = newEntity(sprite, 1, map.entities);

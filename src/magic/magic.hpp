@@ -385,6 +385,7 @@ void createParticle1(Entity* caster, int player);
 void createParticle2(Entity* parent);
 void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);
+void actParticleTest(Entity* my);
 void createParticleDot(Entity* parent);
 
 spell_t* newSpell();
