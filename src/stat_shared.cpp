@@ -468,15 +468,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; //Fish
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 10; //Random Gems
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
-			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 2; //Winny's report
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 50; //Ranged spellbook
 			break;
 		case 85:
 		case (1000 + SCARAB):
