@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initCrystalgolem(Entity* my, Stat* myStats)
 {
@@ -233,8 +234,8 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
 	Entity* entity = NULL;
-	Entity* rightbody = NULL;
-	Entity* rightarm = NULL;
+	Entity* leftbody = NULL;
+	Entity* leftarm = NULL;
 	int bodypart;
 
 	// set invisibility //TODO: isInvisible()?
@@ -316,35 +317,20 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-
-		// torso
-		if ( bodypart == 2 )
-		{
-			if ( MONSTER_ATTACK == GOLEM_SMASH && MONSTER_ATTACKTIME > 0 )
-			{
-				//limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, -15 * PI / 8, false, 0);
-			}
-			else
-			{
-				entity->pitch = 0;
-			}
-		}
-
 		if ( bodypart == 3 || bodypart == 6 )
 		{
-
-			// left leg, right arm.
+			// right leg, left arm.
 			if ( bodypart == 3 )
 			{
-				// set rightbody to the right leg.
-				rightbody = (Entity*)node->next->element;
+				// set leftbody to the left leg.
+				leftbody = (Entity*)node->next->element;
 			}
 			if ( bodypart == 3 || MONSTER_ATTACK == 0 )
 			{
-				// swing left leg/right arm in sync.
+				// swing right leg, left arm in sync.
 				if ( dist > 0.1 )
 				{
-					if ( !rightbody->skill[0] )
+					if ( !leftbody->skill[0] )
 					{
 						entity->pitch -= dist * CRYSTALGOLEMWALKSPEED;
 						if ( entity->pitch < -PI / 4.0 )
@@ -395,107 +381,152 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			else
 			{
 				// ATTACK!
-				// move right arm
-				// vertical chop
-				if ( MONSTER_ATTACKTIME == 0 )
+				// move left arm
+
+				// vertical chop windup
+				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
 				{
-					// prepare the arm animation
-					if ( MONSTER_ATTACK == GOLEM_SMASH )
+					if ( MONSTER_ATTACKTIME == 0 )
 					{
+						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
+						MONSTER_ATTACKTIME = 1;
 					}
-					else if ( MONSTER_ATTACK == 5 )
-					{
-						entity->pitch = -3 * PI / 4;
-						entity->roll = -PI / 4;
-						entity->fskill[21] = ANIMATE_OVERSHOOT_TO_SETPOINT;
 
-					}
-					else
+					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0);
+
+					if ( MONSTER_ATTACKTIME >= 10 )
 					{
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
+						entity->skill[0] = 0;
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(1, 0, nullptr);
+						}
+					}
+
+					MONSTER_ATTACKTIME++; // manually increment counter
+				}
+				// vertical chop attack
+				else if ( MONSTER_ATTACK == 1 )
+				{
+					if ( MONSTER_ATTACKTIME > 0 )
+					{
+						if ( entity->skill[0] == 0 )
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 3, false, 0) )
+							{
+								entity->skill[0] = 1;
+							}
+						}
+						else if ( entity->skill[0] == 1 )
+						{
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, PI / 4, false, 0) )
+							{
+								entity->skill[0] = leftbody->skill[0];
+								entity->pitch = leftbody->pitch;
+								MONSTER_ATTACK = 0;
+							}
+						}
 					}
 				}
-				else
+
+				// horizontal chop windup
+				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
 				{
-					if ( MONSTER_ATTACK == GOLEM_SMASH )
+					if ( MONSTER_ATTACKTIME == 0 )
 					{
-						myStats->EFFECTS[EFF_PARALYZED] = true;
-						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
-						if ( MONSTER_ATTACKTIME < 40 )
-						{
-							// move the head.
-							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, -PI / 6, true, 0.1);
+						// init rotations
+						entity->pitch = 0;
+						entity->roll = 0;
+						MONSTER_ATTACKTIME = 1;
+					}
 
-							// adjust pitch/roll of arms
-							//entity->pitch -= 0.1;
-							//entity->roll -= 0.2;
+					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, PI, false, 0);
+					limbAnimateToLimit(entity, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0);
 
-							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, -7 * PI / 8, true, 0.1);
-							limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 16, false, 0);
-							/*if ( entity->roll < PI / 16 )
-							{
-								entity->roll = PI / 16;
-							}
-							if ( entity->pitch < -7 * PI / 8 )
-							{
-								entity->pitch = -7 * PI / 8;
-							}*/
-						}
-						else if ( MONSTER_ATTACKTIME == 40 )
+					if ( MONSTER_ATTACKTIME >= 10 )
+					{
+						if ( multiplayer != CLIENT )
 						{
-							playSoundEntityLocal(my, 79, 128);
-						}
-						else if ( MONSTER_ATTACKTIME > 50 )
-						{
-							// set overshoot for head animation
-							my->fskill[21] = ANIMATE_OVERSHOOT_TO_SETPOINT;
-							my->attack(10, 0, nullptr);
+							entity->fskill[21] = ANIMATE_OVERSHOOT_TO_SETPOINT;
+							my->attack(2, 0, nullptr);
 						}
 					}
-					else if ( MONSTER_ATTACK == 5 )
+
+					MONSTER_ATTACKTIME++; // manually increment counter
+				}
+				// horizontal chop attack
+				else if ( MONSTER_ATTACK == 2 )
+				{
+					if ( MONSTER_ATTACKTIME > 0 )
 					{
-						limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 0, false, 0);
+						limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 0, false, 0.0);
 						if ( limbAnimateWithOvershoot(entity, ANIMATE_ROLL, 0.25, PI / 2, 0.1, 0, ANIMATE_DIR_POSITIVE) == ANIMATE_OVERSHOOT_TO_ENDPOINT )
 						{
-							my->attack(10, 0, nullptr);
-							MONSTER_ATTACK = 0;
-						}
-						/*if ( entity->pitch <= -PI / 4 )
-						{
-							// reset limbs
-							entity->skill[0] = rightbody->skill[0];
-							entity->pitch = rightbody->pitch;
+							entity->skill[0] = leftbody->skill[0];
+							entity->pitch = leftbody->pitch;
 							entity->roll = 0;
 							MONSTER_ATTACK = 0;
 						}
-						else
-						{
-							entity->pitch += .25;
-							entity->roll -= .25;
-						}*/
 					}
-					else
+				}
+
+				// double vertical chop
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
+				{
+					if ( MONSTER_ATTACKTIME == 0 )
 					{
-						if ( entity->pitch >= PI / 4 )
+						// init rotations
+						entity->pitch = 0;
+						entity->roll = 0;
+						myStats->EFFECTS[EFF_PARALYZED] = true;
+						myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
+						MONSTER_ATTACKTIME = 1;
+						createParticleDot(my);
+					}
+					
+					if ( MONSTER_ATTACKTIME < 40 )
+					{
+						// move the head.
+						limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.1);
+
+						// raise left arm and tilt.
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 9 * PI / 8, true, 0.1);
+						limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, PI / 16, false, 0);
+					}
+					else if ( MONSTER_ATTACKTIME == 40 )
+					{
+						playSoundEntityLocal(my, 79, 128);
+					}
+					else if ( MONSTER_ATTACKTIME > 50 )
+					{
+						// set overshoot for head animation
+						my->fskill[21] = ANIMATE_OVERSHOOT_TO_SETPOINT;
+						if ( multiplayer != CLIENT )
 						{
-							// reset limbs
-							entity->skill[0] = rightbody->skill[0];
-							entity->pitch = rightbody->pitch;
+							my->attack(MONSTER_POSE_GOLEM_SMASH, 0, nullptr);
+						}
+					}
+
+					MONSTER_ATTACKTIME++; // manually increment counter
+				}
+				
+				// golem smash after windup3
+				else if ( MONSTER_ATTACK == MONSTER_POSE_GOLEM_SMASH )
+				{
+					if ( MONSTER_ATTACKTIME > 0 )
+					{
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.25, PI / 4, false, 0) )
+						{
+							entity->skill[0] = leftbody->skill[0];
+							entity->pitch = leftbody->pitch;
 							entity->roll = 0;
-							if ( MONSTER_ATTACK == 10 )
+							if ( myStats->EFFECTS[EFF_PARALYZED] == true )
 							{
 								myStats->EFFECTS[EFF_PARALYZED] = false;
 							}
 							MONSTER_ATTACK = 0;
-
-							// set overshoot animation for head.
-						}
-						else
-						{
-							entity->pitch += .25;
 						}
 					}
 				}
@@ -503,51 +534,55 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == 4 || bodypart == 5 )
 		{
-			// left arm
+			// right arm
 			if ( bodypart == 5 )
 			{
 				if ( MONSTER_ATTACK > 0 )
 				{
-					// get rightarm from bodypart 6 element if ready to attack
-					rightarm = (Entity*)node->next->element;
+					// get leftarm from bodypart 6 element if ready to attack
+					leftarm = (Entity*)node->next->element;
 
-					if ( MONSTER_ATTACK == GOLEM_SMASH )
+					if ( MONSTER_ATTACK == MONSTER_POSE_GOLEM_SMASH || MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3
+						|| MONSTER_ATTACK == 1 || MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						if ( rightarm != NULL )
+						if ( leftarm != nullptr )
 						{
 							// follow the right arm animation.
-							entity->pitch = rightarm->pitch;
-							entity->roll = -rightarm->roll;
+							entity->pitch = leftarm->pitch;
+							entity->roll = -leftarm->roll;
 						}
 					}
-					else
+					else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
 					{
-						// vertical chop
-						if ( MONSTER_ATTACKTIME == 0 )
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, PI / 3, false, 0);
+						entity->skill[0] = 0;
+					}
+					else if ( MONSTER_ATTACK == 2 )
+					{
+						if ( entity->skill[0] == 0 )
 						{
-							entity->pitch = -3 * PI / 4;
-							entity->roll = 0;
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.25, PI / 4, false, 0) )
+							{
+								entity->skill[0] = 1;
+							}
 						}
-						else
+						else if ( entity->skill[0] == 1 )
 						{
-							if ( entity->pitch >= PI / 4 )
-							{
-								entity->skill[0] = rightbody->skill[0];
-								entity->pitch = rightbody->pitch;
-								entity->roll = 0;
-							}
-							else
-							{
-								entity->pitch += .25;
-							}
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 0, false, 0);
 						}
 					}
+				}
+				else
+				{
+					entity->skill[0] = leftbody->skill[0];
+					entity->pitch = leftbody->pitch;
+					entity->roll = 0;
 				}
 			}
 
 			if ( bodypart != 5 || (MONSTER_ATTACK == 0) )
 			{
-				// swing right leg/ left arm in sync
+				// swing right arm/ left leg in sync
 				if ( dist > 0.1 )
 				{
 					if ( entity->skill[0] )
@@ -599,7 +634,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->y -= .5 * sin(my->yaw);
 				entity->z += 2.25;
 				break;
-			// left leg
+			// right leg
 			case 3:
 				entity->x += 2 * cos(my->yaw + PI / 2) - 1.25 * cos(my->yaw);
 				entity->y += 2 * sin(my->yaw + PI / 2) - 1.25 * sin(my->yaw);
@@ -610,7 +645,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->pitch = -PI / 2;
 				}
 				break;
-			// right leg
+			// left leg
 			case 4:
 				entity->x -= 2 * cos(my->yaw + PI / 2) + 1.25 * cos(my->yaw);
 				entity->y -= 2 * sin(my->yaw + PI / 2) + 1.25 * sin(my->yaw);
@@ -621,7 +656,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->pitch = -PI / 2;
 				}
 				break;
-			// left arm
+			// right arm
 			case 5:
 				entity->x += 3.5 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
 				entity->y += 3.5 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
@@ -632,7 +667,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->pitch = 0;
 				}
 				break;
-			// right arm
+			// left arm
 			case 6:
 				entity->x -= 3.5 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
 				entity->y -= 3.5 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
@@ -644,13 +679,17 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= 3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 
 }

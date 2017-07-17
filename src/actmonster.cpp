@@ -4415,18 +4415,22 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 						{
 							pose = MONSTER_POSE_MELEE_WINDUP1;
 						}
+						else if ( myStats->type == CRYSTALGOLEM )
+						{
+							pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+						}
 					}
 
 					
 
-					if ( myStats->type == CRYSTALGOLEM )
+					/*if ( myStats->type == CRYSTALGOLEM )
 					{
 						pose = 5;
 					}
 					else if ( myStats->type == CRYSTALGOLEM && rand() % 2 )
 					{
 						pose = GOLEM_SMASH;
-					}
+					}*/
 
 					// turn to the target, then reset my yaw.
 					double oYaw = my->yaw;
