@@ -3096,7 +3096,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( pose == MONSTER_POSE_MELEE_WINDUP1 || pose == MONSTER_POSE_MELEE_WINDUP2 || pose == MONSTER_POSE_MELEE_WINDUP3 )
+			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_MAGIC_WINDUP3 )
 			{
 				monster_attack = pose;
 				monster_attacktime = 0;
