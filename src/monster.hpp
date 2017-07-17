@@ -353,14 +353,13 @@ bool forceFollower(Entity& leader, Entity& follower);
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
 static const int MONSTER_POSE_MELEE_WINDUP2 = 5;
 static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
-static const int MONSTER_POSE_MELEE_STRIKE = 7;
-static const int MONSTER_POSE_RANGED_WINDUP1 = 8;
-static const int MONSTER_POSE_RANGED_WINDUP2 = 9;
-static const int MONSTER_POSE_RANGED_WINDUP3 = 10;
-static const int MONSTER_POSE_MAGIC_WINDUP1 = 11;
-static const int MONSTER_POSE_MAGIC_WINDUP2 = 12;
-static const int MONSTER_POSE_MAGIC_WINDUP3 = 13;
-static const int GOLEM_SMASH = 10;
+static const int MONSTER_POSE_RANGED_WINDUP1 = 7;
+static const int MONSTER_POSE_RANGED_WINDUP2 = 8;
+static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
+static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
+static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
+static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
+static const int MONSTER_POSE_GOLEM_SMASH = 13;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;

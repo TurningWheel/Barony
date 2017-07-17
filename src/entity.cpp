@@ -3108,18 +3108,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
-			else if (myStats->weapon != nullptr)
+			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM )
 			{
 				monster_attack = pose;
-			}
-			else if ( pose > MONSTER_POSE_MELEE_WINDUP3 && pose < 10)
-			{
-				// special monster attacks
-				monster_attack = pose;
-				monster_attacktime = 0;
-				//createParticle2(this);
-				createParticleDot(this);
-				return;
 			}
 			else
 			{
