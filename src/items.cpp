@@ -2440,7 +2440,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	}
 }
 
-node_t* itemNodeInInventory(Stat* myStats, Item* itemToFind, Category cat)
+node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 {
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
@@ -2460,7 +2460,7 @@ node_t* itemNodeInInventory(Stat* myStats, Item* itemToFind, Category cat)
 			{
 				return node;
 			} 
-			else if ( itemToFind != nullptr && item->type == itemToFind->type )
+			else if ( itemToFind != -1 && item->type == itemToFind )
 			{
 				return node;
 			}
