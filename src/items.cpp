@@ -2439,3 +2439,145 @@ void createCustomInventory(Stat* stats, int itemLimit)
 		}
 	}
 }
+
+node_t* itemNodeInInventory(Stat* myStats, Item* itemToFind, Category cat)
+{
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( cat >= WEAPON && itemCategory(item) == cat )
+			{
+				return node;
+			} 
+			else if ( itemToFind != nullptr && item->type == itemToFind->type )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
+{
+	Item* item = nullptr;
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || inventoryNode == nullptr )
+	{
+		return false;
+	}
+
+	item = (Item*)inventoryNode->element;
+	
+	if ( item->count == 1 )
+	{
+		// TODO: handle stacks.
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		copyItem(tmpItem, item);
+		if ( myStats->weapon != nullptr )
+		{
+			copyItem(item, myStats->weapon);
+			copyItem(myStats->weapon, tmpItem);
+			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			{
+				playSoundEntity(my, 40 + rand() % 4, 64);
+			}
+			free(tmpItem);
+		}
+		else
+		{
+			myStats->weapon = tmpItem;
+			// remove the new item we created.
+			list_RemoveNode(inventoryNode);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
+{
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || *slot == nullptr )
+	{
+		return false;
+	}
+
+	if ( itemCompare(*slot, itemToUnequip) )
+	{
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, &myStats->inventory);
+		copyItem(tmpItem, itemToUnequip);
+
+		if ( (*slot)->node )
+		{
+			list_RemoveNode((*slot)->node);
+		}
+		else
+		{
+			free(*slot);
+		}
+
+		*slot = nullptr;
+	}
+
+	return true;
+}
+
+bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
+{
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || *slot == nullptr )
+	{
+		return false;
+	}
+
+	if ( itemCategory(*slot) == cat)
+	{
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, &myStats->inventory);
+		copyItem(tmpItem, *slot);
+
+		if ( (*slot)->node )
+		{
+			list_RemoveNode((*slot)->node);
+		}
+		else
+		{
+			free(*slot);
+		}
+
+		*slot = nullptr;
+		//messagePlayer(0, "un-equip!");
+		return true;
+	}
+
+	return false;
+}
+
+void copyItem(Item* itemToSet, Item* itemToCopy)
+{
+	itemToSet->type = itemToCopy->type;
+	itemToSet->status = itemToCopy->status;
+	itemToSet->beatitude = itemToCopy->beatitude;
+	itemToSet->count = itemToCopy->count;
+	itemToSet->appearance = itemToCopy->appearance;
+	itemToSet->identified = itemToCopy->identified;
+	itemToSet->uid = itemToCopy->uid;
+
+	return;
+}
