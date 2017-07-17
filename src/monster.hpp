@@ -354,12 +354,19 @@ static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
 static const int MONSTER_POSE_MELEE_WINDUP2 = 5;
 static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
 static const int MONSTER_POSE_MELEE_STRIKE = 7;
-static const int GOLEM_SMASH = 8;
+static const int MONSTER_POSE_RANGED_WINDUP1 = 8;
+static const int MONSTER_POSE_RANGED_WINDUP2 = 9;
+static const int MONSTER_POSE_RANGED_WINDUP3 = 10;
+static const int MONSTER_POSE_MAGIC_WINDUP1 = 11;
+static const int MONSTER_POSE_MAGIC_WINDUP2 = 12;
+static const int MONSTER_POSE_MAGIC_WINDUP3 = 13;
+static const int GOLEM_SMASH = 10;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;
 static const int ANIMATE_PITCH = 2;
 static const int ANIMATE_ROLL = 3;
+static const int ANIMATE_WEAPON_YAW = 4;
 
 static const int ANIMATE_DIR_POSITIVE = 1;
 static const int ANIMATE_DIR_NEGATIVE = -1;
@@ -374,3 +381,5 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 //--animates the selected limb to setpoint, then endpoint along the axis, provided skill[21]/MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon);
+real_t normaliseAngle2PI(real_t angle);
