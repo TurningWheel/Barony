@@ -427,3 +427,6 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
+
+// unique monster item appearance to avoid being dropped on death.
+static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

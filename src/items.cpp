@@ -868,40 +868,74 @@ void dropItem(Item* item, int player)
 
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 {
-	Entity* entity;
+	Entity* entity = nullptr;
 
 	if ( !item || !monster )
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	entity = newEntity(-1, 1, map.entities);
-	entity->flags[INVISIBLE] = true;
-	entity->flags[UPDATENEEDED] = true;
-	entity->x = monster->x;
-	entity->y = monster->y;
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->yaw = monster->yaw;
-	entity->vel_x = (rand() % 20 - 10) / 10.0;
-	entity->vel_y = (rand() % 20 - 10) / 10.0;
-	entity->vel_z = -.5;
-	entity->flags[PASSABLE] = true;
-	entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
-	entity->behavior = &actItem;
-	entity->skill[10] = item->type;
-	entity->skill[11] = item->status;
-	entity->skill[12] = item->beatitude;
-	entity->skill[13] = 1;
-	entity->skill[14] = item->appearance;
-	entity->skill[15] = item->identified;
-	entity->parent = monster->getUID();
+	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	{
+		if ( monsterStats->type == KOBOLD && itemCategory(item) == SPELLBOOK )
+		{
+			// monsters with special spell attacks won't drop their book.
+		}
+		else
+		{
+			entity = newEntity(-1, 1, map.entities);
+			entity->flags[INVISIBLE] = true;
+			entity->flags[UPDATENEEDED] = true;
+			entity->x = monster->x;
+			entity->y = monster->y;
+			entity->sizex = 4;
+			entity->sizey = 4;
+			entity->yaw = monster->yaw;
+			entity->vel_x = (rand() % 20 - 10) / 10.0;
+			entity->vel_y = (rand() % 20 - 10) / 10.0;
+			entity->vel_z = -.5;
+			entity->flags[PASSABLE] = true;
+			entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+			entity->behavior = &actItem;
+			entity->skill[10] = item->type;
+			entity->skill[11] = item->status;
+			entity->skill[12] = item->beatitude;
+			entity->skill[13] = 1;
+			entity->skill[14] = item->appearance;
+			entity->skill[15] = item->identified;
+			entity->parent = monster->getUID();
+		}
+	}
+	else
+	{
+		entity = newEntity(-1, 1, map.entities);
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = monster->x;
+		entity->y = monster->y;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = monster->yaw;
+		entity->vel_x = (rand() % 20 - 10) / 10.0;
+		entity->vel_y = (rand() % 20 - 10) / 10.0;
+		entity->vel_z = -.5;
+		entity->flags[PASSABLE] = true;
+		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+		entity->behavior = &actItem;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = 1;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->parent = monster->getUID();
+	}
 
 	item->count--;
 	Item** slot;
-	if ( (slot = itemSlot(monsterStats, item)) != NULL )
+	if ( (slot = itemSlot(monsterStats, item)) != nullptr )
 	{
-		*slot = NULL; // clear the item slot
+		*slot = nullptr; // clear the item slot
 	}
 	if ( item->count <= 0 )
 	{
