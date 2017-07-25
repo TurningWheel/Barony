@@ -49,7 +49,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalStartZ(fskill[0]),
 	crystalMaxZVelocity(fskill[1]),
 	crystalMinZVelocity(fskill[2]),
-	crystalTurnVelocity(fskill[3])
+	crystalTurnVelocity(fskill[3]),
+	monsterAnimationLimbDirection(skill[20]),
+	monsterAnimationLimbOvershoot(skill[30])
 {
 	int c;
 	// add the entity to the entity list
@@ -99,9 +101,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	children.last = nullptr;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
-	for (c = 0; c < 30; ++c)
+	for ( c = 0; c < NUMENTITYSKILLS; ++c )
 	{
 		skill[c] = 0;
+	}
+	for (c = 0; c < NUMENTITYFSKILLS; ++c)
+	{
 		fskill[c] = 0;
 	}
 	skill[2] = -1;

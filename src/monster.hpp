@@ -199,10 +199,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
 
-//--monster animation storage.
-#define MONSTER_LIMB_DIR limb->skill[20]
-#define MONSTER_LIMB_OVERSHOOT limb->fskill[21]
-
 #define MONSTER_SPECIAL my->skill[29]
 #define MONSTER_IDLEVAR myStats->monster_idlevar
 #define MONSTER_SOUND myStats->monster_sound
@@ -361,6 +357,15 @@ static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
 static const int MONSTER_POSE_GOLEM_SMASH = 13;
 
+//--monster special cooldowns
+static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
+static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
+
+//--monster target search types
+static const int MONSTER_TARGET_ENEMY = 0;
+static const int MONSTER_TARGET_FRIEND = 1;
+static const int MONSTER_TARGET_PLAYER = 2;
+
 //--monster animation handler
 static const int ANIMATE_YAW = 1;
 static const int ANIMATE_PITCH = 2;
@@ -377,8 +382,10 @@ static const int ANIMATE_OVERSHOOT_NONE = 0;
 
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
-//--animates the selected limb to setpoint, then endpoint along the axis, provided skill[21]/MONSTER_LIMB_OVERSHOOT is set
+//--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
 void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon);
 real_t normaliseAngle2PI(real_t angle);
+void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
+int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);
