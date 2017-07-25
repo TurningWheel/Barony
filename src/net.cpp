@@ -614,6 +614,67 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 
 /*-------------------------------------------------------------------------------
 
+serverUpdateEntityFSkill
+
+Updates a specific entity fskill for all clients
+
+-------------------------------------------------------------------------------*/
+
+void serverUpdateEntityFSkill(Entity* entity, int fskill)
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "ENFS");
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+			net_packet->data[8] = fskill;
+			SDLNet_Write32(static_cast<int>(entity->fskill[fskill]), &net_packet->data[9]);
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 13;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
+serverSpawnMiscParticles
+
+Spawns misc particle effects for all clients
+
+-------------------------------------------------------------------------------*/
+
+void serverSpawnMiscParticles(Entity* entity, int particleType)
+{
+	int c;
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+	for ( c = 1; c < MAXPLAYERS; c++ )
+	{
+		if ( !client_disconnected[c] )
+		{
+			strcpy((char*)net_packet->data, "SPPE");
+			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
+			net_packet->data[8] = particleType;
+			net_packet->address.host = net_clients[c - 1].host;
+			net_packet->address.port = net_clients[c - 1].port;
+			net_packet->len = 10;
+			sendPacketSafe(net_sock, -1, net_packet, c - 1);
+		}
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	serverUpdateEntityFlag
 
 	Updates a specific entity flag for all clients
@@ -1909,6 +1970,32 @@ void clientHandlePacket()
 		return;
 	}
 
+	// spawn misc particle effect 
+	else if ( !strncmp((char*)net_packet->data, "SPPE", 4) )
+	{
+		i = (int)SDLNet_Read32(&net_packet->data[4]);
+		for ( node = map.entities->first; node != NULL; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			if ( entity->getUID() == i )
+			{
+				int particleType = net_packet->data[8];
+				switch ( particleType )
+				{
+					case PARTICLE_EFFECT_ABILITY_PURPLE:
+						createParticleDot(entity);
+						break;
+					case PARTICLE_EFFECT_ABILITY_ROCK:
+						createParticleRock(entity);
+						break;
+					default:
+						break;
+				}
+			}
+		}
+		return;
+	}
+
 	// spawn an explosion
 	else if (!strncmp((char*)net_packet->data, "EXPL", 4))
 	{
@@ -2103,6 +2190,21 @@ void clientHandlePacket()
 			if ( entity->getUID() == i )
 			{
 				entity->skill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
+			}
+		}
+		return;
+	}
+
+	// update entity fskill
+	else if ( !strncmp((char*)net_packet->data, "ENFS", 4) )
+	{
+		i = (int)SDLNet_Read32(&net_packet->data[4]);
+		for ( node = map.entities->first; node != NULL; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			if ( entity->getUID() == i )
+			{
+				entity->fskill[net_packet->data[8]] = SDLNet_Read32(&net_packet->data[9]);
 			}
 		}
 		return;

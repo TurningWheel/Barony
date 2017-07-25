@@ -2728,8 +2728,80 @@ void createParticleDot(Entity* parent)
 		entity->skill[0] = 10 + rand()% 50;
 		entity->behavior = &actParticleDot;
 		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
 		entity->setUID(-3);
 	}
+}
+
+void createParticleRock(Entity* parent)
+{
+	for ( int c = 0; c < 5; c++ )
+	{
+		Entity* entity = newEntity(78, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x + (-4 + rand() % 9);
+		entity->y = parent->y + (-4 + rand() % 9);
+		entity->z = 7.5;
+		entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
+
+		entity->vel_x = 0.2 * cos(entity->yaw);
+		entity->vel_y = 0.2 * sin(entity->yaw);
+		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+		
+		entity->skill[0] = 50; // particle life
+		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+		entity->behavior = &actParticleRock;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void actParticleRock(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 || my->z > 10 )
+	{
+		list_RemoveNode(my->mynode);
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		
+		my->roll += 0.1;
+
+		if ( my->vel_z < 0.01 )
+		{
+			my->skill[1] = 1; // start moving downwards
+			my->vel_z = 0.1;
+		}
+
+		if ( my->skill[1] == 0 ) // upwards motion
+		{
+			my->z -= my->vel_z;
+			my->vel_z *= 0.7;
+		}
+		else // downwards motion
+		{
+			my->z += my->vel_z;
+			my->vel_z *= 1.1;
+		}
+	}
+	return;
 }
 
 void actParticleDot(Entity* my)
@@ -2737,7 +2809,6 @@ void actParticleDot(Entity* my)
 	if ( PARTICLE_LIFE < 0 )
 	{
 		list_RemoveNode(my->mynode);
-		return;
 	}
 	else
 	{
@@ -2745,6 +2816,7 @@ void actParticleDot(Entity* my)
 		my->z += my->vel_z;
 		//my->z -= 0.01;
 	}
+	return;
 }
 
 void actParticleTest(Entity* my)
@@ -2763,22 +2835,3 @@ void actParticleTest(Entity* my)
 		//my->z -= 0.01;
 	}
 }
-
-//void actParticleDrop(Entity* my)
-//{
-//	//Entity* entity = newEntity(sprite, 1, map.entities);
-//	if ( PARTICLE_LIFE < 0 )
-//	{
-//		spawnMagicEffectParticles(my->x, my->y, my->z, 171);
-//		spell_summonFamiliar(PARTICLE_CASTER);
-//		list_RemoveNode(my->mynode);
-//		return;
-//	}
-//	else
-//	{
-//		--PARTICLE_LIFE;
-//		my->yaw += std::min(my->fskill[0], 0.5);
-//		my->fskill[0] = my->fskill[0] * 1.1;
-//		//my->z -= 0.01;
-//	}
-//}
