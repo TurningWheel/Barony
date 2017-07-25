@@ -1263,7 +1263,7 @@ void drawEntities2D(long camx, long camy)
 							pady += 2;
 
 							strcpy(tmpStr, "Status: ");
-							ttfPrintTextColor(ttf8, padx, pady - 10, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady - 10, colorWhite, 1, tmpStr);
 							switch ( (int)selectedEntity->skill[11] )
 							{
 								case 1:
@@ -1291,10 +1291,10 @@ void drawEntities2D(long camx, long camy)
 									color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
 									break;
 							}
-							ttfPrintTextColor(ttf8, padx + 56, pady - 10, color, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx + 56, pady - 10, color, 1, tmpStr);
 
 							strcpy(tmpStr, "Bless: ");
-							ttfPrintTextColor(ttf8, padx, pady, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady, colorWhite, 1, tmpStr);
 							if ( selectedEntity->skill[12] < 0 )
 							{
 								snprintf(tmpStr2, 10, "%d", selectedEntity->skill[12]);
@@ -1315,16 +1315,16 @@ void drawEntities2D(long camx, long camy)
 								snprintf(tmpStr2, 10, "+%d", selectedEntity->skill[12]);
 								color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							}
-							ttfPrintTextColor(ttf8, padx + 48, pady, color, 0, tmpStr2);
+							ttfPrintTextColor(ttf8, padx + 48, pady, color, 1, tmpStr2);
 
 							strcpy(tmpStr, "Qty: ");
-							ttfPrintTextColor(ttf8, padx, pady + 10, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + 10, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[13]);
-							ttfPrintTextColor(ttf8, padx + 32, pady + 10, colorWhite, 0, tmpStr2);
+							ttfPrintTextColor(ttf8, padx + 32, pady + 10, colorWhite, 1, tmpStr2);
 
 							pady += 2;
 							strcpy(tmpStr, "Identified: ");
-							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + 20, colorWhite, 1, tmpStr);
 							if ( (int)selectedEntity->skill[15] == 0 )
 							{
 								strcpy(tmpStr2, "No");
@@ -1340,7 +1340,7 @@ void drawEntities2D(long camx, long camy)
 								strcpy(tmpStr2, "?");
 								color = SDL_MapRGB(mainsurface->format, 0, 168, 255);
 							}
-							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 0, tmpStr2);
+							ttfPrintTextColor(ttf8, padx + 80, pady + 20, color, 1, tmpStr2);
 							break;
 						case 4: //summoning trap
 							pady += 5;
@@ -1351,35 +1351,35 @@ void drawEntities2D(long camx, long camy)
 							offsety += 10;
 							strcpy(tmpStr, "Type: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							strcpy(tmpStr2, monsterEditorNameStrings[entity->skill[0]]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Qty: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[1]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Time: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[2]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Amount: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[3]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Power to: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							if ( selectedEntity->skill[4] == 1 )
 							{
 								strcpy(tmpStr2, "Spawn");
@@ -1393,7 +1393,7 @@ void drawEntities2D(long camx, long camy)
 							offsety += 10;
 							strcpy(tmpStr, "Stop Chance: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity->skill[5]);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 							break;
@@ -1431,14 +1431,14 @@ void drawEntities2D(long camx, long camy)
 							offsety += 10;
 							strcpy(tmpStr, "Nodes: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							snprintf(tmpStr2, 10, "%d", selectedEntity->crystalNumElectricityNodes);
 							ttfPrintText(ttf8, padx + offsetx, pady + offsety, tmpStr2);
 
 							offsety += 10;
 							strcpy(tmpStr, "Rotation: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
 							switch ( (int)entity->crystalTurnReverse )
 							{
 								case 0:
@@ -1457,8 +1457,8 @@ void drawEntities2D(long camx, long camy)
 							offsety += 10;
 							strcpy(tmpStr, "Spell to Activate: ");
 							offsetx = strlen(tmpStr) * 8 - 8;
-							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 0, tmpStr);
-							switch ( (int)entity->crystalTurnReverse )
+							ttfPrintTextColor(ttf8, padx, pady + offsety, colorWhite, 1, tmpStr);
+							switch ( (int)entity->crystalSpellToActivate )
 							{
 								case 0:
 									strcpy(tmpStr2, "No");
