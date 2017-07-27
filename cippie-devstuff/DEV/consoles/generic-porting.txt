@@ -1,0 +1,13 @@
+First off, any console ports will require splitscreen support.
+ * Player code needs to be encapsulated inside of a player class.
+ * THE GLOBAL STATE MUST BE NUKED!
+
+After that, figure out rendering a second player's stuff in their own viewport or surface. Or something.
+
+Controls for multiple players on one physical machine (controller support)
+Stretch goal: multiplayer + local co-op if possible = yay
+
+Sound, music, etc for multiplayer players
+
+GUI scaling is critical.
+Cram everything so you can fit 4 players onscreen.

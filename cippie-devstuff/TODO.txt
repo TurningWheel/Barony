@@ -1,0 +1,26 @@
+ * Tutorial
+ * Tooltips
+ * Handy GUI stuff to explain the interface the first time you see stuff
+ * Ingame tutorial/reference pages for stuff like the magic screen(s)
+ * Ingame help for magic.
+ * Ingame books (tomes) that help you with the magic system.
+
+ * hard mode.
+ * Spiders spit venom.
+ * Epoch skill passive/active abilities.
+ * Epoch attribute passive/active abilities? E.g. psychic for high intelligence. Move boulders for high strength.
+ * Bags
+
+ * Fix bug: Walking and then open shopkeeper interface and then let go of key but keep walking.
+ * Fix bug: amulet of life vs boulder.
+[17-02-21] You are struck by a boulder!
+[17-02-21] You die....
+[17-02-21] But wait! Your amulet is glowing!
+[17-02-21] You are brought back to life.
+[17-02-21] However, your amulet crumbles to dust.
+[17-02-21] You are struck by a boulder!
+[17-02-21] dsf fails to dodge the incoming boulder.
+[17-02-21] You die...
+
+ * Fix bug: Interrupting spellcasting doesn't refund mana.
+  -- Not a bug?

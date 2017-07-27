@@ -14,7 +14,7 @@
 
 
 
-Entity::Entity(Sint32 sprite, Uint32 pos, list_t *entlist) :
+Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_gonnavomit(skill[26]),
 	char_heal(skill[22]),
 	char_energize(skill[23]),
@@ -28,6 +28,85 @@ Entity::Entity(Sint32 sprite, Uint32 pos, list_t *entlist) :
 	switch_power(skill[0]),
 	chest_status(skill[1]),
 	chest_opener(skill[5])
-{ }
+{
+	int c;
+	// add the entity to the entity list
+	if (!pos)
+	{
+		mynode = list_AddNodeFirst(entlist);
+	}
+	else
+	{
+		mynode = list_AddNodeLast(entlist);
+	}
+	mynode->element = this;
+	mynode->deconstructor = &entityDeconstructor;
+	mynode->size = sizeof(Entity);
+
+	// now reset all of my data elements
+	lastupdate = 0;
+	lastupdateserver = 0;
+	ticks = 0;
+	x = 0;
+	y = 0;
+	z = 0;
+	new_x = 0;
+	new_y = 0;
+	new_z = 0;
+	focalx = 0;
+	focaly = 0;
+	focalz = 0;
+	scalex = 1;
+	scaley = 1;
+	scalez = 1;
+	vel_x = 0;
+	vel_y = 0;
+	vel_z = 0;
+	sizex = 0;
+	sizey = 0;
+	yaw = 0;
+	pitch = 0;
+	roll = 0;
+	new_yaw = 0;
+	new_pitch = 0;
+	new_roll = 0;
+	sprite = in_sprite;
+	light = nullptr;
+	string = nullptr;
+	children.first = nullptr;
+	children.last = nullptr;
+	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
+	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
+	for (c = 0; c < 30; ++c)
+	{
+		skill[c] = 0;
+		fskill[c] = 0;
+	}
+	skill[2] = -1;
+	for (c = 0; c < 16; ++c)
+	{
+		flags[c] = false;
+	}
+	if (entlist == map.entities)
+	{
+		if (multiplayer != CLIENT || loading)
+		{
+			uid = entity_uids;
+			entity_uids++;
+		}
+		else
+		{
+			uid = -2;
+		}
+	}
+	else
+	{
+		uid = -2;
+	}
+	behavior = nullptr;
+	ranbehavior = false;
+	parent = 0;
+	path = nullptr;
+}
 
 Entity::~Entity() { }

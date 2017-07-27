@@ -11,14 +11,17 @@
 
 #pragma once
 
+#ifdef HAVE_FMOD
 #include "fmod.h"
+#endif
 
 class Item;
 //enum Item;
 //enum Status;
 //enum Category;
 
-typedef enum {
+typedef enum
+{
 	NOTHING,
 	HUMAN,
 	RAT,
@@ -82,62 +85,68 @@ const int NUMPROFICIENCIES = 14;
 
 #define NUMCATEGORIES 13
 
-typedef enum {
+typedef enum
+{
 	MALE,
 	FEMALE
 } sex_t;
 
-class Stat {
-	public:	
-		Monster type;
-		sex_t sex;
-		Uint32 appearance;
-		char name[128];
-		char obituary[128];
-		Uint32 poisonKiller; // uid of the entity which killed me via burning/poison
+class Stat
+{
+public:
+	Monster type;
+	sex_t sex;
+	Uint32 appearance;
+	char name[128];
+	char obituary[128];
+	Uint32 poisonKiller; // uid of the entity which killed me via burning/poison
 
-							 // attributes
-		Sint32 HP, MAXHP, OLDHP;
-		Sint32 MP, MAXMP;
-		Sint32 STR, DEX, CON, INT, PER, CHR;
-		Sint32 EXP, LVL;
-		Sint32 GOLD, HUNGER;
+	// attributes
+	Sint32 HP, MAXHP, OLDHP;
+	Sint32 MP, MAXMP;
+	Sint32 STR, DEX, CON, INT, PER, CHR;
+	Sint32 EXP, LVL;
+	Sint32 GOLD, HUNGER;
 
-		// skills and effects
-		Sint32 PROFICIENCIES[NUMPROFICIENCIES];
-		bool EFFECTS[NUMEFFECTS];
-		Sint32 EFFECTS_TIMERS[NUMEFFECTS];
-		bool defending;
+	// skills and effects
+	Sint32 PROFICIENCIES[NUMPROFICIENCIES];
+	bool EFFECTS[NUMEFFECTS];
+	Sint32 EFFECTS_TIMERS[NUMEFFECTS];
+	bool defending;
 
-		// group think
-		Uint32 leader_uid;
-		list_t FOLLOWERS;
-		int stache_x1, stache_x2;
-		int stache_y1, stache_y2;
+	// group think
+	Uint32 leader_uid;
+	list_t FOLLOWERS;
+	int stache_x1, stache_x2;
+	int stache_y1, stache_y2;
 
-		// equipment
-		list_t inventory;
-		Item *helmet;
-		Item *breastplate;
-		Item *gloves;
-		Item *shoes;
-		Item *shield;
-		Item *weapon;
-		Item *cloak;
-		Item *amulet;
-		Item *ring;
-		Item *mask;
+	// equipment
+	list_t inventory;
+	Item* helmet;
+	Item* breastplate;
+	Item* gloves;
+	Item* shoes;
+	Item* shield;
+	Item* weapon;
+	Item* cloak;
+	Item* amulet;
+	Item* ring;
+	Item* mask;
 
-		// misc
-		FMOD_CHANNEL *monster_sound; //TODO: Do?
-		int monster_idlevar;
+	// misc
+#ifdef HAVE_FMOD
+	FMOD_CHANNEL* monster_sound; //TODO: Do?
+#else
+	void* monster_sound;
+#endif
+	int monster_idlevar;
 
-		list_t magic_effects; //Makes things like the invisibility spell work.
-		Stat();
-		~Stat();
-		void clearStats();
-		void freePlayerEquipment();
-		Stat *copyStats();
-		void printStats();
+	list_t magic_effects; //Makes things like the invisibility spell work.
+	Stat();
+	~Stat();
+	void clearStats();
+	void freePlayerEquipment();
+	Stat* copyStats();
+	void printStats();
 };
-extern Stat *stats[MAXPLAYERS];
+extern Stat* stats[MAXPLAYERS];

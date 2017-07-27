@@ -16,14 +16,19 @@
 #include "../stat.hpp"
 #include "interface.hpp"
 #include "../magic/magic.hpp"
+#include "../player.hpp"
+#include "../entity.hpp"
 
-void updateRightSidebar() {
+void updateRightSidebar()
+{
 	//TODO: Update this to manage spells & skills.
 
 	SDL_Rect pos;
 	//pos.x = MAGICSPELL_LIST_X; pos.y = MAGICSPELL_LIST_Y;
-	pos.x = 0; pos.y = 0;
-	pos.w = 0; pos.h = 0;
+	pos.x = 0;
+	pos.y = 0;
+	pos.w = 0;
+	pos.h = 0;
 
 	int height = rightsidebar_titlebar_img->h;
 	int numitems = 2; //Just two for now: The appraisal skill & the spell list.
@@ -46,17 +51,34 @@ void updateRightSidebar() {
 	//TODO: Make it recurse over a skill list or something?
 	//If the mouse is over the slot, then draw the highlighted version.
 	//TODO: Grey out activated skills. if (appraisal_timer > 0) { draw(slot_unselectable) }
-	if (appraisal_timer > 0) {
+	if (appraisal_timer > 0)
+	{
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos); //The appraisal skill is grayed out while it's timing down. //TODO: Maybe a countdown timer or progress bar?
-	} else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h)) {
+	}
+	else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h))
+	{
 		drawImage(rightsidebar_slot_highlighted_img, NULL, &pos);
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+		if (mousestatus[SDL_BUTTON_LEFT])
+		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			identifygui_active = TRUE;
-			identifygui_appraising = TRUE;
+			identifygui_active = true;
+			identifygui_appraising = true;
 			gui_mode = GUI_MODE_INVENTORY;
+			if ( removecursegui_active )
+			{
+				closeRemoveCurseGUI();
+			}
+			if ( openedChest[clientnum] )
+			{
+				openedChest[clientnum]->closeChest();
+			}
+
+			//Initialize Identify GUI game controller code here.
+			initIdentifyGUIControllerCode();
 		}
-	} else {
+	}
+	else
+	{
 		drawImage(rightsidebar_slot_img, NULL, &pos);
 	}
 
@@ -67,20 +89,27 @@ void updateRightSidebar() {
 	//Advance the position.
 	pos.y += rightsidebar_slot_img->h;
 
-	if (!spellList.first) {
+	if (!spellList.first)
+	{
 		//Grayed out. No spells.
 		drawImage(rightsidebar_slot_grayedout_img, NULL, &pos);
-	} else if(mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h)) {
+	}
+	else if (mouseInBounds(pos.x, pos.x + rightsidebar_slot_img->w, pos.y, pos.y + rightsidebar_slot_img->h))
+	{
 		drawImage(rightsidebar_slot_highlighted_img, NULL, &pos);
-		if (mousestatus[SDL_BUTTON_LEFT]) {
+		if (mousestatus[SDL_BUTTON_LEFT])
+		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
 			gui_mode = GUI_MODE_MAGIC;
-			if (shootmode) {
-				shootmode = FALSE;
+			if (shootmode)
+			{
+				shootmode = false;
 				attributespage = 0;
 			}
 		}
-	} else {
+	}
+	else
+	{
 		//Draw the normal thing.
 		drawImage(rightsidebar_slot_img, NULL, &pos);
 	}

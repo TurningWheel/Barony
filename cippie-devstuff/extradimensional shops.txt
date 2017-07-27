@@ -1,0 +1,6 @@
+Like the shop from Discworld. Any door you open has a random chance of teleporting you to the dimensional shop.
+
+Three options for implementation:
+A) Open the door and the doorframe acts like a special portal. Advanced graphics buggery involved. So the room can be bigger than it appears outside.
+B) Just spawn it in the level.
+C) "As you twist the door's handle, you are suddenly teleported to another dimension!" Breaking the door forfeits your opportunity of going there. How to handle multiplayer? Only one player can go? Bluh.
