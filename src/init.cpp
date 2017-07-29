@@ -339,10 +339,12 @@ int initApp(char* title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("sprite 0 cannot be NULL!\n");
+				fclose(fp);
 				return 7;
 			}
 		}
 	}
+	fclose(fp);
 
 	// print a loading message
 	drawClearBuffers();
@@ -383,10 +385,12 @@ int initApp(char* title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("model 0 cannot be NULL!\n");
+				fclose(fp);
 				return 12;
 			}
 		}
 	}
+	fclose(fp);
 	if ( !softwaremode )
 	{
 		generatePolyModels();
@@ -450,10 +454,12 @@ int initApp(char* title, int fullscreen)
 			if ( c == 0 )
 			{
 				printlog("tile 0 cannot be NULL!\n");
+				fclose(fp);
 				return 9;
 			}
 		}
 	}
+	fclose(fp);
 
 	// print a loading message
 	drawClearBuffers();
@@ -638,18 +644,7 @@ int loadLanguage(char* lang)
 	}
 
 	// free currently loaded language if any
-	if ( language )
-	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
-		{
-			char* entry = language[c];
-			if ( entry )
-			{
-				free(entry);
-			}
-		}
-		free(language);
-	}
+	freeLanguages();
 
 	// store the new language code
 	strcpy(languageCode, lang);
@@ -758,6 +753,32 @@ int reloadLanguage()
 	strcpy(lang, languageCode);
 	strcpy(languageCode, "");
 	return loadLanguage(lang);
+}
+
+/*-------------------------------------------------------------------------------
+ *
+       freeLanguages
+
+	free languages string resources
+
+--------------------------------------------------------------------------------*/
+
+void freeLanguages()
+{
+	int c;
+
+	if ( language )
+	{
+		for ( c = 0; c < NUMLANGENTRIES; c++ )
+		{
+			char* entry = language[c];
+			if ( entry )
+			{
+				free(entry);
+			}
+		}
+		free(language);
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -2068,18 +2089,7 @@ int deinitApp()
 #endif
 
 	// free currently loaded language if any
-	if ( language )
-	{
-		for ( c = 0; c < NUMLANGENTRIES; c++ )
-		{
-			char* entry = language[c];
-			if ( entry )
-			{
-				free(entry);
-			}
-		}
-		free(language);
-	}
+	freeLanguages();
 
 	printlog("success\n");
 	fclose(logfile);

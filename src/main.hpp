@@ -528,6 +528,7 @@ void generatePolyModels();
 void generateVBOs();
 int loadLanguage(char* lang);
 int reloadLanguage();
+void freeLanguages();
 
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
