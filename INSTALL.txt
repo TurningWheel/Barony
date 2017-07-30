@@ -9,7 +9,11 @@ You will need the following libraries to build Barony:
 Optional dependencies required for sound:
  * FMOD Ex - downloadable at http://www.fmod.org/download-previous-products/ (you do need an account to download it).
 You can disable FMOD by running cmake with -DFMOD_ENABLED=OFF.
-Building without FMOD Ex will result in no sound.
+OR
+* OpenAL
+You can enable OpenAL by running cmake with -DOPENAL_ENABLED=ON.
+* libvorbis OR Tremor
+You can enable Tremor by running cmake with -DTREMOR_ENABLED=ON, otherwise libvorbis will be used by default.
 
 You will also need the following tools:
 
