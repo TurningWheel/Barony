@@ -2,7 +2,7 @@
 
 	BARONY
 	File: charclass.cpp
-	Desc: character class definition code
+	Desc: Character class definition code
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
@@ -46,7 +46,7 @@ void initClass(int player)
 	if ( player == clientnum )
 	{
 		// TODO: Dedicated gameStartStuff() function. Seriously.
-		// (same for deathStuff() and/or gameEndStuff().
+		// (Same for deathStuff() and/or gameEndStuff().
 		selected_inventory_slot_x = 0;
 		selected_inventory_slot_y = 0;
 		current_hotbar = 0;
@@ -71,7 +71,7 @@ void initClass(int player)
 	// Barbarian
 	if ( client_classes[player] == static_cast<Sint32>(classes_t::BARBARIAN) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->STR += 1;
 		stats[player]->CON += 1;
 		stats[player]->DEX -= 1;
@@ -82,13 +82,13 @@ void initClass(int player)
 		stats[player]->MAXMP -= 10;
 		stats[player]->MP -= 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
 		stats[player]->PROFICIENCIES[PRO_SHIELD] = 25;
 		stats[player]->PROFICIENCIES[PRO_AXE] = 50;
 		stats[player]->PROFICIENCIES[PRO_MACE] = 50;
 
-		// iron axe
+		// Iron Axe
 		item = newItem(IRON_AXE, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -102,7 +102,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// wooden shield
+		// Wooden Shield
 		item = newItem(WOODEN_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
@@ -116,7 +116,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather helm
+		// Leather Helm
 		item = newItem(LEATHER_HELM, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -131,29 +131,29 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// iron mace
+			// Iron Mace
 			item = newItem(IRON_MACE, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// bread
+			// Bread
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// meat
+			// Meat
 			item = newItem(FOOD_MEAT, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// torch
+			// Torch
 			item = newItem(TOOL_TORCH, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
-			// booze
+			// Booze
 			item = newItem(POTION_BOOZE, SERVICABLE, 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -162,7 +162,7 @@ void initClass(int player)
 	// Warrior
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::WARRIOR) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->STR += 1;
 		stats[player]->DEX += 1;
 		stats[player]->CON -= 3;
@@ -173,14 +173,14 @@ void initClass(int player)
 		stats[player]->MAXMP -= 10;
 		stats[player]->MP -= 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 40;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 50;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 50;
 		stats[player]->PROFICIENCIES[PRO_SHIELD] = 50;
 
-		// iron spear
+		// Iron Spear
 		item = newItem(IRON_SPEAR, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -194,7 +194,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// bronze shield
+		// Bronze Shield
 		item = newItem(BRONZE_SHIELD, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
@@ -208,7 +208,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather helm
+		// Leather Helm
 		item = newItem(LEATHER_HELM, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -221,7 +221,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// iron armor
+		// Iron Armor
 		item = newItem(IRON_BREASTPIECE, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -234,7 +234,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// boots
+		// Boots
 		item = newItem(LEATHER_BOOTS, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -249,24 +249,24 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// iron sword
+			// Iron Sword
 			item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// shortbow
+			// Shortbow
 			item = newItem(SHORTBOW, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			// bread
+			// Bread
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// fish
+			// Fish
 			item = newItem(FOOD_FISH, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -275,7 +275,7 @@ void initClass(int player)
 	// Healer
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::HEALER) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->CON += 2;
 		stats[player]->INT += 1;
 		stats[player]->STR -= 1;
@@ -286,13 +286,13 @@ void initClass(int player)
 		stats[player]->MAXMP += 10;
 		stats[player]->MP += 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 
-		// quarterstaff
+		// Quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -306,7 +306,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// phrygian hat
+		// Phrygian Hat
 		item = newItem(HAT_PHRYGIAN, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -319,7 +319,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak (red, protection)
+		// Cloak (Red, Protection)
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 2, true, NULL);
 		if ( player == clientnum )
 		{
@@ -334,38 +334,38 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// fish
+			// Fish
 			item = newItem(FOOD_FISH, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// extra healing potions
+			// Extra Healing Potions
 			item = newItem(POTION_EXTRAHEALING, EXCELLENT, 0, 3, 6, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			// cure ailment spellbook
+			// Cure Ailment Spellbook
 			item = newItem(SPELLBOOK_CUREAILMENT, EXCELLENT, 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// healing spellbook
+			// Healing Spellbook
 			item = newItem(SPELLBOOK_HEALING, EXCELLENT, 0, 1, 2, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// apples
+			// Apples
 			item = newItem(FOOD_APPLE, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// towels
+			// Towels
 			item = newItem(TOOL_TOWEL, SERVICABLE, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// magicstaff of slow
+			// Magicstaff of Slow
 			item = newItem(MAGICSTAFF_SLOW, SERVICABLE, 0, 1, 3, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
@@ -375,7 +375,7 @@ void initClass(int player)
 	// Rogue
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::ROGUE) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->DEX += 2;
 		stats[player]->PER += 2;
 		stats[player]->INT -= 1;
@@ -387,14 +387,14 @@ void initClass(int player)
 		stats[player]->MAXMP -= 10;
 		stats[player]->MP -= 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 25;
 		stats[player]->PROFICIENCIES[PRO_STEALTH] = 50;
 		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 50;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
 
-		// bronze sword
+		// Bronze Sword
 		item = newItem(BRONZE_SWORD, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -408,7 +408,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak (green)
+		// Cloak (Green)
 		item = newItem(CLOAK, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -421,7 +421,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// hood (green)
+		// Hood (Green)
 		item = newItem(HAT_HOOD, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -434,7 +434,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// gloves
+		// Gloves
 		item = newItem(GLOVES, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -447,7 +447,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather breastpiece
+		// Leather Breastpiece
 		item = newItem(LEATHER_BREASTPIECE, DECREPIT, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -462,18 +462,18 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// shortbow
+			// Shortbow
 			item = newItem(SHORTBOW, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// sickness potion
+			// Sickness Potion
 			item = newItem(POTION_SICKNESS, EXCELLENT, 0, 3, 5, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// lockpicks
+			// Lockpicks
 			item = newItem(TOOL_LOCKPICK, SERVICABLE, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
@@ -483,7 +483,7 @@ void initClass(int player)
 	// Wanderer
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::WANDERER) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->CON += 1;
 		stats[player]->INT -= 1;
 		stats[player]->CHR -= 1;
@@ -493,14 +493,14 @@ void initClass(int player)
 		stats[player]->MAXMP -= 10;
 		stats[player]->MP -= 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 50;
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 
-		// quarterstaff
+		// Quarterstaff
 		item = newItem(QUARTERSTAFF, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -514,7 +514,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// phrygian hat
+		// Phrygian Hat
 		item = newItem(HAT_PHRYGIAN, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -527,7 +527,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak
+		// Cloak
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
@@ -540,7 +540,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// boots
+		// Boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -555,67 +555,67 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// crossbow
+			// Crossbow
 			item = newItem(CROSSBOW, WORN, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// tins
+			// Tins
 			item = newItem(FOOD_TIN, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// bread
+			// Bread
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// fish
+			// Fish
 			item = newItem(FOOD_FISH, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// tin opener
+			// Tin opener
 			item = newItem(TOOL_TINOPENER, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// towel
+			// Towel
 			item = newItem(TOOL_TOWEL, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// torches
+			// Torches
 			item = newItem(TOOL_TORCH, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			// lantern
+			// Lantern
 			item = newItem(TOOL_LANTERN, WORN, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 		}
 	}
-	// cleric
+	// Cleric
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::CLERIC) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->PER += 2;
 		stats[player]->CON += 1;
 		stats[player]->DEX -= 1;
 		stats[player]->CHR -= 1;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_MACE] = 25;
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 
-		// iron mace
+		// Iron Mace
 		item = newItem(IRON_MACE, SERVICABLE, 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -629,7 +629,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// wooden shield
+		// Wooden Shield
 		item = newItem(WOODEN_SHIELD, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -643,7 +643,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather breastpiece
+		// Leather Breastpiece
 		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -656,7 +656,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak (purple)
+		// Cloak (Purple)
 		item = newItem(CLOAK, SERVICABLE, 0, 1, 3, true, NULL);
 		if ( player == clientnum )
 		{
@@ -669,7 +669,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// gloves
+		// Gloves
 		item = newItem(BRACERS, WORN, 1, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -684,25 +684,25 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// torch
+			// Torch
 			item = newItem(TOOL_TORCH, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			// healing potions
+			// Healing Potions
 			item = newItem(POTION_HEALING, EXCELLENT, 0, 2, 7, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[3].item = item2->uid;
 			free(item);
 
-			// summon scrolls
+			// Summon Scrolls
 			item = newItem(SCROLL_SUMMON, EXCELLENT, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[4].item = item2->uid;
 			free(item);
 
-			// bread
+			// Bread
 			item = newItem(FOOD_BREAD, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -711,7 +711,7 @@ void initClass(int player)
 	// Merchant
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::MERCHANT) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->CHR += 1;
 		stats[player]->PER += 1;
 		stats[player]->DEX -= 1;
@@ -721,13 +721,13 @@ void initClass(int player)
 		stats[player]->MAXMP -= 10;
 		stats[player]->MP -= 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_AXE] = 25;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 		stats[player]->PROFICIENCIES[PRO_APPRAISAL] = 50;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 50;
 
-		// bronze axe
+		// Bronze Axe
 		item = newItem(BRONZE_AXE, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -741,7 +741,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// phrygian hat
+		// Phrygian Hat
 		item = newItem(HAT_PHRYGIAN, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -754,7 +754,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather breastpiece
+		// Leather Breastpiece
 		item = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -767,7 +767,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// glasses
+		// Glasses
 		item = newItem(TOOL_GLASSES, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -782,29 +782,29 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// pickaxe
+			// Pickaxe
 			item = newItem(TOOL_PICKAXE, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// gloves
+			// Gloves
 			item = newItem(GLOVES, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			useItem(item2, player);
 			free(item);
 
-			// scroll of remove curse
+			// Scroll of Remove Curse
 			item = newItem(SCROLL_REMOVECURSE, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// cheese
+			// Cheese
 			item = newItem(FOOD_CHEESE, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// meat
+			// Meat
 			item = newItem(FOOD_MEAT, EXCELLENT, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -813,7 +813,7 @@ void initClass(int player)
 	// Wizard
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::WIZARD) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->INT += 1;
 		stats[player]->PER += 1;
 		stats[player]->DEX -= 1;
@@ -824,12 +824,12 @@ void initClass(int player)
 		stats[player]->MAXMP += 20;
 		stats[player]->MP += 20;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_POLEARM] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 50;
 
-		// quarterstaff
+		// Quarterstaff
 		item = newItem(QUARTERSTAFF, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -843,7 +843,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// wizard hat
+		// Wizard Hat
 		item = newItem(HAT_WIZARD, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -856,7 +856,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak (purple, protection)
+		// Cloak (Purple, Protection)
 		item = newItem(CLOAK_PROTECTION, SERVICABLE, 0, 1, 3, true, NULL);
 		if ( player == clientnum )
 		{
@@ -869,7 +869,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// amulet of magic reflection
+		// Amulet of Magic Reflection
 		item = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 0, 1, 1, true, NULL);
 		if ( player == clientnum )
 		{
@@ -882,7 +882,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather boots
+		// Leather Boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -897,28 +897,28 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// magicstaff of light
+			// Magicstaff of Light
 			item = newItem(MAGICSTAFF_LIGHT, EXCELLENT, 0, 1, 3, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// potion of restore magic
+			// Potion of Restore Magic
 			item = newItem(POTION_RESTOREMAGIC, EXCELLENT, 0, 1, 1, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// spellbook of fireball
+			// Spellbook of Fireball
 			item = newItem(SPELLBOOK_FIREBALL, SERVICABLE, 0, 1, 3, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// spellbook of cold
+			// Spellbook of Cold
 			item = newItem(SPELLBOOK_COLD, SERVICABLE, 0, 1, 4, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// spellbook of light
+			// Spellbook of Light
 			item = newItem(SPELLBOOK_LIGHT, SERVICABLE, 0, 1, 5, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -927,7 +927,7 @@ void initClass(int player)
 	// Arcanist
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::ARCANIST) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->INT += 1;
 		stats[player]->CHR += 1;
 		stats[player]->PER -= 1;
@@ -936,7 +936,7 @@ void initClass(int player)
 		stats[player]->MAXMP += 10;
 		stats[player]->MP += 10;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 50;
 		stats[player]->PROFICIENCIES[PRO_STEALTH] = 25;
@@ -944,7 +944,7 @@ void initClass(int player)
 		stats[player]->PROFICIENCIES[PRO_SWORD] = 25;
 		stats[player]->PROFICIENCIES[PRO_RANGED] = 25;
 
-		// iron sword
+		// Iron Sword
 		item = newItem(IRON_SWORD, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -958,7 +958,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// crossbow
+		// Crossbow
 		item = newItem(CROSSBOW, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -972,7 +972,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather armor
+		// Leather Armor
 		item = newItem(LEATHER_BREASTPIECE, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -985,7 +985,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// leather boots
+		// Leather Boots
 		item = newItem(LEATHER_BOOTS, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -998,7 +998,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// cloak (red)
+		// Cloak (Red)
 		item = newItem(CLOAK, WORN, 0, 1, 2, true, NULL);
 		if ( player == clientnum )
 		{
@@ -1011,7 +1011,7 @@ void initClass(int player)
 			useItem(item, player);
 		}
 
-		// hood (red)
+		// Hood (Red)
 		item = newItem(HAT_HOOD, WORN, 0, 1, 2, true, NULL);
 		if ( player == clientnum )
 		{
@@ -1026,18 +1026,18 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// magicstaff of opening
+			// Magicstaff of Opening
 			item = newItem(MAGICSTAFF_OPENING, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[2].item = item2->uid;
 			free(item);
 
-			// spellbook of forcebolt
+			// Spellbook of Forcebolt
 			item = newItem(SPELLBOOK_FORCEBOLT, WORN, 0, 1, 6, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// spellbook of light
+			// Spellbook of Light
 			item = newItem(SPELLBOOK_LIGHT, WORN, 0, 1, 7, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
@@ -1046,21 +1046,21 @@ void initClass(int player)
 	// Joker
 	else if ( client_classes[player] == static_cast<Sint32>(classes_t::JOKER) )
 	{
-		// attributes
+		// Attributes
 		stats[player]->INT += 1;
 		stats[player]->CHR += 1;
 		stats[player]->CON -= 1;
 		stats[player]->STR -= 1;
 		stats[player]->GOLD += 200;
 
-		// skills
+		// Skills
 		stats[player]->PROFICIENCIES[PRO_LOCKPICKING] = 25;
 		stats[player]->PROFICIENCIES[PRO_TRADING] = 25;
 		stats[player]->PROFICIENCIES[PRO_LEADERSHIP] = 20;
 		stats[player]->PROFICIENCIES[PRO_MAGIC] = 25;
 		stats[player]->PROFICIENCIES[PRO_SPELLCASTING] = 25;
 
-		// jester hat
+		// Jester Hat
 		item = newItem(HAT_JESTER, SERVICABLE, 0, 1, 0, true, NULL);
 		if ( player == clientnum )
 		{
@@ -1075,49 +1075,49 @@ void initClass(int player)
 
 		if ( player == clientnum )
 		{
-			// slingshot
+			// Slingshot
 			item = newItem(SLING, SERVICABLE, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[0].item = item2->uid;
 			free(item);
 
-			// lockpicks
+			// Lockpicks
 			item = newItem(TOOL_LOCKPICK, EXCELLENT, 0, 1, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			hotbar[1].item = item2->uid;
 			free(item);
 
-			// scroll of teleportation
+			// Scroll of Teleportation
 			item = newItem(SCROLL_TELEPORTATION, EXCELLENT, 0, 3, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// scroll of food
+			// Scroll of Food
 			item = newItem(SCROLL_FOOD, EXCELLENT, 0, 1, 0, false, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// ring of levitation
+			// Ring of Levitation
 			item = newItem(RING_LEVITATION, SERVICABLE, 0, 1, 2, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// spellbook of confuse
+			// Spellbook of Confuse
 			item = newItem(SPELLBOOK_CONFUSE, WORN, 0, 1, 8, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// blindfold
+			// Blindfold
 			item = newItem(TOOL_BLINDFOLD, SERVICABLE, 0, 1, 2, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// luckstone
+			// Luckstone
 			item = newItem(GEM_LUCK, EXCELLENT, 0, 1, 1, false, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
 
-			// fish
+			// Fish
 			item = newItem(FOOD_FISH, SERVICABLE, 0, 2, 0, true, NULL);
 			item2 = itemPickup(player, item);
 			free(item);
