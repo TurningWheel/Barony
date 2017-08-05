@@ -112,7 +112,7 @@ extern FILE* logfile;
 
 class Item;
 //enum Item;
-//enum Status;
+//enum ItemStatus;
 
 #ifdef WINDOWS
 extern PFNGLGENBUFFERSPROC SDL_glGenBuffers;

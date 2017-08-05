@@ -33,7 +33,7 @@
 #define ITEM_VELZ my->vel_z
 #define ITEM_NOCOLLISION my->flags[USERFLAG1]
 #define ITEM_TYPE (Item)my->skill[10]
-#define ITEM_STATUS (Status)my->skill[11]
+#define ITEM_STATUS (ItemStatus)my->skill[11]
 #define ITEM_BEATITUDE my->skill[12]
 #define ITEM_COUNT my->skill[13]
 #define ITEM_APPEARANCE my->skill[14]

@@ -99,7 +99,7 @@ void actSink(Entity* my)
 							int ring = rand() % 12 + (int)(RING_ADORNMENT); //Generate random number between 0 & 11, then add 88 to it so that it's at the location of the rings.
 
 							//Generate a random status.
-							Status status = SERVICABLE;
+							ItemStatus status = SERVICABLE;
 							int status_rand = rand() % 4;
 							switch (status_rand)
 							{
@@ -123,7 +123,7 @@ void actSink(Entity* my)
 							int beatitude = rand() % 5 - 2; //No item will be able to generate with less than -2 or more than +2 beatitude
 
 							//Actually create the item, put it in the player's inventory, and then free the memory of the temp item.
-							Item* item = newItem(static_cast<ItemType>(ring), static_cast<Status>(status), beatitude, 1, rand(), false, NULL);
+							Item* item = newItem(static_cast<ItemType>(ring), static_cast<ItemStatus>(status), beatitude, 1, rand(), false, NULL);
 							if (item)
 							{
 								itemPickup(i, item);

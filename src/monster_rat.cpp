@@ -114,7 +114,7 @@ void initRat(Entity* my, Stat* myStats)
 			myStats->PER = -2;
 			myStats->CHR = 5;
 			myStats->LVL = 10;
-			newItem(GEM_EMERALD, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
+			newItem(GEM_EMERALD, static_cast<ItemStatus>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 6; c++ )

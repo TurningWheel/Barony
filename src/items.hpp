@@ -210,14 +210,14 @@ typedef enum Category
 	SPELL_CAT
 } Category;
 
-typedef enum Status
+typedef enum ItemStatus
 {
 	BROKEN,
 	DECREPIT,
 	WORN,
 	SERVICABLE,
 	EXCELLENT
-} Status;
+} ItemStatus;
 
 class SummonProperties
 {
@@ -232,7 +232,7 @@ class Item
 {
 public:
 	ItemType type;
-	Status status;
+	ItemStatus status;
 
 	Sint16 beatitude;  // blessedness
 	Sint16 count;      // how many of item
@@ -333,7 +333,7 @@ void item_Gem(Item* item, int player);
 void item_Spellbook(Item* item, int player);
 
 //General functions.
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
+Item* newItem(ItemType type, ItemStatus status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).

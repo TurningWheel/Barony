@@ -102,7 +102,7 @@ void initScorpion(Entity* my, Stat* myStats)
 			myStats->PER = 10;
 			myStats->CHR = 10;
 			myStats->LVL = 15;
-			newItem( GEM_RUBY, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
+			newItem( GEM_RUBY, static_cast<ItemStatus>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 3; c++ )

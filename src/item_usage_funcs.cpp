@@ -1703,7 +1703,7 @@ void item_ScrollRepair(Item* item, int player)
 			{
 				messagePlayer(player, language[872], armor->getName());
 			}
-			armor->status = static_cast<Status>(std::min(armor->status + 1 + item->beatitude, 4));
+			armor->status = static_cast<ItemStatus>(std::min(armor->status + 1 + item->beatitude, 4));
 		}
 	}
 }
@@ -1782,7 +1782,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 			}
 			if ( armor->count <= 1 )
 			{
-				armor->status = static_cast<Status>(0);
+				armor->status = static_cast<ItemStatus>(0);
 			}
 			else
 			{
@@ -1792,7 +1792,7 @@ void item_ScrollDestroyArmor(Item* item, int player)
 					itemPickup(player, item);
 					free(item);
 				}
-				armor->status = static_cast<Status>(0);
+				armor->status = static_cast<ItemStatus>(0);
 				armor->count = 1;
 			}
 		}

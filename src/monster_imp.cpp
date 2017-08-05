@@ -110,7 +110,7 @@ void initImp(Entity* my, Stat* myStats)
 
 		if ( rand() % 4 == 0 )
 		{
-			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
+			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<ItemStatus>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
 		}
 	}
 

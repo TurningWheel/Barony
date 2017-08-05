@@ -36,7 +36,7 @@ ItemGeneric items[NUMITEMS];
 
 -------------------------------------------------------------------------------*/
 
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
+Item* newItem(ItemType type, ItemStatus status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
 {
 	Item* item;
 
@@ -1703,7 +1703,7 @@ Item* newItemFromEntity(Entity* entity)
 	{
 		return NULL;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<ItemStatus>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2220,7 +2220,7 @@ void Item::apply(int player, Entity* entity)
 								}
 							}
 							stats[player]->weapon->count = 1;
-							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+							stats[player]->weapon->status = static_cast<ItemStatus>(stats[player]->weapon->status - 1);
 							if ( status != BROKEN )
 							{
 								messagePlayer(player, language[1103]);
@@ -2279,7 +2279,7 @@ void Item::apply(int player, Entity* entity)
 								}
 							}
 							stats[player]->weapon->count = 1;
-							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+							stats[player]->weapon->status = static_cast<ItemStatus>(stats[player]->weapon->status - 1);
 							if ( status != BROKEN )
 							{
 								messagePlayer(player, language[1103]);

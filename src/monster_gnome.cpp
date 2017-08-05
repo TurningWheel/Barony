@@ -120,7 +120,7 @@ void initGnome(Entity* my, Stat* myStats)
 			int i = 1 + rand() % 4;
 			for ( c = 0; c < i; c++ )
 			{
-				newItem( static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory );
+				newItem( static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<ItemStatus>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory );
 			}
 		}
 
@@ -128,7 +128,7 @@ void initGnome(Entity* my, Stat* myStats)
 		{
 			strcpy(myStats->name, "Rumplewort");
 			myStats->LVL += 10;
-			newItem( GEM_DIAMOND, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
+			newItem( GEM_DIAMOND, static_cast<ItemStatus>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 3; c++ )
@@ -314,7 +314,7 @@ void initGnome(Entity* my, Stat* myStats)
 		case 7:
 		case 8:
 		case 9:
-			myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
+			myStats->shield = newItem(WOODEN_SHIELD, static_cast<ItemStatus>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
 			break;
 	}
 

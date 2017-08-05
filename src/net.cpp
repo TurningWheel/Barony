@@ -1189,7 +1189,7 @@ void clientHandlePacket()
 				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
 				item->count = 1;
 			}
-			item->status = static_cast<Status>(net_packet->data[5]);
+			item->status = static_cast<ItemStatus>(net_packet->data[5]);
 		}
 		return;
 	}
@@ -1337,7 +1337,7 @@ void clientHandlePacket()
 	// get item
 	else if (!strncmp((char*)net_packet->data, "ITEM", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
 		itemPickup(clientnum, item);
 		free(item);
 		return;
@@ -1452,7 +1452,7 @@ void clientHandlePacket()
 		{
 			return;
 		}
-		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv);
+		newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>((char)net_packet->data[8]), (char)net_packet->data[9], (unsigned char)net_packet->data[10], SDLNet_Read32(&net_packet->data[11]), (bool)net_packet->data[15], shopInv);
 	}
 
 	// close shop
@@ -2206,7 +2206,7 @@ void clientHandlePacket()
 		}
 		newitem->node = NULL;
 		newitem->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4]));
-		newitem->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[8]));
+		newitem->status = static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8]));
 		newitem->beatitude = SDLNet_Read32(&net_packet->data[12]);
 		newitem->count = SDLNet_Read32(&net_packet->data[16]);
 		newitem->appearance = SDLNet_Read32(&net_packet->data[20]);
@@ -2780,7 +2780,7 @@ void serverHandlePacket()
 	else if (!strncmp((char*)net_packet->data, "DROP", 4))
 	{
 		client_keepalive[net_packet->data[25]] = ticks;
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		dropItem(item, net_packet->data[25]);
 		return;
 	}
@@ -2788,7 +2788,7 @@ void serverHandlePacket()
 	// item drop (on death)
 	else if (!strncmp((char*)net_packet->data, "DIEI", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		entity = newEntity(-1, 1, map.entities);
 		entity->x = net_packet->data[26];
 		entity->x = entity->x * 16 + 8;
@@ -2844,7 +2844,7 @@ void serverHandlePacket()
 		}
 		Item* item = (Item*) malloc(sizeof(Item));
 		item->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8]));
-		item->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[12]));
+		item->status = static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[12]));
 		item->beatitude = SDLNet_Read32(&net_packet->data[16]);
 		item->count = 1;
 		item->appearance = SDLNet_Read32(&net_packet->data[20]);
@@ -2917,11 +2917,11 @@ void serverHandlePacket()
 		}
 		if ( net_packet->data[24] )
 		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
+			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), true, &entitystats->inventory);
 		}
 		else
 		{
-			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<Status>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
+			item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[8])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[12])), SDLNet_Read32(&net_packet->data[16]), 1, SDLNet_Read32(&net_packet->data[20]), false, &entitystats->inventory);
 		}
 		printlog("client %d sold item to shop (uid=%d)\n", client, uidnum);
 		stats[client]->GOLD += item->sellValue(client);
@@ -2935,7 +2935,7 @@ void serverHandlePacket()
 	// use item
 	else if (!strncmp((char*)net_packet->data, "USEI", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		useItem(item, net_packet->data[25]);
 		return;
 	}
@@ -2943,7 +2943,7 @@ void serverHandlePacket()
 	// equip item (as a weapon)
 	else if (!strncmp((char*)net_packet->data, "EQUI", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], &stats[net_packet->data[25]]->inventory);
 		equipItem(item, &stats[net_packet->data[25]]->weapon, net_packet->data[25]);
 		return;
 	}
@@ -2951,7 +2951,7 @@ void serverHandlePacket()
 	// apply item to entity
 	else if (!strncmp((char*)net_packet->data, "APIT", 4))
 	{
-		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<Status>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
+		item = newItem(static_cast<ItemType>(SDLNet_Read32(&net_packet->data[4])), static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[8])), SDLNet_Read32(&net_packet->data[12]), SDLNet_Read32(&net_packet->data[16]), SDLNet_Read32(&net_packet->data[20]), net_packet->data[24], NULL);
 		Entity* entity = uidToEntity(SDLNet_Read32(&net_packet->data[26]));
 		if ( entity )
 		{
@@ -3012,7 +3012,7 @@ void serverHandlePacket()
 		}
 		newitem->node = NULL;
 		newitem->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[5]));
-		newitem->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[9]));
+		newitem->status = static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[9]));
 		newitem->beatitude = SDLNet_Read32(&net_packet->data[13]);
 		newitem->count = SDLNet_Read32(&net_packet->data[17]);
 		newitem->appearance = SDLNet_Read32(&net_packet->data[21]);
@@ -3047,7 +3047,7 @@ void serverHandlePacket()
 		}
 		theitem->node = NULL;
 		theitem->type = static_cast<ItemType>(SDLNet_Read32(&net_packet->data[5]));
-		theitem->status = static_cast<Status>(SDLNet_Read32(&net_packet->data[9]));
+		theitem->status = static_cast<ItemStatus>(SDLNet_Read32(&net_packet->data[9]));
 		theitem->beatitude = SDLNet_Read32(&net_packet->data[13]);
 		theitem->count = SDLNet_Read32(&net_packet->data[17]);
 		theitem->appearance = SDLNet_Read32(&net_packet->data[21]);

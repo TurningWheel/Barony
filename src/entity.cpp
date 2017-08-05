@@ -1742,7 +1742,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 				myStats->shield->count = 1;
-				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
+				myStats->shield->status = static_cast<ItemStatus>(myStats->shield->status - 1);
 				if ( myStats->shield->status > BROKEN )
 				{
 					messagePlayer(player, language[637], myStats->shield->getName());
@@ -1931,7 +1931,7 @@ void Entity::handleEffects(Stat* myStats)
 						}
 					}
 					myStats->cloak->count = 1;
-					myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
+					myStats->cloak->status = static_cast<ItemStatus>(myStats->cloak->status - 1);
 					if ( myStats->cloak->status != BROKEN )
 					{
 						messagePlayer(player, language[645], myStats->cloak->getName());
@@ -2841,7 +2841,7 @@ void Entity::attack(int pose, int charge)
 							}
 						}
 						myStats->weapon->count = 1;
-						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+						myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
 							messagePlayer(player, language[659]);
@@ -2935,7 +2935,7 @@ void Entity::attack(int pose, int charge)
 							}
 						}
 						myStats->weapon->count = 1;
-						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+						myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
 							messagePlayer(player, language[661], myStats->weapon->getName());
@@ -3094,7 +3094,7 @@ void Entity::attack(int pose, int charge)
 						messagePlayer(player, language[663]);
 						if ( rand() % 2 )
 						{
-							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+							myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 							if ( myStats->weapon->status == BROKEN )
 							{
 								messagePlayer(player, language[664]);
@@ -3508,7 +3508,7 @@ void Entity::attack(int pose, int charge)
 									}
 								}
 								myStats->weapon->count = 1;
-								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+								myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status != BROKEN )
 								{
 									messagePlayer(player, language[679]);
@@ -3595,7 +3595,7 @@ void Entity::attack(int pose, int charge)
 							}
 						}
 						armor->count = 1;
-						armor->status = static_cast<Status>(armor->status - 1);
+						armor->status = static_cast<ItemStatus>(armor->status - 1);
 						if ( armor->status > BROKEN )
 						{
 							messagePlayer(playerhit, language[681], armor->getName());
@@ -3949,7 +3949,7 @@ void Entity::attack(int pose, int charge)
 							}
 							if ( rand() % 2 )
 							{
-								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+								myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
 								{
 									messagePlayer(player, language[704]);

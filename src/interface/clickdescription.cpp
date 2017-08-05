@@ -174,7 +174,7 @@ void clickDescription(int player, Entity* entity)
 				}
 				else if ( entity->behavior == &actItem )
 				{
-					item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], false, NULL);
+					item = newItem(static_cast<ItemType>(entity->skill[10]), static_cast<ItemStatus>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], false, NULL);
 					if (item)
 					{
 						messagePlayer(player, language[257], item->description());
