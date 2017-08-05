@@ -29,7 +29,7 @@ void initClass(int player)
 {
 	Item* item, *item2;
 
-	if ( player == clientnum)
+	if ( player == clientnum )
 	{
 		//TODO: Dedicated gameStartStuff() function. Seriously.
 		//(same for deathStuff() and/or gameEndStuff().
@@ -1110,7 +1110,7 @@ void initClass(int player)
 	if ( player == clientnum )
 	{
 		node_t* node;
-		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
+		for ( node = stats[player]->inventory.first; node != nullptr; node = node->next )
 		{
 			Item* item = (Item*)node->element;
 			item->x = INVENTORY_SIZEX - item->x - 1;
@@ -1118,6 +1118,6 @@ void initClass(int player)
 	}
 
 	//spellList = malloc(sizeof(list_t));
-	spellList.first = NULL;
-	spellList.last = NULL;
+	spellList.first = nullptr;
+	spellList.last = nullptr;
 }
