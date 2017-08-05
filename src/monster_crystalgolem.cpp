@@ -532,12 +532,12 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					else if ( MONSTER_ATTACKTIME == 40 )
 					{
 						playSoundEntityLocal(my, 79, 128);
-						// set overshoot for head animation
 					}
 					else if ( MONSTER_ATTACKTIME > 50 )
 					{
 						if ( multiplayer != CLIENT )
 						{
+						// set overshoot for head animation
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							my->attack(MONSTER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
 						}
