@@ -28,7 +28,7 @@
 void initClass(int player)
 {
     // TODO: Dynamic class list loading/saving from/to file
-    enum class classes_t
+    typedef enum class classes_t
     {
         BARBARIAN,
         WARRIOR,
@@ -41,7 +41,7 @@ void initClass(int player)
         ARCANIST,
         JOKER,
         ENUM_LEN
-    };
+    } PlayerClass;
 
 	if ( player == clientnum )
 	{
@@ -69,7 +69,7 @@ void initClass(int player)
 	// CLASS LOADOUTS
     // TODO: Remove static_cast<Sint32>() in favor for changing client_classes[] to an array of classes_t for direct comparison
 	// Barbarian
-	if ( client_classes[player] == static_cast<Sint32>(classes_t::BARBARIAN) )
+	if ( client_classes[player] == static_cast<Sint32>(PlayerClass::BARBARIAN) )
 	{
 		// Attributes
 		stats[player]->STR += 1;
@@ -160,7 +160,7 @@ void initClass(int player)
 		}
 	}
 	// Warrior
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::WARRIOR) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::WARRIOR) )
 	{
 		// Attributes
 		stats[player]->STR += 1;
@@ -273,7 +273,7 @@ void initClass(int player)
 		}
 	}
 	// Healer
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::HEALER) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::HEALER) )
 	{
 		// Attributes
 		stats[player]->CON += 2;
@@ -373,7 +373,7 @@ void initClass(int player)
 		}
 	}
 	// Rogue
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::ROGUE) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::ROGUE) )
 	{
 		// Attributes
 		stats[player]->DEX += 2;
@@ -481,7 +481,7 @@ void initClass(int player)
 		}
 	}
 	// Wanderer
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::WANDERER) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::WANDERER) )
 	{
 		// Attributes
 		stats[player]->CON += 1;
@@ -600,7 +600,7 @@ void initClass(int player)
 		}
 	}
 	// Cleric
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::CLERIC) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::CLERIC) )
 	{
 		// Attributes
 		stats[player]->PER += 2;
@@ -709,7 +709,7 @@ void initClass(int player)
 		}
 	}
 	// Merchant
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::MERCHANT) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::MERCHANT) )
 	{
 		// Attributes
 		stats[player]->CHR += 1;
@@ -811,7 +811,7 @@ void initClass(int player)
 		}
 	}
 	// Wizard
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::WIZARD) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::WIZARD) )
 	{
 		// Attributes
 		stats[player]->INT += 1;
@@ -925,7 +925,7 @@ void initClass(int player)
 		}
 	}
 	// Arcanist
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::ARCANIST) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::ARCANIST) )
 	{
 		// Attributes
 		stats[player]->INT += 1;
@@ -1044,7 +1044,7 @@ void initClass(int player)
 		}
 	}
 	// Joker
-	else if ( client_classes[player] == static_cast<Sint32>(classes_t::JOKER) )
+	else if ( client_classes[player] == static_cast<Sint32>(PlayerClass::JOKER) )
 	{
 		// Attributes
 		stats[player]->INT += 1;
