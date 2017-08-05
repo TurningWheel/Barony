@@ -23,7 +23,6 @@
 
 void initCrystalgolem(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	my->initMonster(475);
@@ -37,7 +36,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
@@ -56,7 +55,7 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				strcpy(myStats->name, "Thumpus the Troll");
+				/*strcpy(myStats->name, "Thumpus the Troll");
 				for ( c = 0; c < 3; c++ )
 				{
 					Entity* entity = summonMonster(GNOME, my->x, my->y);
@@ -69,11 +68,11 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 				myStats->MAXHP *= 2;
 				myStats->OLDHP = myStats->HP;
 				myStats->GOLD += 300;
-				myStats->LVL += 10;
+				myStats->LVL += 10;*/
 			}
 
 			// random effects
-			if ( rand() % 4 == 0 )
+			if ( rand() % 8 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
@@ -98,14 +97,43 @@ void initCrystalgolem(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-				case 2:
-				case 1:
-					if ( rand() % 3 == 0 )
+					if ( rand() % 10 == 0 ) // 10% for gemstone, rock to obsidian.
 					{
-						int i = 1 + rand() % 3;
-						for ( c = 0; c < i; c++ )
+						newItem(static_cast<ItemType>(GEM_ROCK + rand() % 17), static_cast<Status>(WORN + rand() % 3), 0, 1, rand(), false, &myStats->inventory);
+					}
+				case 2:
+					if ( rand() % 20 == 0 ) // 5% for secondary armor/weapon.
+					{
+						if ( rand() % 2 == 0 ) // 50% armor
 						{
-							newItem(static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+							newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rand() % 5), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+						}
+						else // 50% weapon
+						{
+							if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+							{
+								newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+							}
+							else // pick 1 of 4 normal weapons.
+							{
+								newItem(static_cast<ItemType>(CRYSTAL_SWORD + rand() % 4), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+							}
+						}
+					}
+				case 1:
+					if ( rand() % 2 == 0 ) // 50% armor
+					{
+						newItem(static_cast<ItemType>(CRYSTAL_BREASTPIECE + rand() % 5), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
+					}
+					else // 50% weapon
+					{
+						if ( rand() % 5 == 0 ) // 1 in 5 is shuriken, 1-3 count.
+						{
+							newItem(static_cast<ItemType>(CRYSTAL_SHURIKEN), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1 + rand() % 3, rand(), false, &myStats->inventory);
+						}
+						else // pick 1 of 4 normal weapons.
+						{
+							newItem(static_cast<ItemType>(CRYSTAL_SWORD + rand() % 4), static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, &myStats->inventory);
 						}
 					}
 					break;
@@ -233,9 +261,9 @@ void crystalgolemDie(Entity* my)
 void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL;
-	Entity* leftbody = NULL;
-	Entity* leftarm = NULL;
+	Entity* entity = nullptr;
+	Entity* leftbody = nullptr;
+	Entity* leftarm = nullptr;
 	int bodypart;
 
 	// set invisibility //TODO: isInvisible()?
@@ -246,7 +274,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -271,7 +299,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -304,7 +332,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
 		if ( bodypart < 2 )
 		{
@@ -433,9 +461,8 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-
 				// horizontal chop windup
-				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
 				{
 					if ( MONSTER_ATTACKTIME == 0 )
 					{

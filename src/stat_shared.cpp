@@ -481,8 +481,41 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 86:
 		case (1000 + CRYSTALGOLEM):
 			stats->type = CRYSTALGOLEM;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = 0;
+
+			stats->HP = 200;
+			stats->MAXHP = stats->HP;
+			stats->RANDOM_HP = 50;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->MP = 50;
+			stats->MAXMP = 50;
+			stats->OLDHP = stats->HP;
+			stats->STR = 40;
+			stats->RANDOM_STR = 5;
+			stats->DEX = 5;
+			stats->RANDOM_DEX = 5;
+			stats->CON = 20;
+			stats->RANDOM_CON = 20;
+			stats->INT = -2;
+			stats->RANDOM_INT = 0;
+			stats->PER = 5;
+			stats->RANDOM_PER = 5;
+			stats->CHR = -3;
+			stats->RANDOM_CHR = 0;
+
+			stats->EXP = 0;
+			stats->LVL = 25;
+			stats->GOLD = 0;
+			stats->RANDOM_GOLD = 0;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 50; //Random crystal item
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 5; //Random second crystal item
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 10; //Gem
 			break;
 		case 87:
 		case (1000 + INCUBUS):
