@@ -43,8 +43,6 @@ void initClass(int player)
         ENUM_LEN
     };
 
-	Item* item, *item2;
-
 	if ( player == clientnum )
 	{
 		// TODO: Dedicated gameStartStuff() function. Seriously.
@@ -64,6 +62,9 @@ void initClass(int player)
 	{
 		stats[player]->STR += 1;
 	}
+
+    Item* item = nullptr;  // Pointer to created Item
+    Item* item2 = nullptr; // Pointer to picked up Item?
 
 	// CLASS LOADOUTS
     // TODO: Remove static_cast<Sint32>() in favor for changing client_classes[] to an array of classes_t for direct comparison
