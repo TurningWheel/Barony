@@ -184,7 +184,7 @@ Item* uidToItem(Uint32 uid)
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemCurve(Category cat)
+ItemType itemCurve(ItemCategory cat)
 {
 	int numitems = NUMITEMS - ( NUMITEMS - ((int)ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
@@ -534,7 +534,7 @@ char* Item::description()
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item* item)
+ItemCategory itemCategory(const Item* item)
 {
 	if ( !item )
 	{

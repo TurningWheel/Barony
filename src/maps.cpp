@@ -1728,7 +1728,7 @@ void assignActions(map_t* map)
 							if ( prng_get_uint() % 2 == 0 )
 							{
 								// possible magicstaff
-								entity->skill[10] = itemCurve(static_cast<Category>(prng_get_uint() % (NUMCATEGORIES - 1)));
+								entity->skill[10] = itemCurve(static_cast<ItemCategory>(prng_get_uint() % (NUMCATEGORIES - 1)));
 							}
 							else
 							{
@@ -1738,7 +1738,7 @@ void assignActions(map_t* map)
 								{
 									randType++;
 								}
-								entity->skill[10] = itemCurve(static_cast<Category>(randType));
+								entity->skill[10] = itemCurve(static_cast<ItemCategory>(randType));
 							}
 						}
 						else

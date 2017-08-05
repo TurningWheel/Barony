@@ -18,7 +18,7 @@
 class Item;
 //enum Item;
 //enum ItemStatus;
-//enum Category;
+//enum ItemCategory;
 
 typedef enum
 {

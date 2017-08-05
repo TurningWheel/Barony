@@ -193,7 +193,7 @@ typedef enum ItemType
 const int NUMITEMS = 168;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
-typedef enum Category
+typedef enum ItemCategory
 {
 	WEAPON,
 	ARMOR,
@@ -208,7 +208,7 @@ typedef enum Category
 	FOOD,
 	BOOK,
 	SPELL_CAT
-} Category;
+} ItemCategory;
 
 typedef enum ItemStatus
 {
@@ -288,7 +288,7 @@ public:
 	int value;                  // value per item
 	list_t images;              // item image filenames (inventory)
 	list_t surfaces;            // item image surfaces (inventory)
-	Category category;          // item category
+	ItemCategory category;          // item category
 };
 extern ItemGeneric items[NUMITEMS];
 
@@ -335,12 +335,12 @@ void item_Spellbook(Item* item, int player);
 //General functions.
 Item* newItem(ItemType type, ItemStatus status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
 Item* uidToItem(Uint32 uid);
-ItemType itemCurve(Category cat);
+ItemType itemCurve(ItemCategory cat);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats);
 Item** itemSlot(Stat* myStats, Item* item);
 
-enum Category itemCategory(const Item* item);
+enum ItemCategory itemCategory(const Item* item);
 Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);

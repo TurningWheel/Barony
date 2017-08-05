@@ -42,7 +42,7 @@
 void actThrown(Entity* my)
 {
 	Item* item;
-	Category cat = GEM;
+	ItemCategory cat = GEM;
 	char* itemname = NULL;
 	node_t* node;
 
