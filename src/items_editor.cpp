@@ -319,4 +319,5 @@ int loadItems()
 		}
 	}
 	fclose(fp);
+	return 1;
 }
