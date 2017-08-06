@@ -5685,7 +5685,7 @@ void buttonContinue(button_t* my)
 			openSteamLobbyWaitWindow(my);
 #endif
 		}
-		else if ( multiplayerselect == DIRECTSERVER )
+		else if ( multiplayerselect == NetworkType::DIRECTSERVER )
 		{
 			directConnect = true;
 			buttonHostMultiplayer(my);
@@ -6842,7 +6842,7 @@ void buttonLoadGame(button_t* button)
 	loadingsavegame = getSaveGameUniqueGameKey();
 	int mul = getSaveGameType();
 
-	if ( mul == DIRECTSERVER )
+	if ( mul == NetworkType::DIRECTSERVER )
 	{
 		directConnect = true;
 		buttonHostMultiplayer(button);
