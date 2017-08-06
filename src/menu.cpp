@@ -5690,7 +5690,7 @@ void buttonContinue(button_t* my)
 			directConnect = true;
 			buttonHostMultiplayer(my);
 		}
-		else if ( multiplayerselect == DIRECTCLIENT )
+		else if ( multiplayerselect == NetworkType::DIRECTCLIENT )
 		{
 			directConnect = true;
 			buttonJoinMultiplayer(my);
@@ -6847,7 +6847,7 @@ void buttonLoadGame(button_t* button)
 		directConnect = true;
 		buttonHostMultiplayer(button);
 	}
-	else if ( mul == DIRECTCLIENT )
+	else if ( mul == NetworkType::DIRECTCLIENT )
 	{
 		directConnect = true;
 		buttonJoinMultiplayer(button);
