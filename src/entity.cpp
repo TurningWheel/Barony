@@ -2598,7 +2598,7 @@ Sint32 statGetDEX(Stat* entitystats)
 	}
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
 	{
-		DEX -= 5;
+		//DEX -= 5;
 	}
 	if ( entitystats->HUNGER >= 1500 )
 	{
@@ -2931,6 +2931,12 @@ bool Entity::isMobile()
 		return false;
 	}
 
+	// stunned
+	if ( entitystats->EFFECTS[EFF_STUNNED] )
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -3114,7 +3120,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
-			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM )
+			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
 			{
 				monster_attack = pose;
 			}
@@ -5651,6 +5657,15 @@ int checkEquipType(Item *item)
 
 int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 {
+	if ( myStats == nullptr )
+	{
+		return 0;
+	}
+	if ( myStats->gloves == nullptr )
+	{
+		return 0;
+	}
+
 	if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY) {
 		ent->sprite = 132 + myStats->sex + spriteOffset;
 	}
@@ -5689,6 +5704,15 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 
 int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
 {
+	if ( myStats == nullptr )
+	{
+		return 0;
+	}
+	if ( myStats->shoes == nullptr )
+	{
+		return 0;
+	}
+
 	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
 		ent->sprite = 148 + myStats->sex + spriteOffset;
 	}
