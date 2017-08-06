@@ -4319,7 +4319,6 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 				bow = 2;
 			}
 		}
-
 		// check if ready to attack
 		if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
 		{
@@ -4387,6 +4386,17 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 							{
 								pose = MONSTER_POSE_MAGIC_WINDUP1;
 							}
+							else if ( myStats->type == COCKATRICE )
+							{
+								if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+								{
+									pose = MONSTER_POSE_MAGIC_WINDUP2;
+								}
+								else
+								{
+									pose = MONSTER_POSE_MAGIC_WINDUP1;
+								}
+							}
 							else
 							{
 								pose = 1;  // vertical swing
@@ -4425,6 +4435,17 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 						else if ( myStats->type == CRYSTALGOLEM )
 						{
 							if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_GOLEM )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP3;
+							}
+							else
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+							}
+						}
+						else if ( myStats->type == COCKATRICE )
+						{
+							if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
 							{
 								pose = MONSTER_POSE_MELEE_WINDUP3;
 							}
@@ -4593,7 +4614,31 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			}
 		}
 	}
+	else if ( axis == ANIMATE_Z )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->z += setpointRate * dir;
 
+			if ( limbAngleWithinRange(limb->z, setpointRate, setpoint) )
+			{
+				limb->z = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->z -= endpointRate * dir;
+
+			if ( limbAngleWithinRange(limb->z, endpointRate, endpoint) )
+			{
+				limb->z = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
 
 	return -1;
 }
@@ -4711,6 +4756,33 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 		}
 		limb->roll += rate;
 	}
+	else if ( axis == ANIMATE_Z )
+	{
+		if ( limbAngleWithinRange(limb->z, rate, setpoint) )
+		{
+			limb->z = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->z += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->z -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+		limb->z += rate;
+	}
 	else if ( axis == ANIMATE_WEAPON_YAW )
 	{
 		while ( limb->fskill[5] < 0 )
@@ -4822,6 +4894,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 	int specialRoll = 0;
 	node_t* node = nullptr;
 	int enemiesNearby = 0;
+	int bonusFromHP = 0;
 
 	if ( myStats != nullptr )
 	{
@@ -4868,7 +4941,6 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 				case CRYSTALGOLEM:
 					specialRoll = rand() % 20;
 					enemiesNearby = numTargetsAroundEntity(my, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
-					MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 					if ( enemiesNearby > 1 )
 					{
 						enemiesNearby = std::min(enemiesNearby, 4);
@@ -4879,6 +4951,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 						}
 					}		
 					
+					specialRoll = rand() % 20;
 					if ( myStats->HP > myStats->MAXHP * 0.8 )
 					{
 						if ( specialRoll < 1 ) // 5%
@@ -4886,32 +4959,91 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
-					else if ( myStats->HP <= myStats->MAXHP * 0.8 )
+					else if ( myStats->HP > myStats->MAXHP * 0.6 )
 					{
 						if ( specialRoll < 2 ) // 10%
 						{
 							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
-					else if ( myStats->HP <= myStats->MAXHP * 0.6 )
+					else if ( myStats->HP > myStats->MAXHP * 0.4 )
 					{
 						if ( specialRoll < 3 ) // 15%
 						{
 							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
-					else if ( myStats->HP <= myStats->MAXHP * 0.4 )
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 4 ) // 20%
 						{
 							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
-					else if ( myStats->HP <= myStats->MAXHP * 0.2 )
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 5 ) // 25%
 						{
 							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					break;
+				case COCKATRICE:
+					specialRoll = rand() % 20;
+					//specialRoll = 0;
+					// check for paralyze first
+					enemiesNearby = std::min(numTargetsAroundEntity(my, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+					
+					if ( myStats->HP <= myStats->MAXHP * 0.5 )
+					{
+						bonusFromHP = 5; // +25% chance if on low health
+					}
+					if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(my, myStats, node);
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
+						}
+						break;
+					}
+
+					// nothing selected, look for double attack.
+					specialRoll = rand() % 20;
+					if ( myStats->HP > myStats->MAXHP * 0.8 )
+					{
+						if ( specialRoll < 1 ) // 5%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.6 )
+					{
+						if ( specialRoll < 2 ) // 10%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.4 )
+					{
+						if ( specialRoll < 3 ) // 15%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 4 ) // 20%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP <= myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 5 ) // 25%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					break;
@@ -4933,6 +5065,9 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
 					}
+					break;
+				case COCKATRICE:
+					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 					break;
 				default:
 					break;
@@ -5022,7 +5157,7 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 	if ( aoeTargets )
 	{
 		count = list_Size(aoeTargets);
-		messagePlayer(0, "found %d targets", count);
+		//messagePlayer(0, "found %d targets", count);
 		//Free the list.
 		list_FreeAll(aoeTargets);
 		free(aoeTargets);

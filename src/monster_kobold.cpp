@@ -566,7 +566,6 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						// init rotations
 						entity->pitch = 0;
-						MONSTER_ATTACKTIME = 1;
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->roll = 0;
@@ -578,26 +577,22 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->attack(1, 0, nullptr);
 						}
 					}
-					
 				}
 				// vertical chop attack
 				else if ( MONSTER_ATTACK == 1 )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
+					if ( entity->pitch >= 3 * PI / 2 )
 					{
-						if ( entity->pitch >= 3 * PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 4, false, 0.0) )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
+						MONSTER_ARMBENDED = 1;
+					}
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 4, false, 0.0) )
+					{
+						entity->skill[0] = rightbody->skill[0];
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_ATTACK = 0;
 					}
 				}
 
@@ -609,42 +604,36 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = PI / 4;
 						entity->roll = 0;
-						MONSTER_ATTACKTIME = 1;
 					}
 
 					MONSTER_ARMBENDED = 1;
-					int animationFinish = limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0)
-						+ limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, 0, false, 0.0);
+					limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
+					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 					
 					MONSTER_WEAPONYAW = 5 * PI / 4;
 					//entity->roll = PI / 2;
 
-					if ( animationFinish == 2 && MONSTER_ATTACKTIME >= 10 )
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(2, 0, nullptr);
 						}
 					}
-					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				// horizontal chop attack
 				else if ( MONSTER_ATTACK == 2 )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
+					if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, PI / 8, false, 0.0) )
 					{
-						if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, PI / 8, false, 0.0) )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
+						entity->skill[0] = rightbody->skill[0];
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_ATTACK = 0;
 					}
 				}
-
 				// stab windup
 				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
 				{
@@ -655,12 +644,11 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						MONSTER_WEAPONYAW = 0;
 						entity->roll = 0;
 						entity->pitch = 0;
-						MONSTER_ATTACKTIME = 1;
 					}
 
 					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
 
-					if ( MONSTER_ATTACKTIME >= 10 )
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
 						if ( multiplayer != CLIENT )
 						{
@@ -668,22 +656,18 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 
-					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				// stab attack - refer to weapon limb code for additional animation
 				else if ( MONSTER_ATTACK == 3 )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.3, 11 * PI / 6, false, 0.0) )
 					{
-						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.3, 11 * PI / 6, false, 0.0) )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
+						entity->skill[0] = rightbody->skill[0];
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_ATTACK = 0;
 					}
 				}
 
@@ -697,12 +681,11 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						MONSTER_WEAPONYAW = 0;
 						entity->roll = 0;
 						entity->pitch = 9 * PI / 5;
-						MONSTER_ATTACKTIME = 1;
 					}
 
 					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.15, 0, false, 0.0);
 
-					if ( MONSTER_ATTACKTIME >= 10 )
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
 						if ( multiplayer != CLIENT )
 						{
@@ -720,7 +703,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
 				{
-					// crossbow
+					// magic
 					if ( MONSTER_ATTACKTIME == 0 )
 					{
 						// init rotations
@@ -729,7 +712,6 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->roll = 0;
 						entity->pitch = PI / 8;
 						entity->yaw = my->yaw - PI / 8;
-						MONSTER_ATTACKTIME = 1;
 						entity->skill[0] = 0;
 						createParticleDot(my);
 					}
@@ -1146,7 +1128,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= 3 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MELEE_WINDUP3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}

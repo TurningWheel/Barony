@@ -161,7 +161,7 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
 	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1 }, // kobold
 	{ 1.1, 1.1, 0.9, 0.9, 1.2, 1.f }, // scarab
-	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f }, // crystal golem
+	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // shadow
@@ -356,10 +356,13 @@ static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
 static const int MONSTER_POSE_GOLEM_SMASH = 13;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 14;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
 static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
+static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -371,6 +374,7 @@ static const int ANIMATE_YAW = 1;
 static const int ANIMATE_PITCH = 2;
 static const int ANIMATE_ROLL = 3;
 static const int ANIMATE_WEAPON_YAW = 4;
+static const int ANIMATE_Z = 4;
 
 static const int ANIMATE_DIR_POSITIVE = 1;
 static const int ANIMATE_DIR_NEGATIVE = -1;
@@ -379,6 +383,9 @@ static const int ANIMATE_DIR_NONE = 0;
 static const int ANIMATE_OVERSHOOT_TO_SETPOINT = 1;
 static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
+
+//--monster attack windup duration
+static const int ANIMATE_DURATION_WINDUP = 10;
 
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);

@@ -422,42 +422,36 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
-						MONSTER_ATTACKTIME = 1;
 					}
 
 					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0);
 					entity->skill[0] = 0;
 
-					if ( MONSTER_ATTACKTIME >= 10 )
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(1, 0, nullptr);
 						}
 					}
-
-					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				// vertical chop attack
 				else if ( MONSTER_ATTACK == 1 )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
+					if ( entity->skill[0] == 0 )
 					{
-						if ( entity->skill[0] == 0 )
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 3, false, 0) )
 						{
-							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 3, false, 0) )
-							{
-								entity->skill[0] = 1;
-							}
+							entity->skill[0] = 1;
 						}
-						else if ( entity->skill[0] == 1 )
+					}
+					else if ( entity->skill[0] == 1 )
+					{
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, PI / 4, false, 0) )
 						{
-							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, PI / 4, false, 0) )
-							{
-								entity->skill[0] = leftbody->skill[0];
-								entity->pitch = leftbody->pitch;
-								MONSTER_ATTACK = 0;
-							}
+							entity->skill[0] = leftbody->skill[0];
+							entity->pitch = leftbody->pitch;
+							MONSTER_ATTACK = 0;
 						}
 					}
 				}
@@ -469,13 +463,12 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
-						MONSTER_ATTACKTIME = 1;
 					}
 					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, PI, false, 0);
 					limbAnimateToLimit(entity, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0);
 					entity->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 
-					if ( MONSTER_ATTACKTIME >= 10 )
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
 						if ( multiplayer != CLIENT )
 						{
@@ -483,26 +476,21 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->attack(2, 0, nullptr);
 						}
 					}
-
-					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				// horizontal chop attack
 				else if ( MONSTER_ATTACK == 2 )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
+					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 0, false, 0.0);
+					if ( limbAnimateWithOvershoot(entity, ANIMATE_ROLL, 0.25, PI / 2, 0.1, 0, ANIMATE_DIR_POSITIVE) == ANIMATE_OVERSHOOT_TO_ENDPOINT )
 					{
-						limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 0, false, 0.0);
-						if ( limbAnimateWithOvershoot(entity, ANIMATE_ROLL, 0.25, PI / 2, 0.1, 0, ANIMATE_DIR_POSITIVE) == ANIMATE_OVERSHOOT_TO_ENDPOINT )
-						{
-							entity->skill[0] = leftbody->skill[0];
-							entity->pitch = leftbody->pitch;
-							entity->roll = 0;
-							MONSTER_ATTACK = 0;
-						}
+						entity->skill[0] = leftbody->skill[0];
+						entity->pitch = leftbody->pitch;
+						entity->roll = 0;
+						MONSTER_ATTACK = 0;
 					}
 				}
 
-				// double vertical chop
+				// special double vertical chop
 				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
 				{
 					if ( MONSTER_ATTACKTIME == 0 )
@@ -510,7 +498,6 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
-						MONSTER_ATTACKTIME = 1;
 						if ( multiplayer != CLIENT )
 						{
 							createParticleDot(my);
@@ -542,32 +529,26 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->attack(MONSTER_POSE_GOLEM_SMASH, MAXCHARGE, nullptr);
 						}
 					}
-
-					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				
 				// golem smash after windup3
 				else if ( MONSTER_ATTACK == MONSTER_POSE_GOLEM_SMASH )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.25, PI / 4, false, 0) )
 					{
-						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.25, PI / 4, false, 0) )
+						entity->skill[0] = leftbody->skill[0];
+						entity->pitch = leftbody->pitch;
+						entity->roll = 0;
+						if ( multiplayer != CLIENT )
 						{
-							entity->skill[0] = leftbody->skill[0];
-							entity->pitch = leftbody->pitch;
-							entity->roll = 0;
-							if ( multiplayer != CLIENT )
+							if ( myStats->EFFECTS[EFF_PARALYZED] == true )
 							{
-								if ( myStats->EFFECTS[EFF_PARALYZED] == true )
-								{
-									myStats->EFFECTS[EFF_PARALYZED] = false;
-									myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 0;
-								}
+								myStats->EFFECTS[EFF_PARALYZED] = false;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 0;
 							}
-							MONSTER_ATTACK = 0;
 						}
+						MONSTER_ATTACK = 0;
 					}
-
 					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 			}
@@ -719,7 +700,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= 3 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MELEE_WINDUP3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
