@@ -42,7 +42,7 @@ void actSpearTrap(Entity* my)
 		playSoundEntityLocal( my, 149, 128 );
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		if (!my->skill[28])
 		{
@@ -104,7 +104,7 @@ void actSpearTrap(Entity* my)
 	{
 		// shoot out spears
 		my->z = fmax(SPEARTRAP_STARTHEIGHT - 20, my->z - 4);
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != CLIENT )
 		{
 			SPEARTRAP_OUTTIME++;
 			if ( SPEARTRAP_OUTTIME > 60 )

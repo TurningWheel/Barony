@@ -260,7 +260,7 @@ void navigateMainMenuItems(bool mode)
 				}
 				else
 				{
-					menuselect = 4 + (multiplayer != CLIENT);
+					menuselect = 4 + (localPlayerNetworkType != CLIENT);
 				}
 			}
 
@@ -286,7 +286,7 @@ void navigateMainMenuItems(bool mode)
 			}
 			else
 			{
-				if (menuselect > 4 + ( multiplayer != CLIENT))
+				if (menuselect > 4 + ( localPlayerNetworkType != CLIENT))
 				{
 					menuselect = 1;
 				}
@@ -774,7 +774,7 @@ void handleMainMenu(bool mode)
 					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 				}
 				char* endgameText = NULL;
-				if ( multiplayer == SINGLE )
+				if ( localPlayerNetworkType == SINGLE )
 				{
 					endgameText = language[1310];
 				}
@@ -846,7 +846,7 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf16, 50, yres / 4 + 128, endgameText);
 				}
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != CLIENT )
 				{
 					if ( ((omousex >= 50 && omousex < 50 + strlen(language[1312]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
 					{
@@ -890,7 +890,7 @@ void handleMainMenu(bool mode)
 							button->y = suby2 - 28;
 							button->sizex = strlen(language[1314]) * 12 + 8;
 							button->sizey = 20;
-							if ( multiplayer == SINGLE )
+							if ( localPlayerNetworkType == SINGLE )
 							{
 								button->action = &buttonStartSingleplayer;
 							}
@@ -920,10 +920,10 @@ void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
 					}
 				}
-				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
+				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (localPlayerNetworkType != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (localPlayerNetworkType != CLIENT)) || (menuselect == 4 + (localPlayerNetworkType != CLIENT))) && subwindow == 0 && introstage == 1 )
 				{
-					menuselect = 4 + (multiplayer != CLIENT);
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
+					menuselect = 4 + (localPlayerNetworkType != CLIENT);
+					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != CLIENT), colorGray, language[1313]);
 					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -993,7 +993,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), language[1313]);
+					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != CLIENT), language[1313]);
 				}
 			}
 		}
@@ -2208,7 +2208,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != CLIENT )
 				{
 					current_y = server_flags_start_y;
 					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
@@ -2220,7 +2220,7 @@ void handleMainMenu(bool mode)
 							// toggle flag
 							svFlags ^= power(2, i);
 
-							if ( multiplayer == SERVER )
+							if ( localPlayerNetworkType == SERVER )
 							{
 								// update client flags
 								strcpy((char*)net_packet->data, "SVFL");
@@ -2305,7 +2305,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// communicating with clients
-	if ( multiplayer == SERVER && mode )
+	if ( localPlayerNetworkType == SERVER && mode )
 	{
 		//void *newSteamID = NULL; //TODO: Bugger void pointers!
 #ifdef STEAMWORKS
@@ -2618,7 +2618,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// communicating with server
-	if ( multiplayer == CLIENT && mode )
+	if ( localPlayerNetworkType == CLIENT && mode )
 	{
 		if ( receivedclientnum == false )
 		{
@@ -2679,7 +2679,7 @@ void handleMainMenu(bool mode)
 				if ( clientnum >= MAXPLAYERS || clientnum <= 0 )
 				{
 					printlog("connection attempt denied by server.\n");
-					multiplayer = SINGLE;
+					localPlayerNetworkType = SINGLE;
 
 					// close current window
 					buttonCloseSubwindow(NULL);
@@ -2842,7 +2842,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		else if ( multiplayer == CLIENT )
+		else if ( localPlayerNetworkType == CLIENT )
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
@@ -2966,8 +2966,8 @@ void handleMainMenu(bool mode)
 						button->focused = 1;
 						button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-						// reset multiplayer status
-						multiplayer = SINGLE;
+						// reset localPlayerNetworkType status
+						localPlayerNetworkType = SINGLE;
 						stats[0]->sex = stats[clientnum]->sex;
 						client_classes[0] = client_classes[clientnum];
 						strcpy(stats[0]->name, stats[clientnum]->name);
@@ -3026,7 +3026,7 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
-	if ( multiplayer == SINGLE )
+	if ( localPlayerNetworkType == SINGLE )
 	{
 		receivedclientnum = false;
 	}
@@ -3050,7 +3050,7 @@ void handleMainMenu(bool mode)
 
 #ifdef STEAMWORKS
 			int remoteIDIndex = c;
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == SERVER )
 			{
 				remoteIDIndex--;
 			}
@@ -3085,7 +3085,7 @@ void handleMainMenu(bool mode)
 				inputlen = LOBBY_CHATBOX_LENGTH - 1;
 				cursorflash = ticks;
 			}
-			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && multiplayer == SERVER )
+			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && localPlayerNetworkType == SERVER )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 
@@ -3099,7 +3099,7 @@ void handleMainMenu(bool mode)
 
 			// server flags
 			int i;
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == SERVER )
 			{
 				for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 				{
@@ -3144,7 +3144,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 			if ( !directConnect )
 			{
-				if ( multiplayer == SERVER )
+				if ( localPlayerNetworkType == SERVER )
 				{
 					for ( i = 0; i < 3; i++ )
 					{
@@ -3218,7 +3218,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 		if ( !directConnect )
 		{
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == SERVER )
 			{
 				for ( i = 0; i < 3; i++ )
 				{
@@ -3259,12 +3259,12 @@ void handleMainMenu(bool mode)
 				{
 					if ( strcmp(lobbyName, currentLobbyName) )
 					{
-						if ( multiplayer == CLIENT )
+						if ( localPlayerNetworkType == CLIENT )
 						{
 							// update the lobby name on our end
 							snprintf( currentLobbyName, 31, "%s", lobbyName );
 						}
-						else if ( multiplayer == SERVER )
+						else if ( localPlayerNetworkType == SERVER )
 						{
 							// update the backend's copy of the lobby name
 							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
@@ -3316,7 +3316,7 @@ void handleMainMenu(bool mode)
 		if ( keystatus[SDL_SCANCODE_RETURN] && strlen(lobbyChatbox) > 0 )
 		{
 			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != CLIENT )
 			{
 				playSound(238, 64);
 			}
@@ -3336,7 +3336,7 @@ void handleMainMenu(bool mode)
 				}
 				snprintf((char*)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), "%s", (char*)(lobbyChatbox + LOBBY_CHATBOX_LENGTH - strlen(shortname) - 2));
 			}
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != CLIENT )
 			{
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
 			}
@@ -3347,13 +3347,13 @@ void handleMainMenu(bool mode)
 			strcat((char*)(net_packet->data), msg);
 			net_packet->len = 4 + strlen(msg) + 1;
 			net_packet->data[net_packet->len - 1] = 0;
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			else if ( multiplayer == SERVER )
+			else if ( localPlayerNetworkType == SERVER )
 			{
 				int i;
 				for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3391,7 +3391,7 @@ void handleMainMenu(bool mode)
 		}
 
 		// handle keepalive timeouts (lobby)
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == SERVER )
 		{
 			int i;
 			for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3423,7 +3423,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		else if ( multiplayer == CLIENT )
+		else if ( localPlayerNetworkType == CLIENT )
 		{
 			if ( ticks - client_keepalive[0] > TICKS_PER_SECOND * 30 )
 			{
@@ -3433,18 +3433,18 @@ void handleMainMenu(bool mode)
 		}
 
 		// send keepalive messages every second
-		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE )
+		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && localPlayerNetworkType != SINGLE )
 		{
 			strcpy((char*)net_packet->data, "KEEPALIVE");
 			net_packet->data[9] = clientnum;
 			net_packet->len = 10;
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			else if ( multiplayer == SERVER )
+			else if ( localPlayerNetworkType == SERVER )
 			{
 				int i;
 				for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3723,7 +3723,7 @@ void handleMainMenu(bool mode)
 #endif
 
 			// load dungeon
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != CLIENT )
 			{
 				// stop all sounds
 #ifdef HAVE_FMOD
@@ -3740,7 +3740,7 @@ void handleMainMenu(bool mode)
 
 				// generate a unique game key (used to identify compatible save games)
 				prng_seed_time();
-				if ( multiplayer == SINGLE )
+				if ( localPlayerNetworkType == SINGLE )
 				{
 					uniqueGameKey = prng_get_uint();
 					if ( !uniqueGameKey )
@@ -3873,7 +3873,7 @@ void handleMainMenu(bool mode)
 											newNode->element = myuid;
 											*myuid = monster->getUID();
 
-											if ( c > 0 && multiplayer == SERVER )
+											if ( c > 0 && localPlayerNetworkType == SERVER )
 											{
 												strcpy((char*)net_packet->data, "LEAD");
 												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -3892,7 +3892,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( multiplayer == SINGLE )
+				if ( localPlayerNetworkType == SINGLE )
 				{
 					saveGame();
 				}
@@ -4105,7 +4105,7 @@ void handleMainMenu(bool mode)
 #endif
 
 			// send disconnect messages
-			if (multiplayer == CLIENT)
+			if (localPlayerNetworkType == CLIENT)
 			{
 				strcpy((char*)net_packet->data, "DISCONNECT");
 				net_packet->data[10] = clientnum;
@@ -4115,7 +4115,7 @@ void handleMainMenu(bool mode)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				printlog("disconnected from server.\n");
 			}
-			else if (multiplayer == SERVER)
+			else if (localPlayerNetworkType == SERVER)
 			{
 				for (x = 1; x < MAXPLAYERS; x++)
 				{
@@ -4134,7 +4134,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// clean up shopInv
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == CLIENT )
 			{
 				if ( shopInv )
 				{
@@ -4158,7 +4158,7 @@ void handleMainMenu(bool mode)
 			darkmap = false;
 			appraisal_timer = 0;
 			appraisal_item = 0;
-			multiplayer = 0;
+			localPlayerNetworkType = 0;
 			shootmode = true;
 			currentlevel = 0;
 			secretlevel = false;
@@ -4783,7 +4783,7 @@ void openGameoverWindow()
 	}
 
 	shootmode = false;
-	if ( multiplayer == SINGLE )
+	if ( localPlayerNetworkType == SINGLE )
 	{
 		strcpy(subtext, language[1133]);
 
@@ -5258,7 +5258,7 @@ void openFailedConnectionWindow(int mode)
 		}
 	}
 
-	multiplayer = SINGLE;
+	localPlayerNetworkType = SINGLE;
 	clientnum = 0;
 }
 
@@ -5478,7 +5478,7 @@ void buttonEndGameConfirm(button_t* my)
 	introstage = 5; // prepares to end the current game (throws to main menu)
 	fadeout = true;
 	//Edge case for freeing channeled spells on a client.
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
@@ -5567,7 +5567,7 @@ void buttonCloseSettingsSubwindow(button_t* my)
 void buttonCloseAndEndGameConfirm(button_t* my)
 {
 	//Edge case for freeing channeled spells on a client.
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
@@ -5722,7 +5722,7 @@ void buttonBack(button_t* my)
 void buttonStartSingleplayer(button_t* my)
 {
 	buttonCloseSubwindow(my);
-	multiplayer = SINGLE;
+	localPlayerNetworkType = SINGLE;
 	numplayers = 0;
 	introstage = 3;
 	fadeout = true;
@@ -5732,7 +5732,7 @@ void buttonStartSingleplayer(button_t* my)
 	}
 }
 
-// host a multiplayer game
+// host a localPlayerNetworkType game
 void buttonHostMultiplayer(button_t* my)
 {
 	button_t* button;
@@ -5806,7 +5806,7 @@ void buttonHostMultiplayer(button_t* my)
 	}
 }
 
-// join a multiplayer game
+// join a localPlayerNetworkType game
 void buttonJoinMultiplayer(button_t* my)
 {
 	button_t* button;
@@ -5954,7 +5954,7 @@ void buttonHostLobby(button_t* my)
 	}
 
 	// open lobby window
-	multiplayer = SERVER;
+	localPlayerNetworkType = SERVER;
 	lobby_window = true;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
@@ -6062,7 +6062,7 @@ void buttonJoinLobby(button_t* my)
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	multiplayer = CLIENT;
+	localPlayerNetworkType = CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -6220,7 +6220,7 @@ void buttonStartServer(button_t* my)
 	// close window
 	buttonCloseSubwindow(my);
 
-	multiplayer = SERVER;
+	localPlayerNetworkType = SERVER;
 	intro = true;
 	introstage = 3;
 	numplayers = 0;
@@ -6280,7 +6280,7 @@ void buttonDisconnect(button_t* my)
 {
 	int c;
 
-	if ( multiplayer == SERVER )
+	if ( localPlayerNetworkType == SERVER )
 	{
 		// send disconnect message to clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -6308,8 +6308,8 @@ void buttonDisconnect(button_t* my)
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 
-	// reset multiplayer status
-	multiplayer = SINGLE;
+	// reset localPlayerNetworkType status
+	localPlayerNetworkType = SINGLE;
 	stats[0]->sex = stats[clientnum]->sex;
 	client_classes[0] = client_classes[clientnum];
 	strcpy(stats[0]->name, stats[clientnum]->name);

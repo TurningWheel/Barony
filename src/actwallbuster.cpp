@@ -43,7 +43,7 @@ void actWallBuster(Entity* my)
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
 		map.tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map.height] = 0;
 		spawnExplosion(my->x, my->y, my->z - 8);
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == SERVER )
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -80,7 +80,7 @@ void actWallBuilder(Entity* my)
 		Uint16 x = std::min<Uint16>(std::max<int>(0.0, my->x / 16), map.width - 1);
 		Uint16 y = std::min<Uint16>(std::max<int>(0.0, my->y / 16), map.height - 1);
 		map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] = map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height];
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == SERVER )
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{

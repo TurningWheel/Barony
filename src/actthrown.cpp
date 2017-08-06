@@ -46,7 +46,7 @@ void actThrown(Entity* my)
 	char* itemname = NULL;
 	node_t* node;
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		if ( THROWN_LIFE == 0 )
 		{
@@ -102,7 +102,7 @@ void actThrown(Entity* my)
 		free(item);
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		return;
 	}

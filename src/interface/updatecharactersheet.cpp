@@ -80,7 +80,7 @@ void updateCharacterSheet()
 		}
 		players[clientnum]->entity->flags[BRIGHT] = b;
 		c = 0;
-		if (multiplayer != CLIENT)
+		if (localPlayerNetworkType != CLIENT)
 		{
 			for (node = players[clientnum]->entity->children.first; node != nullptr; node = node->next)
 			{

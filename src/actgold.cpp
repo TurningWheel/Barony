@@ -36,7 +36,7 @@ void actGoldBag(Entity* my)
 
 	if ( my->flags[INVISIBLE] )
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != CLIENT )
 		{
 			node_t* node;
 			for ( node = map.entities->first; node != NULL; node = node->next )
@@ -71,7 +71,7 @@ void actGoldBag(Entity* my)
 	}
 
 	// pick up gold
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -86,7 +86,7 @@ void actGoldBag(Entity* my)
 					stats[i]->GOLD += GOLDBAG_AMOUNT;
 					if ( i != 0 )
 					{
-						if ( multiplayer == SERVER )
+						if ( localPlayerNetworkType == SERVER )
 						{
 							// send the client info on the gold it picked up
 							strcpy((char*)net_packet->data, "GOLD");

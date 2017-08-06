@@ -942,15 +942,15 @@ int saveGame()
 	fprintf(fp, "BARONYSAVEGAME");
 	fprintf(fp, VERSION);
 	fwrite(&uniqueGameKey, sizeof(Uint32), 1, fp);
-	if ( multiplayer > SINGLE && directConnect)
+	if ( localPlayerNetworkType > SINGLE && directConnect)
 	{
-		multiplayer += 2;
-		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
-		multiplayer -= 2;
+		localPlayerNetworkType += 2;
+		fwrite(&localPlayerNetworkType, sizeof(Uint32), 1, fp);
+		localPlayerNetworkType -= 2;
 	}
 	else
 	{
-		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
+		fwrite(&localPlayerNetworkType, sizeof(Uint32), 1, fp);
 	}
 	fwrite(&clientnum, sizeof(Uint32), 1, fp);
 	fwrite(&mapseed, sizeof(Uint32), 1, fp);
@@ -1139,7 +1139,7 @@ int saveGame()
 		}
 		else
 		{
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == SERVER )
 			{
 				if ( stats[player]->helmet )
 				{
@@ -1302,7 +1302,7 @@ int saveGame()
 	fclose(fp);
 
 	// clients don't save follower info
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		return 0;
 	}
@@ -1870,7 +1870,7 @@ int loadGame(int player)
 		stats[player]->ring = NULL;
 		stats[player]->mask = NULL;
 
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == SERVER )
 		{
 			for ( c = 0; c < 10; c++ )
 			{
@@ -2405,7 +2405,7 @@ Uint32 getSaveGameUniqueGameKey()
 
 	getSaveGameType
 
-	Returns the multiplayer variable stored in the save game
+	Returns the localPlayerNetworkType variable stored in the save game
 
 -------------------------------------------------------------------------------*/
 

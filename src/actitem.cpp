@@ -47,7 +47,7 @@ void actItem(Entity* my)
 	Item* item;
 	int i;
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		my->flags[NOUPDATE] = true;
 		if ( ITEM_LIFE == 0 )
@@ -125,7 +125,7 @@ void actItem(Entity* my)
 	}*/
 
 	// pick up item
-	if (multiplayer != CLIENT)
+	if (localPlayerNetworkType != CLIENT)
 	{
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{

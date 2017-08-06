@@ -28,14 +28,14 @@ void initRat(Entity* my, Stat* myStats)
 	my->flags[UPDATENEEDED] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		MONSTER_SPOTSND = 29;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = 29;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();

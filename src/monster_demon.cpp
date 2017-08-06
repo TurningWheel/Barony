@@ -32,14 +32,14 @@ void initDemon(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		MONSTER_SPOTSND = 210;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 214;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -234,7 +234,7 @@ void actDemonLimb(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -314,7 +314,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
@@ -621,7 +621,7 @@ void actDemonCeilingBuster(Entity* my)
 				if ( map.tiles[index] )
 				{
 					map.tiles[index] = 0;
-					if ( multiplayer != CLIENT )
+					if ( localPlayerNetworkType != CLIENT )
 					{
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK = 1;

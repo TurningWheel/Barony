@@ -106,7 +106,7 @@ void actCampfire(Entity* my)
 		my->flags[BRIGHT] = false;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		// using campfire
 		for (i = 0; i < MAXPLAYERS; i++)

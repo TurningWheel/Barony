@@ -78,7 +78,7 @@ Entity* spawnFlame(Entity* parentent)
 	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actFlame;
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		entity_uids--;
 	}

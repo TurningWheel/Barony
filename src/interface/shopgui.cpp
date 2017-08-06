@@ -229,7 +229,7 @@ void updateShopWindow()
 	node_t* node;
 	int c;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		Entity* entity = uidToEntity(shopkeeper);
 		if (entity)

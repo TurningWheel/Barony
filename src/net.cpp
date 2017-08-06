@@ -114,7 +114,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 	packetsend->packet->address.host = packet->address.host;
 	packetsend->packet->address.port = packet->address.port;
 	strcpy((char*)packetsend->packet->data, "SAFE");
-	if ( receivedclientnum || multiplayer != CLIENT )
+	if ( receivedclientnum || localPlayerNetworkType != CLIENT )
 	{
 		packetsend->packet->data[4] = clientnum;
 	}
@@ -235,7 +235,7 @@ void messagePlayerColor(int player, Uint32 color, char* message, ...)
 		}
 		printlog("%s\n", str);
 	}
-	else if ( multiplayer == SERVER )
+	else if ( localPlayerNetworkType == SERVER )
 	{
 		strcpy((char*)net_packet->data, "MSGS");
 		SDLNet_Write32(color, &net_packet->data[4]);
@@ -478,7 +478,7 @@ void sendMapTCP(int c)
 void serverUpdateBodypartIDs(Entity* entity)
 {
 	int c;
-	if ( multiplayer != SERVER )
+	if ( localPlayerNetworkType != SERVER )
 	{
 		return;
 	}
@@ -525,7 +525,7 @@ void serverUpdateBodypartIDs(Entity* entity)
 void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 {
 	int c;
-	if ( multiplayer != SERVER )
+	if ( localPlayerNetworkType != SERVER )
 	{
 		return;
 	}
@@ -562,7 +562,7 @@ void serverUpdateEntityBodypart(Entity* entity, int bodypart)
 void serverUpdateEntitySprite(Entity* entity)
 {
 	int c;
-	if ( multiplayer != SERVER )
+	if ( localPlayerNetworkType != SERVER )
 	{
 		return;
 	}
@@ -592,7 +592,7 @@ void serverUpdateEntitySprite(Entity* entity)
 void serverUpdateEntitySkill(Entity* entity, int skill)
 {
 	int c;
-	if ( multiplayer != SERVER )
+	if ( localPlayerNetworkType != SERVER )
 	{
 		return;
 	}
@@ -623,7 +623,7 @@ void serverUpdateEntitySkill(Entity* entity, int skill)
 void serverUpdateEntityFlag(Entity* entity, int flag)
 {
 	int c;
-	if ( multiplayer != SERVER )
+	if ( localPlayerNetworkType != SERVER )
 	{
 		return;
 	}
@@ -656,7 +656,7 @@ void serverUpdateEffects(int player)
 {
 	int j;
 
-	if ( multiplayer != SERVER || clientnum == player )
+	if ( localPlayerNetworkType != SERVER || clientnum == player )
 	{
 		return;
 	}
@@ -696,7 +696,7 @@ void serverUpdateEffects(int player)
 
 void serverUpdateHunger(int player)
 {
-	if ( multiplayer != SERVER || clientnum == player )
+	if ( localPlayerNetworkType != SERVER || clientnum == player )
 	{
 		return;
 	}
@@ -3199,7 +3199,7 @@ bool handleSafePacket()
 			j = net_packet->data[4];
 			net_packet->data[4] = clientnum;
 			strcpy((char*)net_packet->data, "GOTP");
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -3211,7 +3211,7 @@ bool handleSafePacket()
 			}
 			c = net_packet->len;
 			net_packet->len = 9;
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == CLIENT )
 			{
 				sendPacket(net_sock, -1, net_packet, 0);
 			}

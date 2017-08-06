@@ -58,7 +58,7 @@ void actChest(Entity* my)
 		playSoundEntityLocal( my, 149, 64 );
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		return;
 	}
@@ -476,7 +476,7 @@ void actChest(Entity* my)
 					closeRemoveCurseGUI();
 				}
 				identifygui_active = false;
-				if (chestclicked != 0 && multiplayer == SERVER)
+				if (chestclicked != 0 && localPlayerNetworkType == SERVER)
 				{
 					//Send all of the items to the client.
 					strcpy((char*)net_packet->data, "CHST");  //Chest.
@@ -559,10 +559,10 @@ void actChestLid(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		my->skill[1] = parent->skill[1];
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == SERVER )
 		{
 			if ( my->skill[3] != my->skill[1] )
 			{
@@ -589,7 +589,7 @@ void actChestLid(Entity* my)
 		if ( !my->skill[0] )
 		{
 			my->skill[0] = 1;
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != CLIENT )
 			{
 				playSoundEntity(my, 21, 64);
 			}
@@ -612,7 +612,7 @@ void actChestLid(Entity* my)
 		if ( my->skill[0] )
 		{
 			my->skill[0] = 0;
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != CLIENT )
 			{
 				playSoundEntity(my, 22, 64);
 			}
@@ -633,7 +633,7 @@ void actChestLid(Entity* my)
 
 void Entity::closeChest()
 {
-	if (clientnum != 0 && multiplayer == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
 	{
 		//If client, tell server the chest got closed.
 		if (openedChest[clientnum] != NULL)
@@ -657,7 +657,7 @@ void Entity::closeChest()
 		chest_status = 0;
 		messagePlayer(chest_opener, language[460]);
 		openedChest[chest_opener] = nullptr;
-		if (chest_opener != 0 && multiplayer == SERVER)
+		if (chest_opener != 0 && localPlayerNetworkType == SERVER)
 		{
 			//Tell the client that the chest got closed.
 			strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -691,7 +691,7 @@ void Entity::addItemToChest(Item* item)
 		return;
 	}
 
-	if (clientnum != 0 && multiplayer == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
 	{
 		//Tell the server.
 		strcpy( (char*)net_packet->data, "CITM" );
@@ -732,7 +732,7 @@ void Entity::addItemToChest(Item* item)
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
 
-	if (chest_opener != 0 && multiplayer == SERVER)
+	if (chest_opener != 0 && localPlayerNetworkType == SERVER)
 	{
 		strcpy((char*)net_packet->data, "CITM");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -838,7 +838,7 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 		return NULL;
 	}
 
-	if ( clientnum != 0 && multiplayer == CLIENT)
+	if ( clientnum != 0 && localPlayerNetworkType == CLIENT)
 	{
 		if (!item || !item->node)
 		{
@@ -942,7 +942,7 @@ void closeChestClientside()
 		return;
 	}
 
-	if (multiplayer != CLIENT || clientnum == 0)
+	if (localPlayerNetworkType != CLIENT || clientnum == 0)
 	{
 		return;    //Only called for the client.
 	}

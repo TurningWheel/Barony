@@ -1455,7 +1455,7 @@ void assignActions(map_t* map)
 						entity = NULL;
 						break;
 					}
-					if ( multiplayer != CLIENT )
+					if ( localPlayerNetworkType != CLIENT )
 					{
 						if ( stats[numplayers]->HP <= 0 )
 						{
@@ -1482,7 +1482,7 @@ void assignActions(map_t* map)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->flags[GENIUS] = true;
-				if ( numplayers == clientnum && multiplayer == CLIENT )
+				if ( numplayers == clientnum && localPlayerNetworkType == CLIENT )
 				{
 					entity->flags[UPDATENEEDED] = false;
 				}
@@ -1493,7 +1493,7 @@ void assignActions(map_t* map)
 				entity->flags[BLOCKSIGHT] = true;
 				entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
 				players[numplayers]->entity = entity;
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != CLIENT )
 				{
 					if ( numplayers == 0 && minotaurlevel )
 					{
@@ -1832,7 +1832,7 @@ void assignActions(map_t* map)
 				entity->skill[5] = -1;
 				Stat* myStats = NULL;
 
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != CLIENT )
 				{
 					// need to give the entity its list stuff.
 					// create an empty first node for traversal purposes
@@ -1911,7 +1911,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
 						break;
 					case SLIME:
-						if ( multiplayer != CLIENT )
+						if ( localPlayerNetworkType != CLIENT )
 						{
 							myStats->LVL = 7;
 						}
@@ -1997,7 +1997,7 @@ void assignActions(map_t* map)
 					default:
 						break;
 				}
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != CLIENT )
 				{
 					myStats->type = monsterType;
 					if ( myStats->type == DEVIL )

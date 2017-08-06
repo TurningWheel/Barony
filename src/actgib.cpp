@@ -166,7 +166,7 @@ Entity* spawnGib(Entity* parentent)
 	{
 		entity->flags[INVISIBLE] = true;
 	}
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		entity_uids--;
 	}
@@ -208,7 +208,7 @@ void serverSpawnGibForClient(Entity* gib)
 	{
 		return;
 	}
-	if ( multiplayer == SERVER )
+	if ( localPlayerNetworkType == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{

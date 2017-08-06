@@ -182,7 +182,7 @@ void actHudWeapon(Entity* my)
 		return;
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		if ( stats[clientnum]->HP <= 0 )
 		{
@@ -602,7 +602,7 @@ void actHudWeapon(Entity* my)
 							HUDWEAPON_MOVEZ = 3;
 							HUDWEAPON_CHOP = 3;
 							players[clientnum]->entity->attack(0, 0);
-							if (multiplayer == CLIENT)
+							if (localPlayerNetworkType == CLIENT)
 							{
 								item->count--;
 								if (item->count <= 0)
@@ -1322,7 +1322,7 @@ void actHudShield(Entity* my)
 		return;
 	}
 
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == CLIENT)
 	{
 		if (stats[clientnum]->HP <= 0)
 		{
@@ -1454,7 +1454,7 @@ void actHudShield(Entity* my)
 		stats[clientnum]->defending = false;
 	}
 
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == CLIENT)
 	{
 		if (HUDSHIELD_DEFEND != defending || ticks % 120 == 0)
 		{

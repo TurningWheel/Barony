@@ -38,7 +38,7 @@ void actHeadstone(Entity* my)
 {
 	if ( my->flags[INVISIBLE] )
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != CLIENT )
 		{
 			node_t* node;
 			int goldbags = 0;
@@ -72,7 +72,7 @@ void actHeadstone(Entity* my)
 		playSoundEntityLocal( my, 149, 32 );
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		return;
 	}
@@ -88,7 +88,7 @@ void actHeadstone(Entity* my)
 
 	// rightclick message
 	int i;
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{

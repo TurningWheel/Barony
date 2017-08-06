@@ -138,7 +138,7 @@ void clickDescription(int player, Entity* entity)
 
 	if ( entity != NULL )
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != CLIENT )
 		{
 			if ( (stat = entity->getStats()) == NULL )
 			{

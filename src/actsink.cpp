@@ -59,13 +59,13 @@ void actSink(Entity* my)
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
 
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != CLIENT )
 		{
 			my->skill[2]--;
 		}
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		return;
 	}

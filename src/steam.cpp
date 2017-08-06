@@ -640,7 +640,7 @@ void steamAchievement(const char* achName)
 
 void steamAchievementClient(int player, const char* achName)
 {
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		return;
 	}
@@ -655,7 +655,7 @@ void steamAchievementClient(int player, const char* achName)
 	}
 	else
 	{
-		if ( client_disconnected[player] || multiplayer == SINGLE )
+		if ( client_disconnected[player] || localPlayerNetworkType == SINGLE )
 		{
 			return;
 		}
@@ -924,7 +924,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 	{
 		buttonEndGameConfirm(NULL);
 	}
-	else if ( multiplayer != SINGLE )
+	else if ( localPlayerNetworkType != SINGLE )
 	{
 		buttonDisconnect(NULL);
 	}
@@ -1063,7 +1063,7 @@ void steam_OnP2PSessionConnectFail( void* pCallback )
 	{
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
-		openFailedConnectionWindow(multiplayer);
+		openFailedConnectionWindow(localPlayerNetworkType);
 	}
 }
 

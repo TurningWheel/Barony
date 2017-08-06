@@ -65,7 +65,7 @@ int numItemsInChest()
 	list_t* chestInventory = nullptr;
 	if ( clientnum != 0 )
 	{
-		if ( multiplayer != SERVER )
+		if ( localPlayerNetworkType != SERVER )
 		{
 			chestInventory = &chestInv;
 		}
@@ -153,7 +153,7 @@ inline void drawChestSlots()
 						list_t* chestInventory = nullptr;
 						if ( clientnum != 0 )
 						{
-							if ( multiplayer != SERVER )
+							if ( localPlayerNetworkType != SERVER )
 							{
 								chestInventory = &chestInv;
 							}
@@ -329,7 +329,7 @@ void updateChestInventory()
 	list_t* chest_inventory = NULL;
 	if (clientnum != 0)
 	{
-		if (multiplayer != SERVER)
+		if (localPlayerNetworkType != SERVER)
 		{
 			chest_inventory = &chestInv;
 		}

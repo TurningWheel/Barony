@@ -82,7 +82,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 						//if (spell->magic_effects)
 						//	list_RemoveNode(spell->magic_effects);
 						messagePlayer(player, language[408], spell->name);
-						if (multiplayer == CLIENT)
+						if (localPlayerNetworkType == CLIENT)
 						{
 							list_RemoveNode(node);
 							strcpy( (char*)net_packet->data, "UNCH");
@@ -152,7 +152,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
 #define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat)),100) //Shortcut!
 
-	if (clientnum != 0 && multiplayer == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
 	{
 		strcpy( (char*)net_packet->data, "SPEL" );
 		net_packet->data[4] = clientnum;
@@ -208,7 +208,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				messagePlayer(player, "Error: Invalid spell. Mana cost is negative?");
 			return NULL;
 		}*/
-		if (multiplayer == SINGLE)
+		if (localPlayerNetworkType == SINGLE)
 		{
 			magiccost = cast_animation.mana_left;
 			caster->drainMP(magiccost);
@@ -910,7 +910,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 			//printlog( "Client is: %d\n", target_client);
-			if (multiplayer == SERVER && target_client != 0)
+			if (localPlayerNetworkType == SERVER && target_client != 0)
 			{
 				strcpy( (char*)net_packet->data, "CHAN" );
 				net_packet->data[4] = clientnum;

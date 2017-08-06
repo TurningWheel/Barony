@@ -495,7 +495,7 @@ void deinitGame()
 	int c, x;
 
 	// send disconnect messages
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == CLIENT)
 	{
 		strcpy((char*)net_packet->data, "DISCONNECT");
 		net_packet->data[10] = clientnum;
@@ -505,7 +505,7 @@ void deinitGame()
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		printlog("disconnected from server.\n");
 	}
-	else if (multiplayer == SERVER)
+	else if (localPlayerNetworkType == SERVER)
 	{
 		for (x = 1; x < MAXPLAYERS; x++)
 		{
@@ -530,15 +530,15 @@ void deinitGame()
 	while ( SDL_GetTicks() - timetoshutdown < 500 )
 	{
 		// handle network messages
-		if ( multiplayer == CLIENT )
+		if ( localPlayerNetworkType == CLIENT )
 		{
 			clientHandleMessages();
 		}
-		else if ( multiplayer == SERVER )
+		else if ( localPlayerNetworkType == SERVER )
 		{
 			serverHandleMessages();
 		}
-		if ( !(SDL_GetTicks() % 25) && multiplayer )
+		if ( !(SDL_GetTicks() % 25) && localPlayerNetworkType )
 		{
 			int j = 0;
 			node_t* node, *nextnode;
@@ -617,7 +617,7 @@ void deinitGame()
 	{
 		list_FreeAll(&stats[c]->inventory);
 	}
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		if ( shopInv )
 		{
@@ -628,15 +628,15 @@ void deinitGame()
 	}
 	list_FreeAll(map.entities);
 	list_FreeAll(&messages);
-	if (multiplayer == SINGLE)
+	if (localPlayerNetworkType == SINGLE)
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
-	else if (multiplayer == CLIENT)
+	else if (localPlayerNetworkType == CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
-	else if (multiplayer == SERVER)
+	else if (localPlayerNetworkType == SERVER)
 	{
 		for (c = 0; c < numplayers; ++c)
 		{

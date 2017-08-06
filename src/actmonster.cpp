@@ -137,7 +137,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 	entity->skill[5] = nummonsters;
 
 	Stat* myStats = NULL;
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		// Need to give the entity its list stuff.
 		// create an empty first node for traversal purposes
@@ -161,7 +161,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 	}
 
 	// Find a free tile next to the source and then spawn it there.
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		if ( entityInsideSomething(entity) )
 		{
@@ -252,7 +252,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[GOBLIN][0][2]; // -1.75
 				break;
 			case SLIME:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != CLIENT )
 				{
 					myStats->LVL = 7;
 				}
@@ -345,7 +345,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		{
 			nummonsters++;
 		}
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == SERVER )
 		{
 			strcpy((char*)net_packet->data, "SUMM");
 			SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
@@ -497,7 +497,7 @@ void actMonster(Entity* my)
 
 	// this is mostly a SERVER function.
 	// however, there is a small part for clients:
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == CLIENT )
 	{
 		if ( !MONSTER_INIT && my->sprite >= 100 )
 		{
@@ -1151,7 +1151,7 @@ void actMonster(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != CLIENT )
 	{
 		my->effectTimes();
 	}
@@ -1539,7 +1539,7 @@ void actMonster(Entity* my)
 									players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 									MONSTER_STATE = 0; // be ready to follow
 									myStats->leader_uid = players[monsterclicked]->entity->getUID();
-									if (monsterclicked > 0 && multiplayer == SERVER)
+									if (monsterclicked > 0 && localPlayerNetworkType == SERVER)
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]);
