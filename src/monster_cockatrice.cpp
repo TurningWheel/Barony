@@ -514,11 +514,6 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					else if ( MONSTER_ATTACKTIME > 20 )
 					{
 						entity->skill[0] = 2;
-						//entity->roll = 0;
-					}
-					else
-					{
-						//limbAnimateToLimit(entity, ANIMATE_ROLL, 0.1, 1 * PI / 16, false, 0);
 					}
 
 					switch ( entity->skill[0] )
@@ -540,7 +535,6 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// start attack swing
 							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.4, 5 * PI / 4, false, 0) == 1 )
 							{
-								entity->skill[0] = 0;
 								//playSoundEntityLocal(my, 79, 128);
 								if ( multiplayer != CLIENT )
 								{
@@ -558,40 +552,30 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					switch ( entity->skill[0] )
 					{
-						case 0:
+						case 2:
 							// swing down
 							entity->roll = 31 * PI / 16;
-							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 3, false, 0.0) == 1 )
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 3, false, 0) == 1 )
 							{
-								entity->skill[0] = 1;
+								entity->skill[0] = 3;
 							}
 							break;
-						case 1:
+						case 3:
 							// raise arms up again
 							entity->roll = 0;
 							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.4, 5 * PI / 4, false, 0) == 1 )
 							{
 								entity->roll = 31 * PI / 16;
-								entity->skill[0] = 2;
 								if ( multiplayer != CLIENT )
 								{
-									my->attack(MONSTER_POSE_COCKATRICE_DOUBLEATTACK, 0, nullptr);
+									my->attack(3, 0, nullptr);
 								}
-							}
-							break;
-						case 2:
-							// swing down and end.						
-							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 3, false, 0.0) == 1 )
-							{
-								entity->roll = 0;
-								entity->skill[0] = leftbody->skill[0];
-								entity->pitch = leftbody->pitch;
-								MONSTER_ATTACK = 0;
 							}
 							break;
 						default:
 							break;
 					}
+					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
 				{
@@ -600,10 +584,11 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
-						//my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+						// set overshoot for z axis animation
 						playSoundEntityLocal(my, 79, 128);
 						if ( multiplayer != CLIENT )
 						{
+							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							createParticleDot(my);
 							serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_PURPLE);
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
