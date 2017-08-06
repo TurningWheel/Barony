@@ -447,7 +447,7 @@ typedef enum class networkType_t
     DIRECTSERVER,
     DIRECTCLIENT
 } NetworkType;
-//#define SINGLE 0
+//#define NetworkType::SINGLE 0
 //#define SERVER 1
 //#define CLIENT 2
 //#define DIRECTSERVER 3

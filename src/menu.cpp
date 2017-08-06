@@ -96,7 +96,7 @@ char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
 bool spawn_blood = true;
-int multiplayerselect = SINGLE;
+int multiplayerselect = NetworkType::SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
 bool settings_disable_messages = true;
@@ -774,7 +774,7 @@ void handleMainMenu(bool mode)
 					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 				}
 				char* endgameText = NULL;
-				if ( localPlayerNetworkType == SINGLE )
+				if ( localPlayerNetworkType == NetworkType::SINGLE )
 				{
 					endgameText = language[1310];
 				}
@@ -890,7 +890,7 @@ void handleMainMenu(bool mode)
 							button->y = suby2 - 28;
 							button->sizex = strlen(language[1314]) * 12 + 8;
 							button->sizey = 20;
-							if ( localPlayerNetworkType == SINGLE )
+							if ( localPlayerNetworkType == NetworkType::SINGLE )
 							{
 								button->action = &buttonStartSingleplayer;
 							}
@@ -2679,7 +2679,7 @@ void handleMainMenu(bool mode)
 				if ( clientnum >= MAXPLAYERS || clientnum <= 0 )
 				{
 					printlog("connection attempt denied by server.\n");
-					localPlayerNetworkType = SINGLE;
+					localPlayerNetworkType = NetworkType::SINGLE;
 
 					// close current window
 					buttonCloseSubwindow(NULL);
@@ -2967,7 +2967,7 @@ void handleMainMenu(bool mode)
 						button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
 						// reset localPlayerNetworkType status
-						localPlayerNetworkType = SINGLE;
+						localPlayerNetworkType = NetworkType::SINGLE;
 						stats[0]->sex = stats[clientnum]->sex;
 						client_classes[0] = client_classes[clientnum];
 						strcpy(stats[0]->name, stats[clientnum]->name);
@@ -3026,7 +3026,7 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
-	if ( localPlayerNetworkType == SINGLE )
+	if ( localPlayerNetworkType == NetworkType::SINGLE )
 	{
 		receivedclientnum = false;
 	}
@@ -3433,7 +3433,7 @@ void handleMainMenu(bool mode)
 		}
 
 		// send keepalive messages every second
-		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && localPlayerNetworkType != SINGLE )
+		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			strcpy((char*)net_packet->data, "KEEPALIVE");
 			net_packet->data[9] = clientnum;
@@ -3740,7 +3740,7 @@ void handleMainMenu(bool mode)
 
 				// generate a unique game key (used to identify compatible save games)
 				prng_seed_time();
-				if ( localPlayerNetworkType == SINGLE )
+				if ( localPlayerNetworkType == NetworkType::SINGLE )
 				{
 					uniqueGameKey = prng_get_uint();
 					if ( !uniqueGameKey )
@@ -3892,7 +3892,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( localPlayerNetworkType == SINGLE )
+				if ( localPlayerNetworkType == NetworkType::SINGLE )
 				{
 					saveGame();
 				}
@@ -4783,7 +4783,7 @@ void openGameoverWindow()
 	}
 
 	shootmode = false;
-	if ( localPlayerNetworkType == SINGLE )
+	if ( localPlayerNetworkType == NetworkType::SINGLE )
 	{
 		strcpy(subtext, language[1133]);
 
@@ -5258,7 +5258,7 @@ void openFailedConnectionWindow(int mode)
 		}
 	}
 
-	localPlayerNetworkType = SINGLE;
+	localPlayerNetworkType = NetworkType::SINGLE;
 	clientnum = 0;
 }
 
@@ -5662,7 +5662,7 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 6 )
 	{
-		if ( multiplayerselect == SINGLE )
+		if ( multiplayerselect == NetworkType::SINGLE )
 		{
 			buttonStartSingleplayer(my);
 		}
@@ -5722,7 +5722,7 @@ void buttonBack(button_t* my)
 void buttonStartSingleplayer(button_t* my)
 {
 	buttonCloseSubwindow(my);
-	localPlayerNetworkType = SINGLE;
+	localPlayerNetworkType = NetworkType::SINGLE;
 	numplayers = 0;
 	introstage = 3;
 	fadeout = true;
@@ -6309,7 +6309,7 @@ void buttonDisconnect(button_t* my)
 	}
 
 	// reset localPlayerNetworkType status
-	localPlayerNetworkType = SINGLE;
+	localPlayerNetworkType = NetworkType::SINGLE;
 	stats[0]->sex = stats[clientnum]->sex;
 	client_classes[0] = client_classes[clientnum];
 	strcpy(stats[0]->name, stats[clientnum]->name);
@@ -6852,7 +6852,7 @@ void buttonLoadGame(button_t* button)
 		directConnect = true;
 		buttonJoinMultiplayer(button);
 	}
-	else if ( mul == SINGLE )
+	else if ( mul == NetworkType::SINGLE )
 	{
 		buttonStartSingleplayer(button);
 	}

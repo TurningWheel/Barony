@@ -208,7 +208,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				messagePlayer(player, "Error: Invalid spell. Mana cost is negative?");
 			return NULL;
 		}*/
-		if (localPlayerNetworkType == SINGLE)
+		if (localPlayerNetworkType == NetworkType::SINGLE)
 		{
 			magiccost = cast_animation.mana_left;
 			caster->drainMP(magiccost);

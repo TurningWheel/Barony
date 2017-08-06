@@ -1381,7 +1381,7 @@ void actPlayer(Entity* my)
 								entity->skill[15] = item->identified;
 							}
 						}
-						if (localPlayerNetworkType != SINGLE)
+						if (localPlayerNetworkType != NetworkType::SINGLE)
 						{
 							for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
 							{
@@ -1502,7 +1502,7 @@ void actPlayer(Entity* my)
 						list_FreeAll(&stats[PLAYER_NUM]->inventory);
 					}
 
-					if ( localPlayerNetworkType != SINGLE )
+					if ( localPlayerNetworkType != NetworkType::SINGLE )
 					{
 						messagePlayer(PLAYER_NUM, language[578]);
 					}

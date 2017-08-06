@@ -313,7 +313,7 @@ void gameLogic(void)
 		// execute entity behaviors
 		c = localPlayerNetworkType;
 		x = clientnum;
-		localPlayerNetworkType = SINGLE;
+		localPlayerNetworkType = NetworkType::SINGLE;
 		clientnum = 0;
 		for ( node = map.entities->first; node != NULL; node = nextnode )
 		{
@@ -2532,7 +2532,7 @@ int main(int argc, char** argv)
 						initClass(0);
 
 						strcpy(stats[0]->name, "Avatar");
-						localPlayerNetworkType = SINGLE;
+						localPlayerNetworkType = NetworkType::SINGLE;
 						fadefinished = false;
 						fadeout = false;
 						numplayers = 0;

@@ -942,7 +942,7 @@ int saveGame()
 	fprintf(fp, "BARONYSAVEGAME");
 	fprintf(fp, VERSION);
 	fwrite(&uniqueGameKey, sizeof(Uint32), 1, fp);
-	if ( localPlayerNetworkType > SINGLE && directConnect)
+	if ( localPlayerNetworkType > NetworkType::SINGLE && directConnect)
 	{
 		localPlayerNetworkType += 2;
 		fwrite(&localPlayerNetworkType, sizeof(Uint32), 1, fp);

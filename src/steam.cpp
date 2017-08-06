@@ -655,7 +655,7 @@ void steamAchievementClient(int player, const char* achName)
 	}
 	else
 	{
-		if ( client_disconnected[player] || localPlayerNetworkType == SINGLE )
+		if ( client_disconnected[player] || localPlayerNetworkType == NetworkType::SINGLE )
 		{
 			return;
 		}
@@ -924,7 +924,7 @@ void steam_OnGameJoinRequested( void* pCallback )
 	{
 		buttonEndGameConfirm(NULL);
 	}
-	else if ( localPlayerNetworkType != SINGLE )
+	else if ( localPlayerNetworkType != NetworkType::SINGLE )
 	{
 		buttonDisconnect(NULL);
 	}

@@ -628,7 +628,7 @@ void deinitGame()
 	}
 	list_FreeAll(map.entities);
 	list_FreeAll(&messages);
-	if (localPlayerNetworkType == SINGLE)
+	if (localPlayerNetworkType == NetworkType::SINGLE)
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
