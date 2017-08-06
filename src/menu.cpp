@@ -6840,19 +6840,19 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 void buttonLoadGame(button_t* button)
 {
 	loadingsavegame = getSaveGameUniqueGameKey();
-	int mul = getSaveGameType();
+	NetworkType saveGameNetworkType = getSaveGameType();
 
-	if ( mul == NetworkType::DIRECTSERVER )
+	if ( saveGameNetworkType == NetworkType::DIRECTSERVER )
 	{
 		directConnect = true;
 		buttonHostMultiplayer(button);
 	}
-	else if ( mul == NetworkType::DIRECTCLIENT )
+	else if ( saveGameNetworkType == NetworkType::DIRECTCLIENT )
 	{
 		directConnect = true;
 		buttonJoinMultiplayer(button);
 	}
-	else if ( mul == NetworkType::SINGLE )
+	else if ( saveGameNetworkType == NetworkType::SINGLE )
 	{
 		buttonStartSingleplayer(button);
 	}
@@ -6860,11 +6860,11 @@ void buttonLoadGame(button_t* button)
 	{
 		directConnect = false;
 #ifdef STEAMWORKS
-		if ( mul == NetworkType::SERVER )
+		if ( saveGameNetworkType == NetworkType::SERVER )
 		{
 			buttonHostMultiplayer(button);
 		}
-		else if ( mul == NetworkType::CLIENT )
+		else if ( saveGameNetworkType == NetworkType::CLIENT )
 		{
 			if ( !lobbyToConnectTo )
 			{
