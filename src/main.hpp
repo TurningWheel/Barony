@@ -433,7 +433,7 @@ extern Sint32* lightmap;
 extern bool* vismap;
 extern Entity** clickmap;
 extern list_t entitiesdeleted;
-extern Sint32 localPlayerNetworkType;
+extern NetworkType localPlayerNetworkType;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
 extern int minotaurlevel;
