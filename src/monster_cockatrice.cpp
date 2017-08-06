@@ -597,6 +597,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 
+					// only do the following during 2nd + end stage of overshoot animation.
 					if ( my->monsterAnimationLimbOvershoot != ANIMATE_OVERSHOOT_TO_SETPOINT )
 					{
 						// move the head.
