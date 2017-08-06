@@ -437,11 +437,21 @@ extern Sint32 multiplayer;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
 extern int minotaurlevel;
-#define SINGLE 0
-#define SERVER 1
-#define CLIENT 2
-#define DIRECTSERVER 3
-#define DIRECTCLIENT 4
+
+typedef enum class networkType_t
+{
+    DISCONNECTED = -1,
+    SINGLE,
+    SERVER,
+    CLIENT,
+    DIRECTSERVER,
+    DIRECTCLIENT
+} NetworkType;
+//#define SINGLE 0
+//#define SERVER 1
+//#define CLIENT 2
+//#define DIRECTSERVER 3
+//#define DIRECTCLIENT 4
 
 // language stuff
 #define NUMLANGENTRIES 2500
