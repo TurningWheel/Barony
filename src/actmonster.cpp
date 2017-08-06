@@ -345,7 +345,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		{
 			nummonsters++;
 		}
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			strcpy((char*)net_packet->data, "SUMM");
 			SDLNet_Write32((Uint32)creature, &net_packet->data[4]);
@@ -495,7 +495,7 @@ void actMonster(Entity* my)
 		return;
 	}
 
-	// this is mostly a SERVER function.
+	// this is mostly a NetworkType::SERVER function.
 	// however, there is a small part for clients:
 	if ( localPlayerNetworkType == CLIENT )
 	{
@@ -1539,7 +1539,7 @@ void actMonster(Entity* my)
 									players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
 									MONSTER_STATE = 0; // be ready to follow
 									myStats->leader_uid = players[monsterclicked]->entity->getUID();
-									if (monsterclicked > 0 && localPlayerNetworkType == SERVER)
+									if (monsterclicked > 0 && localPlayerNetworkType == NetworkType::SERVER)
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]);

@@ -505,7 +505,7 @@ void deinitGame()
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 		printlog("disconnected from server.\n");
 	}
-	else if (localPlayerNetworkType == SERVER)
+	else if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (x = 1; x < MAXPLAYERS; x++)
 		{
@@ -534,7 +534,7 @@ void deinitGame()
 		{
 			clientHandleMessages();
 		}
-		else if ( localPlayerNetworkType == SERVER )
+		else if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			serverHandleMessages();
 		}
@@ -636,7 +636,7 @@ void deinitGame()
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
-	else if (localPlayerNetworkType == SERVER)
+	else if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (c = 0; c < numplayers; ++c)
 		{

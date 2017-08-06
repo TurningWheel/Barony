@@ -160,7 +160,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 			{
 				newDamageIndicator(source->x, source->y);
 			}
-			else if ( playertarget > 0 && localPlayerNetworkType == SERVER )
+			else if ( playertarget > 0 && localPlayerNetworkType == NetworkType::SERVER )
 			{
 				strcpy((char*)net_packet->data, "DAMI");
 				SDLNet_Write32(source->x, &net_packet->data[4]);
@@ -180,7 +180,7 @@ void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint3
 		enemy_maxhp = maxhp;
 		strcpy( enemy_name, name );
 	}
-	else if ( player > 0 && localPlayerNetworkType == SERVER )
+	else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		strcpy((char*)net_packet->data, "ENHP");
 		SDLNet_Write32(hp, &net_packet->data[4]);

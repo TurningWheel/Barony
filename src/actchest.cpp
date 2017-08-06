@@ -476,7 +476,7 @@ void actChest(Entity* my)
 					closeRemoveCurseGUI();
 				}
 				identifygui_active = false;
-				if (chestclicked != 0 && localPlayerNetworkType == SERVER)
+				if (chestclicked != 0 && localPlayerNetworkType == NetworkType::SERVER)
 				{
 					//Send all of the items to the client.
 					strcpy((char*)net_packet->data, "CHST");  //Chest.
@@ -562,7 +562,7 @@ void actChestLid(Entity* my)
 	if ( localPlayerNetworkType != CLIENT )
 	{
 		my->skill[1] = parent->skill[1];
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( my->skill[3] != my->skill[1] )
 			{
@@ -657,7 +657,7 @@ void Entity::closeChest()
 		chest_status = 0;
 		messagePlayer(chest_opener, language[460]);
 		openedChest[chest_opener] = nullptr;
-		if (chest_opener != 0 && localPlayerNetworkType == SERVER)
+		if (chest_opener != 0 && localPlayerNetworkType == NetworkType::SERVER)
 		{
 			//Tell the client that the chest got closed.
 			strcpy((char*)net_packet->data, "CCLS");  //Chest close.
@@ -732,7 +732,7 @@ void Entity::addItemToChest(Item* item)
 	item->node->element = item;
 	item->node->deconstructor = &defaultDeconstructor;
 
-	if (chest_opener != 0 && localPlayerNetworkType == SERVER)
+	if (chest_opener != 0 && localPlayerNetworkType == NetworkType::SERVER)
 	{
 		strcpy((char*)net_packet->data, "CITM");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);

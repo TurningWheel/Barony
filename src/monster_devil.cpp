@@ -247,7 +247,7 @@ void devilDie(Entity* my)
 		list_RemoveNode(node);
 		++i;
 	}
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -291,7 +291,7 @@ void devilDie(Entity* my)
 		stats[c]->DEX += 5;
 		stats[c]->CON += 20;
 		stats[c]->INT += 5;
-		if ( localPlayerNetworkType == SERVER && c > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && c > 0 )
 		{
 			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;

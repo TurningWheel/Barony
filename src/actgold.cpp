@@ -86,7 +86,7 @@ void actGoldBag(Entity* my)
 					stats[i]->GOLD += GOLDBAG_AMOUNT;
 					if ( i != 0 )
 					{
-						if ( localPlayerNetworkType == SERVER )
+						if ( localPlayerNetworkType == NetworkType::SERVER )
 						{
 							// send the client info on the gold it picked up
 							strcpy((char*)net_packet->data, "GOLD");

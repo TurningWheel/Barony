@@ -191,7 +191,7 @@ void gameLogic(void)
 		{
 			fadefinished = true;
 		}
-		if ( localPlayerNetworkType == SERVER && introstage == 3 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && introstage == 3 )
 		{
 			// machinegun this message to clients to make sure they get it!
 			for ( c = 1; c < MAXPLAYERS; c++ )
@@ -361,7 +361,7 @@ void gameLogic(void)
 	}
 	else
 	{
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( ticks % 4 == 0 )
 			{
@@ -649,7 +649,7 @@ void gameLogic(void)
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
 					currentlevel++;
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; c++ )
 						{
@@ -802,7 +802,7 @@ void gameLogic(void)
 									newNode->element = myuid;
 									*myuid = monster->getUID();
 
-									if ( c > 0 && localPlayerNetworkType == SERVER )
+									if ( c > 0 && localPlayerNetworkType == NetworkType::SERVER )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -838,7 +838,7 @@ void gameLogic(void)
 				entity->ranbehavior = false;
 			}
 
-			if ( localPlayerNetworkType == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				// periodically remind clients of the current level
 				if ( ticks % (TICKS_PER_SECOND * 3) == 0 )
@@ -2012,7 +2012,7 @@ void pauseGame(int mode, int ignoreplayer)
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
 		return; // doesn't disable the game in localPlayerNetworkType anymore
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
@@ -2047,7 +2047,7 @@ void pauseGame(int mode, int ignoreplayer)
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 		}
 		return; // doesn't disable the game in localPlayerNetworkType anymore
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
@@ -2313,7 +2313,7 @@ int main(int argc, char** argv)
 				{
 					clientHandleMessages();
 				}
-				else if ( localPlayerNetworkType == SERVER )
+				else if ( localPlayerNetworkType == NetworkType::SERVER )
 				{
 					serverHandleMessages();
 				}
@@ -2900,7 +2900,7 @@ int main(int argc, char** argv)
 										Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
 										messagePlayerColor(clientnum, color, chatstring);
 										playSound(238, 64);
-										if ( localPlayerNetworkType == SERVER )
+										if ( localPlayerNetworkType == NetworkType::SERVER )
 										{
 											// send message to all clients
 											for ( c = 1; c < MAXPLAYERS; c++ )
@@ -3199,7 +3199,7 @@ int main(int argc, char** argv)
 					{
 						clientHandleMessages();
 					}
-					else if ( localPlayerNetworkType == SERVER )
+					else if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						serverHandleMessages();
 					}

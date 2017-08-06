@@ -90,7 +90,7 @@ void startTradingServer(Entity* entity, int player)
 			selectedShopSlot = -1;
 		}
 	}
-	else if ( localPlayerNetworkType == SERVER )
+	else if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// open shop on client
 		Stat* entitystats = entity->getStats();

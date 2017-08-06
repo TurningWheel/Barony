@@ -1139,7 +1139,7 @@ int saveGame()
 		}
 		else
 		{
-			if ( localPlayerNetworkType == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				if ( stats[player]->helmet )
 				{
@@ -1870,7 +1870,7 @@ int loadGame(int player)
 		stats[player]->ring = NULL;
 		stats[player]->mask = NULL;
 
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 0; c < 10; c++ )
 			{

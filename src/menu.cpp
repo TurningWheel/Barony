@@ -2220,7 +2220,7 @@ void handleMainMenu(bool mode)
 							// toggle flag
 							svFlags ^= power(2, i);
 
-							if ( localPlayerNetworkType == SERVER )
+							if ( localPlayerNetworkType == NetworkType::SERVER )
 							{
 								// update client flags
 								strcpy((char*)net_packet->data, "SVFL");
@@ -2251,7 +2251,7 @@ void handleMainMenu(bool mode)
 	// connect window
 	if ( connect_window )
 	{
-		if ( connect_window == SERVER )
+		if ( connect_window == NetworkType::SERVER )
 		{
 			drawDepressed(subx1 + 8, suby1 + 40, subx2 - 8, suby1 + 64);
 			ttfPrintText(ttf12, subx1 + 12, suby1 + 46, portnumber_char);
@@ -2305,7 +2305,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// communicating with clients
-	if ( localPlayerNetworkType == SERVER && mode )
+	if ( localPlayerNetworkType == NetworkType::SERVER && mode )
 	{
 		//void *newSteamID = NULL; //TODO: Bugger void pointers!
 #ifdef STEAMWORKS
@@ -3050,7 +3050,7 @@ void handleMainMenu(bool mode)
 
 #ifdef STEAMWORKS
 			int remoteIDIndex = c;
-			if ( localPlayerNetworkType == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				remoteIDIndex--;
 			}
@@ -3085,7 +3085,7 @@ void handleMainMenu(bool mode)
 				inputlen = LOBBY_CHATBOX_LENGTH - 1;
 				cursorflash = ticks;
 			}
-			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && localPlayerNetworkType == SERVER )
+			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && localPlayerNetworkType == NetworkType::SERVER )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 
@@ -3099,7 +3099,7 @@ void handleMainMenu(bool mode)
 
 			// server flags
 			int i;
-			if ( localPlayerNetworkType == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 				{
@@ -3144,7 +3144,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 			if ( !directConnect )
 			{
-				if ( localPlayerNetworkType == SERVER )
+				if ( localPlayerNetworkType == NetworkType::SERVER )
 				{
 					for ( i = 0; i < 3; i++ )
 					{
@@ -3218,7 +3218,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 		if ( !directConnect )
 		{
-			if ( localPlayerNetworkType == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				for ( i = 0; i < 3; i++ )
 				{
@@ -3264,7 +3264,7 @@ void handleMainMenu(bool mode)
 							// update the lobby name on our end
 							snprintf( currentLobbyName, 31, "%s", lobbyName );
 						}
-						else if ( localPlayerNetworkType == SERVER )
+						else if ( localPlayerNetworkType == NetworkType::SERVER )
 						{
 							// update the backend's copy of the lobby name
 							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
@@ -3353,7 +3353,7 @@ void handleMainMenu(bool mode)
 				net_packet->address.port = net_server.port;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			else if ( localPlayerNetworkType == SERVER )
+			else if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				int i;
 				for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3391,7 +3391,7 @@ void handleMainMenu(bool mode)
 		}
 
 		// handle keepalive timeouts (lobby)
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			int i;
 			for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3444,7 +3444,7 @@ void handleMainMenu(bool mode)
 				net_packet->address.port = net_server.port;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			else if ( localPlayerNetworkType == SERVER )
+			else if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				int i;
 				for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3873,7 +3873,7 @@ void handleMainMenu(bool mode)
 											newNode->element = myuid;
 											*myuid = monster->getUID();
 
-											if ( c > 0 && localPlayerNetworkType == SERVER )
+											if ( c > 0 && localPlayerNetworkType == NetworkType::SERVER )
 											{
 												strcpy((char*)net_packet->data, "LEAD");
 												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -4115,7 +4115,7 @@ void handleMainMenu(bool mode)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				printlog("disconnected from server.\n");
 			}
-			else if (localPlayerNetworkType == SERVER)
+			else if (localPlayerNetworkType == NetworkType::SERVER)
 			{
 				for (x = 1; x < MAXPLAYERS; x++)
 				{
@@ -5176,7 +5176,7 @@ void openFailedConnectionWindow(int mode)
 			strcpy(subtext, language[1439]);
 			strcat(subtext, SDLNet_GetError());
 		}
-		else if ( mode == SERVER )
+		else if ( mode == NetworkType::SERVER )
 		{
 			strcpy(subtext, language[1440]);
 			strcat(subtext, SDLNet_GetError());
@@ -5192,7 +5192,7 @@ void openFailedConnectionWindow(int mode)
 		{
 			strcpy(subtext, language[1441]);
 		}
-		else if ( mode == SERVER )
+		else if ( mode == NetworkType::SERVER )
 		{
 			strcpy(subtext, language[1442]);
 		}
@@ -5233,7 +5233,7 @@ void openFailedConnectionWindow(int mode)
 		{
 			button->action = &buttonJoinMultiplayer;
 		}
-		else if ( mode == SERVER )
+		else if ( mode == NetworkType::SERVER )
 		{
 			button->action = &buttonHostMultiplayer;
 		}
@@ -5248,7 +5248,7 @@ void openFailedConnectionWindow(int mode)
 		{
 			button->action = &openSteamLobbyWaitWindow;
 		}
-		else if ( mode == SERVER )
+		else if ( mode == NetworkType::SERVER )
 		{
 			button->action = &buttonCloseSubwindow;
 		}
@@ -5666,7 +5666,7 @@ void buttonContinue(button_t* my)
 		{
 			buttonStartSingleplayer(my);
 		}
-		else if ( multiplayerselect == SERVER )
+		else if ( multiplayerselect == NetworkType::SERVER )
 		{
 #ifdef STEAMWORKS
 			directConnect = false;
@@ -5757,7 +5757,7 @@ void buttonHostMultiplayer(button_t* my)
 		deleteallbuttons = true;
 
 		// open port window
-		connect_window = SERVER;
+		connect_window = NetworkType::SERVER;
 		subwindow = 1;
 		subx1 = xres / 2 - 128;
 		subx2 = xres / 2 + 128;
@@ -5907,7 +5907,7 @@ void buttonHostLobby(button_t* my)
 		if (SDLNet_ResolveHost(&net_server, NULL, portnumber) == -1)
 		{
 			printlog( "warning: resolving host at localhost:%d has failed.\n", portnumber);
-			openFailedConnectionWindow(SERVER);
+			openFailedConnectionWindow(NetworkType::SERVER);
 			return;
 		}
 
@@ -5915,13 +5915,13 @@ void buttonHostLobby(button_t* my)
 		if (!(net_sock = SDLNet_UDP_Open(portnumber)))
 		{
 			printlog( "warning: SDLNet_UDP_open has failed: %s\n", SDLNet_GetError());
-			openFailedConnectionWindow(SERVER);
+			openFailedConnectionWindow(NetworkType::SERVER);
 			return;
 		}
 		if (!(net_tcpsock = SDLNet_TCP_Open(&net_server)))
 		{
 			printlog( "warning: SDLNet_TCP_open has failed: %s\n", SDLNet_GetError());
-			openFailedConnectionWindow(SERVER);
+			openFailedConnectionWindow(NetworkType::SERVER);
 			return;
 		}
 		tcpset = SDLNet_AllocSocketSet(4);
@@ -5940,7 +5940,7 @@ void buttonHostLobby(button_t* my)
 	if (!(net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
 	{
 		printlog( "warning: packet allocation failed: %s\n", SDLNet_GetError());
-		openFailedConnectionWindow(SERVER);
+		openFailedConnectionWindow(NetworkType::SERVER);
 		return;
 	}
 
@@ -5954,7 +5954,7 @@ void buttonHostLobby(button_t* my)
 	}
 
 	// open lobby window
-	localPlayerNetworkType = SERVER;
+	localPlayerNetworkType = NetworkType::SERVER;
 	lobby_window = true;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
@@ -6220,7 +6220,7 @@ void buttonStartServer(button_t* my)
 	// close window
 	buttonCloseSubwindow(my);
 
-	localPlayerNetworkType = SERVER;
+	localPlayerNetworkType = NetworkType::SERVER;
 	intro = true;
 	introstage = 3;
 	numplayers = 0;
@@ -6280,7 +6280,7 @@ void buttonDisconnect(button_t* my)
 {
 	int c;
 
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// send disconnect message to clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -6860,7 +6860,7 @@ void buttonLoadGame(button_t* button)
 	{
 		directConnect = false;
 #ifdef STEAMWORKS
-		if ( mul == SERVER )
+		if ( mul == NetworkType::SERVER )
 		{
 			buttonHostMultiplayer(button);
 		}

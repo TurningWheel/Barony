@@ -894,7 +894,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->flags[INVISIBLE] = false;
 						}
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -986,7 +986,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = true;
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -1037,7 +1037,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->cloak);
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )

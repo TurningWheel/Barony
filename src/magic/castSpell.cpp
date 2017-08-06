@@ -910,7 +910,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 			//printlog( "Client is: %d\n", target_client);
-			if (localPlayerNetworkType == SERVER && target_client != 0)
+			if (localPlayerNetworkType == NetworkType::SERVER && target_client != 0)
 			{
 				strcpy( (char*)net_packet->data, "CHAN" );
 				net_packet->data[4] = clientnum;

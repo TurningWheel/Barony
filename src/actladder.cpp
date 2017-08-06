@@ -322,7 +322,7 @@ void actWinningPortal(Entity* my)
 					}
 				}
 				victory = PORTAL_VICTORYTYPE;
-				if ( localPlayerNetworkType == SERVER )
+				if ( localPlayerNetworkType == NetworkType::SERVER )
 				{
 					for ( c = 0; c < MAXPLAYERS; c++ )
 					{

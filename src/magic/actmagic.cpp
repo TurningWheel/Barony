@@ -266,7 +266,7 @@ void actMagiclightBall(Entity* my)
 				player = i;
 			}
 		}
-		if (player > -1 && localPlayerNetworkType == SERVER)
+		if (player > -1 && localPlayerNetworkType == NetworkType::SERVER)
 		{
 			strcpy( (char*)net_packet->data, "UNCH");
 			net_packet->data[4] = player;
@@ -317,7 +317,7 @@ void actMagiclightBall(Entity* my)
 								player = i;
 							}
 						}
-						if (player > -1 && localPlayerNetworkType == SERVER)
+						if (player > -1 && localPlayerNetworkType == NetworkType::SERVER)
 						{
 							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = player;
@@ -601,7 +601,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			my->light = NULL;
 		}
 
-		if (clientnum == 0 || localPlayerNetworkType == SERVER)
+		if (clientnum == 0 || localPlayerNetworkType == NetworkType::SERVER)
 		{
 			//Handle the missile's life.
 			MAGIC_LIFE++;
@@ -848,7 +848,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								playSoundEntity(hit.entity, 76, 64);
 							}
 						}
-						if (player > 0 && localPlayerNetworkType == SERVER)
+						if (player > 0 && localPlayerNetworkType == NetworkType::SERVER)
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
@@ -2160,7 +2160,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 {
 	int c;
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{

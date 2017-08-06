@@ -76,7 +76,7 @@ void consoleCommand(char* command_str)
 			svFlags = atoi(&command_str[9]);
 			messagePlayer(clientnum, language[276]);
 
-			if ( localPlayerNetworkType == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				// update client flags
 				strcpy((char*)net_packet->data, "SVFL");
@@ -149,7 +149,7 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/kick ", 6) )
 	{
 		strcpy(name, command_str + 6);
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{

@@ -600,7 +600,7 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( my->getUID() % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3) )
 			{
@@ -751,7 +751,7 @@ void actPlayer(Entity* my)
 	// invisibility
 	if ( !intro )
 	{
-		if ( PLAYER_NUM == clientnum || localPlayerNetworkType == SERVER )
+		if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( stats[PLAYER_NUM]->ring != nullptr )
 				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
@@ -824,7 +824,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == SERVER )
+	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		bool prevlevitating = false;
 		if ( localPlayerNetworkType != CLIENT )
@@ -898,7 +898,7 @@ void actPlayer(Entity* my)
 			waterwalkingboots = true;
 		}
 	bool swimming = false;
-	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == SERVER )
+	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		if ( !levitating && !waterwalkingboots )
 		{
@@ -1140,7 +1140,7 @@ void actPlayer(Entity* my)
 	// torch light
 	if ( !intro )
 	{
-		if ( localPlayerNetworkType == SERVER || PLAYER_NUM == clientnum )
+		if ( localPlayerNetworkType == NetworkType::SERVER || PLAYER_NUM == clientnum )
 		{
 			if ( stats[PLAYER_NUM]->shield != nullptr )
 			{
@@ -1207,7 +1207,7 @@ void actPlayer(Entity* my)
 	}
 
 	// server controls players primarily
-	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == SERVER )
+	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// set head model
 		if ( stats[PLAYER_NUM]->appearance < 5 )
@@ -1854,7 +1854,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM != clientnum && localPlayerNetworkType == SERVER )
+	if ( PLAYER_NUM != clientnum && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// PLAYER_VEL* skills updated by messages sent to server from client
 
@@ -2170,7 +2170,7 @@ void actPlayer(Entity* my)
 					{
 						entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2225,7 +2225,7 @@ void actPlayer(Entity* my)
 							entity->sprite = 156 + stats[PLAYER_NUM]->sex;
 						}
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2285,7 +2285,7 @@ void actPlayer(Entity* my)
 							entity->sprite = 158 + stats[PLAYER_NUM]->sex;
 						}
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2350,7 +2350,7 @@ void actPlayer(Entity* my)
 					{
 						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != nullptr);
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2438,7 +2438,7 @@ void actPlayer(Entity* my)
 						}
 					}
 					entity->sprite += 2 * (stats[PLAYER_NUM]->shield != nullptr);
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2505,7 +2505,7 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2612,7 +2612,7 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = true;
 						}
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2687,7 +2687,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2728,7 +2728,7 @@ void actPlayer(Entity* my)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2813,7 +2813,7 @@ void actPlayer(Entity* my)
 							entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
 						}
 					}
-					if ( localPlayerNetworkType == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )

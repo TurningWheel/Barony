@@ -45,7 +45,7 @@ FMOD_CHANNEL* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( localPlayerNetworkType == SERVER )
+	else if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		if ( client_disconnected[player] )
 		{
@@ -100,7 +100,7 @@ FMOD_CHANNEL* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		return NULL;
 	}
 
-	if (localPlayerNetworkType == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
@@ -622,7 +622,7 @@ OPENAL_SOUND* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( localPlayerNetworkType == SERVER )
+	else if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		if ( client_disconnected[player] )
 		{
@@ -677,7 +677,7 @@ OPENAL_SOUND* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		return NULL;
 	}
 
-	if (localPlayerNetworkType == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
@@ -1173,7 +1173,7 @@ void* playSoundPos(real_t x, real_t y, Uint32 snd, int vol)
 		return nullptr;
 	}
 
-	if (localPlayerNetworkType == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
@@ -1231,7 +1231,7 @@ void* playSoundPlayer(int player, Uint32 snd, int vol)
 	{
 		return playSound(snd, vol);
 	}
-	else if ( localPlayerNetworkType == SERVER )
+	else if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		if ( client_disconnected[player] )
 		{

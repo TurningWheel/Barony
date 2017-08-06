@@ -238,7 +238,7 @@ void lichDie(Entity* my)
 		playSoundPlayer(c, 153, 128);
 		steamAchievementClient(c, "BARONY_ACH_LICH_HUNTER");
 	}
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{

@@ -27,7 +27,7 @@ void spell_magicMap(int player)
 		return;
 	}
 
-	if ( localPlayerNetworkType == SERVER && player > 0 )
+	if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 	{
 		//Tell the client to map the magic.
 		strcpy((char*)net_packet->data, "MMAP");

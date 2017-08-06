@@ -258,7 +258,7 @@ void actDoor(Entity* my)
 		}
 
 		// update for clients
-		if ( localPlayerNetworkType == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( DOOR_OLDSTATUS != DOOR_STATUS )
 			{

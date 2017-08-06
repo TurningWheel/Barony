@@ -193,7 +193,7 @@ void actFountain(Entity* my)
 							{
 								stats[i]->mask->beatitude++;
 							}
-							if ( localPlayerNetworkType == SERVER && i > 0 )
+							if ( localPlayerNetworkType == NetworkType::SERVER && i > 0 )
 							{
 								strcpy((char*)net_packet->data, "BLES");
 								net_packet->address.host = net_clients[i - 1].host;

@@ -1005,7 +1005,7 @@ void equipItem(Item* item, Item** slot, int player)
 				}
 			}
 		}
-		if ( localPlayerNetworkType == SERVER && player > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			if ( *slot != NULL )
 			{
@@ -1069,7 +1069,7 @@ void equipItem(Item* item, Item** slot, int player)
 				}
 			}
 		}
-		if ( player != 0 && localPlayerNetworkType == SERVER )
+		if ( player != 0 && localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( item->node )
 			{
@@ -1655,7 +1655,7 @@ Item* itemPickup(int player, Item* item)
 	Item* item2;
 	node_t* node;
 
-	if ( player != 0 && localPlayerNetworkType == SERVER )
+	if ( player != 0 && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
@@ -2229,7 +2229,7 @@ void Item::apply(int player, Entity* entity)
 							{
 								messagePlayer(player, language[1104]);
 							}
-							if ( player > 0 && localPlayerNetworkType == SERVER )
+							if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
@@ -2288,7 +2288,7 @@ void Item::apply(int player, Entity* entity)
 							{
 								messagePlayer(player, language[1104]);
 							}
-							if ( player > 0 && localPlayerNetworkType == SERVER )
+							if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;

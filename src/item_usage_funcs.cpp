@@ -798,7 +798,7 @@ void item_PotionHealing(Item* item, Entity* entity)
 	{
 		stats->EFFECTS[EFF_BLEEDING] = false;
 		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
-		if ( localPlayerNetworkType == SERVER && player > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			serverUpdateEffects(player);
 		}
@@ -874,7 +874,7 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	{
 		stats->EFFECTS[EFF_BLEEDING] = false;
 		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
-		if ( localPlayerNetworkType == SERVER && player > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			serverUpdateEffects(player);
 		}
@@ -1153,7 +1153,7 @@ void item_ScrollLight(Item* item, int player)
 	lightSphereShadow(players[player]->entity->x / 16, players[player]->entity->y / 16, 8, 150);
 
 	// send new light info to clients
-	if (localPlayerNetworkType == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (c = 1; c < MAXPLAYERS; c++)
 		{
@@ -1566,7 +1566,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 	}
 
 	// this is a CLIENT function
-	if (localPlayerNetworkType == SERVER && player > 0)
+	if (localPlayerNetworkType == NetworkType::SERVER && player > 0)
 	{
 		return;
 	}
@@ -1990,7 +1990,7 @@ void item_ScrollSummon(Item* item, int player)
 				*myuid = monster->getUID();
 
 				// update client followers
-				if ( player > 0 && localPlayerNetworkType == SERVER )
+				if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 				{
 					strcpy((char*)net_packet->data, "LEAD");
 					SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);

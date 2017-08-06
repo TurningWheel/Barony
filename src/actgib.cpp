@@ -208,7 +208,7 @@ void serverSpawnGibForClient(Entity* gib)
 	{
 		return;
 	}
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{

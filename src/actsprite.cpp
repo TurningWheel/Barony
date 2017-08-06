@@ -68,7 +68,7 @@ void actSprite(Entity* my)
 Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 {
 	int c;
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -113,7 +113,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 {
 	int c, i;
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -207,7 +207,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 {
 	int c;
 
-	if ( localPlayerNetworkType == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
