@@ -640,7 +640,7 @@ void steamAchievement(const char* achName)
 
 void steamAchievementClient(int player, const char* achName)
 {
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -1025,7 +1025,7 @@ void steam_OnLobbyEntered( void* pCallback, bool bIOFailure )
 		// lobby join failed
 		connectingToLobby = false;
 		connectingToLobbyWindow = false;
-		openFailedConnectionWindow(CLIENT);
+		openFailedConnectionWindow(NetworkType::CLIENT);
 		return;
 	}
 

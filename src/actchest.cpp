@@ -58,7 +58,7 @@ void actChest(Entity* my)
 		playSoundEntityLocal( my, 149, 64 );
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -559,7 +559,7 @@ void actChestLid(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		my->skill[1] = parent->skill[1];
 		if ( localPlayerNetworkType == NetworkType::SERVER )
@@ -589,7 +589,7 @@ void actChestLid(Entity* my)
 		if ( !my->skill[0] )
 		{
 			my->skill[0] = 1;
-			if ( localPlayerNetworkType != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				playSoundEntity(my, 21, 64);
 			}
@@ -612,7 +612,7 @@ void actChestLid(Entity* my)
 		if ( my->skill[0] )
 		{
 			my->skill[0] = 0;
-			if ( localPlayerNetworkType != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				playSoundEntity(my, 22, 64);
 			}
@@ -633,7 +633,7 @@ void actChestLid(Entity* my)
 
 void Entity::closeChest()
 {
-	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		//If client, tell server the chest got closed.
 		if (openedChest[clientnum] != NULL)
@@ -691,7 +691,7 @@ void Entity::addItemToChest(Item* item)
 		return;
 	}
 
-	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		//Tell the server.
 		strcpy( (char*)net_packet->data, "CITM" );
@@ -838,7 +838,7 @@ Item* Entity::getItemFromChest(Item* item, bool all, bool getInfoOnly)
 		return NULL;
 	}
 
-	if ( clientnum != 0 && localPlayerNetworkType == CLIENT)
+	if ( clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		if (!item || !item->node)
 		{
@@ -942,7 +942,7 @@ void closeChestClientside()
 		return;
 	}
 
-	if (localPlayerNetworkType != CLIENT || clientnum == 0)
+	if (localPlayerNetworkType != NetworkType::CLIENT || clientnum == 0)
 	{
 		return;    //Only called for the client.
 	}

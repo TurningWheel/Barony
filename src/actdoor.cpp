@@ -66,7 +66,7 @@ void actDoor(Entity* my)
 	}
 	else
 	{
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			// burning
 			if ( my->flags[BURNING] )

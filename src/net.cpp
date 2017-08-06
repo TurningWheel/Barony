@@ -114,7 +114,7 @@ int sendPacketSafe(UDPsocket sock, int channel, UDPpacket* packet, int hostnum)
 	packetsend->packet->address.host = packet->address.host;
 	packetsend->packet->address.port = packet->address.port;
 	strcpy((char*)packetsend->packet->data, "SAFE");
-	if ( receivedclientnum || localPlayerNetworkType != CLIENT )
+	if ( receivedclientnum || localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		packetsend->packet->data[4] = clientnum;
 	}
@@ -3199,7 +3199,7 @@ bool handleSafePacket()
 			j = net_packet->data[4];
 			net_packet->data[4] = clientnum;
 			strcpy((char*)net_packet->data, "GOTP");
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -3211,7 +3211,7 @@ bool handleSafePacket()
 			}
 			c = net_packet->len;
 			net_packet->len = 9;
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				sendPacket(net_sock, -1, net_packet, 0);
 			}

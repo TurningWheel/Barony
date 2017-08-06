@@ -596,7 +596,7 @@ void drawStatus()
 							}
 							else
 							{
-								if ( localPlayerNetworkType == CLIENT )
+								if ( localPlayerNetworkType == NetworkType::CLIENT )
 								{
 									strcpy((char*)net_packet->data, "EQUI");
 									SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -906,7 +906,7 @@ void drawStatus()
 			}
 			else
 			{
-				if ( localPlayerNetworkType == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					strcpy((char*)net_packet->data, "EQUI");
 					SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);

@@ -32,14 +32,14 @@ void initGnome(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 220;
 		MONSTER_SPOTVAR = 5;
 		MONSTER_IDLESND = 217;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -293,7 +293,7 @@ void initGnome(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 
-	if ( localPlayerNetworkType == CLIENT || MONSTER_INIT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT || MONSTER_INIT )
 	{
 		return;
 	}
@@ -374,7 +374,7 @@ void actGnomeLimb(Entity* my)
 		my->light = NULL;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -478,7 +478,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	bool wearingring = false;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->ring != NULL )
 			if ( myStats->ring->type == RING_INVISIBILITY )
@@ -876,7 +876,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			// weapon
 			case 7:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -970,7 +970,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// shield
 			case 8:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->shield == NULL )
 					{
@@ -1026,7 +1026,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// cloak
 			case 9:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{

@@ -138,7 +138,7 @@ void clickDescription(int player, Entity* entity)
 
 	if ( entity != NULL )
 	{
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			if ( (stat = entity->getStats()) == NULL )
 			{

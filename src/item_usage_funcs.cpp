@@ -60,7 +60,7 @@ void item_PotionWater(Item* item, Entity* entity)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		// play drink sound
 		playSoundEntity(entity, 52, 64);
@@ -157,7 +157,7 @@ void item_PotionBooze(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -210,7 +210,7 @@ void item_PotionJuice(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -263,11 +263,11 @@ void item_PotionSickness(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT || player == 0 )
+	if ( localPlayerNetworkType == NetworkType::CLIENT || player == 0 )
 	{
 		camera_shakex += .1;
 		camera_shakey += 10;
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			consumeItem(item);
 			return;
@@ -323,7 +323,7 @@ void item_PotionConfusion(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -384,7 +384,7 @@ void item_PotionCureAilment(Item* item, Entity* entity)
 		players[clientnum]->entity->flags[BURNING] = false;
 		serverUpdateEntityFlag(players[clientnum]->entity, BURNING);
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -439,7 +439,7 @@ void item_PotionBlindness(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -490,7 +490,7 @@ void item_PotionInvisibility(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -541,7 +541,7 @@ void item_PotionLevitation(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -592,7 +592,7 @@ void item_PotionSpeed(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -656,11 +656,11 @@ void item_PotionAcid(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT || player == 0 )
+	if ( localPlayerNetworkType == NetworkType::CLIENT || player == 0 )
 	{
 		camera_shakex += .1;
 		camera_shakey += 10;
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			consumeItem(item);
 			return;
@@ -714,7 +714,7 @@ void item_PotionParalysis(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -769,7 +769,7 @@ void item_PotionHealing(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -845,7 +845,7 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -921,7 +921,7 @@ void item_PotionRestoreMagic(Item* item, Entity* entity)
 		}
 		return;
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -1131,7 +1131,7 @@ void item_ScrollLight(Item* item, int player)
 		return;
 	}
 
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		return;
 	}
@@ -1443,7 +1443,7 @@ void item_ScrollRemoveCurse(Item* item, int player)
 
 void item_ScrollFire(Item* item, int player)
 {
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		return;
 	}
@@ -1502,7 +1502,7 @@ void item_ScrollFood(Item* item, int player)
 		return;
 	}
 
-	// this is a CLIENT function
+	// this is a NetworkType::CLIENT function
 	if (player != clientnum)
 	{
 		return;
@@ -1565,7 +1565,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 		return;
 	}
 
-	// this is a CLIENT function
+	// this is a NetworkType::CLIENT function
 	if (localPlayerNetworkType == NetworkType::SERVER && player > 0)
 	{
 		return;
@@ -1806,7 +1806,7 @@ void item_ScrollTeleportation(Item* item, int player)
 	{
 		return;
 	}
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		return;
 	}
@@ -1842,7 +1842,7 @@ void item_ScrollSummon(Item* item, int player)
 	{
 		return;
 	}
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		return;
 	}
@@ -2043,7 +2043,7 @@ void item_ToolTowel(Item* item, int player)
 	{
 		messagePlayer(player, language[883]);
 	}
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		stats[player]->EFFECTS[EFF_GREASY] = false;
 		stats[player]->EFFECTS[EFF_MESSY] = false;
@@ -2057,7 +2057,7 @@ void item_ToolTowel(Item* item, int player)
 			messagePlayer(player, language[884]);
 			messagePlayer(player, language[885]);
 		}
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			stats[player]->EFFECTS[EFF_BLEEDING] = false;
 			stats[player]->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
@@ -2065,7 +2065,7 @@ void item_ToolTowel(Item* item, int player)
 		consumeItem(item);
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		serverUpdateEffects(player);
 	}
@@ -2073,7 +2073,7 @@ void item_ToolTowel(Item* item, int player)
 
 void item_ToolTinOpener(Item* item, int player)
 {
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		return;
 	}
@@ -2090,7 +2090,7 @@ void item_ToolMirror(Item* item, int player)
 
 	if (item->beatitude > 0 && !stats[player]->EFFECTS[EFF_GREASY])
 	{
-		if (localPlayerNetworkType != CLIENT)
+		if (localPlayerNetworkType != NetworkType::CLIENT)
 		{
 			players[player]->entity->teleportRandom();
 		}
@@ -2202,7 +2202,7 @@ void item_ToolBeartrap(Item* item, int player)
 {
 	Entity* entity;
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -2237,7 +2237,7 @@ void item_ToolBeartrap(Item* item, int player)
 		{
 			messagePlayer(player, language[905]);
 		}
-		if (localPlayerNetworkType != CLIENT)
+		if (localPlayerNetworkType != NetworkType::CLIENT)
 		{
 			playSoundEntity(players[player]->entity, 76, 64);
 		}
@@ -2301,7 +2301,7 @@ void item_Food(Item* item, int player)
 		}
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;
@@ -2468,7 +2468,7 @@ void item_FoodTin(Item* item, int player)
 		conductVegetarian = false;
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		consumeItem(item);
 		return;

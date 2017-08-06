@@ -338,7 +338,7 @@ void removecurseGUIRemoveCurse(Item* item)
 	item->beatitude = 0; //0 = uncursed. > 0 = blessed.
 	messagePlayer(clientnum, language[348], item->description());
 	closeRemoveCurseGUI();
-	if ( localPlayerNetworkType == CLIENT && itemIsEquipped(item, clientnum) )
+	if ( localPlayerNetworkType == NetworkType::CLIENT && itemIsEquipped(item, clientnum) )
 	{
 		// the client needs to inform the server that their equipment was uncursed.
 		int armornum = 0;

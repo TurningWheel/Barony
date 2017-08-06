@@ -86,7 +86,7 @@ void actMagicTrap(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -148,7 +148,7 @@ void actMagiclightBall(Entity* my)
 
 	my->skill[2] = -10; // so the client sets the behavior of this entity
 
-	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		if ( my->light != NULL )
 		{
@@ -2148,7 +2148,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
 	entity->behavior = &actMagicParticle;
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}
@@ -2199,7 +2199,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			entity_uids--;
 		}

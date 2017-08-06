@@ -112,7 +112,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	}
 	if ( entlist == map.entities )
 	{
-		if ( localPlayerNetworkType != CLIENT || loading )
+		if ( localPlayerNetworkType != NetworkType::CLIENT || loading )
 		{
 			uid = entity_uids;
 			entity_uids++;
@@ -1294,7 +1294,7 @@ void Entity::drainMP(int amount)
 			}
 		}
 	}
-	else if (clientnum != 0 && localPlayerNetworkType == CLIENT)
+	else if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		if (this == players[clientnum]->entity)
 		{
@@ -2745,7 +2745,7 @@ void Entity::attack(int pose, int charge)
 		player = -1;    // not a player
 	}
 
-	if (localPlayerNetworkType != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		// animation
 		if (player >= 0)

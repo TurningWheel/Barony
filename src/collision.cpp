@@ -351,7 +351,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 		{
 			isMonster = true;
 		}
-	if ( isMonster && localPlayerNetworkType == CLIENT )
+	if ( isMonster && localPlayerNetworkType == NetworkType::CLIENT )
 		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
 		{
 			levitating = true;
@@ -428,7 +428,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				continue;
 			}
 		}
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			// fixes bug where clients can't move through humans
 			if ( (entity->sprite >= 113 && entity->sprite < 118) ||
@@ -460,7 +460,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 				hit.mapx = entity->x / 16;
 				hit.mapy = entity->y / 16;
 				hit.entity = entity;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( my->flags[BURNING] && !hit.entity->flags[BURNING] && hit.entity->flags[BURNABLE] )
 					{

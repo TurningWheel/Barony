@@ -59,13 +59,13 @@ void actSink(Entity* my)
 		entity->vel_z = .25;
 		entity->fskill[3] = 0.03;
 
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			my->skill[2]--;
 		}
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}

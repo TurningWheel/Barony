@@ -137,7 +137,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 	entity->skill[5] = nummonsters;
 
 	Stat* myStats = NULL;
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		// Need to give the entity its list stuff.
 		// create an empty first node for traversal purposes
@@ -161,7 +161,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 	}
 
 	// Find a free tile next to the source and then spawn it there.
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( entityInsideSomething(entity) )
 		{
@@ -252,7 +252,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->focalz = limbs[GOBLIN][0][2]; // -1.75
 				break;
 			case SLIME:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					myStats->LVL = 7;
 				}
@@ -497,7 +497,7 @@ void actMonster(Entity* my)
 
 	// this is mostly a NetworkType::SERVER function.
 	// however, there is a small part for clients:
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( !MONSTER_INIT && my->sprite >= 100 )
 		{
@@ -1151,7 +1151,7 @@ void actMonster(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		my->effectTimes();
 	}

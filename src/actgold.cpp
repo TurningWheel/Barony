@@ -36,7 +36,7 @@ void actGoldBag(Entity* my)
 
 	if ( my->flags[INVISIBLE] )
 	{
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			node_t* node;
 			for ( node = map.entities->first; node != NULL; node = node->next )
@@ -71,7 +71,7 @@ void actGoldBag(Entity* my)
 	}
 
 	// pick up gold
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{

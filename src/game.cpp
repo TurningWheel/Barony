@@ -397,7 +397,7 @@ void gameLogic(void)
 				}
 			}
 		}
-		if ( localPlayerNetworkType != CLIENT )   // server/singleplayer code
+		if ( localPlayerNetworkType != NetworkType::CLIENT )   // server/singleplayer code
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -475,7 +475,7 @@ void gameLogic(void)
 												entity->yaw = (rand() % 360) * PI / 180.0;
 												entity->pitch = (rand() % 360) * PI / 180.0;
 												entity->roll = (rand() % 360) * PI / 180.0;
-												if ( localPlayerNetworkType != CLIENT )
+												if ( localPlayerNetworkType != NetworkType::CLIENT )
 												{
 													entity_uids--;
 												}
@@ -1023,10 +1023,10 @@ void gameLogic(void)
 				steamAchievement("BARONY_ACH_HOMICIDAL_MANIAC");
 			}
 		}
-		else if ( localPlayerNetworkType == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			// keep alives
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -1179,7 +1179,7 @@ void gameLogic(void)
 												entity->yaw = (rand() % 360) * PI / 180.0;
 												entity->pitch = (rand() % 360) * PI / 180.0;
 												entity->roll = (rand() % 360) * PI / 180.0;
-												if ( localPlayerNetworkType != CLIENT )
+												if ( localPlayerNetworkType != NetworkType::CLIENT )
 												{
 													entity_uids--;
 												}
@@ -2028,7 +2028,7 @@ void pauseGame(int mode, int ignoreplayer)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
-		else if ( localPlayerNetworkType == CLIENT && ignoreplayer )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT && ignoreplayer )
 		{
 			strcpy((char*)net_packet->data, "PAUS");
 			net_packet->data[4] = clientnum;
@@ -2063,7 +2063,7 @@ void pauseGame(int mode, int ignoreplayer)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
-		else if ( localPlayerNetworkType == CLIENT && ignoreplayer )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT && ignoreplayer )
 		{
 			strcpy((char*)net_packet->data, "UNPS");
 			net_packet->data[4] = clientnum;
@@ -2309,7 +2309,7 @@ int main(int argc, char** argv)
 			if ( !intro )
 			{
 				// handle network messages
-				if ( localPlayerNetworkType == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					clientHandleMessages();
 				}
@@ -2643,7 +2643,7 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-				if ( localPlayerNetworkType == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					// make sure shop inventory is alloc'd
 					if ( !shopInv )
@@ -2671,7 +2671,7 @@ int main(int argc, char** argv)
 						closeRemoveCurseGUI();
 						if ( shopkeeper != 0 )
 						{
-							if ( localPlayerNetworkType != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								Entity* entity = uidToEntity(shopkeeper);
 								entity->skill[0] = 0;
@@ -2779,7 +2779,7 @@ int main(int argc, char** argv)
 						//What even is this code? When should it be run?
 						if ( shopkeeper != 0 )
 						{
-							if ( localPlayerNetworkType != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								Entity* entity = uidToEntity(shopkeeper);
 								entity->skill[0] = 0;
@@ -2882,7 +2882,7 @@ int main(int argc, char** argv)
 						{
 							keystatus[SDL_SCANCODE_RETURN] = 0;
 							command = false;
-							if ( localPlayerNetworkType != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								if ( command_str[0] == '/' )
 								{
@@ -3195,7 +3195,7 @@ int main(int argc, char** argv)
 				if ( !intro )
 				{
 					// handle network messages
-					if ( localPlayerNetworkType == CLIENT )
+					if ( localPlayerNetworkType == NetworkType::CLIENT )
 					{
 						clientHandleMessages();
 					}

@@ -28,14 +28,14 @@ void initScorpion(Entity* my, Stat* myStats)
 	my->flags[INVISIBLE] = false;
 
 	my->sprite = 196;
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 101;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -194,7 +194,7 @@ void actScorpionTail(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -226,7 +226,7 @@ void scorpionAnimate(Entity* my, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		Stat* myStats = my->getStats();
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

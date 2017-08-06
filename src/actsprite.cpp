@@ -102,7 +102,7 @@ Entity* spawnBang(Sint16 x, Sint16 y, Sint16 z)
 	entity->skill[1] = 4;
 	entity->skill[2] = 4;
 	playSoundEntityLocal(entity, 66, 64);
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}
@@ -171,7 +171,7 @@ Entity* spawnExplosion(Sint16 x, Sint16 y, Sint16 z)
 		entity->vel_z = (-40 + rand() % 81) / 8.f;
 		entity->skill[0] = 15 + rand() % 10;
 	}
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}
@@ -241,7 +241,7 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z)
 	entity->scalez = 0.05;
 	entity->sizex = 1;
 	entity->sizey = 1;
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}

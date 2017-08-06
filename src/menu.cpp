@@ -260,7 +260,7 @@ void navigateMainMenuItems(bool mode)
 				}
 				else
 				{
-					menuselect = 4 + (localPlayerNetworkType != CLIENT);
+					menuselect = 4 + (localPlayerNetworkType != NetworkType::CLIENT);
 				}
 			}
 
@@ -286,7 +286,7 @@ void navigateMainMenuItems(bool mode)
 			}
 			else
 			{
-				if (menuselect > 4 + ( localPlayerNetworkType != CLIENT))
+				if (menuselect > 4 + ( localPlayerNetworkType != NetworkType::CLIENT))
 				{
 					menuselect = 1;
 				}
@@ -846,7 +846,7 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf16, 50, yres / 4 + 128, endgameText);
 				}
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( ((omousex >= 50 && omousex < 50 + strlen(language[1312]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
 					{
@@ -920,10 +920,10 @@ void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
 					}
 				}
-				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (localPlayerNetworkType != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (localPlayerNetworkType != CLIENT)) || (menuselect == 4 + (localPlayerNetworkType != CLIENT))) && subwindow == 0 && introstage == 1 )
+				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (localPlayerNetworkType != NetworkType::CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (localPlayerNetworkType != NetworkType::CLIENT)) || (menuselect == 4 + (localPlayerNetworkType != NetworkType::CLIENT))) && subwindow == 0 && introstage == 1 )
 				{
-					menuselect = 4 + (localPlayerNetworkType != CLIENT);
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != CLIENT), colorGray, language[1313]);
+					menuselect = 4 + (localPlayerNetworkType != NetworkType::CLIENT);
+					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != NetworkType::CLIENT), colorGray, language[1313]);
 					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -993,7 +993,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != CLIENT), language[1313]);
+					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != NetworkType::CLIENT), language[1313]);
 				}
 			}
 		}
@@ -2208,7 +2208,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					current_y = server_flags_start_y;
 					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
@@ -2271,7 +2271,7 @@ void handleMainMenu(bool mode)
 				ttfPrintText(ttf12, subx1 + 12 + x, suby1 + 46, "_");
 			}
 		}
-		else if ( connect_window == CLIENT )
+		else if ( connect_window == NetworkType::CLIENT )
 		{
 			drawDepressed(subx1 + 8, suby1 + 40, subx2 - 8, suby1 + 64);
 			if ( !broadcast )
@@ -2618,7 +2618,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// communicating with server
-	if ( localPlayerNetworkType == CLIENT && mode )
+	if ( localPlayerNetworkType == NetworkType::CLIENT && mode )
 	{
 		if ( receivedclientnum == false )
 		{
@@ -2842,7 +2842,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		else if ( localPlayerNetworkType == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
@@ -3259,7 +3259,7 @@ void handleMainMenu(bool mode)
 				{
 					if ( strcmp(lobbyName, currentLobbyName) )
 					{
-						if ( localPlayerNetworkType == CLIENT )
+						if ( localPlayerNetworkType == NetworkType::CLIENT )
 						{
 							// update the lobby name on our end
 							snprintf( currentLobbyName, 31, "%s", lobbyName );
@@ -3316,7 +3316,7 @@ void handleMainMenu(bool mode)
 		if ( keystatus[SDL_SCANCODE_RETURN] && strlen(lobbyChatbox) > 0 )
 		{
 			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if ( localPlayerNetworkType != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				playSound(238, 64);
 			}
@@ -3336,7 +3336,7 @@ void handleMainMenu(bool mode)
 				}
 				snprintf((char*)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), "%s", (char*)(lobbyChatbox + LOBBY_CHATBOX_LENGTH - strlen(shortname) - 2));
 			}
-			if ( localPlayerNetworkType != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
 			}
@@ -3347,7 +3347,7 @@ void handleMainMenu(bool mode)
 			strcat((char*)(net_packet->data), msg);
 			net_packet->len = 4 + strlen(msg) + 1;
 			net_packet->data[net_packet->len - 1] = 0;
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -3423,7 +3423,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		else if ( localPlayerNetworkType == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			if ( ticks - client_keepalive[0] > TICKS_PER_SECOND * 30 )
 			{
@@ -3438,7 +3438,7 @@ void handleMainMenu(bool mode)
 			strcpy((char*)net_packet->data, "KEEPALIVE");
 			net_packet->data[9] = clientnum;
 			net_packet->len = 10;
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
@@ -3723,7 +3723,7 @@ void handleMainMenu(bool mode)
 #endif
 
 			// load dungeon
-			if ( localPlayerNetworkType != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				// stop all sounds
 #ifdef HAVE_FMOD
@@ -4105,7 +4105,7 @@ void handleMainMenu(bool mode)
 #endif
 
 			// send disconnect messages
-			if (localPlayerNetworkType == CLIENT)
+			if (localPlayerNetworkType == NetworkType::CLIENT)
 			{
 				strcpy((char*)net_packet->data, "DISCONNECT");
 				net_packet->data[10] = clientnum;
@@ -4134,7 +4134,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// clean up shopInv
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				if ( shopInv )
 				{
@@ -5171,7 +5171,7 @@ void openFailedConnectionWindow(int mode)
 	suby2 = yres / 2 + 64;
 	if ( directConnect )
 	{
-		if ( mode == CLIENT )
+		if ( mode == NetworkType::CLIENT )
 		{
 			strcpy(subtext, language[1439]);
 			strcat(subtext, SDLNet_GetError());
@@ -5188,7 +5188,7 @@ void openFailedConnectionWindow(int mode)
 	}
 	else
 	{
-		if ( mode == CLIENT )
+		if ( mode == NetworkType::CLIENT )
 		{
 			strcpy(subtext, language[1441]);
 		}
@@ -5229,7 +5229,7 @@ void openFailedConnectionWindow(int mode)
 
 	if ( directConnect )
 	{
-		if ( mode == CLIENT )
+		if ( mode == NetworkType::CLIENT )
 		{
 			button->action = &buttonJoinMultiplayer;
 		}
@@ -5244,7 +5244,7 @@ void openFailedConnectionWindow(int mode)
 	}
 	else
 	{
-		if ( mode == CLIENT )
+		if ( mode == NetworkType::CLIENT )
 		{
 			button->action = &openSteamLobbyWaitWindow;
 		}
@@ -5478,7 +5478,7 @@ void buttonEndGameConfirm(button_t* my)
 	introstage = 5; // prepares to end the current game (throws to main menu)
 	fadeout = true;
 	//Edge case for freeing channeled spells on a client.
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
@@ -5567,7 +5567,7 @@ void buttonCloseSettingsSubwindow(button_t* my)
 void buttonCloseAndEndGameConfirm(button_t* my)
 {
 	//Edge case for freeing channeled spells on a client.
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
@@ -5675,7 +5675,7 @@ void buttonContinue(button_t* my)
 #endif
 			buttonHostMultiplayer(my);
 		}
-		else if ( multiplayerselect == CLIENT )
+		else if ( multiplayerselect == NetworkType::CLIENT )
 		{
 #ifndef STEAMWORKS
 			directConnect = true;
@@ -5817,7 +5817,7 @@ void buttonJoinMultiplayer(button_t* my)
 	deleteallbuttons = true;
 
 	// open port window
-	connect_window = CLIENT;
+	connect_window = NetworkType::CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 210;
 	subx2 = xres / 2 + 210;
@@ -6062,7 +6062,7 @@ void buttonJoinLobby(button_t* my)
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	localPlayerNetworkType = CLIENT;
+	localPlayerNetworkType = NetworkType::CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -6119,7 +6119,7 @@ void buttonJoinLobby(button_t* my)
 		if (SDLNet_ResolveHost(&net_server, address, portnumber) == -1)
 		{
 			printlog( "warning: resolving host at %s:%d has failed.\n", address, portnumber);
-			openFailedConnectionWindow(CLIENT);
+			openFailedConnectionWindow(NetworkType::CLIENT);
 			return;
 		}
 
@@ -6128,13 +6128,13 @@ void buttonJoinLobby(button_t* my)
 		if (!(net_sock = SDLNet_UDP_Open(0)))
 		{
 			printlog( "warning: SDLNet_UDP_open has failed.\n");
-			openFailedConnectionWindow(CLIENT);
+			openFailedConnectionWindow(NetworkType::CLIENT);
 			return;
 		}
 		if (!(net_tcpsock = SDLNet_TCP_Open(&net_server)))
 		{
 			printlog( "warning: SDLNet_TCP_open has failed.\n");
-			openFailedConnectionWindow(CLIENT);
+			openFailedConnectionWindow(NetworkType::CLIENT);
 			return;
 		}
 		tcpset = SDLNet_AllocSocketSet(4);
@@ -6145,7 +6145,7 @@ void buttonJoinLobby(button_t* my)
 	if (!(net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
 	{
 		printlog( "warning: packet allocation failed.\n");
-		openFailedConnectionWindow(CLIENT);
+		openFailedConnectionWindow(NetworkType::CLIENT);
 		return;
 	}
 
@@ -6864,7 +6864,7 @@ void buttonLoadGame(button_t* button)
 		{
 			buttonHostMultiplayer(button);
 		}
-		else if ( mul == CLIENT )
+		else if ( mul == NetworkType::CLIENT )
 		{
 			if ( !lobbyToConnectTo )
 			{

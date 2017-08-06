@@ -45,7 +45,7 @@ void actLadder(Entity* my)
 	}
 
 	// use ladder (climb)
-	if (localPlayerNetworkType != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -114,7 +114,7 @@ void actLadderUp(Entity* my)
 	}
 
 	// use ladder
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -156,7 +156,7 @@ void actPortal(Entity* my)
 	my->yaw += 0.01; // rotate slowly on my axis
 	my->sprite = 254 + (my->ticks / 20) % 4; // animate
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -245,7 +245,7 @@ void actWinningPortal(Entity* my)
 	double dist;
 	int i, c;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( my->flags[INVISIBLE] )
 		{
@@ -292,7 +292,7 @@ void actWinningPortal(Entity* my)
 	my->yaw += 0.01; // rotate slowly on my axis
 	my->sprite = 278 + (my->ticks / 20) % 4; // animate
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}

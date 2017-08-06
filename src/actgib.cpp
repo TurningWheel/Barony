@@ -166,7 +166,7 @@ Entity* spawnGib(Entity* parentent)
 	{
 		entity->flags[INVISIBLE] = true;
 	}
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}

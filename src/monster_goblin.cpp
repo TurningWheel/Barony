@@ -32,14 +32,14 @@ void initGoblin(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 60;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 98;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -300,7 +300,7 @@ void initGoblin(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 
-	if ( localPlayerNetworkType == CLIENT || MONSTER_INIT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT || MONSTER_INIT )
 	{
 		return;
 	}
@@ -458,7 +458,7 @@ void actGoblinLimb(Entity* my)
 		my->light = NULL;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -560,7 +560,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	bool wearingring = false;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->ring != NULL )
 			if ( myStats->ring->type == RING_INVISIBILITY )
@@ -865,7 +865,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case 2:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->breastplate == NULL )
 					{
@@ -985,7 +985,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			// weapon
 			case 7:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -1079,7 +1079,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// shield
 			case 8:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->shield == NULL )
 					{
@@ -1135,7 +1135,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// cloak
 			case 9:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -1176,7 +1176,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[GOBLIN][9][2]; // -2
 				entity->pitch = my->pitch;
 				entity->roll = 0;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
 					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
@@ -1249,7 +1249,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[GOBLIN][10][2]; // .25
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{

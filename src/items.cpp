@@ -752,7 +752,7 @@ void dropItem(Item* item, int player)
 		}
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		strcpy((char*)net_packet->data, "DROP");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -980,7 +980,7 @@ void equipItem(Item* item, Item** slot, int player)
 				return;
 			}
 		}
-		if ( localPlayerNetworkType != CLIENT && !intro && !fadeout )
+		if ( localPlayerNetworkType != NetworkType::CLIENT && !intro && !fadeout )
 		{
 			if ( players[player] != nullptr && players[player]->entity != nullptr)
 			{
@@ -1056,7 +1056,7 @@ void equipItem(Item* item, Item** slot, int player)
 				return;
 			}
 		}
-		if (localPlayerNetworkType != CLIENT && !intro && !fadeout)
+		if (localPlayerNetworkType != NetworkType::CLIENT && !intro && !fadeout)
 		{
 			if (players[player] != nullptr && players[player]->entity != nullptr)
 			{
@@ -1230,7 +1230,7 @@ void useItem(Item* item, int player)
 		}
 	}
 
-	if ( localPlayerNetworkType == CLIENT && !intro )
+	if ( localPlayerNetworkType == NetworkType::CLIENT && !intro )
 	{
 		strcpy((char*)net_packet->data, "USEI");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -1567,7 +1567,7 @@ void useItem(Item* item, int player)
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 				if ( stats[player]->EFFECTS[EFF_BLEEDING] )
 				{
 					consumeItem(item);
@@ -2131,7 +2131,7 @@ int Item::sellValue(int player)
 void Item::apply(int player, Entity* entity)
 {
 	// for clients:
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		strcpy((char*)net_packet->data, "APIT");
 		SDLNet_Write32((Uint32)type, &net_packet->data[4]);

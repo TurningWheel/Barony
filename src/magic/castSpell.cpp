@@ -82,7 +82,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 						//if (spell->magic_effects)
 						//	list_RemoveNode(spell->magic_effects);
 						messagePlayer(player, language[408], spell->name);
-						if (localPlayerNetworkType == CLIENT)
+						if (localPlayerNetworkType == NetworkType::CLIENT)
 						{
 							list_RemoveNode(node);
 							strcpy( (char*)net_packet->data, "UNCH");
@@ -152,7 +152,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	Entity* result = NULL; //If the spell spawns an entity (like a magic light ball or a magic missile), it gets stored here and returned.
 #define spellcasting std::min(std::max(0,stat->PROFICIENCIES[PRO_SPELLCASTING]+statGetINT(stat)),100) //Shortcut!
 
-	if (clientnum != 0 && localPlayerNetworkType == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		strcpy( (char*)net_packet->data, "SPEL" );
 		net_packet->data[4] = clientnum;

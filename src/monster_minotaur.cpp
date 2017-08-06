@@ -33,14 +33,14 @@ void initMinotaur(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 107;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 110;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = MALE;
 		myStats->appearance = rand();
@@ -246,7 +246,7 @@ void actMinotaurLimb(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -331,7 +331,7 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
@@ -795,7 +795,7 @@ void actMinotaurCeilingBuster(Entity* my)
 			entity->flags[NOUPDATE] = true;
 			entity->flags[UNCLICKABLE] = true;
 			entity->behavior = &actMagicParticle;
-			if ( localPlayerNetworkType != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				entity_uids--;
 			}
@@ -814,7 +814,7 @@ void actMinotaurCeilingBuster(Entity* my)
 				if ( map.tiles[index] )
 				{
 					map.tiles[index] = 0;
-					if ( localPlayerNetworkType != CLIENT )
+					if ( localPlayerNetworkType != NetworkType::CLIENT )
 					{
 						playSoundEntity(my, 67, 128);
 						MONSTER_ATTACK = 1;
@@ -883,14 +883,14 @@ void actMinotaurCeilingBuster(Entity* my)
 						}
 						else if ( entity->behavior == &actDoor )
 						{
-							if ( localPlayerNetworkType != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								entity->skill[4] = 0; // destroy the door
 							}
 						}
 						else if ( entity->behavior == &actGate )
 						{
-							if ( localPlayerNetworkType != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								playSoundEntity(entity, 76, 64);
 								list_RemoveNode(entity->mynode);

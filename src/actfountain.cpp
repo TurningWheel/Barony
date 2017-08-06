@@ -36,7 +36,7 @@ void actFountain(Entity* my)
 	//messagePlayer(0, "actFountain()");
 	//TODO: Temporary mechanism testing code.
 	/*
-	if( localPlayerNetworkType != CLIENT ) {
+	if( localPlayerNetworkType != NetworkType::CLIENT ) {
 		if (my->skill[28]) {
 			//All it does is change its sprite to sink if it's powered.
 			if (my->skill[28] == 1) {
@@ -51,7 +51,7 @@ void actFountain(Entity* my)
 	//TODO: Sounds.
 
 	// spray water
-	if ( my->skill[0] > 0 || ( !my->skill[2] && localPlayerNetworkType == CLIENT ) )
+	if ( my->skill[0] > 0 || ( !my->skill[2] && localPlayerNetworkType == NetworkType::CLIENT ) )
 	{
 #define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
@@ -79,7 +79,7 @@ void actFountain(Entity* my)
 	}
 
 	// the rest of the function is server-side.
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}

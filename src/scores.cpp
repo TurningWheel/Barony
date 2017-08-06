@@ -1302,7 +1302,7 @@ int saveGame()
 	fclose(fp);
 
 	// clients don't save follower info
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return 0;
 	}

@@ -1469,7 +1469,7 @@ inline void executeItemMenuOption0(Item* item, bool is_potion_bad = false)
 		else
 		{
 			//Option 0 = equip.
-			if (localPlayerNetworkType == CLIENT)
+			if (localPlayerNetworkType == NetworkType::CLIENT)
 			{
 				strcpy((char*)net_packet->data, "EQUI");
 				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -1512,7 +1512,7 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 		if (!is_potion_bad)
 		{
 			//Option 1 = equip.
-			if (localPlayerNetworkType == CLIENT)
+			if (localPlayerNetworkType == NetworkType::CLIENT)
 			{
 				strcpy((char*)net_packet->data, "EQUI");
 				SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);

@@ -495,7 +495,7 @@ void deinitGame()
 	int c, x;
 
 	// send disconnect messages
-	if (localPlayerNetworkType == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		strcpy((char*)net_packet->data, "DISCONNECT");
 		net_packet->data[10] = clientnum;
@@ -530,7 +530,7 @@ void deinitGame()
 	while ( SDL_GetTicks() - timetoshutdown < 500 )
 	{
 		// handle network messages
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			clientHandleMessages();
 		}
@@ -617,7 +617,7 @@ void deinitGame()
 	{
 		list_FreeAll(&stats[c]->inventory);
 	}
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( shopInv )
 		{
@@ -632,7 +632,7 @@ void deinitGame()
 	{
 		list_FreeAll(&channeledSpells[0]);
 	}
-	else if (localPlayerNetworkType == CLIENT)
+	else if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}

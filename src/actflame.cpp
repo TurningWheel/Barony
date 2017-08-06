@@ -78,7 +78,7 @@ Entity* spawnFlame(Entity* parentent)
 	entity->flags[BRIGHT] = true;
 	entity->flags[UNCLICKABLE] = true;
 	entity->behavior = &actFlame;
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}

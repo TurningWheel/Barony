@@ -28,14 +28,14 @@ void initSpider(Entity* my, Stat* myStats)
 	my->flags[INVISIBLE] = false;
 
 	my->sprite = 267;
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 229;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 232;
 		MONSTER_IDLEVAR = 4;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -256,7 +256,7 @@ void actSpiderLimb(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -283,7 +283,7 @@ void spiderMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{

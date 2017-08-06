@@ -31,14 +31,14 @@ void initHuman(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand() % NUMAPPEARANCES;
@@ -302,7 +302,7 @@ void initHuman(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		my->sprite = 113; // human head model
 		return;
@@ -767,7 +767,7 @@ void actHumanLimb(Entity* my)
 		my->light = NULL;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -869,7 +869,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	bool wearingring = false;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->ring != NULL )
 			if ( myStats->ring->type == RING_INVISIBILITY )
@@ -1227,7 +1227,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			// torso
 			case 2:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->breastplate == NULL )
 					{
@@ -1268,7 +1268,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case 3:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->shoes == NULL )
 					{
@@ -1328,7 +1328,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->shoes == NULL )
 					{
@@ -1389,7 +1389,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->gloves == NULL )
 					{
@@ -1449,7 +1449,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( tempNode )
 				{
 					Entity* weapon = (Entity*)tempNode->element;
-					if ( localPlayerNetworkType == CLIENT )
+					if ( localPlayerNetworkType == NetworkType::CLIENT )
 					{
 						if ( !MONSTER_ARMBENDED )
 						{
@@ -1484,7 +1484,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// left arm
 			case 6:
 			{
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->gloves == NULL )
 					{
@@ -1562,7 +1562,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			// weapon
 			case 7:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -1660,7 +1660,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// shield
 			case 8:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->shield == NULL )
 					{
@@ -1716,7 +1716,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// cloak
 			case 9:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -1757,7 +1757,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[HUMAN][9][2]; // -1.75
 				entity->pitch = my->pitch;
 				entity->roll = 0;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
 					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
@@ -1826,7 +1826,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->focalz = limbs[HUMAN][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{

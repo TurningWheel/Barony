@@ -31,14 +31,14 @@ void initGhoul(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 142;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 146;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( localPlayerNetworkType != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -228,7 +228,7 @@ void actGhoulLimb(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -314,7 +314,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{

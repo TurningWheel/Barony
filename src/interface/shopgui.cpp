@@ -229,7 +229,7 @@ void updateShopWindow()
 	node_t* node;
 	int c;
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		Entity* entity = uidToEntity(shopkeeper);
 		if (entity)

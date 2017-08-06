@@ -208,7 +208,7 @@ void actPlayer(Entity* my)
 		return;
 	}
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( PLAYER_NUM != clientnum )
 		{
@@ -235,7 +235,7 @@ void actPlayer(Entity* my)
 		// hud weapon
 		if ( PLAYER_NUM == clientnum )
 		{
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				my->flags[UPDATENEEDED] = false;
 			}
@@ -287,7 +287,7 @@ void actPlayer(Entity* my)
 			node->element = nullptr;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
-			if ( localPlayerNetworkType == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				PLAYER_TORCH = 0;
 			}
@@ -743,7 +743,7 @@ void actPlayer(Entity* my)
 			stats[PLAYER_NUM]->mask = nullptr;
 		}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		my->effectTimes();
 	}
@@ -771,7 +771,7 @@ void actPlayer(Entity* my)
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				my->flags[BLOCKSIGHT] = false;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					for (i = 0, node = my->children.first; node != nullptr; node = node->next, i++)
 					{
@@ -800,7 +800,7 @@ void actPlayer(Entity* my)
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				my->flags[BLOCKSIGHT] = true;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					for (i = 0, node = my->children.first; node != nullptr; node = node->next, i++)
 					{
@@ -827,7 +827,7 @@ void actPlayer(Entity* my)
 	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		bool prevlevitating = false;
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			if ( (my->z >= -2.05 && my->z <= -1.95) || (my->z >= -1.55 && my->z <= -1.45) )
 			{
@@ -906,7 +906,7 @@ void actPlayer(Entity* my)
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
 			if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
-				if ( rand() % 400 == 0 && localPlayerNetworkType != CLIENT )
+				if ( rand() % 400 == 0 && localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					my->increaseSkill(PRO_SWIMMING);
 				}
@@ -924,7 +924,7 @@ void actPlayer(Entity* my)
 						playSound(136, 128);
 					}
 				}
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( !lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
@@ -1072,7 +1072,7 @@ void actPlayer(Entity* my)
 				{
 					inrange[PLAYER_NUM] = false;
 				}
-				if ( localPlayerNetworkType == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					if ( inrange[PLAYER_NUM] )
 					{
@@ -1115,7 +1115,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if (localPlayerNetworkType != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -1231,7 +1231,7 @@ void actPlayer(Entity* my)
 			my->sprite = 113; // default
 		}
 	}
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		// remove client entities that should no longer exist
 		if ( !intro )
@@ -1803,7 +1803,7 @@ void actPlayer(Entity* my)
 		}
 
 		// send movement updates to server
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			strcpy((char*)net_packet->data, "PMOV");
 			net_packet->data[4] = clientnum;
@@ -1890,7 +1890,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM != clientnum && localPlayerNetworkType == CLIENT )
+	if ( PLAYER_NUM != clientnum && localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
@@ -2149,7 +2149,7 @@ void actPlayer(Entity* my)
 		{
 			// torso
 			case 1:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->breastplate == nullptr )
 					{
@@ -2190,7 +2190,7 @@ void actPlayer(Entity* my)
 				break;
 			// right leg
 			case 2:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->shoes == nullptr )
 					{
@@ -2250,7 +2250,7 @@ void actPlayer(Entity* my)
 				break;
 			// left leg
 			case 3:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->shoes == nullptr )
 					{
@@ -2311,7 +2311,7 @@ void actPlayer(Entity* my)
 			// right arm
 			case 4:
 			{
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->gloves == nullptr )
 					{
@@ -2371,7 +2371,7 @@ void actPlayer(Entity* my)
 				if ( tempNode )
 				{
 					Entity* weapon = (Entity*)tempNode->element;
-					/*if( localPlayerNetworkType==CLIENT ) {
+					/*if( localPlayerNetworkType==NetworkType::CLIENT ) {
 						if( !PLAYER_ARMBENDED ) {
 							if( entity->skill[7]==0 )
 								entity->skill[7] = entity->sprite;
@@ -2402,7 +2402,7 @@ void actPlayer(Entity* my)
 			// left arm
 			case 5:
 			{
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->gloves == nullptr )
 					{
@@ -2480,7 +2480,7 @@ void actPlayer(Entity* my)
 			}
 			// weapon
 			case 6:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( swimming )
 					{
@@ -2589,7 +2589,7 @@ void actPlayer(Entity* my)
 				break;
 			// shield
 			case 7:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( swimming )
 					{
@@ -2676,7 +2676,7 @@ void actPlayer(Entity* my)
 				break;
 			// cloak
 			case 8:
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( stats[PLAYER_NUM]->cloak == nullptr || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -2717,7 +2717,7 @@ void actPlayer(Entity* my)
 				entity->focalz = limbs[HUMAN][9][2]; // -1.75
 				entity->pitch = my->pitch;
 				entity->roll = 0;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
 					if ( stats[PLAYER_NUM]->helmet == nullptr || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
@@ -2786,7 +2786,7 @@ void actPlayer(Entity* my)
 				entity->focalz = limbs[HUMAN][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
-				if ( localPlayerNetworkType != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					bool hasSteelHelm = false;
 					if ( stats[PLAYER_NUM]->helmet )
@@ -2894,7 +2894,7 @@ void actPlayerLimb(Entity* my)
 
 	Entity* parent = uidToEntity(my->parent);
 
-	if ( localPlayerNetworkType == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( stats[PLAYER_NUM]->HP <= 0 )
 		{
@@ -2903,7 +2903,7 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if ( localPlayerNetworkType != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -2921,7 +2921,7 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if (localPlayerNetworkType != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		return;
 	}

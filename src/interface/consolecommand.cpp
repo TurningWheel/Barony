@@ -45,7 +45,7 @@ void consoleCommand(char* command_str)
 
 	if ( !strncmp(command_str, "/ping", 5) )
 	{
-		if ( localPlayerNetworkType != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[1117], 0);
 		}
@@ -67,7 +67,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/svflags ", 9))
 	{
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[275]);
 		}
@@ -174,7 +174,7 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[280]);
 			}
 		}
-		else if ( localPlayerNetworkType == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[281]);
 		}
@@ -209,7 +209,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[284]);
 		}
@@ -320,7 +320,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[284]);
 			return;
@@ -870,7 +870,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( localPlayerNetworkType == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[284]);
 		}
@@ -940,7 +940,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if (localPlayerNetworkType == CLIENT)
+		if (localPlayerNetworkType == NetworkType::CLIENT)
 		{
 			messagePlayer(clientnum, language[284]);
 		}
