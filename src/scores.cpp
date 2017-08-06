@@ -2409,41 +2409,51 @@ Uint32 getSaveGameUniqueGameKey()
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameType()
+NetworkType getSaveGameType()
 {
-	FILE* fp;
-	int mul;
+	FILE* pSaveFile = nullptr;
+	Uint32 saveGameTypeFromFile = 0;
 
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	// Open the save game file
+	if ( (pSaveFile = fopen(SAVEGAMEFILE, "rb")) == nullptr )
 	{
-		printlog("error: failed to get game type out of '%s'!\n", SAVEGAMEFILE);
-		return 0;
+		printlog("ERROR: 'getSaveGameType()' - Failed to open file '%s'!\n", SAVEGAMEFILE);
+		return NetworkType::SINGLE;
 	}
 
-	// read from file
+	// Read the save game type from file
+    // TODOR: What is checkstr, what is this fread attempting to read?
 	char checkstr[64];
-	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
+	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), pSaveFile);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
-		fclose(fp);
-		return 0;
+        // TODOR: Is the file actually corrupt?
+		printlog("ERROR: 'getSaveGameType() - '%s' is corrupt!\n", SAVEGAMEFILE);
+		fclose(pSaveFile);
+		return NetworkType::SINGLE;
 	}
-	fread(checkstr, sizeof(char), strlen(VERSION), fp);
+
+    // TODOR: What is this fread attempting to read?
+	fread(checkstr, sizeof(char), strlen(VERSION), pSaveFile);
 	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
-		fclose(fp);
-		return 0;
+        // TODOR: Is the file actually corrupt? 
+		printlog("ERROR: 'getSaveGameType() - '%s''s VERSION is corrupt!\n", SAVEGAMEFILE);
+		fclose(pSaveFile);
+		return NetworkType::SINGLE;
 	}
 
-	fseek(fp, sizeof(Uint32), SEEK_CUR);
-	fread(&mul, sizeof(Uint32), 1, fp);
+	fseek(pSaveFile, sizeof(Uint32), SEEK_CUR);
+	fread(&saveGameTypeFromFile, sizeof(Uint32), 1, pSaveFile);
 
-	// close file
-	fclose(fp);
-	return mul;
+    // TODOR: See if can read the value from the file directly into type 'NetworkType'
+    NetworkType saveGameType = static_cast<NetworkType>(saveGameTypeFromFile);
+
+	// Close the save game file and cleanup
+	fclose(pSaveFile);
+    pSaveFile = nullptr;
+
+	return saveGameType;
 }
 
 /*-------------------------------------------------------------------------------
