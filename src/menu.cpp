@@ -4805,7 +4805,7 @@ void openGameoverWindow()
 		}
 
 		// Identify all inventory items
-        node_t* pPlayerInventoryNode;
+        node_t* pPlayerInventoryNode = nullptr;
 		for ( pPlayerInventoryNode = stats[clientnum]->inventory.first; pPlayerInventoryNode != nullptr; pPlayerInventoryNode = pPlayerInventoryNode->next )
 		{
 			Item* item = (Item*) pPlayerInventoryNode->element;
