@@ -4912,13 +4912,13 @@ void openGameoverWindow()
 void getResolutionList()
 {
 	int numberOfDisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
-	int nummodes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
+	int numberOfModes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
 	
     // Log the display information
 	printlog("Number of Displays: %d.\n", numberOfDisplays);
-	printlog("Number of possible Display Resolutions: %d.\n", nummodes);
+	printlog("Number of possible Display Resolutions: %d.\n", numberOfModes);
 	
-	for (int iModeIndex = 0; iModeIndex < nummodes; iModeIndex++)
+	for (int iModeIndex = 0; iModeIndex < numberOfModes; iModeIndex++)
 	{
 		SDL_DisplayMode mode;
 		SDL_GetDisplayMode(0, iModeIndex, &mode);
