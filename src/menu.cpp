@@ -3669,7 +3669,7 @@ void handleMainMenu(bool mode)
 			fadefinished = false;
 			fadeout = false;
 			gamePaused = false;
-			selectedNetworkType = 0;
+			selectedNetworkType = NetworkType::SINGLE;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
 
 			if ( !mode )
