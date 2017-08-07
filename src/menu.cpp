@@ -4911,11 +4911,11 @@ void openGameoverWindow()
 // Any display resolution below 960x600 are ignored
 void getResolutionList()
 {
-	int numdisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
+	int numberOfDisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
 	int nummodes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
 	
     // Log the display information
-	printlog("Number of Displays: %d.\n", numdisplays);
+	printlog("Number of Displays: %d.\n", numberOfDisplays);
 	printlog("Number of possible Display Resolutions: %d.\n", nummodes);
 	
 	for (int iModeIndex = 0; iModeIndex < nummodes; iModeIndex++)
