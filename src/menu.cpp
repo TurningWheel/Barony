@@ -4948,7 +4948,6 @@ void getResolutionList()
 void openSettingsWindow()
 {
 	button_t* button;
-	int c;
 
     // Populate the list of possible possible resolutions (listOfDisplayResolutions)
 	getResolutionList();
@@ -4967,13 +4966,13 @@ void openSettingsWindow()
 	settings_gamma = vidgamma;
 	settings_sfxvolume = sfxvolume;
 	settings_musvolume = musvolume;
-	for (c = 0; c < NUMIMPULSES; c++)
+	for ( Uint8 iImpulse = 0; iImpulse < NUMIMPULSES; iImpulse++ )
 	{
-		settings_impulses[c] = impulses[c];
+		settings_impulses[iImpulse] = impulses[iImpulse];
 	}
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
+	for ( Uint8 iJoystickImpulse = 0; iJoystickImpulse < NUM_JOY_IMPULSES; iJoystickImpulse++ )
 	{
-		settings_joyimpulses[c] = joyimpulses[c];
+		settings_joyimpulses[iJoystickImpulse] = joyimpulses[iJoystickImpulse];
 	}
 	settings_reversemouse = reversemouse;
 	settings_smoothmouse = smoothmouse;
