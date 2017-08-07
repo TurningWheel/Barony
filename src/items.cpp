@@ -2351,11 +2351,10 @@ void createCustomInventory(Stat* stats, int itemLimit)
 	int itemsGenerated = 0;
 	int chance = 1;
 
-	if ( stats != NULL )
+	if ( stats != nullptr )
 	{
-		for ( i = 0; i < 6 && itemsGenerated <= itemLimit; i++ )
+		for ( i = 0; i < 6 && itemsGenerated <= itemLimit; ++i )
 		{
-			
 			category = stats->EDITOR_ITEMS[itemSlots[i] + ITEM_SLOT_CATEGORY];
 			if ( category > 0 && stats->EDITOR_ITEMS[itemSlots[i]] == 1 )
 			{
@@ -2415,7 +2414,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 			{
 				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
 			}
-			
+
 			if ( itemId >= 0 )
 			{
 				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);

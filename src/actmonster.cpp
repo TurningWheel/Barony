@@ -128,7 +128,7 @@ double sightranges[NUMMONSTERS] =
 	1024, // DEVIL
 	256,  // SHOPKEEPER
 	128,  // KOBOLD
-	128,  // SCARAB
+	512,  // SCARAB
 	32,   // CRYSTALGOLEM
 	256,  // INCUBUS
 	192,  // VAMPIRE

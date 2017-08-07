@@ -280,6 +280,9 @@ public:
 	void removeMonsterDeathNodes();
 
 	void spawnBlood(int bloodsprite = 160);
+
+	// reflection is set 1, 2 or 3 depending on the item slot. reflection of 3 does not degrade.
+	int getReflection() const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
