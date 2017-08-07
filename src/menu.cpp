@@ -5833,7 +5833,7 @@ void buttonJoinMultiplayer(button_t* my)
 	deleteallbuttons = true;
 
 	// open port window
-	connect_window = NetworkType::CLIENT;
+	connect_window = static_cast<int>(NetworkType::CLIENT);
 	subwindow = 1;
 	subx1 = xres / 2 - 210;
 	subx2 = xres / 2 + 210;
