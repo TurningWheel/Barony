@@ -1366,7 +1366,7 @@ void handleMainMenu(bool mode)
 
 			for ( c = 0; c < nummodes; c++ )
 			{
-				if ( selectedNetworkType == c )
+				if ( selectedNetworkType == static_cast<NetworkType>(c) )
 				{
 					switch ( c )
 					{
@@ -1422,7 +1422,7 @@ void handleMainMenu(bool mode)
 							if ( omousey >= suby1 + 56 + 20 * c && omousey < suby1 + 74 + 20 * c )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								selectedNetworkType = c;
+								selectedNetworkType = static_cast<NetworkType>(c);
 							}
 						}
 						else
@@ -1430,7 +1430,7 @@ void handleMainMenu(bool mode)
 							if ( omousey >= suby1 + 136 + 40 * (c - 3) && omousey < suby1 + 148 + 40 * (c - 3) )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								selectedNetworkType = c;
+								selectedNetworkType = static_cast<NetworkType>(c);
 							}
 						}
 					}
@@ -1443,10 +1443,12 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					}
 					draw_cursor = false;
-					selectedNetworkType--;
-					if (selectedNetworkType < 0)
+                    // TODOR: Rework so its not selectedNetworkType--;, causes this ugly static_cast
+					selectedNetworkType = static_cast<NetworkType>(static_cast<int>(selectedNetworkType) - 1);
+                    // TODOR: Should not be checking for < NetworkType::SINGLE
+					if ( selectedNetworkType < NetworkType::SINGLE )
 					{
-						selectedNetworkType = nummodes - 1;
+						selectedNetworkType = static_cast<NetworkType>(nummodes - 1);
 					}
 				}
 				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
@@ -1457,10 +1459,11 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					}
 					draw_cursor = false;
-					selectedNetworkType++;
-					if (selectedNetworkType > nummodes - 1)
+                    // TODOR: Rework so it's not selectedNetworkType++;, causes this ugly static_cast
+					selectedNetworkType = static_cast<NetworkType>(static_cast<int>(selectedNetworkType) + 1);
+					if ( selectedNetworkType > static_cast<NetworkType>(nummodes - 1) )
 					{
-						selectedNetworkType = 0;
+						selectedNetworkType = NetworkType::SINGLE;
 					}
 				}
 			}
