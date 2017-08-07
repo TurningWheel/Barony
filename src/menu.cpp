@@ -4920,7 +4920,7 @@ void getResolutionList()
 	
 	for (int iModeIndex = 0; iModeIndex < numberOfModes; iModeIndex++)
 	{
-		SDL_DisplayMode mode;
+		SDL_DisplayMode mode; // The display resolution size (WIDTH x HEIGHT)
 		SDL_GetDisplayMode(0, iModeIndex, &mode);
 		// Resolutions below 960x600 are not supported and are discarded
 		if ( mode.w >= 960 && mode.h >= 600 )
