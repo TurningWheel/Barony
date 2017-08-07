@@ -4914,7 +4914,6 @@ void getResolutionList()
 	int numdisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
 	int nummodes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
 	int im;
-	int c;
 	
     // Log the display information
 	printlog("display count: %d.\n", numdisplays);
