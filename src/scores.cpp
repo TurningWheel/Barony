@@ -2449,9 +2449,8 @@ NetworkType getSaveGameType()
     // TODOR: See if can read the value from the file directly into type 'NetworkType'
     NetworkType saveGameType = static_cast<NetworkType>(saveGameTypeFromFile);
 
-	// Close the save game file and cleanup
+	// Close the save game file
 	fclose(pSaveFile);
-    pSaveFile = nullptr;
 
 	return saveGameType;
 }
