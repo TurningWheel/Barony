@@ -4913,16 +4913,15 @@ void getResolutionList()
 {
 	int numdisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
 	int nummodes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
-	int im;
 	
     // Log the display information
 	printlog("Number of Displays: %d.\n", numdisplays);
 	printlog("Number of possible Display Resolutions: %d.\n", nummodes);
 	
-	for (im = 0; im < nummodes; im++)
+	for (int iModeIndex = 0; iModeIndex < nummodes; iModeIndex++)
 	{
 		SDL_DisplayMode mode;
-		SDL_GetDisplayMode(0, im, &mode);
+		SDL_GetDisplayMode(0, iModeIndex, &mode);
 		// Resolutions below 960x600 are not supported and are discarded
 		if ( mode.w >= 960 && mode.h >= 600 )
 		{
