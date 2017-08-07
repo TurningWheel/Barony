@@ -4774,18 +4774,18 @@ void openGameoverWindow()
 	scoreDeconstructor((void*)score);
 
     // Check if the score of the Local Player is high enough to be on the scoreboard
-	bool madetop = false;
+	bool currentScoreMadeScoreboard = false;
 	if ( !list_Size(&topscores) ) // If there are no scores on the scoreboard
 	{
-		madetop = true;
+        currentScoreMadeScoreboard = true;
 	}
 	else if ( list_Size(&topscores) < MAXTOPSCORES ) // If there is still space on the scoreboard
 	{
-		madetop = true;
+        currentScoreMadeScoreboard = true;
 	}
 	else if ( totalScore((score_t*)topscores.last->element) < total ) // If the lowest score on the scoreboard is less than the current score
 	{
-		madetop = true;
+        currentScoreMadeScoreboard = true;
 	}
 
     // If the NetworkType is Singleplayer, then the game is over
@@ -4798,7 +4798,7 @@ void openGameoverWindow()
 		strcat(subtext, language[1135]); // "Total Score: "
 		strcat(subtext, scorenum);       // Displays the current score
 
-		if ( madetop )
+		if ( currentScoreMadeScoreboard )
 		{
 			strcat(subtext, language[1136]); // "Congratulations!\nYoumade the top ten.\n"
 		}
