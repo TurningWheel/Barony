@@ -4754,11 +4754,13 @@ void handleMainMenu(bool mode)
 
 -------------------------------------------------------------------------------*/
 
-// opens the gameover window
+// Create a new Window to display the "game over" message
+// Creates a new Subwindow in the middle of the screen on Local Player death, options and text displayed are different depending on localPlayerNetworkType
 void openGameoverWindow()
 {
 	node_t* node;
 
+    // Create the Subwindow
 	subwindow = 1;
 	subx1 = xres / 2 - 288;
 	subx2 = xres / 2 + 288;
@@ -4766,56 +4768,58 @@ void openGameoverWindow()
 	suby2 = yres / 2 + 160;
 	button_t* button;
 
-	// calculate player score
+	// Calculate player score
 	char scorenum[16];
 	score_t* score = scoreConstructor();
-	Uint32 total = totalScore(score);
+	Uint32 total = totalScore(score);   // The current score
 	snprintf(scorenum, 16, "%d\n\n", total);
 	scoreDeconstructor((void*)score);
 
+    // Check if the score of the Local Player is high enough to be on the scoreboard
 	bool madetop = false;
-	if ( !list_Size(&topscores) )
+	if ( !list_Size(&topscores) ) // If there are no scores on the scoreboard
 	{
 		madetop = true;
 	}
-	else if ( list_Size(&topscores) < MAXTOPSCORES )
+	else if ( list_Size(&topscores) < MAXTOPSCORES ) // If there is still space on the scoreboard
 	{
 		madetop = true;
 	}
-	else if ( totalScore((score_t*)topscores.last->element) < total )
+	else if ( totalScore((score_t*)topscores.last->element) < total ) // If the lowest score on the scoreboard is less than the current score
 	{
 		madetop = true;
 	}
 
+    // If the NetworkType is Singleplayer, then the game is over
 	shootmode = false;
 	if ( localPlayerNetworkType == NetworkType::SINGLE )
 	{
-		strcpy(subtext, language[1133]);
+		strcpy(subtext, language[1133]); // "You have died. Gameover."
 
-		strcat(subtext, language[1134]);
+		strcat(subtext, language[1134]); // "Your equipment has been identified."
 
-		strcat(subtext, language[1135]);
-		strcat(subtext, scorenum);
+		strcat(subtext, language[1135]); // "Total Score: "
+		strcat(subtext, scorenum);       // Displays the current score
 
 		if ( madetop )
 		{
-			strcat(subtext, language[1136]);
+			strcat(subtext, language[1136]); // "Congratulations!\nYoumade the top ten.\n"
 		}
 		else
 		{
-			strcat(subtext, language[1137]);
+			strcat(subtext, language[1137]); // "\n\n\n\n\n"
 		}
 
-		// identify all inventory items
+		// Identify all inventory items
 		for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 		{
 			Item* item = (Item*)node->element;
 			item->identified = true;
 		}
 
-		// Restart
+		// Create the Restart Button
 		button = newButton();
-		strcpy(button->label, language[1138]);
+		strcpy(button->label, language[1138]); // "    Restart Game    "
 		button->x = subx2 - strlen(language[1138]) * 12 - 16;
 		button->y = suby2 - 28;
 		button->sizex = strlen(language[1138]) * 12 + 8;
@@ -4825,9 +4829,9 @@ void openGameoverWindow()
 		button->focused = 1;
 		button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-		// Return to Main Menu
+		// Create the Return to Main Menu Button
 		button = newButton();
-		strcpy(button->label, language[1139]);
+		strcpy(button->label, language[1139]); // "Return to Main Menu"
 		button->x = subx1 + 8;
 		button->y = suby2 - 28;
 		button->sizex = strlen(language[1139]) * 12 + 8;
@@ -4837,9 +4841,9 @@ void openGameoverWindow()
 		button->focused = 1;
 		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 	}
-	else
+	else // Else, the Local Player has a chance to revive if the other player(s) make it to the next floor
 	{
-		strcpy(subtext, language[1140]);
+		strcpy(subtext, language[1140]); // "You have died.\n"
 
 		bool survivingPlayer = false;
 		int c;
@@ -4851,21 +4855,23 @@ void openGameoverWindow()
 				break;
 			}
 		}
+
+        // If there is still a player left alive
 		if ( survivingPlayer )
 		{
-			strcat(subtext, language[1141]);
+			strcat(subtext, language[1141]); // "You will be revived, however, if your\nparty survives to the next level.\n\n"
 		}
-		else
+		else // Else the Local Player was the last to die
 		{
-			strcat(subtext, language[1142]);
+			strcat(subtext, language[1142]); // "As the rest of your party has perished,\nthe host must make a new game or restart the\ncurrent one to continue."
 		}
 
-		strcat(subtext, language[1143]);
-		strcat(subtext, scorenum);
+		strcat(subtext, language[1143]); // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
+		strcat(subtext, scorenum);       // Displays the current score
 
 		strcat(subtext, "\n\n");
 
-		// Okay
+		// Create the Okay Button
 		button = newButton();
 		strcpy(button->label, language[1144]);
 		button->sizex = strlen(language[1144]) * 12 + 8;
@@ -4878,13 +4884,13 @@ void openGameoverWindow()
 		button->joykey = joyimpulses[INJOY_MENU_NEXT];
 	}
 
-	// death hints
+	// Display a randomly chosen hint about the game based unless they die on a Transition Floor (Mines to Swamp, etc)
 	if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
 	{
-		strcat(subtext, language[1145 + rand() % 15]);
+		strcat(subtext, language[1145 + rand() % 15]); // Displays a tip based on #1145 to #1159, a total of 15 tips
 	}
 
-	// close button
+	// Create the Close Button
 	button = newButton();
 	strcpy(button->label, "x");
 	button->x = subx2 - 20;
