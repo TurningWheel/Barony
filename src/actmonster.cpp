@@ -4996,7 +4996,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					
 					if ( myStats->HP <= myStats->MAXHP * 0.5 )
 					{
-						bonusFromHP = 5; // +25% chance if on low health
+						bonusFromHP = 4; // +20% chance if on low health
 					}
 					if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
 					{
