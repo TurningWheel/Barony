@@ -4931,7 +4931,7 @@ void getResolutionList()
 		}
 	}
 	
-	// Sort the list of resolutions by total number of pixels (Width*Height)
+	// Sort the list of resolutions by total number of pixels (WIDTH x HEIGHT)
     listOfDisplayResolutions.sort([](displayResolution a, displayResolution b) {
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
 	});
