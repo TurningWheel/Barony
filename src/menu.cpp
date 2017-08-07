@@ -5773,7 +5773,7 @@ void buttonHostMultiplayer(button_t* my)
 		deleteallbuttons = true;
 
 		// open port window
-		connect_window = NetworkType::SERVER;
+		connect_window = static_cast<int>(NetworkType::SERVER);
 		subwindow = 1;
 		subx1 = xres / 2 - 128;
 		subx2 = xres / 2 + 128;
