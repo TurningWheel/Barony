@@ -4767,11 +4767,11 @@ void openGameoverWindow()
 	button_t* button;
 
 	// Calculate player score
-	char scorenum[16]; // The current score as a string
-	score_t* score = scoreConstructor();
-	Uint32 currentScoreValue = totalScore(score);   // The current score as an integer
+	char scorenum[16]; // The current score as a string - TODOR: Refactor to replace with a String
+	score_t* pScoreCalculator = scoreConstructor();
+	Uint32 currentScoreValue = totalScore(pScoreCalculator);   // The current score as an integer
 	snprintf(scorenum, 16, "%d\n\n", currentScoreValue);
-	scoreDeconstructor((void*)score);
+	scoreDeconstructor((void*) pScoreCalculator);
 
     // Check if the score of the Local Player is high enough to be on the scoreboard
 	bool currentScoreMadeScoreboard = false;
