@@ -625,7 +625,6 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 5; //Set the spell's mana to 15 so that it lasts ~30 seconds.
 
 	spellConstructor(&spell_bleed);
 	strcpy(spell_bleed.name, language[2392]);
@@ -646,7 +645,6 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 15; //Set the spell's mana to 15 so that it lasts ~30 seconds.
 
 	spellConstructor(&spell_summon);
 	strcpy(spell_summon.name, language[2390]);
