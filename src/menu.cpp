@@ -4758,8 +4758,6 @@ void handleMainMenu(bool mode)
 // Creates a new Subwindow in the middle of the screen on Local Player death, options and text displayed are different depending on localPlayerNetworkType
 void openGameoverWindow()
 {
-	node_t* node;
-
     // Create the Subwindow
 	subwindow = 1;
 	subx1 = xres / 2 - 288;
@@ -4810,9 +4808,10 @@ void openGameoverWindow()
 		}
 
 		// Identify all inventory items
-		for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
+        node_t* pPlayerInventoryNode;
+		for ( pPlayerInventoryNode = stats[clientnum]->inventory.first; pPlayerInventoryNode != NULL; pPlayerInventoryNode = pPlayerInventoryNode->next )
 		{
-			Item* item = (Item*)node->element;
+			Item* item = (Item*) pPlayerInventoryNode->element;
 			item->identified = true;
 		}
 
