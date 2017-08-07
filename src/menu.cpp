@@ -4163,7 +4163,7 @@ void handleMainMenu(bool mode)
 			darkmap = false;
 			appraisal_timer = 0;
 			appraisal_item = 0;
-			localPlayerNetworkType = 0;
+			localPlayerNetworkType = NetworkType::SINGLE;
 			shootmode = true;
 			currentlevel = 0;
 			secretlevel = false;

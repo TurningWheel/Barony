@@ -538,7 +538,7 @@ void deinitGame()
 		{
 			serverHandleMessages();
 		}
-		if ( !(SDL_GetTicks() % 25) && localPlayerNetworkType )
+		if ( !(SDL_GetTicks() % 25) && (localPlayerNetworkType != NetworkType::SINGLE) ) // TODOR: Refactor this to not use ints as bools
 		{
 			int j = 0;
 			node_t* node, *nextnode;

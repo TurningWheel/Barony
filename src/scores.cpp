@@ -944,9 +944,10 @@ int saveGame()
 	fwrite(&uniqueGameKey, sizeof(Uint32), 1, fp);
 	if ( localPlayerNetworkType > NetworkType::SINGLE && directConnect)
 	{
-		localPlayerNetworkType += 2;
+        // TODOR: Refactor this to not use int assignments
+		localPlayerNetworkType = static_cast<NetworkType>(static_cast<int>(localPlayerNetworkType) + 2);
 		fwrite(&localPlayerNetworkType, sizeof(Uint32), 1, fp);
-		localPlayerNetworkType -= 2;
+        localPlayerNetworkType = static_cast<NetworkType>(static_cast<int>(localPlayerNetworkType) - 2);
 	}
 	else
 	{

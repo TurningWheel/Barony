@@ -239,7 +239,7 @@ void gameLogic(void)
 	}
 
 	// spawn flame particles on burning objects
-	if ( !gamePaused || (localPlayerNetworkType && !client_disconnected[0]) )
+	if ( !gamePaused || ( (localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this so ints are not used as bools
 	{
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
@@ -311,7 +311,7 @@ void gameLogic(void)
 		}
 
 		// execute entity behaviors
-		c = localPlayerNetworkType;
+		c = static_cast<int>(localPlayerNetworkType);
 		x = clientnum;
 		localPlayerNetworkType = NetworkType::SINGLE;
 		clientnum = 0;
@@ -356,7 +356,7 @@ void gameLogic(void)
 			entity = (Entity*)node->element;
 			entity->ranbehavior = false;
 		}
-		localPlayerNetworkType = c;
+		localPlayerNetworkType = static_cast<NetworkType>(c);
 		clientnum = x;
 	}
 	else
@@ -526,13 +526,13 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				if ( !entity->ranbehavior )
 				{
-					if ( !gamePaused || (localPlayerNetworkType && !client_disconnected[0]) )
+					if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 					{
 						entity->ticks++;
 					}
 					if ( entity->behavior != NULL )
 					{
-						if ( !gamePaused || (localPlayerNetworkType && !client_disconnected[0]) )
+						if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 						{
 							(*entity->behavior)(entity);
 						}
@@ -1231,13 +1231,13 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				if ( !entity->ranbehavior )
 				{
-					if ( !gamePaused || (localPlayerNetworkType && !client_disconnected[0]) )
+					if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 					{
 						entity->ticks++;
 					}
 					if ( entity->behavior != NULL )
 					{
-						if ( !gamePaused || (localPlayerNetworkType && !client_disconnected[0]) )
+						if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 						{
 							(*entity->behavior)(entity);
 							if ( entitiesdeleted.first != NULL )
@@ -1951,7 +1951,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 			playeralive = true;
 		}
 
-	if ((!gamePaused || localPlayerNetworkType) && !loading && !intro && playeralive)
+	if ((!gamePaused || (localPlayerNetworkType != NetworkType::SINGLE)) && !loading && !intro && playeralive) // TODOR: Refactor this to not use ints as bools
 	{
 		completionTime++;
 	}
@@ -2471,7 +2471,7 @@ int main(int argc, char** argv)
 								break;
 						}
 						numplayers = 0;
-						localPlayerNetworkType = 0;
+						localPlayerNetworkType = NetworkType::SINGLE;
 						assignActions(&map);
 						generatePathMaps();
 						fadeout = true;
@@ -3112,7 +3112,7 @@ int main(int argc, char** argv)
 						drawImageAlpha(cross_bmp, NULL, &pos, 128);
 					}
 				}
-				else if ( !localPlayerNetworkType )
+				else if ( localPlayerNetworkType == NetworkType::SINGLE ) // TODOR: WAS "!localPlayerNetworkType" - Remove this comment if it builds (8-6-2017)
 				{
 					// darken the rest of the screen
 					src.x = 0;
