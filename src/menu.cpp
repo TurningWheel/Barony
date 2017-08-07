@@ -4759,63 +4759,63 @@ void handleMainMenu(bool mode)
 void openGameoverWindow()
 {
     // Create the Subwindow
-	subwindow = 1;
-	subx1 = xres / 2 - 288;
-	subx2 = xres / 2 + 288;
-	suby1 = yres / 2 - 160;
-	suby2 = yres / 2 + 160;
+    subwindow = 1;
+    subx1 = xres / 2 - 288;
+    subx2 = xres / 2 + 288;
+    suby1 = yres / 2 - 160;
+    suby2 = yres / 2 + 160;
 
-	// Calculate player score
-	char scorenum[16]; // The current score as a string - TODOR: Refactor to replace with a String
-	score_t* pScoreCalculator = scoreConstructor();
-	Uint32 currentScoreValue = totalScore(pScoreCalculator);   // The current score as an integer
-	snprintf(scorenum, 16, "%d\n\n", currentScoreValue);
-	scoreDeconstructor((void*) pScoreCalculator);
+    // Calculate player score
+    char scorenum[16]; // The current score as a string - TODOR: Refactor to replace with a String
+    score_t* pScoreCalculator = scoreConstructor();
+    Uint32 currentScoreValue = totalScore(pScoreCalculator);   // The current score as an integer
+    snprintf(scorenum, 16, "%d\n\n", currentScoreValue);
+    scoreDeconstructor((void*)pScoreCalculator);
 
     // Check if the score of the Local Player is high enough to be on the scoreboard
-	bool didCurrentScoreMakeScoreboard = false;
-	if ( !list_Size(&topscores) ) // If there are no scores on the scoreboard
-	{
+    bool didCurrentScoreMakeScoreboard = false;
+    if ( !list_Size(&topscores) ) // If there are no scores on the scoreboard
+    {
         didCurrentScoreMakeScoreboard = true;
-	}
-	else if ( list_Size(&topscores) < MAX_SCOREBOARD_ENTIRES ) // If there is still space on the scoreboard
-	{
+    }
+    else if ( list_Size(&topscores) < MAX_SCOREBOARD_ENTIRES ) // If there is still space on the scoreboard
+    {
         didCurrentScoreMakeScoreboard = true;
-	}
-	else if ( totalScore((score_t*)topscores.last->element) < currentScoreValue ) // If the lowest score on the scoreboard is less than the current score
-	{
+    }
+    else if ( totalScore((score_t*)topscores.last->element) < currentScoreValue ) // If the lowest score on the scoreboard is less than the current score
+    {
         didCurrentScoreMakeScoreboard = true;
-	}
+    }
 
     // If the NetworkType is Singleplayer, then the game is over
-	if ( localPlayerNetworkType == NetworkType::SINGLE )
-	{
-		strcpy(subtext, language[1133]); // "You have died. Gameover."
-		strcat(subtext, language[1134]); // "Your equipment has been identified."
-		strcat(subtext, language[1135]); // "Total Score: "
-		strcat(subtext, scorenum);       // Displays the current score
+    if ( localPlayerNetworkType == NetworkType::SINGLE )
+    {
+        strcpy(subtext, language[1133]); // "You have died. Gameover."
+        strcat(subtext, language[1134]); // "Your equipment has been identified."
+        strcat(subtext, language[1135]); // "Total Score: "
+        strcat(subtext, scorenum);       // Displays the current score
 
-		if ( didCurrentScoreMakeScoreboard )
-		{
-			strcat(subtext, language[1136]); // "Congratulations!\nYoumade the top ten.\n"
-		}
-		else
-		{
-			strcat(subtext, language[1137]); // "\n\n\n\n\n"
-		}
+        if ( didCurrentScoreMakeScoreboard )
+        {
+            strcat(subtext, language[1136]); // "Congratulations!\nYoumade the top ten.\n"
+        }
+        else
+        {
+            strcat(subtext, language[1137]); // "\n\n\n\n\n"
+        }
 
-		// Identify all inventory items
+        // Identify all inventory items
         node_t* pPlayerInventoryNode = nullptr;
-		for ( pPlayerInventoryNode = stats[clientnum]->inventory.first; pPlayerInventoryNode != nullptr; pPlayerInventoryNode = pPlayerInventoryNode->next )
-		{
-			Item* item = (Item*) pPlayerInventoryNode->element;
-			item->identified = true;
-		}
+        for ( pPlayerInventoryNode = stats[clientnum]->inventory.first; pPlayerInventoryNode != nullptr; pPlayerInventoryNode = pPlayerInventoryNode->next )
+        {
+            Item* item = (Item*)pPlayerInventoryNode->element;
+            item->identified = true;
+        }
 
-		// Create the Restart Button
+        // Create the Restart Button
         button_t* pRestartButton = nullptr;
         pRestartButton = newButton();
-		strcpy(pRestartButton->label, language[1138]); // "    Restart Game    "
+        strcpy(pRestartButton->label, language[1138]); // "    Restart Game    "
         pRestartButton->x = subx2 - strlen(language[1138]) * 12 - 16;
         pRestartButton->y = suby2 - 28;
         pRestartButton->sizex = strlen(language[1138]) * 12 + 8;
@@ -4826,10 +4826,10 @@ void openGameoverWindow()
         pRestartButton->joykey = joyimpulses[INJOY_MENU_NEXT];
         pRestartButton = nullptr;
 
-		// Create the Return to Main Menu Button
+        // Create the Return to Main Menu Button
         button_t* pReturnToMainMenuButton = nullptr;
         pReturnToMainMenuButton = newButton();
-		strcpy(pReturnToMainMenuButton->label, language[1139]); // "Return to Main Menu"
+        strcpy(pReturnToMainMenuButton->label, language[1139]); // "Return to Main Menu"
         pReturnToMainMenuButton->x = subx1 + 8;
         pReturnToMainMenuButton->y = suby2 - 28;
         pReturnToMainMenuButton->sizex = strlen(language[1139]) * 12 + 8;
@@ -4839,39 +4839,39 @@ void openGameoverWindow()
         pReturnToMainMenuButton->focused = 1;
         pReturnToMainMenuButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
         pReturnToMainMenuButton = nullptr;
-	}
-	else // Else, the Local Player has a chance to revive if the other player(s) make it to the next floor
-	{
-		strcpy(subtext, language[1140]); // "You have died.\n"
+    }
+    else // Else, the Local Player has a chance to revive if the other player(s) make it to the next floor
+    {
+        strcpy(subtext, language[1140]); // "You have died.\n"
 
-		bool survivingPlayer = false;
-		for (Uint8 iPlayerNum = 0; iPlayerNum < MAXPLAYERS; iPlayerNum++)
-		{
-			if (!client_disconnected[iPlayerNum] && players[iPlayerNum]->entity)
-			{
-				survivingPlayer = true;
-				break;
-			}
-		}
+        bool survivingPlayer = false;
+        for ( Uint8 iPlayerNum = 0; iPlayerNum < MAXPLAYERS; iPlayerNum++ )
+        {
+            if ( !client_disconnected[iPlayerNum] && players[iPlayerNum]->entity )
+            {
+                survivingPlayer = true;
+                break;
+            }
+        }
 
         // If there is still a player left alive
-		if ( survivingPlayer )
-		{
-			strcat(subtext, language[1141]); // "You will be revived, however, if your\nparty survives to the next level.\n\n"
-		}
-		else // Else the Local Player was the last to die
-		{
-			strcat(subtext, language[1142]); // "As the rest of your party has perished,\nthe host must make a new game or restart the\ncurrent one to continue."
-		}
+        if ( survivingPlayer )
+        {
+            strcat(subtext, language[1141]); // "You will be revived, however, if your\nparty survives to the next level.\n\n"
+        }
+        else // Else the Local Player was the last to die
+        {
+            strcat(subtext, language[1142]); // "As the rest of your party has perished,\nthe host must make a new game or restart the\ncurrent one to continue."
+        }
 
-		strcat(subtext, language[1143]); // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
-		strcat(subtext, scorenum);       // Displays the current score
-		strcat(subtext, "\n\n");
+        strcat(subtext, language[1143]); // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
+        strcat(subtext, scorenum);       // Displays the current score
+        strcat(subtext, "\n\n");
 
-		// Create the Okay Button
+        // Create the Okay Button
         button_t* pOkayButton = nullptr;
         pOkayButton = newButton();
-		strcpy(pOkayButton->label, language[1144]);
+        strcpy(pOkayButton->label, language[1144]);
         pOkayButton->sizex = strlen(language[1144]) * 12 + 8;
         pOkayButton->sizey = 20;
         pOkayButton->x = subx1 + (subx2 - subx1) / 2 - pOkayButton->sizex / 2;
@@ -4881,18 +4881,18 @@ void openGameoverWindow()
         pOkayButton->focused = 1;
         pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
         pOkayButton = nullptr;
-	}
+    }
 
-	// Display a randomly chosen hint about the game based unless they die on a Transition Floor (Mines to Swamp, etc)
-	if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
-	{
-		strcat(subtext, language[1145 + rand() % 15]); // Displays a tip based on #1145 to #1159, a total of 15 tips
-	}
+    // Display a randomly chosen hint about the game based unless they die on a Transition Floor (Mines to Swamp, etc)
+    if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
+    {
+        strcat(subtext, language[1145 + rand() % 15]); // Displays a tip based on #1145 to #1159, a total of 15 tips
+    }
 
-	// Create the Close Button
+    // Create the Close Button
     button_t* pCloseButton = nullptr;
     pCloseButton = newButton();
-	strcpy(pCloseButton->label, "x");
+    strcpy(pCloseButton->label, "x");
     pCloseButton->x = subx2 - 20;
     pCloseButton->y = suby1;
     pCloseButton->sizex = 20;
