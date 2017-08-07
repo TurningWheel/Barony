@@ -4845,10 +4845,9 @@ void openGameoverWindow()
 		strcpy(subtext, language[1140]); // "You have died.\n"
 
 		bool survivingPlayer = false;
-		int c;
-		for (c = 0; c < MAXPLAYERS; c++)
+		for (Uint8 iPlayerNum = 0; iPlayerNum < MAXPLAYERS; iPlayerNum++)
 		{
-			if (!client_disconnected[c] && players[c]->entity)
+			if (!client_disconnected[iPlayerNum] && players[iPlayerNum]->entity)
 			{
 				survivingPlayer = true;
 				break;
