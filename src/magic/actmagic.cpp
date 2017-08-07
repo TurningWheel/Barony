@@ -946,7 +946,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1101,7 +1101,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1148,7 +1148,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actDoor)
 						{
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
@@ -1178,7 +1178,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
 								int damage = element->damage;
-								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 								damage /= (1+(int)resistance);
 
 								hit.entity->skill[3] -= damage; //Decrease chest health.
@@ -1267,7 +1267,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1420,7 +1420,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_CONFUSED] = true;
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
 							hit.entity->skill[1] = 0; //Remove the monster's target.
 							if ( parent )
@@ -1484,10 +1484,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 172, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1571,7 +1571,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 172, 64); //TODO: Slow spell sound.
 							hitstats->EFFECTS[EFF_SLOW] = true;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							// update enemy bar for attacker
 							if ( parent )
@@ -1701,7 +1701,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1743,7 +1743,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actDoor)
 						{
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
@@ -1776,7 +1776,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
 								int damage = element->damage;
-								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 								damage /= (1+(int)resistance);
 
 								hit.entity->skill[3] -= damage; //Decrease chest health.
@@ -2138,7 +2138,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
 							hitstats->EFFECTS[EFF_PARALYZED] = true;
-							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] /= (1 + (int)resistance);
 							if ( hit.entity->behavior == &actPlayer )
 							{
@@ -2209,7 +2209,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -2221,10 +2221,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 
 							hitstats->EFFECTS[EFF_BLEEDING] = true;
-							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] /= (1 + (int)resistance);
 							hitstats->EFFECTS[EFF_SLOW] = true;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							if ( hit.entity->behavior == &actPlayer )
 							{
