@@ -4906,9 +4906,10 @@ void openGameoverWindow()
     pCloseButton = nullptr;
 }
 
-// Used for collecting the list of possible resolutions to display in the Settings Menu
+// Used for populating the list of possible resolutions (listOfDisplayResolutions) to display in the Settings Menu
 // Collects all possible resolution types on the Main Display, adds them to the list, sorts the list, and removes any duplicates
 // Any display resolution below 960x600 are ignored
+// Called by openSettingsWindow()
 void getResolutionList()
 {
     int numberOfDisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
@@ -4941,15 +4942,19 @@ void getResolutionList()
     listOfDisplayResolutions.unique();
 }
 
-// sets up the settings window
+// Does the initial setup and opening of the Settings Subwindow when the "Settings" Button is clicked
+// Gathers the list of possible Display Resolutions using getResolutionList() then sets all of the Settings variables to their current values
+// Creates a Subwindow with multiple Tabs to separate Settings Subwindows
 void openSettingsWindow()
 {
 	button_t* button;
 	int c;
 
+    // Populate the list of possible possible resolutions (listOfDisplayResolutions)
 	getResolutionList();
 	
-	// set the "settings" variables
+	// Set all of the Settings options to their current values TODOR: These should not be global variables, but part of a Window object
+    // TODOR: Comment what each and every single one of these options are, will be useful for refactoring later, also include what tab it is under
 	settings_xres = xres;
 	settings_yres = yres;
 	settings_fov = fov;
@@ -4993,7 +4998,7 @@ void openSettingsWindow()
 	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;
 	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;
 
-	// create settings window
+	// Create the Settings Subwindow
 	settings_window = true;
 	subwindow = 1;
 	//subx1 = xres/2-256;
@@ -5011,7 +5016,7 @@ void openSettingsWindow()
 #endif
 	strcpy(subtext, language[1306]);
 
-	// close button
+	// Create the Close Button
 	button = newButton();
 	strcpy(button->label, "x");
 	button->x = subx2 - 20;
@@ -5024,7 +5029,7 @@ void openSettingsWindow()
 	button->key = SDL_SCANCODE_ESCAPE;
 	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
-	// cancel button
+	// Create the Cancel Button
 	button = newButton();
 	strcpy(button->label, language[1316]);
 	button->x = subx1 + 8;
@@ -5035,7 +5040,7 @@ void openSettingsWindow()
 	button->visible = 1;
 	button->focused = 1;
 
-	// ok button
+	// Create the Okay Button
 	button = newButton();
 	strcpy(button->label, language[1433]);
 	button->x = subx2 - strlen(language[1433]) * 12 - 16;
@@ -5048,7 +5053,7 @@ void openSettingsWindow()
 	button->key = SDL_SCANCODE_RETURN;
 	button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-	// accept button
+	// Create the Accept Button
 	button = newButton();
 	strcpy(button->label, language[1317]);
 	button->x = subx2 - strlen(language[1317]) * 12 - 16 - strlen(language[1317]) * 12 - 16;
@@ -5061,10 +5066,10 @@ void openSettingsWindow()
 
 	int tabx_so_far = subx1 + 16;
 
-	//TODO: Select tab based off of dpad left & right.
-	//TODO: Maybe golden highlighting & stuff.
+	// TODO: Select tab based off of dpad left & right.
+	// TODO: Maybe golden highlighting & stuff.
 
-	// video tab
+	// Create the Video Tab Button
 	button = newButton();
 	strcpy(button->label, language[1434]);
 	button->x = tabx_so_far;
@@ -5078,7 +5083,7 @@ void openSettingsWindow()
 
 	tabx_so_far += strlen(language[1434]) * 12 + 8;
 
-	// audio tab
+	// Create the Audio Tab Button
 	button = newButton();
 	strcpy(button->label, language[1435]);
 	button->x = tabx_so_far;
@@ -5092,7 +5097,7 @@ void openSettingsWindow()
 
 	tabx_so_far += strlen(language[1435]) * 12 + 8;
 
-	// keyboard tab
+	// Create the Keyboard Tab Button
 	button = newButton();
 	strcpy(button->label, language[1436]);
 	button->x = tabx_so_far;
@@ -5106,7 +5111,7 @@ void openSettingsWindow()
 
 	tabx_so_far += strlen(language[1436]) * 12 + 8;
 
-	// mouse tab
+	// Create the Mouse Tab Button
 	button = newButton();
 	strcpy(button->label, language[1437]);
 	button->x = tabx_so_far;
@@ -5120,7 +5125,7 @@ void openSettingsWindow()
 
 	tabx_so_far += strlen(language[1437]) * 12 + 8;
 
-	//Gamepad bindings tab.
+	// Create the Gameplay Bindings Tab Button
 	button = newButton();
 	strcpy(button->label, language[1947]);
 	button->x = tabx_so_far;
@@ -5134,7 +5139,7 @@ void openSettingsWindow()
 
 	tabx_so_far += strlen(language[1947]) * 12 + 8;
 
-	//Gamepad settings tab.
+	// Create the Gameplay Settings Tab Button
 	button = newButton();
 	strcpy(button->label, language[2400]);
 	button->x = tabx_so_far;
@@ -5148,7 +5153,7 @@ void openSettingsWindow()
 
 	tabx_so_far += strlen(language[2400]) * 12 + 8;
 
-	// misc tab
+	// Create the Misc Tab Button
 	button = newButton();
 	strcpy(button->label, language[1438]);
 	button->x =  tabx_so_far;
@@ -5160,7 +5165,7 @@ void openSettingsWindow()
 	button->focused = 1;
 	button_misc_tab = button;
 
-	//Initialize resolution confirmation window related variables.
+	//Initialize resolution confirmation Window related variables
 	resolutionChanged = false;
 	resolutionConfirmationTimer = 0;
 
