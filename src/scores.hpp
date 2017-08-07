@@ -14,7 +14,7 @@
 #define SCORESFILE "scores.dat"
 
 // game score structure
-#define MAXTOPSCORES 10
+static const Uint8 MAX_SCOREBOARD_ENTIRES = 10;
 typedef struct score_t
 {
 	Sint32 kills[NUMMONSTERS];

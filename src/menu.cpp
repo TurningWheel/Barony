@@ -4779,7 +4779,7 @@ void openGameoverWindow()
 	{
         currentScoreMadeScoreboard = true;
 	}
-	else if ( list_Size(&topscores) < MAXTOPSCORES ) // If there is still space on the scoreboard
+	else if ( list_Size(&topscores) < MAX_SCOREBOARD_ENTIRES ) // If there is still space on the scoreboard
 	{
         currentScoreMadeScoreboard = true;
 	}

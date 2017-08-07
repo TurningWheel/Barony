@@ -236,14 +236,14 @@ int saveScore()
 			newNode->element = currentscore;
 			newNode->deconstructor = &scoreDeconstructor;
 			newNode->size = sizeof(score_t);
-			while ( list_Size(&topscores) > MAXTOPSCORES )
+			while ( list_Size(&topscores) > MAX_SCOREBOARD_ENTIRES )
 			{
 				list_RemoveNode(topscores.last);
 			}
 			return c;
 		}
 	}
-	if ( c == MAXTOPSCORES )
+	if ( c == MAX_SCOREBOARD_ENTIRES )
 	{
 		scoreDeconstructor((void*)currentscore);
 		return -1; // do not save the score
