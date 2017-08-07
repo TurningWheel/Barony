@@ -1371,24 +1371,24 @@ void handleMainMenu(bool mode)
 					switch ( c )
 					{
 						case 0:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1328]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1329]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1328]); // "singleplayer"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1329]);                     // "Start a singleplayer game."
 							break;
 						case 1:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 76, "[o] %s", language[1330]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1331]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 76, "[o] %s", language[1330]); // "host multiplayer"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1331]);                     // "Host a multiplayer game."
 							break;
 						case 2:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 96, "[o] %s", language[1332]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1333]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 96, "[o] %s", language[1332]); // "join multiplayer"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1333]);                     // "Join a multiplayer game."
 							break;
 						case 3:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 136, "[o] %s\n     %s", language[1330], language[1537]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1538]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 136, "[o] %s\n     %s", language[1330], language[1537]); // "host multiplayer\n  (direct ip)"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1538]);                     // "Host a multiplayer game without Steamworks, using a direct IP connection."
 							break;
 						case 4:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[o] %s\n     %s", language[1332], language[1537]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1539]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[o] %s\n     %s", language[1332], language[1537]); // "join multiplayer\n  (direct ip)"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1539]);                     // "Join a multiplayer game without Steamworks, using a direct IP connection."
 							break;
 					}
 				}
