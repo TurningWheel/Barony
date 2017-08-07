@@ -740,6 +740,12 @@ void Entity::effectTimes()
 					case EFF_BLEEDING:
 						messagePlayer(player, language[614]);
 						break;
+					case EFF_MAGICRESIST:
+						messagePlayer(player, language[2470]);
+						break;
+					case EFF_MAGICREFLECT:
+						messagePlayer(player, language[2471]);
+						break;
 					default:
 						break;
 				}
@@ -5297,9 +5303,9 @@ void createMonsterEquipment(Stat* stats)
 	int chance = 1;
 	int category = 0;
 	bool itemIdentified;
-	if ( stats != NULL )
+	if ( stats != nullptr )
 	{
-		for ( itemIndex = 0; itemIndex < 10; itemIndex++ )
+		for ( itemIndex = 0; itemIndex < 10; ++itemIndex )
 		{
 			category = stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES + ITEM_SLOT_CATEGORY];
 			if ( category > 0 && stats->EDITOR_ITEMS[itemIndex * ITEM_SLOT_NUMPROPERTIES] == 1 )
@@ -5440,7 +5446,7 @@ int countCustomItems(Stat* stats)
 	{
 		if ( stats->EDITOR_ITEMS[x] != 1 || (stats->EDITOR_ITEMS[x] == 1 && stats->EDITOR_ITEMS[x + ITEM_SLOT_CATEGORY] != 0) )
 		{
-			customItemSlotCount++; //found a custom item in inventory
+			++customItemSlotCount; //found a custom item in inventory
 		}
 	}
 
@@ -5465,7 +5471,7 @@ int countDefaultItems(Stat* stats)
 
 void setRandomMonsterStats(Stat* stats)
 {
-	if ( stats != NULL )
+	if ( stats != nullptr )
 	{
 		//**************************************
 		// HEALTH
@@ -5875,4 +5881,40 @@ int Entity::isEntityPlayer() const
    }
 
    return -1;
+}
+
+int Entity::getReflection() const
+{
+	Stat *stats = getStats();
+	if ( !stats )
+	{
+		return 0;
+	}
+
+	if ( stats->EFFECTS[EFF_MAGICREFLECT] )
+	{
+		return 3;
+	}
+
+	if ( stats->amulet )
+	{
+		if ( stats->amulet->type == AMULET_MAGICREFLECTION )
+		{
+			return 2;
+		}
+	}
+	if ( stats->cloak )
+	{
+		if ( stats->cloak->type == CLOAK_MAGICREFLECTION )
+		{
+			return 1;
+		}
+	}
+	if ( stats->shield )
+	{
+		if ( stats->shield->type == MIRROR_SHIELD && stats->defending )
+		{
+			return 3;
+		}
+	}
 }

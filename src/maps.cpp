@@ -37,7 +37,7 @@ int startfloor = 0;
 
 int monsterCurve(int level)
 {
-	if ( !strncmp(map.name, "The Mines", 9) || !strncmp(map.name, "Caves", 5) )   // the mines
+	if ( !strncmp(map.name, "The Mines", 9) )   // the mines
 	{
 		switch ( rand() % 10 )
 		{
@@ -831,7 +831,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
-							
+
 							subRoom_tilex++;
 							if ( subRoom_tilex >= subRoomMap->width )
 							{
@@ -847,7 +847,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 						{
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = tempMap->tiles[z + (y0 - y) * MAPLAYERS + (x0 - x) * MAPLAYERS * tempMap->height];
 						}
-						
+
 						if ( z == 0 )
 						{
 							possiblelocations[x0 + y0 * map.width] = false;
@@ -884,7 +884,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				entity = (Entity*)node->element;
 				childEntity = newEntity(entity->sprite, 1, map.entities);
-				
+
 				// entity will return nullptr on getStats called in setSpriteAttributes as behaviour &actmonster is not set.
 				// check if the monster sprite is correct and set the behaviour manually for getStats.
 				if ( checkSpriteType(entity->sprite) == 1 && multiplayer != CLIENT )
@@ -916,7 +916,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					setSpriteAttributes(childEntity, entity, entity);
 					childEntity->x = entity->x + subRoom_tileStartx * 16;
 					childEntity->y = entity->y + subRoom_tileStarty * 16;
-					
+
 					//messagePlayer(0, "1 Generated entity. Sprite: %d X: %.2f Y: %.2f", childEntity->sprite, childEntity->x / 16, childEntity->y / 16);
 				}
 			}
@@ -2369,7 +2369,7 @@ void assignActions(map_t* map)
 					monsterType = static_cast<Monster>(monsterCurve(currentlevel));
 
 				}
-				
+
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats == nullptr )
@@ -2382,7 +2382,7 @@ void assignActions(map_t* map)
 
 						if ( entity->sprite == 10 )
 						{
-							// if the sprite is 10, then choose from monsterCurve. 
+							// if the sprite is 10, then choose from monsterCurve.
 							// Create the stat struct again for the new monster
 							myStats = new Stat(monsterType + 1000);
 						}
@@ -2396,7 +2396,7 @@ void assignActions(map_t* map)
 						node2->element = myStats;
 						//					node2->deconstructor = &myStats->~Stat;
 						node2->size = sizeof(myStats);
-					}	
+					}
 					else if ( entity->sprite == 10 )
 					{
 						// monster is random, but generated from editor
@@ -2850,7 +2850,7 @@ void assignActions(map_t* map)
 				{
 					childEntity->x = entity->x - 3;
 					childEntity->y = entity->y;
-				} 
+				}
 				else if ( entity->yaw == PI / 2 ) //SOUTH FACING
 				{
 					childEntity->x = entity->x;
@@ -2866,7 +2866,7 @@ void assignActions(map_t* map)
 					childEntity->x = entity->x;
 					childEntity->y = entity->y + 3;
 				}
-				else 
+				else
 				{
 					childEntity->x = entity->x;
 					childEntity->y = entity->y - 3;
@@ -3304,7 +3304,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				break;
-			
+
 			// east crystal shard:
 			case 98:
 			{
@@ -3556,7 +3556,7 @@ void assignActions(map_t* map)
 				childEntity->crystalMinZVelocity = 0.001; //min velocity
 				childEntity->crystalTurnVelocity = 0.2; //yaw turning velocity
 				childEntity->vel_z = childEntity->crystalMaxZVelocity * ((prng_get_uint() % 100) * 0.01); // start the velocity randomly
-				
+
 				childEntity->crystalNumElectricityNodes = entity->crystalNumElectricityNodes; //number of electricity nodes to generate in facing direction.
 				childEntity->crystalTurnReverse = entity->crystalTurnReverse;
 				childEntity->crystalSpellToActivate = entity->crystalSpellToActivate;

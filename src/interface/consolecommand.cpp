@@ -1337,6 +1337,56 @@ void consoleCommand(char* command_str)
 
 		mapLevel(clientnum);
 	}
+	else if ( !strncmp(command_str, "/drunky", 7) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		if ( !players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] )
+		{
+			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = true;
+			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = -1;
+		}
+		else
+		{
+			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = false;
+			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
+		}
+	}
+	else if ( !strncmp(command_str, "/maxskill ", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int skill = atoi(&command_str[12]);
+		if ( skill >= NUMPROFICIENCIES )
+		{
+			messagePlayer(clientnum, language[2451]); //Skill out of range.
+		}
+		else
+		{
+			for ( int i = players[clientnum]->entity->getStats()->PROFICIENCIES[skill]; i < 100; ++i )
+			{
+				players[clientnum]->entity->increaseSkill(skill);
+			}
+		}
+	}
 	else
 	{
 		messagePlayer(clientnum, language[305], command_str);

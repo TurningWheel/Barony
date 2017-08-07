@@ -735,28 +735,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( !reflection )
 					{
-						// reflection is set 1, 2 or 3 depending on the item slot. reflection of 3 does not degrade.
-						if (hitstats->amulet)
-						{
-							if (hitstats->amulet->type == AMULET_MAGICREFLECTION)
-							{
-								reflection = 2;
-							}
-						}
-						if (hitstats->cloak)
-						{
-							if (hitstats->cloak->type == CLOAK_MAGICREFLECTION)
-							{
-								reflection = 1;
-							}
-						}
-						if (hitstats->shield)
-						{
-							if ( hitstats->shield->type == MIRROR_SHIELD && hitstats->defending )
-							{
-								reflection = 3;
-							}
-						}
+						reflection = hit.entity->getReflection();
 					}
 				}
 				if ( reflection )
@@ -885,6 +864,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 				// check for magic resistance...
 				// resistance stacks diminishingly
+				//TODO: EFFECTS[EFF_MAGICRESIST]
 				int resistance = 0;
 				if ( hitstats )
 				{
@@ -1948,7 +1928,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* childentity = static_cast<Entity*>((&hit.entity->children)->first->element);
 							if ( childentity != nullptr )
 							{
-								
+
 								//Unlock crystal
 								if ( childentity->crystalSpellToActivate )
 								{
