@@ -2594,3 +2594,61 @@ void copyItem(Item* itemToSet, Item* itemToCopy)
 
 	return;
 }
+
+ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
+{
+	int numitems = NUMITEMS;
+	int numoftype = 0;
+	bool chances[NUMITEMS] = { false };
+	bool pickAnyCategory = false;
+	int c;
+
+	if ( cat < -1 || cat >= NUMCATEGORIES )
+	{
+		printlog("warning: pickItemWithinGoldValue() called with bad category value!\n");
+		return GEM_ROCK;
+	}
+
+	if ( cat == -1 )
+	{
+		pickAnyCategory = true;
+	}
+
+	// find highest value of items in category
+	for ( c = 0; c < NUMITEMS; ++c )
+	{
+		if ( items[c].category == cat || (pickAnyCategory && items[c].category != SPELL_CAT) )
+		{
+			if ( items[c].value >= minValue && items[c].value <= maxValue )
+			{
+				chances[c] = true;
+				numoftype++;
+			}
+		}
+	}
+	
+	if ( numoftype == 0 )
+	{
+		printlog("warning: category passed has no items within gold values!\n");
+		return GEM_ROCK;
+	}
+
+	// pick the item
+	int pick = prng_get_uint() % numoftype;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( chances[c] == true )
+		{
+			if ( pick == 0 )
+			{
+				return static_cast<ItemType>(c);
+			}
+			else
+			{
+				pick--;
+			}
+		}
+	}
+
+	return GEM_ROCK;
+}
