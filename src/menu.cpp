@@ -4766,10 +4766,10 @@ void openGameoverWindow()
     suby2 = yres / 2 + 160;
 
     // Calculate player score
-    char scorenum[16]; // The current score as a string - TODOR: Refactor to replace with a String
+    char currentScoreString[16]; // The current score as a string - TODOR: Refactor to replace with a String
     score_t* pScoreCalculator = scoreConstructor();
     Uint32 currentScoreValue = totalScore(pScoreCalculator);   // The current score as an integer
-    snprintf(scorenum, 16, "%d\n\n", currentScoreValue);
+    snprintf(currentScoreString, 16, "%d\n\n", currentScoreValue);
     scoreDeconstructor((void*)pScoreCalculator);
 
     // Check if the score of the Local Player is high enough to be on the scoreboard
@@ -4790,10 +4790,10 @@ void openGameoverWindow()
     // If the NetworkType is Singleplayer, then the game is over
     if ( localPlayerNetworkType == NetworkType::SINGLE )
     {
-        strcpy(subtext, language[1133]); // "You have died. Gameover."
-        strcat(subtext, language[1134]); // "Your equipment has been identified."
-        strcat(subtext, language[1135]); // "Total Score: "
-        strcat(subtext, scorenum);       // Displays the current score
+        strcpy(subtext, language[1133]);     // "You have died. Gameover."
+        strcat(subtext, language[1134]);     // "Your equipment has been identified."
+        strcat(subtext, language[1135]);     // "Total Score: "
+        strcat(subtext, currentScoreString); // Displays the current score
 
         if ( didCurrentScoreMakeScoreboard )
         {
@@ -4865,8 +4865,8 @@ void openGameoverWindow()
             strcat(subtext, language[1142]); // "As the rest of your party has perished,\nthe host must make a new game or restart the\ncurrent one to continue."
         }
 
-        strcat(subtext, language[1143]); // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
-        strcat(subtext, scorenum);       // Displays the current score
+        strcat(subtext, language[1143]);     // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
+        strcat(subtext, currentScoreString); // Displays the current score
         strcat(subtext, "\n\n");
 
         // Create the Okay Button
