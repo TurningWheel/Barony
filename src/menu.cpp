@@ -4916,8 +4916,8 @@ void getResolutionList()
 	int im;
 	
     // Log the display information
-	printlog("display count: %d.\n", numdisplays);
-	printlog("display mode count: %d.\n", nummodes);
+	printlog("Number of Displays: %d.\n", numdisplays);
+	printlog("Number of possible Display Resolutions: %d.\n", nummodes);
 	
 	for (im = 0; im < nummodes; im++)
 	{
