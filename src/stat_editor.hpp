@@ -60,40 +60,42 @@ typedef enum
 extern int kills[NUMMONSTERS];
 
 // effects
-#define EFF_ASLEEP 0
-#define EFF_POISONED 1
-#define EFF_STUNNED 2
-#define EFF_CONFUSED 3
-#define EFF_DRUNK 4
-#define EFF_INVISIBLE 5
-#define EFF_BLIND 6
-#define EFF_GREASY 7
-#define EFF_MESSY 8
-#define EFF_FAST 9
-#define EFF_PARALYZED 10
-#define EFF_LEVITATING 11
-#define EFF_TELEPATH 12
-#define EFF_VOMITING 13
-#define EFF_BLEEDING 14
-#define EFF_SLOW 15
-#define NUMEFFECTS 16
+static const int EFF_ASLEEP = 0;
+static const int EFF_POISONED = 1;
+static const int EFF_STUNNED = 2;
+static const int EFF_CONFUSED = 3;
+static const int EFF_DRUNK = 4;
+static const int EFF_INVISIBLE = 5;
+static const int EFF_BLIND = 6;
+static const int EFF_GREASY = 7;
+static const int EFF_MESSY = 8;
+static const int EFF_FAST = 9;
+static const int EFF_PARALYZED = 10;
+static const int EFF_LEVITATING = 11;
+static const int EFF_TELEPATH = 12;
+static const int EFF_VOMITING = 13;
+static const int EFF_BLEEDING = 14;
+static const int EFF_SLOW = 15;
+static const int EFF_MAGICRESIST = 16;
+static const int EFF_MAGICREFLECT = 17;
+static const int NUMEFFECTS = 18;
 
 // proficiencies
-#define PRO_LOCKPICKING 0   // base attribute: dex
-#define PRO_STEALTH 1       // base attribute: dex
-#define PRO_TRADING 2       // base attribute: chr
-#define PRO_APPRAISAL 3     // base attribute: per
-#define PRO_SWIMMING 4      // base attribute: con
-#define PRO_LEADERSHIP 5    // base attribute: chr
-#define PRO_SPELLCASTING 6  // base attribute: int
-#define PRO_MAGIC 7         // base attribute: int
-#define PRO_RANGED 8        // base attribute: dex
-#define PRO_SWORD 9         // base attribute: str
-#define PRO_MACE 10         // base attribute: str
-#define PRO_AXE 11          // base attribute: str
-#define PRO_POLEARM 12      // base attribute: str
-#define PRO_SHIELD 13       // base attribute: con
-const int NUMPROFICIENCIES = 14;
+static const int PRO_LOCKPICKING = 0;   // base attribute: dex
+static const int PRO_STEALTH = 1;       // base attribute: dex
+static const int PRO_TRADING = 2;       // base attribute: chr
+static const int PRO_APPRAISAL = 3;     // base attribute: per
+static const int PRO_SWIMMING = 4;      // base attribute: con
+static const int PRO_LEADERSHIP = 5;    // base attribute: chr
+static const int PRO_SPELLCASTING = 6;  // base attribute: int
+static const int PRO_MAGIC = 7;         // base attribute: int
+static const int PRO_RANGED = 8;        // base attribute: dex
+static const int PRO_SWORD = 9;         // base attribute: str
+static const int PRO_MACE = 10;         // base attribute: str
+static const int PRO_AXE = 11;          // base attribute: str
+static const int PRO_POLEARM = 12;      // base attribute: str
+static const int PRO_SHIELD = 13;       // base attribute: con
+static const int NUMPROFICIENCIES = 14;
 
 #define NUMCATEGORIES 13
 

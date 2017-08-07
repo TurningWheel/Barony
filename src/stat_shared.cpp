@@ -631,7 +631,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->INT = -2;
 			stats->RANDOM_INT = 0;
 			stats->PER = 25;
-			stats->RANDOM_PER = 25;
+			stats->RANDOM_PER = 0;
 			stats->CHR = -3;
 			stats->RANDOM_CHR = 0;
 
