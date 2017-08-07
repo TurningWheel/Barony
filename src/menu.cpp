@@ -77,8 +77,8 @@ button_t* button_misc_tab = nullptr;
 int score_window = 0;
 int settings_xres, settings_yres;
 
-typedef std::tuple<int, int> resolution;
-std::list<resolution> resolutions;
+typedef std::tuple<int, int> displayResolution;
+std::list<displayResolution> resolutions;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
@@ -4925,13 +4925,13 @@ void getResolutionList()
 		// Resolutions below 960x600 are not supported and are discarded
 		if ( mode.w >= 960 && mode.h >= 600 )
 		{
-			resolution res(mode.w, mode.h);
+            displayResolution res(mode.w, mode.h);
 			resolutions.push_back(res);
 		}
 	}
 	
 	// Sort the list of resolutions by total number of pixels (Width*Height)
-	resolutions.sort([](resolution a, resolution b) {
+	resolutions.sort([](displayResolution a, displayResolution b) {
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
 	});
 
