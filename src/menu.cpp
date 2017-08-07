@@ -4844,19 +4844,19 @@ void openGameoverWindow()
     {
         strcpy(subtext, language[1140]); // "You have died.\n"
 
-        bool survivingPlayer = false;
+        bool isThereASurvivingPlayer = false;
         for ( Uint8 iPlayerNum = 0; iPlayerNum < MAXPLAYERS; iPlayerNum++ )
         {
             // If the Player we are checking has not disconnected, and does exist (is not dead), then there is a surviving player
             if ( !client_disconnected[iPlayerNum] && players[iPlayerNum]->entity )
             {
-                survivingPlayer = true;
+                isThereASurvivingPlayer = true;
                 break;
             }
         }
 
         // If there is still a player left alive
-        if ( survivingPlayer )
+        if ( isThereASurvivingPlayer )
         {
             strcat(subtext, language[1141]); // "You will be revived, however, if your\nparty survives to the next level.\n\n"
         }
