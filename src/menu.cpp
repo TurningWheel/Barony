@@ -5220,11 +5220,9 @@ void openFailedConnectionWindow(NetworkType netType)
 	}
 
     // TODOR: Buttons should be a class, dynamically allocated and deleted properly
-    // Create the Buttons
-    button_t* pCloseButton;
-    button_t* pOkayButton;
-
+  
 	// Create the 'X (Close)' Button
+    button_t* pCloseButton = nullptr;
     pCloseButton = newButton();
 	strcpy(pCloseButton->label, "x");
     pCloseButton->x = subx2 - 20;
@@ -5236,8 +5234,10 @@ void openFailedConnectionWindow(NetworkType netType)
     pCloseButton->focused = 1;
     pCloseButton->key = SDL_SCANCODE_ESCAPE;
     pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    pCloseButton = nullptr;
 
 	// Create the 'Okay' Button
+    button_t* pOkayButton = nullptr;
     pOkayButton = newButton();
 	strcpy(pOkayButton->label, language[732]);
     pOkayButton->x = subx2 - (subx2 - subx1) / 2 - strlen(language[732]) * 6;
@@ -5248,6 +5248,7 @@ void openFailedConnectionWindow(NetworkType netType)
     pOkayButton->focused = 1;
     pOkayButton->key = SDL_SCANCODE_RETURN;
     pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+    pOkayButton = nullptr;
 
     // Setup the 'Okay' Button's action based off @netType
 	if ( directConnect )
