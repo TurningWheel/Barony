@@ -4911,30 +4911,31 @@ void openGameoverWindow()
 // Any display resolution below 960x600 are ignored
 void getResolutionList()
 {
-	int numberOfDisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
-	int numberOfModes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
-	
+    int numberOfDisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
+    int numberOfModes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
+
     // Log the display information
-	printlog("Number of Displays: %d.\n", numberOfDisplays);
-	printlog("Number of possible Display Resolutions: %d.\n", numberOfModes);
-	
-	for (int iModeIndex = 0; iModeIndex < numberOfModes; iModeIndex++)
-	{
-		SDL_DisplayMode mode; // The display resolution size (WIDTH x HEIGHT)
-		SDL_GetDisplayMode(0, iModeIndex, &mode);
-		// Resolutions below 960x600 are not supported and are discarded
-		if ( mode.w >= 960 && mode.h >= 600 )
-		{
+    printlog("Number of Displays: %d.\n", numberOfDisplays);
+    printlog("Number of possible Display Resolutions: %d.\n", numberOfModes);
+
+    for ( int iModeIndex = 0; iModeIndex < numberOfModes; iModeIndex++ )
+    {
+        SDL_DisplayMode mode; // The display resolution size (WIDTH x HEIGHT)
+        SDL_GetDisplayMode(0, iModeIndex, &mode);
+        // Resolutions below 960x600 are not supported and are discarded
+        if ( mode.w >= 960 && mode.h >= 600 )
+        {
             // Create a tuple, resolution, to hold the width and height
             displayResolution resolution(mode.w, mode.h);
             listOfDisplayResolutions.push_back(resolution);
-		}
-	}
-	
-	// Sort the list of resolutions by total number of pixels (WIDTH x HEIGHT)
-    listOfDisplayResolutions.sort([](displayResolution a, displayResolution b) {
-		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
-	});
+        }
+    }
+
+    // Sort the list of resolutions by total number of pixels (WIDTH x HEIGHT)
+    listOfDisplayResolutions.sort([](displayResolution a, displayResolution b)
+    {
+        return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
+    });
 
     // Remove any duplicates in the list
     listOfDisplayResolutions.unique();
