@@ -263,7 +263,7 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	if ( hitstats->type ==  MINOTAUR || hitstats->type == LICH || hitstats->type == DEVIL || hitstats->type == SHOPKEEPER || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-		messagePlayerColor(parent->skill[2], color, language[2463]);
+		messagePlayerColor(parent->skill[2], color, language[2429]);
 		return false;
 	}
 
@@ -280,17 +280,17 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		{
 			if ( strcmp(hitstats->name, "") )
 			{
-				messagePlayerColor(parent->skill[2], color, language[2461], hitstats->name);
+				messagePlayerColor(parent->skill[2], color, language[2427], hitstats->name);
 			}
 			else
 			{
 				if ( hitstats->type < KOBOLD ) //Original monster count
 				{
-					messagePlayerColor(parent->skill[2], color, language[2462], language[90 + hitstats->type]);
+					messagePlayerColor(parent->skill[2], color, language[2428], language[90 + hitstats->type]);
 				}
 				else if ( hitstats->type >= KOBOLD ) //New monsters
 				{
-					messagePlayerColor(parent->skill[2], color, language[2462], language[2000 + (hitstats->type - KOBOLD)]);
+					messagePlayerColor(parent->skill[2], color, language[2428], language[2000 + (hitstats->type - KOBOLD)]);
 				}
 			}
 		}
