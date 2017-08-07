@@ -2251,10 +2251,11 @@ void handleMainMenu(bool mode)
 		}
 	}
 
+    // TODOR: Refactor this so it doesn't use 2 == true, for now, im going to convert NetworkType into int
 	// connect window
 	if ( connect_window )
 	{
-		if ( connect_window == NetworkType::SERVER )
+		if ( connect_window == static_cast<int>(NetworkType::SERVER) )
 		{
 			drawDepressed(subx1 + 8, suby1 + 40, subx2 - 8, suby1 + 64);
 			ttfPrintText(ttf12, subx1 + 12, suby1 + 46, portnumber_char);
@@ -2274,7 +2275,7 @@ void handleMainMenu(bool mode)
 				ttfPrintText(ttf12, subx1 + 12 + x, suby1 + 46, "_");
 			}
 		}
-		else if ( connect_window == NetworkType::CLIENT )
+		else if ( connect_window == static_cast<int>(NetworkType::CLIENT) )
 		{
 			drawDepressed(subx1 + 8, suby1 + 40, subx2 - 8, suby1 + 64);
 			if ( !broadcast )
