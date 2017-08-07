@@ -5153,30 +5153,34 @@ void openSettingsWindow()
 
 void openSteamLobbyWaitWindow(button_t* my);
 
-// "failed to connect" message
-void openFailedConnectionWindow(int mode)
+// Create a new Window to display the "failed to connect" message for @netType
+// @param netType: The NetworkType that has failed
+// Closes current Window and creates a new Window in the middle of the screen
+void openFailedConnectionWindow(NetworkType netType)
 {
-	button_t* button;
-
-	// close current window
-	buttonCloseSubwindow(NULL);
+    // TODOR: Windows should be a class, dynamically allocated and deleted properly
+	// Close the current Window
+	buttonCloseSubwindow(nullptr);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
 
-	// create new window
+    //TODOR: Windows should be a class, not a bunch of global variables we hope don't clash
+	// Create the new window
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
 	suby1 = yres / 2 - 64;
 	suby2 = yres / 2 + 64;
+
+    // Display the error, based off @netType
 	if ( directConnect )
 	{
-		if ( mode == NetworkType::CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
 			strcpy(subtext, language[1439]);
 			strcat(subtext, SDLNet_GetError());
 		}
-		else if ( mode == NetworkType::SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
 			strcpy(subtext, language[1440]);
 			strcat(subtext, SDLNet_GetError());
@@ -5188,11 +5192,11 @@ void openFailedConnectionWindow(int mode)
 	}
 	else
 	{
-		if ( mode == NetworkType::CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
 			strcpy(subtext, language[1441]);
 		}
-		else if ( mode == NetworkType::SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
 			strcpy(subtext, language[1442]);
 		}
@@ -5202,62 +5206,69 @@ void openFailedConnectionWindow(int mode)
 		}
 	}
 
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    // TODOR: Buttons should be a class, dynamically allocated and deleted properly
+    // Create the Buttons
+    button_t* pCloseButton;
+    button_t* pOkayButton;
 
-	// okay button
-	button = newButton();
-	strcpy(button->label, language[732]);
-	button->x = subx2 - (subx2 - subx1) / 2 - strlen(language[732]) * 6;
-	button->y = suby2 - 24;
-	button->sizex = strlen(language[732]) * 12 + 8;
-	button->sizey = 20;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
+	// Create the 'X (Close)' Button
+    pCloseButton = newButton();
+	strcpy(pCloseButton->label, "x");
+    pCloseButton->x = subx2 - 20;
+    pCloseButton->y = suby1;
+    pCloseButton->sizex = 20;
+    pCloseButton->sizey = 20;
+    pCloseButton->action = &buttonCloseSubwindow;
+    pCloseButton->visible = 1;
+    pCloseButton->focused = 1;
+    pCloseButton->key = SDL_SCANCODE_ESCAPE;
+    pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
 
+	// Create the 'Okay' Button
+    pOkayButton = newButton();
+	strcpy(pOkayButton->label, language[732]);
+    pOkayButton->x = subx2 - (subx2 - subx1) / 2 - strlen(language[732]) * 6;
+    pOkayButton->y = suby2 - 24;
+    pOkayButton->sizex = strlen(language[732]) * 12 + 8;
+    pOkayButton->sizey = 20;
+    pOkayButton->visible = 1;
+    pOkayButton->focused = 1;
+    pOkayButton->key = SDL_SCANCODE_RETURN;
+    pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+
+    // Setup the 'Okay' Button's action based off @netType
 	if ( directConnect )
 	{
-		if ( mode == NetworkType::CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
-			button->action = &buttonJoinMultiplayer;
+            pOkayButton->action = &buttonJoinMultiplayer;
 		}
-		else if ( mode == NetworkType::SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
-			button->action = &buttonHostMultiplayer;
+            pOkayButton->action = &buttonHostMultiplayer;
 		}
 		else
 		{
-			button->action = &buttonCloseSubwindow;
+            pOkayButton->action = &buttonCloseSubwindow;
 		}
 	}
 	else
 	{
-		if ( mode == NetworkType::CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
-			button->action = &openSteamLobbyWaitWindow;
+            pOkayButton->action = &openSteamLobbyWaitWindow;
 		}
-		else if ( mode == NetworkType::SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
-			button->action = &buttonCloseSubwindow;
+            pOkayButton->action = &buttonCloseSubwindow;
 		}
 		else
 		{
-			button->action = &buttonCloseSubwindow;
+            pOkayButton->action = &buttonCloseSubwindow;
 		}
 	}
 
+    // Reset the Local Player's connection status
 	localPlayerNetworkType = NetworkType::SINGLE;
 	clientnum = 0;
 }

@@ -76,7 +76,7 @@ void buttonSteamLobbyBrowserRefresh(button_t* my);
 
 // misc functions
 void openSettingsWindow();
-void openFailedConnectionWindow(int mode);
+void openFailedConnectionWindow(NetworkType netType);
 void openGameoverWindow();
 void openSteamLobbyBrowserWindow(button_t* my);
 void openLoadGameWindow(button_t* my);
