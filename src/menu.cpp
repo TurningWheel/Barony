@@ -4906,16 +4906,17 @@ void openGameoverWindow()
     pCloseButton = nullptr;
 }
 
-// get 
+// Used for collecting the list of possible resolutions to display in the Settings Menu
+// Collects all possible resolution types on the Main Display, adds them to the list, sorts the list, and removes any duplicates
+// Any display resolution below 960x600 are ignored
 void getResolutionList()
 {
-	// for now just use the resolution modes on the first
-	// display.
-	int numdisplays = SDL_GetNumVideoDisplays();
-	int nummodes = SDL_GetNumDisplayModes(0);
+	int numdisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
+	int nummodes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
 	int im;
 	int c;
 	
+    // Log the display information
 	printlog("display count: %d.\n", numdisplays);
 	printlog("display mode count: %d.\n", nummodes);
 	
@@ -4923,7 +4924,7 @@ void getResolutionList()
 	{
 		SDL_DisplayMode mode;
 		SDL_GetDisplayMode(0, im, &mode);
-		// resolutions below 960x600 are not supported
+		// Resolutions below 960x600 are not supported and are discarded
 		if ( mode.w >= 960 && mode.h >= 600 )
 		{
 			resolution res(mode.w, mode.h);
@@ -4931,10 +4932,12 @@ void getResolutionList()
 		}
 	}
 	
-	// Sort by total number of pixels
+	// Sort the list of resolutions by total number of pixels (Width*Height)
 	resolutions.sort([](resolution a, resolution b) {
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
 	});
+
+    // Remove any duplicates in the list
 	resolutions.unique();
 }
 
