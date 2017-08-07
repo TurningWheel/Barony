@@ -5917,4 +5917,5 @@ int Entity::getReflection() const
 			return 3;
 		}
 	}
+	return 0;
 }
