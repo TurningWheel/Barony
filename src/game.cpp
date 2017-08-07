@@ -3112,7 +3112,7 @@ int main(int argc, char** argv)
 						drawImageAlpha(cross_bmp, NULL, &pos, 128);
 					}
 				}
-				else if ( localPlayerNetworkType == NetworkType::SINGLE ) // TODOR: WAS "!localPlayerNetworkType" - Remove this comment if it builds (8-6-2017)
+				else if ( localPlayerNetworkType == NetworkType::SINGLE ) // TODOR: Refactor this so ints are not bools
 				{
 					// darken the rest of the screen
 					src.x = 0;
