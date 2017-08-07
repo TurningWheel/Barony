@@ -4947,8 +4947,6 @@ void getResolutionList()
 // Creates a Subwindow with multiple Tabs to separate Settings Subwindows
 void openSettingsWindow()
 {
-	button_t* button;
-
     // Populate the list of possible possible resolutions (listOfDisplayResolutions)
 	getResolutionList();
 	
@@ -5016,52 +5014,60 @@ void openSettingsWindow()
 	strcpy(subtext, language[1306]);
 
 	// Create the Close Button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSettingsSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    button_t* pCloseButton = nullptr;
+    pCloseButton = newButton();
+	strcpy(pCloseButton->label, "x");
+    pCloseButton->x = subx2 - 20;
+    pCloseButton->y = suby1;
+    pCloseButton->sizex = 20;
+    pCloseButton->sizey = 20;
+    pCloseButton->action = &buttonCloseSettingsSubwindow;
+    pCloseButton->visible = 1;
+    pCloseButton->focused = 1;
+    pCloseButton->key = SDL_SCANCODE_ESCAPE;
+    pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    pCloseButton = nullptr;
 
 	// Create the Cancel Button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->x = subx1 + 8;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+    button_t* pCancelButton = nullptr;
+    pCancelButton = newButton();
+	strcpy(pCancelButton->label, language[1316]);
+    pCancelButton->x = subx1 + 8;
+    pCancelButton->y = suby2 - 28;
+    pCancelButton->sizex = strlen(language[1316]) * 12 + 8;
+    pCancelButton->sizey = 20;
+    pCancelButton->action = &buttonCloseSubwindow;
+    pCancelButton->visible = 1;
+    pCancelButton->focused = 1;
+    pCancelButton = nullptr;
 
 	// Create the Okay Button
-	button = newButton();
-	strcpy(button->label, language[1433]);
-	button->x = subx2 - strlen(language[1433]) * 12 - 16;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1433]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonSettingsOK;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
+    button_t* pOkayButton = nullptr;
+    pOkayButton = newButton();
+	strcpy(pOkayButton->label, language[1433]);
+    pOkayButton->x = subx2 - strlen(language[1433]) * 12 - 16;
+    pOkayButton->y = suby2 - 28;
+    pOkayButton->sizex = strlen(language[1433]) * 12 + 8;
+    pOkayButton->sizey = 20;
+    pOkayButton->action = &buttonSettingsOK;
+    pOkayButton->visible = 1;
+    pOkayButton->focused = 1;
+    pOkayButton->key = SDL_SCANCODE_RETURN;
+    pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+    pOkayButton = nullptr;
 
 	// Create the Accept Button
-	button = newButton();
-	strcpy(button->label, language[1317]);
-	button->x = subx2 - strlen(language[1317]) * 12 - 16 - strlen(language[1317]) * 12 - 16;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1317]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonSettingsAccept;
-	button->visible = 1;
-	button->focused = 1;
+    button_t* pAcceptButton = nullptr;
+    pAcceptButton = newButton();
+	strcpy(pAcceptButton->label, language[1317]);
+    pAcceptButton->x = subx2 - strlen(language[1317]) * 12 - 16 - strlen(language[1317]) * 12 - 16;
+    pAcceptButton->y = suby2 - 28;
+    pAcceptButton->sizex = strlen(language[1317]) * 12 + 8;
+    pAcceptButton->sizey = 20;
+    pAcceptButton->action = &buttonSettingsAccept;
+    pAcceptButton->visible = 1;
+    pAcceptButton->focused = 1;
+    pAcceptButton = nullptr;
 
 	int tabx_so_far = subx1 + 16;
 
@@ -5069,100 +5075,114 @@ void openSettingsWindow()
 	// TODO: Maybe golden highlighting & stuff.
 
 	// Create the Video Tab Button
-	button = newButton();
-	strcpy(button->label, language[1434]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1434]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonVideoTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_video_tab = button;
+    button_t* pVideoTabButton = nullptr;
+    pVideoTabButton = newButton();
+	strcpy(pVideoTabButton->label, language[1434]);
+    pVideoTabButton->x = tabx_so_far;
+    pVideoTabButton->y = suby1 + 24;
+    pVideoTabButton->sizex = strlen(language[1434]) * 12 + 8;
+    pVideoTabButton->sizey = 20;
+    pVideoTabButton->action = &buttonVideoTab;
+    pVideoTabButton->visible = 1;
+    pVideoTabButton->focused = 1;
+	button_video_tab = pVideoTabButton;
+    pVideoTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1434]) * 12 + 8;
 
 	// Create the Audio Tab Button
-	button = newButton();
-	strcpy(button->label, language[1435]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1435]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonAudioTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_audio_tab = button;
+    button_t* pAudioTabButton = nullptr;
+    pAudioTabButton = newButton();
+	strcpy(pAudioTabButton->label, language[1435]);
+    pAudioTabButton->x = tabx_so_far;
+    pAudioTabButton->y = suby1 + 24;
+    pAudioTabButton->sizex = strlen(language[1435]) * 12 + 8;
+    pAudioTabButton->sizey = 20;
+    pAudioTabButton->action = &buttonAudioTab;
+    pAudioTabButton->visible = 1;
+    pAudioTabButton->focused = 1;
+	button_audio_tab = pAudioTabButton;
+    pAudioTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1435]) * 12 + 8;
 
 	// Create the Keyboard Tab Button
-	button = newButton();
-	strcpy(button->label, language[1436]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1436]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonKeyboardTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_keyboard_tab = button;
+    button_t* pKeyboardTabButton = nullptr;
+    pKeyboardTabButton = newButton();
+	strcpy(pKeyboardTabButton->label, language[1436]);
+    pKeyboardTabButton->x = tabx_so_far;
+    pKeyboardTabButton->y = suby1 + 24;
+    pKeyboardTabButton->sizex = strlen(language[1436]) * 12 + 8;
+    pKeyboardTabButton->sizey = 20;
+    pKeyboardTabButton->action = &buttonKeyboardTab;
+    pKeyboardTabButton->visible = 1;
+    pKeyboardTabButton->focused = 1;
+	button_keyboard_tab = pKeyboardTabButton;
+    pKeyboardTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1436]) * 12 + 8;
 
 	// Create the Mouse Tab Button
-	button = newButton();
-	strcpy(button->label, language[1437]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1437]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonMouseTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_mouse_tab = button;
+    button_t* pMouseTabButton = nullptr;
+    pMouseTabButton = newButton();
+	strcpy(pMouseTabButton->label, language[1437]);
+    pMouseTabButton->x = tabx_so_far;
+    pMouseTabButton->y = suby1 + 24;
+    pMouseTabButton->sizex = strlen(language[1437]) * 12 + 8;
+    pMouseTabButton->sizey = 20;
+    pMouseTabButton->action = &buttonMouseTab;
+    pMouseTabButton->visible = 1;
+    pMouseTabButton->focused = 1;
+	button_mouse_tab = pMouseTabButton;
+    pMouseTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1437]) * 12 + 8;
 
 	// Create the Gameplay Bindings Tab Button
-	button = newButton();
-	strcpy(button->label, language[1947]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1947]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonGamepadBindingsTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_gamepad_bindings_tab = button;
+    button_t* pGameplayBindingsTabButton = nullptr;
+    pGameplayBindingsTabButton = newButton();
+	strcpy(pGameplayBindingsTabButton->label, language[1947]);
+    pGameplayBindingsTabButton->x = tabx_so_far;
+    pGameplayBindingsTabButton->y = suby1 + 24;
+    pGameplayBindingsTabButton->sizex = strlen(language[1947]) * 12 + 8;
+    pGameplayBindingsTabButton->sizey = 20;
+    pGameplayBindingsTabButton->action = &buttonGamepadBindingsTab;
+    pGameplayBindingsTabButton->visible = 1;
+    pGameplayBindingsTabButton->focused = 1;
+	button_gamepad_bindings_tab = pGameplayBindingsTabButton;
+    pGameplayBindingsTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1947]) * 12 + 8;
 
 	// Create the Gameplay Settings Tab Button
-	button = newButton();
-	strcpy(button->label, language[2400]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[2400]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonGamepadSettingsTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_gamepad_settings_tab = button;
+    button_t* pGameplaySettingsTabButton = nullptr;
+    pGameplaySettingsTabButton = newButton();
+	strcpy(pGameplaySettingsTabButton->label, language[2400]);
+    pGameplaySettingsTabButton->x = tabx_so_far;
+    pGameplaySettingsTabButton->y = suby1 + 24;
+    pGameplaySettingsTabButton->sizex = strlen(language[2400]) * 12 + 8;
+    pGameplaySettingsTabButton->sizey = 20;
+    pGameplaySettingsTabButton->action = &buttonGamepadSettingsTab;
+    pGameplaySettingsTabButton->visible = 1;
+    pGameplaySettingsTabButton->focused = 1;
+	button_gamepad_settings_tab = pGameplaySettingsTabButton;
+    pGameplaySettingsTabButton = nullptr;
 
 	tabx_so_far += strlen(language[2400]) * 12 + 8;
 
 	// Create the Misc Tab Button
-	button = newButton();
-	strcpy(button->label, language[1438]);
-	button->x =  tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1438]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonMiscTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_misc_tab = button;
+    button_t* pMiscTabButton = nullptr;
+    pMiscTabButton = newButton();
+	strcpy(pMiscTabButton->label, language[1438]);
+    pMiscTabButton->x =  tabx_so_far;
+    pMiscTabButton->y = suby1 + 24;
+    pMiscTabButton->sizex = strlen(language[1438]) * 12 + 8;
+    pMiscTabButton->sizey = 20;
+    pMiscTabButton->action = &buttonMiscTab;
+    pMiscTabButton->visible = 1;
+    pMiscTabButton->focused = 1;
+	button_misc_tab = pMiscTabButton;
+    pMiscTabButton = nullptr;
 
 	//Initialize resolution confirmation Window related variables
 	resolutionChanged = false;
