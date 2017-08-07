@@ -36,7 +36,7 @@ void actFountain(Entity* my)
 	//messagePlayer(0, "actFountain()");
 	//TODO: Temporary mechanism testing code.
 	/*
-	if( multiplayer != CLIENT ) {
+	if( localPlayerNetworkType != NetworkType::CLIENT ) {
 		if (my->skill[28]) {
 			//All it does is change its sprite to sink if it's powered.
 			if (my->skill[28] == 1) {
@@ -51,7 +51,7 @@ void actFountain(Entity* my)
 	//TODO: Sounds.
 
 	// spray water
-	if ( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) )
+	if ( my->skill[0] > 0 || ( !my->skill[2] && localPlayerNetworkType == NetworkType::CLIENT ) )
 	{
 #define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
@@ -79,7 +79,7 @@ void actFountain(Entity* my)
 	}
 
 	// the rest of the function is server-side.
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -141,7 +141,7 @@ void actFountain(Entity* my)
 						{
 							//Potion effect. Potion effect is stored in my->skill[3], randomly chosen when the fountain is created.
 							messagePlayer(i, language[470]);
-							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<Status>(4), 0, 1, 0, false, NULL);
+							Item* item = newItem(static_cast<ItemType>(POTION_WATER + my->skill[3]), static_cast<ItemStatus>(4), 0, 1, 0, false, NULL);
 							useItem(item, i);
 							// Long live the mystical fountain of TODO.
 							break;
@@ -193,7 +193,7 @@ void actFountain(Entity* my)
 							{
 								stats[i]->mask->beatitude++;
 							}
-							if ( multiplayer == SERVER && i > 0 )
+							if ( localPlayerNetworkType == NetworkType::SERVER && i > 0 )
 							{
 								strcpy((char*)net_packet->data, "BLES");
 								net_packet->address.host = net_clients[i - 1].host;

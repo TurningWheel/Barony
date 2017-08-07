@@ -112,7 +112,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	}
 	if ( entlist == map.entities )
 	{
-		if ( multiplayer != CLIENT || loading )
+		if ( localPlayerNetworkType != NetworkType::CLIENT || loading )
 		{
 			uid = entity_uids;
 			entity_uids++;
@@ -169,7 +169,7 @@ Entity::~Entity()
 	}*/
 
 	// alert clients of the entity's deletion
-	if (multiplayer == SERVER && !loading)
+	if (localPlayerNetworkType == NetworkType::SERVER && !loading)
 	{
 		if (mynode->list == map.entities && uid != 0 && flags[NOUPDATE] == false)
 		{
@@ -406,7 +406,7 @@ void Entity::effectTimes()
 				temp = node->next;
 			}
 			spell->magic_effects_node = NULL; //To prevent recursive removal, which results in a crash.
-			if (player > -1 && multiplayer == SERVER)
+			if (player > -1 && localPlayerNetworkType == NetworkType::SERVER)
 			{
 				strcpy( (char*)net_packet->data, "UNCH");
 				net_packet->data[4] = player;
@@ -656,7 +656,7 @@ void Entity::effectTimes()
 					default:
 						break;
 				}
-				if ( player > 0 && multiplayer == SERVER )
+				if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 				{
 					serverUpdateEffects(player);
 				}
@@ -714,7 +714,7 @@ void Entity::increaseSkill(int skill)
 		}
 	}
 	myStats->EXP += 2;
-	if ( player > 0 && multiplayer == SERVER )
+	if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// update SKILL
 		strcpy((char*)net_packet->data, "SKIL");
@@ -1132,7 +1132,7 @@ void Entity::setHP(int amount)
 	strncpy(entitystats->obituary, language[1500], 127);
 
 	int i = 0;
-	if (multiplayer == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (i = 1; i < numplayers; i++)
 		{
@@ -1198,7 +1198,7 @@ void Entity::setMP(int amount)
 	entitystats->MP = std::min(std::max(0, amount), entitystats->MAXMP);
 
 	int i = 0;
-	if (multiplayer == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		for (i = 1; i < numplayers; i++)
 		{
@@ -1276,7 +1276,7 @@ void Entity::drainMP(int amount)
 		overdrawn = entitystats->MP;
 		entitystats->MP = 0;
 	}
-	if (multiplayer == SERVER)
+	if (localPlayerNetworkType == NetworkType::SERVER)
 	{
 		//First check if the entity is the player.
 		for (i = 1; i < numplayers; ++i)
@@ -1294,7 +1294,7 @@ void Entity::drainMP(int amount)
 			}
 		}
 	}
-	else if (clientnum != 0 && multiplayer == CLIENT)
+	else if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		if (this == players[clientnum]->entity)
 		{
@@ -1464,7 +1464,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 
 		// inform clients of stat changes
-		if ( multiplayer == SERVER && player > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;
@@ -1600,7 +1600,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				camera_shakey += 9;
 			}
-			else if ( player > 0 && multiplayer == SERVER )
+			else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 			{
 				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 0; // turns into 0
@@ -1707,7 +1707,7 @@ void Entity::handleEffects(Stat* myStats)
 			if ( player >= 0 )
 			{
 				dropItem(myStats->weapon, player);
-				if ( player > 0 && multiplayer == SERVER )
+				if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 				{
 					strcpy((char*)net_packet->data, "DROP");
 					net_packet->data[4] = 5;
@@ -1742,7 +1742,7 @@ void Entity::handleEffects(Stat* myStats)
 					}
 				}
 				myStats->shield->count = 1;
-				myStats->shield->status = static_cast<Status>(myStats->shield->status - 1);
+				myStats->shield->status = static_cast<ItemStatus>(myStats->shield->status - 1);
 				if ( myStats->shield->status > BROKEN )
 				{
 					messagePlayer(player, language[637], myStats->shield->getName());
@@ -1751,7 +1751,7 @@ void Entity::handleEffects(Stat* myStats)
 				{
 					messagePlayer(player, language[638], myStats->shield->getName());
 				}
-				if ( multiplayer == SERVER && player > 0 )
+				if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 				{
 					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 4;
@@ -1801,7 +1801,7 @@ void Entity::handleEffects(Stat* myStats)
 				camera_shakex += .1;
 				camera_shakey += 10;
 			}
-			else if ( player > 0 && multiplayer == SERVER )
+			else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 			{
 				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 10; // turns into .1
@@ -1842,7 +1842,7 @@ void Entity::handleEffects(Stat* myStats)
 					camera_shakex -= .03;
 					camera_shakey += 3;
 				}
-				else if ( player > 0 && multiplayer == SERVER )
+				else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 				{
 					strcpy((char*)net_packet->data, "SHAK");
 					net_packet->data[4] = -3; // turns into -.03
@@ -1909,7 +1909,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				camera_shakey += 3;
 			}
-			else if ( player > 0 && multiplayer == SERVER )
+			else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 			{
 				strcpy((char*)net_packet->data, "SHAK");
 				net_packet->data[4] = 0; // turns into 0
@@ -1931,7 +1931,7 @@ void Entity::handleEffects(Stat* myStats)
 						}
 					}
 					myStats->cloak->count = 1;
-					myStats->cloak->status = static_cast<Status>(myStats->cloak->status - 1);
+					myStats->cloak->status = static_cast<ItemStatus>(myStats->cloak->status - 1);
 					if ( myStats->cloak->status != BROKEN )
 					{
 						messagePlayer(player, language[645], myStats->cloak->getName());
@@ -1940,7 +1940,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						messagePlayer(player, language[646], myStats->cloak->getName());
 					}
-					if ( player > 0 && multiplayer == SERVER )
+					if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 					{
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 6;
@@ -1956,7 +1956,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->flags[BURNING] = false;
 				messagePlayer(player, language[647]);
-				if ( player > 0 && multiplayer == SERVER )
+				if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 				{
 					serverUpdateEntityFlag(this, BURNING);
 				}
@@ -1990,7 +1990,7 @@ void Entity::handleEffects(Stat* myStats)
 						myStats->amulet->count = 1;
 						myStats->amulet->status = BROKEN;
 						playSoundEntity(this, 76, 64);
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 7;
@@ -2005,7 +2005,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						camera_shakey += 8;
 					}
-					else if ( player > 0 && multiplayer == SERVER )
+					else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 					{
 						strcpy((char*)net_packet->data, "SHAK");
 						net_packet->data[4] = 0; // turns into 0
@@ -2031,7 +2031,7 @@ void Entity::handleEffects(Stat* myStats)
 					myStats->amulet->count = 1;
 					myStats->amulet->status = BROKEN;
 					playSoundEntity(this, 76, 64);
-					if ( player > 0 && multiplayer == SERVER )
+					if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 					{
 						strcpy((char*)net_packet->data, "ARMR");
 						net_packet->data[4] = 7;
@@ -2070,7 +2070,7 @@ void Entity::handleEffects(Stat* myStats)
 					if ( myStats->MAXHP < 10 )
 					{
 						myStats->MAXHP = 10;
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 						{
 							strcpy((char*)net_packet->data, "ATTR");
 							net_packet->data[4] = clientnum;
@@ -2109,7 +2109,7 @@ void Entity::handleEffects(Stat* myStats)
 				}
 				myStats->amulet->status = BROKEN;
 				playSoundEntity(this, 76, 64);
-				if ( player > 0 && multiplayer == SERVER )
+				if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 				{
 					strcpy((char*)net_packet->data, "ARMR");
 					net_packet->data[4] = 7;
@@ -2745,7 +2745,7 @@ void Entity::attack(int pose, int charge)
 		player = -1;    // not a player
 	}
 
-	if (multiplayer != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		// animation
 		if (player >= 0)
@@ -2772,7 +2772,7 @@ void Entity::attack(int pose, int charge)
 			}
 			monster_attacktime = 0;
 		}
-		if (multiplayer == SERVER)
+		if (localPlayerNetworkType == NetworkType::SERVER)
 		{
 			if (player >= 0 && player < MAXPLAYERS)
 			{
@@ -2841,7 +2841,7 @@ void Entity::attack(int pose, int charge)
 							}
 						}
 						myStats->weapon->count = 1;
-						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+						myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
 							messagePlayer(player, language[659]);
@@ -2850,7 +2850,7 @@ void Entity::attack(int pose, int charge)
 						{
 							messagePlayer(player, language[660]);
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
@@ -2904,7 +2904,7 @@ void Entity::attack(int pose, int charge)
 
 						// spells deplete MP
 						myStats->MP--;
-						if( multiplayer==SERVER && player!=clientnum ) {
+						if( localPlayerNetworkType==NetworkType::SERVER && player!=clientnum ) {
 							strcpy((char *)net_packet->data,"UPMP");
 							SDLNet_Write32((Uint32)myStats->MP,&net_packet->data[4]);
 							net_packet->address.host = net_clients[player-1].host;
@@ -2935,7 +2935,7 @@ void Entity::attack(int pose, int charge)
 							}
 						}
 						myStats->weapon->count = 1;
-						myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+						myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 						if ( myStats->weapon->status != BROKEN )
 						{
 							messagePlayer(player, language[661], myStats->weapon->getName());
@@ -2945,7 +2945,7 @@ void Entity::attack(int pose, int charge)
 							playSoundEntity(this, 76, 64);
 							messagePlayer(player, language[662], myStats->weapon->getName());
 						}
-						if ( player > 0 && multiplayer == SERVER )
+						if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = 5;
@@ -3094,7 +3094,7 @@ void Entity::attack(int pose, int charge)
 						messagePlayer(player, language[663]);
 						if ( rand() % 2 )
 						{
-							myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+							myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 							if ( myStats->weapon->status == BROKEN )
 							{
 								messagePlayer(player, language[664]);
@@ -3104,7 +3104,7 @@ void Entity::attack(int pose, int charge)
 							{
 								messagePlayer(player, language[665]);
 							}
-							if ( player > 0 && multiplayer == SERVER )
+							if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
@@ -3508,7 +3508,7 @@ void Entity::attack(int pose, int charge)
 									}
 								}
 								myStats->weapon->count = 1;
-								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+								myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status != BROKEN )
 								{
 									messagePlayer(player, language[679]);
@@ -3518,7 +3518,7 @@ void Entity::attack(int pose, int charge)
 									playSoundEntity(this, 76, 64);
 									messagePlayer(player, language[680]);
 								}
-								if ( player > 0 && multiplayer == SERVER )
+								if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 								{
 									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
@@ -3595,7 +3595,7 @@ void Entity::attack(int pose, int charge)
 							}
 						}
 						armor->count = 1;
-						armor->status = static_cast<Status>(armor->status - 1);
+						armor->status = static_cast<ItemStatus>(armor->status - 1);
 						if ( armor->status > BROKEN )
 						{
 							messagePlayer(playerhit, language[681], armor->getName());
@@ -3605,7 +3605,7 @@ void Entity::attack(int pose, int charge)
 							playSoundEntity(hit.entity, 76, 64);
 							messagePlayer(playerhit, language[682], armor->getName());
 						}
-						if ( playerhit > 0 && multiplayer == SERVER )
+						if ( playerhit > 0 && localPlayerNetworkType == NetworkType::SERVER )
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
@@ -3629,7 +3629,7 @@ void Entity::attack(int pose, int charge)
 									hitstats->poisonKiller = uid;
 								}
 								hit.entity->flags[BURNING] = true;
-								if ( playerhit > 0 && multiplayer == SERVER )
+								if ( playerhit > 0 && localPlayerNetworkType == NetworkType::SERVER )
 								{
 									messagePlayer(playerhit, language[683]);
 									serverUpdateEntityFlag(hit.entity, BURNING);
@@ -3727,7 +3727,7 @@ void Entity::attack(int pose, int charge)
 									{
 										free(armor);
 									}
-									if ( playerhit > 0 && multiplayer == SERVER )
+									if ( playerhit > 0 && localPlayerNetworkType == NetworkType::SERVER )
 									{
 										strcpy((char*)net_packet->data, "STLA");
 										net_packet->data[4] = armornum;
@@ -3808,7 +3808,7 @@ void Entity::attack(int pose, int charge)
 							awardXP( hit.entity, true, true );
 						}
 					}
-					if ( playerhit > 0 && multiplayer == SERVER )
+					if ( playerhit > 0 && localPlayerNetworkType == NetworkType::SERVER )
 					{
 						strcpy((char*)net_packet->data, "UPHP");
 						SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
@@ -3861,7 +3861,7 @@ void Entity::attack(int pose, int charge)
 							{
 								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120);
 								hitstats->EFFECTS[EFF_BLEEDING] = true;
-								if ( player > 0 && multiplayer == SERVER )
+								if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 								{
 									serverUpdateEffects(player);
 								}
@@ -3930,7 +3930,7 @@ void Entity::attack(int pose, int charge)
 
 							map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
 							// send wall destroy info to clients
-							if ( multiplayer == SERVER )
+							if ( localPlayerNetworkType == NetworkType::SERVER )
 							{
 								for ( c = 0; c < MAXPLAYERS; c++ )
 								{
@@ -3949,7 +3949,7 @@ void Entity::attack(int pose, int charge)
 							}
 							if ( rand() % 2 )
 							{
-								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
+								myStats->weapon->status = static_cast<ItemStatus>(myStats->weapon->status - 1);
 								if ( myStats->weapon->status == BROKEN )
 								{
 									messagePlayer(player, language[704]);
@@ -3959,7 +3959,7 @@ void Entity::attack(int pose, int charge)
 								{
 									messagePlayer(player, language[705]);
 								}
-								if ( player > 0 && multiplayer == SERVER )
+								if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 								{
 									strcpy((char*)net_packet->data, "ARMR");
 									net_packet->data[4] = 5;
@@ -4107,13 +4107,13 @@ void Entity::teleport(int tele_x, int tele_y)
 	{
 		x = oldx;
 		y = oldy;
-		if ( multiplayer == SERVER && player > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			messagePlayer(player, language[707]);
 		}
 		return;
 	}
-	if ( player > 0 && multiplayer == SERVER )
+	if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		strcpy((char*)net_packet->data, "TELE");
 		net_packet->data[4] = x;
@@ -4288,7 +4288,7 @@ void Entity::awardXP(Entity* src, bool share, bool root)
 		{
 			kills[srcStats->type]++;
 		}
-		else if ( multiplayer == SERVER && player > 0 )
+		else if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			// inform client of kill
 			strcpy((char*)net_packet->data, "MKIL");

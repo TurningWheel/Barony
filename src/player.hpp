@@ -163,10 +163,10 @@ void initGameControllers();
 class Player
 {
 	//Splitscreen support. Every player gets their own screen.
-	//Except in multiplayer. In that case, this is just a big old dummy class.
+	//Except in localPlayerNetworkType. In that case, this is just a big old dummy class.
 	SDL_Surface* screen;
 
-	//Is this a hotseat player? If so, draw splitscreen and stuff. (Host player is automatically a hotseat player). If not, then this is a dummy container for the multiplayer client.
+	//Is this a hotseat player? If so, draw splitscreen and stuff. (Host player is automatically a hotseat player). If not, then this is a dummy container for the localPlayerNetworkType client.
 	bool local_host;
 
 	int playernum;

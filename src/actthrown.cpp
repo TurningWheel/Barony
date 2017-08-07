@@ -32,7 +32,7 @@
 #define THROWN_VELY my->vel_y
 #define THROWN_VELZ my->vel_z
 #define THROWN_TYPE (Item)my->skill[10]
-#define THROWN_STATUS (Status)my->skill[11]
+#define THROWN_STATUS (ItemStatus)my->skill[11]
 #define THROWN_BEATITUDE my->skill[12]
 #define THROWN_COUNT my->skill[13]
 #define THROWN_APPEARANCE my->skill[14]
@@ -42,11 +42,11 @@
 void actThrown(Entity* my)
 {
 	Item* item;
-	Category cat = GEM;
+	ItemCategory cat = GEM;
 	char* itemname = NULL;
 	node_t* node;
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( THROWN_LIFE == 0 )
 		{
@@ -102,7 +102,7 @@ void actThrown(Entity* my)
 		free(item);
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}

@@ -28,7 +28,7 @@ void actGate(Entity* my)
 {
 	int i;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if (!my->skill[28])
 		{
@@ -70,7 +70,7 @@ void actGate(Entity* my)
 	}
 
 	// rightclick message
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{

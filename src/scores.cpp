@@ -540,7 +540,7 @@ void saveAllScores()
 		{
 			Item* item = (Item*)node2->element;
 			fwrite(&item->type, sizeof(ItemType), 1, fp);
-			fwrite(&item->status, sizeof(Status), 1, fp);
+			fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 			fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 			fwrite(&item->count, sizeof(Sint16), 1, fp);
 			fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -790,13 +790,13 @@ void loadAllScores()
 		for ( c = 0; c < numitems; c++ )
 		{
 			ItemType type;
-			Status status;
+			ItemStatus status;
 			Sint16 beatitude;
 			Sint16 count;
 			Uint32 appearance;
 			bool identified;
 			fread(&type, sizeof(ItemType), 1, fp);
-			fread(&status, sizeof(Status), 1, fp);
+			fread(&status, sizeof(ItemStatus), 1, fp);
 			fread(&beatitude, sizeof(Sint16), 1, fp);
 			fread(&count, sizeof(Sint16), 1, fp);
 			fread(&appearance, sizeof(Uint32), 1, fp);
@@ -942,15 +942,16 @@ int saveGame()
 	fprintf(fp, "BARONYSAVEGAME");
 	fprintf(fp, VERSION);
 	fwrite(&uniqueGameKey, sizeof(Uint32), 1, fp);
-	if ( multiplayer > SINGLE && directConnect)
+	if ( localPlayerNetworkType > NetworkType::SINGLE && directConnect)
 	{
-		multiplayer += 2;
-		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
-		multiplayer -= 2;
+        // TODOR: Refactor this to not use int assignments
+		localPlayerNetworkType = static_cast<NetworkType>(static_cast<int>(localPlayerNetworkType) + 2);
+		fwrite(&localPlayerNetworkType, sizeof(Uint32), 1, fp);
+        localPlayerNetworkType = static_cast<NetworkType>(static_cast<int>(localPlayerNetworkType) - 2);
 	}
 	else
 	{
-		fwrite(&multiplayer, sizeof(Uint32), 1, fp);
+		fwrite(&localPlayerNetworkType, sizeof(Uint32), 1, fp);
 	}
 	fwrite(&clientnum, sizeof(Uint32), 1, fp);
 	fwrite(&mapseed, sizeof(Uint32), 1, fp);
@@ -1028,7 +1029,7 @@ int saveGame()
 			{
 				Item* item = (Item*)node->element;
 				fwrite(&item->type, sizeof(ItemType), 1, fp);
-				fwrite(&item->status, sizeof(Status), 1, fp);
+				fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 				fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 				fwrite(&item->count, sizeof(Sint16), 1, fp);
 				fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1139,13 +1140,13 @@ int saveGame()
 		}
 		else
 		{
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				if ( stats[player]->helmet )
 				{
 					Item* item = stats[player]->helmet;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1160,7 +1161,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->breastplate;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1175,7 +1176,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->gloves;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1190,7 +1191,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->shoes;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1205,7 +1206,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->shield;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1220,7 +1221,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->weapon;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1235,7 +1236,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->cloak;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1250,7 +1251,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->amulet;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1265,7 +1266,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->ring;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1280,7 +1281,7 @@ int saveGame()
 				{
 					Item* item = stats[player]->mask;
 					fwrite(&item->type, sizeof(ItemType), 1, fp);
-					fwrite(&item->status, sizeof(Status), 1, fp);
+					fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 					fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 					fwrite(&item->count, sizeof(Sint16), 1, fp);
 					fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1302,7 +1303,7 @@ int saveGame()
 	fclose(fp);
 
 	// clients don't save follower info
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return 0;
 	}
@@ -1372,7 +1373,7 @@ int saveGame()
 					{
 						Item* item = (Item*)node->element;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1386,7 +1387,7 @@ int saveGame()
 					{
 						Item* item = followerStats->helmet;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1401,7 +1402,7 @@ int saveGame()
 					{
 						Item* item = followerStats->breastplate;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1416,7 +1417,7 @@ int saveGame()
 					{
 						Item* item = followerStats->gloves;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1431,7 +1432,7 @@ int saveGame()
 					{
 						Item* item = followerStats->shoes;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1446,7 +1447,7 @@ int saveGame()
 					{
 						Item* item = followerStats->shield;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1461,7 +1462,7 @@ int saveGame()
 					{
 						Item* item = followerStats->weapon;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1476,7 +1477,7 @@ int saveGame()
 					{
 						Item* item = followerStats->cloak;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1491,7 +1492,7 @@ int saveGame()
 					{
 						Item* item = followerStats->amulet;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1506,7 +1507,7 @@ int saveGame()
 					{
 						Item* item = followerStats->ring;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1521,7 +1522,7 @@ int saveGame()
 					{
 						Item* item = followerStats->mask;
 						fwrite(&item->type, sizeof(ItemType), 1, fp);
-						fwrite(&item->status, sizeof(Status), 1, fp);
+						fwrite(&item->status, sizeof(ItemStatus), 1, fp);
 						fwrite(&item->beatitude, sizeof(Sint16), 1, fp);
 						fwrite(&item->count, sizeof(Sint16), 1, fp);
 						fwrite(&item->appearance, sizeof(Uint32), 1, fp);
@@ -1654,7 +1655,7 @@ int loadGame(int player)
 				fread(&itemtype, sizeof(ItemType), 1, fp);
 				if ( itemtype < NUMITEMS )
 				{
-					fseek(fp, sizeof(Status), SEEK_CUR);
+					fseek(fp, sizeof(ItemStatus), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
 					fseek(fp, sizeof(Uint32), SEEK_CUR);
@@ -1667,7 +1668,7 @@ int loadGame(int player)
 			if ( clientnum != 0 )
 			{
 				// client needs to skip the dummy byte
-				fseek(fp, sizeof(Status), SEEK_CUR);
+				fseek(fp, sizeof(ItemStatus), SEEK_CUR);
 			}
 			else
 			{
@@ -1679,7 +1680,7 @@ int loadGame(int player)
 				for ( i = 0; i < numitems; i++ )
 				{
 					fseek(fp, sizeof(ItemType), SEEK_CUR);
-					fseek(fp, sizeof(Status), SEEK_CUR);
+					fseek(fp, sizeof(ItemStatus), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
 					fseek(fp, sizeof(Sint16), SEEK_CUR);
 					fseek(fp, sizeof(Uint32), SEEK_CUR);
@@ -1737,13 +1738,13 @@ int loadGame(int player)
 		for ( c = 0; c < numitems; c++ )
 		{
 			ItemType type;
-			Status status;
+			ItemStatus status;
 			Sint16 beatitude;
 			Sint16 count;
 			Uint32 appearance;
 			bool identified;
 			fread(&type, sizeof(ItemType), 1, fp);
-			fread(&status, sizeof(Status), 1, fp);
+			fread(&status, sizeof(ItemStatus), 1, fp);
 			fread(&beatitude, sizeof(Sint16), 1, fp);
 			fread(&count, sizeof(Sint16), 1, fp);
 			fread(&appearance, sizeof(Uint32), 1, fp);
@@ -1870,12 +1871,12 @@ int loadGame(int player)
 		stats[player]->ring = NULL;
 		stats[player]->mask = NULL;
 
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 0; c < 10; c++ )
 			{
 				ItemType type;
-				Status status;
+				ItemStatus status;
 				Sint16 beatitude;
 				Sint16 count;
 				Uint32 appearance;
@@ -1884,7 +1885,7 @@ int loadGame(int player)
 				fread(&type, sizeof(ItemType), 1, fp);
 				if ( (int)type < NUMITEMS )
 				{
-					fread(&status, sizeof(Status), 1, fp);
+					fread(&status, sizeof(ItemStatus), 1, fp);
 					fread(&beatitude, sizeof(Sint16), 1, fp);
 					fread(&count, sizeof(Sint16), 1, fp);
 					fread(&appearance, sizeof(Uint32), 1, fp);
@@ -2065,7 +2066,7 @@ list_t* loadGameFollowers()
 
 			// item variables
 			ItemType type;
-			Status status;
+			ItemStatus status;
 			Sint16 beatitude;
 			Sint16 count;
 			Uint32 appearance;
@@ -2077,7 +2078,7 @@ list_t* loadGameFollowers()
 			for ( j = 0; j < invSize; j++ )
 			{
 				fread(&type, sizeof(ItemType), 1, fp);
-				fread(&status, sizeof(Status), 1, fp);
+				fread(&status, sizeof(ItemStatus), 1, fp);
 				fread(&beatitude, sizeof(Sint16), 1, fp);
 				fread(&count, sizeof(Sint16), 1, fp);
 				fread(&appearance, sizeof(Uint32), 1, fp);
@@ -2095,7 +2096,7 @@ list_t* loadGameFollowers()
 				fread(&type, sizeof(ItemType), 1, fp);
 				if ( (int)type < NUMITEMS )
 				{
-					fread(&status, sizeof(Status), 1, fp);
+					fread(&status, sizeof(ItemStatus), 1, fp);
 					fread(&beatitude, sizeof(Sint16), 1, fp);
 					fread(&count, sizeof(Sint16), 1, fp);
 					fread(&appearance, sizeof(Uint32), 1, fp);
@@ -2320,7 +2321,7 @@ char* getSaveGameName()
 			for ( i = 0; i < numitems; i++ )
 			{
 				fseek(fp, sizeof(ItemType), SEEK_CUR);
-				fseek(fp, sizeof(Status), SEEK_CUR);
+				fseek(fp, sizeof(ItemStatus), SEEK_CUR);
 				fseek(fp, sizeof(Sint16), SEEK_CUR);
 				fseek(fp, sizeof(Sint16), SEEK_CUR);
 				fseek(fp, sizeof(Uint32), SEEK_CUR);
@@ -2333,7 +2334,7 @@ char* getSaveGameName()
 		else
 		{
 			// client needs to skip the dummy byte
-			fseek(fp, sizeof(Status), SEEK_CUR);
+			fseek(fp, sizeof(ItemStatus), SEEK_CUR);
 		}
 	}
 
@@ -2405,45 +2406,54 @@ Uint32 getSaveGameUniqueGameKey()
 
 	getSaveGameType
 
-	Returns the multiplayer variable stored in the save game
+	Returns the localPlayerNetworkType variable stored in the save game
 
 -------------------------------------------------------------------------------*/
 
-int getSaveGameType()
+NetworkType getSaveGameType()
 {
-	FILE* fp;
-	int mul;
+	FILE* pSaveFile = nullptr;
+	Uint32 saveGameTypeFromFile = 0;
 
-	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	// Open the save game file
+	if ( (pSaveFile = fopen(SAVEGAMEFILE, "rb")) == nullptr )
 	{
-		printlog("error: failed to get game type out of '%s'!\n", SAVEGAMEFILE);
-		return 0;
+		printlog("ERROR: 'getSaveGameType()' - Failed to open file '%s'!\n", SAVEGAMEFILE);
+		return NetworkType::SINGLE;
 	}
 
-	// read from file
+	// Read the save game type from file
+    // TODOR: What is checkstr, what is this fread attempting to read?
 	char checkstr[64];
-	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), fp);
+	fread(checkstr, sizeof(char), strlen("BARONYSAVEGAME"), pSaveFile);
 	if ( strncmp(checkstr, "BARONYSAVEGAME", strlen("BARONYSAVEGAME")) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
-		fclose(fp);
-		return 0;
+        // TODOR: Is the file actually corrupt?
+		printlog("ERROR: 'getSaveGameType() - '%s' is corrupt!\n", SAVEGAMEFILE);
+		fclose(pSaveFile);
+		return NetworkType::SINGLE;
 	}
-	fread(checkstr, sizeof(char), strlen(VERSION), fp);
+
+    // TODOR: What is this fread attempting to read?
+	fread(checkstr, sizeof(char), strlen(VERSION), pSaveFile);
 	if ( strncmp(checkstr, VERSION, strlen(VERSION)) )
 	{
-		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
-		fclose(fp);
-		return 0;
+        // TODOR: Is the file actually corrupt? 
+		printlog("ERROR: 'getSaveGameType() - '%s''s VERSION is corrupt!\n", SAVEGAMEFILE);
+		fclose(pSaveFile);
+		return NetworkType::SINGLE;
 	}
 
-	fseek(fp, sizeof(Uint32), SEEK_CUR);
-	fread(&mul, sizeof(Uint32), 1, fp);
+	fseek(pSaveFile, sizeof(Uint32), SEEK_CUR);
+	fread(&saveGameTypeFromFile, sizeof(Uint32), 1, pSaveFile);
 
-	// close file
-	fclose(fp);
-	return mul;
+    // TODOR: See if can read the value from the file directly into type 'NetworkType'
+    NetworkType saveGameType = static_cast<NetworkType>(saveGameTypeFromFile);
+
+	// Close the save game file
+	fclose(pSaveFile);
+
+	return saveGameType;
 }
 
 /*-------------------------------------------------------------------------------

@@ -46,7 +46,7 @@ string lastname;
 Uint32 clientplayer = 0;
 int numplayers = 0;
 int clientnum = 0;
-int multiplayer = -1;
+NetworkType localPlayerNetworkType = NetworkType::DISCONNECTED;
 #ifdef STEAMWORKS
 bool directConnect = false;
 #else

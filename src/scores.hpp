@@ -55,7 +55,7 @@ int deleteSaveGame();
 bool saveGameExists();
 
 char* getSaveGameName();
-int getSaveGameType();
+NetworkType getSaveGameType();
 int getSaveGameClientnum();
 Uint32 getSaveGameMapSeed();
 Uint32 getSaveGameUniqueGameKey();

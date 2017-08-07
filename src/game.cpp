@@ -191,7 +191,7 @@ void gameLogic(void)
 		{
 			fadefinished = true;
 		}
-		if ( multiplayer == SERVER && introstage == 3 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && introstage == 3 )
 		{
 			// machinegun this message to clients to make sure they get it!
 			for ( c = 1; c < MAXPLAYERS; c++ )
@@ -239,7 +239,7 @@ void gameLogic(void)
 	}
 
 	// spawn flame particles on burning objects
-	if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+	if ( !gamePaused || ( (localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this so ints are not used as bools
 	{
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
@@ -311,9 +311,9 @@ void gameLogic(void)
 		}
 
 		// execute entity behaviors
-		c = multiplayer;
+		c = static_cast<int>(localPlayerNetworkType);
 		x = clientnum;
-		multiplayer = SINGLE;
+		localPlayerNetworkType = NetworkType::SINGLE;
 		clientnum = 0;
 		for ( node = map.entities->first; node != NULL; node = nextnode )
 		{
@@ -356,12 +356,12 @@ void gameLogic(void)
 			entity = (Entity*)node->element;
 			entity->ranbehavior = false;
 		}
-		multiplayer = c;
+		localPlayerNetworkType = static_cast<NetworkType>(c);
 		clientnum = x;
 	}
 	else
 	{
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( ticks % 4 == 0 )
 			{
@@ -397,7 +397,7 @@ void gameLogic(void)
 				}
 			}
 		}
-		if ( multiplayer != CLIENT )   // server/singleplayer code
+		if ( localPlayerNetworkType != NetworkType::CLIENT )   // server/singleplayer code
 		{
 			for ( c = 0; c < MAXPLAYERS; c++ )
 			{
@@ -475,7 +475,7 @@ void gameLogic(void)
 												entity->yaw = (rand() % 360) * PI / 180.0;
 												entity->pitch = (rand() % 360) * PI / 180.0;
 												entity->roll = (rand() % 360) * PI / 180.0;
-												if ( multiplayer != CLIENT )
+												if ( localPlayerNetworkType != NetworkType::CLIENT )
 												{
 													entity_uids--;
 												}
@@ -526,13 +526,13 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				if ( !entity->ranbehavior )
 				{
-					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+					if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 					{
 						entity->ticks++;
 					}
 					if ( entity->behavior != NULL )
 					{
-						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+						if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 						{
 							(*entity->behavior)(entity);
 						}
@@ -649,7 +649,7 @@ void gameLogic(void)
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
 					currentlevel++;
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; c++ )
 						{
@@ -802,7 +802,7 @@ void gameLogic(void)
 									newNode->element = myuid;
 									*myuid = monster->getUID();
 
-									if ( c > 0 && multiplayer == SERVER )
+									if ( c > 0 && localPlayerNetworkType == NetworkType::SERVER )
 									{
 										strcpy((char*)net_packet->data, "LEAD");
 										SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -838,7 +838,7 @@ void gameLogic(void)
 				entity->ranbehavior = false;
 			}
 
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				// periodically remind clients of the current level
 				if ( ticks % (TICKS_PER_SECOND * 3) == 0 )
@@ -1023,10 +1023,10 @@ void gameLogic(void)
 				steamAchievement("BARONY_ACH_HOMICIDAL_MANIAC");
 			}
 		}
-		else if ( multiplayer == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			// keep alives
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				if ( ticks % (TICKS_PER_SECOND * 1) == 0 )
 				{
@@ -1179,7 +1179,7 @@ void gameLogic(void)
 												entity->yaw = (rand() % 360) * PI / 180.0;
 												entity->pitch = (rand() % 360) * PI / 180.0;
 												entity->roll = (rand() % 360) * PI / 180.0;
-												if ( multiplayer != CLIENT )
+												if ( localPlayerNetworkType != NetworkType::CLIENT )
 												{
 													entity_uids--;
 												}
@@ -1231,13 +1231,13 @@ void gameLogic(void)
 				entity = (Entity*)node->element;
 				if ( !entity->ranbehavior )
 				{
-					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+					if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 					{
 						entity->ticks++;
 					}
 					if ( entity->behavior != NULL )
 					{
-						if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
+						if ( !gamePaused || ((localPlayerNetworkType != NetworkType::SINGLE) && !client_disconnected[0]) ) // TODOR: Refactor this to not use ints as bools
 						{
 							(*entity->behavior)(entity);
 							if ( entitiesdeleted.first != NULL )
@@ -1951,7 +1951,7 @@ Uint32 timerCallback(Uint32 interval, void* param)
 			playeralive = true;
 		}
 
-	if ((!gamePaused || multiplayer) && !loading && !intro && playeralive)
+	if ((!gamePaused || (localPlayerNetworkType != NetworkType::SINGLE)) && !loading && !intro && playeralive) // TODOR: Refactor this to not use ints as bools
 	{
 		completionTime++;
 	}
@@ -2011,8 +2011,8 @@ void pauseGame(int mode, int ignoreplayer)
 		{
 			SDL_SetRelativeMouseMode(SDL_FALSE);
 		}
-		return; // doesn't disable the game in multiplayer anymore
-		if ( multiplayer == SERVER )
+		return; // doesn't disable the game in localPlayerNetworkType anymore
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
@@ -2028,7 +2028,7 @@ void pauseGame(int mode, int ignoreplayer)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
-		else if ( multiplayer == CLIENT && ignoreplayer )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT && ignoreplayer )
 		{
 			strcpy((char*)net_packet->data, "PAUS");
 			net_packet->data[4] = clientnum;
@@ -2046,8 +2046,8 @@ void pauseGame(int mode, int ignoreplayer)
 		{
 			SDL_SetRelativeMouseMode(SDL_TRUE);
 		}
-		return; // doesn't disable the game in multiplayer anymore
-		if ( multiplayer == SERVER )
+		return; // doesn't disable the game in localPlayerNetworkType anymore
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
@@ -2063,7 +2063,7 @@ void pauseGame(int mode, int ignoreplayer)
 				sendPacketSafe(net_sock, -1, net_packet, c - 1);
 			}
 		}
-		else if ( multiplayer == CLIENT && ignoreplayer )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT && ignoreplayer )
 		{
 			strcpy((char*)net_packet->data, "UNPS");
 			net_packet->data[4] = clientnum;
@@ -2309,11 +2309,11 @@ int main(int argc, char** argv)
 			if ( !intro )
 			{
 				// handle network messages
-				if ( multiplayer == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					clientHandleMessages();
 				}
-				else if ( multiplayer == SERVER )
+				else if ( localPlayerNetworkType == NetworkType::SERVER )
 				{
 					serverHandleMessages();
 				}
@@ -2388,7 +2388,7 @@ int main(int argc, char** argv)
 								break;
 						}
 						numplayers = 0;
-						multiplayer = 0;
+						localPlayerNetworkType = 0;
 						assignActions(&map);
 						generatePathMaps();
 						fadeout = true;
@@ -2471,7 +2471,7 @@ int main(int argc, char** argv)
 								break;
 						}
 						numplayers = 0;
-						multiplayer = 0;
+						localPlayerNetworkType = NetworkType::SINGLE;
 						assignActions(&map);
 						generatePathMaps();
 						fadeout = true;
@@ -2532,7 +2532,7 @@ int main(int argc, char** argv)
 						initClass(0);
 
 						strcpy(stats[0]->name, "Avatar");
-						multiplayer = SINGLE;
+						localPlayerNetworkType = NetworkType::SINGLE;
 						fadefinished = false;
 						fadeout = false;
 						numplayers = 0;
@@ -2643,7 +2643,7 @@ int main(int argc, char** argv)
 			}
 			else
 			{
-				if ( multiplayer == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					// make sure shop inventory is alloc'd
 					if ( !shopInv )
@@ -2671,7 +2671,7 @@ int main(int argc, char** argv)
 						closeRemoveCurseGUI();
 						if ( shopkeeper != 0 )
 						{
-							if ( multiplayer != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								Entity* entity = uidToEntity(shopkeeper);
 								entity->skill[0] = 0;
@@ -2779,7 +2779,7 @@ int main(int argc, char** argv)
 						//What even is this code? When should it be run?
 						if ( shopkeeper != 0 )
 						{
-							if ( multiplayer != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								Entity* entity = uidToEntity(shopkeeper);
 								entity->skill[0] = 0;
@@ -2882,7 +2882,7 @@ int main(int argc, char** argv)
 						{
 							keystatus[SDL_SCANCODE_RETURN] = 0;
 							command = false;
-							if ( multiplayer != CLIENT )
+							if ( localPlayerNetworkType != NetworkType::CLIENT )
 							{
 								if ( command_str[0] == '/' )
 								{
@@ -2900,7 +2900,7 @@ int main(int argc, char** argv)
 										Uint32 color = SDL_MapRGBA(mainsurface->format, 0, 255, 255, 255);
 										messagePlayerColor(clientnum, color, chatstring);
 										playSound(238, 64);
-										if ( multiplayer == SERVER )
+										if ( localPlayerNetworkType == NetworkType::SERVER )
 										{
 											// send message to all clients
 											for ( c = 1; c < MAXPLAYERS; c++ )
@@ -3112,7 +3112,7 @@ int main(int argc, char** argv)
 						drawImageAlpha(cross_bmp, NULL, &pos, 128);
 					}
 				}
-				else if ( !multiplayer )
+				else if ( localPlayerNetworkType == NetworkType::SINGLE ) // TODOR: Refactor this so ints are not bools
 				{
 					// darken the rest of the screen
 					src.x = 0;
@@ -3195,11 +3195,11 @@ int main(int argc, char** argv)
 				if ( !intro )
 				{
 					// handle network messages
-					if ( multiplayer == CLIENT )
+					if ( localPlayerNetworkType == NetworkType::CLIENT )
 					{
 						clientHandleMessages();
 					}
-					else if ( multiplayer == SERVER )
+					else if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						serverHandleMessages();
 					}

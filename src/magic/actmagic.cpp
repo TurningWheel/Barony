@@ -86,7 +86,7 @@ void actMagicTrap(Entity* my)
 		return;
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -148,7 +148,7 @@ void actMagiclightBall(Entity* my)
 
 	my->skill[2] = -10; // so the client sets the behavior of this entity
 
-	if (clientnum != 0 && multiplayer == CLIENT)
+	if (clientnum != 0 && localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		if ( my->light != NULL )
 		{
@@ -266,7 +266,7 @@ void actMagiclightBall(Entity* my)
 				player = i;
 			}
 		}
-		if (player > -1 && multiplayer == SERVER)
+		if (player > -1 && localPlayerNetworkType == NetworkType::SERVER)
 		{
 			strcpy( (char*)net_packet->data, "UNCH");
 			net_packet->data[4] = player;
@@ -317,7 +317,7 @@ void actMagiclightBall(Entity* my)
 								player = i;
 							}
 						}
-						if (player > -1 && multiplayer == SERVER)
+						if (player > -1 && localPlayerNetworkType == NetworkType::SERVER)
 						{
 							strcpy( (char*)net_packet->data, "UNCH");
 							net_packet->data[4] = player;
@@ -601,7 +601,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			my->light = NULL;
 		}
 
-		if (clientnum == 0 || multiplayer == SERVER)
+		if (clientnum == 0 || localPlayerNetworkType == NetworkType::SERVER)
 		{
 			//Handle the missile's life.
 			MAGIC_LIFE++;
@@ -809,7 +809,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( reflection == 1 )
 						{
 							hitstats->cloak->count = 1;
-							hitstats->cloak->status = static_cast<Status>(hitstats->cloak->status - 1);
+							hitstats->cloak->status = static_cast<ItemStatus>(hitstats->cloak->status - 1);
 							if ( hitstats->cloak->status != BROKEN )
 							{
 								messagePlayer(player, language[380]);
@@ -823,7 +823,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( reflection == 2 )
 						{
 							hitstats->amulet->count = 1;
-							hitstats->amulet->status = static_cast<Status>(hitstats->amulet->status - 1);
+							hitstats->amulet->status = static_cast<ItemStatus>(hitstats->amulet->status - 1);
 							if ( hitstats->amulet->status != BROKEN )
 							{
 								messagePlayer(player, language[382]);
@@ -837,7 +837,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if ( reflection == -1 )
 						{
 							hitstats->shield->count = 1;
-							hitstats->shield->status = static_cast<Status>(hitstats->shield->status - 1);
+							hitstats->shield->status = static_cast<ItemStatus>(hitstats->shield->status - 1);
 							if ( hitstats->shield->status != BROKEN )
 							{
 								messagePlayer(player, language[384]);
@@ -848,7 +848,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								playSoundEntity(hit.entity, 76, 64);
 							}
 						}
-						if (player > 0 && multiplayer == SERVER)
+						if (player > 0 && localPlayerNetworkType == NetworkType::SERVER)
 						{
 							strcpy((char*)net_packet->data, "ARMR");
 							net_packet->data[4] = armornum;
@@ -2148,7 +2148,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 	entity->flags[NOUPDATE] = true;
 	entity->flags[UPDATENEEDED] = false;
 	entity->behavior = &actMagicParticle;
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		entity_uids--;
 	}
@@ -2160,7 +2160,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 {
 	int c;
-	if ( multiplayer == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -2199,7 +2199,7 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 		entity->flags[UNCLICKABLE] = true;
 		entity->behavior = &actMagicParticle;
 		entity->vel_z = -1;
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			entity_uids--;
 		}

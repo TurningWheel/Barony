@@ -31,14 +31,14 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		if ( myStats )
 		{
@@ -179,18 +179,18 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				{
 					if ( rand() % 2 )
 					{
-						newItem( static_cast<ItemType>(rand() % 20), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+						newItem( static_cast<ItemType>(rand() % 20), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
 					}
 					else
 					{
 						int i = rand() % 21;
 						if ( i < 18 )
 						{
-							newItem( static_cast<ItemType>(GLOVES + i), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
+							newItem( static_cast<ItemType>(GLOVES + i), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 4, rand(), false, &myStats->inventory );
 						}
 						else
 						{
-							newItem( static_cast<ItemType>(GLOVES + i + 4), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
+							newItem( static_cast<ItemType>(GLOVES + i + 4), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
 						}
 					}
 				}
@@ -199,7 +199,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				// hat store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(HAT_PHRYGIAN + rand() % 7), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
+					newItem( static_cast<ItemType>(HAT_PHRYGIAN + rand() % 7), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 6, rand(), false, &myStats->inventory );
 				}
 				break;
 			case 2:
@@ -209,13 +209,13 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					switch ( rand() % 3 )
 					{
 						case 0:
-							newItem( static_cast<ItemType>(AMULET_SEXCHANGE + rand() % 6), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory );
+							newItem( static_cast<ItemType>(AMULET_SEXCHANGE + rand() % 6), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory );
 							break;
 						case 1:
-							newItem( static_cast<ItemType>(RING_ADORNMENT + rand() % 12), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory );
+							newItem( static_cast<ItemType>(RING_ADORNMENT + rand() % 12), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory );
 							break;
 						case 2:
-							newItem( static_cast<ItemType>(GEM_GARNET + rand() % 16), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory );
+							newItem( static_cast<ItemType>(GEM_GARNET + rand() % 16), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), false, &myStats->inventory );
 							break;
 					}
 				}
@@ -227,13 +227,13 @@ void initShopkeeper(Entity* my, Stat* myStats)
 					switch ( rand() % 3 )
 					{
 						case 0:
-							newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory );
+							newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 22), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory );
 							break;
 						case 1:
-							newItem( static_cast<ItemType>(SCROLL_MAIL + rand() % 14), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory );
+							newItem( static_cast<ItemType>(SCROLL_MAIL + rand() % 14), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 2, rand(), true, &myStats->inventory );
 							break;
 						case 2:
-							newItem( READABLE_BOOK, static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+							newItem( READABLE_BOOK, static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
 							break;
 					}
 				}
@@ -242,28 +242,28 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				// apothecary
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(POTION_WATER + rand() % 15), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 5, rand(), true, &myStats->inventory );
+					newItem( static_cast<ItemType>(POTION_WATER + rand() % 15), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 5, rand(), true, &myStats->inventory );
 				}
 				break;
 			case 5:
 				// staff shop
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<Status>(WORN + rand() % 3), 0, 1, 1, true, &myStats->inventory );
+					newItem( static_cast<ItemType>(MAGICSTAFF_LIGHT + rand() % 10), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1, 1, true, &myStats->inventory );
 				}
 				break;
 			case 6:
 				// food store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(FOOD_BREAD + rand() % 7), static_cast<Status>(SERVICABLE + rand() % 2), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					newItem( static_cast<ItemType>(FOOD_BREAD + rand() % 7), static_cast<ItemStatus>(SERVICABLE + rand() % 2), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
 				}
 				break;
 			case 7:
 				// hardware store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					newItem( static_cast<ItemType>(TOOL_PICKAXE + rand() % 11), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
 				}
 				break;
 			case 8:
@@ -277,7 +277,7 @@ void initShopkeeper(Entity* my, Stat* myStats)
 				// general store
 				for ( c = 0; c < numitems; c++ )
 				{
-					newItem( static_cast<ItemType>(rand() % (NUMITEMS - (NUMITEMS - SPELL_ITEM))), static_cast<Status>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
+					newItem( static_cast<ItemType>(rand() % (NUMITEMS - (NUMITEMS - SPELL_ITEM))), static_cast<ItemStatus>(WORN + rand() % 3), 0, 1 + rand() % 3, rand(), false, &myStats->inventory );
 				}
 				break;
 		}
@@ -385,7 +385,7 @@ void actShopkeeperLimb(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -464,7 +464,7 @@ void shopkeeperMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{

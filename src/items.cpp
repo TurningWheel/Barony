@@ -36,7 +36,7 @@ ItemGeneric items[NUMITEMS];
 
 -------------------------------------------------------------------------------*/
 
-Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
+Item* newItem(ItemType type, ItemStatus status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory)
 {
 	Item* item;
 
@@ -184,7 +184,7 @@ Item* uidToItem(Uint32 uid)
 
 -------------------------------------------------------------------------------*/
 
-ItemType itemCurve(Category cat)
+ItemType itemCurve(ItemCategory cat)
 {
 	int numitems = NUMITEMS - ( NUMITEMS - ((int)ARTIFACT_SWORD) );
 	bool chances[NUMITEMS];
@@ -534,7 +534,7 @@ char* Item::description()
 
 -------------------------------------------------------------------------------*/
 
-Category itemCategory(const Item* item)
+ItemCategory itemCategory(const Item* item)
 {
 	if ( !item )
 	{
@@ -752,7 +752,7 @@ void dropItem(Item* item, int player)
 		}
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		strcpy((char*)net_packet->data, "DROP");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -980,7 +980,7 @@ void equipItem(Item* item, Item** slot, int player)
 				return;
 			}
 		}
-		if ( multiplayer != CLIENT && !intro && !fadeout )
+		if ( localPlayerNetworkType != NetworkType::CLIENT && !intro && !fadeout )
 		{
 			if ( players[player] != nullptr && players[player]->entity != nullptr)
 			{
@@ -1005,7 +1005,7 @@ void equipItem(Item* item, Item** slot, int player)
 				}
 			}
 		}
-		if ( multiplayer == SERVER && player > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && player > 0 )
 		{
 			if ( *slot != NULL )
 			{
@@ -1056,7 +1056,7 @@ void equipItem(Item* item, Item** slot, int player)
 				return;
 			}
 		}
-		if (multiplayer != CLIENT && !intro && !fadeout)
+		if (localPlayerNetworkType != NetworkType::CLIENT && !intro && !fadeout)
 		{
 			if (players[player] != nullptr && players[player]->entity != nullptr)
 			{
@@ -1069,7 +1069,7 @@ void equipItem(Item* item, Item** slot, int player)
 				}
 			}
 		}
-		if ( player != 0 && multiplayer == SERVER )
+		if ( player != 0 && localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( item->node )
 			{
@@ -1230,7 +1230,7 @@ void useItem(Item* item, int player)
 		}
 	}
 
-	if ( multiplayer == CLIENT && !intro )
+	if ( localPlayerNetworkType == NetworkType::CLIENT && !intro )
 	{
 		strcpy((char*)net_packet->data, "USEI");
 		SDLNet_Write32((Uint32)item->type, &net_packet->data[4]);
@@ -1567,7 +1567,7 @@ void useItem(Item* item, int player)
 			break;
 		case TOOL_TOWEL:
 			item_ToolTowel(item, player);
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 				if ( stats[player]->EFFECTS[EFF_BLEEDING] )
 				{
 					consumeItem(item);
@@ -1655,7 +1655,7 @@ Item* itemPickup(int player, Item* item)
 	Item* item2;
 	node_t* node;
 
-	if ( player != 0 && multiplayer == SERVER )
+	if ( player != 0 && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// send the client info on the item it just picked up
 		strcpy((char*)net_packet->data, "ITEM");
@@ -1703,7 +1703,7 @@ Item* newItemFromEntity(Entity* entity)
 	{
 		return NULL;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<ItemStatus>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
 }
 
 /*-------------------------------------------------------------------------------
@@ -2131,7 +2131,7 @@ int Item::sellValue(int player)
 void Item::apply(int player, Entity* entity)
 {
 	// for clients:
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		strcpy((char*)net_packet->data, "APIT");
 		SDLNet_Write32((Uint32)type, &net_packet->data[4]);
@@ -2220,7 +2220,7 @@ void Item::apply(int player, Entity* entity)
 								}
 							}
 							stats[player]->weapon->count = 1;
-							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+							stats[player]->weapon->status = static_cast<ItemStatus>(stats[player]->weapon->status - 1);
 							if ( status != BROKEN )
 							{
 								messagePlayer(player, language[1103]);
@@ -2229,7 +2229,7 @@ void Item::apply(int player, Entity* entity)
 							{
 								messagePlayer(player, language[1104]);
 							}
-							if ( player > 0 && multiplayer == SERVER )
+							if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
@@ -2279,7 +2279,7 @@ void Item::apply(int player, Entity* entity)
 								}
 							}
 							stats[player]->weapon->count = 1;
-							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
+							stats[player]->weapon->status = static_cast<ItemStatus>(stats[player]->weapon->status - 1);
 							if ( status != BROKEN )
 							{
 								messagePlayer(player, language[1103]);
@@ -2288,7 +2288,7 @@ void Item::apply(int player, Entity* entity)
 							{
 								messagePlayer(player, language[1104]);
 							}
-							if ( player > 0 && multiplayer == SERVER )
+							if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 							{
 								strcpy((char*)net_packet->data, "ARMR");
 								net_packet->data[4] = 5;
