@@ -734,6 +734,7 @@ void serverUpdateEffects(int player)
 	net_packet->data[4] = 0;
 	net_packet->data[5] = 0;
 	net_packet->data[6] = 0;
+	net_packet->data[7] = 0;
 	for (j = 0; j < NUMEFFECTS; j++)
 	{
 		if ( stats[player]->EFFECTS[j] == true )
@@ -743,7 +744,7 @@ void serverUpdateEffects(int player)
 	}
 	net_packet->address.host = net_clients[player - 1].host;
 	net_packet->address.port = net_clients[player - 1].port;
-	net_packet->len = 7;
+	net_packet->len = 8;
 	sendPacketSafe(net_sock, -1, net_packet, player - 1);
 }
 
