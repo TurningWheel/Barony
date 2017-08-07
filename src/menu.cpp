@@ -4748,9 +4748,9 @@ void handleMainMenu(bool mode)
 
 /*-------------------------------------------------------------------------------
 
-	button functions
+	Button Functions
 
-	this section contains numerous button functions for the game
+	This section handles the different functionalities of Buttons
 
 -------------------------------------------------------------------------------*/
 
