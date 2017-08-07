@@ -4885,7 +4885,7 @@ void openGameoverWindow()
     }
 
     // Display a randomly chosen hint about the game based unless they die on a Transition Floor (Mines to Swamp, etc)
-    if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
+    if ( currentlevel / MAX_LENGTH_OF_LEVEL_REGION < 1 )
     {
         strcat(subtext, language[1145 + rand() % 15]); // Displays a tip based on #1145 to #1159, a total of 15 tips
     }

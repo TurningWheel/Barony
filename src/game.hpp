@@ -196,7 +196,7 @@ extern bool capture_mouse; //Useful for debugging when the game refuses to relea
 
 #define LEVELSFILE "maps/levels.txt"
 #define SECRETLEVELSFILE "maps/secretlevels.txt"
-#define LENGTH_OF_LEVEL_REGION 5
+static const Uint8 MAX_LENGTH_OF_LEVEL_REGION = 5;
 
 #define TICKS_PER_SECOND 50
 

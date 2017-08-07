@@ -231,14 +231,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	// determine whether minotaur level or not
-	if ( currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3 )
+	if ( currentlevel % MAX_LENGTH_OF_LEVEL_REGION == 2 || currentlevel % MAX_LENGTH_OF_LEVEL_REGION == 3 )
 		if ( prng_get_uint() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
 
 	// dark level
-	if ( !secretlevel && currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
+	if ( !secretlevel && currentlevel % MAX_LENGTH_OF_LEVEL_REGION >= 2 )
 	{
 		if ( prng_get_uint() % 4 == 0 )
 		{
