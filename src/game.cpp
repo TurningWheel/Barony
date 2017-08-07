@@ -505,7 +505,7 @@ void gameLogic(void)
 					}
 					if ( stats[c]->GOLD >= 10000 )
 					{
-						steamAchievementClient(i, "BARONY_ACH_FILTHY_RICH");
+						steamAchievementClient(c, "BARONY_ACH_FILTHY_RICH");
 					}
 				}
 			}
