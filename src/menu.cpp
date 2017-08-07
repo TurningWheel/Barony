@@ -5181,32 +5181,32 @@ void openFailedConnectionWindow(NetworkType netType)
 	{
 		if ( netType == NetworkType::CLIENT )
 		{
-			strcpy(subtext, language[1439]);
+			strcpy(subtext, language[1439]);    // "Failed to connect to server:\n"
 			strcat(subtext, SDLNet_GetError());
 		}
 		else if ( netType == NetworkType::SERVER )
 		{
-			strcpy(subtext, language[1440]);
+			strcpy(subtext, language[1440]);    // "Failed to start server:\n"
 			strcat(subtext, SDLNet_GetError());
 		}
 		else
 		{
-			strcpy(subtext, language[1443]);
+			strcpy(subtext, language[1443]);    // "The connection to the server was lost.\n"
 		}
 	}
 	else
 	{
 		if ( netType == NetworkType::CLIENT )
 		{
-			strcpy(subtext, language[1441]);
+			strcpy(subtext, language[1441]);    // "Failed to join the selected lobby.\n"
 		}
 		else if ( netType == NetworkType::SERVER )
 		{
-			strcpy(subtext, language[1442]);
+			strcpy(subtext, language[1442]);    // "Failed to create the lobby.\n"
 		}
 		else
 		{
-			strcpy(subtext, language[1443]);
+			strcpy(subtext, language[1443]);    // "The connection to the server was lost.\n"
 		}
 	}
 
