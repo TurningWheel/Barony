@@ -78,7 +78,7 @@ int score_window = 0;
 int settings_xres, settings_yres;
 
 typedef std::tuple<int, int> displayResolution;
-std::list<displayResolution> resolutions;
+std::list<displayResolution> listOfDisplayResolutions;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
@@ -1619,7 +1619,7 @@ void handleMainMenu(bool mode)
 			// resolution
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
 			c=0;
-			for ( auto cur : resolutions )
+			for ( auto cur : listOfDisplayResolutions )
 			{
 				int width, height;
 				std::tie (width, height) = cur;
@@ -4926,17 +4926,17 @@ void getResolutionList()
 		if ( mode.w >= 960 && mode.h >= 600 )
 		{
             displayResolution res(mode.w, mode.h);
-			resolutions.push_back(res);
+            listOfDisplayResolutions.push_back(res);
 		}
 	}
 	
 	// Sort the list of resolutions by total number of pixels (Width*Height)
-	resolutions.sort([](displayResolution a, displayResolution b) {
+    listOfDisplayResolutions.sort([](displayResolution a, displayResolution b) {
 		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
 	});
 
     // Remove any duplicates in the list
-	resolutions.unique();
+    listOfDisplayResolutions.unique();
 }
 
 // sets up the settings window
