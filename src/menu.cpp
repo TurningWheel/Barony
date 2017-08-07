@@ -4925,8 +4925,9 @@ void getResolutionList()
 		// Resolutions below 960x600 are not supported and are discarded
 		if ( mode.w >= 960 && mode.h >= 600 )
 		{
-            displayResolution res(mode.w, mode.h);
-            listOfDisplayResolutions.push_back(res);
+            // Create a tuple, resolution, to hold the width and height
+            displayResolution resolution(mode.w, mode.h);
+            listOfDisplayResolutions.push_back(resolution);
 		}
 	}
 	
