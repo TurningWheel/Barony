@@ -588,8 +588,43 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 90:
 		case (1000 + COCKATRICE):
 			stats->type = COCKATRICE;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = 0;
+
+			stats->HP = 500;
+			stats->MAXHP = stats->HP;
+			stats->RANDOM_HP = 100;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->MP = 100;
+			stats->MAXMP = 100;
+			stats->OLDHP = stats->HP;
+			stats->STR = 65;
+			stats->RANDOM_STR = 10;
+			stats->DEX = 8;
+			stats->RANDOM_DEX = 0;
+			stats->CON = 15;
+			stats->RANDOM_CON = 0;
+			stats->INT = -2;
+			stats->RANDOM_INT = 0;
+			stats->PER = 25;
+			stats->RANDOM_PER = 25;
+			stats->CHR = -3;
+			stats->RANDOM_CHR = 0;
+
+			stats->EXP = 0;
+			stats->LVL = 50;
+			stats->GOLD = 50;
+			stats->RANDOM_GOLD = 100;
+			stats->HUNGER = 900;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; // random potion, qty 1-3
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 30; // magicstaff
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 20; // gemstones, qty 1-2
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_4] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_4 + ITEM_CHANCE] = 5; // spellbook
 			break;
 		case 91:
 		case (1000 + INSECTOID):

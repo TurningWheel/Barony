@@ -56,14 +56,15 @@ void initCockatrice(Entity* my, Stat* myStats)
 			// boss variants
 
 			// random effects
-			//myStats->EFFECTS[EFF_LEVITATING] = true;
-			//myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
-			if ( rand() % 4 == 0 )
+			// cockatrices don't sleep!
+			/*if ( rand() % 4 == 0 )
 			{
 				myStats->EFFECTS[EFF_ASLEEP] = true;
 				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 3600;
-			}
+			}*/
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);
@@ -77,30 +78,65 @@ void initCockatrice(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			// always give special spell to cockatrice, undroppable.
+			newItem(SPELLBOOK_STONEBLOOD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			// variables for potion drops below.
+			int minValue = 70;
+			int maxValue = 80;
+			int numRolls = 1; // 0-2 extra rolls
+			if ( rand() % 2 == 0 ) // 50% chance
+			{
+				++numRolls;
+				if ( rand() % 2 == 0 ) // 25% chance, including the previous roll
+				{
+					++numRolls;
+				}
+			}
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
 				case 6:
 				case 5:
+					// TODO: cockatrice head.
 				case 4:
-				case 3:
-				case 2:
-				case 1:
-					/*if ( rand() % 4 == 0 )
+					if ( rand() % 20 == 0 ) // 5% drop stoneblood spellbook
 					{
-						newItem(static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
-					}*/
-
+						newItem(static_cast<ItemType>(SPELLBOOK_STONEBLOOD), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+					}
+				case 3:
+					if ( rand() % 5 == 0 ) // 20% for gemstone, luckstone to obsidian. qty 1-2.
+					{
+						newItem(static_cast<ItemType>(GEM_LUCK + rand() % 16), static_cast<Status>(EXCELLENT), 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+					}
+				case 2:
+					if ( rand() % 10 < 3 ) // 30% drop stoneblood magicstaff
+					{
+						newItem(static_cast<ItemType>(MAGICSTAFF_STONEBLOOD), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+					}
+				case 1:
+					for ( int i = 0; i < numRolls; ++i )
+					{
+						if ( rand() % 3 == 0 ) // 33% chance to choose high value item
+						{
+							minValue = 100;
+							maxValue = 100;
+						}
+						ItemType itemType = itemTypeWithinGoldValue(Category::POTION, minValue, maxValue);
+						newItem(itemType, static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						// reset values for next loop.
+						minValue = 70;
+						maxValue = 80;
+					}
 					break;
 				default:
 					break;
 			}
 
-			newItem(SPELLBOOK_STONEBLOOD, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 			//give weapon
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				//myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, nullptr);
+				//TODO: normal spell?
 			}
 		}
 	}
@@ -337,8 +373,8 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// cockatrices are always flying
-		//myStats->EFFECTS[EFF_LEVITATING] = true;
-		//myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+		myStats->EFFECTS[EFF_LEVITATING] = true;
+		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
 	//Move bodyparts
