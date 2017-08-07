@@ -3431,7 +3431,8 @@ void handleMainMenu(bool mode)
 			if ( ticks - client_keepalive[0] > TICKS_PER_SECOND * 30 )
 			{
 				buttonDisconnect(NULL);
-				openFailedConnectionWindow(3); // lost connection to server box
+                // TODOR: Make sure this is correct, currently only displays a single type of message
+				openFailedConnectionWindow(NetworkType::DIRECTSERVER); // lost connection to server box
 			}
 		}
 
