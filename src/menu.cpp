@@ -4764,7 +4764,6 @@ void openGameoverWindow()
 	subx2 = xres / 2 + 288;
 	suby1 = yres / 2 - 160;
 	suby2 = yres / 2 + 160;
-	button_t* button;
 
 	// Calculate player score
 	char scorenum[16]; // The current score as a string - TODOR: Refactor to replace with a String
@@ -4792,9 +4791,7 @@ void openGameoverWindow()
 	if ( localPlayerNetworkType == NetworkType::SINGLE )
 	{
 		strcpy(subtext, language[1133]); // "You have died. Gameover."
-
 		strcat(subtext, language[1134]); // "Your equipment has been identified."
-
 		strcat(subtext, language[1135]); // "Total Score: "
 		strcat(subtext, scorenum);       // Displays the current score
 
@@ -4816,28 +4813,32 @@ void openGameoverWindow()
 		}
 
 		// Create the Restart Button
-		button = newButton();
-		strcpy(button->label, language[1138]); // "    Restart Game    "
-		button->x = subx2 - strlen(language[1138]) * 12 - 16;
-		button->y = suby2 - 28;
-		button->sizex = strlen(language[1138]) * 12 + 8;
-		button->sizey = 20;
-		button->action = &buttonStartSingleplayer;
-		button->visible = 1;
-		button->focused = 1;
-		button->joykey = joyimpulses[INJOY_MENU_NEXT];
+        button_t* pRestartButton = nullptr;
+        pRestartButton = newButton();
+		strcpy(pRestartButton->label, language[1138]); // "    Restart Game    "
+        pRestartButton->x = subx2 - strlen(language[1138]) * 12 - 16;
+        pRestartButton->y = suby2 - 28;
+        pRestartButton->sizex = strlen(language[1138]) * 12 + 8;
+        pRestartButton->sizey = 20;
+        pRestartButton->action = &buttonStartSingleplayer;
+        pRestartButton->visible = 1;
+        pRestartButton->focused = 1;
+        pRestartButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+        pRestartButton = nullptr;
 
 		// Create the Return to Main Menu Button
-		button = newButton();
-		strcpy(button->label, language[1139]); // "Return to Main Menu"
-		button->x = subx1 + 8;
-		button->y = suby2 - 28;
-		button->sizex = strlen(language[1139]) * 12 + 8;
-		button->sizey = 20;
-		button->action = &buttonEndGameConfirm;
-		button->visible = 1;
-		button->focused = 1;
-		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+        button_t* pReturnToMainMenuButton = nullptr;
+        pReturnToMainMenuButton = newButton();
+		strcpy(pReturnToMainMenuButton->label, language[1139]); // "Return to Main Menu"
+        pReturnToMainMenuButton->x = subx1 + 8;
+        pReturnToMainMenuButton->y = suby2 - 28;
+        pReturnToMainMenuButton->sizex = strlen(language[1139]) * 12 + 8;
+        pReturnToMainMenuButton->sizey = 20;
+        pReturnToMainMenuButton->action = &buttonEndGameConfirm;
+        pReturnToMainMenuButton->visible = 1;
+        pReturnToMainMenuButton->focused = 1;
+        pReturnToMainMenuButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+        pReturnToMainMenuButton = nullptr;
 	}
 	else // Else, the Local Player has a chance to revive if the other player(s) make it to the next floor
 	{
@@ -4866,20 +4867,21 @@ void openGameoverWindow()
 
 		strcat(subtext, language[1143]); // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
 		strcat(subtext, scorenum);       // Displays the current score
-
 		strcat(subtext, "\n\n");
 
 		// Create the Okay Button
-		button = newButton();
-		strcpy(button->label, language[1144]);
-		button->sizex = strlen(language[1144]) * 12 + 8;
-		button->sizey = 20;
-		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-		button->y = suby2 - 28;
-		button->action = &buttonCloseSubwindow;
-		button->visible = 1;
-		button->focused = 1;
-		button->joykey = joyimpulses[INJOY_MENU_NEXT];
+        button_t* pOkayButton = nullptr;
+        pOkayButton = newButton();
+		strcpy(pOkayButton->label, language[1144]);
+        pOkayButton->sizex = strlen(language[1144]) * 12 + 8;
+        pOkayButton->sizey = 20;
+        pOkayButton->x = subx1 + (subx2 - subx1) / 2 - pOkayButton->sizex / 2;
+        pOkayButton->y = suby2 - 28;
+        pOkayButton->action = &buttonCloseSubwindow;
+        pOkayButton->visible = 1;
+        pOkayButton->focused = 1;
+        pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+        pOkayButton = nullptr;
 	}
 
 	// Display a randomly chosen hint about the game based unless they die on a Transition Floor (Mines to Swamp, etc)
@@ -4889,17 +4891,19 @@ void openGameoverWindow()
 	}
 
 	// Create the Close Button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    button_t* pCloseButton = nullptr;
+    pCloseButton = newButton();
+	strcpy(pCloseButton->label, "x");
+    pCloseButton->x = subx2 - 20;
+    pCloseButton->y = suby1;
+    pCloseButton->sizex = 20;
+    pCloseButton->sizey = 20;
+    pCloseButton->action = &buttonCloseSubwindow;
+    pCloseButton->visible = 1;
+    pCloseButton->focused = 1;
+    pCloseButton->key = SDL_SCANCODE_ESCAPE;
+    pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    pCloseButton = nullptr;
 }
 
 // get 
