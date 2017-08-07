@@ -4773,18 +4773,18 @@ void openGameoverWindow()
 	scoreDeconstructor((void*) pScoreCalculator);
 
     // Check if the score of the Local Player is high enough to be on the scoreboard
-	bool currentScoreMadeScoreboard = false;
+	bool didCurrentScoreMakeScoreboard = false;
 	if ( !list_Size(&topscores) ) // If there are no scores on the scoreboard
 	{
-        currentScoreMadeScoreboard = true;
+        didCurrentScoreMakeScoreboard = true;
 	}
 	else if ( list_Size(&topscores) < MAX_SCOREBOARD_ENTIRES ) // If there is still space on the scoreboard
 	{
-        currentScoreMadeScoreboard = true;
+        didCurrentScoreMakeScoreboard = true;
 	}
 	else if ( totalScore((score_t*)topscores.last->element) < currentScoreValue ) // If the lowest score on the scoreboard is less than the current score
 	{
-        currentScoreMadeScoreboard = true;
+        didCurrentScoreMakeScoreboard = true;
 	}
 
     // If the NetworkType is Singleplayer, then the game is over
@@ -4795,7 +4795,7 @@ void openGameoverWindow()
 		strcat(subtext, language[1135]); // "Total Score: "
 		strcat(subtext, scorenum);       // Displays the current score
 
-		if ( currentScoreMadeScoreboard )
+		if ( didCurrentScoreMakeScoreboard )
 		{
 			strcat(subtext, language[1136]); // "Congratulations!\nYoumade the top ten.\n"
 		}
