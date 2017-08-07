@@ -4791,7 +4791,6 @@ void openGameoverWindow()
 	}
 
     // If the NetworkType is Singleplayer, then the game is over
-	shootmode = false;
 	if ( localPlayerNetworkType == NetworkType::SINGLE )
 	{
 		strcpy(subtext, language[1133]); // "You have died. Gameover."
