@@ -4767,10 +4767,10 @@ void openGameoverWindow()
 	button_t* button;
 
 	// Calculate player score
-	char scorenum[16];
+	char scorenum[16]; // The current score as a string
 	score_t* score = scoreConstructor();
-	Uint32 total = totalScore(score);   // The current score
-	snprintf(scorenum, 16, "%d\n\n", total);
+	Uint32 currentScoreValue = totalScore(score);   // The current score as an integer
+	snprintf(scorenum, 16, "%d\n\n", currentScoreValue);
 	scoreDeconstructor((void*)score);
 
     // Check if the score of the Local Player is high enough to be on the scoreboard
@@ -4783,7 +4783,7 @@ void openGameoverWindow()
 	{
         currentScoreMadeScoreboard = true;
 	}
-	else if ( totalScore((score_t*)topscores.last->element) < total ) // If the lowest score on the scoreboard is less than the current score
+	else if ( totalScore((score_t*)topscores.last->element) < currentScoreValue ) // If the lowest score on the scoreboard is less than the current score
 	{
         currentScoreMadeScoreboard = true;
 	}
