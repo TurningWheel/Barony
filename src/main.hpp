@@ -433,7 +433,6 @@ extern Sint32* lightmap;
 extern bool* vismap;
 extern Entity** clickmap;
 extern list_t entitiesdeleted;
-extern NetworkType localPlayerNetworkType;
 extern bool directConnect;
 extern bool client_disconnected[MAXPLAYERS];
 extern int minotaurlevel;
@@ -452,6 +451,7 @@ typedef enum class networkType_t
 //#define CLIENT 2
 //#define DIRECTSERVER 3
 //#define DIRECTCLIENT 4
+extern NetworkType localPlayerNetworkType;
 
 // language stuff
 #define NUMLANGENTRIES 2500
