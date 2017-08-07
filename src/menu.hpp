@@ -112,7 +112,7 @@ extern bool settings_colorblind;
 extern bool settings_spawn_blood;
 extern char portnumber_char[6];
 extern char connectaddress[64];
-extern int multiplayerselect;
+extern NetworkType selectedNetworkType;
 extern bool smoothmouse;
 extern bool broadcast;
 extern bool nohud;

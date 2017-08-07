@@ -96,7 +96,7 @@ char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
 bool spawn_blood = true;
-int multiplayerselect = NetworkType::SINGLE;
+NetworkType selectedNetworkType = NetworkType::SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
 bool settings_disable_messages = true;
@@ -1366,7 +1366,7 @@ void handleMainMenu(bool mode)
 
 			for ( c = 0; c < nummodes; c++ )
 			{
-				if ( multiplayerselect == c )
+				if ( selectedNetworkType == c )
 				{
 					switch ( c )
 					{
@@ -1422,7 +1422,7 @@ void handleMainMenu(bool mode)
 							if ( omousey >= suby1 + 56 + 20 * c && omousey < suby1 + 74 + 20 * c )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = c;
+								selectedNetworkType = c;
 							}
 						}
 						else
@@ -1430,7 +1430,7 @@ void handleMainMenu(bool mode)
 							if ( omousey >= suby1 + 136 + 40 * (c - 3) && omousey < suby1 + 148 + 40 * (c - 3) )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = c;
+								selectedNetworkType = c;
 							}
 						}
 					}
@@ -1443,10 +1443,10 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					}
 					draw_cursor = false;
-					multiplayerselect--;
-					if (multiplayerselect < 0)
+					selectedNetworkType--;
+					if (selectedNetworkType < 0)
 					{
-						multiplayerselect = nummodes - 1;
+						selectedNetworkType = nummodes - 1;
 					}
 				}
 				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
@@ -1457,10 +1457,10 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					}
 					draw_cursor = false;
-					multiplayerselect++;
-					if (multiplayerselect > nummodes - 1)
+					selectedNetworkType++;
+					if (selectedNetworkType > nummodes - 1)
 					{
-						multiplayerselect = 0;
+						selectedNetworkType = 0;
 					}
 				}
 			}
@@ -3665,7 +3665,7 @@ void handleMainMenu(bool mode)
 			fadefinished = false;
 			fadeout = false;
 			gamePaused = false;
-			multiplayerselect = 0;
+			selectedNetworkType = 0;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
 
 			if ( !mode )
@@ -5673,11 +5673,11 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 6 )
 	{
-		if ( multiplayerselect == NetworkType::SINGLE )
+		if ( selectedNetworkType == NetworkType::SINGLE )
 		{
 			buttonStartSingleplayer(my);
 		}
-		else if ( multiplayerselect == NetworkType::SERVER )
+		else if ( selectedNetworkType == NetworkType::SERVER )
 		{
 #ifdef STEAMWORKS
 			directConnect = false;
@@ -5686,7 +5686,7 @@ void buttonContinue(button_t* my)
 #endif
 			buttonHostMultiplayer(my);
 		}
-		else if ( multiplayerselect == NetworkType::CLIENT )
+		else if ( selectedNetworkType == NetworkType::CLIENT )
 		{
 #ifndef STEAMWORKS
 			directConnect = true;
@@ -5696,12 +5696,12 @@ void buttonContinue(button_t* my)
 			openSteamLobbyWaitWindow(my);
 #endif
 		}
-		else if ( multiplayerselect == NetworkType::DIRECTSERVER )
+		else if ( selectedNetworkType == NetworkType::DIRECTSERVER )
 		{
 			directConnect = true;
 			buttonHostMultiplayer(my);
 		}
-		else if ( multiplayerselect == NetworkType::DIRECTCLIENT )
+		else if ( selectedNetworkType == NetworkType::DIRECTCLIENT )
 		{
 			directConnect = true;
 			buttonJoinMultiplayer(my);
