@@ -4847,6 +4847,7 @@ void openGameoverWindow()
         bool survivingPlayer = false;
         for ( Uint8 iPlayerNum = 0; iPlayerNum < MAXPLAYERS; iPlayerNum++ )
         {
+            // If the Player we are checking has not disconnected, and does exist (is not dead), then there is a surviving player
             if ( !client_disconnected[iPlayerNum] && players[iPlayerNum]->entity )
             {
                 survivingPlayer = true;
