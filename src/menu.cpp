@@ -4758,6 +4758,8 @@ void handleMainMenu(bool mode)
 // Creates a new Subwindow in the middle of the screen on Local Player death, options and text displayed are different depending on localPlayerNetworkType
 void openGameoverWindow()
 {
+	node_t* node;
+
     // Create the Subwindow
 	subwindow = 1;
 	subx1 = xres / 2 - 288;
