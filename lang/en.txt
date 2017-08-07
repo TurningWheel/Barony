@@ -2954,4 +2954,10 @@ dominate the %s into your service!#
 #More character creation screen stuff.
 2450 Random Name#
 
+#New effects.
+2470 You no longer feel magic weaken against you.#
+2471 You no longer feel magic bounce off you.#
+2472 You feel magic weaken against you.#
+2473 You feel magic bounce off you.#
+
 2499 end#
