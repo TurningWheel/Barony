@@ -374,7 +374,7 @@ static const int ANIMATE_YAW = 1;
 static const int ANIMATE_PITCH = 2;
 static const int ANIMATE_ROLL = 3;
 static const int ANIMATE_WEAPON_YAW = 4;
-static const int ANIMATE_Z = 4;
+static const int ANIMATE_Z = 5;
 
 static const int ANIMATE_DIR_POSITIVE = 1;
 static const int ANIMATE_DIR_NEGATIVE = -1;
@@ -384,8 +384,8 @@ static const int ANIMATE_OVERSHOOT_TO_SETPOINT = 1;
 static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
 
-//--monster attack windup duration
-static const int ANIMATE_DURATION_WINDUP = 10;
+//--monster attack windup duration, in ticks, roughly 180ms
+static const int ANIMATE_DURATION_WINDUP = 9;
 
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
