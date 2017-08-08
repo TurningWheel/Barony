@@ -921,7 +921,7 @@ void clientActions(Entity* entity)
 		case 383: // FemaleDarkHead4
 		case 384: // FemaleDarkHead5
 		case 385: // FemaleDarkHead6
-			// Execute actplayer.cpp - actPlayer() on the client that has been clicked
+			// Execute actplayer.cpp - actPlayer() on the human that has been clicked
 			playernum = SDLNet_Read32(&net_packet->data[30]);
 			if ( playernum >= 0 && playernum < MAXPLAYERS )
 			{
