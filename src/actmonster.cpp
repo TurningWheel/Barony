@@ -31,7 +31,7 @@ float limbs[NUMMONSTERS][20][3];
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 {
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HUMAN
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HUMAN
 	{ 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
 	{ 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOBLIN
 	{ 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SLIME
@@ -127,9 +127,9 @@ double sightranges[NUMMONSTERS] =
 	512,  // MINOTAUR
 	1024, // DEVIL
 	256,  // SHOPKEEPER
-	128,  // KOBOLD
+	192,  // KOBOLD
 	512,  // SCARAB
-	32,   // CRYSTALGOLEM
+	192,   // CRYSTALGOLEM
 	256,  // INCUBUS
 	192,  // VAMPIRE
 	256,  // SHADOW
@@ -1740,7 +1740,6 @@ void actMonster(Entity* my)
 	weight /= 2; // on monsters weight shouldn't matter so much
 	double weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
 	weightratio = fmin(fmax(0, weightratio), 1);
-
 	// determine if I have a ranged weapon or not
 	if ( myStats->weapon != NULL )
 	{
@@ -2594,6 +2593,7 @@ void actMonster(Entity* my)
 						{
 							dist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 						}
+
 						if ( hit.entity != entity && myReflex )
 						{
 							if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
@@ -4295,6 +4295,16 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 	node_t* node = nullptr;
 	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
+	int charge = 1;
+
+	if ( myStats->type != LICH && myStats->type != DEVIL && MONSTER_SPECIAL > 0 )
+	{
+		--MONSTER_SPECIAL;
+		if ( MONSTER_SPECIAL == 0 )
+		{
+			//messagePlayer(0, "Special Ready");
+		}
+	}
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
@@ -4309,14 +4319,11 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 				bow = 2;
 			}
 		}
-		if ( myStats->type == CRYSTALGOLEM )
-		{
-			bow = 1;
-		}
-
 		// check if ready to attack
 		if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
 		{
+			handleMonsterSpecialAttack(my, myStats, nullptr, dist, hasrangedweapon);
+
 			if ( myStats->type == LICH )
 			{
 				MONSTER_SPECIAL++;
@@ -4375,120 +4382,118 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist,
 						}
 						else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 						{
-							pose = 1;  // vertical swing
+							if ( myStats->type == KOBOLD )
+							{
+								pose = MONSTER_POSE_MAGIC_WINDUP1;
+							}
+							else if ( myStats->type == COCKATRICE )
+							{
+								if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+								{
+									pose = MONSTER_POSE_MAGIC_WINDUP2;
+								}
+								else
+								{
+									pose = MONSTER_POSE_MAGIC_WINDUP1;
+								}
+							}
+							else
+							{
+								pose = 1;  // vertical swing
+							}
 						}
 						else if ( hasrangedweapon )
 						{
-							pose = 0;
+							if ( myStats->type == KOBOLD )
+							{
+								pose = MONSTER_POSE_RANGED_WINDUP1;
+							}
+							else
+							{
+								pose = 0;
+							}
 						}
 						else
 						{
-							pose = rand() % 3 + 1;
+							if ( myStats->type == KOBOLD )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+							}
+							else
+							{
+								pose = rand() % 3 + 1;
+							}
 						}
 					}
-
-					if ( myStats->type == KOBOLD )
+					// fists
+					else
 					{
-						pose = MONSTER_POSE_MELEE_WINDUP1;
+						if ( myStats->type == KOBOLD )
+						{
+							pose = MONSTER_POSE_MELEE_WINDUP1;
+						}
+						else if ( myStats->type == CRYSTALGOLEM )
+						{
+							if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_GOLEM )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP3;
+							}
+							else
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+							}
+						}
+						else if ( myStats->type == COCKATRICE )
+						{
+							if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP3;
+							}
+							else
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+							}
+						}
+						else
+						{
+							pose = 1;
+						}
 					}
-
-					if ( myStats->type == CRYSTALGOLEM )
-					{
-						pose = 5;
-					}
-					else if ( myStats->type == CRYSTALGOLEM && rand() % 2 )
-					{
-						pose = GOLEM_SMASH;
-					}
-
 					// turn to the target, then reset my yaw.
 					double oYaw = my->yaw;
 					my->yaw = newTangent;
-					my->attack(pose, 1, nullptr); // attacku! D:<
+					my->attack(pose, charge, nullptr); // attacku! D:<
 					my->yaw = oYaw;
 				}
 			}
 		}
 	}
-
-	//if ( myStats->type == CRYSTALGOLEM )
-	//{
-	//	Entity* tmpEntity = hit.entity;
-
-	//	// aoe
-	//	for ( node = map.entities->first; node != NULL; node = node->next )
-	//	{
-	//		entity = (Entity*)node->element;
-	//		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != tmpEntity && entity != my )
-	//		{
-	//			double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
-	//			int dir = my->yaw - aoeTangent;
-	//			while ( dir >= PI )
-	//			{
-	//				dir -= PI * 2;
-	//			}
-	//			while ( dir < -PI )
-	//			{
-	//				dir += PI * 2;
-	//			}
-	//			if ( dir >= -1 * PI / 2 && dir <= 1 * PI / 2 )
-	//			{
-	//				// 60 degree arc to check.
-	//				//lineTrace(my, my->x, my->y, aoeTangent, 64, 0, true);
-	//				double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-	//				//messagePlayer(0, "dist %f", dist);
-	//				if ( dist < 32 )
-	//				{
-	//					//messagePlayer(0, "hit enemy type %d", hit.entity->getStats()->type);
-	//					my->attack(pose, 1, entity); // attacku! D:<
-
-	//												 //Entity* entity2 = newEntity(-1, 1, map.entities);
-	//												 //entity2->flags[INVISIBLE] = false;
-	//												 //entity2->flags[UPDATENEEDED] = true;
-	//												 //entity2->x = entity->x - 4 + rand() % 8;
-	//												 //entity2->y = entity->y - 4 + rand() % 8;
-	//												 //entity2->z = 4;
-	//												 //entity2->sizex = 4;
-	//												 //entity2->sizey = 4;
-	//												 //entity2->yaw = rand() % 360 * PI / 180;
-	//												 //entity2->vel_x = (rand() % 20 - 10) / 10.0;
-	//												 //entity2->vel_y = (rand() % 20 - 10) / 10.0;
-	//												 //entity2->vel_z = -.75 - (rand() % 5) / 10.0;
-	//												 //entity2->flags[PASSABLE] = true;
-	//												 //entity2->behavior = &actItem;
-	//												 //entity2->flags[USERFLAG1] = true; // no collision: helps performance
-	//												 //entity2->skill[10] = GEM_ROCK;    // type
-	//												 //entity2->skill[11] = WORN;        // status
-	//												 //entity2->skill[12] = 0;           // beatitude
-	//												 //entity2->skill[13] = 1;           // count
-	//												 //entity2->skill[14] = 0;           // appearance
-	//												 //entity2->skill[15] = false;       // identified
-	//				}
-	//			}
-	//		}
-	//	}
-	//}
-
-
-
-
-
-
-
 	return;
 }
 
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir)
 {
-	if ( axis == 0 || MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_NONE || dir == ANIMATE_DIR_NONE )
+	if ( axis == 0 || limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE || dir == ANIMATE_DIR_NONE )
 	{
+		if ( axis == ANIMATE_PITCH )
+		{
+			limb->pitch = endpoint;
+		}
+		else if ( axis == ANIMATE_ROLL )
+		{
+			limb->roll = endpoint;
+		}
+		else if ( axis == ANIMATE_YAW )
+		{
+			limb->yaw = endpoint;
+		}
 		// no animation required.
 		return -1;
 	}
 
 	if ( axis == ANIMATE_PITCH )
 	{
-		if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
 		{
 			limb->pitch += setpointRate * dir;
 			while ( limb->pitch < 0 )
@@ -4503,11 +4508,11 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			if ( limbAngleWithinRange(limb->pitch, setpointRate, setpoint) )
 			{
 				limb->pitch = setpoint;
-				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
 				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
 			}
 		}
-		else if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
 		{
 			limb->pitch -= endpointRate * dir;
 			while ( limb->pitch < 0 )
@@ -4522,14 +4527,14 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			if ( limbAngleWithinRange(limb->pitch, endpointRate, endpoint) )
 			{
 				limb->pitch = endpoint;
-				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
 				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
 			}
 		}
 	}
 	else if ( axis == ANIMATE_ROLL )
 	{
-		if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
 		{
 			limb->roll += setpointRate * dir;
 			while ( limb->roll < 0 )
@@ -4544,11 +4549,11 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			if ( limbAngleWithinRange(limb->roll, setpointRate, setpoint) )
 			{
 				limb->roll = setpoint;
-				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
 				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
 			}
 		}
-		else if ( MONSTER_LIMB_OVERSHOOT == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
 		{
 			limb->roll -= endpointRate * dir;
 			while ( limb->roll < 0 )
@@ -4563,12 +4568,77 @@ int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double
 			if ( limbAngleWithinRange(limb->roll, endpointRate, endpoint) )
 			{
 				limb->roll = endpoint;
-				MONSTER_LIMB_OVERSHOOT = ANIMATE_OVERSHOOT_NONE;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
 				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
 			}
 		}
 	}
+	else if ( axis == ANIMATE_YAW )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->yaw += setpointRate * dir;
+			while ( limb->yaw < 0 )
+			{
+				limb->yaw += 2 * PI;
+			}
+			while ( limb->yaw >= 2 * PI )
+			{
+				limb->yaw -= 2 * PI;
+			}
 
+			if ( limbAngleWithinRange(limb->yaw, setpointRate, setpoint) )
+			{
+				limb->yaw = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->yaw -= endpointRate * dir;
+			while ( limb->yaw < 0 )
+			{
+				limb->yaw += 2 * PI;
+			}
+			while ( limb->yaw >= 2 * PI )
+			{
+				limb->yaw -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->yaw, endpointRate, endpoint) )
+			{
+				limb->yaw = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+	else if ( axis == ANIMATE_Z )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->z += setpointRate * dir;
+
+			if ( limbAngleWithinRange(limb->z, setpointRate, setpoint) )
+			{
+				limb->z = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->z -= endpointRate * dir;
+
+			if ( limbAngleWithinRange(limb->z, endpointRate, endpoint) )
+			{
+				limb->z = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
 
 	return -1;
 }
@@ -4582,15 +4652,41 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 
 	if ( axis == ANIMATE_YAW )
 	{
-		limb->yaw += rate;
-		if ( limb->yaw >= setpoint )
+		while ( limb->yaw < 0 )
+		{
+			limb->yaw += 2 * PI;
+		}
+		while ( limb->yaw >= 2 * PI )
+		{
+			limb->yaw -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->yaw, rate, setpoint) )
 		{
 			limb->yaw = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->yaw += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->yaw -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
 			return 1; //reached setpoint
 		}
+		limb->yaw += rate;
 	} else if ( axis == ANIMATE_PITCH )
 	{
-		limb->pitch += rate;
 		while ( limb->pitch < 0 )
 		{
 			limb->pitch += 2 * PI;
@@ -4605,27 +4701,27 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			limb->pitch = setpoint;
 			if ( shake )
 			{
-				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NONE )
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
 				{
 					// no direction for shake is set.
-					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
 				}
-				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_POSITIVE )
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
 				{
 					limb->pitch += shakerate;
-					MONSTER_LIMB_DIR = ANIMATE_DIR_NEGATIVE;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
 				}
-				else if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NEGATIVE )
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
 				{
 					limb->pitch -= shakerate;
-					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
 				}
 			}
 			return 1; //reached setpoint
 		}
+		limb->pitch += rate;
 	} else if ( axis == ANIMATE_ROLL )
 	{
-		limb->roll += rate;
 		while ( limb->roll < 0 )
 		{
 			limb->roll += 2 * PI;
@@ -4635,29 +4731,75 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 			limb->roll -= 2 * PI;
 		}
 
-		if ( limb->roll >= setpoint )
+		if ( limbAngleWithinRange(limb->roll, rate, setpoint) )
 		{
 			limb->roll = setpoint;
 			if ( shake )
 			{
-				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NONE )
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
 				{
 					// no direction for shake is set.
-					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
 				}
-				if ( MONSTER_LIMB_DIR == ANIMATE_DIR_POSITIVE )
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
 				{
 					limb->roll += shakerate;
-					MONSTER_LIMB_DIR = ANIMATE_DIR_NEGATIVE;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
 				}
-				else if ( MONSTER_LIMB_DIR == ANIMATE_DIR_NEGATIVE )
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
 				{
 					limb->roll -= shakerate;
-					MONSTER_LIMB_DIR = ANIMATE_DIR_POSITIVE;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
 				}
 			}
 			return 1; //reached setpoint
 		}
+		limb->roll += rate;
+	}
+	else if ( axis == ANIMATE_Z )
+	{
+		if ( limbAngleWithinRange(limb->z, rate, setpoint) )
+		{
+			limb->z = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->z += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->z -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+		limb->z += rate;
+	}
+	else if ( axis == ANIMATE_WEAPON_YAW )
+	{
+		while ( limb->fskill[5] < 0 )
+		{
+			limb->fskill[5] += 2 * PI;
+		}
+		while ( limb->fskill[5] >= 2 * PI )
+		{
+			limb->fskill[5] -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->fskill[5], rate, setpoint) )
+		{
+			limb->fskill[5] = setpoint;
+			return 1; //reached setpoint
+		}
+		limb->fskill[5] += rate;
 	}
 
 	return 0;
@@ -4681,6 +4823,20 @@ int limbAngleWithinRange(real_t angle, double rate, double setpoint)
 	}
 
 	return 0;
+}
+
+real_t normaliseAngle2PI(real_t angle)
+{
+	while ( angle >= 2 * PI )
+	{
+		angle -= 2 * PI;
+	}
+	while ( angle < 0 )
+	{
+		angle += 2 * PI;
+	}
+
+	return angle;
 }
 
 bool forceFollower(Entity& leader, Entity& follower)
@@ -4731,4 +4887,280 @@ bool forceFollower(Entity& leader, Entity& follower)
 	}
 
 	return true;
+}
+
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon)
+{
+	int specialRoll = 0;
+	node_t* node = nullptr;
+	int enemiesNearby = 0;
+	int bonusFromHP = 0;
+
+	if ( myStats != nullptr )
+	{
+		if ( myStats->type == LICH || myStats->type == DEVIL || myStats->type == SHOPKEEPER )
+		{
+			return;
+		}
+
+		if ( MONSTER_SPECIAL == 0 )
+		{
+			switch ( myStats->type )
+			{
+				case KOBOLD:
+					if ( hasrangedweapon )
+					{
+						specialRoll = rand() % 20;
+						//messagePlayer(0, "Rolled: %d", specialRoll);
+						if ( myStats->HP < myStats->MAXHP / 3 )
+						{
+							if ( (dist < 40 && specialRoll < 10) || (dist < 100 && specialRoll < 5) ) // 50%/25% chance
+							{
+								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+								if ( node != nullptr )
+								{
+									swapMonsterWeaponWithInventoryItem(my, myStats, node);
+									MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+								}
+							}
+						}
+						else if ( myStats->HP < myStats->MAXHP / 2 )
+						{
+							if ( (dist < 40 && specialRoll < 5) || (dist < 100 && specialRoll < 2) ) // 25%/10% chance
+							{
+								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+								if ( node != nullptr )
+								{
+									swapMonsterWeaponWithInventoryItem(my, myStats, node);
+									MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+								}
+							}
+						}
+					}
+					break;
+				case CRYSTALGOLEM:
+					specialRoll = rand() % 20;
+					enemiesNearby = numTargetsAroundEntity(my, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
+					if ( enemiesNearby > 1 )
+					{
+						enemiesNearby = std::min(enemiesNearby, 4);
+						if ( specialRoll < enemiesNearby * 2 ) // 10% for each enemy > 1, capped at 40%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							break;
+						}
+					}		
+					
+					specialRoll = rand() % 20;
+					if ( myStats->HP > myStats->MAXHP * 0.8 )
+					{
+						if ( specialRoll < 1 ) // 5%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.6 )
+					{
+						if ( specialRoll < 2 ) // 10%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.4 )
+					{
+						if ( specialRoll < 3 ) // 15%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 4 ) // 20%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 5 ) // 25%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					break;
+				case COCKATRICE:
+					specialRoll = rand() % 20;
+					//specialRoll = 0;
+					// check for paralyze first
+					enemiesNearby = std::min(numTargetsAroundEntity(my, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+					
+					if ( myStats->HP <= myStats->MAXHP * 0.5 )
+					{
+						bonusFromHP = 4; // +20% chance if on low health
+					}
+					if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(my, myStats, node);
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
+						}
+						break;
+					}
+
+					// nothing selected, look for double attack.
+					specialRoll = rand() % 20;
+					if ( myStats->HP > myStats->MAXHP * 0.8 )
+					{
+						if ( specialRoll < 1 ) // 5%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.6 )
+					{
+						if ( specialRoll < 2 ) // 10%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.4 )
+					{
+						if ( specialRoll < 3 ) // 15%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 4 ) // 20%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP <= myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 5 ) // 25%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		else if ( MONSTER_SPECIAL > 0 )
+		{
+			switch ( myStats->type )
+			{
+				case KOBOLD:
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(my, myStats, node);
+					}
+					else
+					{
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
+					}
+					break;
+				case COCKATRICE:
+					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	
+	return;
+}
+
+void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list)
+{
+	Entity* entity = nullptr;
+	node_t* node = nullptr;
+	node_t* node2 = nullptr;
+	Stat* myStats = my->getStats();
+
+	if ( myStats != nullptr )
+	{
+		// aoe
+		for ( node = map.entities->first; node != nullptr; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
+			{
+				if ( searchType == MONSTER_TARGET_ENEMY )
+				{
+					if ( !my->checkEnemy(entity) )
+					{
+						continue;
+					}
+				}
+				else if ( searchType == MONSTER_TARGET_FRIEND )
+				{
+					if ( !my->checkFriend(entity) )
+					{
+						continue;
+					}
+				}
+				else if ( searchType == MONSTER_TARGET_PLAYER )
+				{
+					if ( !(entity->behavior == &actPlayer) )
+					{
+						continue;
+					}
+				}
+
+				double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
+				real_t angle = my->yaw - aoeTangent;
+				while ( angle >= PI )
+				{
+					angle -= PI * 2;
+				}
+				while ( angle < -PI )
+				{
+					angle += PI * 2;
+				}
+				if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
+				{
+					double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+					if ( dist < distToFind )
+					{
+						//If this is the first entity found, the list needs to be created.
+						if ( !(*list) )
+						{
+							*list = (list_t*)malloc(sizeof(list_t));
+							(*list)->first = nullptr;
+							(*list)->last = nullptr;
+						}
+						node2 = list_AddNodeLast(*list);
+						node2->element = entity;
+						node2->deconstructor = &emptyDeconstructor;
+						node2->size = sizeof(Entity*);
+					}
+				}
+			}
+		}
+	}
+	return;
+}
+
+int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType)
+{
+	list_t* aoeTargets = nullptr;
+	int count = 0;
+	getTargetsAroundEntity(my, nullptr, distToFind, angleToSearch, searchType, &aoeTargets);
+	if ( aoeTargets )
+	{
+		count = list_Size(aoeTargets);
+		//messagePlayer(0, "found %d targets", count);
+		//Free the list.
+		list_FreeAll(aoeTargets);
+		free(aoeTargets);
+	}
+	return count;
 }

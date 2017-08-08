@@ -868,40 +868,53 @@ void dropItem(Item* item, int player)
 
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 {
-	Entity* entity;
+	Entity* entity = nullptr;
+	bool itemDroppable = true;
 
 	if ( !item || !monster )
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	entity = newEntity(-1, 1, map.entities);
-	entity->flags[INVISIBLE] = true;
-	entity->flags[UPDATENEEDED] = true;
-	entity->x = monster->x;
-	entity->y = monster->y;
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->yaw = monster->yaw;
-	entity->vel_x = (rand() % 20 - 10) / 10.0;
-	entity->vel_y = (rand() % 20 - 10) / 10.0;
-	entity->vel_z = -.5;
-	entity->flags[PASSABLE] = true;
-	entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
-	entity->behavior = &actItem;
-	entity->skill[10] = item->type;
-	entity->skill[11] = item->status;
-	entity->skill[12] = item->beatitude;
-	entity->skill[13] = 1;
-	entity->skill[14] = item->appearance;
-	entity->skill[15] = item->identified;
-	entity->parent = monster->getUID();
+	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	{
+		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE) && itemCategory(item) == SPELLBOOK )
+		{
+			// monsters with special spell attacks won't drop their book.
+			itemDroppable = false;
+		}
+	}
+
+	if ( itemDroppable )
+	{
+		entity = newEntity(-1, 1, map.entities);
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = monster->x;
+		entity->y = monster->y;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = monster->yaw;
+		entity->vel_x = (rand() % 20 - 10) / 10.0;
+		entity->vel_y = (rand() % 20 - 10) / 10.0;
+		entity->vel_z = -.5;
+		entity->flags[PASSABLE] = true;
+		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+		entity->behavior = &actItem;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = 1;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->parent = monster->getUID();
+	}
 
 	item->count--;
 	Item** slot;
-	if ( (slot = itemSlot(monsterStats, item)) != NULL )
+	if ( (slot = itemSlot(monsterStats, item)) != nullptr )
 	{
-		*slot = NULL; // clear the item slot
+		*slot = nullptr; // clear the item slot
 	}
 	if ( item->count <= 0 )
 	{
@@ -2437,4 +2450,204 @@ void createCustomInventory(Stat* stats, int itemLimit)
 			}
 		}
 	}
+}
+
+node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
+{
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( cat >= WEAPON && itemCategory(item) == cat )
+			{
+				return node;
+			} 
+			else if ( itemToFind != -1 && item->type == itemToFind )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
+{
+	Item* item = nullptr;
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || inventoryNode == nullptr )
+	{
+		return false;
+	}
+
+	item = (Item*)inventoryNode->element;
+	
+	if ( item->count == 1 )
+	{
+		// TODO: handle stacks.
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		copyItem(tmpItem, item);
+		if ( myStats->weapon != nullptr )
+		{
+			copyItem(item, myStats->weapon);
+			copyItem(myStats->weapon, tmpItem);
+			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			{
+				playSoundEntity(my, 40 + rand() % 4, 64);
+			}
+			free(tmpItem);
+		}
+		else
+		{
+			myStats->weapon = tmpItem;
+			// remove the new item we created.
+			list_RemoveNode(inventoryNode);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
+{
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || *slot == nullptr )
+	{
+		return false;
+	}
+
+	if ( itemCompare(*slot, itemToUnequip) )
+	{
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, &myStats->inventory);
+		copyItem(tmpItem, itemToUnequip);
+
+		if ( (*slot)->node )
+		{
+			list_RemoveNode((*slot)->node);
+		}
+		else
+		{
+			free(*slot);
+		}
+
+		*slot = nullptr;
+	}
+
+	return true;
+}
+
+bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
+{
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || *slot == nullptr )
+	{
+		return false;
+	}
+
+	if ( itemCategory(*slot) == cat)
+	{
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, &myStats->inventory);
+		copyItem(tmpItem, *slot);
+
+		if ( (*slot)->node )
+		{
+			list_RemoveNode((*slot)->node);
+		}
+		else
+		{
+			free(*slot);
+		}
+
+		*slot = nullptr;
+		//messagePlayer(0, "un-equip!");
+		return true;
+	}
+
+	return false;
+}
+
+void copyItem(Item* itemToSet, Item* itemToCopy)
+{
+	itemToSet->type = itemToCopy->type;
+	itemToSet->status = itemToCopy->status;
+	itemToSet->beatitude = itemToCopy->beatitude;
+	itemToSet->count = itemToCopy->count;
+	itemToSet->appearance = itemToCopy->appearance;
+	itemToSet->identified = itemToCopy->identified;
+	itemToSet->uid = itemToCopy->uid;
+
+	return;
+}
+
+ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
+{
+	int numitems = NUMITEMS;
+	int numoftype = 0;
+	bool chances[NUMITEMS] = { false };
+	bool pickAnyCategory = false;
+	int c;
+
+	if ( cat < -1 || cat >= NUMCATEGORIES )
+	{
+		printlog("warning: pickItemWithinGoldValue() called with bad category value!\n");
+		return GEM_ROCK;
+	}
+
+	if ( cat == -1 )
+	{
+		pickAnyCategory = true;
+	}
+
+	// find highest value of items in category
+	for ( c = 0; c < NUMITEMS; ++c )
+	{
+		if ( items[c].category == cat || (pickAnyCategory && items[c].category != SPELL_CAT) )
+		{
+			if ( items[c].value >= minValue && items[c].value <= maxValue )
+			{
+				chances[c] = true;
+				numoftype++;
+			}
+		}
+	}
+	
+	if ( numoftype == 0 )
+	{
+		printlog("warning: category passed has no items within gold values!\n");
+		return GEM_ROCK;
+	}
+
+	// pick the item
+	int pick = prng_get_uint() % numoftype;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( chances[c] == true )
+		{
+			if ( pick == 0 )
+			{
+				return static_cast<ItemType>(c);
+			}
+			else
+			{
+				pick--;
+			}
+		}
+	}
+
+	return GEM_ROCK;
 }

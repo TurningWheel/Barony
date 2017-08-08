@@ -159,13 +159,13 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
-	{ 0.9, 1.f, 1.f, 0.9, 1.1, 1.1 }, // kobold
+	{ 0.9, 1.2, 1.2, 0.9, 1.1, 1.3 }, // kobold
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
-	{ 1.1, 0.8, 1.1, 0.8, 0.9, 1.f }, // crystal golem
+	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // shadow
-	{ 1.1, 1.f, 0.8, 1.f, 1.f, 1.2 }, // cockatrice
+	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5 }, // cockatrice
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
 	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // automaton
@@ -198,10 +198,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_SHOPYE my->skill[17]
 #define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
-
-//--monster animation storage.
-#define MONSTER_LIMB_DIR limb->skill[20]
-#define MONSTER_LIMB_OVERSHOOT limb->fskill[21]
 
 #define MONSTER_SPECIAL my->skill[29]
 #define MONSTER_IDLEVAR myStats->monster_idlevar
@@ -353,13 +349,32 @@ bool forceFollower(Entity& leader, Entity& follower);
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
 static const int MONSTER_POSE_MELEE_WINDUP2 = 5;
 static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
-static const int MONSTER_POSE_MELEE_STRIKE = 7;
-static const int GOLEM_SMASH = 8;
+static const int MONSTER_POSE_RANGED_WINDUP1 = 7;
+static const int MONSTER_POSE_RANGED_WINDUP2 = 8;
+static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
+static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
+static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
+static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
+static const int MONSTER_POSE_GOLEM_SMASH = 13;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 14;
+
+//--monster special cooldowns
+static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
+static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
+static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
+
+//--monster target search types
+static const int MONSTER_TARGET_ENEMY = 0;
+static const int MONSTER_TARGET_FRIEND = 1;
+static const int MONSTER_TARGET_PLAYER = 2;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;
 static const int ANIMATE_PITCH = 2;
 static const int ANIMATE_ROLL = 3;
+static const int ANIMATE_WEAPON_YAW = 4;
+static const int ANIMATE_Z = 4;
 
 static const int ANIMATE_DIR_POSITIVE = 1;
 static const int ANIMATE_DIR_NEGATIVE = -1;
@@ -369,8 +384,15 @@ static const int ANIMATE_OVERSHOOT_TO_SETPOINT = 1;
 static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
 
+//--monster attack windup duration
+static const int ANIMATE_DURATION_WINDUP = 10;
+
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
-//--animates the selected limb to setpoint, then endpoint along the axis, provided skill[21]/MONSTER_LIMB_OVERSHOOT is set
+//--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon);
+real_t normaliseAngle2PI(real_t angle);
+void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
+int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);

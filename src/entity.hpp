@@ -31,6 +31,11 @@
 #define PASSABLE 12
 #define USERFLAG1 14
 #define USERFLAG2 15
+
+// number of entity skills and fskills
+static const int NUMENTITYSKILLS = 60;
+static const int NUMENTITYFSKILLS = 30;
+
 // entity class
 class Entity
 {
@@ -113,8 +118,8 @@ public:
 	real_t new_yaw, new_pitch, new_roll; // rotation
 
 	// entity attributes
-	real_t fskill[30]; // floating point general purpose variables
-	Sint32 skill[30];  // general purpose variables
+	real_t fskill[NUMENTITYFSKILLS]; // floating point general purpose variables
+	Sint32 skill[NUMENTITYSKILLS];  // general purpose variables
 	bool flags[16];    // engine flags
 	char* string;      // general purpose string
 	light_t* light;    // every entity has a specialized light pointer
@@ -139,6 +144,10 @@ public:
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState;
 	Sint32& monsterTarget;
+
+	//--PUBLIC MONSTER ANIMATION SKILLS--
+	Sint32& monsterAnimationLimbDirection;
+	Sint32& monsterAnimationLimbOvershoot;
 
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise

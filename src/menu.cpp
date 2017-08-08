@@ -490,6 +490,32 @@ void handleMainMenu(bool mode)
 				ttfPrintTextFormattedColor(ttf16, 50, yres/4+80, colorGray, language[1303]);
 				//...etc
 			 */
+			if ( keystatus[SDL_SCANCODE_L] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			{
+				buttonOpenCharacterCreationWindow(nullptr);
+				keystatus[SDL_SCANCODE_L] = 0;
+				keystatus[SDL_SCANCODE_LCTRL] = 0;
+				keystatus[SDL_SCANCODE_RCTRL] = 0;
+				multiplayerselect = SERVER;
+				charcreation_step = 6;
+				directConnect = true;
+				strcpy(portnumber_char, "12345");
+				buttonHostLobby(nullptr);
+			}
+
+			if ( keystatus[SDL_SCANCODE_M] && (keystatus[SDL_SCANCODE_LCTRL] || keystatus[SDL_SCANCODE_RCTRL]) )
+			{
+				buttonOpenCharacterCreationWindow(nullptr);
+				
+				keystatus[SDL_SCANCODE_M] = 0;
+				keystatus[SDL_SCANCODE_LCTRL] = 0;
+				keystatus[SDL_SCANCODE_RCTRL] = 0;
+				multiplayerselect = CLIENT;
+				charcreation_step = 6;
+				directConnect = true;
+				strcpy(connectaddress, "localhost:12345");
+				buttonJoinLobby(nullptr);
+			}
 
 			//"Start Game" button.
 			if ( ((omousex >= 50 && omousex < 50 + strlen(language[1303]) * 18 && omousey >= yres / 4 + 80 && omousey < yres / 4 + 80 + 18) || (menuselect == 1)) && subwindow == 0 && introstage == 1 )

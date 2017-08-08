@@ -422,3 +422,12 @@ bool itemIsEquipped(const Item* item, int player);
 bool isPotionBad(const Item& potion);
 
 void createCustomInventory(Stat* stats, int itemLimit);
+void copyItem(Item* itemToSet, Item* itemToCopy);
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode);
+bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
+bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
+node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
+ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
+
+// unique monster item appearance to avoid being dropped on death.
+static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

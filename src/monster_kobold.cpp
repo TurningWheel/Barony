@@ -20,6 +20,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initKobold(Entity* my, Stat* myStats)
 {
@@ -69,8 +70,34 @@ void initKobold(Entity* my, Stat* myStats)
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
 
-														 // count any inventory items set to default in edtior
+			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
+
+			//give weapon
+			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 3:
+					case 4:
+						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+						myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 9:
+						myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, nullptr);
+						break;
+				}
+			}
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
@@ -79,23 +106,14 @@ void initKobold(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
-					if ( rand() % 50 == 0 )
-					{
-						newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
-					}
 				case 2:
-					if ( rand() % 10 == 0 )
-					{
-						int i = 1 + rand() % 4;
-						for ( c = 0; c < i; ++c )
-						{
-							newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
-						}
-					}
 				case 1:
-					if ( rand() % 3 == 0 )
+					if ( myStats->weapon && myStats->weapon->type == CROSSBOW )
 					{
-						newItem(FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+						if ( rand() % 2 == 0 ) // 50% chance
+						{
+							newItem(SPELLBOOK_SLOW, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						}
 					}
 					break;
 				default:
@@ -130,32 +148,6 @@ void initKobold(Entity* my, Stat* myStats)
 				}
 			}
 
-			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-						myStats->weapon = newItem(STEEL_SWORD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 4:
-					case 5:
-						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						break;
-					case 6:
-					case 7:
-					case 8:
-						//myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
-						//break;
-					case 9:
-						myStats->weapon = newItem(IRON_AXE, static_cast<Status>(DECREPIT + rand() % 4), -2 + rand() % 5, 1, rand(), false, nullptr);
-						break;
-				}
-			}
-
 			// give cloak
 			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
@@ -178,7 +170,7 @@ void initKobold(Entity* my, Stat* myStats)
 			}
 
 			// give helm
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			/*if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -198,7 +190,7 @@ void initKobold(Entity* my, Stat* myStats)
 						myStats->helmet = newItem(STEEL_HELM, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 				}
-			}
+			}*/
 		}
 	}
 
@@ -484,7 +476,14 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == 5 )
+		{
+			//entity->yaw = my->yaw;
+		}
+		else
+		{
+			entity->yaw = my->yaw;
+		}
 		if ( bodypart == 3 || bodypart == 6 )
 		{
 			// right leg, left arm.
@@ -560,89 +559,135 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			{
 				weaponarm = entity;
 
-				if ( MONSTER_ATTACKTIME == 0 )
+				// vertical chop windup
+				if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+					if ( MONSTER_ATTACKTIME == 0 )
 					{
-					MONSTER_ARMBENDED = 0;
-					MONSTER_WEAPONYAW = 0;
-					entity->roll = 0;
-					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0) )
+						// init rotations
+						entity->pitch = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_WEAPONYAW = 0;
+						entity->roll = 0;
+					}
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
 					{
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(1, 0, nullptr);
 						}
 					}
-					//entity->pitch = -3 * PI / 4;
+				}
+				// vertical chop attack
+				else if ( MONSTER_ATTACK == 1 )
+				{
+					if ( entity->pitch >= 3 * PI / 2 )
+					{
+						MONSTER_ARMBENDED = 1;
+					}
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 4, false, 0.0) )
+					{
+						entity->skill[0] = rightbody->skill[0];
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_ATTACK = 0;
 					}
 				}
 
-				if ( MONSTER_ATTACK == 1 )
+				// horizontal chop windup
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
 				{
-					if ( MONSTER_ATTACKTIME > 0 )
-					{
-						if ( entity->pitch >= 3 * PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.25, PI / 4, false, 0) )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
 					if ( MONSTER_ATTACKTIME == 0 )
 					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							MONSTER_WEAPONYAW += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
+						// init rotations
+						entity->pitch = PI / 4;
 						entity->roll = 0;
 					}
-					else
+
+					MONSTER_ARMBENDED = 1;
+					limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
+					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, 0, false, 0.0);
+					
+					MONSTER_WEAPONYAW = 5 * PI / 4;
+					//entity->roll = PI / 2;
+
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
-						if ( MONSTER_ATTACKTIME >= 5 )
+						if ( multiplayer != CLIENT )
 						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
+							my->attack(2, 0, nullptr);
 						}
-						if ( MONSTER_ATTACKTIME >= 10 )
+					}
+				}
+				// horizontal chop attack
+				else if ( MONSTER_ATTACK == 2 )
+				{
+					if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, PI / 8, false, 0.0) )
+					{
+						entity->skill[0] = rightbody->skill[0];
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_ATTACK = 0;
+					}
+				}
+				// stab windup
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
+				{
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
+						// init rotations
+						MONSTER_ARMBENDED = 0;
+						MONSTER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = 0;
+					}
+
+					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
+
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(3, 0, nullptr);
+						}
+					}
+
+				}
+				// stab attack - refer to weapon limb code for additional animation
+				else if ( MONSTER_ATTACK == 3 )
+				{
+					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.3, 11 * PI / 6, false, 0.0) )
+					{
+						entity->skill[0] = rightbody->skill[0];
+						MONSTER_WEAPONYAW = 0;
+						entity->pitch = rightbody->pitch;
+						entity->roll = 0;
+						MONSTER_ARMBENDED = 0;
+						MONSTER_ATTACK = 0;
+					}
+				}
+
+				else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_WINDUP1 )
+				{
+					// crossbow
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
+						// init rotations
+						MONSTER_ARMBENDED = 0;
+						MONSTER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = 9 * PI / 5;
+					}
+
+					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.15, 0, false, 0.0);
+
+					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+					{
+						if ( multiplayer != CLIENT )
 						{
 							entity->skill[0] = rightbody->skill[0];
 							MONSTER_WEAPONYAW = 0;
@@ -650,8 +695,63 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
 							MONSTER_ATTACK = 0;
+							my->attack(0, 0, nullptr);
 						}
 					}
+
+					MONSTER_ATTACKTIME++; // manually increment counter
+				}
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+				{
+					// magic
+					if ( MONSTER_ATTACKTIME == 0 )
+					{
+						// init rotations
+						MONSTER_ARMBENDED = 0;
+						MONSTER_WEAPONYAW = 0;
+						entity->roll = 0;
+						entity->pitch = PI / 8;
+						entity->yaw = my->yaw - PI / 8;
+						entity->skill[0] = 0;
+						createParticleDot(my);
+					}
+
+					double animationSetpoint = normaliseAngle2PI(my->yaw + PI / 8);
+					double animationEndpoint = normaliseAngle2PI(my->yaw - PI / 8);
+
+					if ( entity->skill[0] == 0 )
+					{
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.1, PI / 8, false, 0.0) && limbAnimateToLimit(entity, ANIMATE_YAW, 0.1, animationSetpoint, false, 0.0) )
+						{
+							entity->skill[0] = 1;
+						}
+					}
+					else
+					{
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 15 * PI / 8, false, 0.0) && limbAnimateToLimit(entity, ANIMATE_YAW, -0.1, animationEndpoint, false, 0.0) )
+						{
+							entity->skill[0] = 0;
+						}
+					}
+
+					//limbAnimateWithOvershoot(entity, ANIMATE_YAW, 0.2, animationSetpoint, 0.2, animationEndpoint, ANIMATE_DIR_POSITIVE);
+					//limbAnimateToLimit(entity, ANIMATE_PITCH, 0.2, 0, true, 0.001);
+
+					if ( MONSTER_ATTACKTIME >= 30 )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							MONSTER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							MONSTER_ARMBENDED = 0;
+							MONSTER_ATTACK = 0;
+							my->attack(0, 0, nullptr);
+						}
+					}
+
+					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 			}
 			else if ( bodypart == 9 )
@@ -742,7 +842,6 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
@@ -771,11 +870,10 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->pitch = 0;
 				}
 				break;
-				// left arm
 			}
+			// left arm
 			case 6:
 			{
-				;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
@@ -870,23 +968,54 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 						else
 						{
-							entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-							entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-							entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-							entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+							if ( MONSTER_ATTACK == 3 )
+							{
+								if ( weaponarm->pitch < PI / 4 || weaponarm->pitch > 11 * PI / 6 )
+								{
+									entity->focalx = limbs[KOBOLD][6][0];
+									entity->focalz = limbs[KOBOLD][6][2] - 4.5;
+									entity->x = weaponarm->x + 0 * cos(weaponarm->yaw + PI / 2) - ((0 - 1.5 * cos(weaponarm->pitch)) * cos(weaponarm->yaw));
+									entity->y = weaponarm->y + 0 * sin(weaponarm->yaw + PI / 2) - ((0 - 1.5 * cos(weaponarm->pitch)) * sin(weaponarm->yaw));
+									entity->z = weaponarm->z + 1 + 2 * sin(weaponarm->pitch);
+									limbAnimateToLimit(entity, ANIMATE_PITCH, 0.2, PI / 2, false, 0);
+								}
+								else
+								{
+									entity->focalx = limbs[KOBOLD][6][0];
+									entity->focalz = limbs[KOBOLD][6][2];
+									entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+									entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+									entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+									entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+								}
+							}
+							else
+							{
+								entity->focalx = limbs[KOBOLD][6][0];
+								entity->focalz = limbs[KOBOLD][6][2];
+								entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+								entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+								entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+								entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+							}
+							//entity->pitch += 0.1;
 						}
 					}
+
 					entity->yaw = weaponarm->yaw;
 					entity->roll = weaponarm->roll;
 					if ( !MONSTER_ARMBENDED )
 					{
-						entity->focalx = limbs[KOBOLD][6][0];
-						if ( entity->sprite == items[CROSSBOW].index )
+						if ( MONSTER_ATTACK != 3 )
 						{
-							entity->focalx += 2;
+							entity->focalx = limbs[KOBOLD][6][0];
+							if ( entity->sprite == items[CROSSBOW].index )
+							{
+								entity->focalx += 2;
+							}
+							entity->focaly = limbs[KOBOLD][6][1];
+							entity->focalz = limbs[KOBOLD][6][2];
 						}
-						entity->focaly = limbs[KOBOLD][6][1];
-						entity->focalz = limbs[KOBOLD][6][2];
 					}
 					else
 					{
@@ -999,13 +1128,17 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 && MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP1 && MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP2
-		&& MONSTER_ATTACK != MONSTER_POSE_MELEE_WINDUP3 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MELEE_WINDUP3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
 	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
+	}
+
 }

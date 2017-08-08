@@ -347,7 +347,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					traveltime = 30;    //Range checking.
 				}
 			}
-			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 		}
 		else if ( !strcmp(element->name, spellElement_missile_trio.name) )
 		{
@@ -367,7 +367,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					traveltime = 30;    //Range checking.
 				}
 			}
-			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			traveltime += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 		}
 		else if (!strcmp(element->name, spellElement_light.name))
 		{
@@ -386,7 +386,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->behavior = &actMagiclightBall;
 			entity->skill[4] = entity->x; //Store what x it started shooting out from the player at.
 			entity->skill[5] = entity->y; //Store what y it started shooting out from the player at.
-			entity->skill[12] = (element->duration * (((element->mana + extramagic_to_use) / element->base_mana) * element->overload_multiplier)); //How long this thing lives.
+			entity->skill[12] = (element->duration * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier)); //How long this thing lives.
 			node_t* spellnode = list_AddNodeLast(&entity->children);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -428,7 +428,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->name, spellElement_invisible.name))
 		{
 			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -467,7 +467,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		else if (!strcmp(element->name, spellElement_levitation.name))
 		{
 			int duration = element->duration;
-			duration += (((element->mana + extramagic_to_use) - element->base_mana) / element->overload_multiplier) * element->duration;
+			duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
 			node_t* spellnode = list_AddNodeLast(&caster->getStats()->magic_effects);
 			spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
 			channeled_spell = (spell_t*)(spellnode->element);
@@ -602,7 +602,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if (caster == players[i]->entity)
 				{
-					int amount = element->damage * (((element->mana + extramagic_to_use) / element->base_mana) * element->overload_multiplier); //Amount to heal.
+					int amount = element->damage * (((element->mana + extramagic_to_use) / static_cast<double>(element->base_mana)) * element->overload_multiplier); //Amount to heal.
 					if (newbie)
 					{
 						//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
@@ -737,7 +737,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagicMissile;
 
-			double missile_speed = 4 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			double missile_speed = 4 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 
@@ -791,7 +791,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->behavior = &actMagicMissile;
 			entity->sprite = 170;
 
-			double missile_speed = 2 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			double missile_speed = 2 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 
@@ -819,7 +819,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity1->behavior = &actMagicMissile;
 			entity1->sprite = 170;
 
-			missile_speed = 1 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			missile_speed = 1 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity1->vel_x = cos(entity1->yaw) * (missile_speed);
 			entity1->vel_y = sin(entity1->yaw) * (missile_speed);
 
@@ -845,7 +845,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity2->behavior = &actMagicMissile;
 			entity2->sprite = 170;
 
-			missile_speed = 1 * ((double)element->mana / element->overload_multiplier); //TODO: Factor in base mana cost?
+			missile_speed = 1 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity2->vel_x = cos(entity2->yaw) * (missile_speed);
 			entity2->vel_y = sin(entity2->yaw) * (missile_speed);
 

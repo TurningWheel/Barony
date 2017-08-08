@@ -76,7 +76,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalStartZ(fskill[0]),
 	crystalMaxZVelocity(fskill[1]),
 	crystalMinZVelocity(fskill[2]),
-	crystalTurnVelocity(fskill[3])
+	crystalTurnVelocity(fskill[3]),
+	monsterAnimationLimbDirection(skill[20]),
+	monsterAnimationLimbOvershoot(skill[30])
+
 {
 	int c;
 	// add the entity to the entity list
@@ -126,9 +129,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	children.last = NULL;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
-	for ( c = 0; c < 30; c++ )
+	for ( c = 0; c < NUMENTITYSKILLS; ++c )
 	{
 		skill[c] = 0;
+	}
+	for ( c = 0; c < NUMENTITYFSKILLS; ++c )
+	{
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
@@ -2598,7 +2604,7 @@ Sint32 statGetDEX(Stat* entitystats)
 	}
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
 	{
-		DEX -= 5;
+		//DEX -= 5;
 	}
 	if ( entitystats->HUNGER >= 1500 )
 	{
@@ -2931,6 +2937,12 @@ bool Entity::isMobile()
 		return false;
 	}
 
+	// stunned
+	if ( entitystats->EFFECTS[EFF_STUNNED] )
+	{
+		return false;
+	}
+
 	return true;
 }
 
@@ -3070,7 +3082,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 	node_t* node;
 	double tangent;
 
-	if ( (myStats = getStats()) == NULL )
+	if ( (myStats = getStats()) == nullptr )
 	{
 		return;
 	}
@@ -3102,7 +3114,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( pose == MONSTER_POSE_MELEE_WINDUP1 || pose == MONSTER_POSE_MELEE_WINDUP2 || pose == MONSTER_POSE_MELEE_WINDUP3 )
+			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_MAGIC_WINDUP3 )
 			{
 				monster_attack = pose;
 				monster_attacktime = 0;
@@ -3114,18 +3126,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
-			else if (myStats->weapon != nullptr)
+			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
 			{
 				monster_attack = pose;
-			}
-			else if ( pose > MONSTER_POSE_MELEE_WINDUP3 && pose < 10)
-			{
-				// special monster attacks
-				monster_attack = pose;
-				monster_attacktime = 0;
-				//createParticle2(this);
-				createParticleDot(this);
-				return;
 			}
 			else
 			{
@@ -4020,6 +4023,29 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 						}
+						// crystal golem special attack increase chance for armor to break if hit. (25-33%)
+						// special attack only degrades armor if primary target.
+						else if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
+						{
+							if ( isWeakArmor )
+							{
+								// 66% chance to be deselected from degrading.
+								if ( rand() % 3 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+							else
+							{
+								// 75% chance to be deselected from degrading.
+								if ( rand() % 4 > 0 )
+								{
+									armor = NULL;
+									armornum = 0;
+								}
+							}
+						}
 						else
 						{
 							if ( isWeakArmor )
@@ -4070,7 +4096,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							}
 
 							// shield still has chance to degrade after raising skill.
-							if ( hitstats->defending && rand() % 10 == 0 && armor == NULL )
+							// crystal golem special attack increase chance for shield to break if defended. (33%)
+							// special attack only degrades shields if primary target.
+							if ( (hitstats->defending && rand() % 10 == 0) 
+								|| (hitstats->defending && pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr && rand() % 3 == 0)
+								&& armor == NULL )
 							{
 								armor = hitstats->shield;
 								armornum = 4;
@@ -4148,7 +4178,23 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 
 					// special monster effects
-					if ( damage > 0 && rand() % 4 == 0 )
+					if ( myStats->type == CRYSTALGOLEM && pose == MONSTER_POSE_GOLEM_SMASH )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							createParticleRock(hit.entity);
+							if ( multiplayer == SERVER )
+							{
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK);
+							}
+							if ( target == nullptr )
+							{
+								// only play sound once on primary target.
+								playSoundEntity(hit.entity, 181, 64);
+							}
+						}
+					}
+					else if ( damage > 0 && rand() % 4 == 0 )
 					{
 						int armornum = 0;
 						Item* armor = NULL;
@@ -4340,17 +4386,68 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					if ( playerhit > 0 && multiplayer == SERVER )
 					{
-						strcpy((char*)net_packet->data, "UPHP");
-						SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
-						SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
-						net_packet->address.host = net_clients[playerhit - 1].host;
-						net_packet->address.port = net_clients[playerhit - 1].port;
-						net_packet->len = 12;
-						sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+						if ( pose == MONSTER_POSE_GOLEM_SMASH )
+						{	
+							if ( target == nullptr )
+							{
+								// primary target
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 20; // turns into .2
+								net_packet->data[5] = 20;
+								net_packet->address.host = net_clients[playerhit - 1].host;
+								net_packet->address.port = net_clients[playerhit - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+							}
+							else
+							{
+								// secondary target
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 10; // turns into .1
+								net_packet->data[5] = 10;
+								net_packet->address.host = net_clients[playerhit - 1].host;
+								net_packet->address.port = net_clients[playerhit - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+							}
+						
+							strcpy((char*)net_packet->data, "UPHP");
+							SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
+							net_packet->address.host = net_clients[playerhit - 1].host;
+							net_packet->address.port = net_clients[playerhit - 1].port;
+							net_packet->len = 12;
+							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+						}
+						else
+						{
+							strcpy((char*)net_packet->data, "UPHP");
+							SDLNet_Write32((Uint32)hitstats->HP, &net_packet->data[4]);
+							SDLNet_Write32((Uint32)myStats->type, &net_packet->data[8]);
+							net_packet->address.host = net_clients[playerhit - 1].host;
+							net_packet->address.port = net_clients[playerhit - 1].port;
+							net_packet->len = 12;
+							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+						}
 					}
 					else if ( playerhit == 0 )
 					{
-						if ( damage > 0 )
+						if ( pose == MONSTER_POSE_GOLEM_SMASH )
+						{
+							if ( target == nullptr )
+							{
+								// primary target
+								camera_shakex += .2;
+								camera_shakey += 20;
+							}
+							else
+							{
+								// secondary target
+								camera_shakex += .1;
+								camera_shakey += 10;
+							}
+						}
+						else if ( damage > 0 )
 						{
 							camera_shakex += .1;
 							camera_shakey += 10;
@@ -4401,7 +4498,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hitstats->HP > 5 && damage > 0 && !hitstats->EFFECTS[EFF_BLEEDING] )
 						{
-							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || (rand() % 10 == 0 && weaponskill == PRO_SWORD) )
+							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || (rand() % 10 == 0 && weaponskill == PRO_SWORD) 
+								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH) )
 							{
 								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120);
 								hitstats->EFFECTS[EFF_BLEEDING] = true;
@@ -4434,6 +4532,56 @@ void Entity::attack(int pose, int charge, Entity* target)
 									}
 								}
 							}
+						}
+					}
+					// apply AoE attack
+					if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
+					{
+						list_t* aoeTargets = nullptr;
+						list_t* shakeTargets = nullptr;
+						Entity* tmpEntity = nullptr;
+						getTargetsAroundEntity(this, hit.entity, STRIKERANGE, PI / 3, MONSTER_TARGET_ENEMY, &aoeTargets);
+						if ( aoeTargets )
+						{
+							for ( node = aoeTargets->first; node != NULL; node = node->next )
+							{
+								tmpEntity = (Entity*)node->element;
+								if ( tmpEntity != nullptr )
+								{
+									this->attack(MONSTER_POSE_GOLEM_SMASH, charge, tmpEntity);
+								}
+							}
+							//Free the list.
+							list_FreeAll(aoeTargets);
+							free(aoeTargets);
+						}
+						getTargetsAroundEntity(this, hit.entity, STRIKERANGE, PI, MONSTER_TARGET_PLAYER, &shakeTargets);
+						if ( shakeTargets )
+						{
+							// shake nearby players that were not the primary target.
+							for ( node = shakeTargets->first; node != NULL; node = node->next )
+							{
+								tmpEntity = (Entity*)node->element;
+								playerhit = tmpEntity->skill[2];
+								if ( playerhit > 0 && multiplayer == SERVER )
+								{
+									strcpy((char*)net_packet->data, "SHAK");
+									net_packet->data[4] = 10; // turns into .1
+									net_packet->data[5] = 10;
+									net_packet->address.host = net_clients[playerhit - 1].host;
+									net_packet->address.port = net_clients[playerhit - 1].port;
+									net_packet->len = 6;
+									sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+								}
+								else if ( playerhit == 0 )
+								{
+									camera_shakex += 0.1;
+									camera_shakey += 10;
+								}
+							}
+							//Free the list.
+							list_FreeAll(shakeTargets);
+							free(shakeTargets);
 						}
 					}
 				}
@@ -4542,6 +4690,41 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// bang
 					//spawnBang(hit.x - cos(my->yaw)*2,hit.y - sin(my->yaw)*2,0);
 					playSoundPos(hit.x, hit.y, 183, 64);
+				}
+			}
+
+			// apply AoE shake effect
+			if ( pose == MONSTER_POSE_GOLEM_SMASH && target == nullptr )
+			{
+				list_t* shakeTargets = nullptr;
+				Entity* tmpEntity = nullptr;
+				getTargetsAroundEntity(this, hit.entity, STRIKERANGE, PI, MONSTER_TARGET_PLAYER, &shakeTargets);
+				if ( shakeTargets )
+				{
+					// shake nearby players that were not the primary target.
+					for ( node = shakeTargets->first; node != NULL; node = node->next )
+					{
+						tmpEntity = (Entity*)node->element;
+						playerhit = tmpEntity->skill[2];
+						if ( playerhit > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
+							net_packet->address.host = net_clients[playerhit - 1].host;
+							net_packet->address.port = net_clients[playerhit - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+						}
+						else if ( playerhit == 0 )
+						{
+							camera_shakex += .1;
+							camera_shakey += 10;
+						}
+					}
+					//Free the list.
+					list_FreeAll(shakeTargets);
+					free(shakeTargets);
 				}
 			}
 		}
@@ -5480,6 +5663,15 @@ int checkEquipType(Item *item)
 
 int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 {
+	if ( myStats == nullptr )
+	{
+		return 0;
+	}
+	if ( myStats->gloves == nullptr )
+	{
+		return 0;
+	}
+
 	if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY) {
 		ent->sprite = 132 + myStats->sex + spriteOffset;
 	}
@@ -5518,6 +5710,15 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 
 int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
 {
+	if ( myStats == nullptr )
+	{
+		return 0;
+	}
+	if ( myStats->shoes == nullptr )
+	{
+		return 0;
+	}
+
 	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
 		ent->sprite = 148 + myStats->sex + spriteOffset;
 	}
@@ -5716,4 +5917,5 @@ int Entity::getReflection() const
 			return 3;
 		}
 	}
+	return 0;
 }

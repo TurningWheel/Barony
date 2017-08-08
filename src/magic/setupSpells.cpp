@@ -235,7 +235,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_dominate.overload_multiplier = 1;
 	spellElement_dominate.damage = 0;
 	spellElement_dominate.duration = 0;
-	strcpy(spellElement_dominate.name, language[2460]);
+	strcpy(spellElement_dominate.name, language[2393]);
 
 
 	spellConstructor(&spell_forcebolt);
@@ -625,7 +625,6 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 5; //Set the spell's mana to 15 so that it lasts ~30 seconds.
 
 	spellConstructor(&spell_bleed);
 	strcpy(spell_bleed.name, language[2392]);
@@ -646,7 +645,6 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
-	element->mana = 15; //Set the spell's mana to 15 so that it lasts ~30 seconds.
 
 	spellConstructor(&spell_summon);
 	strcpy(spell_summon.name, language[2390]);
@@ -662,7 +660,7 @@ void setupSpells()   ///TODO: Verify this function.
 	element->node = node;
 
 	spellConstructor(&spell_dominate);
-	strcpy(spell_dominate.name, language[2460]);
+	strcpy(spell_dominate.name, language[2393]);
 	spell_dominate.ID = SPELL_DOMINATE;
 	spell_dominate.difficulty = 100;
 	node = list_AddNodeLast(&spell_dominate.elements);

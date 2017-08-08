@@ -2909,11 +2909,11 @@ client (player %d) (direct ip)#
 2357 The crystal seems locked in place.#
 2358 The crystal begins to move!#
 
-#New spells 2390-2399.
+#New spells (2390-2399)
 2390 Conjure Familiar#
 2391 Stonebleed#
 2392 Bloodletting#
-2393 blank#
+2393 Dominate#
 2394 blank#
 2395 blank#
 2396 blank#
@@ -2937,7 +2937,7 @@ client (player %d) (direct ip)#
 
 2411 Frames Per Second (FPS)#
 
-#New spell effects 2420-2440.
+#New spell effects (2420-2440)
 2420 %s is paralyzed!#
 2421 The %s is paralyzed!#
 2422 Your limbs suddenly refuse to move!#
@@ -2945,17 +2945,14 @@ client (player %d) (direct ip)#
 2424 The %s is severely wounded!#
 2425 You are severely wounded!#
 2426 Trio Missile#
+2427 You feel energy go out from you as you
+dominate %s into your service!#
+2428 You feel energy go out from you as you
+dominate the %s into your service!#
+2429 You are unable to dominate this one.#
 
 #More character creation screen stuff.
 2450 Random Name#
-
-#New spells.
-2460 Dominate#
-2461 You feel energy go out from you as you
-dominate %s into your service!#
-2462 You feel energy go out from you as you
-dominate the %s into your service!#
-2463 You are unable to dominate this one.#
 
 #New effects.
 2470 You no longer feel magic weaken against you.#

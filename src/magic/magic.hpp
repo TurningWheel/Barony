@@ -85,6 +85,10 @@ static const int SPELL_DOMINATE = 25;
 
 #define HEAL_RADIUS 128
 
+/*** misc effect particles ***/
+static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
+static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
+
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
 //TODO: Create a spell class which has the basic spell(s) involved, the mana to use etc. All of those important details. This should support vanilla spells and custom spells with just one data type. The addSpell function gives the player a vanilla spell if they don't already have it.
@@ -385,7 +389,10 @@ void createParticle1(Entity* caster, int player);
 void createParticle2(Entity* parent);
 void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);
+void actParticleRock(Entity* my);
+void actParticleTest(Entity* my);
 void createParticleDot(Entity* parent);
+void createParticleRock(Entity* parent);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
