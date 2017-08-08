@@ -2925,11 +2925,7 @@ void actPlayerLimb(Entity* my)
 				}
 			}
 		}
-	}
-
-	if (multiplayer != CLIENT)
-	{
-		return;
+        return;
 	}
 
 	if (my->skill[2] < 0 || my->skill[2] >= MAXPLAYERS )
