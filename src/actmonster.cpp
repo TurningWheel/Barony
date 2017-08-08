@@ -3890,7 +3890,7 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( MONSTER_SPECIAL == 420 )   // 420 blaze it faggot
+			if ( MONSTER_SPECIAL == 420 )
 			{
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
