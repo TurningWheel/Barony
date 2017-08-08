@@ -4951,49 +4951,52 @@ void openSettingsWindow()
 	getResolutionList();
 	
 	// Set all of the Settings options to their current values TODOR: These should not be global variables, but part of a Window object
-    // TODOR: Comment what each and every single one of these options are, will be useful for refactoring later, also include what tab it is under
-	settings_xres = xres;
-	settings_yres = yres;
-	settings_fov = fov;
-	settings_smoothlighting = smoothlighting;
-	settings_fullscreen = fullscreen;
-	settings_shaking = shaking;
-	settings_bobbing = bobbing;
-	settings_spawn_blood = spawn_blood;
-	settings_colorblind = colorblind;
-	settings_gamma = vidgamma;
-	settings_sfxvolume = sfxvolume;
-	settings_musvolume = musvolume;
-	for ( Uint8 iImpulse = 0; iImpulse < NUMIMPULSES; iImpulse++ )
-	{
-		settings_impulses[iImpulse] = impulses[iImpulse];
-	}
-	for ( Uint8 iJoystickImpulse = 0; iJoystickImpulse < NUM_JOY_IMPULSES; iJoystickImpulse++ )
-	{
-		settings_joyimpulses[iJoystickImpulse] = joyimpulses[iJoystickImpulse];
-	}
-	settings_reversemouse = reversemouse;
-	settings_smoothmouse = smoothmouse;
-	settings_mousespeed = mousespeed;
-	settings_broadcast = broadcast;
-	settings_nohud = nohud;
-	settings_auto_hotbar_new_items = auto_hotbar_new_items;
-	settings_disable_messages = disable_messages;
-	settings_right_click_protect = right_click_protect;
-	settings_auto_appraise_new_items = auto_appraise_new_items;
+	settings_xres = xres;                                               // The Width of the Display Resolution Setting                  DEFAULT: 960    TAB: Video
+	settings_yres = yres;                                               // The Height of the Display Resolution Setting                 DEFAULT: 600    TAB: Video
+	settings_fov = fov;                                                 // The amount of Field of View                                  DEFAULT: 65     TAB: Video
+	settings_smoothlighting = smoothlighting;                           // Toggle for Smooth Lighting on                                DEFAULT: true   TAB: Video
+	settings_fullscreen = fullscreen;                                   // Toggle for turning Fullscreen mode on                        DEFAULT: true   TAB: Video
+	settings_shaking = shaking;                                         // Toggle for turning Screen Shaking Effects on                 DEFAULT: true   TAB: Video
+	settings_bobbing = bobbing;                                         // Toggle for Head Bobbing Effects when walking                 DEFAULT: true   TAB: Video
+	settings_spawn_blood = spawn_blood;                                 // Toggle for Blood effects on ground                           DEFAULT: true   TAB: Video
+	settings_colorblind = colorblind;                                   // Toggle for Colorblind mode                                   DEFAULT: false  TAB: Video
+	settings_gamma = vidgamma;                                          // The amount of Gamma affecting the Display                    DEFAULT: 1.000  TAB: Video
+	settings_sfxvolume = sfxvolume;                                     // The amount of Volume for Sound Effects                       DEFAULT: 64     TAB: Audio
+	settings_musvolume = musvolume;                                     // The amount of Volume for Music                               DEFAULT: 48     TAB: Audio
+    
+	settings_reversemouse = reversemouse;                               // Toggle to reverse Mouse Direction                            DEFAULT: false  TAB: Mouse
+	settings_smoothmouse = smoothmouse;                                 // Toggle for Mouse Smoothing                                   DEFAULT: false  TAB: Mouse
+	settings_mousespeed = mousespeed;                                   // Amount of Speed applied to the Mouse movement                DEFAULT: 16.000 TAB: Mouse
+	settings_broadcast = broadcast;                                     // Toggle for hiding your IP address                            DEFAULT: false  TAB: Misc
+	settings_nohud = nohud;                                             // Toggle for turning the HUD off                               DEFAULT: false  TAB: Misc
+	settings_auto_hotbar_new_items = auto_hotbar_new_items;             // Toggle for adding items to Hotbar after pickup               DEFAULT: true   TAB: Misc
+	settings_disable_messages = disable_messages;                       // Toggle for disabling popup messages                          DEFAULT: false  TAB: Misc
+	settings_right_click_protect = right_click_protect;                 // Toggle for turning Right Click Protection on                 DEFAULT: false  TAB: Misc
+	settings_auto_appraise_new_items = auto_appraise_new_items;         // Toggle for turning Auto Appraise on                          DEFAULT: true   TAB: Misc
 
-	settings_gamepad_leftx_invert = gamepad_leftx_invert;
-	settings_gamepad_lefty_invert = gamepad_lefty_invert;
-	settings_gamepad_rightx_invert = gamepad_rightx_invert;
-	settings_gamepad_righty_invert = gamepad_righty_invert;
-	settings_gamepad_menux_invert = gamepad_menux_invert;
-	settings_gamepad_menuy_invert = gamepad_menuy_invert;
+	settings_gamepad_leftx_invert = gamepad_leftx_invert;               // Toggle for inverting Left Axis Horizontal Movement           DEFAULT: false  TAB: Gamepad
+	settings_gamepad_lefty_invert = gamepad_lefty_invert;               // Toggle for inverting Left Axis Vertical Movement             DEFAULT: false  TAB: Gamepad
+	settings_gamepad_rightx_invert = gamepad_rightx_invert;             // Toggle for inverting Right Axis Horizontal Movement          DEFAULT: false  TAB: Gamepad
+	settings_gamepad_righty_invert = gamepad_righty_invert;             // Toggle for inverting Right Axis Vertical Movement            DEFAULT: false  TAB: Gamepad
+	settings_gamepad_menux_invert = gamepad_menux_invert;               // Toggle for inverting Gamepad GUI Movement Horiz              DEFAULT: false  TAB: Gamepad
+	settings_gamepad_menuy_invert = gamepad_menuy_invert;               // Toggle for inverting Gamepad GUI Movement Vert               DEFAULT: false  TAB: Gamepad
 
-	settings_gamepad_deadzone = gamepad_deadzone;
-	settings_gamepad_rightx_sensitivity = gamepad_rightx_sensitivity;
-	settings_gamepad_righty_sensitivity = gamepad_righty_sensitivity;
-	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;
-	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;
+	settings_gamepad_rightx_sensitivity = gamepad_rightx_sensitivity;   // Amount of Gamepad Camera Horizontal Movement Sensitivity     DEFAULT: 500    TAB: Gamepad
+	settings_gamepad_righty_sensitivity = gamepad_righty_sensitivity;   // Amount of Gamepad Camera Vertical Movement Sensitivity       DEFAULT: 600    TAB: Gamepad
+	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;     // Amount of Gamepad GUI Horizontal Movement Threshold          DEFAULT: 1400   TAB: Gamepad
+	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;     // Amount of Gamepad GUI Vertical Movement Threshold            DEFAULT: 1400   TAB: Gamepad
+
+    // TODOR: What is this? This setting is not available in Settings Menu
+    for ( Uint8 iImpulse = 0; iImpulse < NUMIMPULSES; iImpulse++ )
+    {
+        settings_impulses[iImpulse] = impulses[iImpulse];
+    }
+    // TODOR: What is this? This setting is not available in Settings Menu
+    for ( Uint8 iJoystickImpulse = 0; iJoystickImpulse < NUM_JOY_IMPULSES; iJoystickImpulse++ )
+    {
+        settings_joyimpulses[iJoystickImpulse] = joyimpulses[iJoystickImpulse];
+    }
+    settings_gamepad_deadzone = gamepad_deadzone; // TODOR: This setting is not available in Settings Menu
 
 	// Create the Settings Subwindow
 	settings_window = true;
@@ -5011,7 +5014,7 @@ void openSettingsWindow()
 	suby1 = yres / 2 - 288;
 	suby2 = yres / 2 + 288;
 #endif
-	strcpy(subtext, language[1306]);
+	strcpy(subtext, language[1306]); // "Settings"
 
 	// Create the Close Button
     button_t* pCloseButton = nullptr;
