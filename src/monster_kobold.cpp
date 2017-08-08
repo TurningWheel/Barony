@@ -572,6 +572,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
 					{
+						entity->skill[0] = 0;
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(1, 0, nullptr);
@@ -585,14 +586,27 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						MONSTER_ARMBENDED = 1;
 					}
-					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI / 4, false, 0.0) )
+
+					if ( entity->skill[0] == 0 )
 					{
-						entity->skill[0] = rightbody->skill[0];
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = rightbody->pitch;
-						entity->roll = 0;
-						MONSTER_ARMBENDED = 0;
-						MONSTER_ATTACK = 0;
+						// chop forwards
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+						{
+							entity->skill[0] = 1;
+						}
+					}
+					else if ( entity->skill[0] == 1 )
+					{
+						// return to neutral
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							MONSTER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							MONSTER_ARMBENDED = 0;
+							MONSTER_ATTACK = 0;
+						}
 					}
 				}
 
@@ -610,11 +624,11 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
 					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 					
-					MONSTER_WEAPONYAW = 5 * PI / 4;
-					//entity->roll = PI / 2;
+					MONSTER_WEAPONYAW = 6 * PI / 4;
 
 					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
+						entity->skill[0] = 0;
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(2, 0, nullptr);
@@ -624,14 +638,31 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				// horizontal chop attack
 				else if ( MONSTER_ATTACK == 2 )
 				{
-					if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, PI / 8, false, 0.0) )
+					if ( entity->skill[0] == 0 )
 					{
-						entity->skill[0] = rightbody->skill[0];
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = rightbody->pitch;
-						entity->roll = 0;
-						MONSTER_ARMBENDED = 0;
-						MONSTER_ATTACK = 0;
+						// swing
+						if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.3, 2 * PI / 8, false, 0.0) )
+						{
+							entity->skill[0] = 1;
+						}
+					}
+					else if ( entity->skill[0] == 1 )
+					{
+						// post-swing return to normal weapon yaw
+						if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.5, 0, false, 0.0) )
+						{
+							// restore pitch and roll after yaw is set
+							if ( limbAnimateToLimit(entity, ANIMATE_ROLL, 0.4, 0, false, 0.0)
+								&& limbAnimateToLimit(entity, ANIMATE_PITCH, -0.4, 7 * PI / 4, false, 0.0) )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								MONSTER_WEAPONYAW = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								MONSTER_ARMBENDED = 0;
+								MONSTER_ATTACK = 0;
+							}
+						}
 					}
 				}
 				// stab windup
@@ -650,24 +681,42 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
+						entity->skill[0] = 0;
 						if ( multiplayer != CLIENT )
 						{
 							my->attack(3, 0, nullptr);
 						}
 					}
-
 				}
 				// stab attack - refer to weapon limb code for additional animation
 				else if ( MONSTER_ATTACK == 3 )
 				{
-					if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.3, 11 * PI / 6, false, 0.0) )
+					if ( entity->skill[0] == 0 )
 					{
-						entity->skill[0] = rightbody->skill[0];
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = rightbody->pitch;
-						entity->roll = 0;
-						MONSTER_ARMBENDED = 0;
-						MONSTER_ATTACK = 0;
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.3, 0, false, 0.0) )
+						{
+							entity->skill[0] = 1;
+						}
+					}
+					else if ( entity->skill[0] == 1 )
+					{
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, 2 * PI / 3, false, 0.0) )
+						{
+							entity->skill[0] = 2;
+						}
+					}
+					else if ( entity->skill[0] == 2 )
+					{
+						// return to neutral
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, 0, false, 0.0) )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							MONSTER_WEAPONYAW = 0;
+							entity->pitch = rightbody->pitch;
+							entity->roll = 0;
+							MONSTER_ARMBENDED = 0;
+							MONSTER_ATTACK = 0;
+						}
 					}
 				}
 
@@ -733,9 +782,6 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->skill[0] = 0;
 						}
 					}
-
-					//limbAnimateWithOvershoot(entity, ANIMATE_YAW, 0.2, animationSetpoint, 0.2, animationEndpoint, ANIMATE_DIR_POSITIVE);
-					//limbAnimateToLimit(entity, ANIMATE_PITCH, 0.2, 0, true, 0.001);
 
 					if ( MONSTER_ATTACKTIME >= 30 )
 					{
@@ -970,15 +1016,27 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							if ( MONSTER_ATTACK == 3 )
 							{
-								if ( weaponarm->pitch < PI / 4 || weaponarm->pitch > 11 * PI / 6 )
+								// poking animation, weapon pointing straight ahead.
+								if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2)
 								{
 									entity->focalx = limbs[KOBOLD][6][0];
-									entity->focalz = limbs[KOBOLD][6][2] - 4.5;
-									entity->x = weaponarm->x + 0 * cos(weaponarm->yaw + PI / 2) - ((0 - 1.5 * cos(weaponarm->pitch)) * cos(weaponarm->yaw));
-									entity->y = weaponarm->y + 0 * sin(weaponarm->yaw + PI / 2) - ((0 - 1.5 * cos(weaponarm->pitch)) * sin(weaponarm->yaw));
-									entity->z = weaponarm->z + 1 + 2 * sin(weaponarm->pitch);
-									limbAnimateToLimit(entity, ANIMATE_PITCH, 0.2, PI / 2, false, 0);
+									entity->focalz = limbs[KOBOLD][6][2];
+									// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
+									entity->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
+									entity->y = weaponarm->y + (3 * cos(weaponarm->pitch)) * sin(weaponarm->yaw);
+
+									if ( weaponarm->pitch < PI / 3 )
+									{
+										// adjust the z point halfway through swing.
+										entity->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+									}
+									else
+									{
+										entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+										limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+									}
 								}
+								// hold sword with pitch aligned to arm rotation.
 								else
 								{
 									entity->focalx = limbs[KOBOLD][6][0];
@@ -998,7 +1056,6 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 								entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
 								entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
 							}
-							//entity->pitch += 0.1;
 						}
 					}
 
