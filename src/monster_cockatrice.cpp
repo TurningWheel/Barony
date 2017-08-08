@@ -19,7 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
-#include "magic\magic.hpp"
+#include "magic/magic.hpp"
 
 void initCockatrice(Entity* my, Stat* myStats)
 {
