@@ -31,14 +31,14 @@ void initTroll(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 79;
 		MONSTER_SPOTVAR = 1;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 1;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -102,7 +102,7 @@ void initTroll(Entity* my, Stat* myStats)
 			int i = 1 + rand() % 3;
 			for ( c = 0; c < i; c++ )
 			{
-				newItem( static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
+				newItem( static_cast<ItemType>(rand() % (NUMITEMS - 6)), static_cast<ItemStatus>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
 			}
 		}
 
@@ -231,7 +231,7 @@ void actTrollLimb(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -311,7 +311,7 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{

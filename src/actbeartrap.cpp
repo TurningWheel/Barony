@@ -119,7 +119,7 @@ void actBeartrap(Entity* my)
 							camera_shakex += .1;
 							camera_shakey += 10;
 						}
-						else if ( player > 0 && multiplayer == SERVER )
+						else if ( player > 0 && localPlayerNetworkType == NetworkType::SERVER )
 						{
 							strcpy((char*)net_packet->data, "SHAK");
 							net_packet->data[4] = 10; // turns into .1

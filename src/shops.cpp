@@ -47,7 +47,7 @@ void startTradingServer(Entity* entity, int player)
 	{
 		return;
 	}
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		return;
 	}
@@ -90,7 +90,7 @@ void startTradingServer(Entity* entity, int player)
 			selectedShopSlot = -1;
 		}
 	}
-	else if ( multiplayer == SERVER )
+	else if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// open shop on client
 		Stat* entitystats = entity->getStats();
@@ -167,7 +167,7 @@ void buyItemFromShop(Item* item)
 		item->count = 1;
 		messagePlayer(clientnum, language[1123], item->description(), item->buyValue(clientnum));
 		item->count = ocount;
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			Entity* entity = uidToEntity(shopkeeper);
 			if (entity)
@@ -314,7 +314,7 @@ void sellItemToShop(Item* item)
 	item->count = 1;
 	messagePlayer(clientnum, language[1125], item->description(), item->sellValue(clientnum));
 	item->count = ocount;
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( rand() % 2 )
 		{

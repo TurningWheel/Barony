@@ -31,14 +31,14 @@ void initImp(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 198;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 201;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -110,7 +110,7 @@ void initImp(Entity* my, Stat* myStats)
 
 		if ( rand() % 4 == 0 )
 		{
-			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<Status>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
+			newItem( static_cast<ItemType>(SPELLBOOK_FORCEBOLT + rand() % 21), static_cast<ItemStatus>(1 + rand() % 4), -1 + rand() % 3, 1, rand(), false, &myStats->inventory );
 		}
 	}
 
@@ -253,7 +253,7 @@ void actImpLimb(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -333,7 +333,7 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{

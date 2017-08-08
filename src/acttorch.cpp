@@ -92,7 +92,7 @@ void actTorch(Entity* my)
 	}
 
 	// using
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{

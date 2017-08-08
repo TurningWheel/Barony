@@ -77,8 +77,8 @@ button_t* button_misc_tab = nullptr;
 int score_window = 0;
 int settings_xres, settings_yres;
 
-typedef std::tuple<int, int> resolution;
-std::list<resolution> resolutions;
+typedef std::tuple<int, int> displayResolution;
+std::list<displayResolution> listOfDisplayResolutions;
 Uint32 settings_fov;
 bool settings_smoothlighting;
 int settings_fullscreen, settings_shaking, settings_bobbing;
@@ -96,7 +96,7 @@ char portnumber_char[6];
 char connectaddress[64];
 char classtoquickstart[256] = "";
 bool spawn_blood = true;
-int multiplayerselect = SINGLE;
+NetworkType selectedNetworkType = NetworkType::SINGLE;
 int menuselect = 0;
 bool settings_auto_hotbar_new_items = true;
 bool settings_disable_messages = true;
@@ -260,7 +260,7 @@ void navigateMainMenuItems(bool mode)
 				}
 				else
 				{
-					menuselect = 4 + (multiplayer != CLIENT);
+					menuselect = 4 + (localPlayerNetworkType != NetworkType::CLIENT);
 				}
 			}
 
@@ -286,7 +286,7 @@ void navigateMainMenuItems(bool mode)
 			}
 			else
 			{
-				if (menuselect > 4 + ( multiplayer != CLIENT))
+				if (menuselect > 4 + ( localPlayerNetworkType != NetworkType::CLIENT))
 				{
 					menuselect = 1;
 				}
@@ -774,7 +774,7 @@ void handleMainMenu(bool mode)
 					ttfPrintText(ttf16, 50, yres / 4 + 104, language[1306]);
 				}
 				char* endgameText = NULL;
-				if ( multiplayer == SINGLE )
+				if ( localPlayerNetworkType == NetworkType::SINGLE )
 				{
 					endgameText = language[1310];
 				}
@@ -846,7 +846,7 @@ void handleMainMenu(bool mode)
 				{
 					ttfPrintText(ttf16, 50, yres / 4 + 128, endgameText);
 				}
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( ((omousex >= 50 && omousex < 50 + strlen(language[1312]) * 18 && omousey >= yres / 4 + 152 && omousey < yres / 4 + 152 + 18) || (menuselect == 4)) && subwindow == 0 && introstage == 1 )
 					{
@@ -890,7 +890,7 @@ void handleMainMenu(bool mode)
 							button->y = suby2 - 28;
 							button->sizex = strlen(language[1314]) * 12 + 8;
 							button->sizey = 20;
-							if ( multiplayer == SINGLE )
+							if ( localPlayerNetworkType == NetworkType::SINGLE )
 							{
 								button->action = &buttonStartSingleplayer;
 							}
@@ -920,10 +920,10 @@ void handleMainMenu(bool mode)
 						ttfPrintText(ttf16, 50, yres / 4 + 152, language[1312]);
 					}
 				}
-				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (multiplayer != CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (multiplayer != CLIENT)) || (menuselect == 4 + (multiplayer != CLIENT))) && subwindow == 0 && introstage == 1 )
+				if ( ((omousex >= 50 && omousex < 50 + strlen(language[1313]) * 18 && omousey >= yres / 4 + 152 + 24 * (localPlayerNetworkType != NetworkType::CLIENT) && omousey < yres / 4 + 152 + 18 + 24 * (localPlayerNetworkType != NetworkType::CLIENT)) || (menuselect == 4 + (localPlayerNetworkType != NetworkType::CLIENT))) && subwindow == 0 && introstage == 1 )
 				{
-					menuselect = 4 + (multiplayer != CLIENT);
-					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), colorGray, language[1313]);
+					menuselect = 4 + (localPlayerNetworkType != NetworkType::CLIENT);
+					ttfPrintTextFormattedColor(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != NetworkType::CLIENT), colorGray, language[1313]);
 					if ( mousestatus[SDL_BUTTON_LEFT] || keystatus[SDL_SCANCODE_RETURN] || (*inputPressed(joyimpulses[INJOY_MENU_NEXT]) && rebindaction == -1) )
 					{
 						mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -993,7 +993,7 @@ void handleMainMenu(bool mode)
 				}
 				else
 				{
-					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (multiplayer != CLIENT), language[1313]);
+					ttfPrintText(ttf16, 50, yres / 4 + 152 + 24 * (localPlayerNetworkType != NetworkType::CLIENT), language[1313]);
 				}
 			}
 		}
@@ -1366,29 +1366,29 @@ void handleMainMenu(bool mode)
 
 			for ( c = 0; c < nummodes; c++ )
 			{
-				if ( multiplayerselect == c )
+				if ( selectedNetworkType == static_cast<NetworkType>(c) )
 				{
 					switch ( c )
 					{
 						case 0:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1328]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1329]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 56, "[o] %s", language[1328]); // "singleplayer"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1329]);                     // "Start a singleplayer game."
 							break;
 						case 1:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 76, "[o] %s", language[1330]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1331]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 76, "[o] %s", language[1330]); // "host multiplayer"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1331]);                     // "Host a multiplayer game."
 							break;
 						case 2:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 96, "[o] %s", language[1332]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1333]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 96, "[o] %s", language[1332]); // "join multiplayer"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1333]);                     // "Join a multiplayer game."
 							break;
 						case 3:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 136, "[o] %s\n     %s", language[1330], language[1537]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1538]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 136, "[o] %s\n     %s", language[1330], language[1537]); // "host multiplayer\n  (direct ip)"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1538]);                     // "Host a multiplayer game without Steamworks, using a direct IP connection."
 							break;
 						case 4:
-							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[o] %s\n     %s", language[1332], language[1537]);
-							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1539]);
+							ttfPrintTextFormatted(ttf16, subx1 + 32, suby1 + 176, "[o] %s\n     %s", language[1332], language[1537]); // "join multiplayer\n  (direct ip)"
+							ttfPrintText(ttf12, subx1 + 8, suby2 - 80, language[1539]);                     // "Join a multiplayer game without Steamworks, using a direct IP connection."
 							break;
 					}
 				}
@@ -1422,7 +1422,7 @@ void handleMainMenu(bool mode)
 							if ( omousey >= suby1 + 56 + 20 * c && omousey < suby1 + 74 + 20 * c )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = c;
+								selectedNetworkType = static_cast<NetworkType>(c);
 							}
 						}
 						else
@@ -1430,7 +1430,7 @@ void handleMainMenu(bool mode)
 							if ( omousey >= suby1 + 136 + 40 * (c - 3) && omousey < suby1 + 148 + 40 * (c - 3) )
 							{
 								mousestatus[SDL_BUTTON_LEFT] = 0;
-								multiplayerselect = c;
+								selectedNetworkType = static_cast<NetworkType>(c);
 							}
 						}
 					}
@@ -1443,10 +1443,12 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
 					}
 					draw_cursor = false;
-					multiplayerselect--;
-					if (multiplayerselect < 0)
+                    // TODOR: Rework so its not selectedNetworkType--;, causes this ugly static_cast
+					selectedNetworkType = static_cast<NetworkType>(static_cast<int>(selectedNetworkType) - 1);
+                    // TODOR: Should not be checking for < NetworkType::SINGLE
+					if ( selectedNetworkType < NetworkType::SINGLE )
 					{
-						multiplayerselect = nummodes - 1;
+						selectedNetworkType = static_cast<NetworkType>(nummodes - 1);
 					}
 				}
 				if ( keystatus[SDL_SCANCODE_DOWN] || (*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) && rebindaction == -1) )
@@ -1457,10 +1459,11 @@ void handleMainMenu(bool mode)
 						*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
 					}
 					draw_cursor = false;
-					multiplayerselect++;
-					if (multiplayerselect > nummodes - 1)
+                    // TODOR: Rework so it's not selectedNetworkType++;, causes this ugly static_cast
+					selectedNetworkType = static_cast<NetworkType>(static_cast<int>(selectedNetworkType) + 1);
+					if ( selectedNetworkType > static_cast<NetworkType>(nummodes - 1) )
 					{
-						multiplayerselect = 0;
+						selectedNetworkType = NetworkType::SINGLE;
 					}
 				}
 			}
@@ -1616,7 +1619,7 @@ void handleMainMenu(bool mode)
 			// resolution
 			ttfPrintText(ttf12, subx1 + 24, suby1 + 60, language[1338]);
 			c=0;
-			for ( auto cur : resolutions )
+			for ( auto cur : listOfDisplayResolutions )
 			{
 				int width, height;
 				std::tie (width, height) = cur;
@@ -2208,7 +2211,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					current_y = server_flags_start_y;
 					for (i = 0; i < NUM_SERVER_FLAGS; i++, current_y += 16)
@@ -2220,7 +2223,7 @@ void handleMainMenu(bool mode)
 							// toggle flag
 							svFlags ^= power(2, i);
 
-							if ( multiplayer == SERVER )
+							if ( localPlayerNetworkType == NetworkType::SERVER )
 							{
 								// update client flags
 								strcpy((char*)net_packet->data, "SVFL");
@@ -2248,10 +2251,11 @@ void handleMainMenu(bool mode)
 		}
 	}
 
+    // TODOR: Refactor this so it doesn't use 2 == true, for now, im going to convert NetworkType into int
 	// connect window
 	if ( connect_window )
 	{
-		if ( connect_window == SERVER )
+		if ( connect_window == static_cast<int>(NetworkType::SERVER) )
 		{
 			drawDepressed(subx1 + 8, suby1 + 40, subx2 - 8, suby1 + 64);
 			ttfPrintText(ttf12, subx1 + 12, suby1 + 46, portnumber_char);
@@ -2271,7 +2275,7 @@ void handleMainMenu(bool mode)
 				ttfPrintText(ttf12, subx1 + 12 + x, suby1 + 46, "_");
 			}
 		}
-		else if ( connect_window == CLIENT )
+		else if ( connect_window == static_cast<int>(NetworkType::CLIENT) )
 		{
 			drawDepressed(subx1 + 8, suby1 + 40, subx2 - 8, suby1 + 64);
 			if ( !broadcast )
@@ -2305,7 +2309,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// communicating with clients
-	if ( multiplayer == SERVER && mode )
+	if ( localPlayerNetworkType == NetworkType::SERVER && mode )
 	{
 		//void *newSteamID = NULL; //TODO: Bugger void pointers!
 #ifdef STEAMWORKS
@@ -2618,7 +2622,7 @@ void handleMainMenu(bool mode)
 	}
 
 	// communicating with server
-	if ( multiplayer == CLIENT && mode )
+	if ( localPlayerNetworkType == NetworkType::CLIENT && mode )
 	{
 		if ( receivedclientnum == false )
 		{
@@ -2679,7 +2683,7 @@ void handleMainMenu(bool mode)
 				if ( clientnum >= MAXPLAYERS || clientnum <= 0 )
 				{
 					printlog("connection attempt denied by server.\n");
-					multiplayer = SINGLE;
+					localPlayerNetworkType = NetworkType::SINGLE;
 
 					// close current window
 					buttonCloseSubwindow(NULL);
@@ -2842,7 +2846,7 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		else if ( multiplayer == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 #ifdef STEAMWORKS
 			CSteamID newSteamID;
@@ -2966,8 +2970,8 @@ void handleMainMenu(bool mode)
 						button->focused = 1;
 						button->joykey = joyimpulses[INJOY_MENU_NEXT];
 
-						// reset multiplayer status
-						multiplayer = SINGLE;
+						// reset localPlayerNetworkType status
+						localPlayerNetworkType = NetworkType::SINGLE;
 						stats[0]->sex = stats[clientnum]->sex;
 						client_classes[0] = client_classes[clientnum];
 						strcpy(stats[0]->name, stats[clientnum]->name);
@@ -3026,7 +3030,7 @@ void handleMainMenu(bool mode)
 			}
 		}
 	}
-	if ( multiplayer == SINGLE )
+	if ( localPlayerNetworkType == NetworkType::SINGLE )
 	{
 		receivedclientnum = false;
 	}
@@ -3050,7 +3054,7 @@ void handleMainMenu(bool mode)
 
 #ifdef STEAMWORKS
 			int remoteIDIndex = c;
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				remoteIDIndex--;
 			}
@@ -3085,7 +3089,7 @@ void handleMainMenu(bool mode)
 				inputlen = LOBBY_CHATBOX_LENGTH - 1;
 				cursorflash = ticks;
 			}
-			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && multiplayer == SERVER )
+			else if ( mouseInBounds(xres / 2, subx2 - 32, suby1 + 56, suby1 + 68) && localPlayerNetworkType == NetworkType::SERVER )
 			{
 				mousestatus[SDL_BUTTON_LEFT] = 0;
 
@@ -3099,7 +3103,7 @@ void handleMainMenu(bool mode)
 
 			// server flags
 			int i;
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				for ( i = 0; i < NUM_SERVER_FLAGS; i++ )
 				{
@@ -3144,7 +3148,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 			if ( !directConnect )
 			{
-				if ( multiplayer == SERVER )
+				if ( localPlayerNetworkType == NetworkType::SERVER )
 				{
 					for ( i = 0; i < 3; i++ )
 					{
@@ -3218,7 +3222,7 @@ void handleMainMenu(bool mode)
 #ifdef STEAMWORKS
 		if ( !directConnect )
 		{
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				for ( i = 0; i < 3; i++ )
 				{
@@ -3259,12 +3263,12 @@ void handleMainMenu(bool mode)
 				{
 					if ( strcmp(lobbyName, currentLobbyName) )
 					{
-						if ( multiplayer == CLIENT )
+						if ( localPlayerNetworkType == NetworkType::CLIENT )
 						{
 							// update the lobby name on our end
 							snprintf( currentLobbyName, 31, "%s", lobbyName );
 						}
-						else if ( multiplayer == SERVER )
+						else if ( localPlayerNetworkType == NetworkType::SERVER )
 						{
 							// update the backend's copy of the lobby name
 							SteamMatchmaking()->SetLobbyData(*static_cast<CSteamID*>(currentLobby), "name", currentLobbyName);
@@ -3316,7 +3320,7 @@ void handleMainMenu(bool mode)
 		if ( keystatus[SDL_SCANCODE_RETURN] && strlen(lobbyChatbox) > 0 )
 		{
 			keystatus[SDL_SCANCODE_RETURN] = 0;
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				playSound(238, 64);
 			}
@@ -3336,7 +3340,7 @@ void handleMainMenu(bool mode)
 				}
 				snprintf((char*)(msg + strlen(msg)), (LOBBY_CHATBOX_LENGTH + 31) - strlen(msg), "%s", (char*)(lobbyChatbox + LOBBY_CHATBOX_LENGTH - strlen(shortname) - 2));
 			}
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				newString(&lobbyChatboxMessages, 0xFFFFFFFF, msg);  // servers print their messages right away
 			}
@@ -3347,13 +3351,13 @@ void handleMainMenu(bool mode)
 			strcat((char*)(net_packet->data), msg);
 			net_packet->len = 4 + strlen(msg) + 1;
 			net_packet->data[net_packet->len - 1] = 0;
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			else if ( multiplayer == SERVER )
+			else if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				int i;
 				for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3391,7 +3395,7 @@ void handleMainMenu(bool mode)
 		}
 
 		// handle keepalive timeouts (lobby)
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			int i;
 			for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3423,28 +3427,29 @@ void handleMainMenu(bool mode)
 				}
 			}
 		}
-		else if ( multiplayer == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			if ( ticks - client_keepalive[0] > TICKS_PER_SECOND * 30 )
 			{
 				buttonDisconnect(NULL);
-				openFailedConnectionWindow(3); // lost connection to server box
+                // TODOR: Make sure this is correct, currently only displays a single type of message
+				openFailedConnectionWindow(NetworkType::DIRECTSERVER); // lost connection to server box
 			}
 		}
 
 		// send keepalive messages every second
-		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && multiplayer != SINGLE )
+		if ( ticks % (TICKS_PER_SECOND * 1) == 0 && localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			strcpy((char*)net_packet->data, "KEEPALIVE");
 			net_packet->data[9] = clientnum;
 			net_packet->len = 10;
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				net_packet->address.host = net_server.host;
 				net_packet->address.port = net_server.port;
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 			}
-			else if ( multiplayer == SERVER )
+			else if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				int i;
 				for ( i = 1; i < MAXPLAYERS; i++ )
@@ -3665,7 +3670,7 @@ void handleMainMenu(bool mode)
 			fadefinished = false;
 			fadeout = false;
 			gamePaused = false;
-			multiplayerselect = 0;
+			selectedNetworkType = NetworkType::SINGLE;
 			intro = true; //Fix items auto-adding to the hotbar on game restart.
 
 			if ( !mode )
@@ -3723,7 +3728,7 @@ void handleMainMenu(bool mode)
 #endif
 
 			// load dungeon
-			if ( multiplayer != CLIENT )
+			if ( localPlayerNetworkType != NetworkType::CLIENT )
 			{
 				// stop all sounds
 #ifdef HAVE_FMOD
@@ -3740,7 +3745,7 @@ void handleMainMenu(bool mode)
 
 				// generate a unique game key (used to identify compatible save games)
 				prng_seed_time();
-				if ( multiplayer == SINGLE )
+				if ( localPlayerNetworkType == NetworkType::SINGLE )
 				{
 					uniqueGameKey = prng_get_uint();
 					if ( !uniqueGameKey )
@@ -3873,7 +3878,7 @@ void handleMainMenu(bool mode)
 											newNode->element = myuid;
 											*myuid = monster->getUID();
 
-											if ( c > 0 && multiplayer == SERVER )
+											if ( c > 0 && localPlayerNetworkType == NetworkType::SERVER )
 											{
 												strcpy((char*)net_packet->data, "LEAD");
 												SDLNet_Write32((Uint32)monster->getUID(), &net_packet->data[4]);
@@ -3892,7 +3897,7 @@ void handleMainMenu(bool mode)
 					}
 				}
 
-				if ( multiplayer == SINGLE )
+				if ( localPlayerNetworkType == NetworkType::SINGLE )
 				{
 					saveGame();
 				}
@@ -4105,7 +4110,7 @@ void handleMainMenu(bool mode)
 #endif
 
 			// send disconnect messages
-			if (multiplayer == CLIENT)
+			if (localPlayerNetworkType == NetworkType::CLIENT)
 			{
 				strcpy((char*)net_packet->data, "DISCONNECT");
 				net_packet->data[10] = clientnum;
@@ -4115,7 +4120,7 @@ void handleMainMenu(bool mode)
 				sendPacketSafe(net_sock, -1, net_packet, 0);
 				printlog("disconnected from server.\n");
 			}
-			else if (multiplayer == SERVER)
+			else if (localPlayerNetworkType == NetworkType::SERVER)
 			{
 				for (x = 1; x < MAXPLAYERS; x++)
 				{
@@ -4134,7 +4139,7 @@ void handleMainMenu(bool mode)
 			}
 
 			// clean up shopInv
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				if ( shopInv )
 				{
@@ -4158,7 +4163,7 @@ void handleMainMenu(bool mode)
 			darkmap = false;
 			appraisal_timer = 0;
 			appraisal_item = 0;
-			multiplayer = 0;
+			localPlayerNetworkType = NetworkType::SINGLE;
 			shootmode = true;
 			currentlevel = 0;
 			secretlevel = false;
@@ -4743,241 +4748,257 @@ void handleMainMenu(bool mode)
 
 /*-------------------------------------------------------------------------------
 
-	button functions
+	Button Functions
 
-	this section contains numerous button functions for the game
+	This section handles the different functionalities of Buttons
 
 -------------------------------------------------------------------------------*/
 
-// opens the gameover window
+// Create a new Window to display the "game over" message
+// Creates a new Subwindow in the middle of the screen on Local Player death, options and text displayed are different depending on localPlayerNetworkType
 void openGameoverWindow()
 {
-	node_t* node;
+    // Create the Subwindow
+    subwindow = 1;
+    subx1 = xres / 2 - 288;
+    subx2 = xres / 2 + 288;
+    suby1 = yres / 2 - 160;
+    suby2 = yres / 2 + 160;
 
-	subwindow = 1;
-	subx1 = xres / 2 - 288;
-	subx2 = xres / 2 + 288;
-	suby1 = yres / 2 - 160;
-	suby2 = yres / 2 + 160;
-	button_t* button;
+    // Calculate player score
+    char currentScoreString[16]; // The current score as a string - TODOR: Refactor to replace with a String
+    score_t* pScoreCalculator = scoreConstructor();
+    Uint32 currentScoreValue = totalScore(pScoreCalculator);   // The current score as an integer
+    snprintf(currentScoreString, 16, "%d\n\n", currentScoreValue);
+    scoreDeconstructor((void*)pScoreCalculator);
 
-	// calculate player score
-	char scorenum[16];
-	score_t* score = scoreConstructor();
-	Uint32 total = totalScore(score);
-	snprintf(scorenum, 16, "%d\n\n", total);
-	scoreDeconstructor((void*)score);
+    // Check if the score of the Local Player is high enough to be on the scoreboard
+    bool didCurrentScoreMakeScoreboard = false;
+    if ( !list_Size(&topscores) ) // If there are no scores on the scoreboard
+    {
+        didCurrentScoreMakeScoreboard = true;
+    }
+    else if ( list_Size(&topscores) < MAX_SCOREBOARD_ENTIRES ) // If there is still space on the scoreboard
+    {
+        didCurrentScoreMakeScoreboard = true;
+    }
+    else if ( totalScore((score_t*)topscores.last->element) < currentScoreValue ) // If the lowest score on the scoreboard is less than the current score
+    {
+        didCurrentScoreMakeScoreboard = true;
+    }
 
-	bool madetop = false;
-	if ( !list_Size(&topscores) )
-	{
-		madetop = true;
-	}
-	else if ( list_Size(&topscores) < MAXTOPSCORES )
-	{
-		madetop = true;
-	}
-	else if ( totalScore((score_t*)topscores.last->element) < total )
-	{
-		madetop = true;
-	}
+    // If the NetworkType is Singleplayer, then the game is over
+    if ( localPlayerNetworkType == NetworkType::SINGLE )
+    {
+        strcpy(subtext, language[1133]);     // "You have died. Gameover."
+        strcat(subtext, language[1134]);     // "Your equipment has been identified."
+        strcat(subtext, language[1135]);     // "Total Score: "
+        strcat(subtext, currentScoreString); // Displays the current score
 
-	shootmode = false;
-	if ( multiplayer == SINGLE )
-	{
-		strcpy(subtext, language[1133]);
+        if ( didCurrentScoreMakeScoreboard )
+        {
+            strcat(subtext, language[1136]); // "Congratulations!\nYoumade the top ten.\n"
+        }
+        else
+        {
+            strcat(subtext, language[1137]); // "\n\n\n\n\n"
+        }
 
-		strcat(subtext, language[1134]);
+        // Identify all inventory items
+        node_t* pPlayerInventoryNode = nullptr;
+        for ( pPlayerInventoryNode = stats[clientnum]->inventory.first; pPlayerInventoryNode != nullptr; pPlayerInventoryNode = pPlayerInventoryNode->next )
+        {
+            Item* item = (Item*)pPlayerInventoryNode->element;
+            item->identified = true;
+        }
 
-		strcat(subtext, language[1135]);
-		strcat(subtext, scorenum);
+        // Create the Restart Button
+        button_t* pRestartButton = nullptr;
+        pRestartButton = newButton();
+        strcpy(pRestartButton->label, language[1138]); // "    Restart Game    "
+        pRestartButton->x = subx2 - strlen(language[1138]) * 12 - 16;
+        pRestartButton->y = suby2 - 28;
+        pRestartButton->sizex = strlen(language[1138]) * 12 + 8;
+        pRestartButton->sizey = 20;
+        pRestartButton->action = &buttonStartSingleplayer;
+        pRestartButton->visible = 1;
+        pRestartButton->focused = 1;
+        pRestartButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+        pRestartButton = nullptr;
 
-		if ( madetop )
-		{
-			strcat(subtext, language[1136]);
-		}
-		else
-		{
-			strcat(subtext, language[1137]);
-		}
+        // Create the Return to Main Menu Button
+        button_t* pReturnToMainMenuButton = nullptr;
+        pReturnToMainMenuButton = newButton();
+        strcpy(pReturnToMainMenuButton->label, language[1139]); // "Return to Main Menu"
+        pReturnToMainMenuButton->x = subx1 + 8;
+        pReturnToMainMenuButton->y = suby2 - 28;
+        pReturnToMainMenuButton->sizex = strlen(language[1139]) * 12 + 8;
+        pReturnToMainMenuButton->sizey = 20;
+        pReturnToMainMenuButton->action = &buttonEndGameConfirm;
+        pReturnToMainMenuButton->visible = 1;
+        pReturnToMainMenuButton->focused = 1;
+        pReturnToMainMenuButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+        pReturnToMainMenuButton = nullptr;
+    }
+    else // Else, the Local Player has a chance to revive if the other player(s) make it to the next floor
+    {
+        strcpy(subtext, language[1140]); // "You have died.\n"
 
-		// identify all inventory items
-		for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
-		{
-			Item* item = (Item*)node->element;
-			item->identified = true;
-		}
+        bool isThereASurvivingPlayer = false;
+        for ( Uint8 iPlayerNum = 0; iPlayerNum < MAXPLAYERS; iPlayerNum++ )
+        {
+            // If the Player we are checking has not disconnected, and does exist (is not dead), then there is a surviving player
+            if ( !client_disconnected[iPlayerNum] && players[iPlayerNum]->entity )
+            {
+                isThereASurvivingPlayer = true;
+                break;
+            }
+        }
 
-		// Restart
-		button = newButton();
-		strcpy(button->label, language[1138]);
-		button->x = subx2 - strlen(language[1138]) * 12 - 16;
-		button->y = suby2 - 28;
-		button->sizex = strlen(language[1138]) * 12 + 8;
-		button->sizey = 20;
-		button->action = &buttonStartSingleplayer;
-		button->visible = 1;
-		button->focused = 1;
-		button->joykey = joyimpulses[INJOY_MENU_NEXT];
+        // If there is still a player left alive
+        if ( isThereASurvivingPlayer )
+        {
+            strcat(subtext, language[1141]); // "You will be revived, however, if your\nparty survives to the next level.\n\n"
+        }
+        else // Else the Local Player was the last to die
+        {
+            strcat(subtext, language[1142]); // "As the rest of your party has perished,\nthe host must make a new game or restart the\ncurrent one to continue."
+        }
 
-		// Return to Main Menu
-		button = newButton();
-		strcpy(button->label, language[1139]);
-		button->x = subx1 + 8;
-		button->y = suby2 - 28;
-		button->sizex = strlen(language[1139]) * 12 + 8;
-		button->sizey = 20;
-		button->action = &buttonEndGameConfirm;
-		button->visible = 1;
-		button->focused = 1;
-		button->joykey = joyimpulses[INJOY_MENU_CANCEL];
-	}
-	else
-	{
-		strcpy(subtext, language[1140]);
+        strcat(subtext, language[1143]);     // "Total score: " - TODOR: This is EXACTLY the same as #1135, and should not repeated as separate entry.
+        strcat(subtext, currentScoreString); // Displays the current score
+        strcat(subtext, "\n\n");
 
-		bool survivingPlayer = false;
-		int c;
-		for (c = 0; c < MAXPLAYERS; c++)
-		{
-			if (!client_disconnected[c] && players[c]->entity)
-			{
-				survivingPlayer = true;
-				break;
-			}
-		}
-		if ( survivingPlayer )
-		{
-			strcat(subtext, language[1141]);
-		}
-		else
-		{
-			strcat(subtext, language[1142]);
-		}
+        // Create the Okay Button
+        button_t* pOkayButton = nullptr;
+        pOkayButton = newButton();
+        strcpy(pOkayButton->label, language[1144]);
+        pOkayButton->sizex = strlen(language[1144]) * 12 + 8;
+        pOkayButton->sizey = 20;
+        pOkayButton->x = subx1 + (subx2 - subx1) / 2 - pOkayButton->sizex / 2;
+        pOkayButton->y = suby2 - 28;
+        pOkayButton->action = &buttonCloseSubwindow;
+        pOkayButton->visible = 1;
+        pOkayButton->focused = 1;
+        pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+        pOkayButton = nullptr;
+    }
 
-		strcat(subtext, language[1143]);
-		strcat(subtext, scorenum);
+    // Display a randomly chosen hint about the game based unless they die on a Transition Floor (Mines to Swamp, etc)
+    if ( currentlevel / MAX_LENGTH_OF_LEVEL_REGION < 1 )
+    {
+        strcat(subtext, language[1145 + rand() % 15]); // Displays a tip based on #1145 to #1159, a total of 15 tips
+    }
 
-		strcat(subtext, "\n\n");
-
-		// Okay
-		button = newButton();
-		strcpy(button->label, language[1144]);
-		button->sizex = strlen(language[1144]) * 12 + 8;
-		button->sizey = 20;
-		button->x = subx1 + (subx2 - subx1) / 2 - button->sizex / 2;
-		button->y = suby2 - 28;
-		button->action = &buttonCloseSubwindow;
-		button->visible = 1;
-		button->focused = 1;
-		button->joykey = joyimpulses[INJOY_MENU_NEXT];
-	}
-
-	// death hints
-	if ( currentlevel / LENGTH_OF_LEVEL_REGION < 1 )
-	{
-		strcat(subtext, language[1145 + rand() % 15]);
-	}
-
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    // Create the Close Button
+    button_t* pCloseButton = nullptr;
+    pCloseButton = newButton();
+    strcpy(pCloseButton->label, "x");
+    pCloseButton->x = subx2 - 20;
+    pCloseButton->y = suby1;
+    pCloseButton->sizex = 20;
+    pCloseButton->sizey = 20;
+    pCloseButton->action = &buttonCloseSubwindow;
+    pCloseButton->visible = 1;
+    pCloseButton->focused = 1;
+    pCloseButton->key = SDL_SCANCODE_ESCAPE;
+    pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    pCloseButton = nullptr;
 }
 
-// get 
+// Used for populating the list of possible resolutions (listOfDisplayResolutions) to display in the Settings Menu
+// Collects all possible resolution types on the Main Display, adds them to the list, sorts the list, and removes any duplicates
+// Any display resolution below 960x600 are ignored
+// Called by openSettingsWindow()
 void getResolutionList()
 {
-	// for now just use the resolution modes on the first
-	// display.
-	int numdisplays = SDL_GetNumVideoDisplays();
-	int nummodes = SDL_GetNumDisplayModes(0);
-	int im;
-	int c;
-	
-	printlog("display count: %d.\n", numdisplays);
-	printlog("display mode count: %d.\n", nummodes);
-	
-	for (im = 0; im < nummodes; im++)
-	{
-		SDL_DisplayMode mode;
-		SDL_GetDisplayMode(0, im, &mode);
-		// resolutions below 960x600 are not supported
-		if ( mode.w >= 960 && mode.h >= 600 )
-		{
-			resolution res(mode.w, mode.h);
-			resolutions.push_back(res);
-		}
-	}
-	
-	// Sort by total number of pixels
-	resolutions.sort([](resolution a, resolution b) {
-		return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
-	});
-	resolutions.unique();
+    int numberOfDisplays = SDL_GetNumVideoDisplays(); // Number of monitors the user has
+    int numberOfModes = SDL_GetNumDisplayModes(0);    // Equivalent to the main monitor for the user
+
+    // Log the display information
+    printlog("Number of Displays: %d.\n", numberOfDisplays);
+    printlog("Number of possible Display Resolutions: %d.\n", numberOfModes);
+
+    for ( int iModeIndex = 0; iModeIndex < numberOfModes; iModeIndex++ )
+    {
+        SDL_DisplayMode mode; // The display resolution size (WIDTH x HEIGHT)
+        SDL_GetDisplayMode(0, iModeIndex, &mode);
+        // Resolutions below 960x600 are not supported and are discarded
+        if ( mode.w >= 960 && mode.h >= 600 )
+        {
+            // Create a tuple, resolution, to hold the width and height
+            displayResolution resolution(mode.w, mode.h);
+            listOfDisplayResolutions.push_back(resolution);
+        }
+    }
+
+    // Sort the list of resolutions by total number of pixels (WIDTH x HEIGHT)
+    listOfDisplayResolutions.sort([](displayResolution a, displayResolution b)
+    {
+        return std::get<0>(a) * std::get<1>(a) > std::get<0>(b) * std::get<1>(b);
+    });
+
+    // Remove any duplicates in the list
+    listOfDisplayResolutions.unique();
 }
 
-// sets up the settings window
+// Does the initial setup and opening of the Settings Subwindow when the "Settings" Button is clicked
+// Gathers the list of possible Display Resolutions using getResolutionList() then sets all of the Settings variables to their current values
+// Creates a Subwindow with multiple Tabs to separate Settings Subwindows
 void openSettingsWindow()
 {
-	button_t* button;
-	int c;
-
+    // Populate the list of possible possible resolutions (listOfDisplayResolutions)
 	getResolutionList();
 	
-	// set the "settings" variables
-	settings_xres = xres;
-	settings_yres = yres;
-	settings_fov = fov;
-	settings_smoothlighting = smoothlighting;
-	settings_fullscreen = fullscreen;
-	settings_shaking = shaking;
-	settings_bobbing = bobbing;
-	settings_spawn_blood = spawn_blood;
-	settings_colorblind = colorblind;
-	settings_gamma = vidgamma;
-	settings_sfxvolume = sfxvolume;
-	settings_musvolume = musvolume;
-	for (c = 0; c < NUMIMPULSES; c++)
-	{
-		settings_impulses[c] = impulses[c];
-	}
-	for (c = 0; c < NUM_JOY_IMPULSES; c++)
-	{
-		settings_joyimpulses[c] = joyimpulses[c];
-	}
-	settings_reversemouse = reversemouse;
-	settings_smoothmouse = smoothmouse;
-	settings_mousespeed = mousespeed;
-	settings_broadcast = broadcast;
-	settings_nohud = nohud;
-	settings_auto_hotbar_new_items = auto_hotbar_new_items;
-	settings_disable_messages = disable_messages;
-	settings_right_click_protect = right_click_protect;
-	settings_auto_appraise_new_items = auto_appraise_new_items;
+	// Set all of the Settings options to their current values TODOR: These should not be global variables, but part of a Window object
+	settings_xres = xres;                                               // The Width of the Display Resolution Setting                  DEFAULT: 960    TAB: Video
+	settings_yres = yres;                                               // The Height of the Display Resolution Setting                 DEFAULT: 600    TAB: Video
+	settings_fov = fov;                                                 // The amount of Field of View                                  DEFAULT: 65     TAB: Video
+	settings_smoothlighting = smoothlighting;                           // Toggle for Smooth Lighting on                                DEFAULT: true   TAB: Video
+	settings_fullscreen = fullscreen;                                   // Toggle for turning Fullscreen mode on                        DEFAULT: true   TAB: Video
+	settings_shaking = shaking;                                         // Toggle for turning Screen Shaking Effects on                 DEFAULT: true   TAB: Video
+	settings_bobbing = bobbing;                                         // Toggle for Head Bobbing Effects when walking                 DEFAULT: true   TAB: Video
+	settings_spawn_blood = spawn_blood;                                 // Toggle for Blood effects on ground                           DEFAULT: true   TAB: Video
+	settings_colorblind = colorblind;                                   // Toggle for Colorblind mode                                   DEFAULT: false  TAB: Video
+	settings_gamma = vidgamma;                                          // The amount of Gamma affecting the Display                    DEFAULT: 1.000  TAB: Video
+	settings_sfxvolume = sfxvolume;                                     // The amount of Volume for Sound Effects                       DEFAULT: 64     TAB: Audio
+	settings_musvolume = musvolume;                                     // The amount of Volume for Music                               DEFAULT: 48     TAB: Audio
+    
+	settings_reversemouse = reversemouse;                               // Toggle to reverse Mouse Direction                            DEFAULT: false  TAB: Mouse
+	settings_smoothmouse = smoothmouse;                                 // Toggle for Mouse Smoothing                                   DEFAULT: false  TAB: Mouse
+	settings_mousespeed = mousespeed;                                   // Amount of Speed applied to the Mouse movement                DEFAULT: 16.000 TAB: Mouse
+	settings_broadcast = broadcast;                                     // Toggle for hiding your IP address                            DEFAULT: false  TAB: Misc
+	settings_nohud = nohud;                                             // Toggle for turning the HUD off                               DEFAULT: false  TAB: Misc
+	settings_auto_hotbar_new_items = auto_hotbar_new_items;             // Toggle for adding items to Hotbar after pickup               DEFAULT: true   TAB: Misc
+	settings_disable_messages = disable_messages;                       // Toggle for disabling popup messages                          DEFAULT: false  TAB: Misc
+	settings_right_click_protect = right_click_protect;                 // Toggle for turning Right Click Protection on                 DEFAULT: false  TAB: Misc
+	settings_auto_appraise_new_items = auto_appraise_new_items;         // Toggle for turning Auto Appraise on                          DEFAULT: true   TAB: Misc
 
-	settings_gamepad_leftx_invert = gamepad_leftx_invert;
-	settings_gamepad_lefty_invert = gamepad_lefty_invert;
-	settings_gamepad_rightx_invert = gamepad_rightx_invert;
-	settings_gamepad_righty_invert = gamepad_righty_invert;
-	settings_gamepad_menux_invert = gamepad_menux_invert;
-	settings_gamepad_menuy_invert = gamepad_menuy_invert;
+	settings_gamepad_leftx_invert = gamepad_leftx_invert;               // Toggle for inverting Left Axis Horizontal Movement           DEFAULT: false  TAB: Gamepad
+	settings_gamepad_lefty_invert = gamepad_lefty_invert;               // Toggle for inverting Left Axis Vertical Movement             DEFAULT: false  TAB: Gamepad
+	settings_gamepad_rightx_invert = gamepad_rightx_invert;             // Toggle for inverting Right Axis Horizontal Movement          DEFAULT: false  TAB: Gamepad
+	settings_gamepad_righty_invert = gamepad_righty_invert;             // Toggle for inverting Right Axis Vertical Movement            DEFAULT: false  TAB: Gamepad
+	settings_gamepad_menux_invert = gamepad_menux_invert;               // Toggle for inverting Gamepad GUI Movement Horiz              DEFAULT: false  TAB: Gamepad
+	settings_gamepad_menuy_invert = gamepad_menuy_invert;               // Toggle for inverting Gamepad GUI Movement Vert               DEFAULT: false  TAB: Gamepad
 
-	settings_gamepad_deadzone = gamepad_deadzone;
-	settings_gamepad_rightx_sensitivity = gamepad_rightx_sensitivity;
-	settings_gamepad_righty_sensitivity = gamepad_righty_sensitivity;
-	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;
-	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;
+	settings_gamepad_rightx_sensitivity = gamepad_rightx_sensitivity;   // Amount of Gamepad Camera Horizontal Movement Sensitivity     DEFAULT: 500    TAB: Gamepad
+	settings_gamepad_righty_sensitivity = gamepad_righty_sensitivity;   // Amount of Gamepad Camera Vertical Movement Sensitivity       DEFAULT: 600    TAB: Gamepad
+	settings_gamepad_menux_sensitivity = gamepad_menux_sensitivity;     // Amount of Gamepad GUI Horizontal Movement Threshold          DEFAULT: 1400   TAB: Gamepad
+	settings_gamepad_menuy_sensitivity = gamepad_menuy_sensitivity;     // Amount of Gamepad GUI Vertical Movement Threshold            DEFAULT: 1400   TAB: Gamepad
 
-	// create settings window
+    // TODOR: What is this? This setting is not available in Settings Menu
+    for ( Uint8 iImpulse = 0; iImpulse < NUMIMPULSES; iImpulse++ )
+    {
+        settings_impulses[iImpulse] = impulses[iImpulse];
+    }
+    // TODOR: What is this? This setting is not available in Settings Menu
+    for ( Uint8 iJoystickImpulse = 0; iJoystickImpulse < NUM_JOY_IMPULSES; iJoystickImpulse++ )
+    {
+        settings_joyimpulses[iJoystickImpulse] = joyimpulses[iJoystickImpulse];
+    }
+    settings_gamepad_deadzone = gamepad_deadzone; // TODOR: This setting is not available in Settings Menu
+
+	// Create the Settings Subwindow
 	settings_window = true;
 	subwindow = 1;
 	//subx1 = xres/2-256;
@@ -4993,158 +5014,180 @@ void openSettingsWindow()
 	suby1 = yres / 2 - 288;
 	suby2 = yres / 2 + 288;
 #endif
-	strcpy(subtext, language[1306]);
+	strcpy(subtext, language[1306]); // "Settings"
 
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSettingsSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+	// Create the Close Button
+    button_t* pCloseButton = nullptr;
+    pCloseButton = newButton();
+	strcpy(pCloseButton->label, "x");
+    pCloseButton->x = subx2 - 20;
+    pCloseButton->y = suby1;
+    pCloseButton->sizex = 20;
+    pCloseButton->sizey = 20;
+    pCloseButton->action = &buttonCloseSettingsSubwindow;
+    pCloseButton->visible = 1;
+    pCloseButton->focused = 1;
+    pCloseButton->key = SDL_SCANCODE_ESCAPE;
+    pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    pCloseButton = nullptr;
 
-	// cancel button
-	button = newButton();
-	strcpy(button->label, language[1316]);
-	button->x = subx1 + 8;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1316]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
+	// Create the Cancel Button
+    button_t* pCancelButton = nullptr;
+    pCancelButton = newButton();
+	strcpy(pCancelButton->label, language[1316]);
+    pCancelButton->x = subx1 + 8;
+    pCancelButton->y = suby2 - 28;
+    pCancelButton->sizex = strlen(language[1316]) * 12 + 8;
+    pCancelButton->sizey = 20;
+    pCancelButton->action = &buttonCloseSubwindow;
+    pCancelButton->visible = 1;
+    pCancelButton->focused = 1;
+    pCancelButton = nullptr;
 
-	// ok button
-	button = newButton();
-	strcpy(button->label, language[1433]);
-	button->x = subx2 - strlen(language[1433]) * 12 - 16;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1433]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonSettingsOK;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
+	// Create the Okay Button
+    button_t* pOkayButton = nullptr;
+    pOkayButton = newButton();
+	strcpy(pOkayButton->label, language[1433]);
+    pOkayButton->x = subx2 - strlen(language[1433]) * 12 - 16;
+    pOkayButton->y = suby2 - 28;
+    pOkayButton->sizex = strlen(language[1433]) * 12 + 8;
+    pOkayButton->sizey = 20;
+    pOkayButton->action = &buttonSettingsOK;
+    pOkayButton->visible = 1;
+    pOkayButton->focused = 1;
+    pOkayButton->key = SDL_SCANCODE_RETURN;
+    pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+    pOkayButton = nullptr;
 
-	// accept button
-	button = newButton();
-	strcpy(button->label, language[1317]);
-	button->x = subx2 - strlen(language[1317]) * 12 - 16 - strlen(language[1317]) * 12 - 16;
-	button->y = suby2 - 28;
-	button->sizex = strlen(language[1317]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonSettingsAccept;
-	button->visible = 1;
-	button->focused = 1;
+	// Create the Accept Button
+    button_t* pAcceptButton = nullptr;
+    pAcceptButton = newButton();
+	strcpy(pAcceptButton->label, language[1317]);
+    pAcceptButton->x = subx2 - strlen(language[1317]) * 12 - 16 - strlen(language[1317]) * 12 - 16;
+    pAcceptButton->y = suby2 - 28;
+    pAcceptButton->sizex = strlen(language[1317]) * 12 + 8;
+    pAcceptButton->sizey = 20;
+    pAcceptButton->action = &buttonSettingsAccept;
+    pAcceptButton->visible = 1;
+    pAcceptButton->focused = 1;
+    pAcceptButton = nullptr;
 
 	int tabx_so_far = subx1 + 16;
 
-	//TODO: Select tab based off of dpad left & right.
-	//TODO: Maybe golden highlighting & stuff.
+	// TODO: Select tab based off of dpad left & right.
+	// TODO: Maybe golden highlighting & stuff.
 
-	// video tab
-	button = newButton();
-	strcpy(button->label, language[1434]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1434]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonVideoTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_video_tab = button;
+	// Create the Video Tab Button
+    button_t* pVideoTabButton = nullptr;
+    pVideoTabButton = newButton();
+	strcpy(pVideoTabButton->label, language[1434]);
+    pVideoTabButton->x = tabx_so_far;
+    pVideoTabButton->y = suby1 + 24;
+    pVideoTabButton->sizex = strlen(language[1434]) * 12 + 8;
+    pVideoTabButton->sizey = 20;
+    pVideoTabButton->action = &buttonVideoTab;
+    pVideoTabButton->visible = 1;
+    pVideoTabButton->focused = 1;
+	button_video_tab = pVideoTabButton;
+    pVideoTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1434]) * 12 + 8;
 
-	// audio tab
-	button = newButton();
-	strcpy(button->label, language[1435]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1435]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonAudioTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_audio_tab = button;
+	// Create the Audio Tab Button
+    button_t* pAudioTabButton = nullptr;
+    pAudioTabButton = newButton();
+	strcpy(pAudioTabButton->label, language[1435]);
+    pAudioTabButton->x = tabx_so_far;
+    pAudioTabButton->y = suby1 + 24;
+    pAudioTabButton->sizex = strlen(language[1435]) * 12 + 8;
+    pAudioTabButton->sizey = 20;
+    pAudioTabButton->action = &buttonAudioTab;
+    pAudioTabButton->visible = 1;
+    pAudioTabButton->focused = 1;
+	button_audio_tab = pAudioTabButton;
+    pAudioTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1435]) * 12 + 8;
 
-	// keyboard tab
-	button = newButton();
-	strcpy(button->label, language[1436]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1436]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonKeyboardTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_keyboard_tab = button;
+	// Create the Keyboard Tab Button
+    button_t* pKeyboardTabButton = nullptr;
+    pKeyboardTabButton = newButton();
+	strcpy(pKeyboardTabButton->label, language[1436]);
+    pKeyboardTabButton->x = tabx_so_far;
+    pKeyboardTabButton->y = suby1 + 24;
+    pKeyboardTabButton->sizex = strlen(language[1436]) * 12 + 8;
+    pKeyboardTabButton->sizey = 20;
+    pKeyboardTabButton->action = &buttonKeyboardTab;
+    pKeyboardTabButton->visible = 1;
+    pKeyboardTabButton->focused = 1;
+	button_keyboard_tab = pKeyboardTabButton;
+    pKeyboardTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1436]) * 12 + 8;
 
-	// mouse tab
-	button = newButton();
-	strcpy(button->label, language[1437]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1437]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonMouseTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_mouse_tab = button;
+	// Create the Mouse Tab Button
+    button_t* pMouseTabButton = nullptr;
+    pMouseTabButton = newButton();
+	strcpy(pMouseTabButton->label, language[1437]);
+    pMouseTabButton->x = tabx_so_far;
+    pMouseTabButton->y = suby1 + 24;
+    pMouseTabButton->sizex = strlen(language[1437]) * 12 + 8;
+    pMouseTabButton->sizey = 20;
+    pMouseTabButton->action = &buttonMouseTab;
+    pMouseTabButton->visible = 1;
+    pMouseTabButton->focused = 1;
+	button_mouse_tab = pMouseTabButton;
+    pMouseTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1437]) * 12 + 8;
 
-	//Gamepad bindings tab.
-	button = newButton();
-	strcpy(button->label, language[1947]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1947]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonGamepadBindingsTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_gamepad_bindings_tab = button;
+	// Create the Gameplay Bindings Tab Button
+    button_t* pGameplayBindingsTabButton = nullptr;
+    pGameplayBindingsTabButton = newButton();
+	strcpy(pGameplayBindingsTabButton->label, language[1947]);
+    pGameplayBindingsTabButton->x = tabx_so_far;
+    pGameplayBindingsTabButton->y = suby1 + 24;
+    pGameplayBindingsTabButton->sizex = strlen(language[1947]) * 12 + 8;
+    pGameplayBindingsTabButton->sizey = 20;
+    pGameplayBindingsTabButton->action = &buttonGamepadBindingsTab;
+    pGameplayBindingsTabButton->visible = 1;
+    pGameplayBindingsTabButton->focused = 1;
+	button_gamepad_bindings_tab = pGameplayBindingsTabButton;
+    pGameplayBindingsTabButton = nullptr;
 
 	tabx_so_far += strlen(language[1947]) * 12 + 8;
 
-	//Gamepad settings tab.
-	button = newButton();
-	strcpy(button->label, language[2400]);
-	button->x = tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[2400]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonGamepadSettingsTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_gamepad_settings_tab = button;
+	// Create the Gameplay Settings Tab Button
+    button_t* pGameplaySettingsTabButton = nullptr;
+    pGameplaySettingsTabButton = newButton();
+	strcpy(pGameplaySettingsTabButton->label, language[2400]);
+    pGameplaySettingsTabButton->x = tabx_so_far;
+    pGameplaySettingsTabButton->y = suby1 + 24;
+    pGameplaySettingsTabButton->sizex = strlen(language[2400]) * 12 + 8;
+    pGameplaySettingsTabButton->sizey = 20;
+    pGameplaySettingsTabButton->action = &buttonGamepadSettingsTab;
+    pGameplaySettingsTabButton->visible = 1;
+    pGameplaySettingsTabButton->focused = 1;
+	button_gamepad_settings_tab = pGameplaySettingsTabButton;
+    pGameplaySettingsTabButton = nullptr;
 
 	tabx_so_far += strlen(language[2400]) * 12 + 8;
 
-	// misc tab
-	button = newButton();
-	strcpy(button->label, language[1438]);
-	button->x =  tabx_so_far;
-	button->y = suby1 + 24;
-	button->sizex = strlen(language[1438]) * 12 + 8;
-	button->sizey = 20;
-	button->action = &buttonMiscTab;
-	button->visible = 1;
-	button->focused = 1;
-	button_misc_tab = button;
+	// Create the Misc Tab Button
+    button_t* pMiscTabButton = nullptr;
+    pMiscTabButton = newButton();
+	strcpy(pMiscTabButton->label, language[1438]);
+    pMiscTabButton->x =  tabx_so_far;
+    pMiscTabButton->y = suby1 + 24;
+    pMiscTabButton->sizex = strlen(language[1438]) * 12 + 8;
+    pMiscTabButton->sizey = 20;
+    pMiscTabButton->action = &buttonMiscTab;
+    pMiscTabButton->visible = 1;
+    pMiscTabButton->focused = 1;
+	button_misc_tab = pMiscTabButton;
+    pMiscTabButton = nullptr;
 
-	//Initialize resolution confirmation window related variables.
+	//Initialize resolution confirmation Window related variables
 	resolutionChanged = false;
 	resolutionConfirmationTimer = 0;
 
@@ -5153,112 +5196,124 @@ void openSettingsWindow()
 
 void openSteamLobbyWaitWindow(button_t* my);
 
-// "failed to connect" message
-void openFailedConnectionWindow(int mode)
+// Create a new Window to display the "failed to connect" message for @netType
+// @param netType: The NetworkType that has failed
+// Closes current Window and creates a new Window in the middle of the screen
+void openFailedConnectionWindow(NetworkType netType)
 {
-	button_t* button;
-
-	// close current window
-	buttonCloseSubwindow(NULL);
+    // TODOR: Windows should be a class, dynamically allocated and deleted properly
+	// Close the current Window
+	buttonCloseSubwindow(nullptr);
 	list_FreeAll(&button_l);
 	deleteallbuttons = true;
 
-	// create new window
+    //TODOR: Windows should be a class, not a bunch of global variables we hope don't clash
+	// Create the new window
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
 	suby1 = yres / 2 - 64;
 	suby2 = yres / 2 + 64;
+
+    // Display the error, based off @netType
 	if ( directConnect )
 	{
-		if ( mode == CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
-			strcpy(subtext, language[1439]);
+			strcpy(subtext, language[1439]);    // "Failed to connect to server:\n"
 			strcat(subtext, SDLNet_GetError());
 		}
-		else if ( mode == SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
-			strcpy(subtext, language[1440]);
+			strcpy(subtext, language[1440]);    // "Failed to start server:\n"
 			strcat(subtext, SDLNet_GetError());
 		}
 		else
 		{
-			strcpy(subtext, language[1443]);
+			strcpy(subtext, language[1443]);    // "The connection to the server was lost.\n"
 		}
 	}
 	else
 	{
-		if ( mode == CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
-			strcpy(subtext, language[1441]);
+			strcpy(subtext, language[1441]);    // "Failed to join the selected lobby.\n"
 		}
-		else if ( mode == SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
-			strcpy(subtext, language[1442]);
+			strcpy(subtext, language[1442]);    // "Failed to create the lobby.\n"
 		}
 		else
 		{
-			strcpy(subtext, language[1443]);
+			strcpy(subtext, language[1443]);    // "The connection to the server was lost.\n"
 		}
 	}
 
-	// close button
-	button = newButton();
-	strcpy(button->label, "x");
-	button->x = subx2 - 20;
-	button->y = suby1;
-	button->sizex = 20;
-	button->sizey = 20;
-	button->action = &buttonCloseSubwindow;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_ESCAPE;
-	button->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    // TODOR: Buttons should be a class, dynamically allocated and deleted properly
+  
+	// Create the 'X (Close)' Button
+    button_t* pCloseButton = nullptr;
+    pCloseButton = newButton();
+	strcpy(pCloseButton->label, "x");
+    pCloseButton->x = subx2 - 20;
+    pCloseButton->y = suby1;
+    pCloseButton->sizex = 20;
+    pCloseButton->sizey = 20;
+    pCloseButton->action = &buttonCloseSubwindow;
+    pCloseButton->visible = 1;
+    pCloseButton->focused = 1;
+    pCloseButton->key = SDL_SCANCODE_ESCAPE;
+    pCloseButton->joykey = joyimpulses[INJOY_MENU_CANCEL];
+    pCloseButton = nullptr;
 
-	// okay button
-	button = newButton();
-	strcpy(button->label, language[732]);
-	button->x = subx2 - (subx2 - subx1) / 2 - strlen(language[732]) * 6;
-	button->y = suby2 - 24;
-	button->sizex = strlen(language[732]) * 12 + 8;
-	button->sizey = 20;
-	button->visible = 1;
-	button->focused = 1;
-	button->key = SDL_SCANCODE_RETURN;
-	button->joykey = joyimpulses[INJOY_MENU_NEXT];
+	// Create the 'Okay' Button
+    button_t* pOkayButton = nullptr;
+    pOkayButton = newButton();
+	strcpy(pOkayButton->label, language[732]);
+    pOkayButton->x = subx2 - (subx2 - subx1) / 2 - strlen(language[732]) * 6;
+    pOkayButton->y = suby2 - 24;
+    pOkayButton->sizex = strlen(language[732]) * 12 + 8;
+    pOkayButton->sizey = 20;
+    pOkayButton->visible = 1;
+    pOkayButton->focused = 1;
+    pOkayButton->key = SDL_SCANCODE_RETURN;
+    pOkayButton->joykey = joyimpulses[INJOY_MENU_NEXT];
+    pOkayButton = nullptr;
 
+    // Setup the 'Okay' Button's action based off @netType
 	if ( directConnect )
 	{
-		if ( mode == CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
-			button->action = &buttonJoinMultiplayer;
+            pOkayButton->action = &buttonJoinMultiplayer;
 		}
-		else if ( mode == SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
-			button->action = &buttonHostMultiplayer;
+            pOkayButton->action = &buttonHostMultiplayer;
 		}
 		else
 		{
-			button->action = &buttonCloseSubwindow;
+            pOkayButton->action = &buttonCloseSubwindow;
 		}
 	}
 	else
 	{
-		if ( mode == CLIENT )
+		if ( netType == NetworkType::CLIENT )
 		{
-			button->action = &openSteamLobbyWaitWindow;
+            pOkayButton->action = &openSteamLobbyWaitWindow;
 		}
-		else if ( mode == SERVER )
+		else if ( netType == NetworkType::SERVER )
 		{
-			button->action = &buttonCloseSubwindow;
+            pOkayButton->action = &buttonCloseSubwindow;
 		}
 		else
 		{
-			button->action = &buttonCloseSubwindow;
+            pOkayButton->action = &buttonCloseSubwindow;
 		}
 	}
 
-	multiplayer = SINGLE;
+    // Reset the Local Player's connection status
+	localPlayerNetworkType = NetworkType::SINGLE;
 	clientnum = 0;
 }
 
@@ -5478,7 +5533,7 @@ void buttonEndGameConfirm(button_t* my)
 	introstage = 5; // prepares to end the current game (throws to main menu)
 	fadeout = true;
 	//Edge case for freeing channeled spells on a client.
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
@@ -5567,7 +5622,7 @@ void buttonCloseSettingsSubwindow(button_t* my)
 void buttonCloseAndEndGameConfirm(button_t* my)
 {
 	//Edge case for freeing channeled spells on a client.
-	if (multiplayer == CLIENT)
+	if (localPlayerNetworkType == NetworkType::CLIENT)
 	{
 		list_FreeAll(&channeledSpells[clientnum]);
 	}
@@ -5662,11 +5717,11 @@ void buttonContinue(button_t* my)
 	}
 	else if ( charcreation_step == 6 )
 	{
-		if ( multiplayerselect == SINGLE )
+		if ( selectedNetworkType == NetworkType::SINGLE )
 		{
 			buttonStartSingleplayer(my);
 		}
-		else if ( multiplayerselect == SERVER )
+		else if ( selectedNetworkType == NetworkType::SERVER )
 		{
 #ifdef STEAMWORKS
 			directConnect = false;
@@ -5675,7 +5730,7 @@ void buttonContinue(button_t* my)
 #endif
 			buttonHostMultiplayer(my);
 		}
-		else if ( multiplayerselect == CLIENT )
+		else if ( selectedNetworkType == NetworkType::CLIENT )
 		{
 #ifndef STEAMWORKS
 			directConnect = true;
@@ -5685,12 +5740,12 @@ void buttonContinue(button_t* my)
 			openSteamLobbyWaitWindow(my);
 #endif
 		}
-		else if ( multiplayerselect == DIRECTSERVER )
+		else if ( selectedNetworkType == NetworkType::DIRECTSERVER )
 		{
 			directConnect = true;
 			buttonHostMultiplayer(my);
 		}
-		else if ( multiplayerselect == DIRECTCLIENT )
+		else if ( selectedNetworkType == NetworkType::DIRECTCLIENT )
 		{
 			directConnect = true;
 			buttonJoinMultiplayer(my);
@@ -5722,7 +5777,7 @@ void buttonBack(button_t* my)
 void buttonStartSingleplayer(button_t* my)
 {
 	buttonCloseSubwindow(my);
-	multiplayer = SINGLE;
+	localPlayerNetworkType = NetworkType::SINGLE;
 	numplayers = 0;
 	introstage = 3;
 	fadeout = true;
@@ -5732,7 +5787,7 @@ void buttonStartSingleplayer(button_t* my)
 	}
 }
 
-// host a multiplayer game
+// host a localPlayerNetworkType game
 void buttonHostMultiplayer(button_t* my)
 {
 	button_t* button;
@@ -5757,7 +5812,7 @@ void buttonHostMultiplayer(button_t* my)
 		deleteallbuttons = true;
 
 		// open port window
-		connect_window = SERVER;
+		connect_window = static_cast<int>(NetworkType::SERVER);
 		subwindow = 1;
 		subx1 = xres / 2 - 128;
 		subx2 = xres / 2 + 128;
@@ -5806,7 +5861,7 @@ void buttonHostMultiplayer(button_t* my)
 	}
 }
 
-// join a multiplayer game
+// join a localPlayerNetworkType game
 void buttonJoinMultiplayer(button_t* my)
 {
 	button_t* button;
@@ -5817,7 +5872,7 @@ void buttonJoinMultiplayer(button_t* my)
 	deleteallbuttons = true;
 
 	// open port window
-	connect_window = CLIENT;
+	connect_window = static_cast<int>(NetworkType::CLIENT);
 	subwindow = 1;
 	subx1 = xres / 2 - 210;
 	subx2 = xres / 2 + 210;
@@ -5907,7 +5962,7 @@ void buttonHostLobby(button_t* my)
 		if (SDLNet_ResolveHost(&net_server, NULL, portnumber) == -1)
 		{
 			printlog( "warning: resolving host at localhost:%d has failed.\n", portnumber);
-			openFailedConnectionWindow(SERVER);
+			openFailedConnectionWindow(NetworkType::SERVER);
 			return;
 		}
 
@@ -5915,13 +5970,13 @@ void buttonHostLobby(button_t* my)
 		if (!(net_sock = SDLNet_UDP_Open(portnumber)))
 		{
 			printlog( "warning: SDLNet_UDP_open has failed: %s\n", SDLNet_GetError());
-			openFailedConnectionWindow(SERVER);
+			openFailedConnectionWindow(NetworkType::SERVER);
 			return;
 		}
 		if (!(net_tcpsock = SDLNet_TCP_Open(&net_server)))
 		{
 			printlog( "warning: SDLNet_TCP_open has failed: %s\n", SDLNet_GetError());
-			openFailedConnectionWindow(SERVER);
+			openFailedConnectionWindow(NetworkType::SERVER);
 			return;
 		}
 		tcpset = SDLNet_AllocSocketSet(4);
@@ -5940,7 +5995,7 @@ void buttonHostLobby(button_t* my)
 	if (!(net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
 	{
 		printlog( "warning: packet allocation failed: %s\n", SDLNet_GetError());
-		openFailedConnectionWindow(SERVER);
+		openFailedConnectionWindow(NetworkType::SERVER);
 		return;
 	}
 
@@ -5954,7 +6009,7 @@ void buttonHostLobby(button_t* my)
 	}
 
 	// open lobby window
-	multiplayer = SERVER;
+	localPlayerNetworkType = NetworkType::SERVER;
 	lobby_window = true;
 	subwindow = 1;
 	subx1 = xres / 2 - 400;
@@ -6062,7 +6117,7 @@ void buttonJoinLobby(button_t* my)
 	// open wait window
 	list_FreeAll(&lobbyChatboxMessages);
 	newString(&lobbyChatboxMessages, 0xFFFFFFFF, language[1452]);
-	multiplayer = CLIENT;
+	localPlayerNetworkType = NetworkType::CLIENT;
 	subwindow = 1;
 	subx1 = xres / 2 - 256;
 	subx2 = xres / 2 + 256;
@@ -6119,7 +6174,7 @@ void buttonJoinLobby(button_t* my)
 		if (SDLNet_ResolveHost(&net_server, address, portnumber) == -1)
 		{
 			printlog( "warning: resolving host at %s:%d has failed.\n", address, portnumber);
-			openFailedConnectionWindow(CLIENT);
+			openFailedConnectionWindow(NetworkType::CLIENT);
 			return;
 		}
 
@@ -6128,13 +6183,13 @@ void buttonJoinLobby(button_t* my)
 		if (!(net_sock = SDLNet_UDP_Open(0)))
 		{
 			printlog( "warning: SDLNet_UDP_open has failed.\n");
-			openFailedConnectionWindow(CLIENT);
+			openFailedConnectionWindow(NetworkType::CLIENT);
 			return;
 		}
 		if (!(net_tcpsock = SDLNet_TCP_Open(&net_server)))
 		{
 			printlog( "warning: SDLNet_TCP_open has failed.\n");
-			openFailedConnectionWindow(CLIENT);
+			openFailedConnectionWindow(NetworkType::CLIENT);
 			return;
 		}
 		tcpset = SDLNet_AllocSocketSet(4);
@@ -6145,7 +6200,7 @@ void buttonJoinLobby(button_t* my)
 	if (!(net_packet = SDLNet_AllocPacket(NET_PACKET_SIZE)))
 	{
 		printlog( "warning: packet allocation failed.\n");
-		openFailedConnectionWindow(CLIENT);
+		openFailedConnectionWindow(NetworkType::CLIENT);
 		return;
 	}
 
@@ -6220,7 +6275,7 @@ void buttonStartServer(button_t* my)
 	// close window
 	buttonCloseSubwindow(my);
 
-	multiplayer = SERVER;
+	localPlayerNetworkType = NetworkType::SERVER;
 	intro = true;
 	introstage = 3;
 	numplayers = 0;
@@ -6280,7 +6335,7 @@ void buttonDisconnect(button_t* my)
 {
 	int c;
 
-	if ( multiplayer == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// send disconnect message to clients
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -6308,8 +6363,8 @@ void buttonDisconnect(button_t* my)
 		sendPacketSafe(net_sock, -1, net_packet, 0);
 	}
 
-	// reset multiplayer status
-	multiplayer = SINGLE;
+	// reset localPlayerNetworkType status
+	localPlayerNetworkType = NetworkType::SINGLE;
 	stats[0]->sex = stats[clientnum]->sex;
 	client_classes[0] = client_classes[clientnum];
 	strcpy(stats[0]->name, stats[clientnum]->name);
@@ -6840,19 +6895,19 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 void buttonLoadGame(button_t* button)
 {
 	loadingsavegame = getSaveGameUniqueGameKey();
-	int mul = getSaveGameType();
+	NetworkType saveGameNetworkType = getSaveGameType();
 
-	if ( mul == DIRECTSERVER )
+	if ( saveGameNetworkType == NetworkType::DIRECTSERVER )
 	{
 		directConnect = true;
 		buttonHostMultiplayer(button);
 	}
-	else if ( mul == DIRECTCLIENT )
+	else if ( saveGameNetworkType == NetworkType::DIRECTCLIENT )
 	{
 		directConnect = true;
 		buttonJoinMultiplayer(button);
 	}
-	else if ( mul == SINGLE )
+	else if ( saveGameNetworkType == NetworkType::SINGLE )
 	{
 		buttonStartSingleplayer(button);
 	}
@@ -6860,11 +6915,11 @@ void buttonLoadGame(button_t* button)
 	{
 		directConnect = false;
 #ifdef STEAMWORKS
-		if ( mul == SERVER )
+		if ( saveGameNetworkType == NetworkType::SERVER )
 		{
 			buttonHostMultiplayer(button);
 		}
-		else if ( mul == CLIENT )
+		else if ( saveGameNetworkType == NetworkType::CLIENT )
 		{
 			if ( !lobbyToConnectTo )
 			{

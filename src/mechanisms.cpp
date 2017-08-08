@@ -132,7 +132,7 @@ void actSwitch(Entity* my)
 	//So then when that second switch's actSwitch() comes up, and if it's on, it'll repower the entire network -- which will stay powered until ALL connected switches go off.
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		int i = 0;
 		for (i = 0; i < MAXPLAYERS; ++i)

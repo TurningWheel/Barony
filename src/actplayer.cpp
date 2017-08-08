@@ -191,9 +191,9 @@ void actPlayer(Entity* my)
 	}
 
 	Entity* entity;
-	Entity* entity2 = NULL;
-	Entity* rightbody = NULL;
-	Entity* weaponarm = NULL;
+	Entity* entity2 = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
 	node_t* node;
 	Item* item;
 	int i, bodypart;
@@ -208,7 +208,7 @@ void actPlayer(Entity* my)
 		return;
 	}
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( PLAYER_NUM != clientnum )
 		{
@@ -235,7 +235,7 @@ void actPlayer(Entity* my)
 		// hud weapon
 		if ( PLAYER_NUM == clientnum )
 		{
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				my->flags[UPDATENEEDED] = false;
 			}
@@ -284,10 +284,10 @@ void actPlayer(Entity* my)
 		else
 		{
 			node = list_AddNodeLast(&my->children);
-			node->element = NULL;
+			node->element = nullptr;
 			node->deconstructor = &emptyDeconstructor;
 			node->size = 0;
-			if ( multiplayer == CLIENT )
+			if ( localPlayerNetworkType == NetworkType::CLIENT )
 			{
 				PLAYER_TORCH = 0;
 			}
@@ -499,7 +499,7 @@ void actPlayer(Entity* my)
 			if ( !strcmp(map.name, "Boss") && !my->skill[29] )
 			{
 				bool foundherx = false;
-				for ( node = map.entities->first; node != NULL; node = node->next )
+				for ( node = map.entities->first; node != nullptr; node = node->next )
 				{
 					Entity* entity = (Entity*)node->element;
 					if ( entity->sprite == 274 )
@@ -600,7 +600,7 @@ void actPlayer(Entity* my)
 				}
 			}
 		}
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( my->getUID() % (TICKS_PER_SECOND * 3) == ticks % (TICKS_PER_SECOND * 3) )
 			{
@@ -692,58 +692,58 @@ void actPlayer(Entity* my)
 	}
 
 	// remove broken equipment
-	if ( stats[PLAYER_NUM]->helmet != NULL )
+	if ( stats[PLAYER_NUM]->helmet != nullptr )
 		if ( stats[PLAYER_NUM]->helmet->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->helmet = NULL;
+			stats[PLAYER_NUM]->helmet = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->breastplate != NULL )
+	if ( stats[PLAYER_NUM]->breastplate != nullptr )
 		if ( stats[PLAYER_NUM]->breastplate->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->breastplate = NULL;
+			stats[PLAYER_NUM]->breastplate = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->gloves != NULL )
+	if ( stats[PLAYER_NUM]->gloves != nullptr )
 		if ( stats[PLAYER_NUM]->gloves->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->gloves = NULL;
+			stats[PLAYER_NUM]->gloves = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->shoes != NULL )
+	if ( stats[PLAYER_NUM]->shoes != nullptr )
 		if ( stats[PLAYER_NUM]->shoes->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->shoes = NULL;
+			stats[PLAYER_NUM]->shoes = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->shield != NULL )
+	if ( stats[PLAYER_NUM]->shield != nullptr )
 		if ( stats[PLAYER_NUM]->shield->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->shield = NULL;
+			stats[PLAYER_NUM]->shield = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->weapon != NULL )
+	if ( stats[PLAYER_NUM]->weapon != nullptr )
 		if ( stats[PLAYER_NUM]->weapon->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->weapon = NULL;
+			stats[PLAYER_NUM]->weapon = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->cloak != NULL )
+	if ( stats[PLAYER_NUM]->cloak != nullptr )
 		if ( stats[PLAYER_NUM]->cloak->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->cloak = NULL;
+			stats[PLAYER_NUM]->cloak = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->amulet != NULL )
+	if ( stats[PLAYER_NUM]->amulet != nullptr )
 		if ( stats[PLAYER_NUM]->amulet->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->amulet = NULL;
+			stats[PLAYER_NUM]->amulet = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->ring != NULL )
+	if ( stats[PLAYER_NUM]->ring != nullptr )
 		if ( stats[PLAYER_NUM]->ring->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->ring = NULL;
+			stats[PLAYER_NUM]->ring = nullptr;
 		}
-	if ( stats[PLAYER_NUM]->mask != NULL )
+	if ( stats[PLAYER_NUM]->mask != nullptr )
 		if ( stats[PLAYER_NUM]->mask->status == BROKEN )
 		{
-			stats[PLAYER_NUM]->mask = NULL;
+			stats[PLAYER_NUM]->mask = nullptr;
 		}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		my->effectTimes();
 	}
@@ -751,14 +751,14 @@ void actPlayer(Entity* my)
 	// invisibility
 	if ( !intro )
 	{
-		if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+		if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 		{
-			if ( stats[PLAYER_NUM]->ring != NULL )
+			if ( stats[PLAYER_NUM]->ring != nullptr )
 				if ( stats[PLAYER_NUM]->ring->type == RING_INVISIBILITY )
 				{
 					wearingring = true;
 				}
-			if ( stats[PLAYER_NUM]->cloak != NULL )
+			if ( stats[PLAYER_NUM]->cloak != nullptr )
 				if ( stats[PLAYER_NUM]->cloak->type == CLOAK_INVISIBILITY )
 				{
 					wearingring = true;
@@ -771,9 +771,9 @@ void actPlayer(Entity* my)
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				my->flags[BLOCKSIGHT] = false;
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
+					for (i = 0, node = my->children.first; node != nullptr; node = node->next, i++)
 					{
 						if ( i == 0 )
 						{
@@ -800,9 +800,9 @@ void actPlayer(Entity* my)
 					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				my->flags[BLOCKSIGHT] = true;
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
+					for (i = 0, node = my->children.first; node != nullptr; node = node->next, i++)
 					{
 						if ( i == 0 )
 						{
@@ -824,10 +824,10 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		bool prevlevitating = false;
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			if ( (my->z >= -2.05 && my->z <= -1.95) || (my->z >= -1.55 && my->z <= -1.45) )
 			{
@@ -851,12 +851,12 @@ void actPlayer(Entity* my)
 		{
 			levitating = true;
 		}
-		if ( stats[PLAYER_NUM]->ring != NULL )
+		if ( stats[PLAYER_NUM]->ring != nullptr )
 			if ( stats[PLAYER_NUM]->ring->type == RING_LEVITATION )
 			{
 				levitating = true;
 			}
-		if ( stats[PLAYER_NUM]->shoes != NULL )
+		if ( stats[PLAYER_NUM]->shoes != nullptr )
 			if ( stats[PLAYER_NUM]->shoes->type == STEEL_BOOTS_LEVITATION )
 			{
 				levitating = true;
@@ -892,13 +892,13 @@ void actPlayer(Entity* my)
 
 	// swimming
 	bool waterwalkingboots = false;
-	if ( stats[PLAYER_NUM]->shoes != NULL )
+	if ( stats[PLAYER_NUM]->shoes != nullptr )
 		if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
 		{
 			waterwalkingboots = true;
 		}
 	bool swimming = false;
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		if ( !levitating && !waterwalkingboots )
 		{
@@ -906,7 +906,7 @@ void actPlayer(Entity* my)
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
 			if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
-				if ( rand() % 400 == 0 && multiplayer != CLIENT )
+				if ( rand() % 400 == 0 && localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					my->increaseSkill(PRO_SWIMMING);
 				}
@@ -924,7 +924,7 @@ void actPlayer(Entity* my)
 						playSound(136, 128);
 					}
 				}
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( !lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
@@ -1059,10 +1059,10 @@ void actPlayer(Entity* my)
 		// object interaction
 		if ( intro == false )
 		{
-			clickDescription(PLAYER_NUM, NULL); // inspecting objects
+			clickDescription(PLAYER_NUM, nullptr); // inspecting objects
 			selectedEntity = entityClicked(); // using objects
 
-			if ( selectedEntity != NULL )
+			if ( selectedEntity != nullptr )
 			{
 				if ( entityDist(my, selectedEntity) <= TOUCHRANGE )
 				{
@@ -1072,7 +1072,7 @@ void actPlayer(Entity* my)
 				{
 					inrange[PLAYER_NUM] = false;
 				}
-				if ( multiplayer == CLIENT )
+				if ( localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					if ( inrange[PLAYER_NUM] )
 					{
@@ -1115,7 +1115,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if (multiplayer != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
@@ -1140,9 +1140,9 @@ void actPlayer(Entity* my)
 	// torch light
 	if ( !intro )
 	{
-		if ( multiplayer == SERVER || PLAYER_NUM == clientnum )
+		if ( localPlayerNetworkType == NetworkType::SERVER || PLAYER_NUM == clientnum )
 		{
-			if ( stats[PLAYER_NUM]->shield != NULL )
+			if ( stats[PLAYER_NUM]->shield != nullptr )
 			{
 				if ( PLAYER_NUM == clientnum )
 				{
@@ -1196,18 +1196,18 @@ void actPlayer(Entity* my)
 	{
 		PLAYER_TORCH = 0;
 	}
-	if ( my->light != NULL )
+	if ( my->light != nullptr )
 	{
 		list_RemoveNode(my->light->node);
-		my->light = NULL;
+		my->light = nullptr;
 	}
-	if ( PLAYER_TORCH && my->light == NULL )
+	if ( PLAYER_TORCH && my->light == nullptr )
 	{
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
 	}
 
 	// server controls players primarily
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+	if ( PLAYER_NUM == clientnum || localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// set head model
 		if ( stats[PLAYER_NUM]->appearance < 5 )
@@ -1231,7 +1231,7 @@ void actPlayer(Entity* my)
 			my->sprite = 113; // default
 		}
 	}
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		// remove client entities that should no longer exist
 		if ( !intro )
@@ -1241,7 +1241,7 @@ void actPlayer(Entity* my)
 			{
 				// remove body parts
 				node_t* nextnode;
-				for ( node = my->children.first, i = 0; node != NULL; node = nextnode, i++ )
+				for ( node = my->children.first, i = 0; node != nullptr; node = nextnode, i++ )
 				{
 					nextnode = node->next;
 					if ( i == 0 )
@@ -1269,7 +1269,7 @@ void actPlayer(Entity* my)
 					}
 					if (spawn_blood)
 					{
-						if ( !checkObstacle(my->x, my->y, my, NULL) )
+						if ( !checkObstacle(my->x, my->y, my, nullptr) )
 						{
 							int x, y;
 							x = std::min(std::max<unsigned int>(0, my->x / 16), map.width - 1);
@@ -1296,7 +1296,7 @@ void actPlayer(Entity* my)
 						node_t* oldnode = spellnode;
 						spellnode = spellnode->next;
 						spell_t* spell = (spell_t*)oldnode->element;
-						spell->magic_effects_node = NULL;
+						spell->magic_effects_node = nullptr;
 						list_RemoveNode(oldnode);
 					}
 					int c;
@@ -1381,7 +1381,7 @@ void actPlayer(Entity* my)
 								entity->skill[15] = item->identified;
 							}
 						}
-						if (multiplayer != SINGLE)
+						if (localPlayerNetworkType != NetworkType::SINGLE)
 						{
 							for (node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = nextnode)
 							{
@@ -1393,16 +1393,16 @@ void actPlayer(Entity* my)
 								}
 								list_RemoveNode(node);
 							}
-							stats[0]->helmet = NULL;
-							stats[0]->breastplate = NULL;
-							stats[0]->gloves = NULL;
-							stats[0]->shoes = NULL;
-							stats[0]->shield = NULL;
-							stats[0]->weapon = NULL;
-							stats[0]->cloak = NULL;
-							stats[0]->amulet = NULL;
-							stats[0]->ring = NULL;
-							stats[0]->mask = NULL;
+							stats[0]->helmet = nullptr;
+							stats[0]->breastplate = nullptr;
+							stats[0]->gloves = nullptr;
+							stats[0]->shoes = nullptr;
+							stats[0]->shield = nullptr;
+							stats[0]->weapon = nullptr;
+							stats[0]->cloak = nullptr;
+							stats[0]->amulet = nullptr;
+							stats[0]->ring = nullptr;
+							stats[0]->mask = nullptr;
 						}
 					}
 					else
@@ -1502,15 +1502,15 @@ void actPlayer(Entity* my)
 						list_FreeAll(&stats[PLAYER_NUM]->inventory);
 					}
 
-					if ( multiplayer != SINGLE )
+					if ( localPlayerNetworkType != NetworkType::SINGLE )
 					{
 						messagePlayer(PLAYER_NUM, language[578]);
 					}
 				}
-				if ( my->light != NULL )
+				if ( my->light != nullptr )
 				{
 					list_RemoveNode(my->light->node);
-					my->light = NULL;
+					my->light = nullptr;
 				}
 				list_RemoveNode(my->mynode);
 				return;
@@ -1535,10 +1535,10 @@ void actPlayer(Entity* my)
 
 		// calculate weight
 		weight = 0;
-		for ( node = stats[PLAYER_NUM]->inventory.first; node != NULL; node = node->next )
+		for ( node = stats[PLAYER_NUM]->inventory.first; node != nullptr; node = node->next )
 		{
 			item = (Item*)node->element;
-			if ( item != NULL )
+			if ( item != nullptr )
 				if ( item->type >= 0 && item->type < NUMITEMS )
 				{
 					weight += items[item->type].weight * item->count;
@@ -1599,7 +1599,7 @@ void actPlayer(Entity* my)
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;
 
-		for ( node = map.entities->first; node != NULL; node = node->next )
+		for ( node = map.entities->first; node != nullptr; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
 			if ( entity == my )
@@ -1619,7 +1619,7 @@ void actPlayer(Entity* my)
 
 		// swimming slows you down
 		bool amuletwaterbreathing = false;
-		if ( stats[PLAYER_NUM]->amulet != NULL )
+		if ( stats[PLAYER_NUM]->amulet != nullptr )
 			if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
 			{
 				amuletwaterbreathing = true;
@@ -1803,7 +1803,7 @@ void actPlayer(Entity* my)
 		}
 
 		// send movement updates to server
-		if ( multiplayer == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			strcpy((char*)net_packet->data, "PMOV");
 			net_packet->data[4] = clientnum;
@@ -1854,7 +1854,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM != clientnum && multiplayer == SERVER )
+	if ( PLAYER_NUM != clientnum && localPlayerNetworkType == NetworkType::SERVER )
 	{
 		// PLAYER_VEL* skills updated by messages sent to server from client
 
@@ -1890,13 +1890,13 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	if ( PLAYER_NUM != clientnum && multiplayer == CLIENT )
+	if ( PLAYER_NUM != clientnum && localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		dist = sqrt(PLAYER_VELX * PLAYER_VELX + PLAYER_VELY * PLAYER_VELY);
 	}
 
 	// move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
 		if (bodypart == 0)
 		{
@@ -2149,9 +2149,9 @@ void actPlayer(Entity* my)
 		{
 			// torso
 			case 1:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->breastplate == NULL )
+					if ( stats[PLAYER_NUM]->breastplate == nullptr )
 					{
 						switch ( stats[PLAYER_NUM]->appearance / 6 )
 						{
@@ -2170,7 +2170,7 @@ void actPlayer(Entity* my)
 					{
 						entity->sprite = itemModel(stats[PLAYER_NUM]->breastplate);
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2190,9 +2190,9 @@ void actPlayer(Entity* my)
 				break;
 			// right leg
 			case 2:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->shoes == NULL )
+					if ( stats[PLAYER_NUM]->shoes == nullptr )
 					{
 						switch ( stats[PLAYER_NUM]->appearance / 6 )
 						{
@@ -2225,7 +2225,7 @@ void actPlayer(Entity* my)
 							entity->sprite = 156 + stats[PLAYER_NUM]->sex;
 						}
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2250,9 +2250,9 @@ void actPlayer(Entity* my)
 				break;
 			// left leg
 			case 3:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->shoes == NULL )
+					if ( stats[PLAYER_NUM]->shoes == nullptr )
 					{
 						switch ( stats[PLAYER_NUM]->appearance / 6 )
 						{
@@ -2285,7 +2285,7 @@ void actPlayer(Entity* my)
 							entity->sprite = 158 + stats[PLAYER_NUM]->sex;
 						}
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2311,9 +2311,9 @@ void actPlayer(Entity* my)
 			// right arm
 			case 4:
 			{
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->gloves == NULL )
+					if ( stats[PLAYER_NUM]->gloves == nullptr )
 					{
 						switch ( stats[PLAYER_NUM]->appearance / 6 )
 						{
@@ -2348,9 +2348,9 @@ void actPlayer(Entity* my)
 					}
 					if ( !PLAYER_ARMBENDED )
 					{
-						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != NULL);
+						entity->sprite += 2 * (stats[PLAYER_NUM]->weapon != nullptr);
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2371,7 +2371,7 @@ void actPlayer(Entity* my)
 				if ( tempNode )
 				{
 					Entity* weapon = (Entity*)tempNode->element;
-					/*if( multiplayer==CLIENT ) {
+					/*if( localPlayerNetworkType==NetworkType::CLIENT ) {
 						if( !PLAYER_ARMBENDED ) {
 							if( entity->skill[7]==0 )
 								entity->skill[7] = entity->sprite;
@@ -2402,9 +2402,9 @@ void actPlayer(Entity* my)
 			// left arm
 			case 5:
 			{
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->gloves == NULL )
+					if ( stats[PLAYER_NUM]->gloves == nullptr )
 					{
 						switch ( stats[PLAYER_NUM]->appearance / 6 )
 						{
@@ -2437,8 +2437,8 @@ void actPlayer(Entity* my)
 							entity->sprite = 144 + stats[PLAYER_NUM]->sex;
 						}
 					}
-					entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
-					if ( multiplayer == SERVER )
+					entity->sprite += 2 * (stats[PLAYER_NUM]->shield != nullptr);
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2480,7 +2480,7 @@ void actPlayer(Entity* my)
 			}
 			// weapon
 			case 6:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( swimming )
 					{
@@ -2488,7 +2488,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( stats[PLAYER_NUM]->weapon == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+						if ( stats[PLAYER_NUM]->weapon == nullptr || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2505,7 +2505,7 @@ void actPlayer(Entity* my)
 							}
 						}
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2524,7 +2524,7 @@ void actPlayer(Entity* my)
 						}
 					}
 				}
-				if ( weaponarm != NULL )
+				if ( weaponarm != nullptr )
 				{
 					if ( entity->sprite == items[SHORTBOW].index )
 					{
@@ -2589,7 +2589,7 @@ void actPlayer(Entity* my)
 				break;
 			// shield
 			case 7:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( swimming )
 					{
@@ -2597,7 +2597,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( stats[PLAYER_NUM]->shield == NULL )
+						if ( stats[PLAYER_NUM]->shield == nullptr )
 						{
 							entity->flags[INVISIBLE] = true;
 							entity->sprite = 0;
@@ -2612,7 +2612,7 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = true;
 						}
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2676,9 +2676,9 @@ void actPlayer(Entity* my)
 				break;
 			// cloak
 			case 8:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->cloak == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( stats[PLAYER_NUM]->cloak == nullptr || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2687,7 +2687,7 @@ void actPlayer(Entity* my)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(stats[PLAYER_NUM]->cloak);
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2717,10 +2717,10 @@ void actPlayer(Entity* my)
 				entity->focalz = limbs[HUMAN][9][2]; // -1.75
 				entity->pitch = my->pitch;
 				entity->roll = 0;
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-					if ( stats[PLAYER_NUM]->helmet == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( stats[PLAYER_NUM]->helmet == nullptr || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2728,7 +2728,7 @@ void actPlayer(Entity* my)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2786,7 +2786,7 @@ void actPlayer(Entity* my)
 				entity->focalz = limbs[HUMAN][10][2]; // .5
 				entity->pitch = my->pitch;
 				entity->roll = PI / 2;
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					bool hasSteelHelm = false;
 					if ( stats[PLAYER_NUM]->helmet )
@@ -2794,7 +2794,7 @@ void actPlayer(Entity* my)
 						{
 							hasSteelHelm = true;
 						}
-					if ( stats[PLAYER_NUM]->mask == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm )
+					if ( stats[PLAYER_NUM]->mask == nullptr || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2802,7 +2802,7 @@ void actPlayer(Entity* my)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( stats[PLAYER_NUM]->mask != NULL )
+					if ( stats[PLAYER_NUM]->mask != nullptr )
 					{
 						if ( stats[PLAYER_NUM]->mask->type == TOOL_GLASSES )
 						{
@@ -2813,7 +2813,7 @@ void actPlayer(Entity* my)
 							entity->sprite = itemModel(stats[PLAYER_NUM]->mask);
 						}
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -2894,7 +2894,7 @@ void actPlayerLimb(Entity* my)
 
 	Entity* parent = uidToEntity(my->parent);
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		if ( stats[PLAYER_NUM]->HP <= 0 )
 		{
@@ -2903,7 +2903,7 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -2921,7 +2921,7 @@ void actPlayerLimb(Entity* my)
 		}
 	}
 
-	if (multiplayer != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		return;
 	}

@@ -45,7 +45,7 @@ void consoleCommand(char* command_str)
 
 	if ( !strncmp(command_str, "/ping", 5) )
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[1117], 0);
 		}
@@ -67,7 +67,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/svflags ", 9))
 	{
-		if ( multiplayer == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[275]);
 		}
@@ -76,7 +76,7 @@ void consoleCommand(char* command_str)
 			svFlags = atoi(&command_str[9]);
 			messagePlayer(clientnum, language[276]);
 
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				// update client flags
 				strcpy((char*)net_packet->data, "SVFL");
@@ -149,7 +149,7 @@ void consoleCommand(char* command_str)
 	else if ( !strncmp(command_str, "/kick ", 6) )
 	{
 		strcpy(name, command_str + 6);
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			for ( c = 1; c < MAXPLAYERS; c++ )
 			{
@@ -174,7 +174,7 @@ void consoleCommand(char* command_str)
 				messagePlayer(clientnum, language[280]);
 			}
 		}
-		else if ( multiplayer == CLIENT )
+		else if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[281]);
 		}
@@ -209,7 +209,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[284]);
 		}
@@ -253,7 +253,7 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/noclip", 7) )
 	{
-		if ( multiplayer != SINGLE )
+		if ( localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			messagePlayer(clientnum, language[287]);
 		}
@@ -277,7 +277,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer != SINGLE )
+		if ( localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			messagePlayer(clientnum, language[290]);
 		}
@@ -296,7 +296,7 @@ void consoleCommand(char* command_str)
 	}
 	else if ( !strncmp(command_str, "/buddha", 7) )
 	{
-		if ( multiplayer != SINGLE )
+		if ( localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			messagePlayer(clientnum, language[293]);
 		}
@@ -320,7 +320,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[284]);
 			return;
@@ -690,7 +690,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if ( multiplayer == SINGLE )
+		if ( localPlayerNetworkType == NetworkType::SINGLE )
 		{
 			stats[clientnum]->MP = stats[clientnum]->MAXMP;
 		}
@@ -707,7 +707,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if ( multiplayer == SINGLE )
+		if ( localPlayerNetworkType == NetworkType::SINGLE )
 		{
 			stats[clientnum]->HP = stats[clientnum]->MAXHP;
 		}
@@ -758,7 +758,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if (localPlayerNetworkType == NetworkType::SINGLE)
 		{
 			if (players[clientnum] && players[clientnum]->entity)
 			{
@@ -778,7 +778,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if ( multiplayer == SINGLE )
+		if ( localPlayerNetworkType == NetworkType::SINGLE )
 		{
 			int c;
 			for ( c = 0; c < 14; c++ )
@@ -812,7 +812,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if (localPlayerNetworkType == NetworkType::SINGLE)
 		{
 			Stat* tempStats = players[clientnum]->entity->getStats();
 			if (tempStats)
@@ -845,7 +845,7 @@ void consoleCommand(char* command_str)
 			return;
 		}
 
-		if (multiplayer == SINGLE)
+		if (localPlayerNetworkType == NetworkType::SINGLE)
 		{
 			int i = 0;
 			for (; i < 10; ++i)
@@ -870,7 +870,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer == CLIENT )
+		if ( localPlayerNetworkType == NetworkType::CLIENT )
 		{
 			messagePlayer(clientnum, language[284]);
 		}
@@ -893,7 +893,7 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/die", 4))
 	{
-		if (multiplayer != SINGLE)
+		if (localPlayerNetworkType != NetworkType::SINGLE)
 		{
 			messagePlayer(clientnum, language[299]);
 		}
@@ -915,7 +915,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer != SINGLE )
+		if ( localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
 			return;
@@ -940,7 +940,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if (multiplayer == CLIENT)
+		if (localPlayerNetworkType == NetworkType::CLIENT)
 		{
 			messagePlayer(clientnum, language[284]);
 		}
@@ -1113,7 +1113,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer != SINGLE )
+		if ( localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
 			return;
@@ -1132,7 +1132,7 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[277]);
 			return;
 		}
-		if ( multiplayer != SINGLE )
+		if ( localPlayerNetworkType != NetworkType::SINGLE )
 		{
 			messagePlayer(clientnum, language[299]);
 			return;
