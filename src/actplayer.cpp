@@ -955,11 +955,13 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
-	if (!swimming)
-		if (PLAYER_INWATER)
-		{
-			PLAYER_INWATER = 0;
-		}
+    if ( !swimming )
+    {
+        if ( PLAYER_INWATER )
+        {
+            PLAYER_INWATER = 0;
+        }
+    }
 
 	if (PLAYER_NUM == clientnum)
 	{
