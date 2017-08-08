@@ -108,7 +108,7 @@ void initKobold(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( myStats->weapon->type == CROSSBOW )
+					if ( myStats->weapon && myStats->weapon->type == CROSSBOW )
 					{
 						if ( rand() % 2 == 0 ) // 50% chance
 						{
