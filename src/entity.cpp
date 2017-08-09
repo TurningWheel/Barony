@@ -5966,11 +5966,18 @@ int Entity::getAttackPose() const
 				pose = 1;  // vertical swing
 			}
 		}
-		else if ( Entity::hasRangedWeapon() )
+		else if ( this->hasRangedWeapon() )
 		{
 			if ( myStats->type == KOBOLD )
 			{
-				pose = MONSTER_POSE_RANGED_WINDUP2;
+				if ( myStats->weapon->type == CROSSBOW )
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP1;
+				}
+				else
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP2;
+				}
 			}
 			else
 			{
