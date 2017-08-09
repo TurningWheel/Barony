@@ -656,8 +656,6 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->attack(3, 0, nullptr);
 						}
 					}
-
-					MONSTER_ATTACKTIME++; // manually increment counter
 				}
 				// default swing
 				else if ( MONSTER_ATTACK == 3 )
@@ -854,7 +852,7 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MELEE_WINDUP3 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
