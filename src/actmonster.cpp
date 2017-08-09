@@ -4293,7 +4293,7 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 		// check if ready to attack
 		if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
 		{
-			handleMonsterSpecialAttack(my, myStats, nullptr, dist, hasrangedweapon);
+			handleMonsterSpecialAttack(my, myStats, nullptr, dist);
 
 			if ( myStats->type == LICH )
 			{
@@ -4776,12 +4776,13 @@ bool forceFollower(Entity& leader, Entity& follower)
 	return true;
 }
 
-void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon)
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 {
 	int specialRoll = 0;
 	node_t* node = nullptr;
 	int enemiesNearby = 0;
 	int bonusFromHP = 0;
+	bool hasrangedweapon = my->hasRangedWeapon();
 
 	if ( myStats != nullptr )
 	{

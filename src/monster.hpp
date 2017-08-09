@@ -397,7 +397,7 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
-void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon);
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist);
 real_t normaliseAngle2PI(real_t angle);
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
 int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);
