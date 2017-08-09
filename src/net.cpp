@@ -866,43 +866,49 @@ void clientActions(Entity* entity)
 			entity->behavior = &actTorch;
 			entity->flags[NOUPDATE] = 1;
 			break;
-		case 113:
-		case 114:
-		case 115:
-		case 116:
-		case 117:
-		case 125:
-		case 126:
-		case 127:
-		case 128:
-		case 129:
-		case 332:
-		case 333:
-		case 341:
-		case 342:
-		case 343:
-		case 344:
-		case 345:
-		case 346:
-		case 354:
-		case 355:
-		case 356:
-		case 357:
-		case 358:
-		case 359:
-		case 367:
-		case 368:
-		case 369:
-		case 370:
-		case 371:
-		case 372:
-		case 380:
-		case 381:
-		case 382:
-		case 383:
-		case 384:
-		case 385:
-			// these are all human heads
+		case 113: // MaleHead1
+		case 114: // MaleHead2
+		case 115: // MaleHead3
+		case 116: // MaleHead4
+		case 117: // MaleHead5
+
+		case 125: // FemaleHead1
+		case 126: // FemaleHead2
+		case 127: // FemaleHead3
+		case 128: // FemaleHead4
+		case 129: // FemaleHead5
+        
+		case 332: // MaleHead6
+		case 333: // FemaleHead6
+
+		case 341: // MaleMedHead1
+		case 342: // MaleMedHead2
+		case 343: // MaleMedHead3
+		case 344: // MaleMedHead4
+		case 345: // MaleMedHead5
+		case 346: // MaleMedHead6
+
+		case 354: // FemaleMedHead1
+		case 355: // FemaleMedHead2
+		case 356: // FemaleMedHead3
+		case 357: // FemaleMedHead4
+		case 358: // FemaleMedHead5
+		case 359: // FemaleMedHead6
+
+		case 367: // MaleDarkHead1
+		case 368: // MaleDarkHead2
+		case 369: // MaleDarkHead3
+		case 370: // MaleDarkHead4
+		case 371: // MaleDarkHead5
+		case 372: // MaleDarkHead6
+
+		case 380: // FemaleDarkHead1
+		case 381: // FemaleDarkHead2
+		case 382: // FemaleDarkHead3
+		case 383: // FemaleDarkHead4
+		case 384: // FemaleDarkHead5
+		case 385: // FemaleDarkHead6
+			// Execute actplayer.cpp - actPlayer() on the human that has been clicked
 			playernum = SDLNet_Read32(&net_packet->data[30]);
 			if ( playernum >= 0 && playernum < MAXPLAYERS )
 			{
@@ -2131,7 +2137,7 @@ void clientHandlePacket()
 				{
 					if ( c < 1 || (c < 2 && entity->behavior == &actMonster) )
 					{
-						return;
+						continue;
 					}
 					Entity* tempEntity = (Entity*)tempNode->element;
 					if ( entity->behavior == &actMonster )

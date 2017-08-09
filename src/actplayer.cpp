@@ -944,11 +944,13 @@ void actPlayer(Entity* my)
 			}
 		}
 	}
-	if (!swimming)
-		if (PLAYER_INWATER)
-		{
-			PLAYER_INWATER = 0;
-		}
+    if ( !swimming )
+    {
+        if ( PLAYER_INWATER )
+        {
+            PLAYER_INWATER = 0;
+        }
+    }
 
 	if (PLAYER_NUM == clientnum)
 	{
@@ -1104,6 +1106,7 @@ void actPlayer(Entity* my)
 		}
 	}
 
+    // Server Host right-clicks another Player to attempt the "bump" action
 	if (multiplayer != CLIENT)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
@@ -1113,8 +1116,11 @@ void actPlayer(Entity* my)
 				PLAYER_CLICKED = 0;
 				if (inrange[i] && i != PLAYER_NUM)
 				{
+                    // Display the bumped Client's Stats
 					messagePlayer(i, language[575], stats[PLAYER_NUM]->name, stats[PLAYER_NUM]->HP, stats[PLAYER_NUM]->MAXHP, stats[PLAYER_NUM]->MP, stats[PLAYER_NUM]->MAXMP);
-					messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
+					// Message the bumped Client that they were bumped
+                    messagePlayer(PLAYER_NUM, language[576], stats[i]->name);
+                    // Locally push the player, the Client will be pushed by the previous message on arrival
 					if (PLAYER_NUM == clientnum && players[i] && players[i]->entity)
 					{
 						double tangent = atan2(my->y - players[i]->entity->y, my->x - players[i]->entity->x);
@@ -2906,11 +2912,7 @@ void actPlayerLimb(Entity* my)
 				}
 			}
 		}
-	}
-
-	if (multiplayer != CLIENT)
-	{
-		return;
+        return;
 	}
 
 	if (my->skill[2] < 0 || my->skill[2] >= MAXPLAYERS )
