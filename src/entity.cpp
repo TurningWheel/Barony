@@ -3405,24 +3405,51 @@ void Entity::attack(int pose, int charge, Entity* target)
 					// thrown items have slightly faster velocities
 					if ( (myStats->weapon->type == STEEL_CHAKRAM || myStats->weapon->type == CRYSTAL_SHURIKEN) )
 					{
-						// todo: change velocity of chakram/shuriken?
-						entity->vel_x = 6 * cos(players[player]->entity->yaw);
-						entity->vel_y = 6 * sin(players[player]->entity->yaw);
-						entity->vel_z = -.3;
+						if ( this->behavior == &actPlayer )
+						{
+							// todo: change velocity of chakram/shuriken?
+							entity->vel_x = 6 * cos(players[player]->entity->yaw);
+							entity->vel_y = 6 * sin(players[player]->entity->yaw);
+							entity->vel_z = -.3;
+						}
+						else if ( this->behavior == &actMonster )
+						{
+							// todo: change velocity of chakram/shuriken?
+							entity->vel_x = 6 * cos(this->yaw);
+							entity->vel_y = 6 * sin(this->yaw);
+							entity->vel_z = -.3;
+						}
 					}
 					else
 					{
-						entity->vel_x = 6 * cos(players[player]->entity->yaw);
-						entity->vel_y = 6 * sin(players[player]->entity->yaw);
-						entity->vel_z = -.3;
+						if ( this->behavior == &actPlayer )
+						{
+							entity->vel_x = 6 * cos(players[player]->entity->yaw);
+							entity->vel_y = 6 * sin(players[player]->entity->yaw);
+							entity->vel_z = -.3;
+						}
+						else if ( this->behavior == &actMonster )
+						{
+							entity->vel_x = 6 * cos(this->yaw);
+							entity->vel_y = 6 * sin(this->yaw);
+							entity->vel_z = -.3;
+						}
 					}
 				}
 				else
 				{
-					entity->vel_x = 5 * cos(players[player]->entity->yaw);
-					entity->vel_y = 5 * sin(players[player]->entity->yaw);
-					entity->vel_z = -.5;
-
+					if ( this->behavior == &actPlayer )
+					{
+						entity->vel_x = 5 * cos(players[player]->entity->yaw);
+						entity->vel_y = 5 * sin(players[player]->entity->yaw);
+						entity->vel_z = -.5;
+					}
+					else if ( this->behavior == &actMonster )
+					{
+						entity->vel_x = 5 * cos(this->yaw);
+						entity->vel_y = 5 * sin(this->yaw);
+						entity->vel_z = -.5;
+					}
 				}
 
 				myStats->weapon->count--;
@@ -5974,6 +6001,10 @@ int Entity::getAttackPose() const
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP1;
 				}
+				if ( itemCategory(myStats->weapon) == THROWN )
+				{
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+				}
 				else
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP2;
@@ -6063,6 +6094,10 @@ bool Entity::hasRangedWeapon() const
 		return true;
 	}
 	else if ( itemCategory(myStats->weapon) == SPELLBOOK )
+	{
+		return true;
+	}
+	else if ( itemCategory(myStats->weapon) == THROWN )
 	{
 		return true;
 	}
