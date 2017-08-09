@@ -17,8 +17,7 @@
 #define VERSION "v2.0.5"
 #define GAME_CODE
 
-#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
-
+//#define MAX_FPS_LIMIT 60 //TODO: Make this configurable.
 class Entity;
 
 extern list_t steamAchievements;
@@ -132,6 +131,7 @@ void actDeathCam(Entity* my);
 void actPlayer(Entity* my);
 void actPlayerLimb(Entity* my);
 void actTorch(Entity* my);
+void actCrystalShard(Entity* my);
 void actDoor(Entity* my);
 void actHudWeapon(Entity* my);
 void actHudShield(Entity* my);
@@ -148,7 +148,7 @@ void actPortal(Entity* my);
 void actWinningPortal(Entity* my);
 void actFlame(Entity* my);
 void actCampfire(Entity* my);
-Entity* spawnFlame(Entity* parentent);
+Entity* spawnFlame(Entity* parentent, Sint32 sprite);
 void actMagic(Entity* my);
 Entity* castMagic(Entity* parentent);
 void actSprite(Entity* my);
@@ -159,6 +159,10 @@ Entity* spawnSleepZ(Sint16 x, Sint16 y, Sint16 z);
 void actArrow(Entity* my);
 void actBoulder(Entity* my);
 void actBoulderTrap(Entity* my);
+void actBoulderTrapEast(Entity* my);
+void actBoulderTrapWest(Entity* my);
+void actBoulderTrapSouth(Entity* my);
+void actBoulderTrapNorth(Entity* my);
 void actHeadstone(Entity* my);
 void actThrown(Entity* my);
 void actBeartrap(Entity* my);
@@ -166,6 +170,9 @@ void actBeartrapLaunched(Entity* my);
 void actSpearTrap(Entity* my);
 void actWallBuster(Entity* my);
 void actWallBuilder(Entity* my);
+void actPowerCrystalBase(Entity* my);
+void actPowerCrystal(Entity* my);
+void actPowerCrystalParticleIdle(Entity* my);
 
 void startMessages();
 
@@ -189,6 +196,9 @@ extern char last_port[64];
 #define HP_MOD 5
 #define MP_MOD 5
 
+#define SPRITE_FLAME 13
+#define SPRITE_CRYSTALFLAME 96
+
 #define MAXCHARGE 30 // charging up weapons
 
 extern bool spawn_blood;
@@ -205,3 +215,5 @@ static const std::string PLAYERNAMES_FEMALE_FILE = "playernames-female.txt";
 extern std::vector<std::string> randomPlayerNamesMale;
 extern std::vector<std::string> randomPlayerNamesFemale;
 void loadRandomNames();
+
+void mapLevel(int player);

@@ -65,6 +65,11 @@ void consoleCommand(char* command_str)
 		fov = atoi(&command_str[5]);
 		fov = std::min(std::max<Uint32>(40, fov), 100u);
 	}
+	else if ( !strncmp(command_str, "/fps", 4) )
+	{
+		fpsLimit = atoi(&command_str[5]);
+		fpsLimit = std::min(std::max<Uint32>(60, fpsLimit), 144u);
+	}
 	else if (!strncmp(command_str, "/svflags ", 9))
 	{
 		if ( multiplayer == CLIENT )
@@ -770,6 +775,41 @@ void consoleCommand(char* command_str)
 			messagePlayer(clientnum, language[299]);
 		}
 	}
+	else if ( !strncmp(command_str, "/maxout2", 8) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if ( multiplayer == SINGLE )
+		{
+			int c;
+			Stat* myStats = stats[0];
+			for ( c = 0; c < 24; c++ )
+			{
+				consoleCommand("/levelup");
+			}
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			{
+				hotbar[c].item = 0;
+			}
+			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			newItem(CROSSBOW, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->helmet = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, &myStats->inventory);
+			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+	}
 	else if (!strncmp(command_str, "/maxout", 7))
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -796,7 +836,12 @@ void consoleCommand(char* command_str)
 			consoleCommand("/spawnitem magicstaff of lightning");
 			for ( c = 0; c < NUMPROFICIENCIES; c++ )
 			{
-				stats[clientnum]->PROFICIENCIES[c] = 100;
+				//for ( int j = 0; j < 100; ++j )
+				while ( stats[clientnum]->PROFICIENCIES[c] < 100 )
+				{
+					//++stats[clientnum]->PROFICIENCIES[c];
+					players[clientnum]->entity->increaseSkill(c);
+				}
 			}
 		}
 		else
@@ -863,6 +908,55 @@ void consoleCommand(char* command_str)
 	{
 		messagePlayer(clientnum, language[300], list_Size(map.entities));
 	}
+	else if ( !strncmp(command_str, "/nummonsters", 12) )
+	{
+		messagePlayer(clientnum, language[2353], nummonsters);
+	}
+	else if ( !strncmp(command_str, "/loadmodels ", 12) )
+	{
+		char name2[128];
+		char buf[16] = "";
+		int startIndex = 0;
+		int endIndex = nummodels;
+		int i = 0;
+		strcpy(name, command_str + 12);
+		for ( c = 0; name[c] != '\0'; c++ )
+		{
+			if ( name[c] == ' ' && startIndex == 0 )
+			{
+				startIndex = atoi(buf);
+				strcpy(buf, "");
+				i = 0;
+				continue;
+			}
+			buf[i] = name[c];
+			i++;
+		}
+
+		if ( startIndex != 0 )
+		{
+			endIndex = atoi(buf);
+			if ( endIndex > nummodels || endIndex < startIndex )
+			{
+				endIndex = nummodels;
+			}
+		}
+
+		FILE *fp = openDataFile("models/models.txt", "r");
+		for ( c = 0; !feof(fp); c++ )
+		{
+			fscanf(fp, "%s", name2);
+			while ( fgetc(fp) != '\n' ) if ( feof(fp) )
+			{
+				break;
+			}
+			models[c] = loadVoxel(name2);
+		}
+		fclose(fp);
+		messagePlayer(clientnum, language[2354]);
+		messagePlayer(clientnum, language[2355], startIndex, endIndex);
+		generatePolyModels(startIndex, endIndex);
+	}
 	else if (!strncmp(command_str, "/killmonsters", 13))
 	{
 		if ( !(svFlags & SV_FLAG_CHEATS) )
@@ -924,7 +1018,7 @@ void consoleCommand(char* command_str)
 		players[clientnum]->entity->flags[BURNING] = true;
 		for ( c = 0; c < 100; c++ )
 		{
-			entity = spawnFlame(players[clientnum]->entity);
+			entity = spawnFlame(players[clientnum]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
 			double vel = rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
@@ -952,12 +1046,25 @@ void consoleCommand(char* command_str)
 
 			for (i = 1; i < NUMMONSTERS; ++i)   //Start at 1 because 0 is a nothing.
 			{
-				if (strstr(language[90 + i], name))
+				if ( i < KOBOLD ) //Search original monsters
 				{
-					creature = i;
-					found = true;
-					break;
+					if ( strstr(language[90 + i], name) )
+					{
+						creature = i;
+						found = true;
+						break;
+					}
 				}
+				else if ( i >= KOBOLD ) //Search additional monsters
+				{
+					if ( strstr(language[2000 + (i - KOBOLD)], name) )
+					{
+						creature = i;
+						found = true;
+						break;
+					}
+				}
+
 			}
 
 			if (found)
@@ -968,11 +1075,25 @@ void consoleCommand(char* command_str)
 				Entity* monster = summonMonster(static_cast<Monster>(creature), players[clientnum]->entity->x + 32 * cos(players[clientnum]->entity->yaw), players[clientnum]->entity->y + 32 * sin(players[clientnum]->entity->yaw));
 				if (monster)
 				{
-					messagePlayer(clientnum, language[302], language[90 + creature]);
+					if ( i < KOBOLD )
+					{
+						messagePlayer(clientnum, language[302], language[90 + creature]);
+					}
+					else if ( i >= KOBOLD )
+					{
+						messagePlayer(clientnum, language[302], language[2000 + (creature-21)]);
+					}
 				}
 				else
 				{
-					messagePlayer(clientnum, language[303], language[90 + creature]);
+					if ( i < KOBOLD )
+					{
+						messagePlayer(clientnum, language[303], language[90 + creature]);
+					}
+					else if ( i >= KOBOLD )
+					{
+						messagePlayer(clientnum, language[303], language[2000 + (creature - KOBOLD)]);
+					}
 				}
 			}
 			else
@@ -1142,6 +1263,128 @@ void consoleCommand(char* command_str)
 		{
 			minotaurlevel = 1;
 			createMinotaurTimer(players[0]->entity, &map);
+		}
+	}
+	else if ( !strncmp(command_str, "/minotaurnow", 12) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		if ( minotaurlevel )
+		{
+			node_t *tmpNode = NULL;
+			Entity *tmpEnt = NULL;
+			for ( tmpNode = map.entities->first; tmpNode != NULL; tmpNode = tmpNode->next )
+			{
+				tmpEnt = (Entity*)tmpNode->element;
+				if ( tmpEnt->sprite == 37 )
+				{
+					tmpEnt->skill[0] += TICKS_PER_SECOND * 150;
+					return;
+				}
+			}
+		}
+	}
+	else if ( !strncmp(command_str, "/levelskill ", 12) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int skill = atoi(&command_str[12]);
+		if ( skill >= NUMPROFICIENCIES )
+		{
+			messagePlayer(clientnum, language[2451]); //Skill out of range.
+		}
+		else
+		{
+			for ( int i = 0; i < 10; ++i )
+			{
+				players[clientnum]->entity->increaseSkill(skill);
+			}
+		}
+	}
+	else if ( !strncmp(command_str, "/maplevel", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		messagePlayer(clientnum, language[412]);
+		printlog("Made it this far...");
+
+		mapLevel(clientnum);
+	}
+	else if ( !strncmp(command_str, "/drunky", 7) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		if ( !players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] )
+		{
+			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = true;
+			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = -1;
+		}
+		else
+		{
+			players[clientnum]->entity->getStats()->EFFECTS[EFF_DRUNK] = false;
+			players[clientnum]->entity->getStats()->EFFECTS_TIMERS[EFF_DRUNK] = 0;
+		}
+	}
+	else if ( !strncmp(command_str, "/maxskill ", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int skill = atoi(&command_str[12]);
+		if ( skill >= NUMPROFICIENCIES )
+		{
+			messagePlayer(clientnum, language[2451]); //Skill out of range.
+		}
+		else
+		{
+			for ( int i = players[clientnum]->entity->getStats()->PROFICIENCIES[skill]; i < 100; ++i )
+			{
+				players[clientnum]->entity->increaseSkill(skill);
+			}
 		}
 	}
 	else

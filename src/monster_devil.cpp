@@ -25,11 +25,7 @@ void initDevil(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 304;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(304);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,58 +36,6 @@ void initDevil(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "Baphomet");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 1250 + 250 * numplayers;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 2000;
-		myStats->MAXMP = 2000;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = -50;
-		myStats->DEX = -20;
-		myStats->CON = 10;
-		myStats->INT = 50;
-		myStats->PER = 500;
-		myStats->CHR = 50;
-		myStats->EXP = 0;
-		myStats->LVL = 30;
-		myStats->HUNGER = 900;
-		myStats->leader_uid = 0;
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max<real_t>(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
-			{
-				myStats->PROFICIENCIES[c] = 0;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		myStats->EFFECTS[EFF_LEVITATING] = true;
-		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
-
-		myStats->PROFICIENCIES[PRO_MAGIC] = 100;
-		myStats->PROFICIENCIES[PRO_SPELLCASTING] = 100;
 
 		if (players[0] && players[0]->entity)
 		{
@@ -194,38 +138,12 @@ void initDevil(Entity* my, Stat* myStats)
 
 void actDevilLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void devilDie(Entity* my)
 {
-	node_t* node, *nextnode;
+	node_t* node;
 
 	int c;
 	for ( c = 0; c < 5; c++ )
@@ -234,19 +152,9 @@ void devilDie(Entity* my)
 		serverSpawnGibForClient(gib);
 	}
 	//playSoundEntity(my, 28, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	if ( multiplayer == SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
@@ -324,7 +232,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* leftbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

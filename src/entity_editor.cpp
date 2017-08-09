@@ -9,7 +9,6 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
-
 #include "entity.hpp"
 
 
@@ -26,8 +25,33 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
-	chest_status(skill[1]),
-	chest_opener(skill[5])
+	chestInit(skill[0]),
+	chestStatus(skill[1]),
+	chestHealth(skill[3]),
+	chestLocked(skill[4]),
+	chestOpener(skill[5]),
+	chestLidClicked(skill[6]),
+	chestAmbience(skill[7]),
+	chestMaxHealth(skill[8]),
+	chestType(skill[9]),
+	chestPreventLockpickCapstoneExploit(skill[10]),
+	monsterState(skill[0]),
+	monsterTarget(skill[1]),
+	crystalInitialised(skill[1]),
+	crystalTurning(skill[3]),
+	crystalTurnStartDir(skill[4]),
+	crystalGeneratedElectricityNodes(skill[5]),
+	crystalNumElectricityNodes(skill[6]),
+	crystalHoverDirection(skill[7]),
+	crystalHoverWaitTimer(skill[8]),
+	crystalTurnReverse(skill[9]),
+	crystalSpellToActivate(skill[10]),
+	crystalStartZ(fskill[0]),
+	crystalMaxZVelocity(fskill[1]),
+	crystalMinZVelocity(fskill[2]),
+	crystalTurnVelocity(fskill[3]),
+	monsterAnimationLimbDirection(skill[20]),
+	monsterAnimationLimbOvershoot(skill[30])
 {
 	int c;
 	// add the entity to the entity list
@@ -77,9 +101,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	children.last = nullptr;
 	//this->magic_effects = (list_t *) malloc(sizeof(list_t));
 	//this->magic_effects->first = NULL; this->magic_effects->last = NULL;
-	for (c = 0; c < 30; ++c)
+	for ( c = 0; c < NUMENTITYSKILLS; ++c )
 	{
 		skill[c] = 0;
+	}
+	for (c = 0; c < NUMENTITYFSKILLS; ++c)
+	{
 		fskill[c] = 0;
 	}
 	skill[2] = -1;
@@ -110,3 +137,23 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 }
 
 Entity::~Entity() { }
+
+Stat* Entity::getStats() const
+{
+		if ( this->children.first != nullptr )
+		{
+			if ( this->children.first->next != nullptr )
+			{
+				return (Stat*)this->children.first->next->element;
+			}
+		}
+
+
+	return nullptr;
+}
+
+bool Entity::isInvisible() const
+{
+	//Dummy function.
+	return false;
+}

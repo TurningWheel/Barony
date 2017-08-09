@@ -367,3 +367,18 @@ inline bool hotbarGamepadControlEnabled()
 	return ( !openedChest[clientnum] && gui_mode != GUI_MODE_SHOP && !identifygui_active && !removecursegui_active );
 }
 
+extern SDL_Surface *str_bmp64u;
+extern SDL_Surface *dex_bmp64u;
+extern SDL_Surface *con_bmp64u;
+extern SDL_Surface *int_bmp64u;
+extern SDL_Surface *per_bmp64u;
+extern SDL_Surface *chr_bmp64u;
+extern SDL_Surface *str_bmp64;
+extern SDL_Surface *dex_bmp64;
+extern SDL_Surface *con_bmp64;
+extern SDL_Surface *int_bmp64;
+extern SDL_Surface *per_bmp64;
+extern SDL_Surface *chr_bmp64;
+
+void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
+

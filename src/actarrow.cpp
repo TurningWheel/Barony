@@ -123,7 +123,15 @@ void actArrow(Entity* my)
 					// update enemy bar for attacker
 					if ( !strcmp(hitstats->name, "") )
 					{
-						updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+						}
+						
 					}
 					else
 					{
@@ -208,7 +216,14 @@ void actArrow(Entity* my)
 							if ( !strcmp(hitstats->name, "") )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-								messagePlayerColor(parent->skill[2], color, language[446], language[90 + hitstats->type]);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									messagePlayerColor(parent->skill[2], color, language[446], language[90 + hitstats->type]);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									messagePlayerColor(parent->skill[2], color, language[446], language[2000 + (hitstats->type - KOBOLD)]);
+								}
 								if ( damage == 0 )
 								{
 									messagePlayer(parent->skill[2], language[447]);

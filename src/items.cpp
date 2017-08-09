@@ -335,7 +335,7 @@ char* Item::description()
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[982 + status], beatitude);
 			}
@@ -378,7 +378,7 @@ char* Item::description()
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1008 + status], count, beatitude);
 			}
@@ -424,7 +424,7 @@ char* Item::description()
 	{
 		if ( count < 2 )
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				strncpy(tempstr, language[1034 + status], 1024);
 			}
@@ -474,7 +474,7 @@ char* Item::description()
 		}
 		else
 		{
-			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL )
+			if ( itemCategory(this) == WEAPON || itemCategory(this) == ARMOR || itemCategory(this) == MAGICSTAFF || itemCategory(this) == TOOL || itemCategory(this) == THROWN )
 			{
 				snprintf(tempstr, 1024, language[1060 + status], count);
 			}
@@ -675,6 +675,9 @@ SDL_Surface* itemSprite(Item* item)
 
 int itemCompare(const Item* item1, const Item* item2)
 {
+	Sint32 model1 = 0;
+	Sint32 model2 = 0;
+
 	// null cases
 	if ( item1 == NULL )
 	{
@@ -708,9 +711,20 @@ int itemCompare(const Item* item1, const Item* item2)
 	{
 		return 1;
 	}
-	if (item1->appearance != item2->appearance)
+	/*if ( item1->appearance != item2->appearance )
 	{
 		return 1;
+	}*/
+	model1 = items[item1->type].index + item1->appearance % items[item1->type].variations;
+	model2 = items[item2->type].index + item2->appearance % items[item2->type].variations;
+	//messagePlayer(0, "item1- %d, item2 - %d", model1, model2);
+	if ( model1 != model2 )
+	{
+		return 1;
+	}
+	else if ( item1->type == SCROLL_MAIL || item1->type == READABLE_BOOK || items[item1->type].category == SPELL_CAT )
+	{
+		return 1; // these items do not stack
 	}
 	if (item1->identified != item2->identified)
 	{
@@ -854,40 +868,53 @@ void dropItem(Item* item, int player)
 
 Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 {
-	Entity* entity;
+	Entity* entity = nullptr;
+	bool itemDroppable = true;
 
 	if ( !item || !monster )
 	{
-		return NULL;
+		return nullptr;
 	}
 
-	entity = newEntity(-1, 1, map.entities);
-	entity->flags[INVISIBLE] = true;
-	entity->flags[UPDATENEEDED] = true;
-	entity->x = monster->x;
-	entity->y = monster->y;
-	entity->sizex = 4;
-	entity->sizey = 4;
-	entity->yaw = monster->yaw;
-	entity->vel_x = (rand() % 20 - 10) / 10.0;
-	entity->vel_y = (rand() % 20 - 10) / 10.0;
-	entity->vel_z = -.5;
-	entity->flags[PASSABLE] = true;
-	entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
-	entity->behavior = &actItem;
-	entity->skill[10] = item->type;
-	entity->skill[11] = item->status;
-	entity->skill[12] = item->beatitude;
-	entity->skill[13] = 1;
-	entity->skill[14] = item->appearance;
-	entity->skill[15] = item->identified;
-	entity->parent = monster->getUID();
+	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	{
+		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE) && itemCategory(item) == SPELLBOOK )
+		{
+			// monsters with special spell attacks won't drop their book.
+			itemDroppable = false;
+		}
+	}
+
+	if ( itemDroppable )
+	{
+		entity = newEntity(-1, 1, map.entities);
+		entity->flags[INVISIBLE] = true;
+		entity->flags[UPDATENEEDED] = true;
+		entity->x = monster->x;
+		entity->y = monster->y;
+		entity->sizex = 4;
+		entity->sizey = 4;
+		entity->yaw = monster->yaw;
+		entity->vel_x = (rand() % 20 - 10) / 10.0;
+		entity->vel_y = (rand() % 20 - 10) / 10.0;
+		entity->vel_z = -.5;
+		entity->flags[PASSABLE] = true;
+		entity->flags[USERFLAG1] = true; // speeds up game when many items are dropped
+		entity->behavior = &actItem;
+		entity->skill[10] = item->type;
+		entity->skill[11] = item->status;
+		entity->skill[12] = item->beatitude;
+		entity->skill[13] = 1;
+		entity->skill[14] = item->appearance;
+		entity->skill[15] = item->identified;
+		entity->parent = monster->getUID();
+	}
 
 	item->count--;
 	Item** slot;
-	if ( (slot = itemSlot(monsterStats, item)) != NULL )
+	if ( (slot = itemSlot(monsterStats, item)) != nullptr )
 	{
-		*slot = NULL; // clear the item slot
+		*slot = nullptr; // clear the item slot
 	}
 	if ( item->count <= 0 )
 	{
@@ -998,7 +1025,7 @@ void equipItem(Item* item, Item** slot, int player)
 					{
 						playSoundEntity(players[player]->entity, 44 + rand() % 3, 64);
 					}
-					else if (item->type == TOOL_TORCH || item->type == TOOL_LANTERN)
+					else if (item->type == TOOL_TORCH || item->type == TOOL_LANTERN || item->type == TOOL_CRYSTALSHARD )
 					{
 						playSoundEntity(players[player]->entity, 134, 64);
 					}
@@ -1132,7 +1159,7 @@ void useItem(Item* item, int player)
 		switch ( shopkeepertype )
 		{
 			case 0: // arms & armor
-				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && itemCategory(item) != THROWN )
 				{
 					deal = false;
 				}
@@ -1274,10 +1301,20 @@ void useItem(Item* item, int player)
 		case STEEL_SWORD:
 		case STEEL_MACE:
 		case STEEL_AXE:
+		case CRYSTAL_SWORD:
+		case CRYSTAL_SPEAR:
+		case CRYSTAL_BATTLEAXE:
+		case CRYSTAL_MACE:
+		case BRONZE_TOMAHAWK:
+		case IRON_DAGGER:
+		case STEEL_CHAKRAM:
+		case CRYSTAL_SHURIKEN:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case STEEL_SHIELD:
 		case STEEL_SHIELD_RESISTANCE:
+		case MIRROR_SHIELD:
+		case CRYSTAL_SHIELD:
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case CROSSBOW:
@@ -1289,12 +1326,19 @@ void useItem(Item* item, int player)
 		case BRACERS_CONSTITUTION:
 		case GAUNTLETS:
 		case GAUNTLETS_STRENGTH:
+		case ARTIFACT_GLOVES:
+		case CRYSTAL_GLOVES:
+		case BRASS_KNUCKLES:
+		case IRON_KNUCKLES:
+		case SPIKED_GAUNTLETS:
 			equipItem(item, &stats[player]->gloves, player);
 			break;
 		case CLOAK:
+		case CLOAK_BLACK:
 		case CLOAK_MAGICREFLECTION:
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
+		case ARTIFACT_CLOAK:
 			equipItem(item, &stats[player]->cloak, player);
 			break;
 		case LEATHER_BOOTS:
@@ -1304,11 +1348,18 @@ void useItem(Item* item, int player)
 		case STEEL_BOOTS:
 		case STEEL_BOOTS_LEVITATION:
 		case STEEL_BOOTS_FEATHER:
+		case ARTIFACT_BOOTS:
+		case CRYSTAL_BOOTS:
 			equipItem(item, &stats[player]->shoes, player);
 			break;
 		case LEATHER_BREASTPIECE:
 		case IRON_BREASTPIECE:
 		case STEEL_BREASTPIECE:
+		case CRYSTAL_BREASTPIECE:
+		case VAMPIRE_DOUBLET:
+		case WIZARD_DOUBLET:
+		case HEALER_DOUBLET:
+		case ARTIFACT_BREASTPIECE:
 			equipItem(item, &stats[player]->breastplate, player);
 			break;
 		case HAT_PHRYGIAN:
@@ -1318,6 +1369,8 @@ void useItem(Item* item, int player)
 		case LEATHER_HELM:
 		case IRON_HELM:
 		case STEEL_HELM:
+		case CRYSTAL_HELM:
+		case ARTIFACT_HELM:
 			equipItem(item, &stats[player]->helmet, player);
 			break;
 		case AMULET_SEXCHANGE:
@@ -1486,6 +1539,9 @@ void useItem(Item* item, int player)
 		case MAGICSTAFF_FIRE:
 		case MAGICSTAFF_LIGHTNING:
 		case MAGICSTAFF_SLEEP:
+		case MAGICSTAFF_STONEBLOOD:
+		case MAGICSTAFF_BLEED:
+		case MAGICSTAFF_SUMMON:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
 		case RING_ADORNMENT:
@@ -1523,6 +1579,9 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_EXTRAHEALING:
 		case SPELLBOOK_CUREAILMENT:
 		case SPELLBOOK_DIG:
+		case SPELLBOOK_SUMMON:
+		case SPELLBOOK_STONEBLOOD:
+		case SPELLBOOK_BLEED:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
@@ -1560,9 +1619,12 @@ void useItem(Item* item, int player)
 			break;
 		case TOOL_TORCH:
 		case TOOL_LANTERN:
+		case TOOL_CRYSTALSHARD:
 			equipItem(item, &stats[player]->shield, player);
 			break;
 		case TOOL_BLINDFOLD:
+		case TOOL_BLINDFOLD_FOCUS:
+		case TOOL_BLINDFOLD_TELEPATHY:
 			equipItem(item, &stats[player]->mask, player);
 			break;
 		case TOOL_TOWEL:
@@ -1585,6 +1647,7 @@ void useItem(Item* item, int player)
 		case FOOD_APPLE:
 		case FOOD_MEAT:
 		case FOOD_FISH:
+		case FOOD_TOMALLEY:
 			item_Food(item, player);
 			break;
 		case FOOD_TIN:
@@ -1675,6 +1738,10 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
+			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+			{
+				item->identified = true;
+			}
 			if (!itemCompare(item, item2))
 			{
 				item2->count += item->count;
@@ -1913,6 +1980,22 @@ Sint32 Item::weaponGetAttack()
 	{
 		attack += 15;
 	}
+	else if ( type == CRYSTAL_SWORD )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_SPEAR )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_BATTLEAXE )
+	{
+		attack += 7;
+	}
+	else if ( type == CRYSTAL_MACE )
+	{
+		attack += 7;
+	}
 	attack *= (double)(status / 5.0);
 
 	return attack;
@@ -1952,6 +2035,14 @@ Sint32 Item::armorGetAC()
 	else if ( type == STEEL_BREASTPIECE )
 	{
 		armor += 4;
+	}
+	else if ( type == WIZARD_DOUBLET || type == HEALER_DOUBLET )
+	{
+		armor += 0;
+	}
+	else if ( type == VAMPIRE_DOUBLET )
+	{
+		armor += 1;
 	}
 	else if ( type == GLOVES || type == GLOVES_DEXTERITY )
 	{
@@ -2000,6 +2091,62 @@ Sint32 Item::armorGetAC()
 	else if ( type == RING_PROTECTION )
 	{
 		armor += 1;
+	}
+	else if ( type == CRYSTAL_BREASTPIECE )
+	{
+		armor += 5;
+	}
+	else if ( type == CRYSTAL_HELM )
+	{
+		armor += 4;
+	}
+	else if ( type == CRYSTAL_BOOTS )
+	{
+		armor += 4;
+	}
+	else if ( type == CRYSTAL_SHIELD )
+	{
+		armor += 5;
+	}
+	else if ( type == CRYSTAL_GLOVES )
+	{
+		armor += 4;
+	}
+	else if ( type == ARTIFACT_BREASTPIECE )
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_HELM)
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_BOOTS )
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_GLOVES )
+	{
+		armor += 6;
+	}
+	else if ( type == ARTIFACT_CLOAK )
+	{
+		armor += 0;
+	}
+	else if ( type == MIRROR_SHIELD )
+	{
+		armor += 0;
+	}
+	else if ( type == BRASS_KNUCKLES )
+	{
+		armor += 1;
+	}
+	else if ( type == IRON_KNUCKLES )
+	{
+		armor += 2;
+	}
+	else if ( type == SPIKED_GAUNTLETS )
+	{
+		armor += 3;
 	}
 	//armor *= (double)(item->status/5.0);
 
@@ -2130,6 +2277,11 @@ int Item::sellValue(int player)
 
 void Item::apply(int player, Entity* entity)
 {
+	if ( !entity )
+	{
+		return;
+	}
+
 	// for clients:
 	if ( multiplayer == CLIENT )
 	{
@@ -2152,165 +2304,11 @@ void Item::apply(int player, Entity* entity)
 	// effects
 	if ( type == TOOL_SKELETONKEY )
 	{
-		// skeleton key
-		if ( entity->behavior == &actChest )
-		{
-			playSoundEntity(entity, 91, 64);
-			if ( entity->skill[4] )
-			{
-				messagePlayer(player, language[1097]);
-				entity->skill[4] = 0;
-			}
-			else
-			{
-				messagePlayer(player, language[1098]);
-				entity->skill[4] = 1;
-			}
-		}
-		else if ( entity->behavior == &actDoor )
-		{
-			playSoundEntity(entity, 91, 64);
-			if ( entity->skill[5] )
-			{
-				messagePlayer(player, language[1099]);
-				entity->skill[5] = 0;
-			}
-			else
-			{
-				messagePlayer(player, language[1100]);
-				entity->skill[5] = 1;
-			}
-		}
-		else
-		{
-			messagePlayer(player, language[1101], getName());
-		}
+		applySkeletonKey(player, *entity);
 	}
 	else if ( type == TOOL_LOCKPICK )
 	{
-		// lockpicks
-		if ( entity->behavior == &actChest )
-		{
-			if ( entity->skill[4] )
-			{
-				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
-				{
-					playSoundEntity(entity, 91, 64);
-					messagePlayer(player, language[1097]);
-					entity->skill[4] = 0;
-					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-				}
-				else
-				{
-					playSoundEntity(entity, 92, 64);
-					messagePlayer(player, language[1102]);
-					if (rand() % 10 == 0)
-					{
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-					}
-					else
-					{
-						if ( rand() % 5 == 0 )
-						{
-							if ( player == clientnum )
-							{
-								if ( count > 1 )
-								{
-									newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
-								}
-							}
-							stats[player]->weapon->count = 1;
-							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
-							if ( status != BROKEN )
-							{
-								messagePlayer(player, language[1103]);
-							}
-							else
-							{
-								messagePlayer(player, language[1104]);
-							}
-							if ( player > 0 && multiplayer == SERVER )
-							{
-								strcpy((char*)net_packet->data, "ARMR");
-								net_packet->data[4] = 5;
-								net_packet->data[5] = stats[player]->weapon->status;
-								net_packet->address.host = net_clients[player - 1].host;
-								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, player - 1);
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				messagePlayer(player, language[1105]);
-			}
-		}
-		else if ( entity->behavior == &actDoor )
-		{
-			if ( entity->skill[5] )
-			{
-				if ( stats[player]->PROFICIENCIES[PRO_LOCKPICKING] > rand() % 400 )
-				{
-					playSoundEntity(entity, 91, 64);
-					messagePlayer(player, language[1099]);
-					entity->skill[5] = 0;
-					players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-				}
-				else
-				{
-					playSoundEntity(entity, 92, 64);
-					messagePlayer(player, language[1106]);
-					if ( rand() % 10 == 0 )
-					{
-						players[player]->entity->increaseSkill(PRO_LOCKPICKING);
-					}
-					else
-					{
-						if ( rand() % 5 == 0 )
-						{
-							if ( player == clientnum )
-							{
-								if ( count > 1 )
-								{
-									newItem(type, status, beatitude, count - 1, appearance, identified, &stats[player]->inventory);
-								}
-							}
-							stats[player]->weapon->count = 1;
-							stats[player]->weapon->status = static_cast<Status>(stats[player]->weapon->status - 1);
-							if ( status != BROKEN )
-							{
-								messagePlayer(player, language[1103]);
-							}
-							else
-							{
-								messagePlayer(player, language[1104]);
-							}
-							if ( player > 0 && multiplayer == SERVER )
-							{
-								strcpy((char*)net_packet->data, "ARMR");
-								net_packet->data[4] = 5;
-								net_packet->data[5] = stats[player]->weapon->status;
-								net_packet->address.host = net_clients[player - 1].host;
-								net_packet->address.port = net_clients[player - 1].port;
-								net_packet->len = 6;
-								sendPacketSafe(net_sock, -1, net_packet, player - 1);
-							}
-						}
-					}
-				}
-			}
-			else
-			{
-				messagePlayer(player, language[1107]);
-			}
-		}
-		else
-		{
-			messagePlayer(player, language[1101], getName());
-		}
+		applyLockpick(player, *entity);
 	}
 }
 
@@ -2337,4 +2335,319 @@ bool isPotionBad(const Item& potion)
 	}
 
 	return false;
+}
+
+void createCustomInventory(Stat* stats, int itemLimit)
+{
+	int itemSlots[6] = { ITEM_SLOT_INV_1, ITEM_SLOT_INV_2, ITEM_SLOT_INV_3, ITEM_SLOT_INV_4, ITEM_SLOT_INV_5, ITEM_SLOT_INV_6 };
+	int i = 0;
+	ItemType itemId;
+	Status itemStatus;
+	int itemBless;
+	int itemAppearance = rand();
+	int itemCount;
+	int category = 0;
+	bool itemIdentified;
+	int itemsGenerated = 0;
+	int chance = 1;
+
+	if ( stats != nullptr )
+	{
+		for ( i = 0; i < 6 && itemsGenerated <= itemLimit; ++i )
+		{
+			category = stats->EDITOR_ITEMS[itemSlots[i] + ITEM_SLOT_CATEGORY];
+			if ( category > 0 && stats->EDITOR_ITEMS[itemSlots[i]] == 1 )
+			{
+				if ( category > 0 && category <= 13 )
+				{
+					itemId = itemCurve(static_cast<Category>(category - 1));
+				}
+				else
+				{
+					int randType = 0;
+					if ( category == 14 )
+					{
+						// equipment
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(WEAPON));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(ARMOR));
+						}
+					}
+					else if ( category == 15 )
+					{
+						// jewelry
+						randType = rand() % 2;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(AMULET));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(RING));
+						}
+					}
+					else if ( category == 16 )
+					{
+						// magical
+						randType = rand() % 3;
+						if ( randType == 0 )
+						{
+							itemId = itemCurve(static_cast<Category>(SCROLL));
+						}
+						else if ( randType == 1 )
+						{
+							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+						}
+						else
+						{
+							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+						}
+					}
+				}
+			}
+			else
+			{
+				itemId = static_cast<ItemType>(stats->EDITOR_ITEMS[itemSlots[i]] - 2);
+			}
+
+			if ( itemId >= 0 )
+			{
+				itemStatus = static_cast<Status>(stats->EDITOR_ITEMS[itemSlots[i] + 1]);
+				if ( itemStatus == 0 )
+				{
+					itemStatus = static_cast<Status>(DECREPIT + rand() % 4);
+				}
+				itemBless = stats->EDITOR_ITEMS[itemSlots[i] + 2];
+				if ( itemBless == 10 )
+				{
+					itemBless = -1 + rand() % 3;
+				}
+				itemCount = stats->EDITOR_ITEMS[itemSlots[i] + 3];
+				if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 1 )
+				{
+					itemIdentified = false;
+				}
+				else if ( stats->EDITOR_ITEMS[itemSlots[i] + 4] == 2 )
+				{
+					itemIdentified = true;
+				}
+				else
+				{
+					itemIdentified = rand() % 2;
+				}
+				itemAppearance = rand();
+				chance = stats->EDITOR_ITEMS[itemSlots[i] + 5];
+				if ( rand() % 100 < chance )
+				{
+					newItem(itemId, itemStatus, itemBless, itemCount, itemAppearance, itemIdentified, &stats->inventory);
+				}
+				itemsGenerated++;
+			}
+		}
+	}
+}
+
+node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
+{
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( cat >= WEAPON && itemCategory(item) == cat )
+			{
+				return node;
+			} 
+			else if ( itemToFind != -1 && item->type == itemToFind )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
+{
+	Item* item = nullptr;
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || inventoryNode == nullptr )
+	{
+		return false;
+	}
+
+	item = (Item*)inventoryNode->element;
+	
+	if ( item->count == 1 )
+	{
+		// TODO: handle stacks.
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		copyItem(tmpItem, item);
+		if ( myStats->weapon != nullptr )
+		{
+			copyItem(item, myStats->weapon);
+			copyItem(myStats->weapon, tmpItem);
+			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			{
+				playSoundEntity(my, 40 + rand() % 4, 64);
+			}
+			free(tmpItem);
+		}
+		else
+		{
+			myStats->weapon = tmpItem;
+			// remove the new item we created.
+			list_RemoveNode(inventoryNode);
+		}
+		return true;
+	}
+
+	return false;
+}
+
+bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip)
+{
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || *slot == nullptr )
+	{
+		return false;
+	}
+
+	if ( itemCompare(*slot, itemToUnequip) )
+	{
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, &myStats->inventory);
+		copyItem(tmpItem, itemToUnequip);
+
+		if ( (*slot)->node )
+		{
+			list_RemoveNode((*slot)->node);
+		}
+		else
+		{
+			free(*slot);
+		}
+
+		*slot = nullptr;
+	}
+
+	return true;
+}
+
+bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
+{
+	Item* tmpItem = nullptr;
+
+	if ( myStats == nullptr || *slot == nullptr )
+	{
+		return false;
+	}
+
+	if ( itemCategory(*slot) == cat)
+	{
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, &myStats->inventory);
+		copyItem(tmpItem, *slot);
+
+		if ( (*slot)->node )
+		{
+			list_RemoveNode((*slot)->node);
+		}
+		else
+		{
+			free(*slot);
+		}
+
+		*slot = nullptr;
+		//messagePlayer(0, "un-equip!");
+		return true;
+	}
+
+	return false;
+}
+
+void copyItem(Item* itemToSet, Item* itemToCopy)
+{
+	itemToSet->type = itemToCopy->type;
+	itemToSet->status = itemToCopy->status;
+	itemToSet->beatitude = itemToCopy->beatitude;
+	itemToSet->count = itemToCopy->count;
+	itemToSet->appearance = itemToCopy->appearance;
+	itemToSet->identified = itemToCopy->identified;
+	itemToSet->uid = itemToCopy->uid;
+
+	return;
+}
+
+ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
+{
+	int numitems = NUMITEMS;
+	int numoftype = 0;
+	bool chances[NUMITEMS] = { false };
+	bool pickAnyCategory = false;
+	int c;
+
+	if ( cat < -1 || cat >= NUMCATEGORIES )
+	{
+		printlog("warning: pickItemWithinGoldValue() called with bad category value!\n");
+		return GEM_ROCK;
+	}
+
+	if ( cat == -1 )
+	{
+		pickAnyCategory = true;
+	}
+
+	// find highest value of items in category
+	for ( c = 0; c < NUMITEMS; ++c )
+	{
+		if ( items[c].category == cat || (pickAnyCategory && items[c].category != SPELL_CAT) )
+		{
+			if ( items[c].value >= minValue && items[c].value <= maxValue )
+			{
+				chances[c] = true;
+				numoftype++;
+			}
+		}
+	}
+	
+	if ( numoftype == 0 )
+	{
+		printlog("warning: category passed has no items within gold values!\n");
+		return GEM_ROCK;
+	}
+
+	// pick the item
+	int pick = prng_get_uint() % numoftype;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( chances[c] == true )
+		{
+			if ( pick == 0 )
+			{
+				return static_cast<ItemType>(c);
+			}
+			else
+			{
+				pick--;
+			}
+		}
+	}
+
+	return GEM_ROCK;
 }

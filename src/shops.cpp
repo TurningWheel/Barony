@@ -236,59 +236,66 @@ void sellItemToShop(Item* item)
 	}
 
 	bool deal = true;
-	switch ( shopkeepertype )
+	if ( stats[clientnum]->PROFICIENCIES[PRO_TRADING] >= CAPSTONE_UNLOCK_LEVEL[PRO_TRADING] )
 	{
-		case 0: // arms & armor
-			if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
-			{
-				deal = false;
-			}
-			break;
-		case 1: // hats
-			if ( itemCategory(item) != ARMOR )
-			{
-				deal = false;
-			}
-			break;
-		case 2: // jewelry
-			if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
-			{
-				deal = false;
-			}
-			break;
-		case 3: // bookstore
-			if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
-			{
-				deal = false;
-			}
-			break;
-		case 4: // potion shop
-			if ( itemCategory(item) != POTION )
-			{
-				deal = false;
-			}
-			break;
-		case 5: // magicstaffs
-			if ( itemCategory(item) != MAGICSTAFF )
-			{
-				deal = false;
-			}
-			break;
-		case 6: // food
-			if ( itemCategory(item) != FOOD )
-			{
-				deal = false;
-			}
-			break;
-		case 7: // tools
-		case 8: // lights
-			if ( itemCategory(item) != TOOL )
-			{
-				deal = false;
-			}
-			break;
-		default:
-			break;
+		//Skill capstone: Can sell anything to any shop.
+	}
+	else
+	{
+		switch ( shopkeepertype )
+		{
+			case 0: // arms & armor
+				if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR )
+				{
+					deal = false;
+				}
+				break;
+			case 1: // hats
+				if ( itemCategory(item) != ARMOR )
+				{
+					deal = false;
+				}
+				break;
+			case 2: // jewelry
+				if ( itemCategory(item) != RING && itemCategory(item) != AMULET && itemCategory(item) != GEM )
+				{
+					deal = false;
+				}
+				break;
+			case 3: // bookstore
+				if ( itemCategory(item) != SPELLBOOK && itemCategory(item) != SCROLL && itemCategory(item) != BOOK )
+				{
+					deal = false;
+				}
+				break;
+			case 4: // potion shop
+				if ( itemCategory(item) != POTION )
+				{
+					deal = false;
+				}
+				break;
+			case 5: // magicstaffs
+				if ( itemCategory(item) != MAGICSTAFF )
+				{
+					deal = false;
+				}
+				break;
+			case 6: // food
+				if ( itemCategory(item) != FOOD )
+				{
+					deal = false;
+				}
+				break;
+			case 7: // tools
+			case 8: // lights
+				if ( itemCategory(item) != TOOL )
+				{
+					deal = false;
+				}
+				break;
+			default:
+				break;
+		}
 	}
 	if ( !deal )
 	{

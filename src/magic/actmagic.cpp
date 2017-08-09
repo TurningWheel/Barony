@@ -646,7 +646,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							else
 							{
-								messagePlayerColor(parent->skill[2], color, language[378], language[90 + hitstats->type]);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									messagePlayerColor(parent->skill[2], color, language[378], language[90 + hitstats->type]);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									messagePlayerColor(parent->skill[2], color, language[378], language[2000 + (hitstats->type - KOBOLD)]);
+								}
 							}
 						}
 					}
@@ -728,27 +735,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if ( !reflection )
 					{
-						if (hitstats->amulet)
-						{
-							if (hitstats->amulet->type == AMULET_MAGICREFLECTION)
-							{
-								reflection = 2;
-							}
-						}
-						if (hitstats->cloak)
-						{
-							if (hitstats->cloak->type == CLOAK_MAGICREFLECTION)
-							{
-								reflection = 1;
-							}
-						}
-						if (hitstats->shield)
-						{
-							if (hitstats->shield->type == STEEL_SHIELD_RESISTANCE && hitstats->defending)
-							{
-								reflection = 3;
-							}
-						}
+						reflection = hit.entity->getReflection();
 					}
 				}
 				if ( reflection )
@@ -779,8 +766,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						my->parent = hit.entity->getUID();
 					}
+					// reflection of 3 does not degrade.
 					if ( rand() % 2 == 0 && hitstats && reflection < 3 )
 					{
+						// set armornum to the relevant equipment slot to send to clients
 						int armornum = 5 + reflection;
 						if ( player == clientnum || player < 0 )
 						{
@@ -874,25 +863,41 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				// check for magic resistance...
-				bool resistance = false;
+				// resistance stacks diminishingly
+				//TODO: EFFECTS[EFF_MAGICRESIST]
+				int resistance = 0;
 				if ( hitstats )
 				{
 					if ( hitstats->shield )
 					{
 						if ( hitstats->shield->type == STEEL_SHIELD_RESISTANCE )
 						{
-							resistance = true;
+							if ( hitstats->defending )
+							{
+								resistance += 2;
+							}
+							else
+							{
+								resistance += 1;
+							}
 						}
 					}
 					if ( hitstats->ring )
 					{
 						if ( hitstats->ring->type == RING_MAGICRESISTANCE )
 						{
-							resistance = true;
+							resistance += 1;
+						}
+					}
+					if ( hitstats->gloves )
+					{
+						if ( hitstats->gloves->type == ARTIFACT_GLOVES )
+						{
+							resistance += 1;
 						}
 					}
 				}
-				if ( resistance )
+				if ( resistance > 0 )
 				{
 					if ( parent )
 					{
@@ -921,7 +926,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -938,7 +943,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
 							}
 							else
 							{
@@ -1069,7 +1081,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1087,7 +1099,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
 							}
 							else
 							{
@@ -1109,7 +1128,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actDoor)
 						{
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
@@ -1139,7 +1158,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
 								int damage = element->damage;
-								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 								damage /= (1+(int)resistance);
 
 								hit.entity->skill[3] -= damage; //Decrease chest health.
@@ -1228,7 +1247,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 28, 128);
 							//TODO: Apply fire resistances/weaknesses.
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1246,7 +1265,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
 							}
 							else
 							{
@@ -1374,7 +1400,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 174, 64);
 							hitstats->EFFECTS[EFF_CONFUSED] = true;
-							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
 							hit.entity->skill[1] = 0; //Remove the monster's target.
 							if ( parent )
@@ -1388,7 +1414,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 									else
 									{
-										messagePlayerColor(parent->skill[2], color, language[391], language[90 + hitstats->type]);
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[391], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[391], language[2000 + (hitstats->type - KOBOLD)]);
+										}
 									}
 								}
 							}
@@ -1431,10 +1464,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 172, 64);
 							hitstats->EFFECTS[EFF_SLOW] = true;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1446,7 +1479,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
 							}
 							else
 							{
@@ -1463,7 +1503,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 									else
 									{
-										messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[394], language[2000 + (hitstats->type - KOBOLD)]);
+										}
 									}
 								}
 							}
@@ -1504,7 +1551,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 							playSoundEntity(hit.entity, 172, 64); //TODO: Slow spell sound.
 							hitstats->EFFECTS[EFF_SLOW] = true;
-							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							// update enemy bar for attacker
 							if ( parent )
@@ -1518,7 +1565,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 									else
 									{
-										messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[394], language[2000 + (hitstats->type - KOBOLD)]);
+										}
 									}
 								}
 							}
@@ -1580,7 +1634,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 									else
 									{
-										messagePlayerColor(parent->skill[2], color, language[398], language[90 + hitstats->type]);
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[398], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[398], language[2000 + (hitstats->type - KOBOLD)]);
+										}
 									}
 								}
 							}
@@ -1620,7 +1681,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(my, 173, 64);
 							playSoundEntity(hit.entity, 28, 128);
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
@@ -1634,7 +1695,14 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							// update enemy bar for attacker
 							if ( !strcmp(hitstats->name, "") )
 							{
-								updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
 							}
 							else
 							{
@@ -1655,7 +1723,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actDoor)
 						{
 							int damage = element->damage;
-							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
 							hit.entity->skill[4] -= damage; //Decrease door health.
@@ -1688,7 +1756,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
 								int damage = element->damage;
-								//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
+								//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 								damage /= (1+(int)resistance);
 
 								hit.entity->skill[3] -= damage; //Decrease chest health.
@@ -1758,23 +1826,27 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							playSoundEntity(hit.entity, 92, 64);
 							hit.entity->skill[5] = 1; //Lock the door.
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], language[399]);
 								}
+							}
 						}
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Lock chest
 							playSoundEntity(hit.entity, 92, 64);
-							if ( !hit.entity->skill[4] )
+							if ( !hit.entity->chestLocked )
 							{
-								hit.entity->skill[4] = 1;
+								hit.entity->lockChest();
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayer(parent->skill[2], language[400]);
 									}
+								}
 							}
 						}
 						else
@@ -1838,15 +1910,38 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else if (hit.entity->behavior == &actChest)
 						{
 							//Unlock chest
-							if ( hit.entity->skill[4] )
+							if ( hit.entity->chestLocked )
 							{
 								playSoundEntity(hit.entity, 91, 64);
-								hit.entity->skill[4] = 0;
+								hit.entity->unlockChest();
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer)
 									{
 										messagePlayer(parent->skill[2], language[404]);
 									}
+								}
+							}
+						}
+						else if ( hit.entity->behavior == &actPowerCrystalBase )
+						{
+							Entity* childentity = static_cast<Entity*>((&hit.entity->children)->first->element);
+							if ( childentity != nullptr )
+							{
+
+								//Unlock crystal
+								if ( childentity->crystalSpellToActivate )
+								{
+									playSoundEntity(hit.entity, 151, 128);
+									childentity->crystalSpellToActivate = 0;
+									if ( parent )
+									{
+										if ( parent->behavior == &actPlayer )
+										{
+											messagePlayer(parent->skill[2], language[2358]);
+										}
+									}
+								}
 							}
 						}
 						else
@@ -2001,6 +2096,200 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_stoneblood.name) )
+				{
+					if ( hit.entity )
+					{
+						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+						{
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								// test for friendly fire
+								if ( parent && parent->checkFriend(hit.entity) )
+								{
+									if ( my->light != NULL )
+									{
+										list_RemoveNode(my->light->node);
+										my->light = NULL;
+									}
+									list_RemoveNode(my->mynode);
+									return;
+								}
+							}
+							playSoundEntity(hit.entity, 172, 64); //TODO: Paralyze spell sound.
+							hitstats->EFFECTS[EFF_PARALYZED] = true;
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_PARALYZED] /= (1 + (int)resistance);
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+							// update enemy bar for attacker
+							if ( parent )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer )
+								{
+									if ( strcmp(hitstats->name, "") )
+									{
+										messagePlayerColor(parent->skill[2], color, language[2420], hitstats->name);
+									}
+									else
+									{
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[2421], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[2421], language[2000 + (hitstats->type - KOBOLD)]);
+										}
+									}
+								}
+							}
+
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 )
+							{
+								messagePlayerColor(player, color, language[2422]);
+							}
+							if ( my->light != NULL )
+							{
+								list_RemoveNode(my->light->node);
+								my->light = NULL;
+							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
+				else if ( !strcmp(element->name, spellElement_bleed.name) )
+				{
+					playSoundEntity(my, 173, 128);
+					if ( hit.entity )
+					{
+						if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+						{
+							Entity* parent = uidToEntity(my->parent);
+							if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+							{
+								// test for friendly fire
+								if ( parent && parent->checkFriend(hit.entity) )
+								{
+									if ( my->light != NULL )
+									{
+										list_RemoveNode(my->light->node);
+										my->light = NULL;
+									}
+									list_RemoveNode(my->mynode);
+									return;
+								}
+							}
+							playSoundEntity(my, 173, 64);
+							playSoundEntity(hit.entity, 28, 128);
+							int damage = element->damage;
+							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+							damage *= damagetables[hitstats->type][5];
+							damage /= (1 + (int)resistance);
+							hit.entity->modHP(-damage);
+
+							// write the obituary
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
+
+							hitstats->EFFECTS[EFF_BLEEDING] = true;
+							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] /= (1 + (int)resistance);
+							hitstats->EFFECTS[EFF_SLOW] = true;
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+							// update enemy bar for attacker
+							if ( parent )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( parent->behavior == &actPlayer )
+								{
+									if ( strcmp(hitstats->name, "") )
+									{
+										messagePlayerColor(parent->skill[2], color, language[2423], hitstats->name);
+									}
+									else
+									{
+										if ( hitstats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayerColor(parent->skill[2], color, language[2424], language[90 + hitstats->type]);
+										}
+										else if ( hitstats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayerColor(parent->skill[2], color, language[2424], language[2000 + (hitstats->type - KOBOLD)]);
+										}
+									}
+								}
+							}
+
+							// write the obituary
+							if ( parent )
+							{
+								parent->killedByMonsterObituary(hit.entity);
+							}
+
+							// update enemy bar for attacker
+							if ( !strcmp(hitstats->name, "") )
+							{
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+								}
+							}
+							else
+							{
+								updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+							}
+
+							if ( hitstats->HP <= 0 && parent )
+							{
+								parent->awardXP(hit.entity, true, true);
+							}
+
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( player >= 0 )
+							{
+								messagePlayerColor(player, color, language[2425]);
+							}
+							if ( my->light != NULL )
+							{
+								list_RemoveNode(my->light->node);
+								my->light = NULL;
+							}
+							list_RemoveNode(my->mynode);
+							return;
+						}
+					}
+				}
+				else if ( !strcmp(element->name, spellElement_dominate.name) )
+				{
+					Entity *caster = uidToEntity(spell->caster);
+					if ( caster )
+					{
+						if ( spellEffectDominate(*my, *element, *caster, parent) )
+						{
+							//Abort if successfully run, since do not need to execute the proceeding code..
+							return;
+						}
+					}
+				}
+
 				if ( my->light != NULL )
 				{
 					list_RemoveNode(my->light->node);
@@ -2204,5 +2493,333 @@ void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite)
 			entity_uids--;
 		}
 		entity->setUID(-3);
+	}
+}
+
+void createParticle1(Entity* caster, int player)
+{
+	Entity* entity = newEntity(-1, 1, map.entities);
+	entity->sizex = 0;
+	entity->sizey = 0;
+	entity->x = caster->x + 32 * cos(caster->yaw);
+	entity->y = caster->y + 32 * sin(caster->yaw);
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 50;
+	entity->skill[1] = player;
+	entity->fskill[0] = 0.03;
+	entity->light = lightSphereShadow(entity->x / 16, entity->y / 16, 3, 192);
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->flags[INVISIBLE] = true;
+	entity->setUID(-3);
+
+	createParticle2(entity);
+	createParticleDot(entity);
+	/*entity = newEntity(574, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = x;
+	entity->y = y;
+	entity->z = 0;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 1000;
+	entity->behavior = &actParticleCircle;
+	entity->sprite = 574;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);*/
+}
+
+void createParticle2(Entity* parent)
+{
+	Entity* entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 8;
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = (rand() % 360) * PI / 180.0;
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = -0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	real_t tmp = entity->yaw;
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 8;
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = tmp + (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = -0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 8;
+	entity->z = -7;
+	entity->vel_z = 0.3;
+	entity->yaw = tmp - (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = -0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 16;
+	entity->z = -12;
+	entity->vel_z = 0.4;
+	entity->yaw = tmp;
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = 0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 16;
+	entity->z = -12;
+	entity->vel_z = 0.4;
+	entity->yaw = tmp + (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = 0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+
+	entity = newEntity(174, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->focalx = 16;
+	entity->z = -12;
+	entity->vel_z = 0.4;
+	entity->yaw = tmp - (2 * PI / 3);
+	entity->skill[0] = 60;
+	entity->skill[1] = -1;
+	//entity->scalex = 0.01;
+	//entity->scaley = 0.01;
+	entity->fskill[0] = 0.1;
+	entity->behavior = &actParticleCircle;
+	entity->flags[PASSABLE] = true;
+	entity->setUID(-3);
+}
+
+#define PARTICLE_LIFE my->skill[0]
+#define PARTICLE_CASTER my->skill[1]
+
+void actParticleCircle(Entity* my)
+{
+	//Entity* entity = newEntity(sprite, 1, map.entities);
+	if ( PARTICLE_LIFE < 0 )
+	{
+		if ( PARTICLE_CASTER != -1 )
+		{
+			//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
+			//spell_summonFamiliar(PARTICLE_CASTER);
+			playSoundEntity(my, 164, 128);
+			spawnExplosion(my->x, my->y, 0);
+			//summonMonster(SKELETON, my->x, my->y);
+		}
+		if ( my->light != NULL )
+		{
+			list_RemoveNode(my->light->node);
+		}
+		my->light = NULL;
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->yaw += my->fskill[0];
+		if ( my->fskill[0] < 0.4 && my->fskill[0] > (-0.4) )
+		{
+			my->fskill[0] = my->fskill[0] * 1.05;
+		}
+		my->z += my->vel_z;
+		if ( PARTICLE_CASTER == -1 )
+		{
+
+			if ( my->focalx > 0.05 )
+			{
+				if ( my->vel_z == 0.3 )
+				{
+					my->focalx = my->focalx * 0.98;
+				}
+				else
+				{
+					my->focalx = my->focalx * 0.95;
+				}
+			}
+			my->scalex *= 0.99;
+			my->scaley *= 0.99;
+			my->scalez *= 0.99;
+			//my->scalex = my->scalex * 1.1;
+			//my->scaley = my->scaley * 1.1;
+		}
+		//my->z -= 0.01;
+	}
+}
+
+void createParticleDot(Entity* parent)
+{
+	for ( int c = 0; c < 50; c++ )
+	{
+		Entity* entity = newEntity(576, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x + (-4 + rand() % 9);
+		entity->y = parent->y + (-4 + rand() % 9);
+		entity->z = 7.5 + rand()%50;
+		entity->vel_z = -1;
+		//entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->skill[0] = 10 + rand()% 50;
+		entity->behavior = &actParticleDot;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void createParticleRock(Entity* parent)
+{
+	for ( int c = 0; c < 5; c++ )
+	{
+		Entity* entity = newEntity(78, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x + (-4 + rand() % 9);
+		entity->y = parent->y + (-4 + rand() % 9);
+		entity->z = 7.5;
+		entity->yaw = c * 2 * PI / 5;//(rand() % 360) * PI / 180.0;
+		entity->roll = (rand() % 360) * PI / 180.0;
+
+		entity->vel_x = 0.2 * cos(entity->yaw);
+		entity->vel_y = 0.2 * sin(entity->yaw);
+		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
+		
+		entity->skill[0] = 50; // particle life
+		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
+
+		entity->behavior = &actParticleRock;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void actParticleRock(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 || my->z > 10 )
+	{
+		list_RemoveNode(my->mynode);
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		
+		my->roll += 0.1;
+
+		if ( my->vel_z < 0.01 )
+		{
+			my->skill[1] = 1; // start moving downwards
+			my->vel_z = 0.1;
+		}
+
+		if ( my->skill[1] == 0 ) // upwards motion
+		{
+			my->z -= my->vel_z;
+			my->vel_z *= 0.7;
+		}
+		else // downwards motion
+		{
+			my->z += my->vel_z;
+			my->vel_z *= 1.1;
+		}
+	}
+	return;
+}
+
+void actParticleDot(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->z += my->vel_z;
+		//my->z -= 0.01;
+	}
+	return;
+}
+
+void actParticleTest(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+		my->z += my->vel_z;
+		//my->z -= 0.01;
 	}
 }

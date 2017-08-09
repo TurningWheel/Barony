@@ -1476,7 +1476,7 @@ void item_ScrollFire(Item* item, int player)
 		int c;
 		for (c = 0; c < 100; c++)
 		{
-			Entity* entity = spawnFlame(players[player]->entity);
+			Entity* entity = spawnFlame(players[player]->entity, SPRITE_FLAME);
 			entity->sprite = 16;
 			double vel = rand() % 10;
 			entity->vel_x = vel * cos(entity->yaw) * cos(entity->pitch) * .1;
@@ -1586,33 +1586,7 @@ void item_ScrollMagicMapping(Item* item, int player)
 	if ( item->beatitude >= 0 )
 	{
 		messagePlayer(player, language[868]);
-		for ( y = 0; y < 64; y++ )
-		{
-			for ( x = 0; x < 64; x++ )
-			{
-				if ( x < map.width && y < map.height )
-				{
-					if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
-					{
-						if ( !minimap[y][x] )
-						{
-							minimap[y][x] = 4;
-						}
-					}
-					else if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-					{
-						if ( !minimap[y][x] )
-						{
-							minimap[y][x] = 3;
-						}
-					}
-					else
-					{
-						minimap[y][x] = 0;
-					}
-				}
-			}
-		}
+		mapLevel(player);
 	}
 	else
 	{
@@ -2008,18 +1982,42 @@ void item_ScrollSummon(Item* item, int player)
 		{
 			if ( numCreatures <= 1 )
 			{
-				messagePlayer(player, language[877], language[90 + creature]);
+				if ( creature < KOBOLD ) //Original monster count
+				{
+					messagePlayer(player, language[877], language[90 + creature]);
+
+				}
+				else if ( creature >= KOBOLD ) //New monsters
+				{
+					messagePlayer(player, language[877], language[2000 + (creature - KOBOLD)]);
+				}
 			}
 			else
 			{
-				messagePlayer(player, language[878], language[111 + creature]);
+				if ( creature < KOBOLD ) //Original monster count
+				{
+					messagePlayer(player, language[878], language[111 + creature]);
+
+				}
+				else if ( creature >= KOBOLD ) //New monsters
+				{
+					messagePlayer(player, language[878], language[2050 + (creature - KOBOLD)]);
+				}
 			}
 		}
 		else
 		{
 			if ( numCreatures <= 1 )
 			{
-				messagePlayer(player, language[879], language[90 + creature]);
+				if ( creature < KOBOLD ) //Original monster count
+				{
+					messagePlayer(player, language[879], language[90 + creature]);
+
+				}
+				else if ( creature >= KOBOLD ) //New monsters
+				{
+					messagePlayer(player, language[879], language[2000 + (creature - KOBOLD)]);
+				}
 				if ( item->beatitude >= 2 )
 				{
 					messagePlayer(player, language[880]);
@@ -2027,7 +2025,15 @@ void item_ScrollSummon(Item* item, int player)
 			}
 			else
 			{
-				messagePlayer(player, language[881], language[111 + creature]);
+				if ( creature < KOBOLD ) //Original monster count
+				{
+					messagePlayer(player, language[881], language[111 + creature]);
+
+				}
+				else if ( creature >= KOBOLD ) //New monsters
+				{
+					messagePlayer(player, language[881], language[2050 + (creature - KOBOLD)]);
+				}
 				if ( item->beatitude >= 2 )
 				{
 					messagePlayer(player, language[882]);
@@ -2131,7 +2137,7 @@ void item_ToolMirror(Item* item, int player)
 		messagePlayer(player, language[892]);
 		return;
 	}
-	if ( stats[player]->EFFECTS[EFF_INVISIBLE] )
+	if ( players[player]->entity->isInvisible() )
 	{
 		messagePlayer(player, language[893]);
 		return;
@@ -2295,7 +2301,7 @@ void item_Food(Item* item, int player)
 	if ( player == clientnum )
 	{
 		conductFoodless = false;
-		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH )
+		if ( item->type == FOOD_MEAT || item->type == FOOD_FISH || item->type == FOOD_TOMALLEY )
 		{
 			conductVegetarian = false;
 		}
@@ -2379,6 +2385,9 @@ void item_Food(Item* item, int player)
 				break;
 			case FOOD_FISH:
 				stats[player]->HUNGER += 500;
+				break;
+			case FOOD_TOMALLEY:
+				stats[player]->HUNGER += 400;
 				break;
 			default:
 				stats[player]->HUNGER += 10;
@@ -2756,6 +2765,15 @@ void item_Spellbook(Item* item, int player)
 				break;
 			case SPELLBOOK_DIG:
 				addSpell(SPELL_DIG, player);
+				break;
+			case SPELLBOOK_SUMMON:
+				addSpell(SPELL_SUMMON, player);
+				break;
+			case SPELLBOOK_STONEBLOOD:
+				addSpell(SPELL_STONEBLOOD, player);
+				break;
+			case SPELLBOOK_BLEED:
+				addSpell(SPELL_BLEED, player);
 				break;
 			default:
 				addSpell(SPELL_FORCEBOLT, player);

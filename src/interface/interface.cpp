@@ -99,6 +99,18 @@ SDL_Surface* inventory_bmp = NULL, *inventoryoption_bmp = NULL, *inventoryoption
 //SDL_Surface *category_bmp[NUMCATEGORIES];
 SDL_Surface* shopkeeper_bmp = NULL;
 SDL_Surface* damage_bmp = NULL;
+SDL_Surface *str_bmp64u = NULL;
+SDL_Surface *dex_bmp64u = NULL;
+SDL_Surface *con_bmp64u = NULL;
+SDL_Surface *int_bmp64u = NULL;
+SDL_Surface *per_bmp64u = NULL;
+SDL_Surface *chr_bmp64u = NULL;
+SDL_Surface *str_bmp64 = NULL;
+SDL_Surface *dex_bmp64 = NULL;
+SDL_Surface *con_bmp64 = NULL;
+SDL_Surface *int_bmp64 = NULL;
+SDL_Surface *per_bmp64 = NULL;
+SDL_Surface *chr_bmp64 = NULL;
 int spellscroll = 0;
 int magicspell_list_offset_x = 0;
 int magicspell_list_offset_y = 0;
@@ -210,6 +222,19 @@ bool loadInterfaceResources()
 
 	book_highlighted_left_img = loadImage("images/system/bookpageleft-highlighted.png");
 	book_highlighted_right_img = loadImage("images/system/bookpageright-highlighted.png");
+
+	str_bmp64u = loadImage("images/system/str64u.png");
+	dex_bmp64u = loadImage("images/system/dex64u.png");
+	con_bmp64u = loadImage("images/system/con64u.png");
+	int_bmp64u = loadImage("images/system/int64u.png");
+	per_bmp64u = loadImage("images/system/per64u.png");
+	chr_bmp64u = loadImage("images/system/chr64u.png");
+	str_bmp64 = loadImage("images/system/str64.png");
+	dex_bmp64 = loadImage("images/system/dex64.png");
+	con_bmp64 = loadImage("images/system/con64.png");
+	int_bmp64 = loadImage("images/system/int64.png");
+	per_bmp64 = loadImage("images/system/per64.png");
+	chr_bmp64 = loadImage("images/system/chr64.png");
 
 	hotbar_img = loadImage("images/system/hotbar_slot.png");
 	hotbar_spell_img = loadImage("images/system/magic/hotbar_spell.png");
@@ -403,6 +428,54 @@ void freeInterfaceResources()
 	if (hotbar_spell_img)
 	{
 		SDL_FreeSurface(hotbar_spell_img);
+	}
+	if ( str_bmp64u )
+	{
+		SDL_FreeSurface(str_bmp64u);
+	}
+	if ( dex_bmp64u )
+	{
+		SDL_FreeSurface(dex_bmp64u);
+	}
+	if ( con_bmp64u )
+	{
+		SDL_FreeSurface(con_bmp64u);
+	}
+	if ( int_bmp64u )
+	{
+		SDL_FreeSurface(int_bmp64u);
+	}
+	if ( per_bmp64u )
+	{
+		SDL_FreeSurface(per_bmp64u);
+	}
+	if ( chr_bmp64u )
+	{
+		SDL_FreeSurface(chr_bmp64u);
+	}
+	if ( str_bmp64 )
+	{
+		SDL_FreeSurface(str_bmp64);
+	}
+	if ( dex_bmp64 )
+	{
+		SDL_FreeSurface(dex_bmp64);
+	}
+	if ( con_bmp64 )
+	{
+		SDL_FreeSurface(con_bmp64);
+	}
+	if ( int_bmp64 )
+	{
+		SDL_FreeSurface(int_bmp64);
+	}
+	if ( per_bmp64 )
+	{
+		SDL_FreeSurface(per_bmp64);
+	}
+	if ( chr_bmp64 )
+	{
+		SDL_FreeSurface(chr_bmp64);
 	}
 	list_FreeAll(&damageIndicators);
 }
@@ -741,6 +814,7 @@ int saveConfig(char* filename)
 	fprintf(fp, "/res %dx%d\n", xres, yres);
 	fprintf(fp, "/gamma %3.3f\n", vidgamma);
 	fprintf(fp, "/fov %d\n", fov);
+	fprintf(fp, "/fps %d\n", fpsLimit);
 	fprintf(fp, "/svflags %d\n", svFlags);
 	if ( lastname != "" )
 	{

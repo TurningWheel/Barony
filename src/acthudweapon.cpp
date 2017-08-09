@@ -68,17 +68,9 @@ void actHudArm(Entity* my)
 	}
 	else
 	{
-		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
+		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 		{
-			my->sprite = 132 + stats[clientnum]->sex;
-		}
-		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
-		{
-			my->sprite = 323 + stats[clientnum]->sex;
-		}
-		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
-		{
-			my->sprite = 140 + stats[clientnum]->sex;
+			// successfully set sprite for the human model
 		}
 		else
 		{
@@ -223,21 +215,7 @@ void actHudWeapon(Entity* my)
 	}
 
 	// check levitating value
-	bool levitating = false;
-	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( stats[clientnum]->ring != NULL )
-		if ( stats[clientnum]->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( stats[clientnum]->shoes != NULL )
-		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(stats[clientnum]);
 
 	// water walking boots
 	bool waterwalkingboots = false;
@@ -267,17 +245,21 @@ void actHudWeapon(Entity* my)
 	}
 
 	// select model
-	if (stats[clientnum]->ring != nullptr)
-		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
+	if ( stats[clientnum]->ring != nullptr )
+	{
+		if ( stats[clientnum]->ring->type == RING_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (stats[clientnum]->cloak != nullptr)
-		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
+	}
+	if ( stats[clientnum]->cloak != nullptr )
+	{
+		if ( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring)   // debug cam or player invisible
+	}
+	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 		if (parent != nullptr)
@@ -321,7 +303,7 @@ void actHudWeapon(Entity* my)
 #ifdef HAVE_OPENAL
 				OPENAL_Channel_GetPosition(bowDrawingSound, &position);
 				OPENAL_Sound_GetLength(sounds[246], &length);
-				
+
 #else
 				FMOD_Channel_GetPosition(bowDrawingSound, &position, FMOD_TIMEUNIT_MS);
 				FMOD_Sound_GetLength(sounds[246], &length, FMOD_TIMEUNIT_MS);
@@ -489,7 +471,7 @@ void actHudWeapon(Entity* my)
 									if (bowFire)
 									{
 										bowFire = false;
-										players[clientnum]->entity->attack(0, 0);
+										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = TICKS_PER_SECOND / 4;
 									}
@@ -555,10 +537,15 @@ void actHudWeapon(Entity* my)
 						}
 						else
 						{
-							// crossbows and slings
-							players[clientnum]->entity->attack(0, 0);
-							HUDWEAPON_MOVEX = -4;
-							HUDWEAPON_CHOP = 3;
+							// crossbows
+							if ( throwGimpTimer == 0 )
+							{
+								players[clientnum]->entity->attack(0, 0, nullptr);
+								HUDWEAPON_MOVEX = -4;
+								HUDWEAPON_CHOP = 3;
+								// set delay before crossbow can fire again
+								throwGimpTimer = 40;
+							}
 						}
 					}
 					else
@@ -574,7 +561,7 @@ void actHudWeapon(Entity* my)
 						if (itemCategory(item) == SPELLBOOK)
 						{
 							mousestatus[SDL_BUTTON_LEFT] = 0;
-							players[clientnum]->entity->attack(2, 0); // will need to add some delay to this so you can't rapid fire spells
+							players[clientnum]->entity->attack(2, 0, nullptr); // will need to add some delay to this so you can't rapid fire spells
 						}
 						else if (itemCategory(item) == MAGICSTAFF)
 						{
@@ -596,12 +583,20 @@ void actHudWeapon(Entity* my)
 								messagePlayer(clientnum, language[503], item->getName());
 							}
 						}
-						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM) && !throwGimpTimer)
+						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
 						{
-							throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+							if ( itemCategory(item) == THROWN )
+							{
+								// possibility to change to be unique.
+								throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+							}
+							else
+							{
+								throwGimpTimer = TICKS_PER_SECOND / 2; // limits how often you can throw objects
+							}
 							HUDWEAPON_MOVEZ = 3;
 							HUDWEAPON_CHOP = 3;
-							players[clientnum]->entity->attack(0, 0);
+							players[clientnum]->entity->attack(0, 0, nullptr);
 							if (multiplayer == CLIENT)
 							{
 								item->count--;
@@ -842,7 +837,7 @@ void actHudWeapon(Entity* my)
 				if ( !swingweapon )
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE);
+					players[clientnum]->entity->attack(1, HUDWEAPON_CHARGE, nullptr);
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -884,7 +879,7 @@ void actHudWeapon(Entity* my)
 			Item* item = stats[clientnum]->weapon;
 			if ( item )
 			{
-				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM )
+				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM && itemCategory(item) != THROWN )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )
 					{
@@ -905,7 +900,7 @@ void actHudWeapon(Entity* my)
 				{
 					if (bowFire)
 					{
-						players[clientnum]->entity->attack(0, 0);
+						players[clientnum]->entity->attack(0, 0, nullptr);
 						HUDWEAPON_MOVEX = -2;
 					}
 				}
@@ -1034,7 +1029,7 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE);
+					players[clientnum]->entity->attack(2, HUDWEAPON_CHARGE, nullptr);
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -1067,8 +1062,8 @@ void actHudWeapon(Entity* my)
 			// one more swing...
 			if ( stats[clientnum]->weapon )
 			{
-				type = stats[clientnum]->weapon->type;
-				if ( type == BRONZE_SWORD || type == IRON_SWORD || type == STEEL_SWORD || type == ARTIFACT_SWORD || type == STEEL_HALBERD )
+				int weaponSkill = getWeaponSkill(stats[clientnum]->weapon);
+				if ( weaponSkill == PRO_SWORD || stats[clientnum]->weapon->type == STEEL_HALBERD )
 				{
 					HUDWEAPON_CHOP = 7;  // swords + halberds can stab
 				}
@@ -1145,7 +1140,7 @@ void actHudWeapon(Entity* my)
 				if (!swingweapon)
 				{
 					HUDWEAPON_CHOP++;
-					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE);
+					players[clientnum]->entity->attack(3, HUDWEAPON_CHARGE, nullptr);
 					HUDWEAPON_CHARGE = 0;
 					HUDWEAPON_OVERCHARGE = 0;
 					if (players[clientnum]->entity->skill[3] == 0)   // debug cam OFF
@@ -1198,7 +1193,7 @@ void actHudWeapon(Entity* my)
 				}
 				else
 				{
-					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR )
+					if ( itemCategory(stats[clientnum]->weapon) != MAGICSTAFF && stats[clientnum]->weapon->type != CRYSTAL_SPEAR && stats[clientnum]->weapon->type != IRON_SPEAR && stats[clientnum]->weapon->type != ARTIFACT_SPEAR )
 					{
 						HUDWEAPON_CHOP = 1;
 					}
@@ -1339,21 +1334,7 @@ void actHudShield(Entity* my)
 	}
 
 	// check levitating value
-	bool levitating = false;
-	if ( stats[clientnum]->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( stats[clientnum]->ring != NULL )
-		if ( stats[clientnum]->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( stats[clientnum]->shoes != NULL )
-		if ( stats[clientnum]->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(stats[clientnum]);
 
 	// water walking boots
 	bool waterwalkingboots = false;
@@ -1365,17 +1346,21 @@ void actHudShield(Entity* my)
 
 	// select model
 	bool wearingring = false;
-	if (stats[clientnum]->ring != nullptr)
-		if (stats[clientnum]->ring->type == RING_INVISIBILITY)
+	if ( stats[clientnum]->ring != nullptr )
+	{
+		if ( stats[clientnum]->ring->type == RING_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (stats[clientnum]->cloak != nullptr)
-		if (stats[clientnum]->cloak->type == CLOAK_INVISIBILITY)
+	}
+	if ( stats[clientnum]->cloak != nullptr )
+	{
+		if ( stats[clientnum]->cloak->type == CLOAK_INVISIBILITY )
 		{
 			wearingring = true;
 		}
-	if (players[clientnum]->entity->skill[3] == 1 || stats[clientnum]->EFFECTS[EFF_INVISIBLE] == true || wearingring )   // debug cam or player invisible
+	}
+	if ( players[clientnum]->entity->skill[3] == 1 || players[clientnum]->entity->isInvisible() )   // debug cam or player invisible
 	{
 		my->flags[INVISIBLE] = true;
 	}
@@ -1411,7 +1396,7 @@ void actHudShield(Entity* my)
 	bool swimming = false;
 	if (players[clientnum] && players[clientnum]->entity)
 	{
-		if (!levitating && !waterwalkingboots)
+		if (!levitating && !waterwalkingboots) //TODO: Swimming capstone?
 		{
 			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
@@ -1510,7 +1495,7 @@ void actHudShield(Entity* my)
 		}
 		if ( stats[clientnum]->shield )
 		{
-			if ( stats[clientnum]->shield->type == TOOL_TORCH )
+			if ( stats[clientnum]->shield->type == TOOL_TORCH || stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
 			{
 				if ( HUDSHIELD_MOVEX < 1.5 )
 				{
@@ -1599,7 +1584,15 @@ void actHudShield(Entity* my)
 		{
 			if (stats[clientnum]->shield->type == TOOL_TORCH)
 			{
-				Entity* entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
+				entity->flags[OVERDRAW] = true;
+				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
+				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
+				my->flags[BRIGHT] = true;
+			}
+			if ( stats[clientnum]->shield->type == TOOL_CRYSTALSHARD )
+			{
+				Entity* entity = spawnFlame(my, SPRITE_CRYSTALFLAME);
 				entity->flags[OVERDRAW] = true;
 				entity->z -= 2.5 * cos(HUDSHIELD_ROLL);
 				entity->y += 2.5 * sin(HUDSHIELD_ROLL);
@@ -1607,7 +1600,7 @@ void actHudShield(Entity* my)
 			}
 			else if (stats[clientnum]->shield->type == TOOL_LANTERN)
 			{
-				Entity* entity = spawnFlame(my);
+				Entity* entity = spawnFlame(my, SPRITE_FLAME);
 				entity->flags[OVERDRAW] = true;
 				entity->z += 1;
 				my->flags[BRIGHT] = true;

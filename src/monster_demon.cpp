@@ -25,12 +25,7 @@ void initDemon(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 258;
-
-	//my->flags[GENIUS]=true;
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(258);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -41,76 +36,69 @@ void initDemon(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 120;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 200;
-		myStats->MAXMP = 200;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 30;
-		myStats->DEX = 10;
-		myStats->CON = 10;
-		myStats->INT = 5;
-		myStats->PER = 50;
-		myStats->CHR = -4;
-		myStats->EXP = 0;
-		myStats->LVL = 20;
-		if ( rand() % 50 || my->flags[USERFLAG2] )
+		if ( myStats != NULL )
 		{
-			strcpy(myStats->name, "");
-		}
-		else
-		{
-			strcpy(myStats->name, "Deu De'Breau");
-			myStats->LVL = 30;
-			for ( c = 0; c < 3; c++ )
+			if ( !myStats->leader_uid )
 			{
-				Entity* entity = summonMonster(DEMON, my->x, my->y);
-				if ( entity )
+				myStats->leader_uid = 0;
+			}
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
+			{
+			}
+			else
+			{
+				strcpy(myStats->name, "Deu De'Breau");
+				myStats->LVL = 30;
+				for ( c = 0; c < 3; c++ )
 				{
-					entity->parent = my->getUID();
+					Entity* entity = summonMonster(DEMON, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
 				}
 			}
-		}
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
-		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+
+			// random effects
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats);
+			//max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					if ( rand() % 2 == 0 )
+					{
+						myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
+					}
+					break;
+				default:
+					break;
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		if ( rand() % 2 == 0 )
-		{
-			myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
 		}
 	}
 
@@ -225,81 +213,24 @@ void initDemon(Entity* my, Stat* myStats)
 
 void actDemonLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void demonDie(Entity* my)
 {
-	node_t* node, *nextnode;
-
 	int c;
 	for ( c = 0; c < 5; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood)
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(160, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
+
+	my->spawnBlood();
+
 	playSoundEntity(my, 213, 128);
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -313,7 +244,7 @@ void demonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

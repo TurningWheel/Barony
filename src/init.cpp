@@ -14,6 +14,7 @@
 #include "prng.hpp"
 #include "hash.hpp"
 #include "net.hpp"
+#include "editor.hpp"
 #ifdef STEAMWORKS
 #include <steam/steam_api.h>
 #include "steam.hpp"
@@ -309,7 +310,7 @@ int initApp(char* title, int fullscreen)
 
 	// load sprites
 	printlog("loading sprites...\n");
-	fp = fopen("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "r");
 	for ( numsprites = 0; !feof(fp); numsprites++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -324,7 +325,7 @@ int initApp(char* title, int fullscreen)
 		return 6;
 	}
 	sprites = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numsprites);
-	fp = fopen("images/sprites.txt", "r");
+	fp = openDataFile("images/sprites.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -353,7 +354,7 @@ int initApp(char* title, int fullscreen)
 
 	// load models
 	printlog("loading models...\n");
-	fp = fopen("models/models.txt", "r");
+	fp = openDataFile("models/models.txt", "r");
 	for ( nummodels = 0; !feof(fp); nummodels++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -368,7 +369,7 @@ int initApp(char* title, int fullscreen)
 		return 11;
 	}
 	models = (voxel_t**) malloc(sizeof(voxel_t*)*nummodels);
-	fp = fopen("models/models.txt", "r");
+	fp = openDataFile("models/models.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -389,9 +390,9 @@ int initApp(char* title, int fullscreen)
 	}
 	if ( !softwaremode )
 	{
-		generatePolyModels();
+		generatePolyModels(0, nummodels);
 	}
-
+	fclose(fp);
 	// print a loading message
 	drawClearBuffers();
 	TTF_SizeUTF8(ttf16, LOADSTR3, &w, &h);
@@ -401,7 +402,7 @@ int initApp(char* title, int fullscreen)
 
 	// load tiles
 	printlog("loading tiles...\n");
-	fp = fopen("images/tiles.txt", "r");
+	fp = openDataFile("images/tiles.txt", "r");
 	for ( numtiles = 0; !feof(fp); numtiles++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -418,7 +419,7 @@ int initApp(char* title, int fullscreen)
 	tiles = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numtiles);
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
-	fp = fopen("images/tiles.txt", "r");
+	fp = openDataFile("images/tiles.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -465,7 +466,7 @@ int initApp(char* title, int fullscreen)
 	// load sound effects
 #ifdef HAVE_FMOD
 	printlog("loading sounds...\n");
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile("sound/sounds.txt", "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -480,7 +481,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile("sound/sounds.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -501,7 +502,7 @@ int initApp(char* title, int fullscreen)
 	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
 #elif defined HAVE_OPENAL
 	printlog("loading sounds...\n");
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile("sound/sounds.txt", "r");
 	for ( numsounds = 0; !feof(fp); numsounds++ )
 	{
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -516,7 +517,7 @@ int initApp(char* title, int fullscreen)
 		return 10;
 	}
 	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = fopen("sound/sounds.txt", "r");
+	fp = openDataFile("sound/sounds.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		fscanf(fp, "%s", name);
@@ -560,7 +561,7 @@ int loadLanguage(char* lang)
 	snprintf(filename, 127, "lang/%s.txt", lang);
 
 	// check if language file is valid
-	if ( access( filename, F_OK ) == -1 )
+	if ( !dataPathExists(filename) )
 	{
 		// language file doesn't exist
 		printlog("error: unable to locate language file: '%s'", filename);
@@ -586,21 +587,23 @@ int loadLanguage(char* lang)
 
 	// load fonts
 	char fontName[64] = { 0 };
+	char fontPath[1024];
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
-	if ( access(fontName, F_OK) == -1 )
+	if ( !dataPathExists(fontName) )
 	{
 		strncpy(fontName, "lang/en.ttf", 63);
 	}
-	if ( access(fontName, F_OK) == -1 )
+	if ( !dataPathExists(fontName) )
 	{
 		printlog("error: default game font 'lang/en.ttf' not found");
 		return 1;
 	}
+	completePath(fontPath, fontName);
 	if ( ttf8 )
 	{
 		TTF_CloseFont(ttf8);
 	}
-	if ((ttf8 = TTF_OpenFont(fontName, TTF8_HEIGHT)) == NULL )
+	if ((ttf8 = TTF_OpenFont(fontPath, TTF8_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -611,7 +614,7 @@ int loadLanguage(char* lang)
 	{
 		TTF_CloseFont(ttf12);
 	}
-	if ((ttf12 = TTF_OpenFont(fontName, TTF12_HEIGHT)) == NULL )
+	if ((ttf12 = TTF_OpenFont(fontPath, TTF12_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -622,7 +625,7 @@ int loadLanguage(char* lang)
 	{
 		TTF_CloseFont(ttf16);
 	}
-	if ((ttf16 = TTF_OpenFont(fontName, TTF16_HEIGHT)) == NULL )
+	if ((ttf16 = TTF_OpenFont(fontPath, TTF16_HEIGHT)) == NULL )
 	{
 		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
 		return 1;
@@ -631,7 +634,7 @@ int loadLanguage(char* lang)
 	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
-	if ( (fp = fopen(filename, "r")) == NULL )
+	if ( (fp = openDataFile(filename, "r")) == NULL )
 	{
 		printlog("error: unable to load language file: '%s'", filename);
 		return 1;
@@ -769,7 +772,7 @@ int reloadLanguage()
 
 -------------------------------------------------------------------------------*/
 
-void generatePolyModels()
+void generatePolyModels(int start, int end)
 {
 	Sint32 x, y, z;
 	Sint32 c, i;
@@ -784,20 +787,26 @@ void generatePolyModels()
 	quads.last = NULL;
 
 	printlog("generating poly models...\n");
-	polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-	for ( c = 0; c < nummodels; ++c )
+	if ( start == 0 && end == nummodels )
+	{
+		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
+	}
+
+	for ( c = start; c < end; ++c )
 	{
 		char loadText[128];
 		snprintf(loadText, 127, language[745], c, nummodels);
 
 		// print a loading message
-		drawClearBuffers();
-		int w, h;
-		TTF_SizeUTF8(ttf16, loadText, &w, &h);
-		ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
+		if ( start == 0 && end == nummodels )
+		{
+			drawClearBuffers();
+			int w, h;
+			TTF_SizeUTF8(ttf16, loadText, &w, &h);
+			ttfPrintText(ttf16, (xres - w) / 2, (yres - h) / 2, loadText);
 
-		GO_SwapBuffers(screen);
-
+			GO_SwapBuffers(screen);
+		}
 		numquads = 0;
 		polymodels[c].numfaces = 0;
 		voxel_t* model = models[c];
@@ -1713,7 +1722,7 @@ void generatePolyModels()
 	// now store models into VBOs
 	if ( !disablevbos )
 	{
-		generateVBOs();
+		generateVBOs(start, end);
 	}
 }
 
@@ -1725,11 +1734,11 @@ void generatePolyModels()
 
 -------------------------------------------------------------------------------*/
 
-void generateVBOs()
+void generateVBOs(int start, int end)
 {
 	int i, c;
 
-	for ( c = 0; c < nummodels; ++c )
+	for ( c = start; c < end; ++c )
 	{
 		/*if( c>0 )
 			break;*/
@@ -2350,7 +2359,7 @@ bool changeVideoMode()
 	// regenerate vbos
 	if ( !disablevbos )
 	{
-		generateVBOs();
+		generateVBOs(0, nummodels);
 	}
 #endif
 	// success

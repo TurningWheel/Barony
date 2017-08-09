@@ -30,53 +30,77 @@ float limbs[NUMMONSTERS][20][3];
 // determines which monsters fight which
 bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0 }, // HUMAN
-	{ 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0 }, // RAT
-	{ 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0 }, // GOBLIN
-	{ 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0 }, // SLIME
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0 }, // TROLL
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 }, // OCTOPUS
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1 }, // SPIDER
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0 }, // GHOUL
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0 }, // SKELETON
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0 }, // SCORPION
-	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // IMP
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0 }, // BUGBEAR
-	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0 }, // GNOME
-	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // DEMON
-	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // SUCCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }, // LICH
-	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0 }, // MINOTAUR
-	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1 }, // DEVIL
-	{ 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0 }  // SHOPKEEPER
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
+	{ 0, 0, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HUMAN
+	{ 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
+	{ 0, 1, 1, 0, 1, 0, 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOBLIN
+	{ 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SLIME
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // OCTOPUS
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 1, 0, 1, 1, 1, 1, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GHOUL
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SKELETON
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCORPION
+	{ 0, 1, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // IMP
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
+	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
+	{ 0, 1, 1, 1, 0, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DEMON
+	{ 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SUCCUBUS
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // LICH
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
+	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DEVIL
+	{ 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCARAB
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRYSTALGOLEM
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // INCUBUS
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // VAMPIRE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHADOW
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // COCKATRICE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // INSECTOID
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOATMAN
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // AUTOMATON
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // LICH_ICE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // LICH_FIRE
 };
 
 // determines which monsters come to the aid of other monsters
 bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 {
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1 }, // HUMAN
-	{ 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
-	{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOBLIN
-	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SLIME
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
-	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // OCTOPUS
-	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
-	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // GHOUL
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // SKELETON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCORPION
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // IMP
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
-	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0 }, // DEMON
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0 }, // SUCCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0 }, // LICH
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, // MINOTAUR
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0 }, // DEVIL
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1 }  // SHOPKEEPER
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // NOTHING
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // HUMAN
+	{ 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // RAT
+	{ 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOBLIN
+	{ 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SLIME
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // TROLL
+	{ 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // OCTOPUS
+	{ 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SPIDER
+	{ 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GHOUL
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SKELETON
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCORPION
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // IMP
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // BUGBEAR
+	{ 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GNOME
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DEMON
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SUCCUBUS
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MIMIC
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // LICH
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DEVIL
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // SHOPKEEPER
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }, // SCARAB
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, // CRYSTALGOLEM
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // INCUBUS
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1 }, // VAMPIRE
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1 }, // SHADOW
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }, // COCKATRICE
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }, // INSECTOID
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0 }, // GOATMAN
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, // AUTOMATON
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }, // LICH_ICE
+	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }  // LICH_FIRE
 };
 
 // monster sight ranges
@@ -102,7 +126,19 @@ double sightranges[NUMMONSTERS] =
 	512,  // LICH
 	512,  // MINOTAUR
 	1024, // DEVIL
-	256   // SHOPKEEPER
+	256,  // SHOPKEEPER
+	192,  // KOBOLD
+	512,  // SCARAB
+	192,   // CRYSTALGOLEM
+	256,  // INCUBUS
+	192,  // VAMPIRE
+	256,  // SHADOW
+	256,  // COCKATRICE
+	256,  // INSECTOID
+	256,  // GOATMAN
+	192,  // AUTOMATON
+	512,  // LICH_ICE
+	512,  // LICH_FIRE
 };
 
 /*-------------------------------------------------------------------------------
@@ -146,7 +182,7 @@ Entity* summonMonster(Monster creature, long x, long y)
 		node->element = NULL;
 		node->deconstructor = &emptyDeconstructor;
 
-		myStats = new Stat();
+		myStats = new Stat(creature + 1000);
 		node = list_AddNodeLast(&entity->children); //ASSUMING THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node->element = myStats;
 		node->size = sizeof(myStats);
@@ -156,7 +192,6 @@ Entity* summonMonster(Monster creature, long x, long y)
 			myStats->leader_uid = entity->parent;
 			entity->parent = 0;
 		}
-
 		myStats->type = creature;
 	}
 
@@ -335,6 +370,83 @@ Entity* summonMonster(Monster creature, long x, long y)
 				entity->sizey = 20;
 				entity->yaw = PI;
 				break;
+			case KOBOLD:
+				entity->z = 2.25;
+				entity->focalx = limbs[KOBOLD][0][0]; // 0
+				entity->focaly = limbs[KOBOLD][0][1]; // 0
+				entity->focalz = limbs[KOBOLD][0][2]; // -2
+				break;
+			case SCARAB:
+				entity->focalx = limbs[SCARAB][0][0]; // 0
+				entity->focaly = limbs[SCARAB][0][1]; // 0
+				entity->focalz = limbs[SCARAB][0][2]; // 0
+				break;
+			case CRYSTALGOLEM:
+				entity->z = -1.5;
+				entity->focalx = limbs[CRYSTALGOLEM][0][0]; // 1
+				entity->focaly = limbs[CRYSTALGOLEM][0][1]; // 0
+				entity->focalz = limbs[CRYSTALGOLEM][0][2]; // -2
+				break;
+			case INCUBUS:
+				entity->z = -1;
+				entity->focalx = limbs[INCUBUS][0][0]; // 0
+				entity->focaly = limbs[INCUBUS][0][1]; // 0
+				entity->focalz = limbs[INCUBUS][0][2]; // -1.5
+				break;
+			case VAMPIRE:
+				entity->z = -1;
+				entity->focalx = limbs[HUMAN][0][0]; // 0
+				entity->focaly = limbs[HUMAN][0][1]; // 0
+				entity->focalz = limbs[HUMAN][0][2]; // -1.5
+				break;
+			case SHADOW:
+				entity->z = -1;
+				entity->focalx = limbs[SHADOW][0][0]; // 0
+				entity->focaly = limbs[SHADOW][0][1]; // 0
+				entity->focalz = limbs[SHADOW][0][2]; // -1.75
+				break;
+			case COCKATRICE:
+				entity->z = -4.5;
+				entity->focalx = limbs[COCKATRICE][0][0]; // 0
+				entity->focaly = limbs[COCKATRICE][0][1]; // 0
+				entity->focalz = limbs[COCKATRICE][0][2]; // -1.75
+				break;
+			case INSECTOID:
+				entity->z = 0;
+				entity->focalx = limbs[INSECTOID][0][0]; // 0
+				entity->focaly = limbs[INSECTOID][0][1]; // 0
+				entity->focalz = limbs[INSECTOID][0][2]; // -1.75
+				break;
+			case GOATMAN:
+				entity->z = 0;
+				entity->focalx = limbs[GOATMAN][0][0]; // 0
+				entity->focaly = limbs[GOATMAN][0][1]; // 0
+				entity->focalz = limbs[GOATMAN][0][2]; // -1.75
+				break;
+			case AUTOMATON:
+				entity->z = -.5;
+				entity->focalx = limbs[AUTOMATON][0][0]; // 0
+				entity->focaly = limbs[AUTOMATON][0][1]; // 0
+				entity->focalz = limbs[AUTOMATON][0][2]; // -1.5
+				break;
+			case LICH_ICE:
+				entity->focalx = limbs[LICH_ICE][0][0]; // -0.75
+				entity->focaly = limbs[LICH_ICE][0][1]; // 0
+				entity->focalz = limbs[LICH_ICE][0][2]; // 0
+				entity->z = -2;
+				entity->yaw = PI;
+				entity->sprite = 274;
+				entity->skill[29] = 120;
+				break;
+			case LICH_FIRE:
+				entity->focalx = limbs[LICH_FIRE][0][0]; // -0.75
+				entity->focaly = limbs[LICH_FIRE][0][1]; // 0
+				entity->focalz = limbs[LICH_FIRE][0][2]; // 0
+				entity->z = -2;
+				entity->yaw = PI;
+				entity->sprite = 274;
+				entity->skill[29] = 120;
+				break;
 			default:
 				//Spawn a potato.
 				list_RemoveNode(entity->mynode);
@@ -467,6 +579,142 @@ int devilstate = 0;
 int devilacted = 0;
 int devilroar = 0;
 int devilintro = 0;
+
+bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats)
+{
+	if ( ringconflict )
+	{
+		//Instant fail if ring of conflict is in effect. You have no allies!
+		return false;
+	}
+
+	Monster race = my->getRace();
+
+	if ( myStats->leader_uid != 0 )
+	{
+		//Handle the "I have a leader!" situation.
+		if ( myStats->leader_uid == players[monsterclicked]->entity->getUID() )
+		{
+			//Follows this player already!
+			if ( my->getINT() > -2 && race == HUMAN )
+			{
+				messagePlayer(monsterclicked, language[535], namesays, stats[monsterclicked]->name);
+			}
+			else
+			{
+				messagePlayer(monsterclicked, language[534], namesays);
+			}
+
+			// move aside
+			monsterMoveAside(my, players[monsterclicked]->entity);
+		}
+		else
+		{
+			//Follows somebody else.
+			if ( my->getINT() > -2 && race == HUMAN )
+			{
+				messagePlayer(monsterclicked, language[536], namesays, stats[monsterclicked]->name);
+			}
+			else
+			{
+				messagePlayer(monsterclicked, language[534], namesays);
+			}
+
+			if ( my->checkFriend(players[monsterclicked]->entity) )
+			{
+				//If friendly, move aside.
+				monsterMoveAside(my, players[monsterclicked]->entity);
+			}
+		}
+
+		return false;
+	}
+
+	bool canAlly = false;
+	if ( skillCapstoneUnlocked(monsterclicked, PRO_LEADERSHIP) )
+	{
+		//No cap on # of followers.
+		//Can control humans & goblins both.
+		//TODO: Control humanoids in general? Or otherwise something from each tileset.
+		if ( race == HUMAN || race == GOBLIN )
+		{
+			canAlly = true;
+		}
+
+		//TODO: If enemies (e.g. goblin or an angry human), require the player to be unseen by this creature to gain control of it.
+	}
+	else
+	{
+		if ( my->checkFriend(players[monsterclicked]->entity) )
+		{
+			if ( myStats->leader_uid == 0 )
+			{
+				if ( (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS) ) )
+				{
+					canAlly = true;
+				}
+			}
+		}
+	}
+
+	if ( !canAlly )
+	{
+		//This one does not want to join your ever-enlarging cult.
+		if ( my->getINT() > -2 && race == HUMAN )
+		{
+			//Human tells off the player.
+			messagePlayer(monsterclicked, language[530 + rand() % 4], namesays);
+			// move aside
+			monsterMoveAside(my, players[monsterclicked]->entity);
+		}
+		else
+		{
+			messagePlayer(monsterclicked, language[534], namesays);
+		}
+
+		return false;
+	}
+
+	node_t* newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
+	newNode->deconstructor = &defaultDeconstructor;
+	Uint32* myuid = (Uint32*) (malloc(sizeof(Uint32)));
+	newNode->element = myuid;
+	*myuid = my->getUID();
+
+	if ( my->getINT() > -2 && race == HUMAN )
+	{
+		messagePlayer(monsterclicked, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
+	}
+	else
+	{
+		//This one can't speak, so generic "The %s decides to follow you!" message.
+		if ( myStats->type < KOBOLD ) //Original monster count
+		{
+			messagePlayer(monsterclicked, language[529], language[90 + myStats->type]);
+		}
+		else if ( myStats->type >= KOBOLD ) //New monsters
+		{
+			messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - KOBOLD)]);
+		}
+	}
+
+	monsterMoveAside(my, players[monsterclicked]->entity);
+	players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
+	MONSTER_STATE = 0; // be ready to follow
+	myStats->leader_uid = players[monsterclicked]->entity->getUID();
+
+	if ( monsterclicked > 0 && multiplayer == SERVER )
+	{
+		//Tell the client he suckered somebody into his cult.
+		strcpy((char*) (net_packet->data), "LEAD");
+		SDLNet_Write32((Uint32 )my->getUID(), &net_packet->data[4]);
+		net_packet->address.host = net_clients[monsterclicked - 1].host;
+		net_packet->address.port = net_clients[monsterclicked - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
+	}
+}
+
 //int devilintro=0;
 
 void actMonster(Entity* my)
@@ -582,6 +830,46 @@ void actMonster(Entity* my)
 			{
 				initDevil(my, NULL);
 			}
+			else if ( my->sprite == 475 )     // crystal golem head
+			{
+				initCrystalgolem(my, NULL);
+			}
+			else if ( my->sprite == 413 )     // cockatrice head
+			{
+				initCockatrice(my, NULL);
+			}
+			else if ( my->sprite == 467 )     // automaton torso
+			{
+				initAutomaton(my, NULL);
+			}
+			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
+			{
+				initScarab(my, NULL);
+			}
+			else if ( my->sprite == 421 )     // kobold head
+			{
+				initKobold(my, NULL);
+			}
+			else if ( my->sprite == 481 )     // shadow head
+			{
+				initShadow(my, NULL);
+			}
+			else if ( my->sprite == 437 )     // vampire head
+			{
+				initVampire(my, NULL);
+			}
+			else if ( my->sprite == 445 )     // incubus head
+			{
+				initIncubus(my, NULL);
+			}
+			else if ( my->sprite == 455 )     // insectoid head
+			{
+				initInsectoid(my, NULL);
+			}
+			else if ( my->sprite == 463 )     // goatman head
+			{
+				initGoatman(my, NULL);
+			}
 		}
 		else
 		{
@@ -662,6 +950,46 @@ void actMonster(Entity* my)
 			{
 				my->flags[BURNABLE] = false;
 				devilMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 421 )     // kobold head
+			{
+				koboldMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 429 || my->sprite == 430 )     // scarab
+			{
+				scarabAnimate(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 475 )     // crystal golem head
+			{
+				crystalgolemMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 445 )     // incubus head
+			{
+				incubusMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 437 )     // vampire head
+			{
+				vampireMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 481 )     // shadow head
+			{
+				shadowMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 413 )     // cockatrice head
+			{
+				cockatriceMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 455 )     // insectoid head
+			{
+				insectoidMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 463 )     // goatman head
+			{
+				goatmanMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+			}
+			else if ( my->sprite == 467 )     // automaton head
+			{
+				automatonMoveBodyparts(my, NULL, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 			}
 			else
 			{
@@ -762,10 +1090,47 @@ void actMonster(Entity* my)
 					devilacted = 0;
 					initDevil(my, myStats);
 					break;
+				case KOBOLD:
+					initKobold ( my, myStats );
+					break;
+				case SCARAB:
+					initScarab ( my, myStats );
+					break;
+				case CRYSTALGOLEM:
+					initCrystalgolem ( my, myStats );
+					break;
+				case INCUBUS:
+					initIncubus ( my, myStats );
+					break;
+				case VAMPIRE:
+					initVampire ( my, myStats );
+					break;
+				case SHADOW:
+					initShadow ( my, myStats );
+					break;
+				case COCKATRICE:
+					initCockatrice (my, myStats);
+					break;
+				case INSECTOID:
+					initInsectoid ( my, myStats );
+					break;
+				case GOATMAN:
+					initGoatman ( my, myStats );
+					break;
+				case AUTOMATON:
+					initAutomaton (my, myStats);
+					break;
+				case LICH_ICE:
+					//initLichIce ( my, myStats );
+					break;
+				case LICH_FIRE:
+					//initLichFire ( my, myStats );
+					break;
 				default:
 					break; //This should never be reached.
 			}
 		}
+
 		MONSTER_INIT = 2;
 		if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
@@ -818,21 +1183,7 @@ void actMonster(Entity* my)
 	myStats->defending = false;
 
 	// levitation
-	bool levitating = false;
-	if ( myStats->EFFECTS[EFF_LEVITATING] == true )
-	{
-		levitating = true;
-	}
-	if ( myStats->ring != NULL )
-		if ( myStats->ring->type == RING_LEVITATION )
-		{
-			levitating = true;
-		}
-	if ( myStats->shoes != NULL )
-		if ( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
-		{
-			levitating = true;
-		}
+	bool levitating = isLevitating(myStats);
 
 	if ( myStats->type == MINOTAUR )
 	{
@@ -1036,7 +1387,14 @@ void actMonster(Entity* my)
 				}
 				else
 				{
-					snprintf(whatever, 255, language[1499], stats[c]->name, language[90 + myStats->type], myStats->obituary);
+					if ( myStats->type < KOBOLD ) //Original monster count
+					{
+						snprintf(whatever, 255, language[1499], stats[c]->name, language[90 + myStats->type], myStats->obituary);
+					}
+					else if ( myStats->type >= KOBOLD ) //New monsters
+					{
+						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - KOBOLD)], myStats->obituary);
+					}
 				}
 				messagePlayer(c, whatever);
 			}
@@ -1144,6 +1502,36 @@ void actMonster(Entity* my)
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
+				break;
+			case AUTOMATON:
+				automatonDie(my);
+				break;
+			case COCKATRICE:
+				cockatriceDie(my);
+				break;
+			case CRYSTALGOLEM:
+				crystalgolemDie(my);
+				break;
+			case SCARAB:
+				scarabDie(my);
+				break;
+			case KOBOLD:
+				koboldDie(my);
+				break;
+			case SHADOW:
+				shadowDie(my);
+				break;
+			case VAMPIRE:
+				vampireDie(my);
+				break;
+			case INCUBUS:
+				incubusDie(my);
+				break;
+			case INSECTOID:
+				insectoidDie(my);
+				break;
+			case GOATMAN:
+				goatmanDie(my);
 				break;
 			default:
 				break; //This should never be reached.
@@ -1352,7 +1740,6 @@ void actMonster(Entity* my)
 	weight /= 2; // on monsters weight shouldn't matter so much
 	double weightratio = (1000 + my->getSTR() * 100 - weight) / (double)(1000 + my->getSTR() * 100);
 	weightratio = fmin(fmax(0, weightratio), 1);
-
 	// determine if I have a ranged weapon or not
 	if ( myStats->weapon != NULL )
 	{
@@ -1421,6 +1808,7 @@ void actMonster(Entity* my)
 	}
 	if ( handleinvisible )
 	{
+		//TODO: Should this use isInvisible()?
 		if ( myStats->EFFECTS[EFF_INVISIBLE] )
 		{
 			my->flags[INVISIBLE] = true;
@@ -1445,7 +1833,14 @@ void actMonster(Entity* my)
 	char namesays[32];
 	if ( !strcmp(myStats->name, "") )
 	{
-		snprintf(namesays, 31, language[513], language[90 + (int)myStats->type]);
+		if ( myStats->type < KOBOLD ) //Original monster count
+		{
+			snprintf(namesays, 31, language[513], language[90 + myStats->type]);
+		}
+		else if ( myStats->type >= KOBOLD ) //New monsters
+		{
+			snprintf(namesays, 31, language[513], language[2000 + myStats->type - KOBOLD]);
+		}
 	}
 	else
 	{
@@ -1473,7 +1868,14 @@ void actMonster(Entity* my)
 		{
 			if ( !strcmp(myStats->name, "") )
 			{
-				messagePlayer(monsterclicked, language[514], language[90 + myStats->type]);
+				if ( myStats->type < KOBOLD ) //Original monster count
+				{
+					messagePlayer(monsterclicked, language[514], language[90 + myStats->type]);
+				}
+				else if ( myStats->type >= KOBOLD ) //New monsters
+				{
+					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - KOBOLD)]);
+				}
 			}
 			else
 			{
@@ -1514,84 +1916,7 @@ void actMonster(Entity* my)
 			{
 				if (myStats->type != SHOPKEEPER)
 				{
-					if (my->checkFriend(players[monsterclicked]->entity))
-					{
-						if (!ringconflict)
-						{
-							if (myStats->leader_uid == 0)
-							{
-								if (stats[monsterclicked]->PROFICIENCIES[PRO_LEADERSHIP] / 4 >= list_Size(&stats[monsterclicked]->FOLLOWERS))
-								{
-									node_t* newNode = list_AddNodeLast(&stats[monsterclicked]->FOLLOWERS);
-									newNode->deconstructor = &defaultDeconstructor;
-									Uint32* myuid = (Uint32*) malloc(sizeof(Uint32));
-									newNode->element = myuid;
-									*myuid = my->getUID();
-									if (my->getINT() > -2)
-									{
-										messagePlayer(monsterclicked, language[525 + rand() % 4], namesays, stats[monsterclicked]->name);
-									}
-									else
-									{
-										messagePlayer(monsterclicked, language[529], language[90 + (int)myStats->type]);
-									}
-									monsterMoveAside(my, players[monsterclicked]->entity);
-									players[monsterclicked]->entity->increaseSkill(PRO_LEADERSHIP);
-									MONSTER_STATE = 0; // be ready to follow
-									myStats->leader_uid = players[monsterclicked]->entity->getUID();
-									if (monsterclicked > 0 && multiplayer == SERVER)
-									{
-										strcpy((char*)net_packet->data, "LEAD");
-										SDLNet_Write32((Uint32)my->getUID(), &net_packet->data[4]);
-										net_packet->address.host = net_clients[monsterclicked - 1].host;
-										net_packet->address.port = net_clients[monsterclicked - 1].port;
-										net_packet->len = 8;
-										sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
-									}
-								}
-								else
-								{
-									if (my->getINT() > -2)
-									{
-										messagePlayer(monsterclicked, language[530 + rand() % 4], namesays);
-										// move aside
-										monsterMoveAside(my, players[monsterclicked]->entity);
-									}
-									else
-									{
-										messagePlayer(monsterclicked, language[534], namesays);
-									}
-								}
-							}
-							else
-							{
-								if (myStats->leader_uid == players[monsterclicked]->entity->getUID())
-								{
-									if (my->getINT() > -2)
-									{
-										messagePlayer(monsterclicked, language[535], namesays, stats[monsterclicked]->name);
-									}
-									else
-									{
-										messagePlayer(monsterclicked, language[534], namesays);
-									}
-								}
-								else
-								{
-									if (my->getINT() > -2)
-									{
-										messagePlayer(monsterclicked, language[536], namesays, stats[monsterclicked]->name);
-									}
-									else
-									{
-										messagePlayer(monsterclicked, language[534], namesays);
-									}
-								}
-								// move aside
-								monsterMoveAside(my, players[monsterclicked]->entity);
-							}
-						}
-					}
+					makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
 				}
 				else
 				{
@@ -1738,7 +2063,7 @@ void actMonster(Entity* my)
 							{
 								light = TOUCHRANGE;
 							}
-							if ( myStats->type >= LICH )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
 								light = 1000;
 							}
@@ -1781,7 +2106,7 @@ void actMonster(Entity* my)
 							}
 							if ( visiontest )   // vision cone
 							{
-								if ( myStats->type >= LICH )
+								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 								{
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
@@ -1866,7 +2191,7 @@ void actMonster(Entity* my)
 			// minotaurs and liches chase players relentlessly.
 			if (myReflex)
 			{
-				if (myStats->type == MINOTAUR || myStats->type == LICH || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+				if (myStats->type == MINOTAUR || myStats->type == LICH || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 				{
 					double distToPlayer = 0;
 					int c, playerToChase = -1;
@@ -2205,7 +2530,7 @@ void actMonster(Entity* my)
 				{
 					light = TOUCHRANGE;
 				}
-				if ( myStats->type >= LICH )
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 				{
 					light = 1000;
 				}
@@ -2268,6 +2593,7 @@ void actMonster(Entity* my)
 						{
 							dist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 						}
+
 						if ( hit.entity != entity && myReflex )
 						{
 							if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
@@ -2441,88 +2767,7 @@ timeToGoAgain:
 								}
 							}
 
-							if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
-							{
-								MONSTER_HITTIME++;
-								int bow = 1;
-								if ( hasrangedweapon )
-									if ( myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
-									{
-										bow = 2;
-									}
-								if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
-								{
-									if ( myStats->type == LICH )
-									{
-										MONSTER_SPECIAL++;
-										if ( MONSTER_SPECIAL >= 5 )
-										{
-											MONSTER_SPECIAL = 90;
-											MONSTER_TARGET = 0;
-											MONSTER_TARGETX = my->x - 50 + rand() % 100;
-											MONSTER_TARGETY = my->y - 50 + rand() % 100;
-											MONSTER_STATE = 2; // path state
-										}
-									}
-									MONSTER_HITTIME = 0;
-									int tracedist;
-									if (hasrangedweapon)
-									{
-										tracedist = 160;
-									}
-									else
-									{
-										tracedist = STRIKERANGE;
-									}
-									double newTangent = atan2(entity->y - my->y, entity->x - my->x);
-									lineTrace(my, my->x, my->y, newTangent, tracedist, 0, false);
-									if (hit.entity != nullptr)
-									{
-										hitstats = hit.entity->getStats();
-										if (hit.entity->behavior == &actMonster && !hasrangedweapon)
-										{
-											// alert the monster!
-											if (hit.entity->skill[0] != 1)
-											{
-												//hit.entity->skill[0]=0;
-												//hit.entity->skill[4]=0;
-												//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
-												hit.entity->skill[0] = 2;
-												hit.entity->skill[1] = my->getUID();
-												hit.entity->fskill[2] = my->x;
-												hit.entity->fskill[3] = my->y;
-											}
-										}
-										if ( hit.entity->getStats() != NULL )
-										{
-											int pose = 0;
-											if ( myStats->weapon )
-											{
-												if ( itemCategory(myStats->weapon) == MAGICSTAFF )
-												{
-													pose = 3;  // jab
-												}
-												else if ( itemCategory(myStats->weapon) == SPELLBOOK )
-												{
-													pose = 1;  // vertical swing
-												}
-												else if ( hasrangedweapon )
-												{
-													pose = 0;
-												}
-												else
-												{
-													pose = rand() % 3 + 1;
-												}
-											}
-											double oYaw = my->yaw;
-											my->yaw = newTangent;
-											my->attack(pose, 1); // attacku! D:<
-											my->yaw = oYaw;
-										}
-									}
-								}
-							}
+							handleMonsterAttack(my, myStats, entity, dist, hasrangedweapon);
 
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
@@ -2739,7 +2984,7 @@ timeToGoAgain:
 							{
 								light = TOUCHRANGE;
 							}
-							if ( myStats->type >= LICH )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
 							{
 								light = 1000;
 							}
@@ -4002,5 +4247,920 @@ timeToGoAgain:
 		{
 			devilMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
 		}
+		else if ( myStats->type == COCKATRICE )
+		{
+			cockatriceMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == AUTOMATON )
+		{
+			automatonMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == CRYSTALGOLEM )
+		{
+			crystalgolemMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == SCARAB )
+		{
+			scarabAnimate(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == KOBOLD )
+		{
+			koboldMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == SHADOW )
+		{
+			shadowMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == GOATMAN )
+		{
+			goatmanMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == INSECTOID )
+		{
+			insectoidMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == INCUBUS )
+		{
+			incubusMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
+		else if ( myStats->type == VAMPIRE )
+		{
+			vampireMoveBodyparts(my, myStats, sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY));
+		}
 	}
+}
+
+void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon)
+{
+	node_t* node = nullptr;
+	Entity* entity = nullptr;
+	Stat* hitstats = nullptr;
+	int charge = 1;
+
+	if ( myStats->type != LICH && myStats->type != DEVIL && MONSTER_SPECIAL > 0 )
+	{
+		--MONSTER_SPECIAL;
+		if ( MONSTER_SPECIAL == 0 )
+		{
+			//messagePlayer(0, "Special Ready");
+		}
+	}
+
+	// check the range to the target, depending on ranged weapon or melee.
+	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
+	{
+		// increment the hit time, don't attack until this reaches the hitrate of the weapon
+		MONSTER_HITTIME++;
+		int bow = 1;
+		if ( hasrangedweapon )
+		{
+			if ( myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
+			{
+				bow = 2;
+			}
+		}
+		// check if ready to attack
+		if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
+		{
+			handleMonsterSpecialAttack(my, myStats, nullptr, dist, hasrangedweapon);
+
+			if ( myStats->type == LICH )
+			{
+				MONSTER_SPECIAL++;
+				if ( MONSTER_SPECIAL >= 5 )
+				{
+					MONSTER_SPECIAL = 90;
+					MONSTER_TARGET = 0;
+					MONSTER_TARGETX = my->x - 50 + rand() % 100;
+					MONSTER_TARGETY = my->y - 50 + rand() % 100;
+					MONSTER_STATE = 2; // path state
+				}
+			}
+
+			// reset the hit timer
+			MONSTER_HITTIME = 0;
+			int tracedist;
+			if ( hasrangedweapon )
+			{
+				tracedist = 160;
+			}
+			else
+			{
+				tracedist = STRIKERANGE;
+			}
+
+			// check again for the target in attack range. return the result into hit.entity.
+			double newTangent = atan2(target->y - my->y, target->x - my->x);
+			lineTrace(my, my->x, my->y, newTangent, tracedist, 0, false);
+			if ( hit.entity != nullptr )
+			{
+				// found the target in range
+				hitstats = hit.entity->getStats();
+				if ( hit.entity->behavior == &actMonster && !hasrangedweapon )
+				{
+					// alert the monster!
+					if ( hit.entity->skill[0] != 1 )
+					{
+						//hit.entity->skill[0]=0;
+						//hit.entity->skill[4]=0;
+						//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
+						hit.entity->skill[0] = 2;
+						hit.entity->skill[1] = my->getUID();
+						hit.entity->fskill[2] = my->x;
+						hit.entity->fskill[3] = my->y;
+					}
+				}
+				if ( hit.entity->getStats() != NULL )
+				{
+					// prepare attack, set the animation of the attack based on the current weapon.
+					int pose = 0;
+					if ( myStats->weapon )
+					{
+						if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+						{
+							pose = 3;  // jab
+						}
+						else if ( itemCategory(myStats->weapon) == SPELLBOOK )
+						{
+							if ( myStats->type == KOBOLD )
+							{
+								pose = MONSTER_POSE_MAGIC_WINDUP1;
+							}
+							else if ( myStats->type == COCKATRICE )
+							{
+								if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+								{
+									pose = MONSTER_POSE_MAGIC_WINDUP2;
+								}
+								else
+								{
+									pose = MONSTER_POSE_MAGIC_WINDUP1;
+								}
+							}
+							else
+							{
+								pose = 1;  // vertical swing
+							}
+						}
+						else if ( hasrangedweapon )
+						{
+							if ( myStats->type == KOBOLD )
+							{
+								pose = MONSTER_POSE_RANGED_WINDUP1;
+							}
+							else
+							{
+								pose = 0;
+							}
+						}
+						else
+						{
+							if ( myStats->type == KOBOLD )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+							}
+							else
+							{
+								pose = rand() % 3 + 1;
+							}
+						}
+					}
+					// fists
+					else
+					{
+						if ( myStats->type == KOBOLD )
+						{
+							pose = MONSTER_POSE_MELEE_WINDUP1;
+						}
+						else if ( myStats->type == CRYSTALGOLEM )
+						{
+							if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_GOLEM )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP3;
+							}
+							else
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+							}
+						}
+						else if ( myStats->type == COCKATRICE )
+						{
+							if ( MONSTER_SPECIAL == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP3;
+							}
+							else
+							{
+								pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+							}
+						}
+						else
+						{
+							pose = 1;
+						}
+					}
+					// turn to the target, then reset my yaw.
+					double oYaw = my->yaw;
+					my->yaw = newTangent;
+					my->attack(pose, charge, nullptr); // attacku! D:<
+					my->yaw = oYaw;
+				}
+			}
+		}
+	}
+	return;
+}
+
+int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir)
+{
+	if ( axis == 0 || limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE || dir == ANIMATE_DIR_NONE )
+	{
+		if ( axis == ANIMATE_PITCH )
+		{
+			limb->pitch = endpoint;
+		}
+		else if ( axis == ANIMATE_ROLL )
+		{
+			limb->roll = endpoint;
+		}
+		else if ( axis == ANIMATE_YAW )
+		{
+			limb->yaw = endpoint;
+		}
+		// no animation required.
+		return -1;
+	}
+
+	if ( axis == ANIMATE_PITCH )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->pitch += setpointRate * dir;
+			while ( limb->pitch < 0 )
+			{
+				limb->pitch += 2 * PI;
+			}
+			while ( limb->pitch >= 2 * PI )
+			{
+				limb->pitch -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->pitch, setpointRate, setpoint) )
+			{
+				limb->pitch = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->pitch -= endpointRate * dir;
+			while ( limb->pitch < 0 )
+			{
+				limb->pitch += 2 * PI;
+			}
+			while ( limb->pitch >= 2 * PI )
+			{
+				limb->pitch -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->pitch, endpointRate, endpoint) )
+			{
+				limb->pitch = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+	else if ( axis == ANIMATE_ROLL )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->roll += setpointRate * dir;
+			while ( limb->roll < 0 )
+			{
+				limb->roll += 2 * PI;
+			}
+			while ( limb->roll >= 2 * PI )
+			{
+				limb->roll -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->roll, setpointRate, setpoint) )
+			{
+				limb->roll = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->roll -= endpointRate * dir;
+			while ( limb->roll < 0 )
+			{
+				limb->roll += 2 * PI;
+			}
+			while ( limb->roll >= 2 * PI )
+			{
+				limb->roll -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->roll, endpointRate, endpoint) )
+			{
+				limb->roll = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+	else if ( axis == ANIMATE_YAW )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->yaw += setpointRate * dir;
+			while ( limb->yaw < 0 )
+			{
+				limb->yaw += 2 * PI;
+			}
+			while ( limb->yaw >= 2 * PI )
+			{
+				limb->yaw -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->yaw, setpointRate, setpoint) )
+			{
+				limb->yaw = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->yaw -= endpointRate * dir;
+			while ( limb->yaw < 0 )
+			{
+				limb->yaw += 2 * PI;
+			}
+			while ( limb->yaw >= 2 * PI )
+			{
+				limb->yaw -= 2 * PI;
+			}
+
+			if ( limbAngleWithinRange(limb->yaw, endpointRate, endpoint) )
+			{
+				limb->yaw = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+	else if ( axis == ANIMATE_Z )
+	{
+		if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_SETPOINT )
+		{
+			limb->z += setpointRate * dir;
+
+			if ( limbAngleWithinRange(limb->z, setpointRate, setpoint) )
+			{
+				limb->z = setpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_ENDPOINT;
+				return ANIMATE_OVERSHOOT_TO_SETPOINT; //reached setpoint
+			}
+		}
+		else if ( limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_TO_ENDPOINT )
+		{
+			limb->z -= endpointRate * dir;
+
+			if ( limbAngleWithinRange(limb->z, endpointRate, endpoint) )
+			{
+				limb->z = endpoint;
+				limb->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
+				return ANIMATE_OVERSHOOT_TO_ENDPOINT; //reached endpoint.
+			}
+		}
+	}
+
+	return -1;
+}
+
+int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate)
+{
+	if ( axis == 0 )
+	{
+		return -1;
+	}
+
+	if ( axis == ANIMATE_YAW )
+	{
+		while ( limb->yaw < 0 )
+		{
+			limb->yaw += 2 * PI;
+		}
+		while ( limb->yaw >= 2 * PI )
+		{
+			limb->yaw -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->yaw, rate, setpoint) )
+		{
+			limb->yaw = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->yaw += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->yaw -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+		limb->yaw += rate;
+	} else if ( axis == ANIMATE_PITCH )
+	{
+		while ( limb->pitch < 0 )
+		{
+			limb->pitch += 2 * PI;
+		}
+		while ( limb->pitch >= 2 * PI )
+		{
+			limb->pitch -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->pitch, rate, setpoint) )
+		{
+			limb->pitch = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->pitch += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->pitch -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+		limb->pitch += rate;
+	} else if ( axis == ANIMATE_ROLL )
+	{
+		while ( limb->roll < 0 )
+		{
+			limb->roll += 2 * PI;
+		}
+		while ( limb->roll >= 2 * PI )
+		{
+			limb->roll -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->roll, rate, setpoint) )
+		{
+			limb->roll = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->roll += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->roll -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+		limb->roll += rate;
+	}
+	else if ( axis == ANIMATE_Z )
+	{
+		if ( limbAngleWithinRange(limb->z, rate, setpoint) )
+		{
+			limb->z = setpoint;
+			if ( shake )
+			{
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NONE )
+				{
+					// no direction for shake is set.
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+				if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_POSITIVE )
+				{
+					limb->z += shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_NEGATIVE;
+				}
+				else if ( limb->monsterAnimationLimbDirection == ANIMATE_DIR_NEGATIVE )
+				{
+					limb->z -= shakerate;
+					limb->monsterAnimationLimbDirection = ANIMATE_DIR_POSITIVE;
+				}
+			}
+			return 1; //reached setpoint
+		}
+		limb->z += rate;
+	}
+	else if ( axis == ANIMATE_WEAPON_YAW )
+	{
+		while ( limb->fskill[5] < 0 )
+		{
+			limb->fskill[5] += 2 * PI;
+		}
+		while ( limb->fskill[5] >= 2 * PI )
+		{
+			limb->fskill[5] -= 2 * PI;
+		}
+
+		if ( limbAngleWithinRange(limb->fskill[5], rate, setpoint) )
+		{
+			limb->fskill[5] = setpoint;
+			return 1; //reached setpoint
+		}
+		limb->fskill[5] += rate;
+	}
+
+	return 0;
+}
+
+int limbAngleWithinRange(real_t angle, double rate, double setpoint)
+{
+	if ( rate > 0 )
+	{
+		if ( (angle <= (setpoint + rate)) && (angle >= (setpoint - rate)) )
+		{
+			return 1;
+		}
+	}
+	else if ( rate < 0 )
+	{
+		if ( (angle >= (setpoint + rate)) && (angle <= (setpoint - rate)) )
+		{
+			return 1;
+		}
+	}
+
+	return 0;
+}
+
+real_t normaliseAngle2PI(real_t angle)
+{
+	while ( angle >= 2 * PI )
+	{
+		angle -= 2 * PI;
+	}
+	while ( angle < 0 )
+	{
+		angle += 2 * PI;
+	}
+
+	return angle;
+}
+
+bool forceFollower(Entity& leader, Entity& follower)
+{
+	Stat* leaderStats = leader.getStats();
+	Stat* followerStats = follower.getStats();
+	if ( !leaderStats || !followerStats )
+	{
+		printlog("[forceFollower] Error: Either leader or follower did not have stats.");
+		return false;
+	}
+
+	Uint32* myuid = (Uint32*) (malloc(sizeof(Uint32)));
+	*myuid = follower.getUID();
+
+	//Deal with the old leader.
+	if ( followerStats->leader_uid != 0 )
+	{
+		Entity* oldLeader = uidToEntity(followerStats->leader_uid);
+		if ( oldLeader )
+		{
+			Stat* oldLeaderStats = oldLeader->getStats();
+			if ( oldLeaderStats )
+			{
+				list_RemoveNodeWithElement<Uint32>(oldLeaderStats->FOLLOWERS, *myuid);
+			}
+		}
+	}
+
+	node_t* newNode = list_AddNodeLast(&leaderStats->FOLLOWERS);
+	newNode->deconstructor = &defaultDeconstructor;
+	newNode->element = myuid;
+
+	follower.monsterState = 0;
+	follower.monsterTarget = 0;
+	followerStats->leader_uid = leader.getUID();
+
+	int player = leader.isEntityPlayer();
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		//Tell the client he suckered somebody into his cult.
+		strcpy((char*) (net_packet->data), "LEAD");
+		SDLNet_Write32((Uint32 )follower.getUID(), &net_packet->data[4]);
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 8;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+
+	return true;
+}
+
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon)
+{
+	int specialRoll = 0;
+	node_t* node = nullptr;
+	int enemiesNearby = 0;
+	int bonusFromHP = 0;
+
+	if ( myStats != nullptr )
+	{
+		if ( myStats->type == LICH || myStats->type == DEVIL || myStats->type == SHOPKEEPER )
+		{
+			return;
+		}
+
+		if ( MONSTER_SPECIAL == 0 )
+		{
+			switch ( myStats->type )
+			{
+				case KOBOLD:
+					if ( hasrangedweapon )
+					{
+						specialRoll = rand() % 20;
+						//messagePlayer(0, "Rolled: %d", specialRoll);
+						if ( myStats->HP < myStats->MAXHP / 3 )
+						{
+							if ( (dist < 40 && specialRoll < 10) || (dist < 100 && specialRoll < 5) ) // 50%/25% chance
+							{
+								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+								if ( node != nullptr )
+								{
+									swapMonsterWeaponWithInventoryItem(my, myStats, node);
+									MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+								}
+							}
+						}
+						else if ( myStats->HP < myStats->MAXHP / 2 )
+						{
+							if ( (dist < 40 && specialRoll < 5) || (dist < 100 && specialRoll < 2) ) // 25%/10% chance
+							{
+								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+								if ( node != nullptr )
+								{
+									swapMonsterWeaponWithInventoryItem(my, myStats, node);
+									MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+								}
+							}
+						}
+					}
+					break;
+				case CRYSTALGOLEM:
+					specialRoll = rand() % 20;
+					enemiesNearby = numTargetsAroundEntity(my, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
+					if ( enemiesNearby > 1 )
+					{
+						enemiesNearby = std::min(enemiesNearby, 4);
+						if ( specialRoll < enemiesNearby * 2 ) // 10% for each enemy > 1, capped at 40%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							break;
+						}
+					}		
+					
+					specialRoll = rand() % 20;
+					if ( myStats->HP > myStats->MAXHP * 0.8 )
+					{
+						if ( specialRoll < 1 ) // 5%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.6 )
+					{
+						if ( specialRoll < 2 ) // 10%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.4 )
+					{
+						if ( specialRoll < 3 ) // 15%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 4 ) // 20%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 5 ) // 25%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+						}
+					}
+					break;
+				case COCKATRICE:
+					specialRoll = rand() % 20;
+					//specialRoll = 0;
+					// check for paralyze first
+					enemiesNearby = std::min(numTargetsAroundEntity(my, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+					
+					if ( myStats->HP <= myStats->MAXHP * 0.5 )
+					{
+						bonusFromHP = 4; // +20% chance if on low health
+					}
+					if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(my, myStats, node);
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
+						}
+						break;
+					}
+
+					// nothing selected, look for double attack.
+					specialRoll = rand() % 20;
+					if ( myStats->HP > myStats->MAXHP * 0.8 )
+					{
+						if ( specialRoll < 1 ) // 5%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.6 )
+					{
+						if ( specialRoll < 2 ) // 10%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.4 )
+					{
+						if ( specialRoll < 3 ) // 15%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP > myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 4 ) // 20%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					else if ( myStats->HP <= myStats->MAXHP * 0.2 )
+					{
+						if ( specialRoll < 5 ) // 25%
+						{
+							MONSTER_SPECIAL = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+						}
+					}
+					break;
+				default:
+					break;
+			}
+		}
+		else if ( MONSTER_SPECIAL > 0 )
+		{
+			switch ( myStats->type )
+			{
+				case KOBOLD:
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(my, myStats, node);
+					}
+					else
+					{
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
+					}
+					break;
+				case COCKATRICE:
+					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+					break;
+				default:
+					break;
+			}
+		}
+	}
+	
+	return;
+}
+
+void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list)
+{
+	Entity* entity = nullptr;
+	node_t* node = nullptr;
+	node_t* node2 = nullptr;
+	Stat* myStats = my->getStats();
+
+	if ( myStats != nullptr )
+	{
+		// aoe
+		for ( node = map.entities->first; node != nullptr; node = node->next )
+		{
+			entity = (Entity*)node->element;
+			if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
+			{
+				if ( searchType == MONSTER_TARGET_ENEMY )
+				{
+					if ( !my->checkEnemy(entity) )
+					{
+						continue;
+					}
+				}
+				else if ( searchType == MONSTER_TARGET_FRIEND )
+				{
+					if ( !my->checkFriend(entity) )
+					{
+						continue;
+					}
+				}
+				else if ( searchType == MONSTER_TARGET_PLAYER )
+				{
+					if ( !(entity->behavior == &actPlayer) )
+					{
+						continue;
+					}
+				}
+
+				double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
+				real_t angle = my->yaw - aoeTangent;
+				while ( angle >= PI )
+				{
+					angle -= PI * 2;
+				}
+				while ( angle < -PI )
+				{
+					angle += PI * 2;
+				}
+				if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
+				{
+					double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+					if ( dist < distToFind )
+					{
+						//If this is the first entity found, the list needs to be created.
+						if ( !(*list) )
+						{
+							*list = (list_t*)malloc(sizeof(list_t));
+							(*list)->first = nullptr;
+							(*list)->last = nullptr;
+						}
+						node2 = list_AddNodeLast(*list);
+						node2->element = entity;
+						node2->deconstructor = &emptyDeconstructor;
+						node2->size = sizeof(Entity*);
+					}
+				}
+			}
+		}
+	}
+	return;
+}
+
+int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType)
+{
+	list_t* aoeTargets = nullptr;
+	int count = 0;
+	getTargetsAroundEntity(my, nullptr, distToFind, angleToSearch, searchType, &aoeTargets);
+	if ( aoeTargets )
+	{
+		count = list_Size(aoeTargets);
+		//messagePlayer(0, "found %d targets", count);
+		//Free the list.
+		list_FreeAll(aoeTargets);
+		free(aoeTargets);
+	}
+	return count;
 }

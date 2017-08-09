@@ -570,12 +570,12 @@ thou makest use of them.#
 359 Level %d %s#
 360 Exp:%3d/100#
 361 Dungeon Level: %d#
-1200 STR:            %2d (%2d)#
-1201 DEX:            %2d (%2d)#
-1202 CON:            %2d (%2d)#
-1203 INT:            %2d (%2d)#
-1204 PER:            %2d (%2d)#
-1205 CHR:            %2d (%2d)#
+1200 STR:          %2d -> #
+1201 DEX:          %2d -> #
+1202 CON:          %2d -> #
+1203 INT:          %2d -> #
+1204 PER:          %2d -> #
+1205 CHR:          %2d -> #
 
 
 # skill levels
@@ -2724,36 +2724,36 @@ client (player %d) (direct ip)#
 1952 D-Pad Right#
 1953 D-Pad Up#
 1954 D-Pad Down#
+1955 Next Hotbar Slot#
+1956 Previous Hotbar Slot#
 
 # Menu exclusive bindings.
-1955 "Left Click" (in MENUs)#
-1956 Next (in MENUs)#
-1957 Cancel#
-1958 Next Settings Tab#
-1959 Previous Settings Tab#
-1960 Refresh Lobby#
-1961 Don't Load Save (New Game)#
-1962 Random Name#
-1963 Random Character#
-1964 Previous Inventory Tab#
-1965 Next Inventory Tab#
-1966 Item Context Menu#
-1967 Clear Hotbar Slot#
-1968 Drop Item#
-1969 Grab All From Chest#
-1970 Previous Shop Category#
-1971 Next Shop Category#
-1972 Previous Book Page#
-1973 Next Book Page#
+1957 "Left Click" (in MENUs)#
+1958 Next (in MENUs)#
+1959 Cancel#
+1960 Next Settings Tab#
+1961 Previous Settings Tab#
+1962 Refresh Lobby#
+1963 Don't Load Save (New Game)#
+1964 Random Name#
+1965 Random Character#
+1966 Previous Inventory Tab#
+1967 Next Inventory Tab#
+1968 Item Context Menu#
+1969 Drop Item#
+1970 Clear Hotbar Slot#
+1971 Grab All From Chest#
+1972 Previous Shop Category#
+1973 Next Shop Category#
+1974 Previous Book Page#
+1975 Next Book Page#
 
 # Game exclusive bindings.
-1974 Use#
-1975 Raise Shield#
-1976 Attack#
-1977 Cast Spell#
-1978 Activate Hotbar Slot#
-1979 Previous Hotbar Slot#
-1980 Next Hotbar Slot#
+1976 Use#
+1977 Raise Shield#
+1978 Attack#
+1979 Cast Spell#
+1980 Activate Hotbar Slot#
 
 # More stuff on the gamepad bindings screen.
 1990 Menu exclusive bindings:#
@@ -2764,7 +2764,162 @@ client (player %d) (direct ip)#
 1997 auto appraise items#
 1998 right click protection#
 
+# START DLC
+# monsters, reserve 2000-2049 for monster names, 2050 - 2099 for plurals, 2100-2150 for injury types
 
+2000 kobold#
+2001 scarab#
+2002 crystal golem#
+2003 incubus#
+2004 vampire#
+2005 shadow#
+2006 cockatrice#
+2007 insectoid#
+2008 goatman#
+2009 automaton#
+2010 lich ice#
+2011 lich fire#
+
+# monster plurals
+
+2050 kobolds#
+2051 scarabs#
+2052 crystal golems#
+2053 incubi#
+2054 vampires#
+2055 shadows#
+2056 cockatrices#
+2057 insectoids#
+2058 goatmen#
+2059 automatons#
+2060 liches#
+2061 liches#
+
+# injury types (2100-2149)
+
+2100 hits#
+2101 bites#
+2102 thumps#
+2103 slaps#
+2104 mauls#
+2105 strikes#
+2106 scratches#
+2107 stings#
+2108 pounds#
+2109 thumps#
+2110 hits#
+2111 hits#
+
+# additional obituary messages (2150-2199)
+2150 is dispatched by a kobold.#
+2151 is dispatched by a scarab.#
+2152 is dispatched by a crystal golem.#
+2153 is dispatched by an incubus.#
+2154 is dispatched by a vampire.#
+2155 is dispatched by a shadow.#
+2156 is dispatched by a cockatrice.#
+2157 is dispatched by an insectoid.#
+2158 is dispatched by a goatman.#
+2159 is dispatched by an automaton.#
+2160 is dispatched by the icy lich.#
+2161 is dispatched by the fiery lich.#
+
+#items, reserve 2200-2349 for new items
+2200 artifact breastpiece#
+2201 artifact breastpiece#
+2202 artifact helm#
+2203 artifact helm#
+2204 artifact boots#
+2205 artifact boots#
+2206 artifact cloak#
+2207 artifact cloak#
+2208 Djinni's Brace#
+2209 artifact gloves#
+2210 crystal breastpiece#
+2211 crystal breastpiece#
+2212 crystal helm#
+2213 crystal helm#
+2214 crystal boots#
+2215 crystal boots#
+2216 crystal shield#
+2217 crystal shield#
+2218 crystal gauntlets#
+2219 crystal gauntlets#
+2220 vampire doublet#
+2221 doublet#
+2222 wizard doublet#
+2223 doublet#
+2224 healer doublet#
+2225 doublet#
+2226 mirror shield#
+2227 mirror shield#
+2228 brass knuckles#
+2229 knuckles#
+2230 iron knuckles#
+2231 knuckles#
+2232 spiked gauntlets#
+2233 knuckles#
+2234 tomalley#
+2235 tomalley#
+2236 crystal shard#
+2237 crystal shard#
+2238 crystal sword#
+2239 crystal sword#
+2240 crystal spear#
+2241 crystal spear#
+2242 crystal axe#
+2243 crystal axe#
+2244 crystal mace#
+2245 crystal mace#
+2246 bronze tomahawk#
+2247 bronze tomahawk#
+2248 iron dagger#
+2249 iron dagger#
+2250 steel chakram#
+2251 steel chakram#
+2252 crystal shuriken#
+2253 crystal shuriken#
+2254 black cloak#
+2255 black cloak#
+2256 magicstaff of stoneblood#
+2257 magicstaff#
+2258 magicstaff of bloodletting#
+2259 magicstaff#
+2260 magicstaff of conjure familiar#
+2261 magicstaff#
+2262 blindfold of focus#
+2263 blindfold#
+2264 blindfold of telepathy#
+2265 blindfold#
+2266 spellbook of conjure familiar#
+2267 spellbook#
+2268 spellbook of stoneblood#
+2269 spellbook#
+2270 spellbook of bloodletting#
+2271 spellbook#
+
+#Additional ingame text.
+2350 A fragment breaks away from your %s.#
+2351 Your %s shatters completely!#
+2352 You set off a %s trap!#
+2353 Number of monsters in level: %d#
+2354 WARNING: Experimental - May cause crashing on exit! For model testing only.#
+2355 Reloading models from index %d to %d#
+2356 You rotate the floating crystal.#
+2357 The crystal seems locked in place.#
+2358 The crystal begins to move!#
+
+#New spells (2390-2399)
+2390 Conjure Familiar#
+2391 Stonebleed#
+2392 Bloodletting#
+2393 Dominate#
+2394 blank#
+2395 blank#
+2396 blank#
+2397 blank#
+2398 blank#
+2399 blank#
 
 2400 Gamepad#
 
@@ -2780,9 +2935,29 @@ client (player %d) (direct ip)#
 2409 Menu X-Axis Sensitivity#
 2410 Menu Y-Axis Sensitivity#
 
+2411 Frames Per Second (FPS)#
 
+#New spell effects (2420-2440)
+2420 %s is paralyzed!#
+2421 The %s is paralyzed!#
+2422 Your limbs suddenly refuse to move!#
+2423 %s is severely wounded!#
+2424 The %s is severely wounded!#
+2425 You are severely wounded!#
+2426 Trio Missile#
+2427 You feel energy go out from you as you
+dominate %s into your service!#
+2428 You feel energy go out from you as you
+dominate the %s into your service!#
+2429 You are unable to dominate this one.#
 
 #More character creation screen stuff.
 2450 Random Name#
+
+#New effects.
+2470 You no longer feel magic weaken against you.#
+2471 You no longer feel magic bounce off you.#
+2472 You feel magic weaken against you.#
+2473 You feel magic bounce off you.#
 
 2499 end#

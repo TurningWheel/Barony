@@ -14,6 +14,7 @@
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
+#include "monster.hpp"
 
 // entity flags
 #define BRIGHT 1
@@ -31,6 +32,10 @@
 #define USERFLAG1 14
 #define USERFLAG2 15
 
+// number of entity skills and fskills
+static const int NUMENTITYSKILLS = 60;
+static const int NUMENTITYFSKILLS = 30;
+
 // entity class
 class Entity
 {
@@ -46,8 +51,42 @@ class Entity
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
-	Sint32& chest_status; //0 = closed. 1 = open.
-	Sint32& chest_opener; //Index of the player the chest was opened by.
+	//Chest skills.
+	//skill[0]
+	Sint32& chestInit;
+	//skill[1]
+	//0 = closed. 1 = open.
+	//0 = closed. 1 = open.
+	Sint32& chestStatus;
+	//skill[2] is reserved for all entities.
+	//skill[3]
+	Sint32& chestHealth;
+	//skill[5]
+	//Index of the player the chest was opened by.
+	Sint32& chestOpener;
+	//skill[6]
+	Sint32& chestLidClicked;
+	//skill[7]
+	Sint32& chestAmbience;
+	//skill[8]
+	Sint32& chestMaxHealth;
+	//skill[9]
+	//field to be set if the chest sprite is 75-81 in the editor, otherwise should stay at value 0
+	Sint32& chestType;
+
+	// Power crystal skills
+	Sint32& crystalInitialised; // 1 if init, else 0
+	Sint32& crystalTurning; // 1 if currently rotating, else 0
+	Sint32& crystalTurnStartDir; // when rotating, the previous facing direction stored here 0-3
+
+	Sint32& crystalGeneratedElectricityNodes; // 1 if electricity nodes generated previously, else 0
+	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
+	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
+
+	static const int CRYSTAL_HOVER_UP = 0;
+	static const int CRYSTAL_HOVER_UP_WAIT = 1;
+	static const int CRYSTAL_HOVER_DOWN = 2;
+	static const int CRYSTAL_HOVER_DOWN_WAIT = 3;
 
 	//--- Mechanism defines ---
 	static const int CIRCUIT_OFF = 1;
@@ -79,13 +118,46 @@ public:
 	real_t new_yaw, new_pitch, new_roll; // rotation
 
 	// entity attributes
-	real_t fskill[30]; // floating point general purpose variables
-	Sint32 skill[30];  // general purpose variables
+	real_t fskill[NUMENTITYFSKILLS]; // floating point general purpose variables
+	Sint32 skill[NUMENTITYSKILLS];  // general purpose variables
 	bool flags[16];    // engine flags
 	char* string;      // general purpose string
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
+
+	//--PUBLIC CHEST SKILLS--
+
+	//skill[4]
+	//0 = unlocked. 1 = locked.
+	Sint32& chestLocked;
+	/*
+	 * skill[10]
+	 * 1 = chest already has been unlocked, or spawned in unlocked (prevent spell exploit)
+	 * 0 = chest spawned in locked and is still ripe for harvest.
+	 * Purpose: To prevent exploits with repeatedly locking and unlocking a chest.
+	 * Also doesn't spawn gold for chests that didn't spawn locked
+	 * (e.g. you locked a chest with a spell...sorry, no gold for you)
+	 */
+	Sint32& chestPreventLockpickCapstoneExploit;
+
+	//--PUBLIC MONSTER SKILLS--
+	Sint32& monsterState;
+	Sint32& monsterTarget;
+
+	//--PUBLIC MONSTER ANIMATION SKILLS--
+	Sint32& monsterAnimationLimbDirection;
+	Sint32& monsterAnimationLimbOvershoot;
+
+	//--PUBLIC POWER CRYSTAL SKILLS--
+	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
+	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
+	Sint32& crystalSpellToActivate; // If 1, must be hit by unlocking spell to start generating electricity.
+
+	real_t& crystalStartZ; // mid point of animation, starting height.
+	real_t& crystalMaxZVelocity;
+	real_t& crystalMinZVelocity;
+	real_t& crystalTurnVelocity; // how fast to turn on click.
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -114,7 +186,7 @@ public:
 	void effectTimes();
 	void increaseSkill(int skill);
 
-	Stat* getStats();
+	Stat* getStats() const;
 
 	void setHP(int amount);
 	void modHP(int amount); //Adds amount to HP.
@@ -128,11 +200,11 @@ public:
 	Sint32 getAttack();
 	bool isBlind();
 
-	bool isInvisible();
+	bool isInvisible() const;
 
 	bool isMobile();
 
-	void attack(int pose, int charge);
+	void attack(int pose, int charge, Entity* target);
 
 	void teleport(int x, int y);
 	void teleportRandom();
@@ -161,9 +233,56 @@ public:
 	void addItemToChestFromInventory(int player, Item* item, bool all);
 	void addItemToChestServer(Item* item); //Adds an item to the chest. Called when the server receives a notification from the client that an item was added to the chest.
 	void removeItemFromChestServer(Item* item, int count); //Called when the server learns that a client removed an item from the chest.
+	void unlockChest();
+	void lockChest();
+
+	//Power Crystal functions.
+	void powerCrystalCreateElectricityNodes();
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
+
+	//Act functions.
+	void actChest();
+	void actPowerCrystal();
+
+	Monster getRace() const
+	{
+		Stat* myStats = getStats();
+
+		if ( !myStats )
+		{
+			return NOTHING;
+		}
+
+		return myStats->type;
+	}
+
+	bool inline skillCapstoneUnlockedEntity(int proficiency) const
+	{
+		if ( !getStats() )
+		{
+			return false;
+		}
+
+		return (getStats()->PROFICIENCIES[proficiency] >= CAPSTONE_UNLOCK_LEVEL[proficiency]);
+	}
+
+	/*
+	 * Returns -1 if not a player.
+	 */
+	int isEntityPlayer() const;
+
+	void initMonster(int mySprite);
+
+	void actMonsterLimb(bool processLight = false);
+
+	void removeMonsterDeathNodes();
+
+	void spawnBlood(int bloodsprite = 160);
+
+	// reflection is set 1, 2 or 3 depending on the item slot. reflection of 3 does not degrade.
+	int getReflection() const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -250,3 +369,35 @@ void addItemToChestClientside(Item* item); //Called by the client to manage all 
 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
+
+//checks if a sprite falls in certain sprite ranges
+
+const int NUM_ITEM_STRINGS = 207;
+const int NUM_ITEM_STRINGS_BY_TYPE = 69;
+
+int checkSpriteType(Sint32 sprite);
+extern char spriteEditorNameStrings[108][64];
+extern char tileEditorNameStrings[202][44];
+extern char monsterEditorNameStrings[NUMMONSTERS][13];
+extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
+extern char itemNameStrings[NUM_ITEM_STRINGS][32];
+int canWearEquip(Entity* entity, int category);
+void createMonsterEquipment(Stat* stats);
+int countCustomItems(Stat* stats);
+int countDefaultItems(Stat* stats);
+void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
+void setRandomMonsterStats(Stat* stats);
+
+int checkEquipType(Item *ITEM);
+
+#define SPRITE_GLOVE_RIGHT_OFFSET 0
+#define SPRITE_GLOVE_LEFT_OFFSET 4
+#define SPRITE_BOOT_RIGHT_OFFSET 0
+#define SPRITE_BOOT_LEFT_OFFSET 2
+
+int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
+int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
+bool isLevitating(Stat * myStats);
+int getWeaponSkill(Item* weapon);
+int getStatForProficiency(int skill);
+void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);

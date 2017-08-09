@@ -43,8 +43,6 @@
 
 const unsigned STACK_SIZE = 10;
 
-
-
 void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 {
 	printf("Caught segfault at address %p\n", si->si_addr);
@@ -67,6 +65,9 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 
 #endif
 
+std::vector<std::string> randomPlayerNamesMale;
+std::vector<std::string> randomPlayerNamesFemale;
+
 // recommended for valgrind debugging:
 // res of 480x270
 // /nohud
@@ -75,8 +76,6 @@ void segfault_sigaction(int signal, siginfo_t* si, void* arg)
 int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
-std::vector<std::string> randomPlayerNamesMale;
-std::vector<std::string> randomPlayerNamesFemale;
 
 /*-------------------------------------------------------------------------------
 
@@ -254,7 +253,7 @@ void gameLogic(void)
 				j = 1 + rand() % 4;
 				for ( c = 0; c < j; c++ )
 				{
-					Entity* flame = spawnFlame(entity);
+					Entity* flame = spawnFlame(entity, SPRITE_FLAME);
 					flame->x += rand() % (entity->sizex * 2 + 1) - entity->sizex;
 					flame->y += rand() % (entity->sizey * 2 + 1) - entity->sizey;
 					flame->z += rand() % 5 - 2;
@@ -319,7 +318,7 @@ void gameLogic(void)
 		{
 			nextnode = node->next;
 			entity = (Entity*)node->element;
-			if ( !entity->ranbehavior )
+			if ( entity && !entity->ranbehavior )
 			{
 				entity->ticks++;
 				if ( entity->behavior != NULL )
@@ -506,7 +505,7 @@ void gameLogic(void)
 					}
 					if ( stats[c]->GOLD >= 10000 )
 					{
-						steamAchievementClient(i, "BARONY_ACH_FILTHY_RICH");
+						steamAchievementClient(c, "BARONY_ACH_FILTHY_RICH");
 					}
 				}
 			}
@@ -524,7 +523,7 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
@@ -561,6 +560,7 @@ void gameLogic(void)
 						}
 					}
 				}
+
 				if ( loadnextlevel == true )
 				{
 					for ( node = map.entities->first; node != NULL; node = node->next )
@@ -672,11 +672,11 @@ void gameLogic(void)
 					numplayers = 0;
 					if ( !secretlevel )
 					{
-						fp = fopen(LEVELSFILE, "r");
+						fp = openDataFile(LEVELSFILE, "r");
 					}
 					else
 					{
-						fp = fopen(SECRETLEVELSFILE, "r");
+						fp = openDataFile(SECRETLEVELSFILE, "r");
 					}
 					for ( i = 0; i < currentlevel; i++ )
 						while ( fgetc(fp) != '\n' ) if ( feof(fp) )
@@ -789,7 +789,14 @@ void gameLogic(void)
 									}
 									else
 									{
-										messagePlayer(c, language[721], language[90 + (int)monsterStats->type]);
+										if ( monsterStats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayer(c, language[721], language[90 + monsterStats->type]);
+										}
+										else if ( monsterStats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayer(c, language[721], language[2000 + (monsterStats->type - KOBOLD)]);
+										}
 									}
 									if (!monsterally[HUMAN][monsterStats->type])
 									{
@@ -820,7 +827,14 @@ void gameLogic(void)
 									}
 									else
 									{
-										messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
+										if ( (int)tempStats->type < KOBOLD ) //Original monster count
+										{
+											messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
+										}
+										else if ( (int)tempStats->type >= KOBOLD ) //New monsters
+										{
+											messagePlayer(c, language[723], language[2000 + ((int)tempStats->type - KOBOLD)]);
+										}
 									}
 								}
 							}
@@ -1229,7 +1243,7 @@ void gameLogic(void)
 			{
 				nextnode = node->next;
 				entity = (Entity*)node->element;
-				if ( !entity->ranbehavior )
+				if ( entity && !entity->ranbehavior )
 				{
 					if ( !gamePaused || (multiplayer && !client_disconnected[0]) )
 					{
@@ -1753,7 +1767,7 @@ void handleEvents(void)
 				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 1; // set this mouse button to 1
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else 
+				} else
 #endif
 				{
 					lastkeypressed = event.key.keysym.scancode;
@@ -1768,7 +1782,7 @@ void handleEvents(void)
 				} else if (event.key.keysym.sym==SDLK_RSHIFT) { // R
 					mousestatus[SDL_BUTTON_RIGHT] = 0; // set this mouse button to 0
 					lastkeypressed = 282 + SDL_BUTTON_RIGHT;
-				} else 
+				} else
 #endif
 				{
 					keystatus[event.key.keysym.scancode] = 0; // set this key's index to 0
@@ -1815,7 +1829,7 @@ void handleEvents(void)
 				mousex = event.motion.x;
 				mousey = event.motion.y;
 #ifdef PANDORA
-				if(xres!=800 || yres!=480) {	// SEB Pandora 
+				if(xres!=800 || yres!=480) {	// SEB Pandora
 					mousex = (mousex*xres)/800;
 					mousey = (mousey*yres)/480;
 				}
@@ -2090,13 +2104,21 @@ Uint32 lastGameTickCount = 0;
 bool frameRateLimit( Uint32 maxFrameRate )
 {
 	float desiredFrameMilliseconds = 1000.0f / maxFrameRate;
+
+	if ( (1000.0f / std::ceil(desiredFrameMilliseconds)) < maxFrameRate )
+	{
+		// check if our fps limiter will calculate the fps to be below the target.
+		// if below target, then set our milisecond target to be 1 less millisecond
+		desiredFrameMilliseconds = desiredFrameMilliseconds - 1;
+	}
+
 	Uint32 gameTickCount = SDL_GetTicks();
 
 	float millisecondsElapsed = (float)(gameTickCount - lastGameTickCount);
 	if ( millisecondsElapsed < desiredFrameMilliseconds )
 	{
 		// if enough time is left sleep, otherwise just keep spinning so we don't go over the limit...
-		if ( desiredFrameMilliseconds - millisecondsElapsed > 3.0f )
+		if ( desiredFrameMilliseconds - millisecondsElapsed > 5.0f )
 		{
 #ifndef WINDOWS
 			usleep( 5000 );
@@ -2184,14 +2206,7 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		// load default language file (english)
-		if ( loadLanguage("en") )
-		{
-			printlog("Fatal error: failed to load default language file!\n");
-			fclose(logfile);
-			exit(1);
-		}
-
+		strcpy(datadir, "./");
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2229,8 +2244,22 @@ int main(int argc, char** argv)
 					{
 						strcpy(classtoquickstart, argv[c] + 12);
 					}
+					else if (!strncmp(argv[c], "-datadir=", 9))
+					{
+						strcpy(datadir, argv[c] + 9);
+					}
 				}
 			}
+		}
+		printlog("Data path is %s", datadir);
+
+
+		// load default language file (english)
+		if ( loadLanguage("en") )
+		{
+			printlog("Fatal error: failed to load default language file!\n");
+			fclose(logfile);
+			exit(1);
 		}
 
 		// load config file
@@ -2545,7 +2574,7 @@ int main(int argc, char** argv)
 						startMessages();
 
 						// load dungeon
-						mapseed = 0;
+						mapseed = rand(); //Use prng if decide to make a quickstart for MP...
 						lastEntityUIDs = entity_uids;
 						for ( node = map.entities->first; node != NULL; node = node->next )
 						{
@@ -2556,11 +2585,11 @@ int main(int argc, char** argv)
 						{
 							if ( !secretlevel )
 							{
-								fp = fopen(LEVELSFILE, "r");
+								fp = openDataFile(LEVELSFILE, "r");
 							}
 							else
 							{
-								fp = fopen(SECRETLEVELSFILE, "r");
+								fp = openDataFile(SECRETLEVELSFILE, "r");
 							}
 							fscanf(fp, "%s", tempstr);
 							while ( fgetc(fp) != ' ' ) if ( feof(fp) )
@@ -3190,7 +3219,7 @@ int main(int argc, char** argv)
 			}
 
 			// frame rate limiter
-			while ( frameRateLimit(MAX_FPS_LIMIT) )
+			while ( frameRateLimit(fpsLimit) )
 			{
 				if ( !intro )
 				{

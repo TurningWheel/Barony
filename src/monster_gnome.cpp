@@ -26,11 +26,8 @@ void initGnome(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 295; //Gnome head model
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	//Sprite 295 = Gnome head model
+	my->initMonster(295);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -41,102 +38,134 @@ void initGnome(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 50;
-		myStats->MAXHP = 50;
-		myStats->MP = 50;
-		myStats->MAXMP = 50;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 2;
-		myStats->DEX = 0;
-		myStats->CON = 4;
-		myStats->INT = 0;
-		myStats->PER = 2;
-		myStats->CHR = -1;
-		myStats->EXP = 0;
-		myStats->LVL = 5;
-		myStats->GOLD = 40 + rand() % 20;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+
+			// random effects
+			if ( rand() % 8 == 0 )
 			{
-				myStats->EFFECTS[c] = false;
+				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
 			}
-			if ( c < NUMEFFECTS )
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
 			{
-				myStats->EFFECTS_TIMERS[c] = 0;
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+					if ( rand() % 50 == 0 )
+					{
+						newItem(READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory);
+					}
+				case 2:
+					if ( rand() % 10 == 0 )
+					{
+						int i = 1 + rand() % 4;
+						for ( c = 0; c < i; c++ )
+						{
+							newItem(static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory);
+						}
+					}
+				case 1:
+					if ( rand() % 3 == 0 )
+					{
+						newItem(FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+					}
+					break;
+				default:
+					break;
 			}
-		}
-		myStats->PROFICIENCIES[PRO_SWORD] = 35;
-		myStats->PROFICIENCIES[PRO_MACE] = 50;
-		myStats->PROFICIENCIES[PRO_AXE] = 45;
-		myStats->PROFICIENCIES[PRO_POLEARM] = 25;
-		myStats->PROFICIENCIES[PRO_RANGED] = 35;
-		myStats->PROFICIENCIES[PRO_SHIELD] = 35;
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 
-		if ( rand() % 8 == 0 )
-		{
-			myStats->EFFECTS[EFF_ASLEEP] = true;
-			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
-		}
-
-		if ( rand() % 3 == 0 )
-		{
-			newItem( FOOD_FISH, EXCELLENT, 0, 1, rand(), false, &myStats->inventory );
-		}
-
-		if ( rand() % 50 == 0 )
-		{
-			newItem( READABLE_BOOK, EXCELLENT, 0, 1, getBook("Winny's Report"), false, &myStats->inventory );
-		}
-
-		if ( rand() % 10 == 0 )
-		{
-			int i = 1 + rand() % 4;
-			for ( c = 0; c < i; c++ )
+			//give shield
+			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
-				newItem( static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory );
-			}
-		}
-
-		if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
-		{
-			strcpy(myStats->name, "Rumplewort");
-			myStats->LVL += 10;
-			newItem( GEM_DIAMOND, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
-
-			int c;
-			for ( c = 0; c < 3; c++ )
-			{
-				Entity* entity = summonMonster(GNOME, my->x, my->y);
-				if ( entity )
+				switch ( rand() % 10 )
 				{
-					entity->parent = my->getUID();
+					case 0:
+					case 1:
+						myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						break;
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+					case 6:
+						break;
+					case 7:
+					case 8:
+					case 9:
+						myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
+						break;
+				}
+			}
+
+			//give weapon
+			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						break;
+					case 5:
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+						myStats->GOLD += 100;
+						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						break;
+				}
+			}
+
+			// give cloak
+			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+						break;
+					case 6:
+					case 7:
+					case 8:
+					case 9:
+						myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
+						break;
 				}
 			}
 		}
@@ -297,122 +326,15 @@ void initGnome(Entity* my, Stat* myStats)
 	{
 		return;
 	}
-
-	// give shield
-	switch ( rand() % 10 )
-	{
-		case 0:
-		case 1:
-			myStats->shield = newItem(TOOL_LANTERN, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-		case 6:
-			break;
-		case 7:
-		case 8:
-		case 9:
-			myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-	}
-
-	// give weapon
-	switch ( rand() % 10 )
-	{
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-			myStats->weapon = newItem(TOOL_PICKAXE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-		case 5:
-		case 6:
-		case 7:
-		case 8:
-		case 9:
-			myStats->GOLD += 100;
-			myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-	}
-
-	// give cloak
-	switch ( rand() % 10 )
-	{
-		case 0:
-		case 1:
-		case 2:
-		case 3:
-		case 4:
-		case 5:
-			break;
-		case 6:
-		case 7:
-		case 8:
-		case 9:
-			myStats->cloak = newItem(CLOAK, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-			break;
-	}
 }
 
 void actGnomeLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-
-	int torch = 0;
-	if ( my->flags[INVISIBLE] == false )
-	{
-		if ( my->sprite == 93 )   // torch
-		{
-			torch = 6;
-		}
-		else if ( my->sprite == 94 )     // lantern
-		{
-			torch = 9;
-		}
-	}
-	if ( torch != 0 )
-	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, torch, 50 + 15 * torch);
-	}
+	my->actMonsterLimb(true);
 }
 
 void gnomeDie(Entity* my)
 {
-	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 6; c++ )
 	{
@@ -422,45 +344,11 @@ void gnomeDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	if (spawn_blood)
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(160, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
-	int i = 0;
-	for ( node = my->children.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		if ( node->element != NULL && i >= 2 )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->light != NULL )
-			{
-				list_RemoveNode(entity->light->node);
-			}
-			entity->light = NULL;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		i++;
-	}
+
+	my->spawnBlood();
+
+	my->removeMonsterDeathNodes();
+
 	playSoundEntity(my, 225 + rand() % 4, 128);
 	list_RemoveNode(my->mynode);
 	return;
@@ -477,7 +365,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->ring != NULL )
@@ -878,7 +766,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 7:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -982,7 +870,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1010,7 +898,14 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z += 1;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+				}
+				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z -= 2;
@@ -1018,7 +913,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z += 1;
@@ -1028,7 +923,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 9:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}

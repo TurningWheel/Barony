@@ -25,11 +25,7 @@ void initGhoul(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	my->sprite = 246;
-
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(246);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,89 +36,82 @@ void initGhoul(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 90;
-		myStats->MAXHP = 90;
-		myStats->MP = 10;
-		myStats->MAXMP = 10;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = 8;
-		myStats->DEX = -3;
-		myStats->CON = -1;
-		myStats->INT = -2;
-		myStats->PER = -1;
-		myStats->CHR = -5;
-		myStats->EXP = 0;
-		myStats->LVL = 7;
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
+		if ( myStats != NULL )
 		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
-		if ( rand() % 50 || my->flags[USERFLAG2] )
-		{
-			strcpy(myStats->name, "");
-		}
-		else
-		{
-			strcpy(myStats->name, "Coral Grimes");
-			for ( c = 0; c < 3; c++ )
-			{
-				Entity* entity = summonMonster(GHOUL, my->x, my->y);
-				if ( entity )
-				{
-					entity->parent = my->getUID();
-				}
-			}
-			myStats->HP *= 3;
-			myStats->MAXHP *= 3;
-			myStats->OLDHP = myStats->HP;
-			myStats->LVL = 15;
-			newItem( GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory );
-		}
 
-		if ( rand() % 20 == 0 )
-		{
-			newItem( POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory );
-		}
-		if ( rand() % 10 == 0 )
-		{
-			newItem( itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory );
-		}
-		if ( rand() % 4 == 0 )
-		{
-			newItem( FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory );
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+			if ( rand() % 50 || my->flags[USERFLAG2] )
+			{
+			}
+			else
+			{
+				strcpy(myStats->name, "Coral Grimes");
+				for ( c = 0; c < 3; c++ )
+				{
+					Entity* entity = summonMonster(GHOUL, my->x, my->y);
+					if ( entity )
+					{
+						entity->parent = my->getUID();
+					}
+				}
+				myStats->HP *= 3;
+				myStats->MAXHP *= 3;
+				myStats->OLDHP = myStats->HP;
+				myStats->LVL = 15;
+				newItem(GEM_GARNET, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
+				customItemsToGenerate -= 1;
+			}
+
+			// random effects
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			// max limit of 6 custom items per entity.
+			int customItems = countCustomItems(myStats);
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+					if ( rand() % 20 == 0 )
+					{
+						newItem(POTION_WATER, SERVICABLE, 2, 1, rand(), false, &myStats->inventory);
+					}
+				case 2:
+					if ( rand() % 10 == 0 )
+					{
+						newItem(itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+					}
+				case 1:
+					if ( rand() % 4 == 0 )
+					{
+						newItem(FOOD_MEAT, DECREPIT, -1, 1, rand(), false, &myStats->inventory);
+					}
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
@@ -219,38 +208,11 @@ void initGhoul(Entity* my, Stat* myStats)
 
 void actGhoulLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-	return;
+	my->actMonsterLimb();
 }
 
 void ghoulDie(Entity* my)
 {
-	node_t* node, *nextnode;
 	int c;
 	for ( c = 0; c < 10; c++ )
 	{
@@ -264,41 +226,11 @@ void ghoulDie(Entity* my)
 			serverSpawnGibForClient(entity);
 		}
 	}
-	if (spawn_blood)
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(212, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
-	int i = 0;
-	for (node = my->children.first; node != NULL; node = nextnode)
-	{
-		nextnode = node->next;
-		if (node->element != NULL && i >= 2)
-		{
-			Entity* entity = (Entity*)node->element;
-			entity->flags[UPDATENEEDED] = false;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		++i;
-	}
+
+	my->spawnBlood(212);
+
+	my->removeMonsterDeathNodes();
+
 	playSoundEntity(my, 145, 128);
 	list_RemoveNode(my->mynode);
 	return;
@@ -313,7 +245,7 @@ void ghoulMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	Entity* rightbody = NULL;
 	int bodypart;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )

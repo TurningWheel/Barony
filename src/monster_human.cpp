@@ -26,10 +26,7 @@ void initHuman(Entity* my, Stat* myStats)
 	int c;
 	node_t* node;
 
-	//my->flags[GENIUS] = true;
-	my->flags[UPDATENEEDED] = true;
-	my->flags[BLOCKSIGHT] = true;
-	my->flags[INVISIBLE] = false;
+	my->initMonster(113);
 
 	if ( multiplayer != CLIENT )
 	{
@@ -40,75 +37,499 @@ void initHuman(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand() % NUMAPPEARANCES;
-		strcpy(myStats->name, "");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		myStats->HP = 30 + rand() % 20;
-		myStats->MAXHP = myStats->HP;
-		myStats->MP = 20 + rand() % 20;
-		myStats->MAXMP = myStats->MP;
-		myStats->OLDHP = myStats->HP;
-		myStats->STR = -1 + rand() % 4;
-		myStats->DEX = 4 + rand() % 4;
-		myStats->CON = -2 + rand() % 4;
-		myStats->INT = -1 + rand() % 4;
-		myStats->PER = -2 + rand() % 4;
-		myStats->CHR = -3 + rand() % 4;
-		myStats->EXP = 0;
-		myStats->LVL = 3;
-		if ( rand() % 2 == 0 )
+		if ( myStats != NULL )
 		{
-			myStats->GOLD = 20 + rand() % 20;
-		}
-		else
-		{
-			myStats->GOLD = 0;
-		}
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
-		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
-			}
-		}
-		myStats->PROFICIENCIES[PRO_SWORD] = 45;
-		myStats->PROFICIENCIES[PRO_MACE] = 35;
-		myStats->PROFICIENCIES[PRO_AXE] = 35;
-		myStats->PROFICIENCIES[PRO_POLEARM] = 45;
-		myStats->PROFICIENCIES[PRO_RANGED] = 40;
-		myStats->PROFICIENCIES[PRO_SHIELD] = 35;
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 
-		if ( rand() % 10 == 0 )
-		{
-			myStats->EFFECTS[EFF_ASLEEP] = true;
-			myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// special human variant (named or Zap Brigadier), do not generate any other items
+			int specialMonsterVariant = 0;
+
+			// boss variants
+			// generate special loadout
+			if ( !MONSTER_SPECIAL )
+			{
+				if ( rand() % 25 == 0 )
+				{
+					specialMonsterVariant = 1;
+
+					switch ( rand() % 10 )
+					{
+						case 0:
+							// red riding hood
+							strcpy(myStats->name, "Red Riding Hood");
+							myStats->appearance = 2;
+							myStats->sex = FEMALE;
+							myStats->LVL = 1;
+							myStats->HP = 10;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 10;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 0;
+							myStats->DEX = 0;
+							myStats->CON = 0;
+							myStats->INT = -2;
+							myStats->PER = -2;
+							myStats->CHR = 4;
+							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, 0, false, NULL);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, NULL);
+							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, 0, false, NULL);
+							break;
+						case 1:
+							// king arthur
+							strcpy(myStats->name, "King Arthur");
+							myStats->appearance = 0;
+							myStats->sex = MALE;
+							myStats->LVL = 10;
+							myStats->HP = 100;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 100;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 5;
+							myStats->DEX = 5;
+							myStats->CON = 5;
+							myStats->INT = 5;
+							myStats->PER = 5;
+							myStats->CHR = 5;
+							myStats->breastplate = newItem(STEEL_BREASTPIECE, EXCELLENT, 1, 1, 1, true, NULL);
+							myStats->gloves = newItem(GAUNTLETS, EXCELLENT, 1, 1, 1, true, NULL);
+							myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, NULL);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, NULL);
+							myStats->weapon = newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), true, NULL);
+							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, NULL);
+							break;
+						case 2:
+							// merlin
+							strcpy(myStats->name, "Merlin");
+							myStats->appearance = 5;
+							myStats->sex = MALE;
+							myStats->LVL = 10;
+							myStats->HP = 60;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 200;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 2;
+							myStats->DEX = 2;
+							myStats->CON = 3;
+							myStats->INT = 11;
+							myStats->PER = 10;
+							myStats->CHR = 2;
+							myStats->helmet = newItem(HAT_WIZARD, EXCELLENT, 2, 1, 2, false, NULL);
+							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 2, 1, 2, false, NULL);
+							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 5, 1, 3, false, NULL);
+							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 2, 1, 2, false, NULL);
+							myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 2, 1, 2, false, NULL);
+							break;
+						case 3:
+							// robin hood
+							strcpy(myStats->name, "Robin Hood");
+							myStats->appearance = 1;
+							myStats->sex = MALE;
+							myStats->LVL = 5;
+							myStats->HP = 70;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 50;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 3;
+							myStats->DEX = 5;
+							myStats->CON = 3;
+							myStats->INT = 2;
+							myStats->PER = 3;
+							myStats->CHR = 5;
+							myStats->gloves = newItem(GLOVES, EXCELLENT, 1, 1, 3, true, NULL);
+							myStats->shoes = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 3, true, NULL);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 0, true, NULL);
+							myStats->weapon = newItem(SHORTBOW, EXCELLENT, 1, 1, 3, true, NULL);
+							break;
+						case 4:
+							// conan
+							strcpy(myStats->name, "Conan the Barbarian");
+							myStats->appearance = 7;
+							myStats->sex = MALE;
+							myStats->LVL = 10;
+							myStats->HP = 100;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 20;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 10;
+							myStats->DEX = 5;
+							myStats->CON = 10;
+							myStats->INT = 3;
+							myStats->PER = 3;
+							myStats->CHR = 20;
+							myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, rand(), false, NULL);
+							myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, rand(), false, NULL);
+							myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, rand(), false, NULL);
+							break;
+						case 5:
+							// othello
+							strcpy(myStats->name, "Othello");
+							myStats->appearance = 14;
+							myStats->sex = MALE;
+							myStats->LVL = 10;
+							myStats->HP = 50;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 20;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 3;
+							myStats->DEX = 3;
+							myStats->CON = 3;
+							myStats->INT = 3;
+							myStats->PER = 0;
+							myStats->CHR = 30;
+							myStats->gloves = newItem(BRACERS, EXCELLENT, -1, 1, rand(), false, NULL);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, rand(), false, NULL);
+							myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, rand(), false, NULL);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, NULL);
+							break;
+						case 6:
+							// anansi
+							strcpy(myStats->name, "Anansi");
+							myStats->appearance = 15;
+							myStats->sex = MALE;
+							myStats->LVL = 20;
+							myStats->HP = 100;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 100;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 5;
+							myStats->DEX = 8;
+							myStats->CON = 5;
+							myStats->INT = 20;
+							myStats->PER = 20;
+							myStats->CHR = 10;
+							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, NULL);
+							myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), false, NULL);
+							int c;
+							for ( c = 0; c < 2; c++ )
+							{
+								Entity* entity = summonMonster(SPIDER, my->x, my->y);
+								if ( entity )
+								{
+									entity->parent = my->getUID();
+									entity->flags[USERFLAG2] = true;
+								}
+							}
+							break;
+						case 7:
+							// oya
+							strcpy(myStats->name, "Oya");
+							myStats->appearance = 13;
+							myStats->sex = FEMALE;
+							myStats->LVL = 20;
+							myStats->HP = 100;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 100;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 4;
+							myStats->DEX = 10;
+							myStats->CON = 2;
+							myStats->INT = 20;
+							myStats->PER = 10;
+							myStats->CHR = 10;
+							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 3, 1, 1, false, NULL);
+							myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 3, 1, 1, false, NULL);
+							break;
+						case 8:
+							// vishpala
+							strcpy(myStats->name, "Vishpala");
+							myStats->appearance = 17;
+							myStats->sex = FEMALE;
+							myStats->LVL = 10;
+							myStats->HP = 70;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 20;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 5;
+							myStats->DEX = 5;
+							myStats->CON = 5;
+							myStats->INT = 5;
+							myStats->PER = 5;
+							myStats->CHR = 10;
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, NULL);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, NULL);
+							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(ARTIFACT_SPEAR, EXCELLENT, 1, 1, rand(), false, NULL);
+							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, NULL);
+							break;
+						case 9:
+							// kali
+							strcpy(myStats->name, "Kali");
+							myStats->appearance = 15;
+							myStats->sex = FEMALE;
+							myStats->LVL = 20;
+							myStats->HP = 200;
+							myStats->MAXHP = myStats->HP;
+							myStats->MP = 200;
+							myStats->MAXMP = myStats->MP;
+							myStats->STR = 5;
+							myStats->DEX = 5;
+							myStats->CON = 5;
+							myStats->INT = 20;
+							myStats->PER = 20;
+							myStats->CHR = 20;
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, NULL);
+							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, rand(), false, NULL);
+							myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, rand(), false, NULL);
+							break;
+						default:
+							break;
+					}
+				}
+			}
+			else
+			{
+				specialMonsterVariant = 1;
+				// zap brigadier
+				strcpy(myStats->name, "ZAP Brigadier");
+				myStats->appearance = 1;
+				myStats->sex = static_cast<sex_t>(rand() % 2);
+				myStats->LVL = 10;
+				myStats->HP = 100;
+				myStats->MAXHP = myStats->HP;
+				myStats->MP = 200;
+				myStats->MAXMP = myStats->MP;
+				myStats->STR = 3;
+				myStats->DEX = 3;
+				myStats->CON = 3;
+				myStats->INT = 3;
+				myStats->PER = 10;
+				myStats->CHR = 10;
+				myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 2, 1, 3, false, NULL);
+				myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 2, false, NULL);
+				myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 0, 1, 2, false, NULL);
+				myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 2, false, NULL);
+				myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 2, 1, 3, false, NULL);
+				myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 1, 1, 2, false, NULL);
+				myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, NULL);
+			}
+
+			// random effects
+			if ( rand() % 10 == 0 )
+			{
+				myStats->EFFECTS[EFF_ASLEEP] = true;
+				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+			}
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats);
+			//max limit of 6 custom items per entity.
+
+			// count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
+			{
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					break;
+				default:
+					break;
+			}
+
+			if ( specialMonsterVariant == 0 )
+			{
+				// generate random equipment if not a named special human
+
+				//give shield
+				if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, NULL);
+							break;
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+							myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 7:
+						case 8:
+							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 9:
+							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, NULL);
+							break;
+					}
+				}
+
+				//give weapon
+				if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 2:
+						case 3:
+							myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 4:
+						case 5:
+							myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 6:
+							myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 7:
+							myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 8:
+							myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 9:
+							myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, NULL);
+							break;
+					}
+				}
+
+				// give helmet
+				if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+							break;
+						case 3:
+							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, NULL);
+							break;
+						case 4:
+							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, 0, false, NULL);
+							break;
+						case 5:
+							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, 0, false, NULL);
+							break;
+						case 6:
+						case 7:
+							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, 0, false, NULL);
+							break;
+						case 8:
+						case 9:
+							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, 0, false, NULL);
+							break;
+					}
+				}
+
+				// give cloak
+				if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+							break;
+						case 6:
+						case 7:
+						case 8:
+							myStats->cloak = newItem(CLOAK, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 9:
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
+							break;
+					}
+				}
+
+				// give armor
+				if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+						case 7:
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 8:
+						case 9:
+							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
+							break;
+					}
+				}
+
+				// give gloves
+				if ( myStats->gloves == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+						case 7:
+							myStats->gloves = newItem(GLOVES, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 8:
+						case 9:
+							myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, rand(), false, NULL);
+							break;
+					}
+				}
+
+				// give boots
+				if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							break;
+						case 5:
+						case 6:
+						case 7:
+							myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, rand(), false, NULL);
+							break;
+						case 8:
+						case 9:
+							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rand(), false, NULL);
+							break;
+					}
+				}
+			}
 		}
 	}
 
@@ -308,425 +729,6 @@ void initHuman(Entity* my, Stat* myStats)
 		return;
 	}
 
-	if ( !MONSTER_INIT )
-	{
-		// generate special loadout
-		if ( !MONSTER_SPECIAL )
-		{
-			if ( rand() % 25 == 0 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-						// red riding hood
-						strcpy(myStats->name, "Red Riding Hood");
-						myStats->appearance = 2;
-						myStats->sex = FEMALE;
-						myStats->LVL = 1;
-						myStats->HP = 10;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 10;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 0;
-						myStats->DEX = 0;
-						myStats->CON = 0;
-						myStats->INT = -2;
-						myStats->PER = -2;
-						myStats->CHR = 4;
-						myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, 0, false, NULL);
-						myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, NULL);
-						myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, 0, false, NULL);
-						break;
-					case 1:
-						// king arthur
-						strcpy(myStats->name, "King Arthur");
-						myStats->appearance = 0;
-						myStats->sex = MALE;
-						myStats->LVL = 10;
-						myStats->HP = 100;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 100;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 5;
-						myStats->DEX = 5;
-						myStats->CON = 5;
-						myStats->INT = 5;
-						myStats->PER = 5;
-						myStats->CHR = 5;
-						myStats->breastplate = newItem(STEEL_BREASTPIECE, EXCELLENT, 1, 1, 1, true, NULL);
-						myStats->gloves = newItem(GAUNTLETS, EXCELLENT, 1, 1, 1, true, NULL);
-						myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, NULL);
-						myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, NULL);
-						myStats->weapon = newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), true, NULL);
-						myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, NULL);
-						break;
-					case 2:
-						// merlin
-						strcpy(myStats->name, "Merlin");
-						myStats->appearance = 5;
-						myStats->sex = MALE;
-						myStats->LVL = 10;
-						myStats->HP = 60;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 200;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 2;
-						myStats->DEX = 2;
-						myStats->CON = 3;
-						myStats->INT = 11;
-						myStats->PER = 10;
-						myStats->CHR = 2;
-						myStats->helmet = newItem(HAT_WIZARD, EXCELLENT, 2, 1, 2, false, NULL);
-						myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 2, 1, 2, false, NULL);
-						myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 5, 1, 3, false, NULL);
-						myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 2, 1, 2, false, NULL);
-						myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 2, 1, 2, false, NULL);
-						break;
-					case 3:
-						// robin hood
-						strcpy(myStats->name, "Robin Hood");
-						myStats->appearance = 1;
-						myStats->sex = MALE;
-						myStats->LVL = 5;
-						myStats->HP = 70;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 50;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 3;
-						myStats->DEX = 5;
-						myStats->CON = 3;
-						myStats->INT = 2;
-						myStats->PER = 3;
-						myStats->CHR = 5;
-						myStats->gloves = newItem(GLOVES, EXCELLENT, 1, 1, 3, true, NULL);
-						myStats->shoes = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 3, true, NULL);
-						myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 0, true, NULL);
-						myStats->weapon = newItem(SHORTBOW, EXCELLENT, 1, 1, 3, true, NULL);
-						break;
-					case 4:
-						// conan
-						strcpy(myStats->name, "Conan the Barbarian");
-						myStats->appearance = 7;
-						myStats->sex = MALE;
-						myStats->LVL = 10;
-						myStats->HP = 100;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 20;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 10;
-						myStats->DEX = 5;
-						myStats->CON = 10;
-						myStats->INT = 3;
-						myStats->PER = 3;
-						myStats->CHR = 20;
-						myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, rand(), false, NULL);
-						myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, rand(), false, NULL);
-						myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, rand(), false, NULL);
-						break;
-					case 5:
-						// othello
-						strcpy(myStats->name, "Othello");
-						myStats->appearance = 14;
-						myStats->sex = MALE;
-						myStats->LVL = 10;
-						myStats->HP = 50;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 20;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 3;
-						myStats->DEX = 3;
-						myStats->CON = 3;
-						myStats->INT = 3;
-						myStats->PER = 0;
-						myStats->CHR = 30;
-						myStats->gloves = newItem(BRACERS, EXCELLENT, -1, 1, rand(), false, NULL);
-						myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, rand(), false, NULL);
-						myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, rand(), false, NULL);
-						myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, NULL);
-						break;
-					case 6:
-						// anansi
-						strcpy(myStats->name, "Anansi");
-						myStats->appearance = 15;
-						myStats->sex = MALE;
-						myStats->LVL = 20;
-						myStats->HP = 100;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 100;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 5;
-						myStats->DEX = 8;
-						myStats->CON = 5;
-						myStats->INT = 20;
-						myStats->PER = 20;
-						myStats->CHR = 10;
-						myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, NULL);
-						myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), false, NULL);
-						int c;
-						for ( c = 0; c < 2; c++ )
-						{
-							Entity* entity = summonMonster(SPIDER, my->x, my->y);
-							if ( entity )
-							{
-								entity->parent = my->getUID();
-								entity->flags[USERFLAG2] = true;
-							}
-						}
-						break;
-					case 7:
-						// oya
-						strcpy(myStats->name, "Oya");
-						myStats->appearance = 13;
-						myStats->sex = FEMALE;
-						myStats->LVL = 20;
-						myStats->HP = 100;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 100;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 4;
-						myStats->DEX = 10;
-						myStats->CON = 2;
-						myStats->INT = 20;
-						myStats->PER = 10;
-						myStats->CHR = 10;
-						myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 3, 1, 1, false, NULL);
-						myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 3, 1, 1, false, NULL);
-						break;
-					case 8:
-						// vishpala
-						strcpy(myStats->name, "Vishpala");
-						myStats->appearance = 17;
-						myStats->sex = FEMALE;
-						myStats->LVL = 10;
-						myStats->HP = 70;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 20;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 5;
-						myStats->DEX = 5;
-						myStats->CON = 5;
-						myStats->INT = 5;
-						myStats->PER = 5;
-						myStats->CHR = 10;
-						myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, NULL);
-						myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, NULL);
-						myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, NULL);
-						myStats->weapon = newItem(ARTIFACT_SPEAR, EXCELLENT, 1, 1, rand(), false, NULL);
-						myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, NULL);
-						break;
-					case 9:
-						// kali
-						strcpy(myStats->name, "Kali");
-						myStats->appearance = 15;
-						myStats->sex = FEMALE;
-						myStats->LVL = 20;
-						myStats->HP = 200;
-						myStats->MAXHP = myStats->HP;
-						myStats->MP = 200;
-						myStats->MAXMP = myStats->MP;
-						myStats->STR = 5;
-						myStats->DEX = 5;
-						myStats->CON = 5;
-						myStats->INT = 20;
-						myStats->PER = 20;
-						myStats->CHR = 20;
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, NULL);
-						myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, rand(), false, NULL);
-						myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, rand(), false, NULL);
-						break;
-					default:
-						break;
-				}
-			}
-			else     // standard random generation
-			{
-				// give helmet
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-						break;
-					case 3:
-						myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, NULL);
-						break;
-					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, 0, false, NULL);
-						break;
-					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, 0, false, NULL);
-						break;
-					case 6:
-					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, 0, false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, 0, false, NULL);
-						break;
-				}
-
-				// give cloak
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-					case 8:
-						myStats->cloak = newItem(CLOAK, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-
-				// give shield
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, NULL);
-						break;
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-
-				// give armor
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-
-				// give shoes
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-
-				// give gloves
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-					case 7:
-						myStats->gloves = newItem(GLOVES, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-					case 9:
-						myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-
-				// give weapon
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-						myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 2:
-					case 3:
-						myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 4:
-					case 5:
-						myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 6:
-						myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 7:
-						myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 8:
-						myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-		}
-		else
-		{
-			// zap brigadier
-			strcpy(myStats->name, "ZAP Brigadier");
-			myStats->appearance = 1;
-			myStats->sex = static_cast<sex_t>(rand() % 2);
-			myStats->LVL = 10;
-			myStats->HP = 100;
-			myStats->MAXHP = myStats->HP;
-			myStats->MP = 200;
-			myStats->MAXMP = myStats->MP;
-			myStats->STR = 3;
-			myStats->DEX = 3;
-			myStats->CON = 3;
-			myStats->INT = 3;
-			myStats->PER = 10;
-			myStats->CHR = 10;
-			myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 2, 1, 3, false, NULL);
-			myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 2, false, NULL);
-			myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 0, 1, 2, false, NULL);
-			myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 2, false, NULL);
-			myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 2, 1, 3, false, NULL);
-			myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 1, 1, 2, false, NULL);
-			myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, NULL);
-		}
-	}
-
 	// set head model
 	if ( myStats->appearance < 5 )
 	{
@@ -752,107 +754,24 @@ void initHuman(Entity* my, Stat* myStats)
 
 void actHumanLimb(Entity* my)
 {
-	int i;
-
-	Entity* parent = NULL;
-	if ( (parent = uidToEntity(my->skill[2])) == NULL )
-	{
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
-
-	if ( multiplayer != CLIENT )
-	{
-		for ( i = 0; i < MAXPLAYERS; i++ )
-		{
-			if ( inrange[i] )
-			{
-				if ( i == 0 && selectedEntity == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-				else if ( client_selected[i] == my )
-				{
-					parent->skill[13] = i + 1;
-				}
-			}
-		}
-	}
-
-	int torch = 0;
-	if ( my->flags[INVISIBLE] == false )
-	{
-		if ( my->sprite == 93 )   // torch
-		{
-			torch = 6;
-		}
-		else if ( my->sprite == 94 )     // lantern
-		{
-			torch = 9;
-		}
-	}
-	if ( torch != 0 )
-	{
-		my->light = lightSphereShadow(my->x / 16, my->y / 16, torch, 50 + 15 * torch);
-	}
+	my->actMonsterLimb(true);
 }
 
 void humanDie(Entity* my)
 {
-	node_t* node, *nextnode;
-
 	int c;
 	for ( c = 0; c < 5; c++ )
 	{
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood)
-	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				Entity* entity = newEntity(160, 1, map.entities);
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
-	}
+
+	my->spawnBlood();
+
 	playSoundEntity(my, 28, 128);
-	int i = 0;
-	for ( node = my->children.first; node != NULL; node = nextnode )
-	{
-		nextnode = node->next;
-		if ( node->element != NULL && i >= 2 )
-		{
-			Entity* entity = (Entity*)node->element;
-			if ( entity->light != NULL )
-			{
-				list_RemoveNode(entity->light->node);
-			}
-			entity->light = NULL;
-			list_RemoveNode(entity->mynode);
-		}
-		list_RemoveNode(node);
-		i++;
-	}
+
+	my->removeMonsterDeathNodes();
+
 	list_RemoveNode(my->mynode);
 	return;
 }
@@ -868,7 +787,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 	bool wearingring = false;
 
-	// set invisibility
+	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
 		if ( myStats->ring != NULL )
@@ -945,21 +864,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 
 		// levitation
-		bool levitating = false;
-		if ( myStats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( myStats->ring != NULL )
-			if ( myStats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( myStats->shoes != NULL )
-			if ( myStats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		bool levitating = isLevitating(myStats);
 		if ( levitating )
 		{
 			my->z -= 1; // floating
@@ -1287,20 +1192,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 148 + myStats->sex;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 152 + myStats->sex;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 156 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1347,20 +1241,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather boots
-						if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 150 + myStats->sex;
-						}
-						// iron boots
-						if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 154 + myStats->sex;
-						}
-						// steel boots
-						if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 158 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1408,20 +1291,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 132 + myStats->sex;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 323 + myStats->sex;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 140 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -1503,20 +1375,9 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						// leather gloves
-						if ( myStats->gloves->type == GLOVES || myStats->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 136 + myStats->sex;
-						}
-						// iron bracers
-						if ( myStats->gloves->type == BRACERS || myStats->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 327 + myStats->sex;
-						}
-						// steel gauntlets
-						if ( myStats->gloves->type == GAUNTLETS || myStats->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 144 + myStats->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					entity->sprite += 2 * (myStats->shield != NULL);
@@ -1564,7 +1425,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 7:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1672,7 +1533,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->shield);
 					}
-					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1700,7 +1561,14 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z += 2.5;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+				}
+				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z -= 2;
@@ -1708,7 +1576,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					entity2->x += 2 * cos(my->yaw);
 					entity2->y += 2 * sin(my->yaw);
 					entity2->z += 1;
@@ -1718,7 +1586,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 9:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1760,7 +1628,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1828,7 +1696,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1886,7 +1754,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	if ( shieldNode )
 	{
 		Entity* shieldEntity = (Entity*)shieldNode->element;
-		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index )
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
 		{
 			shieldEntity->yaw -= PI / 6;
 		}

@@ -336,20 +336,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 	// moved static stuff outside of the loop
 	if ( stats )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats->ring != NULL )
-			if ( stats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( stats->shoes != NULL )
-			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stats);
 	}
 	bool isMonster = false;
 	if ( my )
@@ -358,7 +345,7 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 			isMonster = true;
 		}
 	if ( isMonster && multiplayer == CLIENT )
-		if ( my->sprite == 289 || my->sprite == 274 )   // imp and lich
+		if ( my->sprite == 289 || my->sprite == 274 || my->sprite == 413 )   // imp and lich and cockatrice
 		{
 			levitating = true;
 		}
@@ -1062,24 +1049,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	// get levitation status
 	if ( (my && (stats = my->getStats())) != NULL )
 	{
-		if ( stats->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats->ring != NULL )
-		{
-			if ( stats->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		}
-		if ( stats->shoes != NULL )
-		{
-			if ( stats->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
-		}
+		levitating = isLevitating(stats);
 	}
 	if ( my )
 	{

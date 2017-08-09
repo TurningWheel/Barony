@@ -763,7 +763,8 @@ void actPlayer(Entity* my)
 				{
 					wearingring = true;
 				}
-			if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+			//if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] == true || wearingring == true )
+			if ( my->isInvisible() )
 			{
 				if ( !my->flags[INVISIBLE] )
 				{
@@ -773,7 +774,7 @@ void actPlayer(Entity* my)
 				my->flags[BLOCKSIGHT] = false;
 				if ( multiplayer != CLIENT )
 				{
-					for (i = 0, node = my->children.first; node != NULL; node = node->next, i++)
+					for ( i = 0, node = my->children.first; node != NULL; node = node->next, ++i )
 					{
 						if ( i == 0 )
 						{
@@ -841,26 +842,14 @@ void actPlayer(Entity* my)
 			my->z = 1.5;
 			my->pitch = PI / 4;
 		}
-		else
+		else if ( !noclip )
 		{
 			my->z = -1;
 		}
 
 		// levitation
-		if ( stats[PLAYER_NUM]->EFFECTS[EFF_LEVITATING] == true )
-		{
-			levitating = true;
-		}
-		if ( stats[PLAYER_NUM]->ring != NULL )
-			if ( stats[PLAYER_NUM]->ring->type == RING_LEVITATION )
-			{
-				levitating = true;
-			}
-		if ( stats[PLAYER_NUM]->shoes != NULL )
-			if ( stats[PLAYER_NUM]->shoes->type == STEEL_BOOTS_LEVITATION )
-			{
-				levitating = true;
-			}
+		levitating = isLevitating(stats[PLAYER_NUM]);
+
 		if ( levitating )
 		{
 			my->z -= 1; // floating
@@ -900,7 +889,7 @@ void actPlayer(Entity* my)
 	bool swimming = false;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		if ( !levitating && !waterwalkingboots )
+		if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
@@ -1160,6 +1149,10 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_TORCH = 10 + my->getPER() / 3;
 					}
+					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
+					{
+						PLAYER_TORCH = 5 + my->getPER() / 3;
+					}
 					else if ( !PLAYER_DEBUGCAM )
 					{
 						PLAYER_TORCH = 3 + my->getPER() / 3;
@@ -1178,6 +1171,10 @@ void actPlayer(Entity* my)
 					else if ( stats[PLAYER_NUM]->shield->type == TOOL_LANTERN )
 					{
 						PLAYER_TORCH = 10;
+					}
+					else if ( stats[PLAYER_NUM]->shield->type == TOOL_CRYSTALSHARD )
+					{
+						PLAYER_TORCH = 5;
 					}
 					else
 					{
@@ -1565,6 +1562,14 @@ void actPlayer(Entity* my)
 				//Normal controls.
 				x_force = (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT]));
 				y_force = (*inputPressed(impulses[IN_FORWARD]) - (double) * inputPressed(impulses[IN_BACK]) * .25);
+				if ( noclip )
+				{
+					if ( keystatus[SDL_SCANCODE_LSHIFT] )
+					{
+						x_force = x_force * 0.5;
+						y_force = y_force * 0.5;
+					}
+				}
 			}
 			else
 			{
@@ -1641,7 +1646,14 @@ void actPlayer(Entity* my)
 		{
 			if ( !stats[PLAYER_NUM]->EFFECTS[EFF_CONFUSED] )
 			{
-				my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05;
+				if ( noclip )
+				{
+					my->z -= (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .25;
+				}
+				else
+				{
+					my->yaw += (*inputPressed(impulses[IN_TURNR]) - *inputPressed(impulses[IN_TURNL])) * .05;
+				}
 			}
 			else
 			{
@@ -2215,20 +2227,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather boots
-						if ( stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 148 + stats[PLAYER_NUM]->sex;
-						}
-						// iron boots
-						if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS || stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 152 + stats[PLAYER_NUM]->sex;
-						}
-						// steel boots
-						if ( stats[PLAYER_NUM]->shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM]->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 156 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -2275,20 +2276,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather boots
-						if ( stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS || stats[PLAYER_NUM]->shoes->type == LEATHER_BOOTS_SPEED )
+						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 150 + stats[PLAYER_NUM]->sex;
-						}
-						// iron boots
-						if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS || stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
-						{
-							entity->sprite = 154 + stats[PLAYER_NUM]->sex;
-						}
-						// steel boots
-						if ( stats[PLAYER_NUM]->shoes->type >= STEEL_BOOTS && stats[PLAYER_NUM]->shoes->type <= STEEL_BOOTS_FEATHER )
-						{
-							entity->sprite = 158 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( multiplayer == SERVER )
@@ -2336,20 +2326,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather gloves
-						if ( stats[PLAYER_NUM]->gloves->type == GLOVES || stats[PLAYER_NUM]->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
-							entity->sprite = 132 + stats[PLAYER_NUM]->sex;
-						}
-						// iron bracers
-						if ( stats[PLAYER_NUM]->gloves->type == BRACERS || stats[PLAYER_NUM]->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 323 + stats[PLAYER_NUM]->sex;
-						}
-						// steel gauntlets
-						if ( stats[PLAYER_NUM]->gloves->type == GAUNTLETS || stats[PLAYER_NUM]->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 140 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					if ( !PLAYER_ARMBENDED )
@@ -2427,20 +2406,9 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						// leather gloves
-						if ( stats[PLAYER_NUM]->gloves->type == GLOVES || stats[PLAYER_NUM]->gloves->type == GLOVES_DEXTERITY )
+						if ( setGloveSprite(stats[PLAYER_NUM], entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
-							entity->sprite = 136 + stats[PLAYER_NUM]->sex;
-						}
-						// iron bracers
-						if ( stats[PLAYER_NUM]->gloves->type == BRACERS || stats[PLAYER_NUM]->gloves->type == BRACERS_CONSTITUTION )
-						{
-							entity->sprite = 327 + stats[PLAYER_NUM]->sex;
-						}
-						// steel gauntlets
-						if ( stats[PLAYER_NUM]->gloves->type == GAUNTLETS || stats[PLAYER_NUM]->gloves->type == GAUNTLETS_STRENGTH )
-						{
-							entity->sprite = 144 + stats[PLAYER_NUM]->sex;
+							// successfully set sprite for the human model
 						}
 					}
 					entity->sprite += 2 * (stats[PLAYER_NUM]->shield != NULL);
@@ -2494,7 +2462,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( stats[PLAYER_NUM]->weapon == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+						if ( stats[PLAYER_NUM]->weapon == NULL || my->isInvisible() )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2613,7 +2581,7 @@ void actPlayer(Entity* my)
 							entity->flags[INVISIBLE] = false;
 							entity->sprite = itemModel(stats[PLAYER_NUM]->shield);
 						}
-						if ( stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+						if ( my->isInvisible() )
 						{
 							entity->flags[INVISIBLE] = true;
 						}
@@ -2642,7 +2610,26 @@ void actPlayer(Entity* my)
 				entity->z += 2.5;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
+					if ( PLAYER_NUM == clientnum )
+					{
+						entity2->flags[GENIUS] = true;
+					}
+					entity2->x += 2 * cos(my->yaw);
+					entity2->y += 2 * sin(my->yaw);
+					entity2->z -= 2;
+					if ( my->skill[2] == clientnum )
+					{
+						entity2->setUID(-4);
+					}
+					else
+					{
+						entity2->setUID(-3);
+					}
+				}
+				else if ( entity->sprite == items[TOOL_CRYSTALSHARD].index )
+				{
+					entity2 = spawnFlame(entity, SPRITE_CRYSTALFLAME);
 					if ( PLAYER_NUM == clientnum )
 					{
 						entity2->flags[GENIUS] = true;
@@ -2662,7 +2649,7 @@ void actPlayer(Entity* my)
 				else if ( entity->sprite == items[TOOL_LANTERN].index )
 				{
 					entity->z += 2;
-					entity2 = spawnFlame(entity);
+					entity2 = spawnFlame(entity, SPRITE_FLAME);
 					if ( PLAYER_NUM == clientnum )
 					{
 						entity2->flags[GENIUS] = true;
@@ -2684,7 +2671,7 @@ void actPlayer(Entity* my)
 			case 8:
 				if ( multiplayer != CLIENT )
 				{
-					if ( stats[PLAYER_NUM]->cloak == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( stats[PLAYER_NUM]->cloak == NULL || my->isInvisible() )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2726,7 +2713,7 @@ void actPlayer(Entity* my)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(stats[PLAYER_NUM]->helmet);
-					if ( stats[PLAYER_NUM]->helmet == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring )
+					if ( stats[PLAYER_NUM]->helmet == NULL || my->isInvisible() )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2800,7 +2787,7 @@ void actPlayer(Entity* my)
 						{
 							hasSteelHelm = true;
 						}
-					if ( stats[PLAYER_NUM]->mask == NULL || stats[PLAYER_NUM]->EFFECTS[EFF_INVISIBLE] || wearingring || hasSteelHelm )
+					if ( stats[PLAYER_NUM]->mask == NULL || my->isInvisible() || hasSteelHelm )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2858,7 +2845,7 @@ void actPlayer(Entity* my)
 	if ( shieldNode )
 	{
 		Entity* shieldEntity = (Entity*)shieldNode->element;
-		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index )
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
 		{
 			shieldEntity->yaw -= PI / 6;
 		}
@@ -2953,6 +2940,11 @@ void actPlayerLimb(Entity* my)
 	{
 		my->skill[4] = 1;
 		players[my->skill[2]]->entity->skill[1] = 9;
+	}
+	else if ( my->sprite == 529 )	// crystal shard
+	{
+		my->skill[4] = 1;
+		players[my->skill[2]]->entity->skill[1] = 4;
 	}
 	else
 	{

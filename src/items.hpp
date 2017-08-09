@@ -188,9 +188,45 @@ typedef enum ItemType
 	ARTIFACT_MACE,
 	ARTIFACT_SPEAR,
 	ARTIFACT_AXE,
-	ARTIFACT_BOW
+	ARTIFACT_BOW,
+	ARTIFACT_BREASTPIECE,
+	ARTIFACT_HELM,
+	ARTIFACT_BOOTS,
+	ARTIFACT_CLOAK,
+	ARTIFACT_GLOVES,
+	CRYSTAL_BREASTPIECE,
+	CRYSTAL_HELM,
+	CRYSTAL_BOOTS,
+	CRYSTAL_SHIELD,
+	CRYSTAL_GLOVES,
+	VAMPIRE_DOUBLET,
+	WIZARD_DOUBLET,
+	HEALER_DOUBLET,
+	MIRROR_SHIELD,
+	BRASS_KNUCKLES,
+	IRON_KNUCKLES,
+	SPIKED_GAUNTLETS,
+	FOOD_TOMALLEY,
+	TOOL_CRYSTALSHARD,
+	CRYSTAL_SWORD,
+	CRYSTAL_SPEAR,
+	CRYSTAL_BATTLEAXE,
+	CRYSTAL_MACE,
+	BRONZE_TOMAHAWK,
+	IRON_DAGGER,
+	STEEL_CHAKRAM,
+	CRYSTAL_SHURIKEN,
+	CLOAK_BLACK,
+	MAGICSTAFF_STONEBLOOD,
+	MAGICSTAFF_BLEED,
+	MAGICSTAFF_SUMMON,
+	TOOL_BLINDFOLD_FOCUS,
+	TOOL_BLINDFOLD_TELEPATHY,
+	SPELLBOOK_SUMMON,
+	SPELLBOOK_STONEBLOOD,
+	SPELLBOOK_BLEED
 } ItemType;
-const int NUMITEMS = 168;
+const int NUMITEMS = 204;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -204,6 +240,7 @@ typedef enum Category
 	RING,
 	SPELLBOOK,
 	GEM,
+	THROWN,
 	TOOL,
 	FOOD,
 	BOOK,
@@ -218,6 +255,28 @@ typedef enum Status
 	SERVICABLE,
 	EXCELLENT
 } Status;
+
+typedef enum EquipmentType
+{
+	TYPE_NONE,
+	TYPE_HELM,
+	TYPE_HAT,
+	TYPE_BREASTPIECE,
+	TYPE_BOOTS,
+	TYPE_SHIELD,
+	TYPE_GLOVES,
+	TYPE_CLOAK,
+	TYPE_RING,
+	TYPE_AMULET,
+	TYPE_MASK,
+	TYPE_SWORD,
+	TYPE_AXE,
+	TYPE_SPEAR,
+	TYPE_MACE,
+	TYPE_BOW,
+	TYPE_PROJECTILE,
+	TYPE_OFFHAND
+} EquipmentType;
 
 class SummonProperties
 {
@@ -262,7 +321,12 @@ public:
 	bool canUnequip(); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
+
 	void apply(int player, Entity* entity);
+
+	//Item usage functions.
+	void applySkeletonKey(int player, Entity& entity);
+	void applyLockpick(int player, Entity& entity);
 };
 extern Uint32 itemuids;
 
@@ -356,3 +420,14 @@ bool itemIsEquipped(const Item* item, int player);
  * Returns true if potion is harmful to the player.
  */
 bool isPotionBad(const Item& potion);
+
+void createCustomInventory(Stat* stats, int itemLimit);
+void copyItem(Item* itemToSet, Item* itemToCopy);
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode);
+bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
+bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
+node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
+ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
+
+// unique monster item appearance to avoid being dropped on death.
+static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;

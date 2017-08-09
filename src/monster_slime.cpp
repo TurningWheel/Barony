@@ -13,6 +13,7 @@
 #include "game.hpp"
 #include "stat.hpp"
 #include "entity.hpp"
+#include "items.hpp"
 #include "monster.hpp"
 #include "sound.hpp"
 #include "net.hpp"
@@ -42,67 +43,49 @@ void initSlime(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		myStats->sex = static_cast<sex_t>(rand() % 2);
-		myStats->appearance = rand();
-		strcpy(myStats->name, "");
-		myStats->inventory.first = NULL;
-		myStats->inventory.last = NULL;
-		if ( myStats->LVL == 7 )   // blue slime
+		if ( myStats != NULL )
 		{
-			myStats->HP = 70;
-			myStats->MAXHP = 70;
-			myStats->MP = 70;
-			myStats->MAXMP = 70;
-			myStats->STR = 10;
-		}
-		else     // green slime
-		{
-			myStats->STR = 3;
-			myStats->HP = 60;
-			myStats->MAXHP = 60;
-			myStats->MP = 60;
-			myStats->MAXMP = 60;
-		}
-		myStats->OLDHP = myStats->HP;
-		myStats->DEX = -4;
-		myStats->CON = 3;
-		myStats->INT = -4;
-		myStats->PER = -2;
-		myStats->CHR = -4;
-		myStats->EXP = 0;
-		myStats->GOLD = 0;
-		myStats->HUNGER = 900;
-		if ( !myStats->leader_uid )
-		{
-			myStats->leader_uid = 0;
-		}
-		myStats->FOLLOWERS.first = NULL;
-		myStats->FOLLOWERS.last = NULL;
-		for ( c = 0; c < std::max(NUMPROFICIENCIES, NUMEFFECTS); c++ )
-		{
-			if ( c < NUMPROFICIENCIES )
+			if ( !myStats->leader_uid )
 			{
-				myStats->PROFICIENCIES[c] = 0;
+				myStats->leader_uid = 0;
 			}
-			if ( c < NUMEFFECTS )
+
+			// apply random stat increases if set in stat_shared.cpp or editor
+			setRandomMonsterStats(myStats);
+
+			// generate 6 items max, less if there are any forced items from boss variants
+			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
+
+			// boss variants
+
+			// random effects
+
+			// generates equipment and weapons if available from editor
+			createMonsterEquipment(myStats);
+
+			// create any custom inventory items from editor if available
+			createCustomInventory(myStats, customItemsToGenerate);
+
+			// count if any custom inventory items from editor
+			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
+
+														 // count any inventory items set to default in edtior
+			int defaultItems = countDefaultItems(myStats);
+
+			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
+			switch ( defaultItems )
 			{
-				myStats->EFFECTS[c] = false;
-			}
-			if ( c < NUMEFFECTS )
-			{
-				myStats->EFFECTS_TIMERS[c] = 0;
+				case 6:
+				case 5:
+				case 4:
+				case 3:
+				case 2:
+				case 1:
+					break;
+				default:
+					break;
 			}
 		}
-		myStats->helmet = NULL;
-		myStats->breastplate = NULL;
-		myStats->gloves = NULL;
-		myStats->shoes = NULL;
-		myStats->shield = NULL;
-		myStats->weapon = NULL;
-		myStats->cloak = NULL;
-		myStats->amulet = NULL;
-		myStats->ring = NULL;
-		myStats->mask = NULL;
 	}
 }
 
@@ -145,35 +128,16 @@ void slimeDie(Entity* my)
 		Entity* gib = spawnGib(my);
 		serverSpawnGibForClient(gib);
 	}
-	if (spawn_blood)
+
+	if ( my->sprite == 210 )
 	{
-		int x, y;
-		x = std::min<unsigned int>(std::max<int>(0, my->x / 16), map.width - 1);
-		y = std::min<unsigned int>(std::max<int>(0, my->y / 16), map.height - 1);
-		if ( map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] )
-		{
-			if ( !checkObstacle(my->x, my->y, my, NULL) )
-			{
-				if ( my->sprite == 210 )
-				{
-					entity = newEntity(212, 1, map.entities);
-				}
-				else
-				{
-					entity = newEntity(214, 1, map.entities);
-				}
-				entity->x = my->x;
-				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
-				entity->parent = my->getUID();
-				entity->sizex = 2;
-				entity->sizey = 2;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-			}
-		}
+		my->spawnBlood(212);
 	}
+	else
+	{
+		my->spawnBlood(214);
+	}
+
 	playSoundEntity(my, 69, 64);
 	list_RemoveNode(my->mynode);
 	return;

@@ -101,7 +101,7 @@ int initGame()
 		strcpy(filename, "models/creatures/");
 		strcat(filename, monstertypename[c]);
 		strcat(filename, "/limbs.txt");
-		if ( (fp = fopen(filename, "r")) == NULL )
+		if ( (fp = openDataFile(filename, "r")) == NULL )
 		{
 			continue;
 		}
@@ -147,13 +147,22 @@ int initGame()
 
 	GO_SwapBuffers(screen);
 
+	int newItems = 0;
+
 	// load item types
 	printlog( "loading items...\n");
-	fp = fopen("items/items.txt", "r");
+	fp = openDataFile("items/items.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
-		items[c].name_identified = language[1545 + c * 2];
-		items[c].name_unidentified = language[1546 + c * 2];
+		if ( c > ARTIFACT_BOW ) {
+			newItems = c - ARTIFACT_BOW - 1;
+			items[c].name_identified = language[2200 + newItems * 2];
+			items[c].name_unidentified = language[2201 + newItems * 2];
+		}
+		else {
+			items[c].name_identified = language[1545 + c * 2];
+			items[c].name_unidentified = language[1546 + c * 2];
+		}
 		fscanf(fp, "%d", &items[c].index);
 		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
 			{
@@ -217,6 +226,10 @@ int initGame()
 		else if ( !strcmp(name, "BOOK") )
 		{
 			items[c].category = BOOK;
+		}
+		else if ( !strcmp(name, "THROWN") )
+		{
+			items[c].category = THROWN;
 		}
 		else if ( !strcmp(name, "SPELL_CAT") )
 		{
@@ -291,8 +304,8 @@ int initGame()
 	createBooks();
 	setupSpells();
 
-	randomPlayerNamesMale = getLinesFromFile(PLAYERNAMES_MALE_FILE);
-	randomPlayerNamesFemale = getLinesFromFile(PLAYERNAMES_FEMALE_FILE);
+	randomPlayerNamesMale = getLinesFromFile(datadir + PLAYERNAMES_MALE_FILE);
+	randomPlayerNamesFemale = getLinesFromFile(datadir + PLAYERNAMES_FEMALE_FILE);
 
 	// print a loading message
 	drawClearBuffers();
@@ -337,7 +350,8 @@ int initGame()
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
 		players[c] = new Player();
-		stats[c] = new Stat();
+		// Stat set to 0 as monster type not needed, values will be filled with default, then overwritten by savegame or the charclass.cpp file
+		stats[c] = new Stat(0);
 		if (c > 0)
 		{
 			client_disconnected[c] = true;
@@ -606,11 +620,6 @@ void deinitGame()
 		}
 		free( books );
 	}
-	if ( discoveredbooks )
-	{
-		list_FreeAll(discoveredbooks);
-		free(discoveredbooks);
-	}
 	appraisal_timer = 0;
 	appraisal_item = 0;
 	for (c = 0; c < MAXPLAYERS; c++)
@@ -751,28 +760,7 @@ void deinitGame()
 		list_FreeAll(&items[c].surfaces);
 	}
 
-	// free spell data
-	list_FreeAll(&spell_forcebolt.elements);
-	list_FreeAll(&spell_magicmissile.elements);
-	list_FreeAll(&spell_cold.elements);
-	list_FreeAll(&spell_fireball.elements);
-	list_FreeAll(&spell_lightning.elements);
-	list_FreeAll(&spell_removecurse.elements);
-	list_FreeAll(&spell_light.elements);
-	list_FreeAll(&spell_identify.elements);
-	list_FreeAll(&spell_magicmapping.elements);
-	list_FreeAll(&spell_sleep.elements);
-	list_FreeAll(&spell_confuse.elements);
-	list_FreeAll(&spell_slow.elements);
-	list_FreeAll(&spell_opening.elements);
-	list_FreeAll(&spell_locking.elements);
-	list_FreeAll(&spell_levitation.elements);
-	list_FreeAll(&spell_invisibility.elements);
-	list_FreeAll(&spell_teleportation.elements);
-	list_FreeAll(&spell_healing.elements);
-	list_FreeAll(&spell_extrahealing.elements);
-	list_FreeAll(&spell_cureailment.elements);
-	list_FreeAll(&spell_dig.elements);
+	freeSpells();
 
 	// pathmaps
 	if ( pathMapGrounded )

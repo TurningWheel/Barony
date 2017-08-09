@@ -19,6 +19,7 @@ typedef double real_t;
 
 #include <algorithm> //For min and max, because the #define breaks everything in c++.
 #include <iostream>
+#include <list>
 #include <string>
 //using namespace std; //For C++ strings //This breaks messages on certain systems, due to template<class _CharT> class std::__cxx11::messages
 using std::string; //Instead of including an entire namespace, please explicitly include only the parts you need, and check for conflicts as reasonably possible.
@@ -30,6 +31,7 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define STEAM_APPID 371970
 #endif
 
+#include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
 #include <math.h>
@@ -95,9 +97,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 
 #ifdef _MSC_VER
 #include <io.h>
-#define F_OK 0	// check for existence 
-#define X_OK 1	// check for execute permission 
-#define W_OK 2	// check for write permission 
+#define F_OK 0	// check for existence
+#define X_OK 1	// check for execute permission
+#define W_OK 2	// check for write permission
 #define R_OK 4	// check for read permission
 
 #if _MSC_VER != 1900 //Don't need this if running visual studio 2015.
@@ -255,7 +257,8 @@ typedef struct map_t
 {
 	char name[32];   // name of the map
 	char author[32]; // author of the map
-	unsigned int width, height;  // size of the map
+	unsigned int width, height, skybox;  // size of the map + skybox
+	Sint32 flags[16];
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
@@ -263,6 +266,7 @@ typedef struct map_t
 
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
+#define MAPFLAGS 16 // map flags for custom properties
 
 // light structure
 typedef struct light_t
@@ -498,6 +502,7 @@ extern Uint32 imgref, vboref;
 extern GLuint* texid;
 extern bool disablevbos;
 extern Uint32 fov;
+extern Uint32 fpsLimit;
 //extern GLuint *vboid, *vaoid;
 extern SDL_Surface** allsurfaces;
 extern Uint32 numsprites;
@@ -524,14 +529,26 @@ int initApp(char* title, int fullscreen);
 int deinitApp();
 bool initVideo();
 bool changeVideoMode();
-void generatePolyModels();
-void generateVBOs();
+void generatePolyModels(int start, int end);
+void generateVBOs(int start, int end);
 int loadLanguage(char* lang);
 int reloadLanguage();
 
 // function prototypes for list.c:
 void list_FreeAll(list_t* list);
 void list_RemoveNode(node_t* node);
+template <typename T>
+void list_RemoveNodeWithElement(list_t &list, T element)
+{
+	for ( node_t *node = list.first; node != nullptr; node = node->next )
+	{
+		if ( *static_cast<T*>(node->element) == element )
+		{
+			list_RemoveNode(node);
+			return;
+		}
+	}
+}
 node_t* list_AddNodeFirst(list_t* list);
 node_t* list_AddNodeLast(list_t* list);
 node_t* list_AddNode(list_t* list, int index);
@@ -637,7 +654,7 @@ extern char* cursor_fill[];
 GLuint create_shader(const char* filename, GLenum type);
 
 char* readFile(char* filename);
-list_t* directoryContents(char* directory);
+std::list<std::string> directoryContents(const char* directory);
 
 extern bool no_sound; //False means sound initialized properly. True means sound failed to initialize.
 extern bool initialized; //So that messagePlayer doesn't explode before the game is initialized. //TODO: Does the editor need this set too and stuff?
@@ -650,3 +667,8 @@ extern GLuint fbo_ren;
 #endif
 void GO_SwapBuffers(SDL_Window* screen);
 unsigned int GO_GetPixelU32(int x, int y);
+extern char datadir[1024];
+FILE *openDataFile(const char *const filename, const char * const mode);
+DIR * openDataDir(const char *const);
+bool dataPathExists(const char *const);
+bool completePath(char *dest, const char * const path);
