@@ -2741,7 +2741,7 @@ timeToGoAgain:
 								}
 							}
 
-							handleMonsterAttack(my, myStats, entity, dist, hasrangedweapon);
+							handleMonsterAttack(my, myStats, entity, dist);
 
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
@@ -4264,11 +4264,12 @@ timeToGoAgain:
 	}
 }
 
-void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon)
+void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 {
 	node_t* node = nullptr;
 	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
+	bool hasrangedweapon = my->hasRangedWeapon();
 	int charge = 1;
 
 	if ( myStats->type != LICH && myStats->type != DEVIL && my->monsterSpecial > 0 )

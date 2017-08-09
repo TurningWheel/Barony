@@ -340,7 +340,7 @@ void createMinotaurTimer(Entity* entity, map_t* map);
 
 void actSummonTrap(Entity* my);
 int monsterCurve(int level);
-void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist, int hasrangedweapon);
+void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist);
 
 bool forceFollower(Entity& leader, Entity& follower);
 
