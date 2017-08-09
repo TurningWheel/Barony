@@ -560,7 +560,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 		MONSTER_TARGET = 0;
 		MONSTER_TARGETX = my->x + x;
 		MONSTER_TARGETY = my->y + y;
-
+		serverUpdateEntitySkill(my, 0);
 		return true;
 	}
 	return false;
@@ -736,6 +736,7 @@ void actMonster(Entity* my)
 	Stat* hitstats = NULL;
 	bool hasrangedweapon = false;
 	bool myReflex;
+	Sint32 previousMonsterState = my->monsterState;
 
 	// deactivate in menu
 	if ( intro )
@@ -2196,6 +2197,10 @@ void actMonster(Entity* my)
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
+					if ( previousMonsterState != my->monsterState )
+					{
+						serverUpdateEntitySkill(my, 0);
+					}
 					return;
 				}
 			}
@@ -2240,6 +2245,10 @@ void actMonster(Entity* my)
 						node->element = path;
 						node->deconstructor = &listDeconstructor;
 						MONSTER_STATE = MONSTER_STATE_HUNT; // hunt state
+						if ( previousMonsterState != my->monsterState )
+						{
+							serverUpdateEntitySkill(my, 0);
+						}
 						return;
 					}
 					else
@@ -2279,6 +2288,10 @@ void actMonster(Entity* my)
 							node->element = path;
 							node->deconstructor = &listDeconstructor;
 							MONSTER_STATE = MONSTER_STATE_HUNT; // hunt state
+							if ( previousMonsterState != my->monsterState )
+							{
+								serverUpdateEntitySkill(my, 0);
+							}
 							return;
 						}
 					}
@@ -2449,6 +2462,10 @@ void actMonster(Entity* my)
 			if ( uidToEntity(MONSTER_TARGET) == NULL )
 			{
 				MONSTER_STATE = MONSTER_STATE_WAIT;
+				if ( previousMonsterState != my->monsterState )
+				{
+					serverUpdateEntitySkill(my, 0);
+				}
 				return;
 			}
 			entity = uidToEntity(MONSTER_TARGET);
@@ -2881,12 +2898,20 @@ timeToGoAgain:
 			if ( myStats->type == DEVIL )
 			{
 				MONSTER_STATE = MONSTER_STATE_ATTACK;
+				if ( previousMonsterState != my->monsterState )
+				{
+					serverUpdateEntitySkill(my, 0);
+				}
 				return;
 			}
 			if ( uidToEntity(MONSTER_TARGET) == NULL && MONSTER_TARGET != 0 )
 			{
 				MONSTER_TARGET = 0;
 				MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
+				if ( previousMonsterState != my->monsterState )
+				{
+					serverUpdateEntitySkill(my, 0);
+				}
 				return;
 			}
 			entity = uidToEntity(MONSTER_TARGET);
@@ -3106,6 +3131,11 @@ timeToGoAgain:
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
+
+					if ( previousMonsterState != my->monsterState )
+					{
+						serverUpdateEntitySkill(my, 0);
+					}
 					return;
 				}
 			}
@@ -3158,6 +3188,10 @@ timeToGoAgain:
 						node->element = path;
 						node->deconstructor = &listDeconstructor;
 						MONSTER_STATE = MONSTER_STATE_HUNT; // hunt state
+						if ( previousMonsterState != my->monsterState )
+						{
+							serverUpdateEntitySkill(my, 0);
+						}
 						return;
 					}
 					else
@@ -3198,6 +3232,10 @@ timeToGoAgain:
 							node->element = path;
 							node->deconstructor = &listDeconstructor;
 							MONSTER_STATE = MONSTER_STATE_HUNT; // hunt state
+							if ( previousMonsterState != my->monsterState )
+							{
+								serverUpdateEntitySkill(my, 0);
+							}
 							return;
 						}
 						hit.entity = ohitentity;
@@ -4147,6 +4185,11 @@ timeToGoAgain:
 		MONSTER_VELY = 0;
 	}
 
+	if ( previousMonsterState != my->monsterState )
+	{
+		serverUpdateEntitySkill(my, 0);
+	}
+
 	// move body parts
 	myStats = my->getStats();
 	if ( myStats != NULL )
@@ -4355,6 +4398,7 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 			}
 		}
 	}
+
 	return;
 }
 
