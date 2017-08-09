@@ -69,21 +69,27 @@ Entity* entityClicked()
 		{
 			return NULL;
 		}
-		if (openedChest[clientnum])
-			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
-			{
-				return NULL;    //Click falls inside the chest inventory GUI.
-			}
-		if (identifygui_active)
-			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
-			{
-				return NULL;    //Click falls inside the identify item gui.
-			}
-		if (book_open)
-			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
-			{
-				return NULL;    //Click falls inside the book GUI.
-			}
+        if ( openedChest[clientnum] )
+        {
+            if ( omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h )
+            {
+                return NULL;    //Click falls inside the chest inventory GUI.
+            }
+        }
+        if ( identifygui_active )
+        {
+            if ( omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h )
+            {
+                return NULL;    //Click falls inside the identify item gui.
+            }
+        }
+        if ( book_open )
+        {
+            if ( mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
+            {
+                return NULL;    //Click falls inside the book GUI.
+            }
+        }
 		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
 		{
 			if ( gui_mode == GUI_MODE_INVENTORY )
