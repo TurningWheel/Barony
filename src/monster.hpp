@@ -199,7 +199,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
 
-#define MONSTER_SPECIAL my->skill[29]
 #define MONSTER_IDLEVAR myStats->monster_idlevar
 #define MONSTER_SOUND myStats->monster_sound
 #define MONSTER_VELX my->vel_x
@@ -355,8 +354,14 @@ static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
-static const int MONSTER_POSE_GOLEM_SMASH = 13;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 14;
+static const int MONSTER_POSE_RANGED_SHOOT1 = 13;
+static const int MONSTER_POSE_RANGED_SHOOT2 = 14;
+static const int MONSTER_POSE_RANGED_SHOOT3 = 15;
+static const int MONSTER_POSE_MAGIC_CAST1 = 16;
+static const int MONSTER_POSE_MAGIC_CAST2 = 17;
+static const int MONSTER_POSE_MAGIC_CAST3 = 18;
+static const int MONSTER_POSE_GOLEM_SMASH = 19;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 20;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;

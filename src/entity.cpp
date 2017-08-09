@@ -78,7 +78,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalMinZVelocity(fskill[2]),
 	crystalTurnVelocity(fskill[3]),
 	monsterAnimationLimbDirection(skill[20]),
-	monsterAnimationLimbOvershoot(skill[30])
+	monsterAnimationLimbOvershoot(skill[30]),
+	monsterSpecial(skill[29])
 
 {
 	int c;
@@ -5919,3 +5920,146 @@ int Entity::getReflection() const
 	}
 	return 0;
 }
+
+int Entity::getAttackPose() const
+{
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return -1;
+	}
+
+	int pose = 0;
+
+	if ( myStats->weapon != nullptr )
+	{
+		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+		{
+			if ( myStats->type == KOBOLD )
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1;
+			}
+			else
+			{
+				pose = 3;  // jab
+			}
+		}
+		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
+		{
+			if ( myStats->type == KOBOLD )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
+			else if ( myStats->type == COCKATRICE )
+			{
+				if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+				{
+					pose = MONSTER_POSE_MAGIC_WINDUP2;
+				}
+				else
+				{
+					pose = MONSTER_POSE_MAGIC_WINDUP1;
+				}
+			}
+			else
+			{
+				pose = 1;  // vertical swing
+			}
+		}
+		else if ( Entity::hasRangedWeapon() )
+		{
+			if ( myStats->type == KOBOLD )
+			{
+				pose = MONSTER_POSE_RANGED_WINDUP2;
+			}
+			else
+			{
+				pose = 0;
+			}
+		}
+		else
+		{
+			if ( myStats->type == KOBOLD )
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+			}
+			else
+			{
+				pose = rand() % 3 + 1;
+			}
+		}
+	}
+	// fists
+	else
+	{
+		if ( myStats->type == KOBOLD )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1;
+		}
+		else if ( myStats->type == CRYSTALGOLEM )
+		{
+			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOLEM )
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP3;
+			}
+			else
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+			}
+		}
+		else if ( myStats->type == COCKATRICE )
+		{
+			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP3;
+			}
+			else
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+			}
+		}
+		else
+		{
+			pose = 1;
+		}
+	}
+
+	return pose;
+}
+
+bool Entity::hasRangedWeapon() const
+{
+	Stat *myStats = getStats();
+	if ( myStats == nullptr || myStats->weapon == nullptr )
+	{
+		return false;
+	}
+
+	if ( myStats->weapon->type == SLING )
+	{
+		return true;
+	}
+	else if ( myStats->weapon->type == SHORTBOW )
+	{
+		return true;
+	}
+	else if ( myStats->weapon->type == CROSSBOW )
+	{
+		return true;
+	}
+	else if ( myStats->weapon->type == ARTIFACT_BOW )
+	{
+		return true;
+	}
+	else if ( itemCategory(myStats->weapon) == MAGICSTAFF )
+	{
+		return true;
+	}
+	else if ( itemCategory(myStats->weapon) == SPELLBOOK )
+	{
+		return true;
+	}
+	
+	return false;
+}
+

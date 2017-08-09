@@ -144,6 +144,7 @@ public:
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState;
 	Sint32& monsterTarget;
+	Sint32& monsterSpecial;
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;
@@ -283,6 +284,10 @@ public:
 
 	// reflection is set 1, 2 or 3 depending on the item slot. reflection of 3 does not degrade.
 	int getReflection() const;
+	// monster attack pose, return the animation to use based on weapon.
+	int getAttackPose() const;
+	// if monster holding ranged weapon.
+	bool hasRangedWeapon() const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
