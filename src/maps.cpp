@@ -3544,6 +3544,7 @@ void assignActions(map_t* map)
 				entity->behavior = &actPowerCrystalBase;
 				entity->sprite = 577; //crystal base
 				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
+				entity->flags[PASSABLE] = false;
 
 				childEntity = newEntity(578, 0, map->entities); //floating crystal
 				childEntity->parent = entity->getUID();
@@ -3569,7 +3570,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 4;
 				childEntity->sizey = 4;
 				childEntity->behavior = &actPowerCrystal;
-				childEntity->flags[PASSABLE] = true;
+				childEntity->flags[PASSABLE] = false;
 
 				node_t* tempNode = list_AddNodeLast(&entity->children);
 				tempNode->element = childEntity; // add the node to the children list.
