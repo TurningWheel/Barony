@@ -618,9 +618,9 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = PI / 4;
 						entity->roll = 0;
+						MONSTER_ARMBENDED = 1;
 					}
 
-					MONSTER_ARMBENDED = 1;
 					limbAnimateToLimit(entity, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
 					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 					
@@ -730,7 +730,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						MONSTER_WEAPONYAW = 0;
 						entity->roll = 0;
 						// start pitch high
-						entity->pitch = 9 * PI / 5;
+						entity->pitch = 11 * PI / 6;
 					}
 
 					// draw the crossbow level... slowly
@@ -915,7 +915,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					double armMoveSpeed = 1.0;
 					if ( bodypart == 5 && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
 					{
-						// don't move ranged weapons so far on the kobold if ready to attack
+						// don't move ranged weapons so far if ready to attack
 						armMoveSpeed = 0.5;
 					}
 
