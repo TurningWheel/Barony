@@ -145,6 +145,8 @@ public:
 	Sint32& monsterState;
 	Sint32& monsterTarget;
 	Sint32& monsterSpecial;
+	Sint32& monsterSpellAnimation;
+	Sint32& monsterFootstepType;
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;
@@ -276,6 +278,9 @@ public:
 
 	void initMonster(int mySprite);
 
+	//--monster type from sprite
+	int getMonsterTypeFromSprite();
+
 	void actMonsterLimb(bool processLight = false);
 
 	void removeMonsterDeathNodes();
@@ -289,11 +294,11 @@ public:
 	// if monster holding ranged weapon.
 	bool hasRangedWeapon() const;
 	// weapon arm animation attacks
-	void handleWeaponArmAttack(Entity* my, Stat* myStats);
+	void handleWeaponArmAttack(Entity* my);
 	// handle walking movement for arms and legs
 	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
-	// monster footsteps
-	Uint32 getMonsterFootstepSound(Entity* my);
+	// monster footsteps, needs to be client friendly
+	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
 };

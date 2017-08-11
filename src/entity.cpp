@@ -79,7 +79,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalTurnVelocity(fskill[3]),
 	monsterAnimationLimbDirection(skill[20]),
 	monsterAnimationLimbOvershoot(skill[30]),
-	monsterSpecial(skill[29])
+	monsterSpecial(skill[29]),
+	monsterSpellAnimation(skill[31]),
+	monsterFootstepType(skill[32])
 
 {
 	int c;
@@ -6105,9 +6107,9 @@ bool Entity::hasRangedWeapon() const
 	return false;
 }
 
-void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
+void Entity::handleWeaponArmAttack(Entity* my)
 {
-	if ( my == nullptr || myStats == nullptr )
+	if ( my == nullptr )
 	{
 		return;
 	}
@@ -6442,10 +6444,11 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 		double animationEndpoint = 0.f;
 		double armSwingRate = 0.f;
 
-		switch ( myStats->type )
+		switch ( my->monsterSpellAnimation )
 		{
-			case GNOME:
-			case KOBOLD:
+			case MONSTER_SPELLCAST_NONE:
+				break;
+			case MONSTER_SPELLCAST_SMALL_HUMANOID:
 				// smaller models so arms can wave in a larger radius and faster.
 				animationSetpoint = normaliseAngle2PI(my->yaw + 2 * PI / 8);
 				animationEndpoint = normaliseAngle2PI(my->yaw - 2 * PI / 8);
@@ -6455,10 +6458,12 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 					this->yaw = my->yaw - PI / 8;
 				}
 				break;
-			default:
+			case MONSTER_SPELLCAST_HUMANOID:
 				animationSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
 				animationEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
 				armSwingRate = 0.15;
+				break;
+			default:
 				break;
 		}
 
@@ -6545,7 +6550,19 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 
 							if ( dist > distForFootstepSound )
 							{
-								playSoundEntityLocal(my, getMonsterFootstepSound(my), 32);
+								if ( my->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								{
+									node_t* tempNode = list_Node(&my->children, 3);
+									if ( tempNode )
+									{
+										Entity* foot = (Entity*)tempNode->element;
+										playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, foot->sprite), 32);
+									}
+								}
+								else
+								{
+									playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, 0), 32);
+								}
 							}
 						}
 					}
@@ -6561,7 +6578,19 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 							this->skill[0] = 0;
 							if ( dist > distForFootstepSound )
 							{
-								playSoundEntityLocal(my, getMonsterFootstepSound(my), 32);
+								if ( my->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								{
+									node_t* tempNode = list_Node(&my->children, 3);
+									if ( tempNode )
+									{
+										Entity* foot = (Entity*)tempNode->element;
+										playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, foot->sprite), 32);
+									}
+								}
+								else
+								{
+									playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, 0), 32);
+								}
 							}
 						}
 					}
@@ -6646,28 +6675,40 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 	return;
 }
 
-Uint32 Entity::getMonsterFootstepSound(Entity* my)
+Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 {
 	int sound = -1;
-	Stat* myStats = my->getStats();
 
-	if ( myStats == nullptr )
+	switch ( footstepType )
 	{
-		return 0;
-	}
-
-	switch ( myStats->type )
-	{
-		case AUTOMATON:
-		case SKELETON:
+		case MONSTER_FOOTSTEP_SKELETON:
 			sound = 95;
 			break;
-		default:
-			// leather footsteps
+		case MONSTER_FOOTSTEP_STOMP:
+			sound = 115;
+			break;
+		case MONSTER_FOOTSTEP_LEATHER:
 			sound = rand() % 7;
 			break;
+		case MONSTER_FOOTSTEP_USE_BOOTS:
+			if ( bootSprite == 152 || bootSprite == 153 )
+			{
+				sound = 7 + rand() % 7;
+			}
+			else if ( bootSprite == 156 || bootSprite == 157 )
+			{
+				sound = 14 + rand() % 7;
+			}
+			else
+			{
+				sound = rand() % 7;
+			}
+			break;
+		case MONSTER_FOOTSTEP_NONE:
+		default:
+			break;
 	}
-	return sound;
+	return static_cast<Uint32>(sound);
 }
 
 void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType)

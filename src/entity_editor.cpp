@@ -52,7 +52,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalTurnVelocity(fskill[3]),
 	monsterAnimationLimbDirection(skill[20]),
 	monsterAnimationLimbOvershoot(skill[30]),
-	monsterSpecial(skill[29])
+	monsterSpecial(skill[29]),
+	monsterSpellAnimation(skill[31]),
+	monsterFootstepType(skill[32])
 {
 	int c;
 	// add the entity to the entity list

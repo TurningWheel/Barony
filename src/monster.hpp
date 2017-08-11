@@ -413,6 +413,18 @@ static const int LIMB_HUMANOID_LEFTARM = 6;
 //--monster attack windup duration, in ticks, roughly 180ms
 static const int ANIMATE_DURATION_WINDUP = 9;
 
+//--monster footstep sounds
+static const int MONSTER_FOOTSTEP_NONE = 0;
+static const int MONSTER_FOOTSTEP_STOMP = 1;
+static const int MONSTER_FOOTSTEP_SKELETON = 2;
+static const int MONSTER_FOOTSTEP_LEATHER = 3;
+static const int MONSTER_FOOTSTEP_USE_BOOTS = 4; // variable dependent on footwear
+
+//--monster spellcasting animation types
+static const int MONSTER_SPELLCAST_NONE = 0;
+static const int MONSTER_SPELLCAST_SMALL_HUMANOID = 1;
+static const int MONSTER_SPELLCAST_HUMANOID = 2;
+
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
