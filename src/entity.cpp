@@ -6364,12 +6364,17 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 			MONSTER_ARMBENDED = 0;
 			MONSTER_WEAPONYAW = 0;
 			this->roll = 0;
-			// start pitch neutral
-			this->pitch = 0;
 		}
 
 		// draw the weapon level... slowly and shake
-		limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, true, 0.1);
+		if ( this->pitch > PI || this->pitch < 0 )
+		{
+			limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, false, 0.05);
+		}
+		else
+		{
+			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, false, 0.05);
+		}
 
 		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 		{
