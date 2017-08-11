@@ -22,7 +22,6 @@
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	 //Sprite 467 = Automaton head model
