@@ -404,6 +404,12 @@ static const int ANIMATE_OVERSHOOT_TO_SETPOINT = 1;
 static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
 
+//--monster limb bodypart IDs
+static const int LIMB_HUMANOID_RIGHTLEG = 3;
+static const int LIMB_HUMANOID_LEFTLEG = 4;
+static const int LIMB_HUMANOID_RIGHTARM = 5;
+static const int LIMB_HUMANOID_LEFTARM = 6;
+
 //--monster attack windup duration, in ticks, roughly 180ms
 static const int ANIMATE_DURATION_WINDUP = 9;
 
