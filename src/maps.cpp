@@ -3544,6 +3544,7 @@ void assignActions(map_t* map)
 				entity->behavior = &actPowerCrystalBase;
 				entity->sprite = 577; //crystal base
 				entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
+				entity->flags[PASSABLE] = false;
 
 				childEntity = newEntity(578, 0, map->entities); //floating crystal
 				childEntity->parent = entity->getUID();

@@ -199,7 +199,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
 
-#define MONSTER_SPECIAL my->skill[29]
 #define MONSTER_IDLEVAR myStats->monster_idlevar
 #define MONSTER_SOUND myStats->monster_sound
 #define MONSTER_VELX my->vel_x
@@ -341,9 +340,24 @@ void createMinotaurTimer(Entity* entity, map_t* map);
 
 void actSummonTrap(Entity* my);
 int monsterCurve(int level);
-void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist, int hasrangedweapon);
+void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist);
 
 bool forceFollower(Entity& leader, Entity& follower);
+
+//--monsterState constants
+static const int MONSTER_STATE_WAIT = 0;
+static const int MONSTER_STATE_ATTACK = 1;
+static const int MONSTER_STATE_PATH = 2;
+static const int MONSTER_STATE_HUNT = 3;
+static const int MONSTER_STATE_TALK = 4;
+static const int MONSTER_STATE_LICH_DODGE = 5;
+static const int MONSTER_STATE_LICH_SUMMON = 6;
+static const int MONSTER_STATE_LICH_DEATH = 7;
+static const int MONSTER_STATE_DEVIL_DEATH = 8;
+static const int MONSTER_STATE_DEVIL_TELEPORT = 9;
+static const int MONSTER_STATE_DEVIL_RISING = 10;
+static const int MONSTER_STATE_DEVIL_SUMMON = 11;
+static const int MONSTER_STATE_DEVIL_BOULDER = 12;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
@@ -355,8 +369,14 @@ static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
-static const int MONSTER_POSE_GOLEM_SMASH = 13;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 14;
+static const int MONSTER_POSE_RANGED_SHOOT1 = 13;
+static const int MONSTER_POSE_RANGED_SHOOT2 = 14;
+static const int MONSTER_POSE_RANGED_SHOOT3 = 15;
+static const int MONSTER_POSE_MAGIC_CAST1 = 16;
+static const int MONSTER_POSE_MAGIC_CAST2 = 17;
+static const int MONSTER_POSE_MAGIC_CAST3 = 18;
+static const int MONSTER_POSE_GOLEM_SMASH = 19;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 20;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -374,7 +394,7 @@ static const int ANIMATE_YAW = 1;
 static const int ANIMATE_PITCH = 2;
 static const int ANIMATE_ROLL = 3;
 static const int ANIMATE_WEAPON_YAW = 4;
-static const int ANIMATE_Z = 4;
+static const int ANIMATE_Z = 5;
 
 static const int ANIMATE_DIR_POSITIVE = 1;
 static const int ANIMATE_DIR_NEGATIVE = -1;
@@ -384,15 +404,33 @@ static const int ANIMATE_OVERSHOOT_TO_SETPOINT = 1;
 static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
 
-//--monster attack windup duration
-static const int ANIMATE_DURATION_WINDUP = 10;
+//--monster limb bodypart IDs
+static const int LIMB_HUMANOID_RIGHTLEG = 3;
+static const int LIMB_HUMANOID_LEFTLEG = 4;
+static const int LIMB_HUMANOID_RIGHTARM = 5;
+static const int LIMB_HUMANOID_LEFTARM = 6;
+
+//--monster attack windup duration, in ticks, roughly 180ms
+static const int ANIMATE_DURATION_WINDUP = 9;
+
+//--monster footstep sounds
+static const int MONSTER_FOOTSTEP_NONE = 0;
+static const int MONSTER_FOOTSTEP_STOMP = 1;
+static const int MONSTER_FOOTSTEP_SKELETON = 2;
+static const int MONSTER_FOOTSTEP_LEATHER = 3;
+static const int MONSTER_FOOTSTEP_USE_BOOTS = 4; // variable dependent on footwear
+
+//--monster spellcasting animation types
+static const int MONSTER_SPELLCAST_NONE = 0;
+static const int MONSTER_SPELLCAST_SMALL_HUMANOID = 1;
+static const int MONSTER_SPELLCAST_HUMANOID = 2;
 
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
-void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist, int hasrangedweapon);
+void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist);
 real_t normaliseAngle2PI(real_t angle);
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
 int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);

@@ -22,7 +22,6 @@
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
-	int c;
 	node_t* node;
 
 	 //Sprite 467 = Automaton head model
@@ -532,163 +531,29 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
+
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		{
+			// don't let the creatures's yaw move the casting arm
+		}
+		else
+		{
+			entity->yaw = my->yaw;
+		}
+
 		if ( bodypart == 3 || bodypart == 6 )
 		{
-			if ( bodypart == 3 )
-			{
-				rightbody = (Entity*)node->next->element;
-			}
-			node_t* shieldNode = list_Node(&my->children, 7);
-			if ( shieldNode )
-			{
-				Entity* shield = (Entity*)shieldNode->element;
-				if ( dist > 0.1 && (bodypart != 6 || shield->flags[INVISIBLE]) )
-				{
-					if ( !rightbody->skill[0] )
-					{
-						entity->pitch -= dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 1;
-								if ( dist > .1 )
-								{
-									playSoundEntityLocal(my, 95, 32);
-								}
-							}
-						}
-					}
-					else
-					{
-						entity->pitch += dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 0;
-								if ( dist > .1 )
-								{
-									playSoundEntityLocal(my, 95, 32);
-								}
-							}
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
+			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
 		}
 		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
 		{
-			if ( bodypart == 5 )
+			// left leg, right arm, cloak.
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK == 1 )
+				if ( MONSTER_ATTACK > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							MONSTER_WEAPONYAW += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( MONSTER_ATTACKTIME >= 5 )
-						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
-						}
-						if ( MONSTER_ATTACKTIME >= 10 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-					}
+					entity->handleWeaponArmAttack(my);
 				}
 			}
 			else if ( bodypart == 9 )
@@ -696,49 +561,8 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
-			{
-				if ( dist > 0.1 )
-				{
-					if ( entity->skill[0] )
-					{
-						entity->pitch -= dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->skill[0] = 0;
-							entity->pitch = -PI / 4.0;
-						}
-					}
-					else
-					{
-						entity->pitch += dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->skill[0] = 1;
-							entity->pitch = PI / 4.0;
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
+			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+
 			if ( bodypart == 9 )
 			{
 				entity->fskill[0] = entity->pitch;
@@ -907,59 +731,9 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				if ( weaponarm != NULL )
+				if ( weaponarm != nullptr )
 				{
-					if ( entity->flags[INVISIBLE] != true ) //TODO: isInvisible()?
-					{
-						if ( entity->sprite == items[SHORTBOW].index )
-						{
-							entity->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-							entity->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-							entity->z = weaponarm->z + 1;
-							entity->pitch = weaponarm->pitch + .25;
-						}
-						else if ( entity->sprite == items[ARTIFACT_BOW].index )
-						{
-							entity->x = weaponarm->x - 1.5 * cos(weaponarm->yaw);
-							entity->y = weaponarm->y - 1.5 * sin(weaponarm->yaw);
-							entity->z = weaponarm->z + 2;
-							entity->pitch = weaponarm->pitch + .25;
-						}
-						else if ( entity->sprite == items[CROSSBOW].index )
-						{
-							entity->x = weaponarm->x;
-							entity->y = weaponarm->y;
-							entity->z = weaponarm->z + 1;
-							entity->pitch = weaponarm->pitch;
-						}
-						else
-						{
-							entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-							entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-							entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-							entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
-						}
-					}
-					entity->yaw = weaponarm->yaw;
-					entity->roll = weaponarm->roll;
-					if ( !MONSTER_ARMBENDED )
-					{
-						entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
-						if ( entity->sprite == items[CROSSBOW].index )
-						{
-							entity->focalx += 2;
-						}
-						entity->focaly = limbs[AUTOMATON][6][1]; // 0
-						entity->focalz = limbs[AUTOMATON][6][2]; // -.5
-					}
-					else
-					{
-						entity->focalx = limbs[AUTOMATON][6][0] + 1; // 3.5
-						entity->focaly = limbs[AUTOMATON][6][1]; // 0
-						entity->focalz = limbs[AUTOMATON][6][2] - 2; // -2.5
-						entity->yaw -= sin(weaponarm->roll) * PI / 2;
-						entity->pitch += cos(weaponarm->roll) * PI / 2;
-					}
+					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
 				}
 				break;
 			// shield
@@ -1196,12 +970,16 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 }
