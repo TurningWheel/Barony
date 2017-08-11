@@ -288,6 +288,12 @@ public:
 	int getAttackPose() const;
 	// if monster holding ranged weapon.
 	bool hasRangedWeapon() const;
+	// weapon arm animation attacks
+	void handleWeaponArmAttack(Entity* my, Stat* myStats);
+	// handle walking movement for arms and legs
+	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
+	// monster footsteps
+	Uint32 getMonsterFootstepSound(Entity* my);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

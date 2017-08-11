@@ -5962,7 +5962,7 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -5973,7 +5973,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			if ( myStats->type == KOBOLD )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -5995,13 +5995,13 @@ int Entity::getAttackPose() const
 		}
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP1;
 				}
-				if ( itemCategory(myStats->weapon) == THROWN )
+				else if ( itemCategory(myStats->weapon) == THROWN )
 				{
 					pose = MONSTER_POSE_MELEE_WINDUP1;
 				}
@@ -6017,7 +6017,7 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
 			}
@@ -6030,7 +6030,7 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -6105,3 +6105,552 @@ bool Entity::hasRangedWeapon() const
 	return false;
 }
 
+void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
+{
+	if ( my == nullptr || myStats == nullptr )
+	{
+		return;
+	}
+
+	Entity* rightbody = nullptr;
+	// set rightbody to left leg.
+	node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+	if ( rightbodyNode )
+	{
+		rightbody = (Entity*)rightbodyNode->element;
+	}
+	else
+	{
+		return;
+	}
+
+	// vertical chop windup
+	if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+	{
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			this->pitch = 0;
+			MONSTER_ARMBENDED = 0;
+			MONSTER_WEAPONYAW = 0;
+			this->roll = 0;
+		}
+		if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
+		{
+			this->skill[0] = 0;
+			if ( multiplayer != CLIENT )
+			{
+				my->attack(1, 0, nullptr);
+			}
+		}
+	}
+	// vertical chop attack
+	else if ( MONSTER_ATTACK == 1 )
+	{
+		if ( this->pitch >= 3 * PI / 2 )
+		{
+			MONSTER_ARMBENDED = 1;
+		}
+
+		if ( this->skill[0] == 0 )
+		{
+			// chop forwards
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+			{
+				this->skill[0] = 1;
+			}
+		}
+		else if ( this->skill[0] == 1 )
+		{
+			// return to neutral
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+			{
+				this->skill[0] = rightbody->skill[0];
+				MONSTER_WEAPONYAW = 0;
+				this->pitch = rightbody->pitch;
+				this->roll = 0;
+				MONSTER_ARMBENDED = 0;
+				MONSTER_ATTACK = 0;
+			}
+		}
+	}
+	// horizontal chop windup
+	else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
+	{
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			this->pitch = PI / 4;
+			this->roll = 0;
+			MONSTER_ARMBENDED = 1;
+		}
+
+		limbAnimateToLimit(this, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
+		limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0);
+
+		MONSTER_WEAPONYAW = 6 * PI / 4;
+
+		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		{
+			this->skill[0] = 0;
+			if ( multiplayer != CLIENT )
+			{
+				my->attack(2, 0, nullptr);
+			}
+		}
+	}
+	// horizontal chop attack
+	else if ( MONSTER_ATTACK == 2 )
+	{
+		if ( this->skill[0] == 0 )
+		{
+			// swing
+			if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.3, 2 * PI / 8, false, 0.0) )
+			{
+				this->skill[0] = 1;
+			}
+		}
+		else if ( this->skill[0] == 1 )
+		{
+			// post-swing return to normal weapon yaw
+			if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.5, 0, false, 0.0) )
+			{
+				// restore pitch and roll after yaw is set
+				if ( limbAnimateToLimit(this, ANIMATE_ROLL, 0.4, 0, false, 0.0)
+					&& limbAnimateToLimit(this, ANIMATE_PITCH, -0.4, 7 * PI / 4, false, 0.0) )
+				{
+					this->skill[0] = rightbody->skill[0];
+					MONSTER_WEAPONYAW = 0;
+					this->pitch = rightbody->pitch;
+					this->roll = 0;
+					MONSTER_ARMBENDED = 0;
+					MONSTER_ATTACK = 0;
+				}
+			}
+		}
+	}
+	// stab windup
+	else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
+	{
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			MONSTER_ARMBENDED = 0;
+			MONSTER_WEAPONYAW = 0;
+			this->roll = 0;
+			this->pitch = 0;
+		}
+
+		limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
+
+		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		{
+			this->skill[0] = 0;
+			if ( multiplayer != CLIENT )
+			{
+				my->attack(3, 0, nullptr);
+			}
+		}
+	}
+	// stab attack - refer to weapon limb code for additional animation
+	else if ( MONSTER_ATTACK == 3 )
+	{
+		if ( this->skill[0] == 0 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.3, 0, false, 0.0) )
+			{
+				this->skill[0] = 1;
+			}
+		}
+		else if ( this->skill[0] == 1 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.3, 2 * PI / 3, false, 0.0) )
+			{
+				this->skill[0] = 2;
+			}
+		}
+		else if ( this->skill[0] == 2 )
+		{
+			// return to neutral
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0) )
+			{
+				this->skill[0] = rightbody->skill[0];
+				MONSTER_WEAPONYAW = 0;
+				this->pitch = rightbody->pitch;
+				this->roll = 0;
+				MONSTER_ARMBENDED = 0;
+				MONSTER_ATTACK = 0;
+			}
+		}
+	}
+	// ranged weapons
+	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_WINDUP1 )
+	{
+		// crossbow
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			MONSTER_ARMBENDED = 0;
+			MONSTER_WEAPONYAW = 0;
+			this->roll = 0;
+		}
+
+		// draw the crossbow level... slowly
+		if ( this->pitch > PI || this->pitch < 0 )
+		{
+			limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+		}
+		else
+		{
+			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, false, 0.0);
+		}
+
+		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		{
+			if ( multiplayer != CLIENT )
+			{
+				this->skill[0] = 0;
+				my->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
+			}
+		}
+	}
+	// shoot crossbow
+	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_SHOOT1 )
+	{
+		// recoil upwards
+		if ( this->skill[0] == 0 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 15 * PI / 8, false, 0.0) )
+			{
+				this->skill[0] = 1;
+			}
+		}
+		// recoil downwards
+		else if ( this->skill[0] == 1 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, PI / 3, false, 0.0) )
+			{
+				this->skill[0] = 2;
+			}
+		}
+		else if ( this->skill[0] == 2 )
+		{
+			// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(this->pitch, -0.2, rightbody->pitch) )
+			{
+				this->skill[0] = rightbody->skill[0];
+				MONSTER_WEAPONYAW = 0;
+				//if ( my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
+				//{
+				//	// don't move ranged weapons so far if ready to attack
+				//	this->pitch = rightbody->pitch * 0.25;
+				//}
+				//else
+				//{
+				//	this->pitch = rightbody->pitch;
+				//}
+				this->roll = 0;
+				MONSTER_ARMBENDED = 0;
+				MONSTER_ATTACK = 0;
+			}
+		}
+	}
+	// shortbow/sling
+	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_WINDUP2 )
+	{
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			MONSTER_ARMBENDED = 0;
+			MONSTER_WEAPONYAW = 0;
+			this->roll = 0;
+			// start pitch neutral
+			this->pitch = 0;
+		}
+
+		// draw the weapon level... slowly and shake
+		limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, true, 0.1);
+
+		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		{
+			if ( multiplayer != CLIENT )
+			{
+				this->skill[0] = 0;
+				my->attack(MONSTER_POSE_RANGED_SHOOT2, 0, nullptr);
+			}
+		}
+	}
+	// shoot shortbow/sling
+	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_SHOOT2 )
+	{
+		// recoil upwards
+		if ( this->skill[0] == 0 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 14 * PI / 8, false, 0.0) )
+			{
+				this->skill[0] = 1;
+			}
+		}
+		// recoil downwards
+		else if ( this->skill[0] == 1 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 1 * PI / 3, false, 0.0) )
+			{
+				this->skill[0] = 2;
+			}
+		}
+		else if ( this->skill[0] == 2 )
+		{
+			// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(this->pitch, -0.2, rightbody->pitch) )
+			{
+				this->skill[0] = rightbody->skill[0];
+				MONSTER_WEAPONYAW = 0;
+				this->pitch = rightbody->pitch;
+				this->roll = 0;
+				MONSTER_ARMBENDED = 0;
+				MONSTER_ATTACK = 0;
+			}
+		}
+	}
+	else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+	{
+		// magic wiggle hands
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			MONSTER_ARMBENDED = 0;
+			MONSTER_WEAPONYAW = 0;
+			this->roll = 0;
+			this->pitch = 0;
+			this->yaw = my->yaw - PI / 8;
+			this->skill[0] = 0;
+			// casting particles
+			createParticleDot(my);
+			// play casting sound
+			playSoundEntityLocal(my, 170, 32);
+		}
+
+		double animationSetpoint = 0.f;
+		double animationEndpoint = 0.f;
+		double armSwingRate = 0.f;
+
+		switch ( myStats->type )
+		{
+			case GNOME:
+			case KOBOLD:
+				// smaller models so arms can wave in a larger radius and faster.
+				animationSetpoint = normaliseAngle2PI(my->yaw + 2 * PI / 8);
+				animationEndpoint = normaliseAngle2PI(my->yaw - 2 * PI / 8);
+				armSwingRate = 0.3;
+				break;
+			default:
+				animationSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
+				animationEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
+				armSwingRate = 0.15;
+				break;
+		}
+
+		if ( this->skill[0] == 0 )
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, armSwingRate, 2 * PI / 8, false, 0.0) && limbAnimateToLimit(this, ANIMATE_YAW, armSwingRate, animationSetpoint, false, 0.0) )
+			{
+				this->skill[0] = 1;
+			}
+		}
+		else
+		{
+			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -armSwingRate, 14 * PI / 8, false, 0.0) && limbAnimateToLimit(this, ANIMATE_YAW, -armSwingRate, animationEndpoint, false, 0.0) )
+			{
+				this->skill[0] = 0;
+			}
+		}
+
+		if ( MONSTER_ATTACKTIME >= 2 * ANIMATE_DURATION_WINDUP )
+		{
+			if ( multiplayer != CLIENT )
+			{
+				// swing the arm after we prepped the spell
+				my->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
+			}
+		}
+	}
+	// swing arm to cast spell 
+	else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+	{
+		if ( MONSTER_ATTACKTIME == 0 )
+		{
+			// init rotations
+			this->pitch = 0;
+			MONSTER_ARMBENDED = 0;
+			MONSTER_WEAPONYAW = 0;
+			this->roll = 0;
+		}
+		if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0) )
+		{
+			this->skill[0] = 0;
+			if ( multiplayer != CLIENT )
+			{
+				my->attack(1, 0, nullptr);
+			}
+		}
+	}
+}
+
+void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound)
+{
+	if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
+	{
+		Entity* rightbody = nullptr;
+		// set rightbody to left leg.
+		node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+		if ( rightbodyNode )
+		{
+			rightbody = (Entity*)rightbodyNode->element;
+		}
+		else
+		{
+			return;
+		}
+
+		node_t* shieldNode = list_Node(&my->children, 8);
+		if ( shieldNode )
+		{
+			Entity* shield = (Entity*)shieldNode->element;
+			if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
+			{
+				// walking to destination
+				if ( !rightbody->skill[0] )
+				{
+					this->pitch -= dist * walkSpeed;
+					if ( this->pitch < -PI / 4.0 )
+					{
+						this->pitch = -PI / 4.0;
+						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+						{
+							this->skill[0] = 1;
+
+							if ( dist > distForFootstepSound )
+							{
+								playSoundEntityLocal(my, getMonsterFootstepSound(my), 32);
+							}
+						}
+					}
+				}
+				else
+				{
+					this->pitch += dist * walkSpeed;
+					if ( this->pitch > PI / 4.0 )
+					{
+						this->pitch = PI / 4.0;
+						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+						{
+							this->skill[0] = 0;
+							if ( dist > distForFootstepSound )
+							{
+								playSoundEntityLocal(my, getMonsterFootstepSound(my), 32);
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				// coming to a stop
+				if ( this->pitch < 0 )
+				{
+					this->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( this->pitch > 0 )
+					{
+						this->pitch = 0;
+					}
+				}
+				else if ( this->pitch > 0 )
+				{
+					this->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( this->pitch < 0 )
+					{
+						this->pitch = 0;
+					}
+				}
+			}
+		}
+	}
+	else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
+	{
+		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+		{
+			if ( dist > 0.1 )
+			{
+				double armMoveSpeed = 1.0;
+				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
+				{
+					// don't move ranged weapons so far if ready to attack
+					armMoveSpeed = 0.25;
+				}
+
+				if ( this->skill[0] )
+				{
+					this->pitch -= dist * walkSpeed * armMoveSpeed;
+					if ( this->pitch < -PI * armMoveSpeed / 4.0 )
+					{
+						this->skill[0] = 0;
+						this->pitch = -PI * armMoveSpeed / 4.0;
+					}
+				}
+				else
+				{
+					this->pitch += dist * walkSpeed * armMoveSpeed;
+					if ( this->pitch > PI * armMoveSpeed / 4.0 )
+					{
+						this->skill[0] = 1;
+						this->pitch = PI * armMoveSpeed / 4.0;
+					}
+				}
+			}
+			else
+			{
+				if ( this->pitch < 0 )
+				{
+					this->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( this->pitch > 0 )
+					{
+						this->pitch = 0;
+					}
+				}
+				else if ( this->pitch > 0 )
+				{
+					this->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( this->pitch < 0 )
+					{
+						this->pitch = 0;
+					}
+				}
+			}
+		}
+	}
+}
+
+Uint32 Entity::getMonsterFootstepSound(Entity* my)
+{
+	int sound = -1;
+	Stat* myStats = my->getStats();
+
+	if ( myStats == nullptr )
+	{
+		return 0;
+	}
+
+	switch ( myStats->type )
+	{
+		case AUTOMATON:
+		case SKELETON:
+			sound = 95;
+			break;
+		default:
+			// leather footsteps
+			sound = rand() % 7;
+			break;
+	}
+	return sound;
+}
