@@ -732,97 +732,9 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				if ( weaponarm != NULL )
+				if ( weaponarm != nullptr )
 				{
-					if ( entity->flags[INVISIBLE] != true ) //TODO: isInvisible()?
-					{
-						if ( entity->sprite == items[SHORTBOW].index )
-						{
-							entity->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-							entity->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-							entity->z = weaponarm->z + 1;
-							entity->pitch = weaponarm->pitch + .25;
-						}
-						else if ( entity->sprite == items[ARTIFACT_BOW].index )
-						{
-							entity->x = weaponarm->x - 1.5 * cos(weaponarm->yaw);
-							entity->y = weaponarm->y - 1.5 * sin(weaponarm->yaw);
-							entity->z = weaponarm->z + 2;
-							entity->pitch = weaponarm->pitch + .25;
-						}
-						else if ( entity->sprite == items[CROSSBOW].index )
-						{
-							entity->x = weaponarm->x;
-							entity->y = weaponarm->y;
-							entity->z = weaponarm->z + 1;
-							entity->pitch = weaponarm->pitch;
-						}
-						else
-						{
-							if ( MONSTER_ATTACK == 3 )
-							{
-								// poking animation, weapon pointing straight ahead.
-								if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2 )
-								{
-									entity->focalx = limbs[AUTOMATON][6][0];
-									entity->focalz = limbs[AUTOMATON][6][2];
-									// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
-									entity->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
-									entity->y = weaponarm->y + (3 * cos(weaponarm->pitch)) * sin(weaponarm->yaw);
-
-									if ( weaponarm->pitch < PI / 3 )
-									{
-										// adjust the z point halfway through swing.
-										entity->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
-									}
-									else
-									{
-										entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-										limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
-									}
-								}
-								// hold sword with pitch aligned to arm rotation.
-								else
-								{
-									entity->focalx = limbs[AUTOMATON][6][0];
-									entity->focalz = limbs[AUTOMATON][6][2];
-									entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-									entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-									entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-									entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
-								}
-							}
-							else
-							{
-								entity->focalx = limbs[AUTOMATON][6][0];
-								entity->focalz = limbs[AUTOMATON][6][2];
-								entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-								entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-								entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-								entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
-							}
-						}
-					}
-					entity->yaw = weaponarm->yaw;
-					entity->roll = weaponarm->roll;
-					if ( !MONSTER_ARMBENDED )
-					{
-						entity->focalx = limbs[AUTOMATON][6][0]; // 2.5
-						if ( entity->sprite == items[CROSSBOW].index )
-						{
-							entity->focalx += 2;
-						}
-						entity->focaly = limbs[AUTOMATON][6][1]; // 0
-						entity->focalz = limbs[AUTOMATON][6][2]; // -.5
-					}
-					else
-					{
-						entity->focalx = limbs[AUTOMATON][6][0] + 1; // 3.5
-						entity->focaly = limbs[AUTOMATON][6][1]; // 0
-						entity->focalz = limbs[AUTOMATON][6][2] - 2; // -2.5
-						entity->yaw -= sin(weaponarm->roll) * PI / 2;
-						entity->pitch += cos(weaponarm->roll) * PI / 2;
-					}
+					entity->handleHumanoidWeaponLimb(my, weaponarm, static_cast<int>(AUTOMATON));
 				}
 				break;
 			// shield
