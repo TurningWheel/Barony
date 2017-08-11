@@ -553,7 +553,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					entity->handleWeaponArmAttack(my, myStats);
+					entity->handleWeaponArmAttack(my);
 				}
 			}
 			else if ( bodypart == 9 )
@@ -733,7 +733,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( weaponarm != nullptr )
 				{
-					entity->handleHumanoidWeaponLimb(my, weaponarm, static_cast<int>(AUTOMATON));
+					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
 				}
 				break;
 			// shield
