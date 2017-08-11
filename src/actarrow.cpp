@@ -166,6 +166,28 @@ void actArrow(Entity* my)
 							parent->increaseSkill(PRO_RANGED);
 						}
 					}
+					else
+					{
+						if ( hit.entity->behavior == &actPlayer )
+						{
+							if ( hit.entity->skill[2] == clientnum )
+							{
+								camera_shakex += .05;
+								camera_shakey += 5;
+							}
+							else
+							{
+								strcpy((char*)net_packet->data, "SHAK");
+								net_packet->data[4] = 5; // turns into .05
+								net_packet->data[5] = 5;
+								net_packet->address.host = net_clients[hit.entity->skill[2] - 1].host;
+								net_packet->address.port = net_clients[hit.entity->skill[2] - 1].port;
+								net_packet->len = 6;
+								sendPacketSafe(net_sock, -1, net_packet, hit.entity->skill[2] - 1);
+							}
+						}
+					}
+
 					if ( hitstats->HP <= 0 && parent)
 					{
 						parent->awardXP( hit.entity, true, true );
