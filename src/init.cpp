@@ -390,7 +390,6 @@ int initApp(char* title, int fullscreen)
 			}
 		}
 	}
-	fclose(fp);
 	if ( !softwaremode )
 	{
 		generatePolyModels();
