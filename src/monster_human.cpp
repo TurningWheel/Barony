@@ -55,7 +55,7 @@ void initHuman(Entity* my, Stat* myStats)
 
 			// boss variants
 			// generate special loadout
-			if ( !MONSTER_SPECIAL )
+			if ( my->monsterSpecial == 0 )
 			{
 				if ( rand() % 25 == 0 )
 				{

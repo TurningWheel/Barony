@@ -700,7 +700,7 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MELEE_WINDUP3 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
