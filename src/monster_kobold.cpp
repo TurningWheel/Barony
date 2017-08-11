@@ -729,12 +729,17 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						MONSTER_ARMBENDED = 0;
 						MONSTER_WEAPONYAW = 0;
 						entity->roll = 0;
-						// start pitch high
-						entity->pitch = 11 * PI / 6;
 					}
 
 					// draw the crossbow level... slowly
-					limbAnimateToLimit(entity, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+					if ( entity->pitch > PI || entity->pitch < 0 )
+					{
+						limbAnimateToLimit(entity, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+					}
+					else
+					{
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.1, 0, false, 0.0);
+					}
 
 					if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 					{
