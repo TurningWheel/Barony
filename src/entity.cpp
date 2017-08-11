@@ -6192,9 +6192,9 @@ void Entity::handleWeaponArmAttack(Entity* my)
 
 		MONSTER_WEAPONYAW = 6 * PI / 4;
 
+		this->skill[0] = 0;
 		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 		{
-			this->skill[0] = 0;
 			if ( multiplayer != CLIENT )
 			{
 				my->attack(2, 0, nullptr);
@@ -6245,9 +6245,9 @@ void Entity::handleWeaponArmAttack(Entity* my)
 
 		limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
 
+		this->skill[0] = 0;
 		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 		{
-			this->skill[0] = 0;
 			if ( multiplayer != CLIENT )
 			{
 				my->attack(3, 0, nullptr);
@@ -6307,11 +6307,11 @@ void Entity::handleWeaponArmAttack(Entity* my)
 			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, false, 0.0);
 		}
 
+		this->skill[0] = 0;
 		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
-				this->skill[0] = 0;
 				my->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
 			}
 		}
@@ -6378,11 +6378,11 @@ void Entity::handleWeaponArmAttack(Entity* my)
 			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
+		this->skill[0] = 0;
 		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
-				this->skill[0] = 0;
 				my->attack(MONSTER_POSE_RANGED_SHOOT2, 0, nullptr);
 			}
 		}
