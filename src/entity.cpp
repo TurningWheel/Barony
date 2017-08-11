@@ -6369,11 +6369,11 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 		// draw the weapon level... slowly and shake
 		if ( this->pitch > PI || this->pitch < 0 )
 		{
-			limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, false, 0.05);
+			limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, true, 0.1);
 		}
 		else
 		{
-			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, false, 0.05);
+			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
 		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
@@ -6415,6 +6415,8 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 				this->roll = 0;
 				MONSTER_ARMBENDED = 0;
 				MONSTER_ATTACK = 0;
+				// play draw arrow sound
+				playSoundEntityLocal(my, 246, 16);
 			}
 		}
 	}
@@ -6428,7 +6430,7 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 			MONSTER_WEAPONYAW = 0;
 			this->roll = 0;
 			this->pitch = 0;
-			this->yaw = my->yaw - PI / 8;
+			this->yaw = my->yaw;
 			this->skill[0] = 0;
 			// casting particles
 			createParticleDot(my);
@@ -6448,6 +6450,10 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 				animationSetpoint = normaliseAngle2PI(my->yaw + 2 * PI / 8);
 				animationEndpoint = normaliseAngle2PI(my->yaw - 2 * PI / 8);
 				armSwingRate = 0.3;
+				if ( MONSTER_ATTACKTIME == 0 )
+				{
+					this->yaw = my->yaw - PI / 8;
+				}
 				break;
 			default:
 				animationSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
@@ -6500,6 +6506,8 @@ void Entity::handleWeaponArmAttack(Entity* my, Stat* myStats)
 			}
 		}
 	}
+
+	return;
 }
 
 void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound)
@@ -6591,7 +6599,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
 				{
 					// don't move ranged weapons so far if ready to attack
-					armMoveSpeed = 0.25;
+					armMoveSpeed = 0.5;
 				}
 
 				if ( this->skill[0] )
@@ -6634,6 +6642,8 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 			}
 		}
 	}
+
+	return;
 }
 
 Uint32 Entity::getMonsterFootstepSound(Entity* my)
@@ -6658,4 +6668,103 @@ Uint32 Entity::getMonsterFootstepSound(Entity* my)
 			break;
 	}
 	return sound;
+}
+
+void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType)
+{
+	if ( my == nullptr || weaponarm == nullptr )
+	{
+		return;
+	}
+
+	if ( my->isInvisible() == false) //TODO: isInvisible()?
+	{
+		if ( this->sprite == items[SHORTBOW].index )
+		{
+			this->x = weaponarm->x - .5 * cos(weaponarm->yaw);
+			this->y = weaponarm->y - .5 * sin(weaponarm->yaw);
+			this->z = weaponarm->z + 1;
+			this->pitch = weaponarm->pitch + .25;
+		}
+		else if ( this->sprite == items[ARTIFACT_BOW].index )
+		{
+			this->x = weaponarm->x - 1.5 * cos(weaponarm->yaw);
+			this->y = weaponarm->y - 1.5 * sin(weaponarm->yaw);
+			this->z = weaponarm->z + 2;
+			this->pitch = weaponarm->pitch + .25;
+		}
+		else if ( this->sprite == items[CROSSBOW].index )
+		{
+			this->x = weaponarm->x;
+			this->y = weaponarm->y;
+			this->z = weaponarm->z + 1;
+			this->pitch = weaponarm->pitch;
+		}
+		else
+		{
+			this->focalx = limbs[monsterType][6][0];
+			this->focalz = limbs[monsterType][6][2];
+
+			if ( MONSTER_ATTACK == 3 )
+			{
+				// poking animation, weapon pointing straight ahead.
+				if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2 )
+				{
+					// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
+					this->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
+					this->y = weaponarm->y + (3 * cos(weaponarm->pitch)) * sin(weaponarm->yaw);
+
+					if ( weaponarm->pitch < PI / 3 )
+					{
+						// adjust the z point halfway through swing.
+						this->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+					}
+					else
+					{
+						this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+						limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+					}
+				}
+				// hold sword with pitch aligned to arm rotation.
+				else
+				{
+					this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+					this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+					this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+					this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+				}
+			}
+			else
+			{
+				this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+				this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+				this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+				this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+			}
+		}
+	}
+
+	this->yaw = weaponarm->yaw;
+	this->roll = weaponarm->roll;
+
+	if ( !MONSTER_ARMBENDED )
+	{
+		this->focalx = limbs[monsterType][6][0]; // 2.5
+		if ( this->sprite == items[CROSSBOW].index )
+		{
+			this->focalx += 2;
+		}
+		this->focaly = limbs[monsterType][6][1]; // 0
+		this->focalz = limbs[monsterType][6][2]; // -.5
+	}
+	else
+	{
+		this->focalx = limbs[monsterType][6][0] + 1; // 3.5
+		this->focaly = limbs[monsterType][6][1]; // 0
+		this->focalz = limbs[monsterType][6][2] - 2; // -2.5
+		this->yaw -= sin(weaponarm->roll) * PI / 2;
+		this->pitch += cos(weaponarm->roll) * PI / 2;
+	}
+
+	return;
 }

@@ -294,6 +294,8 @@ public:
 	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
 	// monster footsteps
 	Uint32 getMonsterFootstepSound(Entity* my);
+	// handle humanoid weapon arm animation/sprite offsets
+	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
