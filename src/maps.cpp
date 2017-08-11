@@ -3570,7 +3570,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 4;
 				childEntity->sizey = 4;
 				childEntity->behavior = &actPowerCrystal;
-				childEntity->flags[PASSABLE] = false;
+				childEntity->flags[PASSABLE] = true;
 
 				node_t* tempNode = list_AddNodeLast(&entity->children);
 				tempNode->element = childEntity; // add the node to the children list.
