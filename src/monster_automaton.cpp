@@ -532,163 +532,29 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
+
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		{
+			// don't let the creatures's yaw move the casting arm
+		}
+		else
+		{
+			entity->yaw = my->yaw;
+		}
+
 		if ( bodypart == 3 || bodypart == 6 )
 		{
-			if ( bodypart == 3 )
-			{
-				rightbody = (Entity*)node->next->element;
-			}
-			node_t* shieldNode = list_Node(&my->children, 7);
-			if ( shieldNode )
-			{
-				Entity* shield = (Entity*)shieldNode->element;
-				if ( dist > 0.1 && (bodypart != 6 || shield->flags[INVISIBLE]) )
-				{
-					if ( !rightbody->skill[0] )
-					{
-						entity->pitch -= dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 1;
-								if ( dist > .1 )
-								{
-									playSoundEntityLocal(my, 95, 32);
-								}
-							}
-						}
-					}
-					else
-					{
-						entity->pitch += dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 0;
-								if ( dist > .1 )
-								{
-									playSoundEntityLocal(my, 95, 32);
-								}
-							}
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
+			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
 		}
 		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
 		{
-			if ( bodypart == 5 )
+			// left leg, right arm, cloak.
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK == 1 )
+				if ( MONSTER_ATTACK > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							MONSTER_WEAPONYAW += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( MONSTER_ATTACKTIME >= 5 )
-						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
-						}
-						if ( MONSTER_ATTACKTIME >= 10 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-					}
+					entity->handleWeaponArmAttack(my, myStats);
 				}
 			}
 			else if ( bodypart == 9 )
@@ -696,49 +562,8 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
-			{
-				if ( dist > 0.1 )
-				{
-					if ( entity->skill[0] )
-					{
-						entity->pitch -= dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->skill[0] = 0;
-							entity->pitch = -PI / 4.0;
-						}
-					}
-					else
-					{
-						entity->pitch += dist * AUTOMATONWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->skill[0] = 1;
-							entity->pitch = PI / 4.0;
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
+			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+
 			if ( bodypart == 9 )
 			{
 				entity->fskill[0] = entity->pitch;
@@ -934,10 +759,48 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 						else
 						{
-							entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-							entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-							entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-							entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+							if ( MONSTER_ATTACK == 3 )
+							{
+								// poking animation, weapon pointing straight ahead.
+								if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2 )
+								{
+									entity->focalx = limbs[AUTOMATON][6][0];
+									entity->focalz = limbs[AUTOMATON][6][2];
+									// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
+									entity->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
+									entity->y = weaponarm->y + (3 * cos(weaponarm->pitch)) * sin(weaponarm->yaw);
+
+									if ( weaponarm->pitch < PI / 3 )
+									{
+										// adjust the z point halfway through swing.
+										entity->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+									}
+									else
+									{
+										entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+										limbAnimateToLimit(entity, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+									}
+								}
+								// hold sword with pitch aligned to arm rotation.
+								else
+								{
+									entity->focalx = limbs[AUTOMATON][6][0];
+									entity->focalz = limbs[AUTOMATON][6][2];
+									entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+									entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+									entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+									entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+								}
+							}
+							else
+							{
+								entity->focalx = limbs[AUTOMATON][6][0];
+								entity->focalz = limbs[AUTOMATON][6][2];
+								entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+								entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
+								entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+								entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+							}
 						}
 					}
 					entity->yaw = weaponarm->yaw;
@@ -1196,12 +1059,16 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 }
