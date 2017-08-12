@@ -430,18 +430,18 @@ void drawStatus()
 		//drawImage(textdown_bmp, NULL, &pos);
 	}*/
 
-    // PLAYER HEALTHBAR
-	// Display Healthbar Border
+    // PLAYER HEALTH BAR
+	// Display Health bar Border
 	pos.x = 76;
 	pos.w = 38;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
 
-    // Display "HP" at top of Healthbar
+    // Display "HP" at top of Health bar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[306]);
 
-    // Display Border between red bar and "HP"
+    // Display Border between actual Health bar and "HP"
     pos.x = 76;
     pos.w = 38;
     pos.h = 1;
@@ -495,13 +495,24 @@ void drawStatus()
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
 	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
-	// magic
+	// PLAYER MAGIC BAR
+    // Display the Magic bar Border
 	pos.x = 12;
 	pos.w = 39;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
+
+    // Display "MP" at the top of Magic bar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[307]);
+
+    // Display Border between actual Magic bar and "MP"
+    pos.x = 12;
+    pos.w = 39;
+    pos.h = 1;
+    pos.y = yres - 148;
+    drawTooltip(&pos);
+
 	pos.x = 16;
 	pos.w = 32;
 	pos.h = 128;
