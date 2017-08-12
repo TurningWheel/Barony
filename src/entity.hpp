@@ -147,6 +147,10 @@ public:
 	Sint32& monsterSpecial;
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
+	Sint32& monsterLookTime;
+	Sint32& monsterMoveTime;
+
+	real_t& monsterLookDir;
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;
@@ -301,6 +305,8 @@ public:
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
+
+	void lookAtEntity(Entity& target);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
