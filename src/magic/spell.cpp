@@ -514,7 +514,7 @@ void spell_changeHealth(Entity* entity, int amount)
 			}
 		}
 
-		if (multiplayer == SERVER)
+		if (localPlayerNetworkType == NetworkType::SERVER)
 		{
 			strcpy((char*)net_packet->data, "UPHP");
 			SDLNet_Write32((Uint32)stats[player]->HP, &net_packet->data[4]);

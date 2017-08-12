@@ -172,7 +172,7 @@ void actFurniture(Entity* my)
 	}
 	else
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			// burning
 			if ( my->flags[BURNING] )
@@ -252,7 +252,7 @@ void actMCaxe(Entity* my)
 	}
 	if ( !MCAXE_USED )
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			// use
 			int i;

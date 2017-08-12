@@ -274,7 +274,7 @@ void actLeftHandMagic(Entity* my)
 				{
 					//Time to consume mana and reset the ticker!
 					cast_animation.consume_timer = cast_animation.consume_interval;
-					if (multiplayer == SINGLE)
+					if (localPlayerNetworkType == NetworkType::SINGLE)
 					{
 						players[clientnum]->entity->drainMP(1);
 					}

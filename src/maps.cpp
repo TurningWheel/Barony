@@ -231,14 +231,14 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	// determine whether minotaur level or not
-	if ( currentlevel % LENGTH_OF_LEVEL_REGION == 2 || currentlevel % LENGTH_OF_LEVEL_REGION == 3 )
+	if ( currentlevel % MAX_LENGTH_OF_LEVEL_REGION == 2 || currentlevel % MAX_LENGTH_OF_LEVEL_REGION == 3 )
 		if ( prng_get_uint() % 2 && (svFlags & SV_FLAG_MINOTAURS) )
 		{
 			minotaurlevel = 1;
 		}
 
 	// dark level
-	if ( !secretlevel && currentlevel % LENGTH_OF_LEVEL_REGION >= 2 )
+	if ( !secretlevel && currentlevel % MAX_LENGTH_OF_LEVEL_REGION >= 2 )
 	{
 		if ( prng_get_uint() % 4 == 0 )
 		{
@@ -1455,7 +1455,7 @@ void assignActions(map_t* map)
 						entity = NULL;
 						break;
 					}
-					if ( multiplayer != CLIENT )
+					if ( localPlayerNetworkType != NetworkType::CLIENT )
 					{
 						if ( stats[numplayers]->HP <= 0 )
 						{
@@ -1482,7 +1482,7 @@ void assignActions(map_t* map)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->flags[GENIUS] = true;
-				if ( numplayers == clientnum && multiplayer == CLIENT )
+				if ( numplayers == clientnum && localPlayerNetworkType == NetworkType::CLIENT )
 				{
 					entity->flags[UPDATENEEDED] = false;
 				}
@@ -1493,7 +1493,7 @@ void assignActions(map_t* map)
 				entity->flags[BLOCKSIGHT] = true;
 				entity->skill[2] = numplayers; // skill[2] == PLAYER_NUM
 				players[numplayers]->entity = entity;
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( numplayers == 0 && minotaurlevel )
 					{
@@ -1728,7 +1728,7 @@ void assignActions(map_t* map)
 							if ( prng_get_uint() % 2 == 0 )
 							{
 								// possible magicstaff
-								entity->skill[10] = itemCurve(static_cast<Category>(prng_get_uint() % (NUMCATEGORIES - 1)));
+								entity->skill[10] = itemCurve(static_cast<ItemCategory>(prng_get_uint() % (NUMCATEGORIES - 1)));
 							}
 							else
 							{
@@ -1738,7 +1738,7 @@ void assignActions(map_t* map)
 								{
 									randType++;
 								}
-								entity->skill[10] = itemCurve(static_cast<Category>(randType));
+								entity->skill[10] = itemCurve(static_cast<ItemCategory>(randType));
 							}
 						}
 						else
@@ -1832,7 +1832,7 @@ void assignActions(map_t* map)
 				entity->skill[5] = -1;
 				Stat* myStats = NULL;
 
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					// need to give the entity its list stuff.
 					// create an empty first node for traversal purposes
@@ -1911,7 +1911,7 @@ void assignActions(map_t* map)
 						entity->focalz = limbs[GOBLIN][0][2]; // -1.75
 						break;
 					case SLIME:
-						if ( multiplayer != CLIENT )
+						if ( localPlayerNetworkType != NetworkType::CLIENT )
 						{
 							myStats->LVL = 7;
 						}
@@ -1997,7 +1997,7 @@ void assignActions(map_t* map)
 					default:
 						break;
 				}
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					myStats->type = monsterType;
 					if ( myStats->type == DEVIL )

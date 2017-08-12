@@ -32,14 +32,14 @@ void initGnome(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = 220;
 		MONSTER_SPOTVAR = 5;
 		MONSTER_IDLESND = 217;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -120,7 +120,7 @@ void initGnome(Entity* my, Stat* myStats)
 			int i = 1 + rand() % 4;
 			for ( c = 0; c < i; c++ )
 			{
-				newItem( static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<Status>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory );
+				newItem( static_cast<ItemType>(GEM_GARNET + rand() % 15), static_cast<ItemStatus>(1 + rand() % 4), 0, 1, rand(), false, &myStats->inventory );
 			}
 		}
 
@@ -128,7 +128,7 @@ void initGnome(Entity* my, Stat* myStats)
 		{
 			strcpy(myStats->name, "Rumplewort");
 			myStats->LVL += 10;
-			newItem( GEM_DIAMOND, static_cast<Status>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
+			newItem( GEM_DIAMOND, static_cast<ItemStatus>(1 + rand() % 4), 0, 1, rand(), true, &myStats->inventory );
 
 			int c;
 			for ( c = 0; c < 3; c++ )
@@ -293,7 +293,7 @@ void initGnome(Entity* my, Stat* myStats)
 	node->deconstructor = &emptyDeconstructor;
 	node->size = sizeof(Entity*);
 
-	if ( multiplayer == CLIENT || MONSTER_INIT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT || MONSTER_INIT )
 	{
 		return;
 	}
@@ -314,7 +314,7 @@ void initGnome(Entity* my, Stat* myStats)
 		case 7:
 		case 8:
 		case 9:
-			myStats->shield = newItem(WOODEN_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
+			myStats->shield = newItem(WOODEN_SHIELD, static_cast<ItemStatus>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, NULL);
 			break;
 	}
 
@@ -374,7 +374,7 @@ void actGnomeLimb(Entity* my)
 		my->light = NULL;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -478,7 +478,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	bool wearingring = false;
 
 	// set invisibility
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->ring != NULL )
 			if ( myStats->ring->type == RING_INVISIBILITY )
@@ -876,7 +876,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			// weapon
 			case 7:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -894,7 +894,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->flags[INVISIBLE] = false;
 						}
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -970,7 +970,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// shield
 			case 8:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->shield == NULL )
 					{
@@ -986,7 +986,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = true;
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )
@@ -1026,7 +1026,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// cloak
 			case 9:
-				if ( multiplayer != CLIENT )
+				if ( localPlayerNetworkType != NetworkType::CLIENT )
 				{
 					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring )
 					{
@@ -1037,7 +1037,7 @@ void gnomeMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->flags[INVISIBLE] = false;
 						entity->sprite = itemModel(myStats->cloak);
 					}
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						// update sprites for clients
 						if ( entity->skill[10] != entity->sprite )

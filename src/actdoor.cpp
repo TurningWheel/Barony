@@ -66,7 +66,7 @@ void actDoor(Entity* my)
 	}
 	else
 	{
-		if ( multiplayer != CLIENT )
+		if ( localPlayerNetworkType != NetworkType::CLIENT )
 		{
 			// burning
 			if ( my->flags[BURNING] )
@@ -258,7 +258,7 @@ void actDoor(Entity* my)
 		}
 
 		// update for clients
-		if ( multiplayer == SERVER )
+		if ( localPlayerNetworkType == NetworkType::SERVER )
 		{
 			if ( DOOR_OLDSTATUS != DOOR_STATUS )
 			{

@@ -152,7 +152,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 				if ( my->flags[PASSABLE] )
 				{
 					my->flags[PASSABLE] = false;
-					if ( multiplayer == SERVER )
+					if ( localPlayerNetworkType == NetworkType::SERVER )
 					{
 						serverUpdateEntityFlag(my, PASSABLE);
 					}
@@ -268,7 +268,7 @@ void actBoulder(Entity* my)
 		if ( !my->flags[PASSABLE] )
 		{
 			my->flags[PASSABLE] = true;
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				serverUpdateEntityFlag(my, PASSABLE);
 			}
@@ -287,7 +287,7 @@ void actBoulder(Entity* my)
 		if ( my->flags[PASSABLE] )
 		{
 			my->flags[PASSABLE] = false;
-			if ( multiplayer == SERVER )
+			if ( localPlayerNetworkType == NetworkType::SERVER )
 			{
 				serverUpdateEntityFlag(my, PASSABLE);
 			}

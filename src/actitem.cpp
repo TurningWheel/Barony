@@ -33,7 +33,7 @@
 #define ITEM_VELZ my->vel_z
 #define ITEM_NOCOLLISION my->flags[USERFLAG1]
 #define ITEM_TYPE (Item)my->skill[10]
-#define ITEM_STATUS (Status)my->skill[11]
+#define ITEM_STATUS (ItemStatus)my->skill[11]
 #define ITEM_BEATITUDE my->skill[12]
 #define ITEM_COUNT my->skill[13]
 #define ITEM_APPEARANCE my->skill[14]
@@ -47,7 +47,7 @@ void actItem(Entity* my)
 	Item* item;
 	int i;
 
-	if ( multiplayer == CLIENT )
+	if ( localPlayerNetworkType == NetworkType::CLIENT )
 	{
 		my->flags[NOUPDATE] = true;
 		if ( ITEM_LIFE == 0 )
@@ -125,7 +125,7 @@ void actItem(Entity* my)
 	}*/
 
 	// pick up item
-	if (multiplayer != CLIENT)
+	if (localPlayerNetworkType != NetworkType::CLIENT)
 	{
 		for ( i = 0; i < MAXPLAYERS; i++)
 		{

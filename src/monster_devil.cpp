@@ -31,14 +31,14 @@ void initDevil(Entity* my, Stat* myStats)
 	my->flags[BLOCKSIGHT] = true;
 	my->flags[INVISIBLE] = false;
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		MONSTER_SPOTSND = -1;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = -1;
 		MONSTER_IDLEVAR = 3;
 	}
-	if ( multiplayer != CLIENT && !MONSTER_INIT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT && !MONSTER_INIT )
 	{
 		myStats->sex = static_cast<sex_t>(rand() % 2);
 		myStats->appearance = rand();
@@ -203,7 +203,7 @@ void actDevilLimb(Entity* my)
 		return;
 	}
 
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		for ( i = 0; i < MAXPLAYERS; i++ )
 		{
@@ -247,7 +247,7 @@ void devilDie(Entity* my)
 		list_RemoveNode(node);
 		++i;
 	}
-	if ( multiplayer == SERVER )
+	if ( localPlayerNetworkType == NetworkType::SERVER )
 	{
 		for ( c = 1; c < MAXPLAYERS; c++ )
 		{
@@ -291,7 +291,7 @@ void devilDie(Entity* my)
 		stats[c]->DEX += 5;
 		stats[c]->CON += 20;
 		stats[c]->INT += 5;
-		if ( multiplayer == SERVER && c > 0 )
+		if ( localPlayerNetworkType == NetworkType::SERVER && c > 0 )
 		{
 			strcpy((char*)net_packet->data, "ATTR");
 			net_packet->data[4] = clientnum;
@@ -325,7 +325,7 @@ void devilMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	int bodypart;
 
 	// set invisibility
-	if ( multiplayer != CLIENT )
+	if ( localPlayerNetworkType != NetworkType::CLIENT )
 	{
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{

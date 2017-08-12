@@ -89,7 +89,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	}
 	if (entlist == map.entities)
 	{
-		if (multiplayer != CLIENT || loading)
+		if (localPlayerNetworkType != NetworkType::CLIENT || loading)
 		{
 			uid = entity_uids;
 			entity_uids++;
