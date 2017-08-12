@@ -430,13 +430,23 @@ void drawStatus()
 		//drawImage(textdown_bmp, NULL, &pos);
 	}*/
 
-	// health
+    // PLAYER HEALTHBAR
+	// Display Healthbar Border
 	pos.x = 76;
 	pos.w = 38;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
+
+    // Display "HP" at top of Healthbar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[306]);
+
+    // Display Border between red bar and "HP"
+    pos.x = 76;
+    pos.w = 38;
+    pos.h = 1;
+    pos.y = yres - 148;
+    drawTooltip(&pos);
 
 	pos.x = 80;
 	pos.w = 32;
