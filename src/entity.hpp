@@ -305,6 +305,8 @@ public:
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
+
+	void lookAtEntity(Entity& target);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

@@ -1889,13 +1889,14 @@ void actMonster(Entity* my)
 			}
 			else
 			{
-				if (myStats->type != SHOPKEEPER)
+				if ( myStats->type != SHOPKEEPER )
 				{
 					makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+					my->lookAtEntity(*players[monsterclicked]->entity);
 				}
 				else
 				{
-					if (!swornenemies[SHOPKEEPER][HUMAN])
+					if ( !swornenemies[SHOPKEEPER][HUMAN] )
 					{
 						// shopkeepers start trading
 						startTradingServer(my, monsterclicked);
@@ -3420,10 +3421,7 @@ timeToGoAgain:
 						Entity* target = uidToEntity(MONSTER_TARGET);
 						if ( target )
 						{
-							double tangent = atan2( target->y - my->y, target->x - my->x );
-							my->monsterLookTime = 1;
-							my->monsterMoveTime = rand() % 10 + 1;
-							my->monsterLookDir = tangent;
+							my->lookAtEntity(*target);
 						}
 						MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
 					}

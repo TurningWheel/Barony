@@ -6812,3 +6812,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 
 	return;
 }
+
+void Entity::lookAtEntity(Entity& target)
+{
+	double tangent = atan2(target.y - y, target.x - x);
+	monsterLookTime = 1;
+	monsterMoveTime = rand() % 10 + 1;
+	monsterLookDir = tangent;
+}
