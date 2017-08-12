@@ -81,7 +81,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAnimationLimbOvershoot(skill[30]),
 	monsterSpecial(skill[29]),
 	monsterSpellAnimation(skill[31]),
-	monsterFootstepType(skill[32])
+	monsterFootstepType(skill[32]),
+	monsterLookTime(skill[4]),
+	monsterMoveTime(skill[6]),
+	monsterLookDir(fskill[4])
 
 {
 	int c;
@@ -6808,4 +6811,12 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 	}
 
 	return;
+}
+
+void Entity::lookAtEntity(Entity& target)
+{
+	double tangent = atan2(target.y - y, target.x - x);
+	monsterLookTime = 1;
+	monsterMoveTime = rand() % 10 + 1;
+	monsterLookDir = tangent;
 }
