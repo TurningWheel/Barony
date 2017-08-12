@@ -206,7 +206,7 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_VELZ my->vel_z
 #define MONSTER_TARGETX my->fskill[2]
 #define MONSTER_TARGETY my->fskill[3]
-#define MONSTER_LOOKDIR my->fskill[4]
+//#define MONSTER_LOOKDIR my->fskill[4]
 #define MONSTER_WEAPONYAW my->fskill[5]
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
 

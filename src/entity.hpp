@@ -150,6 +150,8 @@ public:
 	Sint32& monsterLookTime;
 	Sint32& monsterMoveTime;
 
+	real_t& monsterLookDir;
+
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;
 	Sint32& monsterAnimationLimbOvershoot;

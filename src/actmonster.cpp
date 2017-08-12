@@ -1135,11 +1135,11 @@ void actMonster(Entity* my)
 		MONSTER_INIT = 2;
 		if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
-			MONSTER_LOOKDIR = (rand() % 360) * PI / 180;
+			my->monsterLookDir = (rand() % 360) * PI / 180;
 		}
 		else
 		{
-			MONSTER_LOOKDIR = PI;
+			my->monsterLookDir = PI;
 		}
 		my->monsterLookTime = rand() % 120;
 		my->monsterMoveTime = rand() % 10;
@@ -2306,7 +2306,7 @@ void actMonster(Entity* my)
 				my->monsterMoveTime--;
 				if ( myStats->type != GHOUL && myStats->type != SPIDER )
 				{
-					MONSTER_LOOKDIR = (rand() % 360) * PI / 180;
+					my->monsterLookDir = (rand() % 360) * PI / 180;
 				}
 				if ( rand() % 3 == 0 )
 				{
@@ -2438,7 +2438,7 @@ void actMonster(Entity* my)
 			}
 
 			// rotate monster
-			dir = my->yaw - MONSTER_LOOKDIR;
+			dir = my->yaw - my->monsterLookDir;
 			while ( dir >= PI )
 			{
 				dir -= PI * 2;
@@ -3423,7 +3423,7 @@ timeToGoAgain:
 							double tangent = atan2( target->y - my->y, target->x - my->x );
 							my->monsterLookTime = 1;
 							my->monsterMoveTime = rand() % 10 + 1;
-							MONSTER_LOOKDIR = tangent;
+							my->monsterLookDir = tangent;
 						}
 						MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
 					}
@@ -3436,7 +3436,7 @@ timeToGoAgain:
 						double tangent = atan2( target->y - my->y, target->x - my->x );
 						my->monsterLookTime = 1;
 						my->monsterMoveTime = rand() % 10 + 1;
-						MONSTER_LOOKDIR = tangent;
+						my->monsterLookDir = tangent;
 					}
 					MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
 				}
@@ -3449,7 +3449,7 @@ timeToGoAgain:
 					double tangent = atan2( target->y - my->y, target->x - my->x );
 					my->monsterLookTime = 1;
 					my->monsterMoveTime = rand() % 10 + 1;
-					MONSTER_LOOKDIR = tangent;
+					my->monsterLookDir = tangent;
 				}
 				MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
 				//TODO: Replace with lookAtEntity();
