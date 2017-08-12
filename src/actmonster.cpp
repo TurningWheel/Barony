@@ -1142,7 +1142,7 @@ void actMonster(Entity* my)
 			MONSTER_LOOKDIR = PI;
 		}
 		my->monsterLookTime = rand() % 120;
-		MONSTER_MOVETIME = rand() % 10;
+		my->monsterMoveTime = rand() % 10;
 		MONSTER_SOUND = NULL;
 		if ( MONSTER_NUMBER == -1 )
 		{
@@ -2303,7 +2303,7 @@ void actMonster(Entity* my)
 			if ( my->monsterLookTime >= 120 && myStats->type != LICH && myStats->type != DEVIL )
 			{
 				my->monsterLookTime = 0;
-				MONSTER_MOVETIME--;
+				my->monsterMoveTime--;
 				if ( myStats->type != GHOUL && myStats->type != SPIDER )
 				{
 					MONSTER_LOOKDIR = (rand() % 360) * PI / 180;
@@ -2334,9 +2334,9 @@ void actMonster(Entity* my)
 					}
 				}
 			}
-			if ( MONSTER_MOVETIME == 0 && uidToEntity(myStats->leader_uid) == NULL )
+			if ( my->monsterMoveTime == 0 && uidToEntity(myStats->leader_uid) == NULL )
 			{
-				MONSTER_MOVETIME = rand() % 30;
+				my->monsterMoveTime = rand() % 30;
 				int goodspots = 0;
 				if ( myStats->type != SHOPKEEPER )
 				{
@@ -2530,7 +2530,7 @@ void actMonster(Entity* my)
 				{
 					if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 					{
-						MONSTER_MOVETIME = 0;
+						my->monsterMoveTime = 0;
 						MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 					}
 					else
@@ -2558,7 +2558,7 @@ void actMonster(Entity* my)
 							}
 						if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 						{
-							MONSTER_MOVETIME = 0;
+							my->monsterMoveTime = 0;
 							MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 						}
 						else
@@ -2589,7 +2589,7 @@ void actMonster(Entity* my)
 						{
 							if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 							{
-								MONSTER_MOVETIME = 0;
+								my->monsterMoveTime = 0;
 								MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 							}
 							else
@@ -2719,7 +2719,7 @@ timeToGoAgain:
 									{
 										if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 										{
-											MONSTER_MOVETIME = 0;
+											my->monsterMoveTime = 0;
 											MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 										}
 										else
@@ -2732,7 +2732,7 @@ timeToGoAgain:
 								{
 									if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 									{
-										MONSTER_MOVETIME = 0;
+										my->monsterMoveTime = 0;
 										MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 									}
 									else if ( dist2 <= 0.1 && myStats->HP > myStats->MAXHP / 3 )
@@ -3422,7 +3422,7 @@ timeToGoAgain:
 						{
 							double tangent = atan2( target->y - my->y, target->x - my->x );
 							my->monsterLookTime = 1;
-							MONSTER_MOVETIME = rand() % 10 + 1;
+							my->monsterMoveTime = rand() % 10 + 1;
 							MONSTER_LOOKDIR = tangent;
 						}
 						MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
@@ -3435,7 +3435,7 @@ timeToGoAgain:
 					{
 						double tangent = atan2( target->y - my->y, target->x - my->x );
 						my->monsterLookTime = 1;
-						MONSTER_MOVETIME = rand() % 10 + 1;
+						my->monsterMoveTime = rand() % 10 + 1;
 						MONSTER_LOOKDIR = tangent;
 					}
 					MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
@@ -3448,7 +3448,7 @@ timeToGoAgain:
 				{
 					double tangent = atan2( target->y - my->y, target->x - my->x );
 					my->monsterLookTime = 1;
-					MONSTER_MOVETIME = rand() % 10 + 1;
+					my->monsterMoveTime = rand() % 10 + 1;
 					MONSTER_LOOKDIR = tangent;
 				}
 				MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state

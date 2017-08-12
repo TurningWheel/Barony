@@ -55,7 +55,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterSpecial(skill[29]),
 	monsterSpellAnimation(skill[31]),
 	monsterFootstepType(skill[32]),
-	monsterLookTime(skill[4])
+	monsterLookTime(skill[4]),
+	monsterMoveTime(skill[6])
 {
 	int c;
 	// add the entity to the entity list

@@ -184,7 +184,7 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_INIT my->skill[3]
 //#define MONSTER_LOOKTIME my->skill[4]
 #define MONSTER_NUMBER my->skill[5]
-#define MONSTER_MOVETIME my->skill[6]
+//#define MONSTER_MOVETIME my->skill[6]
 #define MONSTER_HITTIME my->skill[7]
 #define MONSTER_ATTACK my->skill[8]
 #define MONSTER_ATTACKTIME my->skill[9]

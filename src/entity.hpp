@@ -148,6 +148,7 @@ public:
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
+	Sint32& monsterMoveTime;
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;
