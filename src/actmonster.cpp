@@ -1776,6 +1776,13 @@ void actMonster(Entity* my)
 		case GOBLIN:
 		case SKELETON:
 		case GNOME:
+		case KOBOLD:
+		case AUTOMATON:
+		case INSECTOID:
+		case GOATMAN:
+		case INCUBUS:
+		case SHADOW:
+		case VAMPIRE:
 			handleinvisible = false;
 			break;
 		default:
