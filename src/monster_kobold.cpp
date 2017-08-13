@@ -496,7 +496,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					entity->handleWeaponArmAttack(my);
+					my->handleWeaponArmAttack(entity);
 				}
 			}
 			else if ( bodypart == 9 )
