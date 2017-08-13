@@ -1041,7 +1041,7 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 	bool levitating = false;
 
 	// get levitation status
-	if ( (my && (stats = my->getStats())) != NULL )
+	if ( my != NULL && (stats = my->getStats()) != NULL )
 	{
 		levitating = isLevitating(stats);
 	}
