@@ -6143,10 +6143,10 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			this->monsterArmbended = 0;
 			this->monsterWeaponYaw = 0;
 			weaponarm->roll = 0;
+			weaponarm->skill[0] = 0;
 		}
 		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
 		{
-			weaponarm->skill[0] = 0;
 			if ( multiplayer != CLIENT )
 			{
 				this->attack(1, 0, nullptr);
@@ -6192,6 +6192,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->pitch = PI / 4;
 			weaponarm->roll = 0;
 			this->monsterArmbended = 1;
+			weaponarm->skill[0] = 0;
 		}
 
 		limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
@@ -6199,7 +6200,6 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 
 		this->monsterWeaponYaw = 6 * PI / 4;
 
-		weaponarm->skill[0] = 0;
 		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
@@ -6248,11 +6248,11 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			this->monsterWeaponYaw = 0;
 			weaponarm->roll = 0;
 			weaponarm->pitch = 0;
+			weaponarm->skill[0] = 0;
 		}
 
 		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
 
-		weaponarm->skill[0] = 0;
 		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
@@ -6302,6 +6302,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			this->monsterArmbended = 0;
 			this->monsterWeaponYaw = 0;
 			weaponarm->roll = 0;
+			weaponarm->skill[0] = 0;
 		}
 
 		// draw the crossbow level... slowly
@@ -6314,7 +6315,6 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, false, 0.0);
 		}
 
-		weaponarm->skill[0] = 0;
 		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
@@ -6373,6 +6373,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			this->monsterArmbended = 0;
 			this->monsterWeaponYaw = 0;
 			weaponarm->roll = 0;
+			weaponarm->skill[0] = 0;
 		}
 
 		// draw the weapon level... slowly and shake
@@ -6385,7 +6386,6 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
-		weaponarm->skill[0] = 0;
 		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
@@ -6508,10 +6508,10 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			this->monsterArmbended = 0;
 			this->monsterWeaponYaw = 0;
 			weaponarm->roll = 0;
+			weaponarm->skill[0] = 0;
 		}
 		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0) )
 		{
-			weaponarm->skill[0] = 0;
 			if ( multiplayer != CLIENT )
 			{
 				this->attack(1, 0, nullptr);
