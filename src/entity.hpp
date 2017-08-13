@@ -147,6 +147,10 @@ public:
 	Sint32& monsterSpecial;
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
+	Sint32& monsterAttack;
+	Sint32& monsterAttackTime;
+	Sint32& monsterArmbended;
+	real_t& monsterWeaponYaw;
 
 	//--PUBLIC MONSTER ANIMATION SKILLS--
 	Sint32& monsterAnimationLimbDirection;
