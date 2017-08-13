@@ -258,7 +258,7 @@ void statsHoverText(Stat* tmpStat)
 		return;
 	}
 
-	int pad_y = 262; // 262 px.
+	int pad_y = 274; // 274 px.
 	int pad_x = 8; // 8 px.
 	int off_h = TTF12_HEIGHT - 4; // 12px. height of stat line.
 	int off_w = 216; // 216px. width of stat line.
