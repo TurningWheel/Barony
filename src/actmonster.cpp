@@ -1135,14 +1135,14 @@ void actMonster(Entity* my)
 		MONSTER_INIT = 2;
 		if ( myStats->type != LICH && myStats->type != DEVIL )
 		{
-			MONSTER_LOOKDIR = (rand() % 360) * PI / 180;
+			my->monsterLookDir = (rand() % 360) * PI / 180;
 		}
 		else
 		{
-			MONSTER_LOOKDIR = PI;
+			my->monsterLookDir = PI;
 		}
-		MONSTER_LOOKTIME = rand() % 120;
-		MONSTER_MOVETIME = rand() % 10;
+		my->monsterLookTime = rand() % 120;
+		my->monsterMoveTime = rand() % 10;
 		MONSTER_SOUND = NULL;
 		if ( MONSTER_NUMBER == -1 )
 		{
@@ -1889,13 +1889,14 @@ void actMonster(Entity* my)
 			}
 			else
 			{
-				if (myStats->type != SHOPKEEPER)
+				if ( myStats->type != SHOPKEEPER )
 				{
 					makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+					my->lookAtEntity(*players[monsterclicked]->entity);
 				}
 				else
 				{
-					if (!swornenemies[SHOPKEEPER][HUMAN])
+					if ( !swornenemies[SHOPKEEPER][HUMAN] )
 					{
 						// shopkeepers start trading
 						startTradingServer(my, monsterclicked);
@@ -2299,14 +2300,14 @@ void actMonster(Entity* my)
 			}
 
 			// look
-			MONSTER_LOOKTIME++;
-			if ( MONSTER_LOOKTIME >= 120 && myStats->type != LICH && myStats->type != DEVIL )
+			my->monsterLookTime++;
+			if ( my->monsterLookTime >= 120 && myStats->type != LICH && myStats->type != DEVIL )
 			{
-				MONSTER_LOOKTIME = 0;
-				MONSTER_MOVETIME--;
+				my->monsterLookTime = 0;
+				my->monsterMoveTime--;
 				if ( myStats->type != GHOUL && myStats->type != SPIDER )
 				{
-					MONSTER_LOOKDIR = (rand() % 360) * PI / 180;
+					my->monsterLookDir = (rand() % 360) * PI / 180;
 				}
 				if ( rand() % 3 == 0 )
 				{
@@ -2334,9 +2335,9 @@ void actMonster(Entity* my)
 					}
 				}
 			}
-			if ( MONSTER_MOVETIME == 0 && uidToEntity(myStats->leader_uid) == NULL )
+			if ( my->monsterMoveTime == 0 && uidToEntity(myStats->leader_uid) == NULL )
 			{
-				MONSTER_MOVETIME = rand() % 30;
+				my->monsterMoveTime = rand() % 30;
 				int goodspots = 0;
 				if ( myStats->type != SHOPKEEPER )
 				{
@@ -2438,7 +2439,7 @@ void actMonster(Entity* my)
 			}
 
 			// rotate monster
-			dir = my->yaw - MONSTER_LOOKDIR;
+			dir = my->yaw - my->monsterLookDir;
 			while ( dir >= PI )
 			{
 				dir -= PI * 2;
@@ -2530,7 +2531,7 @@ void actMonster(Entity* my)
 				{
 					if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 					{
-						MONSTER_MOVETIME = 0;
+						my->monsterMoveTime = 0;
 						MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 					}
 					else
@@ -2558,7 +2559,7 @@ void actMonster(Entity* my)
 							}
 						if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 						{
-							MONSTER_MOVETIME = 0;
+							my->monsterMoveTime = 0;
 							MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 						}
 						else
@@ -2589,7 +2590,7 @@ void actMonster(Entity* my)
 						{
 							if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 							{
-								MONSTER_MOVETIME = 0;
+								my->monsterMoveTime = 0;
 								MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 							}
 							else
@@ -2719,7 +2720,7 @@ timeToGoAgain:
 									{
 										if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 										{
-											MONSTER_MOVETIME = 0;
+											my->monsterMoveTime = 0;
 											MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 										}
 										else
@@ -2732,7 +2733,7 @@ timeToGoAgain:
 								{
 									if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
 									{
-										MONSTER_MOVETIME = 0;
+										my->monsterMoveTime = 0;
 										MONSTER_STATE = MONSTER_STATE_WAIT; // wait state
 									}
 									else if ( dist2 <= 0.1 && myStats->HP > myStats->MAXHP / 3 )
@@ -3420,10 +3421,7 @@ timeToGoAgain:
 						Entity* target = uidToEntity(MONSTER_TARGET);
 						if ( target )
 						{
-							double tangent = atan2( target->y - my->y, target->x - my->x );
-							MONSTER_LOOKTIME = 1;
-							MONSTER_MOVETIME = rand() % 10 + 1;
-							MONSTER_LOOKDIR = tangent;
+							my->lookAtEntity(*target);
 						}
 						MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
 					}
@@ -3434,9 +3432,9 @@ timeToGoAgain:
 					if ( target )
 					{
 						double tangent = atan2( target->y - my->y, target->x - my->x );
-						MONSTER_LOOKTIME = 1;
-						MONSTER_MOVETIME = rand() % 10 + 1;
-						MONSTER_LOOKDIR = tangent;
+						my->monsterLookTime = 1;
+						my->monsterMoveTime = rand() % 10 + 1;
+						my->monsterLookDir = tangent;
 					}
 					MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
 				}
@@ -3447,11 +3445,12 @@ timeToGoAgain:
 				if ( target )
 				{
 					double tangent = atan2( target->y - my->y, target->x - my->x );
-					MONSTER_LOOKTIME = 1;
-					MONSTER_MOVETIME = rand() % 10 + 1;
-					MONSTER_LOOKDIR = tangent;
+					my->monsterLookTime = 1;
+					my->monsterMoveTime = rand() % 10 + 1;
+					my->monsterLookDir = tangent;
 				}
 				MONSTER_STATE = MONSTER_STATE_WAIT; // no path, return to wait state
+				//TODO: Replace with lookAtEntity();
 			}
 		}
 		else if ( MONSTER_STATE == MONSTER_STATE_TALK )     // talk state
