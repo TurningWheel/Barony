@@ -576,7 +576,6 @@ thou makest use of them.#
 1203 INT:          %2d -> #
 1204 PER:          %2d -> #
 1205 CHR:          %2d -> #
-2499 HP: %d/%d   MP: %d/%d#
 
 
 # skill levels
