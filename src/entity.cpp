@@ -651,7 +651,7 @@ void Entity::effectTimes()
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
-									myStats->EFFECTS_TIMERS[c] = invisibility_hijacked->channel_duration / getCostOfSpell(invisibility_hijacked);
+									myStats->EFFECTS_TIMERS[c] = invisibility_hijacked->channel_duration;
 								}
 								else
 								{
@@ -660,7 +660,7 @@ void Entity::effectTimes()
 									{
 										if (players[i]->entity == caster)
 										{
-											messagePlayer(i, language[598]);    //TODO: Unhardcode name?
+											messagePlayer(i, language[598]);
 										}
 									}
 									list_RemoveNode(invisibility_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
@@ -717,7 +717,7 @@ void Entity::effectTimes()
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
-									myStats->EFFECTS_TIMERS[c] = levitation_hijacked->channel_duration / getCostOfSpell(levitation_hijacked);
+									myStats->EFFECTS_TIMERS[c] = levitation_hijacked->channel_duration;
 								}
 								else
 								{
