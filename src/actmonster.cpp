@@ -194,6 +194,11 @@ Entity* summonMonster(Monster creature, long x, long y)
 		}
 		myStats->type = creature;
 	}
+	else
+	{
+		//Give dummy stats.
+		entity->clientStats = new Stat(creature + 1000);
+	}
 
 	// Find a free tile next to the source and then spawn it there.
 	if ( multiplayer != CLIENT )
@@ -997,6 +1002,11 @@ void actMonster(Entity* my)
 				my->flags[BURNABLE] = false;
 			}
 
+			if ( !intro )
+			{
+				my->handleEffectsClient();
+			}
+
 			// request entity update (check if I've been deleted)
 			if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 			{
@@ -1266,6 +1276,7 @@ void actMonster(Entity* my)
 	}
 	if ( myStats->HP <= 0 && MONSTER_STATE != 7 && MONSTER_STATE != 8 )
 	{
+		//TODO: Refactor die function.
 		// drop all equipment
 		entity = dropItemMonster(myStats->helmet, my, myStats);
 		if ( entity )

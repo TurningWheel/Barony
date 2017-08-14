@@ -214,6 +214,9 @@ void actPlayer(Entity* my)
 		{
 			my->flags[UPDATENEEDED] = true;
 		}
+
+		my->handleEffectsClient();
+
 		// request entity update (check if I've been deleted)
 		if ( ticks % (TICKS_PER_SECOND * 5) == my->getUID() % (TICKS_PER_SECOND * 5) )
 		{

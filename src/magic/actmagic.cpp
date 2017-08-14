@@ -886,8 +886,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							spellIsReflectingMagic->sustain = false;
 							if ( hitstats )
 							{
-								hitstats->EFFECTS[EFF_MAGICREFLECT] = false;
-								hitstats->EFFECTS_TIMERS[EFF_MAGICREFLECT] = 0;
+								hit.entity->setEffect(EFF_MAGICREFLECT, false, 0, true);
 								messagePlayer(player, language[2476]);
 							}
 						}

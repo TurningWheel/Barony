@@ -180,6 +180,11 @@ public:
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
 
+	//Dummy stats to make certain visual features work on clients (such as ambient particles for magic reflection).
+	Stat* clientStats;
+	bool clientsHaveItsStats;
+	void giveClientStats();
+
 	// behavior function pointer
 	void (*behavior)(class Entity* my);
 	bool ranbehavior;
@@ -198,6 +203,7 @@ public:
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
 
 	void handleEffects(Stat* myStats);
+	void handleEffectsClient();
 
 	void effectTimes();
 	void increaseSkill(int skill);
@@ -324,6 +330,11 @@ public:
 	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
 	 */
 	void spawnAmbientParticles(int chance, int particleSprite, int duration);
+
+	//Updates the EFFECTS variable for all clients for this entity.
+	void serverUpdateEffectsForEntity(bool guarantee);
+
+	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

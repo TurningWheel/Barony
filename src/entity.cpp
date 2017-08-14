@@ -179,6 +179,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	{
 		setSpriteAttributes(this, nullptr, nullptr);
 	}
+
+	clientStats = nullptr;
+	clientsHaveItsStats = false;
 }
 
 void Entity::setUID(Uint32 new_uid) {
@@ -266,6 +269,11 @@ Entity::~Entity()
 	node = list_AddNodeLast(&entitiesdeleted);
 	node->element = this;
 	node->deconstructor = &emptyDeconstructor;
+
+	if ( clientStats )
+	{
+		delete clientStats;
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -519,7 +527,7 @@ void Entity::effectTimes()
 			node = temp;
 			if (!node)
 			{
-				break;    //Done with list. Stop.
+				break; //Done with list. Stop.
 			}
 			continue; //Skip this spell.
 		}
@@ -615,6 +623,7 @@ void Entity::effectTimes()
 	}
 
 	bool dissipate = true;
+	bool updateClient = false;
 
 	for ( c = 0; c < NUMEFFECTS; c++ )
 	{
@@ -818,6 +827,7 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, language[2471]);
+							updateClient = true;
 						}
 						break;
 					default:
@@ -829,6 +839,14 @@ void Entity::effectTimes()
 				}
 			}
 		}
+	}
+
+	if ( updateClient )
+	{
+		//Only a select few effects have something that needs to be handled on the client's end.
+		//(such as spawning particles for the magic reflection effect)
+		//Only update the entity's effects in that case.
+		serverUpdateEffectsForEntity(true);
 	}
 }
 
@@ -974,8 +992,12 @@ void Entity::increaseSkill(int skill)
 
 Stat* Entity::getStats() const
 {
-	if (this->behavior == &actMonster)   // monsters
+	if (this->behavior == &actMonster) // monsters
 	{
+		if ( multiplayer == CLIENT && clientStats )
+		{
+			return clientStats;
+		}
 		if (this->children.first != nullptr)
 		{
 			if (this->children.first->next != nullptr)
@@ -984,11 +1006,11 @@ Stat* Entity::getStats() const
 			}
 		}
 	}
-	else if (this->behavior == &actPlayer)     // players
+	else if (this->behavior == &actPlayer) // players
 	{
 		return stats[this->skill[2]];
 	}
-	else if (this->behavior == &actPlayerLimb)     // player bodyparts
+	else if (this->behavior == &actPlayerLimb) // player bodyparts
 	{
 		return stats[this->skill[2]];
 	}
@@ -6988,5 +7010,102 @@ void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration)
 		spawnParticle->behavior = &actAmbientParticleEffectIdle;
 		spawnParticle->flags[PASSABLE] = true;
 		spawnParticle->setUID(-3);
+	}
+}
+
+void Entity::handleEffectsClient()
+{
+	Stat* myStats = getStats();
+
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
+	{
+		spawnAmbientParticles(80, 579, 10 + rand() % 40);
+	}
+}
+
+void Entity::serverUpdateEffectsForEntity(bool guarantee)
+{
+	if ( multiplayer != SERVER )
+	{
+		return;
+	}
+
+	Stat* myStats = getStats();
+
+	if ( !myStats )
+	{
+		return;
+	}
+
+	for ( int player = 1; player < numplayers; ++player )
+	{
+		if ( client_disconnected[player] )
+		{
+			continue;
+		}
+
+		/*
+		 * Packet breakdown:
+		 * [0][1][2][3]: "EFFE"
+		 * [4][5][6][7]: Entity's UID.
+		 * [8][9][10][11]: Entity's effects.
+		 */
+
+		strcpy((char*)net_packet->data, "EFFE");
+		SDLNet_Write32(static_cast<Uint32>(getUID()), &net_packet->data[4]);
+		net_packet->data[8] = 0;
+		net_packet->data[9] = 0;
+		net_packet->data[10] = 0;
+		net_packet->data[11] = 0;
+		for ( int i = 0; i < NUMEFFECTS; ++i )
+		{
+			if ( myStats->EFFECTS[i] )
+			{
+				net_packet->data[8 + i / 8] |= power(2, i - (i / 8) * 8);
+			}
+		}
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 12;
+		if ( guarantee )
+		{
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+		}
+		else
+		{
+			sendPacket(net_sock, -1, net_packet, player - 1);
+		}
+		clientsHaveItsStats = true;
+	}
+}
+
+void Entity::setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee)
+{
+	Stat* myStats = getStats();
+
+	if ( !myStats )
+	{
+		return;
+	}
+
+	myStats->EFFECTS[effect] = value;
+	myStats->EFFECTS_TIMERS[effect] = duration;
+
+	if ( updateClients )
+	{
+		serverUpdateEffectsForEntity(guarantee);
+	}
+}
+
+void Entity::giveClientStats()
+{
+	if ( !clientStats )
+	{
+		clientStats = new Stat(0);
 	}
 }

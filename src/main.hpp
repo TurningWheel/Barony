@@ -262,6 +262,8 @@ typedef struct map_t
 	Sint32* tiles;
 	std::unordered_map<Sint32, node_t*> entities_map;
 	list_t* entities;
+
+	Entity* getEntityWithUID(Uint32 uid);
 } map_t;
 
 #define MAPLAYERS 3 // number of layers contained in a single map

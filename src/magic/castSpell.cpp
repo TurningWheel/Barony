@@ -451,8 +451,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_INVISIBLE] = true;
-			stat->EFFECTS_TIMERS[EFF_INVISIBLE] = duration;
+			caster->setEffect(EFF_INVISIBLE, true, duration, false);
 			for (i = 0; i < numplayers; ++i)
 			{
 				if (caster == players[i]->entity)
@@ -490,8 +489,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_LEVITATING] = true;
-			stat->EFFECTS_TIMERS[EFF_LEVITATING] = duration;
+			caster->setEffect(EFF_LEVITATING, true, duration, false);
 			for (i = 0; i < numplayers; ++i)
 			{
 				if (caster == players[i]->entity)
@@ -749,8 +747,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			duration /= getCostOfSpell((spell_t*)spellnode->element);
 			channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
-			stat->EFFECTS[EFF_MAGICREFLECT] = true;
-			stat->EFFECTS_TIMERS[EFF_MAGICREFLECT] = duration;
+			caster->setEffect(EFF_MAGICREFLECT, true, duration, true);
 			for ( i = 0; i < numplayers; ++i )
 			{
 				if ( caster == players[i]->entity )
