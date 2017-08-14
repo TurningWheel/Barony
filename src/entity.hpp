@@ -172,6 +172,9 @@ public:
 	real_t& crystalMinZVelocity;
 	real_t& crystalTurnVelocity; // how fast to turn on click.
 
+	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
+	Sint32& particleDuration;
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 
@@ -316,6 +319,11 @@ public:
 	void lookAtEntity(Entity& target);
 
 	spell_t* getActiveMagicEffect(int spellID);
+
+	/*
+	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
+	 */
+	void spawnAmbientParticles(int chance, int particleSprite, int duration);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -402,6 +410,9 @@ void addItemToChestClientside(Item* item); //Called by the client to manage all 
 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
+
+//---Misc act functions---
+void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 

@@ -88,7 +88,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
-	monsterWeaponYaw(fskill[5])
+	monsterWeaponYaw(fskill[5]),
+	particleDuration(skill[0])
 
 {
 	int c;
@@ -6944,4 +6945,43 @@ spell_t* Entity::getActiveMagicEffect(int spellID)
 	}
 
 	return spell;
+}
+
+void actAmbientParticleEffectIdle(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+
+	if ( my->particleDuration < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--my->particleDuration;
+		my->z += my->vel_z;
+	}
+
+	return;
+}
+
+void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration)
+{
+	if ( rand() % chance == 0 )
+	{
+		Entity* spawnParticle = newEntity(particleSprite, 1, map.entities);
+		spawnParticle->sizex = 1;
+		spawnParticle->sizey = 1;
+		spawnParticle->x = x + (-2 + rand() % 5);
+		spawnParticle->y = y + (-2 + rand() % 5);
+		spawnParticle->z = 7.5;
+		spawnParticle->vel_z = -1;
+		spawnParticle->particleDuration = duration;
+		spawnParticle->behavior = &actAmbientParticleEffectIdle;
+		spawnParticle->flags[PASSABLE] = true;
+		spawnParticle->setUID(-3);
+	}
 }
