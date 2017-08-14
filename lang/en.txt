@@ -576,6 +576,7 @@ thou makest use of them.#
 1203 INT:          %2d -> #
 1204 PER:          %2d -> #
 1205 CHR:          %2d -> #
+2499 HP: %d/%d   MP: %d/%d#
 
 
 # skill levels
@@ -2960,4 +2961,4 @@ dominate the %s into your service!#
 2472 You feel magic weaken against you.#
 2473 You feel magic bounce off you.#
 
-2499 end#
+2500 end#
