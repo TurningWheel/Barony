@@ -2897,6 +2897,8 @@ client (player %d) (direct ip)#
 2269 spellbook#
 2270 spellbook of bloodletting#
 2271 spellbook#
+2272 spellbook of reflect magic#
+2273 spellbook#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2914,7 +2916,7 @@ client (player %d) (direct ip)#
 2391 Stonebleed#
 2392 Bloodletting#
 2393 Dominate#
-2394 blank#
+2394 Reflect Magic#
 2395 blank#
 2396 blank#
 2397 blank#
@@ -2959,5 +2961,10 @@ dominate the %s into your service!#
 2471 You no longer feel magic bounce off you.#
 2472 You feel magic weaken against you.#
 2473 You feel magic bounce off you.#
+2474 Failed to sustain spell (reflect magic).#
+2475 But you feel some energy go out and it bounces off!#
+2476 You feel the reflect magic spell fail as the
+last of your magic is drained!#
+
 
 2499 end#

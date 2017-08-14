@@ -171,7 +171,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_levitation.overload_multiplier = 1;
 	spellElement_levitation.damage = 0;
 	spellElement_levitation.duration = 30;
-	strcpy(spellElement_slow.name, language[431]);
+	strcpy(spellElement_levitation.name, language[431]);
 
 	spellElementConstructor(&spellElement_teleportation);
 	spellElement_teleportation.mana = 20;
@@ -236,6 +236,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_dominate.damage = 0;
 	spellElement_dominate.duration = 0;
 	strcpy(spellElement_dominate.name, language[2393]);
+
+	spellElementConstructor(&spellElement_reflectMagic);
+	spellElement_reflectMagic.mana = 10;
+	spellElement_reflectMagic.base_mana = 10;
+	spellElement_reflectMagic.overload_multiplier = 1;
+	spellElement_reflectMagic.damage = 0;
+	spellElement_reflectMagic.duration = 3000;
+	strcpy(spellElement_reflectMagic.name, language[2394]);
 
 
 	spellConstructor(&spell_forcebolt);
@@ -678,4 +686,18 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*) node->element;
 	element->node = node;
+
+	spellConstructor(&spell_reflectMagic);
+	strcpy(spell_reflectMagic.name, language[2394]);
+	spell_reflectMagic.ID = SPELL_REFLECT_MAGIC;
+	spell_reflectMagic.difficulty = 80;
+	spell_reflectMagic.elements.first = nullptr;
+	spell_reflectMagic.elements.last = nullptr;
+	node = list_AddNodeLast(&spell_reflectMagic.elements);
+	node->element = copySpellElement(&spellElement_reflectMagic);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*) node->element;
+	element->node = node; //Tell the element what list it resides in.
+	element->channeled = true;
 }

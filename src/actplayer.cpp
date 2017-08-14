@@ -1257,7 +1257,7 @@ void actPlayer(Entity* my)
 				}
 				if ( stats[PLAYER_NUM]->HP <= 0 )
 				{
-					// die
+					// die //TODO: Refactor.
 					playSoundEntity(my, 28, 128);
 					for ( i = 0; i < 5; i++ )
 					{

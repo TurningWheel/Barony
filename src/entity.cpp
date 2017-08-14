@@ -479,8 +479,9 @@ void Entity::effectTimes()
 	}
 
 
-	spell_t* invisibility_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things. //TODO: Incorporate the spell into isInvisible() instead?
-	spell_t* levitation_hijacked = NULL; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
+	spell_t* invisibility_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things. //TODO: Incorporate the spell into isInvisible() instead?
+	spell_t* levitation_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
+	spell_t* reflectMagic_hijacked = nullptr;
 	//Handle magic effects (like invisibility)
 	for (node = myStats->magic_effects.first; node; node = node->next, ++count)
 	{
@@ -517,6 +518,7 @@ void Entity::effectTimes()
 			}
 			continue; //Skip this spell.
 		}
+
 		switch (spell->ID)
 		{
 			case SPELL_INVISIBILITY:
@@ -567,9 +569,33 @@ void Entity::effectTimes()
 					node = temp;
 				}
 				break;
+			case SPELL_REFLECT_MAGIC:
+				reflectMagic_hijacked = spell;
+				if ( !myStats->EFFECTS[EFF_MAGICREFLECT] )
+				{
+					for ( c = 0; c < numplayers; ++c )
+					{
+						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						{
+							messagePlayer(c, language[591]);
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
 			default:
 				//Unknown spell, undefined effect. Like, say, a fireball spell wound up in here for some reason. That's a nono.
-				printlog( "[entityEffectTimes] Warning: magic_effects spell that's not relevant. Should not be in the magic_effects list!\n");
+				printlog("[entityEffectTimes] Warning: magic_effects spell that's not relevant. Should not be in the magic_effects list!\n");
 				list_RemoveNode(node);
 		}
 
@@ -750,7 +776,44 @@ void Entity::effectTimes()
 						messagePlayer(player, language[2470]);
 						break;
 					case EFF_MAGICREFLECT:
-						messagePlayer(player, language[2471]);
+						dissipate = true; //Remove the effect by default.
+						if ( reflectMagic_hijacked )
+						{
+							bool sustained = false;
+							Entity* caster = uidToEntity(reflectMagic_hijacked->caster);
+							if ( caster )
+							{
+								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								bool deducted = caster->safeConsumeMP(1); //Consume 1 mana ever duration / mana seconds
+								if ( deducted )
+								{
+									sustained = true;
+									myStats->EFFECTS[c] = true;
+									myStats->EFFECTS_TIMERS[c] = reflectMagic_hijacked->channel_duration;
+								}
+								else
+								{
+									int i = 0;
+									for ( i = 0; i < 4; ++i )
+									{
+										if ( players[i]->entity == caster )
+										{
+											messagePlayer(i, language[2474]);
+										}
+									}
+									list_RemoveNode(reflectMagic_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
+									//list_RemoveNode(reflectMagic_hijacked->sustain_node); //Remove it from the channeled spells list.
+								}
+							}
+							if ( sustained )
+							{
+								dissipate = false; //Sustained the spell, so do not stop being invisible.
+							}
+						}
+						if ( dissipate )
+						{
+							messagePlayer(player, language[2471]);
+						}
 						break;
 					default:
 						break;
@@ -1376,6 +1439,11 @@ void Entity::modMP(int amount)
 {
 	Stat* entitystats = this->getStats();
 
+	if ( !entitystats )
+	{
+		return;
+	}
+
 	if ( this->behavior == &actPlayer && godmode && amount < 0 )
 	{
 		amount = 0;
@@ -1386,6 +1454,18 @@ void Entity::modMP(int amount)
 	}
 
 	this->setMP(entitystats->MP + amount);
+}
+
+int Entity::getMP()
+{
+	Stat* myStats = getStats();
+
+	if ( !myStats )
+	{
+		return 0;
+	}
+
+	return myStats->MP;
 }
 
 /*-------------------------------------------------------------------------------
@@ -3283,6 +3363,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_SUMMON:
 							castSpell(uid, &spell_summon, true, false);
 							break;
+						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
+							//castSpell(uid, &spell_reflectMagic, true, false)
+							//break;
 						default:
 							break;
 					}
@@ -6819,4 +6902,28 @@ void Entity::lookAtEntity(Entity& target)
 	monsterLookTime = 1;
 	monsterMoveTime = rand() % 10 + 1;
 	monsterLookDir = tangent;
+}
+
+spell_t* Entity::getActiveMagicEffect(int spellID)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	spell_t* spell = nullptr;
+	spell_t* searchSpell = nullptr;
+
+	for ( node_t *node = myStats->magic_effects.first; node; node = node->next )
+	{
+		searchSpell = (node->element? static_cast<spell_t*>(node->element) : nullptr);
+		if ( searchSpell && searchSpell->ID == spellID )
+		{
+			spell = searchSpell;
+			break;
+		}
+	}
+
+	return spell;
 }
