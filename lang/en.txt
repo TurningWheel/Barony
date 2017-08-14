@@ -2960,4 +2960,6 @@ dominate the %s into your service!#
 2472 You feel magic weaken against you.#
 2473 You feel magic bounce off you.#
 
+2499 HP: %d/%d   MP: %d/%d#
+
 2500 end#
