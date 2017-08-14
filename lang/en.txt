@@ -2913,7 +2913,7 @@ client (player %d) (direct ip)#
 
 #New spells (2390-2399)
 2390 Conjure Familiar#
-2391 Stonebleed#
+2391 Stone Blood#
 2392 Bloodletting#
 2393 Dominate#
 2394 Reflect Magic#
