@@ -2289,6 +2289,11 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
+	{
+		spawnAmbientParticles(80, 579, 10 + rand() % 40);
+	}
+
 	// burning
 	if ( this->flags[BURNING] )
 	{
