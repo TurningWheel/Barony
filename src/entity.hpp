@@ -150,6 +150,10 @@ public:
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
+	Sint32& monsterAttack;
+	Sint32& monsterAttackTime;
+	Sint32& monsterArmbended;
+	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
 
 	real_t& monsterLookDir;
@@ -301,7 +305,7 @@ public:
 	// if monster holding ranged weapon.
 	bool hasRangedWeapon() const;
 	// weapon arm animation attacks
-	void handleWeaponArmAttack(Entity* my);
+	void handleWeaponArmAttack(Entity* weaponarm);
 	// handle walking movement for arms and legs
 	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
 	// monster footsteps, needs to be client friendly

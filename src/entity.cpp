@@ -84,7 +84,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterFootstepType(skill[32]),
 	monsterLookTime(skill[4]),
 	monsterMoveTime(skill[6]),
-	monsterLookDir(fskill[4])
+	monsterLookDir(fskill[4]),
+	monsterAttack(skill[8]),
+	monsterAttackTime(skill[9]),
+	monsterArmbended(skill[10]),
+	monsterWeaponYaw(fskill[5])
 
 {
 	int c;
@@ -6193,16 +6197,16 @@ bool Entity::hasRangedWeapon() const
 	return false;
 }
 
-void Entity::handleWeaponArmAttack(Entity* my)
+void Entity::handleWeaponArmAttack(Entity* weaponarm)
 {
-	if ( my == nullptr )
+	if ( this == nullptr || weaponarm == nullptr )
 	{
 		return;
 	}
 
 	Entity* rightbody = nullptr;
 	// set rightbody to left leg.
-	node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+	node_t* rightbodyNode = list_Node(&this->children, LIMB_HUMANOID_LEFTLEG);
 	if ( rightbodyNode )
 	{
 		rightbody = (Entity*)rightbodyNode->element;
@@ -6213,387 +6217,401 @@ void Entity::handleWeaponArmAttack(Entity* my)
 	}
 
 	// vertical chop windup
-	if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP1 )
+	if ( monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 	{
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			this->pitch = 0;
-			MONSTER_ARMBENDED = 0;
-			MONSTER_WEAPONYAW = 0;
-			this->roll = 0;
+			weaponarm->pitch = 0;
+			this->monsterArmbended = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->roll = 0;
+			weaponarm->skill[1] = 0;
 		}
-		if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
+		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
 		{
-			this->skill[0] = 0;
 			if ( multiplayer != CLIENT )
 			{
-				my->attack(1, 0, nullptr);
+				this->attack(1, 0, nullptr);
 			}
 		}
 	}
 	// vertical chop attack
-	else if ( MONSTER_ATTACK == 1 )
+	else if ( monsterAttack == 1 )
 	{
-		if ( this->pitch >= 3 * PI / 2 )
+		if ( weaponarm->pitch >= 3 * PI / 2 )
 		{
-			MONSTER_ARMBENDED = 1;
+			this->monsterArmbended = 1;
 		}
 
-		if ( this->skill[0] == 0 )
+		if ( weaponarm->skill[1] == 0 )
 		{
 			// chop forwards
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
 			{
-				this->skill[0] = 1;
+				weaponarm->skill[1] = 1;
 			}
 		}
-		else if ( this->skill[0] == 1 )
+		else if ( weaponarm->skill[1] == 1 )
 		{
 			// return to neutral
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
 			{
-				this->skill[0] = rightbody->skill[0];
-				MONSTER_WEAPONYAW = 0;
-				this->pitch = rightbody->pitch;
-				this->roll = 0;
-				MONSTER_ARMBENDED = 0;
-				MONSTER_ATTACK = 0;
+				weaponarm->skill[0] = rightbody->skill[0];
+				this->monsterWeaponYaw = 0;
+				weaponarm->pitch = rightbody->pitch;
+				weaponarm->roll = 0;
+				this->monsterArmbended = 0;
+				monsterAttack = 0;
 			}
 		}
 	}
 	// horizontal chop windup
-	else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP2 )
+	else if ( monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 	{
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			this->pitch = PI / 4;
-			this->roll = 0;
-			MONSTER_ARMBENDED = 1;
+			weaponarm->pitch = PI / 4;
+			weaponarm->roll = 0;
+			this->monsterArmbended = 1;
+			weaponarm->skill[1] = 0;
+			this->monsterWeaponYaw = 6 * PI / 4;
 		}
 
-		limbAnimateToLimit(this, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
-		limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0);
+		limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.2, 3 * PI / 2, false, 0.0);
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 
-		MONSTER_WEAPONYAW = 6 * PI / 4;
 
-		this->skill[0] = 0;
-		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
-				my->attack(2, 0, nullptr);
+				this->attack(2, 0, nullptr);
 			}
 		}
 	}
 	// horizontal chop attack
-	else if ( MONSTER_ATTACK == 2 )
+	else if ( monsterAttack == 2 )
 	{
-		if ( this->skill[0] == 0 )
+		if ( weaponarm->skill[1] == 0 )
 		{
 			// swing
-			if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.3, 2 * PI / 8, false, 0.0) )
+			// this->weaponyaw is OK to change for clients, as server doesn't update it for them.
+			if ( limbAnimateToLimit(this, ANIMATE_WEAPON_YAW, 0.3, 2 * PI / 8, false, 0.0) )
 			{
-				this->skill[0] = 1;
+				weaponarm->skill[1] = 1;
 			}
 		}
-		else if ( this->skill[0] == 1 )
+		else if ( weaponarm->skill[1] == 1 )
 		{
 			// post-swing return to normal weapon yaw
-			if ( limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.5, 0, false, 0.0) )
+			if ( limbAnimateToLimit(this, ANIMATE_WEAPON_YAW, -0.5, 0, false, 0.0) )
 			{
 				// restore pitch and roll after yaw is set
-				if ( limbAnimateToLimit(this, ANIMATE_ROLL, 0.4, 0, false, 0.0)
-					&& limbAnimateToLimit(this, ANIMATE_PITCH, -0.4, 7 * PI / 4, false, 0.0) )
+				if ( limbAnimateToLimit(weaponarm, ANIMATE_ROLL, 0.4, 0, false, 0.0)
+					&& limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.4, 7 * PI / 4, false, 0.0) )
 				{
-					this->skill[0] = rightbody->skill[0];
-					MONSTER_WEAPONYAW = 0;
-					this->pitch = rightbody->pitch;
-					this->roll = 0;
-					MONSTER_ARMBENDED = 0;
-					MONSTER_ATTACK = 0;
+					weaponarm->skill[0] = rightbody->skill[0];
+					this->monsterWeaponYaw = 0;
+					weaponarm->pitch = rightbody->pitch;
+					weaponarm->roll = 0;
+					this->monsterArmbended = 0;
+					monsterAttack = 0;
 				}
 			}
 		}
 	}
 	// stab windup
-	else if ( MONSTER_ATTACK == MONSTER_POSE_MELEE_WINDUP3 )
+	else if ( monsterAttack == MONSTER_POSE_MELEE_WINDUP3 )
 	{
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			MONSTER_ARMBENDED = 0;
-			MONSTER_WEAPONYAW = 0;
-			this->roll = 0;
-			this->pitch = 0;
+			this->monsterArmbended = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->roll = 0;
+			weaponarm->pitch = 0;
+			weaponarm->skill[1] = 0;
 		}
 
-		limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
 
-		this->skill[0] = 0;
-		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
-				my->attack(3, 0, nullptr);
+				this->attack(3, 0, nullptr);
 			}
 		}
 	}
 	// stab attack - refer to weapon limb code for additional animation
-	else if ( MONSTER_ATTACK == 3 )
+	else if ( monsterAttack == 3 )
 	{
-		if ( this->skill[0] == 0 )
+		if ( weaponarm->skill[1] == 0 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.3, 0, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 0, false, 0.0) )
 			{
-				this->skill[0] = 1;
+				weaponarm->skill[1] = 1;
 			}
 		}
-		else if ( this->skill[0] == 1 )
+		else if ( weaponarm->skill[1] == 1 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.3, 2 * PI / 3, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.3, 2 * PI / 3, false, 0.0) )
 			{
-				this->skill[0] = 2;
+				weaponarm->skill[1] = 2;
 			}
 		}
-		else if ( this->skill[0] == 2 )
+		else if ( weaponarm->skill[1] == 2 )
 		{
 			// return to neutral
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0) )
 			{
-				this->skill[0] = rightbody->skill[0];
-				MONSTER_WEAPONYAW = 0;
-				this->pitch = rightbody->pitch;
-				this->roll = 0;
-				MONSTER_ARMBENDED = 0;
-				MONSTER_ATTACK = 0;
+				weaponarm->skill[0] = rightbody->skill[0];
+				this->monsterWeaponYaw = 0;
+				weaponarm->pitch = rightbody->pitch;
+				weaponarm->roll = 0;
+				this->monsterArmbended = 0;
+				monsterAttack = 0;
 			}
 		}
 	}
 	// ranged weapons
-	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_WINDUP1 )
+	else if ( monsterAttack == MONSTER_POSE_RANGED_WINDUP1 )
 	{
 		// crossbow
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			MONSTER_ARMBENDED = 0;
-			MONSTER_WEAPONYAW = 0;
-			this->roll = 0;
+			this->monsterArmbended = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->roll = 0;
+			weaponarm->skill[1] = 0;
 		}
 
 		// draw the crossbow level... slowly
-		if ( this->pitch > PI || this->pitch < 0 )
+		if ( weaponarm->pitch > PI || weaponarm->pitch < 0 )
 		{
-			limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.1, 0, false, 0.0);
 		}
 		else
 		{
-			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, false, 0.0);
+			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, false, 0.0);
 		}
 
-		this->skill[0] = 0;
-		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
-				my->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
+				this->attack(MONSTER_POSE_RANGED_SHOOT1, 0, nullptr);
 			}
 		}
 	}
 	// shoot crossbow
-	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_SHOOT1 )
+	else if ( monsterAttack == MONSTER_POSE_RANGED_SHOOT1 )
 	{
 		// recoil upwards
-		if ( this->skill[0] == 0 )
+		if ( weaponarm->skill[1] == 0 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 15 * PI / 8, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 15 * PI / 8, false, 0.0) )
 			{
-				this->skill[0] = 1;
+				weaponarm->skill[1] = 1;
 			}
 		}
 		// recoil downwards
-		else if ( this->skill[0] == 1 )
+		else if ( weaponarm->skill[1] == 1 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, PI / 3, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.1, PI / 3, false, 0.0) )
 			{
-				this->skill[0] = 2;
+				weaponarm->skill[1] = 2;
 			}
 		}
-		else if ( this->skill[0] == 2 )
+		else if ( weaponarm->skill[1] == 2 )
 		{
 			// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(this->pitch, -0.2, rightbody->pitch) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(weaponarm->pitch, -0.2, rightbody->pitch) )
 			{
-				this->skill[0] = rightbody->skill[0];
-				MONSTER_WEAPONYAW = 0;
-				//if ( my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
+				weaponarm->skill[0] = rightbody->skill[0];
+				this->monsterWeaponYaw = 0;
+				//if ( this->hasRangedWeapon() && this->monsterState == MONSTER_STATE_ATTACK )
 				//{
 				//	// don't move ranged weapons so far if ready to attack
-				//	this->pitch = rightbody->pitch * 0.25;
+				//	weaponarm->pitch = rightbody->pitch * 0.25;
 				//}
 				//else
 				//{
-				//	this->pitch = rightbody->pitch;
+				//	weaponarm->pitch = rightbody->pitch;
 				//}
-				this->roll = 0;
-				MONSTER_ARMBENDED = 0;
-				MONSTER_ATTACK = 0;
+				weaponarm->roll = 0;
+				this->monsterArmbended = 0;
+				monsterAttack = 0;
 			}
 		}
 	}
 	// shortbow/sling
-	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_WINDUP2 )
+	else if ( monsterAttack == MONSTER_POSE_RANGED_WINDUP2 )
 	{
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			MONSTER_ARMBENDED = 0;
-			MONSTER_WEAPONYAW = 0;
-			this->roll = 0;
+			this->monsterArmbended = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->roll = 0;
+			weaponarm->skill[1] = 0;
 		}
 
 		// draw the weapon level... slowly and shake
-		if ( this->pitch > PI || this->pitch < 0 )
+		if ( weaponarm->pitch > PI || weaponarm->pitch < 0 )
 		{
-			limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 0, true, 0.1);
+			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.1, 0, true, 0.1);
 		}
 		else
 		{
-			limbAnimateToLimit(this, ANIMATE_PITCH, -0.1, 0, true, 0.1);
+			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
-		this->skill[0] = 0;
-		if ( MONSTER_ATTACKTIME >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
-				my->attack(MONSTER_POSE_RANGED_SHOOT2, 0, nullptr);
+				this->attack(MONSTER_POSE_RANGED_SHOOT2, 0, nullptr);
 			}
 		}
 	}
 	// shoot shortbow/sling
-	else if ( MONSTER_ATTACK == MONSTER_POSE_RANGED_SHOOT2 )
+	else if ( monsterAttack == MONSTER_POSE_RANGED_SHOOT2 )
 	{
 		// recoil upwards
-		if ( this->skill[0] == 0 )
+		if ( weaponarm->skill[1] == 0 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 14 * PI / 8, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 14 * PI / 8, false, 0.0) )
 			{
-				this->skill[0] = 1;
+				weaponarm->skill[1] = 1;
 			}
 		}
 		// recoil downwards
-		else if ( this->skill[0] == 1 )
+		else if ( weaponarm->skill[1] == 1 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, 0.1, 1 * PI / 3, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.1, 1 * PI / 3, false, 0.0) )
 			{
-				this->skill[0] = 2;
+				weaponarm->skill[1] = 2;
 			}
 		}
-		else if ( this->skill[0] == 2 )
+		else if ( weaponarm->skill[1] == 2 )
 		{
 			// limbAngleWithinRange cuts off animation early so it doesn't snap too far back to position.
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(this->pitch, -0.2, rightbody->pitch) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0) || limbAngleWithinRange(weaponarm->pitch, -0.2, rightbody->pitch) )
 			{
-				this->skill[0] = rightbody->skill[0];
-				MONSTER_WEAPONYAW = 0;
-				this->pitch = rightbody->pitch;
-				this->roll = 0;
-				MONSTER_ARMBENDED = 0;
-				MONSTER_ATTACK = 0;
+				weaponarm->skill[0] = rightbody->skill[0];
+				this->monsterWeaponYaw = 0;
+				weaponarm->pitch = rightbody->pitch;
+				weaponarm->roll = 0;
+				this->monsterArmbended = 0;
+				monsterAttack = 0;
 				// play draw arrow sound
-				playSoundEntityLocal(my, 246, 16);
+				playSoundEntityLocal(this, 246, 16);
 			}
 		}
 	}
-	else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 )
+	else if ( monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 )
 	{
 		// magic wiggle hands
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			MONSTER_ARMBENDED = 0;
-			MONSTER_WEAPONYAW = 0;
-			this->roll = 0;
-			this->pitch = 0;
-			this->yaw = my->yaw;
-			this->skill[0] = 0;
+			this->monsterArmbended = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->roll = 0;
+			weaponarm->pitch = 0;
+			weaponarm->yaw = this->yaw;
+			weaponarm->skill[1] = 0;
 			// casting particles
-			createParticleDot(my);
+			createParticleDot(this);
 			// play casting sound
-			playSoundEntityLocal(my, 170, 32);
+			playSoundEntityLocal(this, 170, 32);
 		}
 
-		double animationSetpoint = 0.f;
-		double animationEndpoint = 0.f;
+		double animationYawSetpoint = 0.f;
+		double animationYawEndpoint = 0.f;
 		double armSwingRate = 0.f;
+		double animationPitchSetpoint = 0.f;
+		double animationPitchEndpoint = 0.f;
 
-		switch ( my->monsterSpellAnimation )
+		switch ( this->monsterSpellAnimation )
 		{
 			case MONSTER_SPELLCAST_NONE:
 				break;
 			case MONSTER_SPELLCAST_SMALL_HUMANOID:
 				// smaller models so arms can wave in a larger radius and faster.
-				animationSetpoint = normaliseAngle2PI(my->yaw + 2 * PI / 8);
-				animationEndpoint = normaliseAngle2PI(my->yaw - 2 * PI / 8);
+				animationYawSetpoint = normaliseAngle2PI(this->yaw + 2 * PI / 8);
+				animationYawEndpoint = normaliseAngle2PI(this->yaw - 2 * PI / 8);
+				animationPitchSetpoint = 2 * PI / 8;
+				animationPitchEndpoint = 14 * PI / 8;
 				armSwingRate = 0.3;
-				if ( MONSTER_ATTACKTIME == 0 )
+				if ( monsterAttackTime == 0 )
 				{
-					this->yaw = my->yaw - PI / 8;
+					weaponarm->yaw = this->yaw - PI / 8;
 				}
 				break;
 			case MONSTER_SPELLCAST_HUMANOID:
-				animationSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
-				animationEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
+				animationYawSetpoint = normaliseAngle2PI(this->yaw + 1 * PI / 8);
+				animationYawEndpoint = normaliseAngle2PI(this->yaw - 1 * PI / 8);
+				animationPitchSetpoint = 1 * PI / 8;
+				animationPitchEndpoint = 15 * PI / 8;
 				armSwingRate = 0.15;
 				break;
 			default:
 				break;
 		}
 
-		if ( this->skill[0] == 0 )
+		if ( weaponarm->skill[1] == 0 )
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, armSwingRate, 2 * PI / 8, false, 0.0) && limbAnimateToLimit(this, ANIMATE_YAW, armSwingRate, animationSetpoint, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, armSwingRate, animationPitchSetpoint, false, 0.0) )
 			{
-				this->skill[0] = 1;
+				if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, armSwingRate, animationYawSetpoint, false, 0.0) )
+				{
+					weaponarm->skill[1] = 1;
+				}
 			}
 		}
 		else
 		{
-			if ( limbAnimateToLimit(this, ANIMATE_PITCH, -armSwingRate, 14 * PI / 8, false, 0.0) && limbAnimateToLimit(this, ANIMATE_YAW, -armSwingRate, animationEndpoint, false, 0.0) )
+			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -armSwingRate, animationPitchEndpoint, false, 0.0) )
 			{
-				this->skill[0] = 0;
+				if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, -armSwingRate, animationYawEndpoint, false, 0.0) )
+				{
+					weaponarm->skill[1] = 0;
+				}
 			}
 		}
 
-		if ( MONSTER_ATTACKTIME >= 2 * ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP )
 		{
 			if ( multiplayer != CLIENT )
 			{
 				// swing the arm after we prepped the spell
-				my->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
+				this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
 			}
 		}
 	}
 	// swing arm to cast spell 
-	else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP2 )
+	else if ( monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
 	{
-		if ( MONSTER_ATTACKTIME == 0 )
+		if ( monsterAttackTime == 0 )
 		{
 			// init rotations
-			this->pitch = 0;
-			MONSTER_ARMBENDED = 0;
-			MONSTER_WEAPONYAW = 0;
-			this->roll = 0;
+			weaponarm->pitch = 0;
+			this->monsterArmbended = 0;
+			this->monsterWeaponYaw = 0;
+			weaponarm->roll = 0;
+			weaponarm->skill[1] = 0;
 		}
-		if ( limbAnimateToLimit(this, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0) )
+
+		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.3, 5 * PI / 4, false, 0.0) )
 		{
-			this->skill[0] = 0;
 			if ( multiplayer != CLIENT )
 			{
-				my->attack(1, 0, nullptr);
+				this->attack(1, 0, nullptr);
 			}
 		}
 	}
@@ -6804,7 +6822,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 		return;
 	}
 
-	if ( my->isInvisible() == false) //TODO: isInvisible()?
+	if ( my->isInvisible() == false	) //TODO: isInvisible()?
 	{
 		if ( this->sprite == items[SHORTBOW].index )
 		{

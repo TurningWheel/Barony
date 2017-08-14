@@ -496,7 +496,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					entity->handleWeaponArmAttack(my);
+					my->handleWeaponArmAttack(entity);
 				}
 			}
 			else if ( bodypart == 9 )
@@ -550,7 +550,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 					{
 						entity->focalx = limbs[KOBOLD][4][0]; // 0
 						entity->focaly = limbs[KOBOLD][4][1]; // 0

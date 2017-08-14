@@ -57,7 +57,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterFootstepType(skill[32]),
 	monsterLookTime(skill[4]),
 	monsterMoveTime(skill[6]),
-	monsterLookDir(fskill[4])
+	monsterLookDir(fskill[4]),
+	monsterAttack(skill[8]),
+	monsterAttackTime(skill[9]),
+	monsterArmbended(skill[10]),
+	monsterWeaponYaw(fskill[5])
 {
 	int c;
 	// add the entity to the entity list
