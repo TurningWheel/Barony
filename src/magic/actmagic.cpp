@@ -740,11 +740,20 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 				if ( reflection )
 				{
+					spell_t* spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
+
 					if (hit.entity)
 					{
 						if ( hit.entity->behavior == &actPlayer )
 						{
-							messagePlayer(player, language[379]);
+							if ( !spellIsReflectingMagic )
+							{
+								messagePlayer(player, language[379]);
+							}
+							else
+							{
+								messagePlayer(player, language[2475]);
+							}
 						}
 					}
 					if ( parent )
@@ -857,6 +866,30 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 6;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
+					if ( spellIsReflectingMagic )
+					{
+						int spellCost = getCostOfSpell(spell);
+						bool unsustain = false;
+						if ( spellCost >= hit.entity->getMP() ) //Unsustain the spell if expended all mana.
+						{
+							unsustain = true;
+						}
+
+						hit.entity->drainMP(spellCost);
+						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z / 2, 174);
+						playSoundEntity(hit.entity, 166, 128); //TODO: Custom sound effect?
+
+						if ( unsustain )
+						{
+							spellIsReflectingMagic->sustain = false;
+							if ( hitstats )
+							{
+								hitstats->EFFECTS[EFF_MAGICREFLECT] = false;
+								hitstats->EFFECTS_TIMERS[EFF_MAGICREFLECT] = 0;
+								messagePlayer(player, language[2476]);
+							}
 						}
 					}
 					return;

@@ -36,6 +36,8 @@
 static const int NUMENTITYSKILLS = 60;
 static const int NUMENTITYFSKILLS = 30;
 
+struct spell_t;
+
 // entity class
 class Entity
 {
@@ -200,6 +202,7 @@ public:
 
 	void setMP(int amount);
 	void modMP(int amount); //Adds amount to MP.
+	int getMP();
 
 	void drainMP(int amount); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
@@ -307,6 +310,8 @@ public:
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
 
 	void lookAtEntity(Entity& target);
+
+	spell_t* getActiveMagicEffect(int spellID);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -396,8 +401,8 @@ void actMagiclightBall(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-const int NUM_ITEM_STRINGS = 207;
-const int NUM_ITEM_STRINGS_BY_TYPE = 69;
+const int NUM_ITEM_STRINGS = 208;
+const int NUM_ITEM_STRINGS_BY_TYPE = 70;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[108][64];
