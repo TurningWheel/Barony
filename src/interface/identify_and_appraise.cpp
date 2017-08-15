@@ -407,6 +407,13 @@ int getAppraisalTime(Item* item)
 	return appraisal_time;
 }
 
+void closeIdentifyGUI()
+{
+    identifygui_active = false;
+
+    selectedIdentifySlot = -1;
+}
+
 inline Item* getItemInfoFromIdentifyGUI(int slot)
 {
 	if ( slot >= 4 )
