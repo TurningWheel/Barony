@@ -31,7 +31,7 @@
     my->skill[1] is either 0, 1, 2, or 3. It is set at the creation of the fountain.
         Those values correspond to what the fountain does:
         0 = spawn succubus, 1 = raise hunger, 2 = random potion effect, 3 = bless equipment
-    my->skill[2] is either 0 or 1. If it is 
+    my->skill[2] is either 0 or 1. If it is 0, the fountain will be animated on Clients
     my->skill[3] is a random potion effect. It is set at the creation of the fountain
 
 -------------------------------------------------------------------------------*/
