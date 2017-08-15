@@ -31,7 +31,6 @@
     my->skill[1] is either 0, 1, 2, or 3. It is set at the creation of the fountain.
         Those values correspond to what the fountain does:
         0 = spawn succubus, 1 = raise hunger, 2 = random potion effect, 3 = bless equipment
-    my->skill[2] is either 0 or 1. If it is 0, the fountain will be animated on Clients
     my->skill[3] is a random potion effect. It is set at the creation of the fountain
 
 -------------------------------------------------------------------------------*/
@@ -58,7 +57,7 @@ void actFountain(Entity* my)
 	//TODO: Sounds.
 
 	// spray water
-	if ( my->skill[0] > 0 || ( !my->skill[2] && multiplayer == CLIENT ) )
+	if ( my->skill[0] > 0 )
 	{
 #define FOUNTAIN_AMBIENCE my->skill[7]
 		FOUNTAIN_AMBIENCE--;
@@ -89,16 +88,6 @@ void actFountain(Entity* my)
 	if ( multiplayer == CLIENT )
 	{
 		return;
-	}
-
-	// makes the fountain stop spraying water on clients
-	if ( my->skill[0] <= 0 )
-	{
-		my->skill[2] = 1;
-	}
-	else
-	{
-		my->skill[2] = 0;
 	}
 
 	//Using the fountain (TODO: Monsters using it?).
