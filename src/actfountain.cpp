@@ -215,6 +215,7 @@ void actFountain(Entity* my)
 					}
 					messagePlayer(i, language[474]);
 					my->skill[0] = 0; //Dry up fountain.
+                    serverUpdateEntitySkill(my, my->skill[0]);
 					//TODO: messagePlayersInSight() instead.
 				}
 				//Then perform the effect randomly determined when the fountain was created.
