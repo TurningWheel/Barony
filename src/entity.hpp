@@ -36,6 +36,8 @@
 static const int NUMENTITYSKILLS = 60;
 static const int NUMENTITYFSKILLS = 30;
 
+struct spell_t;
+
 // entity class
 class Entity
 {
@@ -148,6 +150,10 @@ public:
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
+	Sint32& monsterAttack;
+	Sint32& monsterAttackTime;
+	Sint32& monsterArmbended;
+	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
 
 	real_t& monsterLookDir;
@@ -166,10 +172,18 @@ public:
 	real_t& crystalMinZVelocity;
 	real_t& crystalTurnVelocity; // how fast to turn on click.
 
+	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
+	Sint32& particleDuration;
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
+
+	//Dummy stats to make certain visual features work on clients (such as ambient particles for magic reflection).
+	Stat* clientStats;
+	bool clientsHaveItsStats;
+	void giveClientStats();
 
 	// behavior function pointer
 	void (*behavior)(class Entity* my);
@@ -189,6 +203,7 @@ public:
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
 
 	void handleEffects(Stat* myStats);
+	void handleEffectsClient();
 
 	void effectTimes();
 	void increaseSkill(int skill);
@@ -200,6 +215,7 @@ public:
 
 	void setMP(int amount);
 	void modMP(int amount); //Adds amount to MP.
+	int getMP();
 
 	void drainMP(int amount); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
@@ -298,7 +314,7 @@ public:
 	// if monster holding ranged weapon.
 	bool hasRangedWeapon() const;
 	// weapon arm animation attacks
-	void handleWeaponArmAttack(Entity* my);
+	void handleWeaponArmAttack(Entity* weaponarm);
 	// handle walking movement for arms and legs
 	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
 	// monster footsteps, needs to be client friendly
@@ -307,6 +323,18 @@ public:
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
 
 	void lookAtEntity(Entity& target);
+
+	spell_t* getActiveMagicEffect(int spellID);
+
+	/*
+	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
+	 */
+	void spawnAmbientParticles(int chance, int particleSprite, int duration);
+
+	//Updates the EFFECTS variable for all clients for this entity.
+	void serverUpdateEffectsForEntity(bool guarantee);
+
+	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -394,10 +422,13 @@ void addItemToChestClientside(Item* item); //Called by the client to manage all 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
+//---Misc act functions---
+void actAmbientParticleEffectIdle(Entity* my);
+
 //checks if a sprite falls in certain sprite ranges
 
-const int NUM_ITEM_STRINGS = 207;
-const int NUM_ITEM_STRINGS_BY_TYPE = 69;
+const int NUM_ITEM_STRINGS = 208;
+const int NUM_ITEM_STRINGS_BY_TYPE = 70;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[108][64];

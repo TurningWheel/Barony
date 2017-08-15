@@ -47,6 +47,7 @@ void freeSpells()
 	list_FreeAll(&spell_stoneblood.elements);
 	list_FreeAll(&spell_bleed.elements);
 	list_FreeAll(&spell_dominate.elements);
+	list_FreeAll(&spell_reflectMagic.elements);
 }
 
 void spell_magicMap(int player)

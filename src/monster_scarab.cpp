@@ -68,8 +68,7 @@ void initScarab(Entity* my, Stat* myStats)
 				myStats->PER = -2;
 				myStats->CHR = 5;
 				myStats->LVL = 10;
-				myStats->EFFECTS[EFF_MAGICREFLECT] = true;
-				myStats->EFFECTS_TIMERS[EFF_MAGICREFLECT] = -1; //Never expires.
+				my->setEffect(EFF_MAGICREFLECT, true, -1, true); //-1 duration, never expires.
 				newItem(GEM_AMBER, static_cast<Status>(1 + rand() % 4), 1, 1, rand(), true, &myStats->inventory);
 				myStats->weapon = newItem(SPELLBOOK_COLD, EXCELLENT, 0, 1, 0, false, NULL);
 				customItemsToGenerate = customItemsToGenerate - 1;

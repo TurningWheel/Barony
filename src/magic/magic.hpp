@@ -42,6 +42,7 @@ static const int SPELL_SUMMON = 22;
 static const int SPELL_STONEBLOOD = 23;
 static const int SPELL_BLEED = 24;
 static const int SPELL_DOMINATE = 25;
+static const int SPELL_REFLECT_MAGIC = 26;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -304,6 +305,8 @@ extern spellElement_t spellElement_missile_trio;
  */
 extern spellElement_t spellElement_dominate;
 
+extern spellElement_t spellElement_reflectMagic;
+
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -368,6 +371,7 @@ extern spell_t spell_summon;
 extern spell_t spell_stoneblood;
 extern spell_t spell_bleed;
 extern spell_t spell_dominate;
+extern spell_t spell_reflectMagic;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 

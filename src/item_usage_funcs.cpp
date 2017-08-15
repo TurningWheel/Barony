@@ -2775,6 +2775,9 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_BLEED:
 				addSpell(SPELL_BLEED, player);
 				break;
+			case SPELLBOOK_REFLECT_MAGIC:
+				addSpell(SPELL_REFLECT_MAGIC, player);
+				break;
 			default:
 				addSpell(SPELL_FORCEBOLT, player);
 				break;

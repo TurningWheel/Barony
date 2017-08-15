@@ -284,6 +284,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_summon",
 	"spellbook_stoneblood",
 	"spellbook_bleed",
+	"spellbook_reflect_magic",
 	""
 };
 
@@ -366,6 +367,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_stoneblood",
 		"spellbook_bleed",
 		"spellbook_dig",
+		"spellbook_reflect_magic",
 		"tool_pickaxe",
 		"artifact_sword",
 		"artifact_mace",

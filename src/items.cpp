@@ -1582,6 +1582,7 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_SUMMON:
 		case SPELLBOOK_STONEBLOOD:
 		case SPELLBOOK_BLEED:
+		case SPELLBOOK_REFLECT_MAGIC:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
