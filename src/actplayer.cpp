@@ -958,7 +958,7 @@ void actPlayer(Entity* my)
 		players[PLAYER_NUM]->entity = my;
 
 		// camera bobbing
-		if (bobbing)
+		if (bobbing && !command)
 		{
 			if ( swimming )
 			{
