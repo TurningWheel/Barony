@@ -1585,6 +1585,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+                            if ( hit.entity->behavior == &actPlayer )
+                            {
+                                serverUpdateEffects(hit.entity->skill[2]);
+                            }
 							// update enemy bar for attacker
 							if ( parent )
 							{
