@@ -569,6 +569,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
 						removecursegui_active = true;
 						identifygui_active = false;
+                        if ( identifygui_active )
+                        {
+                            closeIdentifyGUI();
+                        }
 						if ( openedChest[i] )
 						{
 							openedChest[i]->closeChest();
