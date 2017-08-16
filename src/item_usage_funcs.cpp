@@ -2778,6 +2778,21 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_REFLECT_MAGIC:
 				addSpell(SPELL_REFLECT_MAGIC, player);
 				break;
+			case SPELLBOOK_BLANK_1:
+				messagePlayer(player, "You no can has spell of TODO!");
+				break;
+			case SPELLBOOK_BLANK_2:
+				messagePlayer(player, "Wot?! Blank speel?");
+				break;
+			case SPELLBOOK_BLANK_3:
+				messagePlayer(player, "No, you no can has!");
+				break;
+			case SPELLBOOK_BLANK_4:
+				messagePlayer(player, "Oops, misplaced that spell...");
+				break;
+			case SPELLBOOK_BLANK_5:
+				messagePlayer(player, "Nope. Spell doesn't exist yet.");
+				break;
 			default:
 				addSpell(SPELL_FORCEBOLT, player);
 				break;
