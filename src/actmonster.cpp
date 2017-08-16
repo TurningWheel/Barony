@@ -562,7 +562,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 	if ( x != 0 || y != 0 )
 	{
 		my->monsterState = MONSTER_STATE_PATH;
-		MONSTER_TARGET = 0;
+		my->monsterTarget = 0;
 		MONSTER_TARGETX = my->x + x;
 		MONSTER_TARGETY = my->y + y;
 		serverUpdateEntitySkill(my, 0);
@@ -1167,7 +1167,7 @@ void actMonster(Entity* my)
 		} else {
 			MONSTER_TARGET = -1;
 		}*/
-		MONSTER_TARGET = 0;
+		my->monsterTarget = 0;
 
 		/*// create an empty first node for traversal purposes //GOING TO ASSUME THIS ALREADY EXISTS WHEN THIS FUNCTION IS CALLED.
 		node = list_AddNodeFirst(my->children);
@@ -1877,7 +1877,7 @@ void actMonster(Entity* my)
 		}
 		else
 		{
-			if (MONSTER_TARGET == players[monsterclicked]->entity->getUID() && my->monsterState != 4)
+			if (my->monsterTarget == players[monsterclicked]->entity->getUID() && my->monsterState != 4)
 			{
 				switch (myStats->type)
 				{
@@ -1891,7 +1891,7 @@ void actMonster(Entity* my)
 			}
 			else if (my->monsterState == MONSTER_STATE_TALK)
 			{
-				if (MONSTER_TARGET != players[monsterclicked]->entity->getUID())
+				if (my->monsterTarget != players[monsterclicked]->entity->getUID())
 				{
 					switch (myStats->type)
 					{
@@ -2005,7 +2005,7 @@ void actMonster(Entity* my)
 		// state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
 		{
-			MONSTER_TARGET = -1;
+			my->monsterTarget = -1;
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
 			if ( myReflex )
@@ -2020,7 +2020,7 @@ void actMonster(Entity* my)
 					hitstats = entity->getStats();
 					if ( hitstats != NULL )
 					{
-						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->getUID() || ringconflict) )
+						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -2116,7 +2116,7 @@ void actMonster(Entity* my)
 								{
 									//TODO: Refactor w/ monsterAcquireTarget().
 									my->monsterState = MONSTER_STATE_ATTACK; // charge state
-									MONSTER_TARGET = hit.entity->getUID();
+									my->monsterTarget = hit.entity->getUID();
 									MONSTER_TARGETX = hit.entity->x;
 									MONSTER_TARGETY = hit.entity->y;
 									if ( MONSTER_SOUND == nullptr )
@@ -2167,8 +2167,8 @@ void actMonster(Entity* my)
 														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 														if ( hit.entity == entity )
 														{
-															entity->skill[0] = 2; // path state
-															entity->skill[1] = MONSTER_TARGET;
+															entity->monsterState = 2; // path state
+															entity->monsterTarget = my->monsterTarget;
 															entity->fskill[2] = MONSTER_TARGETX;
 															entity->fskill[3] = MONSTER_TARGETY;
 														}
@@ -2215,7 +2215,7 @@ void actMonster(Entity* my)
 					if (playerToChase >= 0)
 					{
 						my->monsterState = MONSTER_STATE_PATH; // path state
-						MONSTER_TARGET = players[playerToChase]->entity->getUID();
+						my->monsterTarget = players[playerToChase]->entity->getUID();
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
@@ -2236,7 +2236,7 @@ void actMonster(Entity* my)
 					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
 					if ( dist > WAIT_FOLLOWDIST )
 					{
-						MONSTER_TARGET = 0;
+						my->monsterTarget = 0;
 						x = ((int)floor(leader->x)) >> 4;
 						y = ((int)floor(leader->y)) >> 4;
 						int u, v;
@@ -2279,7 +2279,7 @@ void actMonster(Entity* my)
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
-							MONSTER_TARGET = 0;
+							my->monsterTarget = 0;
 							x = ((int)floor(leader->x)) >> 4;
 							y = ((int)floor(leader->y)) >> 4;
 							int u, v;
@@ -2481,7 +2481,7 @@ void actMonster(Entity* my)
 		}
 		else if ( my->monsterState == MONSTER_STATE_ATTACK )     // charge state
 		{
-			entity = uidToEntity(MONSTER_TARGET);
+			entity = uidToEntity(my->monsterTarget);
 			if ( entity == nullptr )
 			{
 				my->monsterState = MONSTER_STATE_WAIT;
@@ -2509,7 +2509,7 @@ void actMonster(Entity* my)
 				{
 					if ( players[c] && players[c]->entity )
 					{
-						if ( MONSTER_TARGET == players[c]->entity->getUID() )
+						if ( my->monsterTarget == players[c]->entity->getUID() )
 						{
 							swornenemies[SHOPKEEPER][HUMAN] = true;
 							monsterally[SHOPKEEPER][HUMAN] = false;
@@ -2928,9 +2928,9 @@ timeToGoAgain:
 				}
 				return;
 			}
-			if ( uidToEntity(MONSTER_TARGET) == NULL && MONSTER_TARGET != 0 )
+			if ( uidToEntity(my->monsterTarget) == NULL && my->monsterTarget != 0 )
 			{
-				MONSTER_TARGET = 0;
+				my->monsterTarget = 0;
 				my->monsterState = MONSTER_STATE_WAIT; // wait state
 				if ( previousMonsterState != my->monsterState )
 				{
@@ -2938,7 +2938,7 @@ timeToGoAgain:
 				}
 				return;
 			}
-			entity = uidToEntity(MONSTER_TARGET);
+			entity = uidToEntity(my->monsterTarget);
 			if ( entity != NULL )
 				if ( entity->behavior == &actPlayer )
 				{
@@ -2946,7 +2946,7 @@ timeToGoAgain:
 				}
 			x = ((int)floor(MONSTER_TARGETX)) >> 4;
 			y = ((int)floor(MONSTER_TARGETY)) >> 4;
-			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(MONSTER_TARGET) );
+			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(my->monsterTarget) );
 			if ( my->children.first != NULL )
 			{
 				list_RemoveNode(my->children.first);
@@ -2970,7 +2970,7 @@ timeToGoAgain:
 					hitstats = entity->getStats();
 					if ( hitstats != NULL )
 					{
-						if ( (my->checkEnemy(entity) || MONSTER_TARGET == entity->getUID() || ringconflict) )
+						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
 						{
 							tangent = atan2( entity->y - my->y, entity->x - my->x );
 							dir = my->yaw - tangent;
@@ -3063,7 +3063,7 @@ timeToGoAgain:
 											if ( hit.entity == entity )
 											{
 												//TODO: Refactor w/ monsterAcquireTarget()
-												MONSTER_TARGET = hit.entity->getUID();
+												my->monsterTarget = hit.entity->getUID();
 												my->monsterState = MONSTER_STATE_ATTACK; // charge state
 												MONSTER_TARGETX = hit.entity->x;
 												MONSTER_TARGETY = hit.entity->y;
@@ -3113,7 +3113,7 @@ timeToGoAgain:
 			if (myStats->type == MINOTAUR || (myStats->type == LICH && my->monsterSpecial <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 			{
 				bool shouldHuntPlayer = false;
-				Entity* playerOrNot = uidToEntity(MONSTER_TARGET);
+				Entity* playerOrNot = uidToEntity(my->monsterTarget);
 				if (playerOrNot)
 				{
 					if (ticks % 180 == 0 && playerOrNot->behavior == &actPlayer)
@@ -3152,7 +3152,7 @@ timeToGoAgain:
 					if (playerToChase >= 0)
 					{
 						my->monsterState = MONSTER_STATE_PATH; // path state
-						MONSTER_TARGET = players[playerToChase]->entity->getUID();
+						my->monsterTarget = players[playerToChase]->entity->getUID();
 						MONSTER_TARGETX = players[playerToChase]->entity->x;
 						MONSTER_TARGETY = players[playerToChase]->entity->y;
 					}
@@ -3181,7 +3181,7 @@ timeToGoAgain:
 				if ( leader )
 				{
 					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
-					if ( dist > HUNT_FOLLOWDIST && !MONSTER_TARGET )
+					if ( dist > HUNT_FOLLOWDIST && !my->monsterTarget )
 					{
 						x = ((int)floor(leader->x)) >> 4;
 						y = ((int)floor(leader->y)) >> 4;
@@ -3226,7 +3226,7 @@ timeToGoAgain:
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
-							MONSTER_TARGET = 0;
+							my->monsterTarget = 0;
 							int x = ((int)floor(leader->x)) >> 4;
 							int y = ((int)floor(leader->y)) >> 4;
 							int u, v;
@@ -3268,7 +3268,7 @@ timeToGoAgain:
 				}
 			}
 
-			entity = uidToEntity(MONSTER_TARGET);
+			entity = uidToEntity(my->monsterTarget);
 			if ( entity != NULL )
 				if ( entity->behavior == &actPlayer )
 				{
@@ -3369,7 +3369,7 @@ timeToGoAgain:
 								else if ( hit.entity->behavior == &actMonster )
 								{
 									Stat* yourStats = hit.entity->getStats();
-									if ( hit.entity->getUID() == MONSTER_TARGET )
+									if ( hit.entity->getUID() == my->monsterTarget )
 									{
 										//TODO: Refactor 2/ monsterAcquireTarget()
 										my->monsterState = MONSTER_STATE_ATTACK; // charge state
@@ -3387,7 +3387,7 @@ timeToGoAgain:
 										else if ( my->checkEnemy(hit.entity) )
 										{
 											//TODO: Refactor w/ monsterAcquireTarget()
-											MONSTER_TARGET = hit.entity->getUID();
+											my->monsterTarget = hit.entity->getUID();
 											MONSTER_TARGETX = hit.entity->x;
 											MONSTER_TARGETY = hit.entity->y;
 											my->monsterState = MONSTER_STATE_ATTACK; // charge state
@@ -3399,7 +3399,7 @@ timeToGoAgain:
 									if ( my->checkEnemy(hit.entity) )
 									{
 										//TODO: Refactor w/ monsterAcquireTarget()
-										MONSTER_TARGET = hit.entity->getUID();
+										my->monsterTarget = hit.entity->getUID();
 										MONSTER_TARGETX = hit.entity->x;
 										MONSTER_TARGETY = hit.entity->y;
 										my->monsterState = MONSTER_STATE_ATTACK; // charge state
@@ -3445,7 +3445,7 @@ timeToGoAgain:
 					}
 					else
 					{
-						Entity* target = uidToEntity(MONSTER_TARGET);
+						Entity* target = uidToEntity(my->monsterTarget);
 						if ( target )
 						{
 							my->lookAtEntity(*target);
@@ -3455,7 +3455,7 @@ timeToGoAgain:
 				}
 				else
 				{
-					Entity* target = uidToEntity(MONSTER_TARGET);
+					Entity* target = uidToEntity(my->monsterTarget);
 					if ( target )
 					{
 						double tangent = atan2( target->y - my->y, target->x - my->x );
@@ -3468,7 +3468,7 @@ timeToGoAgain:
 			}
 			else
 			{
-				Entity* target = uidToEntity(MONSTER_TARGET);
+				Entity* target = uidToEntity(my->monsterTarget);
 				if ( target )
 				{
 					double tangent = atan2( target->y - my->y, target->x - my->x );
@@ -3486,7 +3486,7 @@ timeToGoAgain:
 			MONSTER_VELY = 0;
 
 			// turn towards target
-			Entity* target = uidToEntity(MONSTER_TARGET);
+			Entity* target = uidToEntity(my->monsterTarget);
 			if ( target != NULL )
 			{
 				dir = my->yaw - atan2( target->y - my->y, target->x - my->x );
@@ -3512,7 +3512,7 @@ timeToGoAgain:
 				if ( sqrt( pow(my->x - target->x, 2) + pow(my->y - target->y, 2) ) > TOUCHRANGE )
 				{
 					my->monsterState = MONSTER_STATE_WAIT;
-					MONSTER_TARGET = 0;
+					my->monsterTarget = 0;
 					int player = -1;
 					if ( target->behavior == &actPlayer )
 					{
@@ -3539,7 +3539,7 @@ timeToGoAgain:
 			{
 				// abandon conversation
 				my->monsterState = MONSTER_STATE_WAIT;
-				MONSTER_TARGET = 0;
+				my->monsterTarget = 0;
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_LICH_DODGE )     // dodge state (herx)
@@ -3886,7 +3886,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->getUID();
+					my->monsterTarget = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 					MONSTER_VELX = MONSTER_TARGETX - my->x;
@@ -3970,7 +3970,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->getUID();
+					my->monsterTarget = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 				}
@@ -4201,7 +4201,7 @@ timeToGoAgain:
 				}
 				if ( playertotrack )
 				{
-					MONSTER_TARGET = playertotrack->getUID();
+					my->monsterTarget = playertotrack->getUID();
 					MONSTER_TARGETX = playertotrack->x;
 					MONSTER_TARGETY = playertotrack->y;
 				}
@@ -4373,7 +4373,7 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 				if ( my->monsterSpecial >= 5 )
 				{
 					my->monsterSpecial = 90;
-					MONSTER_TARGET = 0;
+					my->monsterTarget = 0;
 					MONSTER_TARGETX = my->x - 50 + rand() % 100;
 					MONSTER_TARGETY = my->y - 50 + rand() % 100;
 					my->monsterState = MONSTER_STATE_PATH; // path state

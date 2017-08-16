@@ -21,8 +21,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_poison(skill[21]),
 	monster_attack(skill[8]),
 	monster_attacktime(skill[9]),
-	monster_state(skill[0]),
-	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
