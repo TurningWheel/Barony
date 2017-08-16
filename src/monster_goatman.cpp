@@ -20,24 +20,35 @@
 #include "collision.hpp"
 #include "player.hpp"
 
+const int NUM_GOATMAN_POTIONS = 4;
+const int NUM_GOATMAN_THROWN_WEAPONS = 2;
+
+const int NUM_GOATMAN_BOSS_GHARBAD_POTIONS = 3;
+const int NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS = 3;
+
+const int BOSS_GHARBAD = 1;
+
 void initGoatman(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
+	int boss = 0;
 
 	//Sprite 463 = Goatman head model
 	my->initMonster(463);
 
 	if ( multiplayer != CLIENT )
 	{
+		//TODO: Update with new goatman sound effects.
 		MONSTER_SPOTSND = 60;
 		MONSTER_SPOTVAR = 3;
 		MONSTER_IDLESND = 98;
 		MONSTER_IDLEVAR = 3;
 	}
+
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
@@ -51,34 +62,44 @@ void initGoatman(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
+			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
 			{
-			}
-			else
-			{
-				myStats->HP = 120;
-				myStats->MAXHP = 120;
-				myStats->OLDHP = myStats->HP;
-				strcpy(myStats->name, "The Potato King");
-				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, NULL);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, 0, false, NULL);
+				strcpy(myStats->name, "Gharbad");
+				boss = BOSS_GHARBAD;
+				//TODO: Boss stats
 
-				int c;
-				for ( c = 0; c < 3; c++ )
+				//Spawn in potions.
+				for ( int i = 0; i < rand()%NUM_GOATMAN_BOSS_GHARBAD_POTIONS + 5; ++i )
 				{
-					Entity* entity = summonMonster(GOBLIN, my->x, my->y);
-					if ( entity )
+					switch ( rand()%10 )
 					{
-						entity->parent = my->getUID();
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							newItem(POTION_BOOZE, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+							break;
+						case 9:
+							newItem(POTION_HEALING, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+							break;
+						default:
+							printlog("Tried to spawn goatman boss \"Gharbad\" invalid potion.");
+							break;
 					}
 				}
+
+				newItem(CRYSTAL_SHURIKEN, EXCELLENT, 1 + rand()%1, rand()%NUM_GOATMAN_BOSS_GHARBAD_THROWN_WEAPONS + 2, rand(), true, &myStats->inventory);
 			}
 
 			// random effects
 			if ( rand() % 8 == 0 )
 			{
-				myStats->EFFECTS[EFF_ASLEEP] = true;
-				myStats->EFFECTS_TIMERS[EFF_ASLEEP] = 1800 + rand() % 1800;
+				my->setEffect(EFF_ASLEEP, true, 1800 + rand() % 1800, false);
 			}
 
 			// generates equipment and weapons if available from editor
@@ -90,7 +111,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
 
-														 // count any inventory items set to default in edtior
+			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
@@ -107,6 +128,15 @@ void initGoatman(Entity* my, Stat* myStats)
 					break;
 			}
 
+			//Give weapons.
+			if ( !boss )
+			{
+				newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+				newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+			}
+
+			/*
+			//TODO: Armor needs to be fitted.
 			//give shield
 			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 			{
@@ -131,34 +161,6 @@ void initGoatman(Entity* my, Stat* myStats)
 						break;
 					case 9:
 						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-					case 2:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 3:
-					case 4:
-					case 5:
-						myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 6:
-					case 7:
-						myStats->weapon = newItem(IRON_MACE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 8:
-						myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 				}
 			}
@@ -234,7 +236,7 @@ void initGoatman(Entity* my, Stat* myStats)
 						myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 				}
-			}
+			}*/
 		}
 	}
 
