@@ -1263,6 +1263,11 @@ bool Entity::goatmanCanWieldItem(Item& item) const
 	switch ( itemCategory(&item) )
 	{
 		case WEAPON:
+			if ( !myStats->weapon || itemCategory(myStats->weapon) != WEAPON )
+			{
+				//Only pick up weapons if wielding a weapon.
+				return false;
+			}
 			return true;
 		case POTION:
 			switch ( item.type )
