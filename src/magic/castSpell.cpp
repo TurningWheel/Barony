@@ -110,6 +110,39 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
+    // Check to make sure the Caster is not swimming
+    // If the Caster is not a Magic Trap, they could potentially be in a water tile
+    // TODO: Currently only Players can swim, this must be expanded if that changes (caster->behavior != &actMagicTrap)
+    if ( player >= 0 ) // TODOR: Bad check, ambiguious
+    {
+        bool bIsCasterLevitating = isLevitating(stat); // If levitating, they can cast
+        bool bIsCasterWaterWalking = false;            // If water walking, they can cast
+
+        if ( stat->shoes != nullptr )
+        {
+            if ( stat->shoes->type == IRON_BOOTS_WATERWALKING )
+            {
+                bIsCasterWaterWalking = true;
+            }
+        }
+
+        // If both cases are false, the Caster could potentially be swimming
+        if ( bIsCasterLevitating != true && bIsCasterWaterWalking != true )
+        {
+            if ( players[player] && players[player]->entity )
+            {
+                int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
+                int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
+                if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+                {
+                    // The Caster is in a water tile, so must be swimming
+                    messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
+                    return;
+                }
+            }
+        }
+    }
+
 	if ( stat->EFFECTS[EFF_PARALYZED] )
 	{
 		return;
