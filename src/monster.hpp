@@ -179,7 +179,6 @@ static double damagetables[NUMMONSTERS][6] =
 
 #define HITRATE 45
 
-#define MONSTER_STATE my->skill[0] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
 #define MONSTER_TARGET my->skill[1] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
 #define MONSTER_INIT my->skill[3]
 //#define MONSTER_LOOKTIME my->skill[4]
