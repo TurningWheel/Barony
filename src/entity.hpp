@@ -333,6 +333,9 @@ public:
 	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
 
 	void checkGroundForItems();
+
+	bool canWieldItem(Item& item) const;
+	bool goatmanCanWieldItem(Item& item) const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

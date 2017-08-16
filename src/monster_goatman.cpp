@@ -237,6 +237,11 @@ void initGoatman(Entity* my, Stat* myStats)
 						break;
 				}
 			}*/
+
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				myStats->weapon = newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+			}
 		}
 	}
 
@@ -1239,3 +1244,46 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		MONSTER_ATTACKTIME = 0;
 	}
 }
+
+void Entity::goatmanChooseWeapon()
+{
+	bool hasPotions = false;
+	bool hasThrown = false;
+	bool hasMelee = false;
+}
+
+bool Entity::goatmanCanWieldItem(Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case POTION:
+			switch ( item.type )
+			{
+				case POTION_BOOZE:
+					return true;
+				case POTION_HEALING:
+					return true;
+				default:
+					return false;
+			}
+		case THROWN:
+			return true;
+		default:
+			return false;
+	}
+
+	return false;
+}
+
+
+
+
+

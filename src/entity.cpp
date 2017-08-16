@@ -1030,7 +1030,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 		return;    //Can't continue without these.
 	}
 
-	list_t* items = NULL;
+	list_t* items = nullptr;
 	//X and Y in terms of tiles.
 	int tx = x / 16;
 	int ty = y / 16;
@@ -1044,9 +1044,9 @@ void Entity::checkBetterEquipment(Stat* myStats)
 	getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
 	getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
 	int currentAC, newAC;
-	Item* oldarmor = NULL;
+	Item* oldarmor = nullptr;
 
-	node_t* node = NULL;
+	node_t* node = nullptr;
 
 	bool glovesandshoes = false;
 	if ( myStats->type == HUMAN )
@@ -1054,7 +1054,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 		glovesandshoes = true;
 	}
 
-	if (items)
+	if ( items )
 	{
 		/*
 		 * Rundown of the function:
@@ -1062,246 +1062,253 @@ void Entity::checkBetterEquipment(Stat* myStats)
 		 * Check the monster's item. Compare and grab the best item.
 		 */
 
-		for (node = items->first; node != NULL; node = node->next)
+		for (node = items->first; node != nullptr; node = node->next)
 		{
 			//Turn the entity into an item.
 			if (node->element)
 			{
 				Entity* entity = (Entity*)node->element;
-				Item* item = NULL;
-				if (entity != NULL)
+				Item* item = nullptr;
+				if (entity != nullptr)
 				{
-					item = newItemFromEntity( entity );
+					item = newItemFromEntity(entity);
 				}
 
-				if (item != NULL)
+				if ( !item )
 				{
-					//If weapon.
-					if (itemCategory(item) == WEAPON)
+					continue;
+				}
+
+				if ( !canWieldItem(*item) )
+				{
+					continue;
+				}
+
+				//If weapon.
+				if (itemCategory(item) == WEAPON)
+				{
+					if (myStats->weapon == nullptr) //Not currently holding a weapon.
 					{
-						if (myStats->weapon == NULL)   //Not currently holding a weapon.
+						myStats->weapon = item; //Assign the monster's weapon.
+						item = nullptr;
+						list_RemoveNode(entity->mynode);
+					}
+					else
+					{
+						//Ok, the monster has a weapon already. First check if the monster's weapon is cursed. Can't drop it if it is.
+						if (myStats->weapon->beatitude >= 0 && itemCategory(myStats->weapon) != MAGICSTAFF)
 						{
-							myStats->weapon = item; //Assign the monster's weapon.
+							//Next compare the two weapons. If the item on the ground is better, drop the weapon it's carrying and equip that one.
+							int weapon_tohit = myStats->weapon->weaponGetAttack();
+							int new_weapon_tohit = item->weaponGetAttack();
+
+							//If the new weapon does more damage than the current weapon.
+							if (new_weapon_tohit > weapon_tohit)
+							{
+								dropItemMonster(myStats->weapon, this, myStats);
+								myStats->weapon = item;
+								item = NULL;
+								list_RemoveNode(entity->mynode);
+							}
+						}
+					}
+				}
+				else if ( itemCategory(item) == ARMOR )
+				{
+					if ( checkEquipType(item) == TYPE_HAT )  // hats
+					{
+						if (myStats->helmet == NULL)   // nothing on head currently
+						{
+							// goblins love hats.
+							myStats->helmet = item; // pick up the hat.
+							item = NULL;
+							list_RemoveNode(entity->mynode);
+						}
+					}
+					else if ( checkEquipType(item) == TYPE_HELM )     // helmets
+					{
+						if (myStats->helmet == NULL)   // nothing on head currently
+						{
+							myStats->helmet = item; // pick up the helmet.
 							item = NULL;
 							list_RemoveNode(entity->mynode);
 						}
 						else
 						{
-							//Ok, the monster has a weapon already. First check if the monster's weapon is cursed. Can't drop it if it is.
-							if (myStats->weapon->beatitude >= 0 && itemCategory(myStats->weapon) != MAGICSTAFF)
+							if (myStats->helmet->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								//Next compare the two weapons. If the item on the ground is better, drop the weapon it's carrying and equip that one.
-								int weapon_tohit = myStats->weapon->weaponGetAttack();
-								int new_weapon_tohit = item->weaponGetAttack();
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->helmet;
+								myStats->helmet = item;
+								newAC = AC(myStats);
+								myStats->helmet = oldarmor;
 
-								//If the new weapon does more damage than the current weapon.
-								if (new_weapon_tohit > weapon_tohit)
+								//If the new armor is better than the current armor.
+								if (newAC > currentAC)
 								{
-									dropItemMonster(myStats->weapon, this, myStats);
-									myStats->weapon = item;
+									dropItemMonster(myStats->helmet, this, myStats);
+									myStats->helmet = item;
 									item = NULL;
 									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
 					}
-					else if ( itemCategory(item) == ARMOR )
+					else if ( checkEquipType(item) == TYPE_SHIELD )     // shields
 					{
-						if ( checkEquipType(item) == TYPE_HAT )  // hats
+						if (myStats->shield == NULL)   // nothing in left hand currently
 						{
-							if (myStats->helmet == NULL)   // nothing on head currently
-							{
-								// goblins love hats.
-								myStats->helmet = item; // pick up the hat.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
+							myStats->shield = item; // pick up the shield.
+							item = NULL;
+							list_RemoveNode(entity->mynode);
 						}
-						else if ( checkEquipType(item) == TYPE_HELM )     // helmets
+						else
 						{
-							if (myStats->helmet == NULL)   // nothing on head currently
+							if (myStats->shield->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								myStats->helmet = item; // pick up the helmet.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
-							else
-							{
-								if (myStats->helmet->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
-								{
-									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-									currentAC = AC(myStats);
-									oldarmor = myStats->helmet;
-									myStats->helmet = item;
-									newAC = AC(myStats);
-									myStats->helmet = oldarmor;
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->shield;
+								myStats->shield = item;
+								newAC = AC(myStats);
+								myStats->shield = oldarmor;
 
-									//If the new armor is better than the current armor.
-									if (newAC > currentAC)
-									{
-										dropItemMonster(myStats->helmet, this, myStats);
-										myStats->helmet = item;
-										item = NULL;
-										list_RemoveNode(entity->mynode);
-									}
-								}
-							}
-						}
-						else if ( checkEquipType(item) == TYPE_SHIELD )     // shields
-						{
-							if (myStats->shield == NULL)   // nothing in left hand currently
-							{
-								myStats->shield = item; // pick up the shield.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
-							else
-							{
-								if (myStats->shield->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								//If the new armor is better than the current armor (OR we're not carrying anything)
+								if (newAC > currentAC || !myStats->shield )
 								{
-									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-									currentAC = AC(myStats);
-									oldarmor = myStats->shield;
+									dropItemMonster(myStats->shield, this, myStats);
 									myStats->shield = item;
-									newAC = AC(myStats);
-									myStats->shield = oldarmor;
-
-									//If the new armor is better than the current armor (OR we're not carrying anything)
-									if (newAC > currentAC || !myStats->shield )
-									{
-										dropItemMonster(myStats->shield, this, myStats);
-										myStats->shield = item;
-										item = NULL;
-										list_RemoveNode(entity->mynode);
-									}
+									item = NULL;
+									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
-						else if ( checkEquipType(item) == TYPE_BREASTPIECE )     // breastpieces
+					}
+					else if ( checkEquipType(item) == TYPE_BREASTPIECE )     // breastpieces
+					{
+						if (myStats->breastplate == NULL)   // nothing on torso currently
 						{
-							if (myStats->breastplate == NULL)   // nothing on torso currently
+							myStats->breastplate = item; // pick up the armor.
+							item = NULL;
+							list_RemoveNode(entity->mynode);
+						}
+						else
+						{
+							if (myStats->breastplate->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								myStats->breastplate = item; // pick up the armor.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
-							else
-							{
-								if (myStats->breastplate->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->breastplate;
+								myStats->breastplate = item;
+								newAC = AC(myStats);
+								myStats->breastplate = oldarmor;
+
+								//If the new armor is better than the current armor.
+								if (newAC > currentAC)
 								{
-									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-									currentAC = AC(myStats);
-									oldarmor = myStats->breastplate;
+									dropItemMonster(myStats->breastplate, this, myStats);
 									myStats->breastplate = item;
-									newAC = AC(myStats);
-									myStats->breastplate = oldarmor;
-
-									//If the new armor is better than the current armor.
-									if (newAC > currentAC)
-									{
-										dropItemMonster(myStats->breastplate, this, myStats);
-										myStats->breastplate = item;
-										item = NULL;
-										list_RemoveNode(entity->mynode);
-									}
+									item = NULL;
+									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
-						else if ( checkEquipType(item) == TYPE_CLOAK )     // cloaks
+					}
+					else if ( checkEquipType(item) == TYPE_CLOAK )     // cloaks
+					{
+						if (myStats->cloak == NULL)   // nothing on back currently
 						{
-							if (myStats->cloak == NULL)   // nothing on back currently
+							myStats->cloak = item; // pick up the armor.
+							item = NULL;
+							list_RemoveNode(entity->mynode);
+						}
+						else
+						{
+							if (myStats->cloak->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								myStats->cloak = item; // pick up the armor.
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->cloak;
+								myStats->cloak = item;
+								newAC = AC(myStats);
+								myStats->cloak = oldarmor;
+
+								//If the new armor is better than the current armor.
+								if (newAC > currentAC)
+								{
+									dropItemMonster(myStats->cloak, this, myStats);
+									myStats->cloak = item;
+									item = NULL;
+									list_RemoveNode(entity->mynode);
+								}
+							}
+						}
+					}
+					if ( glovesandshoes && item != NULL )
+					{
+						if ( checkEquipType(item) == TYPE_BOOTS )   // boots
+						{
+							if (myStats->shoes == NULL)
+							{
+								myStats->shoes = item; // pick up the armor
 								item = NULL;
 								list_RemoveNode(entity->mynode);
 							}
 							else
 							{
-								if (myStats->cloak->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								if (myStats->shoes->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 								{
 									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 									currentAC = AC(myStats);
-									oldarmor = myStats->cloak;
-									myStats->cloak = item;
+									oldarmor = myStats->shoes;
+									myStats->shoes = item;
 									newAC = AC(myStats);
-									myStats->cloak = oldarmor;
+									myStats->shoes = oldarmor;
 
 									//If the new armor is better than the current armor.
 									if (newAC > currentAC)
 									{
-										dropItemMonster(myStats->cloak, this, myStats);
-										myStats->cloak = item;
+										dropItemMonster(myStats->shoes, this, myStats);
+										myStats->shoes = item;
 										item = NULL;
 										list_RemoveNode(entity->mynode);
 									}
 								}
 							}
 						}
-						if ( glovesandshoes && item != NULL )
+						else if ( checkEquipType(item) == TYPE_GLOVES )
 						{
-							if ( checkEquipType(item) == TYPE_BOOTS )   // boots
+							if (myStats->gloves == NULL)
 							{
-								if (myStats->shoes == NULL)
-								{
-									myStats->shoes = item; // pick up the armor
-									item = NULL;
-									list_RemoveNode(entity->mynode);
-								}
-								else
-								{
-									if (myStats->shoes->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
-									{
-										// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-										// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-										currentAC = AC(myStats);
-										oldarmor = myStats->shoes;
-										myStats->shoes = item;
-										newAC = AC(myStats);
-										myStats->shoes = oldarmor;
-
-										//If the new armor is better than the current armor.
-										if (newAC > currentAC)
-										{
-											dropItemMonster(myStats->shoes, this, myStats);
-											myStats->shoes = item;
-											item = NULL;
-											list_RemoveNode(entity->mynode);
-										}
-									}
-								}
+								myStats->gloves = item; // pick up the armor
+								item = NULL;
+								list_RemoveNode(entity->mynode);
 							}
-							else if ( checkEquipType(item) == TYPE_GLOVES )
+							else
 							{
-								if (myStats->gloves == NULL)
+								if (myStats->gloves->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 								{
-									myStats->gloves = item; // pick up the armor
-									item = NULL;
-									list_RemoveNode(entity->mynode);
-								}
-								else
-								{
-									if (myStats->gloves->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
-									{
-										// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-										// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-										currentAC = AC(myStats);
-										oldarmor = myStats->gloves;
-										myStats->gloves = item;
-										newAC = AC(myStats);
-										myStats->gloves = oldarmor;
+									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+									currentAC = AC(myStats);
+									oldarmor = myStats->gloves;
+									myStats->gloves = item;
+									newAC = AC(myStats);
+									myStats->gloves = oldarmor;
 
-										//If the new armor is better than the current armor.
-										if (newAC > currentAC)
-										{
-											dropItemMonster(myStats->gloves, this, myStats);
-											myStats->gloves = item;
-											item = NULL;
-											list_RemoveNode(entity->mynode);
-										}
+									//If the new armor is better than the current armor.
+									if (newAC > currentAC)
+									{
+										dropItemMonster(myStats->gloves, this, myStats);
+										myStats->gloves = item;
+										item = NULL;
+										list_RemoveNode(entity->mynode);
 									}
 								}
 							}
@@ -1309,7 +1316,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 					}
 				}
 
-				if (item != NULL)
+				if (item != nullptr)
 				{
 					free(item);
 				}
@@ -7137,6 +7144,29 @@ void Entity::checkGroundForItems()
 			//Goatman boss picks up items too.
 			checkBetterEquipment(myStats);
 			break;
+		default:
+			return;
+	}
+}
+
+bool Entity::canWieldItem(Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( myStats->type )
+	{
+		case GOBLIN:
+		case HUMAN:
+			return true;
+		case GOATMAN:
+			//TODO: Write a function.
+			return goatmanCanWieldItem(item);
+		default:
+			return false;
 	}
 }
 
