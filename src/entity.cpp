@@ -3186,14 +3186,14 @@ void getItemsOnTile(int x, int y, list_t** list)
 
 void Entity::attack(int pose, int charge, Entity* target)
 {
-	Stat* hitstats = NULL;
-	Stat* myStats;
-	Entity* entity;
+	Stat* hitstats = nullptr;
+	Stat* myStats = nullptr;
+	Entity* entity = nullptr;
 	int player, playerhit = -1;
 	double dist;
 	int c, i;
 	int weaponskill = -1;
-	node_t* node;
+	node_t* node = nullptr;
 	double tangent;
 
 	if ( (myStats = getStats()) == nullptr )
@@ -3202,13 +3202,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 	}
 
 	// get the player number, if applicable
-	if (behavior == &actPlayer)
+	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
 	}
 	else
 	{
-		player = -1;    // not a player
+		player = -1; // not a player
 	}
 
 	if (multiplayer != CLIENT)
@@ -3218,11 +3218,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if (stats[player]->weapon != nullptr)
 			{
-				players[player]->entity->skill[9] = pose;    // PLAYER_ATTACK
+				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
 			}
 			else
 			{
-				players[player]->entity->skill[9] = 1;    // special case for punch to eliminate spanking motion :p
+				players[player]->entity->skill[9] = 1; // special case for punch to eliminate spanking motion :p
 			}
 			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
 		}
@@ -3265,7 +3265,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
-		if ( myStats->weapon != NULL )
+		if ( myStats->weapon != nullptr )
 		{
 			// magical weapons
 			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
@@ -3568,6 +3568,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
+				//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )
 				{
@@ -3579,7 +3580,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						free(myStats->weapon);
 					}
-					myStats->weapon = NULL;
+					myStats->weapon = nullptr;
 				}
 				return;
 			}
@@ -3596,7 +3597,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			hit.entity = target;
 		}
 
-		if ( hit.entity != NULL )
+		if ( hit.entity != nullptr )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
@@ -3609,7 +3610,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 			if ( hit.entity->behavior == &actBoulder )
 			{
-				if ( myStats->weapon != NULL )
+				if ( myStats->weapon != nullptr )
 				{
 					if ( myStats->weapon->type == TOOL_PICKAXE )
 					{
@@ -6217,6 +6218,14 @@ bool Entity::hasRangedWeapon() const
 	{
 		return true;
 	}
+	else if ( itemCategory(myStats->weapon) == GEM )
+	{
+		return true;
+	}
+	else if ( itemCategory(myStats->weapon) == POTION )
+	{
+		return true;
+	}
 	
 	return false;
 }
@@ -7105,3 +7114,31 @@ void Entity::giveClientStats()
 		clientStats = new Stat(0);
 	}
 }
+
+void Entity::checkGroundForItems()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	//Calls the function for a monster to pick up an item, if it's a monster that picks up items.
+	switch ( myStats->type )
+	{
+		case GOBLIN:
+		case HUMAN:
+			if ( !strcmp(myStats->name, "") )
+			{
+				checkBetterEquipment(myStats);
+			}
+			break;
+		case GOATMAN:
+			//Goatman boss picks up items too.
+			checkBetterEquipment(myStats);
+			break;
+	}
+}
+
+
+

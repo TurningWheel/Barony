@@ -331,6 +331,8 @@ public:
 	void serverUpdateEffectsForEntity(bool guarantee);
 
 	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
+
+	void checkGroundForItems();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

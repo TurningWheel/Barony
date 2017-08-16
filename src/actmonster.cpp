@@ -1556,23 +1556,7 @@ void actMonster(Entity* my)
 		my->effectTimes();
 	}
 
-	//Calls the function for a monster to pick up an item, if it's a monster that picks up items.
-	if ( !strcmp(myStats->name, "") )
-	{
-		// only for monsters that have no name
-		switch ( myStats->type )
-		{
-			case GOBLIN:
-				//messagePlayer(0, "BLARG.");
-				my->checkBetterEquipment(myStats);
-				break;
-			case HUMAN:
-				my->checkBetterEquipment(myStats);
-				break;
-			default:
-				break;
-		}
-	}
+	my->checkGroundForItems();
 
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
