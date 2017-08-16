@@ -46,8 +46,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_energize(skill[23]),
 	char_torchtime(skill[25]),
 	char_poison(skill[21]),
-	monster_attack(skill[8]),
-	monster_attacktime(skill[9]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
@@ -3232,8 +3230,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_MAGIC_WINDUP3 )
 			{
-				monster_attack = pose;
-				monster_attacktime = 0;
+				monsterAttack = pose;
+				monsterAttackTime = 0;
 				if ( multiplayer == SERVER )
 				{
 					// be sure to update the clients with the new wind-up pose.
@@ -3244,13 +3242,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
 			{
-				monster_attack = pose;
+				monsterAttack = pose;
 			}
 			else
 			{
-				monster_attack = 1;    // punching
+				monsterAttack = 1;    // punching
 			}
-			monster_attacktime = 0;
+			monsterAttackTime = 0;
 		}
 
 		if (multiplayer == SERVER)

@@ -46,8 +46,6 @@ class Entity
 	Sint32& char_energize;
 	Sint32& char_torchtime;
 	Sint32& char_poison;
-	Sint32& monster_attack;
-	Sint32& monster_attacktime;
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
