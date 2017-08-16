@@ -1772,11 +1772,11 @@ Item* itemPickup(int player, Item* item)
 
 Item* newItemFromEntity(Entity* entity)
 {
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 }
 
 /*-------------------------------------------------------------------------------

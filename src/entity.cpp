@@ -3498,7 +3498,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return;
 			}
 
-			// potions and gems (throwing)
+			// potions & gems (throwing), and thrown weapons
 			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
 			{
 				playSoundEntity(this, 75, 64);

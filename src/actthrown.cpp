@@ -41,10 +41,17 @@
 
 void actThrown(Entity* my)
 {
-	Item* item;
+	Item* item = nullptr;
 	Category cat = GEM;
-	char* itemname = NULL;
+	char* itemname = nullptr;
 	node_t* node;
+
+	item = newItemFromEntity(my);
+	if ( item )
+	{
+		cat = itemCategory(item);
+		free(item);
+	}
 
 	if ( multiplayer == CLIENT )
 	{
@@ -98,8 +105,11 @@ void actThrown(Entity* my)
 		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
-		my->sprite = itemModel(item);
-		free(item);
+		if ( item )
+		{
+			my->sprite = itemModel(item);
+			free(item);
+		}
 	}
 
 	if ( multiplayer == CLIENT )
@@ -111,7 +121,7 @@ void actThrown(Entity* my)
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
-		if ( itemCategory(item) == THROWN )
+		if ( cat == THROWN )
 		{
 			// todo: adjust falling rates for thrown items if need be
 			THROWN_VELZ += 0.03;
@@ -180,7 +190,7 @@ void actThrown(Entity* my)
 			else
 			{
 				// fall
-				if ( itemCategory(item) == THROWN )
+				if ( cat == THROWN )
 				{
 					// todo: adjust falling rates for thrown items if need be
 					THROWN_VELZ += 0.04;
@@ -198,7 +208,7 @@ void actThrown(Entity* my)
 		else
 		{
 			// fall out of x and y bounds
-			if ( itemCategory(item) == THROWN )
+			if ( cat == THROWN )
 			{
 				// todo: adjust falling rates for thrown items if need be
 				THROWN_VELZ += 0.04;
@@ -230,6 +240,7 @@ void actThrown(Entity* my)
 	bool usedpotion = false;
 	if ( result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
+		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
 			real_t bouncePenalty = 0.7;
@@ -249,11 +260,10 @@ void actThrown(Entity* my)
 			}
 		}
 
-		item = newItemFromEntity(my);
 		cat = itemCategory(item);
 		itemname = item->getName();
 		item->count = 1;
-		if ( hit.entity != NULL )
+		if ( hit.entity != nullptr )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
@@ -565,9 +575,14 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+
+		if ( item )
+		{
+			free(item);
+		}
 	}
 
-	if ( itemCategory(item) == THROWN )
+	if ( cat == THROWN )
 	{
 		THROWN_VELX = THROWN_VELX * .99;
 		THROWN_VELY = THROWN_VELY * .99;
