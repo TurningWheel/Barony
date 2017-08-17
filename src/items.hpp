@@ -364,14 +364,14 @@ extern ItemGeneric items[NUMITEMS];
 
 //----------Item usage functions----------
 void item_PotionWater(Item* item, Entity* entity);
-void item_PotionBooze(Item* item, Entity* entity);
+void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem = true);
 void item_PotionJuice(Item* item, Entity* entity);
 void item_PotionSickness(Item* item, Entity* entity);
 void item_PotionConfusion(Item* item, Entity* entity);
 void item_PotionCureAilment(Item* item, Entity* entity);
 void item_PotionBlindness(Item* item, Entity* entity);
-void item_PotionHealing(Item* item, Entity* entity);
-void item_PotionExtraHealing(Item* item, Entity* entity);
+void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem = true);
+void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem = true);
 void item_PotionRestoreMagic(Item* item, Entity* entity);
 void item_PotionInvisibility(Item* item, Entity* entity);
 void item_PotionLevitation(Item* item, Entity* entity);

@@ -181,6 +181,10 @@ int power(int a, int b)
 
 void messagePlayer(int player, char* message, ...)
 {
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
 	char str[256] = { 0 };
 
 	va_list argptr;

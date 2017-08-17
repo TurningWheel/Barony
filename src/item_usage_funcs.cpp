@@ -126,7 +126,7 @@ void item_PotionWater(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionBooze(Item* item, Entity* entity)
+void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -146,7 +146,7 @@ void item_PotionBooze(Item* item, Entity* entity)
 		return;
 	}
 
-	if ( stats->amulet != NULL )
+	if ( stats->amulet != nullptr )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
@@ -180,7 +180,10 @@ void item_PotionBooze(Item* item, Entity* entity)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	if ( shouldConsumeItem )
+	{
+		consumeItem(item);
+	}
 }
 
 void item_PotionJuice(Item* item, Entity* entity)
@@ -778,7 +781,7 @@ void item_PotionParalysis(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionHealing(Item* item, Entity* entity)
+void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -798,11 +801,7 @@ void item_PotionHealing(Item* item, Entity* entity)
 		return;
 	}
 
-	if ( entity == NULL )
-	{
-		return;
-	}
-	if ( stats->amulet != NULL )
+	if ( stats->amulet != nullptr )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
@@ -830,7 +829,15 @@ void item_PotionHealing(Item* item, Entity* entity)
 	{
 		playSoundEntity(entity, 52, 64);
 		messagePlayer(player, language[772]);
-		consumeItem(item);
+		// stop bleeding
+		if ( stats->EFFECTS[EFF_BLEEDING] )
+		{
+			entity->setEffect(EFF_BLEEDING, false, 0, false);
+		}
+		if ( shouldConsumeItem )
+		{
+			consumeItem(item);
+		}
 		return;
 	}
 
@@ -838,6 +845,10 @@ void item_PotionHealing(Item* item, Entity* entity)
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier / 5.f;
+	if ( stats->type == GOATMAN )
+	{
+		amount *= 2; //Goatmen special.
+	}
 	entity->modHP(amount);
 
 	// play drink sound
@@ -848,17 +859,15 @@ void item_PotionHealing(Item* item, Entity* entity)
 	// stop bleeding
 	if ( stats->EFFECTS[EFF_BLEEDING] )
 	{
-		stats->EFFECTS[EFF_BLEEDING] = false;
-		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
-		if ( multiplayer == SERVER && player > 0 )
-		{
-			serverUpdateEffects(player);
-		}
+		entity->setEffect(EFF_BLEEDING, false, 0, false);
 	}
-	consumeItem(item);
+	if ( shouldConsumeItem )
+	{
+		consumeItem(item);
+	}
 }
 
-void item_PotionExtraHealing(Item* item, Entity* entity)
+void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -878,11 +887,7 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 		return;
 	}
 
-	if ( entity == NULL )
-	{
-		return;
-	}
-	if ( stats->amulet != NULL )
+	if ( stats->amulet != nullptr )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
@@ -910,7 +915,15 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	{
 		playSoundEntity(entity, 52, 64);
 		messagePlayer(player, language[772]);
-		consumeItem(item);
+		// stop bleeding
+		if ( stats->EFFECTS[EFF_BLEEDING] )
+		{
+			entity->setEffect(EFF_BLEEDING, false, 0, false);
+		}
+		if ( shouldConsumeItem )
+		{
+			consumeItem(item);
+		}
 		return;
 	}
 
@@ -918,6 +931,10 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier;
+	if ( stats->type == GOATMAN )
+	{
+		amount *= 2; //Goatman special.
+	}
 	entity->modHP(amount);
 
 	// play drink sound
@@ -928,14 +945,12 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	// stop bleeding
 	if ( stats->EFFECTS[EFF_BLEEDING] )
 	{
-		stats->EFFECTS[EFF_BLEEDING] = false;
-		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
-		if ( multiplayer == SERVER && player > 0 )
-		{
-			serverUpdateEffects(player);
-		}
+		entity->setEffect(EFF_BLEEDING, false, 0, false);
 	}
-	consumeItem(item);
+	if ( shouldConsumeItem )
+	{
+		consumeItem(item);
+	}
 }
 
 void item_PotionRestoreMagic(Item* item, Entity* entity)

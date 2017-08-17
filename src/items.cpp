@@ -941,7 +941,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 
 void consumeItem(Item* item)
 {
-	if ( item == NULL )
+	if ( item == nullptr )
 	{
 		return;
 	}
@@ -953,7 +953,7 @@ void consumeItem(Item* item)
 	item->count--;
 	if ( item->count <= 0 )
 	{
-		if ( item->node != NULL )
+		if ( item->node != nullptr )
 		{
 			int i;
 			for ( i = 0; i < MAXPLAYERS; i++ )
@@ -961,9 +961,9 @@ void consumeItem(Item* item)
 				if ( item->node->list == &stats[i]->inventory )
 				{
 					Item** slot;
-					if ( (slot = itemSlot(stats[i], item)) != NULL )
+					if ( (slot = itemSlot(stats[i], item)) != nullptr )
 					{
-						*slot = NULL;
+						*slot = nullptr;
 					}
 				}
 			}

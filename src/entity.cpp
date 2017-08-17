@@ -3594,6 +3594,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
+				if ( myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
+				{
+					//Goatman chug potions & then toss them at you.
+					if ( myStats->weapon->type == POTION_BOOZE )
+					{
+						item_PotionBooze(myStats->weapon, this, false);
+					}
+					else if ( myStats->weapon->type == POTION_HEALING )
+					{
+						item_PotionHealing(myStats->weapon, this, false);
+					}
+					else if ( myStats->weapon->type == POTION_EXTRAHEALING )
+					{
+						item_PotionExtraHealing(myStats->weapon, this, false);
+					}
+
+					//TODO: Choose a new weapon for the goatman.
+				}
+
 				//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )
@@ -7126,6 +7145,21 @@ void Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 
 	myStats->EFFECTS[effect] = value;
 	myStats->EFFECTS_TIMERS[effect] = duration;
+
+	int player = -1;
+	for ( int i = 0; i < numplayers; ++i )
+	{
+		if ( players[i]->entity == this )
+		{
+			player = i;
+			break;
+		}
+	}
+
+	if ( multiplayer == SERVER && player > 0 )
+	{
+		serverUpdateEffects(player);
+	}
 
 	if ( updateClients )
 	{
