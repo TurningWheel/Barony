@@ -233,6 +233,11 @@ public:
 
 	//--*CheckBetterEquipment functions--
 	void checkBetterEquipment(Stat* myStats);
+	void checkGroundForItems();
+	bool canWieldItem(Item& item) const;
+	bool goblinCanWieldItem(Item& item) const;
+	bool humanCanWieldItem(Item& item) const;
+	bool goatmanCanWieldItem(Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -331,11 +336,6 @@ public:
 	void serverUpdateEffectsForEntity(bool guarantee);
 
 	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
-
-	void checkGroundForItems();
-
-	bool canWieldItem(Item& item) const;
-	bool goatmanCanWieldItem(Item& item) const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

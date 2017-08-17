@@ -3542,8 +3542,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						item_PotionExtraHealing(myStats->weapon, this, false);
 						drankPotion = true;
 					}
-
-					//TODO: Choose a new weapon for the goatman.
 				}
 
 				playSoundEntity(this, 75, 64);
@@ -7241,8 +7239,9 @@ bool Entity::canWieldItem(Item& item) const
 	switch ( myStats->type )
 	{
 		case GOBLIN:
+			return goblinCanWieldItem(item);
 		case HUMAN:
-			return true;
+			return humanCanWieldItem(item);
 		case GOATMAN:
 			//TODO: Write a function.
 			return goatmanCanWieldItem(item);

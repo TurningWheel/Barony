@@ -1768,3 +1768,28 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		MONSTER_ATTACKTIME = 0;
 	}
 }
+
+bool Entity::humanCanWieldItem(Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case ARMOR:
+			return true;
+		case MAGICSTAFF:
+			return true;
+		case THROWN:
+			return true;
+		default:
+			return false;
+	}
+
+	return false;
+}
