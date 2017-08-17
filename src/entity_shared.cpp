@@ -290,6 +290,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_blank_3",
 	"spellbook_blank_4",
 	"spellbook_blank_5",
+	"potion_empty"
 	""
 };
 

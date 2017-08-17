@@ -345,7 +345,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -355,11 +363,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1002 + status], beatitude);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == BOOK )
@@ -388,7 +400,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -398,11 +418,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1028 + status], count, beatitude);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == BOOK )
@@ -434,7 +458,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -444,11 +476,15 @@ char* Item::description()
 			{
 				strncpy(tempstr, language[1054 + status], 1024);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == SCROLL )
@@ -484,7 +520,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -494,11 +538,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1080 + status], count);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == SCROLL )
@@ -1438,6 +1486,9 @@ void useItem(Item* item, int player)
 			break;
 		case POTION_PARALYSIS:
 			item_PotionParalysis(item, players[player]->entity);
+			break;
+		case POTION_EMPTY:
+			messagePlayer(player, language[2359]);
 			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);

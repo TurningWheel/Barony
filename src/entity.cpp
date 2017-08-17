@@ -3523,24 +3523,71 @@ void Entity::attack(int pose, int charge, Entity* target)
 			// potions & gems (throwing), and thrown weapons
 			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
 			{
+				bool drankPotion = false;
+				if ( myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
+				{
+					//Goatmen chug potions & then toss them at you.
+					if ( myStats->weapon->type == POTION_BOOZE && !myStats->EFFECTS[EFF_DRUNK] )
+					{
+						item_PotionBooze(myStats->weapon, this, false);
+						drankPotion = true;
+					}
+					else if ( myStats->weapon->type == POTION_HEALING )
+					{
+						item_PotionHealing(myStats->weapon, this, false);
+						drankPotion = true;
+					}
+					else if ( myStats->weapon->type == POTION_EXTRAHEALING )
+					{
+						item_PotionExtraHealing(myStats->weapon, this, false);
+						drankPotion = true;
+					}
+
+					//TODO: Choose a new weapon for the goatman.
+				}
+
 				playSoundEntity(this, 75, 64);
-				entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
-				entity->parent = uid;
-				entity->x = x;
-				entity->y = y;
-				entity->z = z;
-				entity->yaw = yaw;
-				entity->sizex = 1;
-				entity->sizey = 1;
-				entity->behavior = &actThrown;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-				entity->skill[10] = myStats->weapon->type;
-				entity->skill[11] = myStats->weapon->status;
-				entity->skill[12] = myStats->weapon->beatitude;
-				entity->skill[13] = 1;
-				entity->skill[14] = myStats->weapon->appearance;
-				entity->skill[15] = myStats->weapon->identified;
+				if ( drankPotion )
+				{
+					Item* emptyBottle = newItem(POTION_EMPTY, myStats->weapon->status, myStats->weapon->beatitude, 1, myStats->weapon->appearance, myStats->weapon->appearance, nullptr);
+					entity = newEntity(itemModel(emptyBottle), 1, map.entities); // thrown item
+					entity->parent = uid;
+					entity->x = x;
+					entity->y = y;
+					entity->z = z;
+					entity->yaw = yaw;
+					entity->sizex = 1;
+					entity->sizey = 1;
+					entity->behavior = &actThrown;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
+					entity->skill[10] = emptyBottle->type;
+					entity->skill[11] = emptyBottle->status;
+					entity->skill[12] = emptyBottle->beatitude;
+					entity->skill[13] = 1;
+					entity->skill[14] = emptyBottle->appearance;
+					entity->skill[15] = emptyBottle->identified;
+				}
+				else
+				{
+					entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
+					entity->parent = uid;
+					entity->x = x;
+					entity->y = y;
+					entity->z = z;
+					entity->yaw = yaw;
+					entity->sizex = 1;
+					entity->sizey = 1;
+					entity->behavior = &actThrown;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
+					entity->skill[10] = myStats->weapon->type;
+					entity->skill[11] = myStats->weapon->status;
+					entity->skill[12] = myStats->weapon->beatitude;
+					entity->skill[13] = 1;
+					entity->skill[14] = myStats->weapon->appearance;
+					entity->skill[15] = myStats->weapon->identified;
+				}
 
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
@@ -3592,25 +3639,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 						entity->vel_y = 5 * sin(this->yaw);
 						entity->vel_z = -.5;
 					}
-				}
-
-				if ( myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
-				{
-					//Goatman chug potions & then toss them at you.
-					if ( myStats->weapon->type == POTION_BOOZE )
-					{
-						item_PotionBooze(myStats->weapon, this, false);
-					}
-					else if ( myStats->weapon->type == POTION_HEALING )
-					{
-						item_PotionHealing(myStats->weapon, this, false);
-					}
-					else if ( myStats->weapon->type == POTION_EXTRAHEALING )
-					{
-						item_PotionExtraHealing(myStats->weapon, this, false);
-					}
-
-					//TODO: Choose a new weapon for the goatman.
 				}
 
 				//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
