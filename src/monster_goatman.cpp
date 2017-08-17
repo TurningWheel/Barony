@@ -901,7 +901,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 7:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -936,7 +936,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				if ( weaponarm != NULL )
+				if ( weaponarm != nullptr )
 				{
 					if ( entity->flags[INVISIBLE] != true )
 					{
