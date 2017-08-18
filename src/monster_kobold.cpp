@@ -504,7 +504,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.1);
+			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 			
 			if ( bodypart == 9 )
 			{
