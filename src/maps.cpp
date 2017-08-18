@@ -2157,7 +2157,6 @@ void assignActions(map_t* map)
 				}
 				item = newItemFromEntity(entity);
 				entity->sprite = itemModel(item);
-				free(item);
 				if ( !entity->skill[18] )
 				{
 					// shurikens and chakrams need to lie flat on floor as their models are rotated.
@@ -2180,6 +2179,7 @@ void assignActions(map_t* map)
 				}
 				entity->skill[18] = 1; // so the item retains its position
 				itemsdonebefore = true;
+				free(item);
 				break;
 			}
 			// gold:
