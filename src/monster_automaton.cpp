@@ -191,7 +191,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(230, 0, map.entities);
+	Entity* entity = newEntity(468, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -209,7 +209,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(236, 0, map.entities);
+	entity = newEntity(474, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -227,7 +227,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(235, 0, map.entities);
+	entity = newEntity(473, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -245,7 +245,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(233, 0, map.entities);
+	entity = newEntity(471, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -263,7 +263,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(231, 0, map.entities);
+	entity = newEntity(469, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -585,7 +585,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->sprite = itemModel(myStats->breastplate);
 						entity->scalex = 1;
 						// shrink the width of the breastplate
-						entity->scaley = 0.7;
+						entity->scaley = 0.8;
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -607,7 +607,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->scalex = 1;
 						// shrink the width of the breastplate
-						entity->scaley = 0.7;
+						entity->scaley = 0.8;
 					}
 					else
 					{
