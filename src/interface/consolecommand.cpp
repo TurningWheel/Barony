@@ -1435,14 +1435,14 @@ void consoleCommand(char* command_str)
 				// process line
 				if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
 				{
-					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
+					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb index!", filename, line);
 					printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
 					success = false;
 					continue;
 				}
 				if ( sscanf(data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2]) != 4 )
 				{
-					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
+					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb offsets!", filename, line);
 					printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
 					success = false;
 					continue;
