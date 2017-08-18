@@ -5947,36 +5947,100 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	return 1;
 }
 
-int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
+bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 {
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+
+	Stat* myStats;
+
+	if ( this->behavior == &actPlayer )
+	{
+		myStats = stats[this->skill[2]]; // skill[2] contains the player number.
+	}
+	else
+	{
+		myStats = this->getStats();
+	}
+
 	if ( myStats == nullptr )
 	{
-		return 0;
+		return false;
 	}
 	if ( myStats->shoes == nullptr )
 	{
-		return 0;
+		return false;
 	}
 
-	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
-		ent->sprite = 148 + myStats->sex + spriteOffset;
+	switch ( myStats->type )
+	{
+		case HUMAN:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 148 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 152 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 156 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 499 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 521 + myStats->sex + spriteOffset;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		// fall throughs below
+		case AUTOMATON:
+		case GOATMAN:
+		case INSECTOID:
+		case KOBOLD:
+		case GOBLIN:
+		case SKELETON:
+		case GNOME:
+		case SHADOW:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 148 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 152 + spriteOffset;
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 156 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 499 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 521 + spriteOffset;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		default:
+			break;
 	}
-	else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING ) {
-		ent->sprite = 152 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER ) {
-		ent->sprite = 156 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type == CRYSTAL_BOOTS ) {
-		ent->sprite = 499 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type == ARTIFACT_BOOTS ) {
-		ent->sprite = 521 + myStats->sex + spriteOffset;
-	}
-	else {
-		return 0;
-	}
-	return 1;
+	
+	return true;
 }
 
 
@@ -6949,7 +7013,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 		return;
 	}
 
-	if ( my->isInvisible() == false	) //TODO: isInvisible()?
+	if ( this->flags[INVISIBLE] == false ) //TODO: isInvisible()?
 	{
 		if ( this->sprite == items[SHORTBOW].index )
 		{

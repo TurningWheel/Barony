@@ -324,6 +324,8 @@ public:
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
+	// server only function to set boot sprites on monsters.
+	bool setBootSprite(Entity* leg, int spriteOffset);
 
 	void lookAtEntity(Entity& target);
 
@@ -457,13 +459,12 @@ void setRandomMonsterStats(Stat* stats);
 
 int checkEquipType(Item *ITEM);
 
-#define SPRITE_GLOVE_RIGHT_OFFSET 0
-#define SPRITE_GLOVE_LEFT_OFFSET 4
-#define SPRITE_BOOT_RIGHT_OFFSET 0
-#define SPRITE_BOOT_LEFT_OFFSET 2
+static const int SPRITE_GLOVE_RIGHT_OFFSET = 0;
+static const int SPRITE_GLOVE_LEFT_OFFSET = 4;
+static const int SPRITE_BOOT_RIGHT_OFFSET = 0;
+static const int SPRITE_BOOT_LEFT_OFFSET = 2;
 
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
-int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
