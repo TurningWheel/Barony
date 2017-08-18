@@ -1454,7 +1454,7 @@ void consoleCommand(char* command_str)
 		}
 		if ( success )
 		{
-			messagePlayer(clientnum, "Successfully reloaded all limbs.txt! Please restart the current level to apply changes");
+			messagePlayer(clientnum, "Successfully reloaded all limbs.txt! Please restart the current level to apply changes.");
 		}
 	}
 	else
