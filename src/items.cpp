@@ -345,7 +345,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -355,11 +363,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1002 + status], beatitude);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == BOOK )
@@ -388,7 +400,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -398,11 +418,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1028 + status], count, beatitude);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == BOOK )
@@ -434,7 +458,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -444,11 +476,15 @@ char* Item::description()
 			{
 				strncpy(tempstr, language[1054 + status], 1024);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == SCROLL )
@@ -484,7 +520,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -494,11 +538,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1080 + status], count);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == SCROLL )
@@ -941,7 +989,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 
 void consumeItem(Item* item)
 {
-	if ( item == NULL )
+	if ( item == nullptr )
 	{
 		return;
 	}
@@ -953,7 +1001,7 @@ void consumeItem(Item* item)
 	item->count--;
 	if ( item->count <= 0 )
 	{
-		if ( item->node != NULL )
+		if ( item->node != nullptr )
 		{
 			int i;
 			for ( i = 0; i < MAXPLAYERS; i++ )
@@ -961,9 +1009,9 @@ void consumeItem(Item* item)
 				if ( item->node->list == &stats[i]->inventory )
 				{
 					Item** slot;
-					if ( (slot = itemSlot(stats[i], item)) != NULL )
+					if ( (slot = itemSlot(stats[i], item)) != nullptr )
 					{
-						*slot = NULL;
+						*slot = nullptr;
 					}
 				}
 			}
@@ -1439,6 +1487,9 @@ void useItem(Item* item, int player)
 		case POTION_PARALYSIS:
 			item_PotionParalysis(item, players[player]->entity);
 			break;
+		case POTION_EMPTY:
+			messagePlayer(player, language[2359]);
+			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;
@@ -1582,6 +1633,12 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_SUMMON:
 		case SPELLBOOK_STONEBLOOD:
 		case SPELLBOOK_BLEED:
+		case SPELLBOOK_REFLECT_MAGIC:
+		case SPELLBOOK_BLANK_1:
+		case SPELLBOOK_BLANK_2:
+		case SPELLBOOK_BLANK_3:
+		case SPELLBOOK_BLANK_4:
+		case SPELLBOOK_BLANK_5:
 			item_Spellbook(item, player);
 			break;
 		case GEM_ROCK:
@@ -1766,11 +1823,11 @@ Item* itemPickup(int player, Item* item)
 
 Item* newItemFromEntity(Entity* entity)
 {
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 }
 
 /*-------------------------------------------------------------------------------

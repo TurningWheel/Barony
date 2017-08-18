@@ -39,6 +39,10 @@ void item_PotionWater(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -122,7 +126,7 @@ void item_PotionWater(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionBooze(Item* item, Entity* entity)
+void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -137,8 +141,12 @@ void item_PotionBooze(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
-	if ( stats->amulet != NULL )
+	if ( stats->amulet != nullptr )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
@@ -172,7 +180,10 @@ void item_PotionBooze(Item* item, Entity* entity)
 
 	// play drink sound
 	playSoundEntity(entity, 52, 64);
-	consumeItem(item);
+	if ( shouldConsumeItem )
+	{
+		consumeItem(item);
+	}
 }
 
 void item_PotionJuice(Item* item, Entity* entity)
@@ -190,6 +201,10 @@ void item_PotionJuice(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -239,6 +254,10 @@ void item_PotionSickness(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( entity == NULL )
 	{
@@ -303,6 +322,10 @@ void item_PotionConfusion(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -334,7 +357,7 @@ void item_PotionConfusion(Item* item, Entity* entity)
 	stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
 	if ( entity->behavior == &actMonster )
 	{
-		entity->skill[1] = 0;    // monsters forget what they're doing
+		entity->monsterTarget = 0; // monsters forget what they're doing
 	}
 	serverUpdateEffects(player);
 
@@ -359,6 +382,10 @@ void item_PotionCureAilment(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -419,6 +446,10 @@ void item_PotionBlindness(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -470,6 +501,10 @@ void item_PotionInvisibility(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -521,6 +556,10 @@ void item_PotionLevitation(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -572,6 +611,10 @@ void item_PotionSpeed(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -632,6 +675,10 @@ void item_PotionAcid(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( entity == NULL )
 	{
@@ -694,6 +741,10 @@ void item_PotionParalysis(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( stats->amulet != NULL )
 	{
@@ -730,7 +781,7 @@ void item_PotionParalysis(Item* item, Entity* entity)
 	consumeItem(item);
 }
 
-void item_PotionHealing(Item* item, Entity* entity)
+void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -745,12 +796,12 @@ void item_PotionHealing(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
-
-	if ( entity == NULL )
+	if ( !stats )
 	{
 		return;
 	}
-	if ( stats->amulet != NULL )
+
+	if ( stats->amulet != nullptr )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
@@ -778,7 +829,15 @@ void item_PotionHealing(Item* item, Entity* entity)
 	{
 		playSoundEntity(entity, 52, 64);
 		messagePlayer(player, language[772]);
-		consumeItem(item);
+		// stop bleeding
+		if ( stats->EFFECTS[EFF_BLEEDING] )
+		{
+			entity->setEffect(EFF_BLEEDING, false, 0, false);
+		}
+		if ( shouldConsumeItem )
+		{
+			consumeItem(item);
+		}
 		return;
 	}
 
@@ -786,6 +845,10 @@ void item_PotionHealing(Item* item, Entity* entity)
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier / 5.f;
+	if ( stats->type == GOATMAN )
+	{
+		amount *= 2; //Goatmen special.
+	}
 	entity->modHP(amount);
 
 	// play drink sound
@@ -796,17 +859,15 @@ void item_PotionHealing(Item* item, Entity* entity)
 	// stop bleeding
 	if ( stats->EFFECTS[EFF_BLEEDING] )
 	{
-		stats->EFFECTS[EFF_BLEEDING] = false;
-		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
-		if ( multiplayer == SERVER && player > 0 )
-		{
-			serverUpdateEffects(player);
-		}
+		entity->setEffect(EFF_BLEEDING, false, 0, false);
 	}
-	consumeItem(item);
+	if ( shouldConsumeItem )
+	{
+		consumeItem(item);
+	}
 }
 
-void item_PotionExtraHealing(Item* item, Entity* entity)
+void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 {
 	if (!entity)
 	{
@@ -821,12 +882,12 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
-
-	if ( entity == NULL )
+	if ( !stats )
 	{
 		return;
 	}
-	if ( stats->amulet != NULL )
+
+	if ( stats->amulet != nullptr )
 	{
 		if ( stats->amulet->type == AMULET_STRANGULATION )
 		{
@@ -854,7 +915,15 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	{
 		playSoundEntity(entity, 52, 64);
 		messagePlayer(player, language[772]);
-		consumeItem(item);
+		// stop bleeding
+		if ( stats->EFFECTS[EFF_BLEEDING] )
+		{
+			entity->setEffect(EFF_BLEEDING, false, 0, false);
+		}
+		if ( shouldConsumeItem )
+		{
+			consumeItem(item);
+		}
 		return;
 	}
 
@@ -862,6 +931,10 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	int multiplier = std::max(5, item->beatitude + 5);
 
 	amount *= multiplier;
+	if ( stats->type == GOATMAN )
+	{
+		amount *= 2; //Goatman special.
+	}
 	entity->modHP(amount);
 
 	// play drink sound
@@ -872,14 +945,12 @@ void item_PotionExtraHealing(Item* item, Entity* entity)
 	// stop bleeding
 	if ( stats->EFFECTS[EFF_BLEEDING] )
 	{
-		stats->EFFECTS[EFF_BLEEDING] = false;
-		stats->EFFECTS_TIMERS[EFF_BLEEDING] = 0;
-		if ( multiplayer == SERVER && player > 0 )
-		{
-			serverUpdateEffects(player);
-		}
+		entity->setEffect(EFF_BLEEDING, false, 0, false);
 	}
-	consumeItem(item);
+	if ( shouldConsumeItem )
+	{
+		consumeItem(item);
+	}
 }
 
 void item_PotionRestoreMagic(Item* item, Entity* entity)
@@ -897,6 +968,10 @@ void item_PotionRestoreMagic(Item* item, Entity* entity)
 		player = entity->skill[2];
 	}
 	stats = entity->getStats();
+	if ( !stats )
+	{
+		return;
+	}
 
 	if ( entity == NULL )
 	{
@@ -2774,6 +2849,24 @@ void item_Spellbook(Item* item, int player)
 				break;
 			case SPELLBOOK_BLEED:
 				addSpell(SPELL_BLEED, player);
+				break;
+			case SPELLBOOK_REFLECT_MAGIC:
+				addSpell(SPELL_REFLECT_MAGIC, player);
+				break;
+			case SPELLBOOK_BLANK_1:
+				messagePlayer(player, "You no can has spell of TODO!");
+				break;
+			case SPELLBOOK_BLANK_2:
+				messagePlayer(player, "Wot?! Blank speel?");
+				break;
+			case SPELLBOOK_BLANK_3:
+				messagePlayer(player, "No, you no can has!");
+				break;
+			case SPELLBOOK_BLANK_4:
+				messagePlayer(player, "Oops, misplaced that spell...");
+				break;
+			case SPELLBOOK_BLANK_5:
+				messagePlayer(player, "Nope. Spell doesn't exist yet.");
 				break;
 			default:
 				addSpell(SPELL_FORCEBOLT, player);

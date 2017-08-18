@@ -19,10 +19,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_energize(skill[23]),
 	char_torchtime(skill[25]),
 	char_poison(skill[21]),
-	monster_attack(skill[8]),
-	monster_attacktime(skill[9]),
-	monster_state(skill[0]),
-	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
@@ -37,6 +33,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
+	monsterTargetX(fskill[2]),
+	monsterTargetY(fskill[3]),
 	crystalInitialised(skill[1]),
 	crystalTurning(skill[3]),
 	crystalTurnStartDir(skill[4]),
@@ -61,7 +59,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttack(skill[8]),
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
-	monsterWeaponYaw(fskill[5])
+	monsterWeaponYaw(fskill[5]),
+	particleDuration(skill[0])
 {
 	int c;
 	// add the entity to the entity list
@@ -144,19 +143,29 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	ranbehavior = false;
 	parent = 0;
 	path = nullptr;
+
+	clientStats = nullptr;
+	clientsHaveItsStats = false;
 }
 
-Entity::~Entity() { }
+Entity::~Entity()
+{
+	if ( clientStats )
+	{
+		delete clientStats;
+	}
+}
 
 Stat* Entity::getStats() const
 {
-		if ( this->children.first != nullptr )
+
+	if ( this->children.first != nullptr )
+	{
+		if ( this->children.first->next != nullptr )
 		{
-			if ( this->children.first->next != nullptr )
-			{
-				return (Stat*)this->children.first->next->element;
-			}
+			return (Stat*)this->children.first->next->element;
 		}
+	}
 
 
 	return nullptr;

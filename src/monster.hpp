@@ -85,7 +85,6 @@ static char monstertypename[][15] =
 	"automaton",
 	"lichice",
 	"lichfire"
-
 };
 
 // body part focal points
@@ -179,12 +178,8 @@ static double damagetables[NUMMONSTERS][6] =
 
 #define HITRATE 45
 
-#define MONSTER_STATE my->skill[0] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
-#define MONSTER_TARGET my->skill[1] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
 #define MONSTER_INIT my->skill[3]
-//#define MONSTER_LOOKTIME my->skill[4]
 #define MONSTER_NUMBER my->skill[5]
-//#define MONSTER_MOVETIME my->skill[6]
 #define MONSTER_HITTIME my->skill[7]
 #define MONSTER_ATTACK my->skill[8]
 #define MONSTER_ATTACKTIME my->skill[9]
@@ -204,9 +199,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_VELX my->vel_x
 #define MONSTER_VELY my->vel_y
 #define MONSTER_VELZ my->vel_z
-#define MONSTER_TARGETX my->fskill[2]
-#define MONSTER_TARGETY my->fskill[3]
-//#define MONSTER_LOOKDIR my->fskill[4]
 #define MONSTER_WEAPONYAW my->fskill[5]
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
 
@@ -345,19 +337,19 @@ void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist)
 bool forceFollower(Entity& leader, Entity& follower);
 
 //--monsterState constants
-static const int MONSTER_STATE_WAIT = 0;
-static const int MONSTER_STATE_ATTACK = 1;
-static const int MONSTER_STATE_PATH = 2;
-static const int MONSTER_STATE_HUNT = 3;
-static const int MONSTER_STATE_TALK = 4;
-static const int MONSTER_STATE_LICH_DODGE = 5;
-static const int MONSTER_STATE_LICH_SUMMON = 6;
-static const int MONSTER_STATE_LICH_DEATH = 7;
-static const int MONSTER_STATE_DEVIL_DEATH = 8;
-static const int MONSTER_STATE_DEVIL_TELEPORT = 9;
-static const int MONSTER_STATE_DEVIL_RISING = 10;
-static const int MONSTER_STATE_DEVIL_SUMMON = 11;
-static const int MONSTER_STATE_DEVIL_BOULDER = 12;
+static const Sint32 MONSTER_STATE_WAIT = 0;
+static const Sint32 MONSTER_STATE_ATTACK = 1;
+static const Sint32 MONSTER_STATE_PATH = 2;
+static const Sint32 MONSTER_STATE_HUNT = 3;
+static const Sint32 MONSTER_STATE_TALK = 4;
+static const Sint32 MONSTER_STATE_LICH_DODGE = 5;
+static const Sint32 MONSTER_STATE_LICH_SUMMON = 6;
+static const Sint32 MONSTER_STATE_LICH_DEATH = 7;
+static const Sint32 MONSTER_STATE_DEVIL_DEATH = 8;
+static const Sint32 MONSTER_STATE_DEVIL_TELEPORT = 9;
+static const Sint32 MONSTER_STATE_DEVIL_RISING = 10;
+static const Sint32 MONSTER_STATE_DEVIL_SUMMON = 11;
+static const Sint32 MONSTER_STATE_DEVIL_BOULDER = 12;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;

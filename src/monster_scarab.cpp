@@ -68,8 +68,7 @@ void initScarab(Entity* my, Stat* myStats)
 				myStats->PER = -2;
 				myStats->CHR = 5;
 				myStats->LVL = 10;
-				myStats->EFFECTS[EFF_MAGICREFLECT] = true;
-				myStats->EFFECTS_TIMERS[EFF_MAGICREFLECT] = -1; //Never expires.
+				my->setEffect(EFF_MAGICREFLECT, true, -1, true); //-1 duration, never expires.
 				newItem(GEM_AMBER, static_cast<Status>(1 + rand() % 4), 1, 1, rand(), true, &myStats->inventory);
 				myStats->weapon = newItem(SPELLBOOK_COLD, EXCELLENT, 0, 1, 0, false, NULL);
 				customItemsToGenerate = customItemsToGenerate - 1;
@@ -311,7 +310,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( MONSTER_STATE == 1 )
+				else if ( my->monsterState == 1 )
 				{
 					if ( entity->pitch < 0.5 )
 					{
@@ -331,7 +330,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						entity->roll = -0.2;
 					}
 				}
-				else if ( MONSTER_STATE == 0 )
+				else if ( my->monsterState == 0 )
 				{
 					if ( entity->pitch > 0 )
 					{
@@ -412,7 +411,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( MONSTER_STATE == 1 )
+				else if ( my->monsterState == 1 )
 				{
 					if ( entity->pitch < 0.5 )
 					{
@@ -432,7 +431,7 @@ void scarabAnimate(Entity* my, Stat* myStats, double dist)
 						entity->roll = 0.2;
 					}
 				}
-				else if ( MONSTER_STATE == 0 )
+				else if ( my->monsterState == 0 )
 				{
 					if ( entity->pitch > 0 )
 					{

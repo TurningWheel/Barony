@@ -36,6 +36,8 @@
 static const int NUMENTITYSKILLS = 60;
 static const int NUMENTITYFSKILLS = 30;
 
+struct spell_t;
+
 // entity class
 class Entity
 {
@@ -44,10 +46,6 @@ class Entity
 	Sint32& char_energize;
 	Sint32& char_torchtime;
 	Sint32& char_poison;
-	Sint32& monster_attack;
-	Sint32& monster_attacktime;
-	Sint32& monster_state;
-	Sint32& monster_target;
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
@@ -142,8 +140,10 @@ public:
 	Sint32& chestPreventLockpickCapstoneExploit;
 
 	//--PUBLIC MONSTER SKILLS--
-	Sint32& monsterState;
-	Sint32& monsterTarget;
+	Sint32& monsterState; //skill[0]
+	Sint32& monsterTarget; //skill[1]
+	real_t& monsterTargetX; //fskill[2]
+	real_t& monsterTargetY; //fskill[3]
 	Sint32& monsterSpecial;
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
@@ -170,10 +170,18 @@ public:
 	real_t& crystalMinZVelocity;
 	real_t& crystalTurnVelocity; // how fast to turn on click.
 
+	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
+	Sint32& particleDuration;
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 
 	list_t* path; // pathfinding stuff. Most of the code currently stuffs that into children, but the magic code makes use of this variable instead.
+
+	//Dummy stats to make certain visual features work on clients (such as ambient particles for magic reflection).
+	Stat* clientStats;
+	bool clientsHaveItsStats;
+	void giveClientStats();
 
 	// behavior function pointer
 	void (*behavior)(class Entity* my);
@@ -193,6 +201,7 @@ public:
 	int entityLight(); //NOTE: Name change conflicted with light_t *light
 
 	void handleEffects(Stat* myStats);
+	void handleEffectsClient();
 
 	void effectTimes();
 	void increaseSkill(int skill);
@@ -204,6 +213,7 @@ public:
 
 	void setMP(int amount);
 	void modMP(int amount); //Adds amount to MP.
+	int getMP();
 
 	void drainMP(int amount); //Removes this much from MP. Anything over the entity's MP is subtracted from their health. Can be very dangerous.
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
@@ -225,6 +235,11 @@ public:
 
 	//--*CheckBetterEquipment functions--
 	void checkBetterEquipment(Stat* myStats);
+	void checkGroundForItems();
+	bool canWieldItem(Item& item) const;
+	bool goblinCanWieldItem(Item& item) const;
+	bool humanCanWieldItem(Item& item) const;
+	bool goatmanCanWieldItem(Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -311,6 +326,27 @@ public:
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
 
 	void lookAtEntity(Entity& target);
+
+	spell_t* getActiveMagicEffect(int spellID);
+
+	/*
+	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
+	 */
+	void spawnAmbientParticles(int chance, int particleSprite, int duration);
+
+	//Updates the EFFECTS variable for all clients for this entity.
+	void serverUpdateEffectsForEntity(bool guarantee);
+
+	/*
+	 * If set on a player, will call serverUpdateEffects() on the player.
+	 * @param guarantee: Causes serverUpdateEffectsForEntity() to use sendPacketSafe() rather than just sendPacket().
+	 */
+	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
+
+	/*
+	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
+	 */
+	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -398,10 +434,13 @@ void addItemToChestClientside(Item* item); //Called by the client to manage all 
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
+//---Misc act functions---
+void actAmbientParticleEffectIdle(Entity* my);
+
 //checks if a sprite falls in certain sprite ranges
 
-const int NUM_ITEM_STRINGS = 207;
-const int NUM_ITEM_STRINGS_BY_TYPE = 69;
+const int NUM_ITEM_STRINGS = 213;
+const int NUM_ITEM_STRINGS_BY_TYPE = 75;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[108][64];

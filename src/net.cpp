@@ -181,6 +181,10 @@ int power(int a, int b)
 
 void messagePlayer(int player, char* message, ...)
 {
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
 	char str[256] = { 0 };
 
 	va_list argptr;
@@ -329,6 +333,10 @@ void sendEntityTCP(Entity* entity, int c)
 #endif
 	}
 	SDL_Delay(50);
+	if ( entity->clientsHaveItsStats )
+	{
+		entity->serverUpdateEffectsForEntity(false);
+	}
 }
 
 void sendEntityUDP(Entity* entity, int c, bool guarantee)
@@ -388,6 +396,10 @@ void sendEntityUDP(Entity* entity, int c, bool guarantee)
 	else
 	{
 		sendPacket(net_sock, -1, net_packet, c - 1);
+	}
+	if ( entity->clientsHaveItsStats )
+	{
+		entity->serverUpdateEffectsForEntity(false);
 	}
 }
 
@@ -791,6 +803,24 @@ Entity* receiveEntity(Entity* entity)
 {
 	bool newentity = false;
 	int c;
+
+	//TODO: Find out if this is needed.
+	/*bool oldeffects[NUMEFFECTS];
+	Stat* entityStats = entity->getStats();
+
+	for ( int i = 0; i < NUMEFFECTS; ++i )
+	{
+		if ( !entityStats )
+		{
+			oldeffects[i] = 0;
+		}
+		else
+		{
+			oldeffects[i] = entityStats->EFFECTS[i];
+		}
+	}
+	//Yes, it is necessary. I don't think I like this solution though, will try something else.
+	*/
 
 	if ( entity == NULL )
 	{
@@ -1746,6 +1776,7 @@ void clientHandlePacket()
 		return;
 	}
 
+	//Add spell.
 	else if ( !strncmp((char*)net_packet->data, "ASPL", 4) )
 	{
 		if ( net_packet->len != 6 ) //Need to get the actual length, not reported...Should be a generic check at the top of the function, if len != actual len, then abort.
@@ -2524,6 +2555,54 @@ void clientHandlePacket()
 		{
 			pauseGame(2, false);
 		}
+		return;
+	}
+
+	else if ( !strncmp((char*)net_packet->data, "EFFE", 4))
+	{
+		/*
+		 * Packet breakdown:
+		 * [0][1][2][3]: "EFFE"
+		 * [4][5][6][7]: Entity's UID.
+		 * [8][9][10][11]: Entity's effects.
+		 */
+
+		Uint32 uid = static_cast<int>(SDLNet_Read32(&net_packet->data[4]));
+
+		Entity* entity = map.getEntityWithUID(uid);
+
+		if ( entity )
+		{
+			if ( entity->behavior == &actPlayer && entity->skill[2] == clientnum )
+			{
+				//Don't update this client's entity! Use the dedicated function for that.
+				return;
+			}
+
+			Stat *stats = entity->getStats();
+			if ( !stats )
+			{
+				entity->giveClientStats();
+				stats = entity->getStats();
+				if ( !stats )
+				{
+					return;
+				}
+			}
+
+			for ( int i = 0; i < NUMEFFECTS; ++i )
+			{
+				if ( net_packet->data[8 + i / 8]&power(2, i - (i / 8) * 8) )
+				{
+					stats->EFFECTS[i] = true;
+				}
+				else
+				{
+					stats->EFFECTS[i] = false;
+				}
+			}
+		}
+
 		return;
 	}
 

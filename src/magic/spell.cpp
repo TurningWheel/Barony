@@ -51,6 +51,7 @@ spellElement_t spellElement_summon;
 spellElement_t spellElement_stoneblood;
 spellElement_t spellElement_bleed;
 spellElement_t spellElement_dominate;
+spellElement_t spellElement_reflectMagic;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -78,6 +79,7 @@ spell_t spell_summon;
 spell_t spell_stoneblood;
 spell_t spell_bleed;
 spell_t spell_dominate;
+spell_t spell_reflectMagic;
 
 void addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -167,6 +169,9 @@ void addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_DOMINATE:
 			new_spell = copySpell(&spell_dominate);
+			break;
+		case SPELL_REFLECT_MAGIC:
+			new_spell = copySpell(&spell_reflectMagic);
 			break;
 		default:
 			return;
@@ -403,7 +408,7 @@ void equipSpell(spell_t* spell, int playernum)
 
 spell_t* getSpellFromID(int ID)
 {
-	spell_t* spell = NULL;
+	spell_t* spell = nullptr;
 
 	switch (ID)
 	{
@@ -484,6 +489,11 @@ spell_t* getSpellFromID(int ID)
 			break;
 		case SPELL_DOMINATE:
 			spell = &spell_dominate;
+			break;
+		case SPELL_REFLECT_MAGIC:
+			spell = &spell_reflectMagic;
+			break;
+		default:
 			break;
 	}
 

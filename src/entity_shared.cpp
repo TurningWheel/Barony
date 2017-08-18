@@ -284,6 +284,13 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_summon",
 	"spellbook_stoneblood",
 	"spellbook_bleed",
+	"spellbook_reflect_magic",
+	"spellbook_blank_1",
+	"spellbook_blank_2",
+	"spellbook_blank_3",
+	"spellbook_blank_4",
+	"spellbook_blank_5",
+	"potion_empty"
 	""
 };
 
@@ -366,6 +373,12 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_stoneblood",
 		"spellbook_bleed",
 		"spellbook_dig",
+		"spellbook_reflect_magic",
+		"spellbook_blank_1",
+		"spellbook_blank_2",
+		"spellbook_blank_3",
+		"spellbook_blank_4",
+		"spellbook_blank_5",
 		"tool_pickaxe",
 		"artifact_sword",
 		"artifact_mace",

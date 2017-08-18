@@ -143,21 +143,7 @@ void Entity::actPowerCrystal()
 			this->vel_z = this->fskill[1]; // reset velocity at the mid point of animation
 		}
 
-		if ( rand() % 80 == 0 )
-		{
-			Entity* spawnParticle = newEntity(579, 1, map.entities);
-			spawnParticle->sizex = 1;
-			spawnParticle->sizey = 1;
-			spawnParticle->x = this->x + (-2 + rand() % 5);
-			spawnParticle->y = this->y + (-2 + rand() % 5);
-			spawnParticle->z = 7.5;
-			spawnParticle->vel_z = -1;
-			spawnParticle->skill[0] = 10 + rand() % 40;
-			spawnParticle->behavior = &actPowerCrystalParticleIdle;
-			spawnParticle->flags[PASSABLE] = true;
-			spawnParticle->setUID(-3);
-		}
-
+		spawnAmbientParticles(80, 579, 10 + rand() % 40);
 
 		if ( crystalTurning == 1 )
 		{
@@ -232,6 +218,11 @@ void Entity::actPowerCrystal()
 // ambient particle effects.
 void actPowerCrystalParticleIdle(Entity* my)
 {
+	if ( !my )
+	{
+		return;
+	}
+
 	if ( my->skill[0] < 0 )
 	{
 		list_RemoveNode(my->mynode);

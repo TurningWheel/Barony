@@ -1617,6 +1617,10 @@ void itemContextMenu()
 	{
 		is_potion_bad = isPotionBad(*current_item);
 	}
+	if ( current_item->type == POTION_EMPTY )
+	{
+		is_potion_bad = true; //So that you wield empty potions by default.
+	}
 
 	const int slot_width = 100;
 	const int slot_height = 20;

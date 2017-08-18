@@ -224,9 +224,16 @@ typedef enum ItemType
 	TOOL_BLINDFOLD_TELEPATHY,
 	SPELLBOOK_SUMMON,
 	SPELLBOOK_STONEBLOOD,
-	SPELLBOOK_BLEED
+	SPELLBOOK_BLEED,
+	SPELLBOOK_REFLECT_MAGIC,
+	SPELLBOOK_BLANK_1,
+	SPELLBOOK_BLANK_2,
+	SPELLBOOK_BLANK_3,
+	SPELLBOOK_BLANK_4,
+	SPELLBOOK_BLANK_5,
+	POTION_EMPTY
 } ItemType;
-const int NUMITEMS = 204;
+const int NUMITEMS = 211;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -358,14 +365,14 @@ extern ItemGeneric items[NUMITEMS];
 
 //----------Item usage functions----------
 void item_PotionWater(Item* item, Entity* entity);
-void item_PotionBooze(Item* item, Entity* entity);
+void item_PotionBooze(Item* item, Entity* entity, bool shouldConsumeItem = true);
 void item_PotionJuice(Item* item, Entity* entity);
 void item_PotionSickness(Item* item, Entity* entity);
 void item_PotionConfusion(Item* item, Entity* entity);
 void item_PotionCureAilment(Item* item, Entity* entity);
 void item_PotionBlindness(Item* item, Entity* entity);
-void item_PotionHealing(Item* item, Entity* entity);
-void item_PotionExtraHealing(Item* item, Entity* entity);
+void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem = true);
+void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem = true);
 void item_PotionRestoreMagic(Item* item, Entity* entity);
 void item_PotionInvisibility(Item* item, Entity* entity);
 void item_PotionLevitation(Item* item, Entity* entity);

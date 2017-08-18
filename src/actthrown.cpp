@@ -41,10 +41,17 @@
 
 void actThrown(Entity* my)
 {
-	Item* item;
+	Item* item = nullptr;
 	Category cat = GEM;
-	char* itemname = NULL;
+	char* itemname = nullptr;
 	node_t* node;
+
+	item = newItemFromEntity(my);
+	if ( item )
+	{
+		cat = itemCategory(item);
+		free(item);
+	}
 
 	if ( multiplayer == CLIENT )
 	{
@@ -98,8 +105,11 @@ void actThrown(Entity* my)
 		my->skill[2] = -8;
 		my->flags[INVISIBLE] = false;
 		item = newItemFromEntity(my);
-		my->sprite = itemModel(item);
-		free(item);
+		if ( item )
+		{
+			my->sprite = itemModel(item);
+			free(item);
+		}
 	}
 
 	if ( multiplayer == CLIENT )
@@ -111,7 +121,7 @@ void actThrown(Entity* my)
 	if ( my->z < 7.5 - models[my->sprite]->sizey * .25 )
 	{
 		// fall
-		if ( itemCategory(item) == THROWN )
+		if ( cat == THROWN )
 		{
 			// todo: adjust falling rates for thrown items if need be
 			THROWN_VELZ += 0.03;
@@ -180,7 +190,7 @@ void actThrown(Entity* my)
 			else
 			{
 				// fall
-				if ( itemCategory(item) == THROWN )
+				if ( cat == THROWN )
 				{
 					// todo: adjust falling rates for thrown items if need be
 					THROWN_VELZ += 0.04;
@@ -198,7 +208,7 @@ void actThrown(Entity* my)
 		else
 		{
 			// fall out of x and y bounds
-			if ( itemCategory(item) == THROWN )
+			if ( cat == THROWN )
 			{
 				// todo: adjust falling rates for thrown items if need be
 				THROWN_VELZ += 0.04;
@@ -230,6 +240,7 @@ void actThrown(Entity* my)
 	bool usedpotion = false;
 	if ( result != sqrt(THROWN_VELX * THROWN_VELX + THROWN_VELY * THROWN_VELY) )
 	{
+		item = newItemFromEntity(my);
 		if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) )
 		{
 			real_t bouncePenalty = 0.7;
@@ -249,11 +260,10 @@ void actThrown(Entity* my)
 			}
 		}
 
-		item = newItemFromEntity(my);
 		cat = itemCategory(item);
 		itemname = item->getName();
 		item->count = 1;
-		if ( hit.entity != NULL )
+		if ( hit.entity != nullptr )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
@@ -441,35 +451,39 @@ void actThrown(Entity* my)
 				}
 
 				// alert the monster
-				if ( hit.entity->behavior == &actMonster && parent != NULL )
+				if ( hit.entity->behavior == &actMonster && parent != nullptr )
 				{
-					if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 					{
-						hit.entity->skill[0] = 2;
-						hit.entity->skill[1] = parent->getUID();
-						hit.entity->fskill[2] = parent->x;
-						hit.entity->fskill[3] = parent->y;
+						/*hit.entity->monsterState = MONSTER_STATE_PATH;
+						hit.entity->monsterTarget = parent->getUID();
+						hit.entity->monsterTargetX = parent->x;
+						hit.entity->monsterTargetY = parent->y;*/
+
+						hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 					}
 					// alert other monsters too
 					Entity* ohitentity = hit.entity;
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 						{
 							if ( entity->checkFriend(hit.entity) )
 							{
-								if ( entity->skill[0] == 0 )   // monster is waiting
+								if ( entity->monsterState == MONSTER_STATE_WAIT )
 								{
 									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
 									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 									if ( hit.entity == entity )
 									{
-										entity->skill[0] = 2; // path state
-										entity->skill[1] = parent->getUID();
-										entity->fskill[2] = parent->x;
-										entity->fskill[3] = parent->y;
+										/*entity->monsterState = MONSTER_STATE_PATH;
+										entity->monsterTarget = parent->getUID();
+										entity->monsterTargetX = parent->x;
+										entity->monsterTargetY = parent->y;*/
+
+										entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 									}
 								}
 							}
@@ -565,9 +579,14 @@ void actThrown(Entity* my)
 			list_RemoveNode(my->mynode);
 			return;
 		}
+
+		if ( item )
+		{
+			free(item);
+		}
 	}
 
-	if ( itemCategory(item) == THROWN )
+	if ( cat == THROWN )
 	{
 		THROWN_VELX = THROWN_VELX * .99;
 		THROWN_VELY = THROWN_VELY * .99;
