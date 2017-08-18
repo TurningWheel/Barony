@@ -3368,7 +3368,7 @@ timeToGoAgain:
 									Stat* yourStats = hit.entity->getStats();
 									if ( hit.entity->getUID() == my->monsterTarget )
 									{
-										//TODO: Refactor 2/ monsterAcquireTarget()
+										//TODO: Refactor with setMonsterStateAttack().
 										my->monsterState = MONSTER_STATE_ATTACK; // charge state
 									}
 									else if ( yourStats )
