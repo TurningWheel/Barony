@@ -550,6 +550,7 @@ void actThrown(Entity* my)
 		else if ( itemCategory(item) == THROWN && (item->type == STEEL_CHAKRAM || item->type == CRYSTAL_SHURIKEN) && hit.entity == NULL )
 		{
 			// chakram, shurikens bounce off walls until entity or floor is hit.
+			playSoundEntity(my, 66, 64);
 		}
 		else
 		{
