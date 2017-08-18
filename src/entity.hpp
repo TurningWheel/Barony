@@ -140,10 +140,10 @@ public:
 	Sint32& chestPreventLockpickCapstoneExploit;
 
 	//--PUBLIC MONSTER SKILLS--
-	Sint32& monsterState;
-	Sint32& monsterTarget;
-	real_t& monsterTargetX;
-	real_t& monsterTargetY;
+	Sint32& monsterState; //skill[0]
+	Sint32& monsterTarget; //skill[1]
+	real_t& monsterTargetX; //fskill[2]
+	real_t& monsterTargetY; //fskill[3]
 	Sint32& monsterSpecial;
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
@@ -337,7 +337,16 @@ public:
 	//Updates the EFFECTS variable for all clients for this entity.
 	void serverUpdateEffectsForEntity(bool guarantee);
 
+	/*
+	 * If set on a player, will call serverUpdateEffects() on the player.
+	 * @param guarantee: Causes serverUpdateEffectsForEntity() to use sendPacketSafe() rather than just sendPacket().
+	 */
 	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
+
+	/*
+	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
+	 */
+	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

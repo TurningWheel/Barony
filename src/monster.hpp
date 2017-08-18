@@ -337,19 +337,19 @@ void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist)
 bool forceFollower(Entity& leader, Entity& follower);
 
 //--monsterState constants
-static const int MONSTER_STATE_WAIT = 0;
-static const int MONSTER_STATE_ATTACK = 1;
-static const int MONSTER_STATE_PATH = 2;
-static const int MONSTER_STATE_HUNT = 3;
-static const int MONSTER_STATE_TALK = 4;
-static const int MONSTER_STATE_LICH_DODGE = 5;
-static const int MONSTER_STATE_LICH_SUMMON = 6;
-static const int MONSTER_STATE_LICH_DEATH = 7;
-static const int MONSTER_STATE_DEVIL_DEATH = 8;
-static const int MONSTER_STATE_DEVIL_TELEPORT = 9;
-static const int MONSTER_STATE_DEVIL_RISING = 10;
-static const int MONSTER_STATE_DEVIL_SUMMON = 11;
-static const int MONSTER_STATE_DEVIL_BOULDER = 12;
+static const Sint32 MONSTER_STATE_WAIT = 0;
+static const Sint32 MONSTER_STATE_ATTACK = 1;
+static const Sint32 MONSTER_STATE_PATH = 2;
+static const Sint32 MONSTER_STATE_HUNT = 3;
+static const Sint32 MONSTER_STATE_TALK = 4;
+static const Sint32 MONSTER_STATE_LICH_DODGE = 5;
+static const Sint32 MONSTER_STATE_LICH_SUMMON = 6;
+static const Sint32 MONSTER_STATE_LICH_DEATH = 7;
+static const Sint32 MONSTER_STATE_DEVIL_DEATH = 8;
+static const Sint32 MONSTER_STATE_DEVIL_TELEPORT = 9;
+static const Sint32 MONSTER_STATE_DEVIL_RISING = 10;
+static const Sint32 MONSTER_STATE_DEVIL_SUMMON = 11;
+static const Sint32 MONSTER_STATE_DEVIL_BOULDER = 12;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;

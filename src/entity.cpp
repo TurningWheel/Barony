@@ -3775,46 +3775,60 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( hit.entity->behavior == &actMonster )
 			{
-				if ( hit.entity->children.first != NULL )
+				if ( hit.entity->children.first != nullptr )
 				{
-					if ( hit.entity->children.first->next != NULL )
+					if ( hit.entity->children.first->next != nullptr )
 					{
 						hitstats = (Stat*)hit.entity->children.first->next->element;
 
 						// alert the monster!
-						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							//hit.entity->skill[0]=0;
 							//hit.entity->skill[4]=0;
 							//hit.entity->fskill[4]=atan2(my->y-hit.entity->y,my->x-hit.entity->x);
-							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = uid;
-							hit.entity->fskill[2] = x;
-							hit.entity->fskill[3] = y;
+
+							/*hit.entity->monsterState = MONSTER_STATE_PATH;
+							hit.entity->monsterTarget = uid;
+							hit.entity->monsterTargetX = x;
+							hit.entity->monsterTargetY = y;*/
+
+							Entity* attackTarget = uidToEntity(uid);
+
+							if ( attackTarget )
+							{
+								hit.entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+							}
 						}
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != NULL; node = node->next )
+						for ( node = map.entities->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 							{
 								Stat* buddystats = entity->getStats();
-								if ( buddystats != NULL )
+								if ( buddystats != nullptr )
 								{
 									if ( entity->checkFriend(hit.entity) )
 									{
-										if ( entity->skill[0] == 0 )   // monster is waiting
+										if ( entity->monsterState == MONSTER_STATE_WAIT )
 										{
 											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
-												entity->skill[0] = 2; // path state
-												entity->skill[1] = uid;
-												entity->fskill[2] = x;
-												entity->fskill[3] = y;
+												/*entity->monsterState = MONSTER_STATE_PATH;
+												entity->monsterTarget = uid;
+												entity->monsterTargetX = x;
+												entity->monsterTargetY = y;*/
+
+												Entity* attackTarget = uidToEntity(uid);
+												if ( attackTarget )
+												{
+													entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+												}
 											}
 										}
 									}
@@ -3831,7 +3845,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				playerhit = hit.entity->skill[2];
 
 				// alert the player's followers!
-				for ( node = hitstats->FOLLOWERS.first; node != NULL; node = node->next )
+				//Maybe should send a signal to each follower, with some kind of attached priority, which determines if they change their target to bumrush the player's assailant.
+				for ( node = hitstats->FOLLOWERS.first; node != nullptr; node = node->next )
 				{
 					Uint32* c = (Uint32*)node->element;
 					entity = uidToEntity(*c);
@@ -3839,14 +3854,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( entity )
 					{
 						Stat* buddystats = entity->getStats();
-						if ( buddystats != NULL )
+						if ( buddystats != nullptr )
 						{
-							if ( entity->skill[0] == 0 || (entity->skill[0] == 3 && entity->skill[1] != uid) )   // monster is waiting or hunting
+							if ( entity->monsterState == MONSTER_STATE_WAIT || (entity->monsterState == MONSTER_STATE_HUNT && entity->monsterTarget != uid) ) // monster is waiting or hunting
 							{
-								entity->skill[0] = 2; // path state
-								entity->skill[1] = uid;
-								entity->fskill[2] = x;
-								entity->fskill[3] = y;
+								/*entity->monsterState = MONSTER_STATE_PATH;
+								entity->monsterTarget = uid;
+								entity->monsterTargetX = x;
+								entity->monsterTargetY = y;*/
+
+								Entity* attackTarget = uidToEntity(uid);
+								if ( attackTarget )
+								{
+									entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+								}
 							}
 						}
 					}
@@ -7201,6 +7222,22 @@ void Entity::giveClientStats()
 	{
 		clientStats = new Stat(0);
 	}
+}
+
+void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
+{
+	messagePlayer(clientnum, "Entity acquired target!");
+
+	monsterState = state;
+	monsterTarget = target.getUID();
+	monsterTargetX = target.x;
+	monsterTargetY = target.y;
+
+	//TODO: Goatman switch equipped weapon.
+	//Ranged at range, melee in close quarters. Special attacks = potions & throwing stuff.
+
+	//On acquiring a target, some monsters switch out their weapons.
+	//chooseWeapon();
 }
 
 void Entity::checkGroundForItems()

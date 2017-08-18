@@ -451,35 +451,39 @@ void actThrown(Entity* my)
 				}
 
 				// alert the monster
-				if ( hit.entity->behavior == &actMonster && parent != NULL )
+				if ( hit.entity->behavior == &actMonster && parent != nullptr )
 				{
-					if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+					if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 					{
-						hit.entity->skill[0] = 2;
-						hit.entity->skill[1] = parent->getUID();
-						hit.entity->fskill[2] = parent->x;
-						hit.entity->fskill[3] = parent->y;
+						/*hit.entity->monsterState = MONSTER_STATE_PATH;
+						hit.entity->monsterTarget = parent->getUID();
+						hit.entity->monsterTargetX = parent->x;
+						hit.entity->monsterTargetY = parent->y;*/
+
+						hit.entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 					}
 					// alert other monsters too
 					Entity* ohitentity = hit.entity;
 					node_t* node;
-					for ( node = map.entities->first; node != NULL; node = node->next )
+					for ( node = map.entities->first; node != nullptr; node = node->next )
 					{
 						Entity* entity = (Entity*)node->element;
 						if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 						{
 							if ( entity->checkFriend(hit.entity) )
 							{
-								if ( entity->skill[0] == 0 )   // monster is waiting
+								if ( entity->monsterState == MONSTER_STATE_WAIT )
 								{
 									double tangent = atan2(entity->y - ohitentity->y, entity->x - ohitentity->x);
 									lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 									if ( hit.entity == entity )
 									{
-										entity->skill[0] = 2; // path state
-										entity->skill[1] = parent->getUID();
-										entity->fskill[2] = parent->x;
-										entity->fskill[3] = parent->y;
+										/*entity->monsterState = MONSTER_STATE_PATH;
+										entity->monsterTarget = parent->getUID();
+										entity->monsterTargetX = parent->x;
+										entity->monsterTargetY = parent->y;*/
+
+										entity->monsterAcquireAttackTarget(*parent, MONSTER_STATE_PATH);
 									}
 								}
 							}

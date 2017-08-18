@@ -1989,7 +1989,7 @@ void actMonster(Entity* my)
 		// state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
 		{
-			my->monsterTarget = -1;
+			my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
 			if ( myReflex )
@@ -2098,11 +2098,13 @@ void actMonster(Entity* my)
 								}
 								if ( hit.entity == entity )
 								{
-									//TODO: Refactor w/ monsterAcquireTarget().
-									my->monsterState = MONSTER_STATE_ATTACK; // charge state
+									/*my->monsterState = MONSTER_STATE_ATTACK; // charge state
 									my->monsterTarget = hit.entity->getUID();
 									my->monsterTargetX = hit.entity->x;
-									my->monsterTargetY = hit.entity->y;
+									my->monsterTargetY = hit.entity->y;*/
+									Entity& attackTarget = *hit.entity;
+									my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
+
 									if ( MONSTER_SOUND == nullptr )
 									{
 										if ( myStats->type != MINOTAUR )
@@ -2151,10 +2153,11 @@ void actMonster(Entity* my)
 														lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 														if ( hit.entity == entity )
 														{
-															entity->monsterState = 2; // path state
+															/*entity->monsterState = MONSTER_STATE_PATH;
 															entity->monsterTarget = my->monsterTarget;
 															entity->fskill[2] = my->monsterTargetX;
-															entity->fskill[3] = my->monsterTargetY;
+															entity->fskill[3] = my->monsterTargetY;*/
+															entity->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_PATH);
 														}
 													}
 												}
@@ -2196,12 +2199,13 @@ void actMonster(Entity* my)
 							}
 						}
 					}
-					if (playerToChase >= 0)
+					if ( playerToChase >= 0 && players[playerToChase] && players[playerToChase]->entity )
 					{
-						my->monsterState = MONSTER_STATE_PATH; // path state
+						/*my->monsterState = MONSTER_STATE_PATH; // path state
 						my->monsterTarget = players[playerToChase]->entity->getUID();
 						my->monsterTargetX = players[playerToChase]->entity->x;
-						my->monsterTargetY = players[playerToChase]->entity->y;
+						my->monsterTargetY = players[playerToChase]->entity->y;*/
+						my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
 					}
 					if ( previousMonsterState != my->monsterState )
 					{
@@ -2912,7 +2916,7 @@ timeToGoAgain:
 				}
 				return;
 			}
-			if ( uidToEntity(my->monsterTarget) == NULL && my->monsterTarget != 0 )
+			if ( uidToEntity(my->monsterTarget) == nullptr && my->monsterTarget != 0 )
 			{
 				my->monsterTarget = 0;
 				my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3046,11 +3050,13 @@ timeToGoAgain:
 											lineTrace(my, my->x, my->y - 1, tangent, sightranges[myStats->type], 0, (levitating == false));
 											if ( hit.entity == entity )
 											{
-												//TODO: Refactor w/ monsterAcquireTarget()
-												my->monsterTarget = hit.entity->getUID();
+												Entity& attackTarget = *hit.entity;
+												/*my->monsterTarget = hit.entity->getUID();
 												my->monsterState = MONSTER_STATE_ATTACK; // charge state
 												my->monsterTargetX = hit.entity->x;
-												my->monsterTargetY = hit.entity->y;
+												my->monsterTargetY = hit.entity->y;*/
+												my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
+
 												if ( MONSTER_SOUND == NULL )
 												{
 													if ( myStats->type != MINOTAUR )
@@ -3077,11 +3083,13 @@ timeToGoAgain:
 													}
 												}
 
-												if ( entity != NULL )
+												if ( entity != nullptr )
+												{
 													if ( entity->behavior == &actPlayer )
 													{
 														assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 													}
+												}
 												break;
 											}
 										}
@@ -3135,10 +3143,15 @@ timeToGoAgain:
 					}
 					if (playerToChase >= 0)
 					{
-						my->monsterState = MONSTER_STATE_PATH; // path state
+						/*my->monsterState = MONSTER_STATE_PATH; // path state
 						my->monsterTarget = players[playerToChase]->entity->getUID();
 						my->monsterTargetX = players[playerToChase]->entity->x;
-						my->monsterTargetY = players[playerToChase]->entity->y;
+						my->monsterTargetY = players[playerToChase]->entity->y;*/
+
+						if ( players[playerToChase] && players[playerToChase]->entity )
+						{
+							my->monsterAcquireAttackTarget(*players[playerToChase]->entity, MONSTER_STATE_PATH);
+						}
 					}
 
 					if ( previousMonsterState != my->monsterState )
@@ -3370,11 +3383,13 @@ timeToGoAgain:
 										}
 										else if ( my->checkEnemy(hit.entity) )
 										{
-											//TODO: Refactor w/ monsterAcquireTarget()
-											my->monsterTarget = hit.entity->getUID();
+											/*my->monsterTarget = hit.entity->getUID();
 											my->monsterTargetX = hit.entity->x;
 											my->monsterTargetY = hit.entity->y;
-											my->monsterState = MONSTER_STATE_ATTACK; // charge state
+											my->monsterState = MONSTER_STATE_ATTACK; // charge state*/
+
+											Entity& attackTarget = *hit.entity;
+											my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 										}
 									}
 								}
@@ -3382,11 +3397,13 @@ timeToGoAgain:
 								{
 									if ( my->checkEnemy(hit.entity) )
 									{
-										//TODO: Refactor w/ monsterAcquireTarget()
-										my->monsterTarget = hit.entity->getUID();
+										/*my->monsterTarget = hit.entity->getUID();
 										my->monsterTargetX = hit.entity->x;
 										my->monsterTargetY = hit.entity->y;
-										my->monsterState = MONSTER_STATE_ATTACK; // charge state
+										my->monsterState = MONSTER_STATE_ATTACK; // charge state*/
+
+										Entity& attackTarget = *hit.entity;
+										my->monsterAcquireAttackTarget(attackTarget, MONSTER_STATE_ATTACK);
 									}
 									else
 									{
@@ -3904,7 +3921,6 @@ timeToGoAgain:
 
 				if ( MONSTER_ATTACKTIME > 60 )
 				{
-					//TODO: Refactor w/ monsterAcquireTarget()
 					my->monsterState = MONSTER_STATE_ATTACK;
 					MONSTER_ATTACK = 0;
 					MONSTER_ATTACKTIME = 0;
@@ -3930,7 +3946,6 @@ timeToGoAgain:
 			my->monsterSpecial++;
 			if ( my->monsterSpecial > 120 )
 			{
-				//TODO: Refactor w/ monsterAcquireTarget()
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
@@ -4161,7 +4176,6 @@ timeToGoAgain:
 			}
 			if ( my->monsterSpecial == 420 )   // 420 blaze it faggot
 			{
-				//TODO: Refactor w/ monsterAcquireTarget()
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
@@ -4391,10 +4405,13 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 						//hit.entity->skill[0]=0;
 						//hit.entity->skill[4]=0;
 						//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
-						hit.entity->skill[0] = 2;
-						hit.entity->skill[1] = my->getUID();
-						hit.entity->fskill[2] = my->x;
-						hit.entity->fskill[3] = my->y;
+
+						/*hit.entity->monsterState = MONSTER_STATE_PATH;
+						hit.entity->monsterTarget = my->getUID();
+						hit.entity->monsterTargetX = my->x;
+						hit.entity->monsterTargetY = my->y;*/
+
+						hit.entity->monsterAcquireAttackTarget(*my, MONSTER_STATE_PATH);
 					}
 				}
 				if ( hit.entity->getStats() != nullptr )

@@ -357,7 +357,7 @@ void item_PotionConfusion(Item* item, Entity* entity)
 	stats->EFFECTS_TIMERS[EFF_CONFUSED] = 1800;
 	if ( entity->behavior == &actMonster )
 	{
-		entity->skill[1] = 0;    // monsters forget what they're doing
+		entity->monsterTarget = 0; // monsters forget what they're doing
 	}
 	serverUpdateEffects(player);
 
