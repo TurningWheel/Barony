@@ -7061,7 +7061,15 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 					if ( weaponarm->pitch < PI / 3 )
 					{
 						// adjust the z point halfway through swing.
-						this->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+						int monsterType = my->getMonsterTypeFromSprite();
+						if ( monsterType == GOATMAN )
+						{
+							this->z = weaponarm->z + 1 * sin(weaponarm->pitch);
+						}
+						else
+						{
+							this->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+						}
 					}
 					else
 					{

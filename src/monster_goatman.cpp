@@ -711,9 +711,9 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					Entity* weapon = (Entity*)weaponNode->element;
 					if ( !MONSTER_ARMBENDED )
 					{
-						entity->sprite += (weapon->flags[INVISIBLE] != true);
+						entity->sprite += 1/*(weapon->flags[INVISIBLE] != true)*/;
 					}
-					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
+					if ( MONSTER_ARMBENDED /*|| (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT)*/ )
 					{
 						entity->focalx = limbs[GOATMAN][4][0]; // 0
 						entity->focaly = limbs[GOATMAN][4][1]; // 0
@@ -728,7 +728,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
 				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += 1.5;
+				entity->z += .5;
 				entity->yaw += MONSTER_WEAPONYAW;
 				if ( my->z >= 2.4 && my->z <= 2.6 )
 				{
