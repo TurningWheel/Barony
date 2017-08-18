@@ -2253,6 +2253,7 @@ char* getSaveGameName()
 	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to check name in '%s'!\n", SAVEGAMEFILE);
+		free(tempstr);
 		return NULL;
 	}
 
@@ -2263,6 +2264,7 @@ char* getSaveGameName()
 	{
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
+		free(tempstr);
 		return NULL;
 	}
 	fread(checkstr, sizeof(char), strlen(VERSION), fp);
@@ -2270,6 +2272,7 @@ char* getSaveGameName()
 	{
 		printlog("error: '%s' is corrupt!\n", SAVEGAMEFILE);
 		fclose(fp);
+		free(tempstr);
 		return NULL;
 	}
 
