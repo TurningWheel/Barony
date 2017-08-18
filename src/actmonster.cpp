@@ -4347,6 +4347,8 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 		--my->monsterSpecial;
 	}
 
+	//TODO: Goatman choose weapon.
+
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
 	{

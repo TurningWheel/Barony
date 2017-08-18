@@ -347,6 +347,10 @@ public:
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
 	 */
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
+
+	//Lets monsters swap out weapons.
+	//void chooseWeapon();
+	//void goatmanChooseWeapon();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

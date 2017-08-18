@@ -7240,6 +7240,24 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	//chooseWeapon();
 }
 
+/*void Entity::chooseWeapon()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	switch ( myStats->type )
+	{
+		case GOATMAN:
+			goatmanChooseWeapon();
+			break;
+		default:
+			break;
+	}
+}*/
+
 void Entity::checkGroundForItems()
 {
 	Stat* myStats = getStats();
