@@ -661,7 +661,7 @@ void actBoulder(Entity* my)
 						{
 							continue;
 						}
-						if ( boulderCheckAgainstEntity(my, entity) )
+						if ( boulderCheckAgainstEntityInFront(my, entity) )
 						{
 							return;
 						}
