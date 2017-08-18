@@ -6986,11 +6986,19 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 			sound = rand() % 7;
 			break;
 		case MONSTER_FOOTSTEP_USE_BOOTS:
-			if ( bootSprite == 152 || bootSprite == 153 )
+			if ( bootSprite >= 152 && bootSprite <= 155 ) // iron boots
 			{
 				sound = 7 + rand() % 7;
 			}
-			else if ( bootSprite == 156 || bootSprite == 157 )
+			else if ( bootSprite >= 156 && bootSprite <= 159 ) // steel boots
+			{
+				sound = 14 + rand() % 7;
+			}
+			else if ( bootSprite >= 499 && bootSprite <= 502 ) // crystal boots
+			{
+				sound = 14 + rand() % 7;
+			}
+			else if ( bootSprite >= 521 && bootSprite <= 524 ) // artifact boots
 			{
 				sound = 14 + rand() % 7;
 			}
