@@ -563,8 +563,8 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 	{
 		my->monsterState = MONSTER_STATE_PATH;
 		my->monsterTarget = 0;
-		MONSTER_TARGETX = my->x + x;
-		MONSTER_TARGETY = my->y + y;
+		my->monsterTargetX = my->x + x;
+		my->monsterTargetY = my->y + y;
 		serverUpdateEntitySkill(my, 0);
 		return true;
 	}
@@ -2101,8 +2101,8 @@ void actMonster(Entity* my)
 									//TODO: Refactor w/ monsterAcquireTarget().
 									my->monsterState = MONSTER_STATE_ATTACK; // charge state
 									my->monsterTarget = hit.entity->getUID();
-									MONSTER_TARGETX = hit.entity->x;
-									MONSTER_TARGETY = hit.entity->y;
+									my->monsterTargetX = hit.entity->x;
+									my->monsterTargetY = hit.entity->y;
 									if ( MONSTER_SOUND == nullptr )
 									{
 										if ( myStats->type != MINOTAUR )
@@ -2153,8 +2153,8 @@ void actMonster(Entity* my)
 														{
 															entity->monsterState = 2; // path state
 															entity->monsterTarget = my->monsterTarget;
-															entity->fskill[2] = MONSTER_TARGETX;
-															entity->fskill[3] = MONSTER_TARGETY;
+															entity->fskill[2] = my->monsterTargetX;
+															entity->fskill[3] = my->monsterTargetY;
 														}
 													}
 												}
@@ -2200,8 +2200,8 @@ void actMonster(Entity* my)
 					{
 						my->monsterState = MONSTER_STATE_PATH; // path state
 						my->monsterTarget = players[playerToChase]->entity->getUID();
-						MONSTER_TARGETX = players[playerToChase]->entity->x;
-						MONSTER_TARGETY = players[playerToChase]->entity->y;
+						my->monsterTargetX = players[playerToChase]->entity->x;
+						my->monsterTargetY = players[playerToChase]->entity->y;
 					}
 					if ( previousMonsterState != my->monsterState )
 					{
@@ -2482,8 +2482,8 @@ void actMonster(Entity* my)
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
 			}
-			MONSTER_TARGETX = entity->x;
-			MONSTER_TARGETY = entity->y;
+			my->monsterTargetX = entity->x;
+			my->monsterTargetY = entity->y;
 			hitstats = entity->getStats();
 
 			if (myStats->type == SHOPKEEPER)
@@ -2550,7 +2550,7 @@ void actMonster(Entity* my)
 				{
 					if ( targetdist > TOUCHRANGE && targetdist > light && myReflex )
 					{
-						tangent = atan2( MONSTER_TARGETY - my->y, MONSTER_TARGETX - my->x );
+						tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
 						if ( !levitating )
 						{
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
@@ -2578,7 +2578,7 @@ void actMonster(Entity* my)
 					{
 						if ( myReflex )
 						{
-							tangent = atan2( MONSTER_TARGETY - my->y, MONSTER_TARGETX - my->x );
+							tangent = atan2( my->monsterTargetY - my->y, my->monsterTargetX - my->x );
 							if ( !levitating )
 							{
 								dist = lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
@@ -2766,7 +2766,7 @@ timeToGoAgain:
 								}
 							}
 
-							handleMonsterAttack(my, myStats, entity, dist);
+							handleMonsterAttack(my, myStats, entity, dist); //TODO: Continue perusing.
 
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
@@ -2928,8 +2928,8 @@ timeToGoAgain:
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
-			x = ((int)floor(MONSTER_TARGETX)) >> 4;
-			y = ((int)floor(MONSTER_TARGETY)) >> 4;
+			x = ((int)floor(my->monsterTargetX)) >> 4;
+			y = ((int)floor(my->monsterTargetY)) >> 4;
 			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(my->monsterTarget) );
 			if ( my->children.first != NULL )
 			{
@@ -3049,8 +3049,8 @@ timeToGoAgain:
 												//TODO: Refactor w/ monsterAcquireTarget()
 												my->monsterTarget = hit.entity->getUID();
 												my->monsterState = MONSTER_STATE_ATTACK; // charge state
-												MONSTER_TARGETX = hit.entity->x;
-												MONSTER_TARGETY = hit.entity->y;
+												my->monsterTargetX = hit.entity->x;
+												my->monsterTargetY = hit.entity->y;
 												if ( MONSTER_SOUND == NULL )
 												{
 													if ( myStats->type != MINOTAUR )
@@ -3137,8 +3137,8 @@ timeToGoAgain:
 					{
 						my->monsterState = MONSTER_STATE_PATH; // path state
 						my->monsterTarget = players[playerToChase]->entity->getUID();
-						MONSTER_TARGETX = players[playerToChase]->entity->x;
-						MONSTER_TARGETY = players[playerToChase]->entity->y;
+						my->monsterTargetX = players[playerToChase]->entity->x;
+						my->monsterTargetY = players[playerToChase]->entity->y;
 					}
 
 					if ( previousMonsterState != my->monsterState )
@@ -3372,8 +3372,8 @@ timeToGoAgain:
 										{
 											//TODO: Refactor w/ monsterAcquireTarget()
 											my->monsterTarget = hit.entity->getUID();
-											MONSTER_TARGETX = hit.entity->x;
-											MONSTER_TARGETY = hit.entity->y;
+											my->monsterTargetX = hit.entity->x;
+											my->monsterTargetY = hit.entity->y;
 											my->monsterState = MONSTER_STATE_ATTACK; // charge state
 										}
 									}
@@ -3384,8 +3384,8 @@ timeToGoAgain:
 									{
 										//TODO: Refactor w/ monsterAcquireTarget()
 										my->monsterTarget = hit.entity->getUID();
-										MONSTER_TARGETX = hit.entity->x;
-										MONSTER_TARGETY = hit.entity->y;
+										my->monsterTargetX = hit.entity->x;
+										my->monsterTargetY = hit.entity->y;
 										my->monsterState = MONSTER_STATE_ATTACK; // charge state
 									}
 									else
@@ -3871,10 +3871,10 @@ timeToGoAgain:
 				if ( playertotrack )
 				{
 					my->monsterTarget = playertotrack->getUID();
-					MONSTER_TARGETX = playertotrack->x;
-					MONSTER_TARGETY = playertotrack->y;
-					MONSTER_VELX = MONSTER_TARGETX - my->x;
-					MONSTER_VELY = MONSTER_TARGETY - my->y;
+					my->monsterTargetX = playertotrack->x;
+					my->monsterTargetY = playertotrack->y;
+					MONSTER_VELX = my->monsterTargetX - my->x;
+					MONSTER_VELY = my->monsterTargetY - my->y;
 				}
 				else
 				{
@@ -3955,8 +3955,8 @@ timeToGoAgain:
 				if ( playertotrack )
 				{
 					my->monsterTarget = playertotrack->getUID();
-					MONSTER_TARGETX = playertotrack->x;
-					MONSTER_TARGETY = playertotrack->y;
+					my->monsterTargetX = playertotrack->x;
+					my->monsterTargetY = playertotrack->y;
 				}
 
 				int c;
@@ -4186,8 +4186,8 @@ timeToGoAgain:
 				if ( playertotrack )
 				{
 					my->monsterTarget = playertotrack->getUID();
-					MONSTER_TARGETX = playertotrack->x;
-					MONSTER_TARGETY = playertotrack->y;
+					my->monsterTargetX = playertotrack->x;
+					my->monsterTargetY = playertotrack->y;
 				}
 			}
 		}
@@ -4358,8 +4358,8 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 				{
 					my->monsterSpecial = 90;
 					my->monsterTarget = 0;
-					MONSTER_TARGETX = my->x - 50 + rand() % 100;
-					MONSTER_TARGETY = my->y - 50 + rand() % 100;
+					my->monsterTargetX = my->x - 50 + rand() % 100;
+					my->monsterTargetY = my->y - 50 + rand() % 100;
 					my->monsterState = MONSTER_STATE_PATH; // path state
 				}
 			}

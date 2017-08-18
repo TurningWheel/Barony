@@ -40,8 +40,8 @@ void initDevil(Entity* my, Stat* myStats)
 		if (players[0] && players[0]->entity)
 		{
 			my->monsterTarget = players[0]->entity->getUID();
-			MONSTER_TARGETX = players[0]->entity->x;
-			MONSTER_TARGETY = players[0]->entity->y;
+			my->monsterTargetX = players[0]->entity->x;
+			my->monsterTargetY = players[0]->entity->y;
 		}
 	}
 

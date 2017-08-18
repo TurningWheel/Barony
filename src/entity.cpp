@@ -60,6 +60,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
+	monsterTargetX(fskill[2]),
+	monsterTargetY(fskill[3]),
 	crystalInitialised(skill[1]),
 	crystalTurning(skill[3]),
 	crystalTurnStartDir(skill[4]),

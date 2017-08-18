@@ -85,7 +85,6 @@ static char monstertypename[][15] =
 	"automaton",
 	"lichice",
 	"lichfire"
-
 };
 
 // body part focal points
@@ -180,9 +179,7 @@ static double damagetables[NUMMONSTERS][6] =
 #define HITRATE 45
 
 #define MONSTER_INIT my->skill[3]
-//#define MONSTER_LOOKTIME my->skill[4]
 #define MONSTER_NUMBER my->skill[5]
-//#define MONSTER_MOVETIME my->skill[6]
 #define MONSTER_HITTIME my->skill[7]
 #define MONSTER_ATTACK my->skill[8]
 #define MONSTER_ATTACKTIME my->skill[9]
@@ -202,9 +199,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_VELX my->vel_x
 #define MONSTER_VELY my->vel_y
 #define MONSTER_VELZ my->vel_z
-#define MONSTER_TARGETX my->fskill[2]
-#define MONSTER_TARGETY my->fskill[3]
-//#define MONSTER_LOOKDIR my->fskill[4]
 #define MONSTER_WEAPONYAW my->fskill[5]
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
 

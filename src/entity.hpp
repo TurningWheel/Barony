@@ -142,6 +142,8 @@ public:
 	//--PUBLIC MONSTER SKILLS--
 	Sint32& monsterState;
 	Sint32& monsterTarget;
+	real_t& monsterTargetX;
+	real_t& monsterTargetY;
 	Sint32& monsterSpecial;
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
