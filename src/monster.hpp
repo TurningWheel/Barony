@@ -332,7 +332,6 @@ void createMinotaurTimer(Entity* entity, map_t* map);
 
 void actSummonTrap(Entity* my);
 int monsterCurve(int level);
-void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist);
 
 bool forceFollower(Entity& leader, Entity& follower);
 
@@ -362,14 +361,17 @@ static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
-static const int MONSTER_POSE_RANGED_SHOOT1 = 13;
-static const int MONSTER_POSE_RANGED_SHOOT2 = 14;
-static const int MONSTER_POSE_RANGED_SHOOT3 = 15;
-static const int MONSTER_POSE_MAGIC_CAST1 = 16;
-static const int MONSTER_POSE_MAGIC_CAST2 = 17;
-static const int MONSTER_POSE_MAGIC_CAST3 = 18;
-static const int MONSTER_POSE_GOLEM_SMASH = 19;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 20;
+static const int MONSTER_POSE_SPECIAL_WINDUP1 = 13;
+static const int MONSTER_POSE_SPECIAL_WINDUP2 = 14;
+static const int MONSTER_POSE_SPECIAL_WINDUP3 = 15;
+static const int MONSTER_POSE_RANGED_SHOOT1 = 16;
+static const int MONSTER_POSE_RANGED_SHOOT2 = 17;
+static const int MONSTER_POSE_RANGED_SHOOT3 = 18;
+static const int MONSTER_POSE_MAGIC_CAST1 = 19;
+static const int MONSTER_POSE_MAGIC_CAST2 = 20;
+static const int MONSTER_POSE_MAGIC_CAST3 = 21;
+static const int MONSTER_POSE_GOLEM_SMASH = 22;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 22;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -398,10 +400,16 @@ static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
 
 //--monster limb bodypart IDs
+static const int LIMB_HUMANOID_TORSO = 2;
 static const int LIMB_HUMANOID_RIGHTLEG = 3;
 static const int LIMB_HUMANOID_LEFTLEG = 4;
 static const int LIMB_HUMANOID_RIGHTARM = 5;
 static const int LIMB_HUMANOID_LEFTARM = 6;
+static const int LIMB_HUMANOID_WEAPON = 7;
+static const int LIMB_HUMANOID_SHIELD = 8;
+static const int LIMB_HUMANOID_CLOAK = 9;
+static const int LIMB_HUMANOID_HELMET = 10;
+static const int LIMB_HUMANOID_MASK = 11;
 
 //--monster attack windup duration, in ticks, roughly 180ms
 static const int ANIMATE_DURATION_WINDUP = 9;
@@ -423,7 +431,6 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
-void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist);
 real_t normaliseAngle2PI(real_t angle);
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
 int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);
