@@ -3256,7 +3256,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 		}
 		else
 		{
-			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_MAGIC_WINDUP3 )
+			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_SPECIAL_WINDUP3 )
 			{
 				monsterAttack = pose;
 				monsterAttackTime = 0;
@@ -6294,7 +6294,15 @@ int Entity::getAttackPose() const
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
-				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
+				{
+					// axes and maces don't stab
+					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+				}
+				else
+				{
+					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+				}
 			}
 			else
 			{
@@ -6831,7 +6839,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 		if ( shieldNode )
 		{
 			Entity* shield = (Entity*)shieldNode->element;
-			if ( dist > 0.01 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
+			if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
 			{
 				// walking to destination
 				if ( !rightbody->skill[0] )
@@ -6918,7 +6926,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 	{
 		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
 		{
-			if ( dist > 0.01 )
+			if ( dist > 0.1 )
 			{
 				double armMoveSpeed = 1.0;
 				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )

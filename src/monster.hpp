@@ -361,14 +361,17 @@ static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
-static const int MONSTER_POSE_RANGED_SHOOT1 = 13;
-static const int MONSTER_POSE_RANGED_SHOOT2 = 14;
-static const int MONSTER_POSE_RANGED_SHOOT3 = 15;
-static const int MONSTER_POSE_MAGIC_CAST1 = 16;
-static const int MONSTER_POSE_MAGIC_CAST2 = 17;
-static const int MONSTER_POSE_MAGIC_CAST3 = 18;
-static const int MONSTER_POSE_GOLEM_SMASH = 19;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 20;
+static const int MONSTER_POSE_SPECIAL_WINDUP1 = 13;
+static const int MONSTER_POSE_SPECIAL_WINDUP2 = 14;
+static const int MONSTER_POSE_SPECIAL_WINDUP3 = 15;
+static const int MONSTER_POSE_RANGED_SHOOT1 = 16;
+static const int MONSTER_POSE_RANGED_SHOOT2 = 17;
+static const int MONSTER_POSE_RANGED_SHOOT3 = 18;
+static const int MONSTER_POSE_MAGIC_CAST1 = 19;
+static const int MONSTER_POSE_MAGIC_CAST2 = 20;
+static const int MONSTER_POSE_MAGIC_CAST3 = 21;
+static const int MONSTER_POSE_GOLEM_SMASH = 22;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 22;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
