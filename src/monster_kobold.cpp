@@ -600,6 +600,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					Entity* weapon = (Entity*)weaponNode->element;
 					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 					{
+						// if weapon invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][4][0]; // 0
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2]; // 2
@@ -607,6 +608,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[KOBOLD][4][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2] - 1; // 1
@@ -630,8 +632,9 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
+						// if weapon invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][5][0]; // 0
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2]; // 2
@@ -639,6 +642,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[KOBOLD][5][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2] - 1; // 1
