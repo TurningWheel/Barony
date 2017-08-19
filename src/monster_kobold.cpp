@@ -407,12 +407,12 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					++bodypart;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LIMB_HUMANOID_WEAPON )
 				{
 					break;
 				}
@@ -432,12 +432,12 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					++bodypart;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LIMB_HUMANOID_WEAPON )
 				{
 					break;
 				}
@@ -467,7 +467,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, ++bodypart)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -484,11 +484,11 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw;
 		}
 
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 		}
-		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
 			// left leg, right arm, cloak.
 			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
@@ -499,14 +499,14 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					my->handleWeaponArmAttack(entity);
 				}
 			}
-			else if ( bodypart == 9 )
+			else if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 			
-			if ( bodypart == 9 )
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->fskill[0] = entity->pitch;
 				entity->roll = my->roll - fabs(entity->pitch) / 2;
@@ -516,13 +516,13 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 1.25;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shoes == nullptr )
@@ -557,7 +557,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shoes == nullptr )
@@ -592,7 +592,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 			{
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
@@ -626,7 +626,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 			{
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
@@ -634,7 +634,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					Entity* shield = (Entity*)shieldNode->element;
 					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
-						// if weapon invisible and I'm not moving, relax arm.
+						// if shield invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][5][0]; // 0
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2]; // 2
@@ -659,7 +659,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// weapon
-			case 7:
+			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -699,11 +699,11 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( weaponarm != nullptr )
 				{
-					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			// shield
-			case 8:
+			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shield == nullptr )
@@ -766,7 +766,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// cloak
-			case 9:
+			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?

@@ -496,7 +496,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
@@ -521,7 +521,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
@@ -556,7 +556,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -573,11 +573,11 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw;
 		}
 
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			entity->humanoidAnimateWalk(my, node, bodypart, GOATMANWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, GOATMANWALKSPEED, dist, 0.4);
 		}
-		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
 			// left leg, right arm, cloak.
 			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
@@ -588,14 +588,14 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					my->handleWeaponArmAttack(entity);
 				}
 			}
-			else if ( bodypart == 9 )
+			else if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, GOATMANWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, GOATMANWALKSPEED, dist, 0.4);
 
-			if ( bodypart == 9 )
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->fskill[0] = entity->pitch;
 				entity->roll = my->roll - fabs(entity->pitch) / 2;
@@ -605,7 +605,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->breastplate == NULL )
@@ -635,7 +635,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z += 2;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shoes == nullptr )
@@ -670,7 +670,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shoes == nullptr )
@@ -705,7 +705,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 			{
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
@@ -739,7 +739,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 				// left arm
 			}
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 			{
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
@@ -770,7 +770,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// weapon
-			case 7:
+			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -810,11 +810,11 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( weaponarm != nullptr )
 				{
-					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			// shield
-			case 8:
+			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shield == NULL )
@@ -877,7 +877,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// cloak
-			case 9:
+			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -913,7 +913,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw += PI / 2;
 				break;
 			// helm
-			case 10:
+			case LIMB_HUMANOID_HELMET:
 				entity->focalx = limbs[GOATMAN][9][0]; // 0
 				entity->focaly = limbs[GOATMAN][9][1]; // 0
 				entity->focalz = limbs[GOATMAN][9][2]; // -2
@@ -986,7 +986,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// mask
-			case 11:
+			case LIMB_HUMANOID_MASK:
 				entity->focalx = limbs[GOATMAN][10][0]; // 0
 				entity->focaly = limbs[GOATMAN][10][1]; // 0
 				entity->focalz = limbs[GOATMAN][10][2]; // .25

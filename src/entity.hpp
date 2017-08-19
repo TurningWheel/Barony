@@ -153,6 +153,7 @@ public:
 	Sint32& monsterArmbended;
 	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
+	Sint32& monsterHitTime;
 
 	real_t& monsterLookDir;
 
@@ -319,14 +320,17 @@ public:
 	// weapon arm animation attacks
 	void handleWeaponArmAttack(Entity* weaponarm);
 	// handle walking movement for arms and legs
-	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
+	void humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
 	// monster footsteps, needs to be client friendly
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
-	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
+	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
-
+	// monster special attack handler
+	void handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
+	// monster attack handler
+	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
 
 	spell_t* getActiveMagicEffect(int spellID);
