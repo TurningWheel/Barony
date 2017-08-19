@@ -6427,8 +6427,10 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->roll = 0;
 			weaponarm->skill[1] = 0;
 		}
-		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) &&
-			monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
