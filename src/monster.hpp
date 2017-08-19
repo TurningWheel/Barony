@@ -366,6 +366,7 @@ static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
 static const int MONSTER_POSE_RANGED_WINDUP1 = 7;
 static const int MONSTER_POSE_RANGED_WINDUP2 = 8;
 static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
+//TODO: Need potions and thrown.
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
