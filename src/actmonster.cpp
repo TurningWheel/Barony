@@ -2773,7 +2773,7 @@ timeToGoAgain:
 								}
 							}
 
-							handleMonsterAttack(my, myStats, entity, dist); //TODO: Continue perusing.
+							my->handleMonsterAttack(myStats, entity, dist); //TODO: Continue perusing.
 
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
@@ -4337,24 +4337,24 @@ timeToGoAgain:
 	}
 }
 
-void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
+void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 {
 	node_t* node = nullptr;
 	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
-	bool hasrangedweapon = my->hasRangedWeapon();
+	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
 
-	if ( myStats->type != LICH && myStats->type != DEVIL && my->monsterSpecial > 0 )
+	if ( myStats->type != LICH && myStats->type != DEVIL && this->monsterSpecial > 0 )
 	{
-		--my->monsterSpecial;
+		--this->monsterSpecial;
 	}
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
 	{
 		// increment the hit time, don't attack until this reaches the hitrate of the weapon
-		MONSTER_HITTIME++;
+		this->monsterHitTime++;
 		int bow = 1;
 		if ( hasrangedweapon )
 		{
@@ -4364,25 +4364,25 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 			}
 		}
 		// check if ready to attack
-		if ( (MONSTER_HITTIME >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
+		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) || (this->monsterHitTime >= 5 && myStats->type == LICH) )
 		{
-			handleMonsterSpecialAttack(my, myStats, nullptr, dist);
+			this->handleMonsterSpecialAttack(myStats, nullptr, dist);
 
 			if ( myStats->type == LICH )
 			{
-				my->monsterSpecial++;
-				if ( my->monsterSpecial >= 5 )
+				this->monsterSpecial++;
+				if ( this->monsterSpecial >= 5 )
 				{
-					my->monsterSpecial = 90;
-					my->monsterTarget = 0;
-					my->monsterTargetX = my->x - 50 + rand() % 100;
-					my->monsterTargetY = my->y - 50 + rand() % 100;
-					my->monsterState = MONSTER_STATE_PATH; // path state
+					this->monsterSpecial = 90;
+					this->monsterTarget = 0;
+					this->monsterTargetX = this->x - 50 + rand() % 100;
+					this->monsterTargetY = this->y - 50 + rand() % 100;
+					this->monsterState = MONSTER_STATE_PATH; // path state
 				}
 			}
 
 			// reset the hit timer
-			MONSTER_HITTIME = 0;
+			this->monsterHitTime = 0;
 			int tracedist;
 			if ( hasrangedweapon )
 			{
@@ -4394,8 +4394,8 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 			}
 
 			// check again for the target in attack range. return the result into hit.entity.
-			double newTangent = atan2(target->y - my->y, target->x - my->x);
-			lineTrace(my, my->x, my->y, newTangent, tracedist, 0, false);
+			double newTangent = atan2(target->y - this->y, target->x - this->x);
+			lineTrace(this, this->x, this->y, newTangent, tracedist, 0, false);
 			if ( hit.entity != nullptr )
 			{
 				// found the target in range
@@ -4410,23 +4410,23 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 						//hit.entity->fskill[4]=atan2(players[player]->y-hit.entity->y,players[player]->x-hit.entity->x);
 
 						/*hit.entity->monsterState = MONSTER_STATE_PATH;
-						hit.entity->monsterTarget = my->getUID();
-						hit.entity->monsterTargetX = my->x;
-						hit.entity->monsterTargetY = my->y;*/
+						hit.entity->monsterTarget = this->getUID();
+						hit.entity->monsterTargetX = this->x;
+						hit.entity->monsterTargetY = this->y;*/
 
-						hit.entity->monsterAcquireAttackTarget(*my, MONSTER_STATE_PATH);
+						hit.entity->monsterAcquireAttackTarget(*this, MONSTER_STATE_PATH);
 					}
 				}
 				if ( hit.entity->getStats() != nullptr )
 				{
 					// prepare attack, set the animation of the attack based on the current weapon.
-					int pose = my->getAttackPose();
+					int pose = this->getAttackPose();
 
 					// turn to the target, then reset my yaw.
-					double oYaw = my->yaw;
-					my->yaw = newTangent;
-					my->attack(pose, charge, nullptr); // attacku! D:<
-					my->yaw = oYaw;
+					double oYaw = this->yaw;
+					this->yaw = newTangent;
+					this->attack(pose, charge, nullptr); // attacku! D:<
+					this->yaw = oYaw;
 				}
 			}
 		}
@@ -4871,13 +4871,13 @@ bool forceFollower(Entity& leader, Entity& follower)
 	return true;
 }
 
-void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist)
+void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist)
 {
 	int specialRoll = 0;
 	node_t* node = nullptr;
 	int enemiesNearby = 0;
 	int bonusFromHP = 0;
-	bool hasrangedweapon = my->hasRangedWeapon();
+	bool hasrangedweapon = this->hasRangedWeapon();
 
 	if ( myStats != nullptr )
 	{
@@ -4886,7 +4886,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 			return;
 		}
 
-		if ( my->monsterSpecial == 0 )
+		if ( this->monsterSpecial == 0 )
 		{
 			switch ( myStats->type )
 			{
@@ -4902,8 +4902,8 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(my, myStats, node);
-									my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
 						}
@@ -4914,8 +4914,8 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(my, myStats, node);
-									my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
 						}
@@ -4923,13 +4923,13 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					break;
 				case CRYSTALGOLEM:
 					specialRoll = rand() % 20;
-					enemiesNearby = numTargetsAroundEntity(my, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
+					enemiesNearby = numTargetsAroundEntity(this, STRIKERANGE, PI, MONSTER_TARGET_ENEMY);
 					if ( enemiesNearby > 1 )
 					{
 						enemiesNearby = std::min(enemiesNearby, 4);
 						if ( specialRoll < enemiesNearby * 2 ) // 10% for each enemy > 1, capped at 40%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 							break;
 						}
 					}		
@@ -4939,35 +4939,35 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					{
 						if ( specialRoll < 1 ) // 5%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.6 )
 					{
 						if ( specialRoll < 2 ) // 10%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.4 )
 					{
 						if ( specialRoll < 3 ) // 15%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 4 ) // 20%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 5 ) // 25%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					break;
@@ -4975,7 +4975,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					specialRoll = rand() % 20;
 					//specialRoll = 0;
 					// check for paralyze first
-					enemiesNearby = std::min(numTargetsAroundEntity(my, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+					enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
 					
 					if ( myStats->HP <= myStats->MAXHP * 0.5 )
 					{
@@ -4986,8 +4986,8 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(my, myStats, node);
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
+							swapMonsterWeaponWithInventoryItem(this, myStats, node);
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
 					}
@@ -4998,35 +4998,35 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					{
 						if ( specialRoll < 1 ) // 5%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.6 )
 					{
 						if ( specialRoll < 2 ) // 10%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.4 )
 					{
 						if ( specialRoll < 3 ) // 15%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 4 ) // 20%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP <= myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 5 ) // 25%
 						{
-							my->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					break;
@@ -5034,7 +5034,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					break;
 			}
 		}
-		else if ( my->monsterSpecial > 0 )
+		else if ( this->monsterSpecial > 0 )
 		{
 			switch ( myStats->type )
 			{
@@ -5042,7 +5042,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
-						swapMonsterWeaponWithInventoryItem(my, myStats, node);
+						swapMonsterWeaponWithInventoryItem(this, myStats, node);
 					}
 					else
 					{

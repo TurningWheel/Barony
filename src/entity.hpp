@@ -153,6 +153,7 @@ public:
 	Sint32& monsterArmbended;
 	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
+	Sint32& monsterHitTime;
 
 	real_t& monsterLookDir;
 
@@ -326,7 +327,10 @@ public:
 	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
-
+	// monster special attack handler
+	void handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
+	// monster attack handler
+	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
 
 	spell_t* getActiveMagicEffect(int spellID);
