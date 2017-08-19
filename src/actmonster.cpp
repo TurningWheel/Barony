@@ -2704,11 +2704,11 @@ timeToGoAgain:
 										else
 										{
 											// can't open door, so break it down
-											MONSTER_HITTIME++;
-											if ( MONSTER_HITTIME >= HITRATE )
+											my->monsterHitTime++;
+											if ( my->monsterHitTime >= HITRATE )
 											{
-												MONSTER_ATTACK = (rand() % 3) + 1; // random attack motion
-												MONSTER_HITTIME = 0;
+												my->monsterAttack = (rand() % 3) + 1; // random attack motion
+												my->monsterHitTime = 0;
 												hit.entity->skill[4]--; // decrease door health
 												if ( myStats->type == MINOTAUR )
 												{
@@ -3340,11 +3340,11 @@ timeToGoAgain:
 									else
 									{
 										// can't open door, so break it down
-										MONSTER_HITTIME++;
-										if ( MONSTER_HITTIME >= HITRATE )
+										my->monsterHitTime++;
+										if ( my->monsterHitTime >= HITRATE )
 										{
-											MONSTER_ATTACK = (rand() % 3) + 1; // random attack motion
-											MONSTER_HITTIME = 0;
+											my->monsterAttack = (rand() % 3) + 1; // random attack motion
+											my->monsterHitTime = 0;
 											hit.entity->skill[4]--; // decrease door health
 											if ( myStats->type == MINOTAUR )
 											{
@@ -4620,7 +4620,7 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 {
 	if ( axis == 0 )
 	{
-		return -1;
+		return 0;
 	}
 
 	double speedMultiplier = 1.0;
