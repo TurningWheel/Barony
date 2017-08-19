@@ -29,11 +29,11 @@ void Entity::initMonster(int mySprite)
 	switch ( monsterType )
 	{
 		case GNOME:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_SMALL_HUMANOID;
 			break;
 		case KOBOLD:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_SMALL_HUMANOID;
 			break;
 		case HUMAN:
@@ -45,7 +45,7 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
 		case GOBLIN:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case SLIME:
@@ -126,7 +126,7 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case SHADOW:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case COCKATRICE:
@@ -134,15 +134,15 @@ void Entity::initMonster(int mySprite)
 			monsterSpellAnimation = MONSTER_SPELLCAST_NONE;
 			break;
 		case INSECTOID:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case GOATMAN:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case AUTOMATON:
-			monsterFootstepType = MONSTER_FOOTSTEP_LEATHER;
+			monsterFootstepType = MONSTER_FOOTSTEP_USE_BOOTS;
 			monsterSpellAnimation = MONSTER_SPELLCAST_HUMANOID;
 			break;
 		case LICH_ICE:

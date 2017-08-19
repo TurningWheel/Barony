@@ -191,7 +191,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(230, 0, map.entities);
+	Entity* entity = newEntity(468, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -209,7 +209,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(236, 0, map.entities);
+	entity = newEntity(474, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -227,7 +227,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(235, 0, map.entities);
+	entity = newEntity(473, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -245,7 +245,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(233, 0, map.entities);
+	entity = newEntity(471, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -263,7 +263,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(231, 0, map.entities);
+	entity = newEntity(469, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -576,13 +576,16 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case 2:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == nullptr )
 					{
 						entity->sprite = 468;
 					}
 					else
 					{
 						entity->sprite = itemModel(myStats->breastplate);
+						entity->scalex = 1;
+						// shrink the width of the breastplate
+						entity->scaley = 0.8;
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -598,13 +601,50 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else if ( multiplayer == CLIENT )
+				{
+					if ( entity->sprite != 468 )
+					{
+						entity->scalex = 1;
+						// shrink the width of the breastplate
+						entity->scaley = 0.8;
+					}
+					else
+					{
+						entity->scalex = 1;
+						entity->scaley = 1;
+					}
+				}
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 2;
 				break;
 			// right leg
 			case 3:
-				entity->sprite = 474;
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 474;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -616,7 +656,30 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
-				entity->sprite = 473;
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 473;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -629,26 +692,25 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 471;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( !MONSTER_ARMBENDED )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterAttack == 0) )
 					{
-						entity->sprite += (weapon->flags[INVISIBLE] != true);
-					}
-					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
-					{
+						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[AUTOMATON][4][0]; // 0
 						entity->focaly = limbs[AUTOMATON][4][1]; // 0
 						entity->focalz = limbs[AUTOMATON][4][2]; // 2
+						entity->sprite = 471;
 					}
 					else
 					{
-						entity->focalx = limbs[AUTOMATON][4][0] + 1; // 1
-						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						// else flex arm.
+						entity->focalx = limbs[AUTOMATON][4][0] + 1.5; // 1
+						entity->focaly = limbs[AUTOMATON][4][1] + 0.25; // 0
 						entity->focalz = limbs[AUTOMATON][4][2] - 1; // 1
+						entity->sprite = 472;
 					}
 				}
 				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -664,22 +726,24 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 469;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					entity->sprite += (shield->flags[INVISIBLE] != true);
 					if ( shield->flags[INVISIBLE] )
 					{
+						// if shield invisible, relax arm.
+						entity->sprite = 469;
 						entity->focalx = limbs[AUTOMATON][5][0]; // 0
 						entity->focaly = limbs[AUTOMATON][5][1]; // 0
 						entity->focalz = limbs[AUTOMATON][5][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[AUTOMATON][5][0] + 1; // 1
-						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						// else flex arm.
+						entity->sprite = 470;
+						entity->focalx = limbs[AUTOMATON][5][0] + 1.5; // 1
+						entity->focaly = limbs[AUTOMATON][5][1] - 0.25; // 0
 						entity->focalz = limbs[AUTOMATON][5][2] - 1; // 1
 					}
 				}

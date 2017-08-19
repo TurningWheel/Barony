@@ -8,7 +8,6 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
-
 #include <sstream>
 #include "../main.hpp"
 #include "../game.hpp"
@@ -1386,6 +1385,110 @@ void consoleCommand(char* command_str)
 				players[clientnum]->entity->increaseSkill(skill);
 			}
 		}
+	}
+	else if ( !strncmp(command_str, "/reloadlimbs", 12) )
+	{
+		int x;
+		FILE* fp;
+		bool success = true;
+
+		messagePlayer(clientnum, "Reloading limb offsets from limbs.txt files...");
+
+		for ( c = 1; c < NUMMONSTERS; c++ )
+		{
+			// initialize all offsets to zero
+			for ( x = 0; x < 20; x++ )
+			{
+				limbs[c][x][0] = 0;
+				limbs[c][x][1] = 0;
+				limbs[c][x][2] = 0;
+			}
+
+			// open file
+			char filename[256];
+			strcpy(filename, "models/creatures/");
+			strcat(filename, monstertypename[c]);
+			strcat(filename, "/limbs.txt");
+			if ( (fp = openDataFile(filename, "r")) == NULL )
+			{
+				continue;
+			}
+
+			// read file
+			int line;
+			for ( line = 1; feof(fp) == 0; line++ )
+			{
+				char data[256];
+				int limb = 20;
+				int dummy;
+
+				// read line from file
+				fgets(data, 256, fp);
+
+				// skip blank and comment lines
+				if ( data[0] == '\n' || data[0] == '\r' || data[0] == '#' )
+				{
+					continue;
+				}
+
+				// process line
+				if ( sscanf(data, "%d", &limb) != 1 || limb >= 20 || limb < 0 )
+				{
+					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb index!", filename, line);
+					printlog("warning: syntax error in '%s':%d\n invalid limb index!\n", filename, line);
+					success = false;
+					continue;
+				}
+				if ( sscanf(data, "%d %f %f %f\n", &dummy, &limbs[c][limb][0], &limbs[c][limb][1], &limbs[c][limb][2]) != 4 )
+				{
+					messagePlayer(clientnum, "warning: syntax error in '%s':%d\n invalid limb offsets!", filename, line);
+					printlog("warning: syntax error in '%s':%d\n invalid limb offsets!\n", filename, line);
+					success = false;
+					continue;
+				}
+			}
+
+			// close file
+			fclose(fp);
+		}
+		if ( success )
+		{
+			messagePlayer(clientnum, "Successfully reloaded all limbs.txt!");
+		}
+	}
+	else if ( !strncmp(command_str, "/animspeed ", 10) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int speed = atoi(&command_str[11]);
+		monsterGlobalAnimationMultiplier = speed;
+		messagePlayer(clientnum, "Changed animation speed multiplier to %f.", speed / 10.0);
+	}
+	else if ( !strncmp(command_str, "/atkspeed ", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int speed = atoi(&command_str[10]);
+		monsterGlobalAttackTimeMultiplier = speed;
+		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
 	}
 	else
 	{

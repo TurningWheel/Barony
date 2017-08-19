@@ -141,6 +141,9 @@ double sightranges[NUMMONSTERS] =
 	512,  // LICH_FIRE
 };
 
+int monsterGlobalAnimationMultiplier = 10;
+int monsterGlobalAttackTimeMultiplier = 1;
+
 /*-------------------------------------------------------------------------------
 
 	summonMonster
@@ -4363,7 +4366,7 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 			}
 		}
 		// check if ready to attack
-		if ( (MONSTER_HITTIME >= HITRATE * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
+		if ( (MONSTER_HITTIME >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) || (MONSTER_HITTIME >= 5 && myStats->type == LICH) )
 		{
 			handleMonsterSpecialAttack(my, myStats, nullptr, dist);
 
@@ -4436,6 +4439,15 @@ void handleMonsterAttack(Entity* my, Stat* myStats, Entity* target, double dist)
 
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir)
 {
+	double speedMultiplier = 1.0;
+
+	if ( monsterGlobalAnimationMultiplier != 10 )
+	{
+		speedMultiplier = monsterGlobalAnimationMultiplier / 10.0;
+		setpointRate = setpointRate * speedMultiplier;
+		endpointRate = endpointRate * speedMultiplier;
+	}
+
 	if ( axis == 0 || limb->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE || dir == ANIMATE_DIR_NONE )
 	{
 		if ( axis == ANIMATE_PITCH )
@@ -4611,6 +4623,15 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 	if ( axis == 0 )
 	{
 		return -1;
+	}
+
+	double speedMultiplier = 1.0;
+
+	if ( monsterGlobalAnimationMultiplier != 10 )
+	{
+		speedMultiplier = monsterGlobalAnimationMultiplier / 10.0;
+		rate = rate * speedMultiplier;
+		shakerate = shakerate * speedMultiplier;
 	}
 
 	if ( axis == ANIMATE_YAW )
