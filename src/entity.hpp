@@ -324,7 +324,7 @@ public:
 	// monster footsteps, needs to be client friendly
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
-	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
+	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
 	// monster special attack handler

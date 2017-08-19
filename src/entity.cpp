@@ -7026,59 +7026,60 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 	return static_cast<Uint32>(sound);
 }
 
-void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType)
+void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 {
-	if ( my == nullptr || weaponarm == nullptr )
+	if ( weaponLimb == nullptr || weaponArmLimb == nullptr )
 	{
 		return;
 	}
 
-	if ( this->flags[INVISIBLE] == false ) //TODO: isInvisible()?
+	int monsterType = this->getMonsterTypeFromSprite();
+
+	if ( weaponLimb->flags[INVISIBLE] == false ) //TODO: isInvisible()?
 	{
-		if ( this->sprite == items[SHORTBOW].index )
+		if ( weaponLimb->sprite == items[SHORTBOW].index )
 		{
-			this->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-			this->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-			this->z = weaponarm->z + 1;
-			this->pitch = weaponarm->pitch + .25;
+			weaponLimb->x = weaponArmLimb->x - .5 * cos(weaponArmLimb->yaw);
+			weaponLimb->y = weaponArmLimb->y - .5 * sin(weaponArmLimb->yaw);
+			weaponLimb->z = weaponArmLimb->z + 1;
+			weaponLimb->pitch = weaponArmLimb->pitch + .25;
 		}
-		else if ( this->sprite == items[ARTIFACT_BOW].index )
+		else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index )
 		{
-			this->x = weaponarm->x - 1.5 * cos(weaponarm->yaw);
-			this->y = weaponarm->y - 1.5 * sin(weaponarm->yaw);
-			this->z = weaponarm->z + 2;
-			this->pitch = weaponarm->pitch + .25;
+			weaponLimb->x = weaponArmLimb->x - 1.5 * cos(weaponArmLimb->yaw);
+			weaponLimb->y = weaponArmLimb->y - 1.5 * sin(weaponArmLimb->yaw);
+			weaponLimb->z = weaponArmLimb->z + 2;
+			weaponLimb->pitch = weaponArmLimb->pitch + .25;
 		}
-		else if ( this->sprite == items[CROSSBOW].index )
+		else if ( weaponLimb->sprite == items[CROSSBOW].index )
 		{
-			this->x = weaponarm->x;
-			this->y = weaponarm->y;
-			this->z = weaponarm->z + 1;
-			this->pitch = weaponarm->pitch;
+			weaponLimb->x = weaponArmLimb->x;
+			weaponLimb->y = weaponArmLimb->y;
+			weaponLimb->z = weaponArmLimb->z + 1;
+			weaponLimb->pitch = weaponArmLimb->pitch;
 		}
 		else
 		{
-			/*this->focalx = limbs[monsterType][6][0];
-			this->focalz = limbs[monsterType][6][2];*/
-			int monsterType = my->getMonsterTypeFromSprite();
-			if ( MONSTER_ATTACK == 3 )
+			/*weaponLimb->focalx = limbs[monsterType][6][0];
+			weaponLimb->focalz = limbs[monsterType][6][2];*/
+			if ( this->monsterAttack == 3 )
 			{
 				// poking animation, weapon pointing straight ahead.
-				if ( weaponarm->skill[1] < 2 && weaponarm->pitch < PI / 2 )
+				if ( weaponArmLimb->skill[1] < 2 && weaponArmLimb->pitch < PI / 2 )
 				{
-					// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
-					this->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
-					this->y = weaponarm->y + (3 * cos(weaponarm->pitch)) * sin(weaponarm->yaw);
+					// cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw) allows forward/back motion dependent on the arm rotation.
+					weaponLimb->x = weaponArmLimb->x + (3 * cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw);
+					weaponLimb->y = weaponArmLimb->y + (3 * cos(weaponArmLimb->pitch)) * sin(weaponArmLimb->yaw);
 
-					if ( weaponarm->pitch < PI / 3 )
+					if ( weaponArmLimb->pitch < PI / 3 )
 					{
 						// adjust the z point halfway through swing.
-						this->z = weaponarm->z + 1.5 - 2 * cos(weaponarm->pitch / 2);
+						weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
 					}
 					else
 					{
-						this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-						if ( this->pitch > PI / 2 )
+						weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
+						if ( weaponLimb->pitch > PI / 2 )
 						{
 							limbAnimateToLimit(this, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
 						}
@@ -7091,42 +7092,42 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 				// hold sword with pitch aligned to arm rotation.
 				else
 				{
-					this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-					this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-					this->z = weaponarm->z - .5;
-					this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+					weaponLimb->z = weaponArmLimb->z - .5;
+					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
 				}
 			}
 			else
 			{
-				this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-				this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-				this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-				this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+				weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+				weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
+				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
 			}
 		}
 	}
 
-	this->yaw = weaponarm->yaw;
-	this->roll = weaponarm->roll;
+	weaponLimb->yaw = weaponArmLimb->yaw;
+	weaponLimb->roll = weaponArmLimb->roll;
 
-	if ( !MONSTER_ARMBENDED )
+	if ( !this->monsterArmbended )
 	{
-		this->focalx = limbs[monsterType][6][0]; // 2.5
-		if ( this->sprite == items[CROSSBOW].index )
+		weaponLimb->focalx = limbs[monsterType][6][0]; // 2.5
+		if ( weaponLimb->sprite == items[CROSSBOW].index )
 		{
-			this->focalx += 2;
+			weaponLimb->focalx += 2;
 		}
-		this->focaly = limbs[monsterType][6][1]; // 0
-		this->focalz = limbs[monsterType][6][2]; // -.5
+		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
+		weaponLimb->focalz = limbs[monsterType][6][2]; // -.5
 	}
 	else
 	{
-		this->focalx = limbs[monsterType][6][0] + 1; // 3.5
-		this->focaly = limbs[monsterType][6][1]; // 0
-		this->focalz = limbs[monsterType][6][2] - 2; // -2.5
-		this->yaw -= sin(weaponarm->roll) * PI / 2;
-		this->pitch += cos(weaponarm->roll) * PI / 2;
+		weaponLimb->focalx = limbs[monsterType][6][0] + 1; // 3.5
+		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
+		weaponLimb->focalz = limbs[monsterType][6][2] - 2; // -2.5
+		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
+		weaponLimb->pitch += cos(weaponArmLimb->roll) * PI / 2;
 	}
 
 	return;

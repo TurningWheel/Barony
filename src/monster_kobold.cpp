@@ -699,7 +699,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( weaponarm != nullptr )
 				{
-					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			// shield
