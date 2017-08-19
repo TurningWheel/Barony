@@ -803,6 +803,16 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, 8);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
+		}
+	}
 	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
