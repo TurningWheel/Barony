@@ -1736,8 +1736,8 @@ void assignActions(map_t* map)
 						if ( stats[numplayers]->HP <= 0 )
 						{
 							messagePlayer(numplayers, language[1109]);
-							stats[numplayers]->HP = stats[numplayers]->MAXHP / 2;
-							stats[numplayers]->MP = stats[numplayers]->MAXMP / 2;
+							stats[numplayers]->HP = stats[numplayers]->MAXHP;
+							stats[numplayers]->MP = stats[numplayers]->MAXMP;
 							stats[numplayers]->HUNGER = 500;
 							for ( c = 0; c < NUMEFFECTS; c++ )
 							{
