@@ -704,26 +704,25 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 461;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( !MONSTER_ARMBENDED )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 					{
-						entity->sprite += 1/*(weapon->flags[INVISIBLE] != true)*/;
-					}
-					if ( MONSTER_ARMBENDED /*|| (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT)*/ )
-					{
+						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[GOATMAN][4][0]; // 0
 						entity->focaly = limbs[GOATMAN][4][1]; // 0
-						entity->focalz = limbs[GOATMAN][4][2]; // 1.5
+						entity->focalz = limbs[GOATMAN][4][2]; // 2
+						entity->sprite = 461;
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[GOATMAN][4][0] + 0.75;
 						entity->focaly = limbs[GOATMAN][4][1];
 						entity->focalz = limbs[GOATMAN][4][2] - 0.75;
+						entity->sprite = 462;
 					}
 				}
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -739,28 +738,28 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 459;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					entity->sprite += (shield->flags[INVISIBLE] != true);
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
 						entity->focalx = limbs[GOATMAN][5][0]; // 0
 						entity->focaly = limbs[GOATMAN][5][1]; // 0
-						entity->focalz = limbs[GOATMAN][5][2]; // 1.5
+						entity->focalz = limbs[GOATMAN][5][2]; // 2
+						entity->sprite = 459;
 					}
 					else
 					{
 						entity->focalx = limbs[GOATMAN][5][0] + 0.75;
 						entity->focaly = limbs[GOATMAN][5][1];
 						entity->focalz = limbs[GOATMAN][5][2] - 0.75;
+						entity->sprite = 460;
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 1.5;
+				entity->z += .5;
 				if ( my->z >= 2.4 && my->z <= 2.6 )
 				{
 					entity->pitch = 0;

@@ -6419,7 +6419,8 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->roll = 0;
 			weaponarm->skill[1] = 0;
 		}
-		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
+		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) &&
+			monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6474,7 +6475,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6526,9 +6527,9 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->skill[1] = 0;
 		}
 
-		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, false, 0.0);
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6590,7 +6591,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, false, 0.0);
 		}
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6661,7 +6662,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6776,7 +6777,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			}
 		}
 
-		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6830,7 +6831,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 		if ( shieldNode )
 		{
 			Entity* shield = (Entity*)shieldNode->element;
-			if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
+			if ( dist > 0.01 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
 			{
 				// walking to destination
 				if ( !rightbody->skill[0] )
@@ -6917,7 +6918,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 	{
 		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
 		{
-			if ( dist > 0.1 )
+			if ( dist > 0.01 )
 			{
 				double armMoveSpeed = 1.0;
 				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
@@ -7046,13 +7047,13 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 		}
 		else
 		{
-			this->focalx = limbs[monsterType][6][0];
-			this->focalz = limbs[monsterType][6][2];
-
+			/*this->focalx = limbs[monsterType][6][0];
+			this->focalz = limbs[monsterType][6][2];*/
+			int monsterType = my->getMonsterTypeFromSprite();
 			if ( MONSTER_ATTACK == 3 )
 			{
 				// poking animation, weapon pointing straight ahead.
-				if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2 )
+				if ( weaponarm->skill[1] < 2 && weaponarm->pitch < PI / 2 )
 				{
 					// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
 					this->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
@@ -7061,20 +7062,23 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 					if ( weaponarm->pitch < PI / 3 )
 					{
 						// adjust the z point halfway through swing.
-						int monsterType = my->getMonsterTypeFromSprite();
+						this->z = weaponarm->z + 1.5 - 2 * cos(weaponarm->pitch / 2);
 						if ( monsterType == GOATMAN )
 						{
-							this->z = weaponarm->z + 1 * sin(weaponarm->pitch);
-						}
-						else
-						{
-							this->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+							this->z += 1.0;
 						}
 					}
 					else
 					{
 						this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-						limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+						if ( this->pitch > PI / 2 )
+						{
+							limbAnimateToLimit(this, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
+						}
+						else
+						{
+							limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+						}
 					}
 				}
 				// hold sword with pitch aligned to arm rotation.
@@ -7082,7 +7086,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 				{
 					this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
 					this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-					this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+					this->z = weaponarm->z - .5;
+					if ( monsterType == GOATMAN )
+					{
+						this->z += 1.0;
+					}
 					this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
 				}
 			}
@@ -7092,6 +7100,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 				this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
 				this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
 				this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+				if ( monsterType == GOATMAN )
+				{
+					this->z += 1.0;
+				}
 			}
 		}
 	}
