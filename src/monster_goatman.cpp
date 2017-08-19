@@ -240,7 +240,10 @@ void initGoatman(Entity* my, Stat* myStats)
 
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->weapon = newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+				messagePlayer(clientnum, "Giving goatman a bottle of booze.");
+				//myStats->weapon = newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, nullptr);
+				myStats->weapon = newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, nullptr); //TODO: Test.
+				//myStats->weapon = newItem(BRONZE_AXE, static_cast<Status>(DECREPIT), 0, 1, rand(), false, nullptr);
 			}
 		}
 	}
