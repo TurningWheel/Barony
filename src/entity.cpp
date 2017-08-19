@@ -7063,10 +7063,6 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 					{
 						// adjust the z point halfway through swing.
 						this->z = weaponarm->z + 1.5 - 2 * cos(weaponarm->pitch / 2);
-						if ( monsterType == GOATMAN )
-						{
-							this->z += 1.0;
-						}
 					}
 					else
 					{
@@ -7087,10 +7083,6 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 					this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
 					this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
 					this->z = weaponarm->z - .5;
-					if ( monsterType == GOATMAN )
-					{
-						this->z += 1.0;
-					}
 					this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
 				}
 			}
@@ -7100,10 +7092,6 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 				this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
 				this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
 				this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
-				if ( monsterType == GOATMAN )
-				{
-					this->z += 1.0;
-				}
 			}
 		}
 	}
