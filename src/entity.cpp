@@ -6399,7 +6399,7 @@ bool Entity::hasRangedWeapon() const
 
 void Entity::handleWeaponArmAttack(Entity* weaponarm)
 {
-	if ( this == nullptr || weaponarm == nullptr )
+	if ( weaponarm == nullptr )
 	{
 		return;
 	}
