@@ -570,7 +570,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw;
 		}
 
-		if ( bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_RIGHTLEG )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
 			my->humanoidAnimateWalk(entity, node, bodypart, GOATMANWALKSPEED, dist, 0.4);
 		}

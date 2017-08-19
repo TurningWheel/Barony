@@ -6847,13 +6847,13 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 				// walking to destination
 				if ( !rightbody->skill[0] )
 				{
-					this->pitch -= dist * walkSpeed;
-					if ( this->pitch < -PI / 4.0 )
+					limb->pitch -= dist * walkSpeed;
+					if ( limb->pitch < -PI / 4.0 )
 					{
-						this->pitch = -PI / 4.0;
+						limb->pitch = -PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							this->skill[0] = 1;
+							limb->skill[0] = 1;
 
 							if ( dist > distForFootstepSound )
 							{
@@ -6876,13 +6876,13 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 				}
 				else
 				{
-					this->pitch += dist * walkSpeed;
-					if ( this->pitch > PI / 4.0 )
+					limb->pitch += dist * walkSpeed;
+					if ( limb->pitch > PI / 4.0 )
 					{
-						this->pitch = PI / 4.0;
+						limb->pitch = PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							this->skill[0] = 0;
+							limb->skill[0] = 0;
 							if ( dist > distForFootstepSound )
 							{
 								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
@@ -6906,26 +6906,26 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 			else
 			{
 				// coming to a stop
-				if ( this->pitch < 0 )
+				if ( limb->pitch < 0 )
 				{
-					this->pitch += 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch > 0 )
+					limb->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch > 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
-				else if ( this->pitch > 0 )
+				else if ( limb->pitch > 0 )
 				{
-					this->pitch -= 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch < 0 )
+					limb->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch < 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
 			}
 		}
 	}
-	else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
+	else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 	{
 		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (this->monsterAttack == 0 && this->monsterAttackTime == 0) )
 		{
@@ -6938,41 +6938,41 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 					armMoveSpeed = 0.5;
 				}
 
-				if ( this->skill[0] )
+				if ( limb->skill[0] )
 				{
-					this->pitch -= dist * walkSpeed * armMoveSpeed;
-					if ( this->pitch < -PI * armMoveSpeed / 4.0 )
+					limb->pitch -= dist * walkSpeed * armMoveSpeed;
+					if ( limb->pitch < -PI * armMoveSpeed / 4.0 )
 					{
-						this->skill[0] = 0;
-						this->pitch = -PI * armMoveSpeed / 4.0;
+						limb->skill[0] = 0;
+						limb->pitch = -PI * armMoveSpeed / 4.0;
 					}
 				}
 				else
 				{
-					this->pitch += dist * walkSpeed * armMoveSpeed;
-					if ( this->pitch > PI * armMoveSpeed / 4.0 )
+					limb->pitch += dist * walkSpeed * armMoveSpeed;
+					if ( limb->pitch > PI * armMoveSpeed / 4.0 )
 					{
-						this->skill[0] = 1;
-						this->pitch = PI * armMoveSpeed / 4.0;
+						limb->skill[0] = 1;
+						limb->pitch = PI * armMoveSpeed / 4.0;
 					}
 				}
 			}
 			else
 			{
-				if ( this->pitch < 0 )
+				if ( limb->pitch < 0 )
 				{
-					this->pitch += 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch > 0 )
+					limb->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch > 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
-				else if ( this->pitch > 0 )
+				else if ( limb->pitch > 0 )
 				{
-					this->pitch -= 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch < 0 )
+					limb->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch < 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
 			}
@@ -7081,11 +7081,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
 						if ( weaponLimb->pitch > PI / 2 )
 						{
-							limbAnimateToLimit(this, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
+							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
 						}
 						else
 						{
-							limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
 						}
 					}
 				}
