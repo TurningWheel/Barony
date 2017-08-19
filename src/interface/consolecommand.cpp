@@ -8,7 +8,6 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
-
 #include <sstream>
 #include "../main.hpp"
 #include "../game.hpp"
@@ -1454,8 +1453,42 @@ void consoleCommand(char* command_str)
 		}
 		if ( success )
 		{
-			messagePlayer(clientnum, "Successfully reloaded all limbs.txt! Please restart the current level to apply changes.");
+			messagePlayer(clientnum, "Successfully reloaded all limbs.txt!");
 		}
+	}
+	else if ( !strncmp(command_str, "/animspeed ", 10) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int speed = atoi(&command_str[11]);
+		monsterGlobalAnimationMultiplier = speed;
+		messagePlayer(clientnum, "Changed animation speed multiplier to %f.", speed / 10.0);
+	}
+	else if ( !strncmp(command_str, "/atkspeed ", 9) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+		if ( multiplayer != SINGLE )
+		{
+			messagePlayer(clientnum, language[299]);
+			return;
+		}
+
+		int speed = atoi(&command_str[10]);
+		monsterGlobalAttackTimeMultiplier = speed;
+		messagePlayer(clientnum, "Changed attack speed multiplier to %d.", speed);
 	}
 	else
 	{
