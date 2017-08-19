@@ -6204,6 +6204,15 @@ int Entity::getAttackPose() const
 				pose = 1;  // vertical swing
 			}
 		}
+		/*else if ( itemCategory(myStats->weapon) == POTION )
+		{
+			//TODO:
+			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+			{
+				//
+			}
+			else if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+		}*/
 		else if ( this->hasRangedWeapon() )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
