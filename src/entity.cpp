@@ -5947,36 +5947,100 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	return 1;
 }
 
-int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
+bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 {
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+
+	Stat* myStats;
+
+	if ( this->behavior == &actPlayer )
+	{
+		myStats = stats[this->skill[2]]; // skill[2] contains the player number.
+	}
+	else
+	{
+		myStats = this->getStats();
+	}
+
 	if ( myStats == nullptr )
 	{
-		return 0;
+		return false;
 	}
 	if ( myStats->shoes == nullptr )
 	{
-		return 0;
+		return false;
 	}
 
-	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
-		ent->sprite = 148 + myStats->sex + spriteOffset;
+	switch ( myStats->type )
+	{
+		case HUMAN:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 148 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 152 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 156 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 499 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 521 + myStats->sex + spriteOffset;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		// fall throughs below
+		case AUTOMATON:
+		case GOATMAN:
+		case INSECTOID:
+		case KOBOLD:
+		case GOBLIN:
+		case SKELETON:
+		case GNOME:
+		case SHADOW:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 148 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 152 + spriteOffset;
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 156 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 499 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 521 + spriteOffset;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		default:
+			break;
 	}
-	else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING ) {
-		ent->sprite = 152 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER ) {
-		ent->sprite = 156 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type == CRYSTAL_BOOTS ) {
-		ent->sprite = 499 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type == ARTIFACT_BOOTS ) {
-		ent->sprite = 521 + myStats->sex + spriteOffset;
-	}
-	else {
-		return 0;
-	}
-	return 1;
+	
+	return true;
 }
 
 
@@ -6173,7 +6237,7 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6184,7 +6248,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6206,7 +6270,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6228,7 +6292,7 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
 			}
@@ -6241,7 +6305,7 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -6355,7 +6419,8 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->roll = 0;
 			weaponarm->skill[1] = 0;
 		}
-		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
+		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) &&
+			monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6410,7 +6475,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6462,9 +6527,9 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->skill[1] = 0;
 		}
 
-		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, false, 0.0);
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6526,7 +6591,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, false, 0.0);
 		}
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6597,7 +6662,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6712,7 +6777,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			}
 		}
 
-		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6766,7 +6831,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 		if ( shieldNode )
 		{
 			Entity* shield = (Entity*)shieldNode->element;
-			if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
+			if ( dist > 0.01 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0 ) )
 			{
 				// walking to destination
 				if ( !rightbody->skill[0] )
@@ -6853,7 +6918,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 	{
 		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
 		{
-			if ( dist > 0.1 )
+			if ( dist > 0.01 )
 			{
 				double armMoveSpeed = 1.0;
 				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
@@ -6922,11 +6987,19 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 			sound = rand() % 7;
 			break;
 		case MONSTER_FOOTSTEP_USE_BOOTS:
-			if ( bootSprite == 152 || bootSprite == 153 )
+			if ( bootSprite >= 152 && bootSprite <= 155 ) // iron boots
 			{
 				sound = 7 + rand() % 7;
 			}
-			else if ( bootSprite == 156 || bootSprite == 157 )
+			else if ( bootSprite >= 156 && bootSprite <= 159 ) // steel boots
+			{
+				sound = 14 + rand() % 7;
+			}
+			else if ( bootSprite >= 499 && bootSprite <= 502 ) // crystal boots
+			{
+				sound = 14 + rand() % 7;
+			}
+			else if ( bootSprite >= 521 && bootSprite <= 524 ) // artifact boots
 			{
 				sound = 14 + rand() % 7;
 			}
@@ -6949,7 +7022,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 		return;
 	}
 
-	if ( my->isInvisible() == false	) //TODO: isInvisible()?
+	if ( this->flags[INVISIBLE] == false ) //TODO: isInvisible()?
 	{
 		if ( this->sprite == items[SHORTBOW].index )
 		{
@@ -6974,13 +7047,13 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 		}
 		else
 		{
-			this->focalx = limbs[monsterType][6][0];
-			this->focalz = limbs[monsterType][6][2];
-
+			/*this->focalx = limbs[monsterType][6][0];
+			this->focalz = limbs[monsterType][6][2];*/
+			int monsterType = my->getMonsterTypeFromSprite();
 			if ( MONSTER_ATTACK == 3 )
 			{
 				// poking animation, weapon pointing straight ahead.
-				if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2 )
+				if ( weaponarm->skill[1] < 2 && weaponarm->pitch < PI / 2 )
 				{
 					// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
 					this->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
@@ -6989,12 +7062,19 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 					if ( weaponarm->pitch < PI / 3 )
 					{
 						// adjust the z point halfway through swing.
-						this->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+						this->z = weaponarm->z + 1.5 - 2 * cos(weaponarm->pitch / 2);
 					}
 					else
 					{
 						this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-						limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+						if ( this->pitch > PI / 2 )
+						{
+							limbAnimateToLimit(this, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
+						}
+						else
+						{
+							limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+						}
 					}
 				}
 				// hold sword with pitch aligned to arm rotation.
@@ -7002,7 +7082,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monster
 				{
 					this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
 					this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-					this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
+					this->z = weaponarm->z - .5;
 					this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
 				}
 			}

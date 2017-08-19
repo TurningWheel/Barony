@@ -2224,10 +2224,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -2273,10 +2270,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{

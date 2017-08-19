@@ -1192,10 +1192,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -1241,10 +1238,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{

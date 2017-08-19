@@ -504,7 +504,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.1);
+			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 			
 			if ( bodypart == 9 )
 			{
@@ -523,6 +523,30 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// right leg
 			case 3:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 423;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x += 1.25 * cos(my->yaw + PI / 2);
 				entity->y += 1.25 * sin(my->yaw + PI / 2);
 				entity->z += 2.75;
@@ -534,6 +558,30 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 424;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= 1.25 * cos(my->yaw + PI / 2);
 				entity->y -= 1.25 * sin(my->yaw + PI / 2);
 				entity->z += 2.75;
@@ -552,6 +600,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					Entity* weapon = (Entity*)weaponNode->element;
 					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
 					{
+						// if weapon invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][4][0]; // 0
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2]; // 2
@@ -559,6 +608,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[KOBOLD][4][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][4][1]; // 0
 						entity->focalz = limbs[KOBOLD][4][2] - 1; // 1
@@ -582,8 +632,9 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
+						// if weapon invisible and I'm not moving, relax arm.
 						entity->focalx = limbs[KOBOLD][5][0]; // 0
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2]; // 2
@@ -591,6 +642,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[KOBOLD][5][0] + 1; // 1
 						entity->focaly = limbs[KOBOLD][5][1]; // 0
 						entity->focalz = limbs[KOBOLD][5][2] - 1; // 1
@@ -749,6 +801,16 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->y -= sin(my->yaw) * 1.5;
 				entity->yaw += PI / 2;
 				break;
+		}
+	}
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, 8);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
 		}
 	}
 	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )

@@ -426,3 +426,7 @@ void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, doubl
 real_t normaliseAngle2PI(real_t angle);
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
 int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);
+// change animation speeds for debugging, default value 10.
+extern int monsterGlobalAnimationMultiplier;
+// change attacktime for debugging, default value 1.
+extern int monsterGlobalAttackTimeMultiplier;
