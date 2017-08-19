@@ -320,7 +320,7 @@ public:
 	// weapon arm animation attacks
 	void handleWeaponArmAttack(Entity* weaponarm);
 	// handle walking movement for arms and legs
-	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
+	void humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
 	// monster footsteps, needs to be client friendly
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets

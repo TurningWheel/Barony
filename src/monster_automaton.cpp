@@ -543,7 +543,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -561,7 +561,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
 
 			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{

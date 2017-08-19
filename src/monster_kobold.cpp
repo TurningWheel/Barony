@@ -486,7 +486,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -504,7 +504,7 @@ void koboldMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
+			my->humanoidAnimateWalk(entity, node, bodypart, KOBOLDWALKSPEED, dist, 0.4);
 			
 			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{

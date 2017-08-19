@@ -6822,13 +6822,13 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 	return;
 }
 
-void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound)
+void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound)
 {
 	if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 	{
 		Entity* rightbody = nullptr;
 		// set rightbody to left leg.
-		node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+		node_t* rightbodyNode = list_Node(&this->children, LIMB_HUMANOID_LEFTLEG);
 		if ( rightbodyNode )
 		{
 			rightbody = (Entity*)rightbodyNode->element;
@@ -6838,7 +6838,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 			return;
 		}
 
-		node_t* shieldNode = list_Node(&my->children, 8);
+		node_t* shieldNode = list_Node(&this->children, 8);
 		if ( shieldNode )
 		{
 			Entity* shield = (Entity*)shieldNode->element;
@@ -6857,18 +6857,18 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 
 							if ( dist > distForFootstepSound )
 							{
-								if ( my->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 								{
-									node_t* tempNode = list_Node(&my->children, 3);
+									node_t* tempNode = list_Node(&this->children, 3);
 									if ( tempNode )
 									{
 										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, foot->sprite), 32);
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
 									}
 								}
 								else
 								{
-									playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, 0), 32);
+									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
 								}
 							}
 						}
@@ -6885,18 +6885,18 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 							this->skill[0] = 0;
 							if ( dist > distForFootstepSound )
 							{
-								if ( my->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 								{
-									node_t* tempNode = list_Node(&my->children, 3);
+									node_t* tempNode = list_Node(&this->children, 3);
 									if ( tempNode )
 									{
 										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, foot->sprite), 32);
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
 									}
 								}
 								else
 								{
-									playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, 0), 32);
+									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
 								}
 							}
 						}
@@ -6927,12 +6927,12 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 	}
 	else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
 	{
-		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (this->monsterAttack == 0 && this->monsterAttackTime == 0) )
 		{
 			if ( dist > 0.1 )
 			{
 				double armMoveSpeed = 1.0;
-				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
+				if ( bodypart == LIMB_HUMANOID_RIGHTARM && this->hasRangedWeapon() && this->monsterState == MONSTER_STATE_ATTACK )
 				{
 					// don't move ranged weapons so far if ready to attack
 					armMoveSpeed = 0.5;
