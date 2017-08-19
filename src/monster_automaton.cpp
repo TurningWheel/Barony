@@ -692,26 +692,25 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			// right arm
 			case 5:
 			{
-				entity->sprite = 471;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( !MONSTER_ARMBENDED )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterAttack == 0) )
 					{
-						entity->sprite += (weapon->flags[INVISIBLE] != true);
-					}
-					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE]) )
-					{
+						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[AUTOMATON][4][0]; // 0
 						entity->focaly = limbs[AUTOMATON][4][1]; // 0
 						entity->focalz = limbs[AUTOMATON][4][2]; // 2
+						entity->sprite = 471;
 					}
 					else
 					{
-						entity->focalx = limbs[AUTOMATON][4][0] + 1; // 1
-						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						// else flex arm.
+						entity->focalx = limbs[AUTOMATON][4][0] + 1.5; // 1
+						entity->focaly = limbs[AUTOMATON][4][1] + 0.25; // 0
 						entity->focalz = limbs[AUTOMATON][4][2] - 1; // 1
+						entity->sprite = 472;
 					}
 				}
 				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -727,22 +726,24 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			case 6:
 			{
-				entity->sprite = 469;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					entity->sprite += (shield->flags[INVISIBLE] != true);
 					if ( shield->flags[INVISIBLE] )
 					{
+						// if shield invisible, relax arm.
+						entity->sprite = 469;
 						entity->focalx = limbs[AUTOMATON][5][0]; // 0
 						entity->focaly = limbs[AUTOMATON][5][1]; // 0
 						entity->focalz = limbs[AUTOMATON][5][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[AUTOMATON][5][0] + 1; // 1
-						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						// else flex arm.
+						entity->sprite = 470;
+						entity->focalx = limbs[AUTOMATON][5][0] + 1.5; // 1
+						entity->focaly = limbs[AUTOMATON][5][1] - 0.25; // 0
 						entity->focalz = limbs[AUTOMATON][5][2] - 1; // 1
 					}
 				}
