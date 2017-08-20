@@ -81,6 +81,9 @@ class Entity
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
 
+	// Item skills
+	Sint32& itemNotMoving;
+
 	static const int CRYSTAL_HOVER_UP = 0;
 	static const int CRYSTAL_HOVER_UP_WAIT = 1;
 	static const int CRYSTAL_HOVER_DOWN = 2;
@@ -241,6 +244,7 @@ public:
 	bool goblinCanWieldItem(Item& item) const;
 	bool humanCanWieldItem(Item& item) const;
 	bool goatmanCanWieldItem(Item& item) const;
+	bool automatonCanWieldItem(Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -332,6 +336,10 @@ public:
 	// monster attack handler
 	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
+	// automaton specific function
+	void automatonRecycleItem();
+	// check for nearby items to add to monster's inventory
+	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 
 	spell_t* getActiveMagicEffect(int spellID);
 

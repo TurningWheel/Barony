@@ -1047,3 +1047,160 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		// do nothing, don't reset attacktime or increment it.
 	}
 }
+
+bool Entity::automatonCanWieldItem(Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case ARMOR:
+			return true;
+		case THROWN:
+			return true;
+		default:
+			return false;
+	}
+
+	return false;
+}
+
+
+void Entity::automatonRecycleItem()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+	int numItemsHeld = list_Size(&myStats->inventory);
+
+	if ( this->monsterSpecial > 0 )
+	{
+		--this->monsterSpecial;
+		return;
+	}
+	else if ( numItemsHeld < 2 )
+	{
+		return;
+	}
+	
+	if (this->monsterSpecial == 0)
+	{
+		this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
+	}
+
+	int i = 0;
+	int itemIndex = 0;
+	int chances[10] = { -1 }; // max 10 items
+	int matches = 0;
+
+	// search for valid recyclable items, set chance for valid index.
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		if ( matches >= 10 )
+		{
+			break;
+		}
+		nextnode = node->next;
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( (itemCategory(item) == WEAPON || itemCategory(item) == THROWN || itemCategory(item) == ARMOR)
+				&& item->status > BROKEN )
+			{
+				chances[matches] = itemIndex;
+				++matches;
+			}
+		}
+		++itemIndex;
+	}
+
+	//messagePlayer(0, "Found %d items", matches);
+
+	if ( matches < 2 ) // not enough valid items found.
+	{
+		return;
+	}
+
+	int pickItem1 = rand() % matches; // pick random valid item index in inventory
+	int pickItem2 = rand() % matches;
+	while ( pickItem2 == pickItem1 )
+	{
+		pickItem2 = rand() % matches; // make sure index 2 is unique
+	}
+
+	itemIndex = 0;
+	Item* item1 = nullptr;
+	Item* item2 = nullptr;
+
+	
+
+	// search again for the 2 indexes, store the items and nodes.
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( chances[pickItem1] == itemIndex )
+		{
+			item1 = (Item*)node->element;
+		}
+		else if ( chances[pickItem2] == itemIndex )
+		{
+			item2 = (Item*)node->element;
+		}
+		++itemIndex;
+	}
+
+	if ( item1 == nullptr || item2 == nullptr )
+	{
+		return;
+	}
+
+	//messagePlayer(0, "made it past");
+
+	int maxGoldValue = (items[item1->type].value + items[item2->type].value) * 2 / 3;
+	int minGoldValue = (items[item1->type].value + items[item2->type].value) * 1 / 3;
+	ItemType type;
+	// generate a weapon/armor piece and add it into the inventory.
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			type = itemTypeWithinGoldValue(WEAPON, minGoldValue, maxGoldValue);
+			break;
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+			type = itemTypeWithinGoldValue(ARMOR, minGoldValue, maxGoldValue);
+			break;
+		case 9:
+			type = itemTypeWithinGoldValue(THROWN, minGoldValue, maxGoldValue);
+			break;
+		default:
+			break;
+	}
+
+	if ( type != GEM_ROCK ) // found an item in category
+	{
+		Item* item = newItem(type, item1->status, item1->beatitude, 1, rand(), item1->identified, &myStats->inventory);
+		dropItemMonster(item, this, myStats);
+		// recycle item1, reduce durability.
+		item1->status = static_cast<Status>(std::max(0, item1->status - 2));
+		//messagePlayer(0, "Generated %d!", type);
+	}
+
+	return;
+}
