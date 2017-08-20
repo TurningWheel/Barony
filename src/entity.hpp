@@ -445,11 +445,12 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-const int NUM_ITEM_STRINGS = 213;
-const int NUM_ITEM_STRINGS_BY_TYPE = 75;
+static const int NUM_ITEM_STRINGS = 213;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
+static const int NUM_EDITOR_SPRITES = 113;
 
 int checkSpriteType(Sint32 sprite);
-extern char spriteEditorNameStrings[108][64];
+extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
 extern char tileEditorNameStrings[202][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
