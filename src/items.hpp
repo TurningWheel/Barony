@@ -427,6 +427,8 @@ bool itemIsEquipped(const Item* item, int player);
  * Returns true if potion is harmful to the player.
  */
 bool isPotionBad(const Item& potion);
+bool inline isRangedWeapon(const Item& item);
+bool inline isMeleeWeapon(const Item& item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
 void copyItem(Item* itemToSet, Item* itemToCopy);
@@ -434,6 +436,8 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats);
+node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
 ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 
 // unique monster item appearance to avoid being dropped on death.

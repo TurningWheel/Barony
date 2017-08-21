@@ -1763,7 +1763,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-bool Entity::humanCanWieldItem(Item& item) const
+bool Entity::humanCanWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )

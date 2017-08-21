@@ -1071,14 +1071,89 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-//void Entity::goatmanChooseWeapon()
-//{
-//	bool hasPotions = false;
-//	bool hasThrown = false;
-//	bool hasMelee = false;
-//}
+void Entity::goatmanChooseWeapon(const Entity* target, double dist)
+{
+	//TODO: I don't like this function getting called every frame. Find a better place to put it.
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
 
-bool Entity::goatmanCanWieldItem(Item& item) const
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+	if ( inMeleeRange )
+	{
+		//messagePlayer(clientnum, "In melee range!");
+	}
+	else
+	{
+		//messagePlayer(clientnum, "In ranged range!");
+	}
+
+	if ( inMeleeRange )
+	{
+		//Switch to a melee weapon if not already wielding one.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			//Item* meleeWeapon = nullptr;
+			node_t *weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
+
+			//meleeWeapon = static_cast<Item*>(weaponNode->element); //If weaponNode->element is nullptr, will basically resort to fists.
+			//myStats->weapon = meleeWeapon;
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+			if ( !swapped )
+			{
+				//messagePlayer(clientnum, "Failed to swap Goatman's non-melee weapon into inventory!");
+			}
+			else
+			{
+				//messagePlayer(clientnum, "Swapped Goatman's non-melee weapon into inventory!");
+			}
+			return;
+		}
+	}
+	else
+	{
+		//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
+		if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+		{
+			//First search the inventory for a THROWN weapon.
+			node_t *weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			if ( !weaponNode )
+			{
+				//messagePlayer(clientnum, "No THROWN weapons in inventory!");
+				//If couldn't find any, search the inventory for a ranged weapon.
+				weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+				if ( !weaponNode )
+				{
+					//messagePlayer(clientnum, "No other ranged weapons in inventory!");
+				}
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+			if ( !swapped )
+			{
+				//messagePlayer(clientnum, "Failed to swap Goatman's non-ranged weapon into inventory!");
+				/*if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+				{
+					//Free up hands so he can pick up items off the floor.
+					putWeaponInInventory(myStats);
+				}*/
+			}
+			else
+			{
+				//messagePlayer(clientnum, "Swapped Goatman's non-ranged weapon into inventory!");
+			}
+			return;
+		}
+	}
+}
+
+bool Entity::goatmanCanWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )

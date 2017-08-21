@@ -1284,7 +1284,7 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-bool Entity::goblinCanWieldItem(Item& item) const
+bool Entity::goblinCanWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )

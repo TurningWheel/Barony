@@ -237,10 +237,10 @@ public:
 	//--*CheckBetterEquipment functions--
 	void checkBetterEquipment(Stat* myStats);
 	void checkGroundForItems();
-	bool canWieldItem(Item& item) const;
-	bool goblinCanWieldItem(Item& item) const;
-	bool humanCanWieldItem(Item& item) const;
-	bool goatmanCanWieldItem(Item& item) const;
+	bool canWieldItem(const Item& item) const;
+	bool goblinCanWieldItem(const Item& item) const;
+	bool humanCanWieldItem(const Item& item) const;
+	bool goatmanCanWieldItem(const Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -355,8 +355,31 @@ public:
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
 
 	//Lets monsters swap out weapons.
-	//void chooseWeapon();
-	//void goatmanChooseWeapon();
+	void inline chooseWeapon(const Entity* target, double dist)
+	{
+		Stat* myStats = getStats();
+		if ( !myStats )
+		{
+			return;
+		}
+
+		switch ( myStats->type )
+		{
+			case GOATMAN:
+				goatmanChooseWeapon(target, dist);
+				break;
+			default:
+				break;
+		}
+	}
+	void goatmanChooseWeapon(const Entity* target, double dist);
+
+	bool monsterInMeleeRange(const Entity* target, double dist)
+	{
+		return (dist < STRIKERANGE);
+	}
+
+	//node_t* addItemToMonsterInventory(Item& item);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

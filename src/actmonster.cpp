@@ -2773,7 +2773,7 @@ timeToGoAgain:
 								}
 							}
 
-							my->handleMonsterAttack(myStats, entity, dist); //TODO: Continue perusing.
+							my->handleMonsterAttack(myStats, entity, dist);
 
 							// bust ceilings
 							/*if( myStats->type == MINOTAUR ) {
@@ -4351,6 +4351,8 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	}
 
 	//TODO: Goatman choose weapon.
+	//TODO: I don't like this function getting called every frame. Find a better place to put it.
+	chooseWeapon(target, dist);
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )

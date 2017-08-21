@@ -2511,13 +2511,13 @@ void createCustomInventory(Stat* stats, int itemLimit)
 
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 {
-	node_t* node = nullptr;
-	node_t* nextnode = nullptr;
-
 	if ( myStats == nullptr )
 	{
 		return nullptr;
 	}
+
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
 
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
 	{
@@ -2539,6 +2539,74 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
+{
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( isRangedWeapon(*item) )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
+{
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( isMeleeWeapon(*item) )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+bool inline isRangedWeapon(const Item& item)
+{
+	switch ( item.type )
+	{
+		case SLING:
+		case SHORTBOW:
+		case CROSSBOW:
+		case ARTIFACT_BOW:
+			return true;
+		default:
+			return false;
+	}
+}
+
+bool inline isMeleeWeapon(const Item& item)
+{
+	if ( itemCategory(&item) != WEAPON )
+	{
+		return false;
+	}
+
+	return ( !isRangedWeapon(item) );
+}
+
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
 {
 	Item* item = nullptr;
@@ -2555,6 +2623,29 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 	{
 		// TODO: handle stacks.
 		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		copyItem(tmpItem, item);
+		if ( myStats->weapon != nullptr )
+		{
+			copyItem(item, myStats->weapon);
+			copyItem(myStats->weapon, tmpItem);
+			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			{
+				playSoundEntity(my, 40 + rand() % 4, 64);
+			}
+			free(tmpItem);
+		}
+		else
+		{
+			myStats->weapon = tmpItem;
+			// remove the new item we created.
+			list_RemoveNode(inventoryNode);
+		}
+		return true;
+	}
+	else
+	{
+		//TODO: Cheap hack to handle stacks. Put the whole stack in his hand.
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, item->count, 0, false, nullptr);
 		copyItem(tmpItem, item);
 		if ( myStats->weapon != nullptr )
 		{

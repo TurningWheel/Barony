@@ -7386,7 +7386,7 @@ void Entity::checkGroundForItems()
 	}
 }
 
-bool Entity::canWieldItem(Item& item) const
+bool Entity::canWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -7407,6 +7407,15 @@ bool Entity::canWieldItem(Item& item) const
 			return false;
 	}
 }
+
+/*node_t* Entity::addItemToMonsterInventory(Item& item)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+}*/
 
 
 
