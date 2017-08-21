@@ -1196,77 +1196,60 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		Category cat = itemCategory(myStats->weapon);
 		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
 		{
-			//Item* meleeWeapon = nullptr;
 			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
 			if ( !weaponNode )
 			{
 				return; //Resort to fists.
 			}
 
-			//meleeWeapon = static_cast<Item*>(weaponNode->element); //If weaponNode->element is nullptr, will basically resort to fists.
-			//myStats->weapon = meleeWeapon;
 			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
 			if ( !swapped )
 			{
-				//messagePlayer(clientnum, "Failed to swap Goatman's non-melee weapon into inventory!");
+				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand!");
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
 			}
 			else
 			{
-				//messagePlayer(clientnum, "Swapped Goatman's non-melee weapon into inventory!");
-			}
-			return;
-		}
-	}
-	else
-	{
-		if ( hasPotion )
-		{
-			//Try to equip the potion first. If fails, then equip normal ranged.
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
-			if ( !swapped )
-			{
-				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand!");
-			}
-			else
-			{
-				monsterSpecialState = 1;
 				return;
 			}
 		}
-
-		//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
-		if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+		else
 		{
-			//First search the inventory for a THROWN weapon.
-			node_t *weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
-			if ( !weaponNode )
-			{
-				//messagePlayer(clientnum, "No THROWN weapons in inventory!");
-				//If couldn't find any, search the inventory for a ranged weapon.
-				weaponNode = getRangedWeaponItemNodeInInventory(myStats);
-				if ( !weaponNode )
-				{
-					//messagePlayer(clientnum, "No other ranged weapons in inventory!");
-				}
-			}
-
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
-			if ( !swapped )
-			{
-				//messagePlayer(clientnum, "Failed to swap Goatman's non-ranged weapon into inventory!");
-				/*if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
-				{
-					//Free up hands so he can pick up items off the floor.
-					putWeaponInInventory(myStats);
-				}*/
-			}
-			else
-			{
-				//messagePlayer(clientnum, "Swapped Goatman's non-ranged weapon into inventory!");
-			}
 			return;
 		}
 	}
+
+	if ( hasPotion )
+	{
+		//Try to equip the potion first. If fails, then equip normal ranged.
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
+		if ( !swapped )
+		{
+			printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand!");
+		}
+		else
+		{
+			monsterSpecialState = 1;
+			return;
+		}
+	}
+
+	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
+	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	{
+		//First search the inventory for a THROWN weapon.
+		node_t *weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+		if ( !weaponNode )
+		{
+			//If couldn't find any, search the inventory for a ranged weapon.
+			weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		}
+
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+		return;
+	}
+
+	return;
 }
 
 bool Entity::goatmanCanWieldItem(const Item& item) const
