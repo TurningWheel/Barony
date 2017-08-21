@@ -2617,6 +2617,11 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false;
 	}
 
+	if ( myStats->weapon->beatitude < 0 )
+	{
+		return false; //Can't unequip cursed items!
+	}
+
 	item = (Item*)inventoryNode->element;
 	
 	if ( item->count == 1 )
