@@ -88,7 +88,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
 	particleDuration(skill[0]),
-	monsterHitTime(skill[7])
+	monsterHitTime(skill[7]),
+	itemNotMoving(skill[18])
 
 {
 	int c;
@@ -7381,6 +7382,9 @@ void Entity::checkGroundForItems()
 			//Goatman boss picks up items too.
 			checkBetterEquipment(myStats);
 			break;
+		case AUTOMATON:
+			monsterAddNearbyItemToInventory(myStats, 8, 5);
+			break;
 		default:
 			return;
 	}
@@ -7401,8 +7405,9 @@ bool Entity::canWieldItem(const Item& item) const
 		case HUMAN:
 			return humanCanWieldItem(item);
 		case GOATMAN:
-			//TODO: Write a function.
 			return goatmanCanWieldItem(item);
+		case AUTOMATON:
+			return automatonCanWieldItem(item);
 		default:
 			return false;
 	}
@@ -7416,6 +7421,78 @@ bool Entity::canWieldItem(const Item& item) const
 		return nullptr;
 	}
 }*/
+void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems)
+{
+	if ( !myStats )
+	{
+		return; //Can't continue without these.
+	}
+
+	list_t* items = nullptr;
+	//X and Y in terms of tiles.
+	int tx = x / 16;
+	int ty = y / 16;
+	getItemsOnTile(tx, ty, &items); //Check the tile the monster is on for items.
+	getItemsOnTile(tx - 1, ty, &items); //Check tile to the left.
+	getItemsOnTile(tx + 1, ty, &items); //Check tile to the right.
+	getItemsOnTile(tx, ty - 1, &items); //Check tile up.
+	getItemsOnTile(tx, ty + 1, &items); //Check tile down.
+	getItemsOnTile(tx - 1, ty - 1, &items); //Check tile diagonal up left.
+	getItemsOnTile(tx + 1, ty - 1, &items); //Check tile diagonal up right.
+	getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
+	getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
+	node_t* node = nullptr;
+
+	if ( items )
+	{
+		/*
+		* Rundown of the function:
+		* Loop through all items.
+		* Add item to inventory.
+		*/
+
+		for ( node = items->first; node != nullptr; node = node->next )
+		{
+			//Turn the entity into an item.
+			if ( node->element )
+			{
+				Entity* entity = (Entity*)node->element;
+				Item* item = nullptr;
+				if ( entity != nullptr )
+				{
+					item = newItemFromEntity(entity);
+				}
+				if ( !item )
+				{
+					continue;
+				}
+				if ( list_Size(&myStats->inventory) >= maxInventoryItems )
+				{
+					break;
+				}
+				
+
+				double dist = sqrt(pow(this->x - entity->x, 2) + pow(this->y - entity->y, 2));
+				if ( std::floor(dist) > rangeToFind || entity->itemNotMoving == 0 )
+				{
+					// item was too far away, or in flight, continue.
+					continue;
+				}
+
+				newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &myStats->inventory);
+				item = nullptr;
+				list_RemoveNode(entity->mynode);			
+
+				if ( item != nullptr )
+				{
+					free(item);
+				}
+			}
+		}
+		list_FreeAll(items);
+		free(items);
+	}
+}
 
 
 

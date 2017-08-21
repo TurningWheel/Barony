@@ -219,6 +219,7 @@ void actItem(Entity* my)
 						my->z = 7.5 - models[my->sprite]->sizey * .25;
 					}
 					ITEM_VELZ = 0;
+					onground = true;
 				}
 				else
 				{

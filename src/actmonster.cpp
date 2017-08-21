@@ -1561,6 +1561,11 @@ void actMonster(Entity* my)
 
 	my->checkGroundForItems();
 
+	if ( myStats->type == AUTOMATON )
+	{
+		my->automatonRecycleItem();
+	}
+
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
 	{

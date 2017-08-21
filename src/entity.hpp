@@ -81,6 +81,9 @@ class Entity
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
 
+	// Item skills
+	Sint32& itemNotMoving;
+
 	static const int CRYSTAL_HOVER_UP = 0;
 	static const int CRYSTAL_HOVER_UP_WAIT = 1;
 	static const int CRYSTAL_HOVER_DOWN = 2;
@@ -241,6 +244,7 @@ public:
 	bool goblinCanWieldItem(const Item& item) const;
 	bool humanCanWieldItem(const Item& item) const;
 	bool goatmanCanWieldItem(const Item& item) const;
+	bool automatonCanWieldItem(const Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -332,6 +336,10 @@ public:
 	// monster attack handler
 	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
+	// automaton specific function
+	void automatonRecycleItem();
+	// check for nearby items to add to monster's inventory
+	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 
 	spell_t* getActiveMagicEffect(int spellID);
 
@@ -472,11 +480,12 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-const int NUM_ITEM_STRINGS = 213;
-const int NUM_ITEM_STRINGS_BY_TYPE = 75;
+static const int NUM_ITEM_STRINGS = 213;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
+static const int NUM_EDITOR_SPRITES = 113;
 
 int checkSpriteType(Sint32 sprite);
-extern char spriteEditorNameStrings[108][64];
+extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
 extern char tileEditorNameStrings[202][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];

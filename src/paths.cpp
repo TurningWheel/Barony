@@ -509,7 +509,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 				Entity* entity = (Entity*)node->element;
 				if ( entity )
 				{
-					if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
+					if ( isPathObstacle(entity) )
 					{
 						obstacle = true;
 						break;
@@ -559,7 +559,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									Entity* entity = (Entity*)node->element;
 									if ( entity )
 									{
-										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
+										if ( isPathObstacle(entity) )
 										{
 											foundObstacle = true;
 											break;
@@ -605,7 +605,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									Entity* entity = (Entity*)node->element;
 									if ( entity )
 									{
-										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
+										if ( isPathObstacle(entity) )
 										{
 											foundObstacle = true;
 											break;
@@ -651,7 +651,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									Entity* entity = (Entity*)node->element;
 									if ( entity )
 									{
-										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
+										if ( isPathObstacle(entity) )
 										{
 											foundObstacle = true;
 											break;
@@ -697,7 +697,7 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 									Entity* entity = (Entity*)node->element;
 									if ( entity )
 									{
-										if ( entity->behavior == &actHeadstone || entity->behavior == &actSink || entity->behavior == &actFountain )
+										if ( isPathObstacle(entity) )
 										{
 											foundObstacle = true;
 											break;
@@ -734,4 +734,28 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 	}
 	while ( repeat );
 	pathMapZone++;
+}
+
+
+
+bool isPathObstacle(Entity* entity)
+{
+	if ( entity->behavior == &actHeadstone )
+	{
+		return true;
+	}
+	else if(entity->behavior == &actSink )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actFountain )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+	{
+		return true;
+	}
+
+	return false;
 }
