@@ -1950,7 +1950,7 @@ bool itemIsEquipped(const Item* item, int player)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::weaponGetAttack()
+Sint32 Item::weaponGetAttack() const
 {
 	Sint32 attack = beatitude;
 	if ( itemCategory(this) == MAGICSTAFF )
@@ -2066,7 +2066,7 @@ Sint32 Item::weaponGetAttack()
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::armorGetAC()
+Sint32 Item::armorGetAC() const
 {
 	Sint32 armor = beatitude;
 	if ( type == LEATHER_HELM )

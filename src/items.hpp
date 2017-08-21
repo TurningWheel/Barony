@@ -323,8 +323,8 @@ public:
 	char* getName();
 
 	//General Functions.
-	Sint32 weaponGetAttack(); //Returns the tohit of the weapon.
-	Sint32 armorGetAC();
+	Sint32 weaponGetAttack() const; //Returns the tohit of the weapon.
+	Sint32 armorGetAC() const;
 	bool canUnequip(); //Returns true if the item can be unequipped (not cursed), false if it can't (cursed).
 	int buyValue(int player);
 	int sellValue(int player);
