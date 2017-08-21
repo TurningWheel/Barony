@@ -2623,6 +2623,10 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 	{
 		// TODO: handle stacks.
 		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		if ( !tmpItem )
+		{
+			return false;
+		}
 		copyItem(tmpItem, item);
 		if ( myStats->weapon != nullptr )
 		{
@@ -2644,24 +2648,32 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 	}
 	else
 	{
-		//TODO: Cheap hack to handle stacks. Put the whole stack in his hand.
-		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, item->count, 0, false, nullptr);
+		//Move exactly 1 item into hand.
+		if ( my == nullptr )
+		{
+			return false;
+		}
+
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		if ( !tmpItem )
+		{
+			return false;
+		}
 		copyItem(tmpItem, item);
+		tmpItem->count = 1;
+		item->count--;
 		if ( myStats->weapon != nullptr )
 		{
-			copyItem(item, myStats->weapon);
-			copyItem(myStats->weapon, tmpItem);
+			my->addItemToMonsterInventory(myStats->weapon);
+			myStats->weapon = tmpItem;
 			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}
-			free(tmpItem);
 		}
 		else
 		{
 			myStats->weapon = tmpItem;
-			// remove the new item we created.
-			list_RemoveNode(inventoryNode);
 		}
 		return true;
 	}

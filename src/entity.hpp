@@ -147,7 +147,9 @@ public:
 	Sint32& monsterTarget; //skill[1]
 	real_t& monsterTargetX; //fskill[2]
 	real_t& monsterTargetY; //fskill[3]
-	Sint32& monsterSpecial;
+	Sint32& monsterSpecialTimer;
+	//Only used by goatman.
+	Sint32& monsterSpecialState; //skill[33]
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
@@ -387,7 +389,7 @@ public:
 		return (dist < STRIKERANGE);
 	}
 
-	//node_t* addItemToMonsterInventory(Item& item);
+	node_t* addItemToMonsterInventory(Item* item);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

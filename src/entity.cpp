@@ -77,7 +77,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalTurnVelocity(fskill[3]),
 	monsterAnimationLimbDirection(skill[20]),
 	monsterAnimationLimbOvershoot(skill[30]),
-	monsterSpecial(skill[29]),
+	monsterSpecialTimer(skill[29]),
+	monsterSpecialState(skill[33]),
 	monsterSpellAnimation(skill[31]),
 	monsterFootstepType(skill[32]),
 	monsterLookTime(skill[4]),
@@ -3302,6 +3303,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
+		if ( myStats->type == GOATMAN )
+		{
+			if ( monsterSpecialState > 0 )
+			{
+				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
+			}
+		}
+
 		if ( myStats->weapon != nullptr )
 		{
 			// magical weapons
@@ -6263,7 +6272,7 @@ int Entity::getAttackPose() const
 			}
 			else if ( myStats->type == COCKATRICE )
 			{
-				if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
 				{
 					pose = MONSTER_POSE_MAGIC_WINDUP2;
 				}
@@ -6337,7 +6346,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( myStats->type == CRYSTALGOLEM )
 		{
-			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOLEM )
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOLEM )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP3;
 			}
@@ -6348,7 +6357,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( myStats->type == COCKATRICE )
 		{
-			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP3;
 			}
@@ -7501,5 +7510,30 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 	}
 }
 
+node_t* Entity::addItemToMonsterInventory(Item* item)
+{
+	//TODO: Sort into inventory...that is, if an item of this type already exists and they can stack, stack 'em instead of creating a new node.
+	if ( !item )
+	{
+		return nullptr;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	item->node = list_AddNodeLast(&myStats->inventory);
+	if ( !item->node )
+	{
+		return nullptr;
+	}
+	item->node->element = item;
+	item->node->deconstructor = &defaultDeconstructor;
+	item->node->size = sizeof(Item);
+
+	return item->node;
+}
 
 

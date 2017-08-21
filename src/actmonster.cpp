@@ -1268,7 +1268,7 @@ void actMonster(Entity* my)
 			double dir = my->yaw - (PI / 2) + PI * (rand() % 2);
 			MONSTER_VELX = cos(dir) * 5;
 			MONSTER_VELY = sin(dir) * 5;
-			my->monsterSpecial = 0;
+			my->monsterSpecialTimer = 0;
 		}
 	}
 
@@ -1495,7 +1495,7 @@ void actMonster(Entity* my)
 			case LICH:
 				my->flags[PASSABLE] = true; // so I can't take any more hits
 				my->monsterState = MONSTER_STATE_LICH_DEATH; // lich death state
-				my->monsterSpecial = 0;
+				my->monsterSpecialTimer = 0;
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
@@ -1510,7 +1510,7 @@ void actMonster(Entity* my)
 			case DEVIL:
 				my->flags[PASSABLE] = true; // so I can't take any more hits
 				my->monsterState = MONSTER_STATE_DEVIL_DEATH; // devil death state
-				my->monsterSpecial = 0;
+				my->monsterSpecialTimer = 0;
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
 				MONSTER_ARMBENDED = 0;
@@ -2823,8 +2823,8 @@ timeToGoAgain:
 				// devil specific code
 				if ( !MONSTER_ATTACK || MONSTER_ATTACK == 4 )
 				{
-					my->monsterSpecial++;
-					if ( my->monsterSpecial > 60 )
+					my->monsterSpecialTimer++;
+					if ( my->monsterSpecialTimer > 60 )
 					{
 						if ( !devilstate )
 						{
@@ -2878,7 +2878,7 @@ timeToGoAgain:
 								}
 							}
 						}
-						my->monsterSpecial = 0;
+						my->monsterSpecialTimer = 0;
 					}
 				}
 				else if ( MONSTER_ATTACK == 5 || MONSTER_ATTACK == 6 )
@@ -2952,9 +2952,9 @@ timeToGoAgain:
 			node->deconstructor = &listDeconstructor;
 			my->monsterState = MONSTER_STATE_HUNT; // hunt state
 		}
-		else if ( my->monsterState == MONSTER_STATE_HUNT )     // hunt state
+		else if ( my->monsterState == MONSTER_STATE_HUNT ) // hunt state
 		{
-			if ( myReflex && (myStats->type != LICH || my->monsterSpecial <= 0) )
+			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
 				for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
 				{
@@ -3110,7 +3110,7 @@ timeToGoAgain:
 			}
 
 			// minotaurs and liches chase players relentlessly.
-			if (myStats->type == MINOTAUR || (myStats->type == LICH && my->monsterSpecial <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
+			if (myStats->type == MINOTAUR || (myStats->type == LICH && my->monsterSpecialTimer <= 0) || (myStats->type == CREATURE_IMP && strstr(map.name, "Boss")))
 			{
 				bool shouldHuntPlayer = false;
 				Entity* playerOrNot = uidToEntity(my->monsterTarget);
@@ -3173,9 +3173,9 @@ timeToGoAgain:
 			// lich cooldown
 			if ( myStats->type == LICH )
 			{
-				if ( my->monsterSpecial > 0 )
+				if ( my->monsterSpecialTimer > 0 )
 				{
-					my->monsterSpecial--;
+					my->monsterSpecialTimer--;
 				}
 			}
 
@@ -3557,7 +3557,7 @@ timeToGoAgain:
 			dist = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 			if ( dist != sqrt(MONSTER_VELX * MONSTER_VELX + MONSTER_VELY * MONSTER_VELY) )   // hit obstacle
 			{
-				my->monsterSpecial = 60;
+				my->monsterSpecialTimer = 60;
 				if ( rand() % 2 )
 				{
 					my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3569,10 +3569,10 @@ timeToGoAgain:
 			}
 			else
 			{
-				my->monsterSpecial++;
-				if ( my->monsterSpecial > 20 )
+				my->monsterSpecialTimer++;
+				if ( my->monsterSpecialTimer > 20 )
 				{
-					my->monsterSpecial = 60;
+					my->monsterSpecialTimer = 60;
 					if ( rand() % 2 )
 					{
 						my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -3588,13 +3588,13 @@ timeToGoAgain:
 		{
 			MONSTER_ATTACK = 1;
 			MONSTER_ATTACKTIME = 0;
-			if ( my->monsterSpecial )
+			if ( my->monsterSpecialTimer )
 			{
-				my->monsterSpecial--;
+				my->monsterSpecialTimer--;
 			}
 			else
 			{
-				my->monsterSpecial = 60;
+				my->monsterSpecialTimer = 60;
 				my->monsterState = MONSTER_STATE_WAIT; // wait state
 				playSoundEntity(my, 166, 128);
 
@@ -3627,7 +3627,7 @@ timeToGoAgain:
 			}
 			MONSTER_ATTACK = 1;
 			MONSTER_ATTACKTIME = 0;
-			if ( my->monsterSpecial == 0 )
+			if ( my->monsterSpecialTimer == 0 )
 			{
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
@@ -3637,12 +3637,12 @@ timeToGoAgain:
 					playSoundPlayer(c, 186, 128);
 				}
 			}
-			if ( my->monsterSpecial % 10 == 0 )
+			if ( my->monsterSpecialTimer % 10 == 0 )
 			{
 				spawnExplosion(my->x - 8 + rand() % 16, my->y - 8 + rand() % 16, -4 + rand() % 8);
 			}
-			my->monsterSpecial++;
-			if ( my->monsterSpecial > 180 )
+			my->monsterSpecialTimer++;
+			if ( my->monsterSpecialTimer > 180 )
 			{
 				lichDie(my);
 			}
@@ -3657,14 +3657,14 @@ timeToGoAgain:
 				for( c=0; c<MAXPLAYERS; c++ )
 					playSoundPlayer(c,186,128);
 			}*/
-			if ( my->monsterSpecial == 0 )
+			if ( my->monsterSpecialTimer == 0 )
 			{
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				my->x += cos(my->yaw + PI / 2) * 2;
 				my->y += sin(my->yaw + PI / 2) * 2;
 			}
-			else if ( my->monsterSpecial % 2 == 0 )
+			else if ( my->monsterSpecialTimer % 2 == 0 )
 			{
 				my->x += cos(my->yaw + PI / 2) * 4;
 				my->y += sin(my->yaw + PI / 2) * 4;
@@ -3674,11 +3674,11 @@ timeToGoAgain:
 				my->x -= cos(my->yaw + PI / 2) * 4;
 				my->y -= sin(my->yaw + PI / 2) * 4;
 			}
-			if ( my->monsterSpecial % 10 == 0 )
+			if ( my->monsterSpecialTimer % 10 == 0 )
 			{
 				spawnExplosion(my->x - 24 + rand() % 48, my->y - 24 + rand() % 48, -16 + rand() % 32);
 			}
-			my->monsterSpecial++;
+			my->monsterSpecialTimer++;
 			if ( my->z > 96 )
 			{
 				devilDie(my);
@@ -3696,13 +3696,13 @@ timeToGoAgain:
 			MONSTER_ATTACK = 4;
 			MONSTER_ATTACKTIME = 0;
 			MONSTER_ARMBENDED = 1;
-			if ( my->monsterSpecial == 0 )
+			if ( my->monsterSpecialTimer == 0 )
 			{
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 				serverUpdateEntitySkill(my, 10);
 			}
-			my->monsterSpecial++;
+			my->monsterSpecialTimer++;
 			if ( my->z >= 64 )
 			{
 				node_t* node;
@@ -3809,20 +3809,20 @@ timeToGoAgain:
 						}
 					}
 				}
-				my->monsterSpecial = 30;
+				my->monsterSpecialTimer = 30;
 				my->monsterState = MONSTER_STATE_DEVIL_RISING;
 			}
 		}
 		else if ( my->monsterState == MONSTER_STATE_DEVIL_RISING )     // devil rising state (post-teleport)
 		{
-			if ( my->monsterSpecial <= 0 )
+			if ( my->monsterSpecialTimer <= 0 )
 			{
 				my->z = std::max<int>(my->z - 1, -4); // ascend
 			}
 			else
 			{
-				my->monsterSpecial--;
-				if ( my->monsterSpecial <= 0 )
+				my->monsterSpecialTimer--;
+				if ( my->monsterSpecialTimer <= 0 )
 				{
 					if ( myStats->HP > 0 )
 					{
@@ -3946,19 +3946,19 @@ timeToGoAgain:
 		{
 			MONSTER_ATTACK = 4;
 			MONSTER_ATTACKTIME = 0;
-			if ( my->monsterSpecial == 0 )
+			if ( my->monsterSpecialTimer == 0 )
 			{
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			my->monsterSpecial++;
-			if ( my->monsterSpecial > 120 )
+			my->monsterSpecialTimer++;
+			if ( my->monsterSpecialTimer > 120 )
 			{
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
-				my->monsterSpecial = 0;
+				my->monsterSpecialTimer = 0;
 				my->monsterState = MONSTER_STATE_ATTACK;
 				node_t* tempNode;
 				Entity* playertotrack = NULL;
@@ -4031,15 +4031,15 @@ timeToGoAgain:
 				angle = 3;
 			}
 			my->yaw = angle * PI / 2;
-			my->monsterSpecial++;
-			if ( my->monsterSpecial == 30 )
+			my->monsterSpecialTimer++;
+			if ( my->monsterSpecialTimer == 30 )
 			{
 				MONSTER_ATTACK = 1;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			if ( my->monsterSpecial == 60 )
+			if ( my->monsterSpecialTimer == 60 )
 			{
 				int c;
 				double oyaw = my->yaw;
@@ -4082,14 +4082,14 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( my->monsterSpecial == 150 )
+			if ( my->monsterSpecialTimer == 150 )
 			{
 				MONSTER_ATTACK = 2;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			if ( my->monsterSpecial == 180 )
+			if ( my->monsterSpecialTimer == 180 )
 			{
 				int c;
 				double oyaw = my->yaw;
@@ -4132,14 +4132,14 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( my->monsterSpecial == 270 )
+			if ( my->monsterSpecialTimer == 270 )
 			{
 				MONSTER_ATTACK = 3;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
 			}
-			if ( my->monsterSpecial == 300 )
+			if ( my->monsterSpecialTimer == 300 )
 			{
 				int c;
 				double oyaw = my->yaw;
@@ -4182,13 +4182,13 @@ timeToGoAgain:
 					entity->flags[PASSABLE] = true;
 				}
 			}
-			if ( my->monsterSpecial == 420 )   // 420 blaze it faggot
+			if ( my->monsterSpecialTimer == 420 )   // 420 blaze it faggot
 			{
 				MONSTER_ATTACK = 0;
 				MONSTER_ATTACKTIME = 0;
 				serverUpdateEntitySkill(my, 8);
 				serverUpdateEntitySkill(my, 9);
-				my->monsterSpecial = 0;
+				my->monsterSpecialTimer = 0;
 				my->monsterState = MONSTER_STATE_ATTACK;
 				node_t* tempNode;
 				Entity* playertotrack = NULL;
@@ -4350,9 +4350,9 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
 
-	if ( myStats->type != LICH && myStats->type != DEVIL && this->monsterSpecial > 0 )
+	if ( myStats->type != LICH && myStats->type != DEVIL && this->monsterSpecialTimer > 0 )
 	{
-		--this->monsterSpecial;
+		--this->monsterSpecialTimer;
 	}
 
 	//TODO: Goatman choose weapon.
@@ -4379,10 +4379,10 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 
 			if ( myStats->type == LICH )
 			{
-				this->monsterSpecial++;
-				if ( this->monsterSpecial >= 5 )
+				this->monsterSpecialTimer++;
+				if ( this->monsterSpecialTimer >= 5 )
 				{
-					this->monsterSpecial = 90;
+					this->monsterSpecialTimer = 90;
 					this->monsterTarget = 0;
 					this->monsterTargetX = this->x - 50 + rand() % 100;
 					this->monsterTargetY = this->y - 50 + rand() % 100;
@@ -4895,7 +4895,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 			return;
 		}
 
-		if ( this->monsterSpecial == 0 )
+		if ( this->monsterSpecialTimer == 0 )
 		{
 			switch ( myStats->type )
 			{
@@ -4912,7 +4912,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								if ( node != nullptr )
 								{
 									swapMonsterWeaponWithInventoryItem(this, myStats, node);
-									this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
 						}
@@ -4924,7 +4924,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								if ( node != nullptr )
 								{
 									swapMonsterWeaponWithInventoryItem(this, myStats, node);
-									this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
+									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
 						}
@@ -4938,7 +4938,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						enemiesNearby = std::min(enemiesNearby, 4);
 						if ( specialRoll < enemiesNearby * 2 ) // 10% for each enemy > 1, capped at 40%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 							break;
 						}
 					}		
@@ -4948,35 +4948,35 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						if ( specialRoll < 1 ) // 5%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.6 )
 					{
 						if ( specialRoll < 2 ) // 10%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.4 )
 					{
 						if ( specialRoll < 3 ) // 15%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 4 ) // 20%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 5 ) // 25%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_GOLEM;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOLEM;
 						}
 					}
 					break;
@@ -4996,7 +4996,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						if ( node != nullptr )
 						{
 							swapMonsterWeaponWithInventoryItem(this, myStats, node);
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
 					}
@@ -5007,35 +5007,35 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						if ( specialRoll < 1 ) // 5%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.6 )
 					{
 						if ( specialRoll < 2 ) // 10%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.4 )
 					{
 						if ( specialRoll < 3 ) // 15%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP > myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 4 ) // 20%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					else if ( myStats->HP <= myStats->MAXHP * 0.2 )
 					{
 						if ( specialRoll < 5 ) // 25%
 						{
-							this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK;
 						}
 					}
 					break;
@@ -5043,7 +5043,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					break;
 			}
 		}
-		else if ( this->monsterSpecial > 0 )
+		else if ( this->monsterSpecialTimer > 0 )
 		{
 			switch ( myStats->type )
 			{
