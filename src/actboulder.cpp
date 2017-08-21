@@ -85,77 +85,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
                         steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
                         if ( stats->amulet->type == AMULET_LIFESAVING )
                         {
-                            // The Player had an Amulet of Life Saving! Revive them, if it isn't cursed
-                            Sint32 player = -1;
-                            for ( Sint32 iPlayer = 0; iPlayer < numplayers; ++iPlayer )
-                            {
-                                if ( entity == players[iPlayer]->entity )
-                                {
-                                    player = iPlayer; //Set the player.
-                                }
-                            }
-
-                            if ( stats->amulet->beatitude >= 0 )
-                            {
-                                messagePlayer(player, language[654]); // "You are brought back to life."
-                                messagePlayer(player, language[655]); // "However, your amulet crumbles to dust."
-                                steamAchievementClient(player, "BARONY_ACH_BORN_AGAIN");
-                                stats->HUNGER = 800;
-
-                                if ( stats->MAXHP < 10 )
-                                {
-                                    stats->MAXHP = 10;
-                                    if ( player > 0 && multiplayer == SERVER )
-                                    {
-                                        strcpy((char*)net_packet->data, "ATTR");
-                                        net_packet->data[4] = clientnum;
-                                        net_packet->data[5] = (Sint8)stats->STR;
-                                        net_packet->data[6] = (Sint8)stats->DEX;
-                                        net_packet->data[7] = (Sint8)stats->CON;
-                                        net_packet->data[8] = (Sint8)stats->INT;
-                                        net_packet->data[9] = (Sint8)stats->PER;
-                                        net_packet->data[10] = (Sint8)stats->CHR;
-                                        net_packet->data[11] = (Sint8)stats->EXP;
-                                        net_packet->data[12] = (Sint8)stats->LVL;
-                                        SDLNet_Write16((Sint16)stats->HP, &net_packet->data[13]);
-                                        SDLNet_Write16((Sint16)stats->MAXHP, &net_packet->data[15]);
-                                        SDLNet_Write16((Sint16)stats->MP, &net_packet->data[17]);
-                                        SDLNet_Write16((Sint16)stats->MAXMP, &net_packet->data[19]);
-                                        net_packet->address.host = net_clients[player - 1].host;
-                                        net_packet->address.port = net_clients[player - 1].port;
-                                        net_packet->len = 21;
-                                        sendPacketSafe(net_sock, -1, net_packet, player - 1);
-                                    }
-                                }
-
-                                entity->setHP(std::max(stats->MAXHP, 10));
-                                for ( int iEffect = 0; iEffect < NUMEFFECTS; iEffect++ )
-                                {
-                                    stats->EFFECTS[iEffect] = false;
-                                    stats->EFFECTS_TIMERS[iEffect] = 0;
-                                }
-                                entity->flags[BURNING] = false;
-                                serverUpdateEntityFlag(entity, BURNING);
-                                serverUpdateEffects(player);
-                            }
-                            else
-                            {
-                                messagePlayer(player, language[656]); // "Whoops, sorry. Guess it was a dud."
-                                messagePlayer(player, language[657]); // "See you in the next life."
-                            }
-                            stats->amulet->status = BROKEN;
-                            playSoundEntity(entity, 76, 64);
-                            if ( player > 0 && multiplayer == SERVER )
-                            {
-                                strcpy((char*)net_packet->data, "ARMR");
-                                net_packet->data[4] = 7;
-                                net_packet->data[5] = stats->amulet->status;
-                                net_packet->address.host = net_clients[player - 1].host;
-                                net_packet->address.port = net_clients[player - 1].port;
-                                net_packet->len = 6;
-                                sendPacketSafe(net_sock, -1, net_packet, player - 1);
-                            }
-                            stats->amulet = nullptr;
+                            bool bHasLifeSaving = true;
                         }
                     }
                 }
