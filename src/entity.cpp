@@ -1332,9 +1332,16 @@ void Entity::checkBetterEquipment(Stat* myStats)
 				{
 					if ( myStats->weapon == nullptr ) //Not currently holding a weapon.
 					{
-						myStats->weapon = item; //Assign the monster's weapon.
-						item = nullptr;
-						list_RemoveNode(entity->mynode);
+						if ( !entity->itemNotMoving && entity->parent && entity->parent != uid )
+						{
+							//Don't pick up the item.
+						}
+						else
+						{
+							myStats->weapon = item; //Assign the monster's weapon.
+							item = nullptr;
+							list_RemoveNode(entity->mynode);
+						}
 					}
 					//Don't pick up if already wielding something.
 				}

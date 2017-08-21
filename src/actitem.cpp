@@ -252,7 +252,20 @@ void actItem(Entity* my)
 	}
 
 	// don't perform unneeded computations on items that have basically no velocity
-	double groundheight = 7.5 - models[my->sprite]->sizey * .25;
+	double groundheight;
+	if ( my->sprite == 569 )
+	{
+		groundheight = 8.5 - models[my->sprite]->sizey * .25;
+	}
+	else if ( my->sprite == 567 )
+	{
+		groundheight = 8.75 - models[my->sprite]->sizey * .25;
+	}
+	else
+	{
+		groundheight = 7.5 - models[my->sprite]->sizey * .25;
+	}
+
 	if ( onground && my->z > groundheight - .0001 && my->z < groundheight + .0001 && fabs(ITEM_VELX) < 0.02 && fabs(ITEM_VELY) < 0.02 )
 	{
 		ITEM_NOTMOVING = 1;
