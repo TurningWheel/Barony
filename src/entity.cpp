@@ -2711,7 +2711,15 @@ Sint32 statGetSTR(Stat* entitystats)
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
-		STR++;
+		switch ( entitystats->type )
+		{
+			case GOATMAN:
+				STR += 10; //Goatman love booze.
+				break;
+			default:
+				++STR;
+				break;
+		}
 	}
 	return STR;
 }
@@ -2786,7 +2794,12 @@ Sint32 statGetDEX(Stat* entitystats)
 		}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
-		DEX--;
+		switch ( entitystats->type )
+		{
+			default:
+				--DEX;
+				break;
+		}
 	}
 	return DEX;
 }

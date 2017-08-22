@@ -255,7 +255,7 @@ public:
 	 */
 	//bool goatmanWantsItem(const Item& item, Item*& shouldWield, node_t*& replaceInventoryItem) const;
 
-	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;
+	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
 	Item** shouldMonsterEquipThisArmor(const Item& item) const;
 
 	//--- Mechanism functions ---

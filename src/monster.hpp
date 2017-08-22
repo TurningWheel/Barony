@@ -440,3 +440,9 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
+
+//-----RACE SPECIFIC CONSTANTS-----
+
+//--Goatman--
+static const int GOATMAN_HEALINGPOTION_MOD = 3;
+static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
