@@ -191,7 +191,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	}
 
 	// torso
-	Entity* entity = newEntity(230, 0, map.entities);
+	Entity* entity = newEntity(468, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -209,7 +209,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right leg
-	entity = newEntity(236, 0, map.entities);
+	entity = newEntity(474, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -227,7 +227,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left leg
-	entity = newEntity(235, 0, map.entities);
+	entity = newEntity(473, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -245,7 +245,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(233, 0, map.entities);
+	entity = newEntity(471, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -263,7 +263,7 @@ void initAutomaton(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(231, 0, map.entities);
+	entity = newEntity(469, 0, map.entities);
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -463,12 +463,12 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LIMB_HUMANOID_WEAPON )
 				{
 					break;
 				}
@@ -488,12 +488,12 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			bodypart = 0;
 			for (node = my->children.first; node != NULL; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
 				}
-				if ( bodypart >= 7 )
+				if ( bodypart >= LIMB_HUMANOID_WEAPON )
 				{
 					break;
 				}
@@ -523,7 +523,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -541,11 +541,11 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			entity->yaw = my->yaw;
 		}
 
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
 		}
-		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
 			// left leg, right arm, cloak.
 			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
@@ -556,14 +556,14 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					my->handleWeaponArmAttack(entity);
 				}
 			}
-			else if ( bodypart == 9 )
+			else if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->pitch = entity->fskill[0];
 			}
 
-			entity->humanoidAnimateWalk(my, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
+			my->humanoidAnimateWalk(entity, node, bodypart, AUTOMATONWALKSPEED, dist, 0.1);
 
-			if ( bodypart == 9 )
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->fskill[0] = entity->pitch;
 				entity->roll = my->roll - fabs(entity->pitch) / 2;
@@ -573,16 +573,19 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == nullptr )
 					{
 						entity->sprite = 468;
 					}
 					else
 					{
 						entity->sprite = itemModel(myStats->breastplate);
+						entity->scalex = 1;
+						// shrink the width of the breastplate
+						entity->scaley = 0.8;
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -598,13 +601,50 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else if ( multiplayer == CLIENT )
+				{
+					if ( entity->sprite != 468 )
+					{
+						entity->scalex = 1;
+						// shrink the width of the breastplate
+						entity->scaley = 0.8;
+					}
+					else
+					{
+						entity->scalex = 1;
+						entity->scaley = 1;
+					}
+				}
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 2;
 				break;
 			// right leg
-			case 3:
-				entity->sprite = 474;
+			case LIMB_HUMANOID_RIGHTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 474;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x += 1 * cos(my->yaw + PI / 2) + .25 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) + .25 * sin(my->yaw);
 				entity->z += 4;
@@ -615,8 +655,31 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
-				entity->sprite = 473;
+			case LIMB_HUMANOID_LEFTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 473;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= 1 * cos(my->yaw + PI / 2) - .25 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) - .25 * sin(my->yaw);
 				entity->z += 4;
@@ -627,28 +690,27 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 			{
-				entity->sprite = 471;
 				node_t* weaponNode = list_Node(&my->children, 7);
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( !MONSTER_ARMBENDED )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterAttack == 0) )
 					{
-						entity->sprite += (weapon->flags[INVISIBLE] != true);
-					}
-					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
-					{
+						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[AUTOMATON][4][0]; // 0
 						entity->focaly = limbs[AUTOMATON][4][1]; // 0
 						entity->focalz = limbs[AUTOMATON][4][2]; // 2
+						entity->sprite = 471;
 					}
 					else
 					{
-						entity->focalx = limbs[AUTOMATON][4][0] + 1; // 1
-						entity->focaly = limbs[AUTOMATON][4][1]; // 0
+						// else flex arm.
+						entity->focalx = limbs[AUTOMATON][4][0] + 1.5; // 1
+						entity->focaly = limbs[AUTOMATON][4][1] + 0.25; // 0
 						entity->focalz = limbs[AUTOMATON][4][2] - 1; // 1
+						entity->sprite = 472;
 					}
 				}
 				entity->x += 1.75 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
@@ -662,24 +724,26 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 				// left arm
 			}
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 			{
-				entity->sprite = 469;
 				node_t* shieldNode = list_Node(&my->children, 8);
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					entity->sprite += (shield->flags[INVISIBLE] != true);
 					if ( shield->flags[INVISIBLE] )
 					{
+						// if shield invisible, relax arm.
+						entity->sprite = 469;
 						entity->focalx = limbs[AUTOMATON][5][0]; // 0
 						entity->focaly = limbs[AUTOMATON][5][1]; // 0
 						entity->focalz = limbs[AUTOMATON][5][2]; // 2
 					}
 					else
 					{
-						entity->focalx = limbs[AUTOMATON][5][0] + 1; // 1
-						entity->focaly = limbs[AUTOMATON][5][1]; // 0
+						// else flex arm.
+						entity->sprite = 470;
+						entity->focalx = limbs[AUTOMATON][5][0] + 1.5; // 1
+						entity->focaly = limbs[AUTOMATON][5][1] - 0.25; // 0
 						entity->focalz = limbs[AUTOMATON][5][2] - 1; // 1
 					}
 				}
@@ -693,7 +757,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// weapon
-			case 7:
+			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -733,11 +797,11 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				if ( weaponarm != nullptr )
 				{
-					entity->handleHumanoidWeaponLimb(my, weaponarm, my->getMonsterTypeFromSprite());
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			// shield
-			case 8:
+			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shield == NULL )
@@ -800,7 +864,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// cloak
-			case 9:
+			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
@@ -836,7 +900,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->yaw += PI / 2;
 				break;
 			// helm
-			case 10:
+			case LIMB_HUMANOID_HELMET:
 				entity->focalx = limbs[AUTOMATON][9][0]; // 0
 				entity->focaly = limbs[AUTOMATON][9][1]; // 0
 				entity->focalz = limbs[AUTOMATON][9][2]; // -2
@@ -909,7 +973,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// mask
-			case 11:
+			case LIMB_HUMANOID_MASK:
 				entity->focalx = limbs[AUTOMATON][10][0]; // 0
 				entity->focaly = limbs[AUTOMATON][10][1]; // 0
 				entity->focalz = limbs[AUTOMATON][10][2]; // .5
@@ -982,4 +1046,161 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+bool Entity::automatonCanWieldItem(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case ARMOR:
+			return true;
+		case THROWN:
+			return true;
+		default:
+			return false;
+	}
+
+	return false;
+}
+
+
+void Entity::automatonRecycleItem()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
+	int numItemsHeld = list_Size(&myStats->inventory);
+
+	if ( this->monsterSpecialTimer > 0 )
+	{
+		--this->monsterSpecialTimer;
+		return;
+	}
+	else if ( numItemsHeld < 2 )
+	{
+		return;
+	}
+	
+	if (this->monsterSpecialTimer == 0)
+	{
+		this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
+	}
+
+	int i = 0;
+	int itemIndex = 0;
+	int chances[10] = { -1 }; // max 10 items
+	int matches = 0;
+
+	// search for valid recyclable items, set chance for valid index.
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		if ( matches >= 10 )
+		{
+			break;
+		}
+		nextnode = node->next;
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( (itemCategory(item) == WEAPON || itemCategory(item) == THROWN || itemCategory(item) == ARMOR)
+				&& item->status > BROKEN )
+			{
+				chances[matches] = itemIndex;
+				++matches;
+			}
+		}
+		++itemIndex;
+	}
+
+	//messagePlayer(0, "Found %d items", matches);
+
+	if ( matches < 2 ) // not enough valid items found.
+	{
+		return;
+	}
+
+	int pickItem1 = rand() % matches; // pick random valid item index in inventory
+	int pickItem2 = rand() % matches;
+	while ( pickItem2 == pickItem1 )
+	{
+		pickItem2 = rand() % matches; // make sure index 2 is unique
+	}
+
+	itemIndex = 0;
+	Item* item1 = nullptr;
+	Item* item2 = nullptr;
+
+	
+
+	// search again for the 2 indexes, store the items and nodes.
+	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		if ( chances[pickItem1] == itemIndex )
+		{
+			item1 = (Item*)node->element;
+		}
+		else if ( chances[pickItem2] == itemIndex )
+		{
+			item2 = (Item*)node->element;
+		}
+		++itemIndex;
+	}
+
+	if ( item1 == nullptr || item2 == nullptr )
+	{
+		return;
+	}
+
+	//messagePlayer(0, "made it past");
+
+	int maxGoldValue = (items[item1->type].value + items[item2->type].value) * 2 / 3;
+	int minGoldValue = (items[item1->type].value + items[item2->type].value) * 1 / 3;
+	ItemType type;
+	// generate a weapon/armor piece and add it into the inventory.
+	switch ( rand() % 10 )
+	{
+		case 0:
+		case 1:
+		case 2:
+		case 3:
+			type = itemTypeWithinGoldValue(WEAPON, minGoldValue, maxGoldValue);
+			break;
+		case 4:
+		case 5:
+		case 6:
+		case 7:
+		case 8:
+			type = itemTypeWithinGoldValue(ARMOR, minGoldValue, maxGoldValue);
+			break;
+		case 9:
+			type = itemTypeWithinGoldValue(THROWN, minGoldValue, maxGoldValue);
+			break;
+		default:
+			break;
+	}
+
+	if ( type != GEM_ROCK ) // found an item in category
+	{
+		Item* item = newItem(type, item1->status, item1->beatitude, 1, rand(), item1->identified, &myStats->inventory);
+		dropItemMonster(item, this, myStats);
+		// recycle item1, reduce durability.
+		item1->status = static_cast<Status>(std::max(0, item1->status - 2));
+		//messagePlayer(0, "Generated %d!", type);
+	}
+
+	return;
 }

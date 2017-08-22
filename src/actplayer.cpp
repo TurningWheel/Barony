@@ -1849,7 +1849,7 @@ void actPlayer(Entity* my)
 					bool enemy = my->checkEnemy(hit.entity);
 					if ( enemy )
 					{
-						if ( hit.entity->skill[0] == 0 || (hit.entity->skill[0] == 3 && hit.entity->skill[1] == 0) )
+						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
 						{
 							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
 							hit.entity->skill[4] = 1;
@@ -1886,7 +1886,7 @@ void actPlayer(Entity* my)
 					bool enemy = my->checkEnemy(hit.entity);
 					if ( enemy )
 					{
-						if ( hit.entity->skill[0] == 0 || (hit.entity->skill[0] == 3 && hit.entity->skill[1] == 0) )
+						if ( hit.entity->monsterState == MONSTER_STATE_WAIT || (hit.entity->monsterState == MONSTER_STATE_HUNT && hit.entity->monsterTarget == 0) )
 						{
 							double tangent = atan2( my->y - hit.entity->y, my->x - hit.entity->x );
 							hit.entity->skill[4] = 1;
@@ -2224,10 +2224,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -2273,10 +2270,7 @@ void actPlayer(Entity* my)
 					}
 					else
 					{
-						if ( setBootSprite(stats[PLAYER_NUM], entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{

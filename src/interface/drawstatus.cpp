@@ -573,11 +573,13 @@ void drawStatus()
 						bool badpotion = false;
 						if ( itemCategory(item) == POTION && item->identified )
 						{
-							if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
-							{
-								badpotion = true;
-							}
+							badpotion = isPotionBad(*item); //So that you wield empty potions be default.
 						}
+						if ( item->type == POTION_EMPTY )
+						{
+							badpotion = true;
+						}
+
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
 						{
 							identifygui_active = false;
@@ -895,11 +897,13 @@ void drawStatus()
 			bool badpotion = false;
 			if ( itemCategory(item) == POTION && item->identified )
 			{
-				if ( item->type == POTION_SICKNESS || item->type == POTION_CONFUSION || item->type == POTION_BLINDNESS || item->type == POTION_ACID || item->type == POTION_PARALYSIS )
-				{
-					badpotion = true;
-				}
+				badpotion = isPotionBad(*item);
 			}
+			if ( item->type == POTION_EMPTY )
+			{
+				badpotion = true; //So that you wield empty potions be default.
+			}
+
 			if ( !badpotion )
 			{
 				useItem(item, clientnum);

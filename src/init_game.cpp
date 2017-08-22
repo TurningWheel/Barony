@@ -152,14 +152,16 @@ int initGame()
 	// load item types
 	printlog( "loading items...\n");
 	fp = openDataFile("items/items.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
+	for ( c = 0; !feof(fp); ++c )
 	{
-		if ( c > ARTIFACT_BOW ) {
+		if ( c > ARTIFACT_BOW )
+		{
 			newItems = c - ARTIFACT_BOW - 1;
 			items[c].name_identified = language[2200 + newItems * 2];
 			items[c].name_unidentified = language[2201 + newItems * 2];
 		}
-		else {
+		else
+		{
 			items[c].name_identified = language[1545 + c * 2];
 			items[c].name_unidentified = language[1546 + c * 2];
 		}

@@ -289,3 +289,8 @@ void actMCaxe(Entity* my)
 		}
 	}
 }
+
+void actStalag(Entity* my)
+{
+
+}

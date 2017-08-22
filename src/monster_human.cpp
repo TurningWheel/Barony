@@ -55,7 +55,7 @@ void initHuman(Entity* my, Stat* myStats)
 
 			// boss variants
 			// generate special loadout
-			if ( my->monsterSpecial == 0 )
+			if ( my->monsterSpecialTimer == 0 )
 			{
 				if ( rand() % 25 == 0 )
 				{
@@ -1192,10 +1192,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -1241,10 +1238,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -1767,4 +1761,29 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		MONSTER_ATTACKTIME = 0;
 	}
+}
+
+bool Entity::humanCanWieldItem(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case ARMOR:
+			return true;
+		case MAGICSTAFF:
+			return true;
+		case THROWN:
+			return true;
+		default:
+			return false;
+	}
+
+	return false;
 }

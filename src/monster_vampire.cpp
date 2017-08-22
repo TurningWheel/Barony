@@ -807,10 +807,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_BOOT_RIGHT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -845,10 +842,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_BOOT_LEFT_OFFSET) != 0 )
-						{
-							// successfully set sprite for the human model
-						}
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -884,7 +878,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
 						{
 							// successfully set sprite for the human model
 						}
@@ -957,7 +951,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					}
 					else
 					{
-						if ( setBootSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
+						if ( setGloveSprite(myStats, entity, SPRITE_GLOVE_LEFT_OFFSET) != 0 )
 						{
 							// successfully set sprite for the human model
 						}
