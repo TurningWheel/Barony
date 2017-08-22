@@ -246,7 +246,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(EXCELLENT - rand()%1), 0, 1, rand(), false, nullptr);
+				myStats->weapon = newItem(rand()%2? STEEL_AXE : STEEL_MACE, static_cast<Status>(EXCELLENT - rand()%1), 0, 1, rand(), false, nullptr);
 			}
 		}
 	}

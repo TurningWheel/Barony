@@ -701,8 +701,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 
 			//stats->PROFICIENCIES[PRO_SWORD] = 35;
-			//stats->PROFICIENCIES[PRO_MACE] = 50;
-			//stats->PROFICIENCIES[PRO_AXE] = 45;
+			stats->PROFICIENCIES[PRO_MACE] = 45;
+			stats->PROFICIENCIES[PRO_AXE] = 60;
 			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
 			stats->PROFICIENCIES[PRO_RANGED] = 60; //Chuck booze at you.
 			//stats->PROFICIENCIES[PRO_SHIELD] = 35;
