@@ -131,8 +131,14 @@ void initGoatman(Entity* my, Stat* myStats)
 			//Give weapons.
 			if ( !boss )
 			{
-				//newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
-				//newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+				if ( rand()%2 == 0 )
+				{
+					newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+				}
+				if ( rand()%4 > 0 )
+				{
+					newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+				}
 			}
 
 			/*
@@ -240,10 +246,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				messagePlayer(clientnum, "Giving goatman a bottle of booze.");
-				//myStats->weapon = newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, nullptr);
-				myStats->weapon = newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, nullptr); //TODO: Test.
-				//myStats->weapon = newItem(BRONZE_AXE, static_cast<Status>(DECREPIT), 0, 1, rand(), false, nullptr);
+				myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(EXCELLENT - rand()%1), 0, 1, rand(), false, nullptr);
 			}
 		}
 	}
@@ -1275,6 +1278,15 @@ bool Entity::goatmanCanWieldItem(const Item& item) const
 			}
 		case THROWN:
 			return true;
+		case ARMOR:
+			{ //Little baby compiler stop whining, wah wah.
+				int equipType = checkEquipType(&item);
+				if ( equipType == TYPE_HAT || equipType == TYPE_HELM )
+				{
+					return false; //No can wear hats, because horns.
+				}
+				return true; //Can wear all other armor.
+			}
 		default:
 			return false;
 	}
