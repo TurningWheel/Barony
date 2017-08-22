@@ -914,7 +914,7 @@ void dropItem(Item* item, int player)
 	}
 }
 
-Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
+Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count)
 {
 	Entity* entity = nullptr;
 	bool itemDroppable = true;
@@ -933,8 +933,11 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 		}
 	}
 
+	count = std::min(count, item->count);
+
 	if ( itemDroppable )
 	{
+		//TODO: Spawn multiple entities for count...
 		entity = newEntity(-1, 1, map.entities);
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
@@ -952,20 +955,21 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 		entity->skill[10] = item->type;
 		entity->skill[11] = item->status;
 		entity->skill[12] = item->beatitude;
-		entity->skill[13] = 1;
+		entity->skill[13] = count;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
 		entity->parent = monster->getUID();
 	}
 
-	item->count--;
-	Item** slot;
-	if ( (slot = itemSlot(monsterStats, item)) != nullptr )
-	{
-		*slot = nullptr; // clear the item slot
-	}
+	item->count -= count;
 	if ( item->count <= 0 )
 	{
+		Item** slot;
+		if ( (slot = itemSlot(monsterStats, item)) != nullptr )
+		{
+			*slot = nullptr; // clear the item slot
+		}
+
 		if ( item->node )
 		{
 			list_RemoveNode(item->node);
@@ -2609,6 +2613,7 @@ bool inline isMeleeWeapon(const Item& item)
 
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
 {
+	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
 	Item* tmpItem = nullptr;
 
@@ -2815,4 +2820,38 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
 	}
 
 	return GEM_ROCK;
+}
+
+bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave)
+{
+	if ( !weaponAlreadyHave )
+	{
+		//Any thing is better than no thing!
+		return true;
+	}
+
+	if ( newWeapon.weaponGetAttack() > weaponAlreadyHave->weaponGetAttack() )
+	{
+		return true; //If the new weapon does more damage than the current weapon, it's better. Even if it's cursed, eh?
+	}
+
+	return false;
+}
+
+bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave)
+{
+	if ( !armorAlreadyHave )
+	{
+		//Some thing is better than no thing!
+		return true;
+	}
+
+	//If the new weapon defends better than the current armor, it's better. Even if it's cursed, eh?
+	//TODO: Special effects/abilities, like magic resistance or reflection...
+	if ( newArmor.armorGetAC() > armorAlreadyHave->armorGetAC() )
+	{
+		return true;
+	}
+
+	return false;
 }

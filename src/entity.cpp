@@ -5831,7 +5831,7 @@ void setRandomMonsterStats(Stat* stats)
 }
 
 
-int checkEquipType(Item *item)
+int checkEquipType(const Item *item)
 {
 	switch ( item->type ) {
 
@@ -7391,12 +7391,14 @@ void Entity::checkGroundForItems()
 		case HUMAN:
 			if ( !strcmp(myStats->name, "") )
 			{
-				checkBetterEquipment(myStats);
+				//checkBetterEquipment(myStats);
+				monsterAddNearbyItemToInventory(myStats, 16, 9);
 			}
 			break;
 		case GOATMAN:
 			//Goatman boss picks up items too.
-			checkBetterEquipment(myStats);
+			monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
+			//checkBetterEquipment(myStats);
 			break;
 		case AUTOMATON:
 			monsterAddNearbyItemToInventory(myStats, 8, 5);
@@ -7429,16 +7431,9 @@ bool Entity::canWieldItem(const Item& item) const
 	}
 }
 
-/*node_t* Entity::addItemToMonsterInventory(Item& item)
-{
-	Stat* myStats = getStats();
-	if ( !myStats )
-	{
-		return nullptr;
-	}
-}*/
 void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems)
 {
+	//TODO: Any networking/multiplayer needs?
 	if ( !myStats )
 	{
 		return; //Can't continue without these.
@@ -7472,6 +7467,11 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 			//Turn the entity into an item.
 			if ( node->element )
 			{
+				if ( list_Size(&myStats->inventory) >= maxInventoryItems )
+				{
+					break;
+				}
+
 				Entity* entity = (Entity*)node->element;
 				Item* item = nullptr;
 				if ( entity != nullptr )
@@ -7482,22 +7482,80 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					continue;
 				}
-				if ( list_Size(&myStats->inventory) >= maxInventoryItems )
-				{
-					break;
-				}
-				
 
 				double dist = sqrt(pow(this->x - entity->x, 2) + pow(this->y - entity->y, 2));
-				if ( std::floor(dist) > rangeToFind || entity->itemNotMoving == 0 )
+				if ( std::floor(dist) > rangeToFind )
 				{
-					// item was too far away, or in flight, continue.
+					// item was too far away, continue.
+					if ( item != nullptr )
+					{
+						free(item);
+					}
 					continue;
 				}
 
-				newItem(item->type, item->status, item->beatitude, item->count, item->appearance, item->identified, &myStats->inventory);
-				item = nullptr;
-				list_RemoveNode(entity->mynode);			
+				if ( !entity->itemNotMoving && entity->parent && entity->parent != uid )
+				{
+					if ( itemCategory(item) == THROWN && entity->parent && entity->parent == uid )
+					{
+						//It's good. Can pick this one up, it's your THROWN now.
+					}
+					else
+					{
+						//Don't pick up non-THROWN items that are moving, or owned THROWN that are moving.
+						if ( item != nullptr )
+						{
+							free(item);
+						}
+						continue; //Item still in motion, don't pick it up.
+					}
+				}
+
+				Item** shouldWield = nullptr;
+				node_t* replaceInventoryItem = nullptr;
+				if ( !monsterWantsItem(*item, shouldWield, replaceInventoryItem) )
+				{
+					if ( item != nullptr )
+					{
+						free(item);
+					}
+					continue;
+				}
+
+				if ( shouldWield )
+				{
+					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 )
+					{
+						if ( item != nullptr )
+						{
+							free(item);
+						}
+						continue;
+					}
+					dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+					(*shouldWield) = item;
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
+				else if ( replaceInventoryItem )
+				{
+					//Drop that item out of the monster's inventory, and add this item to the monster's inventory.
+					Item* itemToDrop = static_cast<Item*>(replaceInventoryItem->element);
+					if ( itemToDrop )
+					{
+						dropItemMonster(itemToDrop, this, myStats, itemToDrop->count);
+						//list_RemoveNode(replaceInventoryItem);
+					}
+					addItemToMonsterInventory(item);
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
+				else
+				{
+					addItemToMonsterInventory(item);
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
 
 				if ( item != nullptr )
 				{
@@ -7536,4 +7594,197 @@ node_t* Entity::addItemToMonsterInventory(Item* item)
 	return item->node;
 }
 
+bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	if (myStats->weapon == nullptr)
+	{
+		return true; //Something is better than nothing.
+	}
+	//Monster is already holding a weapon.
+
+	if ( !Item::isThisABetterWeapon(itemToEquip, myStats->weapon) )
+	{
+		return false; //Don't want junk.
+	}
+
+	if ( myStats->weapon->beatitude < 0 )
+	{
+		//If monster already holding an item, can't swap it out if it's cursed.
+		return false;
+	}
+
+	if ( itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == THROWN || itemCategory(myStats->weapon) == GEM )
+	{
+		//If current hand item is not cursed, but it's a certain item, don't want to equip this new one.
+		return false;
+	}
+
+	return true;
+}
+
+bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( myStats->type )
+	{
+		case GOBLIN:
+			if ( !goblinCanWieldItem(item) )
+			{
+				return false;
+			}
+			break;
+		case HUMAN:
+			if ( !humanCanWieldItem(item) )
+			{
+				return false;
+			}
+			break;
+		case GOATMAN:
+			if ( !goatmanCanWieldItem(item) )
+			{
+				return false;
+			}
+			break;
+		case AUTOMATON:
+			return true; //Can pick up all items, because recycler.
+		default:
+			return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			if ( !myStats->weapon )
+			{
+				shouldEquip = &myStats->weapon;
+			}
+
+			if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON && shouldMonsterEquipThisWeapon(item) )
+			{
+				shouldEquip = &myStats->weapon;
+				return true;
+			}
+			else
+			{
+				if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON )
+				{
+					//Weapon ain't better than weapon already holding. Don't want it.
+					return false;
+				}
+
+				//Not holding a weapon. Make sure don't already have a weapon in the inventory. If doesn't have a weapon at all, then add it into the inventory since something is better than nothing.
+				node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+				if ( !weaponNode )
+				{
+					//If no weapons found in inventory, then yes, the goatman wants it, and it should be added to the inventory.
+					return true; //Want this item.
+				}
+
+				//Search inventory and replace weapon if this one is better.
+				if ( Item::isThisABetterWeapon(item, static_cast<Item*>(weaponNode->element)) )
+				{
+					replaceInventoryItem = weaponNode;
+					return true;
+				}
+				return false; //Don't want your junk.
+			}
+		case ARMOR:
+			return (shouldEquip = shouldMonsterEquipThisArmor(item));
+		case THROWN:
+			if ( myStats->weapon == nullptr )
+			{
+				shouldEquip = &myStats->weapon;
+				return true;
+			}
+			else
+			{
+				return true; //Store in inventory.
+			}
+		default:
+			return true; //Already checked if monster likes this specific item in the racial calls.
+	}
+
+	return false;
+}
+
+Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	switch ( checkEquipType(&item) )
+	{
+		case TYPE_HAT:
+			if ( myStats->helmet && myStats->helmet->beatitude < 0 )
+			{
+				return nullptr; //No can has hats : (
+			}
+
+			return Item::isThisABetterArmor(item, myStats->helmet)? &myStats->helmet : nullptr;
+		case TYPE_HELM:
+			if ( myStats->helmet && myStats->helmet->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			if ( myStats->type == GOBLIN && myStats->helmet && checkEquipType(myStats->helmet) == TYPE_HAT )
+			{
+				return nullptr; //Goblins love hats.
+			}
+
+			return Item::isThisABetterArmor(item, myStats->helmet)? &myStats->helmet : nullptr;
+			break;
+		case TYPE_SHIELD:
+			if ( myStats->shield && myStats->shield->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->shield)? &myStats->shield : nullptr;
+		case TYPE_BREASTPIECE:
+			if ( myStats->breastplate && myStats->breastplate->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->breastplate)? &myStats->breastplate : nullptr;
+		case TYPE_CLOAK:
+			if ( myStats->cloak && myStats->cloak->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->cloak)? &myStats->cloak : nullptr;
+		case TYPE_BOOTS:
+			if ( myStats->shoes && myStats->shoes->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->shoes)? &myStats->shoes : nullptr;
+		case TYPE_GLOVES:
+			if ( myStats->gloves && myStats->gloves->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->gloves)? &myStats->gloves : nullptr;
+		default:
+			return nullptr;
+	}
+}
 

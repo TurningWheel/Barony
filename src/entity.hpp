@@ -248,6 +248,16 @@ public:
 	bool goatmanCanWieldItem(const Item& item) const;
 	bool automatonCanWieldItem(const Item& item) const;
 
+	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
+
+	/*
+	 * Check if the goatman can wield the item, and if so, is it something it wants? E.g. does it really want to carry 2 sets of armor?
+	 */
+	//bool goatmanWantsItem(const Item& item, Item*& shouldWield, node_t*& replaceInventoryItem) const;
+
+	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;
+	Item** shouldMonsterEquipThisArmor(const Item& item) const;
+
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
 	void circuitPowerOff(); //Called when a nearby circuit or switch powers off.
@@ -499,7 +509,7 @@ int countDefaultItems(Stat* stats);
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
 void setRandomMonsterStats(Stat* stats);
 
-int checkEquipType(Item *ITEM);
+int checkEquipType(const Item *ITEM);
 
 static const int SPRITE_GLOVE_RIGHT_OFFSET = 0;
 static const int SPRITE_GLOVE_LEFT_OFFSET = 4;

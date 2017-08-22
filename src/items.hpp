@@ -334,6 +334,14 @@ public:
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
+
+	//-----ITEM COMPARISON FUNCTIONS-----
+	/*
+	 * Returns which weapon hits harder.
+	 */
+	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
+	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave);
+
 };
 extern Uint32 itemuids;
 
@@ -408,7 +416,7 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
-Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats);
+Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count = 1);
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
@@ -416,12 +424,17 @@ Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
 void consumeItem(Item* item); //NOTE: Items have to be unequipped before calling this function on them.
-int itemCompare(const Item* item1, const Item* item2);
 void dropItem(Item* item, int player);
 void useItem(Item* item, int player);
 void equipItem(Item* item, Item** slot, int player);
 Item* itemPickup(int player, Item* item);
 bool itemIsEquipped(const Item* item, int player);
+
+//-----ITEM COMPARISON FUNCS-----
+/*
+ * Only compares items of the same type.
+ */
+int itemCompare(const Item* item1, const Item* item2);
 
 /*
  * Returns true if potion is harmful to the player.

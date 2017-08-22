@@ -1166,7 +1166,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode);
 					if ( !swapped )
 					{
-						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap THROWN into hand!");
+						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap THROWN into hand! Cursed? (%d)", myStats->weapon->beatitude);
 						//Don't return, make sure holding a melee weapon at least.
 					}
 					else
@@ -1183,7 +1183,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
 			if ( !swapped )
 			{
-				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand!");
+				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand (melee block)! Cursed? (%d)", myStats->weapon->beatitude);
 			}
 			else
 			{
@@ -1193,7 +1193,6 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		}
 
 		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
-		Category cat = itemCategory(myStats->weapon);
 		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
 		{
 			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
@@ -1205,7 +1204,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
 			if ( !swapped )
 			{
-				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand!");
+				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand! Cursed? (%d)", myStats->weapon->beatitude);
 				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
 			}
 			else
@@ -1225,7 +1224,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
 		if ( !swapped )
 		{
-			printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand!");
+			printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
 		}
 		else
 		{
@@ -1263,11 +1262,6 @@ bool Entity::goatmanCanWieldItem(const Item& item) const
 	switch ( itemCategory(&item) )
 	{
 		case WEAPON:
-			if ( !myStats->weapon || itemCategory(myStats->weapon) != WEAPON )
-			{
-				//Only pick up weapons if wielding a weapon.
-				return false;
-			}
 			return true;
 		case POTION:
 			switch ( item.type )
