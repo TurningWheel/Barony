@@ -2507,7 +2507,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 		// life saving
-		if ( myStats->amulet->type == AMULET_LIFESAVING )   //TODO: Doesn't save against boulder traps.
+		if ( myStats->amulet->type == AMULET_LIFESAVING )
 		{
 			if ( myStats->HP <= 0 )
 			{
