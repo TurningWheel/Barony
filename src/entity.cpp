@@ -787,6 +787,9 @@ void Entity::effectTimes()
 					case EFF_BLEEDING:
 						messagePlayer(player, language[614]);
 						break;
+                    case EFF_SLOW:
+                        messagePlayer(player, language[604]);
+                        break;
 					case EFF_MAGICRESIST:
 						messagePlayer(player, language[2470]);
 						break;
