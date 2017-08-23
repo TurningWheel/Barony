@@ -758,22 +758,33 @@ void actMinotaurCeilingBuster(Entity* my)
 					int c, i = 6 + rand() % 4;
 					for ( c = 0; c < i; c++ )
 					{
-						Entity* entity = spawnGib(my);
-						entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
-						entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
-						entity->z = -8;
-						entity->flags[PASSABLE] = true;
-						entity->flags[INVISIBLE] = false;
-						entity->flags[NOUPDATE] = true;
-						entity->flags[UPDATENEEDED] = false;
-						entity->sprite = items[GEM_ROCK].index;
-						entity->yaw = rand() % 360 * PI / 180;
-						entity->pitch = rand() % 360 * PI / 180;
-						entity->roll = rand() % 360 * PI / 180;
-						entity->vel_x = (rand() % 20 - 10) / 10.0;
-						entity->vel_y = (rand() % 20 - 10) / 10.0;
-						entity->vel_z = -.25;
-						entity->fskill[3] = 0.03;
+						Entity *entity = nullptr;
+						if ( multiplayer == SERVER )
+						{
+							entity = spawnGib(my, true);
+						}
+						else
+						{
+							entity = spawnGibClient(my->x, my->y, my->z, 5);
+						}
+						if ( entity )
+						{
+							entity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+							entity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+							entity->z = -8;
+							entity->flags[PASSABLE] = true;
+							entity->flags[INVISIBLE] = false;
+							entity->flags[NOUPDATE] = true;
+							entity->flags[UPDATENEEDED] = false;
+							entity->sprite = items[GEM_ROCK].index;
+							entity->yaw = rand() % 360 * PI / 180;
+							entity->pitch = rand() % 360 * PI / 180;
+							entity->roll = rand() % 360 * PI / 180;
+							entity->vel_x = (rand() % 20 - 10) / 10.0;
+							entity->vel_y = (rand() % 20 - 10) / 10.0;
+							entity->vel_z = -.25;
+							entity->fskill[3] = 0.03;
+						}
 					}
 				}
 				node_t* node, *nextnode;
