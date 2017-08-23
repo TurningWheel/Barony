@@ -1927,17 +1927,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actDoor)
 						{
-							//Open door
-							if (!hit.entity->skill[0] && !hit.entity->skill[3])
-							{
-								hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
-							}
-							else if (hit.entity->skill[0] && !hit.entity->skill[3])
-							{
-								hit.entity->skill[3] = 1 + (my->x < hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
-							}
+                            playSoundEntity(hit.entity, 91, 64);
+                            hit.entity->skill[5] = 0; // Unlock the door.
 							if ( parent )
 								if ( parent->behavior == &actPlayer)
 								{
