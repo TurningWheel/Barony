@@ -2782,16 +2782,20 @@ Sint32 statGetDEX(Stat* entitystats)
 	{
 		DEX = std::min(DEX - 3, -2);
 	}
-	if ( entitystats->shoes != NULL )
+	if ( entitystats->shoes != nullptr )
+	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
 			DEX++;
 		}
-	if ( entitystats->gloves != NULL )
+	}
+	if ( entitystats->gloves != nullptr )
+	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
 			DEX++;
 		}
+	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
 		switch ( entitystats->type )

@@ -1094,6 +1094,11 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		return;
 	}
 
+	if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
+	{
+		return;
+	}
+
 	int specialRoll = -1;
 	bool usePotionSpecial = false;
 
