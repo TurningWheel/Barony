@@ -1736,8 +1736,8 @@ void assignActions(map_t* map)
 						if ( stats[numplayers]->HP <= 0 )
 						{
 							messagePlayer(numplayers, language[1109]);
-							stats[numplayers]->HP = stats[numplayers]->MAXHP / 2;
-							stats[numplayers]->MP = stats[numplayers]->MAXMP / 2;
+							stats[numplayers]->HP = stats[numplayers]->MAXHP;
+							stats[numplayers]->MP = stats[numplayers]->MAXMP;
 							stats[numplayers]->HUNGER = 500;
 							for ( c = 0; c < NUMEFFECTS; c++ )
 							{
@@ -3608,6 +3608,71 @@ void assignActions(map_t* map)
 				entity->skill[15] = 0; //identified
 				break;
 			}
+			case 108: //stalag column
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 580;
+				entity->sizex = 8;
+				entity->sizey = 8;
+				entity->z = -7.75;
+				entity->behavior = &actStalag;
+				break;
+			case 109: //stalagmite single
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 581;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->z = 1.75;
+				entity->behavior = &actStalag;
+				break;
+			case 110: //stalagmite multiple
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 582;
+				entity->sizex = 7;
+				entity->sizey = 7;
+				entity->z = -1;
+				entity->behavior = &actStalag;
+				break;
+			case 111: //stalagtite single
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 583;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->z = -1.75;
+				x = entity->x / 16;
+				y = entity->y / 16;
+				entity->behavior = &actStalag;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						entity->flags[PASSABLE] = true;
+						entity->z -= 16;
+					}
+				}
+				break;
+			case 112: //stalagtite multiple
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 584;
+				entity->sizex = 7;
+				entity->sizey = 7;
+				entity->z = 1;
+				x = entity->x / 16;
+				y = entity->y / 16;
+				entity->behavior = &actStalag;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						entity->flags[PASSABLE] = true;
+						entity->z -= 16;
+					}
+				}
+				break;
 			default:
 				break;
 		}

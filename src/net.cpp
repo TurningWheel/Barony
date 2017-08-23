@@ -181,6 +181,10 @@ int power(int a, int b)
 
 void messagePlayer(int player, char* message, ...)
 {
+	if ( player < 0 || player >= MAXPLAYERS )
+	{
+		return;
+	}
 	char str[256] = { 0 };
 
 	va_list argptr;
@@ -1651,7 +1655,8 @@ void clientHandlePacket()
 		else if ( !strcmp((char*)(&net_packet->data[8]), language[1109]) )
 		{
 			// ... or lived
-			stats[clientnum]->HP = stats[clientnum]->MAXHP / 2;
+			stats[clientnum]->HP = stats[clientnum]->MAXHP;
+            stats[clientnum]->MP = stats[clientnum]->MAXMP;
 			stats[clientnum]->HUNGER = 500;
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
@@ -2408,6 +2413,28 @@ void clientHandlePacket()
 
 		return;
 	}
+
+    //Open up the Remove Curse GUI
+    else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
+    {
+        removecursegui_active = true;
+        shootmode = false;
+        gui_mode = GUI_MODE_INVENTORY; //Reset the GUI to the inventory.
+        if ( identifygui_active )
+        {
+            closeIdentifyGUI();
+        }
+        if ( openedChest[clientnum] )
+        {
+            openedChest[clientnum]->closeChest();
+        }
+
+        //Initialize Remove Curse GUI game controller code here.
+        initRemoveCurseGUIControllerCode();
+
+        return;
+    }
+
 
 	//Add a spell to the channeled spells list.
 	else if (!strncmp((char*)net_packet->data, "CHAN", 4))

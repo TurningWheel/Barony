@@ -46,10 +46,6 @@ class Entity
 	Sint32& char_energize;
 	Sint32& char_torchtime;
 	Sint32& char_poison;
-	Sint32& monster_attack;
-	Sint32& monster_attacktime;
-	Sint32& monster_state;
-	Sint32& monster_target;
 	Sint32& circuit_status; //Use CIRCUIT_OFF and CIRCUIT_ON.
 	Sint32& switch_power; //Switch/mechanism power status.
 
@@ -84,6 +80,9 @@ class Entity
 	Sint32& crystalGeneratedElectricityNodes; // 1 if electricity nodes generated previously, else 0
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
+
+	// Item skills
+	Sint32& itemNotMoving;
 
 	static const int CRYSTAL_HOVER_UP = 0;
 	static const int CRYSTAL_HOVER_UP_WAIT = 1;
@@ -144,9 +143,13 @@ public:
 	Sint32& chestPreventLockpickCapstoneExploit;
 
 	//--PUBLIC MONSTER SKILLS--
-	Sint32& monsterState;
-	Sint32& monsterTarget;
-	Sint32& monsterSpecial;
+	Sint32& monsterState; //skill[0]
+	Sint32& monsterTarget; //skill[1]
+	real_t& monsterTargetX; //fskill[2]
+	real_t& monsterTargetY; //fskill[3]
+	Sint32& monsterSpecialTimer;
+	//Only used by goatman.
+	Sint32& monsterSpecialState; //skill[33]
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
@@ -155,6 +158,7 @@ public:
 	Sint32& monsterArmbended;
 	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
+	Sint32& monsterHitTime;
 
 	real_t& monsterLookDir;
 
@@ -237,6 +241,22 @@ public:
 
 	//--*CheckBetterEquipment functions--
 	void checkBetterEquipment(Stat* myStats);
+	void checkGroundForItems();
+	bool canWieldItem(const Item& item) const;
+	bool goblinCanWieldItem(const Item& item) const;
+	bool humanCanWieldItem(const Item& item) const;
+	bool goatmanCanWieldItem(const Item& item) const;
+	bool automatonCanWieldItem(const Item& item) const;
+
+	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
+
+	/*
+	 * Check if the goatman can wield the item, and if so, is it something it wants? E.g. does it really want to carry 2 sets of armor?
+	 */
+	//bool goatmanWantsItem(const Item& item, Item*& shouldWield, node_t*& replaceInventoryItem) const;
+
+	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
+	Item** shouldMonsterEquipThisArmor(const Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -316,13 +336,22 @@ public:
 	// weapon arm animation attacks
 	void handleWeaponArmAttack(Entity* weaponarm);
 	// handle walking movement for arms and legs
-	void humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
+	void humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound);
 	// monster footsteps, needs to be client friendly
 	Uint32 getMonsterFootstepSound(int footstepType, int bootSprite);
 	// handle humanoid weapon arm animation/sprite offsets
-	void handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType);
-
+	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
+	// server only function to set boot sprites on monsters.
+	bool setBootSprite(Entity* leg, int spriteOffset);
+	// monster special attack handler
+	void handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
+	// monster attack handler
+	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
+	// automaton specific function
+	void automatonRecycleItem();
+	// check for nearby items to add to monster's inventory
+	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 
 	spell_t* getActiveMagicEffect(int spellID);
 
@@ -334,7 +363,43 @@ public:
 	//Updates the EFFECTS variable for all clients for this entity.
 	void serverUpdateEffectsForEntity(bool guarantee);
 
+	/*
+	 * If set on a player, will call serverUpdateEffects() on the player.
+	 * @param guarantee: Causes serverUpdateEffectsForEntity() to use sendPacketSafe() rather than just sendPacket().
+	 */
 	void setEffect(int effect, bool value, int duration, bool updateClients, bool guarantee = true);
+
+	/*
+	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
+	 */
+	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
+
+	//Lets monsters swap out weapons.
+	void inline chooseWeapon(const Entity* target, double dist)
+	{
+		Stat* myStats = getStats();
+		if ( !myStats )
+		{
+			return;
+		}
+
+		switch ( myStats->type )
+		{
+			case GOATMAN:
+				goatmanChooseWeapon(target, dist);
+				break;
+			default:
+				break;
+		}
+	}
+	void goatmanChooseWeapon(const Entity* target, double dist);
+
+	bool monsterInMeleeRange(const Entity* target, double dist)
+	{
+		return (dist < STRIKERANGE);
+	}
+
+	node_t* addItemToMonsterInventory(Item* item);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -427,11 +492,12 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-const int NUM_ITEM_STRINGS = 208;
-const int NUM_ITEM_STRINGS_BY_TYPE = 70;
+static const int NUM_ITEM_STRINGS = 213;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
+static const int NUM_EDITOR_SPRITES = 113;
 
 int checkSpriteType(Sint32 sprite);
-extern char spriteEditorNameStrings[108][64];
+extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
 extern char tileEditorNameStrings[202][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
@@ -443,15 +509,14 @@ int countDefaultItems(Stat* stats);
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
 void setRandomMonsterStats(Stat* stats);
 
-int checkEquipType(Item *ITEM);
+int checkEquipType(const Item *ITEM);
 
-#define SPRITE_GLOVE_RIGHT_OFFSET 0
-#define SPRITE_GLOVE_LEFT_OFFSET 4
-#define SPRITE_BOOT_RIGHT_OFFSET 0
-#define SPRITE_BOOT_LEFT_OFFSET 2
+static const int SPRITE_GLOVE_RIGHT_OFFSET = 0;
+static const int SPRITE_GLOVE_LEFT_OFFSET = 4;
+static const int SPRITE_BOOT_RIGHT_OFFSET = 0;
+static const int SPRITE_BOOT_LEFT_OFFSET = 2;
 
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
-int setBootSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);

@@ -614,6 +614,12 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
+    if ( !(svFlags & SV_FLAG_CHEATS) )
+    {
+        // Cheats are enabled, therefore you cannot earn Steam Achievements
+        return;
+    }
+
 	if ( !achievementUnlocked(achName) )
 	{
 		//messagePlayer(clientnum, "You've unlocked an achievement!\n [%s]",c_SteamUserStats_GetAchievementDisplayAttribute(achName,"name"));
@@ -645,6 +651,12 @@ void steamAchievementClient(int player, const char* achName)
 	{
 		return;
 	}
+
+    if ( !(svFlags & SV_FLAG_CHEATS) )
+    {
+        // Cheats are enabled, therefore you cannot earn Steam Achievements, this check prevents needless packet sending
+        return;
+    }
 
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
