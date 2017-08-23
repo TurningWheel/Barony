@@ -19,10 +19,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_energize(skill[23]),
 	char_torchtime(skill[25]),
 	char_poison(skill[21]),
-	monster_attack(skill[8]),
-	monster_attacktime(skill[9]),
-	monster_state(skill[0]),
-	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
@@ -37,6 +33,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
+	monsterTargetX(fskill[2]),
+	monsterTargetY(fskill[3]),
 	crystalInitialised(skill[1]),
 	crystalTurning(skill[3]),
 	crystalTurnStartDir(skill[4]),
@@ -52,7 +50,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalTurnVelocity(fskill[3]),
 	monsterAnimationLimbDirection(skill[20]),
 	monsterAnimationLimbOvershoot(skill[30]),
-	monsterSpecial(skill[29]),
+	monsterSpecialTimer(skill[29]),
+	monsterSpecialState(skill[33]),
 	monsterSpellAnimation(skill[31]),
 	monsterFootstepType(skill[32]),
 	monsterLookTime(skill[4]),
@@ -62,7 +61,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
-	particleDuration(skill[0])
+	particleDuration(skill[0]),
+	monsterHitTime(skill[7]),
+	itemNotMoving(skill[18])
 {
 	int c;
 	// add the entity to the entity list

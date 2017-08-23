@@ -2909,6 +2909,8 @@ client (player %d) (direct ip)#
 2281 spellbook#
 2282 blank spellbook 5#
 2283 spellbook#
+2284 empty bottle#
+2285 empty bottle#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2920,6 +2922,7 @@ client (player %d) (direct ip)#
 2356 You rotate the floating crystal.#
 2357 The crystal seems locked in place.#
 2358 The crystal begins to move!#
+2359 You can't drink an empty bottle!#
 
 #New spells (2390-2399)
 2390 Conjure Familiar#

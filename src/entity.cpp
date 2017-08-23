@@ -46,10 +46,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	char_energize(skill[23]),
 	char_torchtime(skill[25]),
 	char_poison(skill[21]),
-	monster_attack(skill[8]),
-	monster_attacktime(skill[9]),
-	monster_state(skill[0]),
-	monster_target(skill[1]),
 	circuit_status(skill[28]),
 	switch_power(skill[0]),
 	chestInit(skill[0]),
@@ -64,6 +60,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	chestPreventLockpickCapstoneExploit(skill[10]),
 	monsterState(skill[0]),
 	monsterTarget(skill[1]),
+	monsterTargetX(fskill[2]),
+	monsterTargetY(fskill[3]),
 	crystalInitialised(skill[1]),
 	crystalTurning(skill[3]),
 	crystalTurnStartDir(skill[4]),
@@ -79,7 +77,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	crystalTurnVelocity(fskill[3]),
 	monsterAnimationLimbDirection(skill[20]),
 	monsterAnimationLimbOvershoot(skill[30]),
-	monsterSpecial(skill[29]),
+	monsterSpecialTimer(skill[29]),
+	monsterSpecialState(skill[33]),
 	monsterSpellAnimation(skill[31]),
 	monsterFootstepType(skill[32]),
 	monsterLookTime(skill[4]),
@@ -89,7 +88,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
-	particleDuration(skill[0])
+	particleDuration(skill[0]),
+	monsterHitTime(skill[7]),
+	itemNotMoving(skill[18])
 
 {
 	int c;
@@ -1031,10 +1032,10 @@ void Entity::checkBetterEquipment(Stat* myStats)
 {
 	if (!myStats)
 	{
-		return;    //Can't continue without these.
+		return; //Can't continue without these.
 	}
 
-	list_t* items = NULL;
+	list_t* items = nullptr;
 	//X and Y in terms of tiles.
 	int tx = x / 16;
 	int ty = y / 16;
@@ -1048,9 +1049,9 @@ void Entity::checkBetterEquipment(Stat* myStats)
 	getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
 	getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
 	int currentAC, newAC;
-	Item* oldarmor = NULL;
+	Item* oldarmor = nullptr;
 
-	node_t* node = NULL;
+	node_t* node = nullptr;
 
 	bool glovesandshoes = false;
 	if ( myStats->type == HUMAN )
@@ -1058,7 +1059,7 @@ void Entity::checkBetterEquipment(Stat* myStats)
 		glovesandshoes = true;
 	}
 
-	if (items)
+	if ( items )
 	{
 		/*
 		 * Rundown of the function:
@@ -1066,254 +1067,287 @@ void Entity::checkBetterEquipment(Stat* myStats)
 		 * Check the monster's item. Compare and grab the best item.
 		 */
 
-		for (node = items->first; node != NULL; node = node->next)
+		for (node = items->first; node != nullptr; node = node->next)
 		{
 			//Turn the entity into an item.
 			if (node->element)
 			{
 				Entity* entity = (Entity*)node->element;
-				Item* item = NULL;
-				if (entity != NULL)
+				Item* item = nullptr;
+				if (entity != nullptr)
 				{
-					item = newItemFromEntity( entity );
+					item = newItemFromEntity(entity);
+				}
+				if ( !item )
+				{
+					continue;
+				}
+				if ( !canWieldItem(*item) )
+				{
+					free(item);
+					continue;
 				}
 
-				if (item != NULL)
+				//If weapon.
+				if (itemCategory(item) == WEAPON)
 				{
-					//If weapon.
-					if (itemCategory(item) == WEAPON)
+					if (myStats->weapon == nullptr) //Not currently holding a weapon.
 					{
-						if (myStats->weapon == NULL)   //Not currently holding a weapon.
+						myStats->weapon = item; //Assign the monster's weapon.
+						item = nullptr;
+						list_RemoveNode(entity->mynode);
+					}
+					else
+					{
+						//Ok, the monster has a weapon already. First check if the monster's weapon is cursed. Can't drop it if it is.
+						if (myStats->weapon->beatitude >= 0 && itemCategory(myStats->weapon) != MAGICSTAFF && itemCategory(myStats->weapon) != POTION && itemCategory(myStats->weapon) != THROWN && itemCategory(myStats->weapon) != GEM )
 						{
-							myStats->weapon = item; //Assign the monster's weapon.
-							item = NULL;
+							//Next compare the two weapons. If the item on the ground is better, drop the weapon it's carrying and equip that one.
+							int weapon_tohit = myStats->weapon->weaponGetAttack();
+							int new_weapon_tohit = item->weaponGetAttack();
+
+							//If the new weapon does more damage than the current weapon.
+							if (new_weapon_tohit > weapon_tohit)
+							{
+								dropItemMonster(myStats->weapon, this, myStats);
+								myStats->weapon = item;
+								item = nullptr;
+								list_RemoveNode(entity->mynode);
+							}
+						}
+					}
+				}
+				else if ( itemCategory(item) == ARMOR )
+				{
+					if ( checkEquipType(item) == TYPE_HAT ) // hats
+					{
+						if (myStats->helmet == nullptr) // nothing on head currently
+						{
+							// goblins love hats.
+							myStats->helmet = item; // pick up the hat.
+							item = nullptr;
+							list_RemoveNode(entity->mynode);
+						}
+					}
+					else if ( checkEquipType(item) == TYPE_HELM ) // helmets
+					{
+						if (myStats->helmet == nullptr) // nothing on head currently
+						{
+							myStats->helmet = item; // pick up the helmet.
+							item = nullptr;
 							list_RemoveNode(entity->mynode);
 						}
 						else
 						{
-							//Ok, the monster has a weapon already. First check if the monster's weapon is cursed. Can't drop it if it is.
-							if (myStats->weapon->beatitude >= 0 && itemCategory(myStats->weapon) != MAGICSTAFF)
+							if (myStats->helmet->beatitude >= 0) // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								//Next compare the two weapons. If the item on the ground is better, drop the weapon it's carrying and equip that one.
-								int weapon_tohit = myStats->weapon->weaponGetAttack();
-								int new_weapon_tohit = item->weaponGetAttack();
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->helmet;
+								myStats->helmet = item;
+								newAC = AC(myStats);
+								myStats->helmet = oldarmor;
 
-								//If the new weapon does more damage than the current weapon.
-								if (new_weapon_tohit > weapon_tohit)
+								//If the new armor is better than the current armor.
+								if (newAC > currentAC)
 								{
-									dropItemMonster(myStats->weapon, this, myStats);
-									myStats->weapon = item;
-									item = NULL;
+									dropItemMonster(myStats->helmet, this, myStats);
+									myStats->helmet = item;
+									item = nullptr;
 									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
 					}
-					else if ( itemCategory(item) == ARMOR )
+					else if ( checkEquipType(item) == TYPE_SHIELD )     // shields
 					{
-						if ( checkEquipType(item) == TYPE_HAT )  // hats
+						if (myStats->shield == nullptr) // nothing in left hand currently
 						{
-							if (myStats->helmet == NULL)   // nothing on head currently
-							{
-								// goblins love hats.
-								myStats->helmet = item; // pick up the hat.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
+							myStats->shield = item; // pick up the shield.
+							item = nullptr;
+							list_RemoveNode(entity->mynode);
 						}
-						else if ( checkEquipType(item) == TYPE_HELM )     // helmets
+						else
 						{
-							if (myStats->helmet == NULL)   // nothing on head currently
+							if (myStats->shield->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								myStats->helmet = item; // pick up the helmet.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
-							else
-							{
-								if (myStats->helmet->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
-								{
-									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-									currentAC = AC(myStats);
-									oldarmor = myStats->helmet;
-									myStats->helmet = item;
-									newAC = AC(myStats);
-									myStats->helmet = oldarmor;
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->shield;
+								myStats->shield = item;
+								newAC = AC(myStats);
+								myStats->shield = oldarmor;
 
-									//If the new armor is better than the current armor.
-									if (newAC > currentAC)
-									{
-										dropItemMonster(myStats->helmet, this, myStats);
-										myStats->helmet = item;
-										item = NULL;
-										list_RemoveNode(entity->mynode);
-									}
-								}
-							}
-						}
-						else if ( checkEquipType(item) == TYPE_SHIELD )     // shields
-						{
-							if (myStats->shield == NULL)   // nothing in left hand currently
-							{
-								myStats->shield = item; // pick up the shield.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
-							else
-							{
-								if (myStats->shield->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								//If the new armor is better than the current armor (OR we're not carrying anything)
+								if (newAC > currentAC || !myStats->shield )
 								{
-									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-									currentAC = AC(myStats);
-									oldarmor = myStats->shield;
+									dropItemMonster(myStats->shield, this, myStats);
 									myStats->shield = item;
-									newAC = AC(myStats);
-									myStats->shield = oldarmor;
-
-									//If the new armor is better than the current armor (OR we're not carrying anything)
-									if (newAC > currentAC || !myStats->shield )
-									{
-										dropItemMonster(myStats->shield, this, myStats);
-										myStats->shield = item;
-										item = NULL;
-										list_RemoveNode(entity->mynode);
-									}
+									item = nullptr;
+									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
-						else if ( checkEquipType(item) == TYPE_BREASTPIECE )     // breastpieces
+					}
+					else if ( checkEquipType(item) == TYPE_BREASTPIECE ) // breastpieces
+					{
+						if (myStats->breastplate == nullptr) // nothing on torso currently
 						{
-							if (myStats->breastplate == NULL)   // nothing on torso currently
+							myStats->breastplate = item; // pick up the armor.
+							item = nullptr;
+							list_RemoveNode(entity->mynode);
+						}
+						else
+						{
+							if (myStats->breastplate->beatitude >= 0) // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								myStats->breastplate = item; // pick up the armor.
-								item = NULL;
-								list_RemoveNode(entity->mynode);
-							}
-							else
-							{
-								if (myStats->breastplate->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->breastplate;
+								myStats->breastplate = item;
+								newAC = AC(myStats);
+								myStats->breastplate = oldarmor;
+
+								//If the new armor is better than the current armor.
+								if (newAC > currentAC)
 								{
-									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-									currentAC = AC(myStats);
-									oldarmor = myStats->breastplate;
+									dropItemMonster(myStats->breastplate, this, myStats);
 									myStats->breastplate = item;
-									newAC = AC(myStats);
-									myStats->breastplate = oldarmor;
-
-									//If the new armor is better than the current armor.
-									if (newAC > currentAC)
-									{
-										dropItemMonster(myStats->breastplate, this, myStats);
-										myStats->breastplate = item;
-										item = NULL;
-										list_RemoveNode(entity->mynode);
-									}
+									item = nullptr;
+									list_RemoveNode(entity->mynode);
 								}
 							}
 						}
-						else if ( checkEquipType(item) == TYPE_CLOAK )     // cloaks
+					}
+					else if ( checkEquipType(item) == TYPE_CLOAK ) // cloaks
+					{
+						if (myStats->cloak == nullptr) // nothing on back currently
 						{
-							if (myStats->cloak == NULL)   // nothing on back currently
+							myStats->cloak = item; // pick up the armor.
+							item = nullptr;
+							list_RemoveNode(entity->mynode);
+						}
+						else
+						{
+							if (myStats->cloak->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 							{
-								myStats->cloak = item; // pick up the armor.
-								item = NULL;
+								// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+								// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+								currentAC = AC(myStats);
+								oldarmor = myStats->cloak;
+								myStats->cloak = item;
+								newAC = AC(myStats);
+								myStats->cloak = oldarmor;
+
+								//If the new armor is better than the current armor.
+								if (newAC > currentAC)
+								{
+									dropItemMonster(myStats->cloak, this, myStats);
+									myStats->cloak = item;
+									item = nullptr;
+									list_RemoveNode(entity->mynode);
+								}
+							}
+						}
+					}
+					if ( glovesandshoes && item != nullptr )
+					{
+						if ( checkEquipType(item) == TYPE_BOOTS ) // boots
+						{
+							if (myStats->shoes == nullptr)
+							{
+								myStats->shoes = item; // pick up the armor
+								item = nullptr;
 								list_RemoveNode(entity->mynode);
 							}
 							else
 							{
-								if (myStats->cloak->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
+								if (myStats->shoes->beatitude >= 0) // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 								{
 									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
 									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
 									currentAC = AC(myStats);
-									oldarmor = myStats->cloak;
-									myStats->cloak = item;
+									oldarmor = myStats->shoes;
+									myStats->shoes = item;
 									newAC = AC(myStats);
-									myStats->cloak = oldarmor;
+									myStats->shoes = oldarmor;
 
 									//If the new armor is better than the current armor.
 									if (newAC > currentAC)
 									{
-										dropItemMonster(myStats->cloak, this, myStats);
-										myStats->cloak = item;
-										item = NULL;
+										dropItemMonster(myStats->shoes, this, myStats);
+										myStats->shoes = item;
+										item = nullptr;
 										list_RemoveNode(entity->mynode);
 									}
 								}
 							}
 						}
-						if ( glovesandshoes && item != NULL )
+						else if ( checkEquipType(item) == TYPE_GLOVES )
 						{
-							if ( checkEquipType(item) == TYPE_BOOTS )   // boots
+							if (myStats->gloves == nullptr)
 							{
-								if (myStats->shoes == NULL)
-								{
-									myStats->shoes = item; // pick up the armor
-									item = NULL;
-									list_RemoveNode(entity->mynode);
-								}
-								else
-								{
-									if (myStats->shoes->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
-									{
-										// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-										// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-										currentAC = AC(myStats);
-										oldarmor = myStats->shoes;
-										myStats->shoes = item;
-										newAC = AC(myStats);
-										myStats->shoes = oldarmor;
-
-										//If the new armor is better than the current armor.
-										if (newAC > currentAC)
-										{
-											dropItemMonster(myStats->shoes, this, myStats);
-											myStats->shoes = item;
-											item = NULL;
-											list_RemoveNode(entity->mynode);
-										}
-									}
-								}
+								myStats->gloves = item; // pick up the armor
+								item = nullptr;
+								list_RemoveNode(entity->mynode);
 							}
-							else if ( checkEquipType(item) == TYPE_GLOVES )
+							else
 							{
-								if (myStats->gloves == NULL)
+								if (myStats->gloves->beatitude >= 0) // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
 								{
-									myStats->gloves = item; // pick up the armor
-									item = NULL;
-									list_RemoveNode(entity->mynode);
-								}
-								else
-								{
-									if (myStats->gloves->beatitude >= 0)   // if the armor is not cursed, proceed. Won't do anything if the armor is cursed.
-									{
-										// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
-										// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
-										currentAC = AC(myStats);
-										oldarmor = myStats->gloves;
-										myStats->gloves = item;
-										newAC = AC(myStats);
-										myStats->gloves = oldarmor;
+									// to compare the armors, we use the AC function to check the Armor Class of the equipment the goblin
+									// is currently wearing versus the Armor Class that the goblin would have if it had the new armor.
+									currentAC = AC(myStats);
+									oldarmor = myStats->gloves;
+									myStats->gloves = item;
+									newAC = AC(myStats);
+									myStats->gloves = oldarmor;
 
-										//If the new armor is better than the current armor.
-										if (newAC > currentAC)
-										{
-											dropItemMonster(myStats->gloves, this, myStats);
-											myStats->gloves = item;
-											item = NULL;
-											list_RemoveNode(entity->mynode);
-										}
+									//If the new armor is better than the current armor.
+									if (newAC > currentAC)
+									{
+										dropItemMonster(myStats->gloves, this, myStats);
+										myStats->gloves = item;
+										item = nullptr;
+										list_RemoveNode(entity->mynode);
 									}
 								}
 							}
 						}
 					}
 				}
+				else if ( itemCategory(item) == POTION )
+				{
+					if ( myStats->weapon == nullptr ) //Not currently holding a weapon.
+					{
+						myStats->weapon = item; //Assign the monster's weapon.
+						item = nullptr;
+						list_RemoveNode(entity->mynode);
+					}
+					//Don't pick up if already wielding something.
+				}
+				else if ( itemCategory(item) == THROWN )
+				{
+					if ( myStats->weapon == nullptr ) //Not currently holding a weapon.
+					{
+						if ( !entity->itemNotMoving && entity->parent && entity->parent != uid )
+						{
+							//Don't pick up the item.
+						}
+						else
+						{
+							myStats->weapon = item; //Assign the monster's weapon.
+							item = nullptr;
+							list_RemoveNode(entity->mynode);
+						}
+					}
+					//Don't pick up if already wielding something.
+				}
 
-				if (item != NULL)
+				if (item != nullptr)
 				{
 					free(item);
 				}
@@ -2677,7 +2711,15 @@ Sint32 statGetSTR(Stat* entitystats)
 	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
-		STR++;
+		switch ( entitystats->type )
+		{
+			case GOATMAN:
+				STR += 10; //Goatman love booze.
+				break;
+			default:
+				++STR;
+				break;
+		}
 	}
 	return STR;
 }
@@ -2740,19 +2782,28 @@ Sint32 statGetDEX(Stat* entitystats)
 	{
 		DEX = std::min(DEX - 3, -2);
 	}
-	if ( entitystats->shoes != NULL )
+	if ( entitystats->shoes != nullptr )
+	{
 		if ( entitystats->shoes->type == LEATHER_BOOTS_SPEED )
 		{
 			DEX++;
 		}
-	if ( entitystats->gloves != NULL )
+	}
+	if ( entitystats->gloves != nullptr )
+	{
 		if ( entitystats->gloves->type == GLOVES_DEXTERITY )
 		{
 			DEX++;
 		}
+	}
 	if ( entitystats->EFFECTS[EFF_DRUNK] )
 	{
-		DEX--;
+		switch ( entitystats->type )
+		{
+			default:
+				--DEX;
+				break;
+		}
 	}
 	return DEX;
 }
@@ -3190,14 +3241,14 @@ void getItemsOnTile(int x, int y, list_t** list)
 
 void Entity::attack(int pose, int charge, Entity* target)
 {
-	Stat* hitstats = NULL;
-	Stat* myStats;
-	Entity* entity;
+	Stat* hitstats = nullptr;
+	Stat* myStats = nullptr;
+	Entity* entity = nullptr;
 	int player, playerhit = -1;
 	double dist;
 	int c, i;
 	int weaponskill = -1;
-	node_t* node;
+	node_t* node = nullptr;
 	double tangent;
 
 	if ( (myStats = getStats()) == nullptr )
@@ -3206,13 +3257,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 	}
 
 	// get the player number, if applicable
-	if (behavior == &actPlayer)
+	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
 	}
 	else
 	{
-		player = -1;    // not a player
+		player = -1; // not a player
 	}
 
 	if (multiplayer != CLIENT)
@@ -3222,20 +3273,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 		{
 			if (stats[player]->weapon != nullptr)
 			{
-				players[player]->entity->skill[9] = pose;    // PLAYER_ATTACK
+				players[player]->entity->skill[9] = pose; // PLAYER_ATTACK
 			}
 			else
 			{
-				players[player]->entity->skill[9] = 1;    // special case for punch to eliminate spanking motion :p
+				players[player]->entity->skill[9] = 1; // special case for punch to eliminate spanking motion :p
 			}
 			players[player]->entity->skill[10] = 0; // PLAYER_ATTACKTIME
 		}
 		else
 		{
-			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_MAGIC_WINDUP3 )
+			if ( pose >= MONSTER_POSE_MELEE_WINDUP1 && pose <= MONSTER_POSE_SPECIAL_WINDUP3 )
 			{
-				monster_attack = pose;
-				monster_attacktime = 0;
+				monsterAttack = pose;
+				monsterAttackTime = 0;
 				if ( multiplayer == SERVER )
 				{
 					// be sure to update the clients with the new wind-up pose.
@@ -3246,13 +3297,13 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
 			{
-				monster_attack = pose;
+				monsterAttack = pose;
 			}
 			else
 			{
-				monster_attack = 1;    // punching
+				monsterAttack = 1;    // punching
 			}
-			monster_attacktime = 0;
+			monsterAttackTime = 0;
 		}
 
 		if (multiplayer == SERVER)
@@ -3269,7 +3320,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
-		if ( myStats->weapon != NULL )
+		if ( myStats->type == GOATMAN )
+		{
+			if ( monsterSpecialState > 0 )
+			{
+				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
+			}
+		}
+
+		if ( myStats->weapon != nullptr )
 		{
 			// magical weapons
 			if ( itemCategory(myStats->weapon) == SPELLBOOK || itemCategory(myStats->weapon) == MAGICSTAFF )
@@ -3498,27 +3557,72 @@ void Entity::attack(int pose, int charge, Entity* target)
 				return;
 			}
 
-			// potions and gems (throwing)
+			// potions & gems (throwing), and thrown weapons
 			if ( itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == GEM || itemCategory(myStats->weapon) == THROWN )
 			{
+				bool drankPotion = false;
+				if ( myStats->type == GOATMAN && itemCategory(myStats->weapon) == POTION )
+				{
+					//Goatmen chug potions & then toss them at you.
+					if ( myStats->weapon->type == POTION_BOOZE && !myStats->EFFECTS[EFF_DRUNK] )
+					{
+						item_PotionBooze(myStats->weapon, this, false);
+						drankPotion = true;
+					}
+					else if ( myStats->weapon->type == POTION_HEALING )
+					{
+						item_PotionHealing(myStats->weapon, this, false);
+						drankPotion = true;
+					}
+					else if ( myStats->weapon->type == POTION_EXTRAHEALING )
+					{
+						item_PotionExtraHealing(myStats->weapon, this, false);
+						drankPotion = true;
+					}
+				}
+
 				playSoundEntity(this, 75, 64);
-				entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
-				entity->parent = uid;
-				entity->x = x;
-				entity->y = y;
-				entity->z = z;
-				entity->yaw = yaw;
-				entity->sizex = 1;
-				entity->sizey = 1;
-				entity->behavior = &actThrown;
-				entity->flags[UPDATENEEDED] = true;
-				entity->flags[PASSABLE] = true;
-				entity->skill[10] = myStats->weapon->type;
-				entity->skill[11] = myStats->weapon->status;
-				entity->skill[12] = myStats->weapon->beatitude;
-				entity->skill[13] = 1;
-				entity->skill[14] = myStats->weapon->appearance;
-				entity->skill[15] = myStats->weapon->identified;
+				if ( drankPotion )
+				{
+					Item* emptyBottle = newItem(POTION_EMPTY, myStats->weapon->status, myStats->weapon->beatitude, 1, myStats->weapon->appearance, myStats->weapon->appearance, nullptr);
+					entity = newEntity(itemModel(emptyBottle), 1, map.entities); // thrown item
+					entity->parent = uid;
+					entity->x = x;
+					entity->y = y;
+					entity->z = z;
+					entity->yaw = yaw;
+					entity->sizex = 1;
+					entity->sizey = 1;
+					entity->behavior = &actThrown;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
+					entity->skill[10] = emptyBottle->type;
+					entity->skill[11] = emptyBottle->status;
+					entity->skill[12] = emptyBottle->beatitude;
+					entity->skill[13] = 1;
+					entity->skill[14] = emptyBottle->appearance;
+					entity->skill[15] = emptyBottle->identified;
+				}
+				else
+				{
+					entity = newEntity(itemModel(myStats->weapon), 1, map.entities); // thrown item
+					entity->parent = uid;
+					entity->x = x;
+					entity->y = y;
+					entity->z = z;
+					entity->yaw = yaw;
+					entity->sizex = 1;
+					entity->sizey = 1;
+					entity->behavior = &actThrown;
+					entity->flags[UPDATENEEDED] = true;
+					entity->flags[PASSABLE] = true;
+					entity->skill[10] = myStats->weapon->type;
+					entity->skill[11] = myStats->weapon->status;
+					entity->skill[12] = myStats->weapon->beatitude;
+					entity->skill[13] = 1;
+					entity->skill[14] = myStats->weapon->appearance;
+					entity->skill[15] = myStats->weapon->identified;
+				}
 
 				if ( itemCategory(myStats->weapon) == THROWN )
 				{
@@ -3572,6 +3676,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 				}
 
+				//TODO: Refactor this so that we don't have to copy paste this check a million times whenever some-one uses up an item.
 				myStats->weapon->count--;
 				if ( myStats->weapon->count <= 0 )
 				{
@@ -3583,7 +3688,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						free(myStats->weapon);
 					}
-					myStats->weapon = NULL;
+					myStats->weapon = nullptr;
 				}
 				return;
 			}
@@ -3600,7 +3705,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			hit.entity = target;
 		}
 
-		if ( hit.entity != NULL )
+		if ( hit.entity != nullptr )
 		{
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
 			{
@@ -3613,7 +3718,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 			if ( hit.entity->behavior == &actBoulder )
 			{
-				if ( myStats->weapon != NULL )
+				if ( myStats->weapon != nullptr )
 				{
 					if ( myStats->weapon->type == TOOL_PICKAXE )
 					{
@@ -3705,46 +3810,60 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 			else if ( hit.entity->behavior == &actMonster )
 			{
-				if ( hit.entity->children.first != NULL )
+				if ( hit.entity->children.first != nullptr )
 				{
-					if ( hit.entity->children.first->next != NULL )
+					if ( hit.entity->children.first->next != nullptr )
 					{
 						hitstats = (Stat*)hit.entity->children.first->next->element;
 
 						// alert the monster!
-						if ( hit.entity->skill[0] != 1 && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
+						if ( hit.entity->monsterState != MONSTER_STATE_ATTACK && (hitstats->type < LICH || hitstats->type >= SHOPKEEPER) )
 						{
 							//hit.entity->skill[0]=0;
 							//hit.entity->skill[4]=0;
 							//hit.entity->fskill[4]=atan2(my->y-hit.entity->y,my->x-hit.entity->x);
-							hit.entity->skill[0] = 2;
-							hit.entity->skill[1] = uid;
-							hit.entity->fskill[2] = x;
-							hit.entity->fskill[3] = y;
+
+							/*hit.entity->monsterState = MONSTER_STATE_PATH;
+							hit.entity->monsterTarget = uid;
+							hit.entity->monsterTargetX = x;
+							hit.entity->monsterTargetY = y;*/
+
+							Entity* attackTarget = uidToEntity(uid);
+
+							if ( attackTarget )
+							{
+								hit.entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+							}
 						}
 
 						// alert other monsters too
 						Entity* ohitentity = hit.entity;
-						for ( node = map.entities->first; node != NULL; node = node->next )
+						for ( node = map.entities->first; node != nullptr; node = node->next )
 						{
 							entity = (Entity*)node->element;
 							if ( entity && entity->behavior == &actMonster && entity != ohitentity )
 							{
 								Stat* buddystats = entity->getStats();
-								if ( buddystats != NULL )
+								if ( buddystats != nullptr )
 								{
 									if ( entity->checkFriend(hit.entity) )
 									{
-										if ( entity->skill[0] == 0 )   // monster is waiting
+										if ( entity->monsterState == MONSTER_STATE_WAIT )
 										{
 											tangent = atan2( entity->y - ohitentity->y, entity->x - ohitentity->x );
 											lineTrace(ohitentity, ohitentity->x, ohitentity->y, tangent, 1024, 0, false);
 											if ( hit.entity == entity )
 											{
-												entity->skill[0] = 2; // path state
-												entity->skill[1] = uid;
-												entity->fskill[2] = x;
-												entity->fskill[3] = y;
+												/*entity->monsterState = MONSTER_STATE_PATH;
+												entity->monsterTarget = uid;
+												entity->monsterTargetX = x;
+												entity->monsterTargetY = y;*/
+
+												Entity* attackTarget = uidToEntity(uid);
+												if ( attackTarget )
+												{
+													entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+												}
 											}
 										}
 									}
@@ -3761,7 +3880,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				playerhit = hit.entity->skill[2];
 
 				// alert the player's followers!
-				for ( node = hitstats->FOLLOWERS.first; node != NULL; node = node->next )
+				//Maybe should send a signal to each follower, with some kind of attached priority, which determines if they change their target to bumrush the player's assailant.
+				for ( node = hitstats->FOLLOWERS.first; node != nullptr; node = node->next )
 				{
 					Uint32* c = (Uint32*)node->element;
 					entity = uidToEntity(*c);
@@ -3769,14 +3889,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 					if ( entity )
 					{
 						Stat* buddystats = entity->getStats();
-						if ( buddystats != NULL )
+						if ( buddystats != nullptr )
 						{
-							if ( entity->skill[0] == 0 || (entity->skill[0] == 3 && entity->skill[1] != uid) )   // monster is waiting or hunting
+							if ( entity->monsterState == MONSTER_STATE_WAIT || (entity->monsterState == MONSTER_STATE_HUNT && entity->monsterTarget != uid) ) // monster is waiting or hunting
 							{
-								entity->skill[0] = 2; // path state
-								entity->skill[1] = uid;
-								entity->fskill[2] = x;
-								entity->fskill[3] = y;
+								/*entity->monsterState = MONSTER_STATE_PATH;
+								entity->monsterTarget = uid;
+								entity->monsterTargetX = x;
+								entity->monsterTargetY = y;*/
+
+								Entity* attackTarget = uidToEntity(uid);
+								if ( attackTarget )
+								{
+									entity->monsterAcquireAttackTarget(*attackTarget, MONSTER_STATE_PATH);
+								}
 							}
 						}
 					}
@@ -4442,8 +4568,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 									teleportRandom();
 
 									// the succubus loses interest after this
-									monster_state = 0;
-									monster_target = 0;
+									monsterState = 0;
+									monsterTarget = 0;
 								}
 								break;
 							default:
@@ -5722,7 +5848,7 @@ void setRandomMonsterStats(Stat* stats)
 }
 
 
-int checkEquipType(Item *item)
+int checkEquipType(const Item *item)
 {
 	switch ( item->type ) {
 
@@ -5856,36 +5982,100 @@ int setGloveSprite(Stat* myStats, Entity* ent, int spriteOffset)
 	return 1;
 }
 
-int setBootSprite(Stat* myStats, Entity* ent, int spriteOffset)
+bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 {
+	if ( multiplayer == CLIENT )
+	{
+		return false;
+	}
+
+	Stat* myStats;
+
+	if ( this->behavior == &actPlayer )
+	{
+		myStats = stats[this->skill[2]]; // skill[2] contains the player number.
+	}
+	else
+	{
+		myStats = this->getStats();
+	}
+
 	if ( myStats == nullptr )
 	{
-		return 0;
+		return false;
 	}
 	if ( myStats->shoes == nullptr )
 	{
-		return 0;
+		return false;
 	}
 
-	if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED ) {
-		ent->sprite = 148 + myStats->sex + spriteOffset;
+	switch ( myStats->type )
+	{
+		case HUMAN:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 148 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 152 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 156 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 499 + myStats->sex + spriteOffset;
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 521 + myStats->sex + spriteOffset;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		// fall throughs below
+		case AUTOMATON:
+		case GOATMAN:
+		case INSECTOID:
+		case KOBOLD:
+		case GOBLIN:
+		case SKELETON:
+		case GNOME:
+		case SHADOW:
+			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
+			{
+				leg->sprite = 148 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING )
+			{
+				leg->sprite = 152 + spriteOffset;
+			}
+			else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER )
+			{
+				leg->sprite = 156 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == CRYSTAL_BOOTS )
+			{
+				leg->sprite = 499 + spriteOffset;
+			}
+			else if ( myStats->shoes->type == ARTIFACT_BOOTS )
+			{
+				leg->sprite = 521 + spriteOffset;
+			}
+			else
+			{
+				return false;
+			}
+			break;
+		default:
+			break;
 	}
-	else if ( myStats->shoes->type == IRON_BOOTS || myStats->shoes->type == IRON_BOOTS_WATERWALKING ) {
-		ent->sprite = 152 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type >= STEEL_BOOTS && myStats->shoes->type <= STEEL_BOOTS_FEATHER ) {
-		ent->sprite = 156 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type == CRYSTAL_BOOTS ) {
-		ent->sprite = 499 + myStats->sex + spriteOffset;
-	}
-	else if ( myStats->shoes->type == ARTIFACT_BOOTS ) {
-		ent->sprite = 521 + myStats->sex + spriteOffset;
-	}
-	else {
-		return 0;
-	}
-	return 1;
+	
+	return true;
 }
 
 
@@ -6082,7 +6272,7 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6093,13 +6283,13 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
 			else if ( myStats->type == COCKATRICE )
 			{
-				if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
 				{
 					pose = MONSTER_POSE_MAGIC_WINDUP2;
 				}
@@ -6113,9 +6303,18 @@ int Entity::getAttackPose() const
 				pose = 1;  // vertical swing
 			}
 		}
+		/*else if ( itemCategory(myStats->weapon) == POTION )
+		{
+			//TODO:
+			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+			{
+				//
+			}
+			else if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+		}*/
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6137,9 +6336,17 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 			{
-				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
+				{
+					// axes and maces don't stab
+					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
+				}
+				else
+				{
+					pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 3;
+				}
 			}
 			else
 			{
@@ -6150,13 +6357,13 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
 		else if ( myStats->type == CRYSTALGOLEM )
 		{
-			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOLEM )
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOLEM )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP3;
 			}
@@ -6167,7 +6374,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( myStats->type == COCKATRICE )
 		{
-			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP3;
 			}
@@ -6221,13 +6428,21 @@ bool Entity::hasRangedWeapon() const
 	{
 		return true;
 	}
+	else if ( itemCategory(myStats->weapon) == GEM )
+	{
+		return true;
+	}
+	else if ( itemCategory(myStats->weapon) == POTION )
+	{
+		return true;
+	}
 	
 	return false;
 }
 
 void Entity::handleWeaponArmAttack(Entity* weaponarm)
 {
-	if ( this == nullptr || weaponarm == nullptr )
+	if ( weaponarm == nullptr )
 	{
 		return;
 	}
@@ -6256,7 +6471,10 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->roll = 0;
 			weaponarm->skill[1] = 0;
 		}
-		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0) )
+
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6311,7 +6529,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.2, 0, false, 0.0);
 
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6363,9 +6581,9 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			weaponarm->skill[1] = 0;
 		}
 
-		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, true, 0.05);
+		limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.5, 2 * PI / 3, false, 0.0);
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6427,7 +6645,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, false, 0.0);
 		}
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6498,7 +6716,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.1, 0, true, 0.1);
 		}
 
-		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6613,7 +6831,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			}
 		}
 
-		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP )
+		if ( monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 		{
 			if ( multiplayer != CLIENT )
 			{
@@ -6647,13 +6865,13 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 	return;
 }
 
-void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound)
+void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypart, double walkSpeed, double dist, double distForFootstepSound)
 {
 	if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 	{
 		Entity* rightbody = nullptr;
 		// set rightbody to left leg.
-		node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+		node_t* rightbodyNode = list_Node(&this->children, LIMB_HUMANOID_LEFTLEG);
 		if ( rightbodyNode )
 		{
 			rightbody = (Entity*)rightbodyNode->element;
@@ -6663,7 +6881,7 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 			return;
 		}
 
-		node_t* shieldNode = list_Node(&my->children, 8);
+		node_t* shieldNode = list_Node(&this->children, 8);
 		if ( shieldNode )
 		{
 			Entity* shield = (Entity*)shieldNode->element;
@@ -6672,28 +6890,28 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 				// walking to destination
 				if ( !rightbody->skill[0] )
 				{
-					this->pitch -= dist * walkSpeed;
-					if ( this->pitch < -PI / 4.0 )
+					limb->pitch -= dist * walkSpeed;
+					if ( limb->pitch < -PI / 4.0 )
 					{
-						this->pitch = -PI / 4.0;
+						limb->pitch = -PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							this->skill[0] = 1;
+							limb->skill[0] = 1;
 
 							if ( dist > distForFootstepSound )
 							{
-								if ( my->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 								{
-									node_t* tempNode = list_Node(&my->children, 3);
+									node_t* tempNode = list_Node(&this->children, 3);
 									if ( tempNode )
 									{
 										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, foot->sprite), 32);
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
 									}
 								}
 								else
 								{
-									playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, 0), 32);
+									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
 								}
 							}
 						}
@@ -6701,27 +6919,27 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 				}
 				else
 				{
-					this->pitch += dist * walkSpeed;
-					if ( this->pitch > PI / 4.0 )
+					limb->pitch += dist * walkSpeed;
+					if ( limb->pitch > PI / 4.0 )
 					{
-						this->pitch = PI / 4.0;
+						limb->pitch = PI / 4.0;
 						if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 						{
-							this->skill[0] = 0;
+							limb->skill[0] = 0;
 							if ( dist > distForFootstepSound )
 							{
-								if ( my->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
+								if ( this->monsterFootstepType == MONSTER_FOOTSTEP_USE_BOOTS )
 								{
-									node_t* tempNode = list_Node(&my->children, 3);
+									node_t* tempNode = list_Node(&this->children, 3);
 									if ( tempNode )
 									{
 										Entity* foot = (Entity*)tempNode->element;
-										playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, foot->sprite), 32);
+										playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, foot->sprite), 32);
 									}
 								}
 								else
 								{
-									playSoundEntityLocal(my, getMonsterFootstepSound(my->monsterFootstepType, 0), 32);
+									playSoundEntityLocal(this, getMonsterFootstepSound(this->monsterFootstepType, 0), 32);
 								}
 							}
 						}
@@ -6731,73 +6949,73 @@ void Entity::humanoidAnimateWalk(Entity* my, node_t* bodypartNode, int bodypart,
 			else
 			{
 				// coming to a stop
-				if ( this->pitch < 0 )
+				if ( limb->pitch < 0 )
 				{
-					this->pitch += 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch > 0 )
+					limb->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch > 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
-				else if ( this->pitch > 0 )
+				else if ( limb->pitch > 0 )
 				{
-					this->pitch -= 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch < 0 )
+					limb->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch < 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
 			}
 		}
 	}
-	else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
+	else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 	{
-		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+		if ( bodypart != LIMB_HUMANOID_RIGHTARM || (this->monsterAttack == 0 && this->monsterAttackTime == 0) )
 		{
 			if ( dist > 0.1 )
 			{
 				double armMoveSpeed = 1.0;
-				if ( bodypart == LIMB_HUMANOID_RIGHTARM && my->hasRangedWeapon() && my->monsterState == MONSTER_STATE_ATTACK )
+				if ( bodypart == LIMB_HUMANOID_RIGHTARM && this->hasRangedWeapon() && this->monsterState == MONSTER_STATE_ATTACK )
 				{
 					// don't move ranged weapons so far if ready to attack
 					armMoveSpeed = 0.5;
 				}
 
-				if ( this->skill[0] )
+				if ( limb->skill[0] )
 				{
-					this->pitch -= dist * walkSpeed * armMoveSpeed;
-					if ( this->pitch < -PI * armMoveSpeed / 4.0 )
+					limb->pitch -= dist * walkSpeed * armMoveSpeed;
+					if ( limb->pitch < -PI * armMoveSpeed / 4.0 )
 					{
-						this->skill[0] = 0;
-						this->pitch = -PI * armMoveSpeed / 4.0;
+						limb->skill[0] = 0;
+						limb->pitch = -PI * armMoveSpeed / 4.0;
 					}
 				}
 				else
 				{
-					this->pitch += dist * walkSpeed * armMoveSpeed;
-					if ( this->pitch > PI * armMoveSpeed / 4.0 )
+					limb->pitch += dist * walkSpeed * armMoveSpeed;
+					if ( limb->pitch > PI * armMoveSpeed / 4.0 )
 					{
-						this->skill[0] = 1;
-						this->pitch = PI * armMoveSpeed / 4.0;
+						limb->skill[0] = 1;
+						limb->pitch = PI * armMoveSpeed / 4.0;
 					}
 				}
 			}
 			else
 			{
-				if ( this->pitch < 0 )
+				if ( limb->pitch < 0 )
 				{
-					this->pitch += 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch > 0 )
+					limb->pitch += 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch > 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
-				else if ( this->pitch > 0 )
+				else if ( limb->pitch > 0 )
 				{
-					this->pitch -= 1 / fmax(dist * .1, 10.0);
-					if ( this->pitch < 0 )
+					limb->pitch -= 1 / fmax(dist * .1, 10.0);
+					if ( limb->pitch < 0 )
 					{
-						this->pitch = 0;
+						limb->pitch = 0;
 					}
 				}
 			}
@@ -6823,11 +7041,19 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 			sound = rand() % 7;
 			break;
 		case MONSTER_FOOTSTEP_USE_BOOTS:
-			if ( bootSprite == 152 || bootSprite == 153 )
+			if ( bootSprite >= 152 && bootSprite <= 155 ) // iron boots
 			{
 				sound = 7 + rand() % 7;
 			}
-			else if ( bootSprite == 156 || bootSprite == 157 )
+			else if ( bootSprite >= 156 && bootSprite <= 159 ) // steel boots
+			{
+				sound = 14 + rand() % 7;
+			}
+			else if ( bootSprite >= 499 && bootSprite <= 502 ) // crystal boots
+			{
+				sound = 14 + rand() % 7;
+			}
+			else if ( bootSprite >= 521 && bootSprite <= 524 ) // artifact boots
 			{
 				sound = 14 + rand() % 7;
 			}
@@ -6843,100 +7069,108 @@ Uint32 Entity::getMonsterFootstepSound(int footstepType, int bootSprite)
 	return static_cast<Uint32>(sound);
 }
 
-void Entity::handleHumanoidWeaponLimb(Entity* my, Entity* weaponarm, int monsterType)
+void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 {
-	if ( my == nullptr || weaponarm == nullptr )
+	if ( weaponLimb == nullptr || weaponArmLimb == nullptr )
 	{
 		return;
 	}
 
-	if ( my->isInvisible() == false	) //TODO: isInvisible()?
+	int monsterType = this->getMonsterTypeFromSprite();
+
+	if ( weaponLimb->flags[INVISIBLE] == false ) //TODO: isInvisible()?
 	{
-		if ( this->sprite == items[SHORTBOW].index )
+		if ( weaponLimb->sprite == items[SHORTBOW].index )
 		{
-			this->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-			this->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-			this->z = weaponarm->z + 1;
-			this->pitch = weaponarm->pitch + .25;
+			weaponLimb->x = weaponArmLimb->x - .5 * cos(weaponArmLimb->yaw);
+			weaponLimb->y = weaponArmLimb->y - .5 * sin(weaponArmLimb->yaw);
+			weaponLimb->z = weaponArmLimb->z + 1;
+			weaponLimb->pitch = weaponArmLimb->pitch + .25;
 		}
-		else if ( this->sprite == items[ARTIFACT_BOW].index )
+		else if ( weaponLimb->sprite == items[ARTIFACT_BOW].index )
 		{
-			this->x = weaponarm->x - 1.5 * cos(weaponarm->yaw);
-			this->y = weaponarm->y - 1.5 * sin(weaponarm->yaw);
-			this->z = weaponarm->z + 2;
-			this->pitch = weaponarm->pitch + .25;
+			weaponLimb->x = weaponArmLimb->x - 1.5 * cos(weaponArmLimb->yaw);
+			weaponLimb->y = weaponArmLimb->y - 1.5 * sin(weaponArmLimb->yaw);
+			weaponLimb->z = weaponArmLimb->z + 2;
+			weaponLimb->pitch = weaponArmLimb->pitch + .25;
 		}
-		else if ( this->sprite == items[CROSSBOW].index )
+		else if ( weaponLimb->sprite == items[CROSSBOW].index )
 		{
-			this->x = weaponarm->x;
-			this->y = weaponarm->y;
-			this->z = weaponarm->z + 1;
-			this->pitch = weaponarm->pitch;
+			weaponLimb->x = weaponArmLimb->x;
+			weaponLimb->y = weaponArmLimb->y;
+			weaponLimb->z = weaponArmLimb->z + 1;
+			weaponLimb->pitch = weaponArmLimb->pitch;
 		}
 		else
 		{
-			this->focalx = limbs[monsterType][6][0];
-			this->focalz = limbs[monsterType][6][2];
-
-			if ( MONSTER_ATTACK == 3 )
+			/*weaponLimb->focalx = limbs[monsterType][6][0];
+			weaponLimb->focalz = limbs[monsterType][6][2];*/
+			if ( this->monsterAttack == 3 )
 			{
 				// poking animation, weapon pointing straight ahead.
-				if ( weaponarm->skill[0] < 2 && weaponarm->pitch < PI / 2 )
+				if ( weaponArmLimb->skill[1] < 2 && weaponArmLimb->pitch < PI / 2 )
 				{
-					// cos(weaponarm->pitch)) * cos(weaponarm->yaw) allows forward/back motion dependent on the arm rotation.
-					this->x = weaponarm->x + (3 * cos(weaponarm->pitch)) * cos(weaponarm->yaw);
-					this->y = weaponarm->y + (3 * cos(weaponarm->pitch)) * sin(weaponarm->yaw);
+					// cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw) allows forward/back motion dependent on the arm rotation.
+					weaponLimb->x = weaponArmLimb->x + (3 * cos(weaponArmLimb->pitch)) * cos(weaponArmLimb->yaw);
+					weaponLimb->y = weaponArmLimb->y + (3 * cos(weaponArmLimb->pitch)) * sin(weaponArmLimb->yaw);
 
-					if ( weaponarm->pitch < PI / 3 )
+					if ( weaponArmLimb->pitch < PI / 3 )
 					{
 						// adjust the z point halfway through swing.
-						this->z = weaponarm->z - 1.7 + 2 * sin(weaponarm->pitch);
+						weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
 					}
 					else
 					{
-						this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-						limbAnimateToLimit(this, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+						weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
+						if ( weaponLimb->pitch > PI / 2 )
+						{
+							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, -0.5, PI * 0.5, false, 0);
+						}
+						else
+						{
+							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
+						}
 					}
 				}
 				// hold sword with pitch aligned to arm rotation.
 				else
 				{
-					this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-					this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-					this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-					this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+					weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+					weaponLimb->z = weaponArmLimb->z - .5;
+					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
 				}
 			}
 			else
 			{
-				this->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-				this->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-				this->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-				this->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
+				weaponLimb->x = weaponArmLimb->x + .5 * cos(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+				weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
+				weaponLimb->z = weaponArmLimb->z - .5 * (this->monsterAttack == 0);
+				weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
 			}
 		}
 	}
 
-	this->yaw = weaponarm->yaw;
-	this->roll = weaponarm->roll;
+	weaponLimb->yaw = weaponArmLimb->yaw;
+	weaponLimb->roll = weaponArmLimb->roll;
 
-	if ( !MONSTER_ARMBENDED )
+	if ( !this->monsterArmbended )
 	{
-		this->focalx = limbs[monsterType][6][0]; // 2.5
-		if ( this->sprite == items[CROSSBOW].index )
+		weaponLimb->focalx = limbs[monsterType][6][0]; // 2.5
+		if ( weaponLimb->sprite == items[CROSSBOW].index )
 		{
-			this->focalx += 2;
+			weaponLimb->focalx += 2;
 		}
-		this->focaly = limbs[monsterType][6][1]; // 0
-		this->focalz = limbs[monsterType][6][2]; // -.5
+		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
+		weaponLimb->focalz = limbs[monsterType][6][2]; // -.5
 	}
 	else
 	{
-		this->focalx = limbs[monsterType][6][0] + 1; // 3.5
-		this->focaly = limbs[monsterType][6][1]; // 0
-		this->focalz = limbs[monsterType][6][2] - 2; // -2.5
-		this->yaw -= sin(weaponarm->roll) * PI / 2;
-		this->pitch += cos(weaponarm->roll) * PI / 2;
+		weaponLimb->focalx = limbs[monsterType][6][0] + 1; // 3.5
+		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
+		weaponLimb->focalz = limbs[monsterType][6][2] - 2; // -2.5
+		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
+		weaponLimb->pitch += cos(weaponArmLimb->roll) * PI / 2;
 	}
 
 	return;
@@ -7096,6 +7330,21 @@ void Entity::setEffect(int effect, bool value, int duration, bool updateClients,
 	myStats->EFFECTS[effect] = value;
 	myStats->EFFECTS_TIMERS[effect] = duration;
 
+	int player = -1;
+	for ( int i = 0; i < numplayers; ++i )
+	{
+		if ( players[i]->entity == this )
+		{
+			player = i;
+			break;
+		}
+	}
+
+	if ( multiplayer == SERVER && player > 0 )
+	{
+		serverUpdateEffects(player);
+	}
+
 	if ( updateClients )
 	{
 		serverUpdateEffectsForEntity(guarantee);
@@ -7109,3 +7358,450 @@ void Entity::giveClientStats()
 		clientStats = new Stat(0);
 	}
 }
+
+void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
+{
+	messagePlayer(clientnum, "Entity acquired target!");
+
+	monsterState = state;
+	monsterTarget = target.getUID();
+	monsterTargetX = target.x;
+	monsterTargetY = target.y;
+
+	//TODO: Goatman switch equipped weapon.
+	//Ranged at range, melee in close quarters. Special attacks = potions & throwing stuff.
+
+	//On acquiring a target, some monsters switch out their weapons.
+	//chooseWeapon();
+}
+
+/*void Entity::chooseWeapon()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	switch ( myStats->type )
+	{
+		case GOATMAN:
+			goatmanChooseWeapon();
+			break;
+		default:
+			break;
+	}
+}*/
+
+void Entity::checkGroundForItems()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	//Calls the function for a monster to pick up an item, if it's a monster that picks up items.
+	switch ( myStats->type )
+	{
+		case GOBLIN:
+		case HUMAN:
+			if ( !strcmp(myStats->name, "") )
+			{
+				//checkBetterEquipment(myStats);
+				monsterAddNearbyItemToInventory(myStats, 16, 9);
+			}
+			break;
+		case GOATMAN:
+			//Goatman boss picks up items too.
+			monsterAddNearbyItemToInventory(myStats, 16, 9); //Replaces checkBetterEquipment(), because more better. Adds items to inventory, and swaps out current equipped with better stuff on the ground.
+			//checkBetterEquipment(myStats);
+			break;
+		case AUTOMATON:
+			monsterAddNearbyItemToInventory(myStats, 8, 5);
+			break;
+		default:
+			return;
+	}
+}
+
+bool Entity::canWieldItem(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( myStats->type )
+	{
+		case GOBLIN:
+			return goblinCanWieldItem(item);
+		case HUMAN:
+			return humanCanWieldItem(item);
+		case GOATMAN:
+			return goatmanCanWieldItem(item);
+		case AUTOMATON:
+			return automatonCanWieldItem(item);
+		default:
+			return false;
+	}
+}
+
+void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems)
+{
+	//TODO: Any networking/multiplayer needs?
+	if ( !myStats )
+	{
+		return; //Can't continue without these.
+	}
+
+	list_t* items = nullptr;
+	//X and Y in terms of tiles.
+	int tx = x / 16;
+	int ty = y / 16;
+	getItemsOnTile(tx, ty, &items); //Check the tile the monster is on for items.
+	getItemsOnTile(tx - 1, ty, &items); //Check tile to the left.
+	getItemsOnTile(tx + 1, ty, &items); //Check tile to the right.
+	getItemsOnTile(tx, ty - 1, &items); //Check tile up.
+	getItemsOnTile(tx, ty + 1, &items); //Check tile down.
+	getItemsOnTile(tx - 1, ty - 1, &items); //Check tile diagonal up left.
+	getItemsOnTile(tx + 1, ty - 1, &items); //Check tile diagonal up right.
+	getItemsOnTile(tx - 1, ty + 1, &items); //Check tile diagonal down left.
+	getItemsOnTile(tx + 1, ty + 1, &items); //Check tile diagonal down right.
+	node_t* node = nullptr;
+
+	if ( items )
+	{
+		/*
+		* Rundown of the function:
+		* Loop through all items.
+		* Add item to inventory.
+		*/
+
+		for ( node = items->first; node != nullptr; node = node->next )
+		{
+			//Turn the entity into an item.
+			if ( node->element )
+			{
+				if ( list_Size(&myStats->inventory) >= maxInventoryItems )
+				{
+					break;
+				}
+
+				Entity* entity = (Entity*)node->element;
+				Item* item = nullptr;
+				if ( entity != nullptr )
+				{
+					item = newItemFromEntity(entity);
+				}
+				if ( !item )
+				{
+					continue;
+				}
+
+				double dist = sqrt(pow(this->x - entity->x, 2) + pow(this->y - entity->y, 2));
+				if ( std::floor(dist) > rangeToFind )
+				{
+					// item was too far away, continue.
+					if ( item != nullptr )
+					{
+						free(item);
+					}
+					continue;
+				}
+
+				if ( !entity->itemNotMoving && entity->parent && entity->parent != uid )
+				{
+					if ( itemCategory(item) == THROWN && entity->parent && entity->parent == uid )
+					{
+						//It's good. Can pick this one up, it's your THROWN now.
+					}
+					else
+					{
+						//Don't pick up non-THROWN items that are moving, or owned THROWN that are moving.
+						if ( item != nullptr )
+						{
+							free(item);
+						}
+						continue; //Item still in motion, don't pick it up.
+					}
+				}
+
+				Item** shouldWield = nullptr;
+				node_t* replaceInventoryItem = nullptr;
+				if ( !monsterWantsItem(*item, shouldWield, replaceInventoryItem) )
+				{
+					if ( item != nullptr )
+					{
+						free(item);
+					}
+					continue;
+				}
+
+				if ( shouldWield )
+				{
+					if ( (*shouldWield) && (*shouldWield)->beatitude < 0 )
+					{
+						if ( item != nullptr )
+						{
+							free(item);
+						}
+						continue;
+					}
+					dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+					(*shouldWield) = item;
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
+				else if ( replaceInventoryItem )
+				{
+					//Drop that item out of the monster's inventory, and add this item to the monster's inventory.
+					Item* itemToDrop = static_cast<Item*>(replaceInventoryItem->element);
+					if ( itemToDrop )
+					{
+						dropItemMonster(itemToDrop, this, myStats, itemToDrop->count);
+						//list_RemoveNode(replaceInventoryItem);
+					}
+					addItemToMonsterInventory(item);
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
+				else
+				{
+					addItemToMonsterInventory(item);
+					item = nullptr;
+					list_RemoveNode(entity->mynode);
+				}
+
+				if ( item != nullptr )
+				{
+					free(item);
+				}
+			}
+		}
+		list_FreeAll(items);
+		free(items);
+	}
+}
+
+node_t* Entity::addItemToMonsterInventory(Item* item)
+{
+	//TODO: Sort into inventory...that is, if an item of this type already exists and they can stack, stack 'em instead of creating a new node.
+	if ( !item )
+	{
+		return nullptr;
+	}
+
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	item->node = list_AddNodeLast(&myStats->inventory);
+	if ( !item->node )
+	{
+		return nullptr;
+	}
+	item->node->element = item;
+	item->node->deconstructor = &defaultDeconstructor;
+	item->node->size = sizeof(Item);
+
+	return item->node;
+}
+
+bool Entity::shouldMonsterEquipThisWeapon(const Item& itemToEquip) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	if (myStats->weapon == nullptr)
+	{
+		return true; //Something is better than nothing.
+	}
+	//Monster is already holding a weapon.
+
+	if ( !Item::isThisABetterWeapon(itemToEquip, myStats->weapon) )
+	{
+		return false; //Don't want junk.
+	}
+
+	if ( myStats->weapon->beatitude < 0 )
+	{
+		//If monster already holding an item, can't swap it out if it's cursed.
+		return false;
+	}
+
+	if ( itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == POTION || itemCategory(myStats->weapon) == THROWN || itemCategory(myStats->weapon) == GEM )
+	{
+		//If current hand item is not cursed, but it's a certain item, don't want to equip this new one.
+		return false;
+	}
+
+	return true;
+}
+
+bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( myStats->type )
+	{
+		case GOBLIN:
+			if ( !goblinCanWieldItem(item) )
+			{
+				return false;
+			}
+			break;
+		case HUMAN:
+			if ( !humanCanWieldItem(item) )
+			{
+				return false;
+			}
+			break;
+		case GOATMAN:
+			if ( !goatmanCanWieldItem(item) )
+			{
+				return false;
+			}
+			break;
+		case AUTOMATON:
+			return true; //Can pick up all items, because recycler.
+		default:
+			return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			if ( !myStats->weapon )
+			{
+				shouldEquip = &myStats->weapon;
+			}
+
+			if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON && shouldMonsterEquipThisWeapon(item) )
+			{
+				shouldEquip = &myStats->weapon;
+				return true;
+			}
+			else
+			{
+				if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON )
+				{
+					//Weapon ain't better than weapon already holding. Don't want it.
+					return false;
+				}
+
+				//Not holding a weapon. Make sure don't already have a weapon in the inventory. If doesn't have a weapon at all, then add it into the inventory since something is better than nothing.
+				node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+				if ( !weaponNode )
+				{
+					//If no weapons found in inventory, then yes, the goatman wants it, and it should be added to the inventory.
+					return true; //Want this item.
+				}
+
+				//Search inventory and replace weapon if this one is better.
+				if ( Item::isThisABetterWeapon(item, static_cast<Item*>(weaponNode->element)) )
+				{
+					replaceInventoryItem = weaponNode;
+					return true;
+				}
+				return false; //Don't want your junk.
+			}
+		case ARMOR:
+			return (shouldEquip = shouldMonsterEquipThisArmor(item));
+		case THROWN:
+			if ( myStats->weapon == nullptr )
+			{
+				shouldEquip = &myStats->weapon;
+				return true;
+			}
+			else
+			{
+				return true; //Store in inventory.
+			}
+		default:
+			return true; //Already checked if monster likes this specific item in the racial calls.
+	}
+
+	return false;
+}
+
+Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	switch ( checkEquipType(&item) )
+	{
+		case TYPE_HAT:
+			if ( myStats->helmet && myStats->helmet->beatitude < 0 )
+			{
+				return nullptr; //No can has hats : (
+			}
+
+			return Item::isThisABetterArmor(item, myStats->helmet)? &myStats->helmet : nullptr;
+		case TYPE_HELM:
+			if ( myStats->helmet && myStats->helmet->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			if ( myStats->type == GOBLIN && myStats->helmet && checkEquipType(myStats->helmet) == TYPE_HAT )
+			{
+				return nullptr; //Goblins love hats.
+			}
+
+			return Item::isThisABetterArmor(item, myStats->helmet)? &myStats->helmet : nullptr;
+			break;
+		case TYPE_SHIELD:
+			if ( myStats->shield && myStats->shield->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->shield)? &myStats->shield : nullptr;
+		case TYPE_BREASTPIECE:
+			if ( myStats->breastplate && myStats->breastplate->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->breastplate)? &myStats->breastplate : nullptr;
+		case TYPE_CLOAK:
+			if ( myStats->cloak && myStats->cloak->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->cloak)? &myStats->cloak : nullptr;
+		case TYPE_BOOTS:
+			if ( myStats->shoes && myStats->shoes->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->shoes)? &myStats->shoes : nullptr;
+		case TYPE_GLOVES:
+			if ( myStats->gloves && myStats->gloves->beatitude < 0 )
+			{
+				return nullptr; //Can't swap out armor piece if current one is cursed!
+			}
+
+			return Item::isThisABetterArmor(item, myStats->gloves)? &myStats->gloves : nullptr;
+		default:
+			return nullptr;
+	}
+}
+

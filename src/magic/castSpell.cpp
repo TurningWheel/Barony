@@ -225,6 +225,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else
 		{
+			//TODO: Fix issue #141: Spellcasting capstone doesn't work in multiplayer.
 			magiccost = getCostOfSpell(spell);
 			caster->drainMP(magiccost);
 		}

@@ -85,7 +85,6 @@ static char monstertypename[][15] =
 	"automaton",
 	"lichice",
 	"lichfire"
-
 };
 
 // body part focal points
@@ -179,12 +178,8 @@ static double damagetables[NUMMONSTERS][6] =
 
 #define HITRATE 45
 
-#define MONSTER_STATE my->skill[0] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
-#define MONSTER_TARGET my->skill[1] //TODO: Replace all occurence of this #define with the Sint32& in the Entity class.
 #define MONSTER_INIT my->skill[3]
-//#define MONSTER_LOOKTIME my->skill[4]
 #define MONSTER_NUMBER my->skill[5]
-//#define MONSTER_MOVETIME my->skill[6]
 #define MONSTER_HITTIME my->skill[7]
 #define MONSTER_ATTACK my->skill[8]
 #define MONSTER_ATTACKTIME my->skill[9]
@@ -204,9 +199,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_VELX my->vel_x
 #define MONSTER_VELY my->vel_y
 #define MONSTER_VELZ my->vel_z
-#define MONSTER_TARGETX my->fskill[2]
-#define MONSTER_TARGETY my->fskill[3]
-//#define MONSTER_LOOKDIR my->fskill[4]
 #define MONSTER_WEAPONYAW my->fskill[5]
 #define MONSTER_FLIPPEDANGLE my->fskill[6]
 
@@ -340,24 +332,23 @@ void createMinotaurTimer(Entity* entity, map_t* map);
 
 void actSummonTrap(Entity* my);
 int monsterCurve(int level);
-void handleMonsterAttack(Entity* my, Stat* mystats, Entity* target, double dist);
 
 bool forceFollower(Entity& leader, Entity& follower);
 
 //--monsterState constants
-static const int MONSTER_STATE_WAIT = 0;
-static const int MONSTER_STATE_ATTACK = 1;
-static const int MONSTER_STATE_PATH = 2;
-static const int MONSTER_STATE_HUNT = 3;
-static const int MONSTER_STATE_TALK = 4;
-static const int MONSTER_STATE_LICH_DODGE = 5;
-static const int MONSTER_STATE_LICH_SUMMON = 6;
-static const int MONSTER_STATE_LICH_DEATH = 7;
-static const int MONSTER_STATE_DEVIL_DEATH = 8;
-static const int MONSTER_STATE_DEVIL_TELEPORT = 9;
-static const int MONSTER_STATE_DEVIL_RISING = 10;
-static const int MONSTER_STATE_DEVIL_SUMMON = 11;
-static const int MONSTER_STATE_DEVIL_BOULDER = 12;
+static const Sint32 MONSTER_STATE_WAIT = 0;
+static const Sint32 MONSTER_STATE_ATTACK = 1;
+static const Sint32 MONSTER_STATE_PATH = 2;
+static const Sint32 MONSTER_STATE_HUNT = 3;
+static const Sint32 MONSTER_STATE_TALK = 4;
+static const Sint32 MONSTER_STATE_LICH_DODGE = 5;
+static const Sint32 MONSTER_STATE_LICH_SUMMON = 6;
+static const Sint32 MONSTER_STATE_LICH_DEATH = 7;
+static const Sint32 MONSTER_STATE_DEVIL_DEATH = 8;
+static const Sint32 MONSTER_STATE_DEVIL_TELEPORT = 9;
+static const Sint32 MONSTER_STATE_DEVIL_RISING = 10;
+static const Sint32 MONSTER_STATE_DEVIL_SUMMON = 11;
+static const Sint32 MONSTER_STATE_DEVIL_BOULDER = 12;
 
 //--special monster attack constants
 static const int MONSTER_POSE_MELEE_WINDUP1 = 4;
@@ -366,23 +357,29 @@ static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
 static const int MONSTER_POSE_RANGED_WINDUP1 = 7;
 static const int MONSTER_POSE_RANGED_WINDUP2 = 8;
 static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
+//TODO: Need potions and thrown.
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
-static const int MONSTER_POSE_RANGED_SHOOT1 = 13;
-static const int MONSTER_POSE_RANGED_SHOOT2 = 14;
-static const int MONSTER_POSE_RANGED_SHOOT3 = 15;
-static const int MONSTER_POSE_MAGIC_CAST1 = 16;
-static const int MONSTER_POSE_MAGIC_CAST2 = 17;
-static const int MONSTER_POSE_MAGIC_CAST3 = 18;
-static const int MONSTER_POSE_GOLEM_SMASH = 19;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 20;
+static const int MONSTER_POSE_SPECIAL_WINDUP1 = 13;
+static const int MONSTER_POSE_SPECIAL_WINDUP2 = 14;
+static const int MONSTER_POSE_SPECIAL_WINDUP3 = 15;
+static const int MONSTER_POSE_RANGED_SHOOT1 = 16;
+static const int MONSTER_POSE_RANGED_SHOOT2 = 17;
+static const int MONSTER_POSE_RANGED_SHOOT3 = 18;
+static const int MONSTER_POSE_MAGIC_CAST1 = 19;
+static const int MONSTER_POSE_MAGIC_CAST2 = 20;
+static const int MONSTER_POSE_MAGIC_CAST3 = 21;
+static const int MONSTER_POSE_GOLEM_SMASH = 22;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 22;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
 static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -405,10 +402,16 @@ static const int ANIMATE_OVERSHOOT_TO_ENDPOINT = 2;
 static const int ANIMATE_OVERSHOOT_NONE = 0;
 
 //--monster limb bodypart IDs
+static const int LIMB_HUMANOID_TORSO = 2;
 static const int LIMB_HUMANOID_RIGHTLEG = 3;
 static const int LIMB_HUMANOID_LEFTLEG = 4;
 static const int LIMB_HUMANOID_RIGHTARM = 5;
 static const int LIMB_HUMANOID_LEFTARM = 6;
+static const int LIMB_HUMANOID_WEAPON = 7;
+static const int LIMB_HUMANOID_SHIELD = 8;
+static const int LIMB_HUMANOID_CLOAK = 9;
+static const int LIMB_HUMANOID_HELMET = 10;
+static const int LIMB_HUMANOID_MASK = 11;
 
 //--monster attack windup duration, in ticks, roughly 180ms
 static const int ANIMATE_DURATION_WINDUP = 9;
@@ -430,7 +433,16 @@ int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, boo
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
 int limbAnimateWithOvershoot(Entity* limb, int axis, double setpointRate, double setpoint, double endpointRate, double endpoint, int dir);
 int limbAngleWithinRange(real_t angle, double rate, double setpoint);
-void handleMonsterSpecialAttack(Entity* my, Stat* myStats, Entity* target, double dist);
 real_t normaliseAngle2PI(real_t angle);
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list);
 int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, int searchType);
+// change animation speeds for debugging, default value 10.
+extern int monsterGlobalAnimationMultiplier;
+// change attacktime for debugging, default value 1.
+extern int monsterGlobalAttackTimeMultiplier;
+
+//-----RACE SPECIFIC CONSTANTS-----
+
+//--Goatman--
+static const int GOATMAN_HEALINGPOTION_MOD = 3;
+static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;

@@ -345,7 +345,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[992 + status], language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -355,11 +363,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1002 + status], beatitude);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == BOOK )
@@ -388,7 +400,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1018 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50], beatitude);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -398,11 +418,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1028 + status], count, beatitude);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == BOOK )
@@ -434,7 +458,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1044 + status], language[974 + items[type].index + appearance % items[type].variations - 50]);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -444,11 +476,15 @@ char* Item::description()
 			{
 				strncpy(tempstr, language[1054 + status], 1024);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == SCROLL )
@@ -484,7 +520,15 @@ char* Item::description()
 			}
 			else if ( itemCategory(this) == POTION )
 			{
-				snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+				if ( type == POTION_EMPTY )
+				{
+					//No fancy descriptives for empty potions.
+					snprintf(tempstr, 1024, language[982 + status], beatitude);
+				}
+				else
+				{
+					snprintf(tempstr, 1024, language[1070 + status], count, language[974 + items[type].index + appearance % items[type].variations - 50]);
+				}
 			}
 			else if ( itemCategory(this) == SCROLL || itemCategory(this) == SPELLBOOK || itemCategory(this) == BOOK )
 			{
@@ -494,11 +538,15 @@ char* Item::description()
 			{
 				snprintf(tempstr, 1024, language[1080 + status], count);
 			}
-			for ( c = 0; c < 1024; c++ )
+
+			for ( c = 0; c < 1024; ++c )
+			{
 				if ( tempstr[c] == 0 )
 				{
 					break;
 				}
+			}
+
 			if ( type >= 0 && type < NUMITEMS )
 			{
 				if ( itemCategory(this) == SCROLL )
@@ -866,7 +914,7 @@ void dropItem(Item* item, int player)
 	}
 }
 
-Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
+Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 count)
 {
 	Entity* entity = nullptr;
 	bool itemDroppable = true;
@@ -885,8 +933,11 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 		}
 	}
 
+	count = std::min(count, item->count);
+
 	if ( itemDroppable )
 	{
+		//TODO: Spawn multiple entities for count...
 		entity = newEntity(-1, 1, map.entities);
 		entity->flags[INVISIBLE] = true;
 		entity->flags[UPDATENEEDED] = true;
@@ -904,20 +955,21 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 		entity->skill[10] = item->type;
 		entity->skill[11] = item->status;
 		entity->skill[12] = item->beatitude;
-		entity->skill[13] = 1;
+		entity->skill[13] = count;
 		entity->skill[14] = item->appearance;
 		entity->skill[15] = item->identified;
 		entity->parent = monster->getUID();
 	}
 
-	item->count--;
-	Item** slot;
-	if ( (slot = itemSlot(monsterStats, item)) != nullptr )
-	{
-		*slot = nullptr; // clear the item slot
-	}
+	item->count -= count;
 	if ( item->count <= 0 )
 	{
+		Item** slot;
+		if ( (slot = itemSlot(monsterStats, item)) != nullptr )
+		{
+			*slot = nullptr; // clear the item slot
+		}
+
 		if ( item->node )
 		{
 			list_RemoveNode(item->node);
@@ -941,7 +993,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats)
 
 void consumeItem(Item* item)
 {
-	if ( item == NULL )
+	if ( item == nullptr )
 	{
 		return;
 	}
@@ -953,7 +1005,7 @@ void consumeItem(Item* item)
 	item->count--;
 	if ( item->count <= 0 )
 	{
-		if ( item->node != NULL )
+		if ( item->node != nullptr )
 		{
 			int i;
 			for ( i = 0; i < MAXPLAYERS; i++ )
@@ -961,9 +1013,9 @@ void consumeItem(Item* item)
 				if ( item->node->list == &stats[i]->inventory )
 				{
 					Item** slot;
-					if ( (slot = itemSlot(stats[i], item)) != NULL )
+					if ( (slot = itemSlot(stats[i], item)) != nullptr )
 					{
-						*slot = NULL;
+						*slot = nullptr;
 					}
 				}
 			}
@@ -1439,6 +1491,9 @@ void useItem(Item* item, int player)
 		case POTION_PARALYSIS:
 			item_PotionParalysis(item, players[player]->entity);
 			break;
+		case POTION_EMPTY:
+			messagePlayer(player, language[2359]);
+			break;
 		case SCROLL_MAIL:
 			item_ScrollMail(item, player);
 			break;
@@ -1772,11 +1827,11 @@ Item* itemPickup(int player, Item* item)
 
 Item* newItemFromEntity(Entity* entity)
 {
-	if ( entity == NULL )
+	if ( entity == nullptr )
 	{
-		return NULL;
+		return nullptr;
 	}
-	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], NULL);
+	return newItem(static_cast<ItemType>(entity->skill[10]), static_cast<Status>(entity->skill[11]), entity->skill[12], entity->skill[13], entity->skill[14], entity->skill[15], nullptr);
 }
 
 /*-------------------------------------------------------------------------------
@@ -1899,7 +1954,7 @@ bool itemIsEquipped(const Item* item, int player)
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::weaponGetAttack()
+Sint32 Item::weaponGetAttack() const
 {
 	Sint32 attack = beatitude;
 	if ( itemCategory(this) == MAGICSTAFF )
@@ -2015,7 +2070,7 @@ Sint32 Item::weaponGetAttack()
 
 -------------------------------------------------------------------------------*/
 
-Sint32 Item::armorGetAC()
+Sint32 Item::armorGetAC() const
 {
 	Sint32 armor = beatitude;
 	if ( type == LEATHER_HELM )
@@ -2460,13 +2515,13 @@ void createCustomInventory(Stat* stats, int itemLimit)
 
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 {
-	node_t* node = nullptr;
-	node_t* nextnode = nullptr;
-
 	if ( myStats == nullptr )
 	{
 		return nullptr;
 	}
+
+	node_t* node = nullptr;
+	node_t* nextnode = nullptr;
 
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
 	{
@@ -2488,8 +2543,77 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
+{
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( isRangedWeapon(*item) )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
+{
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr )
+		{
+			if ( isMeleeWeapon(*item) )
+			{
+				return node;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+bool inline isRangedWeapon(const Item& item)
+{
+	switch ( item.type )
+	{
+		case SLING:
+		case SHORTBOW:
+		case CROSSBOW:
+		case ARTIFACT_BOW:
+			return true;
+		default:
+			return false;
+	}
+}
+
+bool inline isMeleeWeapon(const Item& item)
+{
+	if ( itemCategory(&item) != WEAPON )
+	{
+		return false;
+	}
+
+	return ( !isRangedWeapon(item) );
+}
+
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
 {
+	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
 	Item* tmpItem = nullptr;
 
@@ -2498,12 +2622,21 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false;
 	}
 
+	if ( myStats->weapon && myStats->weapon->beatitude < 0 )
+	{
+		return false; //Can't unequip cursed items!
+	}
+
 	item = (Item*)inventoryNode->element;
 	
 	if ( item->count == 1 )
 	{
 		// TODO: handle stacks.
 		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		if ( !tmpItem )
+		{
+			return false;
+		}
 		copyItem(tmpItem, item);
 		if ( myStats->weapon != nullptr )
 		{
@@ -2520,6 +2653,37 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 			myStats->weapon = tmpItem;
 			// remove the new item we created.
 			list_RemoveNode(inventoryNode);
+		}
+		return true;
+	}
+	else
+	{
+		//Move exactly 1 item into hand.
+		if ( my == nullptr )
+		{
+			return false;
+		}
+
+		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
+		if ( !tmpItem )
+		{
+			return false;
+		}
+		copyItem(tmpItem, item);
+		tmpItem->count = 1;
+		item->count--;
+		if ( myStats->weapon != nullptr )
+		{
+			my->addItemToMonsterInventory(myStats->weapon);
+			myStats->weapon = tmpItem;
+			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			{
+				playSoundEntity(my, 40 + rand() % 4, 64);
+			}
+		}
+		else
+		{
+			myStats->weapon = tmpItem;
 		}
 		return true;
 	}
@@ -2656,4 +2820,38 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue)
 	}
 
 	return GEM_ROCK;
+}
+
+bool Item::isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave)
+{
+	if ( !weaponAlreadyHave )
+	{
+		//Any thing is better than no thing!
+		return true;
+	}
+
+	if ( newWeapon.weaponGetAttack() > weaponAlreadyHave->weaponGetAttack() )
+	{
+		return true; //If the new weapon does more damage than the current weapon, it's better. Even if it's cursed, eh?
+	}
+
+	return false;
+}
+
+bool Item::isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave)
+{
+	if ( !armorAlreadyHave )
+	{
+		//Some thing is better than no thing!
+		return true;
+	}
+
+	//If the new weapon defends better than the current armor, it's better. Even if it's cursed, eh?
+	//TODO: Special effects/abilities, like magic resistance or reflection...
+	if ( newArmor.armorGetAC() > armorAlreadyHave->armorGetAC() )
+	{
+		return true;
+	}
+
+	return false;
 }
