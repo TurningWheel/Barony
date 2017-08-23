@@ -18,6 +18,7 @@ real_t entityDist(Entity* my, Entity* your);
 Entity* entityClicked();
 bool entityInsideTile(Entity* entity, int x, int y, int z);
 bool entityInsideEntity(Entity* entity1, Entity* entity2);
+bool entityInFrontOfEntity(Entity* entity1, Entity* entity2, Sint32 direction);
 bool entityInsideSomething(Entity* entity);
 int barony_clear(real_t tx, real_t ty, Entity* my);
 real_t clipMove(real_t* x, real_t* y, real_t vx, real_t vy, Entity* my);

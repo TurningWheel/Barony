@@ -196,6 +196,160 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 
 /*-------------------------------------------------------------------------------
 
+boulderCheckAgainstEntityInFront
+
+Causes the boulder given in my to crush the object given in entity
+or vice versa if the object is in front of it
+This is used when a Player pushes a boulder
+
+-------------------------------------------------------------------------------*/
+
+int boulderCheckAgainstEntityInFront(Entity* my, Entity* entity)
+{
+    if ( !my || !entity )
+    {
+        return 0;
+    }
+
+    if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
+    {
+        if ( entityInFrontOfEntity(my, entity, BOULDER_ROLLDIR) )
+        {
+            Stat* stats = entity->getStats();
+            if ( stats )
+            {
+                if ( entity->behavior == &actPlayer )
+                {
+                    Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+                    messagePlayerColor(entity->skill[2], color, language[455]);
+                    if ( entity->skill[2] == clientnum )
+                    {
+                        camera_shakex += .1;
+                        camera_shakey += 10;
+                    }
+                    else
+                    {
+                        strcpy((char*)net_packet->data, "SHAK");
+                        net_packet->data[4] = 10; // turns into .1
+                        net_packet->data[5] = 10;
+                        net_packet->address.host = net_clients[entity->skill[2] - 1].host;
+                        net_packet->address.port = net_clients[entity->skill[2] - 1].port;
+                        net_packet->len = 6;
+                        sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
+                    }
+                }
+                playSoundEntity(my, 181, 128);
+                playSoundEntity(entity, 28, 64);
+                spawnGib(entity);
+                entity->modHP(-80);
+                entity->setObituary(language[1505]);
+                if ( entity->behavior == &actPlayer )
+                    if ( stats->HP <= 0 )
+                    {
+                        steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
+                    }
+                if ( stats->HP > 0 )
+                {
+                    // spawn several rock items
+                    int i = 8 + rand() % 4;
+
+                    int c;
+                    for ( c = 0; c < i; c++ )
+                    {
+                        Entity* entity = newEntity(-1, 1, map.entities);
+                        entity->flags[INVISIBLE] = true;
+                        entity->flags[UPDATENEEDED] = true;
+                        entity->x = my->x - 4 + rand() % 8;
+                        entity->y = my->y - 4 + rand() % 8;
+                        entity->z = -6 + rand() % 12;
+                        entity->sizex = 4;
+                        entity->sizey = 4;
+                        entity->yaw = rand() % 360 * PI / 180;
+                        entity->vel_x = (rand() % 20 - 10) / 10.0;
+                        entity->vel_y = (rand() % 20 - 10) / 10.0;
+                        entity->vel_z = -.25 - (rand() % 5) / 10.0;
+                        entity->flags[PASSABLE] = true;
+                        entity->behavior = &actItem;
+                        entity->flags[USERFLAG1] = true; // no collision: helps performance
+                        entity->skill[10] = GEM_ROCK;    // type
+                        entity->skill[11] = WORN;        // status
+                        entity->skill[12] = 0;           // beatitude
+                        entity->skill[13] = 1;           // count
+                        entity->skill[14] = 0;           // appearance
+                        entity->skill[15] = false;       // identified
+                    }
+
+                    double ox = my->x;
+                    double oy = my->y;
+
+                    // destroy the boulder
+                    playSoundEntity(my, 67, 128);
+                    list_RemoveNode(my->mynode);
+
+                    // on sokoban, destroying boulders spawns scorpions
+                    if ( !strcmp(map.name, "Sokoban") )
+                    {
+                        Entity* monster = summonMonster(SCORPION, ox, oy);
+                        if ( monster )
+                        {
+                            int c;
+                            for ( c = 0; c < MAXPLAYERS; c++ )
+                            {
+                                Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
+                                messagePlayerColor(c, color, language[406]);
+                            }
+                        }
+                    }
+
+                    return 1;
+                }
+            }
+        }
+    }
+    else if ( entity->behavior == &actGate || entity->behavior == &actBoulder || entity->behavior == &actChest || entity->behavior == &actHeadstone || entity->behavior == &actFountain || entity->behavior == &actSink )
+    {
+        if ( !entity->flags[PASSABLE] )
+        {
+            if ( entityInsideEntity(my, entity) )
+            {
+                // stop the boulder
+                BOULDER_STOPPED = 1;
+                BOULDER_ROLLING = 0;
+                playSoundEntity(my, 181, 128);
+                if ( my->flags[PASSABLE] )
+                {
+                    my->flags[PASSABLE] = false;
+                    if ( multiplayer == SERVER )
+                    {
+                        serverUpdateEntityFlag(my, PASSABLE);
+                    }
+                }
+            }
+        }
+    }
+    else if ( entity->behavior == &actDoor )
+    {
+        if ( entityInsideEntity(my, entity) )
+        {
+            playSoundEntity(entity, 28, 64);
+            entity->skill[4] = 0;
+            if ( !entity->skill[0] )
+            {
+                entity->skill[6] = (my->x > entity->x);
+            }
+            else
+            {
+                entity->skill[6] = (my->y < entity->y);
+            }
+            playSoundEntity(my, 181, 128);
+        }
+    }
+    return 0;
+}
+
+
+/*-------------------------------------------------------------------------------
+
 	act*
 
 	The following function describes an entity behavior. The function
@@ -521,7 +675,7 @@ void actBoulder(Entity* my)
 						{
 							continue;
 						}
-						if ( boulderCheckAgainstEntity(my, entity) )
+						if ( boulderCheckAgainstEntityInFront(my, entity) )
 						{
 							return;
 						}
