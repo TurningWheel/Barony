@@ -608,6 +608,30 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->type = SHADOW;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
 			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->appearance = rand();
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->MAXHP = 200;
+			stats->HP = stats->MAXHP;
+			stats->MAXMP = 500;
+			stats->MP = stats->MAXMP;
+			stats->OLDHP = stats->HP;
+			stats->STR = 20;
+			stats->RANDOM_STR = 5;
+			stats->DEX = 10;
+			stats->RANDOM_DEX = 5;
+			stats->CON = 2;
+			stats->RANDOM_CON = 2;
+			stats->INT = 5;
+			stats->RANDOM_INT = 4;
+			stats->PER = 20;
+			stats->RANDOM_PER = 5;
+			stats->CHR = -1;
+			stats->RANDOM_CHR = 2;
+			stats->EXP = 0;
+			stats->LVL = 25;
+			stats->HUNGER = 900;
 			break;
 		case 90:
 		case (1000 + COCKATRICE):
