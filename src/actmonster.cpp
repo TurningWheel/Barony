@@ -2050,8 +2050,9 @@ void actMonster(Entity* my)
 							{
 								light = TOUCHRANGE;
 							}
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
+								//See invisible.
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -2093,8 +2094,9 @@ void actMonster(Entity* my)
 							}
 							if ( visiontest )   // vision cone
 							{
-								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 								{
+									//See invisible
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								else
@@ -2542,8 +2544,9 @@ void actMonster(Entity* my)
 				{
 					light = TOUCHRANGE;
 				}
-				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 				{
+					//See invisible.
 					light = 1000;
 				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -3004,8 +3007,9 @@ timeToGoAgain:
 							{
 								light = TOUCHRANGE;
 							}
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
+								//See invisible.
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -3024,10 +3028,12 @@ timeToGoAgain:
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								if ( hit.entity == entity )
+								{
 									if ( rand() % 100 == 0 )
 									{
 										entity->increaseSkill(PRO_STEALTH);
 									}
+								}
 								continue;
 							}
 							bool visiontest = false;
