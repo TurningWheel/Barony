@@ -1085,3 +1085,28 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		MONSTER_ATTACKTIME = 0;
 	}
 }
+
+bool Entity::shadowCanWieldItem(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case THROWN:
+			return true;
+		case ARMOR:
+			if ( checkEquipType(&item) == TYPE_SHIELD )
+			{
+				return true; //Can only wear shields, out of armor.
+			}
+			return false;
+		default:
+			return false;
+	}
+}

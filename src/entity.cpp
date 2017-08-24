@@ -7443,6 +7443,8 @@ bool Entity::canWieldItem(const Item& item) const
 			return goatmanCanWieldItem(item);
 		case AUTOMATON:
 			return automatonCanWieldItem(item);
+		case SHADOW:
+			return shadowCanWieldItem(item);
 		default:
 			return false;
 	}
