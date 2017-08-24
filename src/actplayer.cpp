@@ -924,10 +924,7 @@ void actPlayer(Entity* my)
 						{
 							my->flags[BURNING] = false;
 							messagePlayer(PLAYER_NUM, language[574]);
-							if ( PLAYER_NUM > 0 )
-							{
-								serverUpdateEntityFlag(my, BURNING);
-							}
+							serverUpdateEntityFlag(my, BURNING);
 						}
 					}
 					else if ( ticks % 10 == 0 )
@@ -958,7 +955,7 @@ void actPlayer(Entity* my)
 		players[PLAYER_NUM]->entity = my;
 
 		// camera bobbing
-		if (bobbing)
+		if (bobbing && !command)
 		{
 			if ( swimming )
 			{

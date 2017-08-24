@@ -787,6 +787,9 @@ void Entity::effectTimes()
 					case EFF_BLEEDING:
 						messagePlayer(player, language[614]);
 						break;
+                    case EFF_SLOW:
+                        messagePlayer(player, language[604]);
+                        break;
 					case EFF_MAGICRESIST:
 						messagePlayer(player, language[2470]);
 						break;
@@ -2325,7 +2328,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						entity->x = this->x;
 						entity->y = this->y;
-						entity->z = 7.4 + (rand() % 20) / 100.f;
+                        entity->z = 8.0;
 						entity->parent = this->uid;
 						entity->sizex = 2;
 						entity->sizey = 2;
@@ -2418,10 +2421,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->flags[BURNING] = false;
 				messagePlayer(player, language[647]);
-				if ( player > 0 && multiplayer == SERVER )
-				{
-					serverUpdateEntityFlag(this, BURNING);
-				}
+				serverUpdateEntityFlag(this, BURNING);
 			}
 		}
 	}
@@ -2507,7 +2507,7 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 		// life saving
-		if ( myStats->amulet->type == AMULET_LIFESAVING )   //TODO: Doesn't save against boulder traps.
+		if ( myStats->amulet->type == AMULET_LIFESAVING )
 		{
 			if ( myStats->HP <= 0 )
 			{
