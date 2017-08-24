@@ -1132,6 +1132,7 @@ void actMonster(Entity* my)
 					initGoatman ( my, myStats );
 					break;
 				case AUTOMATON:
+					my->flags[BURNABLE] = false;
 					initAutomaton (my, myStats);
 					break;
 				case LICH_ICE:
