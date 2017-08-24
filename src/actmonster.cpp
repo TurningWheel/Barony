@@ -132,7 +132,7 @@ double sightranges[NUMMONSTERS] =
 	192,   // CRYSTALGOLEM
 	256,  // INCUBUS
 	192,  // VAMPIRE
-	256,  // SHADOW
+	768,  // SHADOW
 	256,  // COCKATRICE
 	256,  // INSECTOID
 	256,  // GOATMAN

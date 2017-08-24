@@ -632,6 +632,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EXP = 0;
 			stats->LVL = 25;
 			stats->HUNGER = 900;
+			stats->GOLD = 100;
+			stats->RANDOM_GOLD = 50;
 			break;
 		case 90:
 		case (1000 + COCKATRICE):
