@@ -761,7 +761,7 @@ void actMinotaurCeilingBuster(Entity* my)
 						Entity *entity = nullptr;
 						if ( multiplayer == SERVER )
 						{
-							entity = spawnGib(my, true);
+							entity = spawnGib(my);
 						}
 						else
 						{
