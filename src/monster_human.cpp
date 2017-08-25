@@ -55,7 +55,7 @@ void initHuman(Entity* my, Stat* myStats)
 
 			// boss variants
 			// generate special loadout
-			if ( my->monsterSpecial == 0 )
+			if ( my->monsterSpecialTimer == 0 )
 			{
 				if ( rand() % 25 == 0 )
 				{
@@ -1763,7 +1763,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-bool Entity::humanCanWieldItem(Item& item) const
+bool Entity::humanCanWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )

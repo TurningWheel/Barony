@@ -182,6 +182,11 @@ void actThrown(Entity* my)
 					entity->skill[13] = item->count;
 					entity->skill[14] = item->appearance;
 					entity->skill[15] = item->identified;
+					if ( itemCategory(item) == THROWN )
+					{
+						//Hack to make monsters stop catching your shurikens and chakrams.
+						entity->parent = my->parent;
+					}
 					free(item);
 					list_RemoveNode(my->mynode);
 					return;
@@ -576,6 +581,11 @@ void actThrown(Entity* my)
 			entity->skill[13] = item->count;
 			entity->skill[14] = item->appearance;
 			entity->skill[15] = item->identified;
+			if ( itemCategory(item) == THROWN )
+			{
+				//Hack to make monsters stop catching your shurikens and chakrams.
+				entity->parent = my->parent;
+			}
 			free(item);
 			list_RemoveNode(my->mynode);
 			return;

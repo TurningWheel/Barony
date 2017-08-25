@@ -131,8 +131,14 @@ void initGoatman(Entity* my, Stat* myStats)
 			//Give weapons.
 			if ( !boss )
 			{
-				newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
-				newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+				if ( rand()%2 == 0 )
+				{
+					newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+				}
+				if ( rand()%4 > 0 )
+				{
+					newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+				}
 			}
 
 			/*
@@ -240,7 +246,7 @@ void initGoatman(Entity* my, Stat* myStats)
 
 			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->weapon = newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+				myStats->weapon = newItem(rand()%2? STEEL_AXE : STEEL_MACE, static_cast<Status>(EXCELLENT - rand()%1), 0, 1, rand(), false, nullptr);
 			}
 		}
 	}
@@ -1068,14 +1074,192 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-//void Entity::goatmanChooseWeapon()
-//{
-//	bool hasPotions = false;
-//	bool hasThrown = false;
-//	bool hasMelee = false;
-//}
+void Entity::goatmanChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState == 1 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer()
+		return;
+	}
 
-bool Entity::goatmanCanWieldItem(Item& item) const
+	//TODO: I don't like this function getting called every frame. Find a better place to put it.
+	//Although if I do that, can't do this dirty little hack for the goatman's special...
+
+	//TODO: If applying attack animations that will involve holding a potion for several frames while this code has a chance to run, do a check here to cancel the function if holding a potion.
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
+	{
+		return;
+	}
+
+	int specialRoll = -1;
+	bool usePotionSpecial = false;
+
+	/*
+	 * For the goatman's special:
+	 * * If specialRoll == 0, want to use a booze or healing potion (prioritize healing potion if damaged enough).
+	 * * If no have potion, try to use THROWN in melee.
+	 * * If in melee, if potion is not a healing potion, check if have any THROWN and then 50% chance to use those instead.
+	 */
+
+	node_t* hasPotion = nullptr;
+	bool isHealingPotion = false;
+
+	if ( monsterSpecialTimer == 0 )
+	{
+		//messagePlayer(clientnum, "Cooldown done!");
+		specialRoll = rand()%20;
+
+		if ( specialRoll == 0 )
+		{
+			monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
+			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
+			{
+				//Try to get a health potion.
+				hasPotion = itemNodeInInventory(myStats, POTION_EXTRAHEALING, static_cast<Category>(-1));
+				if ( !hasPotion )
+				{
+					hasPotion = itemNodeInInventory(myStats, POTION_HEALING, static_cast<Category>(-1));
+					if ( hasPotion )
+					{
+						//Equip and chuck it now.
+						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
+						if ( !swapped )
+						{
+							printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+							//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+						}
+						else
+						{
+							monsterSpecialState = 1;
+							return;
+						}
+					}
+				}
+			}
+
+			if ( !hasPotion )
+			{
+				//Couldn't find a healing potion? Try for a potion of booze.
+				hasPotion = itemNodeInInventory(myStats, POTION_BOOZE, static_cast<Category>(-1));
+			}
+		}
+	}
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	if ( inMeleeRange )
+	{
+		if ( specialRoll == 0 )
+		{
+			bool tryChakram = true;
+			if ( hasPotion && rand()%2 )
+			{
+				tryChakram = false;
+			}
+
+			if ( tryChakram )
+			{
+				//Grab a chakram instead.
+				node_t* thrownNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+				if ( thrownNode )
+				{
+					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode);
+					if ( !swapped )
+					{
+						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap THROWN into hand! Cursed? (%d)", myStats->weapon->beatitude);
+						//Don't return, make sure holding a melee weapon at least.
+					}
+					else
+					{
+						monsterSpecialState = 1;
+						return;
+					}
+				}
+			}
+		}
+		if ( hasPotion )
+		{
+			//Equip the potion.
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
+			if ( !swapped )
+			{
+				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand (melee block)! Cursed? (%d)", myStats->weapon->beatitude);
+			}
+			else
+			{
+				monsterSpecialState = 1;
+				return;
+			}
+		}
+
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+			if ( !swapped )
+			{
+				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand! Cursed? (%d)", myStats->weapon->beatitude);
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	if ( hasPotion )
+	{
+		//Try to equip the potion first. If fails, then equip normal ranged.
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
+		if ( !swapped )
+		{
+			printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
+		}
+		else
+		{
+			monsterSpecialState = 1;
+			return;
+		}
+	}
+
+	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
+	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	{
+		//First search the inventory for a THROWN weapon.
+		node_t *weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+		if ( !weaponNode )
+		{
+			//If couldn't find any, search the inventory for a ranged weapon.
+			weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		}
+
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+		return;
+	}
+
+	return;
+}
+
+bool Entity::goatmanCanWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -1086,11 +1270,6 @@ bool Entity::goatmanCanWieldItem(Item& item) const
 	switch ( itemCategory(&item) )
 	{
 		case WEAPON:
-			if ( !myStats->weapon || itemCategory(myStats->weapon) != WEAPON )
-			{
-				//Only pick up weapons if wielding a weapon.
-				return false;
-			}
 			return true;
 		case POTION:
 			switch ( item.type )
@@ -1104,6 +1283,15 @@ bool Entity::goatmanCanWieldItem(Item& item) const
 			}
 		case THROWN:
 			return true;
+		case ARMOR:
+			{ //Little baby compiler stop whining, wah wah.
+				int equipType = checkEquipType(&item);
+				if ( equipType == TYPE_HAT || equipType == TYPE_HELM )
+				{
+					return false; //No can wear hats, because horns.
+				}
+				return true; //Can wear all other armor.
+			}
 		default:
 			return false;
 	}

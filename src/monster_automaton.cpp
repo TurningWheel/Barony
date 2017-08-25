@@ -1048,7 +1048,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 }
 
-bool Entity::automatonCanWieldItem(Item& item) const
+bool Entity::automatonCanWieldItem(const Item& item) const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -1084,9 +1084,9 @@ void Entity::automatonRecycleItem()
 	node_t* nextnode = nullptr;
 	int numItemsHeld = list_Size(&myStats->inventory);
 
-	if ( this->monsterSpecial > 0 )
+	if ( this->monsterSpecialTimer > 0 )
 	{
-		--this->monsterSpecial;
+		--this->monsterSpecialTimer;
 		return;
 	}
 	else if ( numItemsHeld < 2 )
@@ -1094,9 +1094,9 @@ void Entity::automatonRecycleItem()
 		return;
 	}
 	
-	if (this->monsterSpecial == 0)
+	if (this->monsterSpecialTimer == 0)
 	{
-		this->monsterSpecial = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
+		this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
 	}
 
 	int i = 0;

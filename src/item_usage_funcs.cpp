@@ -847,7 +847,9 @@ void item_PotionHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 	amount *= multiplier / 5.f;
 	if ( stats->type == GOATMAN )
 	{
-		amount *= 2; //Goatmen special.
+		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
+		stats->EFFECTS[EFF_FAST] = true;
+		stats->EFFECTS_TIMERS[EFF_FAST] = GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION;
 	}
 	entity->modHP(amount);
 
@@ -933,7 +935,9 @@ void item_PotionExtraHealing(Item* item, Entity* entity, bool shouldConsumeItem)
 	amount *= multiplier;
 	if ( stats->type == GOATMAN )
 	{
-		amount *= 2; //Goatman special.
+		amount *= GOATMAN_HEALINGPOTION_MOD; //Goatman special.
+		stats->EFFECTS[EFF_FAST] = true;
+		stats->EFFECTS_TIMERS[EFF_FAST] = GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION;
 	}
 	entity->modHP(amount);
 

@@ -659,28 +659,31 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 92:
 		case (1000 + GOATMAN):
 			stats->type = GOATMAN;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
 			stats->sex = static_cast<sex_t>(rand() % 2);
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->HP = 100;
-			stats->MAXHP = 100;
-			stats->MP = 20;
+			stats->MAXHP = 150;
+			stats->HP = stats->MAXHP;
 			stats->MAXMP = 20;
+			stats->MP = stats->MAXMP;
 			stats->OLDHP = stats->HP;
-			stats->STR = 10;
+			stats->RANDOM_MAXHP = 20;
+			stats->RANDOM_HP = stats->RANDOM_MAXHP;
+			//stats->RANDOM_MAXMP = 20;
+			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
+			stats->STR = 30;
 			stats->DEX = 5;
 			stats->CON = 5;
 			stats->INT = -1;
 			stats->PER = 0;
+			stats->RANDOM_PER = 5;
 			stats->CHR = -1;
 			stats->EXP = 0;
-			stats->LVL = 10;
-			if ( rand() % 4 == 0 )
+			stats->LVL = 20;
+			if ( rand() % 3 > 0 )
 			{
-				stats->GOLD = 30;
+				stats->GOLD = 100;
 				stats->RANDOM_GOLD = 50;
 			}
 			else
@@ -698,8 +701,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
 
 			//stats->PROFICIENCIES[PRO_SWORD] = 35;
-			//stats->PROFICIENCIES[PRO_MACE] = 50;
-			//stats->PROFICIENCIES[PRO_AXE] = 45;
+			stats->PROFICIENCIES[PRO_MACE] = 45;
+			stats->PROFICIENCIES[PRO_AXE] = 60;
 			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
 			stats->PROFICIENCIES[PRO_RANGED] = 60; //Chuck booze at you.
 			//stats->PROFICIENCIES[PRO_SHIELD] = 35;

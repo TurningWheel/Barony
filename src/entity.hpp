@@ -147,7 +147,9 @@ public:
 	Sint32& monsterTarget; //skill[1]
 	real_t& monsterTargetX; //fskill[2]
 	real_t& monsterTargetY; //fskill[3]
-	Sint32& monsterSpecial;
+	Sint32& monsterSpecialTimer;
+	//Only used by goatman.
+	Sint32& monsterSpecialState; //skill[33]
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
@@ -240,11 +242,21 @@ public:
 	//--*CheckBetterEquipment functions--
 	void checkBetterEquipment(Stat* myStats);
 	void checkGroundForItems();
-	bool canWieldItem(Item& item) const;
-	bool goblinCanWieldItem(Item& item) const;
-	bool humanCanWieldItem(Item& item) const;
-	bool goatmanCanWieldItem(Item& item) const;
-	bool automatonCanWieldItem(Item& item) const;
+	bool canWieldItem(const Item& item) const;
+	bool goblinCanWieldItem(const Item& item) const;
+	bool humanCanWieldItem(const Item& item) const;
+	bool goatmanCanWieldItem(const Item& item) const;
+	bool automatonCanWieldItem(const Item& item) const;
+
+	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
+
+	/*
+	 * Check if the goatman can wield the item, and if so, is it something it wants? E.g. does it really want to carry 2 sets of armor?
+	 */
+	//bool goatmanWantsItem(const Item& item, Item*& shouldWield, node_t*& replaceInventoryItem) const;
+
+	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
+	Item** shouldMonsterEquipThisArmor(const Item& item) const;
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -361,6 +373,33 @@ public:
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
 	 */
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
+
+	//Lets monsters swap out weapons.
+	void inline chooseWeapon(const Entity* target, double dist)
+	{
+		Stat* myStats = getStats();
+		if ( !myStats )
+		{
+			return;
+		}
+
+		switch ( myStats->type )
+		{
+			case GOATMAN:
+				goatmanChooseWeapon(target, dist);
+				break;
+			default:
+				break;
+		}
+	}
+	void goatmanChooseWeapon(const Entity* target, double dist);
+
+	bool monsterInMeleeRange(const Entity* target, double dist)
+	{
+		return (dist < STRIKERANGE);
+	}
+
+	node_t* addItemToMonsterInventory(Item* item);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
@@ -470,7 +509,7 @@ int countDefaultItems(Stat* stats);
 void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats);
 void setRandomMonsterStats(Stat* stats);
 
-int checkEquipType(Item *ITEM);
+int checkEquipType(const Item *ITEM);
 
 static const int SPRITE_GLOVE_RIGHT_OFFSET = 0;
 static const int SPRITE_GLOVE_LEFT_OFFSET = 4;

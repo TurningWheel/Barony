@@ -357,6 +357,7 @@ static const int MONSTER_POSE_MELEE_WINDUP3 = 6;
 static const int MONSTER_POSE_RANGED_WINDUP1 = 7;
 static const int MONSTER_POSE_RANGED_WINDUP2 = 8;
 static const int MONSTER_POSE_RANGED_WINDUP3 = 9;
+//TODO: Need potions and thrown.
 static const int MONSTER_POSE_MAGIC_WINDUP1 = 10;
 static const int MONSTER_POSE_MAGIC_WINDUP2 = 11;
 static const int MONSTER_POSE_MAGIC_WINDUP3 = 12;
@@ -378,6 +379,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -438,3 +440,9 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
+
+//-----RACE SPECIFIC CONSTANTS-----
+
+//--Goatman--
+static const int GOATMAN_HEALINGPOTION_MOD = 3;
+static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
