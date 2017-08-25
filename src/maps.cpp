@@ -3551,6 +3551,8 @@ void assignActions(map_t* map)
 
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				childEntity->sizex = 4;
+				childEntity->sizey = 4;
 				childEntity->crystalStartZ = entity->z - 10; //start position
 				childEntity->z = childEntity->crystalStartZ - 0.4 + ((prng_get_uint() % 8) * 0.1); // start the height randomly
 				childEntity->crystalMaxZVelocity = 0.02; //max velocity
