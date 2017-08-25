@@ -440,8 +440,8 @@ int itemCompare(const Item* item1, const Item* item2);
  * Returns true if potion is harmful to the player.
  */
 bool isPotionBad(const Item& potion);
-bool inline isRangedWeapon(const Item& item);
-bool inline isMeleeWeapon(const Item& item);
+bool isRangedWeapon(const Item& item);
+bool isMeleeWeapon(const Item& item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
 void copyItem(Item* itemToSet, Item* itemToCopy);
