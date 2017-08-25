@@ -295,6 +295,7 @@ public:
 	//Act functions.
 	void actChest();
 	void actPowerCrystal();
+	void actGate();
 
 	Monster getRace() const
 	{

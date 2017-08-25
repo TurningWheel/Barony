@@ -20,47 +20,57 @@
 
 void actGate(Entity* my)
 {
+	if ( !my )
+	{
+		return;
+	}
+
+	my->actGate();
+}
+
+void Entity::actGate()
+{
 	int i;
 
 	if ( multiplayer != CLIENT )
 	{
-		if (!my->skill[28])
+		if ( this->circuit_status == 0 )
 		{
 			return;    //Gate needs the mechanism powered state variable to be set.
 		}
 
-		if (my->skill[28] == 2)
+		if ( this->circuit_status == CIRCUIT_ON )
 		{
 			//Raise gate if it's closed.
-			if (!my->gateStatus)
+			if ( !this->gateStatus )
 			{
-				my->gateStatus = 1;
-				playSoundEntity(my, 81, 64);
-				serverUpdateEntitySkill(my, 3);
+				this->gateStatus = 1;
+				playSoundEntity(this, 81, 64);
+				serverUpdateEntitySkill(this, 3);
 			}
 		}
 		else
 		{
 			//Close gate if it's open.
-			if (my->gateStatus)
+			if ( this->gateStatus )
 			{
-				my->gateStatus = 0;
-				playSoundEntity(my, 82, 64);
-				serverUpdateEntitySkill(my, 3);
+				this->gateStatus = 0;
+				playSoundEntity(this, 82, 64);
+				serverUpdateEntitySkill(this, 3);
 			}
 		}
 	}
 	else
 	{
-		my->flags[NOUPDATE] = true;
+		this->flags[NOUPDATE] = true;
 	}
-	if (!my->gateInit )
+	if ( !this->gateInit )
 	{
-		my->gateInit = 1;
-		my->gateStartHeight = my->z;
-		my->scalex = 1.01;
-		my->scaley = 1.01;
-		my->scalez = 1.01;
+		this->gateInit = 1;
+		this->gateStartHeight = this->z;
+		this->scalex = 1.01;
+		this->scaley = 1.01;
+		this->scalez = 1.01;
 	}
 
 	// rightclick message
@@ -68,7 +78,7 @@ void actGate(Entity* my)
 	{
 		for (i = 0; i < MAXPLAYERS; i++)
 		{
-			if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+			if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
 			{
 				if (inrange[i])
 				{
@@ -78,47 +88,47 @@ void actGate(Entity* my)
 		}
 	}
 
-	if ( !my->gateStatus )
+	if ( !this->gateStatus )
 	{
 		//Closing gate.
-		if ( my->z < my->gateStartHeight )
+		if ( this->z < this->gateStartHeight )
 		{
-			my->gateVelZ += .25;
-			my->z = std::min(my->gateStartHeight, my->z + my->gateVelZ);
+			this->gateVelZ += .25;
+			this->z = std::min(this->gateStartHeight, this->z + this->gateVelZ);
 		}
 		else
 		{
-			my->gateVelZ = 0;
+			this->gateVelZ = 0;
 		}
 	}
 	else
 	{
 		//Opening gate.
-		if ( my->z > my->gateStartHeight - 12 )
+		if ( this->z > this->gateStartHeight - 12 )
 		{
-			my->z = std::max(my->gateStartHeight - 12, my->z - 0.25);
+			this->z = std::max(this->gateStartHeight - 12, this->z - 0.25);
 
 			// rattle the gate
-			my->gateRattle = (my->gateRattle == 0);
-			if ( my->gateRattle )
+			this->gateRattle = (this->gateRattle == 0);
+			if ( this->gateRattle )
 			{
-				my->x += .05;
-				my->y += .05;
+				this->x += .05;
+				this->y += .05;
 			}
 			else
 			{
-				my->x -= .05;
-				my->y -= .05;
+				this->x -= .05;
+				this->y -= .05;
 			}
 		}
 		else
 		{
 			// reset the gate's position
-			if ( my->gateRattle )
+			if ( this->gateRattle )
 			{
-				my->gateRattle = 0;
-				my->x -= .05;
-				my->y -= .05;
+				this->gateRattle = 0;
+				this->x -= .05;
+				this->y -= .05;
 			}
 		}
 	}
@@ -126,16 +136,16 @@ void actGate(Entity* my)
 	//Setting collision
 	node_t* node;
 	bool somebodyinside = false;
-	if ( my->z > my->gateStartHeight - 6 && my->flags[PASSABLE] )
+	if ( this->z > this->gateStartHeight - 6 && this->flags[PASSABLE] )
 	{
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
-			if ( entity == my || entity->flags[PASSABLE] || entity->sprite == 1 )
+			if ( entity == this || entity->flags[PASSABLE] || entity->sprite == 1 )
 			{
 				continue;
 			}
-			if ( entityInsideEntity(my, entity) )
+			if ( entityInsideEntity(this, entity) )
 			{
 				somebodyinside = true;
 				break;
@@ -143,11 +153,11 @@ void actGate(Entity* my)
 		}
 		if ( !somebodyinside )
 		{
-			my->flags[PASSABLE] = false;
+			this->flags[PASSABLE] = false;
 		}
 	}
-	else if ( my->z < my->gateStartHeight - 9 && !my->flags[PASSABLE] )
+	else if ( this->z < this->gateStartHeight - 9 && !this->flags[PASSABLE] )
 	{
-		my->flags[PASSABLE] = true;
+		this->flags[PASSABLE] = true;
 	}
 }

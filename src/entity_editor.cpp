@@ -63,7 +63,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterWeaponYaw(fskill[5]),
 	particleDuration(skill[0]),
 	monsterHitTime(skill[7]),
-	itemNotMoving(skill[18])
+	itemNotMoving(skill[18]),
+	gateInit(skill[1]),
+	gateStatus(skill[3]),
+	gateRattle(skill[4]),
+	gateStartHeight(fskill[0]),
+	gateVelZ(vel_z)
 {
 	int c;
 	// add the entity to the entity list
