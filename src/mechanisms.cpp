@@ -188,7 +188,7 @@ void actSwitch(Entity* my)
 void actSwitchWithTimer(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
-	my->skill[2] = 150; // 3 second timer
+	my->leverTimerTicks = 150; // 3 second timer
 
 	if ( multiplayer != CLIENT )
 	{
@@ -200,7 +200,7 @@ void actSwitchWithTimer(Entity* my)
 				// server/client has clicked on the entity.
 				if ( inrange[i] )   //Act on it only if the player (or monster, if/when this is changed to support monster interaction?) is in range.
 				{
-					switch ( my->skill[1] )
+					switch ( my->leverStatus )
 					{
 						case 0:
 							messagePlayer(i, language[2359]);
@@ -216,12 +216,12 @@ void actSwitchWithTimer(Entity* my)
 							break;
 					}
 
-					if ( my->skill[1] < 3 )
+					if ( my->leverStatus < 3 )
 					{
-						++my->skill[1];
+						++my->leverStatus;
 						playSoundEntity(my, 248, 64);
 						serverUpdateEntitySkill(my, 1);
-						if ( my->skill[1] == 3 )
+						if ( my->leverStatus == 3 )
 						{
 							playSoundEntity(my, 56, 64);
 							my->toggleSwitch();
@@ -231,7 +231,7 @@ void actSwitchWithTimer(Entity* my)
 			}
 		}
 
-		if ( my->skill[0] )
+		if ( my->leverStatus )
 		{
 			//Power on any neighbors that don't have power.
 			my->switchUpdateNeighbors();
@@ -244,7 +244,7 @@ void actSwitchWithTimer(Entity* my)
 	}
 
 	// Rotate the switch when it is on/off.
-	if ( my->skill[1] == 0 )
+	if ( my->leverStatus == 0 )
 	{
 		if ( my->roll > -PI / 4 )
 		{
@@ -255,7 +255,7 @@ void actSwitchWithTimer(Entity* my)
 			my->roll = -PI / 4;
 		}
 	}
-	else if (my->skill[1] == 1 ) // 1/3 of the way up
+	else if (my->leverStatus == 1 ) // 1/3 of the way up
 	{
 		if ( my->roll < -PI / 12 )
 		{
@@ -266,7 +266,7 @@ void actSwitchWithTimer(Entity* my)
 			my->roll = -PI / 12;
 		}
 	}
-	else if ( my->skill[1] == 2 ) // 2/3 of the way up
+	else if ( my->leverStatus == 2 ) // 2/3 of the way up
 	{
 		if ( my->roll < PI / 12 )
 		{
@@ -277,7 +277,7 @@ void actSwitchWithTimer(Entity* my)
 			my->roll = PI / 12;
 		}
 	}
-	else if ( my->skill[1] == 3 ) // all the way up
+	else if ( my->leverStatus == 3 ) // all the way up
 	{
 		if ( my->roll < PI / 4 )
 		{
@@ -286,14 +286,14 @@ void actSwitchWithTimer(Entity* my)
 		else
 		{
 			my->roll = PI / 4;
-			my->skill[1] = 4;
+			my->leverStatus = 4;
 		}
 	}
-	else if ( my->skill[1] == 4 ) // ticking down
+	else if ( my->leverStatus == 4 ) // ticking down
 	{
 		if ( my->roll > -PI / 12 )
 		{
-			my->roll -= (PI / 3) / my->skill[2]; // move slowly towards 2/3rds of the resting point
+			my->roll -= (PI / 3) / my->leverTimerTicks; // move slowly towards 2/3rds of the resting point
 			if ( my->ticks % 10 == 0 )
 			{
 				playSoundEntityLocal(my, 247, 32);
@@ -305,7 +305,7 @@ void actSwitchWithTimer(Entity* my)
 			if ( multiplayer != CLIENT )
 			{
 				playSoundEntity(my, 56, 64);
-				my->skill[1] = 0;
+				my->leverStatus = 0;
 				serverUpdateEntitySkill(my, 1);
 				my->toggleSwitch();
 			}

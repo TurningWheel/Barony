@@ -68,6 +68,9 @@ int checkSpriteType(Sint32 sprite)
 		//power crystal
 		return 5;
 		break;
+	case 115:
+		// lever timer
+		return 6;
 	default:
 		return 0;
 		break;

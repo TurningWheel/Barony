@@ -191,4 +191,8 @@ extern int itemSelect;
 extern int itemSlotSelected;
 int loadItems();
 
+void propertyPageTextAndInput(int numProperties, int width);
+void propertyPageError(int rowIndex, int resetValue);
+void propertyPageCursorFlash(int rowSpacing);
+
 #define TICKS_PER_SECOND 50
