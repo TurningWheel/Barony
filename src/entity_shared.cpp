@@ -612,7 +612,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"STALAGTITE SINGLE",
 	"STALAGTITE MULTIPLE",
 	"GATE INVERTED (North-South)",
-	"GATE INVERTED (East-West)"
+	"GATE INVERTED (East-West)",
+	"LEVER WITH TIMER"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =

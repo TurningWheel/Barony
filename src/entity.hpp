@@ -478,6 +478,7 @@ void actGate(Entity* my);
 void actArrowTrap(Entity* my);
 void actTrap(Entity* my);
 void actTrapPermanent(Entity* my);
+void actSwitchWithTimer(Entity* my);
 
 /*
  * Note: Circuits and mechanisms use skill[28] to signify powered state.
@@ -508,7 +509,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 213;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
-static const int NUM_EDITOR_SPRITES = 115;
+static const int NUM_EDITOR_SPRITES = 116;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];

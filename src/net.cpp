@@ -992,6 +992,9 @@ void clientActions(Entity* entity)
 		case 578:
 			entity->behavior = &actPowerCrystal;
 			break;
+		case 586:
+			entity->behavior = &actSwitchWithTimer;
+			break;
 		default:
 			break;
 	}

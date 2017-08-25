@@ -3768,6 +3768,28 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				break;
+			//Switch with timer.
+			case 115:
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7;
+				entity->sprite = 585; // this is the switch base.
+				entity->flags[PASSABLE] = true;
+				childEntity = newEntity(586, 0, map->entities);
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->z = 8;
+				childEntity->focalz = -4.5;
+				childEntity->sizex = 1;
+				childEntity->sizey = 1;
+				childEntity->sprite = 586; // this is the switch handle.
+				childEntity->roll = -PI / 4; // "off" position
+				childEntity->flags[PASSABLE] = true;
+				childEntity->behavior = &actSwitchWithTimer;
+				break;
 			default:
 				break;
 		}
