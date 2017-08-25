@@ -188,7 +188,6 @@ void actSwitch(Entity* my)
 void actSwitchWithTimer(Entity* my)
 {
 	my->flags[PASSABLE] = true; // these should ALWAYS be passable. No exceptions
-	my->leverTimerTicks = 150; // 3 second timer
 
 	if ( multiplayer != CLIENT )
 	{
@@ -231,7 +230,7 @@ void actSwitchWithTimer(Entity* my)
 			}
 		}
 
-		if ( my->leverStatus )
+		if ( my->leverStatus == 4 )
 		{
 			//Power on any neighbors that don't have power.
 			my->switchUpdateNeighbors();
@@ -286,14 +285,18 @@ void actSwitchWithTimer(Entity* my)
 		else
 		{
 			my->roll = PI / 4;
-			my->leverStatus = 4;
+			if ( multiplayer != CLIENT )
+			{
+				my->leverStatus = 4;
+				serverUpdateEntitySkill(my, 1);
+			}
 		}
 	}
 	else if ( my->leverStatus == 4 ) // ticking down
 	{
 		if ( my->roll > -PI / 12 )
 		{
-			my->roll -= (PI / 3) / my->leverTimerTicks; // move slowly towards 2/3rds of the resting point
+			my->roll -= (PI / 3) / static_cast<real_t>(my->leverTimerTicks); // move slowly towards 2/3rds of the resting point
 			if ( my->ticks % 10 == 0 )
 			{
 				playSoundEntityLocal(my, 247, 32);

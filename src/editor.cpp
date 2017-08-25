@@ -3873,15 +3873,23 @@ int main(int argc, char** argv)
 										else
 										{
 											char tmpStr[32] = "";
-											if ( propertyInt == 1 )
+											if ( propertyInt == 0 )
 											{
-												strcpy(tmpStr, "second");
+												strcpy(tmpStr, "Value must be > 0!");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
 											}
 											else
 											{
-												strcpy(tmpStr, "seconds");
+												if ( propertyInt == 1 )
+												{
+													strcpy(tmpStr, "second");
+												}
+												else
+												{
+													strcpy(tmpStr, "seconds");
+												}
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 											}
-											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 										}
 									}
 									else

@@ -1087,6 +1087,20 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->crystalSpellToActivate = 0;
 		}
 	}
+	// lever timer
+	else if ( spriteType == 6 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->leverTimerTicks = entityToCopy->leverTimerTicks;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->leverTimerTicks = 3;
+		}
+	}
 
 	if ( entityToCopy != nullptr )
 	{

@@ -1151,10 +1151,10 @@ void buttonSpriteProperties(button_t* my)
 			menuVisible = 0;
 			subwindow = 1;
 			newwindow = 8;
-			subx1 = xres / 2 - 210;
-			subx2 = xres / 2 + 210;
-			suby1 = yres / 2 - 120;
-			suby2 = yres / 2 + 120;
+			subx1 = xres / 2 - 120;
+			subx2 = xres / 2 + 120;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
 			strcpy(subtext, "Lever Timer Properties:");
 			break;
 		default:

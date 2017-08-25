@@ -3782,6 +3782,8 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y;
 				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->z = 8;
+				childEntity->leverTimerTicks = std::max(entity->leverTimerTicks, 1) * TICKS_PER_SECOND; // convert seconds to ticks from editor, make sure not less than 1
+				childEntity->leverStatus = 0; // set default to off.
 				childEntity->focalz = -4.5;
 				childEntity->sizex = 1;
 				childEntity->sizey = 1;

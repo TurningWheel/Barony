@@ -489,6 +489,9 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
 						fread(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
 						break;
+					case 6:
+						fread(&entity->leverTimerTicks, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -709,6 +712,9 @@ int saveMap(char* filename2)
 					fwrite(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1, fp);
 					fwrite(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
 					fwrite(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
+					break;
+				case 6:
+					fwrite(&entity->leverTimerTicks, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;
