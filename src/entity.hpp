@@ -484,6 +484,11 @@ void actChestLid(Entity* my);
 void closeChestClientside(); //Called by the client to manage all clientside stuff relating to closing a chest.
 void addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
 
+//---Stalag functions---
+void actStalagFloor(Entity* my);
+void actStalagCeiling(Entity* my);
+void actStalagColumn(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 

@@ -30,6 +30,59 @@
 
 /*-------------------------------------------------------------------------------
 
+doesEntityStopBoulder
+
+checks which objects the boulder breaks when it hits.
+
+-------------------------------------------------------------------------------*/
+
+bool doesEntityStopBoulder(Entity* entity)
+{
+	if ( entity->behavior == &actGate )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actBoulder )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actChest )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actHeadstone )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actFountain )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actSink )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagCeiling )
+	{
+		if ( entity->z > -8 )
+		{
+			// not on ceiling layer
+			return true;
+		}
+	}
+	else if ( entity->behavior == &actStalagFloor )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actStalagColumn )
+	{
+		return true;
+	}
+	return false;
+}
+
+/*-------------------------------------------------------------------------------
+
 	boulderCheckAgainstEntity
 
 	causes the boulder given in my to crush the object given in entity
@@ -139,7 +192,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 			}
 		}
 	}
-	else if ( entity->behavior == &actGate || entity->behavior == &actBoulder || entity->behavior == &actChest || entity->behavior == &actHeadstone || entity->behavior == &actFountain || entity->behavior == &actSink )
+	else if ( doesEntityStopBoulder(entity) )
 	{
 		if ( !entity->flags[PASSABLE] )
 		{
