@@ -176,6 +176,13 @@ public:
 	real_t& crystalMinZVelocity;
 	real_t& crystalTurnVelocity; // how fast to turn on click.
 
+	//--PUBLIC GATE SKILLS--
+	Sint32& gateInit;
+	Sint32& gateStatus;
+	Sint32& gateRattle;
+	real_t& gateStartHeight;
+	real_t& gateVelZ;
+
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
 

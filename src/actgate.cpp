@@ -18,12 +18,6 @@
 #include "collision.hpp"
 #include "player.hpp"
 
-#define GATE_INIT my->skill[1]
-#define GATE_STATUS my->skill[3]
-#define GATE_RATTLE my->skill[4]
-#define GATE_STARTHEIGHT my->fskill[0]
-#define GATE_VELZ my->vel_z
-
 void actGate(Entity* my)
 {
 	int i;
@@ -38,9 +32,9 @@ void actGate(Entity* my)
 		if (my->skill[28] == 2)
 		{
 			//Raise gate if it's closed.
-			if (!GATE_STATUS)
+			if (!my->gateStatus)
 			{
-				GATE_STATUS = 1;
+				my->gateStatus = 1;
 				playSoundEntity(my, 81, 64);
 				serverUpdateEntitySkill(my, 3);
 			}
@@ -48,9 +42,9 @@ void actGate(Entity* my)
 		else
 		{
 			//Close gate if it's open.
-			if (GATE_STATUS)
+			if (my->gateStatus)
 			{
-				GATE_STATUS = 0;
+				my->gateStatus = 0;
 				playSoundEntity(my, 82, 64);
 				serverUpdateEntitySkill(my, 3);
 			}
@@ -60,10 +54,10 @@ void actGate(Entity* my)
 	{
 		my->flags[NOUPDATE] = true;
 	}
-	if (!GATE_INIT )
+	if (!my->gateInit )
 	{
-		GATE_INIT = 1;
-		GATE_STARTHEIGHT = my->z;
+		my->gateInit = 1;
+		my->gateStartHeight = my->z;
 		my->scalex = 1.01;
 		my->scaley = 1.01;
 		my->scalez = 1.01;
@@ -84,29 +78,29 @@ void actGate(Entity* my)
 		}
 	}
 
-	if ( !GATE_STATUS )
+	if ( !my->gateStatus )
 	{
 		//Closing gate.
-		if ( my->z < GATE_STARTHEIGHT )
+		if ( my->z < my->gateStartHeight )
 		{
-			GATE_VELZ += .25;
-			my->z = std::min(GATE_STARTHEIGHT, my->z + GATE_VELZ);
+			my->gateVelZ += .25;
+			my->z = std::min(my->gateStartHeight, my->z + my->gateVelZ);
 		}
 		else
 		{
-			GATE_VELZ = 0;
+			my->gateVelZ = 0;
 		}
 	}
 	else
 	{
 		//Opening gate.
-		if ( my->z > GATE_STARTHEIGHT - 12 )
+		if ( my->z > my->gateStartHeight - 12 )
 		{
-			my->z = std::max(GATE_STARTHEIGHT - 12, my->z - 0.25);
+			my->z = std::max(my->gateStartHeight - 12, my->z - 0.25);
 
 			// rattle the gate
-			GATE_RATTLE = (GATE_RATTLE == 0);
-			if ( GATE_RATTLE )
+			my->gateRattle = (my->gateRattle == 0);
+			if ( my->gateRattle )
 			{
 				my->x += .05;
 				my->y += .05;
@@ -120,9 +114,9 @@ void actGate(Entity* my)
 		else
 		{
 			// reset the gate's position
-			if ( GATE_RATTLE )
+			if ( my->gateRattle )
 			{
-				GATE_RATTLE = 0;
+				my->gateRattle = 0;
 				my->x -= .05;
 				my->y -= .05;
 			}
@@ -132,7 +126,7 @@ void actGate(Entity* my)
 	//Setting collision
 	node_t* node;
 	bool somebodyinside = false;
-	if ( my->z > GATE_STARTHEIGHT - 6 && my->flags[PASSABLE] )
+	if ( my->z > my->gateStartHeight - 6 && my->flags[PASSABLE] )
 	{
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
@@ -152,7 +146,7 @@ void actGate(Entity* my)
 			my->flags[PASSABLE] = false;
 		}
 	}
-	else if ( my->z < GATE_STARTHEIGHT - 9 && !my->flags[PASSABLE] )
+	else if ( my->z < my->gateStartHeight - 9 && !my->flags[PASSABLE] )
 	{
 		my->flags[PASSABLE] = true;
 	}
