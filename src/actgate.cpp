@@ -34,29 +34,57 @@ void Entity::actGate()
 
 	if ( multiplayer != CLIENT )
 	{
-		if ( this->circuit_status == 0 )
+		if ( circuit_status == 0 )
 		{
 			return;    //Gate needs the mechanism powered state variable to be set.
 		}
 
-		if ( this->circuit_status == CIRCUIT_ON )
+		if ( gateInverted == 0 )
 		{
-			//Raise gate if it's closed.
-			if ( !this->gateStatus )
+			// normal operation
+			if ( circuit_status == CIRCUIT_ON )
 			{
-				this->gateStatus = 1;
-				playSoundEntity(this, 81, 64);
-				serverUpdateEntitySkill(this, 3);
+				//Raise gate if it's closed.
+				if ( !gateStatus )
+				{
+					gateStatus = 1;
+					playSoundEntity(this, 81, 64);
+					serverUpdateEntitySkill(this, 3);
+				}
+			}
+			else
+			{
+				//Close gate if it's open.
+				if ( gateStatus )
+				{
+					gateStatus = 0;
+					playSoundEntity(this, 82, 64);
+					serverUpdateEntitySkill(this, 3);
+				}
 			}
 		}
 		else
 		{
-			//Close gate if it's open.
-			if ( this->gateStatus )
+			// inverted operation
+			if ( circuit_status == CIRCUIT_OFF )
 			{
-				this->gateStatus = 0;
-				playSoundEntity(this, 82, 64);
-				serverUpdateEntitySkill(this, 3);
+				//Raise gate if it's closed.
+				if ( !gateStatus )
+				{
+					gateStatus = 1;
+					playSoundEntity(this, 81, 64);
+					serverUpdateEntitySkill(this, 3);
+				}
+			}
+			else
+			{
+				//Close gate if it's open.
+				if ( gateStatus )
+				{
+					gateStatus = 0;
+					playSoundEntity(this, 82, 64);
+					serverUpdateEntitySkill(this, 3);
+				}
 			}
 		}
 	}
@@ -64,10 +92,15 @@ void Entity::actGate()
 	{
 		this->flags[NOUPDATE] = true;
 	}
-	if ( !this->gateInit )
+	if ( !gateInit )
 	{
-		this->gateInit = 1;
-		this->gateStartHeight = this->z;
+		gateInit = 1;
+		gateStartHeight = this->z;
+		if ( gateInverted )
+		{
+			gateStatus = 1; // set to start opened.
+			this->z = gateStartHeight - 12;
+		}
 		this->scalex = 1.01;
 		this->scaley = 1.01;
 		this->scalez = 1.01;
@@ -88,29 +121,29 @@ void Entity::actGate()
 		}
 	}
 
-	if ( !this->gateStatus )
+	if ( !gateStatus )
 	{
 		//Closing gate.
-		if ( this->z < this->gateStartHeight )
+		if ( this->z < gateStartHeight )
 		{
-			this->gateVelZ += .25;
-			this->z = std::min(this->gateStartHeight, this->z + this->gateVelZ);
+			gateVelZ += .25;
+			this->z = std::min(gateStartHeight, this->z + gateVelZ);
 		}
 		else
 		{
-			this->gateVelZ = 0;
+			gateVelZ = 0;
 		}
 	}
 	else
 	{
 		//Opening gate.
-		if ( this->z > this->gateStartHeight - 12 )
+		if ( this->z > gateStartHeight - 12 )
 		{
-			this->z = std::max(this->gateStartHeight - 12, this->z - 0.25);
+			this->z = std::max(gateStartHeight - 12, this->z - 0.25);
 
 			// rattle the gate
-			this->gateRattle = (this->gateRattle == 0);
-			if ( this->gateRattle )
+			gateRattle = (gateRattle == 0);
+			if ( gateRattle )
 			{
 				this->x += .05;
 				this->y += .05;
@@ -124,9 +157,9 @@ void Entity::actGate()
 		else
 		{
 			// reset the gate's position
-			if ( this->gateRattle )
+			if ( gateRattle )
 			{
-				this->gateRattle = 0;
+				gateRattle = 0;
 				this->x -= .05;
 				this->y -= .05;
 			}
@@ -136,7 +169,7 @@ void Entity::actGate()
 	//Setting collision
 	node_t* node;
 	bool somebodyinside = false;
-	if ( this->z > this->gateStartHeight - 6 && this->flags[PASSABLE] )
+	if ( this->z > gateStartHeight - 6 && this->flags[PASSABLE] )
 	{
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
@@ -156,7 +189,7 @@ void Entity::actGate()
 			this->flags[PASSABLE] = false;
 		}
 	}
-	else if ( this->z < this->gateStartHeight - 9 && !this->flags[PASSABLE] )
+	else if ( this->z < gateStartHeight - 9 && !this->flags[PASSABLE] )
 	{
 		this->flags[PASSABLE] = true;
 	}

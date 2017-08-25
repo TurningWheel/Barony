@@ -182,6 +182,7 @@ public:
 	Sint32& gateRattle;
 	real_t& gateStartHeight;
 	real_t& gateVelZ;
+	Sint32& gateInverted;
 
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
@@ -507,7 +508,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 213;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
-static const int NUM_EDITOR_SPRITES = 113;
+static const int NUM_EDITOR_SPRITES = 115;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];

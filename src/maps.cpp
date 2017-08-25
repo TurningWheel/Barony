@@ -2757,7 +2757,7 @@ void assignActions(map_t* map)
 				//entity->sprite = 164; //No sprite.
 				entity->skill[28] = 1; //It's a depowered powerable.
 				break;
-			//East/west gate: //TODO: Adjust this. It's a copypaste of door.
+			//North/South gate: //TODO: Adjust this. It's a copypaste of door.
 			case 19:
 				entity->x += 8;
 				entity->y += 8;
@@ -2765,6 +2765,7 @@ void assignActions(map_t* map)
 				entity->sprite = 1;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
+
 				//entity->skill[28] = 1; //It's a mechanism.
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
@@ -2773,9 +2774,11 @@ void assignActions(map_t* map)
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
+				childEntity->gateInverted = 0;
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -2785,6 +2788,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -2795,22 +2799,25 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				break;
-			//North/south gate: //TODO: Adjust this. It's a copypaste of door.
+			//East/west gate: //TODO: Adjust this. It's a copypaste of door.
 			case 20:
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 1;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
+				childEntity->gateInverted = 0;
 				childEntity->sizey = 8;
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -2820,6 +2827,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -3674,6 +3682,87 @@ void assignActions(map_t* map)
 						entity->z -= 16;
 					}
 				}
+				break;
+			//North/South gate inverted: //TODO: Adjust this. It's a copypaste of door.
+			case 113:
+				entity->x += 8;
+				entity->y += 8;
+				entity->yaw -= PI / 2.0;
+				entity->sprite = 1;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actDoorFrame;
+
+				//entity->skill[28] = 1; //It's a mechanism.
+				childEntity = newEntity(186, 0, map->entities);
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 8;
+				childEntity->sizey = 1;
+				childEntity->yaw -= PI / 2.0;
+				childEntity->gateInverted = 1;
+				childEntity->skill[28] = 1; //It's a mechanism.
+				childEntity->behavior = &actGate;
+				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x - 7;
+				childEntity->y = entity->y;
+				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x + 7;
+				childEntity->y = entity->y;
+				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+				break;
+			//East/west gate inverted: //TODO: Adjust this. It's a copypaste of door.
+			case 114:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 1;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(186, 0, map->entities);
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 1;
+				childEntity->gateInverted = 1;
+				childEntity->sizey = 8;
+				childEntity->skill[28] = 1; //It's a mechanism.
+				childEntity->behavior = &actGate;
+				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y - 7;
+				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y + 7;
+				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
 				break;
 			default:
 				break;

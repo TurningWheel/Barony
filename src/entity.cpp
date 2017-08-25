@@ -95,7 +95,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	gateStatus(skill[3]),
 	gateRattle(skill[4]),
 	gateStartHeight(fskill[0]),
-	gateVelZ(vel_z)
+	gateVelZ(vel_z),
+	gateInverted(skill[5])
 
 {
 	int c;
