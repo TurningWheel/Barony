@@ -184,6 +184,10 @@ public:
 	real_t& gateVelZ;
 	Sint32& gateInverted;
 
+	//--PUBLIC LEVER SKILLS--
+	Sint32& leverTimerTicks;
+	Sint32& leverStatus;
+
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
 

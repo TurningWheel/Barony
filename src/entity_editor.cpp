@@ -69,7 +69,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	gateRattle(skill[4]),
 	gateStartHeight(fskill[0]),
 	gateVelZ(vel_z),
-	gateInverted(skill[5])
+	gateInverted(skill[5]),
+	leverStatus(skill[1]),
+	leverTimerTicks(skill[2])
 {
 	int c;
 	// add the entity to the entity list
