@@ -947,7 +947,6 @@ void drawStatus()
 	{
 		if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
 		{
-
 			stats[clientnum]->PLAYER_LVL_STAT_TIMER[i]--;
 
 			switch ( i )

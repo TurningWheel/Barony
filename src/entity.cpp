@@ -1743,7 +1743,7 @@ void Entity::handleEffects(Stat* myStats)
 			increasestat[2]++;
 		}*/
 
-		for ( i = 0; i < 6; i++ )
+		for ( i = 0; i < NUMSTATS * 2; ++i )
 		{
 			myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
 		}
@@ -1863,6 +1863,25 @@ void Entity::handleEffects(Stat* myStats)
 			net_packet->address.host = net_clients[player - 1].host;
 			net_packet->address.port = net_clients[player - 1].port;
 			net_packet->len = 21;
+			sendPacketSafe(net_sock, -1, net_packet, player - 1);
+
+			strcpy((char*)net_packet->data, "LVLI");
+			net_packet->data[4] = clientnum;
+			net_packet->data[5] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_STR];
+			net_packet->data[6] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_DEX];
+			net_packet->data[7] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CON];
+			net_packet->data[8] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_INT];
+			net_packet->data[9] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_PER];
+			net_packet->data[10] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CHR];
+			net_packet->data[11] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_STR + NUMSTATS];
+			net_packet->data[12] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_DEX + NUMSTATS];
+			net_packet->data[13] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CON + NUMSTATS];
+			net_packet->data[14] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_INT + NUMSTATS];
+			net_packet->data[15] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_PER + NUMSTATS];
+			net_packet->data[16] = (Uint8)myStats->PLAYER_LVL_STAT_TIMER[STAT_CHR + NUMSTATS];
+			net_packet->address.host = net_clients[player - 1].host;
+			net_packet->address.port = net_clients[player - 1].port;
+			net_packet->len = 17;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
 
