@@ -2774,7 +2774,8 @@ void assignActions(map_t* map)
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
-				childEntity->gateInverted = 0;
+				childEntity->gateInverted = 0; // non-inverted
+				childEntity->gateStatus = 0; // closed.
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
@@ -2812,8 +2813,9 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y;
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
-				childEntity->gateInverted = 0;
 				childEntity->sizey = 8;
+				childEntity->gateInverted = 0; // non-inverted
+				childEntity->gateStatus = 0; // closed.
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
@@ -3700,7 +3702,8 @@ void assignActions(map_t* map)
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
-				childEntity->gateInverted = 1;
+				childEntity->gateInverted = 1; // inverted.
+				childEntity->gateStatus = 1; // open.
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
@@ -3738,7 +3741,8 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y;
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
-				childEntity->gateInverted = 1;
+				childEntity->gateInverted = 1; // inverted.
+				childEntity->gateStatus = 1; // open.
 				childEntity->sizey = 8;
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;

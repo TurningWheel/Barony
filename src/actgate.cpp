@@ -98,7 +98,6 @@ void Entity::actGate()
 		gateStartHeight = this->z;
 		if ( gateInverted )
 		{
-			gateStatus = 1; // set to start opened.
 			this->z = gateStartHeight - 12;
 		}
 		this->scalex = 1.01;
