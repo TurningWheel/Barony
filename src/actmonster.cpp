@@ -1209,6 +1209,18 @@ void actMonster(Entity* my)
 		}
 	}
 
+	if ( myStats->type == SHADOW && my->monsterTarget != 0 )
+	{
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c] && players[c]->entity && players[c]->entity->getUID() == my->monsterTarget )
+			{
+				assailant[c] = true; //Keeps combat music on as long as a shadow is hunting you down down down!
+				break;
+			}
+		}
+	}
+
 	if ( my->ticks == 120 + MONSTER_NUMBER )
 	{
 		serverUpdateBodypartIDs(my);
