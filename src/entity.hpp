@@ -147,9 +147,11 @@ public:
 	Sint32& monsterTarget; //skill[1]
 	real_t& monsterTargetX; //fskill[2]
 	real_t& monsterTargetY; //fskill[3]
-	Sint32& monsterSpecialAttackTimer;
+	Sint32& monsterSpecialAttackTimer; //skill[29]
 	//Only used by goatman.
 	Sint32& monsterSpecialAttackState; //skill[33]
+	Sint32& monsterSpecialAbilityTimer; //skill[34]
+	Sint32& monsterSpecialAbilityState; //skill[35]
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
