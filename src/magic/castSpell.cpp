@@ -204,6 +204,21 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
+    // Check to make sure the Caster is not swimming
+    // This check prevents situations where the Caster starts swimming after starting to cast
+    if ( !trap )
+    {
+        if ( isSwimming(caster) == true )
+        {
+            // If the Caster is a Player, tell them they cannot cast while swimming
+            if ( player >= 0 )
+            {
+                messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
+            }
+            return nullptr;
+        }
+    }
+
 	bool newbie = false;
 	if ( !using_magicstaff && !trap)
 	{
@@ -259,49 +274,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 				return NULL;
 			}
-		}
-	}
-
-	//Check if the bugger is levitating.
-	bool levitating = false;
-	if (!trap)
-	{
-		levitating = isLevitating(stat);
-	}
-
-	//Water walking boots
-	bool waterwalkingboots = false;
-	if (!trap)
-	{
-		if (stat->shoes != NULL)
-			if (stat->shoes->type == IRON_BOOTS_WATERWALKING )
-			{
-				waterwalkingboots = true;
-			}
-	}
-
-	node_t* node2; //For traversing the map looking for...liquids?
-	//Check if swimming.
-	if (!waterwalkingboots && !levitating && !trap && player >= 0)
-	{
-		bool swimming = false;
-		if (players[player] && players[player]->entity)
-		{
-			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
-			{
-				swimming = true;
-			}
-		}
-		if (swimming)
-		{
-			//Can't cast spells while swimming if not levitating or water walking.
-			if (player >= 0)
-			{
-				messagePlayer(player, language[410]);
-			}
-			return nullptr;
 		}
 	}
 
