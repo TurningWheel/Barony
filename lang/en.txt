@@ -2910,7 +2910,7 @@ client (player %d) (direct ip)#
 2282 blank spellbook 5#
 2283 spellbook#
 2284 empty bottle#
-2285 empty bottle#
+2285 empty bottle#                                
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2923,6 +2923,11 @@ client (player %d) (direct ip)#
 2357 The crystal seems locked in place.#
 2358 The crystal begins to move!#
 2359 You can't drink an empty bottle!#
+2360 You pull the lever, but the mechanism still seems inactive.#
+2361 The lever grinds further along with resistance.#
+2362 You hear a click from the mechanism!#
+2363 You attempt to pull the lever back,
+but it retracts beyond your might!#
 
 #New spells (2390-2399)
 2390 Conjure Familiar#
@@ -2978,6 +2983,6 @@ dominate the %s into your service!#
 2475 But you feel some energy go out and it bounces off!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
-
-
+   
+                         
 2499 end#

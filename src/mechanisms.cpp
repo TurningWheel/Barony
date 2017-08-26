@@ -202,16 +202,16 @@ void actSwitchWithTimer(Entity* my)
 					switch ( my->leverStatus )
 					{
 						case 0:
-							messagePlayer(i, language[2359]);
-							break;
-						case 1:
 							messagePlayer(i, language[2360]);
 							break;
-						case 2:
+						case 1:
 							messagePlayer(i, language[2361]);
 							break;
-						default:
+						case 2:
 							messagePlayer(i, language[2362]);
+							break;
+						default:
+							messagePlayer(i, language[2363]);
 							break;
 					}
 
