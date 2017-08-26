@@ -2453,7 +2453,7 @@ void actPlayer(Entity* my)
 			case 6:
 				if ( multiplayer != CLIENT )
 				{
-					if ( swimming )
+					if ( isPlayerSwimming == true )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2562,7 +2562,7 @@ void actPlayer(Entity* my)
 			case 7:
 				if ( multiplayer != CLIENT )
 				{
-					if ( swimming )
+					if ( isPlayerSwimming == true )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
