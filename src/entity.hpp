@@ -375,6 +375,13 @@ public:
 	 */
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
 
+	/*
+	 * Attempts to set the target to 0.
+	 * May refuses to do so and consequently return false in cases such as the shadow, which cannot lose its target until it's dead.
+	 * Returns true otherwise, if successfully zero-d out target.
+	 */
+	bool monsterReleaseAttackTarget();
+
 	//Lets monsters swap out weapons.
 	void inline chooseWeapon(const Entity* target, double dist)
 	{

@@ -2013,7 +2013,7 @@ void actMonster(Entity* my)
 		}
 
 		// state machine
-		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
+		if ( my->monsterState == MONSTER_STATE_WAIT ) // wait state
 		{
 			my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
 			MONSTER_VELX = 0;

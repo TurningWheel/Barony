@@ -7361,6 +7361,18 @@ void Entity::giveClientStats()
 
 void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 {
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( !monsterReleaseAttackTarget() )
+	{
+		messagePlayer(clientnum, "Entity failed to acquire target!");
+		return;
+	}
+
 	messagePlayer(clientnum, "Entity acquired target!");
 
 	monsterState = state;
@@ -7375,23 +7387,24 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	//chooseWeapon();
 }
 
-/*void Entity::chooseWeapon()
+bool Entity::monsterReleaseAttackTarget()
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
-		return;
+		return false;
 	}
 
-	switch ( myStats->type )
+	if ( monsterTarget && uidToEntity(monsterTarget) && myStats->type == SHADOW )
 	{
-		case GOATMAN:
-			goatmanChooseWeapon();
-			break;
-		default:
-			break;
+		messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
+		return false; //Shadow cannot lose its target.
 	}
-}*/
+
+	monsterTarget = 0;
+
+	return true;
+}
 
 void Entity::checkGroundForItems()
 {
