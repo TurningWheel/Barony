@@ -1947,7 +1947,7 @@ void actPlayer(Entity* my)
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
-							if (bodypart == 2 && dist > .4 && !levitating && !swimming)
+							if ( bodypart == 2 && dist > .4 && !levitating && isPlayerSwimming != true )
 							{
 								node_t* tempNode = list_Node(&my->children, 2);
 								if ( tempNode )
@@ -1975,7 +1975,7 @@ void actPlayer(Entity* my)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if (bodypart == 2 && dist > .4 && !levitating && !swimming)
+							if ( bodypart == 2 && dist > .4 && !levitating && isPlayerSwimming != true )
 							{
 								node_t* tempNode = list_Node(&my->children, 2);
 								if ( tempNode )
