@@ -1076,7 +1076,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 {
-	if ( monsterSpecialAttackState == 1 )
+	if ( monsterSpecialState == 1 )
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
 		//messagePlayer()
@@ -1112,14 +1112,14 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	node_t* hasPotion = nullptr;
 	bool isHealingPotion = false;
 
-	if ( monsterSpecialAttackTimer == 0 )
+	if ( monsterSpecialTimer == 0 )
 	{
 		//messagePlayer(clientnum, "Cooldown done!");
 		specialRoll = rand()%20;
 
 		if ( specialRoll == 0 )
 		{
-			monsterSpecialAttackTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
+			monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
 			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
 			{
 				//Try to get a health potion.
@@ -1138,7 +1138,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 						}
 						else
 						{
-							monsterSpecialAttackState = 1;
+							monsterSpecialState = 1;
 							return;
 						}
 					}
@@ -1179,7 +1179,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 					}
 					else
 					{
-						monsterSpecialAttackState = 1;
+						monsterSpecialState = 1;
 						return;
 					}
 				}
@@ -1195,7 +1195,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			}
 			else
 			{
-				monsterSpecialAttackState = 1;
+				monsterSpecialState = 1;
 				return;
 			}
 		}
@@ -1236,7 +1236,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		}
 		else
 		{
-			monsterSpecialAttackState = 1;
+			monsterSpecialState = 1;
 			return;
 		}
 	}

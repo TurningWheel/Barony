@@ -101,7 +101,7 @@ public:
 	~Entity();
 
 
-	Uint32 getUID() const { return uid; }
+	Uint32 getUID() const {return uid;}
 	void setUID(Uint32 new_uid);
 	Uint32 ticks;                  // duration of the entity's existence
 	real_t x, y, z;                // world coordinates
@@ -147,9 +147,9 @@ public:
 	Sint32& monsterTarget; //skill[1]
 	real_t& monsterTargetX; //fskill[2]
 	real_t& monsterTargetY; //fskill[3]
-	Sint32& monsterSpecialAttackTimer;
+	Sint32& monsterSpecialTimer;
 	//Only used by goatman.
-	Sint32& monsterSpecialAttackState; //skill[33]
+	Sint32& monsterSpecialState; //skill[33]
 	Sint32& monsterSpellAnimation;
 	Sint32& monsterFootstepType;
 	Sint32& monsterLookTime;
