@@ -975,7 +975,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMOVE -= .03;
 				}
 			}
-			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && !swimming)
+			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && isPlayerSwimming != true)
 			{
 				if (!stats[clientnum]->defending)
 				{
@@ -1631,12 +1631,14 @@ void actPlayer(Entity* my)
 
 		// swimming slows you down
 		bool amuletwaterbreathing = false;
-		if ( stats[PLAYER_NUM]->amulet != NULL )
-			if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
-			{
-				amuletwaterbreathing = true;
-			}
-		if ( swimming && !amuletwaterbreathing )
+        if ( stats[PLAYER_NUM]->amulet != NULL )
+        {
+            if ( stats[PLAYER_NUM]->amulet->type == AMULET_WATERBREATHING )
+            {
+                amuletwaterbreathing = true;
+            }
+        }
+		if ( isPlayerSwimming == true && !amuletwaterbreathing )
 		{
 			PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
 			PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
