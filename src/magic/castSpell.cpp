@@ -110,6 +110,17 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
+    // Check to make sure the Caster is not swimming
+    if ( isSwimming(caster) == true )
+    {
+        // If the Caster is a Player, tell them they cannot cast while swimming
+        if ( player >= 0 )
+        {
+            messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
+        }
+        return;
+    }
+
 	if ( stat->EFFECTS[EFF_PARALYZED] )
 	{
 		return;
