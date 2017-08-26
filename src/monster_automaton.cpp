@@ -1084,9 +1084,9 @@ void Entity::automatonRecycleItem()
 	node_t* nextnode = nullptr;
 	int numItemsHeld = list_Size(&myStats->inventory);
 
-	if ( this->monsterSpecialTimer > 0 )
+	if ( this->monsterSpecialAttackTimer > 0 )
 	{
-		--this->monsterSpecialTimer;
+		--this->monsterSpecialAttackTimer;
 		return;
 	}
 	else if ( numItemsHeld < 2 )
@@ -1094,9 +1094,9 @@ void Entity::automatonRecycleItem()
 		return;
 	}
 	
-	if (this->monsterSpecialTimer == 0)
+	if (this->monsterSpecialAttackTimer == 0)
 	{
-		this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
+		this->monsterSpecialAttackTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
 	}
 
 	int i = 0;

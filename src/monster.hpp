@@ -380,6 +380,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_INVISTELEATTACK = 500; //Shadow invisible teleport attack.
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
