@@ -219,7 +219,7 @@ void actHudWeapon(Entity* my)
     {
         if ( isSwimming(players[clientnum]->entity) == true )
         {
-            // Player is swimming, hide their arms
+            // Player is swimming, hide their weapon
             my->flags[INVISIBLE] = true;
             if ( parent )
             {
@@ -1377,26 +1377,22 @@ void actHudShield(Entity* my)
 		}
 	}
 
-	// swimming
-	bool swimming = false;
-	if (players[clientnum] && players[clientnum]->entity)
-	{
-		if (!levitating && !waterwalkingboots) //TODO: Swimming capstone?
-		{
-			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
-			{
-				my->flags[INVISIBLE] = true;
-				Entity* parent = uidToEntity(my->parent);
-				if (parent)
-				{
-					parent->flags[INVISIBLE] = true;
-				}
-				swimming = true;
-			}
-		}
-	}
+    // Check to make sure the Player is not swimming
+    bool isPlayerSwimming = false;
+    if ( players[clientnum] && players[clientnum]->entity )
+    {
+        if ( isSwimming(players[clientnum]->entity) == true )
+        {
+            // Player is swimming, hide their shield
+            my->flags[INVISIBLE] = true;
+            Entity* parent = uidToEntity(my->parent);
+            if ( parent )
+            {
+                parent->flags[INVISIBLE] = true;
+            }
+            isPlayerSwimming = true;
+        }
+    }
 
 	if (cast_animation.active)
 	{
@@ -1404,7 +1400,7 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
-	if (!command && !swimming)
+	if ( !command && isPlayerSwimming == false )
 	{
 		if (stats[clientnum]->shield)
 		{
@@ -1563,7 +1559,7 @@ void actHudShield(Entity* my)
 
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
-	if (stats[clientnum]->shield && !swimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch)
+	if (stats[clientnum]->shield && isPlayerSwimming == false && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch)
 	{
 		if (itemCategory(stats[clientnum]->shield) == TOOL)
 		{
