@@ -882,76 +882,80 @@ void actPlayer(Entity* my)
 		}
 	}
 
-	// swimming
-	bool waterwalkingboots = false;
-	if ( stats[PLAYER_NUM]->shoes != NULL )
-		if ( stats[PLAYER_NUM]->shoes->type == IRON_BOOTS_WATERWALKING )
-		{
-			waterwalkingboots = true;
-		}
-	bool swimming = false;
-	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
-	{
-		if ( !levitating && !waterwalkingboots && !noclip && !skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
-		{
-			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
-			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
-			if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
-			{
-				if ( rand() % 400 == 0 && multiplayer != CLIENT )
-				{
-					my->increaseSkill(PRO_SWIMMING);
-				}
-				swimming = true;
-				my->z = 7;
-				if ( !PLAYER_INWATER && PLAYER_NUM == clientnum )
-				{
-					PLAYER_INWATER = 1;
-					if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
-					{
-						messagePlayer(PLAYER_NUM, language[573]);
-					}
-					else
-					{
-						playSound(136, 128);
-					}
-				}
-				if ( multiplayer != CLIENT )
-				{
-					if ( !lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
-					{
-						if ( my->flags[BURNING] )
-						{
-							my->flags[BURNING] = false;
-							messagePlayer(PLAYER_NUM, language[574]);
-							if ( PLAYER_NUM > 0 )
-							{
-								serverUpdateEntityFlag(my, BURNING);
-							}
-						}
-					}
-					else if ( ticks % 10 == 0 )
-					{
-						my->modHP(-2 - rand() % 2);
-						my->setObituary(language[1506]);
-						if ( !my->flags[BURNING] )
-						{
-							my->flags[BURNING] = true;
-							if ( PLAYER_NUM > 0 )
-							{
-								serverUpdateEntityFlag(my, BURNING);
-							}
-						}
-					}
-				}
-			}
-		}
-	}
-	if (!swimming)
-		if (PLAYER_INWATER)
-		{
-			PLAYER_INWATER = 0;
-		}
+    // Check to make sure the Player is not swimming
+    bool isPlayerSwimming = false;
+    if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
+    {
+        if ( isSwimming(players[clientnum]->entity) == true && noclip == false && skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) == false )
+        {
+            // Player is swimming, lower them into the water
+            isPlayerSwimming = true;
+            my->z = 7;
+
+            // Store their map position for future checks
+            int playerMapX = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
+            int playerMapY = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
+
+            // Check to increase their swimming level
+            if ( rand() % 400 == 0 && multiplayer != CLIENT )
+            {
+                my->increaseSkill(PRO_SWIMMING);
+            }
+
+            // Check if they are in lava
+            if ( !PLAYER_INWATER && PLAYER_NUM == clientnum )
+            {
+                PLAYER_INWATER = 1;
+                if ( lavatiles[map.tiles[playerMapY * MAPLAYERS + playerMapX * MAPLAYERS * map.height]] )
+                {
+                    messagePlayer(PLAYER_NUM, language[573]); // "You've fallen in boiling lava!"
+                }
+                else
+                {
+                    playSound(136, 128); // "Splash1V1.ogg"
+                }
+            }
+
+            // Check to remove Fire status if stepping in water
+            if ( multiplayer != CLIENT )
+            {
+                if ( !lavatiles[map.tiles[playerMapY * MAPLAYERS + playerMapX * MAPLAYERS * map.height]] )
+                {
+                    if ( my->flags[BURNING] )
+                    {
+                        my->flags[BURNING] = false;
+                        messagePlayer(PLAYER_NUM, language[574]); // "The water extinguishes the flames!"
+                        if ( PLAYER_NUM > 0 )
+                        {
+                            serverUpdateEntityFlag(my, BURNING);
+                        }
+                    }
+                }
+                else if ( ticks % 10 == 0 ) // Player is in lava, burn them
+                {
+                    my->modHP(-2 - rand() % 2);
+                    my->setObituary(language[1506]); // "goes for a swim in some lava."
+                    if ( !my->flags[BURNING] )
+                    {
+                        my->flags[BURNING] = true;
+                        if ( PLAYER_NUM > 0 )
+                        {
+                            serverUpdateEntityFlag(my, BURNING);
+                        }
+                    }
+                }
+            }
+        }
+    }			
+	
+    // Update PLAYER_INWATER flag
+    if ( isPlayerSwimming != true )
+    {
+        if ( PLAYER_INWATER )
+        {
+            PLAYER_INWATER = 0;
+        }
+    }
 
 	if (PLAYER_NUM == clientnum)
 	{
@@ -960,7 +964,7 @@ void actPlayer(Entity* my)
 		// camera bobbing
 		if (bobbing)
 		{
-			if ( swimming )
+			if ( isPlayerSwimming == true )
 			{
 				if ( PLAYER_BOBMODE )
 				{
@@ -996,13 +1000,13 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
-			else if ( !swimming )
+			else if ( isPlayerSwimming != true )
 			{
 				PLAYER_BOBMOVE = 0;
 				PLAYER_BOB = 0;
 				PLAYER_BOBMODE = 0;
 			}
-			if ( !swimming && !stats[clientnum]->defending )
+            if ( isPlayerSwimming != true && !stats[clientnum]->defending )
 			{
 				if ( PLAYER_BOBMOVE > .2 )
 				{
@@ -1015,7 +1019,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMODE = 1;
 				}
 			}
-			else if ( swimming )
+			else if ( isPlayerSwimming == true )
 			{
 				if ( PLAYER_BOBMOVE > .3 )
 				{
