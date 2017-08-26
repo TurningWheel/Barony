@@ -2007,6 +2007,11 @@ void actMonster(Entity* my)
 			}
 		}
 
+		if ( myStats->type != LICH && myStats->type != DEVIL && my->monsterSpecialTimer > 0 )
+		{
+			--my->monsterSpecialTimer;
+		}
+
 		// state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
 		{
@@ -4368,11 +4373,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	Stat* hitstats = nullptr;
 	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
-
-	if ( myStats->type != LICH && myStats->type != DEVIL && this->monsterSpecialTimer > 0 )
-	{
-		--this->monsterSpecialTimer;
-	}
 
 	//TODO: Goatman choose weapon.
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
