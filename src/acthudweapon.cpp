@@ -214,35 +214,20 @@ void actHudWeapon(Entity* my)
 		throwGimpTimer--;
 	}
 
-	// check levitating value
-	bool levitating = isLevitating(stats[clientnum]);
-
-	// water walking boots
-	bool waterwalkingboots = false;
-	if (stats[clientnum]->shoes != nullptr)
-		if ( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING )
-		{
-			waterwalkingboots = true;
-		}
-
-	// swimming
-	if (players[clientnum] && players[clientnum]->entity)
-	{
-		if (!levitating && !waterwalkingboots)
-		{
-			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
-			{
-				my->flags[INVISIBLE] = true;
-				if (parent)
-				{
-					parent->flags[INVISIBLE] = true;
-				}
-				return;
-			}
-		}
-	}
+    // Check to make sure the Player is not swimming
+    if ( players[clientnum] && players[clientnum]->entity )
+    {
+        if ( isSwimming(players[clientnum]->entity) == true )
+        {
+            // Player is swimming, hide their arms
+            my->flags[INVISIBLE] = true;
+            if ( parent )
+            {
+                parent->flags[INVISIBLE] = true;
+            }
+            return;
+        }
+    }
 
 	// select model
 	if ( stats[clientnum]->ring != nullptr )
