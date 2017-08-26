@@ -6127,6 +6127,53 @@ bool isLevitating(Stat* mystats)
 
 /*-------------------------------------------------------------------------------
 
+isSwimming
+
+Returns true if the given Entity is swimming, or false if it is not
+
+-------------------------------------------------------------------------------*/
+
+bool isSwimming(Entity* entity)
+{
+    if ( entity == nullptr )
+    {
+        return false;
+    }
+
+    Stat* entityStats = entity->getStats();
+    if ( entityStats == nullptr )
+    {
+        return false;
+    }
+
+    // If the Entity is levitating, they are not swimming
+    if ( isLevitating(entityStats) )
+    {
+        return false;
+    }
+
+    // If the Entity has waterwalking boots, they are not swimming
+    if ( entityStats->shoes != nullptr )
+    {
+        if ( entityStats->shoes->type == IRON_BOOTS_WATERWALKING )
+        {
+            return false;
+        }
+    }
+
+    // If both cases are false, the Entity could potentially be swimming
+    int x = std::min<int>(std::max<int>(0, floor(entity->x / 16)), map.width - 1);
+    int y = std::min<int>(std::max<int>(0, floor(entity->y / 16)), map.height - 1);
+    if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+    {
+        return true; // The Entity is in a water tile, so must be swimming
+    }
+
+    return false;
+}
+
+/*-------------------------------------------------------------------------------
+
 getWeaponSkill
 
 returns the proficiency for the weapon equipped.

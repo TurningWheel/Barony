@@ -518,6 +518,7 @@ static const int SPRITE_BOOT_LEFT_OFFSET = 2;
 
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
+bool isSwimming(Entity* entity);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
