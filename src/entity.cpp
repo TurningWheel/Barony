@@ -2291,7 +2291,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						entity->x = this->x;
 						entity->y = this->y;
-                        entity->z = 8.0;
+                        entity->z = 8.0 + (rand() % 20) / 100.0;
 						entity->parent = this->uid;
 						entity->sizex = 2;
 						entity->sizey = 2;
