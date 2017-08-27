@@ -886,7 +886,7 @@ void actPlayer(Entity* my)
     bool isPlayerSwimming = false;
     if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
     {
-        if ( isSwimming(players[clientnum]->entity) == true && noclip == false && skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) == false )
+        if ( isSwimming(players[PLAYER_NUM]->entity) == true && noclip == false && skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) == false )
         {
             // Player is swimming, lower them into the water
             isPlayerSwimming = true;
@@ -902,7 +902,7 @@ void actPlayer(Entity* my)
                 my->increaseSkill(PRO_SWIMMING);
             }
 
-            // Check if they are in lava
+            // Process initial step into swimming tile
             if ( !PLAYER_INWATER && PLAYER_NUM == clientnum )
             {
                 PLAYER_INWATER = 1;
