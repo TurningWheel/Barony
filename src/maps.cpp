@@ -2759,7 +2759,7 @@ void assignActions(map_t* map)
 				//entity->sprite = 164; //No sprite.
 				entity->skill[28] = 1; //It's a depowered powerable.
 				break;
-			//East/west gate: //TODO: Adjust this. It's a copypaste of door.
+			//North/South gate: //TODO: Adjust this. It's a copypaste of door.
 			case 19:
 				entity->x += 8;
 				entity->y += 8;
@@ -2767,6 +2767,7 @@ void assignActions(map_t* map)
 				entity->sprite = 1;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
+
 				//entity->skill[28] = 1; //It's a mechanism.
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
@@ -2775,9 +2776,12 @@ void assignActions(map_t* map)
 				childEntity->sizex = 8;
 				childEntity->sizey = 1;
 				childEntity->yaw -= PI / 2.0;
+				childEntity->gateInverted = 0; // non-inverted
+				childEntity->gateStatus = 0; // closed.
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -2787,6 +2791,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -2797,22 +2802,26 @@ void assignActions(map_t* map)
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
 				break;
-			//North/south gate: //TODO: Adjust this. It's a copypaste of door.
+			//East/west gate: //TODO: Adjust this. It's a copypaste of door.
 			case 20:
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 1;
 				entity->flags[PASSABLE] = true;
 				entity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(186, 0, map->entities);
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
 				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
 				childEntity->sizex = 1;
 				childEntity->sizey = 8;
+				childEntity->gateInverted = 0; // non-inverted
+				childEntity->gateStatus = 0; // closed.
 				childEntity->skill[28] = 1; //It's a mechanism.
 				childEntity->behavior = &actGate;
 				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -2822,6 +2831,7 @@ void assignActions(map_t* map)
 				childEntity->sizex = 2;
 				childEntity->sizey = 2;
 				childEntity->behavior = &actDoorFrame;
+
 				childEntity = newEntity(1, 0, map->entities);
 				childEntity->flags[INVISIBLE] = true;
 				childEntity->flags[BLOCKSIGHT] = true;
@@ -3320,7 +3330,7 @@ void assignActions(map_t* map)
 				entity->x += 1;
 				entity->y += 8;
 				entity->z -= 1;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3339,7 +3349,7 @@ void assignActions(map_t* map)
 				entity->y += 1;
 				entity->z -= 1;
 				entity->yaw += PI / 2.0;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3358,7 +3368,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z -= 1;
 				entity->yaw += PI;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3377,7 +3387,7 @@ void assignActions(map_t* map)
 				entity->y += 15;
 				entity->z -= 1;
 				entity->yaw += 3 * PI / 2.0;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3553,6 +3563,8 @@ void assignActions(map_t* map)
 
 				childEntity->x = entity->x;
 				childEntity->y = entity->y;
+				childEntity->sizex = 4;
+				childEntity->sizey = 4;
 				childEntity->crystalStartZ = entity->z - 10; //start position
 				childEntity->z = childEntity->crystalStartZ - 0.4 + ((prng_get_uint() % 8) * 0.1); // start the height randomly
 				childEntity->crystalMaxZVelocity = 0.02; //max velocity
@@ -3617,7 +3629,7 @@ void assignActions(map_t* map)
 				entity->sizex = 8;
 				entity->sizey = 8;
 				entity->z = -7.75;
-				entity->behavior = &actStalag;
+				entity->behavior = &actStalagColumn;
 				break;
 			case 109: //stalagmite single
 				entity->x += 8;
@@ -3626,7 +3638,7 @@ void assignActions(map_t* map)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->z = 1.75;
-				entity->behavior = &actStalag;
+				entity->behavior = &actStalagFloor;
 				break;
 			case 110: //stalagmite multiple
 				entity->x += 8;
@@ -3635,7 +3647,7 @@ void assignActions(map_t* map)
 				entity->sizex = 7;
 				entity->sizey = 7;
 				entity->z = -1;
-				entity->behavior = &actStalag;
+				entity->behavior = &actStalagFloor;
 				break;
 			case 111: //stalagtite single
 				entity->x += 8;
@@ -3646,7 +3658,7 @@ void assignActions(map_t* map)
 				entity->z = -1.75;
 				x = entity->x / 16;
 				y = entity->y / 16;
-				entity->behavior = &actStalag;
+				entity->behavior = &actStalagCeiling;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{
 					if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
@@ -3665,7 +3677,7 @@ void assignActions(map_t* map)
 				entity->z = 1;
 				x = entity->x / 16;
 				y = entity->y / 16;
-				entity->behavior = &actStalag;
+				entity->behavior = &actStalagCeiling;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{
 					if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
@@ -3674,6 +3686,113 @@ void assignActions(map_t* map)
 						entity->z -= 16;
 					}
 				}
+				break;
+			//North/South gate inverted: //TODO: Adjust this. It's a copypaste of door.
+			case 113:
+				entity->x += 8;
+				entity->y += 8;
+				entity->yaw -= PI / 2.0;
+				entity->sprite = 1;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actDoorFrame;
+
+				//entity->skill[28] = 1; //It's a mechanism.
+				childEntity = newEntity(186, 0, map->entities);
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				//printlog("23 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 8;
+				childEntity->sizey = 1;
+				childEntity->yaw -= PI / 2.0;
+				childEntity->gateInverted = 1; // inverted.
+				childEntity->gateStatus = 1; // open.
+				childEntity->skill[28] = 1; //It's a mechanism.
+				childEntity->behavior = &actGate;
+				childEntity->skill[0] = 1; // signify behavior code of DOOR_DIR
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x - 7;
+				childEntity->y = entity->y;
+				//printlog("24 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x + 7;
+				childEntity->y = entity->y;
+				//printlog("25 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+				break;
+			//East/west gate inverted: //TODO: Adjust this. It's a copypaste of door.
+			case 114:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 1;
+				entity->flags[PASSABLE] = true;
+				entity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(186, 0, map->entities);
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				//printlog("26 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 1;
+				childEntity->gateInverted = 1; // inverted.
+				childEntity->gateStatus = 1; // open.
+				childEntity->sizey = 8;
+				childEntity->skill[28] = 1; //It's a mechanism.
+				childEntity->behavior = &actGate;
+				childEntity->skill[0] = 0; // signify behavior code of DOOR_DIR
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y - 7;
+				//printlog("27 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+
+				childEntity = newEntity(1, 0, map->entities);
+				childEntity->flags[INVISIBLE] = true;
+				childEntity->flags[BLOCKSIGHT] = true;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y + 7;
+				//printlog("28 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->behavior = &actDoorFrame;
+				break;
+			//Switch with timer.
+			case 115:
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7;
+				entity->sprite = 585; // this is the switch base.
+				entity->flags[PASSABLE] = true;
+				childEntity = newEntity(586, 0, map->entities);
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				//printlog("22 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+				childEntity->z = 8;
+				childEntity->leverTimerTicks = std::max(entity->leverTimerTicks, 1) * TICKS_PER_SECOND; // convert seconds to ticks from editor, make sure not less than 1
+				childEntity->leverStatus = 0; // set default to off.
+				childEntity->focalz = -4.5;
+				childEntity->sizex = 1;
+				childEntity->sizey = 1;
+				childEntity->sprite = 586; // this is the switch handle.
+				childEntity->roll = -PI / 4; // "off" position
+				childEntity->flags[PASSABLE] = true;
+				childEntity->behavior = &actSwitchWithTimer;
 				break;
 			default:
 				break;

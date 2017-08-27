@@ -132,6 +132,11 @@ char monsterItemPropertyNames[7][36] =
 	"Category: (0-16, if default_random)"
 };
 
+char leverTimerPropertyNames[1][26] =
+{
+	"Powered Duration (1-999s)"
+};
+
 int recentUsedTiles[9][9] = { 0 };
 int recentUsedTilePalette = 0;
 int lockTilePalette[9] = { 0 };
@@ -3639,172 +3644,271 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 7 )
 				{
+					if ( selectedEntity != NULL )
+					{
+						int numProperties = sizeof(powerCrystalPropertyNames) / sizeof(powerCrystalPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(powerCrystalPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int pad_y1 = suby1 + 28; // 28 px spacing from subwindow start.
+						int pad_x1 = subx1 + 8; // 8px spacing from subwindow start.
+						int pad_x2 = 64;
+						int pad_x3 = pad_x1 + pad_x2 + 8;
+						int pad_y2 = 0;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, powerCrystalPropertyNames[i]);
+							pad_y1 = suby1 + 28 + i * spacing;
+							pad_y2 = suby1 + 44 + i * spacing;
+							// box outlines then text
+							drawDepressed(pad_x1 - 4, suby1 + 40 + i * spacing, pad_x1 - 4 + pad_x2, suby1 + 56 + i * spacing);
+							// print values on top of boxes
+							printText(font8x8_bmp, pad_x1, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, pad_x1, pad_y1, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 3 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										if ( propertyInt == 0 )
+										{
+											strcpy(tmpStr, "EAST");
+										}
+										else if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "SOUTH");
+										}
+										else if ( propertyInt == 2 )
+										{
+											strcpy(tmpStr, "WEST");
+										}
+										else if ( propertyInt == 3 )
+										{
+											strcpy(tmpStr, "NORTH");
+										}
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 99 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
+									}
+									else
+									{
+										color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										char tmpStr[32] = "";
+										strcpy(tmpStr, spriteProperties[i]); //reset
+										strcat(tmpStr, " Tiles to power in facing direction");
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Clockwise");
+									}
+									else if ( propertyInt == 1 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Counter-Clockwise");
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										errorMessage = 60;
+										errorArr[i] = 1;
+										snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+									}
+									else if ( propertyInt == 0 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Always on");
+									}
+									else if ( propertyInt == 1 )
+									{
+										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Requires spell to activate");
+									}
+								}
+							}
+
+							if ( errorMessage )
+							{
+								color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
+								}
+							}
+
+							pad_x1 = subx1 + 8;
+						}
+
+						// print out directions
+						pad_x1 += 54;
+						spacing = 18;
+						pad_y1 = suby1 + 28 + 8 * spacing;
+						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "NORTH(3)");
+						pad_y1 = suby1 + 28 + 9 * spacing;
+						printText(font8x8_bmp, pad_x1, pad_y1, "WEST(2)");
+						printText(font8x8_bmp, pad_x1 + 96 - 16, pad_y1, "EAST(0)");
+						pad_y1 = suby1 + 28 + 10 * spacing;
+						printText(font8x8_bmp, pad_x1 + 32, pad_y1, "SOUTH(1)");
+						spacing = 36;
+
+						// Cycle properties with TAB.
+						if ( keystatus[SDL_SCANCODE_TAB] )
+						{
+							keystatus[SDL_SCANCODE_TAB] = 0;
+							cursorflash = ticks;
+							editproperty++;
+							if ( editproperty == numProperties )
+							{
+								editproperty = 0;
+							}
+
+							inputstr = spriteProperties[editproperty];
+						}
+
+						// select a textbox
+						if ( mousestatus[SDL_BUTTON_LEFT] )
+						{
+							for ( int i = 0; i < numProperties; i++ )
+							{
+								pad_x1 = subx1 + 8;
+								if ( omousex >= pad_x1 - 4 && omousey >= suby1 + 40 + i * spacing && omousex < pad_x1 - 4 + pad_x2 && omousey < suby1 + 56 + i * spacing )
+								{
+									inputstr = spriteProperties[i];
+									editproperty = i;
+									cursorflash = ticks;
+								}
+							}
+						}
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+							if ( editproperty == 1 )
+							{
+								inputlen = 2;
+							}
+							else
+							{
+								inputlen = 1;
+							}
+							if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+							{
+								printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing, "\26");
+							}
+						}
+					}
+				}
+				else if ( newwindow == 8 )
+				{
 					{
 						if ( selectedEntity != NULL )
 						{
-							int numProperties = sizeof(powerCrystalPropertyNames) / sizeof(powerCrystalPropertyNames[0]); //find number of entries in property list
-							const int lenProperties = sizeof(powerCrystalPropertyNames[0]) / sizeof(char); //find length of entry in property list
+							int numProperties = sizeof(leverTimerPropertyNames) / sizeof(leverTimerPropertyNames[0]); //find number of entries in property list
+							const int lenProperties = sizeof(leverTimerPropertyNames[0]) / sizeof(char); //find length of entry in property list
 							int spacing = 36; // 36 px between each item in the list.
-							int pad_y1 = suby1 + 28; // 28 px spacing from subwindow start.
-							int pad_x1 = subx1 + 8; // 8px spacing from subwindow start.
-							int pad_x2 = 64;
-							int pad_x3 = pad_x1 + pad_x2 + 8;
-							int pad_y2 = 0;
+							int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+							int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+							int inputField_y = inputFieldHeader_y + 16;
+							int inputFieldWidth = 64; // width of the text field
+							int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
 							char tmpPropertyName[lenProperties] = "";
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 							Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+							Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 
 							for ( int i = 0; i < numProperties; i++ )
 							{
 								int propertyInt = atoi(spriteProperties[i]);
 
-								strcpy(tmpPropertyName, powerCrystalPropertyNames[i]);
-								pad_y1 = suby1 + 28 + i * spacing;
-								pad_y2 = suby1 + 44 + i * spacing;
+								strcpy(tmpPropertyName, leverTimerPropertyNames[i]);
+								inputFieldHeader_y = suby1 + 28 + i * spacing;
+								inputField_y = inputFieldHeader_y + 16;
 								// box outlines then text
-								drawDepressed(pad_x1 - 4, suby1 + 40 + i * spacing, pad_x1 - 4 + pad_x2, suby1 + 56 + i * spacing);
+								drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
 								// print values on top of boxes
-								printText(font8x8_bmp, pad_x1, suby1 + 44 + i * spacing, spriteProperties[i]);
-								printText(font8x8_bmp, pad_x1, pad_y1, tmpPropertyName);
+								printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+								printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
 
 								if ( errorArr[i] != 1 )
 								{
 									if ( i == 0 )
 									{
-										if ( propertyInt > 3 || propertyInt < 0 )
+										if ( propertyInt > 999 || propertyInt < 0 )
 										{
-											errorMessage = 60;
-											errorArr[i] = 1;
-											snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
+											propertyPageError(i, 5); // reset to default 5 seconds.
 										}
 										else
 										{
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 											char tmpStr[32] = "";
 											if ( propertyInt == 0 )
 											{
-												strcpy(tmpStr, "EAST");
+												strcpy(tmpStr, "Value must be > 0!");
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
 											}
-											else if ( propertyInt == 1 )
+											else
 											{
-												strcpy(tmpStr, "SOUTH");
+												if ( propertyInt == 1 )
+												{
+													strcpy(tmpStr, "second");
+												}
+												else
+												{
+													strcpy(tmpStr, "seconds");
+												}
+												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 											}
-											else if ( propertyInt == 2 )
-											{
-												strcpy(tmpStr, "WEST");
-											}
-											else if ( propertyInt == 3 )
-											{
-												strcpy(tmpStr, "NORTH");
-											}
-											printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
 										}
 									}
-									else if ( i == 1 )
+									else
 									{
-										if ( propertyInt > 99 || propertyInt < 0 )
-										{
-											errorMessage = 60;
-											errorArr[i] = 1;
-											snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 1); //reset
-										}
-										else
-										{
-											color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-											char tmpStr[32] = "";
-											strcpy(tmpStr, spriteProperties[i]); //reset
-											strcat(tmpStr, " Tiles to power in facing direction");
-											printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, tmpStr);
-										}
-									}
-									else if ( i == 2 )
-									{
-										if ( propertyInt > 1 || propertyInt < 0 )
-										{
-											errorMessage = 60;
-											errorArr[i] = 1;
-											snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
-										}
-										else if ( propertyInt == 0 )
-										{
-											printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Clockwise");
-										}
-										else if ( propertyInt == 1 )
-										{
-											printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Counter-Clockwise");
-										}
-									}
-									else if ( i == 3 )
-									{
-										if ( propertyInt > 1 || propertyInt < 0 )
-										{
-											errorMessage = 60;
-											errorArr[i] = 1;
-											snprintf(spriteProperties[i], sizeof(spriteProperties[i]), "%d", 0); //reset
-										}
-										else if ( propertyInt == 0 )
-										{
-											printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, colorRandom, "Always on");
-										}
-										else if ( propertyInt == 1 )
-										{
-											printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Requires spell to activate");
-										}
+										// enter other row entries here
 									}
 								}
 
 								if ( errorMessage )
 								{
-									color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 									if ( errorArr[i] == 1 )
 									{
-										printTextFormattedColor(font8x8_bmp, pad_x3, pad_y2, color, "Invalid ID!");
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
 									}
 								}
-
-								pad_x1 = subx1 + 8;
 							}
 
-							// print out directions
-							pad_x1 += 54;
-							spacing = 18;
-							pad_y1 = suby1 + 28 + 8 * spacing;
-							printText(font8x8_bmp, pad_x1 + 32, pad_y1, "NORTH(3)");
-							pad_y1 = suby1 + 28 + 9 * spacing;
-							printText(font8x8_bmp, pad_x1, pad_y1, "WEST(2)");
-							printText(font8x8_bmp, pad_x1 + 96 - 16, pad_y1, "EAST(0)");
-							pad_y1 = suby1 + 28 + 10 * spacing;
-							printText(font8x8_bmp, pad_x1 + 32, pad_y1, "SOUTH(1)");
-							spacing = 36;
+							propertyPageTextAndInput(numProperties, inputFieldWidth);
 
-							// Cycle properties with TAB.
-							if ( keystatus[SDL_SCANCODE_TAB] )
-							{
-								keystatus[SDL_SCANCODE_TAB] = 0;
-								cursorflash = ticks;
-								editproperty++;
-								if ( editproperty == numProperties )
-								{
-									editproperty = 0;
-								}
-
-								inputstr = spriteProperties[editproperty];
-							}
-
-							// select a textbox
-							if ( mousestatus[SDL_BUTTON_LEFT] )
-							{
-								for ( int i = 0; i < numProperties; i++ )
-								{
-									if ( omousex >= pad_x1 - 4 && omousey >= suby1 + 40 + i * spacing && omousex < pad_x1 - 4 + pad_x2 && omousey < suby1 + 56 + i * spacing )
-									{
-										inputstr = spriteProperties[i];
-										editproperty = i;
-										cursorflash = ticks;
-									}
-									pad_x1 = subx1 + 8;
-								}
-							}
 							if ( editproperty < numProperties )   // edit
 							{
 								if ( !SDL_IsTextInputActive() )
@@ -3812,18 +3916,17 @@ int main(int argc, char** argv)
 									SDL_StartTextInput();
 									inputstr = spriteProperties[0];
 								}
-								if ( editproperty == 1 )
+
+								// set the maximum length allowed for user input
+								if ( editproperty == 0 )
 								{
-									inputlen = 2;
+									inputlen = 4;
 								}
 								else
 								{
-									inputlen = 1;
+									inputlen = 4;
 								}
-								if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
-								{
-									printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * spacing, "\26");
-								}
+								propertyPageCursorFlash(spacing);
 							}
 						}
 					}
@@ -4419,5 +4522,55 @@ int main(int argc, char** argv)
 	list_FreeAll(&undolist);
 	saveTilePalettes();
 	return deinitApp();
+}
+
+void propertyPageTextAndInput(int numProperties, int width)
+{
+	int pad_x1 = subx1 + 8;
+	int spacing = 36;
+	int pad_x2 = width;
+
+	// Cycle properties with TAB.
+	if ( keystatus[SDL_SCANCODE_TAB] )
+	{
+		keystatus[SDL_SCANCODE_TAB] = 0;
+		cursorflash = ticks;
+		editproperty++;
+		if ( editproperty == numProperties )
+		{
+			editproperty = 0;
+		}
+
+		inputstr = spriteProperties[editproperty];
+	}
+
+	// select a textbox
+	if ( mousestatus[SDL_BUTTON_LEFT] )
+	{
+		for ( int i = 0; i < numProperties; i++ )
+		{
+			if ( omousex >= pad_x1 - 4 && omousey >= suby1 + 40 + i * spacing && omousex < pad_x1 - 4 + pad_x2 && omousey < suby1 + 56 + i * spacing )
+			{
+				inputstr = spriteProperties[i];
+				editproperty = i;
+				cursorflash = ticks;
+			}
+		}
+	}
+}
+
+void propertyPageError(int rowIndex, int resetValue)
+{
+	errorMessage = 60;
+	errorArr[rowIndex] = 1;
+	snprintf(spriteProperties[rowIndex], sizeof(spriteProperties[rowIndex]), "%d", resetValue); //reset
+}
+
+void propertyPageCursorFlash(int rowSpacing)
+{
+	if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+	{
+		printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * rowSpacing, "\26");
+	}
 }
 

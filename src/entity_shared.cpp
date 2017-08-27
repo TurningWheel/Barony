@@ -68,6 +68,9 @@ int checkSpriteType(Sint32 sprite)
 		//power crystal
 		return 5;
 		break;
+	case 115:
+		// lever timer
+		return 6;
 	default:
 		return 0;
 		break;
@@ -607,10 +610,13 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"POWER CRYSTAL",
 	"ARMED BEAR TRAP",
 	"STALAG-COLUMN",
-	"STALAGMITE 1",
-	"STALAGMITE 2",
-	"STALAGTITE 1",
-	"STALAGTITE 2"
+	"STALAGMITE SINGLE",
+	"STALAGMITE MULTIPLE",
+	"STALAGTITE SINGLE",
+	"STALAGTITE MULTIPLE",
+	"GATE INVERTED (North-South)",
+	"GATE INVERTED (East-West)",
+	"LEVER WITH TIMER"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1079,6 +1085,20 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->crystalNumElectricityNodes = 5;
 			entityNew->crystalTurnReverse = 0;
 			entityNew->crystalSpellToActivate = 0;
+		}
+	}
+	// lever timer
+	else if ( spriteType == 6 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->leverTimerTicks = entityToCopy->leverTimerTicks;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->leverTimerTicks = 3;
 		}
 	}
 

@@ -1970,6 +1970,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								{
 									playSoundEntity(hit.entity, 151, 128);
 									childentity->crystalSpellToActivate = 0;
+									// send the clients the updated skill.
+									serverUpdateEntitySkill(childentity, 10);
 									if ( parent )
 									{
 										if ( parent->behavior == &actPlayer )

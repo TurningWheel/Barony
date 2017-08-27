@@ -1144,6 +1144,19 @@ void buttonSpriteProperties(button_t* my)
 			suby2 = yres / 2 + 120;
 			strcpy(subtext, "Power Crystal Properties:");
 			break;
+		case 6:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks)); //Orientation
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 8;
+			subx1 = xres / 2 - 120;
+			subx2 = xres / 2 + 120;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
+			strcpy(subtext, "Lever Timer Properties:");
+			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -1931,6 +1944,16 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->crystalNumElectricityNodes = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->crystalTurnReverse = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->crystalSpellToActivate = (Sint32)atoi(spriteProperties[3]);
+				break;
+			case 6: //lever timer
+				if ( (Sint32)atoi(spriteProperties[0]) == 0 )
+				{
+					selectedEntity->leverTimerTicks = 1;
+				}
+				else
+				{
+					selectedEntity->leverTimerTicks = (Sint32)atoi(spriteProperties[0]);
+				}
 				break;
 			default:
 				break;

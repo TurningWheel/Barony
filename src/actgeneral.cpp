@@ -290,7 +290,35 @@ void actMCaxe(Entity* my)
 	}
 }
 
-void actStalag(Entity* my)
+void actStalagFloor(Entity* my)
 {
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
 
+	//my->actStalagFloor();
+}
+
+void actStalagCeiling(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+
+	//my->actStalagCeiling();
+}
+
+void actStalagColumn(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+
+	//my->actStalagColumn();
 }

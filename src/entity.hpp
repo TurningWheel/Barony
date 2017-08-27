@@ -176,6 +176,18 @@ public:
 	real_t& crystalMinZVelocity;
 	real_t& crystalTurnVelocity; // how fast to turn on click.
 
+	//--PUBLIC GATE SKILLS--
+	Sint32& gateInit;
+	Sint32& gateStatus;
+	Sint32& gateRattle;
+	real_t& gateStartHeight;
+	real_t& gateVelZ;
+	Sint32& gateInverted;
+
+	//--PUBLIC LEVER SKILLS--
+	Sint32& leverTimerTicks;
+	Sint32& leverStatus;
+
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
 
@@ -289,6 +301,7 @@ public:
 	//Act functions.
 	void actChest();
 	void actPowerCrystal();
+	void actGate();
 
 	Monster getRace() const
 	{
@@ -477,6 +490,7 @@ void actGate(Entity* my);
 void actArrowTrap(Entity* my);
 void actTrap(Entity* my);
 void actTrapPermanent(Entity* my);
+void actSwitchWithTimer(Entity* my);
 
 /*
  * Note: Circuits and mechanisms use skill[28] to signify powered state.
@@ -492,6 +506,11 @@ void actChestLid(Entity* my);
 void closeChestClientside(); //Called by the client to manage all clientside stuff relating to closing a chest.
 void addItemToChestClientside(Item* item); //Called by the client to manage all clientside stuff relating to adding an item to a chest.
 
+//---Stalag functions---
+void actStalagFloor(Entity* my);
+void actStalagCeiling(Entity* my);
+void actStalagColumn(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
@@ -502,7 +521,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 213;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
-static const int NUM_EDITOR_SPRITES = 113;
+static const int NUM_EDITOR_SPRITES = 116;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
