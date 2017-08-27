@@ -638,7 +638,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							if ( multiplayer != CLIENT )
 							{
 								spawnMagicEffectParticles(my->x, my->y, my->z / 2, 174);
-								my->monsterSpecialState = 1;
+								my->monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_COMPLETE;
 							}
 						}
 					}
@@ -1181,10 +1181,10 @@ void Entity::automatonRecycleItem()
 		return;
 	}
 
-	if ( this->monsterSpecialTimer > 0 && this->monsterSpecialState == 0 )
+	if ( this->monsterSpecialTimer > 0 && !(this->monsterSpecialState == AUTOMATON_RECYCLE_ANIMATION_COMPLETE) )
 	{
 		// if we're on cooldown, skip checking
-		// also we need the callback from my->attack() to set monsterSpecialState = 1 once the animation completes.
+		// also we need the callback from my->attack() to set monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_COMPLETE once the animation completes.
 		return;
 	}
 
@@ -1197,7 +1197,7 @@ void Entity::automatonRecycleItem()
 		return;
 	}
 
-	if ( this->monsterSpecialTimer == 0 && this->monsterSpecialState == 0 )
+	if ( this->monsterSpecialTimer == 0 && this->monsterSpecialState == AUTOMATON_RECYCLE_ANIMATION_WAITING )
 	{
 		// put the skill on cooldown.
 		this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
@@ -1237,14 +1237,14 @@ void Entity::automatonRecycleItem()
 		return;
 	}
 	
-	if ( this->monsterSpecialState == 0 )
+	if ( this->monsterSpecialState == AUTOMATON_RECYCLE_ANIMATION_WAITING )
 	{
 		// this is the first run of the check, we'll execute the casting animation and wait for this to be set to 1 when it ends.
 		this->attack(MONSTER_POSE_SPECIAL_WINDUP1, 0, nullptr);
 		return;
 	}
 
-	this->monsterSpecialState = 0; // reset my special state after the previous lines.
+	this->monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_WAITING; // reset my special state after the previous lines.
 	int pickItem1 = rand() % matches; // pick random valid item index in inventory
 	int pickItem2 = rand() % matches;
 	while ( pickItem2 == pickItem1 )

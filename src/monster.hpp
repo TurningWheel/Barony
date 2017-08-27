@@ -447,3 +447,7 @@ extern int monsterGlobalAttackTimeMultiplier;
 //--Goatman--
 static const int GOATMAN_HEALINGPOTION_MOD = 3;
 static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
+
+//--Automaton--
+static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;
+static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
