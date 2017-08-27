@@ -138,6 +138,7 @@ int monsterCurve(int level)
 			case 0:
 				return SLIME;
 			case 1:
+				return SHADOW;
 			case 2:
 			case 3:
 			case 4:
@@ -170,6 +171,7 @@ int monsterCurve(int level)
 				}
 			case 4:
 			case 5:
+				return SHADOW;
 			case 6:
 			case 7:
 			case 8:
