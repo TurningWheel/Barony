@@ -463,7 +463,7 @@ void actHudWeapon(Entity* my)
 					{
 						if ( stats[clientnum]->weapon->type == SLING || stats[clientnum]->weapon->type == SHORTBOW || stats[clientnum]->weapon->type == ARTIFACT_BOW )
 						{
-							if ( !stats[clientnum]->defending && !throwGimpTimer )
+							if ( throwGimpTimer == 0 )
 							{
 								// bows need to be drawn back
 								if (!bowDrawingSoundPlaying)
