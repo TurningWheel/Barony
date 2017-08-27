@@ -7527,7 +7527,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 			//Turn the entity into an item.
 			if ( node->element )
 			{
-				if ( list_Size(&myStats->inventory) >= maxInventoryItems )
+				if ( list_Size(&myStats->inventory) >= maxInventoryItems + 1 )
 				{
 					break;
 				}
@@ -7593,7 +7593,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						continue;
 					}
 
-					if ( myStats->type == AUTOMATON )
+					if ( myStats->type == AUTOMATON && list_Size(&myStats->inventory) < maxInventoryItems )
 					{
 						addItemToMonsterInventory(*shouldWield); // Automatons are hoarders.
 					}
@@ -7610,16 +7610,24 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					//Drop that item out of the monster's inventory, and add this item to the monster's inventory.
 					Item* itemToDrop = static_cast<Item*>(replaceInventoryItem->element);
-					if ( itemToDrop && myStats->type != AUTOMATON ) // Automatons are hoarders.
+					if ( itemToDrop )
 					{
-						dropItemMonster(itemToDrop, this, myStats, itemToDrop->count);
+						if ( !(myStats->type == AUTOMATON && list_Size(&myStats->inventory) < maxInventoryItems) )
+						{
+							// Automatons are hoarders when swapping. Everything else will drop the weapon.
+							dropItemMonster(itemToDrop, this, myStats, itemToDrop->count);
+						}
 						//list_RemoveNode(replaceInventoryItem);
 					}
-					addItemToMonsterInventory(item);
+
+					if ( list_Size(&myStats->inventory) < maxInventoryItems )
+					{
+						addItemToMonsterInventory(item);
+					}
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
 				}
-				else
+				else if ( list_Size(&myStats->inventory) < maxInventoryItems )
 				{
 					addItemToMonsterInventory(item);
 					item = nullptr;
