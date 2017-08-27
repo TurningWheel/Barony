@@ -147,7 +147,7 @@ public:
 	Sint32& monsterTarget; //skill[1]
 	real_t& monsterTargetX; //fskill[2]
 	real_t& monsterTargetY; //fskill[3]
-	Sint32& monsterSpecialTimer;
+	Sint32& monsterSpecialTimer; //skill[29]
 	//Only used by goatman.
 	Sint32& monsterSpecialState; //skill[33]
 	Sint32& monsterSpellAnimation;
@@ -259,6 +259,7 @@ public:
 	bool humanCanWieldItem(const Item& item) const;
 	bool goatmanCanWieldItem(const Item& item) const;
 	bool automatonCanWieldItem(const Item& item) const;
+	bool shadowCanWieldItem(const Item& item) const;
 
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
 
@@ -386,6 +387,13 @@ public:
 	 * @param state: required to let the entity know if it should enter MONSTER_STATE_PATH, MONSTER_STATE_ATTACK, etc.
 	 */
 	void monsterAcquireAttackTarget(const Entity& target, Sint32 state);
+
+	/*
+	 * Attempts to set the target to 0.
+	 * May refuses to do so and consequently return false in cases such as the shadow, which cannot lose its target until it's dead.
+	 * Returns true otherwise, if successfully zero-d out target.
+	 */
+	bool monsterReleaseAttackTarget();
 
 	//Lets monsters swap out weapons.
 	void inline chooseWeapon(const Entity* target, double dist)

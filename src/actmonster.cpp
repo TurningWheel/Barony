@@ -132,7 +132,7 @@ double sightranges[NUMMONSTERS] =
 	192,   // CRYSTALGOLEM
 	256,  // INCUBUS
 	192,  // VAMPIRE
-	256,  // SHADOW
+	768,  // SHADOW
 	256,  // COCKATRICE
 	256,  // INSECTOID
 	256,  // GOATMAN
@@ -565,7 +565,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 	if ( x != 0 || y != 0 )
 	{
 		my->monsterState = MONSTER_STATE_PATH;
-		my->monsterTarget = 0;
+		my->monsterReleaseAttackTarget();
 		my->monsterTargetX = my->x + x;
 		my->monsterTargetY = my->y + y;
 		serverUpdateEntitySkill(my, 0);
@@ -1132,6 +1132,7 @@ void actMonster(Entity* my)
 					initGoatman ( my, myStats );
 					break;
 				case AUTOMATON:
+					my->flags[BURNABLE] = false;
 					initAutomaton (my, myStats);
 					break;
 				case LICH_ICE:
@@ -1205,6 +1206,18 @@ void actMonster(Entity* my)
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
 			assailant[c] = true; // as long as this is active, combat music doesn't turn off
+		}
+	}
+
+	if ( myStats->type == SHADOW && my->monsterTarget != 0 )
+	{
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c] && players[c]->entity && players[c]->entity->getUID() == my->monsterTarget )
+			{
+				assailant[c] = true; //Keeps combat music on as long as a shadow is hunting you down down down!
+				break;
+			}
 		}
 	}
 
@@ -1994,10 +2007,16 @@ void actMonster(Entity* my)
 			}
 		}
 
-		// state machine
-		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
+		if ( myStats->type != LICH && myStats->type != DEVIL && my->monsterSpecialTimer > 0 )
 		{
-			my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
+			--my->monsterSpecialTimer;
+		}
+
+		// state machine
+		if ( my->monsterState == MONSTER_STATE_WAIT ) // wait state
+		{
+			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
+			my->monsterReleaseAttackTarget();
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
 			if ( myReflex )
@@ -2049,8 +2068,9 @@ void actMonster(Entity* my)
 							{
 								light = TOUCHRANGE;
 							}
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
+								//See invisible.
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -2092,8 +2112,9 @@ void actMonster(Entity* my)
 							}
 							if ( visiontest )   // vision cone
 							{
-								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 								{
+									//See invisible
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								else
@@ -2232,7 +2253,7 @@ void actMonster(Entity* my)
 					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
 					if ( dist > WAIT_FOLLOWDIST )
 					{
-						my->monsterTarget = 0;
+						my->monsterReleaseAttackTarget();
 						x = ((int)floor(leader->x)) >> 4;
 						y = ((int)floor(leader->y)) >> 4;
 						int u, v;
@@ -2275,7 +2296,7 @@ void actMonster(Entity* my)
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
-							my->monsterTarget = 0;
+							my->monsterReleaseAttackTarget();
 							x = ((int)floor(leader->x)) >> 4;
 							y = ((int)floor(leader->y)) >> 4;
 							int u, v;
@@ -2475,7 +2496,7 @@ void actMonster(Entity* my)
 				my->yaw -= 2 * PI;
 			}
 		}
-		else if ( my->monsterState == MONSTER_STATE_ATTACK )     // charge state
+		else if ( my->monsterState == MONSTER_STATE_ATTACK ) // charge state
 		{
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity == nullptr )
@@ -2541,8 +2562,9 @@ void actMonster(Entity* my)
 				{
 					light = TOUCHRANGE;
 				}
-				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 				{
+					//See invisible.
 					light = 1000;
 				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -2935,15 +2957,17 @@ timeToGoAgain:
 				return;
 			}
 			entity = uidToEntity(my->monsterTarget);
-			if ( entity != NULL )
+			if ( entity != nullptr )
+			{
 				if ( entity->behavior == &actPlayer )
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
+			}
 			x = ((int)floor(my->monsterTargetX)) >> 4;
 			y = ((int)floor(my->monsterTargetY)) >> 4;
 			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(my->monsterTarget) );
-			if ( my->children.first != NULL )
+			if ( my->children.first != nullptr )
 			{
 				list_RemoveNode(my->children.first);
 			}
@@ -2956,7 +2980,7 @@ timeToGoAgain:
 		{
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
-				for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
 				{
 					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] )
@@ -2964,7 +2988,7 @@ timeToGoAgain:
 						continue;
 					}
 					hitstats = entity->getStats();
-					if ( hitstats != NULL )
+					if ( hitstats != nullptr )
 					{
 						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
 						{
@@ -3003,8 +3027,9 @@ timeToGoAgain:
 							{
 								light = TOUCHRANGE;
 							}
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
+								//See invisible.
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -3023,10 +3048,12 @@ timeToGoAgain:
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								if ( hit.entity == entity )
+								{
 									if ( rand() % 100 == 0 )
 									{
 										entity->increaseSkill(PRO_STEALTH);
 									}
+								}
 								continue;
 							}
 							bool visiontest = false;
@@ -3231,7 +3258,7 @@ timeToGoAgain:
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
-							my->monsterTarget = 0;
+							my->monsterReleaseAttackTarget();
 							int x = ((int)floor(leader->x)) >> 4;
 							int y = ((int)floor(leader->y)) >> 4;
 							int u, v;
@@ -3275,10 +3302,12 @@ timeToGoAgain:
 
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity != NULL )
+			{
 				if ( entity->behavior == &actPlayer )
 				{
-					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+					assailant[entity->skill[2]] = true; // as long as this is active, combat music doesn't turn off
 				}
+			}
 			if ( my->children.first != NULL )
 			{
 				if ( my->children.first->element != NULL )
@@ -4349,11 +4378,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	Stat* hitstats = nullptr;
 	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
-
-	if ( myStats->type != LICH && myStats->type != DEVIL && this->monsterSpecialTimer > 0 )
-	{
-		--this->monsterSpecialTimer;
-	}
 
 	//TODO: Goatman choose weapon.
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
