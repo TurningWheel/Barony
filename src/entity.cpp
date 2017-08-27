@@ -5931,6 +5931,7 @@ int checkEquipType(const Item *item)
 		case CLOAK_INVISIBILITY:
 		case CLOAK_PROTECTION:
 		case ARTIFACT_CLOAK:
+		case CLOAK_BLACK:
 			return TYPE_CLOAK;
 			break;
 
@@ -7458,7 +7459,7 @@ void Entity::checkGroundForItems()
 			//checkBetterEquipment(myStats);
 			break;
 		case AUTOMATON:
-			monsterAddNearbyItemToInventory(myStats, 8, 5);
+			monsterAddNearbyItemToInventory(myStats, 16, 5);
 			break;
 		default:
 			return;
@@ -7591,7 +7592,16 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 						}
 						continue;
 					}
-					dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+
+					if ( myStats->type == AUTOMATON )
+					{
+						addItemToMonsterInventory(*shouldWield); // Automatons are hoarders.
+					}
+					else
+					{
+						dropItemMonster((*shouldWield), this, myStats); //And I threw it on the ground!
+					}
+
 					(*shouldWield) = item;
 					item = nullptr;
 					list_RemoveNode(entity->mynode);
@@ -7600,7 +7610,7 @@ void Entity::monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int
 				{
 					//Drop that item out of the monster's inventory, and add this item to the monster's inventory.
 					Item* itemToDrop = static_cast<Item*>(replaceInventoryItem->element);
-					if ( itemToDrop )
+					if ( itemToDrop && myStats->type != AUTOMATON ) // Automatons are hoarders.
 					{
 						dropItemMonster(itemToDrop, this, myStats, itemToDrop->count);
 						//list_RemoveNode(replaceInventoryItem);
@@ -7716,7 +7726,11 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 			}
 			break;
 		case AUTOMATON:
-			return true; //Can pick up all items, because recycler.
+			if ( !automatonCanWieldItem(item) )
+			{
+				return true; //Can pick up all items automaton can't equip, because recycler.
+			}
+			break;
 		default:
 			return false;
 	}
@@ -7739,6 +7753,10 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				if ( myStats->weapon && itemCategory(myStats->weapon) == WEAPON )
 				{
 					//Weapon ain't better than weapon already holding. Don't want it.
+					if ( myStats->type == AUTOMATON ) // Automatons are hoarders.
+					{
+						return true;
+					}
 					return false;
 				}
 
@@ -7759,6 +7777,11 @@ bool Entity::monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& re
 				return false; //Don't want your junk.
 			}
 		case ARMOR:
+			if ( myStats->type == AUTOMATON ) // Automatons are hoarders.
+			{
+				shouldEquip = shouldMonsterEquipThisArmor(item);
+				return true;
+			}
 			return (shouldEquip = shouldMonsterEquipThisArmor(item));
 		case THROWN:
 			if ( myStats->weapon == nullptr )

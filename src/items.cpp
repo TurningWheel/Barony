@@ -932,6 +932,23 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 			itemDroppable = false;
 		}
 	}
+	else if ( monsterStats->HP <= 0 )
+	{
+		// we're dropping the item on death.
+		switch ( itemCategory(item) )
+		{
+			case WEAPON:
+			case ARMOR:
+			case THROWN:
+				if ( item->status == BROKEN )
+				{
+					itemDroppable = false;
+				}
+				break;
+			default:
+				break;
+		}
+	}
 
 	count = std::min(count, item->count);
 
