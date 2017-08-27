@@ -1233,6 +1233,7 @@ void Entity::automatonRecycleItem()
 
 	if ( matches < 2 ) // not enough valid items found.
 	{
+		this->monsterSpecialTimer = 250; // reset cooldown to 5 seconds to check again quicker.
 		return;
 	}
 	
