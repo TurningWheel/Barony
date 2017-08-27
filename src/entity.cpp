@@ -6331,15 +6331,16 @@ int Entity::getAttackPose() const
 				pose = 1;  // vertical swing
 			}
 		}
-		/*else if ( itemCategory(myStats->weapon) == POTION )
+		else if ( itemCategory(myStats->weapon) == POTION && myStats->type == GOATMAN )
 		{
+			pose = MONSTER_POSE_RANGED_WINDUP3;
 			//TODO:
-			if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
-			{
-				//
-			}
-			else if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
-		}*/
+			//if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+			//{
+			//	//
+			//}
+			//else if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+		}
 		else if ( this->hasRangedWeapon() )
 		{
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
@@ -7180,7 +7181,15 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 
 	weaponLimb->yaw = weaponArmLimb->yaw;
-	weaponLimb->roll = weaponArmLimb->roll;
+
+	if ( this->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+	{
+		limbAnimateToLimit(weaponLimb, ANIMATE_ROLL, 0.25, 1 * PI / 4, false, 0.0);
+	}
+	else
+	{
+		weaponLimb->roll = weaponArmLimb->roll;
+	}
 
 	if ( !this->monsterArmbended )
 	{
