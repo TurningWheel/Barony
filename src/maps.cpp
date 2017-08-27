@@ -3328,7 +3328,7 @@ void assignActions(map_t* map)
 				entity->x += 1;
 				entity->y += 8;
 				entity->z -= 1;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3347,7 +3347,7 @@ void assignActions(map_t* map)
 				entity->y += 1;
 				entity->z -= 1;
 				entity->yaw += PI / 2.0;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3366,7 +3366,7 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z -= 1;
 				entity->yaw += PI;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
@@ -3385,7 +3385,7 @@ void assignActions(map_t* map)
 				entity->y += 15;
 				entity->z -= 1;
 				entity->yaw += 3 * PI / 2.0;
-				entity->sprite = 3;
+				entity->sprite = 587;
 				entity->flags[PASSABLE] = true;
 				entity->flags[BRIGHT] = true;
 				break;
