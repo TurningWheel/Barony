@@ -7408,7 +7408,7 @@ void Entity::giveClientStats()
 
 void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 {
-	messagePlayer(clientnum, "Entity acquired target!");
+	//messagePlayer(clientnum, "Entity acquired target!");
 
 	monsterState = state;
 	monsterTarget = target.getUID();
