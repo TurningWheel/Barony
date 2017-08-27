@@ -473,7 +473,7 @@ void actHudWeapon(Entity* my)
 										bowFire = false;
 										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
-										throwGimpTimer = TICKS_PER_SECOND / 4;
+										throwGimpTimer = 12;
 									}
 									else
 									{
