@@ -471,6 +471,7 @@ void actHudWeapon(Entity* my)
 									if (bowFire)
 									{
 										bowFire = false;
+                                        bowDrawingSound = nullptr;
 										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
 										throwGimpTimer = 12;
