@@ -138,8 +138,7 @@ void updateCharacterSheet()
 	ttfPrintTextFormatted(ttf12, 8, 214, language[359], stats[clientnum]->LVL, language[1900 + client_classes[clientnum]]);
 	ttfPrintTextFormatted(ttf12, 8, 226, language[360], stats[clientnum]->EXP);
 	ttfPrintTextFormatted(ttf12, 8, 238, language[361], currentlevel);
-    ttfPrintTextFormatted(ttf12, 8, 250, language[2499], stats[clientnum]->HP, stats[clientnum]->MAXHP);
-    ttfPrintTextFormatted(ttf12, 8, 262, language[2500], stats[clientnum]->MP, stats[clientnum]->MAXMP);
+    ttfPrintTextFormatted(ttf12, 8, 256, language[2499], stats[clientnum]->HP, stats[clientnum]->MAXHP, stats[clientnum]->MP, stats[clientnum]->MAXMP);
 
 	// attributes
 	Sint32 statModifier = 0;
