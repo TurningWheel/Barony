@@ -59,10 +59,10 @@ void initClass(int player)
 		stats[player]->DEX -= 1;
 		stats[player]->INT -= 1;
 
-		stats[player]->MAXHP += 10;
-		stats[player]->HP += 10;
-		stats[player]->MAXMP -= 10;
-		stats[player]->MP -= 10;
+		stats[player]->MAXHP += 100;
+		stats[player]->HP += 100;
+		stats[player]->MAXMP += 100;
+		stats[player]->MP += 100;
 
 		// skills
 		stats[player]->PROFICIENCIES[PRO_SWIMMING] = 25;
