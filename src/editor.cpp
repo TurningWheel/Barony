@@ -2376,9 +2376,13 @@ int main(int argc, char** argv)
 
 					start_y = suby1 + 104;
 					pad_y1 = 0;
+					int start_x2 = subx1 + 180;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map skybox:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, skyboxtext);
+
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Traps:");
+					printText(font8x8_bmp, start_x2 + 112, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLETRAPS]);
 					pad_y1 += 24;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map ceiling:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
@@ -2429,6 +2433,18 @@ int main(int argc, char** argv)
 					// select a textbox
 					if ( mousestatus[SDL_BUTTON_LEFT] )
 					{
+						if ( omousex >= start_x2 + 112 && omousey >= suby1 + 100 && omousex < start_x2 + 136 && omousey < suby1 + 116 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
 						if ( omousex >= subx1 + 4 && omousey >= suby1 + 40 && omousex < subx2 - 4 && omousey < suby1 + 56 )
 						{
 							inputstr = nametext;

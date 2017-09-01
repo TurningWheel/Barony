@@ -197,6 +197,14 @@ void buttonNew(button_t* my)
 	{
 		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
 	}
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
@@ -249,7 +257,21 @@ void buttonNewConfirm(button_t* my)
 	map.skybox = atoi(skyboxtext);
 	for ( z = 0; z < MAPFLAGS; ++z )
 	{
-		map.flags[z] = atoi(mapflagtext[z]);
+		if ( z == MAP_FLAG_DISABLETRAPS )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLETRAPS] = 0;
+			}
+		}
+		else
+		{
+			map.flags[z] = atoi(mapflagtext[z]);
+		}
 	}
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
@@ -771,6 +793,14 @@ void buttonAttributes(button_t* my)
 	{
 		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
 	}
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
@@ -849,7 +879,15 @@ void buttonAttributesConfirm(button_t* my)
 	{
 		map.flags[MAP_FLAG_CEILINGTILE] = 0;
 	}
-	map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLETRAPS] = 0;
+	}
+
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);

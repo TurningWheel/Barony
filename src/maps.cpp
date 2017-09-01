@@ -282,6 +282,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	map_t shopmap;
 	map_t secretlevelmap;
 	int secretlevelexit = 0;
+	bool *trapexcludelocations;
 
 	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
 	if (loadMap(levelset, &map, map.entities) == -1)
@@ -563,6 +564,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	if ( numlevels > 1 )
 	{
 		possiblelocations = (bool*) malloc(sizeof(bool) * map.width * map.height);
+		trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		for ( y = 0; y < map.height; y++ )
 		{
 			for ( x = 0; x < map.width; x++ )
@@ -575,6 +577,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					possiblelocations[x + y * map.width] = true;
 				}
+				trapexcludelocations[x + y * map.width] = false;
 			}
 		}
 		possiblelocations2 = (bool*) malloc(sizeof(bool) * map.width * map.height);
@@ -715,6 +718,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					free(possiblerooms);
 					free(possiblelocations);
 					free(possiblelocations2);
+					free(trapexcludelocations);
 					free(firstroomtile);
 					free(sublevelname);
 					free(fullname);
@@ -853,6 +857,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 						if ( z == 0 )
 						{
 							possiblelocations[x0 + y0 * map.width] = false;
+							if ( tempMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
+							{
+								trapexcludelocations[x0 + y0 * map.width] = true;
+								map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
+							}
 							if ( c == 0 )
 							{
 								firstroomtile[y0 + x0 * map.height] = true;
@@ -1133,7 +1142,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	// boulder and arrow traps
-	if ( svFlags & SV_FLAG_TRAPS )
+	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
 	{
 		numpossiblelocations = 0;
 		for ( c = 0; c < map.width * map.height; c++ )
@@ -1165,7 +1174,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					sides++;
 				}
-				if ( sides == 1 )
+				if ( sides == 1 && trapexcludelocations[x + y * map.width] == false )
 				{
 					possiblelocations[y + x * map.height] = true;
 					numpossiblelocations++;
@@ -1292,6 +1301,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			else
 			{
+				messagePlayer(0, "Included at x: %d, y: %d", x, y);
 				entity = newEntity(38, 1, map.entities); // boulder trap
 				entity->behavior = &actBoulderTrap;
 			}
@@ -1657,6 +1667,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}*/
 
 	free(possiblelocations);
+	free(trapexcludelocations);
 	free(firstroomtile);
 	free(subRoomName);
 	free(sublevelname);
