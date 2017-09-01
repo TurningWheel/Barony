@@ -269,6 +269,9 @@ typedef struct map_t
 #define MAPLAYERS 3 // number of layers contained in a single map
 #define OBSTACLELAYER 1 // obstacle layer in map
 #define MAPFLAGS 16 // map flags for custom properties
+// names for the flag indices
+static const int MAP_FLAG_CEILINGTILE = 0;
+static const int MAP_FLAG_DISABLETRAPS = 1;
 
 // light structure
 typedef struct light_t

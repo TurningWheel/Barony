@@ -2362,28 +2362,44 @@ int main(int argc, char** argv)
 				// new map and attributes windows
 				if ( newwindow == 1 )
 				{
-					printText(font8x8_bmp, subx1 + 8, suby1 + 28, "Map name:");
+					int pad_y1 = 0;
+					int start_y = suby1 + 28;
+					int rowheight = 16;
+
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map name:");
 					drawDepressed(subx1 + 4, suby1 + 40, subx2 - 4, suby1 + 56);
-					printText(font8x8_bmp, subx1 + 8, suby1 + 44, nametext);
-					printText(font8x8_bmp, subx1 + 8, suby1 + 64, "Author name:");
+					printText(font8x8_bmp, subx1 + 8, start_y + 16, nametext);
+					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1 + 12, "Author name:");
 					drawDepressed(subx1 + 4, suby1 + 76, subx2 - 4, suby1 + 92);
-					printText(font8x8_bmp, subx1 + 8, suby1 + 80, authortext);
-					printText(font8x8_bmp, subx1 + 8, suby1 + 104, "Map skybox:");
-					drawDepressed(subx1 + 104, suby1 + 100, subx1 + 168, suby1 + 116);
-					printText(font8x8_bmp, subx1 + 108, suby1 + 104, skyboxtext);
-					printText(font8x8_bmp, subx1 + 8, suby2 - 44, "Map width:");
-					drawDepressed(subx1 + 104, suby2 - 48, subx1 + 168, suby2 - 32);
-					printText(font8x8_bmp, subx1 + 108, suby2 - 44, widthtext);
-					printText(font8x8_bmp, subx1 + 8, suby2 - 20, "Map height:");
-					drawDepressed(subx1 + 104, suby2 - 24, subx1 + 168, suby2 - 8);
-					printText(font8x8_bmp, subx1 + 108, suby2 - 20, heighttext);
+					printText(font8x8_bmp, subx1 + 8, start_y + 16 + 36, authortext);
+
+					start_y = suby1 + 104;
+					pad_y1 = 0;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map skybox:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, skyboxtext);
+					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map ceiling:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_CEILINGTILE]);
+
+					start_y = suby2 - 44;
+					pad_y1 = 0;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map width:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, widthtext);
+					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map height:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, heighttext);
 
 					if ( keystatus[SDL_SCANCODE_TAB] )
 					{
 						keystatus[SDL_SCANCODE_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 5 )
+						if ( editproperty == 6 )
 						{
 							editproperty = 0;
 						}
@@ -2399,9 +2415,12 @@ int main(int argc, char** argv)
 								inputstr = skyboxtext;
 								break;
 							case 3:
-								inputstr = widthtext;
+								inputstr = mapflagtext[MAP_FLAG_CEILINGTILE];
 								break;
 							case 4:
+								inputstr = widthtext;
+								break;
+							case 5:
 								inputstr = heighttext;
 								break;
 						}
@@ -2422,22 +2441,28 @@ int main(int argc, char** argv)
 							editproperty = 1;
 							cursorflash = ticks;
 						}
-						if ( omousex >= subx1 + 104 && omousey >= suby1 + 94 && omousex < subx1 + 168 && omousey < suby1 + 110 )
+						if ( omousex >= subx1 + 104 && omousey >= suby1 + 100 && omousex < subx1 + 168 && omousey < suby1 + 116 )
 						{
 							inputstr = skyboxtext;
 							editproperty = 2;
 							cursorflash = ticks;
 						}
+						if ( omousex >= subx1 + 104 && omousey >= suby1 + 124 && omousex < subx1 + 168 && omousey < suby1 + 140 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_CEILINGTILE];
+							editproperty = 3;
+							cursorflash = ticks;
+						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 3;
+							editproperty = 4;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 4;
+							editproperty = 5;
 							cursorflash = ticks;
 						}
 					}
@@ -2484,7 +2509,21 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(skyboxtext) * 8, suby1 + 104, "\26");
 						}
 					}
-					if ( editproperty == 3 )   // edit map width
+					if ( editproperty == 3 )   // edit map ceiling tiles
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_CEILINGTILE];
+						}
+						//strncpy(widthtext,inputstr,3);
+						inputlen = 3;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_CEILINGTILE]) * 8, suby1 + 128, "\26");
+						}
+					}
+					if ( editproperty == 4 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -2498,7 +2537,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 4 )   // edit map height
+					if ( editproperty == 5 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{

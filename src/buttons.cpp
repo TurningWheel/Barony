@@ -193,6 +193,10 @@ void buttonNew(button_t* my)
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
 	snprintf(skyboxtext, 4, "%d", map.skybox);
+	for ( int z = 0; z < MAPFLAGS; ++z )
+	{
+		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
@@ -243,6 +247,10 @@ void buttonNewConfirm(button_t* my)
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
 	map.skybox = atoi(skyboxtext);
+	for ( z = 0; z < MAPFLAGS; ++z )
+	{
+		map.flags[z] = atoi(mapflagtext[z]);
+	}
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -759,6 +767,10 @@ void buttonAttributes(button_t* my)
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
 	snprintf(skyboxtext, 4, "%d", map.skybox);
+	for ( int z = 0; z < MAPFLAGS; ++z )
+	{
+		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
@@ -828,6 +840,16 @@ void buttonAttributesConfirm(button_t* my)
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.skybox = atoi(skyboxtext);
+	if ( map.skybox > numtiles )
+	{
+		map.skybox = 0;
+	}
+	map.flags[MAP_FLAG_CEILINGTILE] = atoi(mapflagtext[MAP_FLAG_CEILINGTILE]);
+	if ( map.flags[MAP_FLAG_CEILINGTILE] >= numtiles )
+	{
+		map.flags[MAP_FLAG_CEILINGTILE] = 0;
+	}
+	map.flags[MAP_FLAG_DISABLETRAPS] = 1;
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);

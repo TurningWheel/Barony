@@ -110,6 +110,7 @@ extern int messagetime;
 extern char message[48];
 extern Uint32 cursorflash;
 extern char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[4];
+extern char mapflagtext[MAPFLAGS][32];
 extern char spriteProperties[32][128];
 extern char tmpSpriteProperties[32][128];
 extern int editproperty;
