@@ -71,7 +71,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	gateVelZ(vel_z),
 	gateInverted(skill[5]),
 	leverStatus(skill[1]),
-	leverTimerTicks(skill[2])
+	leverTimerTicks(skill[3]),
+	boulderTrapRefireAmount(skill[1]),
+	boulderTrapRefireDelay(skill[3]),
+	boulderTrapAmbience(skill[6]),
+	boulderTrapFired(skill[0]),
+	boulderTrapRefireCounter(skill[4]),
+	boulderTrapPreDelay(skill[5])
 {
 	int c;
 	// add the entity to the entity list

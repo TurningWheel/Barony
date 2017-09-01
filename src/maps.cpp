@@ -3417,6 +3417,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3455,6 +3456,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3493,6 +3495,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3531,6 +3534,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;

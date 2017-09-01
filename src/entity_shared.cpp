@@ -71,6 +71,13 @@ int checkSpriteType(Sint32 sprite)
 	case 115:
 		// lever timer
 		return 6;
+	case 102:
+	case 103:
+	case 104:
+	case 105:
+		//boulder traps
+		return 7;
+		break;
 	default:
 		return 0;
 		break;
@@ -1099,6 +1106,24 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// set default new entity attributes.
 			entityNew->leverTimerTicks = 3;
+		}
+	}
+	// boulder trap with re-fire
+	else if ( spriteType == 7 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->boulderTrapRefireDelay = entityToCopy->boulderTrapRefireDelay;
+			entityNew->boulderTrapRefireAmount = entityToCopy->boulderTrapRefireAmount;
+			entityNew->boulderTrapPreDelay = entityToCopy->boulderTrapPreDelay;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->boulderTrapRefireDelay = 3;
+			entityNew->boulderTrapRefireAmount = 0;
+			entityNew->boulderTrapPreDelay = 0;
 		}
 	}
 

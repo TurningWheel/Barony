@@ -137,6 +137,13 @@ char leverTimerPropertyNames[1][26] =
 	"Powered Duration (1-999s)"
 };
 
+char boulderTrapPropertyNames[3][42] =
+{
+	"Amount of times to re-fire (0-99)",
+	"Delay between re-fire (2-999s)",
+	"Pre-delay for first time trigger (0-999s)"
+};
+
 int recentUsedTiles[9][9] = { 0 };
 int recentUsedTilePalette = 0;
 int lockTilePalette[9] = { 0 };
@@ -3888,101 +3895,237 @@ int main(int argc, char** argv)
 				}
 				else if ( newwindow == 8 )
 				{
+					if ( selectedEntity != NULL )
 					{
-						if ( selectedEntity != NULL )
+						int numProperties = sizeof(leverTimerPropertyNames) / sizeof(leverTimerPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(leverTimerPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
 						{
-							int numProperties = sizeof(leverTimerPropertyNames) / sizeof(leverTimerPropertyNames[0]); //find number of entries in property list
-							const int lenProperties = sizeof(leverTimerPropertyNames[0]) / sizeof(char); //find length of entry in property list
-							int spacing = 36; // 36 px between each item in the list.
-							int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
-							int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
-							int inputField_y = inputFieldHeader_y + 16;
-							int inputFieldWidth = 64; // width of the text field
-							int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
-							char tmpPropertyName[lenProperties] = "";
-							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
-							Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							int propertyInt = atoi(spriteProperties[i]);
 
-							for ( int i = 0; i < numProperties; i++ )
+							strcpy(tmpPropertyName, leverTimerPropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
 							{
-								int propertyInt = atoi(spriteProperties[i]);
-
-								strcpy(tmpPropertyName, leverTimerPropertyNames[i]);
-								inputFieldHeader_y = suby1 + 28 + i * spacing;
-								inputField_y = inputFieldHeader_y + 16;
-								// box outlines then text
-								drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
-								// print values on top of boxes
-								printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
-								printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
-
-								if ( errorArr[i] != 1 )
+								if ( i == 0 )
 								{
-									if ( i == 0 )
+									if ( propertyInt > 999 || propertyInt < 0 )
 									{
-										if ( propertyInt > 999 || propertyInt < 0 )
-										{
-											propertyPageError(i, 5); // reset to default 5 seconds.
-										}
-										else
-										{
-											char tmpStr[32] = "";
-											if ( propertyInt == 0 )
-											{
-												strcpy(tmpStr, "Value must be > 0!");
-												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
-											}
-											else
-											{
-												if ( propertyInt == 1 )
-												{
-													strcpy(tmpStr, "second");
-												}
-												else
-												{
-													strcpy(tmpStr, "seconds");
-												}
-												printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
-											}
-										}
+										propertyPageError(i, 5); // reset to default 5 seconds.
 									}
 									else
 									{
-										// enter other row entries here
+										char tmpStr[32] = "";
+										if ( propertyInt == 0 )
+										{
+											strcpy(tmpStr, "Value must be > 0!");
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
+										}
+										else
+										{
+											if ( propertyInt == 1 )
+											{
+												strcpy(tmpStr, "second");
+											}
+											else
+											{
+												strcpy(tmpStr, "seconds");
+											}
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+										}
 									}
-								}
-
-								if ( errorMessage )
-								{
-									if ( errorArr[i] == 1 )
-									{
-										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
-									}
-								}
-							}
-
-							propertyPageTextAndInput(numProperties, inputFieldWidth);
-
-							if ( editproperty < numProperties )   // edit
-							{
-								if ( !SDL_IsTextInputActive() )
-								{
-									SDL_StartTextInput();
-									inputstr = spriteProperties[0];
-								}
-
-								// set the maximum length allowed for user input
-								if ( editproperty == 0 )
-								{
-									inputlen = 4;
 								}
 								else
 								{
-									inputlen = 4;
+									// enter other row entries here
 								}
-								propertyPageCursorFlash(spacing);
 							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							if ( editproperty == 0 )
+							{
+								inputlen = 4;
+							}
+							else
+							{
+								inputlen = 4;
+							}
+							propertyPageCursorFlash(spacing);
+						}
+					}
+				}
+				else if ( newwindow == 9 )
+				{
+					if ( selectedEntity != NULL )
+					{
+						int numProperties = sizeof(boulderTrapPropertyNames) / sizeof(boulderTrapPropertyNames[0]); //find number of entries in property list
+						const int lenProperties = sizeof(boulderTrapPropertyNames[0]) / sizeof(char); //find length of entry in property list
+						int spacing = 36; // 36 px between each item in the list.
+						int inputFieldHeader_y = suby1 + 28; // 28 px spacing from subwindow start.
+						int inputField_x = subx1 + 8; // 8px spacing from subwindow start.
+						int inputField_y = inputFieldHeader_y + 16;
+						int inputFieldWidth = 64; // width of the text field
+						int inputFieldFeedback_x = inputField_x + inputFieldWidth + 8;
+						char tmpPropertyName[lenProperties] = "";
+						Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						Uint32 colorRandom = SDL_MapRGB(mainsurface->format, 0, 168, 255);
+						Uint32 colorError = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+						for ( int i = 0; i < numProperties; i++ )
+						{
+							int propertyInt = atoi(spriteProperties[i]);
+
+							strcpy(tmpPropertyName, boulderTrapPropertyNames[i]);
+							inputFieldHeader_y = suby1 + 28 + i * spacing;
+							inputField_y = inputFieldHeader_y + 16;
+							// box outlines then text
+							drawDepressed(inputField_x - 4, inputField_y - 4, inputField_x - 4 + inputFieldWidth, inputField_y + 16 - 4);
+							// print values on top of boxes
+							printText(font8x8_bmp, inputField_x, suby1 + 44 + i * spacing, spriteProperties[i]);
+							printText(font8x8_bmp, inputField_x, inputFieldHeader_y, tmpPropertyName);
+
+							if ( errorArr[i] != 1 )
+							{
+								if ( i == 0 )
+								{
+									if ( propertyInt > 99 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0 re-fire.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "time");
+										}
+										else
+										{
+											strcpy(tmpStr, "times");
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 1 )
+								{
+									if ( propertyInt > 999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 1); // reset to default 1 seconds.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										if ( propertyInt < 2 )
+										{
+											strcpy(tmpStr, "Value must be > 1!");
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, tmpStr);
+										}
+										else
+										{
+											if ( propertyInt == 1 )
+											{
+												strcpy(tmpStr, "second");
+											}
+											else
+											{
+												strcpy(tmpStr, "seconds");
+											}
+											printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+										}
+									}
+								}
+								else if ( i == 2 )
+								{
+									if ( propertyInt > 999 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 1 seconds.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "second");
+										}
+										else
+										{
+											strcpy(tmpStr, "seconds");
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else
+								{
+									// enter other row entries here
+								}
+							}
+
+							if ( errorMessage )
+							{
+								if ( errorArr[i] == 1 )
+								{
+									printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, colorError, "Invalid ID!");
+								}
+							}
+						}
+
+						propertyPageTextAndInput(numProperties, inputFieldWidth);
+
+						if ( editproperty < numProperties )   // edit
+						{
+							if ( !SDL_IsTextInputActive() )
+							{
+								SDL_StartTextInput();
+								inputstr = spriteProperties[0];
+							}
+
+							// set the maximum length allowed for user input
+							if ( editproperty == 0 )
+							{
+								inputlen = 4;
+							}
+							else
+							{
+								inputlen = 4;
+							}
+							propertyPageCursorFlash(spacing);
 						}
 					}
 				}

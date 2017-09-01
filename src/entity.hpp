@@ -188,6 +188,14 @@ public:
 	Sint32& leverTimerTicks;
 	Sint32& leverStatus;
 
+	//--PUBLIC BOULDER TRAP SKILLS--
+	Sint32& boulderTrapRefireAmount;
+	Sint32& boulderTrapRefireDelay;
+	Sint32& boulderTrapAmbience;
+	Sint32& boulderTrapFired;
+	Sint32& boulderTrapRefireCounter;
+	Sint32& boulderTrapPreDelay;
+
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
 

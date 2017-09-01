@@ -1205,7 +1205,7 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(subtext, "Power Crystal Properties:");
 			break;
 		case 6:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks)); //Orientation
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1216,6 +1216,21 @@ void buttonSpriteProperties(button_t* my)
 			suby1 = yres / 2 - 60;
 			suby2 = yres / 2 + 60;
 			strcpy(subtext, "Lever Timer Properties:");
+			break;
+		case 7:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireAmount));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireDelay));
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->boulderTrapPreDelay)); 
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 9;
+			subx1 = xres / 2 - 140;
+			subx2 = xres / 2 + 140;
+			suby1 = yres / 2 - 100;
+			suby2 = yres / 2 + 100;
+			strcpy(subtext, "Boulder Trap Properties:");
 			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
@@ -2013,6 +2028,25 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				else
 				{
 					selectedEntity->leverTimerTicks = (Sint32)atoi(spriteProperties[0]);
+				}
+				break;
+			case 7: //boulder trap
+				selectedEntity->boulderTrapRefireAmount = (Sint32)atoi(spriteProperties[0]);
+				if ( (Sint32)atoi(spriteProperties[1]) < 2 )
+				{
+					selectedEntity->boulderTrapRefireDelay = 2;
+				}
+				else
+				{
+					selectedEntity->boulderTrapRefireDelay = (Sint32)atoi(spriteProperties[1]);
+				}
+				if ( (Sint32)atoi(spriteProperties[2]) < 0 )
+				{
+					selectedEntity->boulderTrapPreDelay = 0;
+				}
+				else
+				{
+					selectedEntity->boulderTrapPreDelay = (Sint32)atoi(spriteProperties[2]);
 				}
 				break;
 			default:
