@@ -552,7 +552,10 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			my->z = 0;
-			my->pitch = 0;
+			if ( my->monsterAttack == 0 )
+			{
+				my->pitch = 0;
+			}
 		}
 	}
 
@@ -561,6 +564,11 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( my->monsterAttack != MONSTER_POSE_RANGED_WINDUP3 && bodypart == 1 && multiplayer != CLIENT )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -588,7 +596,50 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					my->handleWeaponArmAttack(entity);
+					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+					{
+						Entity* rightbody = nullptr;
+						// set rightbody to left leg.
+						node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+						if ( rightbodyNode )
+						{
+							rightbody = (Entity*)rightbodyNode->element;
+						}
+						else
+						{
+							return;
+						}
+
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+						}
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.05);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.25, 14 * PI / 8, false, 0.0);
+						}
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.1);
+						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+							}
+						}
+					}
+					else
+					{
+						my->handleWeaponArmAttack(entity);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -1115,7 +1166,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	if ( monsterSpecialTimer == 0 )
 	{
 		//messagePlayer(clientnum, "Cooldown done!");
-		specialRoll = rand()%20;
+		specialRoll = rand()%2;
 
 		if ( specialRoll == 0 )
 		{

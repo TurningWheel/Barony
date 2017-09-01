@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initAutomaton(Entity* my, Stat* myStats)
 {
@@ -532,7 +533,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 
-		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 || MONSTER_ATTACK == MONSTER_POSE_SPECIAL_WINDUP1) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
 		}
@@ -553,7 +554,98 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					my->handleWeaponArmAttack(entity);
+					if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+					{
+						Entity* rightbody = nullptr;
+						// set rightbody to left leg.
+						node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+						if ( rightbodyNode )
+						{
+							rightbody = (Entity*)rightbodyNode->element;
+						}
+						else
+						{
+							return;
+						}
+
+						// magic wiggle hands
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->pitch = 0;
+							weaponarm->yaw = my->yaw;
+							weaponarm->skill[1] = 0;
+							// casting particles
+							createParticleDot(my);
+							// play casting sound
+							playSoundEntityLocal(my, 170, 32);
+							if ( multiplayer != CLIENT )
+							{
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 30;
+							}
+						}
+
+						double animationYawSetpoint = 0.f;
+						double animationYawEndpoint = 0.f;
+						double armSwingRate = 0.f;
+						double animationPitchSetpoint = 0.f;
+						double animationPitchEndpoint = 0.f;
+
+						switch ( my->monsterSpellAnimation )
+						{
+							case MONSTER_SPELLCAST_HUMANOID:
+								animationYawSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
+								animationYawEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
+								animationPitchSetpoint = 1 * PI / 8;
+								animationPitchEndpoint = 15 * PI / 8;
+								armSwingRate = 0.15;
+								break;
+							default:
+								break;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, armSwingRate, animationPitchSetpoint, false, 0.0) )
+							{
+								if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, armSwingRate, animationYawSetpoint, false, 0.0) )
+								{
+									weaponarm->skill[1] = 1;
+								}
+							}
+						}
+						else
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -armSwingRate, animationPitchEndpoint, false, 0.0) )
+							{
+								if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, -armSwingRate, animationYawEndpoint, false, 0.0) )
+								{
+									weaponarm->skill[1] = 0;
+								}
+							}
+						}
+
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							weaponarm->skill[0] = rightbody->skill[0];
+							weaponarm->pitch = rightbody->pitch;
+							my->monsterArmbended = 0;
+							my->monsterAttack = 0;
+							if ( multiplayer != CLIENT )
+							{
+								spawnMagicEffectParticles(my->x, my->y, my->z / 2, 174);
+								my->monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_COMPLETE;
+							}
+						}
+					}
+					else
+					{
+						my->handleWeaponArmAttack(entity);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -1061,8 +1153,17 @@ bool Entity::automatonCanWieldItem(const Item& item) const
 		case WEAPON:
 			return true;
 		case ARMOR:
-			return true;
+			{
+				int equipType = checkEquipType(&item);
+				if ( equipType == TYPE_HAT )
+				{
+					return false; //No can wear hats, beep boop
+				}
+				return true;
+			}
 		case THROWN:
+			return true;
+		case MAGICSTAFF:
 			return true;
 		default:
 			return false;
@@ -1080,22 +1181,25 @@ void Entity::automatonRecycleItem()
 		return;
 	}
 
+	if ( this->monsterSpecialTimer > 0 && !(this->monsterSpecialState == AUTOMATON_RECYCLE_ANIMATION_COMPLETE) )
+	{
+		// if we're on cooldown, skip checking
+		// also we need the callback from my->attack() to set monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_COMPLETE once the animation completes.
+		return;
+	}
+
 	node_t* node = nullptr;
 	node_t* nextnode = nullptr;
 	int numItemsHeld = list_Size(&myStats->inventory);
+	//messagePlayer(0, "Numitems: %d", numItemsHeld);
+	if ( numItemsHeld < 2 )
+	{
+		return;
+	}
 
-	if ( this->monsterSpecialTimer > 0 )
+	if ( this->monsterSpecialTimer == 0 && this->monsterSpecialState == AUTOMATON_RECYCLE_ANIMATION_WAITING )
 	{
-		--this->monsterSpecialTimer;
-		return;
-	}
-	else if ( numItemsHeld < 2 )
-	{
-		return;
-	}
-	
-	if (this->monsterSpecialTimer == 0)
-	{
+		// put the skill on cooldown.
 		this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE;
 	}
 
@@ -1129,9 +1233,18 @@ void Entity::automatonRecycleItem()
 
 	if ( matches < 2 ) // not enough valid items found.
 	{
+		this->monsterSpecialTimer = 250; // reset cooldown to 5 seconds to check again quicker.
+		return;
+	}
+	
+	if ( this->monsterSpecialState == AUTOMATON_RECYCLE_ANIMATION_WAITING )
+	{
+		// this is the first run of the check, we'll execute the casting animation and wait for this to be set to 1 when it ends.
+		this->attack(MONSTER_POSE_SPECIAL_WINDUP1, 0, nullptr);
 		return;
 	}
 
+	this->monsterSpecialState = AUTOMATON_RECYCLE_ANIMATION_WAITING; // reset my special state after the previous lines.
 	int pickItem1 = rand() % matches; // pick random valid item index in inventory
 	int pickItem2 = rand() % matches;
 	while ( pickItem2 == pickItem1 )
@@ -1142,8 +1255,6 @@ void Entity::automatonRecycleItem()
 	itemIndex = 0;
 	Item* item1 = nullptr;
 	Item* item2 = nullptr;
-
-	
 
 	// search again for the 2 indexes, store the items and nodes.
 	for ( node = myStats->inventory.first; node != nullptr; node = nextnode )
@@ -1167,8 +1278,12 @@ void Entity::automatonRecycleItem()
 
 	//messagePlayer(0, "made it past");
 
-	int maxGoldValue = (items[item1->type].value + items[item2->type].value) * 2 / 3;
-	int minGoldValue = (items[item1->type].value + items[item2->type].value) * 1 / 3;
+	int maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 2) / 3;
+	if ( rand() % 2 == 0 )
+	{
+		maxGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 2;
+	}
+	int minGoldValue = ((items[item1->type].value + items[item2->type].value) * 1) / 3;
 	ItemType type;
 	// generate a weapon/armor piece and add it into the inventory.
 	switch ( rand() % 10 )
@@ -1176,9 +1291,9 @@ void Entity::automatonRecycleItem()
 		case 0:
 		case 1:
 		case 2:
-		case 3:
 			type = itemTypeWithinGoldValue(WEAPON, minGoldValue, maxGoldValue);
 			break;
+		case 3:
 		case 4:
 		case 5:
 		case 6:
@@ -1195,10 +1310,20 @@ void Entity::automatonRecycleItem()
 
 	if ( type != GEM_ROCK ) // found an item in category
 	{
-		Item* item = newItem(type, item1->status, item1->beatitude, 1, rand(), item1->identified, &myStats->inventory);
+		Item* item = nullptr;
+		// recycle item1 or item2, reduce durability.
+		if ( rand() % 2 == 0 )
+		{
+			item = newItem(type, item1->status, item1->beatitude, 1, rand(), item1->identified, &myStats->inventory);
+			item1->status = static_cast<Status>(std::max(0, item1->status - 2));
+		}
+		else
+		{
+			item = newItem(type, item2->status, item2->beatitude, 1, rand(), item2->identified, &myStats->inventory);
+			item2->status = static_cast<Status>(std::max(0, item2->status - 2));
+		}
+		// drop newly created item. To pickup if possible or leave behind if overburdened.
 		dropItemMonster(item, this, myStats);
-		// recycle item1, reduce durability.
-		item1->status = static_cast<Status>(std::max(0, item1->status - 2));
 		//messagePlayer(0, "Generated %d!", type);
 	}
 

@@ -371,15 +371,17 @@ static const int MONSTER_POSE_MAGIC_CAST1 = 19;
 static const int MONSTER_POSE_MAGIC_CAST2 = 20;
 static const int MONSTER_POSE_MAGIC_CAST3 = 21;
 static const int MONSTER_POSE_GOLEM_SMASH = 22;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 22;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 23;
+static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
 static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
-static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 1000;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 200;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -446,3 +448,7 @@ extern int monsterGlobalAttackTimeMultiplier;
 //--Goatman--
 static const int GOATMAN_HEALINGPOTION_MOD = 3;
 static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
+
+//--Automaton--
+static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;
+static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
