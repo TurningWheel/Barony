@@ -2328,10 +2328,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 				}
 
-				if ( my->light != NULL )
+				if ( my->light != nullptr )
 				{
 					list_RemoveNode(my->light->node);
-					my->light = NULL;
+					my->light = nullptr;
 				}
 				list_RemoveNode(my->mynode);
 				return;
