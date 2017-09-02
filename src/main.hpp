@@ -272,6 +272,7 @@ typedef struct map_t
 // names for the flag indices
 static const int MAP_FLAG_CEILINGTILE = 0;
 static const int MAP_FLAG_DISABLETRAPS = 1;
+static const int MAP_FLAG_DISABLEMONSTERS = 2;
 
 // light structure
 typedef struct light_t
