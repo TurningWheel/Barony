@@ -420,11 +420,15 @@ public:
 			case GOATMAN:
 				goatmanChooseWeapon(target, dist);
 				break;
+			case INSECTOID:
+				insectoidChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
 	}
 	void goatmanChooseWeapon(const Entity* target, double dist);
+	void insectoidChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist)
 	{

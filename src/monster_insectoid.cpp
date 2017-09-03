@@ -1094,3 +1094,73 @@ bool Entity::insectoidCanWieldItem(const Item& item) const
 
 	return false;
 }
+
+void Entity::insectoidChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState == 1 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer()
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	/*if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
+	{
+		return;
+	}*/
+
+	int specialRoll = -1;
+	bool usePotionSpecial = false;
+
+	node_t* hasPotion = nullptr;
+	bool isHealingPotion = false;
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	if ( inMeleeRange )
+	{
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+			if ( !swapped )
+			{
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	//Switch to a thrown weapon or a ranged weapon.
+	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	{
+		//First search the inventory for a THROWN weapon.
+		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		if ( !weaponNode )
+		{
+			return; //Nothing available
+		}
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+		return;
+	}
+	return;
+}
