@@ -3116,7 +3116,7 @@ bool Entity::isInvisible() const
 bool Entity::isMobile()
 {
 	Stat* entitystats;
-	if ( (entitystats = getStats()) == NULL )
+	if ( (entitystats = getStats()) == nullptr )
 	{
 		return true;
 	}
@@ -3137,6 +3137,11 @@ bool Entity::isMobile()
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
 	{
 		return false;
+	}
+
+	if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	{
+		return false; //Shadows can't do anything while they are casting their special ability.
 	}
 
 	return true;
@@ -3354,6 +3359,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
 			}
 		}
+		/*else if ( myStats->type == SHADOW )
+		{
+			if ( myStats->EFFECTS[EFF_INVISIBLE] )
+			{
+				//Shadows lose invisibility when they attack.
+				//TODO: How does this play with the passive invisibility?
+				myStats->EFFECTS[EFF_INVISIBLE] = false;
+			}
+		}*/
 
 		if ( myStats->weapon != nullptr )
 		{
@@ -7903,3 +7917,26 @@ Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
 	}
 }
 
+double Entity::monsterRotate()
+{
+	double dir = yaw - monsterLookDir;
+	while ( dir >= PI )
+	{
+		dir -= PI * 2;
+	}
+	while ( dir < -PI )
+	{
+		dir += PI * 2;
+	}
+	yaw -= dir / 2;
+	while ( yaw < 0 )
+	{
+		yaw += 2 * PI;
+	}
+	while ( yaw >= 2 * PI )
+	{
+		yaw -= 2 * PI;
+	}
+
+	return dir;
+}

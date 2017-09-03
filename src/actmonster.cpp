@@ -2478,24 +2478,7 @@ void actMonster(Entity* my)
 			}
 
 			// rotate monster
-			dir = my->yaw - my->monsterLookDir;
-			while ( dir >= PI )
-			{
-				dir -= PI * 2;
-			}
-			while ( dir < -PI )
-			{
-				dir += PI * 2;
-			}
-			my->yaw -= dir / 2;
-			while ( my->yaw < 0 )
-			{
-				my->yaw += 2 * PI;
-			}
-			while ( my->yaw >= 2 * PI )
-			{
-				my->yaw -= 2 * PI;
-			}
+			dir = my->monsterRotate();
 		}
 		else if ( my->monsterState == MONSTER_STATE_ATTACK ) // charge state
 		{
@@ -4459,7 +4442,15 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					// turn to the target, then reset my yaw.
 					double oYaw = this->yaw;
 					this->yaw = newTangent;
-					this->attack(pose, charge, nullptr); // attacku! D:<
+					//if ( myStats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					//{
+						//Do nothing, already handled in shadow's actLimnbs thing.
+						//Otherwise, this will make the shadow beat on players.
+					//}
+					//else
+					//{
+						this->attack(pose, charge, nullptr); // attacku! D:<
+					//}
 					this->yaw = oYaw;
 				}
 			}

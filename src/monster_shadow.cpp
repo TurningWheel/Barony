@@ -394,6 +394,17 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
+	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	{
+		//Always turn to face the target.
+		Entity* target = uidToEntity(my->monsterTarget);
+		if ( target )
+		{
+			my->lookAtEntity(*target);
+			my->monsterRotate();
+		}
+	}
+
 	//Move bodyparts
 	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++ )
 	{
@@ -653,6 +664,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// swing the arm after we prepped the spell
 							//this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
 							messagePlayer(clientnum, "TODO: Shadow invisibility mimic teleport and stuff.");
+							my->shadowSpecialAbility();
 						}
 					}
 				}
@@ -1205,4 +1217,23 @@ bool Entity::shadowCanWieldItem(const Item& item) const
 		default:
 			return false;
 	}
+}
+
+void Entity::shadowSpecialAbility()
+{
+	//TODO: Teleport to target.
+	//TODO: Turn invisible.
+	//TODO: Mimic target's weapon & shield (only on initial cast).
+	//TODO: Random chance to mimic other things.
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	//TODO: Turn invisible.
+	//myStats->EFFECTS[EFF_INVISIBLE] = true;
+	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
+	messagePlayer(clientnum, "Turned invisible!");
 }

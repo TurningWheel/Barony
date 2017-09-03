@@ -423,6 +423,10 @@ public:
 	node_t* addItemToMonsterInventory(Item* item);
 
 	//void returnWeaponarmToNeutral(Entity* weaponarm, Entity* rightbody); //TODO: Need a proper refactor?
+
+	void shadowSpecialAbility();
+
+	double monsterRotate();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
