@@ -6339,7 +6339,10 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == POTION && myStats->type == GOATMAN )
 		{
-			pose = MONSTER_POSE_RANGED_WINDUP3;
+			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+			{
+				pose = MONSTER_POSE_RANGED_WINDUP3;
+			}
 			//TODO:
 			//if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
 			//{

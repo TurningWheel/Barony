@@ -1166,7 +1166,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	if ( monsterSpecialTimer == 0 )
 	{
 		//messagePlayer(clientnum, "Cooldown done!");
-		specialRoll = rand()%2;
+		specialRoll = rand()%20;
 
 		if ( specialRoll == 0 )
 		{
