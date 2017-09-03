@@ -199,6 +199,7 @@ public:
 	Stat* copyStats();
 	void printStats();
 	Sint32 EDITOR_ITEMS[ITEM_SLOT_NUM];
+	int pickRandomEquippedItem(Item* returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry);
 };
 extern Stat* stats[MAXPLAYERS];
 
