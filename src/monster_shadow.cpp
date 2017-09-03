@@ -60,6 +60,8 @@ void initShadow(Entity* my, Stat* myStats)
 			}
 
 			// random effects
+			myStats->EFFECTS[EFF_LEVITATING] = true;
+			myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);
