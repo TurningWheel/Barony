@@ -3359,7 +3359,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
 			}
 		}
-		/*else if ( myStats->type == SHADOW )
+		else if ( myStats->type == SHADOW )
 		{
 			if ( myStats->EFFECTS[EFF_INVISIBLE] )
 			{
