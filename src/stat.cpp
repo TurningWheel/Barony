@@ -670,47 +670,44 @@ void Stat::printStats()
 }
 
 
-int Stat::pickRandomEquippedItem(Item* returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry)
+int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry)
 {
 	int numEquippedItems = 0;
-	Item* equipArray[10] = { nullptr };
-	int equipNum[10] = { -1 }; // index of equipment piece to update the client, defined in net.cpp "ARMR"
+	int equipNum[10] = { 0 };// index of equipment piece to update the client, defined in net.cpp "ARMR"
+	for ( int i; i < 10; ++i )
+	{
+		equipNum[i] = -1;
+	}
 
 	if ( !excludeArmor )
 	{
 		if ( this->helmet != nullptr )
 		{
-			equipArray[numEquippedItems] = this->helmet;
 			equipNum[numEquippedItems] = 0;
 			++numEquippedItems;
 		}
 		if ( this->breastplate != nullptr )
 		{
-			equipArray[numEquippedItems] = this->breastplate;
 			equipNum[numEquippedItems] = 1;
 			++numEquippedItems;
 		}
 		if ( this->gloves != nullptr )
 		{
-			equipArray[numEquippedItems] = this->gloves;
 			equipNum[numEquippedItems] = 2;
 			++numEquippedItems;
 		}
 		if ( this->shoes != nullptr )
 		{
-			equipArray[numEquippedItems] = this->shoes;
 			equipNum[numEquippedItems] = 3;
 			++numEquippedItems;
 		}
 		if ( this->cloak != nullptr )
 		{
-			equipArray[numEquippedItems] = this->cloak;
 			equipNum[numEquippedItems] = 6;
 			++numEquippedItems;
 		}
 		if ( this->mask != nullptr )
 		{
-			equipArray[numEquippedItems] = this->mask;
 			equipNum[numEquippedItems] = 9;
 			++numEquippedItems;
 		}
@@ -720,7 +717,6 @@ int Stat::pickRandomEquippedItem(Item* returnItem, bool excludeWeapon, bool excl
 	{
 		if ( this->weapon != nullptr )
 		{
-			equipArray[numEquippedItems] = this->weapon;
 			equipNum[numEquippedItems] = 5;
 			++numEquippedItems;
 		}
@@ -730,7 +726,6 @@ int Stat::pickRandomEquippedItem(Item* returnItem, bool excludeWeapon, bool excl
 	{
 		if ( this->shield != nullptr )
 		{
-			equipArray[numEquippedItems] = this->shield;
 			equipNum[numEquippedItems] = 4;
 			++numEquippedItems;
 		}
@@ -740,13 +735,11 @@ int Stat::pickRandomEquippedItem(Item* returnItem, bool excludeWeapon, bool excl
 	{
 		if ( this->amulet != nullptr )
 		{
-			equipArray[numEquippedItems] = this->amulet;
 			equipNum[numEquippedItems] = 7;
 			++numEquippedItems;
 		}
 		if ( this->ring != nullptr )
 		{
-			equipArray[numEquippedItems] = this->ring;
 			equipNum[numEquippedItems] = 8;
 			++numEquippedItems;
 		}
@@ -754,12 +747,48 @@ int Stat::pickRandomEquippedItem(Item* returnItem, bool excludeWeapon, bool excl
 
 	if ( numEquippedItems == 0 )
 	{
-		returnItem = nullptr;
+		*returnItem = nullptr;
 		return -1;
 	}
 
 	int roll = rand() % numEquippedItems;
-	returnItem = equipArray[roll];
+
+	switch ( equipNum[roll] )
+	{
+		case 0:
+			*returnItem = this->helmet;
+			break;
+		case 1:
+			*returnItem = this->breastplate;
+			break;
+		case 2:
+			*returnItem = this->gloves;
+			break;
+		case 3:
+			*returnItem = this->shoes;
+			break;
+		case 4:
+			*returnItem = this->shield;
+			break;
+		case 5:
+			*returnItem = this->weapon;
+			break;
+		case 6:
+			*returnItem = this->cloak;
+			break;
+		case 7:
+			*returnItem = this->amulet;
+			break;
+		case 8:
+			*returnItem = this->ring;
+			break;
+		case 9:
+			*returnItem = this->mask;
+			break;
+		default:
+			*returnItem = nullptr;
+			break;
+	}
 
 	return equipNum[roll];
 }
