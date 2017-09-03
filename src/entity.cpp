@@ -3487,6 +3487,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_SUMMON:
 							castSpell(uid, &spell_summon, true, false);
 							break;
+						case SPELLBOOK_ACID_SPRAY:
+							castSpell(uid, &spell_acidSpray, true, false);
+							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 							//castSpell(uid, &spell_reflectMagic, true, false)
 							//break;
@@ -7912,4 +7915,3 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 	}
 }
-

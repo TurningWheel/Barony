@@ -2327,6 +2327,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
+				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
+				{
+					spellEffectAcid(*my, *element, parent, resistance);
+					return;
+				}
 
 				if ( my->light != NULL )
 				{

@@ -2857,8 +2857,8 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_REFLECT_MAGIC:
 				addSpell(SPELL_REFLECT_MAGIC, player);
 				break;
-			case SPELLBOOK_BLANK_1:
-				messagePlayer(player, "You no can has spell of TODO!");
+			case SPELLBOOK_ACID_SPRAY:
+				addSpell(SPELL_ACID_SPRAY, player);
 				break;
 			case SPELLBOOK_BLANK_2:
 				messagePlayer(player, "Wot?! Blank speel?");

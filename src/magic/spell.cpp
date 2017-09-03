@@ -52,6 +52,7 @@ spellElement_t spellElement_stoneblood;
 spellElement_t spellElement_bleed;
 spellElement_t spellElement_dominate;
 spellElement_t spellElement_reflectMagic;
+spellElement_t spellElement_acidSpray;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -80,6 +81,7 @@ spell_t spell_stoneblood;
 spell_t spell_bleed;
 spell_t spell_dominate;
 spell_t spell_reflectMagic;
+spell_t spell_acidSpray;
 
 void addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -172,6 +174,9 @@ void addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_REFLECT_MAGIC:
 			new_spell = copySpell(&spell_reflectMagic);
+			break;
+		case SPELL_ACID_SPRAY:
+			new_spell = copySpell(&spell_acidSpray);
 			break;
 		default:
 			return;
@@ -492,6 +497,9 @@ spell_t* getSpellFromID(int ID)
 			break;
 		case SPELL_REFLECT_MAGIC:
 			spell = &spell_reflectMagic;
+			break;
+		case SPELL_ACID_SPRAY:
+			spell = &spell_acidSpray;
 			break;
 		default:
 			break;

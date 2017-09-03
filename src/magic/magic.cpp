@@ -308,3 +308,157 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	list_RemoveNode(my.mynode);
 	return true;
 }
+
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	if ( !hit.entity )
+	{
+		return;
+	}
+
+	Stat* hitstats = hit.entity->getStats();
+	if ( !hitstats )
+	{
+		return;
+	}
+
+	int player = -1;
+	if ( hit.entity->behavior == &actPlayer )
+	{
+		player = hit.entity->skill[2];
+	}
+
+	playSoundEntity(&my, 173, 128);
+	if ( hit.entity )
+	{
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			Entity* parent = uidToEntity(my.parent);
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					if ( my.light != NULL )
+					{
+						list_RemoveNode(my.light->node);
+						my.light = NULL;
+					}
+					list_RemoveNode(my.mynode);
+					return;
+				}
+			}
+			playSoundEntity(&my, 173, 64);
+			playSoundEntity(hit.entity, 249, 128);
+			playSoundEntity(hit.entity, 28, 128);
+			int damage = element.damage;
+			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+			damage *= damagetables[hitstats->type][5];
+			damage /= (1 + (int)resistance);
+			hit.entity->modHP(-damage);
+
+			// write the obituary
+			if ( parent )
+			{
+				parent->killedByMonsterObituary(hit.entity);
+			}
+
+			hitstats->EFFECTS[EFF_POISONED] = true;
+			hitstats->EFFECTS_TIMERS[EFF_POISONED] = (element.duration * (((element.mana) / static_cast<double>(element.base_mana)) * element.overload_multiplier));
+			hitstats->EFFECTS_TIMERS[EFF_POISONED] /= (1 + (int)resistance);
+			/*hitstats->EFFECTS[EFF_SLOW] = true;
+			hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+			hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);*/
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				serverUpdateEffects(hit.entity->skill[2]);
+			}
+			// hit messages
+			if ( parent )
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+				if ( parent->behavior == &actPlayer )
+				{
+					if ( strcmp(hitstats->name, "") )
+					{
+						messagePlayerColor(parent->skill[2], color, language[2430], hitstats->name);
+					}
+					else
+					{
+						if ( hitstats->type < KOBOLD ) //Original monster count
+						{
+							messagePlayerColor(parent->skill[2], color, language[2431], language[90 + hitstats->type]);
+						}
+						else if ( hitstats->type >= KOBOLD ) //New monsters
+						{
+							messagePlayerColor(parent->skill[2], color, language[2431], language[2000 + (hitstats->type - KOBOLD)]);
+						}
+					}
+				}
+			}
+
+			// write the obituary
+			if ( parent )
+			{
+				parent->killedByMonsterObituary(hit.entity);
+			}
+
+			// update enemy bar for attacker
+			if ( !strcmp(hitstats->name, "") )
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+				}
+			}
+			else
+			{
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+			}
+
+			if ( hitstats->HP <= 0 && parent )
+			{
+				parent->awardXP(hit.entity, true, true);
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+			if ( player >= 0 )
+			{
+				messagePlayerColor(player, color, language[2432]);
+			}
+			if ( my.light != NULL )
+			{
+				list_RemoveNode(my.light->node);
+				my.light = NULL;
+			}
+			list_RemoveNode(my.mynode);
+
+			if ( hitstats->HP > 0 && rand() & 2 )
+			{
+				// damage armor
+				Item* armor = nullptr;
+				int armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+				//messagePlayer(0, "armornum: %d", armornum);
+				if ( armornum != -1 && armor != nullptr )
+				{
+					hit.entity->degradeArmor(*hitstats, *armor, armornum);
+					//messagePlayerColor(player, color, "Armor piece: %s", armor->getName());
+				}
+			}
+			return;
+		}
+	}
+
+	if ( my.light != NULL )
+	{
+		list_RemoveNode(my.light->node);
+		my.light = NULL;
+	}
+	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	list_RemoveNode(my.mynode);
+	return;
+}
