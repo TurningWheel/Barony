@@ -373,6 +373,7 @@ static const int MONSTER_POSE_MAGIC_CAST3 = 21;
 static const int MONSTER_POSE_GOLEM_SMASH = 22;
 static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 23;
 static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
+//static const int MONSTER_POSE_SHADOW_TELEMIMICINVISI_WINDUP = 25;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -382,6 +383,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 1000;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 200;
+static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK = 500;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -417,6 +419,7 @@ static const int LIMB_HUMANOID_MASK = 11;
 
 //--monster attack windup duration, in ticks, roughly 180ms
 static const int ANIMATE_DURATION_WINDUP = 9;
+static const int ANIMATE_DURATION_WINDUP_SHADOW_SPECIAL = 50;
 
 //--monster footstep sounds
 static const int MONSTER_FOOTSTEP_NONE = 0;

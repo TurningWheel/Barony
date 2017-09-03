@@ -2910,7 +2910,7 @@ client (player %d) (direct ip)#
 2282 blank spellbook 5#
 2283 spellbook#
 2284 empty bottle#
-2285 empty bottle#                                
+2285 empty bottle#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2983,6 +2983,6 @@ dominate the %s into your service!#
 2475 But you feel some energy go out and it bounces off!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
-   
-                         
+
+
 2499 end#
