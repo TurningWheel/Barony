@@ -2398,6 +2398,9 @@ int main(int argc, char** argv)
 
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Monster Spawns:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLEMONSTERS]);
+					pad_y1 += 24;
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Loot Spawns:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELOOT]);
 
 					start_y = suby2 - 44;
 					pad_y1 = 0;
@@ -2465,6 +2468,18 @@ int main(int argc, char** argv)
 							else
 							{
 								strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 148 && omousex < start_x3 + 24 && omousey < suby1 + 164 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}

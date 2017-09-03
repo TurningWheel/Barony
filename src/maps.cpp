@@ -284,6 +284,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	int secretlevelexit = 0;
 	bool *trapexcludelocations;
 	bool *monsterexcludelocations;
+	bool *lootexcludelocations;
 
 	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
 	if (loadMap(levelset, &map, map.entities) == -1)
@@ -567,6 +568,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 		possiblelocations = (bool*) malloc(sizeof(bool) * map.width * map.height);
 		trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		monsterexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		lootexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		for ( y = 0; y < map.height; y++ )
 		{
 			for ( x = 0; x < map.width; x++ )
@@ -588,6 +590,15 @@ int generateDungeon(char* levelset, Uint32 seed)
 				else
 				{
 					monsterexcludelocations[x + y * map.width] = false;
+				}
+				if ( map.flags[MAP_FLAG_DISABLELOOT] == true )
+				{
+					// the base map excludes all monsters
+					lootexcludelocations[x + y * map.width] = true;
+				}
+				else
+				{
+					lootexcludelocations[x + y * map.width] = false;
 				}
 			}
 		}
@@ -731,6 +742,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					free(possiblelocations2);
 					free(trapexcludelocations);
 					free(monsterexcludelocations);
+					free(lootexcludelocations);
 					free(firstroomtile);
 					free(sublevelname);
 					free(fullname);
@@ -877,6 +889,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 							if ( tempMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
 							{
 								monsterexcludelocations[x0 + y0 * map.width] = true;
+							}
+							if ( tempMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
+							{
+								lootexcludelocations[x0 + y0 * map.width] = true;
 							}
 							if ( c == 0 )
 							{
@@ -1593,33 +1609,35 @@ int generateDungeon(char* levelset, Uint32 seed)
 				// monsters/items
 				if ( balance )
 				{
-					if ( prng_get_uint() % balance || monsterexcludelocations[x + y * map.width] == true )
+					if ( prng_get_uint() % balance )
 					{
-						if ( monsterexcludelocations[x + y * map.width] == true )
+						if ( lootexcludelocations[x + y * map.width] == false )
 						{
-							messagePlayer(0, "Item added in place of monster at x: %d, y: %d", x, y);
-						}
-						if ( prng_get_uint() % 10 == 0 )   // 10% chance
-						{
-							entity = newEntity(9, 1, map.entities);  // gold
-						}
-						else
-						{
-							entity = newEntity(8, 1, map.entities);  // item
+							if ( prng_get_uint() % 10 == 0 )   // 10% chance
+							{
+								entity = newEntity(9, 1, map.entities);  // gold
+							}
+							else
+							{
+								entity = newEntity(8, 1, map.entities);  // item
+							}
 						}
 					}
 					else
 					{
-						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+						if ( monsterexcludelocations[x + y * map.width] == false )
 						{
-							entity = newEntity(27, 1, map.entities);  // human
+							if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+							{
+								entity = newEntity(27, 1, map.entities);  // human
+							}
+							else
+							{
+								entity = newEntity(10, 1, map.entities);  // monster
+							}
+							entity->skill[5] = nummonsters;
+							nummonsters++;
 						}
-						else
-						{
-							entity = newEntity(10, 1, map.entities);  // monster
-						}
-						entity->skill[5] = nummonsters;
-						nummonsters++;
 					}
 				}
 			}
@@ -1689,6 +1707,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	free(possiblelocations);
 	free(trapexcludelocations);
 	free(monsterexcludelocations);
+	free(lootexcludelocations);
 	free(firstroomtile);
 	free(subRoomName);
 	free(sublevelname);

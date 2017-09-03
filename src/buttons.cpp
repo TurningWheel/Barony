@@ -213,14 +213,22 @@ void buttonNew(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
 	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 100;
-	suby2 = yres / 2 + 100;
+	suby1 = yres / 2 - 120;
+	suby2 = yres / 2 + 120;
 	strcpy(subtext, "New map:");
 
 	button = newButton();
@@ -285,6 +293,17 @@ void buttonNewConfirm(button_t* my)
 			else
 			{
 				map.flags[MAP_FLAG_DISABLEMONSTERS] = 0;
+			}
+		}
+		else if ( z == MAP_FLAG_DISABLELOOT )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLELOOT] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLELOOT] = 0;
 			}
 		}
 		else
@@ -828,14 +847,22 @@ void buttonAttributes(button_t* my)
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
 	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 100;
-	suby2 = yres / 2 + 100;
+	suby1 = yres / 2 - 120;
+	suby2 = yres / 2 + 120;
 	strcpy(subtext, "Map properties:");
 
 	button = newButton();
@@ -921,6 +948,14 @@ void buttonAttributesConfirm(button_t* my)
 	else
 	{
 		map.flags[MAP_FLAG_DISABLEMONSTERS] = 0;
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLELOOT] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLELOOT] = 0;
 	}
 
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
