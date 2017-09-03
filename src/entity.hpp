@@ -268,6 +268,7 @@ public:
 	bool goatmanCanWieldItem(const Item& item) const;
 	bool automatonCanWieldItem(const Item& item) const;
 	bool shadowCanWieldItem(const Item& item) const;
+	bool insectoidCanWieldItem(const Item& item) const;
 
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
 

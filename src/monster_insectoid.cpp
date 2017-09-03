@@ -1062,3 +1062,35 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		// do nothing, don't reset attacktime or increment it.
 	}
 }
+
+bool Entity::insectoidCanWieldItem(const Item& item) const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	switch ( itemCategory(&item) )
+	{
+		case WEAPON:
+			return true;
+		case POTION:
+			return false;
+		case THROWN:
+			return true;
+		case ARMOR:
+		{ //Little baby compiler stop whining, wah wah.
+			int equipType = checkEquipType(&item);
+			if ( equipType == TYPE_HAT || equipType == TYPE_HELM )
+			{
+				return false; //No can wear hats, because antennae.
+			}
+			return true; //Can wear all other armor.
+		}
+		default:
+			return false;
+	}
+
+	return false;
+}
