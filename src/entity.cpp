@@ -6306,7 +6306,7 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6317,7 +6317,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6337,20 +6337,27 @@ int Entity::getAttackPose() const
 				pose = 1;  // vertical swing
 			}
 		}
-		else if ( itemCategory(myStats->weapon) == POTION && myStats->type == GOATMAN )
+		else if ( itemCategory(myStats->weapon) == POTION )
 		{
-			if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+			if ( myStats->type == GOATMAN )
 			{
-				pose = MONSTER_POSE_RANGED_WINDUP3;
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP3;
+				}
+				else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+				{
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+				}
 			}
-			else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+			else
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
 		}
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6372,7 +6379,7 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6393,7 +6400,7 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}

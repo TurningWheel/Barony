@@ -754,7 +754,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 1.5;
+				entity->z += .5;
 				if ( my->z >= 2.4 && my->z <= 2.6 )
 				{
 					entity->pitch = 0;
