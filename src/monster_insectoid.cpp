@@ -102,41 +102,42 @@ void initInsectoid(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					newItem(SPELLBOOK_ACID_SPRAY, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					break;
 				default:
 					break;
 			}
 
 			//give shield
-			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				// give shield
-				switch ( rand() % 10 )
-				{
-					case 0:
-					case 1:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-				}
-			}
+			//if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			//{
+			//	// give shield
+			//	switch ( rand() % 10 )
+			//	{
+			//		case 0:
+			//		case 1:
+			//			myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
+			//			break;
+			//		case 2:
+			//		case 3:
+			//		case 4:
+			//			break;
+			//		case 5:
+			//		case 6:
+			//			myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+			//			break;
+			//		case 7:
+			//		case 8:
+			//			myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+			//			break;
+			//		case 9:
+			//			myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+			//			break;
+			//	}
+			//}
 
 			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			/*if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -161,10 +162,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 						myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 				}
-			}
+			}*/
 
 			// give cloak
-			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			/*if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -184,10 +185,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
 						break;
 				}
-			}
+			}*/
 
 			// give helmet
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			/*if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -211,10 +212,10 @@ void initInsectoid(Entity* my, Stat* myStats)
 						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
 						break;
 				}
-			}
+			}*/
 
 			// give armor
-			if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			/*if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -234,7 +235,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 						myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 				}
-			}
+			}*/
 		}
 	}
 

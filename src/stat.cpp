@@ -674,39 +674,39 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 {
 	int numEquippedItems = 0;
 	int equipNum[10] = { 0 };// index of equipment piece to update the client, defined in net.cpp "ARMR"
-	for ( int i; i < 10; ++i )
+	for ( int i = 0; i < 10; ++i )
 	{
 		equipNum[i] = -1;
 	}
 
 	if ( !excludeArmor )
 	{
-		if ( this->helmet != nullptr )
+		if ( this->helmet != nullptr && this->helmet->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 0;
 			++numEquippedItems;
 		}
-		if ( this->breastplate != nullptr )
+		if ( this->breastplate != nullptr && this->breastplate->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 1;
 			++numEquippedItems;
 		}
-		if ( this->gloves != nullptr )
+		if ( this->gloves != nullptr && this->gloves->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 2;
 			++numEquippedItems;
 		}
-		if ( this->shoes != nullptr )
+		if ( this->shoes != nullptr && this->shoes->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 3;
 			++numEquippedItems;
 		}
-		if ( this->cloak != nullptr )
+		if ( this->cloak != nullptr && this->cloak->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 6;
 			++numEquippedItems;
 		}
-		if ( this->mask != nullptr )
+		if ( this->mask != nullptr && this->mask->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 9;
 			++numEquippedItems;
@@ -715,7 +715,7 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 
 	if ( !excludeWeapon )
 	{
-		if ( this->weapon != nullptr )
+		if ( this->weapon != nullptr && this->weapon->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 5;
 			++numEquippedItems;
@@ -724,7 +724,7 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 
 	if ( !excludeShield )
 	{
-		if ( this->shield != nullptr )
+		if ( this->shield != nullptr && this->shield->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 4;
 			++numEquippedItems;
@@ -733,12 +733,12 @@ int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool exc
 
 	if ( !excludeJewelry )
 	{
-		if ( this->amulet != nullptr )
+		if ( this->amulet != nullptr  && this->amulet->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 7;
 			++numEquippedItems;
 		}
-		if ( this->ring != nullptr )
+		if ( this->ring != nullptr && this->ring->status > BROKEN )
 		{
 			equipNum[numEquippedItems] = 8;
 			++numEquippedItems;

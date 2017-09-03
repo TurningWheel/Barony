@@ -4420,7 +4420,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( armor != NULL )
 					{
-						hit.entity->degradeArmor(*hitstats, *armor, armornum);
+						hit.entity->degradeArmor(hitstats, armor, armornum);
 					}
 
 					// special weapon effects
@@ -6277,20 +6277,17 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
+			if ( myStats->type == INSECTOID && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP2;
+			}
+			else if ( myStats->type == COCKATRICE && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP2;
+			}
+			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == COCKATRICE )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
-			}
-			else if ( myStats->type == COCKATRICE )
-			{
-				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
-				{
-					pose = MONSTER_POSE_MAGIC_WINDUP2;
-				}
-				else
-				{
-					pose = MONSTER_POSE_MAGIC_WINDUP1;
-				}
 			}
 			else
 			{
@@ -7861,7 +7858,7 @@ Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
 	}
 }
 
-void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
+void Entity::degradeArmor(Stat* hitstats, Item* armor, int armornum)
 {
 	int playerhit = -1;
 
@@ -7872,43 +7869,42 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 
 	if ( playerhit == clientnum || playerhit < 0 )
 	{
-		if ( armor.count > 1 )
+		if ( armor->count > 1 )
 		{
-			newItem(armor.type, armor.status, armor.beatitude, armor.count - 1, armor.appearance, armor.identified, &hitstats.inventory);
+			newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
 		}
 	}
-	armor.count = 1;
-	armor.status = static_cast<Status>(armor.status - 1);
-	if ( armor.status > BROKEN )
+	armor->count = 1;
+	armor->status = static_cast<Status>(armor->status - 1);
+	if ( armor->status > BROKEN )
 	{
-		if ( armor.type == TOOL_CRYSTALSHARD )
+		if ( armor->type == TOOL_CRYSTALSHARD )
 		{
-			messagePlayer(playerhit, language[2350], armor.getName());
+			messagePlayer(playerhit, language[2350], armor->getName());
 		}
 		else
 		{
-			messagePlayer(playerhit, language[681], armor.getName());
+			messagePlayer(playerhit, language[681], armor->getName());
 		}
 	}
 	else
 	{
-
-		if ( armor.type == TOOL_CRYSTALSHARD )
+		if ( armor->type == TOOL_CRYSTALSHARD )
 		{
 			playSoundEntity(hit.entity, 162, 64);
-			messagePlayer(playerhit, language[2351], armor.getName());
+			messagePlayer(playerhit, language[2351], armor->getName());
 		}
 		else
 		{
 			playSoundEntity(hit.entity, 76, 64);
-			messagePlayer(playerhit, language[682], armor.getName());
+			messagePlayer(playerhit, language[682], armor->getName());
 		}
 	}
 	if ( playerhit > 0 && multiplayer == SERVER )
 	{
 		strcpy((char*)net_packet->data, "ARMR");
 		net_packet->data[4] = armornum;
-		net_packet->data[5] = armor.status;
+		net_packet->data[5] = armor->status;
 		net_packet->address.host = net_clients[playerhit - 1].host;
 		net_packet->address.port = net_clients[playerhit - 1].port;
 		net_packet->len = 6;

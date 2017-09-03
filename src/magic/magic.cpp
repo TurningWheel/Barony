@@ -430,12 +430,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			{
 				messagePlayerColor(player, color, language[2432]);
 			}
-			if ( my.light != NULL )
-			{
-				list_RemoveNode(my.light->node);
-				my.light = NULL;
-			}
-			list_RemoveNode(my.mynode);
 
 			if ( hitstats->HP > 0 )
 			{
@@ -453,10 +447,18 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				//messagePlayer(0, "armornum: %d", armornum);
 				if ( armornum != -1 && armor != nullptr )
 				{
-					hit.entity->degradeArmor(*hitstats, *armor, armornum);
+					hit.entity->degradeArmor(hitstats, armor, armornum);
 					//messagePlayerColor(player, color, "Armor piece: %s", armor->getName());
 				}
 			}
+
+			if ( my.light != NULL )
+			{
+				list_RemoveNode(my.light->node);
+				my.light = NULL;
+			}
+			list_RemoveNode(my.mynode);
+
 			return;
 		}
 	}

@@ -5066,6 +5066,30 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case INSECTOID:
+					if ( dist < STRIKERANGE * 2 )
+					{
+						specialRoll = rand() % 20;
+						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+
+						if ( myStats->HP <= myStats->MAXHP * 0.3 )
+						{
+							bonusFromHP = 2; // +10% chance if on low health
+						}
+						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+						{
+							monsterSpecialState = 1;
+							node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+							if ( node != nullptr )
+							{
+								swapMonsterWeaponWithInventoryItem(this, myStats, node);
+								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
+							}
+							break;
+						}
+					}
+					
+					break;
 				default:
 					break;
 			}
@@ -5083,6 +5107,18 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					else
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
+					}
+					break;
+				case INSECTOID:
+					monsterSpecialState = 0;
+					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+					if ( node != nullptr )
+					{
+						swapMonsterWeaponWithInventoryItem(this, myStats, node);
+					}
+					else
+					{
+						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 					}
 					break;
 				case COCKATRICE:

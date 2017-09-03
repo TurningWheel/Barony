@@ -376,7 +376,7 @@ public:
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
-	void degradeArmor(Stat& hitstats, Item& armor, int armornum);
+	void degradeArmor(Stat* hitstats, Item* armor, int armornum);
 
 	spell_t* getActiveMagicEffect(int spellID);
 
