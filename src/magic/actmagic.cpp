@@ -745,7 +745,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( reflection )
 				{
 					spell_t* spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
-
+					playSoundEntity(hit.entity, 166, 128);
 					if (hit.entity)
 					{
 						if ( hit.entity->behavior == &actPlayer )
