@@ -350,7 +350,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 			playSoundEntity(&my, 173, 64);
 			playSoundEntity(hit.entity, 249, 128);
-			playSoundEntity(hit.entity, 28, 128);
+			//playSoundEntity(hit.entity, 28, 64);
 			int damage = element.damage;
 			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 			damage *= damagetables[hitstats->type][5];
@@ -437,11 +437,19 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 			list_RemoveNode(my.mynode);
 
-			if ( hitstats->HP > 0 && rand() & 2 )
+			if ( hitstats->HP > 0 )
 			{
 				// damage armor
 				Item* armor = nullptr;
-				int armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+				int armornum = -1;
+				if ( hitstats->defending && (rand() % 6 == 0) ) // 1 in 6 to corrode shield
+				{
+					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, true, true);
+				}
+				else if ( !hitstats->defending && (rand() % 3 == 0) ) // 1 in 3 to corrode armor
+				{
+					armornum = hitstats->pickRandomEquippedItem(&armor, true, false, false, false);
+				}
 				//messagePlayer(0, "armornum: %d", armornum);
 				if ( armornum != -1 && armor != nullptr )
 				{

@@ -249,7 +249,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_acidSpray.mana = 10;
 	spellElement_acidSpray.base_mana = 10;
 	spellElement_acidSpray.overload_multiplier = 1;
-	spellElement_acidSpray.damage = 10;
+	spellElement_acidSpray.damage = 5;
 	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_acidSpray.name, language[2395]);
 
@@ -713,7 +713,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spell_acidSpray.ID = SPELL_ACID_SPRAY;
 	spell_acidSpray.difficulty = 0;
 	node = list_AddNodeLast(&spell_acidSpray.elements);
-	node->element = copySpellElement(&spellElement_missile);
+	node->element = copySpellElement(&spellElement_missile_trio);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
