@@ -247,6 +247,34 @@ void ItemModifyingGUI::closeItemModifyingGUI()
 } // closeItemModifyingGUI()
 
 /* ItemModifyingGUI.cpp
+ * @param GUIType - The type of GUI to be opened: 0,1,2,3,4 - Identify, Remove Curse, Repair, Enchant Weapon, Enchant Armor
+ * @returns true - If the Player's Inventory has valid Items for processing
+ * @returns false - If the Player's Inventory has no valid Items for processing
+ * The main usage of this function is to prevent a Spell from being cast needlessly
+ * Sets 'itemModifyingGUI_Type' = @GUIType. 'itemModifyingGUI_Type' is set back to default value before returning via closeItemModifyingGUI()
+ */
+bool ItemModifyingGUI::areThereValidItems(const Uint8 GUIType)
+{
+    itemModifyingGUI_Type = GUIType;
+
+    // Build the GUI's Inventory for an initial check
+    rebuildItemModifyingGUIInventory();
+
+    // If the Inventory is empty, there is nothing to process
+    if ( itemModifyingGUI_Inventory[0] == nullptr )
+    {
+        messagePlayer(clientnum, language[2500]); // "There are no valid items to use this on!"
+        closeItemModifyingGUI(); // Reset all values to prevent any crossover
+        return false;
+    }
+    else
+    {
+        closeItemModifyingGUI(); // Reset all values to prevent any crossover
+        return true;
+    }
+}
+
+/* ItemModifyingGUI.cpp
 *  Used to get the reference to the Item in the given slot in itemModifyingGUI_Inventory[]
 *  @param int slot - The slot to be accessed in itemModifyingGUI_Inventory[]
 *  @returns The Item* from itemModifyingGUI_Inventory[slot]

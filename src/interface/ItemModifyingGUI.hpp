@@ -32,6 +32,7 @@ private:
     Item* itemModifyingGUI_ScrollUsed = nullptr; // A pointer to the Item of the Scroll being used to open the GUI. If the Scroll finishes it's processing, the Item will be deleted
 
     void closeItemModifyingGUI();
+    bool areThereValidItems(const Uint8 GUIType);
 
     Item* getItemInfoFromGUI(Uint8 slot);
 
