@@ -2628,7 +2628,7 @@ bool inline isMeleeWeapon(const Item& item)
 	return ( !isRangedWeapon(item) );
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -2646,7 +2646,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 
 	item = (Item*)inventoryNode->element;
 	
-	if ( item->count == 1 )
+	if ( item->count == 1 || moveStack )
 	{
 		// TODO: handle stacks.
 		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
@@ -2686,9 +2686,11 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			return false;
 		}
+
 		copyItem(tmpItem, item);
 		tmpItem->count = 1;
 		item->count--;
+
 		if ( myStats->weapon != nullptr )
 		{
 			my->addItemToMonsterInventory(myStats->weapon);
