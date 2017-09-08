@@ -89,10 +89,6 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
         }
     }
 
-    // Open the Inventory, this is for Spells, as they can open the GUI without having the Inventory open
-    shootmode = false;
-    gui_mode = GUI_MODE_INVENTORY;
-
     // Build the GUI's Inventory for an initial check
     rebuildItemModifyingGUIInventory();
 
@@ -105,6 +101,10 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
     }
     else
     {
+        // Open the Inventory, this is for Spells, as they can open the GUI without having the Inventory open
+        shootmode = false;
+        gui_mode = GUI_MODE_INVENTORY;
+
         // The actual logic is handled by updateItemModifyingGUI()
         itemModifyingGUI_InventorySelectedSlot = 0;
         warpMouseToSelectedGUISlot();
