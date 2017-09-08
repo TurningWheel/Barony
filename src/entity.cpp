@@ -7921,3 +7921,12 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 		sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
 	}
 }
+
+void Entity::removeLightField()
+{
+	if ( this->light != nullptr )
+	{
+		list_RemoveNode(this->light->node);
+		this->light = nullptr;
+	}
+}

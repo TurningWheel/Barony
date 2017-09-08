@@ -292,6 +292,8 @@ public:
 	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
 	Item** shouldMonsterEquipThisArmor(const Item& item) const;
 
+	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
+
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
 	void circuitPowerOff(); //Called when a nearby circuit or switch powers off.
