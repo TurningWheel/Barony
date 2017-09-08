@@ -273,8 +273,8 @@ void actDoorFrame(Entity* my)
 
 void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
 {
-	this->skill[4] -= damage; //Decrease door health.
-	if ( this->skill[4] < 0 )
+	doorHealth -= damage; //Decrease door health.
+	if ( doorHealth < 0 )
 	{
 		if ( caster )
 		{
@@ -285,14 +285,14 @@ void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *
 		}
 	}
 	playSoundEntity(this, 28, 128);
-	if ( !this->skill[0] )
+	if ( !doorDir )
 	{
-		this->skill[6] = (magicProjectile.x > this->x);
+		doorSmacked = (magicProjectile.x > this->x);
 	}
 	else
 	{
-		this->skill[6] = (magicProjectile.y < this->y);
+		doorSmacked = (magicProjectile.y < this->y);
 	}
 
-	updateEnemyBar(caster, this, language[674], this->skill[4], this->skill[9]);
+	updateEnemyBar(caster, this, language[674], doorHealth, doorMaxHealth);
 }
