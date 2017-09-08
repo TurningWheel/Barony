@@ -7862,7 +7862,7 @@ void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
 	int playerhit = -1;
 
-	if ( this->behavior = &actPlayer )
+	if ( this->behavior == &actPlayer )
 	{
 		playerhit = this->skill[2];
 	}
