@@ -2899,16 +2899,6 @@ client (player %d) (direct ip)#
 2271 spellbook#
 2272 spellbook of reflect magic#
 2273 spellbook#
-2274 blank spellbook 1#
-2275 spellbook#
-2276 blank spellbook 2#
-2277 spellbook#
-2278 blank spellbook 3#
-2279 spellbook#
-2280 blank spellbook 4#
-2281 spellbook#
-2282 blank spellbook 5#
-2283 spellbook#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2976,5 +2966,24 @@ dominate the %s into your service!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
 
+2499 Repair an Item#
+2500 There are no valid items to use this on!#
+2501 This is a scroll of remove curse!#
+2502 This is a scroll of repair!#
+2503 This is a scroll of enchant weapon!#
+2504 This is a scroll of enchant armor!#
+2505 Oh no! The scroll was cursed!#
+2506 Your %s was unidentified!#
+2507 Your %s was cursed!#
+2508 Your %s is now broken!#
+2509 Your %s was unenchanted!#
+2510 You have no remaining items for the scroll's blessing...#
+2511 Wow! Your %s was identified too!#
+2512 Wow! Your %s was uncursed too!#
+2513 You have no remaining items for the scroll's curse...#
+2514 Oh no! Your %s was unidentified too!#
+2515 Oh no! Your %s was cursed too!#
+2516 Oh no! Your %s was broken too!#
+2517 Your %s looks perfect now!#
 
-2499 end#
+2518 end#
