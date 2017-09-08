@@ -447,7 +447,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				//messagePlayer(0, "armornum: %d", armornum);
 				if ( armornum != -1 && armor != nullptr )
 				{
-					hit.entity->degradeArmor(hitstats, armor, armornum);
+					hit.entity->degradeArmor(*hitstats, *armor, armornum);
 					//messagePlayerColor(player, color, "Armor piece: %s", armor->getName());
 				}
 			}
