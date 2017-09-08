@@ -331,6 +331,10 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	playSoundEntity(&my, 173, 128);
 	if ( hit.entity )
 	{
+		int damage = element.damage;
+		//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+		damage /= (1 + (int)resistance);
+
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 		{
 			Entity* parent = uidToEntity(my.parent);
@@ -351,10 +355,8 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			playSoundEntity(&my, 173, 64);
 			playSoundEntity(hit.entity, 249, 64);
 			//playSoundEntity(hit.entity, 28, 64);
-			int damage = element.damage;
-			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+
 			damage *= damagetables[hitstats->type][5];
-			damage /= (1 + (int)resistance);
 			hit.entity->modHP(-damage);
 
 			// write the obituary
@@ -395,12 +397,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 						}
 					}
 				}
-			}
-
-			// write the obituary
-			if ( parent )
-			{
-				parent->killedByMonsterObituary(hit.entity);
 			}
 
 			// update enemy bar for attacker
@@ -451,15 +447,10 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 					//messagePlayerColor(player, color, "Armor piece: %s", armor->getName());
 				}
 			}
-
-			if ( my.light != NULL )
-			{
-				list_RemoveNode(my.light->node);
-				my.light = NULL;
-			}
-			list_RemoveNode(my.mynode);
-
-			return;
+		}
+		else if ( hit.entity->behavior == &actDoor )
+		{
+			hit.entity->doorHandleDamageMagic(damage, my, parent);
 		}
 	}
 
