@@ -1010,28 +1010,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-								if ( parent )
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
 							if ( my->light != NULL )
 							{
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1167,29 +1152,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-								if ( parent )
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 
 							if ( my->light != NULL )
 							{
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1331,28 +1300,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-								if ( parent )
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
 							if ( my->light != NULL )
 							{
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1762,32 +1716,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-							{
-								if ( parent )
-								{
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
 							if ( my->light != NULL )
 							{
 								list_RemoveNode(my->light->node);
 								my->light = NULL;
 							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
