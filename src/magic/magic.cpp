@@ -316,12 +316,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 		return;
 	}
 
-	Stat* hitstats = hit.entity->getStats();
-	if ( !hitstats )
-	{
-		return;
-	}
-
 	int player = -1;
 	if ( hit.entity->behavior == &actPlayer )
 	{
@@ -355,6 +349,12 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			playSoundEntity(&my, 173, 64);
 			playSoundEntity(hit.entity, 249, 64);
 			//playSoundEntity(hit.entity, 28, 64);
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
 
 			damage *= damagetables[hitstats->type][5];
 			hit.entity->modHP(-damage);
