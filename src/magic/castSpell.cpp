@@ -115,6 +115,24 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
+    // Check to prevent Mana loss if there are no valid Items to be processed by Identify Spell
+    if ( spell->ID == SPELL_IDENTIFY )
+    {
+        if ( itemModifyingGUI->areThereValidItems(0) != true )
+        {
+            return;
+        }
+    }
+
+    // Check to prevent Mana loss if there are no valid Items to be processed by Remove Curse Spell
+    if ( spell->ID == SPELL_REMOVECURSE )
+    {
+        if ( itemModifyingGUI->areThereValidItems(1) != true )
+        {
+            return;
+        }
+    }
+
 	if ( spell->ID == SPELL_MAGICMISSILE && skillCapstoneUnlocked(player, PRO_SPELLCASTING) )
 	{
 		//Spellcasting capstone.
