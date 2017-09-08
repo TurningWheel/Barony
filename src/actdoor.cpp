@@ -17,6 +17,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "interface/interface.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -279,4 +280,30 @@ void actDoorFrame(Entity* my)
 	{
 		my->flags[PASSABLE] = true; // the actual frame should ALWAYS be passable
 	}
+}
+
+void Entity::doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster)
+{
+	this->skill[4] -= damage; //Decrease door health.
+	if ( this->skill[4] < 0 )
+	{
+		if ( caster )
+		{
+			if ( caster->behavior == &actPlayer )
+			{
+				messagePlayer(caster->skill[2], language[387]);
+			}
+		}
+	}
+	playSoundEntity(this, 28, 128);
+	if ( !this->skill[0] )
+	{
+		this->skill[6] = (magicProjectile.x > this->x);
+	}
+	else
+	{
+		this->skill[6] = (magicProjectile.y < this->y);
+	}
+
+	updateEnemyBar(caster, this, language[674], this->skill[4], this->skill[9]);
 }

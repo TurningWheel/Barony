@@ -304,6 +304,9 @@ public:
 	//Power Crystal functions.
 	void powerCrystalCreateElectricityNodes();
 
+	//Door functions.
+	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
+
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
 
