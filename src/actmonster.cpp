@@ -5070,7 +5070,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					// spray acid
 					if ( dist < STRIKERANGE * 2 )
 					{
-						specialRoll = rand() % 3;
+						specialRoll = rand() % 20;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
 
 						if ( myStats->HP <= myStats->MAXHP * 0.3 )
@@ -5090,7 +5090,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					// throwing weapons
-					specialRoll = 5;// rand() % 5;
+					specialRoll = rand() % 20;
 					if ( myStats->HP <= myStats->MAXHP * 0.5 )
 					{
 						bonusFromHP = 2; // +10% chance if on low health

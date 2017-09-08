@@ -692,6 +692,10 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							weaponarm->roll = 0;
 							weaponarm->skill[1] = 0;
 							createParticleDot(my);
+							// play casting sound
+							playSoundEntityLocal(my, 170, 64);
+							// monster scream
+							playSoundEntityLocal(my, 99, 128);
 						}
 
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
