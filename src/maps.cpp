@@ -826,10 +826,22 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			if ( subroomCount[levelnum + 1] > 0 )
 			{
+				int jumps = 0;
 				pickSubRoom = prng_get_uint() % subroomCount[levelnum + 1];
 				// traverse the map list to the picked level
 				subRoomNode = subRoomMapList.first;
+				for ( int cycleRooms = 0; (cycleRooms < levelnum + 1) && (subRoomNode != nullptr); ++cycleRooms )
+				{
+					for ( int cycleRoomSubMaps = subroomCount[cycleRooms]; cycleRoomSubMaps > 0; --cycleRoomSubMaps )
+					{
+						// advance the subroom map list by the previous entries.
+						// e.g 2 subrooms, 3 maps each should advance pointer 3 maps when loading second room.
+						subRoomNode = subRoomNode->next;
+						jumps++; // just to keep track of how many jumps we made.
+					}
+				}
 				k = 0;
+
 				while ( 1 )
 				{
 					if ( k == pickSubRoom )
@@ -839,6 +851,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
+				messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
 				subRoomDoorNode = subRoomNode->next;
@@ -857,7 +870,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
 								foundSubRoom = 1;
-								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom, subroomCount[levelnum + 1], levelnum + 1);
+								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
