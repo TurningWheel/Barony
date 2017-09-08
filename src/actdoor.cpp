@@ -28,17 +28,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#define DOOR_DIR my->skill[0]
-#define DOOR_INIT my->skill[1]
-#define DOOR_STATUS my->skill[3]
-#define DOOR_HEALTH my->skill[4]
-#define DOOR_LOCKED my->skill[5]
-#define DOOR_SMACKED my->skill[6]
-#define DOOR_TIMER my->skill[7]
-#define DOOR_OLDSTATUS my->skill[8]
-#define DOOR_MAXHEALTH my->skill[9]
-#define DOOR_STARTANG my->fskill[0]
-
 void actDoor(Entity* my)
 {
 	if (!my)
@@ -49,17 +38,17 @@ void actDoor(Entity* my)
 	Entity* entity;
 	int i, c;
 
-	if ( !DOOR_INIT )
+	if ( !my->doorInit )
 	{
-		DOOR_INIT = 1;
-		DOOR_STARTANG = my->yaw;
-		DOOR_HEALTH = 15 + rand() % 5;
-		DOOR_MAXHEALTH = DOOR_HEALTH;
+		my->doorInit = 1;
+		my->doorStartAng = my->yaw;
+		my->doorHealth = 15 + rand() % 5;
+		my->doorMaxHealth = my->doorHealth;
 		if ( rand() % 20 == 0 )   // 5% chance
 		{
-			DOOR_LOCKED = 1;
+			my->doorLocked = 1;
 		}
-		DOOR_OLDSTATUS = DOOR_STATUS;
+		my->doorOldStatus = my->doorStatus;
 		my->scalex = 1.01;
 		my->scaley = 1.01;
 		my->scalez = 1.01;
@@ -74,12 +63,12 @@ void actDoor(Entity* my)
 			{
 				if ( ticks % 30 == 0 )
 				{
-					DOOR_HEALTH--;
+					my->doorHealth--;
 				}
 			}
 
 			// door mortality :p
-			if ( DOOR_HEALTH <= 0 )
+			if ( my->doorHealth <= 0 )
 			{
 				for ( c = 0; c < 5; c++ )
 				{
@@ -90,11 +79,11 @@ void actDoor(Entity* my)
 					entity->y = floor(my->y / 16) * 16 + 8;
 					entity->z = 0;
 					entity->z += -7 + rand() % 14;
-					if ( !DOOR_DIR )
+					if ( !my->doorDir )
 					{
 						// horizontal door
 						entity->y += -4 + rand() % 8;
-						if ( DOOR_SMACKED )
+						if ( my->doorSmacked )
 						{
 							entity->yaw = PI;
 						}
@@ -107,7 +96,7 @@ void actDoor(Entity* my)
 					{
 						// vertical door
 						entity->x += -4 + rand() % 8;
-						if ( DOOR_SMACKED )
+						if ( my->doorSmacked )
 						{
 							entity->yaw = PI / 2;
 						}
@@ -136,26 +125,26 @@ void actDoor(Entity* my)
 				{
 					if (inrange[i])
 					{
-						if ( !DOOR_LOCKED )   // door unlocked
+						if ( !my->doorLocked )   // door unlocked
 						{
-							if ( !DOOR_DIR && !DOOR_STATUS )
+							if ( !my->doorDir && !my->doorStatus )
 							{
 								// open door
-								DOOR_STATUS = 1 + (players[i]->entity->x > my->x);
+								my->doorStatus = 1 + (players[i]->entity->x > my->x);
 								playSoundEntity(my, 21, 96);
 								messagePlayer(i, language[464]);
 							}
-							else if ( DOOR_DIR && !DOOR_STATUS )
+							else if ( my->doorDir && !my->doorStatus )
 							{
 								// open door
-								DOOR_STATUS = 1 + (players[i]->entity->y < my->y);
+								my->doorStatus = 1 + (players[i]->entity->y < my->y);
 								playSoundEntity(my, 21, 96);
 								messagePlayer(i, language[464]);
 							}
 							else
 							{
 								// close door
-								DOOR_STATUS = 0;
+								my->doorStatus = 0;
 								playSoundEntity(my, 22, 96);
 								messagePlayer(i, language[465]);
 							}
@@ -172,47 +161,47 @@ void actDoor(Entity* my)
 		}
 
 		// door swinging
-		if ( !DOOR_STATUS )
+		if ( !my->doorStatus )
 		{
 			// closing door
-			if ( my->yaw > DOOR_STARTANG )
+			if ( my->yaw > my->doorStartAng )
 			{
-				my->yaw = std::max(DOOR_STARTANG, my->yaw - 0.15);
+				my->yaw = std::max(my->doorStartAng, my->yaw - 0.15);
 			}
-			else if ( my->yaw < DOOR_STARTANG )
+			else if ( my->yaw < my->doorStartAng )
 			{
-				my->yaw = std::min(DOOR_STARTANG, my->yaw + 0.15);
+				my->yaw = std::min(my->doorStartAng, my->yaw + 0.15);
 			}
 		}
 		else
 		{
 			// opening door
-			if ( DOOR_STATUS == 1 )
+			if ( my->doorStatus == 1 )
 			{
-				if ( my->yaw > DOOR_STARTANG + PI / 2 )
+				if ( my->yaw > my->doorStartAng + PI / 2 )
 				{
-					my->yaw = std::max(DOOR_STARTANG + PI / 2, my->yaw - 0.15);
+					my->yaw = std::max(my->doorStartAng + PI / 2, my->yaw - 0.15);
 				}
-				else if ( my->yaw < DOOR_STARTANG + PI / 2 )
+				else if ( my->yaw < my->doorStartAng + PI / 2 )
 				{
-					my->yaw = std::min(DOOR_STARTANG + PI / 2, my->yaw + 0.15);
+					my->yaw = std::min(my->doorStartAng + PI / 2, my->yaw + 0.15);
 				}
 			}
-			else if ( DOOR_STATUS == 2 )
+			else if ( my->doorStatus == 2 )
 			{
-				if ( my->yaw > DOOR_STARTANG - PI / 2 )
+				if ( my->yaw > my->doorStartAng - PI / 2 )
 				{
-					my->yaw = std::max(DOOR_STARTANG - PI / 2, my->yaw - 0.15);
+					my->yaw = std::max(my->doorStartAng - PI / 2, my->yaw - 0.15);
 				}
-				else if ( my->yaw < DOOR_STARTANG - PI / 2 )
+				else if ( my->yaw < my->doorStartAng - PI / 2 )
 				{
-					my->yaw = std::min(DOOR_STARTANG - PI / 2, my->yaw + 0.15);
+					my->yaw = std::min(my->doorStartAng - PI / 2, my->yaw + 0.15);
 				}
 			}
 		}
 
 		// setting collision
-		if ( my->yaw == DOOR_STARTANG && my->flags[PASSABLE] )
+		if ( my->yaw == my->doorStartAng && my->flags[PASSABLE] )
 		{
 			// don't set impassable if someone's inside, otherwise do
 			node_t* node;
@@ -233,7 +222,7 @@ void actDoor(Entity* my)
 			if ( !somebodyinside )
 			{
 				my->focaly = 0;
-				if ( DOOR_STARTANG == 0 )
+				if ( my->doorStartAng == 0 )
 				{
 					my->y -= 5;
 				}
@@ -244,10 +233,10 @@ void actDoor(Entity* my)
 				my->flags[PASSABLE] = false;
 			}
 		}
-		else if ( my->yaw != DOOR_STARTANG && !my->flags[PASSABLE] )
+		else if ( my->yaw != my->doorStartAng && !my->flags[PASSABLE] )
 		{
 			my->focaly = -5;
-			if ( DOOR_STARTANG == 0 )
+			if ( my->doorStartAng == 0 )
 			{
 				my->y += 5;
 			}
@@ -261,9 +250,9 @@ void actDoor(Entity* my)
 		// update for clients
 		if ( multiplayer == SERVER )
 		{
-			if ( DOOR_OLDSTATUS != DOOR_STATUS )
+			if ( my->doorOldStatus != my->doorStatus )
 			{
-				DOOR_OLDSTATUS = DOOR_STATUS;
+				my->doorOldStatus = my->doorStatus;
 				serverUpdateEntitySkill(my, 3);
 			}
 		}
