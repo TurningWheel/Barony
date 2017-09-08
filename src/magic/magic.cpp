@@ -299,12 +299,8 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		caster.drainMP(hitstats->HP); //Drain additional MP equal to health of monster.
 	}
 
-	if ( my.light != NULL )
-	{
-		list_RemoveNode(my.light->node);
-		my.light = NULL;
-	}
 	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	my.removeLightField();
 	list_RemoveNode(my.mynode);
 	return true;
 }
@@ -337,11 +333,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 				// test for friendly fire
 				if ( parent && parent->checkFriend(hit.entity) )
 				{
-					if ( my.light != NULL )
-					{
-						list_RemoveNode(my.light->node);
-						my.light = NULL;
-					}
+					my.removeLightField();
 					list_RemoveNode(my.mynode);
 					return;
 				}
@@ -454,12 +446,8 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 		}
 	}
 
-	if ( my.light != NULL )
-	{
-		list_RemoveNode(my.light->node);
-		my.light = NULL;
-	}
 	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	my.removeLightField();
 	list_RemoveNode(my.mynode);
 	return;
 }
