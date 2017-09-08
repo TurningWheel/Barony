@@ -199,6 +199,18 @@ public:
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
 
+	//--PUBLIC DOOR SKILLS--
+	Sint32& doorDir;
+	Sint32& doorInit;
+	Sint32& doorStatus;
+	Sint32& doorHealth;
+	Sint32& doorLocked;
+	Sint32& doorSmacked;
+	Sint32& doorTimer;
+	Sint32& doorOldStatus;
+	Sint32& doorMaxHealth;
+	real_t& doorStartAng;
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 

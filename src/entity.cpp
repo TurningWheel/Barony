@@ -104,7 +104,17 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	boulderTrapAmbience(skill[6]),
 	boulderTrapFired(skill[0]),
 	boulderTrapRefireCounter(skill[4]),
-	boulderTrapPreDelay(skill[5])
+	boulderTrapPreDelay(skill[5]),
+	doorDir(skill[0]),
+	doorInit(skill[1]),
+	doorStatus(skill[3]),
+	doorHealth(skill[4]),
+	doorLocked(skill[5]),
+	doorSmacked(skill[6]),
+	doorTimer(skill[7]),
+	doorOldStatus(skill[8]),
+	doorMaxHealth(skill[9]),
+	doorStartAng(fskill[0])
 
 {
 	int c;
