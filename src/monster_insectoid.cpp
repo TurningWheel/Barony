@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initInsectoid(Entity* my, Stat* myStats)
 {
@@ -93,6 +94,9 @@ void initInsectoid(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			// always give special spell to insectoid, undroppable.
+			newItem(SPELLBOOK_ACID_SPRAY, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -102,7 +106,6 @@ void initInsectoid(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					newItem(SPELLBOOK_ACID_SPRAY, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					break;
 				default:
 					break;
@@ -552,13 +555,18 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( my->monsterAttack != MONSTER_POSE_MAGIC_WINDUP3 && bodypart == 1 && multiplayer != CLIENT )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		if ( (my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 ) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
 		}
@@ -568,7 +576,27 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			my->humanoidAnimateWalk(entity, node, bodypart, INSECTOIDWALKSPEED, dist, 0.4);
+			if ( bodypart == LIMB_HUMANOID_LEFTARM && 
+				(my->monsterSpecialState == INSECTOID_ACID) )
+			{
+				Entity* weaponarm = nullptr;
+				// leftarm follows the right arm during special acid attack
+				node_t* weaponarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTARM);
+				if ( weaponarmNode )
+				{
+					weaponarm = (Entity*)weaponarmNode->element;
+				}
+				else
+				{
+					return;
+				}
+				entity->pitch = weaponarm->pitch;
+				entity->roll = -weaponarm->roll;
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, INSECTOIDWALKSPEED, dist, 0.4);
+			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -576,9 +604,116 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK > 0 )
+				if ( my->monsterAttack > 0 )
 				{
-					my->handleWeaponArmAttack(entity);
+					Entity* rightbody = nullptr;
+					// set rightbody to left leg.
+					node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+					if ( rightbodyNode )
+					{
+						rightbody = (Entity*)rightbodyNode->element;
+					}
+					else
+					{
+						return;
+					}
+
+					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+						}
+
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_INSECTOID_DOUBLETHROW, 0, nullptr);
+							}
+						}
+					}
+					// vertical throw
+					else if ( my->monsterAttack == MONSTER_POSE_INSECTOID_DOUBLETHROW )
+					{
+						if ( weaponarm->pitch >= 3 * PI / 2 )
+						{
+							my->monsterArmbended = 1;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							// chop forwards
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] == 1 )
+						{
+							// return to neutral
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								weaponarm->skill[0] = rightbody->skill[0];
+								my->monsterWeaponYaw = 0;
+								weaponarm->pitch = rightbody->pitch;
+								weaponarm->roll = 0;
+								my->monsterArmbended = 0;
+
+								if ( multiplayer != CLIENT && my->monsterSpecialState == INSECTOID_DOUBLETHROW_FIRST )
+								{
+									my->monsterSpecialState = INSECTOID_DOUBLETHROW_SECOND;
+									my->attack(MONSTER_POSE_RANGED_WINDUP3, 0, nullptr);
+								}
+								else
+								{
+									my->monsterAttack = 0;
+								}
+							}
+						}
+						++my->monsterAttackTime;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+						}
+
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 15 * PI / 8, true, 0.1);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 4 * PI / 8, false, 0.0);
+						}
+
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+							}
+						}
+					}
+					else
+					{
+						my->handleWeaponArmAttack(entity);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -1135,7 +1270,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 				return; //Resort to fists.
 			}
 
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
 			if ( !swapped )
 			{
 				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
@@ -1160,7 +1295,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 		{
 			return; //Nothing available
 		}
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
 		return;
 	}
 	return;

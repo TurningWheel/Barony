@@ -373,6 +373,7 @@ static const int MONSTER_POSE_MAGIC_CAST3 = 21;
 static const int MONSTER_POSE_GOLEM_SMASH = 22;
 static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 23;
 static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
+static const int MONSTER_POSE_INSECTOID_DOUBLETHROW = 25;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -454,3 +455,8 @@ static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
 //--Automaton--
 static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;
 static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
+
+//--Insectoid--
+static const int INSECTOID_ACID = 1;
+static const int INSECTOID_DOUBLETHROW_FIRST = 2;
+static const int INSECTOID_DOUBLETHROW_SECOND = 3;

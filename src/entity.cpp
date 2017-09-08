@@ -6289,7 +6289,7 @@ int Entity::getAttackPose() const
 		{
 			if ( myStats->type == INSECTOID && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID )
 			{
-				pose = MONSTER_POSE_MAGIC_WINDUP2;
+				pose = MONSTER_POSE_MAGIC_WINDUP3;
 			}
 			else if ( myStats->type == COCKATRICE && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
 			{
@@ -6332,7 +6332,21 @@ int Entity::getAttackPose() const
 				}
 				else if ( itemCategory(myStats->weapon) == THROWN )
 				{
-					pose = MONSTER_POSE_MELEE_WINDUP1;
+					if ( myStats->type == INSECTOID )
+					{
+						if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW )
+						{
+							pose = MONSTER_POSE_RANGED_WINDUP3;
+						}
+						else
+						{
+							pose = MONSTER_POSE_MELEE_WINDUP1;
+						}
+					}
+					else
+					{
+						pose = MONSTER_POSE_MELEE_WINDUP1;
+					}
 				}
 				else
 				{
@@ -7163,8 +7177,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 
 	weaponLimb->yaw = weaponArmLimb->yaw;
 
-	if ( this->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+	if ( this->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 && monsterType == GOATMAN )
 	{
+		// specific for potion throwing goatmen.
 		limbAnimateToLimit(weaponLimb, ANIMATE_ROLL, 0.25, 1 * PI / 4, false, 0.0);
 	}
 	else

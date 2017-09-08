@@ -4938,7 +4938,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -4950,7 +4950,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -5022,7 +5022,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
@@ -5067,9 +5067,10 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case INSECTOID:
+					// spray acid
 					if ( dist < STRIKERANGE * 2 )
 					{
-						specialRoll = rand() % 20;
+						specialRoll = rand() % 3;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
 
 						if ( myStats->HP <= myStats->MAXHP * 0.3 )
@@ -5082,13 +5083,35 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 							if ( node != nullptr )
 							{
-								swapMonsterWeaponWithInventoryItem(this, myStats, node);
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
 							}
 							break;
 						}
 					}
-					
+					// throwing weapons
+					specialRoll = 5;// rand() % 5;
+					if ( myStats->HP <= myStats->MAXHP * 0.5 )
+					{
+						bonusFromHP = 2; // +10% chance if on low health
+					}
+					if ( specialRoll < (1 + bonusFromHP) ) // +5% base
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
+							if ( myStats->weapon->count > 1 )
+							{
+								monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + rand() % 2; // 50% for double throw.
+							}
+							else
+							{
+								monsterSpecialState = INSECTOID_DOUBLETHROW_SECOND;
+							}
+							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW;
+						}
+					}
 					break;
 				default:
 					break;
@@ -5102,7 +5125,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
-						swapMonsterWeaponWithInventoryItem(this, myStats, node);
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 					}
 					else
 					{
@@ -5110,15 +5133,31 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case INSECTOID:
-					monsterSpecialState = 0;
-					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
-					if ( node != nullptr )
+					if ( monsterSpecialState == INSECTOID_ACID )
 					{
-						swapMonsterWeaponWithInventoryItem(this, myStats, node);
+						monsterSpecialState = 0;
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
 					}
-					else
+					else if ( monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
 					{
-						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						monsterSpecialState = 0;
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+						}
 					}
 					break;
 				case COCKATRICE:
