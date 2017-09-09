@@ -1443,11 +1443,7 @@ void useItem(Item* item, int player)
 			item_ScrollMail(item, player);
 			break;
 		case SCROLL_IDENTIFY:
-			item_ScrollIdentify(item, player);
-			if ( !players[player]->entity->isBlind() )
-			{
-				consumeItem(item);
-			}
+            itemModifyingGUI->openItemModifyingGUI(0, item);
 			break;
 		case SCROLL_LIGHT:
 			item_ScrollLight(item, player);
@@ -1474,11 +1470,7 @@ void useItem(Item* item, int player)
 			}
 			break;
 		case SCROLL_REMOVECURSE:
-			item_ScrollRemoveCurse(item, player);
-			if ( !players[player]->entity->isBlind() )
-			{
-				consumeItem(item);
-			}
+            itemModifyingGUI->openItemModifyingGUI(1, item);
 			break;
 		case SCROLL_FIRE:
 			item_ScrollFire(item, player);
@@ -1502,11 +1494,7 @@ void useItem(Item* item, int player)
 			}
 			break;
 		case SCROLL_REPAIR:
-			item_ScrollRepair(item, player);
-			if ( !players[player]->entity->isBlind() )
-			{
-				consumeItem(item);
-			}
+            itemModifyingGUI->openItemModifyingGUI(2, item);
 			break;
 		case SCROLL_DESTROYARMOR:
 			item_ScrollDestroyArmor(item, player);
