@@ -130,6 +130,12 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
  */
 void ItemModifyingGUI::updateItemModifyingGUI()
 {
+    // If the GUI is not active, there is no reason to go further
+    if ( bIsActive != true )
+    {
+        return;
+    }
+
     // Cursed Scrolls do not use the GUI, their processing is determined at random
     if ( bIsActive == true && bIsCursed != true )
     {
