@@ -1,3 +1,16 @@
+/*-------------------------------------------------------------------------------
+
+BARONY
+File: ItemModifyingGUI.cpp
+Desc: ItemModifyingGUI class implementation
+
+Copyright 2013-2017 (c) Turning Wheel LLC, all rights reserved.
+See LICENSE for details.
+
+Additional Author(s): Lutz Kellen
+
+-------------------------------------------------------------------------------*/
+
 #include "ItemModifyingGUI.hpp"
 #include "../player.hpp"
 #include "../stat.hpp"
@@ -272,7 +285,7 @@ bool ItemModifyingGUI::areThereValidItems(const Uint8 GUIType)
         closeItemModifyingGUI(); // Reset all values to prevent any crossover
         return true;
     }
-}
+} // areThereValidItems()
 
 /* ItemModifyingGUI.cpp
 *  Used to get the reference to the Item in the given slot in itemModifyingGUI_Inventory[]
@@ -351,7 +364,7 @@ void ItemModifyingGUI::itemModifyingGUIProcessRandomItem()
             break;
         default: printlog("ERROR: itemModifyingGUIProcessRandomItem() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
-}
+} // itemModifyingGUIProcessRandomItem()
 
 /* ItemModifyingGUI.cpp
  * Selects the correct function to rebuild the GUI Inventory according to 'itemModifyingGUI_Type'
@@ -474,7 +487,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtons()
             }
         }
     }
-}
+} // itemModifyingGUI_HandleButtons()
 
 /* ItemModifyingGUI.cpp
  * Handles setting up the collision bounds and checking for Mouse input on those collision bounds for Mouse scroll wheel input
@@ -509,7 +522,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleMouseWheel()
             }
         }
     }
-}
+} // itemModifyingGUI_HandleMouseWheel()
 
 /* ItemModifyingGUI.cpp
  * Handles the actual movement of the GUI Window by modifying 'itemModifyingGUI_OffsetX/Y' when 'bIsItemModifyingGUI_Dragging' == true
@@ -553,7 +566,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleDraggingBar()
             bIsItemModifyingGUI_Dragging = false;
         }
     }
-}
+} // itemModifyingGUI_HandleDraggingBar()
 
 /* ItemModifyingGUI.cpp
  * @param GUIPosX - The GUI position in the center of the screen + itemModifyingGUI_OffsetX
@@ -595,7 +608,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX,
         drawImage(invclose_bmp, nullptr, &GUICloseButtonRect);
         closeItemModifyingGUI();
     }
-}
+} // itemModifyingGUI_HandleButtonImages()
 
 /* ItemModifyingGUI.cpp
  * Rebuilds the GUI Inventory before selecting the correct function to render the Images for each Item according to 'itemModifyingGUI_Type'
@@ -622,7 +635,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleItemImages()
             break;
         default: printlog("ERROR: itemModifyingGUI_HandleItemImages() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
-}
+} // itemModifyingGUI_HandleItemImages()
 
 // IDENTIFY GUI
 
@@ -670,7 +683,7 @@ void ItemModifyingGUI::processIdentifyGUIEffectOnItem(Item* const selectedItem)
     }
 
     closeItemModifyingGUI();
-}
+} // processIdentifyGUIEffectOnItem()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
@@ -797,7 +810,7 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
             }
         }
     }
-}
+} // identifyGUIProcessRandomItem()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
@@ -923,7 +936,7 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
             break;
         }
     }
-}
+} // rebuildIdentifyGUIInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
@@ -991,7 +1004,7 @@ void ItemModifyingGUI::identifyGUI_HandleItemImages()
             }
         }
     }
-}
+} // identifyGUI_HandleItemImages()
 
 // REMOVE CURSE GUI
 
@@ -1096,7 +1109,7 @@ void ItemModifyingGUI::processRemoveCurseGUIEffectOnItem(Item* const selectedIte
         net_packet->len = 6;
         sendPacketSafe(net_sock, -1, net_packet, 0);
     }
-}
+} // processRemoveCurseGUIEffectOnItem()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
@@ -1222,7 +1235,7 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
             }
         }
     }
-}
+} // removeCurseGUIProcessRandomItem()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
@@ -1348,7 +1361,7 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
             break;
         }
     }
-}
+} // rebuildRemoveCurseGUIInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
@@ -1416,7 +1429,7 @@ void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
             }
         }
     }
-}
+} // removeCurseGUI_HandleItemImages()
 
 // REPAIR GUI
 
@@ -1519,7 +1532,7 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
         net_packet->len = 6;
         sendPacketSafe(net_sock, -1, net_packet, 0);
     }
-}
+} // processRepairGUIEffectOnItem()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
@@ -1634,7 +1647,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
             }
         }
     }
-}
+} // repairGUIProcessRandomItem()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
@@ -1812,7 +1825,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
             break;
         }
     }
-}
+} // rebuildRepairGUIInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
@@ -1978,7 +1991,7 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
             }
         }
     }
-}
+} // repairGUI_HandleItemImages()
 
 // ENCHANT WEAPON GUI
 

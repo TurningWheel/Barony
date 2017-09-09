@@ -1,3 +1,16 @@
+/*-------------------------------------------------------------------------------
+
+BARONY
+File: ItemModifyingGUI.hpp
+Desc: ItemModifyingGUI class definition
+
+Copyright 2013-2017 (c) Turning Wheel LLC, all rights reserved.
+See LICENSE for details.
+
+Additional Author(s): Lutz Kellen
+
+-------------------------------------------------------------------------------*/
+
 #pragma once
 
 #include "interface.hpp"
