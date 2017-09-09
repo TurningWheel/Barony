@@ -820,30 +820,3 @@ Player::~Player()
 		delete entity;
 	}
 }
-
-void initIdentifyGUIControllerCode()
-{
-	if ( identify_items[0] )
-	{
-		selectedIdentifySlot = 0;
-		warpMouseToSelectedIdentifySlot();
-	}
-	else
-	{
-		selectedIdentifySlot = -1;
-	}
-}
-
-void initRemoveCurseGUIControllerCode()
-{
-	if ( removecurse_items[0] )
-	{
-		selectedRemoveCurseSlot = 0;
-		warpMouseToSelectedRemoveCurseSlot();
-	}
-	else
-	{
-		selectedRemoveCurseSlot = -1;
-	}
-}
-
