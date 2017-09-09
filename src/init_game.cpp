@@ -493,6 +493,8 @@ int fmod_result;
 		return -1;
 	}
 
+    itemModifyingGUI = new GUI::ItemModifyingGUI;
+
 	return 0;
 }
 
@@ -830,4 +832,8 @@ void deinitGame()
 		delete players[i];
 	}
 	delete[] players;
+
+    // 9-5-2017 - Lutz - ItemModifyingGUI Refactor
+    delete itemModifyingGUI;
+    itemModifyingGUI = nullptr;
 }
