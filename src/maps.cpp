@@ -3697,6 +3697,7 @@ void assignActions(map_t* map)
 				entity->sizex = 8;
 				entity->sizey = 8;
 				entity->z = -7.75;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagColumn;
 				break;
 			case 109: //stalagmite single
@@ -3706,6 +3707,7 @@ void assignActions(map_t* map)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->z = 1.75;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagFloor;
 				break;
 			case 110: //stalagmite multiple
@@ -3715,6 +3717,7 @@ void assignActions(map_t* map)
 				entity->sizex = 7;
 				entity->sizey = 7;
 				entity->z = -1;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagFloor;
 				break;
 			case 111: //stalagtite single
@@ -3726,6 +3729,7 @@ void assignActions(map_t* map)
 				entity->z = -1.75;
 				x = entity->x / 16;
 				y = entity->y / 16;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagCeiling;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{
@@ -3745,6 +3749,7 @@ void assignActions(map_t* map)
 				entity->z = 1;
 				x = entity->x / 16;
 				y = entity->y / 16;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagCeiling;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{
