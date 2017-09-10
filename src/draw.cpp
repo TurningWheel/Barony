@@ -1173,6 +1173,87 @@ void drawEntities2D(long camx, long camy)
 					box.h = TEXTURESIZE;
 					box.x = pos.x;
 					box.y = pos.y;
+					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					box.w = TEXTURESIZE - 2;
+					box.h = TEXTURESIZE - 2;
+					box.x = pos.x + 1;
+					box.y = pos.y + 1;
+					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+				}
+				
+				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
+				if ( entity->sprite == 8 && entity->skill[10] > 1 )
+				{
+					// draw the item sprite in the editor layout
+					Item* tmpItem = newItem(static_cast<ItemType>(entity->skill[10] - 2), static_cast<Status>(0), 0, 0, 0, 0, NULL);
+					drawImageScaled(itemSprite(tmpItem), NULL, &pos);
+					free(tmpItem);
+				}
+				else
+				{
+					// draw sprite normally from sprites list
+					drawImageScaled(sprites[entity->sprite], NULL, &pos);
+				}
+			}
+			else
+			{
+				if ( entity == selectedEntity )
+				{
+					// draws a box around the sprite
+					box.w = TEXTURESIZE;
+					box.h = TEXTURESIZE;
+					box.x = pos.x;
+					box.y = pos.y;
+					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+					box.w = TEXTURESIZE - 2;
+					box.h = TEXTURESIZE - 2;
+					box.x = pos.x + 1;
+					box.y = pos.y + 1;
+					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+				}
+				drawImageScaled(sprites[0], NULL, &pos);
+			}
+		}
+		else
+		{
+			if ( entity == selectedEntity )
+			{
+				// draws a box around the sprite
+				box.w = TEXTURESIZE;
+				box.h = TEXTURESIZE;
+				box.x = pos.x;
+				box.y = pos.y;
+				drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
+				box.w = TEXTURESIZE - 2;
+				box.h = TEXTURESIZE - 2;
+				box.x = pos.x + 1;
+				box.y = pos.y + 1;
+				drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
+			}
+			drawImageScaled(sprites[0], NULL, &pos);
+		}
+	}
+
+	// draw hover text for entities over the top of sprites.
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
+		entity = (Entity*)node->element;
+		if ( entity->flags[INVISIBLE] )
+		{
+			continue;
+		}
+		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
+		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
+		pos.w = TEXTURESIZE;
+		pos.h = TEXTURESIZE;
+		//ttfPrintText(ttf8, 100, 100, inputstr); debug any errant text input in editor
+
+		if ( entity->sprite >= 0 && entity->sprite < numsprites )
+		{
+			if ( sprites[entity->sprite] != NULL )
+			{
+				if ( entity == selectedEntity )
+				{
 					int spriteType = checkSpriteType(selectedEntity->sprite);
 					char tmpStr[1024] = "";
 					char tmpStr2[1024] = "";
@@ -1479,16 +1560,9 @@ void drawEntities2D(long camx, long camy)
 							break;
 
 					}
-
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
-					box.w = TEXTURESIZE - 2;
-					box.h = TEXTURESIZE - 2;
-					box.x = pos.x + 1;
-					box.y = pos.y + 1;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
 				}
 				else if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y &&
-							selectedEntity == NULL && hovertext )
+					selectedEntity == NULL && hovertext )
 				{
 					// handle mouseover sprite name tooltip in main editor screen
 					int padx = pos.x + 10;
@@ -1521,55 +1595,7 @@ void drawEntities2D(long camx, long camy)
 						offsety += 10;
 					}
 				}
-				// if item sprite and the item index is not 0 (NULL), or 1 (RANDOM)
-				if ( entity->sprite == 8 && entity->skill[10] > 1 )
-				{
-					// draw the item sprite in the editor layout
-					Item* tmpItem = newItem(static_cast<ItemType>(entity->skill[10] - 2), static_cast<Status>(0), 0, 0, 0, 0, NULL);
-					drawImageScaled(itemSprite(tmpItem), NULL, &pos);
-				}
-				else
-				{
-					// draw sprite normally from sprites list
-					drawImageScaled(sprites[entity->sprite], NULL, &pos);
-				}
 			}
-			else
-			{
-				if ( entity == selectedEntity )
-				{
-					// draws a box around the sprite
-					box.w = TEXTURESIZE;
-					box.h = TEXTURESIZE;
-					box.x = pos.x;
-					box.y = pos.y;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
-					box.w = TEXTURESIZE - 2;
-					box.h = TEXTURESIZE - 2;
-					box.x = pos.x + 1;
-					box.y = pos.y + 1;
-					drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
-				}
-				drawImageScaled(sprites[0], NULL, &pos);
-			}
-		}
-		else
-		{
-			if ( entity == selectedEntity )
-			{
-				// draws a box around the sprite
-				box.w = TEXTURESIZE;
-				box.h = TEXTURESIZE;
-				box.x = pos.x;
-				box.y = pos.y;
-				drawRect(&box, SDL_MapRGB(mainsurface->format, 255, 0, 0), 255);
-				box.w = TEXTURESIZE - 2;
-				box.h = TEXTURESIZE - 2;
-				box.x = pos.x + 1;
-				box.y = pos.y + 1;
-				drawRect(&box, SDL_MapRGB(mainsurface->format, 0, 0, 255), 255);
-			}
-			drawImageScaled(sprites[0], NULL, &pos);
 		}
 	}
 }
