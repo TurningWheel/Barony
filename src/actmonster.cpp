@@ -4388,10 +4388,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	int charge = 1;
 
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
-	if ( ticks % (TICKS_PER_SECOND / 2) == 0 )
-	{
-		chooseWeapon(target, dist);
-	}
+	chooseWeapon(target, dist);
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
@@ -5074,15 +5071,21 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					}
 					break;
 				case INSECTOID:
+					if ( monsterSpecialState == INSECTOID_DOUBLETHROW_FIRST || monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
+					{
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW;
+						break;
+					}
+
 					// spray acid
 					if ( dist < STRIKERANGE * 2 )
 					{
 						specialRoll = rand() % 20;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
 
-						if ( myStats->HP <= myStats->MAXHP * 0.3 )
+						if ( myStats->HP <= myStats->MAXHP * 0.5 )
 						{
-							bonusFromHP = 2; // +10% chance if on low health
+							bonusFromHP = 4; // +20% chance if on low health
 						}
 						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
 						{
@@ -5096,29 +5099,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							break;
 						}
 					}
-					// throwing weapons
-					specialRoll = rand() % 20;
-					if ( myStats->HP <= myStats->MAXHP * 0.5 )
-					{
-						bonusFromHP = 2; // +10% chance if on low health
-					}
-					if ( specialRoll < (1 + bonusFromHP) ) // +5% base
-					{
-						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
-						if ( node != nullptr )
-						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
-							if ( myStats->weapon->count > 1 )
-							{
-								monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + rand() % 2; // 50% for double throw.
-							}
-							else
-							{
-								monsterSpecialState = INSECTOID_DOUBLETHROW_SECOND;
-							}
-							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW;
-						}
-					}
+					// throwing weapon special handled in insectoidChooseWeapon()
 					break;
 				default:
 					break;

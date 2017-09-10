@@ -1254,7 +1254,7 @@ bool Entity::insectoidCanWieldItem(const Item& item) const
 
 void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 {
-	if ( monsterSpecialState == 1 )
+	if ( monsterSpecialState != 0 )
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
 		//messagePlayer()
@@ -1273,10 +1273,39 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	}*/
 
 	int specialRoll = -1;
-	bool usePotionSpecial = false;
+	int bonusFromHP = 0;
 
-	node_t* hasPotion = nullptr;
-	bool isHealingPotion = false;
+	// throwing weapons, chances compensated for how often this check is called.
+	// occurs less often against fellow monsters.
+	if ( monsterSpecialTimer == 0 )
+	{
+		specialRoll = rand() % (20 + 20 * (target->behavior == &actMonster));
+		if ( myStats->HP <= myStats->MAXHP * 0.6 )
+		{
+			bonusFromHP += 1; // +5% chance if on low health
+		}
+		if ( myStats->HP <= myStats->MAXHP * 0.3 )
+		{
+			bonusFromHP += 1; // +extra 5% chance if on lower health
+		}
+		if ( specialRoll < (1 + bonusFromHP) ) // +5% base
+		{
+			node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			if ( node != nullptr )
+			{
+				swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
+				if ( myStats->weapon->count > 1 )
+				{
+					monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + rand() % 2; // 50% for double throw.
+				}
+				else
+				{
+					monsterSpecialState = INSECTOID_DOUBLETHROW_SECOND;
+				}
+				return;
+			}
+		}
+	}
 
 	bool inMeleeRange = monsterInMeleeRange(target, dist);
 
