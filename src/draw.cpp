@@ -1494,7 +1494,7 @@ void drawEntities2D(long camx, long camy)
 					int padx = pos.x + 10;
 					int pady = pos.y - 20;
 					int spriteType = checkSpriteType(entity->sprite);
-					offsety = 0;
+					//offsety = 0;
 					Stat* tmpStats = nullptr;
 					if ( spriteType == 1 )
 					{
