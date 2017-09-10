@@ -38,7 +38,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
@@ -57,12 +57,12 @@ void initInsectoid(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				myStats->HP = 120;
+				/*myStats->HP = 120;
 				myStats->MAXHP = 120;
 				myStats->OLDHP = myStats->HP;
 				strcpy(myStats->name, "The Potato King");
-				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, NULL);
-				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, 0, false, NULL);
+				myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), true, nullptr);
+				myStats->helmet = newItem(HAT_JESTER, SERVICABLE, 3 + rand() % 3, 1, 0, false, nullptr);
 
 				int c;
 				for ( c = 0; c < 3; c++ )
@@ -72,7 +72,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 					{
 						entity->parent = my->getUID();
 					}
-				}
+				}*/
 			}
 
 			// random effects
@@ -105,70 +105,74 @@ void initInsectoid(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
+					if ( rand() % 2 == 0 )
+					{
+						newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+					}
+					break;
 				case 1:
+					newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 7, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					break;
 				default:
 					break;
 			}
 
-			//give shield
-			//if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			//{
-			//	// give shield
-			//	switch ( rand() % 10 )
-			//	{
-			//		case 0:
-			//		case 1:
-			//			myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-			//			break;
-			//		case 2:
-			//		case 3:
-			//		case 4:
-			//			break;
-			//		case 5:
-			//		case 6:
-			//			myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-			//			break;
-			//		case 7:
-			//		case 8:
-			//			myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-			//			break;
-			//		case 9:
-			//			myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-			//			break;
-			//	}
-			//}
+			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			{
+				// give shield
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+						myStats->shield = newItem(STEEL_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 3:
+					case 4:
+					case 5:
+						myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 6:
+						myStats->shield = newItem(CRYSTAL_SHIELD, static_cast<Status>(WORN + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 7:
+					case 8:
+						myStats->shield = newItem(IRON_SHIELD, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 9:
+						myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+				}
+			}
 
 			//give weapon
-			/*if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
 					case 0:
 					case 1:
 					case 2:
-						myStats->weapon = newItem(SHORTBOW, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(CRYSTAL_SWORD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 3:
 					case 4:
 					case 5:
-						myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
 					case 6:
+						myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
 					case 7:
-						myStats->weapon = newItem(IRON_MACE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 8:
-						myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
 					case 9:
-						myStats->weapon = newItem(MAGICSTAFF_FIRE, EXCELLENT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 				}
-			}*/
+			}
 
 			// give cloak
-			/*if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -177,21 +181,20 @@ void initInsectoid(Entity* my, Stat* myStats)
 					case 2:
 					case 3:
 					case 4:
-					case 5:
 						break;
+					case 5:
 					case 6:
 					case 7:
 					case 8:
-						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
 					case 9:
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
+						myStats->cloak = newItem(CLOAK, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
 						break;
 				}
-			}*/
+			}
 
 			// give helmet
-			/*if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			/*if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -201,24 +204,24 @@ void initInsectoid(Entity* my, Stat* myStats)
 						break;
 					case 3:
 					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					case 6:
 					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					case 8:
 					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 				}
 			}*/
 
 			// give armor
-			/*if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -227,18 +230,43 @@ void initInsectoid(Entity* my, Stat* myStats)
 					case 2:
 					case 3:
 					case 4:
+					case 5:
+					case 6:
+						break;
+					case 7:
+					case 8:
+						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 9:
+						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+				}
+			}
+
+			// give booties
+			if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 5:
 					case 6:
 					case 7:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 8:
+						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(DECREPIT + rand() % 3), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
 					case 9:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 				}
-			}*/
+			}
 		}
 	}
 
@@ -464,21 +492,21 @@ void insectoidDie(Entity* my)
 void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL, *entity2 = NULL;
-	Entity* rightbody = NULL;
-	Entity* weaponarm = NULL;
+	Entity* entity = nullptr, *entity2 = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
 	int bodypart;
 	bool wearingring = false;
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->ring != NULL )
+		if ( myStats->ring != nullptr )
 			if ( myStats->ring->type == RING_INVISIBILITY )
 			{
 				wearingring = true;
 			}
-		if ( myStats->cloak != NULL )
+		if ( myStats->cloak != nullptr )
 			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
 			{
 				wearingring = true;
@@ -488,7 +516,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -513,7 +541,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -551,7 +579,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
@@ -740,7 +768,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == nullptr )
 					{
 						entity->sprite = 458;
 					}
@@ -922,7 +950,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -966,7 +994,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shield == NULL )
+					if ( myStats->shield == nullptr )
 					{
 						entity->flags[INVISIBLE] = true;
 						entity->sprite = 0;
@@ -1029,7 +1057,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1071,7 +1099,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1143,7 +1171,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1151,7 +1179,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( myStats->mask != NULL )
+					if ( myStats->mask != nullptr )
 					{
 						if ( myStats->mask->type == TOOL_GLASSES )
 						{
