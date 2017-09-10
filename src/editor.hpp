@@ -162,6 +162,7 @@ void buttonCut(button_t* my);
 void buttonCopy(button_t* my);
 void buttonPaste(button_t* my);
 void buttonDelete(button_t* my);
+void buttonCycleSprites(button_t* my);
 void buttonSelectAll(button_t* my);
 void buttonUndo(button_t* my);
 void buttonRedo(button_t* my);

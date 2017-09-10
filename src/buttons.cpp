@@ -723,6 +723,48 @@ void buttonDelete(button_t* my)
 	}
 }
 
+void buttonCycleSprites(button_t* my)
+{
+	SDL_Rect pos;
+	char tmp[4];
+	Entity* entity = nullptr;
+	Entity* lastEntity = nullptr;
+	bool entityWasSelected = false;
+	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	{
+		entity = (Entity*)node->element;
+		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
+		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
+		if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y )
+		{
+			// set lastEntity to each entity on the tile.
+			lastEntity = entity;
+		}
+	}
+
+	if ( lastEntity != nullptr )
+	{
+		if ( selectedEntity )
+		{
+			entityWasSelected = true;
+		}
+
+		selectedEntity = nullptr;
+		lastSelectedEntity = nullptr;
+
+		// create new entity on the list, copying and removing the previous last one.
+		entity = newEntity(lastEntity->sprite, 0, map.entities);
+		setSpriteAttributes(entity, lastEntity, lastEntity);
+		list_RemoveNode(lastEntity->mynode);
+
+		if ( entityWasSelected )
+		{
+			selectedEntity = entity;
+			lastSelectedEntity = selectedEntity;
+		}
+	}
+}
+
 void buttonSelectAll(button_t* my)
 {
 	menuVisible = 0;

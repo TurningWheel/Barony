@@ -4347,6 +4347,11 @@ int main(int argc, char** argv)
 					keystatus[SDL_SCANCODE_DELETE] = 0;
 					buttonDelete(NULL);
 				}
+				if ( keystatus[SDL_SCANCODE_C] )
+				{
+					keystatus[SDL_SCANCODE_C] = 0;
+					buttonCycleSprites(NULL);
+				}
 				if ( keystatus[SDL_SCANCODE_F1] )
 				{
 					keystatus[SDL_SCANCODE_F1] = 0;
