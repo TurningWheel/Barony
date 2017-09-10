@@ -246,10 +246,10 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_reflectMagic.name, language[2394]);
 
 	spellElementConstructor(&spellElement_acidSpray);
-	spellElement_acidSpray.mana = 10;
-	spellElement_acidSpray.base_mana = 10;
+	spellElement_acidSpray.mana = 20;
+	spellElement_acidSpray.base_mana = 20;
 	spellElement_acidSpray.overload_multiplier = 1;
-	spellElement_acidSpray.damage = 5;
+	spellElement_acidSpray.damage = 10;
 	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
 	strcpy(spellElement_acidSpray.name, language[2395]);
 
