@@ -926,9 +926,14 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
-		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE) && itemCategory(item) == SPELLBOOK )
+		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE || monsterStats->type == INSECTOID ) && itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.
+			itemDroppable = false;
+		}
+		if ( monsterStats->type == INSECTOID && itemCategory(item) == THROWN )
+		{
+			// insectoids won't drop their un-thrown daggers.
 			itemDroppable = false;
 		}
 	}

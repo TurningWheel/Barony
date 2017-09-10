@@ -109,7 +109,6 @@ void initInsectoid(Entity* my, Stat* myStats)
 					{
 						newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 					}
-					break;
 				case 1:
 					newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 7, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					break;
