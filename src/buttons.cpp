@@ -1296,8 +1296,8 @@ void buttonSpriteProperties(button_t* my)
 			menuVisible = 0;
 			subwindow = 1;
 			newwindow = 9;
-			subx1 = xres / 2 - 140;
-			subx2 = xres / 2 + 140;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
 			suby1 = yres / 2 - 100;
 			suby2 = yres / 2 + 100;
 			strcpy(subtext, "Boulder Trap Properties:");
