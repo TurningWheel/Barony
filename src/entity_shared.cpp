@@ -909,7 +909,6 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
-				case INSECTOID:
 				case LICH_FIRE:
 				case LICH_ICE:
 					equipType = 2;
@@ -925,6 +924,7 @@ int canWearEquip(Entity* entity, int category)
 				case AUTOMATON:
 				case GOATMAN:
 				case KOBOLD:
+				case INSECTOID:
 					equipType = 3;
 					break;
 
@@ -955,7 +955,8 @@ int canWearEquip(Entity* entity, int category)
 	{
 		return 1;
 	}
-	else if ( category == 5 || category == 6 ) { //RINGS/AMULETS WORN BY ALL
+	else if ( category == 5 || category == 6 )  //RINGS/AMULETS WORN BY ALL
+	{
 		return 1;
 	}
 	else if ( (category >= 7 && category <= 9) && equipType >= 2 ) //CLOAK/MASK/GLOVES

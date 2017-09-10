@@ -5079,10 +5079,10 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
 						{
-							monsterSpecialState = 1;
 							node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 							if ( node != nullptr )
 							{
+								monsterSpecialState = INSECTOID_ACID;
 								swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
 							}

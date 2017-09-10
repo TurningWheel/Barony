@@ -747,6 +747,9 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					else
 					{
 						entity->sprite = itemModel(myStats->breastplate);
+						entity->scalex = 0.9;
+						// shrink the width of the breastplate
+						entity->scaley = 0.9;
 					}
 					if ( multiplayer == SERVER )
 					{
@@ -760,6 +763,20 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else if ( multiplayer == CLIENT )
+				{
+					if ( entity->sprite != 468 )
+					{
+						entity->scalex = 0.9;
+						// shrink the width of the breastplate
+						entity->scaley = 0.9;
+					}
+					else
+					{
+						entity->scalex = 1;
+						entity->scaley = 1;
 					}
 				}
 				entity->x -= .25 * cos(my->yaw);
