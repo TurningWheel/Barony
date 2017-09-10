@@ -394,6 +394,10 @@ public:
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
 	void degradeArmor(Stat& hitstats, Item& armor, int armornum);
+	// check stats if monster should "retreat" in actMonster
+	bool shouldRetreat(Stat& myStats);
+	// check if monster should retreat or stand still when less than given distance
+	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
 
 	spell_t* getActiveMagicEffect(int spellID);
 

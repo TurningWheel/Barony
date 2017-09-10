@@ -7945,3 +7945,37 @@ void Entity::removeLightField()
 		this->light = nullptr;
 	}
 }
+
+bool Entity::shouldRetreat(Stat& myStats)
+{
+	// monsters that retreat based on CHR
+	// gnomes, spiders, goblins, shopkeeps, trolls, humans (50%)
+	// kobolds, scarabs, vampires, suc/incubi, insectoids, goatmen, rats
+
+	// excluded golems, shadows, cockatrice, skeletons, demons, imps
+	// scorpions, slimes, ghouls
+
+	// retreating monsters will not try path when losing sight of target
+
+	if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon)
+{
+	if ( dist >= 100 || !hasrangedweapon )
+	{
+		return false;
+	}
+
+	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
+	{
+		return false;
+	}
+
+	return true;
+}
