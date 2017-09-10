@@ -139,7 +139,7 @@ char leverTimerPropertyNames[1][26] =
 
 char boulderTrapPropertyNames[3][42] =
 {
-	"Amount of times to re-fire (0-99)",
+	"Amount of times to re-fire (-1 - 99)",
 	"Delay between re-fire (2-999s)",
 	"Pre-delay for first time trigger (0-999s)"
 };
@@ -4056,7 +4056,7 @@ int main(int argc, char** argv)
 							{
 								if ( i == 0 )
 								{
-									if ( propertyInt > 99 || propertyInt < 0 )
+									if ( propertyInt > 99 || propertyInt < -1 )
 									{
 										propertyPageError(i, 0); // reset to default 0 re-fire.
 									}
@@ -4066,6 +4066,10 @@ int main(int argc, char** argv)
 										if ( propertyInt == 1 )
 										{
 											strcpy(tmpStr, "time");
+										}
+										else if ( propertyInt == -1 )
+										{
+											strcpy(tmpStr, "infinite reload");
 										}
 										else
 										{

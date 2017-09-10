@@ -767,6 +767,11 @@ void actBoulderTrapEast(Entity* my)
 				--my->boulderTrapRefireAmount;
 				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
 		}
 	}
 }
@@ -848,6 +853,11 @@ void actBoulderTrapSouth(Entity* my)
 			if ( my->boulderTrapRefireAmount > 0 )
 			{
 				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
 				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
 		}
@@ -934,6 +944,11 @@ void actBoulderTrapWest(Entity* my)
 				--my->boulderTrapRefireAmount;
 				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
 		}
 	}
 }
@@ -1015,6 +1030,11 @@ void actBoulderTrapNorth(Entity* my)
 			if ( my->boulderTrapRefireAmount > 0 )
 			{
 				--my->boulderTrapRefireAmount;
+				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
+			}
+			else if ( my->boulderTrapRefireAmount == -1 )
+			{
+				// infinite boulders.
 				my->boulderTrapRefireCounter = my->boulderTrapRefireDelay * TICKS_PER_SECOND;
 			}
 		}
