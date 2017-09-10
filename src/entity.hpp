@@ -558,10 +558,11 @@ void actAmbientParticleEffectIdle(Entity* my);
 static const int NUM_ITEM_STRINGS = 213;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
 static const int NUM_EDITOR_SPRITES = 116;
+static const int NUM_EDITOR_TILES = 208;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
-extern char tileEditorNameStrings[202][44];
+extern char tileEditorNameStrings[NUM_EDITOR_TILES][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
 extern char itemNameStrings[NUM_ITEM_STRINGS][32];
