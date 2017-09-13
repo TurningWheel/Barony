@@ -31,18 +31,13 @@ ItemModifyingGUI::ItemModifyingGUI() :
     itemModifyingGUI_OffsetX(0),
     itemModifyingGUI_OffsetY(0)
 {
-    itemModifyingGUI_IMG = loadImage("images/system/identifyGUI.png");
+    itemModifyingGUI_IMG = loadImage("images/system/itemModifyingGUI.png");
 } // ItemModifyingGUI()
 
 ItemModifyingGUI::~ItemModifyingGUI()
 {
     closeItemModifyingGUI();
     itemModifyingGUI_IMG = nullptr;
-    itemModifyingGUI_ScrollUsed = nullptr;
-    for ( int i = 0; i < NUM_ITEM_MODIFYING_GUI_ITEMS; i++ )
-    {
-        itemModifyingGUI_Inventory[i] = nullptr;
-    }
 } // ~ItemModifyingGUI()
 
 /* ItemModifyingGUI.cpp
@@ -137,7 +132,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
     }
 
     // Cursed Scrolls do not use the GUI, their processing is determined at random
-    if ( bIsActive == true && bIsCursed != true )
+    if ( bIsCursed != true )
     {
         // If the Player's Inventory cannot be accessed, nothing will work, therefore this is a check to prevent needless processing
         list_t* playerInventoryList = &stats[clientnum]->inventory;
@@ -171,15 +166,15 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         char* windowName;
         windowName = language[2499]; // "Repair an Item"
 
-        Sint32 windowLabelX = ((((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 2 + ((identifyGUI_img->w / 2) - ((TTF8_WIDTH * longestline(windowName)) / 2)));
-        Sint32 windowLabelY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 4;
+        const Sint32 windowLabelX = ((((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 2 + ((itemModifyingGUI_IMG->w / 2) - ((TTF8_WIDTH * longestline(windowName)) / 2)));
+        const Sint32 windowLabelY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 4;
 
         // Print the Window Label
         ttfPrintText(ttf8, windowLabelX, windowLabelY, windowName);
 
         // The GUI Window's position after being offset
-        Sint32 GUIOffsetPosX = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
-        Sint32 GUIOffsetPosY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
+        const Sint32 GUIOffsetPosX = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
+        const Sint32 GUIOffsetPosY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
 
         // Draw the Images for the GUI buttons when they are being clicked
         itemModifyingGUI_HandleButtonImages(GUIOffsetPosX, GUIOffsetPosY);
@@ -233,7 +228,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         // This is done at the end to prevent the Inventory Slot highlight from being drawn on top of the Item information
         itemModifyingGUI_HandleItemImages();
     }
-    else if ( bIsActive == true && bIsCursed == true ) 
+    else 
     {
         if ( itemModifyingGUI_ScrollUsed == nullptr )
         {
@@ -252,7 +247,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
 } // updateItemModifyingGUI()
 
 /* ItemModifyingGUI.cpp
- * Resets all relevant variables back to their base states
+ * Resets all member variables back to their base states
  */
 void ItemModifyingGUI::closeItemModifyingGUI()
 {
@@ -263,7 +258,103 @@ void ItemModifyingGUI::closeItemModifyingGUI()
     itemModifyingGUI_Type = 0;
     itemModifyingGUI_InventoryScrollOffset = 0;
     itemModifyingGUI_InventorySelectedSlot = -1;
+
+    itemModifyingGUI_ScrollUsed = nullptr;
+    for ( int i = 0; i < NUM_ITEM_MODIFYING_GUI_ITEMS; i++ )
+    {
+        itemModifyingGUI_Inventory[i] = nullptr;
+    }
 } // closeItemModifyingGUI()
+
+/* ItemModifyingGUI.cpp
+ * @param direction - Will either be -1 for Up or 1 for Down. The direction in which the User wants to move the cursor
+ * Called by GameController::handleItemModifyingGUIMovement(). Evaluates the requested movement, updating 'itemModifyingGUI_InventorySelectedSlot' as needed
+ */
+void ItemModifyingGUI::gamepadMoveCursor(Sint8 direction)
+{
+    // Up will be -1, Down will be 1
+    Sint8 newSlot = itemModifyingGUI_InventorySelectedSlot + direction;
+    
+    // D-Pad Up was pressed
+    if ( newSlot < itemModifyingGUI_InventorySelectedSlot )
+    {
+        // Possible cases:
+        // * 1) Move cursor up the GUI through different itemModifyingGUI_InventorySelectedSlot
+        // * * 2) Page up through itemModifyingGUI_InventoryScrollOffset--
+        // * * 3) Scrolling up past top of the GUI's Inventory, no itemModifyingGUI_InventoryScrollOffset (move back to Player Inventory)
+
+        if ( itemModifyingGUI_InventorySelectedSlot <= 0 )
+        {
+            // Covers cases 2 & 3
+            // Possible cases:
+            // * A) Hit very top of the GUI's Inventory, can't go any further. Return to Player Inventory
+            // * * B) Page up, scrolling through itemModifyingGUI_InventoryScrollOffset--
+
+            if ( itemModifyingGUI_InventoryScrollOffset <= 0 )
+            {
+                // Case 3/A: Return to Player Inventory
+                // A check will happen in playerinventory.cpp immediately after this which will call warpMouseToSelectedInventorySlot()
+                itemModifyingGUI_InventorySelectedSlot = -1;
+            }
+            else
+            {
+                // Case 2/B: Page up through GUI's Inventory
+                itemModifyingGUI_InventoryScrollOffset--;
+            }
+        }
+        else
+        {
+            // Covers case 1
+            // Move cursor up the GUI through different itemModifyingGUI_InventorySelectedSlot (itemModifyingGUI_InventorySelectedSlot--)
+            itemModifyingGUI_InventorySelectedSlot--;
+            warpMouseToSelectedGUISlot();
+        }
+    }
+    else if ( newSlot > itemModifyingGUI_InventorySelectedSlot ) // D-Pad Down was pressed
+    {
+        // Possible cases:
+        // * 1) Moving cursor down through GUI through different itemModifyingGUI_InventorySelectedSlot
+        // * * 2) Scrolling down past bottom of GUI's Inventory through itemModifyingGUI_InventoryScrollOffset++
+        // * * 3) Scrolling down past bottom of GUI's Inventory, past maximum GUI Inventory size (Undo move -- can't go beyond limit of the GUI's Inventory)
+
+        if ( itemModifyingGUI_InventorySelectedSlot >= NUM_ITEM_MODIFYING_GUI_ITEMS - 1 )
+        {
+            // Covers cases 2 & 3
+            itemModifyingGUI_InventoryScrollOffset++; // itemModifyingGUI_InventoryScrollOffset is automatically sanitized in updateItemModifyingGUI()
+        }
+        else
+        {
+            // Covers case 1
+            // Move cursor down through the GUI through different itemModifyingGUI_InventorySelectedSlot (itemModifyingGUI_InventorySelectedSlot++)
+            // This is a little bit trickier since must undo movement if there is no Item in the next slot
+            // Two possible cases:
+            // * A) There are Items below this. Advance itemModifyingGUI_InventorySelectedSlot to them
+            // * * B) On last Item already. Do nothing (undo movement)
+
+            Item* item = getItemInfoFromGUI(itemModifyingGUI_InventorySelectedSlot + 1);
+
+            if ( item != nullptr )
+            {
+                // Case 1/A
+                itemModifyingGUI_InventorySelectedSlot++;
+                warpMouseToSelectedGUISlot();
+            }
+            else
+            {
+                // Case 1/B
+                //No more Items. Prevent movement (undo movement)
+            }
+        }
+    }
+}
+
+/* ItemModifyingGUI.cpp
+ * @returns 'bIsActive'
+ */
+bool ItemModifyingGUI::isActive() const
+{
+    return bIsActive;
+}
 
 /* ItemModifyingGUI.cpp
  * @param GUIType - The type of GUI to be opened: 0,1,2,3,4 - Identify, Remove Curse, Repair, Enchant Weapon, Enchant Armor
@@ -292,6 +383,16 @@ bool ItemModifyingGUI::areThereValidItems(const Uint8 GUIType)
         return true;
     }
 } // areThereValidItems()
+
+/* ItemModifyingGUI.cpp
+ * @returns true - If 'itemModifyingGUI_InventorySelectedSlot' is < 0
+ * @returns false - If 'itemModifyingGUI_InventorySelectedSlot' is 0 or greater
+ * Returns whether or not the mouse is currently hovering over a GUI Inventory Slot
+ */
+bool ItemModifyingGUI::isSelectedSlotInvalid() const
+{
+    return (itemModifyingGUI_InventorySelectedSlot < 0);
+}
 
 /* ItemModifyingGUI.cpp
 *  Used to get the reference to the Item in the given slot in itemModifyingGUI_Inventory[]
@@ -420,29 +521,29 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtons()
 {
     // GUI Button Collision Bounds TODOR: I may have these swapped, the lower bound may be the upper bound
     // Scroll Up Button Y
-    Sint32 scrollUpButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16;
-    Sint32 scrollUpButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 52;
+    const Sint32 scrollUpButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16;
+    const Sint32 scrollUpButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 52;
     // Scroll Up Button X
-    Sint32 scrollUpButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
-    Sint32 scrollUpButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
+    const Sint32 scrollUpButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
+    const Sint32 scrollUpButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
     // Scroll Down Button Y
-    Sint32 scrollDownButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 52;
-    Sint32 scrollDownButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 88;
+    const Sint32 scrollDownButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 52;
+    const Sint32 scrollDownButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 88;
     // Scroll Down Button X
-    Sint32 scrollDownButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
-    Sint32 scrollDownButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
+    const Sint32 scrollDownButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
+    const Sint32 scrollDownButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
     // Close Button Y
-    Sint32 closeButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
-    Sint32 closeButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 15;
+    const Sint32 closeButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
+    const Sint32 closeButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 15;
     // Close Button X
-    Sint32 closeButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 393;
-    Sint32 closeButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 407;
+    const Sint32 closeButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 393;
+    const Sint32 closeButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 407;
     // Dragging Bar Y
-    Sint32 draggingBarY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
-    Sint32 draggingBarY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 15;
+    const Sint32 draggingBarY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
+    const Sint32 draggingBarY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 15;
     // Dragging Bar X
-    Sint32 draggingBarX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
-    Sint32 draggingBarX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 377;
+    const Sint32 draggingBarX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
+    const Sint32 draggingBarX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 377;
 
     // Buttons
     if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -502,11 +603,11 @@ void ItemModifyingGUI::itemModifyingGUI_HandleMouseWheel()
 {
     // GUI Mouse Wheel Collision Bounds
     // Mouse Wheel Y
-    Sint32 mouseWheelY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16;
-    Sint32 mouseWheelY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + (identifyGUI_img->h - 8);
+    const Sint32 mouseWheelY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16;
+    const Sint32 mouseWheelY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + (itemModifyingGUI_IMG->h - 8);
     // Mouse Wheel X
-    Sint32 mouseWheelX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 12;
-    Sint32 mouseWheelX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (identifyGUI_img->w - 28);
+    const Sint32 mouseWheelX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 12;
+    const Sint32 mouseWheelX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
 
     // Mouse wheel
     if ( omousex >= mouseWheelX_LowerBound && omousex < mouseWheelX_UpperBound )
@@ -554,17 +655,17 @@ void ItemModifyingGUI::itemModifyingGUI_HandleDraggingBar()
             {
                 itemModifyingGUI_OffsetX = camera.winx - GUICenterPosX;
             }
-            if ( GUIOffsetPosX > camera.winx + camera.winw - identifyGUI_img->w )
+            if ( GUIOffsetPosX > camera.winx + camera.winw - itemModifyingGUI_IMG->w )
             {
-                itemModifyingGUI_OffsetX = (camera.winx + camera.winw - identifyGUI_img->w) - GUICenterPosX;
+                itemModifyingGUI_OffsetX = (camera.winx + camera.winw - itemModifyingGUI_IMG->w) - GUICenterPosX;
             }
             if ( GUIOffsetPosY <= camera.winy )
             {
                 itemModifyingGUI_OffsetY = camera.winy - GUICenterPosY;
             }
-            if ( GUIOffsetPosY > camera.winy + camera.winh - identifyGUI_img->h )
+            if ( GUIOffsetPosY > camera.winy + camera.winh - itemModifyingGUI_IMG->h )
             {
-                itemModifyingGUI_OffsetY = (camera.winy + camera.winh - identifyGUI_img->h) - GUICenterPosY;
+                itemModifyingGUI_OffsetY = (camera.winy + camera.winh - itemModifyingGUI_IMG->h) - GUICenterPosY;
             }
         }
         else // Else, reset the flag
@@ -585,7 +686,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX,
     if ( buttonclick == 7 )
     {
         SDL_Rect GUIInventoryUpButtonRect;
-        GUIInventoryUpButtonRect.x = GUIPosX + (identifyGUI_img->w - 28);
+        GUIInventoryUpButtonRect.x = GUIPosX + (itemModifyingGUI_IMG->w - 28);
         GUIInventoryUpButtonRect.y = GUIPosY + 16;
         GUIInventoryUpButtonRect.w = 0;
         GUIInventoryUpButtonRect.h = 0;
@@ -596,7 +697,7 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX,
     if ( buttonclick == 8 )
     {
         SDL_Rect GUIInventoryDownButtonRect;
-        GUIInventoryDownButtonRect.x = GUIPosX + (identifyGUI_img->w - 28);
+        GUIInventoryDownButtonRect.x = GUIPosX + (itemModifyingGUI_IMG->w - 28);
         GUIInventoryDownButtonRect.y = GUIPosY + 52;
         GUIInventoryDownButtonRect.w = 0;
         GUIInventoryDownButtonRect.h = 0;
