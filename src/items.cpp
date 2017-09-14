@@ -926,9 +926,14 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
-		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE) && itemCategory(item) == SPELLBOOK )
+		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE || monsterStats->type == INSECTOID ) && itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.
+			itemDroppable = false;
+		}
+		if ( monsterStats->type == INSECTOID && itemCategory(item) == THROWN )
+		{
+			// insectoids won't drop their un-thrown daggers.
 			itemDroppable = false;
 		}
 	}
@@ -1655,7 +1660,7 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_STONEBLOOD:
 		case SPELLBOOK_BLEED:
 		case SPELLBOOK_REFLECT_MAGIC:
-		case SPELLBOOK_BLANK_1:
+		case SPELLBOOK_ACID_SPRAY:
 		case SPELLBOOK_BLANK_2:
 		case SPELLBOOK_BLANK_3:
 		case SPELLBOOK_BLANK_4:
@@ -2628,7 +2633,7 @@ bool inline isMeleeWeapon(const Item& item)
 	return ( !isRangedWeapon(item) );
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -2646,7 +2651,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 
 	item = (Item*)inventoryNode->element;
 	
-	if ( item->count == 1 )
+	if ( item->count == 1 || moveStack )
 	{
 		// TODO: handle stacks.
 		tmpItem = newItem(GEM_ROCK, EXCELLENT, 0, 1, 0, false, nullptr);
@@ -2686,9 +2691,11 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			return false;
 		}
+
 		copyItem(tmpItem, item);
 		tmpItem->count = 1;
 		item->count--;
+
 		if ( myStats->weapon != nullptr )
 		{
 			my->addItemToMonsterInventory(myStats->weapon);

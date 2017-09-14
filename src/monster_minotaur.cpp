@@ -834,6 +834,34 @@ void actMinotaurCeilingBuster(Entity* my)
 								list_RemoveNode(entity->mynode);
 							}
 						}
+						else if (	entity->behavior == &actStalagCeiling	||
+									entity->behavior == &actStalagFloor		||
+									entity->behavior == &actStalagColumn 
+								)
+						{
+							// spawn several rock items
+							int c, i = rand() % 4;
+							for ( c = 0; c < i; ++c )
+							{
+								Entity* childEntity = spawnGib(my);
+								childEntity->x = ((int)(my->x / 16)) * 16 + rand() % 16;
+								childEntity->y = ((int)(my->y / 16)) * 16 + rand() % 16;
+								childEntity->z = -8;
+								childEntity->flags[PASSABLE] = true;
+								childEntity->flags[INVISIBLE] = false;
+								childEntity->flags[NOUPDATE] = true;
+								childEntity->flags[UPDATENEEDED] = false;
+								childEntity->sprite = items[GEM_ROCK].index;
+								childEntity->yaw = rand() % 360 * PI / 180;
+								childEntity->pitch = rand() % 360 * PI / 180;
+								childEntity->roll = rand() % 360 * PI / 180;
+								childEntity->vel_x = (rand() % 20 - 10) / 10.0;
+								childEntity->vel_y = (rand() % 20 - 10) / 10.0;
+								childEntity->vel_z = -.25;
+								childEntity->fskill[3] = 0.03;
+							}
+							list_RemoveNode(entity->mynode);
+						}
 					}
 				}
 			}

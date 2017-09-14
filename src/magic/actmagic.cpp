@@ -77,11 +77,7 @@ void actMagicTrap(Entity* my)
 	// eliminate traps that have been destroyed.
 	if ( !checkObstacle(my->x, my->y, my, NULL) )
 	{
-		if ( my->light )
-		{
-			list_RemoveNode(my->light->node);
-			my->light = NULL;
-		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -150,11 +146,7 @@ void actMagiclightBall(Entity* my)
 
 	if (clientnum != 0 && multiplayer == CLIENT)
 	{
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-			my->light = NULL;
-		}
+		my->removeLightField();
 
 		//Light up the area.
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
@@ -166,18 +158,12 @@ void actMagiclightBall(Entity* my)
 
 			if (lightball_lighting == 1)
 			{
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-				}
+				my->removeLightField();
 				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 			}
 			else
 			{
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-				}
+				my->removeLightField();
 				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 			}
 			lightball_flicker = 0;
@@ -233,11 +219,7 @@ void actMagiclightBall(Entity* my)
 		{
 			if (stats->HP <= 0)
 			{
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-					my->light = NULL;
-				}
+				my->removeLightField();
 				list_RemoveNode(my->mynode); //Delete the light spell.
 				return;
 			}
@@ -245,11 +227,7 @@ void actMagiclightBall(Entity* my)
 	}
 	else if (spell->caster >= 1)     //So no caster...but uidToEntity returns NULL if entity is already dead, right? And if the uid is supposed to point to an entity, but it doesn't...it means the caster has died.
 	{
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-			my->light = NULL;
-		}
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -276,22 +254,14 @@ void actMagiclightBall(Entity* my)
 			net_packet->len = 9;
 			sendPacketSafe(net_sock, -1, net_packet, player - 1);
 		}
-		if ( my->light )
-		{
-			list_RemoveNode(my->light->node);
-		}
-		my->light = NULL;
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
 
 	if (magic_init)
 	{
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-			my->light = NULL;
-		}
+		my->removeLightField();
 
 		if (lightball_timer <= 0)
 		{
@@ -327,11 +297,7 @@ void actMagiclightBall(Entity* my)
 							net_packet->len = 9;
 							sendPacketSafe(net_sock, -1, net_packet, player - 1);
 						}
-						if ( my->light )
-						{
-							list_RemoveNode(my->light->node);
-						}
-						my->light = NULL;
+						my->removeLightField();
 						list_RemoveNode(my->mynode);
 						return;
 					}
@@ -533,18 +499,12 @@ void actMagiclightBall(Entity* my)
 
 			if (lightball_lighting == 1)
 			{
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-				}
+				my->removeLightField();
 				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 			}
 			else
 			{
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-				}
+				my->removeLightField();
 				my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 			}
 			lightball_flicker = 0;
@@ -595,11 +555,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 	if (magic_init)
 	{
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-			my->light = NULL;
-		}
+		my->removeLightField();
 
 		if (clientnum == 0 || multiplayer == SERVER)
 		{
@@ -745,7 +701,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				if ( reflection )
 				{
 					spell_t* spellIsReflectingMagic = hit.entity->getActiveMagicEffect(SPELL_REFLECT_MAGIC);
-
+					playSoundEntity(hit.entity, 166, 128);
 					if (hit.entity)
 					{
 						if ( hit.entity->behavior == &actPlayer )
@@ -997,11 +953,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1010,28 +962,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-								if ( parent )
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1048,10 +981,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									hit.entity->skill[6] = (my->x > hit.entity->x);
 								else
 									hit.entity->skill[6] = (my->y < hit.entity->y);
-								if( my->light != NULL ) {
-									list_RemoveNode(my->light->node);
-									my->light = NULL;
-								}
+								my->removeLightField();
 								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
 								list_RemoveNode(my->mynode);
 								return;*/
@@ -1083,11 +1013,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1106,11 +1032,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// test for friendly fire
 								if ( parent &&  parent->checkFriend(hit.entity) )
 								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
+									my->removeLightField();
 									list_RemoveNode(my->mynode);
 									return;
 								}
@@ -1153,11 +1075,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1167,29 +1085,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-								if ( parent )
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
 
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1208,10 +1106,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								else
 									hit.entity->skill[6] = (my->y < hit.entity->y);
 
-								if( my->light != NULL ) {
-									list_RemoveNode(my->light->node);
-									my->light = NULL;
-								}
+								my->removeLightField();
 								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
 								list_RemoveNode(my->mynode);
 								return;*/
@@ -1243,11 +1138,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1270,11 +1161,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) )
 								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
+									my->removeLightField();
 									list_RemoveNode(my->mynode);
 									return;
 								}
@@ -1318,11 +1205,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1331,28 +1214,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							int damage = element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-								if ( parent )
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1369,10 +1233,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									hit.entity->skill[6] = (my->x > hit.entity->x);
 								else
 									hit.entity->skill[6] = (my->y < hit.entity->y);
-								if( my->light != NULL ) {
-									list_RemoveNode(my->light->node);
-									my->light = NULL;
-								}
+								my->removeLightField();
 								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
 								list_RemoveNode(my->mynode);
 								return;*/
@@ -1404,11 +1265,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1466,11 +1323,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[392]);
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
@@ -1489,11 +1342,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) )
 								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
+									my->removeLightField();
 									list_RemoveNode(my->mynode);
 									return;
 								}
@@ -1555,11 +1404,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[395]);
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1576,11 +1421,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) )
 								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
+									my->removeLightField();
 									list_RemoveNode(my->mynode);
 									return;
 								}
@@ -1617,11 +1458,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[395]);
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
@@ -1639,11 +1476,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) )
 								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
+									my->removeLightField();
 									list_RemoveNode(my->mynode);
 									return;
 								}
@@ -1681,11 +1514,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 								}
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
@@ -1748,11 +1577,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1762,32 +1587,9 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage /= (1 + (int)resistance);
 
-							hit.entity->skill[4] -= damage; //Decrease door health.
-							if ( hit.entity->skill[4] < 0 )
-							{
-								if ( parent )
-								{
-									if ( parent->behavior == &actPlayer )
-									{
-										messagePlayer(parent->skill[2], language[387]);
-									}
-								}
-							}
-							playSoundEntity(hit.entity, 28, 128);
-							if ( !hit.entity->skill[0] )
-							{
-								hit.entity->skill[6] = (my->x > hit.entity->x);
-							}
-							else
-							{
-								hit.entity->skill[6] = (my->y < hit.entity->y);
-							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
-							updateEnemyBar(parent, hit.entity, language[674], hit.entity->skill[4], hit.entity->skill[9]);
+							hit.entity->doorHandleDamageMagic(damage, *my, parent);
+
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 							/*} else if (hit.entity->behavior == &actChest) { //TODO: Get right skill values and language file entries.
@@ -1808,10 +1610,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									hit.entity->skill[6] = (my->x > hit.entity->x);
 								else
 									hit.entity->skill[6] = (my->y < hit.entity->y);
-								if( my->light != NULL ) {
-									list_RemoveNode(my->light->node);
-									my->light = NULL;
-								}
+								my->removeLightField();
 								updateEnemyBar(parent,hit.entity,language[674],hit.entity->skill[3],hit.entity->skill[9]);
 								list_RemoveNode(my->mynode);
 								return;*/
@@ -1843,11 +1642,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -1898,11 +1693,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						if (my->light != NULL)
-						{
-							list_RemoveNode(my->light->node);
-							my->light = NULL;
-						}
+						my->removeLightField();
 						list_RemoveNode(my->mynode);
 						return;
 					}
@@ -1995,11 +1786,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						if (my->light != NULL)
-						{
-							list_RemoveNode(my->light->node);
-							my->light = NULL;
-						}
+						my->removeLightField();
 						list_RemoveNode(my->mynode);
 						return;
 					}
@@ -2191,11 +1978,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[2422]);
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 							list_RemoveNode(my->mynode);
 							return;
@@ -2215,11 +1998,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								// test for friendly fire
 								if ( parent && parent->checkFriend(hit.entity) )
 								{
-									if ( my->light != NULL )
-									{
-										list_RemoveNode(my->light->node);
-										my->light = NULL;
-									}
+									my->removeLightField();
 									list_RemoveNode(my->mynode);
 									return;
 								}
@@ -2305,11 +2084,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[2425]);
 							}
-							if ( my->light != NULL )
-							{
-								list_RemoveNode(my->light->node);
-								my->light = NULL;
-							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -2327,12 +2102,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-
-				if ( my->light != nullptr )
+				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
 				{
-					list_RemoveNode(my->light->node);
-					my->light = nullptr;
+					spellEffectAcid(*my, *element, parent, resistance);
+					return;
 				}
+
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}
@@ -2358,18 +2134,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 				if (lightball_lighting == 1)
 				{
-					if ( my->light != NULL )
-					{
-						list_RemoveNode(my->light->node);
-					}
+					my->removeLightField();
 					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 				}
 				else
 				{
-					if ( my->light != NULL )
-					{
-						list_RemoveNode(my->light->node);
-					}
+					my->removeLightField();
 					my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 				}
 				lightball_flicker = 0;
@@ -2393,11 +2163,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 
 void actMagicClient(Entity* my)
 {
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
+	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 	lightball_flicker++;
 	my->skill[2] = -11; // so clients know to create a light field
@@ -2408,18 +2174,12 @@ void actMagicClient(Entity* my)
 
 		if (lightball_lighting == 1)
 		{
-			if ( my->light != NULL )
-			{
-				list_RemoveNode(my->light->node);
-			}
+			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 192);
 		}
 		else
 		{
-			if ( my->light != NULL )
-			{
-				list_RemoveNode(my->light->node);
-			}
+			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 8, 174);
 		}
 		lightball_flicker = 0;
@@ -2698,11 +2458,7 @@ void actParticleCircle(Entity* my)
 			spawnExplosion(my->x, my->y, 0);
 			//summonMonster(SKELETON, my->x, my->y);
 		}
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-		}
-		my->light = NULL;
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -2780,7 +2536,7 @@ void createParticleRock(Entity* parent)
 		entity->vel_x = 0.2 * cos(entity->yaw);
 		entity->vel_y = 0.2 * sin(entity->yaw);
 		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
-		
+
 		entity->skill[0] = 50; // particle life
 		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
 
@@ -2807,7 +2563,7 @@ void actParticleRock(Entity* my)
 		--PARTICLE_LIFE;
 		my->x += my->vel_x;
 		my->y += my->vel_y;
-		
+
 		my->roll += 0.1;
 
 		if ( my->vel_z < 0.01 )

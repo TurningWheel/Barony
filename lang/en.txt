@@ -2899,7 +2899,7 @@ client (player %d) (direct ip)#
 2271 spellbook#
 2272 spellbook of reflect magic#
 2273 spellbook#
-2274 blank spellbook 1#
+2274 spellbook of spray acid#
 2275 spellbook#
 2276 blank spellbook 2#
 2277 spellbook#
@@ -2935,7 +2935,7 @@ but it retracts beyond your might!#
 2392 Bloodletting#
 2393 Dominate#
 2394 Reflect Magic#
-2395 blank#
+2395 Spray Acid#
 2396 blank#
 2397 blank#
 2398 blank#
@@ -2970,6 +2970,9 @@ dominate %s into your service!#
 2428 You feel energy go out from you as you
 dominate the %s into your service!#
 2429 You are unable to dominate this one.#
+2430 %s is sprayed with corrosive acid!#
+2431 The %s is sprayed with corrosive acid!#
+2432 You are sprayed with corrosive acid!#
 
 #More character creation screen stuff.
 2450 Random Name#

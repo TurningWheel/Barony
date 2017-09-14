@@ -71,6 +71,13 @@ int checkSpriteType(Sint32 sprite)
 	case 115:
 		// lever timer
 		return 6;
+	case 102:
+	case 103:
+	case 104:
+	case 105:
+		//boulder traps
+		return 7;
+		break;
 	default:
 		return 0;
 		break;
@@ -288,7 +295,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_stoneblood",
 	"spellbook_bleed",
 	"spellbook_reflect_magic",
-	"spellbook_blank_1",
+	"spellbook_acid_spray",
 	"spellbook_blank_2",
 	"spellbook_blank_3",
 	"spellbook_blank_4",
@@ -377,7 +384,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_bleed",
 		"spellbook_dig",
 		"spellbook_reflect_magic",
-		"spellbook_blank_1",
+		"spellbook_acid_spray",
 		"spellbook_blank_2",
 		"spellbook_blank_3",
 		"spellbook_blank_4",
@@ -656,7 +663,7 @@ char monsterEditorNameStrings[NUMMONSTERS][13] =
 	"lich_fire"
 };
 
-char tileEditorNameStrings[202][44] =
+char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 {
 	"backdrop.png",
 	"bback.png",
@@ -859,7 +866,14 @@ char tileEditorNameStrings[202][44] =
 	"Crystal Wall Column Right.png",
 	"Bronze Columns.png",
 	"Bronze Columns Alcove.png",
-	"Submap.png"
+	"Submap.png",
+	"Cave Wall Reinforced No Beam",
+	"Cave Wall Reinforced Left Cap",
+	"Cave Wall Reinforced Right Cap",
+	"Crystal Wall Reinforced No Beam",
+	"Crystal Wall Reinforced Left Cap",
+	"Crystal Wall Reinforced Right Cap"
+
 };
 
 int canWearEquip(Entity* entity, int category)
@@ -902,7 +916,6 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
-				case INSECTOID:
 				case LICH_FIRE:
 				case LICH_ICE:
 					equipType = 2;
@@ -918,6 +931,7 @@ int canWearEquip(Entity* entity, int category)
 				case AUTOMATON:
 				case GOATMAN:
 				case KOBOLD:
+				case INSECTOID:
 					equipType = 3;
 					break;
 
@@ -948,7 +962,8 @@ int canWearEquip(Entity* entity, int category)
 	{
 		return 1;
 	}
-	else if ( category == 5 || category == 6 ) { //RINGS/AMULETS WORN BY ALL
+	else if ( category == 5 || category == 6 )  //RINGS/AMULETS WORN BY ALL
+	{
 		return 1;
 	}
 	else if ( (category >= 7 && category <= 9) && equipType >= 2 ) //CLOAK/MASK/GLOVES
@@ -1099,6 +1114,24 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 		{
 			// set default new entity attributes.
 			entityNew->leverTimerTicks = 3;
+		}
+	}
+	// boulder trap with re-fire
+	else if ( spriteType == 7 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->boulderTrapRefireDelay = entityToCopy->boulderTrapRefireDelay;
+			entityNew->boulderTrapRefireAmount = entityToCopy->boulderTrapRefireAmount;
+			entityNew->boulderTrapPreDelay = entityToCopy->boulderTrapPreDelay;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->boulderTrapRefireDelay = 3;
+			entityNew->boulderTrapRefireAmount = 0;
+			entityNew->boulderTrapPreDelay = 0;
 		}
 	}
 

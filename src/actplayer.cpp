@@ -141,11 +141,7 @@ void actDeathCam(Entity* my)
 		}
 	}
 
-	if (my->light)
-	{
-		list_RemoveNode(my->light->node);
-		my->light = nullptr;
-	}
+	my->removeLightField();
 	my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 128);
 
 	camera.x = my->x / 16.f;
@@ -1196,11 +1192,9 @@ void actPlayer(Entity* my)
 	{
 		PLAYER_TORCH = 0;
 	}
-	if ( my->light != NULL )
-	{
-		list_RemoveNode(my->light->node);
-		my->light = NULL;
-	}
+
+	my->removeLightField();
+
 	if ( PLAYER_TORCH && my->light == NULL )
 	{
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, PLAYER_TORCH, 50 + 15 * PLAYER_TORCH);
@@ -1507,11 +1501,7 @@ void actPlayer(Entity* my)
 						messagePlayer(PLAYER_NUM, language[578]);
 					}
 				}
-				if ( my->light != NULL )
-				{
-					list_RemoveNode(my->light->node);
-					my->light = NULL;
-				}
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}

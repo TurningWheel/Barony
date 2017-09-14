@@ -43,11 +43,13 @@ static const int SPELL_STONEBLOOD = 23;
 static const int SPELL_BLEED = 24;
 static const int SPELL_DOMINATE = 25;
 static const int SPELL_REFLECT_MAGIC = 26;
+static const int SPELL_ACID_SPRAY = 27;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
 #define SPELLELEMENT_STONEBLOOD_BASE_DURATION 5//In seconds.
+static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 10;
 
 //Definitions for actMagic(note that other functions may use this)
 #define MAGIC_TYPE (Item)my->skill[10] //TODO: OLD.
@@ -292,6 +294,9 @@ extern spellElement_t spellElement_stoneblood;
 */
 extern spellElement_t spellElement_bleed;
 
+/*Dmg/Poison and degrade armor*/
+extern spellElement_t spellElement_acidSpray;
+
 /*
 * The missile element gives propulsion to a spell; it makes a spell a projectile.
 * Base cost: 1 mana.
@@ -372,6 +377,7 @@ extern spell_t spell_stoneblood;
 extern spell_t spell_bleed;
 extern spell_t spell_dominate;
 extern spell_t spell_reflectMagic;
+extern spell_t spell_acidSpray;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -461,5 +467,6 @@ spell_t* getSpellFromItem(Item* item);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 
 void freeSpells();

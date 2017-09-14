@@ -193,14 +193,42 @@ void buttonNew(button_t* my)
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
 	snprintf(skyboxtext, 4, "%d", map.skybox);
+	for ( int z = 0; z < MAPFLAGS; ++z )
+	{
+		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+	}
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLEMONSTERS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
-	subx1 = xres / 2 - 160;
-	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 100;
-	suby2 = yres / 2 + 100;
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 120;
+	suby2 = yres / 2 + 120;
 	strcpy(subtext, "New map:");
 
 	button = newButton();
@@ -243,6 +271,46 @@ void buttonNewConfirm(button_t* my)
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
 	map.skybox = atoi(skyboxtext);
+	for ( z = 0; z < MAPFLAGS; ++z )
+	{
+		if ( z == MAP_FLAG_DISABLETRAPS )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLETRAPS] = 0;
+			}
+		}
+		else if ( z == MAP_FLAG_DISABLEMONSTERS )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLEMONSTERS] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLEMONSTERS] = 0;
+			}
+		}
+		else if ( z == MAP_FLAG_DISABLELOOT )
+		{
+			if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+			{
+				map.flags[MAP_FLAG_DISABLELOOT] = 1;
+			}
+			else
+			{
+				map.flags[MAP_FLAG_DISABLELOOT] = 0;
+			}
+		}
+		else
+		{
+			map.flags[z] = atoi(mapflagtext[z]);
+		}
+	}
 	map.width = atoi(widthtext);
 	map.height = atoi(heighttext);
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
@@ -655,6 +723,48 @@ void buttonDelete(button_t* my)
 	}
 }
 
+void buttonCycleSprites(button_t* my)
+{
+	SDL_Rect pos;
+	char tmp[4];
+	Entity* entity = nullptr;
+	Entity* lastEntity = nullptr;
+	bool entityWasSelected = false;
+	for ( node_t* node = map.entities->first; node != NULL; node = node->next )
+	{
+		entity = (Entity*)node->element;
+		pos.x = entity->x * (TEXTURESIZE / 16) - camx;
+		pos.y = entity->y * (TEXTURESIZE / 16) - camy;
+		if ( (omousex / TEXTURESIZE) * 32 == pos.x && (omousey / TEXTURESIZE) * 32 == pos.y )
+		{
+			// set lastEntity to each entity on the tile.
+			lastEntity = entity;
+		}
+	}
+
+	if ( lastEntity != nullptr )
+	{
+		if ( selectedEntity )
+		{
+			entityWasSelected = true;
+		}
+
+		selectedEntity = nullptr;
+		lastSelectedEntity = nullptr;
+
+		// create new entity on the list, copying and removing the previous last one.
+		entity = newEntity(lastEntity->sprite, 0, map.entities);
+		setSpriteAttributes(entity, lastEntity, lastEntity);
+		list_RemoveNode(lastEntity->mynode);
+
+		if ( entityWasSelected )
+		{
+			selectedEntity = entity;
+			lastSelectedEntity = selectedEntity;
+		}
+	}
+}
+
 void buttonSelectAll(button_t* my)
 {
 	menuVisible = 0;
@@ -759,14 +869,42 @@ void buttonAttributes(button_t* my)
 	strcpy(nametext, map.name);
 	strcpy(authortext, map.author);
 	snprintf(skyboxtext, 4, "%d", map.skybox);
+	for ( int z = 0; z < MAPFLAGS; ++z )
+	{
+		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+	}
+	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLEMONSTERS] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[ ]");
+	}
+	if ( map.flags[MAP_FLAG_DISABLELOOT] > 0 )
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+	}
+	else
+	{
+		strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[ ]");
+	}
 	cursorflash = ticks;
 	menuVisible = 0;
 	subwindow = 1;
 	newwindow = 1;
-	subx1 = xres / 2 - 160;
-	subx2 = xres / 2 + 160;
-	suby1 = yres / 2 - 100;
-	suby2 = yres / 2 + 100;
+	subx1 = xres / 2 - 200;
+	subx2 = xres / 2 + 200;
+	suby1 = yres / 2 - 120;
+	suby2 = yres / 2 + 120;
 	strcpy(subtext, "Map properties:");
 
 	button = newButton();
@@ -828,6 +966,40 @@ void buttonAttributesConfirm(button_t* my)
 	map.width = std::min(std::max(MINWIDTH, map.width), MAXWIDTH);
 	map.height = std::min(std::max(MINHEIGHT, map.height), MAXHEIGHT);
 	map.skybox = atoi(skyboxtext);
+	if ( map.skybox > numtiles )
+	{
+		map.skybox = 0;
+	}
+	map.flags[MAP_FLAG_CEILINGTILE] = atoi(mapflagtext[MAP_FLAG_CEILINGTILE]);
+	if ( map.flags[MAP_FLAG_CEILINGTILE] >= numtiles )
+	{
+		map.flags[MAP_FLAG_CEILINGTILE] = 0;
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLETRAPS] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLETRAPS] = 0;
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEMONSTERS], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLEMONSTERS] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLEMONSTERS] = 0;
+	}
+	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]", 3) )
+	{
+		map.flags[MAP_FLAG_DISABLELOOT] = 1;
+	}
+	else
+	{
+		map.flags[MAP_FLAG_DISABLELOOT] = 0;
+	}
+
 	map.tiles = (int*) malloc(sizeof(int) * MAPLAYERS * map.height * map.width);
 	strcpy(map.name, nametext);
 	strcpy(map.author, authortext);
@@ -1145,7 +1317,7 @@ void buttonSpriteProperties(button_t* my)
 			strcpy(subtext, "Power Crystal Properties:");
 			break;
 		case 6:
-			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks)); //Orientation
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->leverTimerTicks));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1156,6 +1328,21 @@ void buttonSpriteProperties(button_t* my)
 			suby1 = yres / 2 - 60;
 			suby2 = yres / 2 + 60;
 			strcpy(subtext, "Lever Timer Properties:");
+			break;
+		case 7:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireAmount));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->boulderTrapRefireDelay));
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->boulderTrapPreDelay)); 
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 9;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 100;
+			suby2 = yres / 2 + 100;
+			strcpy(subtext, "Boulder Trap Properties:");
 			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
@@ -1953,6 +2140,25 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				else
 				{
 					selectedEntity->leverTimerTicks = (Sint32)atoi(spriteProperties[0]);
+				}
+				break;
+			case 7: //boulder trap
+				selectedEntity->boulderTrapRefireAmount = (Sint32)atoi(spriteProperties[0]);
+				if ( (Sint32)atoi(spriteProperties[1]) < 2 )
+				{
+					selectedEntity->boulderTrapRefireDelay = 2;
+				}
+				else
+				{
+					selectedEntity->boulderTrapRefireDelay = (Sint32)atoi(spriteProperties[1]);
+				}
+				if ( (Sint32)atoi(spriteProperties[2]) < 0 )
+				{
+					selectedEntity->boulderTrapPreDelay = 0;
+				}
+				else
+				{
+					selectedEntity->boulderTrapPreDelay = (Sint32)atoi(spriteProperties[2]);
 				}
 				break;
 			default:

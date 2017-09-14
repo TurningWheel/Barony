@@ -282,6 +282,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 	map_t shopmap;
 	map_t secretlevelmap;
 	int secretlevelexit = 0;
+	bool *trapexcludelocations;
+	bool *monsterexcludelocations;
+	bool *lootexcludelocations;
 
 	printlog("generating a dungeon from level set '%s' (seed %d)...\n", levelset, seed);
 	if (loadMap(levelset, &map, map.entities) == -1)
@@ -563,6 +566,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 	if ( numlevels > 1 )
 	{
 		possiblelocations = (bool*) malloc(sizeof(bool) * map.width * map.height);
+		trapexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		monsterexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
+		lootexcludelocations = (bool*)malloc(sizeof(bool) * map.width * map.height);
 		for ( y = 0; y < map.height; y++ )
 		{
 			for ( x = 0; x < map.width; x++ )
@@ -574,6 +580,25 @@ int generateDungeon(char* levelset, Uint32 seed)
 				else
 				{
 					possiblelocations[x + y * map.width] = true;
+				}
+				trapexcludelocations[x + y * map.width] = false;
+				if ( map.flags[MAP_FLAG_DISABLEMONSTERS] == true )
+				{
+					// the base map excludes all monsters
+					monsterexcludelocations[x + y * map.width] = true;
+				}
+				else
+				{
+					monsterexcludelocations[x + y * map.width] = false;
+				}
+				if ( map.flags[MAP_FLAG_DISABLELOOT] == true )
+				{
+					// the base map excludes all monsters
+					lootexcludelocations[x + y * map.width] = true;
+				}
+				else
+				{
+					lootexcludelocations[x + y * map.width] = false;
 				}
 			}
 		}
@@ -715,6 +740,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 					free(possiblerooms);
 					free(possiblelocations);
 					free(possiblelocations2);
+					free(trapexcludelocations);
+					free(monsterexcludelocations);
+					free(lootexcludelocations);
 					free(firstroomtile);
 					free(sublevelname);
 					free(fullname);
@@ -798,10 +826,22 @@ int generateDungeon(char* levelset, Uint32 seed)
 
 			if ( subroomCount[levelnum + 1] > 0 )
 			{
+				int jumps = 0;
 				pickSubRoom = prng_get_uint() % subroomCount[levelnum + 1];
 				// traverse the map list to the picked level
 				subRoomNode = subRoomMapList.first;
+				for ( int cycleRooms = 0; (cycleRooms < levelnum + 1) && (subRoomNode != nullptr); ++cycleRooms )
+				{
+					for ( int cycleRoomSubMaps = subroomCount[cycleRooms]; cycleRoomSubMaps > 0; --cycleRoomSubMaps )
+					{
+						// advance the subroom map list by the previous entries.
+						// e.g 2 subrooms, 3 maps each should advance pointer 3 maps when loading second room.
+						subRoomNode = subRoomNode->next;
+						jumps++; // just to keep track of how many jumps we made.
+					}
+				}
 				k = 0;
+
 				while ( 1 )
 				{
 					if ( k == pickSubRoom )
@@ -811,6 +851,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 					subRoomNode = subRoomNode->next;
 					k++;
 				}
+				messagePlayer(0, "%d + %d jumps!", jumps, k + 1);
 				subRoomNode = ((list_t*)subRoomNode->element)->first;
 				subRoomMap = (map_t*)subRoomNode->element;
 				subRoomDoorNode = subRoomNode->next;
@@ -829,7 +870,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 								subRoom_tileStartx = x0;
 								subRoom_tileStarty = y0;
 								foundSubRoom = 1;
-								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom, subroomCount[levelnum + 1], levelnum + 1);
+								messagePlayer(0, "Picked level: %d from %d possible rooms in submap %d", pickSubRoom + 1, subroomCount[levelnum + 1], levelnum + 1);
 							}
 
 							map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = subRoomMap->tiles[z + (subRoom_tiley)* MAPLAYERS + (subRoom_tilex)* MAPLAYERS * subRoomMap->height];
@@ -853,6 +894,19 @@ int generateDungeon(char* levelset, Uint32 seed)
 						if ( z == 0 )
 						{
 							possiblelocations[x0 + y0 * map.width] = false;
+							if ( tempMap->flags[MAP_FLAG_DISABLETRAPS] == 1 )
+							{
+								trapexcludelocations[x0 + y0 * map.width] = true;
+								map.tiles[z + y0 * MAPLAYERS + x0 * MAPLAYERS * map.height] = 83;
+							}
+							if ( tempMap->flags[MAP_FLAG_DISABLEMONSTERS] == 1 )
+							{
+								monsterexcludelocations[x0 + y0 * map.width] = true;
+							}
+							if ( tempMap->flags[MAP_FLAG_DISABLELOOT] == 1 )
+							{
+								lootexcludelocations[x0 + y0 * map.width] = true;
+							}
 							if ( c == 0 )
 							{
 								firstroomtile[y0 + x0 * map.height] = true;
@@ -1133,7 +1187,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}
 
 	// boulder and arrow traps
-	if ( svFlags & SV_FLAG_TRAPS )
+	if ( (svFlags & SV_FLAG_TRAPS) && map.flags[MAP_FLAG_DISABLETRAPS] == 0 )
 	{
 		numpossiblelocations = 0;
 		for ( c = 0; c < map.width * map.height; c++ )
@@ -1165,7 +1219,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					sides++;
 				}
-				if ( sides == 1 )
+				if ( sides == 1 && (trapexcludelocations[x + y * map.width] == false) )
 				{
 					possiblelocations[y + x * map.height] = true;
 					numpossiblelocations++;
@@ -1292,6 +1346,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			else
 			{
+				//messagePlayer(0, "Included at x: %d, y: %d", x, y);
 				entity = newEntity(38, 1, map.entities); // boulder trap
 				entity->behavior = &actBoulderTrap;
 			}
@@ -1569,27 +1624,33 @@ int generateDungeon(char* levelset, Uint32 seed)
 				{
 					if ( prng_get_uint() % balance )
 					{
-						if ( prng_get_uint() % 10 == 0 )   // 10% chance
+						if ( lootexcludelocations[x + y * map.width] == false )
 						{
-							entity = newEntity(9, 1, map.entities);  // gold
-						}
-						else
-						{
-							entity = newEntity(8, 1, map.entities);  // item
+							if ( prng_get_uint() % 10 == 0 )   // 10% chance
+							{
+								entity = newEntity(9, 1, map.entities);  // gold
+							}
+							else
+							{
+								entity = newEntity(8, 1, map.entities);  // item
+							}
 						}
 					}
 					else
 					{
-						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+						if ( monsterexcludelocations[x + y * map.width] == false )
 						{
-							entity = newEntity(27, 1, map.entities);  // human
+							if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+							{
+								entity = newEntity(27, 1, map.entities);  // human
+							}
+							else
+							{
+								entity = newEntity(10, 1, map.entities);  // monster
+							}
+							entity->skill[5] = nummonsters;
+							nummonsters++;
 						}
-						else
-						{
-							entity = newEntity(10, 1, map.entities);  // monster
-						}
-						entity->skill[5] = nummonsters;
-						nummonsters++;
 					}
 				}
 			}
@@ -1657,6 +1718,9 @@ int generateDungeon(char* levelset, Uint32 seed)
 	}*/
 
 	free(possiblelocations);
+	free(trapexcludelocations);
+	free(monsterexcludelocations);
+	free(lootexcludelocations);
 	free(firstroomtile);
 	free(subRoomName);
 	free(sublevelname);
@@ -3406,6 +3470,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3444,6 +3509,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3482,6 +3548,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3520,6 +3587,7 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				entity->flags[NOUPDATE] = true;
 				entity->skill[28] = 1; // is a mechanism
+				entity->boulderTrapPreDelay = entity->boulderTrapPreDelay * TICKS_PER_SECOND; // convert seconds to ticks from editor
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
@@ -3629,6 +3697,7 @@ void assignActions(map_t* map)
 				entity->sizex = 8;
 				entity->sizey = 8;
 				entity->z = -7.75;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagColumn;
 				break;
 			case 109: //stalagmite single
@@ -3638,6 +3707,7 @@ void assignActions(map_t* map)
 				entity->sizex = 4;
 				entity->sizey = 4;
 				entity->z = 1.75;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagFloor;
 				break;
 			case 110: //stalagmite multiple
@@ -3647,6 +3717,7 @@ void assignActions(map_t* map)
 				entity->sizex = 7;
 				entity->sizey = 7;
 				entity->z = -1;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagFloor;
 				break;
 			case 111: //stalagtite single
@@ -3658,6 +3729,7 @@ void assignActions(map_t* map)
 				entity->z = -1.75;
 				x = entity->x / 16;
 				y = entity->y / 16;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagCeiling;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{
@@ -3677,6 +3749,7 @@ void assignActions(map_t* map)
 				entity->z = 1;
 				x = entity->x / 16;
 				y = entity->y / 16;
+				entity->flags[BLOCKSIGHT] = false;
 				entity->behavior = &actStalagCeiling;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{

@@ -564,6 +564,7 @@ void glDrawWorld(view_t* camera, int mode)
 	real_t s;
 	bool clouds = false;
 	int cloudtile = 0;
+	int mapceilingtile = 50;
 
 	if ( softwaremode == true )
 	{
@@ -581,6 +582,12 @@ void glDrawWorld(view_t* camera, int mode)
 		{
 			cloudtile = map.skybox;
 		}
+	}
+
+
+	if ( map.flags[MAP_FLAG_CEILINGTILE] != 0 && map.flags[MAP_FLAG_CEILINGTILE] < numtiles )
+	{
+		mapceilingtile = map.flags[MAP_FLAG_CEILINGTILE];
 	}
 
 	if ( clouds && mode == REALCOLORS )
@@ -1006,7 +1013,7 @@ void glDrawWorld(view_t* camera, int mode)
 						// bind texture
 						if ( mode == REALCOLORS )
 						{
-							new_tex = texid[tiles[50]->refcount];
+							new_tex = texid[tiles[mapceilingtile]->refcount];
 							//glBindTexture(GL_TEXTURE_2D, texid[tiles[50]->refcount]); // rock tile
 							if (cur_tex!=new_tex)
 							{

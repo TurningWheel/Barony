@@ -808,6 +808,12 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				playSoundEntity(entity, 171, 128);
 			}
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			{
+				playSoundEntity(entity, 164, 128);
+				traveltime = 15;
+				entity->skill[5] = traveltime;
+			}
 			else
 			{
 				playSoundEntity(entity, 169, 128 );
@@ -816,6 +822,24 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if ( propulsion == PROPULSION_MISSILE_TRIO )
 		{
+			real_t angle = PI / 6;
+			real_t baseSpeed = 2;
+			real_t baseSideSpeed = 1;
+			int sprite = 170;
+			if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				angle = PI / 6;
+				baseSpeed = 2;
+			}
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			{
+				sprite = 171;
+				angle = PI / 16;
+				baseSpeed = 3;
+				baseSideSpeed = 2;
+				traveltime = 15;
+			}
+
 			entity = newEntity(168, 1, map.entities); // red magic ball
 			entity->parent = caster->getUID();
 			entity->x = caster->x;
@@ -828,9 +852,9 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity->flags[PASSABLE] = true;
 			entity->flags[BRIGHT] = true;
 			entity->behavior = &actMagicMissile;
-			entity->sprite = 170;
+			entity->sprite = sprite;
 
-			double missile_speed = 2 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
+			double missile_speed = baseSpeed * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity->vel_x = cos(entity->yaw) * (missile_speed);
 			entity->vel_y = sin(entity->yaw) * (missile_speed);
 
@@ -842,6 +866,15 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
 
+			if ( !strcmp(spell->name, spell_stoneblood.name) )
+			{
+				playSoundEntity(entity, 171, 128);
+			}
+			else if ( !strcmp(spell->name, spell_acidSpray.name) )
+			{
+				playSoundEntity(entity, 164, 128);
+			}
+
 			result = entity;
 
 			Entity* entity1 = newEntity(168, 1, map.entities); // red magic ball
@@ -851,14 +884,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity1->z = -1;
 			entity1->sizex = 1;
 			entity1->sizey = 1;
-			entity1->yaw = caster->yaw - (PI / 6);
+			entity1->yaw = caster->yaw - angle;
 			entity1->flags[UPDATENEEDED] = true;
 			entity1->flags[PASSABLE] = true;
 			entity1->flags[BRIGHT] = true;
 			entity1->behavior = &actMagicMissile;
-			entity1->sprite = 170;
+			entity1->sprite = sprite;
 
-			missile_speed = 1 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
+			missile_speed = baseSideSpeed * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity1->vel_x = cos(entity1->yaw) * (missile_speed);
 			entity1->vel_y = sin(entity1->yaw) * (missile_speed);
 
@@ -877,14 +910,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			entity2->z = -1;
 			entity2->sizex = 1;
 			entity2->sizey = 1;
-			entity2->yaw = caster->yaw + (PI / 6);
+			entity2->yaw = caster->yaw + angle;
 			entity2->flags[UPDATENEEDED] = true;
 			entity2->flags[PASSABLE] = true;
 			entity2->flags[BRIGHT] = true;
 			entity2->behavior = &actMagicMissile;
-			entity2->sprite = 170;
+			entity2->sprite = sprite;
 
-			missile_speed = 1 * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
+			missile_speed = baseSideSpeed * (element->mana / static_cast<double>(element->overload_multiplier)); //TODO: Factor in base mana cost?
 			entity2->vel_x = cos(entity2->yaw) * (missile_speed);
 			entity2->vel_y = sin(entity2->yaw) * (missile_speed);
 
@@ -895,11 +928,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			((spell_t*)node->element)->caster = caster->getUID();
 			node->deconstructor = &spellDeconstructor;
 			node->size = sizeof(spell_t);
-
-			if ( !strcmp(spell->name, spell_stoneblood.name) )
-			{
-				playSoundEntity(entity, 171, 128);
-			}
 		}
 
 		extramagic_to_use = 0;
@@ -1062,6 +1090,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 168;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_acidSpray.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 171;
 				}
 			}
 		}
