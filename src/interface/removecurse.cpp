@@ -8,7 +8,7 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
-
+/*
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
@@ -16,7 +16,6 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
-
 
 //Remove curse GUI definitions.
 bool removecursegui_active = false;
@@ -415,22 +414,22 @@ void selectRemoveCurseSlot(int slot)
 	{
 		//Moving up.
 
-		/*
+		
 		 * Possible cases:
 		 * * 1) Move cursor up the GUI through different selectedRemoveCurseSlot.
 		 * * 2) Page up through removecursescroll--
 		 * * 3) Scrolling up past top of Remove Curse GUI, no removecursescroll (move back to inventory)
-		 */
+		 
 
 		if ( selectedRemoveCurseSlot <= 0 )
 		{
 			//Covers cases 2 & 3.
 
-			/*
+			
 			 * Possible cases:
 			 * * A) Hit very top of Remove Curse "inventory", can't go any further. Return to inventory.
 			 * * B) Page up, scrolling through removecursescroll.
-			 */
+			 
 
 			if ( removecursescroll <= 0 )
 			{
@@ -456,12 +455,12 @@ void selectRemoveCurseSlot(int slot)
 	{
 		//Moving down.
 
-		/*
+		
 		 * Possible cases:
 		 * * 1) Moving cursor down through GUI through different selectedRemoveCurseSlot.
 		 * * 2) Scrolling down past bottom of Remove Curse GUI through removecursescroll++
 		 * * 3) Scrolling down past bottom of Remove Curse GUI, max Remove Curse scroll (revoke move -- can't go beyond limit of Remove Curse GUI).
-		 */
+		 
 
 		if ( selectedRemoveCurseSlot >= NUM_REMOVE_CURSE_GUI_ITEMS - 1 )
 		{
@@ -474,11 +473,11 @@ void selectRemoveCurseSlot(int slot)
 			//Move cursor down through the GUI through different selectedRemoveCurseSlot (++selectedRemoveCurseSlot).
 			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
 
-			/*
+			
 			 * Two possible cases:
 			 * * A) Items below this. Advance selectedRemoveCurseSlot to them.
 			 * * B) On last item already. Do nothing (revoke movement).
-			 */
+			 
 
 			Item* item = getItemInfoFromRemoveCurseGUI(selectedRemoveCurseSlot + 1);
 
@@ -505,3 +504,4 @@ void warpMouseToSelectedRemoveCurseSlot()
 
 	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }
+*/

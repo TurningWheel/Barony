@@ -8,7 +8,7 @@
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
-
+/*
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
@@ -16,6 +16,10 @@
 #include "../net.hpp"
 #include "../player.hpp"
 #include "interface.hpp"
+
+#define IDENTIFY_GUI_X 1
+#define IDENTIFY_GUI_Y 1
+#define NUM_IDENTIFY_GUI_ITEMS 4
 
 //Identify GUI definitions.
 bool identifygui_active = false;
@@ -423,22 +427,22 @@ void selectIdentifySlot(int slot)
 	{
 		//Moving up.
 
-		/*
+		
 		 * Possible cases:
 		 * * 1) Move cursor up the GUI through different selectedIdentifySlot.
 		 * * 2) Page up through identifyscroll--
 		 * * 3) Scrolling up past top of Identify GUI, no identifyscroll (move back to inventory)
-		 */
+		 
 
 		if ( selectedIdentifySlot <= 0 )
 		{
 			//Covers cases 2 & 3.
 
-			/*
+			
 			 * Possible cases:
 			 * * A) Hit very top of Identify "inventory", can't go any further. Return to inventory.
 			 * * B) Page up, scrolling through identifyscroll.
-			 */
+			 
 
 			if ( identifyscroll <= 0 )
 			{
@@ -464,12 +468,12 @@ void selectIdentifySlot(int slot)
 	{
 		//Moving down.
 
-		/*
+		
 		 * Possible cases:
 		 * * 1) Moving cursor down through GUI through different selectedIdentifySlot.
 		 * * 2) Scrolling down past bottom of Identify GUI through identifyscroll++
 		 * * 3) Scrolling down past bottom of Identify GUI, max Identify scroll (revoke move -- can't go beyond limit of Identify GUI).
-		 */
+		 
 
 		if ( selectedIdentifySlot >= NUM_IDENTIFY_GUI_ITEMS - 1 )
 		{
@@ -482,11 +486,11 @@ void selectIdentifySlot(int slot)
 			//Move cursor down through the GUi through different selectedIdentifySlot (++selectedIdentifySlot).
 			//This is a little bit trickier since must revoke movement if there is no item in the next slot!
 
-			/*
+			
 			 * Two possible cases:
 			 * * A) Items below this. Advance selectedIdentifySlot to them.
 			 * * B) On last item already. Do nothing (revoke movement).
-			 */
+			 
 
 			Item* item = getItemInfoFromIdentifyGUI(selectedIdentifySlot + 1);
 
@@ -513,3 +517,4 @@ void warpMouseToSelectedIdentifySlot()
 
 	SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 }
+*/
