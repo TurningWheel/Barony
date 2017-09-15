@@ -1759,10 +1759,6 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
-            if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
-            {
-                item->identified = true;
-            }
 			if (!itemCompare(item, item2))
 			{
 				item2->count += item->count;
