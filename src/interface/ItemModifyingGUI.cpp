@@ -87,10 +87,10 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
                     messagePlayer(clientnum, language[2502]); // "This is a scroll of repair!"
                     break;
                 case 3: // Enchant Weapon
-                    messagePlayer(clientnum, language[2503]); // "This is a scroll of enchant weapon!"
+                    messagePlayer(clientnum, language[2503]); // "This is a scroll of Enchant weapon!"
                     break;
                 case 4: // Enchant Armor
-                    messagePlayer(clientnum, language[2504]); // "This is a scroll of enchant armor!"
+                    messagePlayer(clientnum, language[2504]); // "This is a scroll of Enchant armor!"
                     break;
                 default: printlog("ERROR: updateItemModifyingGUI() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
             }
@@ -103,6 +103,22 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
     // If the Inventory is empty, there is nothing to process. The GUI will not open and nothing will be processed
     if ( itemModifyingGUI_Inventory[0] == nullptr )
     {
+        // If it is a Cursed Scroll and there are no valid Items, still use up the Scroll
+        if ( itemModifyingGUI_ScrollBeatitude < 0 )
+        {
+            messagePlayer(clientnum, language[863]); // "The scroll smokes and crumbles to ash!"
+
+            // Somehow, a Spell has been used to open the GUI, but was also Cursed, this should never happen, because Spells cannot be Cursed
+            if ( itemModifyingGUI_ScrollUsed == nullptr )
+            {
+                printlog("ERROR: updateItemModifyingGUI() - A Cursed Spell has opened the GUI. This should never happen.");
+                return;
+            }
+
+            consumeItem(itemModifyingGUI_ScrollUsed);
+            closeItemModifyingGUI();
+            return;
+        }
         messagePlayer(clientnum, language[2500]); // "There are no valid items to use this on!"
         closeItemModifyingGUI();
         return;
@@ -113,9 +129,13 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
         shootmode = false;
         gui_mode = GUI_MODE_INVENTORY;
 
-        // The actual logic is handled by updateItemModifyingGUI()
-        itemModifyingGUI_InventorySelectedSlot = 0;
-        warpMouseToSelectedGUISlot();
+        // If the Scroll is Cursed, don't warp the Mouse
+        if ( itemModifyingGUI_ScrollBeatitude >= 0 )
+        {
+            // The actual logic is handled by updateItemModifyingGUI()
+            itemModifyingGUI_InventorySelectedSlot = 0;
+            warpMouseToSelectedGUISlot();
+        }
     }
 } // openItemModifyingGUI()
 
@@ -430,8 +450,10 @@ void ItemModifyingGUI::processGUIEffectOnItem(Item* const selectedItem)
             processRepairGUIEffectOnItem(selectedItem);
             break;
         case 3: // Enchant Weapon
+            processEnchantWeaponGUIEffectOnItem(selectedItem);
             break;
         case 4: // Enchant Armor
+            processEnchantArmorGUIEffectOnItem(selectedItem);
             break;
         default: printlog("ERROR: processGUIEffectOnItem() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
@@ -466,8 +488,10 @@ void ItemModifyingGUI::itemModifyingGUIProcessRandomItem()
             repairGUIProcessRandomItem(numberOfItemsToProcess);
             break;
         case 3: // Enchant Weapon
+            enchantWeaponGUIProcessRandomItem(numberOfItemsToProcess);
             break;
         case 4: // Enchant Armor
+            enchantArmorGUIProcessRandomItem(numberOfItemsToProcess);
             break;
         default: printlog("ERROR: itemModifyingGUIProcessRandomItem() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
@@ -490,8 +514,10 @@ void ItemModifyingGUI::rebuildItemModifyingGUIInventory()
             rebuildRepairGUIInventory();
             break;
         case 3: // Enchant Weapon
+            rebuildEnchantWeaponGUIInventory();
             break;
         case 4: // Enchant Armor
+            rebuildEnchantArmorGUIInventory();
             break;
         default: printlog("ERROR: rebuildItemModifyingGUIInventory() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
@@ -737,8 +763,10 @@ void ItemModifyingGUI::itemModifyingGUI_HandleItemImages()
             repairGUI_HandleItemImages();
             break;
         case 3: // Enchant Weapon
+            enchantWeaponGUI_HandleItemImages();
             break;
         case 4: // Enchant Armor
+            enchantArmorGUI_HandleItemImages();
             break;
         default: printlog("ERROR: itemModifyingGUI_HandleItemImages() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
@@ -793,7 +821,7 @@ void ItemModifyingGUI::processIdentifyGUIEffectOnItem(Item* const selectedItem)
 } // processIdentifyGUIEffectOnItem()
 
 /* ItemModifyingGUI.cpp
- * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+ * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will either Identify or Unidentify the random Items according to 'itemModifyingGUI_ScrollBeatitude'
  * Messages the Player that their Item has been Identified or Unidentified because of the beatitude of the Scroll used
  */
@@ -809,7 +837,7 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
         return;
     }
 
-    // Count the number of items in the GUI Inventory
+    // Count the number of Items in the GUI Inventory
     Uint8 totalAmountOfItems = 0;
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
@@ -842,14 +870,33 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
         }
     }
 
-    // There are no valid items to be processed
-    if ( totalAmountOfItems == 0 )
+    // There are no valid Items to be processed
+    if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude > 0 )
     {
         messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
         return;
     }
+    else if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no items for the scroll's curse..."
+        return;
+    }
 
     Uint8 amountOfItemsLeftToProcess = numItems;
+    bool isThereASingleItem = false;
+
+    // If there is only a single Item that can be processed, but it's a +-2 Scroll, adjust the loop
+    if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude >= 2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+    else if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude <= -2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+
     Sint8 iPreviousItemProcessedIndex = -1;
     Sint8 iItemToProcessIndex = -1;
     Uint8 iIdentifyGUIInventoryIndex = 0;
@@ -881,7 +928,7 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
                     {
                         if ( iIdentifyGUIInventoryIndex == iItemToProcessIndex )
                         {
-                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 )
+                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 && isThereASingleItem != true )
                             {
                                 messagePlayer(clientnum, language[2514], itemToProcess->description()); // "Oh no! Your %s was unidentified too!"
                             }
@@ -915,7 +962,29 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
                     break;
                 default: printlog("ERROR: identifyGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
+
+            // If processing is done, stop searching the Inventory
+            if ( amountOfItemsLeftToProcess == 0 )
+            {
+                break;
+            }
         }
+
+        // If there's only a single valid Item, but it's a +-2 scroll, this will happen
+        if ( amountOfItemsLeftToProcess == 0 )
+        {
+            break;
+        }
+    }
+
+    // Tell the Player they were an Item short of the full effect
+    if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+    }
+    else if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
 } // identifyGUIProcessRandomItem()
 
@@ -936,7 +1005,7 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
         return;
     }
 
-    // Count the number of items in the GUI Inventory
+    // Count the number of Items in the GUI Inventory
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
         Item* item = static_cast<Item*>(iInventoryNode->element);
@@ -980,7 +1049,7 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
 
     iIdentifyGUIInventoryIndex = 0;
 
-    // Assign the visible items to the GUI slots
+    // Assign the visible Items to the GUI slots
     bool bBreakFromLoop = false;
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
@@ -1219,7 +1288,7 @@ void ItemModifyingGUI::processRemoveCurseGUIEffectOnItem(Item* const selectedIte
 } // processRemoveCurseGUIEffectOnItem()
 
 /* ItemModifyingGUI.cpp
- * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+ * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will either Uncurse or Curse the random Items according to 'itemModifyingGUI_ScrollBeatitude'
  * Messages the Player that their Item has been Uncursed or Cursed because of the beatitude of the Scroll used
  */
@@ -1235,7 +1304,7 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
         return;
     }
 
-    // Count the number of items in the GUI Inventory
+    // Count the number of Items in the GUI Inventory
     Uint8 totalAmountOfItems = 0;
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
@@ -1268,14 +1337,33 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
         }
     }
 
-    // There are no valid items to be processed
-    if ( totalAmountOfItems == 0 )
+    // There are no valid Items to be processed
+    if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude > 0 )
     {
         messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
         return;
     }
+    else if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no items for the scroll's curse..."
+        return;
+    }
 
     Uint8 amountOfItemsLeftToProcess = numItems;
+    bool isThereASingleItem = false;
+
+    // If there is only a single Item that can be processed, but it's a +-2 Scroll, adjust the loop
+    if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude >= 2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+    else if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude <= -2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+
     Sint8 iPreviousItemProcessedIndex = -1;
     Sint8 iItemToProcessIndex = -1;
     Uint8 iRemoveCurseGUIInventoryIndex = 0;
@@ -1307,7 +1395,7 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
                     {
                         if ( iRemoveCurseGUIInventoryIndex == iItemToProcessIndex )
                         {
-                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 )
+                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 && isThereASingleItem != true )
                             {
                                 messagePlayer(clientnum, language[2515], itemToProcess->description()); // "Oh no! Your %s was cursed too!"
                             }
@@ -1340,7 +1428,29 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
                     break;
                 default: printlog("ERROR: removeCurseGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
+
+            // If processing is done, stop searching the Inventory
+            if ( amountOfItemsLeftToProcess == 0 )
+            {
+                break;
+            }
         }
+
+        // If there's only a single valid Item, but it's a +-2 scroll, this will happen
+        if ( amountOfItemsLeftToProcess == 0 )
+        {
+            break;
+        }
+    }
+
+    // Tell the Player they were an Item short of the full effect
+    if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+    }
+    else if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
 } // removeCurseGUIProcessRandomItem()
 
@@ -1361,7 +1471,7 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
         return;
     }
 
-    // Count the number of items in the GUI Inventory
+    // Count the number of Items in the GUI Inventory
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
         Item* item = static_cast<Item*>(iInventoryNode->element);
@@ -1405,7 +1515,7 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
 
     iRemoveCurseGUIInventoryIndex = 0;
 
-    // Assign the visible items to the GUI slots
+    // Assign the visible Items to the GUI slots
     bool bBreakFromLoop = false;
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
@@ -1556,7 +1666,7 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
         return;
     }
 
-    Uint8 itemNewStatus = -1;
+    // Cursed Scrolls don't use the GUI so they will never call this function
     switch ( itemModifyingGUI_ScrollBeatitude )
     {
         case 0:
@@ -1633,7 +1743,7 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
 
         strcpy((char*)net_packet->data, "ARMR");
         net_packet->data[4] = itemType;
-        net_packet->data[5] = itemNewStatus;
+        net_packet->data[5] = selectedItem->status;
         net_packet->address.host = net_server.host;
         net_packet->address.port = net_server.port;
         net_packet->len = 6;
@@ -1642,8 +1752,8 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
 } // processRepairGUIEffectOnItem()
 
 /* ItemModifyingGUI.cpp
- * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
- * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random items to Broken
+ * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+ * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to Broken
  * Messages the Player that their Item has been Broken because of the beatitude of the Scroll used
  */
 void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
@@ -1658,7 +1768,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
         return;
     }
 
-    // Count the number of items in the GUI Inventory
+    // Count the number of Items in the GUI Inventory
     Uint8 totalAmountOfItems = 0;
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
@@ -1670,7 +1780,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
         }
 
         // Skip all Items that don't need to be repaired TODOR: Item's should have a "repairable" component
-        if ( itemCategory(item) == POTION || itemCategory(item) == SCROLL || itemCategory(item) == SPELLBOOK || itemCategory(item) == GEM || itemCategory(item) == THROWN || itemCategory(item) == FOOD || itemCategory(item) == BOOK || itemCategory(item) == SPELL_CAT )
+        if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && item->type != AMULET_LIFESAVING && item->type != AMULET_MAGICREFLECTION && itemCategory(item) != MAGICSTAFF && item->type != TOOL_PICKAXE )
         {
             continue;
         }
@@ -1689,14 +1799,33 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
         }
     }
 
-    // There are no valid items to be processed
-    if ( totalAmountOfItems == 0 )
+    // There are no valid Items to be processed
+    if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude > 0 )
     {
-        messagePlayer(clientnum, language[2513]); // "You have no remaining items for the scroll's curse..."
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+        return;
+    }
+    else if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no items for the scroll's curse..."
         return;
     }
 
     Uint8 amountOfItemsLeftToProcess = numItems;
+    bool isThereASingleItem = false;
+
+    // If there is only a single Item that can be processed, but it's a +-2 Scroll, adjust the loop
+    if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude >= 2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+    else if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude <= -2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+
     Sint8 iPreviousItemProcessedIndex = -1;
     Sint8 iItemToProcessIndex = -1;
     Uint8 iRepairGUIInventoryIndex = 0;
@@ -1734,7 +1863,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
                     {
                         if ( iRepairGUIInventoryIndex == iItemToProcessIndex )
                         {
-                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 )
+                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 && isThereASingleItem != true )
                             {
                                 messagePlayer(clientnum, language[2516], itemToProcess->description()); // "Oh no! Your %s was broken too!"
                             }
@@ -1752,7 +1881,29 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
                     break;
                 default: printlog("ERROR: repairGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
+
+            // If processing is done, stop searching the Inventory
+            if ( amountOfItemsLeftToProcess == 0 )
+            {
+                break;
+            }
         }
+
+        // If there's only a single valid Item, but it's a +-2 scroll, this will happen
+        if ( amountOfItemsLeftToProcess == 0 )
+        {
+            break;
+        }
+    }
+
+    // Tell the Player they were an Item short of the full effect
+    if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+    }
+    else if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
 } // repairGUIProcessRandomItem()
 
@@ -1773,7 +1924,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
         return;
     }
 
-    // Count the number of items in the Repair GUI Inventory
+    // Count the number of Items in the Repair GUI Inventory
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
         Item* item = static_cast<Item*>(iInventoryNode->element);
@@ -1784,7 +1935,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
         }
 
         // Skip all Items that don't need to be repaired TODOR: Item's should have a "repairable" component
-        if ( itemCategory(item) == POTION || itemCategory(item) == SCROLL || itemCategory(item) == SPELLBOOK || itemCategory(item) == GEM || itemCategory(item) == THROWN || itemCategory(item) == FOOD || itemCategory(item) == BOOK || itemCategory(item) == SPELL_CAT )
+        if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && item->type != AMULET_LIFESAVING && item->type != AMULET_MAGICREFLECTION && itemCategory(item) != MAGICSTAFF && item->type != TOOL_PICKAXE )
         {
             continue;
         }
@@ -1831,7 +1982,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
         
     iRepairGUIInventoryIndex = 0;
 
-    // Assign the visible items to the GUI slots
+    // Assign the visible Items to the GUI slots
     bool bBreakFromLoop = false;
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
     {
@@ -1843,7 +1994,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
         }
 
         // Skip all Items that don't need to be repaired TODOR: Item's should have a "repairable" component
-        if ( itemCategory(item) == POTION || itemCategory(item) == SCROLL || itemCategory(item) == SPELLBOOK || itemCategory(item) == GEM || itemCategory(item) == THROWN || itemCategory(item) == FOOD || itemCategory(item) == BOOK || itemCategory(item) == SPELL_CAT )
+        if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && item->type != AMULET_LIFESAVING && item->type != AMULET_MAGICREFLECTION && itemCategory(item) != MAGICSTAFF && item->type != TOOL_PICKAXE )
         {
             continue;
         }
@@ -1961,7 +2112,7 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
             }
 
             // Skip all Items that don't need to be repaired TODOR: Item's should have a "repairable" component
-            if ( itemCategory(item) == POTION || itemCategory(item) == SCROLL || itemCategory(item) == SPELLBOOK || itemCategory(item) == GEM || itemCategory(item) == THROWN || itemCategory(item) == FOOD || itemCategory(item) == BOOK || itemCategory(item) == SPELL_CAT )
+            if ( itemCategory(item) != WEAPON && itemCategory(item) != ARMOR && item->type != AMULET_LIFESAVING && item->type != AMULET_MAGICREFLECTION && itemCategory(item) != MAGICSTAFF && item->type != TOOL_PICKAXE )
             {
                 continue;
             }
@@ -2102,6 +2253,1227 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
 
 // ENCHANT WEAPON GUI
 
+/* ItemModifyingGUI.cpp
+ * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
+ * Enchants the selected Item based on 'itemModifyingGUI_ScrollBeatitude' and 'itemModifyingGUI_ScrollBeatitude'
+ * +0 Scrolls can raise a +0 or +1 weapon up to +2. Cannot Enchant Artifacts
+ * +1 Scrolls can raise a +0, +1, or +2 weapon up to +3. Cannot Enchant Artifacts
+ * +2 Scrolls can raise a +0, +1, +2, +3, or +4 weapon up to +5. Raises any Artifact Weapon by one level
+ * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
+ */
+void ItemModifyingGUI::processEnchantWeaponGUIEffectOnItem(Item* const selectedItem)
+{
+    if ( selectedItem == nullptr )
+    {
+        printlog("ERROR: processEnchantWeaponGUIEffectOnItem() - selectedItem is null.");
+        return;
+    }
+
+    // Cursed Scrolls don't use the GUI so they will never call this function
+    ItemType itemType = WOODEN_SHIELD;
+    switch ( itemModifyingGUI_ScrollBeatitude )
+    {
+        case 0:
+            // Enchant the Item if it is a weapon +0 or +1 up to +2. Cannot Enchant Artifacts
+            messagePlayer(clientnum, language[2520], selectedItem->description()); // "Your %s glows blue!"
+            selectedItem->beatitude = 2;
+            break;
+        case 1:
+            // Enchant the Item if it is a weapon +0, +1, or +2 up to +3. Cannot Enchant Artifacts
+            messagePlayer(clientnum, language[2521], selectedItem->description()); // "Your %s violently glows blue!"
+            selectedItem->beatitude = 3;
+            break;
+        case 2:
+            // Enchant the Item if it is a weapon +0, +1, +2, +3, or +4 up to +5. Raises any Artifact Weapon by one level
+            messagePlayer(clientnum, language[2522], selectedItem->description()); // "Your %s radiates power!"
+            itemType = selectedItem->type;
+            if ( itemType == ARTIFACT_SWORD || itemType == ARTIFACT_MACE || itemType == ARTIFACT_SPEAR || itemType == ARTIFACT_AXE || itemType == ARTIFACT_BOW )
+            {
+                selectedItem->beatitude++;
+            }
+            else
+            {
+                selectedItem->beatitude = 5;
+            }
+            break;
+        default: printlog("ERROR: processEnchantWeaponGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+    }
+
+    // If the Player used a Scroll, consume it. Currently there is no Spell of Enchant Weapon
+    if ( itemModifyingGUI_ScrollUsed != nullptr )
+    {
+        consumeItem(itemModifyingGUI_ScrollUsed);
+        itemModifyingGUI_ScrollUsed = nullptr;
+    }
+
+    closeItemModifyingGUI();
+} // processEnchantWeaponGUIEffectOnItem()
+
+/* ItemModifyingGUI.cpp
+ * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+ * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
+ * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
+ */
+void ItemModifyingGUI::enchantWeaponGUIProcessRandomItem(const Uint8 numItems)
+{
+    // Grab the Player's Inventory again, as it may have been modified prior to this
+    list_t* playerInventoryList = &stats[clientnum]->inventory;
+
+    if ( playerInventoryList == nullptr )
+    {
+        messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
+        printlog("ERROR: enchantWeaponGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        return;
+    }
+
+    // Count the number of Items in the GUI Inventory
+    Uint8 totalAmountOfItems = 0;
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        Item* item = static_cast<Item*>(iInventoryNode->element);
+
+        if ( item == nullptr )
+        {
+            continue;
+        }
+
+        // Skip all Items that aren't Weapons
+        if ( itemCategory(item) != WEAPON )
+        {
+            continue;
+        }
+
+        switch ( itemModifyingGUI_ScrollBeatitude )
+        {
+            case -2:
+                // Intentional fall-through
+            case -1:
+                if ( item->beatitude > 0) // Skip over all Cursed and Unenchanted Items
+                {
+                    totalAmountOfItems++;
+                }
+                break;
+            default: printlog("ERROR: enchantWeaponGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+        }
+    }
+
+    // There are no valid Items to be processed
+    if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+        return;
+    }
+    else if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no items for the scroll's curse..."
+        return;
+    }
+
+    Uint8 amountOfItemsLeftToProcess = numItems;
+    bool isThereASingleItem = false;
+
+    // If there is only a single Item that can be processed, but it's a +-2 Scroll, adjust the loop
+    if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude >= 2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+    else if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude <= -2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+
+    Sint8 iPreviousItemProcessedIndex = -1;
+    Sint8 iItemToProcessIndex = -1;
+    Uint8 iEnchantWeaponGUIInventoryIndex = 0;
+
+    for ( Uint8 i = 0; i < numItems; i++ )
+    {
+        while ( iItemToProcessIndex == iPreviousItemProcessedIndex )
+        {
+            iItemToProcessIndex = rand() % totalAmountOfItems;
+        }
+
+        iEnchantWeaponGUIInventoryIndex = 0;
+
+        for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+        {
+            Item* itemToProcess = static_cast<Item*>(iInventoryNode->element);
+
+            if ( itemToProcess == nullptr )
+            {
+                continue;
+            }
+
+            // Skip all Items that aren't Weapons
+            if ( itemCategory(itemToProcess) != WEAPON )
+            {
+                continue;
+            }
+
+            switch ( itemModifyingGUI_ScrollBeatitude )
+            {
+                case -2:
+                    // Intentional fall-through
+                case -1:
+                    if ( itemToProcess->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                    {
+                        if ( iEnchantWeaponGUIInventoryIndex == iItemToProcessIndex )
+                        {
+                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 && isThereASingleItem != true )
+                            {
+                                messagePlayer(clientnum, language[2523], itemToProcess->description()); // "Oh no! Your %s was disenchanted too!"
+                            }
+                            else
+                            {
+                                messagePlayer(clientnum, language[2509], itemToProcess->description()); // "Your %s was disenchanted!"
+                            }
+
+                            itemToProcess->beatitude = 0;
+                            amountOfItemsLeftToProcess--;
+                            iPreviousItemProcessedIndex = iEnchantWeaponGUIInventoryIndex;
+                        }
+                        iEnchantWeaponGUIInventoryIndex++;
+                    }
+                    break;
+                default: printlog("ERROR: enchantWeaponGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            }
+
+            // If processing is done, stop searching the Inventory
+            if ( amountOfItemsLeftToProcess == 0 )
+            {
+                break;
+            }
+        }
+
+        // If there's only a single valid Item, but it's a +-2 scroll, this will happen
+        if ( amountOfItemsLeftToProcess == 0 )
+        {
+            break;
+        }
+    }
+
+    // Tell the Player they were an Item short of the full effect
+    if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+    }
+    else if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
+    }
+} // enchantWeaponGUIProcessRandomItem()
+
+/* ItemModifyingGUI.cpp
+ * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
+ * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
+ */
+void ItemModifyingGUI::rebuildEnchantWeaponGUIInventory()
+{
+    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    list_t* playerInventoryList = &stats[clientnum]->inventory;
+    Uint8 iEnchantWeaponGUIInventoryIndex = 0;
+
+    if ( playerInventoryList == nullptr )
+    {
+        messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
+        printlog("ERROR: rebuildEnchantWeaponGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        return;
+    }
+
+    // Count the number of Items in the Repair GUI Inventory
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        Item* item = static_cast<Item*>(iInventoryNode->element);
+
+        if ( item == nullptr )
+        {
+            continue;
+        }
+
+        // Skip all Items that aren't Weapons
+        if ( itemCategory(item) != WEAPON )
+        {
+            continue;
+        }
+
+        switch ( itemModifyingGUI_ScrollBeatitude )
+        {
+            case -2:
+                // Intentional fall-through
+            case -1:
+                if ( item->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                {
+                    ++iEnchantWeaponGUIInventoryIndex;
+                }
+                break;
+            case 0:
+                if ( item->beatitude >= 0 && item->beatitude < 2 ) // Skip over all Cursed Items and Items +2 and greater. Skip Artifacts
+                {
+                    if ( item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW )
+                    {
+                        continue;
+                    }
+                    ++iEnchantWeaponGUIInventoryIndex;
+                }
+                break;
+            case 1:
+                if ( item->beatitude >= 0 && item->beatitude < 3 ) // Skip over all Cursed Items and Items +3 and greater. Skip Artifacts
+                {
+                    if ( item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW )
+                    {
+                        continue;
+                    }
+                    ++iEnchantWeaponGUIInventoryIndex;
+                }
+                break;
+            case 2:
+                if ( (item->beatitude >= 0 && item->beatitude < 5) || (item->beatitude >= 5 && (item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW)) ) // Skip over all Cursed Items and Items +5 and greater, unless it's an Artifact Weapon
+                {
+                    ++iEnchantWeaponGUIInventoryIndex;
+                }
+                break;
+            default: printlog("ERROR: rebuildEnchantWeaponGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+        }
+    }
+
+    itemModifyingGUI_InventoryScrollOffset = std::max(0, std::min(static_cast<int>(itemModifyingGUI_InventoryScrollOffset), iEnchantWeaponGUIInventoryIndex - 4));
+
+    // Reset the current Inventory
+    for ( iEnchantWeaponGUIInventoryIndex = 0; iEnchantWeaponGUIInventoryIndex < 4; ++iEnchantWeaponGUIInventoryIndex )
+    {
+        itemModifyingGUI_Inventory[iEnchantWeaponGUIInventoryIndex] = nullptr;
+    }
+
+    iEnchantWeaponGUIInventoryIndex = 0;
+
+    // Assign the visible Items to the GUI slots
+    bool bBreakFromLoop = false;
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        Item* item = static_cast<Item*>(iInventoryNode->element);
+
+        if ( item == nullptr )
+        {
+            continue;
+        }
+
+        // Skip all Items that aren't Weapons
+        if ( itemCategory(item) != WEAPON )
+        {
+            continue;
+        }
+
+        switch ( itemModifyingGUI_ScrollBeatitude )
+        {
+            case -2:
+                // Intentional fall-through
+            case -1:
+                if ( item->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                {
+                    ++iEnchantWeaponGUIInventoryIndex;
+
+                    if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            case 0:
+                if ( item->beatitude >= 0 && item->beatitude < 2 ) // Skip over all Cursed Items and Items +2 and greater. Skip Artifacts
+                {
+                    if ( item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW )
+                    {
+                        continue;
+                    }
+
+                    ++iEnchantWeaponGUIInventoryIndex;
+
+                    if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            case 1:
+                if ( item->beatitude >= 0 && item->beatitude < 3 ) // Skip over all Cursed Items and Items +3 and greater. Skip Artifacts
+                {
+                    if ( item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW )
+                    {
+                        continue;
+                    }
+
+                    ++iEnchantWeaponGUIInventoryIndex;
+
+                    if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            case 2:
+                if ( (item->beatitude >= 0 && item->beatitude < 5) || (item->beatitude >= 5 && (item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW)) ) // Skip over all Cursed Items and Items +5 and greater, unless it's an Artifact Weapon
+                {
+                    ++iEnchantWeaponGUIInventoryIndex;
+
+                    if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            default: printlog("ERROR: rebuildEnchantWeaponGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+        }
+
+        if ( bBreakFromLoop == true )
+        {
+            break;
+        }
+    }
+} // rebuildEnchantWeaponGUIInventory()
+
+/* ItemModifyingGUI.cpp
+ * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
+ */
+void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
+{
+    bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
+    Uint8 iEnchantWeaponGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
+    Sint32 iEnchantWeaponGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+
+    Item* item = nullptr; // The given Item being drawn from the GUI Inventory
+    SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
+
+    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    list_t* playerInventoryList = &stats[clientnum]->inventory;
+
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        if ( iInventoryNode->element != nullptr )
+        {
+            item = static_cast<Item*>(iInventoryNode->element);
+
+            if ( item == nullptr )
+            {
+                continue;
+            }
+
+            // Skip all Items that aren't Weapons
+            if ( itemCategory(item) != WEAPON )
+            {
+                continue;
+            }
+
+            // Cursed Scrolls don't need to be shown, as they wont have a GUI
+            switch ( itemModifyingGUI_ScrollBeatitude )
+            {
+                case 0:
+                    if ( item->beatitude >= 0 && item->beatitude < 2 ) // Skip over all Cursed Items and Items +2 and greater. Skip Artifacts
+                    {
+                        if ( item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW )
+                        {
+                            continue;
+                        }
+
+                        iEnchantWeaponGUIInventoryIndex++;
+
+                        // If the Item is not visible (within 0 - 3 in Inventory), skip over it
+                        if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            continue;
+                        }
+
+                        // The name and description of the Item in the GUI Inventory
+                        char itemDescription[64] = {0};
+                        strncpy(itemDescription, item->description(), 46);
+
+                        // Check to make sure the text doesn't go out of bounds
+                        if ( strlen(itemDescription) == 46 )
+                        {
+                            strcat(itemDescription, " ...");
+                        }
+
+                        // Print the name and description of the Item
+                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+
+                        // Draw the Image of the Item
+                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.w = 16;
+                        itemImageRect.h = 16;
+                        drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
+
+                        iEnchantWeaponGUIInventoryItemOffset += 18;
+
+                        // If the Item's index is out of bounds (above the amount of Items in the Inventory), stop drawing
+                        if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            bBreakFromLoop = true;
+                        }
+                    }
+                    break;
+                case 1:
+                    if ( item->beatitude >= 0 && item->beatitude < 3 ) // Skip over all Cursed Items and Items +3 and greater. Skip Artifacts
+                    {
+                        if ( item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW )
+                        {
+                            continue;
+                        }
+
+                        iEnchantWeaponGUIInventoryIndex++;
+
+                        // If the Item is not visible (within 0 - 3 in Inventory), skip over it
+                        if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            continue;
+                        }
+
+                        // The name and description of the Item in the GUI Inventory
+                        char itemDescription[64] = {0};
+                        strncpy(itemDescription, item->description(), 46);
+
+                        // Check to make sure the text doesn't go out of bounds
+                        if ( strlen(itemDescription) == 46 )
+                        {
+                            strcat(itemDescription, " ...");
+                        }
+
+                        // Print the name and description of the Item
+                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+
+                        // Draw the Image of the Item
+                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.w = 16;
+                        itemImageRect.h = 16;
+                        drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
+
+                        iEnchantWeaponGUIInventoryItemOffset += 18;
+
+                        // If the Item's index is out of bounds (above the amount of Items in the Inventory), stop drawing
+                        if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            bBreakFromLoop = true;
+                        }
+                    }
+                    break;
+                case 2:
+                    if ( (item->beatitude >= 0 && item->beatitude < 5) || (item->beatitude >= 5 && (item->type == ARTIFACT_SWORD || item->type == ARTIFACT_MACE || item->type == ARTIFACT_SPEAR || item->type == ARTIFACT_AXE || item->type == ARTIFACT_BOW)) ) // Skip over all Cursed Items and Items +5 and greater, unless it's an Artifact Weapon
+                    {
+                        iEnchantWeaponGUIInventoryIndex++;
+
+                        // If the Item is not visible (within 0 - 3 in Inventory), skip over it
+                        if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            continue;
+                        }
+
+                        // The name and description of the Item in the GUI Inventory
+                        char itemDescription[64] = {0};
+                        strncpy(itemDescription, item->description(), 46);
+
+                        // Check to make sure the text doesn't go out of bounds
+                        if ( strlen(itemDescription) == 46 )
+                        {
+                            strcat(itemDescription, " ...");
+                        }
+
+                        // Print the name and description of the Item
+                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+
+                        // Draw the Image of the Item
+                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.w = 16;
+                        itemImageRect.h = 16;
+                        drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
+
+                        iEnchantWeaponGUIInventoryItemOffset += 18;
+
+                        // If the Item's index is out of bounds (above the amount of Items in the Inventory), stop drawing
+                        if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            bBreakFromLoop = true;
+                        }
+                    }
+                    break;
+                default: printlog("ERROR: enchantWeaponGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            }
+
+            if ( bBreakFromLoop == true )
+            {
+                break;
+            }
+        }
+    }
+} // enchantWeaponGUI_HandleItemImages()
+
 // ENCHANT ARMOR GUI
+
+/* ItemModifyingGUI.cpp
+ * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
+ * Enchants the selected Item based on 'itemModifyingGUI_ScrollBeatitude' and 'itemModifyingGUI_ScrollBeatitude'
+ * +0 Scrolls can raise a +0 or +1 Shield, Breastpiece, or Helm up to +2. Cannot Enchant Artifacts
+ * +1 Scrolls can raise a +0, +1, or +2 Shield, Breastpiece, Helm, Boots, or Gloves up to +3. Cannot Enchant Artifacts
+ * +2 Scrolls can raise a +0, +1, +2, +3, or +4 Shield, Breastpiece, Helm, Boots, Gloves, Rings, or Cloaks up to +5. Raises any Artifact Armor by one level
+ * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
+ */
+void ItemModifyingGUI::processEnchantArmorGUIEffectOnItem(Item* const selectedItem)
+{
+    if ( selectedItem == nullptr )
+    {
+        printlog("ERROR: processEnchantArmorGUIEffectOnItem() - selectedItem is null.");
+        return;
+    }
+
+    // Cursed Scrolls don't use the GUI so they will never call this function
+    ItemType itemType = WOODEN_SHIELD;
+    switch ( itemModifyingGUI_ScrollBeatitude )
+    {
+        case 0:
+            // Enchant the Item if it is a Shield, Breastpiece, or Helm +0 or +1 up to +2. Cannot Enchant Artifacts
+            messagePlayer(clientnum, language[2520], selectedItem->description()); // "Your %s glows blue!"
+            selectedItem->beatitude = 2;
+            break;
+        case 1:
+            // Enchant the Item if it is a Shield, Breastpiece, Helm, Boots, or Gloves +0, +1, or +2 up to +3. Cannot Enchant Artifacts
+            messagePlayer(clientnum, language[2521], selectedItem->description()); // "Your %s violently glows blue!"
+            selectedItem->beatitude = 3;
+            break;
+        case 2:
+            // Enchant the Item if it is a Shield, Breastpiece, Helm, Boots, Gloves, Rings, or Cloaks +0, +1, +2, +3, or +4 up to +5. Raises any Artifact Armor by one level
+            messagePlayer(clientnum, language[2522], selectedItem->description()); // "Your %s radiates power!"
+            itemType = selectedItem->type;
+            if ( itemType == ARTIFACT_BREASTPIECE || itemType == ARTIFACT_HELM   || itemType == ARTIFACT_BOOTS || itemType == ARTIFACT_CLOAK || itemType == ARTIFACT_GLOVES )
+            {
+                selectedItem->beatitude++;
+            }
+            else
+            {
+                selectedItem->beatitude = 5;
+            }
+            break;
+        default: printlog("ERROR: processEnchantArmorGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+    }
+
+    // If the Player used a Scroll, consume it. Currently there is no Spell of Enchant Weapon
+    if ( itemModifyingGUI_ScrollUsed != nullptr )
+    {
+        consumeItem(itemModifyingGUI_ScrollUsed);
+        itemModifyingGUI_ScrollUsed = nullptr;
+    }
+
+    closeItemModifyingGUI();
+} // processEnchantArmorGUIEffectOnItem()
+
+/* ItemModifyingGUI.cpp
+ * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+ * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
+ * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
+ */
+void ItemModifyingGUI::enchantArmorGUIProcessRandomItem(const Uint8 numItems)
+{
+    // Grab the Player's Inventory again, as it may have been modified prior to this
+    list_t* playerInventoryList = &stats[clientnum]->inventory;
+
+    if ( playerInventoryList == nullptr )
+    {
+        messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
+        printlog("ERROR: enchantArmorGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        return;
+    }
+
+    // Count the number of Items in the GUI Inventory
+    Uint8 totalAmountOfItems = 0;
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        Item* item = static_cast<Item*>(iInventoryNode->element);
+
+        if ( item == nullptr )
+        {
+            continue;
+        }
+
+        ItemArmorType itemArmorType = getItemArmorType(item->type);
+
+        // Skip all Items that aren't Armor
+        if ( itemArmorType == ItemArmorType::NOT_ARMOR )
+        {
+            continue;
+        }
+
+        switch ( itemModifyingGUI_ScrollBeatitude )
+        {
+            case -2:
+                // Intentional fall-through
+            case -1:
+                if ( item->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                {
+                    totalAmountOfItems++;
+                }
+                break;
+            default: printlog("ERROR: enchantArmorGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+        }
+    }
+
+    // There are no valid Items to be processed
+    if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+        return;
+    }
+    else if ( totalAmountOfItems == 0 && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no items for the scroll's curse..."
+        return;
+    }
+
+    Uint8 amountOfItemsLeftToProcess = numItems;
+    bool isThereASingleItem = false;
+
+    // If there is only a single Item that can be processed, but it's a +-2 Scroll, adjust the loop
+    if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude >= 2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+    else if ( totalAmountOfItems == 1 && itemModifyingGUI_ScrollBeatitude <= -2 )
+    {
+        isThereASingleItem = true;
+        amountOfItemsLeftToProcess--;
+    }
+
+    Sint8 iPreviousItemProcessedIndex = -1;
+    Sint8 iItemToProcessIndex = -1;
+    Uint8 iEnchantArmorGUIInventoryIndex = 0;
+
+    for ( Uint8 i = 0; i < numItems; i++ )
+    {
+        while ( iItemToProcessIndex == iPreviousItemProcessedIndex )
+        {
+            iItemToProcessIndex = rand() % totalAmountOfItems;
+        }
+
+        iEnchantArmorGUIInventoryIndex = 0;
+
+        for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+        {
+            Item* itemToProcess = static_cast<Item*>(iInventoryNode->element);
+
+            if ( itemToProcess == nullptr )
+            {
+                continue;
+            }
+
+            ItemArmorType itemArmorType = getItemArmorType(itemToProcess->type);
+
+            // Skip all Items that aren't Armor
+            if ( itemArmorType == ItemArmorType::NOT_ARMOR )
+            {
+                continue;
+            }
+
+            switch ( itemModifyingGUI_ScrollBeatitude )
+            {
+                case -2:
+                    // Intentional fall-through
+                case -1:
+                    if ( itemToProcess->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                    {
+                        if ( iEnchantArmorGUIInventoryIndex == iItemToProcessIndex )
+                        {
+                            if ( numItems == 2 && amountOfItemsLeftToProcess == 1 && isThereASingleItem != true )
+                            {
+                                messagePlayer(clientnum, language[2523], itemToProcess->description()); // "Oh no! Your %s was disenchanted too!"
+                            }
+                            else
+                            {
+                                messagePlayer(clientnum, language[2509], itemToProcess->description()); // "Your %s was disenchanted!"
+                            }
+
+                            itemToProcess->beatitude = 0;
+                            amountOfItemsLeftToProcess--;
+                            iPreviousItemProcessedIndex = iEnchantArmorGUIInventoryIndex;
+                        }
+                        iEnchantArmorGUIInventoryIndex++;
+                    }
+                    break;
+                default: printlog("ERROR: enchantArmorGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            }
+
+            // If processing is done, stop searching the Inventory
+            if ( amountOfItemsLeftToProcess == 0 )
+            {
+                break;
+            }
+        }
+
+        // If there's only a single valid Item, but it's a +-2 scroll, this will happen
+        if ( amountOfItemsLeftToProcess == 0 )
+        {
+            break;
+        }
+    }
+
+    // Tell the Player they were an Item short of the full effect
+    if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude > 0 )
+    {
+        messagePlayer(clientnum, language[2510]); // "You have no remaining items for the scroll's blessing..."
+    }
+    else if ( isThereASingleItem == true && itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
+    }
+} // enchantArmorGUIProcessRandomItem()
+
+/* ItemModifyingGUI.cpp
+ * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
+ * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
+ */
+void ItemModifyingGUI::rebuildEnchantArmorGUIInventory()
+{
+    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    list_t* playerInventoryList = &stats[clientnum]->inventory;
+    Uint8 iEnchantArmorGUIInventoryIndex = 0;
+
+    if ( playerInventoryList == nullptr )
+    {
+        messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
+        printlog("ERROR: rebuildEnchantArmorGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        return;
+    }
+
+    // Count the number of Items in the Repair GUI Inventory
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        Item* item = static_cast<Item*>(iInventoryNode->element);
+
+        if ( item == nullptr )
+        {
+            continue;
+        }
+
+        ItemArmorType itemArmorType = getItemArmorType(item->type);
+
+        // Skip all Items that aren't Armor
+        if ( itemArmorType == ItemArmorType::NOT_ARMOR )
+        {
+            continue;
+        }
+
+        switch ( itemModifyingGUI_ScrollBeatitude )
+        {
+            case -2:
+                // Intentional fall-through
+            case -1:
+                if ( item->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                {
+                    ++iEnchantArmorGUIInventoryIndex;
+                }
+                break;
+            case 0:
+                if ( item->beatitude >= 0 && item->beatitude < 2 ) // Skip over all Cursed Items and Items +2 and greater. Skip Artifacts
+                {
+                    // +0 can enchant Shields, Breastpiece, Masks, and Helms
+                    if ( itemArmorType == ItemArmorType::BOOTS || itemArmorType == ItemArmorType::GLOVES || itemArmorType == ItemArmorType::RING || itemArmorType == ItemArmorType::AMULET || itemArmorType == ItemArmorType::CLOAK )
+                    {
+                        continue;
+                    }
+
+                    // +0 cannot enchant Artifacts
+                    if ( item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES )
+                    {
+                        continue;
+                    }
+
+                    ++iEnchantArmorGUIInventoryIndex;
+                }
+                break;
+            case 1:
+                if ( item->beatitude >= 0 && item->beatitude < 3 ) // Skip over all Cursed Items and Items +3 and greater. Skip Artifacts
+                {
+                    // +1 can enchant Shields, Breastpiece, Masks, Helms, Boots, and Gloves
+                    if ( itemArmorType == ItemArmorType::RING || itemArmorType == ItemArmorType::AMULET || itemArmorType == ItemArmorType::CLOAK )
+                    {
+                        continue;
+                    }
+
+                    // +1 cannot enchant Artifacts
+                    if ( item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES )
+                    {
+                        continue;
+                    }
+
+                    ++iEnchantArmorGUIInventoryIndex;
+                }
+                break;
+            case 2:
+                if ( (item->beatitude >= 0 && item->beatitude < 5) || (item->beatitude >= 5 && (item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES)) ) // Skip over all Cursed Items and Items +5 and greater, unless it's an Artifact Armor
+                {
+                    // +2 can enchant Shields, Breastpiece, Masks, Helms, Boots, Gloves, Rings, Amulets, and Cloaks
+                    ++iEnchantArmorGUIInventoryIndex;
+                }
+                break;
+            default: printlog("ERROR: rebuildEnchantArmorGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+        }
+    }
+
+    itemModifyingGUI_InventoryScrollOffset = std::max(0, std::min(static_cast<int>(itemModifyingGUI_InventoryScrollOffset), iEnchantArmorGUIInventoryIndex - 4));
+
+    // Reset the current Inventory
+    for ( iEnchantArmorGUIInventoryIndex = 0; iEnchantArmorGUIInventoryIndex < 4; ++iEnchantArmorGUIInventoryIndex )
+    {
+        itemModifyingGUI_Inventory[iEnchantArmorGUIInventoryIndex] = nullptr;
+    }
+
+    iEnchantArmorGUIInventoryIndex = 0;
+
+    // Assign the visible Items to the GUI slots
+    bool bBreakFromLoop = false;
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        Item* item = static_cast<Item*>(iInventoryNode->element);
+
+        if ( item == nullptr )
+        {
+            continue;
+        }
+
+        ItemArmorType itemArmorType = getItemArmorType(item->type);
+
+        // Skip all Items that aren't Armor
+        if ( itemArmorType == ItemArmorType::NOT_ARMOR )
+        {
+            continue;
+        }
+
+        switch ( itemModifyingGUI_ScrollBeatitude )
+        {
+            case -2:
+                // Intentional fall-through
+            case -1:
+                if ( item->beatitude > 0 ) // Skip over all Cursed and Unenchanted Items
+                {
+                    ++iEnchantArmorGUIInventoryIndex;
+
+                    if ( iEnchantArmorGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantArmorGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantArmorGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            case 0:
+                if ( item->beatitude >= 0 && item->beatitude < 2 ) // Skip over all Cursed Items and Items +2 and greater. Skip Artifacts
+                {
+                    // +0 can enchant Shields, Breastpiece, Masks, and Helms
+                    if ( itemArmorType == ItemArmorType::BOOTS || itemArmorType == ItemArmorType::GLOVES || itemArmorType == ItemArmorType::RING || itemArmorType == ItemArmorType::AMULET || itemArmorType == ItemArmorType::CLOAK )
+                    {
+                        continue;
+                    }
+
+                    if ( item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES )
+                    {
+                        continue;
+                    }
+
+                    ++iEnchantArmorGUIInventoryIndex;
+
+                    if ( iEnchantArmorGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantArmorGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantArmorGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            case 1:
+                if ( item->beatitude >= 0 && item->beatitude < 3 ) // Skip over all Cursed Items and Items +3 and greater. Skip Artifacts
+                {
+                    // +1 can enchant Shields, Breastpiece, Masks, Helms, Boots, and Gloves
+                    if ( itemArmorType == ItemArmorType::RING || itemArmorType == ItemArmorType::AMULET || itemArmorType == ItemArmorType::CLOAK )
+                    {
+                        continue;
+                    }
+
+                    if ( item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES )
+                    {
+                        continue;
+                    }
+
+                    ++iEnchantArmorGUIInventoryIndex;
+
+                    if ( iEnchantArmorGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantArmorGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantArmorGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            case 2:
+                if ( (item->beatitude >= 0 && item->beatitude < 5) || (item->beatitude >= 5 && (item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES)) ) // Skip over all Cursed Items and Items +5 and greater, unless it's an Artifact Armor
+                {
+                    // +2 can enchant Shields, Breastpiece, Masks, Helms, Boots, Gloves, Rings, Amulets, and Cloaks
+                    ++iEnchantArmorGUIInventoryIndex;
+
+                    if ( iEnchantArmorGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        continue;
+                    }
+
+                    itemModifyingGUI_Inventory[iEnchantArmorGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1] = item;
+
+                    if ( iEnchantArmorGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                    {
+                        bBreakFromLoop = true;
+                    }
+                }
+                break;
+            default: printlog("ERROR: rebuildEnchantArmorGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+        }
+
+        if ( bBreakFromLoop == true )
+        {
+            break;
+        }
+    }
+} // rebuildEnchantArmorGUIInventory()
+
+/* ItemModifyingGUI.cpp
+ * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
+ */
+void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
+{
+    bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
+    Uint8 iEnchantWeaponGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
+    Sint32 iEnchantWeaponGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+
+    Item* item = nullptr; // The given Item being drawn from the GUI Inventory
+    SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
+
+    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    list_t* playerInventoryList = &stats[clientnum]->inventory;
+
+    for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
+    {
+        if ( iInventoryNode->element != nullptr )
+        {
+            item = static_cast<Item*>(iInventoryNode->element);
+
+            if ( item == nullptr )
+            {
+                continue;
+            }
+
+            ItemArmorType itemArmorType = getItemArmorType(item->type);
+
+            // Skip all Items that aren't Armor
+            if ( itemArmorType == ItemArmorType::NOT_ARMOR )
+            {
+                continue;
+            }
+
+            // Cursed Scrolls don't need to be shown, as they wont have a GUI
+            switch ( itemModifyingGUI_ScrollBeatitude )
+            {
+                case 0:
+                    if ( item->beatitude >= 0 && item->beatitude < 2 ) // Skip over all Cursed Items and Items +2 and greater. Skip Artifacts
+                    {
+                        // +0 can enchant Shields, Breastpiece, Masks, and Helms
+                        if ( itemArmorType == ItemArmorType::BOOTS || itemArmorType == ItemArmorType::GLOVES || itemArmorType == ItemArmorType::RING || itemArmorType == ItemArmorType::AMULET || itemArmorType == ItemArmorType::CLOAK )
+                        {
+                            continue;
+                        }
+
+                        if ( item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES )
+                        {
+                            continue;
+                        }
+
+                        iEnchantWeaponGUIInventoryIndex++;
+
+                        // If the Item is not visible (within 0 - 3 in Inventory), skip over it
+                        if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            continue;
+                        }
+
+                        // The name and description of the Item in the GUI Inventory
+                        char itemDescription[64] = {0};
+                        strncpy(itemDescription, item->description(), 46);
+
+                        // Check to make sure the text doesn't go out of bounds
+                        if ( strlen(itemDescription) == 46 )
+                        {
+                            strcat(itemDescription, " ...");
+                        }
+
+                        // Print the name and description of the Item
+                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+
+                        // Draw the Image of the Item
+                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.w = 16;
+                        itemImageRect.h = 16;
+                        drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
+
+                        iEnchantWeaponGUIInventoryItemOffset += 18;
+
+                        // If the Item's index is out of bounds (above the amount of Items in the Inventory), stop drawing
+                        if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            bBreakFromLoop = true;
+                        }
+                    }
+                    break;
+                case 1:
+                    if ( item->beatitude >= 0 && item->beatitude < 3 ) // Skip over all Cursed Items and Items +3 and greater. Skip Artifacts
+                    {
+                        // +1 can enchant Shields, Breastpiece, Masks, Helms, Boots, and Gloves
+                        if ( itemArmorType == ItemArmorType::RING || itemArmorType == ItemArmorType::AMULET || itemArmorType == ItemArmorType::CLOAK )
+                        {
+                            continue;
+                        }
+
+                        if ( item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES )
+                        {
+                            continue;
+                        }
+
+                        iEnchantWeaponGUIInventoryIndex++;
+
+                        // If the Item is not visible (within 0 - 3 in Inventory), skip over it
+                        if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            continue;
+                        }
+
+                        // The name and description of the Item in the GUI Inventory
+                        char itemDescription[64] = {0};
+                        strncpy(itemDescription, item->description(), 46);
+
+                        // Check to make sure the text doesn't go out of bounds
+                        if ( strlen(itemDescription) == 46 )
+                        {
+                            strcat(itemDescription, " ...");
+                        }
+
+                        // Print the name and description of the Item
+                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+
+                        // Draw the Image of the Item
+                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.w = 16;
+                        itemImageRect.h = 16;
+                        drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
+
+                        iEnchantWeaponGUIInventoryItemOffset += 18;
+
+                        // If the Item's index is out of bounds (above the amount of Items in the Inventory), stop drawing
+                        if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            bBreakFromLoop = true;
+                        }
+                    }
+                    break;
+                case 2:
+                    if ( (item->beatitude >= 0 && item->beatitude < 5) || (item->beatitude >= 5 && (item->type == ARTIFACT_BREASTPIECE || item->type == ARTIFACT_HELM || item->type == ARTIFACT_BOOTS || item->type == ARTIFACT_CLOAK || item->type == ARTIFACT_GLOVES)) ) // Skip over all Cursed Items and Items +5 and greater, unless it's an Artifact Armor
+                    {
+                        // +2 can enchant Shields, Breastpiece, Masks, Helms, Boots, Gloves, Rings, Amulets, and Cloaks
+                        iEnchantWeaponGUIInventoryIndex++;
+
+                        // If the Item is not visible (within 0 - 3 in Inventory), skip over it
+                        if ( iEnchantWeaponGUIInventoryIndex <= itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            continue;
+                        }
+
+                        // The name and description of the Item in the GUI Inventory
+                        char itemDescription[64] = {0};
+                        strncpy(itemDescription, item->description(), 46);
+
+                        // Check to make sure the text doesn't go out of bounds
+                        if ( strlen(itemDescription) == 46 )
+                        {
+                            strcat(itemDescription, " ...");
+                        }
+
+                        // Print the name and description of the Item
+                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+
+                        // Draw the Image of the Item
+                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.w = 16;
+                        itemImageRect.h = 16;
+                        drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
+
+                        iEnchantWeaponGUIInventoryItemOffset += 18;
+
+                        // If the Item's index is out of bounds (above the amount of Items in the Inventory), stop drawing
+                        if ( iEnchantWeaponGUIInventoryIndex > 3 + itemModifyingGUI_InventoryScrollOffset )
+                        {
+                            bBreakFromLoop = true;
+                        }
+                    }
+                    break;
+                default: printlog("ERROR: enchantWeaponGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            }
+
+            if ( bBreakFromLoop == true )
+            {
+                break;
+            }
+        }
+    }
+} // enchantArmorGUI_HandleItemImages()
 
 } // namespace GUI

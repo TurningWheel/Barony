@@ -143,7 +143,7 @@ private:
      */
     void processIdentifyGUIEffectOnItem(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
-     * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+     * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will either Identify or Unidentify the random Items according to 'itemModifyingGUI_ScrollBeatitude'
      * Messages the Player that their Item has been Identified or Unidentified because of the beatitude of the Scroll used
      */
@@ -166,7 +166,7 @@ private:
      */
     void processRemoveCurseGUIEffectOnItem(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
-     * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+     * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will either Uncurse or Curse the random Items according to 'itemModifyingGUI_ScrollBeatitude'
      * Messages the Player that their Item has been Uncursed or Cursed because of the beatitude of the Scroll used
      */
@@ -192,8 +192,8 @@ private:
      */
     void processRepairGUIEffectOnItem(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
-     * @param numItems - The number of random items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
-     * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random items to Broken
+     * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+     * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to Broken
      * Messages the Player that their Item has been Broken because of the beatitude of the Scroll used
      */
     void repairGUIProcessRandomItem(const Uint8 numItems);
@@ -206,6 +206,58 @@ private:
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
     void repairGUI_HandleItemImages();
+
+    // Enchant Weapon GUI
+    /* ItemModifyingGUI.cpp
+     * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
+     * Enchants the selected Item based on 'itemModifyingGUI_ScrollBeatitude' and 'itemModifyingGUI_ScrollBeatitude'
+     * +0 Scrolls can raise a +0 or +1 weapon up to +2. Cannot Enchant Artifacts
+     * +1 Scrolls can raise a +0, +1, or +2 weapon up to +3. Cannot Enchant Artifacts
+     * +2 Scrolls can raise a +0, +1, +2, +3, or +4 weapon up to +5. Raises any Artifact Weapon by one level
+     * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
+     */
+    void processEnchantWeaponGUIEffectOnItem(Item* const selectedItem);
+    /* ItemModifyingGUI.cpp
+     * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+     * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
+     * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
+     */
+    void enchantWeaponGUIProcessRandomItem(const Uint8 numItems);
+    /* ItemModifyingGUI.cpp
+     * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
+     * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
+     */
+    void rebuildEnchantWeaponGUIInventory();
+    /* ItemModifyingGUI.cpp
+     * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
+     */
+    void enchantWeaponGUI_HandleItemImages();
+
+    // Enchant Armor GUI
+    /* ItemModifyingGUI.cpp
+     * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
+     * Enchants the selected Item based on 'itemModifyingGUI_ScrollBeatitude' and 'itemModifyingGUI_ScrollBeatitude'
+     * +0 Scrolls can raise a +0 or +1 Shield, Breastpiece, or Helm up to +2. Cannot enchant Artifacts
+     * +1 Scrolls can raise a +0, +1, or +2 Shield, Breastpiece, Helm, Boots, or Gloves up to +3. Cannot enchant Artifacts
+     * +2 Scrolls can raise a +0, +1, +2, +3, or +4 Shield, Breastpiece, Helm, Boots, Gloves, Rings, or Cloaks up to +5. Raises any Artifact Armor by one level
+     * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
+     */
+    void processEnchantArmorGUIEffectOnItem(Item* const selectedItem);
+    /* ItemModifyingGUI.cpp
+     * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
+     * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
+     * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
+     */
+    void enchantArmorGUIProcessRandomItem(const Uint8 numItems);
+    /* ItemModifyingGUI.cpp
+     * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
+     * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
+     */
+    void rebuildEnchantArmorGUIInventory();
+    /* ItemModifyingGUI.cpp
+     * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
+     */
+    void enchantArmorGUI_HandleItemImages();
 }; // class ItemModifyingGUI
 
 } // namespace GUI
