@@ -13,6 +13,8 @@
 
 #include "../main.hpp"
 #include "../game.hpp"
+#include "ItemModifyingGUI.hpp"
+#include "AppraisalGUI.hpp"
 
 class Item;
 
@@ -142,12 +144,14 @@ extern int inventory_mode;
  *		BEHAVIOR_MOUSE = press left button to pick up, release left button to drop,
  *		BEHAVIOR_GAMEPAD = press mapped button (x by default) to select/"grab" item, press again to drop.
  */
+/*
 enum selectBehavior_t
 {
 	BEHAVIOR_MOUSE = 0,
 	BEHAVIOR_GAMEPAD = 1,
 	ENUM_LEN = 2
 } extern itemSelectBehavior;
+*/
 
 //Chest GUI definitions.
 #define CHEST_INVENTORY_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + chestgui_offset_x)
@@ -198,52 +202,6 @@ void updateMagicGUI();
 #define SUST_SPELLS_RIGHT_ALIGN true //If true, overrides settings and makes the sustained spells draw alongside the right edge of the screen, vertically.
 void drawSustainedSpells(); //Draws an icon for every sustained spell.
 
-//Identify GUI definitions.
-//NOTE: Make sure to always reset identifygui_appraising back to false.
-#define IDENTIFY_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + identifygui_offset_x)
-#define IDENTIFY_GUI_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + identifygui_offset_y)
-extern bool identifygui_active;
-extern bool identifygui_appraising; //If this is true, the appraisal skill is controlling the identify GUI. If this is false, it originated from an identify spell.
-extern int identifygui_offset_x;
-extern int identifygui_offset_y;
-extern bool dragging_identifyGUI; //The identify GUI is being dragged.
-extern int identifyscroll;
-static const int NUM_IDENTIFY_GUI_ITEMS = 4;
-extern Item* identify_items[NUM_IDENTIFY_GUI_ITEMS];
-extern SDL_Surface* identifyGUI_img;
-
-extern int selectedIdentifySlot;
-
-void selectIdentifySlot(int slot);
-void warpMouseToSelectedIdentifySlot();
-
-void updateIdentifyGUI(); //Updates the identify item GUI.
-void identifyGUIIdentify(Item* item); //Identify the given item.
-int getAppraisalTime(Item* item); // Return time in ticks needed to appraise an item
-void drawSustainedSpells(); //Draws an icon for every sustained spell.
-
-//Remove curse GUI definitions.
-#define REMOVECURSE_GUI_X (((xres / 2) - (inventoryChest_bmp->w / 2)) + removecursegui_offset_x)
-#define REMOVECURSE_GUI_Y (((yres / 2) - (inventoryChest_bmp->h / 2)) + removecursegui_offset_y)
-extern bool removecursegui_active;
-extern int removecursegui_offset_x;
-extern int removecursegui_offset_y;
-extern bool dragging_removecurseGUI; //The remove curse GUI is being dragged.
-extern int removecursescroll;
-static const int NUM_REMOVE_CURSE_GUI_ITEMS = 4;
-extern Item* removecurse_items[NUM_REMOVE_CURSE_GUI_ITEMS];
-//extern SDL_Surface *removecurseGUI_img; //Nah, just use the identify GUI's image. It works well enough. No need to double the resources.
-
-void closeRemoveCurseGUI();
-void updateRemoveCurseGUI(); //Updates the remove curse GUI.
-void removecurseGUIRemoveCurse(Item* item); //Uncurse the given item.
-
-//Gamepad-support related stuff.
-extern int selectedRemoveCurseSlot;
-void selectRemoveCurseSlot(int slot);
-void warpMouseToSelectedRemoveCurseSlot();
-
-
 /*
  * Returns true if the mouse is in the specified bounds, with x1 and y1 specifying the top left corner, and x2 and y2 specifying the bottom right corner.
  */
@@ -264,7 +222,7 @@ extern int appraisal_timer; //There is a delay after the appraisal skill is acti
 extern int appraisal_timermax;
 extern Uint32 appraisal_item; //The item being appraised (or rather its uid)
 
-void updateRightSidebar(); //Updates the sidebar on the right side of the screen, the one containing spells, skills, etc.
+//void updateRightSidebar(); //Updates the sidebar on the right side of the screen, the one containing spells, skills, etc. DEPRECATED: See updaterightsidebar.cpp
 
 //------book_t Defines-----
 extern SDL_Surface* bookgui_img;
@@ -362,9 +320,10 @@ void openStatusScreen(int whichGUIMode, int whichInventoryMode); //TODO: Make al
 
 static const int SCANCODE_UNASSIGNED_BINDING = 399;
 
+// TODOR: I'm not sure why this is the intended behavior. I believe this should be reworked to be more user friendly
 inline bool hotbarGamepadControlEnabled()
 {
-	return ( !openedChest[clientnum] && gui_mode != GUI_MODE_SHOP && !identifygui_active && !removecursegui_active );
+    return (!openedChest[clientnum] && gui_mode != GUI_MODE_SHOP); // && itemModifyingGUI->isActive() == false); // TODOR: This cannot be done as the function is inline
 }
 
 extern SDL_Surface *str_bmp64u;
@@ -382,3 +341,13 @@ extern SDL_Surface *chr_bmp64;
 
 void printStatBonus(TTF_Font* outputFont, Sint32 stat, Sint32 statWithModifiers, int x, int y);
 
+// 9-5-2017 - Lutz - ItemModifyingGUI Refactor
+// Forward Declaration
+namespace GUI
+{
+class ItemModifyingGUI;
+class AppraisalGUI;
+}
+
+extern GUI::ItemModifyingGUI* itemModifyingGUI;
+extern GUI::AppraisalGUI* appraisalGUI;
