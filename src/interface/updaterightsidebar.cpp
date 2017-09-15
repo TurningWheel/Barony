@@ -10,7 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 // note: as of some prealpha version I've since forgotten, this module is totally deprecated
-
+/*
 #include "../main.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
@@ -61,20 +61,8 @@ void updateRightSidebar()
 		if (mousestatus[SDL_BUTTON_LEFT])
 		{
 			mousestatus[SDL_BUTTON_LEFT] = 0;
-			identifygui_active = true;
-			identifygui_appraising = true;
-			gui_mode = GUI_MODE_INVENTORY;
-			if ( removecursegui_active )
-			{
-				closeRemoveCurseGUI();
-			}
-			if ( openedChest[clientnum] )
-			{
-				openedChest[clientnum]->closeChest();
-			}
-
-			//Initialize Identify GUI game controller code here.
-			initIdentifyGUIControllerCode();
+            
+            // AppraisalGUI->openAppraisalGUI() would go here, but this is a deprecated function
 		}
 	}
 	else
@@ -121,3 +109,4 @@ void updateRightSidebar()
 	//Advance the position.
 	pos.y += rightsidebar_slot_img->h;
 }
+*/
