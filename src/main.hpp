@@ -450,7 +450,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 2519
+#define NUMLANGENTRIES 2526
 extern char languageCode[32];
 extern char** language;
 

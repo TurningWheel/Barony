@@ -2976,14 +2976,21 @@ last of your magic is drained!#
 2506 Your %s was unidentified!#
 2507 Your %s was cursed!#
 2508 Your %s is now broken!#
-2509 Your %s was unenchanted!#
+2509 Your %s was disenchanted!#
 2510 You have no remaining items for the scroll's blessing...#
 2511 Wow! Your %s was identified too!#
 2512 Wow! Your %s was uncursed too!#
-2513 You have no remaining items for the scroll's curse...#
+2513 You have no items for the scroll's curse...#
 2514 Oh no! Your %s was unidentified too!#
 2515 Oh no! Your %s was cursed too!#
 2516 Oh no! Your %s was broken too!#
 2517 Your %s looks perfect now!#
+2518 Enchant a Weapon#
+2519 Enchant an Armor Piece#
+2520 Your %s glows blue!#
+2521 Your %s glows violently blue!#
+2522 Your %s radiates power!#
+2523 Oh no! Your %s was disenchanted too!#
+2524 You have no remaining items for the scroll's curse...#
 
-2518 end#
+2525 end#
