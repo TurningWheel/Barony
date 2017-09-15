@@ -74,11 +74,13 @@ Entity* entityClicked()
 			{
 				return NULL;    //Click falls inside the chest inventory GUI.
 			}
-		if (identifygui_active)
-			if (omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h)
-			{
-				return NULL;    //Click falls inside the identify item gui.
-			}
+        if ( itemModifyingGUI->isActive() == true )
+        {
+            if ( itemModifyingGUI->isMouseWithinGUIBounds() == true )
+            {
+                return nullptr; // Click falls within the itemModifyingGUI's bounds
+            }
+        }
 		if (book_open)
 			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
 			{
