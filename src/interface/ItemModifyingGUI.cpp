@@ -168,7 +168,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
 
         SDL_Rect GUIRect; // The location of the GUI window
 
-        // Draw the GUI Background at the center off the Game Window
+        // Draw the GUI Background at the center of the Game Window + it's offset
         GUIRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
         GUIRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
         drawImage(itemModifyingGUI_IMG, nullptr, &GUIRect);
@@ -413,6 +413,25 @@ bool ItemModifyingGUI::isSelectedSlotInvalid() const
 {
     return (itemModifyingGUI_InventorySelectedSlot < 0);
 }
+
+/* ItemModifyingGUI.cpp
+ * @returns true - If the Mouse is currently within the bounds of the GUI
+ * @returns false - If the Mouse is not within the bounds of the GUI
+ * Returns whether or not the Mouse is currently within the bounds of the ItemModifyingGUI
+ */
+bool ItemModifyingGUI::isMouseWithinGUIBounds() const
+{
+    // Draw the GUI Background at the center of the Game Window + it's offset
+    const Sint32 GUIX = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
+    const Sint32 GUIY = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
+
+    if ( ((omousex > GUIX) && (omousex < GUIX + itemModifyingGUI_IMG->w)) && ((omousey > GUIY) && (omousey < GUIY + itemModifyingGUI_IMG->h)))
+    {
+        return true;
+    }
+
+    return false;
+} // isMouseWithinGUIBounds()
 
 /* ItemModifyingGUI.cpp
 *  Used to get the reference to the Item in the given slot in itemModifyingGUI_Inventory[]

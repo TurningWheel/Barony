@@ -65,6 +65,12 @@ public:
      * Returns whether or not the mouse is currently hovering over a GUI Inventory Slot
      */
     bool isSelectedSlotInvalid() const;
+    /* ItemModifyingGUI.cpp
+     * @returns true - If the Mouse is currently within the bounds of the GUI
+     * @returns false - If the Mouse is not within the bounds of the GUI
+     * Returns whether or not the Mouse is currently within the bounds of the ItemModifyingGUI
+     */
+    bool isMouseWithinGUIBounds() const;
 
 private:
     // ItemModifying GUI
