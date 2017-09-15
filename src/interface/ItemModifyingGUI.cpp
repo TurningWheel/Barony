@@ -169,8 +169,8 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         SDL_Rect GUIRect; // The location of the GUI window
 
         // Draw the GUI Background at the center off the Game Window
-        GUIRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
-        GUIRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
+        GUIRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
+        GUIRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
         drawImage(itemModifyingGUI_IMG, nullptr, &GUIRect);
 
         // Setup the collision bounds for the GUI buttons
@@ -186,15 +186,15 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         char* windowName;
         windowName = language[2499]; // "Repair an Item"
 
-        const Sint32 windowLabelX = ((((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 2 + ((itemModifyingGUI_IMG->w / 2) - ((TTF8_WIDTH * longestline(windowName)) / 2)));
-        const Sint32 windowLabelY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 4;
+        const Sint32 windowLabelX = ((((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 2 + ((itemModifyingGUI_IMG->w / 2) - ((TTF8_WIDTH * longestline(windowName)) / 2)));
+        const Sint32 windowLabelY = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 4;
 
         // Print the Window Label
         ttfPrintText(ttf8, windowLabelX, windowLabelY, windowName);
 
         // The GUI Window's position after being offset
-        const Sint32 GUIOffsetPosX = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
-        const Sint32 GUIOffsetPosY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
+        const Sint32 GUIOffsetPosX = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
+        const Sint32 GUIOffsetPosY = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
 
         // Draw the Images for the GUI buttons when they are being clicked
         itemModifyingGUI_HandleButtonImages(GUIOffsetPosX, GUIOffsetPosY);
@@ -529,10 +529,10 @@ void ItemModifyingGUI::rebuildItemModifyingGUIInventory()
 void ItemModifyingGUI::warpMouseToSelectedGUISlot()
 {
     SDL_Rect slotPos;
-    slotPos.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
+    slotPos.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
     slotPos.w = inventoryoptionChest_bmp->w;
     slotPos.h = inventoryoptionChest_bmp->h;
-    slotPos.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16 + (slotPos.h * itemModifyingGUI_InventorySelectedSlot);
+    slotPos.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 16 + (slotPos.h * itemModifyingGUI_InventorySelectedSlot);
 
     SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
 } // warpMouseToSelectedGUISlot()
@@ -547,29 +547,29 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtons()
 {
     // GUI Button Collision Bounds TODOR: I may have these swapped, the lower bound may be the upper bound
     // Scroll Up Button Y
-    const Sint32 scrollUpButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16;
-    const Sint32 scrollUpButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 52;
+    const Sint32 scrollUpButtonY_LowerBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 16;
+    const Sint32 scrollUpButtonY_UpperBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 52;
     // Scroll Up Button X
-    const Sint32 scrollUpButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
-    const Sint32 scrollUpButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
+    const Sint32 scrollUpButtonX_LowerBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
+    const Sint32 scrollUpButtonX_UpperBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
     // Scroll Down Button Y
-    const Sint32 scrollDownButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 52;
-    const Sint32 scrollDownButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 88;
+    const Sint32 scrollDownButtonY_LowerBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 52;
+    const Sint32 scrollDownButtonY_UpperBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 88;
     // Scroll Down Button X
-    const Sint32 scrollDownButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
-    const Sint32 scrollDownButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
+    const Sint32 scrollDownButtonX_LowerBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
+    const Sint32 scrollDownButtonX_UpperBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 12);
     // Close Button Y
-    const Sint32 closeButtonY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
-    const Sint32 closeButtonY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 15;
+    const Sint32 closeButtonY_LowerBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
+    const Sint32 closeButtonY_UpperBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 15;
     // Close Button X
-    const Sint32 closeButtonX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 393;
-    const Sint32 closeButtonX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 407;
+    const Sint32 closeButtonX_LowerBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 393;
+    const Sint32 closeButtonX_UpperBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 407;
     // Dragging Bar Y
-    const Sint32 draggingBarY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
-    const Sint32 draggingBarY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 15;
+    const Sint32 draggingBarY_LowerBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
+    const Sint32 draggingBarY_UpperBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 15;
     // Dragging Bar X
-    const Sint32 draggingBarX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
-    const Sint32 draggingBarX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 377;
+    const Sint32 draggingBarX_LowerBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
+    const Sint32 draggingBarX_UpperBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 377;
 
     // Buttons
     if ( mousestatus[SDL_BUTTON_LEFT] )
@@ -614,8 +614,8 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtons()
             {
                 gui_clickdrag = true;
                 bIsItemModifyingGUI_Dragging = true;
-                dragoffset_x = omousex - (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
-                dragoffset_y = omousey - (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
+                dragoffset_x = omousex - (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
+                dragoffset_y = omousey - (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
                 mousestatus[SDL_BUTTON_LEFT] = 0;
             }
         }
@@ -629,11 +629,11 @@ void ItemModifyingGUI::itemModifyingGUI_HandleMouseWheel()
 {
     // GUI Mouse Wheel Collision Bounds
     // Mouse Wheel Y
-    const Sint32 mouseWheelY_LowerBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 16;
-    const Sint32 mouseWheelY_UpperBound = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + (itemModifyingGUI_IMG->h - 8);
+    const Sint32 mouseWheelY_LowerBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 16;
+    const Sint32 mouseWheelY_UpperBound = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + (itemModifyingGUI_IMG->h - 8);
     // Mouse Wheel X
-    const Sint32 mouseWheelX_LowerBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 12;
-    const Sint32 mouseWheelX_UpperBound = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
+    const Sint32 mouseWheelX_LowerBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 12;
+    const Sint32 mouseWheelX_UpperBound = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + (itemModifyingGUI_IMG->w - 28);
 
     // Mouse wheel
     if ( omousex >= mouseWheelX_LowerBound && omousex < mouseWheelX_UpperBound )
@@ -664,11 +664,11 @@ void ItemModifyingGUI::itemModifyingGUI_HandleDraggingBar()
 {
     // GUI Dragging
     // The GUI Window's centered position in the Game Window
-    Sint32 GUICenterPosY = ((yres / 2) - (inventoryChest_bmp->h / 2));
-    Sint32 GUICenterPosX = ((xres / 2) - (inventoryChest_bmp->w / 2));
+    Sint32 GUICenterPosY = ((yres / 2) - (itemModifyingGUI_IMG->h / 2));
+    Sint32 GUICenterPosX = ((xres / 2) - (itemModifyingGUI_IMG->w / 2));
     // The GUI Window's position after being offset
-    Sint32 GUIOffsetPosY = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY);
-    Sint32 GUIOffsetPosX = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX);
+    Sint32 GUIOffsetPosY = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
+    Sint32 GUIOffsetPosX = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
 
     // Dragging the Window
     if ( bIsItemModifyingGUI_Dragging == true)
@@ -1120,7 +1120,7 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
 void ItemModifyingGUI::identifyGUI_HandleItemImages()
 {
     Uint8 iIdentifyGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
-    Sint32 iIdentifyGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+    Sint32 iIdentifyGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
 
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
@@ -1161,11 +1161,11 @@ void ItemModifyingGUI::identifyGUI_HandleItemImages()
                 }
 
                 // Print the name and description of the Item
-                ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iIdentifyGUIInventoryItemOffset, itemDescription);
+                ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iIdentifyGUIInventoryItemOffset, itemDescription);
 
                 // Draw the Image of the Item
-                itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iIdentifyGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iIdentifyGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                 itemImageRect.w = 16;
                 itemImageRect.h = 16;
                 drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -1586,7 +1586,7 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
 void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
 {
     Uint8 iRemoveCurseGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
-    Sint32 iRemoveCurseGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+    Sint32 iRemoveCurseGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
 
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
@@ -1627,11 +1627,11 @@ void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
                 }
 
                 // Print the name and description of the Item
-                ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRemoveCurseGUIInventoryItemOffset, itemDescription);
+                ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRemoveCurseGUIInventoryItemOffset, itemDescription);
 
                 // Draw the Image of the Item
-                itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRemoveCurseGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRemoveCurseGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                 itemImageRect.w = 16;
                 itemImageRect.h = 16;
                 drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -2092,7 +2092,7 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
 {
     bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
     Uint8 iRepairGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
-    Sint32 iRepairGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+    Sint32 iRepairGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
 
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
@@ -2142,11 +2142,11 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRepairGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRepairGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRepairGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRepairGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -2182,11 +2182,11 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRepairGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRepairGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRepairGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRepairGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -2222,11 +2222,11 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRepairGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iRepairGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRepairGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iRepairGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -2668,7 +2668,7 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
 {
     bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
     Uint8 iEnchantWeaponGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
-    Sint32 iEnchantWeaponGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+    Sint32 iEnchantWeaponGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
 
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
@@ -2723,11 +2723,11 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -2768,11 +2768,11 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -2808,11 +2808,11 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -3292,7 +3292,7 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
 {
     bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
     Uint8 iEnchantWeaponGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
-    Sint32 iEnchantWeaponGUIInventoryItemOffset = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
+    Sint32 iEnchantWeaponGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
 
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
@@ -3355,11 +3355,11 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -3406,11 +3406,11 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
@@ -3447,11 +3447,11 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
                         }
 
                         // Print the name and description of the Item
-                        ttfPrintText(ttf8, (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
+                        ttfPrintText(ttf8, (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 36, iEnchantWeaponGUIInventoryItemOffset, itemDescription);
 
                         // Draw the Image of the Item
-                        itemImageRect.x = (((xres / 2) - (inventoryChest_bmp->w / 2)) + itemModifyingGUI_OffsetX) + 16;
-                        itemImageRect.y = (((yres / 2) - (inventoryChest_bmp->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
+                        itemImageRect.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX) + 16;
+                        itemImageRect.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 17 + 18 * (iEnchantWeaponGUIInventoryIndex - itemModifyingGUI_InventoryScrollOffset - 1);
                         itemImageRect.w = 16;
                         itemImageRect.h = 16;
                         drawImageScaled(itemSprite(item), nullptr, &itemImageRect);
