@@ -139,18 +139,6 @@ public:
 	bool handleShopMovement();
 
 	/*
-	 * Uses dpad to move the cursor around Identify GUI's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleIdentifyMovement();
-
-	/*
-	 * Uses dpad to move the cursor around Remove Curse GUI's inventory and select items.
-	 * Returns true if moved.
-	 */
-	bool handleRemoveCurseMovement();
-
-	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
 	 */
