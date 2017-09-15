@@ -71,6 +71,10 @@ public:
      * Returns whether or not the Mouse is currently within the bounds of the ItemModifyingGUI
      */
     bool isMouseWithinGUIBounds() const;
+    /* ItemModifyingGUI.cpp
+     * Called by freeInterfaceResources(). Frees 'itemModifyingGUI_IMG' using SDL_FreeSurface()
+     */
+    void freeGUIImage();
 
 private:
     // ItemModifying GUI

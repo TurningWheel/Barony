@@ -37,7 +37,7 @@ ItemModifyingGUI::ItemModifyingGUI() :
 ItemModifyingGUI::~ItemModifyingGUI()
 {
     closeItemModifyingGUI();
-    itemModifyingGUI_IMG = nullptr;
+    freeGUIImage();
 } // ~ItemModifyingGUI()
 
 /* ItemModifyingGUI.cpp
@@ -432,6 +432,18 @@ bool ItemModifyingGUI::isMouseWithinGUIBounds() const
 
     return false;
 } // isMouseWithinGUIBounds()
+
+/* ItemModifyingGUI.cpp
+ * Called by freeInterfaceResources(). Frees 'itemModifyingGUI_IMG' using SDL_FreeSurface()
+ */
+void ItemModifyingGUI::freeGUIImage()
+{
+    if ( itemModifyingGUI_IMG != nullptr )
+    {
+        SDL_FreeSurface(itemModifyingGUI_IMG);
+        itemModifyingGUI_IMG = nullptr;
+    }
+}
 
 /* ItemModifyingGUI.cpp
 *  Used to get the reference to the Item in the given slot in itemModifyingGUI_Inventory[]
