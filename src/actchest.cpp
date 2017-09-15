@@ -494,11 +494,13 @@ void Entity::actChest()
 				messagePlayer(chestclicked, language[459]);
 				chestOpener = chestclicked;
 				openedChest[chestclicked] = this;
-				if ( removecursegui_active )
-				{
-					closeRemoveCurseGUI();
-				}
-				identifygui_active = false;
+                
+                // If the ItemModifyingGUI is open, close it
+                if ( itemModifyingGUI->isActive() == true )
+                {
+                    itemModifyingGUI->closeItemModifyingGUI();
+                }
+
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{
 					//Send all of the items to the client.
