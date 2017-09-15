@@ -138,6 +138,14 @@ public:
 	 */
 	bool handleShopMovement();
 
+    /* player.cpp
+     * @returns true - If the cursor has been moved using the D-Pad
+     * @returns false - If the cursor has not been moved or 'itemMenuOpen' == true
+     * The cursor has been moved if '*joyimpulses[INJOY_DPAD_UP]' or '*joyimpulses[INJOY_DPAD_DOWN]' is true
+     * If the cursor has been moved, itemModifyingGUI->gamepadMoveCursor() will be called. 'dpad_moved' and 'draw_cursor' will both be set to false as well
+     */
+    bool handleItemModifyingGUIMovement();
+
 	/*
 	 * Uses dpad to move the cursor through the item context menu and select entries.
 	 * Returns true if moved.
