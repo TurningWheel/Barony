@@ -57,23 +57,25 @@ Entity* entityClicked()
 
 	if ( !(*inputPressed(impulses[IN_USE])) && !(*inputPressed(joyimpulses[INJOY_GAME_USE])) )
 	{
-		return NULL;
+		return nullptr;
 	}
 	if ( !shootmode )
 	{
 		if ( itemMenuOpen )
 		{
-			return NULL;
+			return nullptr;
 		}
 		if ( omousex < camera.winx || omousex >= camera.winx + camera.winw || omousey < camera.winy || omousey >= camera.winy + camera.winh )
 		{
-			return NULL;
+			return nullptr;
 		}
-		if (openedChest[clientnum])
-			if (omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h)
-			{
-				return NULL;    //Click falls inside the chest inventory GUI.
-			}
+        if ( openedChest[clientnum] )
+        {
+            if ( omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h )
+            {
+                return nullptr;    //Click falls inside the chest inventory GUI.
+            }
+        }
         if ( itemModifyingGUI->isActive() == true )
         {
             if ( itemModifyingGUI->isMouseWithinGUIBounds() == true )
@@ -81,25 +83,29 @@ Entity* entityClicked()
                 return nullptr; // Click falls within the itemModifyingGUI's bounds
             }
         }
-		if (book_open)
-			if (mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h))
-			{
-				return NULL;    //Click falls inside the book GUI.
-			}
+        if ( book_open )
+        {
+            if ( mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
+            {
+                return nullptr;    //Click falls inside the book GUI.
+            }
+        }
 		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
 		{
-			if ( gui_mode == GUI_MODE_INVENTORY )
-				if (mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height))
-				{
-					return NULL;    //Click falls inside the right sidebar.
-				}
+            if ( gui_mode == GUI_MODE_INVENTORY )
+            {
+                if ( mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height) )
+                {
+                    return nullptr;    //Click falls inside the right sidebar.
+                }
+            }
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;
 			if ( mouseInBounds(INVENTORY_STARTX, INVENTORY_STARTX + INVENTORY_SIZEX * INVENTORY_SLOTSIZE, INVENTORY_STARTY, INVENTORY_STARTY + INVENTORY_SIZEY * INVENTORY_SLOTSIZE) )
 			{
 				// clicked in inventory
-				return NULL;
+				return nullptr;
 			}
 			if ( gui_mode == GUI_MODE_SHOP )
 			{
@@ -107,7 +113,7 @@ Entity* entityClicked()
 				int y1 = yres / 2 - SHOPWINDOW_SIZEY / 2, y2 = yres / 2 + SHOPWINDOW_SIZEY / 2;
 				if (mouseInBounds(x1, x2, y1, y2))
 				{
-					return NULL;
+					return nullptr;
 				}
 			}
 		}
@@ -119,7 +125,7 @@ Entity* entityClicked()
 				int height = spell_list_titlebar_bmp->h;
 				int numspells = 0;
 				node_t* node;
-				for (node = spellList.first; node != NULL; node = node->next)
+				for (node = spellList.first; node != nullptr; node = node->next)
 				{
 					numspells++;
 				}
@@ -130,18 +136,18 @@ Entity* entityClicked()
 
 				if (mouseInBounds(MAGICSPELL_LIST_X, MAGICSPELL_LIST_X + spell_list_titlebar_bmp->w, spelllist_y, spelllist_y + height))
 				{
-					return NULL;
+					return nullptr;
 				}
 			}
 		}
 		if (mouseInBounds(0, 224, 0, 420))   // character sheet
 		{
-			return NULL;
+			return nullptr;
 		}
 		int x = xres / 2 - (status_bmp->w / 2);
 		if (mouseInBounds(x, x + status_bmp->w, yres - status_bmp->h, yres))
 		{
-			return NULL;
+			return nullptr;
 		}
 		*inputPressed(impulses[IN_USE]) = 0;
 		*inputPressed(joyimpulses[INJOY_GAME_USE]) = 0;
@@ -175,7 +181,7 @@ Entity* entityClicked()
 	}
 	else
 	{
-		return NULL;
+		return nullptr;
 	}
 }
 
