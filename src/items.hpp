@@ -253,6 +253,23 @@ typedef enum Category
 	SPELL_CAT
 } Category;
 
+/* items.hpp
+ * The type of Armor that the Item is. Returned by getItemArmorType()
+ */
+typedef enum class ItemArmorType
+{
+    NOT_ARMOR,
+    SHIELD,
+    BREASTPIECE,
+    MASK,
+    HELM,
+    BOOTS,
+    GLOVES,
+    RING,
+    AMULET,
+    CLOAK
+} ItemArmorType;
+
 typedef enum Status
 {
 	BROKEN,
@@ -408,6 +425,7 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats);
 Item** itemSlot(Stat* myStats, Item* item);
 
 enum Category itemCategory(const Item* item);
+ItemArmorType getItemArmorType(const ItemType& itemType);
 Sint32 itemModel(Item* item);
 Sint32 itemModelFirstperson(Item* item);
 SDL_Surface* itemSprite(Item* item);
