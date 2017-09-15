@@ -51,11 +51,11 @@ void clickDescription(int player, Entity* entity)
                 return;    //Click falls inside the chest inventory GUI.
             }
         }
-        if ( identifygui_active )
+        if ( itemModifyingGUI->isActive() == true )
         {
-            if ( omousex > IDENTIFY_GUI_X && omousex < IDENTIFY_GUI_X + identifyGUI_img->w && omousey > IDENTIFY_GUI_Y && omousey < IDENTIFY_GUI_Y + identifyGUI_img->h )
+            if ( itemModifyingGUI->isMouseWithinGUIBounds() == true )
             {
-                return;    //Click falls inside the identify item gui.
+                return; // Click falls within the itemModifyingGUI's bounds
             }
         }
         if ( book_open )
