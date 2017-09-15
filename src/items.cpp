@@ -1443,7 +1443,14 @@ void useItem(Item* item, int player)
 			item_ScrollMail(item, player);
 			break;
 		case SCROLL_IDENTIFY:
-            itemModifyingGUI->openItemModifyingGUI(0, item);
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(0, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
 			break;
 		case SCROLL_LIGHT:
 			item_ScrollLight(item, player);
@@ -1456,21 +1463,34 @@ void useItem(Item* item, int player)
 			item_ScrollBlank(item, player);
 			break;
 		case SCROLL_ENCHANTWEAPON:
-			item_ScrollEnchantWeapon(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
+                itemModifyingGUI->openItemModifyingGUI(3, item);
 			}
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
 			break;
 		case SCROLL_ENCHANTARMOR:
-			item_ScrollEnchantArmor(item, player);
 			if ( !players[player]->entity->isBlind() )
 			{
-				consumeItem(item);
-			}
+                itemModifyingGUI->openItemModifyingGUI(4, item);
+            }
+            else if(player == clientnum)
+            {
+                messagePlayer(player, language[775]);
+            }
 			break;
 		case SCROLL_REMOVECURSE:
-            itemModifyingGUI->openItemModifyingGUI(1, item);
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(1, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
 			break;
 		case SCROLL_FIRE:
 			item_ScrollFire(item, player);
@@ -1494,7 +1514,14 @@ void useItem(Item* item, int player)
 			}
 			break;
 		case SCROLL_REPAIR:
-            itemModifyingGUI->openItemModifyingGUI(2, item);
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(2, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
 			break;
 		case SCROLL_DESTROYARMOR:
 			item_ScrollDestroyArmor(item, player);
@@ -1732,10 +1759,10 @@ Item* itemPickup(int player, Item* item)
 		for ( node = stats[player]->inventory.first; node != NULL; node = node->next )
 		{
 			item2 = (Item*) node->element;
-			if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
-			{
-				item->identified = true;
-			}
+            if ( stats[player]->PROFICIENCIES[PRO_APPRAISAL] >= CAPSTONE_UNLOCK_LEVEL[PRO_APPRAISAL] )
+            {
+                item->identified = true;
+            }
 			if (!itemCompare(item, item2))
 			{
 				item2->count += item->count;
