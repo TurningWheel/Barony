@@ -192,9 +192,6 @@ bool loadInterfaceResources()
 	invclose_bmp = loadImage("images/system/InventoryCloseHighlighted.png");
 	invgraball_bmp = loadImage("images/system/InventoryChestGraballHighlighted.png");
 
-	//Identify GUI images...
-	identifyGUI_img = loadImage("images/system/identifyGUI.png");
-
 	/*rightsidebar_titlebar_img = loadImage("images/system/rightSidebarTitlebar.png");
 	if (!rightsidebar_titlebar_img) {
 		printlog( "Failed to load \"images/system/rightSidebarTitlebar.png\".");
@@ -389,10 +386,7 @@ void freeInterfaceResources()
 	//for( c=0; c<NUMCATEGORIES; c++ )
 	//if(category_bmp[c]!=NULL)
 	//SDL_FreeSurface(category_bmp[c]);
-	if (identifyGUI_img != NULL)
-	{
-		SDL_FreeSurface(identifyGUI_img);
-	}
+    itemModifyingGUI->freeGUIImage();
 	/*if (rightsidebar_titlebar_img)
 		SDL_FreeSurface(rightsidebar_titlebar_img);
 	if (rightsidebar_slot_img)
