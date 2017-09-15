@@ -6464,6 +6464,16 @@ bool Entity::hasRangedWeapon() const
 	return false;
 }
 
+/*void Entity::returnWeaponarmToNeutral(Entity* weaponarm, Entity* rightbody)
+{
+	weaponarm->skill[0] = rightbody->skill[0];
+	monsterWeaponYaw = 0;
+	weaponarm->pitch = rightbody->pitch;
+	weaponarm->roll = 0;
+	monsterArmbended = 0;
+	monsterAttack = 0;
+}*/
+
 void Entity::handleWeaponArmAttack(Entity* weaponarm)
 {
 	if ( weaponarm == nullptr )
@@ -6524,7 +6534,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		}
 		else if ( weaponarm->skill[1] == 1 )
 		{
-			// return to neutral
+			// return to neutral //TODO: Does client need this in shadow code, or just monsterAttack = 0?
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
 			{
 				weaponarm->skill[0] = rightbody->skill[0];
@@ -6533,6 +6543,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 				weaponarm->roll = 0;
 				this->monsterArmbended = 0;
 				monsterAttack = 0;
+				//returnWeaponarmToNeutral(weaponarm, rightbody);
 			}
 		}
 	}
@@ -7400,9 +7411,11 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		return;
 	}
 
+	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
+
 	if ( !monsterReleaseAttackTarget() )
 	{
-		messagePlayer(clientnum, "Entity failed to acquire target!");
+		//messagePlayer(clientnum, "Entity failed to acquire target!");
 		return;
 	}
 
@@ -7413,11 +7426,14 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	monsterTargetX = target.x;
 	monsterTargetY = target.y;
 
-	//TODO: Goatman switch equipped weapon.
-	//Ranged at range, melee in close quarters. Special attacks = potions & throwing stuff.
-
-	//On acquiring a target, some monsters switch out their weapons.
-	//chooseWeapon();
+	if ( !hadOldTarget && myStats->type == SHADOW )
+	{
+		messagePlayer(clientnum, "TODO: Shadow got new target.");
+		//TODO: Activate special ability initially for Shadow.
+		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
+		//pose = MONSTER_POSE_MAGIC_WINDUP1;
+		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+	}
 }
 
 bool Entity::monsterReleaseAttackTarget()
@@ -7430,7 +7446,7 @@ bool Entity::monsterReleaseAttackTarget()
 
 	if ( monsterTarget && uidToEntity(monsterTarget) && myStats->type == SHADOW )
 	{
-		messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
+		//messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
 		return false; //Shadow cannot lose its target.
 	}
 

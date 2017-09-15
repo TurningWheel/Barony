@@ -254,14 +254,14 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 		return false;
 	}
 
-	//Abort if invalid creature (boss, shopkeep, etc).
 	Stat* hitstats = hit.entity->getStats();
 	if ( !hitstats )
 	{
 		return false;
 	}
 
-	if ( hitstats->type ==  MINOTAUR || hitstats->type == LICH || hitstats->type == DEVIL || hitstats->type == SHOPKEEPER || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE )
+	//Abort if invalid creature (boss, shopkeep, etc).
+	if ( hitstats->type ==  MINOTAUR || hitstats->type == LICH || hitstats->type == DEVIL || hitstats->type == SHOPKEEPER || hitstats->type == LICH_ICE || hitstats->type == LICH_FIRE || hitstats->type == SHADOW )
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 		messagePlayerColor(parent->skill[2], color, language[2429]);
@@ -273,7 +273,6 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	//Make the monster a follower.
 	bool dominated = forceFollower(caster, *hit.entity);
 
-	//TODO: Update lang entries.
 	if ( parent && dominated )
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);

@@ -2536,7 +2536,7 @@ void createParticleRock(Entity* parent)
 		entity->vel_x = 0.2 * cos(entity->yaw);
 		entity->vel_y = 0.2 * sin(entity->yaw);
 		entity->vel_z = 3;// 0.25 - (rand() % 5) / 10.0;
-		
+
 		entity->skill[0] = 50; // particle life
 		entity->skill[1] = 0; // particle direction, 0 = upwards, 1 = downwards.
 
@@ -2563,7 +2563,7 @@ void actParticleRock(Entity* my)
 		--PARTICLE_LIFE;
 		my->x += my->vel_x;
 		my->y += my->vel_y;
-		
+
 		my->roll += 0.1;
 
 		if ( my->vel_z < 0.01 )

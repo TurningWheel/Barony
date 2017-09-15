@@ -19,6 +19,7 @@ See LICENSE for details.
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initShadow(Entity* my, Stat* myStats)
 {
@@ -392,7 +393,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Move bodyparts
-	for ( bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++ )
+	for ( bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++ )
 	{
 		if ( bodypart < 2 )
 		{
@@ -402,7 +403,16 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
+
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		{
+			// don't let the creatures's yaw move the casting arm
+		}
+		else
+		{
+			entity->yaw = my->yaw;
+		}
+
 		if ( bodypart == 3 || bodypart == 6 )
 		{
 			if ( bodypart == 3 )
@@ -557,6 +567,90 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->roll = 0;
 							MONSTER_ARMBENDED = 0;
 							MONSTER_ATTACK = 0;
+						}
+					}
+				}
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 ) //TODO: The animation is bork.
+				{
+					// magic wiggle hands
+					if ( my->monsterAttackTime == 0 )
+					{
+						// init rotations
+						my->monsterArmbended = 0;
+						my->monsterWeaponYaw = 0;
+						weaponarm->roll = 0;
+						weaponarm->pitch = 0;
+						weaponarm->yaw = my->yaw;
+						weaponarm->skill[1] = 0;
+						// casting particles
+						createParticleDot(my);
+						// play casting sound
+						playSoundEntityLocal(my, 170, 32);
+					}
+
+					double animationYawSetpoint = 0.f;
+					double animationYawEndpoint = 0.f;
+					double armSwingRate = 0.f;
+					double animationPitchSetpoint = 0.f;
+					double animationPitchEndpoint = 0.f;
+
+					switch ( my->monsterSpellAnimation )
+					{
+						case MONSTER_SPELLCAST_NONE:
+							break;
+						case MONSTER_SPELLCAST_SMALL_HUMANOID:
+							// smaller models so arms can wave in a larger radius and faster.
+							animationYawSetpoint = normaliseAngle2PI(my->yaw + 2 * PI / 8);
+							animationYawEndpoint = normaliseAngle2PI(my->yaw - 2 * PI / 8);
+							animationPitchSetpoint = 2 * PI / 8;
+							animationPitchEndpoint = 14 * PI / 8;
+							armSwingRate = 0.3;
+							if ( my->monsterAttackTime == 0 )
+							{
+								weaponarm->yaw = my->yaw - PI / 8;
+							}
+							break;
+						case MONSTER_SPELLCAST_HUMANOID:
+							animationYawSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
+							animationYawEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
+							animationPitchSetpoint = 1 * PI / 8;
+							animationPitchEndpoint = 15 * PI / 8;
+							armSwingRate = 0.15;
+							break;
+						default:
+							break;
+					}
+
+					if ( weaponarm->skill[1] == 0 )
+					{
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, armSwingRate, animationPitchSetpoint, false, 0.0) )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, armSwingRate, animationYawSetpoint, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+					}
+					else
+					{
+						if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -armSwingRate, animationPitchEndpoint, false, 0.0) )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, -armSwingRate, animationYawEndpoint, false, 0.0) )
+							{
+								weaponarm->skill[1] = 0;
+							}
+						}
+					}
+
+					if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP_SHADOW_SPECIAL / (monsterGlobalAnimationMultiplier / 10.0) )
+					{
+						//TODO: my->returnWeaponarmToNeutral()?
+						MONSTER_ATTACK = 0;
+						if ( multiplayer != CLIENT )
+						{
+							// swing the arm after we prepped the spell
+							//this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
+							messagePlayer(clientnum, "TODO: Shadow invisibility mimic teleport and stuff.");
 						}
 					}
 				}

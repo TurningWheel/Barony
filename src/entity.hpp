@@ -457,6 +457,8 @@ public:
 	}
 
 	node_t* addItemToMonsterInventory(Item* item);
+
+	//void returnWeaponarmToNeutral(Entity* weaponarm, Entity* rightbody); //TODO: Need a proper refactor?
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
