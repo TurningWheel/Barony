@@ -274,6 +274,21 @@ static const int MAP_FLAG_CEILINGTILE = 0;
 static const int MAP_FLAG_DISABLETRAPS = 1;
 static const int MAP_FLAG_DISABLEMONSTERS = 2;
 static const int MAP_FLAG_DISABLELOOT = 3;
+static const int MAP_FLAG_GENBYTES1 = 4;
+static const int MAP_FLAG_GENBYTES2 = 5;
+static const int MAP_FLAG_GENBYTES3 = 6;
+static const int MAP_FLAG_GENBYTES4 = 7;
+static const int MAP_FLAG_GENBYTES5 = 8;
+static const int MAP_FLAG_GENBYTES6 = 9;
+// indices for mapflagtext, 4 of these are stored as bytes within the above GENBYTES
+static const int MAP_FLAG_GENTOTALMIN = 4;
+static const int MAP_FLAG_GENTOTALMAX = 5;
+static const int MAP_FLAG_GENMONSTERMIN = 6;
+static const int MAP_FLAG_GENMONSTERMAX = 7;
+static const int MAP_FLAG_GENLOOTMIN = 8;
+static const int MAP_FLAG_GENLOOTMAX = 9;
+static const int MAP_FLAG_GENDECORATIONMIN = 10;
+static const int MAP_FLAG_GENDECORATIONMAX = 11;
 
 // light structure
 typedef struct light_t

@@ -2373,11 +2373,11 @@ int main(int argc, char** argv)
 					int start_y = suby1 + 28;
 					int rowheight = 16;
 
-					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map name:");
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Name:");
 					drawDepressed(subx1 + 4, suby1 + 40, subx2 - 4, suby1 + 56);
 					printText(font8x8_bmp, subx1 + 8, start_y + 16, nametext);
 					pad_y1 += 24;
-					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1 + 12, "Author name:");
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1 + 12, "Author Name:");
 					drawDepressed(subx1 + 4, suby1 + 76, subx2 - 4, suby1 + 92);
 					printText(font8x8_bmp, subx1 + 8, start_y + 16 + 36, authortext);
 
@@ -2385,30 +2385,61 @@ int main(int argc, char** argv)
 					pad_y1 = 0;
 					int start_x2 = subx1 + 180;
 					int start_x3 = subx2 - 32;
-					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map skybox:");
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Skybox:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, skyboxtext);
 
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Traps:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLETRAPS]);
 					pad_y1 += 24;
-					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map ceiling:");
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Ceiling:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_CEILINGTILE]);
 
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Monster Spawns:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLEMONSTERS]);
 					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Entity Qty:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 128, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_GENTOTALMIN]);
+					printText(font8x8_bmp, subx1 + 132, start_y + pad_y1, "-");
+					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENTOTALMAX]);
+
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Loot Spawns:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELOOT]);
+			
+					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Monster Qty:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 128, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_GENMONSTERMIN]);
+					printText(font8x8_bmp, subx1 + 132, start_y + pad_y1, "-");
+					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENMONSTERMAX]);
+
+					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Item Qty:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 128, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_GENLOOTMIN]);
+					printText(font8x8_bmp, subx1 + 132, start_y + pad_y1, "-");
+					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENLOOTMAX]);
+
+					pad_y1 += 24;
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Deco Qty:");
+					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 128, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, mapflagtext[MAP_FLAG_GENDECORATIONMIN]);
+					printText(font8x8_bmp, subx1 + 132, start_y + pad_y1, "-");
+					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
+					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENDECORATIONMAX]);
 
 					start_y = suby2 - 44;
 					pad_y1 = 0;
-					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map width:");
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Width:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, widthtext);
 					pad_y1 += 24;
-					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map height:");
+					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Height:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 108, start_y + pad_y1, heighttext);
 
@@ -2417,7 +2448,7 @@ int main(int argc, char** argv)
 						keystatus[SDL_SCANCODE_TAB] = 0;
 						cursorflash = ticks;
 						editproperty++;
-						if ( editproperty == 6 )
+						if ( editproperty == 14 )
 						{
 							editproperty = 0;
 						}
@@ -2436,9 +2467,33 @@ int main(int argc, char** argv)
 								inputstr = mapflagtext[MAP_FLAG_CEILINGTILE];
 								break;
 							case 4:
-								inputstr = widthtext;
+								inputstr = mapflagtext[MAP_FLAG_GENTOTALMIN];
 								break;
 							case 5:
+								inputstr = mapflagtext[MAP_FLAG_GENTOTALMAX];
+								break;
+							case 6:
+								inputstr = mapflagtext[MAP_FLAG_GENMONSTERMIN];
+								break;
+							case 7:
+								inputstr = mapflagtext[MAP_FLAG_GENMONSTERMAX];
+								break;
+							case 8:
+								inputstr = mapflagtext[MAP_FLAG_GENLOOTMIN];
+								break;
+							case 9:
+								inputstr = mapflagtext[MAP_FLAG_GENLOOTMAX];
+								break;
+							case 10:
+								inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMIN];
+								break;
+							case 11:
+								inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMAX];
+								break;
+							case 12:
+								inputstr = widthtext;
+								break;
+							case 13:
 								inputstr = heighttext;
 								break;
 						}
@@ -2483,43 +2538,105 @@ int main(int argc, char** argv)
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
-						if ( omousex >= subx1 + 4 && omousey >= suby1 + 40 && omousex < subx2 - 4 && omousey < suby1 + 56 )
+
+						start_y = suby1 + 40;
+						pad_y1 = 0;
+						if ( omousex >= subx1 + 4 && omousey >= start_y + pad_y1 && omousex < subx2 - 4 && omousey < start_y + pad_y1 + 16 )
 						{
 							inputstr = nametext;
 							editproperty = 0;
 							cursorflash = ticks;
 						}
-						if ( omousex >= subx1 + 4 && omousey >= suby1 + 76 && omousex < subx2 - 4 && omousey < suby1 + 92 )
+						pad_y1 += 36;
+						if ( omousex >= subx1 + 4 && omousey >= start_y + pad_y1 && omousex < subx2 - 4 && omousey < start_y + pad_y1 + 16 )
 						{
 							inputstr = authortext;
 							editproperty = 1;
 							cursorflash = ticks;
 						}
-						if ( omousex >= subx1 + 104 && omousey >= suby1 + 100 && omousex < subx1 + 168 && omousey < suby1 + 116 )
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 64 && omousey < start_y + pad_y1 + 16 )
 						{
 							inputstr = skyboxtext;
 							editproperty = 2;
 							cursorflash = ticks;
 						}
-						if ( omousex >= subx1 + 104 && omousey >= suby1 + 124 && omousex < subx1 + 168 && omousey < suby1 + 140 )
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 64 && omousey < start_y + pad_y1 + 16 )
 						{
 							inputstr = mapflagtext[MAP_FLAG_CEILINGTILE];
 							editproperty = 3;
 							cursorflash = ticks;
 						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENTOTALMIN];
+							editproperty = 4;
+							cursorflash = ticks;
+						}
+						if ( omousex >= subx1 + 144 && omousey >= start_y + pad_y1 && omousex < subx1 + 144 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENTOTALMAX];
+							editproperty = 5;
+							cursorflash = ticks;
+						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENMONSTERMIN];
+							editproperty = 6;
+							cursorflash = ticks;
+						}
+						if ( omousex >= subx1 + 144 && omousey >= start_y + pad_y1 && omousex < subx1 + 144 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENMONSTERMAX];
+							editproperty = 7;
+							cursorflash = ticks;
+						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENLOOTMIN];
+							editproperty = 8;
+							cursorflash = ticks;
+						}
+						if ( omousex >= subx1 + 144 && omousey >= start_y + pad_y1 && omousex < subx1 + 144 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENLOOTMAX];
+							editproperty = 9;
+							cursorflash = ticks;
+						}
+						pad_y1 += 24;
+						if ( omousex >= subx1 + 104 && omousey >= start_y + pad_y1 && omousex < subx1 + 104 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMIN];
+							editproperty = 10;
+							cursorflash = ticks;
+						}
+						if ( omousex >= subx1 + 144 && omousey >= start_y + pad_y1 && omousex < subx1 + 144 + 24 && omousey < start_y + pad_y1 + 16 )
+						{
+							inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMAX];
+							editproperty = 11;
+							cursorflash = ticks;
+						}
+
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 48 && omousex < subx1 + 168 && omousey < suby2 - 32 )
 						{
 							inputstr = widthtext;
-							editproperty = 4;
+							editproperty = 12;
 							cursorflash = ticks;
 						}
 						if ( omousex >= subx1 + 104 && omousey >= suby2 - 24 && omousex < subx1 + 168 && omousey < suby2 - 8 )
 						{
 							inputstr = heighttext;
-							editproperty = 5;
+							editproperty = 13;
 							cursorflash = ticks;
 						}
 					}
+
+					start_y = suby1 + 44;
+					pad_y1 = 0;
 
 					if ( editproperty == 0 )   // edit map name
 					{
@@ -2532,9 +2649,10 @@ int main(int argc, char** argv)
 						inputlen = 31;
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
-							printText(font8x8_bmp, subx1 + 8 + strlen(nametext) * 8, suby1 + 44, "\26");
+							printText(font8x8_bmp, subx1 + 8 + strlen(nametext) * 8, start_y + pad_y1, "\26");
 						}
 					}
+					pad_y1 += 36;
 					if ( editproperty == 1 )   // edit author name
 					{
 						if ( !SDL_IsTextInputActive() )
@@ -2546,9 +2664,10 @@ int main(int argc, char** argv)
 						inputlen = 31;
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
-							printText(font8x8_bmp, subx1 + 8 + strlen(authortext) * 8, suby1 + 80, "\26");
+							printText(font8x8_bmp, subx1 + 8 + strlen(authortext) * 8, start_y + pad_y1, "\26");
 						}
 					}
+					pad_y1 += 24;
 					if ( editproperty == 2 )   // edit map skybox
 					{
 						if ( !SDL_IsTextInputActive() )
@@ -2560,9 +2679,10 @@ int main(int argc, char** argv)
 						inputlen = 3;
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
-							printText(font8x8_bmp, subx1 + 108 + strlen(skyboxtext) * 8, suby1 + 104, "\26");
+							printText(font8x8_bmp, subx1 + 108 + strlen(skyboxtext) * 8, start_y + pad_y1, "\26");
 						}
 					}
+					pad_y1 += 24;
 					if ( editproperty == 3 )   // edit map ceiling tiles
 					{
 						if ( !SDL_IsTextInputActive() )
@@ -2574,10 +2694,10 @@ int main(int argc, char** argv)
 						inputlen = 3;
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
-							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_CEILINGTILE]) * 8, suby1 + 128, "\26");
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_CEILINGTILE]) * 8, start_y + pad_y1, "\26");
 						}
 					}
-					if ( editproperty == 4 )   // edit map width
+					if ( editproperty == 12 )   // edit map width
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -2591,7 +2711,7 @@ int main(int argc, char** argv)
 							printText(font8x8_bmp, subx1 + 108 + strlen(widthtext) * 8, suby2 - 44, "\26");
 						}
 					}
-					if ( editproperty == 5 )   // edit map height
+					if ( editproperty == 13 )   // edit map height
 					{
 						if ( !SDL_IsTextInputActive() )
 						{
@@ -2603,6 +2723,114 @@ int main(int argc, char** argv)
 						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 						{
 							printText(font8x8_bmp, subx1 + 108 + strlen(heighttext) * 8, suby2 - 20, "\26");
+						}
+					}
+					pad_y1 += 24;
+					if ( editproperty == 4 )   // edit min entity gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENTOTALMIN];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_GENTOTALMIN]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					if ( editproperty == 5 )   // edit max entity gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENTOTALMAX];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENTOTALMAX]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					pad_y1 += 24;
+					if ( editproperty == 6 )   // edit min monster gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENMONSTERMIN];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_GENMONSTERMIN]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					if ( editproperty == 7 )   // edit max monster gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENMONSTERMAX];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENMONSTERMAX]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					pad_y1 += 24;
+					if ( editproperty == 8 )   // edit min monster gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENLOOTMIN];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_GENLOOTMIN]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					if ( editproperty == 9 )   // edit max monster gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENLOOTMAX];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENLOOTMAX]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					pad_y1 += 24;
+					if ( editproperty == 10 )   // edit min decoration gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMIN];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 108 + strlen(mapflagtext[MAP_FLAG_GENDECORATIONMIN]) * 8, start_y + pad_y1, "\26");
+						}
+					}
+					if ( editproperty == 11 )   // edit max decoration gen
+					{
+						if ( !SDL_IsTextInputActive() )
+						{
+							SDL_StartTextInput();
+							inputstr = mapflagtext[MAP_FLAG_GENDECORATIONMAX];
+						}
+						inputlen = 2;
+						if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
+						{
+							printText(font8x8_bmp, subx1 + 148 + strlen(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) * 8, start_y + pad_y1, "\26");
 						}
 					}
 				}
