@@ -77,6 +77,9 @@ int game = 1;
 Uint32 uniqueGameKey = 0;
 list_t steamAchievements;
 
+GUI::ItemModifyingGUI* itemModifyingGUI;
+GUI::AppraisalGUI* appraisalGUI;
+
 /*-------------------------------------------------------------------------------
 
 	gameLogic
@@ -1442,7 +1445,7 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+                    if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
 					{
 						int appraisal_time = getAppraisalTime(item);
 						if (appraisal_time < auto_appraise_lowest_time)
@@ -2695,9 +2698,13 @@ int main(int argc, char** argv)
 					{
 						shootmode = true;
 						gui_mode = GUI_MODE_INVENTORY;
-						identifygui_active = false;
-						selectedIdentifySlot = -1;
-						closeRemoveCurseGUI();
+
+                        // If the ItemModifyingGUI is open, close it
+                        if ( itemModifyingGUI->isActive() == true )
+                        {
+                            itemModifyingGUI->closeItemModifyingGUI();
+                        }
+
 						if ( shopkeeper != 0 )
 						{
 							if ( multiplayer != CLIENT )
@@ -2799,10 +2806,13 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-							shootmode = true;
-							identifygui_active = false;
-							selectedIdentifySlot = -1;
-							closeRemoveCurseGUI();
+                            // If the ItemModifyingGUI is open, close it
+                            if ( itemModifyingGUI->isActive() == true )
+                            {
+                                itemModifyingGUI->closeItemModifyingGUI();
+                            }
+
+                            shootmode = true;
 						}
 
 						//What even is this code? When should it be run?
@@ -3023,22 +3033,14 @@ int main(int argc, char** argv)
 					}
 					else
 					{
-						//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
-						//2-3 years later...yes, it is run every frame.
-						if (identifygui_appraising)
-						{
-							//Close the identify GUI if appraising.
-							identifygui_active = false;
-							identifygui_appraising = false;
+					    //Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
+					    //2-3 years later...yes, it is run every frame.
 
-							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot = -1;
-						}
-
-						if ( removecursegui_active )
-						{
-							closeRemoveCurseGUI();
-						}
+                        // If the ItemModifyingGUI is open, close it
+                        if ( itemModifyingGUI->isActive() == true )
+                        {
+                            itemModifyingGUI->closeItemModifyingGUI();
+                        }
 
 						if ( book_open )
 						{
@@ -3068,8 +3070,7 @@ int main(int argc, char** argv)
 							updateCharacterSheet();
 							updatePlayerInventory();
 							updateChestInventory();
-							updateIdentifyGUI();
-							updateRemoveCurseGUI();
+                            itemModifyingGUI->updateItemModifyingGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 
