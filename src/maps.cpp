@@ -1476,7 +1476,72 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 		}
 	}
-	j = std::min<Uint32>(30 + prng_get_uint() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
+
+	// read some editor map data if available:
+	int genEntityMin = 0;
+	int genEntityMax = 0;
+	int genMonsterMin = 0;
+	int genMonsterMax = 0;
+	int genLootMin = 0;
+	int genLootMax = 0;
+	int genDecorationMin = 0;
+	int genDecorationMax = 0;
+
+	if ( map.flags[MAP_FLAG_GENBYTES1] != 0 || map.flags[MAP_FLAG_GENBYTES2] != 0 )
+	{
+		genEntityMin = (map.flags[MAP_FLAG_GENBYTES1] >> 24) & 0xFF; // first leftmost byte
+		genEntityMax = (map.flags[MAP_FLAG_GENBYTES1] >> 16) & 0xFF; // second leftmost byte
+		genEntityMin = std::max(genEntityMin, 2); // make sure there's room for a ladder.
+
+		genMonsterMin = (map.flags[MAP_FLAG_GENBYTES1] >> 8) & 0xFF; // third leftmost byte
+		genMonsterMax = (map.flags[MAP_FLAG_GENBYTES1] >> 0) & 0xFF; // fourth leftmost byte
+		
+		genLootMin = (map.flags[MAP_FLAG_GENBYTES2] >> 24) & 0xFF; // first leftmost byte
+		genLootMax = (map.flags[MAP_FLAG_GENBYTES2] >> 16) & 0xFF; // second leftmost byte
+
+		genDecorationMin = (map.flags[MAP_FLAG_GENBYTES2] >> 8) & 0xFF; // third leftmost byte
+		genDecorationMax = (map.flags[MAP_FLAG_GENBYTES2] >> 0) & 0xFF; // fourth leftmost byte
+	}
+
+	int entitiesToGenerate = 30;
+	int randomEntities = 10;
+
+	if ( genEntityMin > 0 || genEntityMax > 0 )
+	{
+		entitiesToGenerate = genEntityMin;
+		randomEntities = std::max(genEntityMax - genEntityMin, 1); // difference between min and max is the extra chances.
+		//Needs to be 1 for prng_get_uint() % to not divide by 0.
+		j = std::min<Uint32>(entitiesToGenerate + prng_get_uint() % randomEntities, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
+	}
+	else
+	{
+		// revert to old mechanics.
+		j = std::min<Uint32>(30 + prng_get_uint() % 10, numpossiblelocations); //TODO: Why are Uint32 and Sin32 being compared?
+	}
+
+	int forcedMonsterSpawns = 0;
+	int forcedLootSpawns = 0;
+	int forcedDecorationSpawns = 0;
+
+	if ( genMonsterMin > 0 || genMonsterMax > 0 )
+	{
+		forcedMonsterSpawns = genMonsterMin + prng_get_uint() % std::max(genMonsterMax - genMonsterMin, 1);
+	}
+	if ( genLootMin > 0 || genLootMax > 0 )
+	{
+		forcedLootSpawns = genLootMin + prng_get_uint() % std::max(genLootMax - genLootMin, 1);
+	}
+	if ( genDecorationMin > 0 || genDecorationMax > 0 )
+	{
+		forcedDecorationSpawns = genDecorationMin + prng_get_uint() % std::max(genDecorationMax - genDecorationMin, 1);
+	}
+
+	messagePlayer(0, "Num locations: %d of %d possible, force monsters: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedLootSpawns, forcedDecorationSpawns);
+	printlog("Num locations: %d of %d possible, force monsters: %d, force loot: %d, force decorations: %d", j, numpossiblelocations, forcedMonsterSpawns, forcedLootSpawns, forcedDecorationSpawns);
+	int numGenItems = 0;
+	int numGenGold = 0;
+	int numGenDecorations = 0;
+
 	//printlog("j: %d\n",j);
 	//printlog("numpossiblelocations: %d\n",numpossiblelocations);
 	for ( c = 0; c < std::min(j, numpossiblelocations); c++ )
@@ -1571,7 +1636,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				for ( y2 = -1; y2 <= 1; y2++ )
 				{
-					if ( checkObstacle( (x + x2) * 16, (y + y2) * 16, NULL, NULL ) )
+					if ( checkObstacle((x + x2) * 16, (y + y2) * 16, NULL, NULL) )
 					{
 						obstacles++;
 						if ( obstacles > 1 )
@@ -1589,109 +1654,196 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				nodecoration = true;
 			}
-			if ( prng_get_uint() % 2 || nodecoration )
+			if ( forcedMonsterSpawns > 0 || forcedLootSpawns > 0 || (forcedDecorationSpawns > 0 && !nodecoration) )
 			{
-				// balance for total number of players
-				int balance = 0;
-				for ( i = 0; i < MAXPLAYERS; i++ )
+				// force monsters, then loot, then decorations.
+				if ( forcedMonsterSpawns > 0 )
 				{
-					if ( !client_disconnected[i] )
+					--forcedMonsterSpawns;
+					if ( monsterexcludelocations[x + y * map.width] == false )
 					{
-						balance++;
+						if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+						{
+							entity = newEntity(27, 1, map.entities);  // human
+						}
+						else
+						{
+							entity = newEntity(10, 1, map.entities);  // monster
+						}
+						entity->skill[5] = nummonsters;
+						nummonsters++;
 					}
 				}
-				switch ( balance )
+				else if ( forcedLootSpawns > 0 )
 				{
-					case 1:
-						balance = 4;
-						break;
-					case 2:
-						balance = 3;
-						break;
-					case 3:
-						balance = 2;
-						break;
-					case 4:
-						balance = 2;
-						break;
-					default:
-						balance = 2;
-						break;
-				}
-
-				// monsters/items
-				if ( balance )
-				{
-					if ( prng_get_uint() % balance )
+					--forcedLootSpawns;
+					if ( lootexcludelocations[x + y * map.width] == false )
 					{
-						if ( lootexcludelocations[x + y * map.width] == false )
+						if ( prng_get_uint() % 10 == 0 )   // 10% chance
 						{
-							if ( prng_get_uint() % 10 == 0 )   // 10% chance
-							{
-								entity = newEntity(9, 1, map.entities);  // gold
-							}
-							else
-							{
-								entity = newEntity(8, 1, map.entities);  // item
-							}
+							entity = newEntity(9, 1, map.entities);  // gold
+							numGenGold++;
+						}
+						else
+						{
+							entity = newEntity(8, 1, map.entities);  // item
+							numGenItems++;
+						}
+					}
+				}
+				else if ( forcedDecorationSpawns > 0 && !nodecoration )
+				{
+					--forcedDecorationSpawns;
+					// decorations
+					if ( (prng_get_uint() % 4 == 0 || currentlevel <= 10) && strcmp(map.name, "Hell") )
+					{
+						switch ( prng_get_uint() % 7 )
+						{
+							case 0:
+								entity = newEntity(12, 1, map.entities);
+								break; //Firecamp
+							case 1:
+								entity = newEntity(14, 1, map.entities);
+								break; //Fountain
+							case 2:
+								entity = newEntity(15, 1, map.entities);
+								break; //Sink
+							case 3:
+								entity = newEntity(21, 1, map.entities);
+								entity->chestLocked = -1;
+								break; //Chest
+							case 4:
+								entity = newEntity(39, 1, map.entities);
+								break; //Tomb
+							case 5:
+								entity = newEntity(59, 1, map.entities);
+								break; //Table
+							case 6:
+								entity = newEntity(60, 1, map.entities);
+								break; //Chair
 						}
 					}
 					else
 					{
-						if ( monsterexcludelocations[x + y * map.width] == false )
-						{
-							if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
-							{
-								entity = newEntity(27, 1, map.entities);  // human
-							}
-							else
-							{
-								entity = newEntity(10, 1, map.entities);  // monster
-							}
-							entity->skill[5] = nummonsters;
-							nummonsters++;
-						}
+						entity = newEntity(64, 1, map.entities); // spear trap
+						Entity* also = newEntity(33, 1, map.entities);
+						also->x = x * 16;
+						also->y = y * 16;
+						//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->getUID(),also->x,also->y);
 					}
+					numGenDecorations++;
 				}
 			}
 			else
 			{
-				// decorations
-				if ( (prng_get_uint() % 4 == 0 || currentlevel <= 10) && strcmp(map.name, "Hell") )
+				// return to normal generation
+				if ( prng_get_uint() % 2 || nodecoration )
 				{
-					switch ( prng_get_uint() % 7 )
+					// balance for total number of players
+					int balance = 0;
+					for ( i = 0; i < MAXPLAYERS; i++ )
 					{
-						case 0:
-							entity = newEntity(12, 1, map.entities);
-							break; //Firecamp
+						if ( !client_disconnected[i] )
+						{
+							balance++;
+						}
+					}
+					switch ( balance )
+					{
 						case 1:
-							entity = newEntity(14, 1, map.entities);
-							break; //Fountain
+							balance = 4;
+							break;
 						case 2:
-							entity = newEntity(15, 1, map.entities);
-							break; //Sink
+							balance = 3;
+							break;
 						case 3:
-							entity = newEntity(21, 1, map.entities);
-							entity->chestLocked = -1;
-							break; //Chest
+							balance = 2;
+							break;
 						case 4:
-							entity = newEntity(39, 1, map.entities);
-							break; //Tomb
-						case 5:
-							entity = newEntity(59, 1, map.entities);
-							break; //Table
-						case 6:
-							entity = newEntity(60, 1, map.entities);
-							break; //Chair
+							balance = 2;
+							break;
+						default:
+							balance = 2;
+							break;
+					}
+
+					// monsters/items
+					if ( balance )
+					{
+						if ( prng_get_uint() % balance )
+						{
+							if ( lootexcludelocations[x + y * map.width] == false )
+							{
+								if ( prng_get_uint() % 10 == 0 )   // 10% chance
+								{
+									entity = newEntity(9, 1, map.entities);  // gold
+									numGenGold++;
+								}
+								else
+								{
+									entity = newEntity(8, 1, map.entities);  // item
+									numGenItems++;
+								}
+							}
+						}
+						else
+						{
+							if ( monsterexcludelocations[x + y * map.width] == false )
+							{
+								if ( prng_get_uint() % 10 == 0 && currentlevel > 1 )
+								{
+									entity = newEntity(27, 1, map.entities);  // human
+								}
+								else
+								{
+									entity = newEntity(10, 1, map.entities);  // monster
+								}
+								entity->skill[5] = nummonsters;
+								nummonsters++;
+							}
+						}
 					}
 				}
 				else
 				{
-					entity = newEntity(64, 1, map.entities); // spear trap
-					Entity* also = newEntity(33, 1, map.entities);
-					also->x = x * 16;
-					also->y = y * 16;
-					//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->getUID(),also->x,also->y);
+					// decorations
+					if ( (prng_get_uint() % 4 == 0 || currentlevel <= 10) && strcmp(map.name, "Hell") )
+					{
+						switch ( prng_get_uint() % 7 )
+						{
+							case 0:
+								entity = newEntity(12, 1, map.entities);
+								break; //Firecamp
+							case 1:
+								entity = newEntity(14, 1, map.entities);
+								break; //Fountain
+							case 2:
+								entity = newEntity(15, 1, map.entities);
+								break; //Sink
+							case 3:
+								entity = newEntity(21, 1, map.entities);
+								entity->chestLocked = -1;
+								break; //Chest
+							case 4:
+								entity = newEntity(39, 1, map.entities);
+								break; //Tomb
+							case 5:
+								entity = newEntity(59, 1, map.entities);
+								break; //Table
+							case 6:
+								entity = newEntity(60, 1, map.entities);
+								break; //Chair
+						}
+					}
+					else
+					{
+						entity = newEntity(64, 1, map.entities); // spear trap
+						Entity* also = newEntity(33, 1, map.entities);
+						also->x = x * 16;
+						also->y = y * 16;
+						//printlog("15 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",also->sprite,also->getUID(),also->x,also->y);
+					}
+					numGenDecorations++;
 				}
 			}
 		}
@@ -1728,7 +1880,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	list_FreeAll(&subRoomMapList);
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
-	printlog("successfully generated a dungeon with %d rooms, %d monsters.\n", roomcount, nummonsters);
+	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
 }
 
