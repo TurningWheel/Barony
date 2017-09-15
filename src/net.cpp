@@ -1519,8 +1519,12 @@ void clientHandlePacket()
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		shopitemscroll = 0;
-		identifygui_active = false; //Really need a centralized function to open up whatever screen/inventory.
-		closeRemoveCurseGUI();
+        
+        // If the ItemModifyingGUI is open, close it
+        if ( itemModifyingGUI->isActive() == true )
+        {
+            itemModifyingGUI->closeItemModifyingGUI();
+        }
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
@@ -2336,11 +2340,13 @@ void clientHandlePacket()
 			if (entity2->getUID() == i)
 			{
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
-				if ( removecursegui_active )
-				{
-					closeRemoveCurseGUI();
-				}
-				identifygui_active = false;
+                
+                // If the ItemModifyingGUI is open, close it
+                if ( itemModifyingGUI->isActive() == true )
+                {
+                    itemModifyingGUI->closeItemModifyingGUI();
+                }
+
 				list_FreeAll(&chestInv);
 				chestInv.first = nullptr;
 				chestInv.last = nullptr;
@@ -2403,8 +2409,8 @@ void clientHandlePacket()
 			openedChest[clientnum]->closeChest();
 		}
 
-		//Initialize Identify GUI game controller code here.
-		initIdentifyGUIControllerCode();
+        //Initialize Identify GUI game controller code here.
+        initIdentifyGUIControllerCode();
 
 		return;
 	}
