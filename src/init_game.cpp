@@ -494,6 +494,7 @@ int fmod_result;
 	}
 
     itemModifyingGUI = new GUI::ItemModifyingGUI;
+    appraisalGUI = new GUI::AppraisalGUI;
 
 	return 0;
 }
@@ -836,4 +837,7 @@ void deinitGame()
     // 9-5-2017 - Lutz - ItemModifyingGUI Refactor
     delete itemModifyingGUI;
     itemModifyingGUI = nullptr;
+
+    delete appraisalGUI;
+    appraisalGUI = nullptr;
 }
