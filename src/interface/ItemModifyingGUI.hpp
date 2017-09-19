@@ -35,7 +35,7 @@ public:
     void openItemModifyingGUI(const Uint8 GUIType, Item* const scrollUsed);
     /* ItemModifyingGUI.cpp
      * Handles the Drawing of the GUI, along with setting up and processing the Mouse input collision bounds through their various function calls
-     * Handles the GUI Inventory slot bounds and Mouse input to call processGUIEffectOnItem()
+     * Handles the GUI Inventory slot bounds and Mouse input to call ItemModifyingGUI_Process()
      */
     void updateItemModifyingGUI();
     /* ItemModifyingGUI.cpp
@@ -106,90 +106,90 @@ private:
      * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
      * Selects the correct function to process the Item according to 'itemModifyingGUI_Type'
      */
-    void processGUIEffectOnItem(Item* const selectedItem);
+    void ItemModifyingGUI_Process(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
      * Used for Cursed Scrolls. Selects the correct function to randomly process the Item(s) according to 'itemModifyingGUI_Type'
      */
-    void itemModifyingGUIProcessRandomItem();
+    void ItemModifyingGUI_ProcessRandom();
     /* ItemModifyingGUI.cpp
      * Selects the correct function to rebuild the GUI Inventory according to 'itemModifyingGUI_Type'
      */
-    void rebuildItemModifyingGUIInventory();
+    void ItemModifyingGUI_RebuildInventory();
     /* ItemModifyingGUI.cpp
      * Calls SDL_WarpMouseInWindow() to move the Mouse cursor to the currently selected GUI slot for controllers
      */
-    void warpMouseToSelectedGUISlot();
+    void WarpMouseToSelectedGUISlot();
 
     // Display Update Handlers
     /* ItemModifyingGUI.cpp
      * Handles setting up the collision bounds and checking for Mouse input on those collision bounds for each of the GUI's buttons
      * The Top Bar of the GUI used for dragging is considered a button
      */
-    void itemModifyingGUI_HandleButtons();
+    void ItemModifyingGUI_HandleButtons();
     /* ItemModifyingGUI.cpp
      * Handles setting up the collision bounds and checking for Mouse input on those collision bounds for Mouse scroll wheel input
      */
-    void itemModifyingGUI_HandleMouseWheel();
+    void ItemModifyingGUI_HandleMouseWheel();
     /* ItemModifyingGUI.cpp
      * Handles the actual movement of the GUI Window by modifying 'itemModifyingGUI_OffsetX/Y' when 'bIsItemModifyingGUI_Dragging' == true
      */
-    void itemModifyingGUI_HandleDraggingBar();
+    void ItemModifyingGUI_HandleDraggingBar();
     /* ItemModifyingGUI.cpp
      * @param GUIPosX - The GUI position in the center of the screen + itemModifyingGUI_OffsetX
      * @param GUIPosY - The GUI position in the center of the screen + itemModifyingGUI_OffsetY
      * Handles drawing the actual GUI button Images when they are being clicked. The unclicked versions are part of the original Image
      */
-    void itemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX, const Sint32 GUIPosY);
+    void ItemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX, const Sint32 GUIPosY);
     /* ItemModifyingGUI.cpp
      * Rebuilds the GUI Inventory before selecting the correct function to render the Images for each Item according to 'itemModifyingGUI_Type'
      */
-    void itemModifyingGUI_HandleItemImages();
+    void ItemModifyingGUI_HandleItemImages();
 
     // Identify GUI
     /* ItemModifyingGUI.cpp
      * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
-     * Identifies the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then identifyGUIProcessRandomItem() will be called
+     * Identifies the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then IdentifyGUI_ProcessRandom() will be called
      * Messages the Player that their Item has been Identified, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
      */
-    void processIdentifyGUIEffectOnItem(Item* const selectedItem);
+    void IdentifyGUI_Process(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
      * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will either Identify or Unidentify the random Items according to 'itemModifyingGUI_ScrollBeatitude'
      * Messages the Player that their Item has been Identified or Unidentified because of the beatitude of the Scroll used
      */
-    void identifyGUIProcessRandomItem(const Uint8 numItems);
+    void IdentifyGUI_ProcessRandom(const Uint8 numItems);
     /* ItemModifyingGUI.cpp
      * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
      * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
      */
-    void rebuildIdentifyGUIInventory();
+    void IdentifyGUI_RebuildInventory();
     /* ItemModifyingGUI.cpp
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
-    void identifyGUI_HandleItemImages();
+    void IdentifyGUI_HandleItemImages();
 
     // Remove Curse GUI
     /* ItemModifyingGUI.cpp
      * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
-     * Uncurses the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then identifyGUIProcessRandomItem() will be called
+     * Uncurses the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > or < 0 then RemoveCurseGUI_ProcessRandom() will be called
      * Messages the Player that their Item has been Identified, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
      */
-    void processRemoveCurseGUIEffectOnItem(Item* const selectedItem);
+    void RemoveCurseGUI_Process(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
      * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will either Uncurse or Curse the random Items according to 'itemModifyingGUI_ScrollBeatitude'
      * Messages the Player that their Item has been Uncursed or Cursed because of the beatitude of the Scroll used
      */
-    void removeCurseGUIProcessRandomItem(const Uint8 numItems);
+    void RemoveCurseGUI_ProcessRandom(const Uint8 numItems);
     /* ItemModifyingGUI.cpp
      * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
      * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
      */
-    void rebuildRemoveCurseGUIInventory();
+    void RemoveCurseGUI_RebuildInventory();
     /* ItemModifyingGUI.cpp
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
-    void removeCurseGUI_HandleItemImages();
+    void RemoveCurseGUI_HandleItemImages();
 
     // Repair GUI
     /* ItemModifyingGUI.cpp
@@ -200,22 +200,22 @@ private:
      * +2 Scrolls can repair all Items up to Excellent
      * Messages the Player that their Item has been Repaired, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
      */
-    void processRepairGUIEffectOnItem(Item* const selectedItem);
+    void RepairGUI_Process(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
      * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to Broken
      * Messages the Player that their Item has been Broken because of the beatitude of the Scroll used
      */
-    void repairGUIProcessRandomItem(const Uint8 numItems);
+    void RepairGUI_ProcessRandom(const Uint8 numItems);
     /* ItemModifyingGUI.cpp
      * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
      * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
      */
-    void rebuildRepairGUIInventory();
+    void RepairGUI_RebuildInventory();
     /* ItemModifyingGUI.cpp
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
-    void repairGUI_HandleItemImages();
+    void RepairGUI_HandleItemImages();
 
     // Enchant Weapon GUI
     /* ItemModifyingGUI.cpp
@@ -226,22 +226,22 @@ private:
      * +2 Scrolls can raise a +0, +1, +2, +3, or +4 weapon up to +5. Raises any Artifact Weapon by one level
      * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
      */
-    void processEnchantWeaponGUIEffectOnItem(Item* const selectedItem);
+    void EnchantWeaponGUI_Process(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
      * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
      * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
      */
-    void enchantWeaponGUIProcessRandomItem(const Uint8 numItems);
+    void EnchantWeaponGUI_ProcessRandom(const Uint8 numItems);
     /* ItemModifyingGUI.cpp
      * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
      * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
      */
-    void rebuildEnchantWeaponGUIInventory();
+    void EnchantWeaponGUI_RebuildInventory();
     /* ItemModifyingGUI.cpp
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
-    void enchantWeaponGUI_HandleItemImages();
+    void EnchantWeaponGUI_HandleItemImages();
 
     // Enchant Armor GUI
     /* ItemModifyingGUI.cpp
@@ -252,22 +252,22 @@ private:
      * +2 Scrolls can raise a +0, +1, +2, +3, or +4 Shield, Breastpiece, Helm, Boots, Gloves, Rings, or Cloaks up to +5. Raises any Artifact Armor by one level
      * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
      */
-    void processEnchantArmorGUIEffectOnItem(Item* const selectedItem);
+    void EnchantArmorGUI_Process(Item* const selectedItem);
     /* ItemModifyingGUI.cpp
      * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
      * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
      * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
      */
-    void enchantArmorGUIProcessRandomItem(const Uint8 numItems);
+    void EnchantArmorGUI_ProcessRandom(const Uint8 numItems);
     /* ItemModifyingGUI.cpp
      * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
      * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
      */
-    void rebuildEnchantArmorGUIInventory();
+    void EnchantArmorGUI_RebuildInventory();
     /* ItemModifyingGUI.cpp
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
-    void enchantArmorGUI_HandleItemImages();
+    void EnchantArmorGUI_HandleItemImages();
 }; // class ItemModifyingGUI
 
 } // namespace GUI

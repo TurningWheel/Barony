@@ -98,7 +98,7 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
     }
 
     // Build the GUI's Inventory for an initial check
-    rebuildItemModifyingGUIInventory();
+    ItemModifyingGUI_RebuildInventory();
 
     // If the Inventory is empty, there is nothing to process. The GUI will not open and nothing will be processed
     if ( itemModifyingGUI_Inventory[0] == nullptr )
@@ -134,14 +134,14 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
         {
             // The actual logic is handled by updateItemModifyingGUI()
             itemModifyingGUI_InventorySelectedSlot = 0;
-            warpMouseToSelectedGUISlot();
+            WarpMouseToSelectedGUISlot();
         }
     }
 } // openItemModifyingGUI()
 
 /* ItemModifyingGUI.cpp
  * Handles the Drawing of the GUI, along with setting up and processing the Mouse input collision bounds through their various function calls
- * Handles the GUI Inventory slot bounds and Mouse input to call processGUIEffectOnItem()
+ * Handles the GUI Inventory slot bounds and Mouse input to call ItemModifyingGUI_Process()
  */
 void ItemModifyingGUI::updateItemModifyingGUI()
 {
@@ -174,13 +174,13 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         drawImage(itemModifyingGUI_IMG, nullptr, &GUIRect);
 
         // Setup the collision bounds for the GUI buttons
-        itemModifyingGUI_HandleButtons();
+        ItemModifyingGUI_HandleButtons();
 
         // Setup the collision bounds for the Mouse Wheel
-        itemModifyingGUI_HandleMouseWheel();
+        ItemModifyingGUI_HandleMouseWheel();
         
         // Setup the collision bounds for the GUI Dragging Bar
-        itemModifyingGUI_HandleDraggingBar();
+        ItemModifyingGUI_HandleDraggingBar();
 
         // Print the Window Label signifying this GUI
         char* windowName;
@@ -197,7 +197,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         const Sint32 GUIOffsetPosY = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY);
 
         // Draw the Images for the GUI buttons when they are being clicked
-        itemModifyingGUI_HandleButtonImages(GUIOffsetPosX, GUIOffsetPosY);
+        ItemModifyingGUI_HandleButtonImages(GUIOffsetPosX, GUIOffsetPosY);
 
         SDL_Rect inventorySlotRect; // The position of all the Inventory Slots combined
         inventorySlotRect.x = GUIOffsetPosX;
@@ -233,7 +233,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
                     *inputPressed(joyimpulses[INJOY_MENU_USE]) = 0;
                     mousestatus[SDL_BUTTON_LEFT] = 0;
 
-                    processGUIEffectOnItem(itemModifyingGUI_Inventory[iSlotIndex]);
+                    ItemModifyingGUI_Process(itemModifyingGUI_Inventory[iSlotIndex]);
                 }
             }
         }
@@ -246,7 +246,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
 
         // Draw the Images for each Item in the GUI Inventory
         // This is done at the end to prevent the Inventory Slot highlight from being drawn on top of the Item information
-        itemModifyingGUI_HandleItemImages();
+        ItemModifyingGUI_HandleItemImages();
     }
     else 
     {
@@ -259,7 +259,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
 
         messagePlayer(clientnum, language[2505]); // "Oh no! The scroll was cursed!"
 
-        itemModifyingGUIProcessRandomItem();
+        ItemModifyingGUI_ProcessRandom();
 
         consumeItem(itemModifyingGUI_ScrollUsed);
         closeItemModifyingGUI();
@@ -327,7 +327,7 @@ void ItemModifyingGUI::gamepadMoveCursor(Sint8 direction)
             // Covers case 1
             // Move cursor up the GUI through different itemModifyingGUI_InventorySelectedSlot (itemModifyingGUI_InventorySelectedSlot--)
             itemModifyingGUI_InventorySelectedSlot--;
-            warpMouseToSelectedGUISlot();
+            WarpMouseToSelectedGUISlot();
         }
     }
     else if ( newSlot > itemModifyingGUI_InventorySelectedSlot ) // D-Pad Down was pressed
@@ -357,7 +357,7 @@ void ItemModifyingGUI::gamepadMoveCursor(Sint8 direction)
             {
                 // Case 1/A
                 itemModifyingGUI_InventorySelectedSlot++;
-                warpMouseToSelectedGUISlot();
+                WarpMouseToSelectedGUISlot();
             }
             else
             {
@@ -388,7 +388,7 @@ bool ItemModifyingGUI::areThereValidItems(const Uint8 GUIType)
     itemModifyingGUI_Type = GUIType;
 
     // Build the GUI's Inventory for an initial check
-    rebuildItemModifyingGUIInventory();
+    ItemModifyingGUI_RebuildInventory();
 
     // If the Inventory is empty, there is nothing to process
     if ( itemModifyingGUI_Inventory[0] == nullptr )
@@ -467,33 +467,33 @@ inline Item* ItemModifyingGUI::getItemInfoFromGUI(Uint8 slot)
  * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
  * Selects the correct function to process the Item according to 'itemModifyingGUI_Type'
  */
-void ItemModifyingGUI::processGUIEffectOnItem(Item* const selectedItem)
+void ItemModifyingGUI::ItemModifyingGUI_Process(Item* const selectedItem)
 {
     switch ( itemModifyingGUI_Type )
     {
         case 0: // Identify
-            processIdentifyGUIEffectOnItem(selectedItem);
+            IdentifyGUI_Process(selectedItem);
             break;
         case 1: // Remove Curse
-            processRemoveCurseGUIEffectOnItem(selectedItem);
+            RemoveCurseGUI_Process(selectedItem);
             break;
         case 2: // Repair
-            processRepairGUIEffectOnItem(selectedItem);
+            RepairGUI_Process(selectedItem);
             break;
         case 3: // Enchant Weapon
-            processEnchantWeaponGUIEffectOnItem(selectedItem);
+            EnchantWeaponGUI_Process(selectedItem);
             break;
         case 4: // Enchant Armor
-            processEnchantArmorGUIEffectOnItem(selectedItem);
+            EnchantArmorGUI_Process(selectedItem);
             break;
-        default: printlog("ERROR: processGUIEffectOnItem() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
+        default: printlog("ERROR: ItemModifyingGUI_Process() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
-} // processGUIEffectOnItem()
+} // ItemModifyingGUI_Process()
 
 /* ItemModifyingGUI.cpp
  * Used for Cursed Scrolls. Selects the correct function to randomly process the Item(s) according to 'itemModifyingGUI_Type'
  */
-void ItemModifyingGUI::itemModifyingGUIProcessRandomItem()
+void ItemModifyingGUI::ItemModifyingGUI_ProcessRandom()
 {
     Uint8 numberOfItemsToProcess = 0;
     switch ( itemModifyingGUI_ScrollBeatitude )
@@ -504,60 +504,60 @@ void ItemModifyingGUI::itemModifyingGUIProcessRandomItem()
         case -1:
             numberOfItemsToProcess = 1;
             break;
-        default: printlog("ERROR: itemModifyingGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%s) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+        default: printlog("ERROR: ItemModifyingGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%s) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     }
 
     switch ( itemModifyingGUI_Type )
     {
         case 0: // Identify
-            identifyGUIProcessRandomItem(numberOfItemsToProcess);
+            IdentifyGUI_ProcessRandom(numberOfItemsToProcess);
             break;
         case 1: // Remove Curse
-            removeCurseGUIProcessRandomItem(numberOfItemsToProcess);
+            RemoveCurseGUI_ProcessRandom(numberOfItemsToProcess);
             break;
         case 2: // Repair
-            repairGUIProcessRandomItem(numberOfItemsToProcess);
+            RepairGUI_ProcessRandom(numberOfItemsToProcess);
             break;
         case 3: // Enchant Weapon
-            enchantWeaponGUIProcessRandomItem(numberOfItemsToProcess);
+            EnchantWeaponGUI_ProcessRandom(numberOfItemsToProcess);
             break;
         case 4: // Enchant Armor
-            enchantArmorGUIProcessRandomItem(numberOfItemsToProcess);
+            EnchantArmorGUI_ProcessRandom(numberOfItemsToProcess);
             break;
-        default: printlog("ERROR: itemModifyingGUIProcessRandomItem() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
+        default: printlog("ERROR: ItemModifyingGUI_ProcessRandom() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
-} // itemModifyingGUIProcessRandomItem()
+} // ItemModifyingGUI_ProcessRandom()
 
 /* ItemModifyingGUI.cpp
  * Selects the correct function to rebuild the GUI Inventory according to 'itemModifyingGUI_Type'
  */
-void ItemModifyingGUI::rebuildItemModifyingGUIInventory()
+void ItemModifyingGUI::ItemModifyingGUI_RebuildInventory()
 {
     switch ( itemModifyingGUI_Type )
     {
         case 0: // Identify
-            rebuildIdentifyGUIInventory();
+            IdentifyGUI_RebuildInventory();
             break;
         case 1: // Remove Curse
-            rebuildRemoveCurseGUIInventory();
+            RemoveCurseGUI_RebuildInventory();
             break;
         case 2: // Repair
-            rebuildRepairGUIInventory();
+            RepairGUI_RebuildInventory();
             break;
         case 3: // Enchant Weapon
-            rebuildEnchantWeaponGUIInventory();
+            EnchantWeaponGUI_RebuildInventory();
             break;
         case 4: // Enchant Armor
-            rebuildEnchantArmorGUIInventory();
+            EnchantArmorGUI_RebuildInventory();
             break;
-        default: printlog("ERROR: rebuildItemModifyingGUIInventory() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
+        default: printlog("ERROR: ItemModifyingGUI_RebuildInventory() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
-} // rebuildItemModifyingGUIInventory()
+} // ItemModifyingGUI_RebuildInventory()
 
 /* ItemModifyingGUI.cpp
  * Calls SDL_WarpMouseInWindow() to move the Mouse cursor to the currently selected GUI slot for controllers
  */
-void ItemModifyingGUI::warpMouseToSelectedGUISlot()
+void ItemModifyingGUI::WarpMouseToSelectedGUISlot()
 {
     SDL_Rect slotPos;
     slotPos.x = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
@@ -566,7 +566,7 @@ void ItemModifyingGUI::warpMouseToSelectedGUISlot()
     slotPos.y = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 16 + (slotPos.h * itemModifyingGUI_InventorySelectedSlot);
 
     SDL_WarpMouseInWindow(screen, slotPos.x + (slotPos.w / 2), slotPos.y + (slotPos.h / 2));
-} // warpMouseToSelectedGUISlot()
+} // WarpMouseToSelectedGUISlot()
 
 // ITEM MODIFYING GUI DISPLAY HANDLERS
 
@@ -574,7 +574,7 @@ void ItemModifyingGUI::warpMouseToSelectedGUISlot()
  * Handles setting up the collision bounds and checking for Mouse input on those collision bounds for each of the GUI's buttons
  * The Top Bar of the GUI used for dragging is considered a button
  */
-void ItemModifyingGUI::itemModifyingGUI_HandleButtons()
+void ItemModifyingGUI::ItemModifyingGUI_HandleButtons()
 {
     // GUI Button Collision Bounds TODOR: I may have these swapped, the lower bound may be the upper bound
     // Scroll Up Button Y
@@ -651,12 +651,12 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtons()
             }
         }
     }
-} // itemModifyingGUI_HandleButtons()
+} // ItemModifyingGUI_HandleButtons()
 
 /* ItemModifyingGUI.cpp
  * Handles setting up the collision bounds and checking for Mouse input on those collision bounds for Mouse scroll wheel input
  */
-void ItemModifyingGUI::itemModifyingGUI_HandleMouseWheel()
+void ItemModifyingGUI::ItemModifyingGUI_HandleMouseWheel()
 {
     // GUI Mouse Wheel Collision Bounds
     // Mouse Wheel Y
@@ -686,12 +686,12 @@ void ItemModifyingGUI::itemModifyingGUI_HandleMouseWheel()
             }
         }
     }
-} // itemModifyingGUI_HandleMouseWheel()
+} // ItemModifyingGUI_HandleMouseWheel()
 
 /* ItemModifyingGUI.cpp
  * Handles the actual movement of the GUI Window by modifying 'itemModifyingGUI_OffsetX/Y' when 'bIsItemModifyingGUI_Dragging' == true
  */
-void ItemModifyingGUI::itemModifyingGUI_HandleDraggingBar()
+void ItemModifyingGUI::ItemModifyingGUI_HandleDraggingBar()
 {
     // GUI Dragging
     // The GUI Window's centered position in the Game Window
@@ -730,14 +730,14 @@ void ItemModifyingGUI::itemModifyingGUI_HandleDraggingBar()
             bIsItemModifyingGUI_Dragging = false;
         }
     }
-} // itemModifyingGUI_HandleDraggingBar()
+} // ItemModifyingGUI_HandleDraggingBar()
 
 /* ItemModifyingGUI.cpp
  * @param GUIPosX - The GUI position in the center of the screen + itemModifyingGUI_OffsetX
  * @param GUIPosY - The GUI position in the center of the screen + itemModifyingGUI_OffsetY
  * Handles drawing the actual GUI button Images when they are being clicked. The unclicked versions are part of the original Image
  */
-void ItemModifyingGUI::itemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX, const Sint32 GUIPosY)
+void ItemModifyingGUI::ItemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX, const Sint32 GUIPosY)
 {
     // GUI Scroll Up Button
     if ( buttonclick == 7 )
@@ -772,49 +772,49 @@ void ItemModifyingGUI::itemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX,
         drawImage(invclose_bmp, nullptr, &GUICloseButtonRect);
         closeItemModifyingGUI();
     }
-} // itemModifyingGUI_HandleButtonImages()
+} // ItemModifyingGUI_HandleButtonImages()
 
 /* ItemModifyingGUI.cpp
  * Rebuilds the GUI Inventory before selecting the correct function to render the Images for each Item according to 'itemModifyingGUI_Type'
  */
-void ItemModifyingGUI::itemModifyingGUI_HandleItemImages()
+void ItemModifyingGUI::ItemModifyingGUI_HandleItemImages()
 {
     // Rebuild the GUI Inventory to prevent scrolling infinitely
-    rebuildItemModifyingGUIInventory();
+    ItemModifyingGUI_RebuildInventory();
 
     switch ( itemModifyingGUI_Type )
     {
         case 0: // Identify
-            identifyGUI_HandleItemImages();
+            IdentifyGUI_HandleItemImages();
             break;
         case 1: // Remove Curse
-            removeCurseGUI_HandleItemImages();
+            RemoveCurseGUI_HandleItemImages();
             break;
         case 2: // Repair
-            repairGUI_HandleItemImages();
+            RepairGUI_HandleItemImages();
             break;
         case 3: // Enchant Weapon
-            enchantWeaponGUI_HandleItemImages();
+            EnchantWeaponGUI_HandleItemImages();
             break;
         case 4: // Enchant Armor
-            enchantArmorGUI_HandleItemImages();
+            EnchantArmorGUI_HandleItemImages();
             break;
-        default: printlog("ERROR: itemModifyingGUI_HandleItemImages() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
+        default: printlog("ERROR: ItemModifyingGUI_HandleItemImages() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
     }
-} // itemModifyingGUI_HandleItemImages()
+} // ItemModifyingGUI_HandleItemImages()
 
 // IDENTIFY GUI
 
 /* ItemModifyingGUI.cpp
  * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
- * Identifies the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then identifyGUIProcessRandomItem() will be called
+ * Identifies the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then IdentifyGUI_ProcessRandom() will be called
  * Messages the Player that their Item has been Identified, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
  */
-void ItemModifyingGUI::processIdentifyGUIEffectOnItem(Item* const selectedItem)
+void ItemModifyingGUI::IdentifyGUI_Process(Item* const selectedItem)
 {
     if ( selectedItem == nullptr )
     {
-        printlog("ERROR: processIdentifyGUIEffectOnItem() - selectedItem is null.");
+        printlog("ERROR: IdentifyGUI_Process() - selectedItem is null.");
         return;
     }
 
@@ -830,15 +830,15 @@ void ItemModifyingGUI::processIdentifyGUIEffectOnItem(Item* const selectedItem)
             // Identify the selected Item and 1 random Unidentified Item in their Inventory
             selectedItem->identified = true;
             messagePlayer(clientnum, language[320], selectedItem->description()); // "Identified "%s"."
-            identifyGUIProcessRandomItem(1);
+            IdentifyGUI_ProcessRandom(1);
             break;
         case 2:
             // Identify the selected Item and 2 random Unidentified Items in their Inventory
             selectedItem->identified = true;
             messagePlayer(clientnum, language[320], selectedItem->description()); // "Identified "%s"."
-            identifyGUIProcessRandomItem(2);
+            IdentifyGUI_ProcessRandom(2);
             break;
-        default: printlog("ERROR: processIdentifyGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+        default: printlog("ERROR: IdentifyGUI_Process() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     }
 
     // If the Player used a Scroll, consume it
@@ -849,14 +849,14 @@ void ItemModifyingGUI::processIdentifyGUIEffectOnItem(Item* const selectedItem)
     }
 
     closeItemModifyingGUI();
-} // processIdentifyGUIEffectOnItem()
+} // IdentifyGUI_Process()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will either Identify or Unidentify the random Items according to 'itemModifyingGUI_ScrollBeatitude'
  * Messages the Player that their Item has been Identified or Unidentified because of the beatitude of the Scroll used
  */
-void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
+void ItemModifyingGUI::IdentifyGUI_ProcessRandom(const Uint8 numItems)
 {
     // Grab the Player's Inventory again, as it may have been modified prior to this
     list_t* playerInventoryList = &stats[clientnum]->inventory;
@@ -864,7 +864,7 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: identifyGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: IdentifyGUI_ProcessRandom() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -897,7 +897,7 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
                     totalAmountOfItems++;
                 }
                 break;
-            default: printlog("ERROR: identifyGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: IdentifyGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -991,7 +991,7 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
                         iIdentifyGUIInventoryIndex++;
                     }
                     break;
-                default: printlog("ERROR: identifyGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: IdentifyGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             // If processing is done, stop searching the Inventory
@@ -1017,22 +1017,22 @@ void ItemModifyingGUI::identifyGUIProcessRandomItem(const Uint8 numItems)
     {
         messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
-} // identifyGUIProcessRandomItem()
+} // IdentifyGUI_ProcessRandom()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
  * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
  */
-void ItemModifyingGUI::rebuildIdentifyGUIInventory()
+void ItemModifyingGUI::IdentifyGUI_RebuildInventory()
 {
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
     Uint8 iIdentifyGUIInventoryIndex = 0;
 
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: rebuildIdentifyGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: IdentifyGUI_RebuildInventory() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -1066,7 +1066,7 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
                     ++iIdentifyGUIInventoryIndex;
                 }
                 break;
-            default: printlog("ERROR: rebuildRepairGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RepairGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -1135,7 +1135,7 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
                     }
                 }
                 break;
-            default: printlog("ERROR: rebuildIdentifyGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: IdentifyGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
 
         if ( bBreakFromLoop == true )
@@ -1143,12 +1143,12 @@ void ItemModifyingGUI::rebuildIdentifyGUIInventory()
             break;
         }
     }
-} // rebuildIdentifyGUIInventory()
+} // IdentifyGUI_RebuildInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
  */
-void ItemModifyingGUI::identifyGUI_HandleItemImages()
+void ItemModifyingGUI::IdentifyGUI_HandleItemImages()
 {
     Uint8 iIdentifyGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
     Sint32 iIdentifyGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
@@ -1156,7 +1156,7 @@ void ItemModifyingGUI::identifyGUI_HandleItemImages()
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
 
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
 
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
@@ -1211,20 +1211,20 @@ void ItemModifyingGUI::identifyGUI_HandleItemImages()
             }
         }
     }
-} // identifyGUI_HandleItemImages()
+} // IdentifyGUI_HandleItemImages()
 
 // REMOVE CURSE GUI
 
 /* ItemModifyingGUI.cpp
  * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
- * Uncurses the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then identifyGUIProcessRandomItem() will be called
+ * Uncurses the selected Item based on 'itemModifyingGUI_ScrollBeatitude'. If 'itemModifyingGUI_ScrollBeatitude' is > 0 then IdentifyGUI_ProcessRandom() will be called
  * Messages the Player that their Item has been Identified, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
  */
-void ItemModifyingGUI::processRemoveCurseGUIEffectOnItem(Item* const selectedItem)
+void ItemModifyingGUI::RemoveCurseGUI_Process(Item* const selectedItem)
 {
     if ( selectedItem == nullptr )
     {
-        printlog("ERROR: processRemoveCurseGUIEffectOnItem() - selectedItem is null.");
+        printlog("ERROR: RemoveCurseGUI_Process() - selectedItem is null.");
         return;
     }
 
@@ -1240,15 +1240,15 @@ void ItemModifyingGUI::processRemoveCurseGUIEffectOnItem(Item* const selectedIte
             // Uncurse the selected Item and 1 random Cursed Item in their Inventory
             messagePlayer(clientnum, language[348], selectedItem->description()); // "Uncursed "%s"."
             selectedItem->beatitude = 0;
-            removeCurseGUIProcessRandomItem(1);
+            RemoveCurseGUI_ProcessRandom(1);
             break;
         case 2:
             // Uncurse the selected Item and 2 random Cursed Items in their Inventory
             messagePlayer(clientnum, language[348], selectedItem->description()); // "Uncursed "%s"."
             selectedItem->beatitude = 0;
-            removeCurseGUIProcessRandomItem(2);
+            RemoveCurseGUI_ProcessRandom(2);
             break;
-        default: printlog("ERROR: processRemoveCurseGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+        default: printlog("ERROR: RemoveCurseGUI_Process() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     } 
 
     // If the Player used a Scroll, consume it
@@ -1260,70 +1260,15 @@ void ItemModifyingGUI::processRemoveCurseGUIEffectOnItem(Item* const selectedIte
 
     closeItemModifyingGUI();
 
-    // TODOR: Why does the Client need to be told, this doesn't need to be networked likely
-    if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
-    {
-        // The Client needs to inform the Server that their equipment was Uncursed
-
-        // Convert the Item type to an int for the packet
-        Uint8 itemType = 0;
-        if ( selectedItem == stats[clientnum]->helmet )
-        {
-            itemType = 0;
-        }
-        else if ( selectedItem == stats[clientnum]->breastplate )
-        {
-            itemType = 1;
-        }
-        else if ( selectedItem == stats[clientnum]->gloves )
-        {
-            itemType = 2;
-        }
-        else if ( selectedItem == stats[clientnum]->shoes )
-        {
-            itemType = 3;
-        }
-        else if ( selectedItem == stats[clientnum]->shield )
-        {
-            itemType = 4;
-        }
-        else if ( selectedItem == stats[clientnum]->weapon )
-        {
-            itemType = 5;
-        }
-        else if ( selectedItem == stats[clientnum]->cloak )
-        {
-            itemType = 6;
-        }
-        else if ( selectedItem == stats[clientnum]->amulet )
-        {
-            itemType = 7;
-        }
-        else if ( selectedItem == stats[clientnum]->ring )
-        {
-            itemType = 8;
-        }
-        else if ( selectedItem == stats[clientnum]->mask )
-        {
-            itemType = 9;
-        }
-
-        strcpy((char*)net_packet->data, "RCUR");
-        net_packet->data[4] = clientnum;
-        net_packet->data[5] = itemType;
-        net_packet->address.host = net_server.host;
-        net_packet->address.port = net_server.port;
-        net_packet->len = 6;
-        sendPacketSafe(net_sock, -1, net_packet, 0);
-    }
-} // processRemoveCurseGUIEffectOnItem()
+    // The Client needs to inform the Server that their equipment was Uncursed only if they are wearing it
+} // RemoveCurseGUI_Process()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will either Uncurse or Curse the random Items according to 'itemModifyingGUI_ScrollBeatitude'
  * Messages the Player that their Item has been Uncursed or Cursed because of the beatitude of the Scroll used
  */
-void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
+void ItemModifyingGUI::RemoveCurseGUI_ProcessRandom(const Uint8 numItems)
 {
     // Grab the Player's Inventory again, as it may have been modified prior to this
     list_t* playerInventoryList = &stats[clientnum]->inventory;
@@ -1331,7 +1276,7 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: removeCurseGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: RemoveCurseGUI_ProcessRandom() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -1364,7 +1309,7 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
                     totalAmountOfItems++;
                 }
                 break;
-            default: printlog("ERROR: removeCurseGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RemoveCurseGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -1457,7 +1402,7 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
                         iRemoveCurseGUIInventoryIndex++;
                     }
                     break;
-                default: printlog("ERROR: removeCurseGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: RemoveCurseGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             // If processing is done, stop searching the Inventory
@@ -1483,22 +1428,22 @@ void ItemModifyingGUI::removeCurseGUIProcessRandomItem(const Uint8 numItems)
     {
         messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
-} // removeCurseGUIProcessRandomItem()
+} // RemoveCurseGUI_ProcessRandom()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
  * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
  */
-void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
+void ItemModifyingGUI::RemoveCurseGUI_RebuildInventory()
 {
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
     Uint8 iRemoveCurseGUIInventoryIndex = 0;
 
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: rebuildRemoveCurseGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: RemoveCurseGUI_RebuildInventory() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -1532,7 +1477,7 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
                     ++iRemoveCurseGUIInventoryIndex;
                 }
                 break;
-            default: printlog("ERROR: rebuildRepairGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RepairGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -1601,7 +1546,7 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
                     }
                 }
                 break;
-            default: printlog("ERROR: rebuildRemoveCurseGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RemoveCurseGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
 
         if ( bBreakFromLoop == true )
@@ -1609,12 +1554,12 @@ void ItemModifyingGUI::rebuildRemoveCurseGUIInventory()
             break;
         }
     }
-} // rebuildRemoveCurseGUIInventory()
+} // RemoveCurseGUI_RebuildInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
  */
-void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
+void ItemModifyingGUI::RemoveCurseGUI_HandleItemImages()
 {
     Uint8 iRemoveCurseGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
     Sint32 iRemoveCurseGUIInventoryItemOffset = (((yres / 2) - (itemModifyingGUI_IMG->h / 2)) + itemModifyingGUI_OffsetY) + 22; // The amount that each Item is offset vertically from each other
@@ -1622,7 +1567,7 @@ void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
 
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
 
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
@@ -1677,7 +1622,7 @@ void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
             }
         }
     }
-} // removeCurseGUI_HandleItemImages()
+} // RemoveCurseGUI_HandleItemImages()
 
 // REPAIR GUI
 
@@ -1689,11 +1634,11 @@ void ItemModifyingGUI::removeCurseGUI_HandleItemImages()
  * +2 Scrolls can repair all Items up to Excellent
  * Messages the Player that their Item has been Repaired, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
  */
-void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
+void ItemModifyingGUI::RepairGUI_Process(Item* const selectedItem)
 {
     if ( selectedItem == nullptr )
     {
-        printlog("ERROR: processRepairGUIEffectOnItem() - selectedItem is null.");
+        printlog("ERROR: RepairGUI_Process() - selectedItem is null.");
         return;
     }
 
@@ -1712,7 +1657,7 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
             selectedItem->status = EXCELLENT;
             messagePlayer(clientnum, language[2517], selectedItem->description()); // "Your %s looks perfect now!"
             break;
-        default: printlog("ERROR: processRepairGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+        default: printlog("ERROR: RepairGUI_Process() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     }
 
     // If the Player used a Scroll, consume it. Currently there is no Spell of Repair
@@ -1724,11 +1669,9 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
 
     closeItemModifyingGUI();
 
-    // TODOR: Why does the Client need to be told, this doesn't need to be networked likely
+    // The Client needs to inform the Server that their equipment was Repaired only if they are wearing it
     if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
     {
-        // The Client needs to inform the Server that their equipment was repaired
-
         // Convert the Item type to an int for the packet
         Uint8 itemType = 0;
         if ( selectedItem == stats[clientnum]->helmet )
@@ -1780,14 +1723,14 @@ void ItemModifyingGUI::processRepairGUIEffectOnItem(Item* const selectedItem)
         net_packet->len = 6;
         sendPacketSafe(net_sock, -1, net_packet, 0);
     }
-} // processRepairGUIEffectOnItem()
+} // RepairGUI_Process()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to Broken
  * Messages the Player that their Item has been Broken because of the beatitude of the Scroll used
  */
-void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
+void ItemModifyingGUI::RepairGUI_ProcessRandom(const Uint8 numItems)
 {
     // Grab the Player's Inventory again, as it may have been modified prior to this
     list_t* playerInventoryList = &stats[clientnum]->inventory;
@@ -1795,7 +1738,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: repairGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: RepairGUI_ProcessRandom() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -1826,7 +1769,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
                     totalAmountOfItems++;
                 }
                 break;
-            default: printlog("ERROR: repairGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RepairGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -1910,7 +1853,7 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
                         iRepairGUIInventoryIndex++;
                     }
                     break;
-                default: printlog("ERROR: repairGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: RepairGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             // If processing is done, stop searching the Inventory
@@ -1936,22 +1879,22 @@ void ItemModifyingGUI::repairGUIProcessRandomItem(const Uint8 numItems)
     {
         messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
-} // repairGUIProcessRandomItem()
+} // RepairGUI_ProcessRandom()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
  * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
  */
-void ItemModifyingGUI::rebuildRepairGUIInventory()
+void ItemModifyingGUI::RepairGUI_RebuildInventory()
 {
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
     Uint8 iRepairGUIInventoryIndex = 0;
 
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: rebuildRepairGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: RepairGUI_RebuildInventory() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -1999,7 +1942,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
                     ++iRepairGUIInventoryIndex;
                 }
                 break;
-            default: printlog("ERROR: rebuildRepairGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RepairGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -2106,7 +2049,7 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
                     }
                 }
                 break;
-            default: printlog("ERROR: rebuildRepairGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: RepairGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
 
         if ( bBreakFromLoop == true )
@@ -2114,12 +2057,12 @@ void ItemModifyingGUI::rebuildRepairGUIInventory()
             break;
         }
     }
-} // rebuildRepairGUIInventory()
+} // RepairGUI_RebuildInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
  */
-void ItemModifyingGUI::repairGUI_HandleItemImages()
+void ItemModifyingGUI::RepairGUI_HandleItemImages()
 {
     bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
     Uint8 iRepairGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
@@ -2128,7 +2071,7 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
 
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
 
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
@@ -2271,7 +2214,7 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
                         }
                     }
                     break;
-                default: printlog("ERROR: repairGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: RepairGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             if ( bBreakFromLoop == true )
@@ -2280,7 +2223,7 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
             }
         }
     }
-} // repairGUI_HandleItemImages()
+} // RepairGUI_HandleItemImages()
 
 // ENCHANT WEAPON GUI
 
@@ -2292,11 +2235,11 @@ void ItemModifyingGUI::repairGUI_HandleItemImages()
  * +2 Scrolls can raise a +0, +1, +2, +3, or +4 weapon up to +5. Raises any Artifact Weapon by one level
  * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
  */
-void ItemModifyingGUI::processEnchantWeaponGUIEffectOnItem(Item* const selectedItem)
+void ItemModifyingGUI::EnchantWeaponGUI_Process(Item* const selectedItem)
 {
     if ( selectedItem == nullptr )
     {
-        printlog("ERROR: processEnchantWeaponGUIEffectOnItem() - selectedItem is null.");
+        printlog("ERROR: EnchantWeaponGUI_Process() - selectedItem is null.");
         return;
     }
 
@@ -2327,7 +2270,7 @@ void ItemModifyingGUI::processEnchantWeaponGUIEffectOnItem(Item* const selectedI
                 selectedItem->beatitude = 5;
             }
             break;
-        default: printlog("ERROR: processEnchantWeaponGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+        default: printlog("ERROR: EnchantWeaponGUI_Process() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     }
 
     // If the Player used a Scroll, consume it. Currently there is no Spell of Enchant Weapon
@@ -2338,14 +2281,14 @@ void ItemModifyingGUI::processEnchantWeaponGUIEffectOnItem(Item* const selectedI
     }
 
     closeItemModifyingGUI();
-} // processEnchantWeaponGUIEffectOnItem()
+} // EnchantWeaponGUI_Process()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
  * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
  */
-void ItemModifyingGUI::enchantWeaponGUIProcessRandomItem(const Uint8 numItems)
+void ItemModifyingGUI::EnchantWeaponGUI_ProcessRandom(const Uint8 numItems)
 {
     // Grab the Player's Inventory again, as it may have been modified prior to this
     list_t* playerInventoryList = &stats[clientnum]->inventory;
@@ -2353,7 +2296,7 @@ void ItemModifyingGUI::enchantWeaponGUIProcessRandomItem(const Uint8 numItems)
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: enchantWeaponGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: EnchantWeaponGUI_ProcessRandom() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -2384,7 +2327,7 @@ void ItemModifyingGUI::enchantWeaponGUIProcessRandomItem(const Uint8 numItems)
                     totalAmountOfItems++;
                 }
                 break;
-            default: printlog("ERROR: enchantWeaponGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: EnchantWeaponGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -2468,7 +2411,7 @@ void ItemModifyingGUI::enchantWeaponGUIProcessRandomItem(const Uint8 numItems)
                         iEnchantWeaponGUIInventoryIndex++;
                     }
                     break;
-                default: printlog("ERROR: enchantWeaponGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: EnchantWeaponGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             // If processing is done, stop searching the Inventory
@@ -2494,22 +2437,22 @@ void ItemModifyingGUI::enchantWeaponGUIProcessRandomItem(const Uint8 numItems)
     {
         messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
-} // enchantWeaponGUIProcessRandomItem()
+} // EnchantWeaponGUI_ProcessRandom()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
  * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
  */
-void ItemModifyingGUI::rebuildEnchantWeaponGUIInventory()
+void ItemModifyingGUI::EnchantWeaponGUI_RebuildInventory()
 {
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
     Uint8 iEnchantWeaponGUIInventoryIndex = 0;
 
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: rebuildEnchantWeaponGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: EnchantWeaponGUI_RebuildInventory() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -2565,7 +2508,7 @@ void ItemModifyingGUI::rebuildEnchantWeaponGUIInventory()
                     ++iEnchantWeaponGUIInventoryIndex;
                 }
                 break;
-            default: printlog("ERROR: rebuildEnchantWeaponGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: EnchantWeaponGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -2682,7 +2625,7 @@ void ItemModifyingGUI::rebuildEnchantWeaponGUIInventory()
                     }
                 }
                 break;
-            default: printlog("ERROR: rebuildEnchantWeaponGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: EnchantWeaponGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
 
         if ( bBreakFromLoop == true )
@@ -2690,12 +2633,12 @@ void ItemModifyingGUI::rebuildEnchantWeaponGUIInventory()
             break;
         }
     }
-} // rebuildEnchantWeaponGUIInventory()
+} // EnchantWeaponGUI_RebuildInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
  */
-void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
+void ItemModifyingGUI::EnchantWeaponGUI_HandleItemImages()
 {
     bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
     Uint8 iEnchantWeaponGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
@@ -2704,7 +2647,7 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
 
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
 
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
@@ -2857,7 +2800,7 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
                         }
                     }
                     break;
-                default: printlog("ERROR: enchantWeaponGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: EnchantWeaponGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             if ( bBreakFromLoop == true )
@@ -2866,7 +2809,7 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
             }
         }
     }
-} // enchantWeaponGUI_HandleItemImages()
+} // EnchantWeaponGUI_HandleItemImages()
 
 // ENCHANT ARMOR GUI
 
@@ -2878,11 +2821,11 @@ void ItemModifyingGUI::enchantWeaponGUI_HandleItemImages()
  * +2 Scrolls can raise a +0, +1, +2, +3, or +4 Shield, Breastpiece, Helm, Boots, Gloves, Rings, or Cloaks up to +5. Raises any Artifact Armor by one level
  * Messages the Player that their Item has been Enchanted, then if the GUI was opened with a Scroll, it is consumed before closing the GUI
  */
-void ItemModifyingGUI::processEnchantArmorGUIEffectOnItem(Item* const selectedItem)
+void ItemModifyingGUI::EnchantArmorGUI_Process(Item* const selectedItem)
 {
     if ( selectedItem == nullptr )
     {
-        printlog("ERROR: processEnchantArmorGUIEffectOnItem() - selectedItem is null.");
+        printlog("ERROR: EnchantArmorGUI_Process() - selectedItem is null.");
         return;
     }
 
@@ -2913,7 +2856,7 @@ void ItemModifyingGUI::processEnchantArmorGUIEffectOnItem(Item* const selectedIt
                 selectedItem->beatitude = 5;
             }
             break;
-        default: printlog("ERROR: processEnchantArmorGUIEffectOnItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
+        default: printlog("ERROR: EnchantArmorGUI_Process() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     }
 
     // If the Player used a Scroll, consume it. Currently there is no Spell of Enchant Weapon
@@ -2924,14 +2867,14 @@ void ItemModifyingGUI::processEnchantArmorGUIEffectOnItem(Item* const selectedIt
     }
 
     closeItemModifyingGUI();
-} // processEnchantArmorGUIEffectOnItem()
+} // EnchantArmorGUI_Process()
 
 /* ItemModifyingGUI.cpp
  * @param numItems - The number of random Items to be processed. Currently this number should never exceed 2, as the highest naturally spawning Scrolls are +-2
  * Processes a random amount of valid Items equal to 'numItems'. Processing will reduce the random Items to +0
  * Messages the Player that their Item has been Disenchanted because of the beatitude of the Scroll used
  */
-void ItemModifyingGUI::enchantArmorGUIProcessRandomItem(const Uint8 numItems)
+void ItemModifyingGUI::EnchantArmorGUI_ProcessRandom(const Uint8 numItems)
 {
     // Grab the Player's Inventory again, as it may have been modified prior to this
     list_t* playerInventoryList = &stats[clientnum]->inventory;
@@ -2939,7 +2882,7 @@ void ItemModifyingGUI::enchantArmorGUIProcessRandomItem(const Uint8 numItems)
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: enchantArmorGUIProcessRandomItem() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: EnchantArmorGUI_ProcessRandom() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -2972,7 +2915,7 @@ void ItemModifyingGUI::enchantArmorGUIProcessRandomItem(const Uint8 numItems)
                     totalAmountOfItems++;
                 }
                 break;
-            default: printlog("ERROR: enchantArmorGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: EnchantArmorGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -3058,7 +3001,7 @@ void ItemModifyingGUI::enchantArmorGUIProcessRandomItem(const Uint8 numItems)
                         iEnchantArmorGUIInventoryIndex++;
                     }
                     break;
-                default: printlog("ERROR: enchantArmorGUIProcessRandomItem() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: EnchantArmorGUI_ProcessRandom() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             // If processing is done, stop searching the Inventory
@@ -3084,22 +3027,22 @@ void ItemModifyingGUI::enchantArmorGUIProcessRandomItem(const Uint8 numItems)
     {
         messagePlayer(clientnum, language[2524]); // "You have no remaining items for the scroll's curse..."
     }
-} // enchantArmorGUIProcessRandomItem()
+} // EnchantArmorGUI_ProcessRandom()
 
 /* ItemModifyingGUI.cpp
  * Builds the GUI's Inventory based off of 'itemModifyingGUI_Type' and 'itemModifyingGUI_ScrollBeatitude'
  * Counts the number of Items to add to the GUI's Inventory, then assigns the visible ones to their position in 'itemModifyingGUI_Inventory[]'
  */
-void ItemModifyingGUI::rebuildEnchantArmorGUIInventory()
+void ItemModifyingGUI::EnchantArmorGUI_RebuildInventory()
 {
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
     Uint8 iEnchantArmorGUIInventoryIndex = 0;
 
     if ( playerInventoryList == nullptr )
     {
         messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-        printlog("ERROR: rebuildEnchantArmorGUIInventory() - stats[%d]->inventory is not a valid list.", clientnum);
+        printlog("ERROR: EnchantArmorGUI_RebuildInventory() - stats[%d]->inventory is not a valid list.", clientnum);
         return;
     }
 
@@ -3174,7 +3117,7 @@ void ItemModifyingGUI::rebuildEnchantArmorGUIInventory()
                     ++iEnchantArmorGUIInventoryIndex;
                 }
                 break;
-            default: printlog("ERROR: rebuildEnchantArmorGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: EnchantArmorGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
     }
 
@@ -3306,7 +3249,7 @@ void ItemModifyingGUI::rebuildEnchantArmorGUIInventory()
                     }
                 }
                 break;
-            default: printlog("ERROR: rebuildEnchantArmorGUIInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+            default: printlog("ERROR: EnchantArmorGUI_RebuildInventory() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
         }
 
         if ( bBreakFromLoop == true )
@@ -3314,12 +3257,12 @@ void ItemModifyingGUI::rebuildEnchantArmorGUIInventory()
             break;
         }
     }
-} // rebuildEnchantArmorGUIInventory()
+} // EnchantArmorGUI_RebuildInventory()
 
 /* ItemModifyingGUI.cpp
  * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
  */
-void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
+void ItemModifyingGUI::EnchantArmorGUI_HandleItemImages()
 {
     bool bBreakFromLoop = false; // True if evaluation of drawing Images has ended (all viable Images have been processed)
     Uint8 iEnchantWeaponGUIInventoryIndex = 0; // The position in the GUI Inventory array of the given Item
@@ -3328,7 +3271,7 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
     Item* item = nullptr; // The given Item being drawn from the GUI Inventory
     SDL_Rect itemImageRect; // The position of the Image of the Item in the GUI Inventory
 
-    // Grab the Player's Inventory again, as it may have been modified by processGUIEffectOnItem()
+    // Grab the Player's Inventory again, as it may have been modified by ItemModifyingGUI_Process()
     list_t* playerInventoryList = &stats[clientnum]->inventory;
 
     for ( node_t* iInventoryNode = playerInventoryList->first; iInventoryNode != nullptr; iInventoryNode = iInventoryNode->next )
@@ -3496,7 +3439,7 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
                         }
                     }
                     break;
-                default: printlog("ERROR: enchantWeaponGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
+                default: printlog("ERROR: EnchantWeaponGUI_HandleItemImages() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds", itemModifyingGUI_ScrollBeatitude); return;
             }
 
             if ( bBreakFromLoop == true )
@@ -3505,6 +3448,6 @@ void ItemModifyingGUI::enchantArmorGUI_HandleItemImages()
             }
         }
     }
-} // enchantArmorGUI_HandleItemImages()
+} // EnchantArmorGUI_HandleItemImages()
 
 } // namespace GUI
