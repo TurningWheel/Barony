@@ -496,9 +496,9 @@ void Entity::actChest()
 				openedChest[chestclicked] = this;
                 
                 // If the ItemModifyingGUI is open, close it
-                if ( itemModifyingGUI->isActive() == true )
+                if ( itemModifyingGUI->IsGUIOpen() == true )
                 {
-                    itemModifyingGUI->closeItemModifyingGUI();
+                    itemModifyingGUI->CloseGUI();
                 }
 
 				if (chestclicked != 0 && multiplayer == SERVER)

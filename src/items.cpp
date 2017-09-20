@@ -1315,7 +1315,7 @@ void useItem(Item* item, int player)
         case SCROLL_IDENTIFY:  
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(0, item);
+                itemModifyingGUI->OpenGUI(0, item);
             }
             else if ( player == clientnum )
             {
@@ -1325,7 +1325,7 @@ void useItem(Item* item, int player)
         case SCROLL_ENCHANTWEAPON:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(3, item);
+                itemModifyingGUI->OpenGUI(3, item);
             }
             else if ( player == clientnum )
             {
@@ -1335,7 +1335,7 @@ void useItem(Item* item, int player)
         case SCROLL_ENCHANTARMOR:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(4, item);
+                itemModifyingGUI->OpenGUI(4, item);
             }
             else if ( player == clientnum )
             {
@@ -1345,7 +1345,7 @@ void useItem(Item* item, int player)
         case SCROLL_REMOVECURSE:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(1, item);
+                itemModifyingGUI->OpenGUI(1, item);
             }
             else if ( player == clientnum )
             {
@@ -1355,7 +1355,7 @@ void useItem(Item* item, int player)
         case SCROLL_REPAIR:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(2, item);
+                itemModifyingGUI->OpenGUI(2, item);
             }
             else if ( player == clientnum )
             {
@@ -1552,7 +1552,7 @@ void useItem(Item* item, int player)
 		case SCROLL_IDENTIFY:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(0, item);
+                itemModifyingGUI->OpenGUI(0, item);
             }
             else if ( player == clientnum )
             {
@@ -1572,7 +1572,7 @@ void useItem(Item* item, int player)
 		case SCROLL_ENCHANTWEAPON:
 			if ( !players[player]->entity->isBlind() )
 			{
-                itemModifyingGUI->openItemModifyingGUI(3, item);
+                itemModifyingGUI->OpenGUI(3, item);
 			}
             else if ( player == clientnum )
             {
@@ -1582,7 +1582,7 @@ void useItem(Item* item, int player)
 		case SCROLL_ENCHANTARMOR:
 			if ( !players[player]->entity->isBlind() )
 			{
-                itemModifyingGUI->openItemModifyingGUI(4, item);
+                itemModifyingGUI->OpenGUI(4, item);
             }
             else if(player == clientnum)
             {
@@ -1592,7 +1592,7 @@ void useItem(Item* item, int player)
 		case SCROLL_REMOVECURSE:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(1, item);
+                itemModifyingGUI->OpenGUI(1, item);
             }
             else if ( player == clientnum )
             {
@@ -1623,7 +1623,7 @@ void useItem(Item* item, int player)
 		case SCROLL_REPAIR:
             if ( !players[player]->entity->isBlind() )
             {
-                itemModifyingGUI->openItemModifyingGUI(2, item);
+                itemModifyingGUI->OpenGUI(2, item);
             }
             else if ( player == clientnum )
             {

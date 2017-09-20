@@ -670,7 +670,7 @@ bool GameController::handleShopMovement()
  * @returns true - If the cursor has been moved using the D-Pad
  * @returns false - If the cursor has not been moved or 'itemMenuOpen' == true
  * The cursor has been moved if '*joyimpulses[INJOY_DPAD_UP]' or '*joyimpulses[INJOY_DPAD_DOWN]' is true
- * If the cursor has been moved, itemModifyingGUI->gamepadMoveCursor() will be called. 'draw_cursor' will be set to false as well
+ * If the cursor has been moved, itemModifyingGUI->Gamepad_MoveCursor() will be called. 'draw_cursor' will be set to false as well
  */
 bool GameController::handleItemModifyingGUIMovement()
 {
@@ -699,7 +699,7 @@ bool GameController::handleItemModifyingGUIMovement()
     if ( wasDPadPressed == true )
     {
         // Move the cursor to the new slot position
-        itemModifyingGUI->gamepadMoveCursor(direction);
+        itemModifyingGUI->Gamepad_MoveCursor(direction);
 
         //draw_cursor = false; TODOR: Ask why this matters
 

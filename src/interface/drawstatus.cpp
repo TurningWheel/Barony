@@ -538,7 +538,7 @@ void drawStatus()
 			{
 				if ( !shootmode && mouseInBounds(pos.x, pos.x + hotbar_img->w, pos.y, pos.y + hotbar_img->h) )
 				{
-					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && (itemModifyingGUI->isActive() == false)) && !selectedItem) )
+					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && (itemModifyingGUI->IsGUIOpen() == false)) && !selectedItem) )
 					{
 						toggleclick = false;
 						if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
@@ -555,7 +555,7 @@ void drawStatus()
 							}
 							hotbar[num].item = 0;
 
-							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && (itemModifyingGUI->isActive() == false) )
+							if ( *inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && (itemModifyingGUI->IsGUIOpen() == false) )
 							{
 								*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) = 0;
 								//itemSelectBehavior = BEHAVIOR_GAMEPAD;
@@ -565,7 +565,7 @@ void drawStatus()
 							}
 						}
 					}
-					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && (itemModifyingGUI->isActive() == false)) )
+					if ( mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && (itemModifyingGUI->IsGUIOpen() == false)) )
 					{
 						//Use the item if right clicked.
 						mousestatus[SDL_BUTTON_RIGHT] = 0;
@@ -837,27 +837,27 @@ void drawStatus()
 
 		bool bumper_moved = false;
 		//Gamepad change hotbar selection.
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->isActive() == false) )
+		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->IsGUIOpen() == false) )
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_NEXT]) = 0;
 			selectHotbarSlot(current_hotbar + 1);
 			bumper_moved = true;
 		}
-		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->isActive() == false) )
+		if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->IsGUIOpen() == false) )
 		{
 			*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_PREV]) = 0;
 			selectHotbarSlot(current_hotbar - 1);
 			bumper_moved = true;
 		}
 
-		if ( bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->isActive() == false) )
+		if ( bumper_moved && !itemMenuOpen && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->IsGUIOpen() == false) )
 		{
 			warpMouseToSelectedHotbarSlot();
 		}
 
 		if ( !itemMenuOpen && !selectedItem && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) )
 		{
-			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->isActive() == false) )
+			if ( shootmode && *inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) && !openedChest[clientnum] && gui_mode != (GUI_MODE_SHOP) && !book_open && (itemModifyingGUI->IsGUIOpen() == false) )
 			{
 				//Activate a hotbar slot if in-game.
 				*inputPressed(joyimpulses[INJOY_GAME_HOTBAR_ACTIVATE]) = 0;

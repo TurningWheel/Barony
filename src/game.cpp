@@ -2700,9 +2700,9 @@ int main(int argc, char** argv)
 						gui_mode = GUI_MODE_INVENTORY;
 
                         // If the ItemModifyingGUI is open, close it
-                        if ( itemModifyingGUI->isActive() == true )
+                        if ( itemModifyingGUI->IsGUIOpen() == true )
                         {
-                            itemModifyingGUI->closeItemModifyingGUI();
+                            itemModifyingGUI->CloseGUI();
                         }
 
 						if ( shopkeeper != 0 )
@@ -2807,9 +2807,9 @@ int main(int argc, char** argv)
 						else
 						{
                             // If the ItemModifyingGUI is open, close it
-                            if ( itemModifyingGUI->isActive() == true )
+                            if ( itemModifyingGUI->IsGUIOpen() == true )
                             {
-                                itemModifyingGUI->closeItemModifyingGUI();
+                                itemModifyingGUI->CloseGUI();
                             }
 
                             shootmode = true;
@@ -3037,9 +3037,9 @@ int main(int argc, char** argv)
 					    //2-3 years later...yes, it is run every frame.
 
                         // If the ItemModifyingGUI is open, close it
-                        if ( itemModifyingGUI->isActive() == true )
+                        if ( itemModifyingGUI->IsGUIOpen() == true )
                         {
-                            itemModifyingGUI->closeItemModifyingGUI();
+                            itemModifyingGUI->CloseGUI();
                         }
 
 						if ( book_open )
@@ -3070,7 +3070,7 @@ int main(int argc, char** argv)
 							updateCharacterSheet();
 							updatePlayerInventory();
 							updateChestInventory();
-                            itemModifyingGUI->updateItemModifyingGUI();
+                            itemModifyingGUI->UpdateGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 

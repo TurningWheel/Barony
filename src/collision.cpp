@@ -76,9 +76,9 @@ Entity* entityClicked()
                 return nullptr;    //Click falls inside the chest inventory GUI.
             }
         }
-        if ( itemModifyingGUI->isActive() == true )
+        if ( itemModifyingGUI->IsGUIOpen() == true )
         {
-            if ( itemModifyingGUI->isMouseWithinGUIBounds() == true )
+            if ( itemModifyingGUI->IsMouseWithinGUIBounds() == true )
             {
                 return nullptr; // Click falls within the itemModifyingGUI's bounds
             }

@@ -323,7 +323,7 @@ static const int SCANCODE_UNASSIGNED_BINDING = 399;
 // TODOR: I'm not sure why this is the intended behavior. I believe this should be reworked to be more user friendly
 inline bool hotbarGamepadControlEnabled()
 {
-    return (!openedChest[clientnum] && gui_mode != GUI_MODE_SHOP); // && itemModifyingGUI->isActive() == false); // TODOR: This cannot be done as the function is inline
+    return (!openedChest[clientnum] && gui_mode != GUI_MODE_SHOP); // && itemModifyingGUI->IsGUIOpen() == false); // TODOR: This cannot be done as the function is inline
 }
 
 extern SDL_Surface *str_bmp64u;

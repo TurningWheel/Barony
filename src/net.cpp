@@ -1532,9 +1532,9 @@ void clientHandlePacket()
 		shopitemscroll = 0;
         
         // If the ItemModifyingGUI is open, close it
-        if ( itemModifyingGUI->isActive() == true )
+        if ( itemModifyingGUI->IsGUIOpen() == true )
         {
-            itemModifyingGUI->closeItemModifyingGUI();
+            itemModifyingGUI->CloseGUI();
         }
 
 		//Initialize shop gamepad code here.
@@ -2353,9 +2353,9 @@ void clientHandlePacket()
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
                 
                 // If the ItemModifyingGUI is open, close it
-                if ( itemModifyingGUI->isActive() == true )
+                if ( itemModifyingGUI->IsGUIOpen() == true )
                 {
-                    itemModifyingGUI->closeItemModifyingGUI();
+                    itemModifyingGUI->CloseGUI();
                 }
 
 				list_FreeAll(&chestInv);
@@ -2601,7 +2601,7 @@ void clientHandlePacket()
     {
         // data[4] = The type of ItemModifyingGUI to open
         // 0 is Identify GUI, 1 is Remove Curse GUI
-        itemModifyingGUI->openItemModifyingGUI(net_packet->data[4], nullptr);
+        itemModifyingGUI->OpenGUI(net_packet->data[4], nullptr);
         return;
     } // "CIMG" - Client Open ItemModifyingGUI
 

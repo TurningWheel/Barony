@@ -51,9 +51,9 @@ void clickDescription(int player, Entity* entity)
                 return;    //Click falls inside the chest inventory GUI.
             }
         }
-        if ( itemModifyingGUI->isActive() == true )
+        if ( itemModifyingGUI->IsGUIOpen() == true )
         {
-            if ( itemModifyingGUI->isMouseWithinGUIBounds() == true )
+            if ( itemModifyingGUI->IsMouseWithinGUIBounds() == true )
             {
                 return; // Click falls within the itemModifyingGUI's bounds
             }
