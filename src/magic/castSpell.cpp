@@ -525,23 +525,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_identify.name))
 		{
-			for (i = 0; i < numplayers; ++i)
+            // Find the Client that is casting the Spell
+			for ( Uint8 iClientPlayerIndex = 0; iClientPlayerIndex < numplayers; ++iClientPlayerIndex )
 			{
-				if (caster == players[i]->entity)
+				if ( caster == players[iClientPlayerIndex]->entity )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					if (i != 0)
+
+                    // If the Client is not the Host, send a packet to tell open the ItemModifyingGUI
+					if ( iClientPlayerIndex != 0 )
 					{
-						//Tell the client to identify an item.
-						strcpy((char*)net_packet->data, "IDEN");
-						net_packet->address.host = net_clients[i - 1].host;
-						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+						// data[4] = The type of ItemModifyingGUI to open. 0 is Identify GUI
+						strcpy((char*)net_packet->data, "CIMG");
+                        net_packet->data[4] = 0;
+						net_packet->address.host = net_clients[iClientPlayerIndex - 1].host;
+						net_packet->address.port = net_clients[iClientPlayerIndex - 1].port;
+						net_packet->len = 5;
+						sendPacketSafe(net_sock, -1, net_packet, iClientPlayerIndex - 1);
 					}
 					else
 					{
-						//Identify an item.
+						// Open ItemModifyingGUI as Identify GUI
                         itemModifyingGUI->openItemModifyingGUI(0, nullptr);
 					}
 				}
@@ -551,23 +555,27 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 		else if (!strcmp(element->name, spellElement_removecurse.name))
 		{
-			for (i = 0; i < numplayers; ++i)
+            // Find the Client that is casting the Spell
+			for ( Uint8 iClientPlayerIndex = 0; iClientPlayerIndex < numplayers; ++iClientPlayerIndex )
 			{
-				if (caster == players[i]->entity)
+				if ( caster == players[iClientPlayerIndex]->entity )
 				{
 					spawnMagicEffectParticles(caster->x, caster->y, caster->z, 169);
-					if (i != 0)
+
+                    // If the Client is not the Host, send a packet to tell open the ItemModifyingGUI
+					if ( iClientPlayerIndex != 0 )
 					{
-						//Tell the client to uncurse an item.
-						strcpy((char*)net_packet->data, "RCUR"); //TODO: Send a different packet, to pop open the remove curse GUI.
-						net_packet->address.host = net_clients[i - 1].host;
-						net_packet->address.port = net_clients[i - 1].port;
-						net_packet->len = 4;
-						sendPacketSafe(net_sock, -1, net_packet, i - 1);
+                        // data[4] = The type of ItemModifyingGUI to open. 1 is Remove Curse GUI
+						strcpy((char*)net_packet->data, "CIMG");
+                        net_packet->data[4] = 1;
+						net_packet->address.host = net_clients[iClientPlayerIndex - 1].host;
+						net_packet->address.port = net_clients[iClientPlayerIndex - 1].port;
+						net_packet->len = 5;
+						sendPacketSafe(net_sock, -1, net_packet, iClientPlayerIndex - 1);
 					}
 					else
 					{
-						//Uncurse an item
+                        // Open ItemModifyingGUI as Remove Curse GUI
                         itemModifyingGUI->openItemModifyingGUI(1, nullptr);
 					}
 				}
