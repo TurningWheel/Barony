@@ -1309,6 +1309,61 @@ void useItem(Item* item, int player)
 		}
 	}
 
+    // 9-15-2017 - Lutz GUI Refactor - This is a quick hack to make itemModifyingGUI's work, it will need to be replaced with a refactor of net code/useItem later
+    switch ( item->type )
+    {
+        case SCROLL_IDENTIFY:  
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(0, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
+            return;
+        case SCROLL_ENCHANTWEAPON:
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(3, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
+            return;
+        case SCROLL_ENCHANTARMOR:
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(4, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
+            return;
+        case SCROLL_REMOVECURSE:
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(1, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
+            return;
+        case SCROLL_REPAIR:
+            if ( !players[player]->entity->isBlind() )
+            {
+                itemModifyingGUI->openItemModifyingGUI(2, item);
+            }
+            else if ( player == clientnum )
+            {
+                messagePlayer(player, language[775]);
+            }
+            return;
+    }
+
 	if ( multiplayer == CLIENT && !intro )
 	{
 		strcpy((char*)net_packet->data, "USEI");
