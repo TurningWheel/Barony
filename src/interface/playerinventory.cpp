@@ -588,13 +588,30 @@ void releaseItem(int x, int y) //TODO: This function uses toggleclick. Conflict 
 				}
 				else
 				{
+                    // Let go of Item outside of the Inventory
 					if (selectedItem->count > 1)
 					{
+                        // Item being held is a stack of Items, drop one at a time
+
+                        // If the Item is currently being Appraised, stop the appraisal
+                        if ( appraisalGUI->IsItemBeingAppraised(selectedItem) == true )
+                        {
+                            appraisalGUI->CloseGUI();
+                        }
+
 						dropItem(selectedItem, clientnum);
 						toggleclick = true;
 					}
 					else
 					{
+                        // Item being held is a single Item, drop it
+
+                        // If the Item is currently being Appraised, stop the appraisal
+                        if ( appraisalGUI->IsItemBeingAppraised(selectedItem) == true )
+                        {
+                            appraisalGUI->CloseGUI();
+                        }
+
 						dropItem(selectedItem, clientnum);
 						selectedItem = NULL;
 						toggleclick = false;
@@ -1096,15 +1113,31 @@ void updatePlayerInventory()
 					if ( *inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) && !itemMenuOpen && !selectedItem && selectedChestSlot < 0 && selectedShopSlot < 0 && itemModifyingGUI->IsSelectedSlotInvalid() )
 					{
 						*inputPressed(joyimpulses[INJOY_MENU_DROP_ITEM]) = 0;
+
+                        // If the Item is currently being Appraised, stop the appraisal
+                        if ( appraisalGUI->IsItemBeingAppraised(item) == true )
+                        {
+                            appraisalGUI->CloseGUI();
+                        }
+
 						dropItem(item, clientnum);
 					}
 
 					// handle clicking
 					if ( (mousestatus[SDL_BUTTON_LEFT] || (*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK]) && selectedChestSlot < 0 && selectedShopSlot < 0 && itemModifyingGUI->IsSelectedSlotInvalid() )) && !selectedItem && !itemMenuOpen )
 					{
+                        // If the User presses Shift + Left Click, drop the Item they have selected
 						if ( !(*inputPressed(joyimpulses[INJOY_MENU_LEFT_CLICK])) && (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) )
 						{
-							dropItem(item, clientnum); // Quick item drop
+                            mousestatus[SDL_BUTTON_LEFT] = 0;
+
+                            // If the Item is currently being Appraised, stop the appraisal
+                            if ( appraisalGUI->IsItemBeingAppraised(item) == true )
+                            {
+                                appraisalGUI->CloseGUI();
+                            }
+
+							dropItem(item, clientnum); // Drop the Item
 						}
 						else
 						{
@@ -1126,16 +1159,16 @@ void updatePlayerInventory()
 					}
 					else if ( (mousestatus[SDL_BUTTON_RIGHT] || (*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0 && selectedShopSlot < 0 && itemModifyingGUI->IsSelectedSlotInvalid() )) && !itemMenuOpen && !selectedItem )
 					{
+                        // If the User presses Shift + Right Click, start appraising the Item they have selected
 						if ( (keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT]) && !(*inputPressed(joyimpulses[INJOY_MENU_USE]) && selectedChestSlot < 0) ) //TODO: selected shop slot, identify, remove curse?
 						{
-							// auto-appraise the item
-							identifygui_active = false;
-							identifygui_appraising = true;
-							identifyGUIIdentify(item);
-							mousestatus[SDL_BUTTON_RIGHT] = 0;
+                            mousestatus[SDL_BUTTON_RIGHT] = 0;
 
-							//Cleanup identify GUI gamecontroller code here.
-							selectedIdentifySlot = -1;
+                            // Don't starting appraising if the Item is already being appraised
+                            if ( appraisalGUI->IsItemBeingAppraised(item) == false )
+                            {
+                                appraisalGUI->OpenGUI(item, players[clientnum]->entity);
+                            }
 						}
 						else
 						{
@@ -1490,16 +1523,14 @@ inline void executeItemMenuOption1(Item* item, bool is_potion_bad = false)
 		return;
 	}
 
+    // If the Item is not a Potion, the second Tooltip Option is "Appraise"
 	if (itemCategory(item) != POTION)
 	{
-		//Option 1 = appraise.
-		identifygui_active = false;
-		identifygui_appraising = true;
-
-		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot = -1;
-
-		identifyGUIIdentify(item);
+        // Don't starting appraising if the Item is already being appraised
+        if ( appraisalGUI->IsItemBeingAppraised(item) == false )
+        {
+            appraisalGUI->OpenGUI(item, players[clientnum]->entity);
+        }
 	}
 	else
 	{
@@ -1538,32 +1569,41 @@ inline void executeItemMenuOption2(Item* item)
 		return;
 	}
 
+    // If the Item is not a Potion, the third Tooltip Option is "Drop"
 	if (itemCategory(item) != POTION)
 	{
-		//Option 2 = drop.
+        // If the Item is currently being Appraised, stop the appraisal
+        if ( appraisalGUI->IsItemBeingAppraised(item) == true )
+        {
+            appraisalGUI->CloseGUI();
+        }
+
 		dropItem(item, clientnum);
 	}
 	else
 	{
-		//Option 2 = appraise.
-		identifygui_active = false;
-		identifygui_appraising = true;
-
-		//Cleanup identify GUI gamecontroller code here.
-		selectedIdentifySlot = -1;
-
-		identifyGUIIdentify(item);
+        // Don't starting appraising if the Item is already being appraised
+        if ( appraisalGUI->IsItemBeingAppraised(item) == false )
+        {
+            appraisalGUI->OpenGUI(item, players[clientnum]->entity);
+        }
 	}
 }
 
 inline void executeItemMenuOption3(Item* item)
 {
+    // Only Potions have four Tooltip Options, the fourth being "Drop"
 	if (!item || itemCategory(item) != POTION)
 	{
 		return;
 	}
 
-	//Option 3 = drop (only potions have option 3).
+    // If the Item is currently being Appraised, stop the appraisal
+    if ( appraisalGUI->IsItemBeingAppraised(item) == true )
+    {
+        appraisalGUI->CloseGUI();
+    }
+
 	dropItem(item, clientnum);
 }
 
