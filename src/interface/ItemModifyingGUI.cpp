@@ -36,8 +36,8 @@ ItemModifyingGUI::ItemModifyingGUI() :
 
 ItemModifyingGUI::~ItemModifyingGUI()
 {
-    closeItemModifyingGUI();
-    freeGUIImage();
+    CloseGUI();
+    FreeImage();
 } // ~ItemModifyingGUI()
 
 /* ItemModifyingGUI.cpp
@@ -48,12 +48,12 @@ ItemModifyingGUI::~ItemModifyingGUI()
  * If a ItemModifyingGUI is already opened, it will be closed before opening the new one
  * If a Unidentified Scroll is used, it will be Identified here and message the Player accordingly
  */
-void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scrollUsed)
+void ItemModifyingGUI::OpenGUI(const Uint8 GUIType, Item* const scrollUsed)
 {
     // If a GUI is already opened, close the GUI before opening the new one
     if ( bIsActive == true )
     {
-        closeItemModifyingGUI();
+        CloseGUI();
     }
 
     // Initialize the values for the GUI
@@ -92,7 +92,7 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
                 case 4: // Enchant Armor
                     messagePlayer(clientnum, language[2504]); // "This is a scroll of Enchant armor!"
                     break;
-                default: printlog("ERROR: updateItemModifyingGUI() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
+                default: printlog("ERROR: UpdateGUI() - itemModifyingGUI_Type (%s) out of bounds.", itemModifyingGUI_Type); return;
             }
         }
     }
@@ -111,16 +111,16 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
             // Somehow, a Spell has been used to open the GUI, but was also Cursed, this should never happen, because Spells cannot be Cursed
             if ( itemModifyingGUI_ScrollUsed == nullptr )
             {
-                printlog("ERROR: updateItemModifyingGUI() - A Cursed Spell has opened the GUI. This should never happen.");
+                printlog("ERROR: UpdateGUI() - A Cursed Spell has opened the GUI. This should never happen.");
                 return;
             }
 
             consumeItem(itemModifyingGUI_ScrollUsed);
-            closeItemModifyingGUI();
+            CloseGUI();
             return;
         }
         messagePlayer(clientnum, language[2500]); // "There are no valid items to use this on!"
-        closeItemModifyingGUI();
+        CloseGUI();
         return;
     }
     else
@@ -132,18 +132,18 @@ void ItemModifyingGUI::openItemModifyingGUI(const Uint8 GUIType, Item* const scr
         // If the Scroll is Cursed, don't warp the Mouse
         if ( itemModifyingGUI_ScrollBeatitude >= 0 )
         {
-            // The actual logic is handled by updateItemModifyingGUI()
+            // The actual logic is handled by UpdateGUI()
             itemModifyingGUI_InventorySelectedSlot = 0;
             WarpMouseToSelectedGUISlot();
         }
     }
-} // openItemModifyingGUI()
+} // OpenGUI()
 
 /* ItemModifyingGUI.cpp
  * Handles the Drawing of the GUI, along with setting up and processing the Mouse input collision bounds through their various function calls
  * Handles the GUI Inventory slot bounds and Mouse input to call ItemModifyingGUI_Process()
  */
-void ItemModifyingGUI::updateItemModifyingGUI()
+void ItemModifyingGUI::UpdateGUI()
 {
     // If the GUI is not active, there is no reason to go further
     if ( bIsActive != true )
@@ -159,7 +159,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         if ( playerInventoryList == nullptr )
         {
             messagePlayer(0, "Warning: stats[%d]->inventory is not a valid list. This should not happen.", clientnum);
-            printlog("ERROR: updateItemModifyingGUI() - stats[%d]->inventory is not a valid list.", clientnum);
+            printlog("ERROR: UpdateGUI() - stats[%d]->inventory is not a valid list.", clientnum);
             return;
         }
 
@@ -253,7 +253,7 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         if ( itemModifyingGUI_ScrollUsed == nullptr )
         {
             // Somehow, a Spell has been used to open the GUI, but was also Cursed, this should never happen, because Spells cannot be Cursed
-            printlog("ERROR: updateItemModifyingGUI() - A Cursed Spell has opened the GUI. This should never happen.");
+            printlog("ERROR: UpdateGUI() - A Cursed Spell has opened the GUI. This should never happen.");
             return;
         }
 
@@ -262,14 +262,14 @@ void ItemModifyingGUI::updateItemModifyingGUI()
         ItemModifyingGUI_ProcessRandom();
 
         consumeItem(itemModifyingGUI_ScrollUsed);
-        closeItemModifyingGUI();
+        CloseGUI();
     }
-} // updateItemModifyingGUI()
+} // UpdateGUI()
 
 /* ItemModifyingGUI.cpp
  * Resets all member variables back to their base states
  */
-void ItemModifyingGUI::closeItemModifyingGUI()
+void ItemModifyingGUI::CloseGUI()
 {
     bIsActive = false;
     bIsCursed = false;
@@ -284,13 +284,13 @@ void ItemModifyingGUI::closeItemModifyingGUI()
     {
         itemModifyingGUI_Inventory[i] = nullptr;
     }
-} // closeItemModifyingGUI()
+} // CloseGUI()
 
 /* ItemModifyingGUI.cpp
  * @param direction - Will either be -1 for Up or 1 for Down. The direction in which the User wants to move the cursor
  * Called by GameController::handleItemModifyingGUIMovement(). Evaluates the requested movement, updating 'itemModifyingGUI_InventorySelectedSlot' as needed
  */
-void ItemModifyingGUI::gamepadMoveCursor(Sint8 direction)
+void ItemModifyingGUI::Gamepad_MoveCursor(Sint8 direction)
 {
     // Up will be -1, Down will be 1
     Sint8 newSlot = itemModifyingGUI_InventorySelectedSlot + direction;
@@ -340,7 +340,7 @@ void ItemModifyingGUI::gamepadMoveCursor(Sint8 direction)
         if ( itemModifyingGUI_InventorySelectedSlot >= NUM_ITEM_MODIFYING_GUI_ITEMS - 1 )
         {
             // Covers cases 2 & 3
-            itemModifyingGUI_InventoryScrollOffset++; // itemModifyingGUI_InventoryScrollOffset is automatically sanitized in updateItemModifyingGUI()
+            itemModifyingGUI_InventoryScrollOffset++; // itemModifyingGUI_InventoryScrollOffset is automatically sanitized in UpdateGUI()
         }
         else
         {
@@ -371,7 +371,7 @@ void ItemModifyingGUI::gamepadMoveCursor(Sint8 direction)
 /* ItemModifyingGUI.cpp
  * @returns 'bIsActive'
  */
-bool ItemModifyingGUI::isActive() const
+bool ItemModifyingGUI::IsGUIOpen() const
 {
     return bIsActive;
 }
@@ -381,9 +381,9 @@ bool ItemModifyingGUI::isActive() const
  * @returns true - If the Player's Inventory has valid Items for processing
  * @returns false - If the Player's Inventory has no valid Items for processing
  * The main usage of this function is to prevent a Spell from being cast needlessly
- * Sets 'itemModifyingGUI_Type' = @GUIType. 'itemModifyingGUI_Type' is set back to default value before returning via closeItemModifyingGUI()
+ * Sets 'itemModifyingGUI_Type' = @GUIType. 'itemModifyingGUI_Type' is set back to default value before returning via CloseGUI()
  */
-bool ItemModifyingGUI::areThereValidItems(const Uint8 GUIType)
+bool ItemModifyingGUI::AreThereValidItems(const Uint8 GUIType)
 {
     itemModifyingGUI_Type = GUIType;
 
@@ -394,22 +394,22 @@ bool ItemModifyingGUI::areThereValidItems(const Uint8 GUIType)
     if ( itemModifyingGUI_Inventory[0] == nullptr )
     {
         messagePlayer(clientnum, language[2500]); // "There are no valid items to use this on!"
-        closeItemModifyingGUI(); // Reset all values to prevent any crossover
+        CloseGUI(); // Reset all values to prevent any crossover
         return false;
     }
     else
     {
-        closeItemModifyingGUI(); // Reset all values to prevent any crossover
+        CloseGUI(); // Reset all values to prevent any crossover
         return true;
     }
-} // areThereValidItems()
+} // AreThereValidItems()
 
 /* ItemModifyingGUI.cpp
  * @returns true - If 'itemModifyingGUI_InventorySelectedSlot' is < 0
  * @returns false - If 'itemModifyingGUI_InventorySelectedSlot' is 0 or greater
  * Returns whether or not the mouse is currently hovering over a GUI Inventory Slot
  */
-bool ItemModifyingGUI::isSelectedSlotInvalid() const
+bool ItemModifyingGUI::IsSelectedSlotInvalid() const
 {
     return (itemModifyingGUI_InventorySelectedSlot < 0);
 }
@@ -419,7 +419,7 @@ bool ItemModifyingGUI::isSelectedSlotInvalid() const
  * @returns false - If the Mouse is not within the bounds of the GUI
  * Returns whether or not the Mouse is currently within the bounds of the ItemModifyingGUI
  */
-bool ItemModifyingGUI::isMouseWithinGUIBounds() const
+bool ItemModifyingGUI::IsMouseWithinGUIBounds() const
 {
     // Draw the GUI Background at the center of the Game Window + it's offset
     const Sint32 GUIX = (((xres / 2) - (itemModifyingGUI_IMG->w / 2)) + itemModifyingGUI_OffsetX);
@@ -431,12 +431,12 @@ bool ItemModifyingGUI::isMouseWithinGUIBounds() const
     }
 
     return false;
-} // isMouseWithinGUIBounds()
+} // IsMouseWithinGUIBounds()
 
 /* ItemModifyingGUI.cpp
  * Called by freeInterfaceResources(). Frees 'itemModifyingGUI_IMG' using SDL_FreeSurface()
  */
-void ItemModifyingGUI::freeGUIImage()
+void ItemModifyingGUI::FreeImage()
 {
     if ( itemModifyingGUI_IMG != nullptr )
     {
@@ -770,7 +770,7 @@ void ItemModifyingGUI::ItemModifyingGUI_HandleButtonImages(const Sint32 GUIPosX,
         GUICloseButtonRect.w = 0;
         GUICloseButtonRect.h = 0;
         drawImage(invclose_bmp, nullptr, &GUICloseButtonRect);
-        closeItemModifyingGUI();
+        CloseGUI();
     }
 } // ItemModifyingGUI_HandleButtonImages()
 
@@ -848,7 +848,7 @@ void ItemModifyingGUI::IdentifyGUI_Process(Item* const selectedItem)
         itemModifyingGUI_ScrollUsed = nullptr;
     }
 
-    closeItemModifyingGUI();
+    CloseGUI();
 } // IdentifyGUI_Process()
 
 /* ItemModifyingGUI.cpp
@@ -1258,7 +1258,7 @@ void ItemModifyingGUI::RemoveCurseGUI_Process(Item* const selectedItem)
         itemModifyingGUI_ScrollUsed = nullptr;
     }
 
-    closeItemModifyingGUI();
+    CloseGUI();
 
     // The Client needs to inform the Server that their equipment was changed only if they have it equipped
     if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
@@ -1758,7 +1758,7 @@ void ItemModifyingGUI::RepairGUI_Process(Item* const selectedItem)
         itemModifyingGUI_ScrollUsed = nullptr;
     }
 
-    closeItemModifyingGUI();
+    CloseGUI();
 
     // The Client needs to inform the Server that their equipment was changed only if they have it equipped
     if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
@@ -2397,7 +2397,7 @@ void ItemModifyingGUI::EnchantWeaponGUI_Process(Item* const selectedItem)
         itemModifyingGUI_ScrollUsed = nullptr;
     }
 
-    closeItemModifyingGUI();
+    CloseGUI();
 
     // The Client needs to inform the Server that their equipment was changed only if they have it equipped
     if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
@@ -3024,7 +3024,7 @@ void ItemModifyingGUI::EnchantArmorGUI_Process(Item* const selectedItem)
         itemModifyingGUI_ScrollUsed = nullptr;
     }
 
-    closeItemModifyingGUI();
+    CloseGUI();
 
     // The Client needs to inform the Server that their equipment was changed only if they have it equipped
     if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )

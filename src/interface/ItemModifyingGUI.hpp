@@ -32,49 +32,49 @@ public:
      * If a ItemModifyingGUI is already opened, it will be closed before opening the new one
      * If a Unidentified Scroll is used, it will be Identified here and message the Player accordingly
      */
-    void openItemModifyingGUI(const Uint8 GUIType, Item* const scrollUsed);
+    void OpenGUI(const Uint8 GUIType, Item* const scrollUsed);
     /* ItemModifyingGUI.cpp
      * Handles the Drawing of the GUI, along with setting up and processing the Mouse input collision bounds through their various function calls
      * Handles the GUI Inventory slot bounds and Mouse input to call ItemModifyingGUI_Process()
      */
-    void updateItemModifyingGUI();
+    void UpdateGUI();
     /* ItemModifyingGUI.cpp
      * Resets all member variables back to their base states
      */
-    void closeItemModifyingGUI();
+    void CloseGUI();
     /* ItemModifyingGUI.cpp
      * @param direction - Will either be -1 for Up or 1 for Down. The direction in which the User wants to move the cursor
      * Called by GameController::handleItemModifyingGUIMovement(). Evaluates the requested movement, updating 'itemModifyingGUI_InventorySelectedSlot' as needed
      */
-    void gamepadMoveCursor(Sint8 direction);
+    void Gamepad_MoveCursor(Sint8 direction);
     /* ItemModifyingGUI.cpp
      * @returns 'bIsActive'
      */
-    bool isActive() const;
+    bool IsGUIOpen() const;
     /* ItemModifyingGUI.cpp
      * @param GUIType - The type of GUI to be opened: 0,1,2,3,4 - Identify, Remove Curse, Repair, Enchant Weapon, Enchant Armor
      * @returns true - If the Player's Inventory has valid Items for processing
      * @returns false - If the Player's Inventory has no valid Items for processing
      * The main usage of this function is to prevent a Spell from being cast needlessly
-     * Sets 'itemModifyingGUI_Type' = @GUIType. 'itemModifyingGUI_Type' is set back to default value before returning via closeItemModifyingGUI()
+     * Sets 'itemModifyingGUI_Type' = @GUIType. 'itemModifyingGUI_Type' is set back to default value before returning via CloseGUI()
      */
-    bool areThereValidItems(const Uint8 GUIType);
+    bool AreThereValidItems(const Uint8 GUIType);
     /* ItemModifyingGUI.cpp
      * @returns true - If 'itemModifyingGUI_InventorySelectedSlot' is < 0
      * @returns false - If 'itemModifyingGUI_InventorySelectedSlot' is 0 or greater
      * Returns whether or not the mouse is currently hovering over a GUI Inventory Slot
      */
-    bool isSelectedSlotInvalid() const;
+    bool IsSelectedSlotInvalid() const;
     /* ItemModifyingGUI.cpp
      * @returns true - If the Mouse is currently within the bounds of the GUI
      * @returns false - If the Mouse is not within the bounds of the GUI
      * Returns whether or not the Mouse is currently within the bounds of the ItemModifyingGUI
      */
-    bool isMouseWithinGUIBounds() const;
+    bool IsMouseWithinGUIBounds() const;
     /* ItemModifyingGUI.cpp
      * Called by freeInterfaceResources(). Frees 'itemModifyingGUI_IMG' using SDL_FreeSurface()
      */
-    void freeGUIImage();
+    void FreeImage();
 
 private:
     // ItemModifying GUI
