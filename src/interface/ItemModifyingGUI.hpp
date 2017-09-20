@@ -190,6 +190,11 @@ private:
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
     void RemoveCurseGUI_HandleItemImages();
+    /* ItemModifyingGUI.cpp
+     * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+     * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+     */
+    void RemoveCurseGUI_UpdateServer(Item* const selectedItem);
 
     // Repair GUI
     /* ItemModifyingGUI.cpp
@@ -216,6 +221,11 @@ private:
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
     void RepairGUI_HandleItemImages();
+    /* ItemModifyingGUI.cpp
+     * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+     * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+     */
+    void RepairGUI_UpdateServer(Item* const selectedItem);
 
     // Enchant Weapon GUI
     /* ItemModifyingGUI.cpp
@@ -242,6 +252,11 @@ private:
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
     void EnchantWeaponGUI_HandleItemImages();
+    /* ItemModifyingGUI.cpp
+     * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+     * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+     */
+    void EnchantWeaponGUI_UpdateServer();
 
     // Enchant Armor GUI
     /* ItemModifyingGUI.cpp
@@ -268,6 +283,11 @@ private:
      * Draws the Sprite Image and description for the given Item in each of the visible GUI Inventory slots
      */
     void EnchantArmorGUI_HandleItemImages();
+    /* ItemModifyingGUI.cpp
+     * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+     * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+     */
+    void EnchantArmorGUI_UpdateServer(Item* const selectedItem);
 }; // class ItemModifyingGUI
 
 } // namespace GUI

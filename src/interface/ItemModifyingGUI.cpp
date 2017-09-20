@@ -1260,7 +1260,11 @@ void ItemModifyingGUI::RemoveCurseGUI_Process(Item* const selectedItem)
 
     closeItemModifyingGUI();
 
-    // The Client needs to inform the Server that their equipment was Uncursed only if they are wearing it
+    // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+    if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
+    {
+        RemoveCurseGUI_UpdateServer(selectedItem);
+    }
 } // RemoveCurseGUI_Process()
 
 /* ItemModifyingGUI.cpp
@@ -1383,6 +1387,12 @@ void ItemModifyingGUI::RemoveCurseGUI_ProcessRandom(const Uint8 numItems)
                             itemToProcess->beatitude = -1;
                             amountOfItemsLeftToProcess--;
                             iPreviousItemProcessedIndex = iRemoveCurseGUIInventoryIndex;
+
+                            // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+                            if ( multiplayer == CLIENT && itemIsEquipped(itemToProcess, clientnum) )
+                            {
+                                RemoveCurseGUI_UpdateServer(itemToProcess);
+                            }
                         }
                         iRemoveCurseGUIInventoryIndex++;
                     }
@@ -1398,6 +1408,12 @@ void ItemModifyingGUI::RemoveCurseGUI_ProcessRandom(const Uint8 numItems)
                             itemToProcess->beatitude = 0;
                             amountOfItemsLeftToProcess--;
                             iPreviousItemProcessedIndex = iRemoveCurseGUIInventoryIndex;
+
+                            // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+                            if ( multiplayer == CLIENT && itemIsEquipped(itemToProcess, clientnum) )
+                            {
+                                RemoveCurseGUI_UpdateServer(itemToProcess);
+                            }
                         }
                         iRemoveCurseGUIInventoryIndex++;
                     }
@@ -1624,6 +1640,81 @@ void ItemModifyingGUI::RemoveCurseGUI_HandleItemImages()
     }
 } // RemoveCurseGUI_HandleItemImages()
 
+/* ItemModifyingGUI.cpp
+ * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+ * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+ */
+void ItemModifyingGUI::RemoveCurseGUI_UpdateServer(Item* const selectedItem)
+{
+    // Convert the Item type to an int for the packet
+    Uint8 itemType = 10;
+    if ( selectedItem == stats[clientnum]->helmet )
+    {
+        itemType = 0;
+    }
+    else if ( selectedItem == stats[clientnum]->breastplate )
+    {
+        itemType = 1;
+    }
+    else if ( selectedItem == stats[clientnum]->gloves )
+    {
+        itemType = 2;
+    }
+    else if ( selectedItem == stats[clientnum]->shoes )
+    {
+        itemType = 3;
+    }
+    else if ( selectedItem == stats[clientnum]->shield )
+    {
+        itemType = 4;
+    }
+    else if ( selectedItem == stats[clientnum]->weapon )
+    {
+        itemType = 5;
+    }
+    else if ( selectedItem == stats[clientnum]->cloak )
+    {
+        itemType = 6;
+    }
+    else if ( selectedItem == stats[clientnum]->amulet )
+    {
+        itemType = 7;
+    }
+    else if ( selectedItem == stats[clientnum]->ring )
+    {
+        itemType = 8;
+    }
+    else if ( selectedItem == stats[clientnum]->mask )
+    {
+        itemType = 9;
+    }
+
+    // If none of the above is true, then this shouldn't have happened in the first place
+    if ( itemType == 10 )
+    {
+        printlog("ERROR: RemoveCurseGUI_UpdateServer() - itemType is out of bounds.");
+        return;
+    }
+
+    Uint8 isScrollCursed = 0;
+    if ( itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        isScrollCursed = 1;
+    }
+
+    // data[4] = The type of Item as a Uint8
+    // data[5] = 0 if the Scroll was Uncursed, 1 if the Scroll is Cursed. Determines if the Item is Uncursed or Cursed
+    // data[6] = The Player that is sending the message
+    strcpy((char*)net_packet->data, "CRCU");
+    net_packet->data[4] = itemType;
+    net_packet->data[5] = isScrollCursed;
+    net_packet->data[6] = clientnum;
+    net_packet->address.host = net_server.host;
+    net_packet->address.port = net_server.port;
+    net_packet->len = 7;
+    sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
 // REPAIR GUI
 
 /* ItemModifyingGUI.cpp
@@ -1649,13 +1740,13 @@ void ItemModifyingGUI::RepairGUI_Process(Item* const selectedItem)
             // Intentional fall-through
         case 1:
             // Repair the Item if it is Broken (+1 only), Decrepit, or Worn up to Serviceable
-            selectedItem->status = SERVICABLE;
             messagePlayer(clientnum, language[872], selectedItem->description()); // "Your %s looks better!"
+            selectedItem->status = SERVICABLE;
             break;
         case 2:
             // Repair the Item if it is Broken, Decrepit, Worn, or Serviceable up to Excellent
-            selectedItem->status = EXCELLENT;
             messagePlayer(clientnum, language[2517], selectedItem->description()); // "Your %s looks perfect now!"
+            selectedItem->status = EXCELLENT;
             break;
         default: printlog("ERROR: RepairGUI_Process() - itemModifyingGUI_ScrollBeatitude (%d) out of bounds.", itemModifyingGUI_ScrollBeatitude); return;
     }
@@ -1669,59 +1760,10 @@ void ItemModifyingGUI::RepairGUI_Process(Item* const selectedItem)
 
     closeItemModifyingGUI();
 
-    // The Client needs to inform the Server that their equipment was Repaired only if they are wearing it
+    // The Client needs to inform the Server that their equipment was changed only if they have it equipped
     if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
     {
-        // Convert the Item type to an int for the packet
-        Uint8 itemType = 0;
-        if ( selectedItem == stats[clientnum]->helmet )
-        {
-            itemType = 0;
-        }
-        else if ( selectedItem == stats[clientnum]->breastplate )
-        {
-            itemType = 1;
-        }
-        else if ( selectedItem == stats[clientnum]->gloves )
-        {
-            itemType = 2;
-        }
-        else if ( selectedItem == stats[clientnum]->shoes )
-        {
-            itemType = 3;
-        }
-        else if ( selectedItem == stats[clientnum]->shield )
-        {
-            itemType = 4;
-        }
-        else if ( selectedItem == stats[clientnum]->weapon )
-        {
-            itemType = 5;
-        }
-        else if ( selectedItem == stats[clientnum]->cloak )
-        {
-            itemType = 6;
-        }
-        else if ( selectedItem == stats[clientnum]->amulet )
-        {
-            itemType = 7;
-        }
-        else if ( selectedItem == stats[clientnum]->ring )
-        {
-            itemType = 8;
-        }
-        else if ( selectedItem == stats[clientnum]->mask )
-        {
-            itemType = 9;
-        }
-
-        strcpy((char*)net_packet->data, "ARMR");
-        net_packet->data[4] = itemType;
-        net_packet->data[5] = selectedItem->status;
-        net_packet->address.host = net_server.host;
-        net_packet->address.port = net_server.port;
-        net_packet->len = 6;
-        sendPacketSafe(net_sock, -1, net_packet, 0);
+        RepairGUI_UpdateServer(selectedItem);
     }
 } // RepairGUI_Process()
 
@@ -1849,6 +1891,12 @@ void ItemModifyingGUI::RepairGUI_ProcessRandom(const Uint8 numItems)
                             itemToProcess->status = BROKEN;
                             amountOfItemsLeftToProcess--;
                             iPreviousItemProcessedIndex = iRepairGUIInventoryIndex;
+
+                            // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+                            if ( multiplayer == CLIENT && itemIsEquipped(itemToProcess, clientnum) )
+                            {
+                                RepairGUI_UpdateServer(itemToProcess);
+                            }
                         }
                         iRepairGUIInventoryIndex++;
                     }
@@ -2225,6 +2273,75 @@ void ItemModifyingGUI::RepairGUI_HandleItemImages()
     }
 } // RepairGUI_HandleItemImages()
 
+/* ItemModifyingGUI.cpp
+ * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+ * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+ */
+void ItemModifyingGUI::RepairGUI_UpdateServer(Item* const selectedItem)
+{
+    // Convert the Item type to an int for the packet
+    Uint8 itemType = 10;
+    if ( selectedItem == stats[clientnum]->helmet )
+    {
+        itemType = 0;
+    }
+    else if ( selectedItem == stats[clientnum]->breastplate )
+    {
+        itemType = 1;
+    }
+    else if ( selectedItem == stats[clientnum]->gloves )
+    {
+        itemType = 2;
+    }
+    else if ( selectedItem == stats[clientnum]->shoes )
+    {
+        itemType = 3;
+    }
+    else if ( selectedItem == stats[clientnum]->shield )
+    {
+        itemType = 4;
+    }
+    else if ( selectedItem == stats[clientnum]->weapon )
+    {
+        itemType = 5;
+    }
+    else if ( selectedItem == stats[clientnum]->cloak )
+    {
+        itemType = 6;
+    }
+    else if ( selectedItem == stats[clientnum]->amulet )
+    {
+        itemType = 7;
+    }
+    else if ( selectedItem == stats[clientnum]->ring )
+    {
+        itemType = 8;
+    }
+    else if ( selectedItem == stats[clientnum]->mask )
+    {
+        itemType = 9;
+    }
+
+    // If none of the above is true, then this shouldn't have happened in the first place
+    if ( itemType == 10 )
+    {
+        printlog("ERROR: RepairGUI_UpdateServer() - itemType is out of bounds.");
+        return;
+    }
+
+    // data[4] = The type of Item as a Uint8
+    // data[5] = The updated ItemStatus of the Armor as a Uint8
+    // data[6] = The Player that is sending the message
+    strcpy((char*)net_packet->data, "CREP");
+    net_packet->data[4] = itemType;
+    net_packet->data[5] = static_cast<Uint8>(selectedItem->status);
+    net_packet->data[6] = static_cast<Uint8>(clientnum);
+    net_packet->address.host = net_server.host;
+    net_packet->address.port = net_server.port;
+    net_packet->len = 7;
+    sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
 // ENCHANT WEAPON GUI
 
 /* ItemModifyingGUI.cpp
@@ -2281,6 +2398,15 @@ void ItemModifyingGUI::EnchantWeaponGUI_Process(Item* const selectedItem)
     }
 
     closeItemModifyingGUI();
+
+    // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+    if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
+    {
+        if ( selectedItem == stats[clientnum]->weapon )
+        {
+            EnchantWeaponGUI_UpdateServer();
+        }
+    }
 } // EnchantWeaponGUI_Process()
 
 /* ItemModifyingGUI.cpp
@@ -2407,6 +2533,15 @@ void ItemModifyingGUI::EnchantWeaponGUI_ProcessRandom(const Uint8 numItems)
                             itemToProcess->beatitude = 0;
                             amountOfItemsLeftToProcess--;
                             iPreviousItemProcessedIndex = iEnchantWeaponGUIInventoryIndex;
+
+                            // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+                            if ( multiplayer == CLIENT && itemIsEquipped(itemToProcess, clientnum) )
+                            {
+                                if ( itemToProcess == stats[clientnum]->weapon )
+                                {
+                                    EnchantWeaponGUI_UpdateServer();
+                                }
+                            }
                         }
                         iEnchantWeaponGUIInventoryIndex++;
                     }
@@ -2811,6 +2946,29 @@ void ItemModifyingGUI::EnchantWeaponGUI_HandleItemImages()
     }
 } // EnchantWeaponGUI_HandleItemImages()
 
+/* ItemModifyingGUI.cpp
+ * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+ * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+ */
+void ItemModifyingGUI::EnchantWeaponGUI_UpdateServer()
+{
+    Uint8 isScrollCursed = 0;
+    if ( itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        isScrollCursed = 1;
+    }
+
+    // data[4] = The Player that is sending the message
+    // data[5] = 0 if the Scroll was Uncursed, 1 if the Scroll is Cursed. Determines if the Item is Enchanted or Disenchanted
+    strcpy((char*)net_packet->data, "CENW");
+    net_packet->data[4] = clientnum;
+    net_packet->data[5] = isScrollCursed;
+    net_packet->address.host = net_server.host;
+    net_packet->address.port = net_server.port;
+    net_packet->len = 6;
+    sendPacketSafe(net_sock, -1, net_packet, 0);
+}
+
 // ENCHANT ARMOR GUI
 
 /* ItemModifyingGUI.cpp
@@ -2867,6 +3025,12 @@ void ItemModifyingGUI::EnchantArmorGUI_Process(Item* const selectedItem)
     }
 
     closeItemModifyingGUI();
+
+    // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+    if ( multiplayer == CLIENT && itemIsEquipped(selectedItem, clientnum) )
+    {
+        EnchantArmorGUI_UpdateServer(selectedItem);
+    }
 } // EnchantArmorGUI_Process()
 
 /* ItemModifyingGUI.cpp
@@ -2997,6 +3161,12 @@ void ItemModifyingGUI::EnchantArmorGUI_ProcessRandom(const Uint8 numItems)
                             itemToProcess->beatitude = 0;
                             amountOfItemsLeftToProcess--;
                             iPreviousItemProcessedIndex = iEnchantArmorGUIInventoryIndex;
+
+                            // The Client needs to inform the Server that their equipment was changed only if they have it equipped
+                            if ( multiplayer == CLIENT && itemIsEquipped(itemToProcess, clientnum) )
+                            {
+                                EnchantArmorGUI_UpdateServer(itemToProcess);
+                            }
                         }
                         iEnchantArmorGUIInventoryIndex++;
                     }
@@ -3449,5 +3619,76 @@ void ItemModifyingGUI::EnchantArmorGUI_HandleItemImages()
         }
     }
 } // EnchantArmorGUI_HandleItemImages()
+
+/* ItemModifyingGUI.cpp
+ * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
+ * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
+ */
+void ItemModifyingGUI::EnchantArmorGUI_UpdateServer(Item* const selectedItem)
+{
+    // Convert the Item type to an int for the packet
+    Uint8 itemType = 9;
+    if ( selectedItem == stats[clientnum]->helmet )
+    {
+        itemType = 0;
+    }
+    else if ( selectedItem == stats[clientnum]->breastplate )
+    {
+        itemType = 1;
+    }
+    else if ( selectedItem == stats[clientnum]->gloves )
+    {
+        itemType = 2;
+    }
+    else if ( selectedItem == stats[clientnum]->shoes )
+    {
+        itemType = 3;
+    }
+    else if ( selectedItem == stats[clientnum]->shield )
+    {
+        itemType = 4;
+    }
+    else if ( selectedItem == stats[clientnum]->cloak )
+    {
+        itemType = 5;
+    }
+    else if ( selectedItem == stats[clientnum]->amulet )
+    {
+        itemType = 6;
+    }
+    else if ( selectedItem == stats[clientnum]->ring )
+    {
+        itemType = 7;
+    }
+    else if ( selectedItem == stats[clientnum]->mask )
+    {
+        itemType = 8;
+    }
+
+    // If none of the above is true, then this shouldn't have happened in the first place
+    if ( itemType == 9 )
+    {
+        printlog("ERROR: EnchantArmorGUI_UpdateServer() - itemType is out of bounds.");
+        return;
+    }
+
+    Uint8 isScrollCursed = 0;
+    if ( itemModifyingGUI_ScrollBeatitude < 0 )
+    {
+        isScrollCursed = 1;
+    }
+   
+    // data[4] = The type of Armor as a Uint8
+    // data[5] = 0 if the Scroll is Uncursed, 1 if the Scroll is Cursed. Determines if the Item is Enchanted or Disenchanted
+    // data[6] = The Player that is sending the message
+    strcpy((char*)net_packet->data, "CENA");
+    net_packet->data[4] = itemType;
+    net_packet->data[5] = isScrollCursed;
+    net_packet->data[6] = clientnum;
+    net_packet->address.host = net_server.host;
+    net_packet->address.port = net_server.port;
+    net_packet->len = 7;
+    sendPacketSafe(net_sock, -1, net_packet, 0);
+}
 
 } // namespace GUI
