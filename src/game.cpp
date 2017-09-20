@@ -98,8 +98,8 @@ void gameLogic(void)
 	FILE* fp;
 	deleteent_t* deleteent;
 	bool entitydeletedself;
-	int auto_appraise_lowest_time = std::numeric_limits<int>::max();
-	Item* auto_appraise_target = NULL;
+
+	Item* autoAppraiseTarget = nullptr; // The Item that has been selected to be auto-appraised
 
 	if ( creditstage > 0 )
 	{
@@ -1019,14 +1019,14 @@ void gameLogic(void)
 				}
 				else
 				{
-					if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
+                    // Items don't have to be dropped, auto-appraise a new Item if valid
+                    if( auto_appraise_new_items && item->identified == false && appraisalGUI->IsGUIOpen() == false )
 					{
-						int appraisal_time = getAppraisalTime(item);
-						if (appraisal_time < auto_appraise_lowest_time)
-						{
-							auto_appraise_target = item;
-							auto_appraise_lowest_time = appraisal_time;
-						}
+                        // Check if the current Item has the lowest appraisal time, if it does, set appraisalGUI->lowestAppraisalTime = item's appraisal time
+                        if ( appraisalGUI->IsItemAppraisalTimeShortest(item) == true )
+                        {
+                            autoAppraiseTarget = item;
+                        }
 					}
 				}
 			}
@@ -1445,15 +1445,15 @@ void gameLogic(void)
 				}
 				else
 				{
-                    if ( auto_appraise_new_items && appraisal_timer == 0 && !(item->identified) )
-					{
-						int appraisal_time = getAppraisalTime(item);
-						if (appraisal_time < auto_appraise_lowest_time)
-						{
-							auto_appraise_target = item;
-							auto_appraise_lowest_time = appraisal_time;
-						}
-					}
+                    // Items don't have to be dropped, auto-appraise a new Item if valid
+                    if ( auto_appraise_new_items && item->identified == false && appraisalGUI->IsGUIOpen() == false )
+                    {
+                        // Check if the current Item has the lowest appraisal time, if it does, set appraisalGUI->lowestAppraisalTime = item's appraisal time
+                        if ( appraisalGUI->IsItemAppraisalTimeShortest(item) == true )
+                        {
+                            autoAppraiseTarget = item;
+                        }
+                    }
 				}
 			}
 
@@ -1467,15 +1467,10 @@ void gameLogic(void)
 			}
 		}
 
-		// Automatically identify items, shortest time required first
-		if ( auto_appraise_target != NULL )
+		// If an Item was selected for auto-appraisal, open the AppraisalGUI
+		if ( autoAppraiseTarget != nullptr )
 		{
-			//Cleanup identify GUI gamecontroller code here.
-			selectedIdentifySlot = -1;
-
-			identifygui_active = false;
-			identifygui_appraising = true;
-			identifyGUIIdentify(auto_appraise_target);
+            appraisalGUI->OpenGUI(autoAppraiseTarget, players[clientnum]->entity);
 		}
 	}
 }
