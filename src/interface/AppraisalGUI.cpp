@@ -23,7 +23,7 @@ AppraisalGUI::AppraisalGUI() :
     initialAppraisalTime(0),
     remainingAppraisalTime(0)
 {
-    std::numeric_limits<int>::max();
+    lowestAppraisalTime = std::numeric_limits<int>::max();
 } // AppraisalGUI()
 
 AppraisalGUI::~AppraisalGUI()
