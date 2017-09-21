@@ -218,9 +218,9 @@ extern SDL_Surface* rightsidebar_slot_img;
 extern SDL_Surface* rightsidebar_slot_highlighted_img;
 extern SDL_Surface* rightsidebar_slot_grayedout_img;
 extern int rightsidebar_height;
-extern int appraisal_timer; //There is a delay after the appraisal skill is activated before the item is identified.
-extern int appraisal_timermax;
-extern Uint32 appraisal_item; //The item being appraised (or rather its uid)
+//extern int appraisal_timer; //There is a delay after the appraisal skill is activated before the item is identified.
+//extern int appraisal_timermax;
+//extern Uint32 appraisal_item; //The item being appraised (or rather its uid)
 
 //void updateRightSidebar(); //Updates the sidebar on the right side of the screen, the one containing spells, skills, etc. DEPRECATED: See updaterightsidebar.cpp
 

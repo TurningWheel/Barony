@@ -623,8 +623,7 @@ void deinitGame()
 		}
 		free( books );
 	}
-	appraisal_timer = 0;
-	appraisal_item = 0;
+
 	for (c = 0; c < MAXPLAYERS; c++)
 	{
 		list_FreeAll(&stats[c]->inventory);
