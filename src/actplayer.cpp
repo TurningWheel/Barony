@@ -618,6 +618,15 @@ void actPlayer(Entity* my)
 		}
 	}
 
+    if ( PLAYER_NUM == clientnum )
+    {
+        if ( appraisalGUI->IsGUIOpen() == true )
+        {
+            appraisalGUI->UpdateGUI();
+        }
+    }
+
+    /*
 	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
 	{
 		Item* tempItem = uidToItem(appraisal_item);
@@ -692,7 +701,7 @@ void actPlayer(Entity* my)
 			appraisal_timer = 0;
 			appraisal_item = 0;
 		}
-	}
+	}*/
 
 	// remove broken equipment
 	if ( stats[PLAYER_NUM]->helmet != NULL )
