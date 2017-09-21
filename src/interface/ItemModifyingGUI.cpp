@@ -351,7 +351,7 @@ void ItemModifyingGUI::Gamepad_MoveCursor(Sint8 direction)
             // * A) There are Items below this. Advance itemModifyingGUI_InventorySelectedSlot to them
             // * * B) On last Item already. Do nothing (undo movement)
 
-            Item* item = getItemInfoFromGUI(itemModifyingGUI_InventorySelectedSlot + 1);
+            Item* item = GetItemInfoFromGUI(itemModifyingGUI_InventorySelectedSlot + 1);
 
             if ( item != nullptr )
             {
@@ -366,7 +366,7 @@ void ItemModifyingGUI::Gamepad_MoveCursor(Sint8 direction)
             }
         }
     }
-}
+} // Gamepad_MoveCursor()
 
 /* ItemModifyingGUI.cpp
  * @returns 'bIsActive'
@@ -374,7 +374,7 @@ void ItemModifyingGUI::Gamepad_MoveCursor(Sint8 direction)
 bool ItemModifyingGUI::IsGUIOpen() const
 {
     return bIsActive;
-}
+} // IsGUIOpen()
 
 /* ItemModifyingGUI.cpp
  * @param GUIType - The type of GUI to be opened: 0,1,2,3,4 - Identify, Remove Curse, Repair, Enchant Weapon, Enchant Armor
@@ -412,7 +412,7 @@ bool ItemModifyingGUI::AreThereValidItems(const Uint8 GUIType)
 bool ItemModifyingGUI::IsSelectedSlotInvalid() const
 {
     return (itemModifyingGUI_InventorySelectedSlot < 0);
-}
+} // IsSelectedSlotInvalid()
 
 /* ItemModifyingGUI.cpp
  * @returns true - If the Mouse is currently within the bounds of the GUI
@@ -443,7 +443,7 @@ void ItemModifyingGUI::FreeImage()
         SDL_FreeSurface(itemModifyingGUI_IMG);
         itemModifyingGUI_IMG = nullptr;
     }
-}
+} // FreeImage()
 
 /* ItemModifyingGUI.cpp
 *  Used to get the reference to the Item in the given slot in itemModifyingGUI_Inventory[]
@@ -451,7 +451,7 @@ void ItemModifyingGUI::FreeImage()
 *  @returns The Item* from itemModifyingGUI_Inventory[slot]
 *  @returns nullptr if slot >= 4 (Out of bounds)
 */
-inline Item* ItemModifyingGUI::getItemInfoFromGUI(Uint8 slot)
+inline Item* ItemModifyingGUI::GetItemInfoFromGUI(Uint8 slot)
 {
     if ( slot >= 4 )
     {
@@ -459,7 +459,7 @@ inline Item* ItemModifyingGUI::getItemInfoFromGUI(Uint8 slot)
     }
 
     return itemModifyingGUI_Inventory[slot];
-} // getItemInfoFromGUI()
+} // GetItemInfoFromGUI()
 
 // ITEM MODIFYING GUI LOGIC HANDLERS
 
@@ -1641,6 +1641,7 @@ void ItemModifyingGUI::RemoveCurseGUI_HandleItemImages()
 } // RemoveCurseGUI_HandleItemImages()
 
 /* ItemModifyingGUI.cpp
+ * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
  * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
  * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
  */
@@ -1713,7 +1714,7 @@ void ItemModifyingGUI::RemoveCurseGUI_UpdateServer(Item* const selectedItem)
     net_packet->address.port = net_server.port;
     net_packet->len = 7;
     sendPacketSafe(net_sock, -1, net_packet, 0);
-}
+} // RemoveCurseGUI_UpdateServer()
 
 // REPAIR GUI
 
@@ -2274,6 +2275,7 @@ void ItemModifyingGUI::RepairGUI_HandleItemImages()
 } // RepairGUI_HandleItemImages()
 
 /* ItemModifyingGUI.cpp
+ * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
  * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
  * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
  */
@@ -2340,7 +2342,7 @@ void ItemModifyingGUI::RepairGUI_UpdateServer(Item* const selectedItem)
     net_packet->address.port = net_server.port;
     net_packet->len = 7;
     sendPacketSafe(net_sock, -1, net_packet, 0);
-}
+} // RepairGUI_UpdateServer()
 
 // ENCHANT WEAPON GUI
 
@@ -2967,7 +2969,7 @@ void ItemModifyingGUI::EnchantWeaponGUI_UpdateServer()
     net_packet->address.port = net_server.port;
     net_packet->len = 6;
     sendPacketSafe(net_sock, -1, net_packet, 0);
-}
+} // EnchantWeaponGUI_UpdateServer()
 
 // ENCHANT ARMOR GUI
 
@@ -3621,6 +3623,7 @@ void ItemModifyingGUI::EnchantArmorGUI_HandleItemImages()
 } // EnchantArmorGUI_HandleItemImages()
 
 /* ItemModifyingGUI.cpp
+ * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
  * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
  * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
  */
@@ -3689,6 +3692,6 @@ void ItemModifyingGUI::EnchantArmorGUI_UpdateServer(Item* const selectedItem)
     net_packet->address.port = net_server.port;
     net_packet->len = 7;
     sendPacketSafe(net_sock, -1, net_packet, 0);
-}
+} // EnchantArmorGUI_UpdateServer()
 
 } // namespace GUI

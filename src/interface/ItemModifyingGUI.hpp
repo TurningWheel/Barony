@@ -100,7 +100,7 @@ private:
      *  @returns The Item* from itemModifyingGUI_Inventory[slot]
      *  @returns nullptr if slot >= 4 (Out of bounds)
      */
-    Item* getItemInfoFromGUI(Uint8 slot);
+    Item* GetItemInfoFromGUI(Uint8 slot);
 
     /* ItemModifyingGUI.cpp
      * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
@@ -191,6 +191,7 @@ private:
      */
     void RemoveCurseGUI_HandleItemImages();
     /* ItemModifyingGUI.cpp
+     * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
      * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
      * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
      */
@@ -222,6 +223,7 @@ private:
      */
     void RepairGUI_HandleItemImages();
     /* ItemModifyingGUI.cpp
+     * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
      * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
      * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
      */
@@ -284,6 +286,7 @@ private:
      */
     void EnchantArmorGUI_HandleItemImages();
     /* ItemModifyingGUI.cpp
+     * @param selectedItem - The Item that is being processed, selected from the GUI Inventory
      * Updates the Server with the updated stats of the Client's equipment. Only needs to update the equipment that is being worn
      * Equipment that is worn affects the stats of the Player, and is only updated in certain cases, this being one of them
      */
