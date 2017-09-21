@@ -3055,7 +3055,8 @@ int main(int argc, char** argv)
 					}
 
 					drawSustainedSpells();
-					updateAppraisalItemBox();
+                    appraisalGUI->DrawGUI();
+					//updateAppraisalItemBox();
 
 					// inventory and stats
 					if ( shootmode == false )
