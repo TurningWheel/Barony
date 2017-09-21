@@ -245,7 +245,7 @@ char* itemUseString(const Item* item)
 	draws the current item being appraised
 
 -------------------------------------------------------------------------------*/
-
+/*
 void updateAppraisalItemBox()
 {
 	SDL_Rect pos;
@@ -295,6 +295,7 @@ void updateAppraisalItemBox()
 		drawImageScaled(itemSprite(item), NULL, &pos);
 	}
 }
+*/
 
 void select_inventory_slot(int x, int y)
 {

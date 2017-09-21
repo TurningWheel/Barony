@@ -111,7 +111,7 @@ int loadConfig(char* filename);
 int saveConfig(char* filename);
 void defaultConfig();
 void updateChestInventory();
-void updateAppraisalItemBox();
+//void updateAppraisalItemBox();
 void updatePlayerInventory();
 void updateShopWindow();
 void updateEnemyBar(Entity* source, Entity* target, char* name, Sint32 hp, Sint32 maxhp);
