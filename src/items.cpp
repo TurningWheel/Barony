@@ -997,11 +997,13 @@ void consumeItem(Item* item)
 	{
 		return;
 	}
-	if ( appraisal_item == item->uid && item->count == 1 )
-	{
-		appraisal_item = 0;
-		appraisal_timer = 0;
-	}
+
+    // If the Item is currently being Appraised, stop the appraisal
+    if ( appraisalGUI->IsItemBeingAppraised(item) == true )
+    {
+        appraisalGUI->CloseGUI();
+    }
+
 	item->count--;
 	if ( item->count <= 0 )
 	{
