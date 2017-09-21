@@ -133,49 +133,8 @@ void AppraisalGUI::CloseGUI()
 } // CloseGUI()
 
 /* AppraisalGUI.cpp
- * @returns bIsActive
- * Returns the status of whether or not the AppraisalGUI is currently active
- */
-bool AppraisalGUI::IsGUIOpen() const
-{
-    return bIsActive;
-} // IsGUIOpen()
-
-/* AppraisalGUI.cpp
- * @param item - The Item being compared to 'itemToAppraise'
- * @returns true - If the AppraisalGUI's currently appraising Item is the same as @item
- * @returns false - If they are not the same
- */
-bool AppraisalGUI::IsItemBeingAppraised(const Item* const item) const
-{
-    return (itemToAppraise == item);
-} // IsItemBeingAppraised()
-
-/* AppraisalGUI.cpp
- * @param item - A pointer to the Item having it's appraisal time evaluated
- * @returns true - If @item's appraisal time is lower than 'lowestAppraisalTime'
- * @returns false - Default case
- * Evaluates and compares @item's appraisal time to 'lowestAppraisalTime'. In the event that it is shorter, 'lowestAppraisalTime' is set to @item's appraisal time
- * Used for finding the next target for auto-appraisal
- */
-bool AppraisalGUI::IsItemAppraisalTimeShortest(const Item* const item) 
-{
-    Uint32 itemAppraisalTime = GetExternalItemAppraisalTime(item);
-
-    // Check if the Item's appraisal time is lower than the previous lowest time
-    if ( itemAppraisalTime < lowestAppraisalTime )
-    {
-        lowestAppraisalTime = itemAppraisalTime;
-        return true;
-    }
-
-    return false;
-} // IsItemAppraisalTimeShortest()
-
-// PRIVATE FUNCTIONS
-
-/* AppraisalGUI.cpp
  * Draws the AppraisalGUI box, along with the text and Item icon. The GUI's position is shifted if the Player's Inventory is open
+ * Will not draw anything if AppraisalGUI is not active
  */
 void AppraisalGUI::DrawGUI()
 {
@@ -252,6 +211,48 @@ void AppraisalGUI::DrawGUI()
     // Draw the Sprite of the Item being appraised
     drawImageScaled(itemSprite(itemToAppraise), nullptr, &appraisalBoxRect);
 } // DrawGUI()
+
+/* AppraisalGUI.cpp
+ * @returns bIsActive
+ * Returns the status of whether or not the AppraisalGUI is currently active
+ */
+bool AppraisalGUI::IsGUIOpen() const
+{
+    return bIsActive;
+} // IsGUIOpen()
+
+/* AppraisalGUI.cpp
+ * @param item - The Item being compared to 'itemToAppraise'
+ * @returns true - If the AppraisalGUI's currently appraising Item is the same as @item
+ * @returns false - If they are not the same
+ */
+bool AppraisalGUI::IsItemBeingAppraised(const Item* const item) const
+{
+    return (itemToAppraise == item);
+} // IsItemBeingAppraised()
+
+/* AppraisalGUI.cpp
+ * @param item - A pointer to the Item having it's appraisal time evaluated
+ * @returns true - If @item's appraisal time is lower than 'lowestAppraisalTime'
+ * @returns false - Default case
+ * Evaluates and compares @item's appraisal time to 'lowestAppraisalTime'. In the event that it is shorter, 'lowestAppraisalTime' is set to @item's appraisal time
+ * Used for finding the next target for auto-appraisal
+ */
+bool AppraisalGUI::IsItemAppraisalTimeShortest(const Item* const item) 
+{
+    Uint32 itemAppraisalTime = GetExternalItemAppraisalTime(item);
+
+    // Check if the Item's appraisal time is lower than the previous lowest time
+    if ( itemAppraisalTime < lowestAppraisalTime )
+    {
+        lowestAppraisalTime = itemAppraisalTime;
+        return true;
+    }
+
+    return false;
+} // IsItemAppraisalTimeShortest()
+
+// PRIVATE FUNCTIONS
 
 /* AppraisalGUI.cpp
  * @returns - The calcuated appraisal time based off of (value * 60) / (PRO_APPRAISAL + 1). Minimum of 1, maximum of 36,000 ticks

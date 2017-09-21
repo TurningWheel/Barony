@@ -43,6 +43,10 @@ public:
      */
     void CloseGUI();
     /* AppraisalGUI.cpp
+     * Draws the AppraisalGUI box, along with the text and Item icon. The GUI's position is shifted if the Player's Inventory is open
+     */
+    void DrawGUI();
+    /* AppraisalGUI.cpp
      * @returns bIsActive
      * Returns the status of whether or not the AppraisalGUI is currently active
      */
@@ -71,10 +75,6 @@ private:
     Item* itemToAppraise = nullptr; // A pointer to the Item being appraised
     Entity* localPlayerEntity = nullptr; // A pointer to the Player who is preforming the appraisal, used for getting the PER of the Player, and for increasing their skill
 
-    /* AppraisalGUI.cpp
-     * Draws the AppraisalGUI box, along with the text and Item icon. The GUI's position is shifted if the Player's Inventory is open
-     */
-    void DrawGUI();
     /* AppraisalGUI.cpp
      * @returns - The calcuated appraisal time based off of (value * 60) / (PRO_APPRAISAL + 1). Minimum of 1, maximum of 36,000 ticks
      * Calculates the appraisal time of the selected appraisal target, 'itemToAppraise'. Value is used internally only
