@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 #include <sstream>
 #include "../main.hpp"
+#include "../files.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../items.hpp"

@@ -15,6 +15,7 @@
 #include "items.hpp"
 #include "player.hpp"
 #include "interface/interface.hpp"
+#include "files.hpp"
 
 #define EDITOR
 
