@@ -15,6 +15,7 @@
 #include "net.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "monster.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"

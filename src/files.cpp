@@ -17,6 +17,7 @@
 #include <string>
 
 #include "main.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
 
