@@ -14,6 +14,7 @@
 #include "main.hpp"
 #include "editor.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "player.hpp"
 
 button_t* butX;
