@@ -2617,3 +2617,393 @@ void actParticleTest(Entity* my)
 		//my->z -= 0.01;
 	}
 }
+
+void createParticleErupt(Entity* parent, int sprite)
+{
+	real_t yaw = 0;
+	int numParticles = 8;
+	for ( int c = 0; c < 8; c++ )
+	{
+		Entity* entity = newEntity(sprite, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x;
+		entity->y = parent->y;
+		entity->z = 7.5; // start from the ground.
+		entity->yaw = yaw;
+		entity->vel_x = 0.2;
+		entity->vel_y = 0.2;
+		entity->vel_z = -2;
+		entity->skill[0] = 100;
+		entity->skill[1] = 0; // direction.
+		entity->fskill[0] = 0.1;
+		entity->behavior = &actParticleErupt;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+		yaw += 2 * PI / numParticles;
+	}
+}
+
+void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite)
+{
+	// spawns the invisible 'center' of the magic particle
+	Entity* entity = newEntity(sprite, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = startx;
+	entity->y = starty;
+	entity->parent = (parent->getUID());
+	entity->yaw = parent->yaw + PI; // face towards the caster.
+	entity->skill[0] = 45;
+	entity->skill[2] = -13; // so clients know my behavior.
+	entity->skill[3] = 0; // init
+	entity->skill[4] = sprite; // visible sprites.
+	entity->skill[5] = sprite; // sprite to spawn on return to caster.
+	entity->behavior = &actParticleSapCenter;
+	entity->flags[INVISIBLE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[UPDATENEEDED] = true;
+	entity->flags[UNCLICKABLE] = true;
+}
+
+void createParticleSap(Entity* parent)
+{
+	real_t speed = 0.4;
+	for ( int c = 0; c < 4; c++ )
+	{
+		// 4 particles, in an 'x' pattern around parent sprite.
+		Entity* entity = newEntity(parent->sprite, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x;
+		entity->y = parent->y;
+		entity->z = 0;
+		entity->scalex = 0.9;
+		entity->scaley = 0.9;
+		entity->scalez = 0.9;
+		entity->parent = (parent->getUID());
+		entity->yaw = parent->yaw;
+		if ( c == 0 )
+		{
+			entity->vel_z = -speed;
+			entity->vel_x = speed * cos(entity->yaw + PI / 2);
+			entity->vel_y = speed * sin(entity->yaw + PI / 2);
+			entity->yaw += PI / 3;
+			entity->pitch -= PI / 6;
+			entity->fskill[2] = -(PI / 3) / 25; // yaw rate of change.
+			entity->fskill[3] = (PI / 6) / 25; // pitch rate of change.
+		}
+		else if ( c == 1 )
+		{
+			entity->vel_z = -speed;
+			entity->vel_x = speed * cos(entity->yaw - PI / 2);
+			entity->vel_y = speed * sin(entity->yaw - PI / 2);
+			entity->yaw -= PI / 3;
+			entity->pitch -= PI / 6;
+			entity->fskill[2] = (PI / 3) / 25; // yaw rate of change.
+			entity->fskill[3] = (PI / 6) / 25; // pitch rate of change.
+		}
+		else if ( c == 2 )
+		{
+			entity->vel_x = speed * cos(entity->yaw + PI / 2);
+			entity->vel_y = speed * sin(entity->yaw + PI / 2);
+			entity->vel_z = speed;
+			entity->yaw += PI / 3;
+			entity->pitch += PI / 6;
+			entity->fskill[2] = -(PI / 3) / 25; // yaw rate of change.
+			entity->fskill[3] = -(PI / 6) / 25; // pitch rate of change.
+		}
+		else if ( c == 3 )
+		{
+			entity->vel_x = speed * cos(entity->yaw - PI / 2);
+			entity->vel_y = speed * sin(entity->yaw - PI / 2);
+			entity->vel_z = speed;
+			entity->yaw -= PI / 3;
+			entity->pitch += PI / 6;
+			entity->fskill[2] = (PI / 3) / 25; // yaw rate of change.
+			entity->fskill[3] = -(PI / 6) / 25; // pitch rate of change.
+		}
+
+		entity->skill[3] = c; // particle index
+		entity->fskill[0] = entity->vel_x; // stores the accumulated x offset from center
+		entity->fskill[1] = entity->vel_y; // stores the accumulated y offset from center
+		entity->skill[0] = 200; // lifetime
+		entity->skill[1] = 0; // direction outwards
+		entity->behavior = &actParticleSap;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+}
+
+void createParticleDropRising(Entity* parent, int sprite)
+{
+	for ( int c = 0; c < 50; c++ )
+	{
+		// shoot drops to the sky
+		Entity* entity = newEntity(sprite, 1, map.entities);
+		entity->sizex = 1;
+		entity->sizey = 1;
+		entity->x = parent->x - 4 + rand() % 9;
+		entity->y = parent->y - 4 + rand() % 9;
+		entity->z = 7.5 + rand() % 50;
+		entity->vel_z = -1;
+		//entity->yaw = (rand() % 360) * PI / 180.0;
+		entity->skill[0] = 10 + rand() % 50;
+		entity->behavior = &actParticleDot;
+		entity->flags[PASSABLE] = true;
+		entity->flags[NOUPDATE] = true;
+		entity->flags[UNCLICKABLE] = true;
+		if ( multiplayer != CLIENT )
+		{
+			entity_uids--;
+		}
+		entity->setUID(-3);
+	}
+
+	Entity* entity = newEntity(-1, 1, map.entities);
+	entity->sizex = 1;
+	entity->sizey = 1;
+	entity->x = parent->x;
+	entity->y = parent->y;
+	entity->parent = (parent->getUID());
+	entity->skill[0] = 40; // lifetime/ticks before timer triggers
+	entity->skill[1] = 1; // behavior of timer.
+	entity->skill[3] = sprite; // sprite to use for timer function.
+	entity->behavior = &actParticleTimer;
+	entity->flags[INVISIBLE] = true;
+	entity->flags[PASSABLE] = true;
+	entity->flags[NOUPDATE] = true;
+	entity->flags[UNCLICKABLE] = true;
+	if ( multiplayer != CLIENT )
+	{
+		entity_uids--;
+	}
+	entity->setUID(-3);
+}
+
+void actParticleErupt(Entity* my)
+{
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		// particles jump up from the ground then back down again.
+		--PARTICLE_LIFE;
+		my->x += my->vel_x * cos(my->yaw);
+		my->y += my->vel_y * sin(my->yaw);
+		my->scalex *= 0.99;
+		my->scaley *= 0.99;
+		my->scalez *= 0.99;
+		spawnMagicParticle(my);
+		if ( my->skill[1] == 0 ) // rising
+		{
+			my->z += my->vel_z;
+			my->vel_z *= 0.8;
+			my->pitch = std::min<real_t>(my->pitch + my->fskill[0], PI / 2);
+			my->fskill[0] = std::max<real_t>(my->fskill[0] * 0.85, 0.05);
+			if ( my->vel_z > -0.02 )
+			{
+				my->skill[1] = 1;
+			}
+		}
+		else // falling
+		{
+			my->pitch = std::min<real_t>(my->pitch + my->fskill[0], 15 * PI / 16);
+			my->fskill[0] = std::min<real_t>(my->fskill[0] * (1 / 0.99), 0.1);
+			my->z -= my->vel_z;
+			my->vel_z *= (1 / 0.8);
+			my->vel_z = std::max<real_t>(my->vel_z, -0.8);
+		}
+	}
+}
+
+void actParticleTimer(Entity* my)
+{
+	if(PARTICLE_LIFE < 0)
+	{
+		if ( my->skill[1] == 1 )
+		{
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent )
+			{
+				createParticleErupt(parent, my->skill[3]);
+			}
+			if ( multiplayer != CLIENT )
+			{
+				// insert host only functions here.
+
+				//list_t* aoeTargets = nullptr;
+				//getTargetsAroundEntity(my, nullptr, 16, PI, MONSTER_TARGET_ALL, &aoeTargets);
+				//if ( aoeTargets )
+				//{
+				//	for ( node_t* node = aoeTargets->first; node != nullptr; node = node->next )
+				//	{
+				//		Entity* entity = (Entity*)node->element;
+				//		if ( entity->getStats() != nullptr )
+				//		{
+				//			entity->getStats()->EFFECTS[EFF_INVISIBLE] = true;
+				//			entity->getStats()->EFFECTS_TIMERS[EFF_INVISIBLE] = 300;
+				//		}
+				//	}
+				//	//Free the list.
+				//	list_FreeAll(aoeTargets);
+				//	free(aoeTargets);
+				//}
+			}
+		}
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+	}
+}
+
+void actParticleSap(Entity* my)
+{
+	real_t decel = 0.9;
+	real_t accel = 0.9;
+	real_t minSpeed = 0.05;
+
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		spawnMagicParticle(my);
+		Entity* parent = uidToEntity(my->parent);
+		if ( parent )
+		{
+			my->x = parent->x + my->fskill[0];
+			my->y = parent->y + my->fskill[1];
+		}
+		else
+		{
+			list_RemoveNode(my->mynode);
+			return;
+		}
+
+		if ( my->skill[1] == 0 )
+		{
+			// move outwards diagonally.
+			if ( abs(my->vel_z) > minSpeed )
+			{
+				my->fskill[0] += my->vel_x;
+				my->fskill[1] += my->vel_y;
+				my->vel_x *= decel;
+				my->vel_y *= decel;
+
+				my->z += my->vel_z;
+				my->vel_z *= decel;
+
+				my->yaw += my->fskill[2];
+				my->pitch += my->fskill[3];
+			}
+			else
+			{
+				my->skill[1] = 1;
+				my->vel_x *= -1;
+				my->vel_y *= -1;
+				my->vel_z *= -1;
+			}
+		}
+		else if ( my->skill[1] == 1 )
+		{
+			// move inwards diagonally.
+			if ( abs(my->vel_z) < 0.4 )
+			{
+				my->fskill[0] += my->vel_x;
+				my->fskill[1] += my->vel_y;
+				my->vel_x /= accel;
+				my->vel_y /= accel;
+
+				my->z += my->vel_z;
+				my->vel_z /= accel;
+
+				my->yaw += my->fskill[2];
+				my->pitch += my->fskill[3];
+			}
+			else
+			{
+				// movement completed.
+				my->skill[1] = 2;
+			}
+		}
+
+		my->scalex *= 0.99;
+		my->scaley *= 0.99;
+		my->scalez *= 0.99;
+		--PARTICLE_LIFE;
+	}
+}
+
+void actParticleSapCenter(Entity* my)
+{
+	// init
+	if ( my->skill[3] == 0 )
+	{
+		// for clients and server spawn the visible arcing particles.
+		my->skill[3] = 1;
+		createParticleSap(my);
+	}
+
+	if ( multiplayer == CLIENT )
+	{
+		return;
+	}
+
+	Entity* parent = uidToEntity(my->parent);
+	if ( parent )
+	{
+		// if reached the caster, delete self and spawn some particles.
+		if ( entityInsideEntity(my, parent) )
+		{
+			playSoundEntity(parent, 168, 128);
+			spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
+			list_RemoveNode(my->mynode);
+			return;
+		}
+
+		// calculate direction to caster and move.
+		real_t tangent = atan2(parent->y - my->y, parent->x - my->x);
+		real_t dist = sqrt(pow(my->x - parent->x, 2) + pow(my->y - parent->y, 2));
+		real_t speed = dist / PARTICLE_LIFE;
+		my->vel_x = speed * cos(tangent);
+		my->vel_y = speed * sin(tangent);
+		my->x += my->vel_x;
+		my->y += my->vel_y;
+	}
+	else
+	{
+		// no parent, no target to travel to.
+		list_RemoveNode(my->mynode);
+		return;
+	}
+
+	if ( PARTICLE_LIFE < 0 )
+	{
+		list_RemoveNode(my->mynode);
+		return;
+	}
+	else
+	{
+		--PARTICLE_LIFE;
+	}
+}

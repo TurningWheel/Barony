@@ -1034,6 +1034,9 @@ void clientActions(Entity* entity)
 				case -12:
 					entity->behavior = &actMagicClientNoLight;
 					break;
+				case -13:
+					entity->behavior = &actParticleSapCenter;
+					break;
 				default:
 					break;
 			}
@@ -2041,6 +2044,9 @@ void clientHandlePacket()
 						break;
 					case PARTICLE_EFFECT_ABILITY_ROCK:
 						createParticleRock(entity);
+						break;
+					case PARTICLE_EFFECT_SHADOW_INVIS:
+						createParticleDropRising(entity, 593);
 						break;
 					default:
 						break;

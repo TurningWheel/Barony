@@ -871,8 +871,21 @@ void buttonAttributes(button_t* my)
 	snprintf(skyboxtext, 4, "%d", map.skybox);
 	for ( int z = 0; z < MAPFLAGS; ++z )
 	{
-		snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+		if ( z < MAP_FLAG_GENBYTES1 && z > MAP_FLAG_GENBYTES6 )
+		{
+			snprintf(mapflagtext[z], 4, "%d", map.flags[z]);
+		}
 	}
+
+	snprintf(mapflagtext[MAP_FLAG_GENTOTALMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 24) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENTOTALMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 16) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENMONSTERMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 8) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENMONSTERMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES1] >> 0) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENLOOTMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 24) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENLOOTMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 16) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMIN], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 8) & static_cast<int>(0xFF));
+	snprintf(mapflagtext[MAP_FLAG_GENDECORATIONMAX], 4, "%d", (map.flags[MAP_FLAG_GENBYTES2] >> 0) & static_cast<int>(0xFF));
+
 	if ( map.flags[MAP_FLAG_DISABLETRAPS] > 0 )
 	{
 		strcpy(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]");
@@ -903,8 +916,8 @@ void buttonAttributes(button_t* my)
 	newwindow = 1;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 120;
-	suby2 = yres / 2 + 120;
+	suby1 = yres / 2 - 200;
+	suby2 = yres / 2 + 200;
 	strcpy(subtext, "Map properties:");
 
 	button = newButton();
@@ -975,6 +988,44 @@ void buttonAttributesConfirm(button_t* my)
 	{
 		map.flags[MAP_FLAG_CEILINGTILE] = 0;
 	}
+
+	// start storing some misc bytes within the Sint32 flags to save space:
+	map.flags[MAP_FLAG_GENBYTES1] = 0; // clear the flag 1 slot.
+	if ( atoi(mapflagtext[MAP_FLAG_GENTOTALMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENTOTALMIN]) << 24; // store in first leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENTOTALMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENTOTALMAX]) << 16; // store in second leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) << 8; // store in third leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES1] |= atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) << 0; // store in fourth leftmost byte.
+	}
+
+	map.flags[MAP_FLAG_GENBYTES2] = 0; // clear the flag 2 slot.
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENLOOTMIN]) << 24; // store in first leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENMONSTERMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENLOOTMAX]) << 16; // store in second leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENDECORATIONMIN]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENDECORATIONMIN]) << 8; // store in third leftmost byte.
+	}
+	if ( atoi(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) >= 0 )
+	{
+		map.flags[MAP_FLAG_GENBYTES2] |= atoi(mapflagtext[MAP_FLAG_GENDECORATIONMAX]) << 0; // store in fourth leftmost byte.
+	}
+
 	if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETRAPS], "[x]", 3) )
 	{
 		map.flags[MAP_FLAG_DISABLETRAPS] = 1;

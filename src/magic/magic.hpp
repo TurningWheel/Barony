@@ -91,6 +91,8 @@ static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 10;
 /*** misc effect particles ***/
 static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
 static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
+static const int PARTICLE_EFFECT_SAP = 3;
+static const int PARTICLE_EFFECT_SHADOW_INVIS = 4;
 
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -401,8 +403,17 @@ void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);
 void actParticleRock(Entity* my);
 void actParticleTest(Entity* my);
+void actParticleErupt(Entity* my);
+void actParticleTimer(Entity* my);
+void actParticleSap(Entity* my);
+void actParticleSapCenter(Entity* my);
+
+void createParticleDropRising(Entity* parent, int sprite);
 void createParticleDot(Entity* parent);
 void createParticleRock(Entity* parent);
+void createParticleErupt(Entity* parent, int sprite);
+void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite);
+void createParticleSap(Entity* parent);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);

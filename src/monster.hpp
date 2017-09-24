@@ -392,6 +392,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
 static const int MONSTER_TARGET_ENEMY = 0;
 static const int MONSTER_TARGET_FRIEND = 1;
 static const int MONSTER_TARGET_PLAYER = 2;
+static const int MONSTER_TARGET_ALL = 3;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;

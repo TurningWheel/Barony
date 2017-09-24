@@ -5165,65 +5165,64 @@ void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFin
 	Entity* entity = nullptr;
 	node_t* node = nullptr;
 	node_t* node2 = nullptr;
-	Stat* myStats = my->getStats();
 
-	if ( myStats != nullptr )
+	// aoe
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
-		// aoe
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		entity = (Entity*)node->element;
+		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
 		{
-			entity = (Entity*)node->element;
-			if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
+			if ( searchType == MONSTER_TARGET_ENEMY )
 			{
-				if ( searchType == MONSTER_TARGET_ENEMY )
+				if ( !my->checkEnemy(entity) )
 				{
-					if ( !my->checkEnemy(entity) )
-					{
-						continue;
-					}
+					continue;
 				}
-				else if ( searchType == MONSTER_TARGET_FRIEND )
+			}
+			else if ( searchType == MONSTER_TARGET_FRIEND )
+			{
+				if ( !my->checkFriend(entity) )
 				{
-					if ( !my->checkFriend(entity) )
-					{
-						continue;
-					}
+					continue;
 				}
-				else if ( searchType == MONSTER_TARGET_PLAYER )
+			}
+			else if ( searchType == MONSTER_TARGET_PLAYER )
+			{
+				if ( !(entity->behavior == &actPlayer) )
 				{
-					if ( !(entity->behavior == &actPlayer) )
-					{
-						continue;
-					}
+					continue;
 				}
+			}
+			else if ( searchType == MONSTER_TARGET_ALL )
+			{
+			}
 
-				double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
-				real_t angle = my->yaw - aoeTangent;
-				while ( angle >= PI )
+			double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
+			real_t angle = my->yaw - aoeTangent;
+			while ( angle >= PI )
+			{
+				angle -= PI * 2;
+			}
+			while ( angle < -PI )
+			{
+				angle += PI * 2;
+			}
+			if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
+			{
+				double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+				if ( dist < distToFind )
 				{
-					angle -= PI * 2;
-				}
-				while ( angle < -PI )
-				{
-					angle += PI * 2;
-				}
-				if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
-				{
-					double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-					if ( dist < distToFind )
+					//If this is the first entity found, the list needs to be created.
+					if ( !(*list) )
 					{
-						//If this is the first entity found, the list needs to be created.
-						if ( !(*list) )
-						{
-							*list = (list_t*)malloc(sizeof(list_t));
-							(*list)->first = nullptr;
-							(*list)->last = nullptr;
-						}
-						node2 = list_AddNodeLast(*list);
-						node2->element = entity;
-						node2->deconstructor = &emptyDeconstructor;
-						node2->size = sizeof(Entity*);
+						*list = (list_t*)malloc(sizeof(list_t));
+						(*list)->first = nullptr;
+						(*list)->last = nullptr;
 					}
+					node2 = list_AddNodeLast(*list);
+					node2->element = entity;
+					node2->deconstructor = &emptyDeconstructor;
+					node2->size = sizeof(Entity*);
 				}
 			}
 		}
