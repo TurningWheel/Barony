@@ -598,7 +598,7 @@ void OPENAL_RemoveChannelGroup(Channel *channel, ChannelGroup *group) {
 	group->num--;
 }
 
-Sound* createSound(SoundSystem *sys, char* name) {
+Sound* createSound(SoundSystem *sys, const char* name) {
 	Sound* result = (Sound*) malloc(sizeof(Sound));
 	strcpy(result->oggfile, name);	// for debugging purpose
 	result->stream = false;
@@ -655,7 +655,7 @@ Sound* createSound(SoundSystem *sys, char* name) {
 	return result;
 }
 
-Sound* CreateMusic(char* name) {
+Sound* CreateMusic(const char* name) {
 	Sound *buffer = (Sound*)malloc(sizeof(Sound));
 	buffer->stream = true;
 	strcpy(buffer->oggfile, name);

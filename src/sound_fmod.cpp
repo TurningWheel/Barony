@@ -402,7 +402,7 @@ static FMOD_RESULT openDataFileFmodCB(const char *name, int unicode, unsigned in
 
 static FMOD_CREATESOUNDEXINFO info = { 0 };
 
-Sound* createSound(SoundSystem* sys, char *name) {
+Sound* createSound(SoundSystem* sys, const char *name) {
 	if (info.cbsize == 0) {
 		info.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 		info.useropen = openDataFileFmodCB;
@@ -412,7 +412,7 @@ Sound* createSound(SoundSystem* sys, char *name) {
 	return result;
 }
 
-Sound* CreateMusic(char* name) {
+Sound* CreateMusic(const char* name) {
 	if (info.cbsize == 0) {
 		info.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);
 		info.useropen = openDataFileFmodCB;

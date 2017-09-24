@@ -382,7 +382,7 @@ extern SDL_GLContext renderer;
 extern SDL_Surface* mainsurface;
 extern SDL_Event event;
 extern bool firstmouseevent;
-extern char* window_title;
+extern const char* window_title;
 extern Sint32 fullscreen;
 extern bool smoothlighting;
 extern Sint32 xres;
@@ -498,8 +498,8 @@ extern bool* shoparea;
 // function prototypes for main.c:
 int sgn(real_t x);
 int numdigits_sint16(Sint16 x);
-int longestline(char* str);
-int concatedStringLength(char* str, ...);
+int longestline(const char* str);
+int concatedStringLength(const char* str, ...);
 void printlog(const char* str, ...);
 
 // function prototypes for objects.c:
@@ -512,7 +512,7 @@ void stringDeconstructor(void* data);
 void listDeconstructor(void* data);
 Entity* newEntity(Sint32 sprite, Uint32 pos, list_t* entlist);
 button_t* newButton(void);
-string_t* newString(list_t* list, Uint32 color, char* content, ...);
+string_t* newString(list_t* list, Uint32 color, const char* content, ...);
 pathnode_t* newPathnode(list_t* list, Sint32 x, Sint32 y, pathnode_t* parent, Sint8 pos);
 
 // function prototypes for opengl.c:
@@ -525,16 +525,16 @@ real_t getLightAt(int x, int y);
 void glDrawWorld(view_t* camera, int mode);
 
 // function prototypes for cursors.c:
-SDL_Cursor* newCursor(char* image[]);
+SDL_Cursor* newCursor(const char* image[]);
 
 // function prototypes for maps.c:
 int generateDungeon(char* levelset, Uint32 seed);
 void assignActions(map_t* map);
 
 // cursor bitmap definitions
-extern char* cursor_pencil[];
-extern char* cursor_brush[];
-extern char* cursor_fill[];
+extern const char* cursor_pencil[];
+extern const char* cursor_brush[];
+extern const char* cursor_fill[];
 
 GLuint create_shader(const char* filename, GLenum type);
 

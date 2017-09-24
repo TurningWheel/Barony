@@ -147,12 +147,12 @@ void Channel_Stop(Channel*);
 unsigned int Channel_GetPosition(Channel*);
 unsigned int Sound_GetLength(Sound*);
 bool Channel_IsPlaying(Channel*);
-Sound* CreateMusic(char* name);
+Sound* CreateMusic(const char* name);
 
 void initSound();
 void deinitSound();
 void sound_update();
-Sound* createSound(SoundSystem*, char* name);
+Sound* createSound(SoundSystem*, const char* name);
 void playmusic(Sound* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 void handleLevelMusic();
 

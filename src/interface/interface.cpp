@@ -727,23 +727,20 @@ void saveCommand(char* content)
 
 -------------------------------------------------------------------------------*/
 
-int loadConfig(char* filename)
+int loadConfig(const char* filename)
 {
 	defaultImpulses(); //So that a config file that's missing impulses can get all them.
 
+	char real_filename[1024];
 	char str[1024];
 	FILE* fp;
-	bool mallocd = false;
 
 	printlog("Loading config '%s'...\n", filename);
 
+	strcpy(real_filename, filename);
 	if ( strstr(filename, ".cfg") == NULL )
 	{
-		char* filename2 = filename;
-		filename = (char*) malloc(sizeof(char) * 256);
-		strcpy(filename, filename2);
-		mallocd = true;
-		strcat(filename, ".cfg");
+		strcat(real_filename, ".cfg");
 	}
 
 	// open the config file
@@ -764,10 +761,6 @@ int loadConfig(char* filename)
 		}
 	}
 	fclose(fp);
-	if ( mallocd )
-	{
-		free(filename);
-	}
 	return 0;
 }
 
@@ -780,23 +773,20 @@ int loadConfig(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int saveConfig(char* filename)
+int saveConfig(const char* filename)
 {
+	char real_filename[1024];
 	time_t t = time(NULL);
 	struct tm tm = *localtime(&t);
 	FILE* fp;
 	int c;
-	bool mallocd = false;
 
 	printlog("Saving config '%s'...\n", filename);
 
+	strcpy(real_filename, filename);
 	if ( strstr(filename, ".cfg") == NULL )
 	{
-		char* filename2 = filename;
-		filename = (char*) malloc(sizeof(char) * 256);
-		strcpy(filename, filename2);
-		mallocd = true;
-		strcat(filename, ".cfg");
+		strcat(real_filename, ".cfg");
 	}
 
 	// open the config file
@@ -943,10 +933,6 @@ int saveConfig(char* filename)
 	fprintf(fp, "/skipintro\n");
 
 	fclose(fp);
-	if ( mallocd )
-	{
-		free(filename);
-	}
 	return 0;
 }
 

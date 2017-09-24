@@ -181,7 +181,7 @@ int power(int a, int b)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayer(int player, char* message, ...)
+void messagePlayer(int player, const char* message, ...)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -206,7 +206,7 @@ void messagePlayer(int player, char* message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerColor(int player, Uint32 color, char* message, ...)
+void messagePlayerColor(int player, Uint32 color, const char* message, ...)
 {
 	char str[256] = { 0 };
 	va_list argptr;

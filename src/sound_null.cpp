@@ -15,5 +15,5 @@ bool levelmusicplaying;
 void ChannelGroup_SetVolume(ChannelGroup*, float) {}
 void initSound() {}
 void deinitSound() {}
-Sound* createSound(SoundSystem*, char*) {return NULL;}
+Sound* createSound(SoundSystem*, const char*) {return NULL;}
 void Sound_Release(Sound*) {}

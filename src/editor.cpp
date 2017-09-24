@@ -264,7 +264,7 @@ void mainLogic(void)
 			{
 				lastPaletteTileSelected = 0;
 			}
-			selectedTile = selectedTile = recentUsedTiles[recentUsedTilePalette][lastPaletteTileSelected];
+			selectedTile = recentUsedTiles[recentUsedTilePalette][lastPaletteTileSelected];
 		}
 		scroll = 0;
 	}
@@ -289,7 +289,7 @@ void mainLogic(void)
 			{
 				lastPaletteTileSelected = 8;
 			}
-			selectedTile = selectedTile = recentUsedTiles[recentUsedTilePalette][lastPaletteTileSelected];
+			selectedTile = recentUsedTiles[recentUsedTilePalette][lastPaletteTileSelected];
 
 		}
 		scroll = 0;
@@ -1010,7 +1010,6 @@ int saveTilePalettes()
 {
 	char filename[128] = { 0 };
 	FILE* fp;
-	int c;
 
 	// open log file
 	if ( !logfile )
@@ -1036,10 +1035,8 @@ int saveTilePalettes()
 	}
 
 	// write file
-	Uint32 line;
 	int paletteNumber = 0;
 	int paletteTile = 0;
-	bool lockValueEntry = 0;
 	char data[128];
 
 	fputs("# Tile palette file\n", fp);
@@ -1114,7 +1111,6 @@ void updateRecentTileList(int tile)
 
 	if ( checkEmpty == -1 )
 	{
-		checkEmpty == 0;
 		for ( int j = 8; j > 0; j-- )
 		{
 			recentUsedTiles[recentUsedTilePalette][j] = recentUsedTiles[recentUsedTilePalette][j - 1]; // shift array by 1 to insert new tile as the array is full.

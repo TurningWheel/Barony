@@ -53,7 +53,7 @@ GLuint fbo_ren = 0;
 FILE* logfile = nullptr;
 bool steam_init = false;
 
-int initApp(char* title, int fullscreen)
+int initApp(const char* title, int fullscreen)
 {
 	char name[128];
 	FILE* fp;
@@ -493,7 +493,7 @@ static void loadFont(TTF_Font** dest, SDL_RWops* file, int size) {
 	}
 }
 
-int loadLanguage(char* lang)
+int loadLanguage(const char* lang)
 {
 	char filename[128] = { 0 };
 	FILE* fp;

@@ -300,7 +300,7 @@ light_t* newLight(Sint32 x, Sint32 y, Sint32 radius, Sint32 intensity)
 
 -------------------------------------------------------------------------------*/
 
-string_t* newString(list_t* list, Uint32 color, char* content, ...)
+string_t* newString(list_t* list, Uint32 color, const char* content, ...)
 {
 	string_t* string;
 	char str[1024] = { 0 };

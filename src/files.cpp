@@ -161,7 +161,7 @@ bool dataPathExists(const char * const path) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* loadImage(char* filename)
+SDL_Surface* loadImage(const char* filename)
 {
 	char full_path[1024];
 	completeDataPath(full_path, filename);
@@ -256,7 +256,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist)
+int loadMap(const char* filename2, map_t* destmap, list_t* entlist)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -662,7 +662,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char* filename2)
+int saveMap(const char* filename2)
 {
 	FILE* fp;
 	Uint32 numentities = 0;
@@ -796,7 +796,7 @@ int saveMap(char* filename2)
 
 -------------------------------------------------------------------------------*/
 
-char* readFile(char* filename)
+char* readFile(const char* filename)
 {
 	char* file_contents = NULL;
 	long input_file_size;
