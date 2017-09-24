@@ -2554,7 +2554,8 @@ void actMonster(Entity* my)
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 				if ( targetdist > sightranges[myStats->type] )
 				{
-					if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+					// if target has left my sight, decide whether or not to path or retreat (stay put).
+					if ( my->shouldRetreat(*myStats) )
 					{
 						my->monsterMoveTime = 0;
 						my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2578,11 +2579,15 @@ void actMonster(Entity* my)
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 						}
 						if ( hit.entity == entity )
+						{	
 							if ( rand() % 100 == 0 )
 							{
 								entity->increaseSkill(PRO_STEALTH);
 							}
-						if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+						}
+						// if target is within sight range but light level is too low and out of melee range.
+						// decide whether or not to path or retreat (stay put).
+						if ( my->shouldRetreat(*myStats) )
 						{
 							my->monsterMoveTime = 0;
 							my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2613,7 +2618,9 @@ void actMonster(Entity* my)
 
 						if ( hit.entity != entity && myReflex )
 						{
-							if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+							// if I currently lost sight of my target in a straight line in front of me
+							// decide whether or not to path or retreat (stay put).
+							if ( my->shouldRetreat(*myStats) )
 							{
 								my->monsterMoveTime = 0;
 								my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2632,7 +2639,7 @@ void actMonster(Entity* my)
 							// get movement dir
 							int goAgain = 0;
 timeToGoAgain:
-							if ( targetdist > TOUCHRANGE * 1.5 && !hasrangedweapon && (myStats->HP > myStats->MAXHP / 3 || my->getCHR() < -1) && my->getINT() > -2 )
+							if ( targetdist > TOUCHRANGE * 1.5 && !hasrangedweapon && !my->shouldRetreat(*myStats) && my->getINT() > -2 )
 							{
 								if ( MONSTER_FLIPPEDANGLE < 5 )
 								{
@@ -2682,16 +2689,16 @@ timeToGoAgain:
 
 							MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
 							MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
-							if ( (dist > 16 && !hasrangedweapon && (myStats->HP > myStats->MAXHP / 3 || my->getCHR() < -1)) || (dist > 160 && hasrangedweapon) )
+							if ( (dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon) )
 							{
-								if ( myStats->HP > myStats->MAXHP / 3 || my->getCHR() < -1 )
+								if ( my->shouldRetreat(*myStats) )
 								{
+									MONSTER_VELX *= -.5;
+									MONSTER_VELY *= -.5;
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 								}
 								else
 								{
-									MONSTER_VELX *= -.5;
-									MONSTER_VELY *= -.5;
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 								}
 								if ( hit.entity != NULL )
@@ -2743,7 +2750,7 @@ timeToGoAgain:
 									}
 									else
 									{
-										if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+										if ( my->shouldRetreat(*myStats) )
 										{
 											my->monsterMoveTime = 0;
 											my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2756,7 +2763,7 @@ timeToGoAgain:
 								}
 								else
 								{
-									if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+									if ( my->shouldRetreat(*myStats) )
 									{
 										my->monsterMoveTime = 0;
 										my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2769,7 +2776,7 @@ timeToGoAgain:
 							}
 							else
 							{
-								if ( (hasrangedweapon && dist < 100) || (myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2) )
+								if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 								{
 									// injured monsters or monsters with ranged weapons back up
 									MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
@@ -2795,7 +2802,7 @@ timeToGoAgain:
 							}*/
 
 							// rotate monster
-							if ( (hasrangedweapon && dist < 100) || (myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2) )
+							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 							{
 								dir = my->yaw - atan2( -MONSTER_VELY, -MONSTER_VELX );
 							}
@@ -4363,7 +4370,6 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
 
-	//TODO: Goatman choose weapon.
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
 	chooseWeapon(target, dist);
 
@@ -4927,7 +4933,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -4939,7 +4945,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -5011,7 +5017,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
@@ -5055,6 +5061,37 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case INSECTOID:
+					if ( monsterSpecialState == INSECTOID_DOUBLETHROW_FIRST || monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
+					{
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW;
+						break;
+					}
+
+					// spray acid
+					if ( dist < STRIKERANGE * 2 )
+					{
+						specialRoll = rand() % 20;
+						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+
+						if ( myStats->HP <= myStats->MAXHP * 0.5 )
+						{
+							bonusFromHP = 4; // +20% chance if on low health
+						}
+						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+						{
+							node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+							if ( node != nullptr )
+							{
+								monsterSpecialState = INSECTOID_ACID;
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
+							}
+							break;
+						}
+					}
+					// throwing weapon special handled in insectoidChooseWeapon()
+					break;
 				default:
 					break;
 			}
@@ -5067,11 +5104,39 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
-						swapMonsterWeaponWithInventoryItem(this, myStats, node);
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
 					}
 					else
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
+					}
+					break;
+				case INSECTOID:
+					if ( monsterSpecialState == INSECTOID_ACID )
+					{
+						monsterSpecialState = 0;
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+					}
+					else if ( monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
+					{
+						monsterSpecialState = 0;
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+						}
 					}
 					break;
 				case COCKATRICE:
@@ -5091,65 +5156,64 @@ void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFin
 	Entity* entity = nullptr;
 	node_t* node = nullptr;
 	node_t* node2 = nullptr;
-	Stat* myStats = my->getStats();
 
-	if ( myStats != nullptr )
+	// aoe
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
-		// aoe
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		entity = (Entity*)node->element;
+		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
 		{
-			entity = (Entity*)node->element;
-			if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
+			if ( searchType == MONSTER_TARGET_ENEMY )
 			{
-				if ( searchType == MONSTER_TARGET_ENEMY )
+				if ( !my->checkEnemy(entity) )
 				{
-					if ( !my->checkEnemy(entity) )
-					{
-						continue;
-					}
+					continue;
 				}
-				else if ( searchType == MONSTER_TARGET_FRIEND )
+			}
+			else if ( searchType == MONSTER_TARGET_FRIEND )
+			{
+				if ( !my->checkFriend(entity) )
 				{
-					if ( !my->checkFriend(entity) )
-					{
-						continue;
-					}
+					continue;
 				}
-				else if ( searchType == MONSTER_TARGET_PLAYER )
+			}
+			else if ( searchType == MONSTER_TARGET_PLAYER )
+			{
+				if ( !(entity->behavior == &actPlayer) )
 				{
-					if ( !(entity->behavior == &actPlayer) )
-					{
-						continue;
-					}
+					continue;
 				}
+			}
+			else if ( searchType == MONSTER_TARGET_ALL )
+			{
+			}
 
-				double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
-				real_t angle = my->yaw - aoeTangent;
-				while ( angle >= PI )
+			double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
+			real_t angle = my->yaw - aoeTangent;
+			while ( angle >= PI )
+			{
+				angle -= PI * 2;
+			}
+			while ( angle < -PI )
+			{
+				angle += PI * 2;
+			}
+			if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
+			{
+				double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+				if ( dist < distToFind )
 				{
-					angle -= PI * 2;
-				}
-				while ( angle < -PI )
-				{
-					angle += PI * 2;
-				}
-				if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
-				{
-					double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-					if ( dist < distToFind )
+					//If this is the first entity found, the list needs to be created.
+					if ( !(*list) )
 					{
-						//If this is the first entity found, the list needs to be created.
-						if ( !(*list) )
-						{
-							*list = (list_t*)malloc(sizeof(list_t));
-							(*list)->first = nullptr;
-							(*list)->last = nullptr;
-						}
-						node2 = list_AddNodeLast(*list);
-						node2->element = entity;
-						node2->deconstructor = &emptyDeconstructor;
-						node2->size = sizeof(Entity*);
+						*list = (list_t*)malloc(sizeof(list_t));
+						(*list)->first = nullptr;
+						(*list)->last = nullptr;
 					}
+					node2 = list_AddNodeLast(*list);
+					node2->element = entity;
+					node2->deconstructor = &emptyDeconstructor;
+					node2->size = sizeof(Entity*);
 				}
 			}
 		}

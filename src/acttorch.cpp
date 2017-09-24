@@ -74,18 +74,12 @@ void actTorch(Entity* my)
 
 		if (TORCH_LIGHTING == 1)
 		{
-			if ( my->light != NULL )
-			{
-				list_RemoveNode(my->light->node);
-			}
+			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 192);
 		}
 		else
 		{
-			if ( my->light != NULL )
-			{
-				list_RemoveNode(my->light->node);
-			}
+			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 7, 174);
 		}
 		TORCH_FLICKER = 2 + rand() % 7;
@@ -138,11 +132,7 @@ void actCrystalShard(Entity* my)
 	// check wall
 	if ( !checkObstacle(my->x - cos(my->yaw) * 8, my->y - sin(my->yaw) * 8, my, NULL) )
 	{
-		if ( my->light != NULL )
-		{
-			list_RemoveNode(my->light->node);
-		}
-		my->light = NULL;
+		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -160,18 +150,12 @@ void actCrystalShard(Entity* my)
 
 		if ( TORCH_LIGHTING == 1 )
 		{
-			if ( my->light != NULL )
-			{
-				list_RemoveNode(my->light->node);
-			}
+			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 128);
 		}
 		else
 		{
-			if ( my->light != NULL )
-			{
-				list_RemoveNode(my->light->node);
-			}
+			my->removeLightField();
 			my->light = lightSphereShadow(my->x / 16, my->y / 16, 5, 112);
 		}
 		TORCH_FLICKER = 2 + rand() % 7;

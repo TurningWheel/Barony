@@ -669,3 +669,127 @@ void Stat::printStats()
 	}
 }
 
+
+int Stat::pickRandomEquippedItem(Item** returnItem, bool excludeWeapon, bool excludeShield, bool excludeArmor, bool excludeJewelry)
+{
+	int numEquippedItems = 0;
+	int equipNum[10] = { 0 };// index of equipment piece to update the client, defined in net.cpp "ARMR"
+	for ( int i = 0; i < 10; ++i )
+	{
+		equipNum[i] = -1;
+	}
+
+	if ( !excludeArmor )
+	{
+		if ( this->helmet != nullptr && this->helmet->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 0;
+			++numEquippedItems;
+		}
+		if ( this->breastplate != nullptr && this->breastplate->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 1;
+			++numEquippedItems;
+		}
+		if ( this->gloves != nullptr && this->gloves->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 2;
+			++numEquippedItems;
+		}
+		if ( this->shoes != nullptr && this->shoes->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 3;
+			++numEquippedItems;
+		}
+		if ( this->cloak != nullptr && this->cloak->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 6;
+			++numEquippedItems;
+		}
+		if ( this->mask != nullptr && this->mask->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 9;
+			++numEquippedItems;
+		}
+	}
+
+	if ( !excludeWeapon )
+	{
+		if ( this->weapon != nullptr && this->weapon->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 5;
+			++numEquippedItems;
+		}
+	}
+
+	if ( !excludeShield )
+	{
+		if ( this->shield != nullptr && this->shield->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 4;
+			++numEquippedItems;
+		}
+	}
+
+	if ( !excludeJewelry )
+	{
+		if ( this->amulet != nullptr  && this->amulet->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 7;
+			++numEquippedItems;
+		}
+		if ( this->ring != nullptr && this->ring->status > BROKEN )
+		{
+			equipNum[numEquippedItems] = 8;
+			++numEquippedItems;
+		}
+	}
+
+	if ( numEquippedItems == 0 )
+	{
+		*returnItem = nullptr;
+		return -1;
+	}
+
+	int roll = rand() % numEquippedItems;
+
+	switch ( equipNum[roll] )
+	{
+		case 0:
+			*returnItem = this->helmet;
+			break;
+		case 1:
+			*returnItem = this->breastplate;
+			break;
+		case 2:
+			*returnItem = this->gloves;
+			break;
+		case 3:
+			*returnItem = this->shoes;
+			break;
+		case 4:
+			*returnItem = this->shield;
+			break;
+		case 5:
+			*returnItem = this->weapon;
+			break;
+		case 6:
+			*returnItem = this->cloak;
+			break;
+		case 7:
+			*returnItem = this->amulet;
+			break;
+		case 8:
+			*returnItem = this->ring;
+			break;
+		case 9:
+			*returnItem = this->mask;
+			break;
+		default:
+			*returnItem = nullptr;
+			break;
+	}
+
+	return equipNum[roll];
+}
+
