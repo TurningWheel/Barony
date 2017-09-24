@@ -715,9 +715,14 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( caster == players[i]->entity )
 				{
 					//spawnMagicEffectParticles(caster->x, caster->y, caster->z, 171);
-					createParticle1(caster, i);
+					//createParticle1(caster, i);
+					//createParticleDropRising(caster);
 				}
 			}
+			createParticleDropRising(caster, 593);
+			serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS);
+
+			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
 			playSoundEntity(caster, 167, 128);
 		}
 		else if ( !strcmp(element->name, spellElement_reflectMagic.name) )
