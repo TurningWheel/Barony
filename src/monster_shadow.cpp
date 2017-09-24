@@ -664,7 +664,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// swing the arm after we prepped the spell
 							//this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
 							messagePlayer(clientnum, "TODO: Shadow invisibility mimic teleport and stuff.");
-							my->shadowSpecialAbility();
+							my->shadowSpecialAbility(true);
 						}
 					}
 				}
@@ -1219,7 +1219,7 @@ bool Entity::shadowCanWieldItem(const Item& item) const
 	}
 }
 
-void Entity::shadowSpecialAbility()
+void Entity::shadowSpecialAbility(bool initialMimic)
 {
 	//TODO: Teleport to target.
 	//TODO: Turn invisible.
@@ -1232,8 +1232,24 @@ void Entity::shadowSpecialAbility()
 		return;
 	}
 
+	Entity *target = uidToEntity(monsterTarget);
+	if ( !target )
+	{
+		messagePlayer(clientnum, "Shadow's target deaded!");
+		monsterReleaseAttackTarget();
+		return;
+	}
+
 	//TODO: Turn invisible.
 	//myStats->EFFECTS[EFF_INVISIBLE] = true;
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
 	messagePlayer(clientnum, "Turned invisible!");
+
+	//TODO: Copy target's weapon & shield on initial activation of this ability only.
+	if ( initialMimic )
+	{
+		//TODO: On initial mimic, need to reset all the tracking info on what's already been mimic'ed.
+		//TODO: On initial mimic, copy best melee weapon and shield from target's hands or inventory.
+		const Item *bestMeleeWeapon = target->getBestMeleeWeaponIHave(); //TODO:
+	}
 }

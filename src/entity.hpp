@@ -415,7 +415,7 @@ public:
 	}
 	void goatmanChooseWeapon(const Entity* target, double dist);
 
-	bool monsterInMeleeRange(const Entity* target, double dist)
+	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);
 	}
@@ -424,9 +424,12 @@ public:
 
 	//void returnWeaponarmToNeutral(Entity* weaponarm, Entity* rightbody); //TODO: Need a proper refactor?
 
-	void shadowSpecialAbility();
+	void shadowSpecialAbility(bool initialMimic);
 
 	double monsterRotate();
+
+	const Item* getBestMeleeWeaponIHave() const;
+	const Item* getBestShieldIHave() const;
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];

@@ -3367,7 +3367,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				//TODO: How does this play with the passive invisibility?
 				myStats->EFFECTS[EFF_INVISIBLE] = false;
 			}
-		}*/
+		}
 
 		if ( myStats->weapon != nullptr )
 		{
@@ -7462,7 +7462,7 @@ bool Entity::monsterReleaseAttackTarget()
 		return false;
 	}
 
-	if ( monsterTarget && uidToEntity(monsterTarget) && myStats->type == SHADOW )
+	if ( myStats->type == SHADOW && monsterTarget && uidToEntity(monsterTarget) )
 	{
 		//messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
 		return false; //Shadow cannot lose its target.
@@ -7939,4 +7939,65 @@ double Entity::monsterRotate()
 	}
 
 	return dir;
+}
+
+const Item* Entity::getBestMeleeWeaponIHave() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	Item* currentBest = nullptr;
+	if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+	{
+		currentBest = myStats->weapon;
+	}
+
+	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			if ( isMeleeWeapon(*item) && Item::isThisABetterWeapon(*item, currentBest) )
+			{
+				currentBest = item;
+			}
+		}
+	}
+
+	return nullptr;
+}
+
+const Item* Entity::getBestShieldIHave() const
+{
+	//TODO:
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	Item* currentBest = nullptr;
+	if ( myStats->shield && itemCategory(myStats->shield) == ARMOR ) //TODO: Right way to check if shield?
+	{
+		currentBest = myStats->weapon;
+	}
+
+	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			if ( isMeleeWeapon(*item) && Item::isThisABetterWeapon(*item, currentBest) )
+			{
+				currentBest = item;
+			}
+		}
+	}
+
+	return nullptr;
 }
