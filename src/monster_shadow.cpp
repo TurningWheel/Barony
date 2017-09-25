@@ -1248,8 +1248,10 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//TODO: Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
+
 		//TODO: On initial mimic, need to reset all the tracking info on what's already been mimic'ed.
 		//TODO: On initial mimic, copy best melee weapon and shield from target's hands or inventory.
 		const Item *bestMeleeWeapon = target->getBestMeleeWeaponIHave(); //TODO:
+		const Item *bestShield = target->getBestShieldIHave(); //TODO:
 	}
 }

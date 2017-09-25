@@ -7962,12 +7962,16 @@ const Item* Entity::getBestMeleeWeaponIHave() const
 		}
 	}
 
-	return nullptr;
+	if ( currentBest )
+	{
+		messagePlayer(clientnum, "Found best melee weapon: \"%s\"", currentBest->description());
+	}
+
+	return currentBest;
 }
 
 const Item* Entity::getBestShieldIHave() const
 {
-	//TODO:
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
@@ -7975,9 +7979,9 @@ const Item* Entity::getBestShieldIHave() const
 	}
 
 	Item* currentBest = nullptr;
-	if ( myStats->shield && itemCategory(myStats->shield) == ARMOR ) //TODO: Right way to check if shield?
+	if ( myStats->shield && myStats->shield->isShield() )
 	{
-		currentBest = myStats->weapon;
+		currentBest = myStats->shield;
 	}
 
 	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
@@ -7986,14 +7990,19 @@ const Item* Entity::getBestShieldIHave() const
 		Item* item = static_cast<Item*>(node->element);
 		if ( item )
 		{
-			if ( isMeleeWeapon(*item) && Item::isThisABetterWeapon(*item, currentBest) )
+			if ( item->isShield() && Item::isThisABetterArmor(*item, currentBest) )
 			{
 				currentBest = item;
 			}
 		}
 	}
 
-	return nullptr;
+	if ( currentBest )
+	{
+		messagePlayer(clientnum, "Found best shield: \"%s\"", currentBest->description());
+	}
+
+	return currentBest;
 }
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
