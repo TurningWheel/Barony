@@ -7935,7 +7935,7 @@ double Entity::monsterRotate()
 	return dir;
 }
 
-const Item* Entity::getBestMeleeWeaponIHave() const
+Item* Entity::getBestMeleeWeaponIHave() const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -7970,7 +7970,7 @@ const Item* Entity::getBestMeleeWeaponIHave() const
 	return currentBest;
 }
 
-const Item* Entity::getBestShieldIHave() const
+Item* Entity::getBestShieldIHave() const
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -8004,6 +8004,7 @@ const Item* Entity::getBestShieldIHave() const
 
 	return currentBest;
 }
+
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
 	int playerhit = -1;
@@ -8100,3 +8101,25 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 
 	return true;
 }
+
+void Entity::monsterEquipItem(Item& item, Item** slot)
+{
+	if ( !slot )
+	{
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	dropItemMonster((*slot), this, myStats);
+
+	*slot = &item;
+}
+
+
+
+

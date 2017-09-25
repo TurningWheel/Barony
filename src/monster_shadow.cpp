@@ -1250,8 +1250,26 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	{
 
 		//TODO: On initial mimic, need to reset all the tracking info on what's already been mimic'ed.
-		//TODO: On initial mimic, copy best melee weapon and shield from target's hands or inventory.
-		const Item *bestMeleeWeapon = target->getBestMeleeWeaponIHave(); //TODO:
-		const Item *bestShield = target->getBestShieldIHave(); //TODO:
+		//Such as dropping already equipped items.
+		dropItemMonster(myStats->weapon, this, myStats);
+		dropItemMonster(myStats->shield, this, myStats);
+
+		//On initial mimic, copy best melee weapon and shield from target's hands or inventory.
+		Item *bestMeleeWeapon = target->getBestMeleeWeaponIHave();
+		Item *bestShield = target->getBestShieldIHave();
+
+		if ( bestMeleeWeapon )
+		{
+			Item* wieldedCopy = new Item();
+			copyItem(wieldedCopy, bestMeleeWeapon);
+			monsterEquipItem(*wieldedCopy, &myStats->weapon);
+		}
+
+		if ( bestShield )
+		{
+			Item* wieldedCopy = new Item();
+			copyItem(wieldedCopy, bestShield);
+			monsterEquipItem(*wieldedCopy, &myStats->shield);
+		}
 	}
 }

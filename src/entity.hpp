@@ -464,8 +464,12 @@ public:
 
 	double monsterRotate();
 
-	const Item* getBestMeleeWeaponIHave() const;
-	const Item* getBestShieldIHave() const;
+	//TODO: These two won't work with multiplayer because clients are stubborn little tater tots that refuse to surrender their inventories on demand.
+	//Here's the TODO: Fix it.
+	Item* getBestMeleeWeaponIHave() const;
+	Item* getBestShieldIHave() const;
+
+	void monsterEquipItem(Item& item, Item** slot);
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
