@@ -3383,7 +3383,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				//TODO: How does this play with the passive invisibility?
 				myStats->EFFECTS[EFF_INVISIBLE] = false;
 			}
-		}*/
+		}
 
 		if ( myStats->weapon != nullptr )
 		{
