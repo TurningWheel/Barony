@@ -1249,10 +1249,14 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	if ( initialMimic )
 	{
 
-		//TODO: On initial mimic, need to reset all the tracking info on what's already been mimic'ed.
+		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
 		dropItemMonster(myStats->weapon, this, myStats);
 		dropItemMonster(myStats->shield, this, myStats);
+
+		//Skills do not get reset.
+		//Attributes do not get reset.
+		//Spells do not get reset.
 
 		//On initial mimic, copy best melee weapon and shield from target's hands or inventory.
 		Item *bestMeleeWeapon = target->getBestMeleeWeaponIHave();
@@ -1271,5 +1275,8 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 			copyItem(wieldedCopy, bestShield);
 			monsterEquipItem(*wieldedCopy, &myStats->shield);
 		}
+
+		//TODO: On initial mimic, copy some random skills that the player is better at.
+		//TODO: Copy some of the player's spells.
 	}
 }

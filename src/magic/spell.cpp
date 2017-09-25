@@ -508,6 +508,106 @@ spell_t* getSpellFromID(int ID)
 	return spell;
 }
 
+Item* getSpellbookFromSpellID(int spellID)
+{
+	Item *spellbook = nullptr;
+
+	int itemType = -1;
+	switch (spellID)
+	{
+		case SPELL_FORCEBOLT:
+			itemType = SPELLBOOK_FORCEBOLT;
+			break;
+		case SPELL_MAGICMISSILE:
+			itemType = SPELLBOOK_MAGICMISSILE;
+			break;
+		case SPELL_COLD:
+			itemType = SPELLBOOK_COLD;
+			break;
+		case SPELL_FIREBALL:
+			itemType = SPELLBOOK_FIREBALL;
+			break;
+		case SPELL_LIGHTNING:
+			itemType = SPELLBOOK_LIGHTNING;
+			break;
+		case SPELL_REMOVECURSE:
+			itemType = SPELLBOOK_REMOVECURSE;
+			break;
+		case SPELL_LIGHT:
+			itemType = SPELLBOOK_LIGHT;
+			break;
+		case SPELL_IDENTIFY:
+			itemType = SPELLBOOK_IDENTIFY;
+			break;
+		case SPELL_MAGICMAPPING:
+			itemType = SPELLBOOK_MAGICMAPPING;
+			break;
+		case SPELL_SLEEP:
+			itemType = SPELLBOOK_SLEEP;
+			break;
+		case SPELL_CONFUSE:
+			itemType = SPELLBOOK_CONFUSE;
+			break;
+		case SPELL_SLOW:
+			itemType = SPELLBOOK_SLOW;
+			break;
+		case SPELL_OPENING:
+			itemType = SPELLBOOK_OPENING;
+			break;
+		case SPELL_LOCKING:
+			itemType = SPELLBOOK_LOCKING;
+			break;
+		case SPELL_LEVITATION:
+			itemType = SPELLBOOK_LEVITATION;
+			break;
+		case SPELL_INVISIBILITY:
+			itemType = SPELLBOOK_INVISIBILITY;
+			break;
+		case SPELL_TELEPORTATION:
+			itemType = SPELLBOOK_TELEPORTATION;
+			break;
+		case SPELL_HEALING:
+			itemType = SPELLBOOK_HEALING;
+			break;
+		case SPELL_EXTRAHEALING:
+			itemType = SPELLBOOK_EXTRAHEALING;
+			break;
+		case SPELL_CUREAILMENT:
+			itemType = SPELLBOOK_CUREAILMENT;
+			break;
+		case SPELL_DIG:
+			itemType = SPELLBOOK_DIG;
+			break;
+		case SPELL_SUMMON:
+			itemType = SPELLBOOK_SUMMON;
+			break;
+		case SPELL_STONEBLOOD:
+			itemType = SPELLBOOK_STONEBLOOD;
+			break;
+		case SPELL_BLEED:
+			itemType = SPELLBOOK_BLEED;
+			break;
+		/*case SPELL_DOMINATE:
+			itemType = SPELLBOOK_DOMINATE;
+			break;*/
+		case SPELL_REFLECT_MAGIC:
+			itemType = SPELLBOOK_REFLECT_MAGIC;
+			break;
+		case SPELL_ACID_SPRAY:
+			itemType = SPELLBOOK_ACID_SPRAY;
+			break;
+		default:
+			break;
+	}
+
+	if ( itemType > 0 )
+	{
+		spellbook = newItem(static_cast<ItemType>(itemType), static_cast<Status>(0), 0, 1, rand(), true, nullptr);
+	}
+
+	return spellbook;
+}
+
 bool spellInList(list_t* list, spell_t* spell)
 {
 	node_t* node;
