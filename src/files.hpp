@@ -1,3 +1,14 @@
+/*-------------------------------------------------------------------------------
+
+	BARONY
+	File: files.hpp
+	Desc: prototypes for file.cpp, all file access should be mediated
+		  through this interface
+
+	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
+	See LICENSE for details.
+
+-------------------------------------------------------------------------------*/
 #pragma once
 #include <string>
 #include <vector>

@@ -1,3 +1,13 @@
+/*-------------------------------------------------------------------------------
+
+	BARONY
+	File: draw.hpp
+	Desc: prototypes for draw.cpp, various drawing functions
+
+	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
+	See LICENSE for details.
+
+-------------------------------------------------------------------------------*/
 #pragma once
 #include <SDL.h>
 #include "entity.hpp"
