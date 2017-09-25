@@ -9,8 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -7450,7 +7448,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	}
 }
 
-bool Entity::monsterReleaseAttackTarget()
+bool Entity::monsterReleaseAttackTarget(bool force)
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -7458,7 +7456,7 @@ bool Entity::monsterReleaseAttackTarget()
 		return false;
 	}
 
-	if ( monsterTarget && uidToEntity(monsterTarget) && myStats->type == SHADOW )
+	if ( !force && myStats->type == SHADOW && monsterTarget && uidToEntity(monsterTarget) )
 	{
 		//messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
 		return false; //Shadow cannot lose its target.
@@ -7937,6 +7935,76 @@ double Entity::monsterRotate()
 	return dir;
 }
 
+Item* Entity::getBestMeleeWeaponIHave() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	Item* currentBest = nullptr;
+	if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+	{
+		currentBest = myStats->weapon;
+	}
+
+	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			if ( isMeleeWeapon(*item) && Item::isThisABetterWeapon(*item, currentBest) )
+			{
+				currentBest = item;
+			}
+		}
+	}
+
+	if ( currentBest )
+	{
+		messagePlayer(clientnum, "Found best melee weapon: \"%s\"", currentBest->description());
+	}
+
+	return currentBest;
+}
+
+Item* Entity::getBestShieldIHave() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	Item* currentBest = nullptr;
+	if ( myStats->shield && myStats->shield->isShield() )
+	{
+		currentBest = myStats->shield;
+	}
+
+	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			if ( item->isShield() && Item::isThisABetterArmor(*item, currentBest) )
+			{
+				currentBest = item;
+			}
+		}
+	}
+
+	if ( currentBest )
+	{
+		messagePlayer(clientnum, "Found best shield: \"%s\"", currentBest->description());
+	}
+
+	return currentBest;
+}
+
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
 	int playerhit = -1;
@@ -8033,3 +8101,59 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 
 	return true;
 }
+
+void Entity::monsterEquipItem(Item& item, Item** slot)
+{
+	if ( !slot )
+	{
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	dropItemMonster((*slot), this, myStats);
+
+	*slot = &item;
+}
+
+bool Entity::monsterHasSpellbook(int spellbookType)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	if ( myStats->weapon->type == spellbookType )
+	{
+		//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
+		//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+		return true;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item )
+		{
+			continue;
+		}
+
+		if ( item->type == spellbookType )
+		{
+			//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+			//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+

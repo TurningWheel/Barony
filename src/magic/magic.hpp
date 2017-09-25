@@ -430,6 +430,7 @@ bool spell_isChanneled(spell_t* spell);
 bool spellElement_isChanneled(spellElement_t* spellElement);
 
 spell_t* getSpellFromID(int ID);
+Item* getSpellbookFromSpellID(int spellID);
 
 bool spellInList(list_t* list, spell_t* spell);
 
@@ -475,6 +476,7 @@ void spellcastingAnimationManager_completeSpell(spellcasting_animation_manager_t
 class Item;
 
 spell_t* getSpellFromItem(Item* item);
+int getSpellIDFromSpellbook(int spellbookType);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);

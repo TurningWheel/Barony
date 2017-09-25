@@ -924,7 +924,12 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		return nullptr;
 	}
 
-	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
+	if ( monsterStats->type == SHADOW )
+	{
+		//Shadows' items are fake! Don't drop them.
+		itemDroppable = false;
+	}
+	else if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
 		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE || monsterStats->type == INSECTOID ) && itemCategory(item) == SPELLBOOK )
 		{
@@ -2631,6 +2636,16 @@ bool inline isMeleeWeapon(const Item& item)
 	}
 
 	return ( !isRangedWeapon(item) );
+}
+
+bool Item::isShield() const
+{
+	if ( itemCategory(this) != ARMOR || checkEquipType(this) != TYPE_SHIELD )
+	{
+		return false;
+	}
+
+	return true;
 }
 
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack)

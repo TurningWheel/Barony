@@ -340,7 +340,9 @@ public:
 	 * Returns which weapon hits harder.
 	 */
 	static bool isThisABetterWeapon(const Item& newWeapon, const Item* weaponAlreadyHave);
-	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave);
+	static bool isThisABetterArmor(const Item& newArmor, const Item* armorAlreadyHave); //Also checks shields.
+
+	bool isShield() const;
 
 };
 extern Uint32 itemuids;
