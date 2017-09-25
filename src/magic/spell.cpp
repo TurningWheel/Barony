@@ -608,6 +608,67 @@ Item* getSpellbookFromSpellID(int spellID)
 	return spellbook;
 }
 
+int getSpellIDFromSpellbook(int spellbookType)
+{
+	switch (spellbookType )
+	{
+		case SPELLBOOK_FORCEBOLT:
+			return spell_forcebolt.ID;
+		case SPELLBOOK_MAGICMISSILE:
+			return spell_magicmissile.ID;
+		case SPELLBOOK_COLD:
+			return spell_cold.ID;
+		case SPELLBOOK_FIREBALL:
+			return spell_fireball.ID;
+		case SPELLBOOK_LIGHTNING:
+			return spell_lightning.ID;
+		case SPELLBOOK_REMOVECURSE:
+			return spell_removecurse.ID;
+		case SPELLBOOK_LIGHT:
+			return spell_light.ID;
+		case SPELLBOOK_IDENTIFY:
+			return spell_identify.ID;
+		case SPELLBOOK_MAGICMAPPING:
+			return spell_magicmapping.ID;
+		case SPELLBOOK_SLEEP:
+			return spell_sleep.ID;
+		case SPELLBOOK_CONFUSE:
+			return spell_confuse.ID;
+		case SPELLBOOK_SLOW:
+			return spell_slow.ID;
+		case SPELLBOOK_OPENING:
+			return spell_opening.ID;
+		case SPELLBOOK_LOCKING:
+			return spell_locking.ID;
+		case SPELLBOOK_LEVITATION:
+			return spell_levitation.ID;
+		case SPELLBOOK_INVISIBILITY:
+			return spell_invisibility.ID;
+		case SPELLBOOK_TELEPORTATION:
+			return spell_teleportation.ID;
+		case SPELLBOOK_HEALING:
+			return spell_healing.ID;
+		case SPELLBOOK_EXTRAHEALING:
+			return spell_extrahealing.ID;
+		case SPELLBOOK_CUREAILMENT:
+			return spell_cureailment.ID;
+		case SPELLBOOK_DIG:
+			return spell_dig.ID;
+		case SPELLBOOK_SUMMON:
+			return spell_summon.ID;
+		case SPELLBOOK_STONEBLOOD:
+			return spell_stoneblood.ID;
+		case SPELLBOOK_BLEED:
+			return spell_bleed.ID;
+		case SPELLBOOK_REFLECT_MAGIC:
+			return spell_reflectMagic.ID;
+		case SPELLBOOK_ACID_SPRAY:
+			return spell_acidSpray.ID;
+		default:
+			return SPELL_NONE;
+	}
+}
+
 bool spellInList(list_t* list, spell_t* spell)
 {
 	node_t* node;

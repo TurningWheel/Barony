@@ -1223,7 +1223,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 {
 	//TODO: Teleport to target.
 	//TODO: Turn invisible.
-	//TODO: Mimic target's weapon & shield (only on initial cast).
+	//3. Mimic target's weapon & shield (only on initial cast).
 	//TODO: Random chance to mimic other things.
 
 	Stat *myStats = getStats();
@@ -1251,6 +1251,9 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//myStats->EFFECTS[EFF_INVISIBLE] = true;
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
 	messagePlayer(clientnum, "Turned invisible!");
+
+	int numSpellsToMimic = 2;
+	int numSkillsToMimic = 3;
 
 	//TODO: Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
@@ -1283,7 +1286,139 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 			monsterEquipItem(*wieldedCopy, &myStats->shield);
 		}
 
-		//TODO: On initial mimic, copy some random skills that the player is better at.
-		//TODO: Copy some of the player's spells.
+		//TODO: On initial mimic, copy some random skills that the target is better at.
+		//TODO: Copy some of the target's spells.
+
+		numSkillsToMimic += rand()%3 + 1;
+		numSpellsToMimic += rand()%3 + 1;
+	}
+
+	//Mimic target's skills (proficiencies).
+	//First, get proficiencies to mimic:
+	std::vector<int> skillsCanMimic;
+	for ( int i = 0; i < NUMPROFICIENCIES; ++i )
+	{
+		if ( targetStats->PROFICIENCIES[i] > myStats->PROFICIENCIES[i] )
+		{
+			//Target is better, can mimic this proficiency.
+			skillsCanMimic.push_back(i);
+		}
+	}
+	//Now choose a random skill and copy it over.
+	for ( int skillsMimicked = 0; skillsCanMimic.size() && skillsMimicked < numSkillsToMimic; ++skillsMimicked )
+	{
+		int choosen = rand()%skillsCanMimic.size();
+		myStats->PROFICIENCIES[skillsCanMimic[choosen]] = targetStats->PROFICIENCIES[skillsCanMimic[choosen]];
+
+		messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
+		skillsCanMimic.erase(skillsCanMimic.begin() + choosen); //No longer an eligible skill.
+	}
+
+	//Mimick spells.
+	//First, search the target's inventory for spells the shadow likes.
+	//For a player, it searches for the spell item.
+	//For a monster, it searches for spellbooks (since monsters don't learn spells the normal way.
+	std::vector<int> spellsCanMimic; //Array of spell IDs.
+	if ( target->behavior == actMonster && itemCategory(targetStats->weapon) == SPELLBOOK )
+	{
+		int spellID = getSpellIDFromSpellbook(targetStats->weapon->type);
+		if ( spellID != SPELL_NONE && shadowCanMimickSpell(spellID) && !monsterHasSpellbook(targetStats->weapon->type) )
+		{
+			spellsCanMimic.push_back(spellID);
+		}
+	}
+	for ( node_t* node = targetStats->inventory.first; node; node = node->next)
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item )
+		{
+			continue;
+		}
+
+		if ( target->behavior == actPlayer )
+		{
+			//Search player's inventory for the special spell item.
+			if ( itemCategory(item) != SPELL_CAT )
+			{
+				continue;
+			}
+
+			spell_t *spell = getSpellFromItem(item); //Do not free or delete this.
+			if ( !spell )
+			{
+				continue;
+			}
+
+			Item* spellbook = getSpellbookFromSpellID(spell->ID);
+			if ( !spellbook )
+			{
+				continue;
+			}
+
+			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(spellbook->type) )
+			{
+				spellsCanMimic.push_back(spell->ID);
+			}
+
+			free(spellbook);
+		}
+		else
+		{
+			//Search monster's inventory for spellbooks.
+			if ( itemCategory(item) != SPELLBOOK )
+			{
+				continue;
+			}
+
+			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+
+			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(item->type) )
+			{
+				spellsCanMimic.push_back(spell->ID);
+			}
+		}
+	}
+	//Now randomly choose & copy over a spell.
+	for ( int spellsMimicked = 0; spellsCanMimic.size() && spellsMimicked < numSkillsToMimic; ++spellsMimicked )
+	{
+		int choosen = rand()%spellsCanMimic.size();
+
+		Item* spellbook = getSpellbookFromSpellID(spellsCanMimic[choosen]);
+
+		if ( spellbook )
+		{
+			addItemToMonsterInventory(spellbook);
+
+			//TODO: Delete debug.
+			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(spellbook->type));
+			messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
+		}
+
+		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
 	}
 }
+
+bool Entity::shadowCanMimickSpell(int spellID)
+{
+	switch ( spellID )
+	{
+		case SPELL_FORCEBOLT:
+		case SPELL_MAGICMISSILE:
+		case SPELL_COLD:
+		case SPELL_FIREBALL:
+		case SPELL_LIGHTNING:
+		case SPELL_SLEEP:
+		case SPELL_CONFUSE:
+		case SPELL_SLOW:
+		case SPELL_STONEBLOOD:
+		case SPELL_BLEED:
+		case SPELL_ACID_SPRAY:
+			return true;
+		default:
+			return false;
+	}
+}
+
+
+
+

@@ -8120,6 +8120,40 @@ void Entity::monsterEquipItem(Item& item, Item** slot)
 	*slot = &item;
 }
 
+bool Entity::monsterHasSpellbook(int spellbookType)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	if ( myStats->weapon->type == spellbookType )
+	{
+		//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
+		//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+		return true;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item )
+		{
+			continue;
+		}
+
+		if ( item->type == spellbookType )
+		{
+			//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+			//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+			return true;
+		}
+	}
+
+	return false;
+}
+
 
 
 
