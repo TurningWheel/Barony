@@ -425,7 +425,7 @@ public:
 	 * May refuses to do so and consequently return false in cases such as the shadow, which cannot lose its target until it's dead.
 	 * Returns true otherwise, if successfully zero-d out target.
 	 */
-	bool monsterReleaseAttackTarget();
+	bool monsterReleaseAttackTarget(bool force = false);
 
 	//Lets monsters swap out weapons.
 	void inline chooseWeapon(const Entity* target, double dist)

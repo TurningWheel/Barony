@@ -1240,6 +1240,13 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		return;
 	}
 
+	Stat* targetStats = target->getStats();
+	if ( !targetStats )
+	{
+		monsterReleaseAttackTarget(true); //Force get rid of the target since it has no stats -- it's useless to us!
+		return;
+	}
+
 	//TODO: Turn invisible.
 	//myStats->EFFECTS[EFF_INVISIBLE] = true;
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.

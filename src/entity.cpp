@@ -7448,7 +7448,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	}
 }
 
-bool Entity::monsterReleaseAttackTarget()
+bool Entity::monsterReleaseAttackTarget(bool force)
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -7456,7 +7456,7 @@ bool Entity::monsterReleaseAttackTarget()
 		return false;
 	}
 
-	if ( myStats->type == SHADOW && monsterTarget && uidToEntity(monsterTarget) )
+	if ( !force && myStats->type == SHADOW && monsterTarget && uidToEntity(monsterTarget) )
 	{
 		//messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
 		return false; //Shadow cannot lose its target.
