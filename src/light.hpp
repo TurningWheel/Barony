@@ -1,3 +1,13 @@
+/*-------------------------------------------------------------------------------
+
+	BARONY
+	File: light.hpp
+	Desc: prototypes for light.cpp, light-related types and prototypes
+
+	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
+	See LICENSE for details.
+
+-------------------------------------------------------------------------------*/
 #pragma once
 
 typedef struct light_t
