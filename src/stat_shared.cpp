@@ -679,8 +679,55 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 91:
 		case (1000 + INSECTOID):
 			stats->type = INSECTOID;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->MAXHP = 175;
+			stats->HP = stats->MAXHP;
+			stats->MAXMP = 50;
+			stats->MP = stats->MAXMP;
+			stats->OLDHP = stats->HP;
+			stats->RANDOM_MAXHP = 25;
+			stats->RANDOM_HP = stats->RANDOM_MAXHP;
+			stats->RANDOM_MAXMP = 0;
+			stats->RANDOM_MP = stats->RANDOM_MAXMP;
+			stats->STR = 25;
+			stats->RANDOM_STR = 5;
+			stats->DEX = 10;
+			stats->CON = 10;
+			stats->RANDOM_CON = 2;
+			stats->INT = -2;
+			stats->RANDOM_INT = 2;
+			stats->PER = 10;
+			stats->RANDOM_PER = 5;
+			stats->CHR = -3;
+			stats->EXP = 0;
+			stats->LVL = 25;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+			//stats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] = 1;
+
+			stats->PROFICIENCIES[PRO_SWORD] = 50;
+			//stats->PROFICIENCIES[PRO_MACE] = 35;
+			stats->PROFICIENCIES[PRO_AXE] = 35;
+			stats->PROFICIENCIES[PRO_POLEARM] = 60;
+			stats->PROFICIENCIES[PRO_RANGED] = 50;
+			stats->PROFICIENCIES[PRO_SHIELD] = 35;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 100; // iron daggers, qty 2-8
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 50; // shortbow
+			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 20; // gemstones, qty 1-2
+			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_4] = 1;
+			//stats->EDITOR_ITEMS[ITEM_SLOT_INV_4 + ITEM_CHANCE] = 5; // spellbook
 			break;
 		case 92:
 		case (1000 + GOATMAN):

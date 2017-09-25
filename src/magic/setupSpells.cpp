@@ -245,6 +245,13 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_reflectMagic.duration = 3000;
 	strcpy(spellElement_reflectMagic.name, language[2394]);
 
+	spellElementConstructor(&spellElement_acidSpray);
+	spellElement_acidSpray.mana = 20;
+	spellElement_acidSpray.base_mana = 20;
+	spellElement_acidSpray.overload_multiplier = 1;
+	spellElement_acidSpray.damage = 10;
+	spellElement_acidSpray.duration = TICKS_PER_SECOND * SPELLELEMENT_ACIDSPRAY_BASE_DURATION; //TODO: Decide on something.;
+	strcpy(spellElement_acidSpray.name, language[2395]);
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
@@ -700,4 +707,24 @@ void setupSpells()   ///TODO: Verify this function.
 	element = (spellElement_t*) node->element;
 	element->node = node; //Tell the element what list it resides in.
 	element->channeled = true;
+
+	spellConstructor(&spell_acidSpray);
+	strcpy(spell_acidSpray.name, language[2395]);
+	spell_acidSpray.ID = SPELL_ACID_SPRAY;
+	spell_acidSpray.difficulty = 0;
+	node = list_AddNodeLast(&spell_acidSpray.elements);
+	node->element = copySpellElement(&spellElement_missile_trio);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+						  //Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_acidSpray);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
 }

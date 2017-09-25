@@ -188,8 +188,28 @@ public:
 	Sint32& leverTimerTicks;
 	Sint32& leverStatus;
 
+	//--PUBLIC BOULDER TRAP SKILLS--
+	Sint32& boulderTrapRefireAmount;
+	Sint32& boulderTrapRefireDelay;
+	Sint32& boulderTrapAmbience;
+	Sint32& boulderTrapFired;
+	Sint32& boulderTrapRefireCounter;
+	Sint32& boulderTrapPreDelay;
+
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
+
+	//--PUBLIC DOOR SKILLS--
+	Sint32& doorDir;
+	Sint32& doorInit;
+	Sint32& doorStatus;
+	Sint32& doorHealth;
+	Sint32& doorLocked;
+	Sint32& doorSmacked;
+	Sint32& doorTimer;
+	Sint32& doorOldStatus;
+	Sint32& doorMaxHealth;
+	real_t& doorStartAng;
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -260,6 +280,7 @@ public:
 	bool goatmanCanWieldItem(const Item& item) const;
 	bool automatonCanWieldItem(const Item& item) const;
 	bool shadowCanWieldItem(const Item& item) const;
+	bool insectoidCanWieldItem(const Item& item) const;
 
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
 
@@ -270,6 +291,8 @@ public:
 
 	bool shouldMonsterEquipThisWeapon(const Item& itemToEquip) const;//TODO: Look @ proficiencies.
 	Item** shouldMonsterEquipThisArmor(const Item& item) const;
+
+	void removeLightField(); // Removes light field from entity, sets this->light to nullptr.
 
 	//--- Mechanism functions ---
 	void circuitPowerOn(); //Called when a nearby circuit or switch powers on.
@@ -294,6 +317,9 @@ public:
 
 	//Power Crystal functions.
 	void powerCrystalCreateElectricityNodes();
+
+	//Door functions.
+	void doorHandleDamageMagic(int damage, Entity &magicProjectile, Entity *caster);
 
 	bool checkEnemy(Entity* your);
 	bool checkFriend(Entity* your);
@@ -366,6 +392,12 @@ public:
 	void automatonRecycleItem();
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
+	// degrade chosen armor piece by 1 on entity, update clients.
+	void degradeArmor(Stat& hitstats, Item& armor, int armornum);
+	// check stats if monster should "retreat" in actMonster
+	bool shouldRetreat(Stat& myStats);
+	// check if monster should retreat or stand still when less than given distance
+	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
 
 	spell_t* getActiveMagicEffect(int spellID);
 
@@ -409,11 +441,15 @@ public:
 			case GOATMAN:
 				goatmanChooseWeapon(target, dist);
 				break;
+			case INSECTOID:
+				insectoidChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
 	}
 	void goatmanChooseWeapon(const Entity* target, double dist);
+	void insectoidChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
@@ -529,12 +565,13 @@ void actAmbientParticleEffectIdle(Entity* my);
 //checks if a sprite falls in certain sprite ranges
 
 static const int NUM_ITEM_STRINGS = 213;
-static const int NUM_ITEM_STRINGS_BY_TYPE = 75;
+static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
 static const int NUM_EDITOR_SPRITES = 116;
+static const int NUM_EDITOR_TILES = 208;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];
-extern char tileEditorNameStrings[202][44];
+extern char tileEditorNameStrings[NUM_EDITOR_TILES][44];
 extern char monsterEditorNameStrings[NUMMONSTERS][13];
 extern char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32];
 extern char itemNameStrings[NUM_ITEM_STRINGS][32];

@@ -43,11 +43,13 @@ static const int SPELL_STONEBLOOD = 23;
 static const int SPELL_BLEED = 24;
 static const int SPELL_DOMINATE = 25;
 static const int SPELL_REFLECT_MAGIC = 26;
+static const int SPELL_ACID_SPRAY = 27;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
 #define SPELLELEMENT_BLEED_BASE_DURATION 10//In seconds.
 #define SPELLELEMENT_STONEBLOOD_BASE_DURATION 5//In seconds.
+static const int SPELLELEMENT_ACIDSPRAY_BASE_DURATION = 10;
 
 //Definitions for actMagic(note that other functions may use this)
 #define MAGIC_TYPE (Item)my->skill[10] //TODO: OLD.
@@ -89,6 +91,8 @@ static const int SPELL_REFLECT_MAGIC = 26;
 /*** misc effect particles ***/
 static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
 static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
+static const int PARTICLE_EFFECT_SAP = 3;
+static const int PARTICLE_EFFECT_SHADOW_INVIS = 4;
 
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -292,6 +296,9 @@ extern spellElement_t spellElement_stoneblood;
 */
 extern spellElement_t spellElement_bleed;
 
+/*Dmg/Poison and degrade armor*/
+extern spellElement_t spellElement_acidSpray;
+
 /*
 * The missile element gives propulsion to a spell; it makes a spell a projectile.
 * Base cost: 1 mana.
@@ -372,6 +379,7 @@ extern spell_t spell_stoneblood;
 extern spell_t spell_bleed;
 extern spell_t spell_dominate;
 extern spell_t spell_reflectMagic;
+extern spell_t spell_acidSpray;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -395,8 +403,17 @@ void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);
 void actParticleRock(Entity* my);
 void actParticleTest(Entity* my);
+void actParticleErupt(Entity* my);
+void actParticleTimer(Entity* my);
+void actParticleSap(Entity* my);
+void actParticleSapCenter(Entity* my);
+
+void createParticleDropRising(Entity* parent, int sprite);
 void createParticleDot(Entity* parent);
 void createParticleRock(Entity* parent);
+void createParticleErupt(Entity* parent, int sprite);
+void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite);
+void createParticleSap(Entity* parent);
 
 spell_t* newSpell();
 spell_t* copySpell(spell_t* spell);
@@ -461,5 +478,6 @@ spell_t* getSpellFromItem(Item* item);
 
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
+void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 
 void freeSpells();

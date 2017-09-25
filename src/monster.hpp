@@ -374,6 +374,7 @@ static const int MONSTER_POSE_GOLEM_SMASH = 22;
 static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 23;
 static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
 //static const int MONSTER_POSE_SHADOW_TELEMIMICINVISI_WINDUP = 25;
+static const int MONSTER_POSE_INSECTOID_DOUBLETHROW = 25;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -384,11 +385,14 @@ static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 1000;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 200;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
 static const int MONSTER_TARGET_FRIEND = 1;
 static const int MONSTER_TARGET_PLAYER = 2;
+static const int MONSTER_TARGET_ALL = 3;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;
@@ -455,3 +459,8 @@ static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
 //--Automaton--
 static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;
 static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
+
+//--Insectoid--
+static const int INSECTOID_ACID = 1;
+static const int INSECTOID_DOUBLETHROW_FIRST = 2;
+static const int INSECTOID_DOUBLETHROW_SECOND = 3;

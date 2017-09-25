@@ -98,7 +98,23 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	gateVelZ(vel_z),
 	gateInverted(skill[5]),
 	leverStatus(skill[1]),
-	leverTimerTicks(skill[2])
+	leverTimerTicks(skill[3]),
+	boulderTrapRefireAmount(skill[1]),
+	boulderTrapRefireDelay(skill[3]),
+	boulderTrapAmbience(skill[6]),
+	boulderTrapFired(skill[0]),
+	boulderTrapRefireCounter(skill[4]),
+	boulderTrapPreDelay(skill[5]),
+	doorDir(skill[0]),
+	doorInit(skill[1]),
+	doorStatus(skill[3]),
+	doorHealth(skill[4]),
+	doorLocked(skill[5]),
+	doorSmacked(skill[6]),
+	doorTimer(skill[7]),
+	doorOldStatus(skill[8]),
+	doorMaxHealth(skill[9]),
+	doorStartAng(fskill[0])
 
 {
 	int c;
@@ -3495,6 +3511,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_SUMMON:
 							castSpell(uid, &spell_summon, true, false);
 							break;
+						case SPELLBOOK_ACID_SPRAY:
+							castSpell(uid, &spell_acidSpray, true, false);
+							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 							//castSpell(uid, &spell_reflectMagic, true, false)
 							//break;
@@ -4425,50 +4444,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 					if ( armor != NULL )
 					{
-						if ( playerhit == clientnum || playerhit < 0 )
-						{
-							if ( armor->count > 1 )
-							{
-								newItem(armor->type, armor->status, armor->beatitude, armor->count - 1, armor->appearance, armor->identified, &hitstats->inventory);
-							}
-						}
-						armor->count = 1;
-						armor->status = static_cast<Status>(armor->status - 1);
-						if ( armor->status > BROKEN )
-						{
-							if ( armor->type == TOOL_CRYSTALSHARD )
-							{
-								messagePlayer(playerhit, language[2350], armor->getName());
-							}
-							else
-							{
-								messagePlayer(playerhit, language[681], armor->getName());
-							}
-						}
-						else
-						{
-
-							if ( armor->type == TOOL_CRYSTALSHARD )
-							{
-								playSoundEntity(hit.entity, 162, 64);
-								messagePlayer(playerhit, language[2351], armor->getName());
-							}
-							else
-							{
-								playSoundEntity(hit.entity, 76, 64);
-								messagePlayer(playerhit, language[682], armor->getName());
-							}
-						}
-						if ( playerhit > 0 && multiplayer == SERVER )
-						{
-							strcpy((char*)net_packet->data, "ARMR");
-							net_packet->data[4] = armornum;
-							net_packet->data[5] = armor->status;
-							net_packet->address.host = net_clients[playerhit - 1].host;
-							net_packet->address.port = net_clients[playerhit - 1].port;
-							net_packet->len = 6;
-							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
-						}
+						hit.entity->degradeArmor(*hitstats, *armor, armornum);
 					}
 
 					// special weapon effects
@@ -6314,7 +6290,7 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6325,39 +6301,44 @@ int Entity::getAttackPose() const
 		}
 		else if ( itemCategory(myStats->weapon) == SPELLBOOK )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == INSECTOID && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP3;
+			}
+			else if ( myStats->type == COCKATRICE && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP2;
+			}
+			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == COCKATRICE )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
-			}
-			else if ( myStats->type == COCKATRICE )
-			{
-				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
-				{
-					pose = MONSTER_POSE_MAGIC_WINDUP2;
-				}
-				else
-				{
-					pose = MONSTER_POSE_MAGIC_WINDUP1;
-				}
 			}
 			else
 			{
 				pose = 1;  // vertical swing
 			}
 		}
-		else if ( itemCategory(myStats->weapon) == POTION && myStats->type == GOATMAN )
+		else if ( itemCategory(myStats->weapon) == POTION )
 		{
-			pose = MONSTER_POSE_RANGED_WINDUP3;
-			//TODO:
-			//if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
-			//{
-			//	//
-			//}
-			//else if ( this->monsterSpecial == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+			if ( myStats->type == GOATMAN )
+			{
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP3;
+				}
+				else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
+				{
+					pose = MONSTER_POSE_MELEE_WINDUP1;
+				}
+			}
+			else
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1;
+			}
 		}
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6365,7 +6346,21 @@ int Entity::getAttackPose() const
 				}
 				else if ( itemCategory(myStats->weapon) == THROWN )
 				{
-					pose = MONSTER_POSE_MELEE_WINDUP1;
+					if ( myStats->type == INSECTOID )
+					{
+						if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW )
+						{
+							pose = MONSTER_POSE_RANGED_WINDUP3;
+						}
+						else
+						{
+							pose = MONSTER_POSE_MELEE_WINDUP1;
+						}
+					}
+					else
+					{
+						pose = MONSTER_POSE_MELEE_WINDUP1;
+					}
 				}
 				else
 				{
@@ -6379,7 +6374,7 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6400,7 +6395,7 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -7207,8 +7202,9 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 
 	weaponLimb->yaw = weaponArmLimb->yaw;
 
-	if ( this->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+	if ( this->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 && monsterType == GOATMAN )
 	{
+		// specific for potion throwing goatmen.
 		limbAnimateToLimit(weaponLimb, ANIMATE_ROLL, 0.25, 1 * PI / 4, false, 0.0);
 	}
 	else
@@ -8000,4 +7996,100 @@ const Item* Entity::getBestShieldIHave() const
 	}
 
 	return nullptr;
+}
+void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
+{
+	int playerhit = -1;
+
+	if ( this->behavior == &actPlayer )
+	{
+		playerhit = this->skill[2];
+	}
+
+	if ( playerhit == clientnum || playerhit < 0 )
+	{
+		if ( armor.count > 1 )
+		{
+			newItem(armor.type, armor.status, armor.beatitude, armor.count - 1, armor.appearance, armor.identified, &hitstats.inventory);
+		}
+	}
+	armor.count = 1;
+	armor.status = static_cast<Status>(armor.status - 1);
+	if ( armor.status > BROKEN )
+	{
+		if ( armor.type == TOOL_CRYSTALSHARD )
+		{
+			messagePlayer(playerhit, language[2350], armor.getName());
+		}
+		else
+		{
+			messagePlayer(playerhit, language[681], armor.getName());
+		}
+	}
+	else
+	{
+		if ( armor.type == TOOL_CRYSTALSHARD )
+		{
+			playSoundEntity(hit.entity, 162, 64);
+			messagePlayer(playerhit, language[2351], armor.getName());
+		}
+		else
+		{
+			playSoundEntity(hit.entity, 76, 64);
+			messagePlayer(playerhit, language[682], armor.getName());
+		}
+	}
+	if ( playerhit > 0 && multiplayer == SERVER )
+	{
+		strcpy((char*)net_packet->data, "ARMR");
+		net_packet->data[4] = armornum;
+		net_packet->data[5] = armor.status;
+		net_packet->address.host = net_clients[playerhit - 1].host;
+		net_packet->address.port = net_clients[playerhit - 1].port;
+		net_packet->len = 6;
+		sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+	}
+}
+
+void Entity::removeLightField()
+{
+	if ( this->light != nullptr )
+	{
+		list_RemoveNode(this->light->node);
+		this->light = nullptr;
+	}
+}
+
+bool Entity::shouldRetreat(Stat& myStats)
+{
+	// monsters that retreat based on CHR
+	// gnomes, spiders, goblins, shopkeeps, trolls, humans (50%)
+	// kobolds, scarabs, vampires, suc/incubi, insectoids, goatmen, rats
+
+	// excluded golems, shadows, cockatrice, skeletons, demons, imps
+	// scorpions, slimes, ghouls
+
+	// retreating monsters will not try path when losing sight of target
+
+	if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
+	{
+		return true;
+	}
+
+	return false;
+}
+
+bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon)
+{
+	if ( dist >= 100 || !hasrangedweapon )
+	{
+		return false;
+	}
+
+	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
+	{
+		return false;
+	}
+
+	return true;
 }
