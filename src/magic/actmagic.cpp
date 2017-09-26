@@ -1883,13 +1883,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 						else
 						{
-                            if ( parent )
-                            {
-                                if ( parent->behavior == &actPlayer )
-                                {
-                                    messagePlayer(parent->skill[2], language[401]);
-                                }
-                            }
+							if ( parent )
+							{
+								if ( parent->behavior == &actPlayer )
+								{
+									messagePlayer(parent->skill[2], language[401]);
+								}
+							}
 							if ( player >= 0 )
 							{
 								messagePlayer(player, language[401]);
