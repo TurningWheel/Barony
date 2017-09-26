@@ -465,16 +465,16 @@ void actHudWeapon(Entity* my)
 						{
 							if ( throwGimpTimer == 0 )
 							{
-								// bows need to be drawn back
-								if (!bowDrawingSoundPlaying)
+								// Bows need to be drawn back
+								if ( !bowDrawingSoundPlaying )
 								{
-									if (bowFire)
+									if ( bowFire )
 									{
 										bowFire = false;
-                                        bowDrawingSound = nullptr;
+										bowDrawingSound = nullptr;
 										players[clientnum]->entity->attack(0, 0, nullptr);
 										HUDWEAPON_MOVEX = 3;
-										throwGimpTimer = 12;
+										throwGimpTimer = 12; // Was TICKS_PER_SECOND / 4
 									}
 									else
 									{
