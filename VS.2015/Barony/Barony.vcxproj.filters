@@ -321,9 +321,6 @@
     <ClCompile Include="..\..\src\interface\drawstatus.cpp">
       <Filter>Source Files\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\interface\identify_and_appraise.cpp">
-      <Filter>Source Files\interface</Filter>
-    </ClCompile>
     <ClCompile Include="..\..\src\interface\interface.cpp">
       <Filter>Source Files\interface</Filter>
     </ClCompile>
@@ -331,9 +328,6 @@
       <Filter>Source Files\interface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\interface\playerinventory.cpp">
-      <Filter>Source Files\interface</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\interface\removecurse.cpp">
       <Filter>Source Files\interface</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\interface\screenshot.cpp">
@@ -366,10 +360,10 @@
     <ClCompile Include="..\..\src\magic\spell.cpp">
       <Filter>Source Files\magic</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\interface\ItemModifyingGUI.cpp">
+    <ClCompile Include="..\..\src\interface\AppraisalGUI.cpp">
       <Filter>Source Files\interface</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\interface\AppraisalGUI.cpp">
+    <ClCompile Include="..\..\src\interface\ItemModifyingGUI.cpp">
       <Filter>Source Files\interface</Filter>
     </ClCompile>
   </ItemGroup>
@@ -452,13 +446,13 @@
     <ClInclude Include="..\..\src\magic\magic.hpp">
       <Filter>Header Files\magic</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\interface\ItemModifyingGUI.hpp">
-      <Filter>Header Files\interface</Filter>
-    </ClInclude>
     <ClInclude Include="..\..\src\interface\AppraisalGUI.hpp">
       <Filter>Header Files\interface</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\cppfuncs.hpp">
+    <ClInclude Include="..\..\src\interface\ItemModifyingGUI.hpp">
+      <Filter>Header Files\interface</Filter>
+    </ClInclude>
+    <ClInclude Include="..\..\src\paths.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
     <ClInclude Include="..\..\src\collision.hpp">
@@ -467,10 +461,10 @@
     <ClInclude Include="..\..\src\colors.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\hash.hpp">
+    <ClInclude Include="..\..\src\cppfuncs.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
-    <ClInclude Include="..\..\src\paths.hpp">
+    <ClInclude Include="..\..\src\hash.hpp">
       <Filter>Header Files</Filter>
     </ClInclude>
   </ItemGroup>

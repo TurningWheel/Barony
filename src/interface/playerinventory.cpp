@@ -238,65 +238,6 @@ char* itemUseString(const Item* item)
 	return language[332];
 }
 
-/*-------------------------------------------------------------------------------
-
-	updateAppraisalItemBox
-
-	draws the current item being appraised
-
--------------------------------------------------------------------------------*/
-/*
-void updateAppraisalItemBox()
-{
-	SDL_Rect pos;
-	Item* item;
-	int x, y;
-
-	x = INVENTORY_STARTX;
-	y = INVENTORY_STARTY;
-
-	// appraisal item box
-	if ( (item = uidToItem(appraisal_item)) != NULL && appraisal_timer > 0 )
-	{
-		if ( !shootmode )
-		{
-			pos.x = x + 16;
-			pos.y = y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE + 16;
-		}
-		else
-		{
-			pos.x = 16;
-			pos.y = 16;
-		}
-		int w1, w2;
-		TTF_SizeUTF8(ttf12, language[340], &w1, NULL);
-		TTF_SizeUTF8(ttf12, item->getName(), &w2, NULL);
-		w2 += 48;
-		pos.w = std::max(w1, w2) + 8;
-		pos.h = 68;
-		drawTooltip(&pos);
-
-		char tempstr[64] = { 0 };
-		snprintf(tempstr, 63, language[341], (((double)(appraisal_timermax - appraisal_timer)) / ((double)appraisal_timermax)) * 100);
-		ttfPrintText( ttf12, pos.x + 8, pos.y + 8, tempstr );
-		if ( !shootmode )
-		{
-			pos.x = x + 24;
-			pos.y = y + INVENTORY_SIZEY * INVENTORY_SLOTSIZE + 16 + 24;
-		}
-		else
-		{
-			pos.x = 24;
-			pos.y = 16 + 24;
-		}
-		ttfPrintText( ttf12, pos.x + 40, pos.y + 8, item->getName() );
-		pos.w = 32;
-		pos.h = 32;
-		drawImageScaled(itemSprite(item), NULL, &pos);
-	}
-}
-*/
-
 void select_inventory_slot(int x, int y)
 {
 	if ( x < 0 )   //Wrap around left boundary.
