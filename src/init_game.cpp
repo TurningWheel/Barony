@@ -493,8 +493,8 @@ int fmod_result;
 		return -1;
 	}
 
-    itemModifyingGUI = new GUI::ItemModifyingGUI;
-    appraisalGUI = new GUI::AppraisalGUI;
+	itemModifyingGUI = new GUI::ItemModifyingGUI;
+	appraisalGUI = new GUI::AppraisalGUI;
 
 	return 0;
 }
@@ -833,10 +833,10 @@ void deinitGame()
 	}
 	delete[] players;
 
-    // 9-5-2017 - Lutz - ItemModifyingGUI Refactor
-    delete itemModifyingGUI;
-    itemModifyingGUI = nullptr;
+	// 9-5-2017 - Lutz - ItemModifyingGUI Refactor
+	delete itemModifyingGUI;
+	itemModifyingGUI = nullptr;
 
-    delete appraisalGUI;
-    appraisalGUI = nullptr;
+	delete appraisalGUI;
+	appraisalGUI = nullptr;
 }

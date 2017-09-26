@@ -1019,14 +1019,14 @@ void gameLogic(void)
 				}
 				else
 				{
-                    // Items don't have to be dropped, auto-appraise a new Item if valid
-                    if( auto_appraise_new_items && item->identified == false && appraisalGUI->IsGUIOpen() == false )
+					// Items don't have to be dropped, auto-appraise a new Item if valid
+					if ( auto_appraise_new_items && item->identified == false && appraisalGUI->IsGUIOpen() == false )
 					{
-                        // Check if the current Item has the lowest appraisal time, if it does, set appraisalGUI->lowestAppraisalTime = item's appraisal time
-                        if ( appraisalGUI->IsItemAppraisalTimeShortest(item) == true )
-                        {
-                            autoAppraiseTarget = item;
-                        }
+						// Check if the current Item has the lowest appraisal time, if it does, set appraisalGUI->lowestAppraisalTime = item's appraisal time
+						if ( appraisalGUI->IsItemAppraisalTimeShortest(item) == true )
+						{
+							autoAppraiseTarget = item;
+						}
 					}
 				}
 			}
@@ -1445,15 +1445,15 @@ void gameLogic(void)
 				}
 				else
 				{
-                    // Items don't have to be dropped, auto-appraise a new Item if valid
-                    if ( auto_appraise_new_items && item->identified == false && appraisalGUI->IsGUIOpen() == false )
-                    {
-                        // Check if the current Item has the lowest appraisal time, if it does, set appraisalGUI->lowestAppraisalTime = item's appraisal time
-                        if ( appraisalGUI->IsItemAppraisalTimeShortest(item) == true )
-                        {
-                            autoAppraiseTarget = item;
-                        }
-                    }
+					// Items don't have to be dropped, auto-appraise a new Item if valid
+					if ( auto_appraise_new_items && item->identified == false && appraisalGUI->IsGUIOpen() == false )
+					{
+						// Check if the current Item has the lowest appraisal time, if it does, set appraisalGUI->lowestAppraisalTime = item's appraisal time
+						if ( appraisalGUI->IsItemAppraisalTimeShortest(item) == true )
+						{
+							autoAppraiseTarget = item;
+						}
+					}
 				}
 			}
 
@@ -1470,7 +1470,7 @@ void gameLogic(void)
 		// If an Item was selected for auto-appraisal, open the AppraisalGUI
 		if ( autoAppraiseTarget != nullptr )
 		{
-            appraisalGUI->OpenGUI(autoAppraiseTarget, players[clientnum]->entity);
+			appraisalGUI->OpenGUI(autoAppraiseTarget, players[clientnum]->entity);
 		}
 	}
 }
@@ -2694,11 +2694,11 @@ int main(int argc, char** argv)
 						shootmode = true;
 						gui_mode = GUI_MODE_INVENTORY;
 
-                        // If the ItemModifyingGUI is open, close it
-                        if ( itemModifyingGUI->IsGUIOpen() == true )
-                        {
-                            itemModifyingGUI->CloseGUI();
-                        }
+						// If the ItemModifyingGUI is open, close it
+						if ( itemModifyingGUI->IsGUIOpen() == true )
+						{
+							itemModifyingGUI->CloseGUI();
+						}
 
 						if ( shopkeeper != 0 )
 						{
@@ -2801,13 +2801,13 @@ int main(int argc, char** argv)
 						}
 						else
 						{
-                            // If the ItemModifyingGUI is open, close it
-                            if ( itemModifyingGUI->IsGUIOpen() == true )
-                            {
-                                itemModifyingGUI->CloseGUI();
-                            }
+							// If the ItemModifyingGUI is open, close it
+							if ( itemModifyingGUI->IsGUIOpen() == true )
+							{
+								itemModifyingGUI->CloseGUI();
+							}
 
-                            shootmode = true;
+							shootmode = true;
 						}
 
 						//What even is this code? When should it be run?
@@ -3028,14 +3028,14 @@ int main(int argc, char** argv)
 					}
 					else
 					{
-					    //Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
-					    //2-3 years later...yes, it is run every frame.
+						//Do these get called every frame? Might be better to move this stuff into an if (went_back_into_shootmode) { ... } thing.
+						//2-3 years later...yes, it is run every frame.
 
-                        // If the ItemModifyingGUI is open, close it
-                        if ( itemModifyingGUI->IsGUIOpen() == true )
-                        {
-                            itemModifyingGUI->CloseGUI();
-                        }
+						// If the ItemModifyingGUI is open, close it
+						if ( itemModifyingGUI->IsGUIOpen() == true )
+						{
+							itemModifyingGUI->CloseGUI();
+						}
 
 						if ( book_open )
 						{
@@ -3055,8 +3055,7 @@ int main(int argc, char** argv)
 					}
 
 					drawSustainedSpells();
-                    appraisalGUI->DrawGUI();
-					//updateAppraisalItemBox();
+					appraisalGUI->DrawGUI();
 
 					// inventory and stats
 					if ( shootmode == false )
@@ -3066,7 +3065,7 @@ int main(int argc, char** argv)
 							updateCharacterSheet();
 							updatePlayerInventory();
 							updateChestInventory();
-                            itemModifyingGUI->UpdateGUI();
+							itemModifyingGUI->UpdateGUI();
 							updateBookGUI();
 							//updateRightSidebar();
 

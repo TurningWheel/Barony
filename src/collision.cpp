@@ -69,36 +69,36 @@ Entity* entityClicked()
 		{
 			return nullptr;
 		}
-        if ( openedChest[clientnum] )
-        {
-            if ( omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h )
-            {
-                return nullptr;    //Click falls inside the chest inventory GUI.
-            }
-        }
-        if ( itemModifyingGUI->IsGUIOpen() == true )
-        {
-            if ( itemModifyingGUI->IsMouseWithinGUIBounds() == true )
-            {
-                return nullptr; // Click falls within the itemModifyingGUI's bounds
-            }
-        }
-        if ( book_open )
-        {
-            if ( mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
-            {
-                return nullptr;    //Click falls inside the book GUI.
-            }
-        }
-		if (gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP)
+		if ( openedChest[clientnum] )
 		{
-            if ( gui_mode == GUI_MODE_INVENTORY )
-            {
-                if ( mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height) )
-                {
-                    return nullptr;    //Click falls inside the right sidebar.
-                }
-            }
+			if ( omousex > CHEST_INVENTORY_X && omousex < CHEST_INVENTORY_X + inventoryChest_bmp->w && omousey > CHEST_INVENTORY_Y && omousey < CHEST_INVENTORY_Y + inventoryChest_bmp->h )
+			{
+				return nullptr;    //Click falls inside the chest inventory GUI.
+			}
+		}
+		if ( itemModifyingGUI->IsGUIOpen() == true )
+		{
+			if ( itemModifyingGUI->IsMouseWithinGUIBounds() == true )
+			{
+				return nullptr; // Click falls within the itemModifyingGUI's bounds
+			}
+		}
+		if ( book_open )
+		{
+			if ( mouseInBounds(BOOK_GUI_X, BOOK_GUI_X + bookgui_img->w, BOOK_GUI_Y, BOOK_GUI_Y + bookgui_img->h) )
+			{
+				return nullptr;    //Click falls inside the book GUI.
+			}
+		}
+		if ( gui_mode == GUI_MODE_INVENTORY || gui_mode == GUI_MODE_SHOP )
+		{
+			if ( gui_mode == GUI_MODE_INVENTORY )
+			{
+				if ( mouseInBounds(RIGHTSIDEBAR_X, RIGHTSIDEBAR_X + rightsidebar_titlebar_img->w, RIGHTSIDEBAR_Y, RIGHTSIDEBAR_Y + rightsidebar_height) )
+				{
+					return nullptr;    //Click falls inside the right sidebar.
+				}
+			}
 			//int x = std::max(character_bmp->w, xres/2-inventory_bmp->w/2);
 			//if (mouseInBounds(x,x+inventory_bmp->w,0,inventory_bmp->h))
 			//return NULL;

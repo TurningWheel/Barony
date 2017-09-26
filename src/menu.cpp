@@ -4187,8 +4187,8 @@ void handleMainMenu(bool mode)
 
 			// reset game
 			darkmap = false;
-			
-            appraisalGUI->CloseGUI(); // Close the Appraisal GUI
+
+			appraisalGUI->CloseGUI(); // Close the Appraisal GUI
 
 			multiplayer = 0;
 			shootmode = true;

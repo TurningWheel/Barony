@@ -494,12 +494,12 @@ void Entity::actChest()
 				messagePlayer(chestclicked, language[459]);
 				chestOpener = chestclicked;
 				openedChest[chestclicked] = this;
-                
-                // If the ItemModifyingGUI is open, close it
-                if ( itemModifyingGUI->IsGUIOpen() == true )
-                {
-                    itemModifyingGUI->CloseGUI();
-                }
+
+				// If the ItemModifyingGUI is open, close it
+				if ( itemModifyingGUI->IsGUIOpen() == true )
+				{
+					itemModifyingGUI->CloseGUI();
+				}
 
 				if (chestclicked != 0 && multiplayer == SERVER)
 				{

@@ -674,39 +674,39 @@ bool GameController::handleShopMovement()
  */
 bool GameController::handleItemModifyingGUIMovement()
 {
-    if ( itemMenuOpen == true )
-    {
-        return false;
-    }
+	if ( itemMenuOpen == true )
+	{
+		return false;
+	}
 
-    bool wasDPadPressed = false;
-    Sint8 direction = 0;
+	bool wasDPadPressed = false;
+	Sint8 direction = 0;
 
-    // If the User has pressed Up or Down on the D-Pad, move the mouse to the new slot
-    if ( *inputPressed(joyimpulses[INJOY_DPAD_UP]) )
-    {
-        *inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
-        direction = -1;
-        wasDPadPressed = true;
-    }
-    else if ( *inputPressed(joyimpulses[INJOY_DPAD_DOWN]) )
-    {
-        *inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
-        direction = 1;
-        wasDPadPressed = true;
-    }
+	// If the User has pressed Up or Down on the D-Pad, move the mouse to the new slot
+	if ( *inputPressed(joyimpulses[INJOY_DPAD_UP]) )
+	{
+		*inputPressed(joyimpulses[INJOY_DPAD_UP]) = 0;
+		direction = -1;
+		wasDPadPressed = true;
+	}
+	else if ( *inputPressed(joyimpulses[INJOY_DPAD_DOWN]) )
+	{
+		*inputPressed(joyimpulses[INJOY_DPAD_DOWN]) = 0;
+		direction = 1;
+		wasDPadPressed = true;
+	}
 
-    if ( wasDPadPressed == true )
-    {
-        // Move the cursor to the new slot position
-        itemModifyingGUI->Gamepad_MoveCursor(direction);
+	if ( wasDPadPressed == true )
+	{
+		// Move the cursor to the new slot position
+		itemModifyingGUI->Gamepad_MoveCursor(direction);
 
-        //draw_cursor = false; TODOR: Ask why this matters
+		//draw_cursor = false; TODOR: Ask why this matters
 
-        return true;
-    }
+		return true;
+	}
 
-    return false;
+	return false;
 }
 
 bool GameController::handleItemContextMenu(const Item& item)

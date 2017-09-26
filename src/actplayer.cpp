@@ -618,90 +618,13 @@ void actPlayer(Entity* my)
 		}
 	}
 
-    if ( PLAYER_NUM == clientnum )
-    {
-        if ( appraisalGUI->IsGUIOpen() == true )
-        {
-            appraisalGUI->UpdateGUI();
-        }
-    }
-
-    /*
-	if (PLAYER_NUM == clientnum && appraisal_timer > 0)
+	if ( PLAYER_NUM == clientnum )
 	{
-		Item* tempItem = uidToItem(appraisal_item);
-		if ( tempItem )
+		if ( appraisalGUI->IsGUIOpen() == true )
 		{
-			if ( tempItem->identified )
-			{
-				appraisal_timer = 0;
-				appraisal_item = 0;
-			}
-			else if ( tempItem->type == GEM_ROCK )
-			{
-				//Auto-succeed on rocks.
-				tempItem->identified = true;
-				messagePlayer(clientnum, language[570], tempItem->description());
-				appraisal_item = 0;
-				appraisal_timer = 0;
-			}
-			else
-			{
-				appraisal_timer -= 1; //De-increment appraisal timer.
-				if (appraisal_timer <= 0)
-				{
-					appraisal_timer = 0;
-
-					//Cool. Time to identify the item.
-					bool success = false;
-					if ( stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] < 100 )
-					{
-						if ( tempItem->type != GEM_GLASS )
-						{
-							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] + my->getPER() * 5 >= items[tempItem->type].value / 10);
-						}
-						else
-						{
-							success = (stats[PLAYER_NUM]->PROFICIENCIES[PRO_APPRAISAL] + my->getPER() * 5 >= 100);
-						}
-					}
-					else
-					{
-						success = true; // always succeed when appraisal is maxed out
-					}
-					if ( success )
-					{
-						tempItem->identified = true;
-						messagePlayer(clientnum, language[570], tempItem->description());
-					}
-					else
-					{
-						messagePlayer(clientnum, language[571], tempItem->description());
-					}
-
-					//Attempt a level up.
-					if ( items[tempItem->type].value > 0 )
-					{
-						if ( tempItem->identified )
-						{
-							my->increaseSkill(PRO_APPRAISAL);
-						}
-						else if ( rand() % 5 == 0 )
-						{
-							my->increaseSkill(PRO_APPRAISAL);
-						}
-					}
-
-					appraisal_item = 0;
-				}
-			}
+			appraisalGUI->UpdateGUI();
 		}
-		else
-		{
-			appraisal_timer = 0;
-			appraisal_item = 0;
-		}
-	}*/
+	}
 
 	// remove broken equipment
 	if ( stats[PLAYER_NUM]->helmet != NULL )

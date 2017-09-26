@@ -258,16 +258,16 @@ typedef enum Category
  */
 typedef enum class ItemArmorType
 {
-    NOT_ARMOR,
-    SHIELD,
-    BREASTPIECE,
-    MASK,
-    HELM,
-    BOOTS,
-    GLOVES,
-    RING,
-    AMULET,
-    CLOAK
+	NOT_ARMOR,
+	SHIELD,
+	BREASTPIECE,
+	MASK,
+	HELM,
+	BOOTS,
+	GLOVES,
+	RING,
+	AMULET,
+	CLOAK
 } ItemArmorType;
 
 typedef enum Status

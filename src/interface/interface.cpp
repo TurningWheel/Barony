@@ -386,7 +386,7 @@ void freeInterfaceResources()
 	//for( c=0; c<NUMCATEGORIES; c++ )
 	//if(category_bmp[c]!=NULL)
 	//SDL_FreeSurface(category_bmp[c]);
-    itemModifyingGUI->FreeImage();
+	itemModifyingGUI->FreeImage();
 	/*if (rightsidebar_titlebar_img)
 		SDL_FreeSurface(rightsidebar_titlebar_img);
 	if (rightsidebar_slot_img)

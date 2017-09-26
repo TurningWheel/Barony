@@ -1234,67 +1234,67 @@ void clientHandlePacket()
 		return;
 	}
 
-    // Client Update Equipped Status - Called whenever the Client's equipped Item's ItemStatus has changed, except for Repair GUI
-    else if ( !strncmp((char*)net_packet->data, "ARMR", 4) )
-    {
-        // data[4] = The type of Armor as a Uint8
-        // data[5] = The updated ItemStatus of the Armor as a Uint8
+	// Client Update Equipped Status - Called whenever the Client's equipped Item's ItemStatus has changed, except for Repair GUI
+	else if ( !strncmp((char*)net_packet->data, "ARMR", 4) )
+	{
+		// data[4] = The type of Armor as a Uint8
+		// data[5] = The updated ItemStatus of the Armor as a Uint8
 
-        switch ( net_packet->data[4] )
-        {
-            case 0:
-                item = stats[clientnum]->helmet;
-                break;
-            case 1:
-                item = stats[clientnum]->breastplate;
-                break;
-            case 2:
-                item = stats[clientnum]->gloves;
-                break;
-            case 3:
-                item = stats[clientnum]->shoes;
-                break;
-            case 4:
-                item = stats[clientnum]->shield;
-                break;
-            case 5:
-                item = stats[clientnum]->weapon;
-                break;
-            case 6:
-                item = stats[clientnum]->cloak;
-                break;
-            case 7:
-                item = stats[clientnum]->amulet;
-                break;
-            case 8:
-                item = stats[clientnum]->ring;
-                break;
-            case 9:
-                item = stats[clientnum]->mask;
-                break;
-            default:
-                item = nullptr;
-                break;
-        }
+		switch ( net_packet->data[4] )
+		{
+			case 0:
+				item = stats[clientnum]->helmet;
+				break;
+			case 1:
+				item = stats[clientnum]->breastplate;
+				break;
+			case 2:
+				item = stats[clientnum]->gloves;
+				break;
+			case 3:
+				item = stats[clientnum]->shoes;
+				break;
+			case 4:
+				item = stats[clientnum]->shield;
+				break;
+			case 5:
+				item = stats[clientnum]->weapon;
+				break;
+			case 6:
+				item = stats[clientnum]->cloak;
+				break;
+			case 7:
+				item = stats[clientnum]->amulet;
+				break;
+			case 8:
+				item = stats[clientnum]->ring;
+				break;
+			case 9:
+				item = stats[clientnum]->mask;
+				break;
+			default:
+				item = nullptr;
+				break;
+		}
 
-        if ( item != nullptr )
-        {
-            if ( item->count > 1 )
-            {
-                newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
-                item->count = 1;
-            }
+		if ( item != nullptr )
+		{
+			if ( item->count > 1 )
+			{
+				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientnum]->inventory);
+				item->count = 1;
+			}
 
-            item->status = static_cast<Status>(net_packet->data[5]);
-            return;
-        }
-        else
-        {
-            printlog("ERROR: clientHandlePacket() (ARMR) - item is null.");
-        }
+			item->status = static_cast<Status>(net_packet->data[5]);
+			return;
+		}
+		else
+		{
+			printlog("ERROR: clientHandlePacket() (ARMR) - item is null.");
+		}
 
-        return;
-    } // "ARMR" - Client Update Equipped Status
+		return;
+	} // "ARMR" - Client Update Equipped Status
 
 	// steal armor (destroy it)
 	else if (!strncmp((char*)net_packet->data, "STLA", 4))
@@ -1530,12 +1530,12 @@ void clientHandlePacket()
 		shopinventorycategory = 7;
 		sellitem = NULL;
 		shopitemscroll = 0;
-        
-        // If the ItemModifyingGUI is open, close it
-        if ( itemModifyingGUI->IsGUIOpen() == true )
-        {
-            itemModifyingGUI->CloseGUI();
-        }
+
+		// If the ItemModifyingGUI is open, close it
+		if ( itemModifyingGUI->IsGUIOpen() == true )
+		{
+			itemModifyingGUI->CloseGUI();
+		}
 
 		//Initialize shop gamepad code here.
 		if ( shopinvitems[0] != nullptr )
@@ -2351,12 +2351,12 @@ void clientHandlePacket()
 			if (entity2->getUID() == i)
 			{
 				openedChest[clientnum] = entity2; //Set the opened chest to this.
-                
-                // If the ItemModifyingGUI is open, close it
-                if ( itemModifyingGUI->IsGUIOpen() == true )
-                {
-                    itemModifyingGUI->CloseGUI();
-                }
+
+				// If the ItemModifyingGUI is open, close it
+				if ( itemModifyingGUI->IsGUIOpen() == true )
+				{
+					itemModifyingGUI->CloseGUI();
+				}
 
 				list_FreeAll(&chestInv);
 				chestInv.first = nullptr;
@@ -2596,14 +2596,14 @@ void clientHandlePacket()
 		return;
 	}
 
-    // Client open ItemModifyingGUI - Called by castSpell() on Server. Client is told to open GUI locally
-    else if ( !strncmp((char*)net_packet->data, "CIMG", 4) )
-    {
-        // data[4] = The type of ItemModifyingGUI to open
-        // 0 is Identify GUI, 1 is Remove Curse GUI
-        itemModifyingGUI->OpenGUI(net_packet->data[4], nullptr);
-        return;
-    } // "CIMG" - Client Open ItemModifyingGUI
+	// Client open ItemModifyingGUI - Called by castSpell() on Server. Client is told to open GUI locally
+	else if ( !strncmp((char*)net_packet->data, "CIMG", 4) )
+	{
+		// data[4] = The type of ItemModifyingGUI to open
+		// 0 is Identify GUI, 1 is Remove Curse GUI
+		itemModifyingGUI->OpenGUI(net_packet->data[4], nullptr);
+		return;
+	} // "CIMG" - Client Open ItemModifyingGUI
 
 	// game restart
 	if (!strncmp((char*)net_packet->data, "BARONY_GAME_START", 17))
@@ -3271,267 +3271,267 @@ void serverHandlePacket()
 		return;
 	}
 
-    // Client Remove Curse - Called by ItemModifyingGUI to update Server when Client removes Curse on equipped Item(s)
-    else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
-    {
-        // data[4] = The type of Item as a Uint8
-        // data[5] = 0 if the Scroll was Cursed, 1 if the Scroll is Uncursed. Determines if the Item is Cursed or Uncursed
-        // data[6] = The Player that is sending the message
+	// Client Remove Curse - Called by ItemModifyingGUI to update Server when Client removes Curse on equipped Item(s)
+	else if ( !strncmp((char*)net_packet->data, "CRCU", 4) )
+	{
+		// data[4] = The type of Item as a Uint8
+		// data[5] = 0 if the Scroll was Cursed, 1 if the Scroll is Uncursed. Determines if the Item is Cursed or Uncursed
+		// data[6] = The Player that is sending the message
 
-        Uint8 clientToUpdate = net_packet->data[6];
+		Uint8 clientToUpdate = net_packet->data[6];
 
-        switch ( net_packet->data[4] )
-        {
-            case 0:
-                item = stats[clientToUpdate]->helmet;
-                break;
-            case 1:
-                item = stats[clientToUpdate]->breastplate;
-                break;
-            case 2:
-                item = stats[clientToUpdate]->gloves;
-                break;
-            case 3:
-                item = stats[clientToUpdate]->shoes;
-                break;
-            case 4:
-                item = stats[clientToUpdate]->shield;
-                break;
-            case 5:
-                item = stats[clientToUpdate]->weapon;
-                break;
-            case 6:
-                item = stats[clientToUpdate]->cloak;
-                break;
-            case 7:
-                item = stats[clientToUpdate]->amulet;
-                break;
-            case 8:
-                item = stats[clientToUpdate]->ring;
-                break;
-            case 9:
-                item = stats[clientToUpdate]->mask;
-                break;
-            default:
-                item = nullptr;
-                break;
-        }
+		switch ( net_packet->data[4] )
+		{
+			case 0:
+				item = stats[clientToUpdate]->helmet;
+				break;
+			case 1:
+				item = stats[clientToUpdate]->breastplate;
+				break;
+			case 2:
+				item = stats[clientToUpdate]->gloves;
+				break;
+			case 3:
+				item = stats[clientToUpdate]->shoes;
+				break;
+			case 4:
+				item = stats[clientToUpdate]->shield;
+				break;
+			case 5:
+				item = stats[clientToUpdate]->weapon;
+				break;
+			case 6:
+				item = stats[clientToUpdate]->cloak;
+				break;
+			case 7:
+				item = stats[clientToUpdate]->amulet;
+				break;
+			case 8:
+				item = stats[clientToUpdate]->ring;
+				break;
+			case 9:
+				item = stats[clientToUpdate]->mask;
+				break;
+			default:
+				item = nullptr;
+				break;
+		}
 
-        if ( item != nullptr )
-        {
-            if ( item->count > 1 )
-            {
-                newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
-                item->count = 1;
-            }
+		if ( item != nullptr )
+		{
+			if ( item->count > 1 )
+			{
+				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
+				item->count = 1;
+			}
 
-            bool bWasScrollCursed = false;
-            if ( net_packet->data[5] == 1 )
-            {
-                bWasScrollCursed = true;
-            }
+			bool bWasScrollCursed = false;
+			if ( net_packet->data[5] == 1 )
+			{
+				bWasScrollCursed = true;
+			}
 
-            if ( bWasScrollCursed == true )
-            {
-                item->beatitude = -1;
-                return;
-            }
-            else
-            {
-                item->beatitude = 0;
-                return;
-            }
-        }
-        else
-        {
-            printlog("ERROR: clientHandlePacket() (CRCU) - item is null.");
-        }
+			if ( bWasScrollCursed == true )
+			{
+				item->beatitude = -1;
+				return;
+			}
+			else
+			{
+				item->beatitude = 0;
+				return;
+			}
+		}
+		else
+		{
+			printlog("ERROR: clientHandlePacket() (CRCU) - item is null.");
+		}
 
-        return;
-    } // "CRCU" - Client Remove Curse
+		return;
+	} // "CRCU" - Client Remove Curse
 
-    // Client Repair - Called by ItemModifyingGUI to update Server when Client Repairs an equipped Item
-    else if ( !strncmp((char*)net_packet->data, "CREP", 4) )
-    {
-        // data[4] = The type of Item as a Uint8
-        // data[5] = The updated ItemStatus of the Armor as a Uint8
-        // data[6] = The Player that is sending the message
+	// Client Repair - Called by ItemModifyingGUI to update Server when Client Repairs an equipped Item
+	else if ( !strncmp((char*)net_packet->data, "CREP", 4) )
+	{
+		// data[4] = The type of Item as a Uint8
+		// data[5] = The updated ItemStatus of the Armor as a Uint8
+		// data[6] = The Player that is sending the message
 
-        Uint8 clientToUpdate = net_packet->data[6];
+		Uint8 clientToUpdate = net_packet->data[6];
 
-        switch ( net_packet->data[4] )
-        {
-            case 0:
-                item = stats[clientToUpdate]->helmet;
-                break;
-            case 1:
-                item = stats[clientToUpdate]->breastplate;
-                break;
-            case 2:
-                item = stats[clientToUpdate]->gloves;
-                break;
-            case 3:
-                item = stats[clientToUpdate]->shoes;
-                break;
-            case 4:
-                item = stats[clientToUpdate]->shield;
-                break;
-            case 5:
-                item = stats[clientToUpdate]->weapon;
-                break;
-            case 6:
-                item = stats[clientToUpdate]->cloak;
-                break;
-            case 7:
-                item = stats[clientToUpdate]->amulet;
-                break;
-            case 8:
-                item = stats[clientToUpdate]->ring;
-                break;
-            case 9:
-                item = stats[clientToUpdate]->mask;
-                break;
-            default:
-                item = nullptr;
-                break;
-        }
+		switch ( net_packet->data[4] )
+		{
+			case 0:
+				item = stats[clientToUpdate]->helmet;
+				break;
+			case 1:
+				item = stats[clientToUpdate]->breastplate;
+				break;
+			case 2:
+				item = stats[clientToUpdate]->gloves;
+				break;
+			case 3:
+				item = stats[clientToUpdate]->shoes;
+				break;
+			case 4:
+				item = stats[clientToUpdate]->shield;
+				break;
+			case 5:
+				item = stats[clientToUpdate]->weapon;
+				break;
+			case 6:
+				item = stats[clientToUpdate]->cloak;
+				break;
+			case 7:
+				item = stats[clientToUpdate]->amulet;
+				break;
+			case 8:
+				item = stats[clientToUpdate]->ring;
+				break;
+			case 9:
+				item = stats[clientToUpdate]->mask;
+				break;
+			default:
+				item = nullptr;
+				break;
+		}
 
-        if ( item != nullptr )
-        {
-            if ( item->count > 1 )
-            {
-                newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
-                item->count = 1;
-            }
+		if ( item != nullptr )
+		{
+			if ( item->count > 1 )
+			{
+				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
+				item->count = 1;
+			}
 
-            item->status = static_cast<Status>(net_packet->data[5]);
-            return;
-        }
-        else
-        {
-            printlog("ERROR: clientHandlePacket() (CREP) - item is null.");
-        }
+			item->status = static_cast<Status>(net_packet->data[5]);
+			return;
+		}
+		else
+		{
+			printlog("ERROR: clientHandlePacket() (CREP) - item is null.");
+		}
 
-        return;
-    } // "CREP" - Client Repair
+		return;
+	} // "CREP" - Client Repair
 
-    // Client Enchant Weapon - Called by ItemModifyingGUI to update Server when Client Enchants equipped Weapon
-    else if ( !strncmp((char*)net_packet->data, "CENW", 4) )
-    {
-        // data[4] = The Player that is sending the message
-        // data[5] = 0 if the Scroll was Cursed, 1 if the Scroll is Uncursed. Determines if the Item is Disenchanted or Enchanted
+	// Client Enchant Weapon - Called by ItemModifyingGUI to update Server when Client Enchants equipped Weapon
+	else if ( !strncmp((char*)net_packet->data, "CENW", 4) )
+	{
+		// data[4] = The Player that is sending the message
+		// data[5] = 0 if the Scroll was Cursed, 1 if the Scroll is Uncursed. Determines if the Item is Disenchanted or Enchanted
 
-        Uint8 clientToUpdate = net_packet->data[4];
-        item = stats[clientToUpdate]->weapon;
+		Uint8 clientToUpdate = net_packet->data[4];
+		item = stats[clientToUpdate]->weapon;
 
-        if ( item != nullptr )
-        {
-            if ( item->count > 1 )
-            {
-                newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
-                item->count = 1;
-            }
+		if ( item != nullptr )
+		{
+			if ( item->count > 1 )
+			{
+				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
+				item->count = 1;
+			}
 
-            bool bWasScrollCursed = false;
-            if ( net_packet->data[5] == 1 )
-            {
-                bWasScrollCursed = true;
-            }
+			bool bWasScrollCursed = false;
+			if ( net_packet->data[5] == 1 )
+			{
+				bWasScrollCursed = true;
+			}
 
-            if ( bWasScrollCursed == true )
-            {
-                item->beatitude = 0;
-                return;
-            }
-            else
-            {
-                item->beatitude++;
-                return;
-            }
-        }
-        else
-        {
-            printlog("ERROR: clientHandlePacket() (CENW) - item is null.");
-        }
+			if ( bWasScrollCursed == true )
+			{
+				item->beatitude = 0;
+				return;
+			}
+			else
+			{
+				item->beatitude++;
+				return;
+			}
+		}
+		else
+		{
+			printlog("ERROR: clientHandlePacket() (CENW) - item is null.");
+		}
 
-        return;
-    } // "CENW" - Client Enchant Weapon
+		return;
+	} // "CENW" - Client Enchant Weapon
 
-    // Client Enchant Armor - Called by ItemModifyingGUI to update Server when Client Enchants equipped Armor
-    else if ( !strncmp((char*)net_packet->data, "CENA", 4) )
-    {
-        // data[4] = The type of Armor as a Uint8
-        // data[5] = 0 if the Scroll was Cursed, 1 if the Scroll is Uncursed. Determines if the Item is Disenchanted or Enchanted
-        // data[6] = The Player that is sending the message
+	// Client Enchant Armor - Called by ItemModifyingGUI to update Server when Client Enchants equipped Armor
+	else if ( !strncmp((char*)net_packet->data, "CENA", 4) )
+	{
+		// data[4] = The type of Armor as a Uint8
+		// data[5] = 0 if the Scroll was Cursed, 1 if the Scroll is Uncursed. Determines if the Item is Disenchanted or Enchanted
+		// data[6] = The Player that is sending the message
 
-        Uint8 clientToUpdate = net_packet->data[6];
+		Uint8 clientToUpdate = net_packet->data[6];
 
-        switch ( net_packet->data[4] )
-        {
-            case 0:
-                item = stats[clientToUpdate]->helmet;
-                break;
-            case 1:
-                item = stats[clientToUpdate]->breastplate;
-                break;
-            case 2:
-                item = stats[clientToUpdate]->gloves;
-                break;
-            case 3:
-                item = stats[clientToUpdate]->shoes;
-                break;
-            case 4:
-                item = stats[clientToUpdate]->shield;
-                break;
-            case 5:
-                item = stats[clientToUpdate]->cloak;
-                break;
-            case 6:
-                item = stats[clientToUpdate]->amulet;
-                break;
-            case 7:
-                item = stats[clientToUpdate]->ring;
-                break;
-            case 8:
-                item = stats[clientToUpdate]->mask;
-                break;
-            default:
-                item = nullptr;
-                break;
-        }
+		switch ( net_packet->data[4] )
+		{
+			case 0:
+				item = stats[clientToUpdate]->helmet;
+				break;
+			case 1:
+				item = stats[clientToUpdate]->breastplate;
+				break;
+			case 2:
+				item = stats[clientToUpdate]->gloves;
+				break;
+			case 3:
+				item = stats[clientToUpdate]->shoes;
+				break;
+			case 4:
+				item = stats[clientToUpdate]->shield;
+				break;
+			case 5:
+				item = stats[clientToUpdate]->cloak;
+				break;
+			case 6:
+				item = stats[clientToUpdate]->amulet;
+				break;
+			case 7:
+				item = stats[clientToUpdate]->ring;
+				break;
+			case 8:
+				item = stats[clientToUpdate]->mask;
+				break;
+			default:
+				item = nullptr;
+				break;
+		}
 
-        if ( item != nullptr )
-        {
-            if ( item->count > 1 )
-            {
-                newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
-                item->count = 1;
-            }
+		if ( item != nullptr )
+		{
+			if ( item->count > 1 )
+			{
+				newItem(item->type, item->status, item->beatitude, item->count - 1, item->appearance, item->identified, &stats[clientToUpdate]->inventory);
+				item->count = 1;
+			}
 
-            bool bWasScrollCursed = false;
-            if ( net_packet->data[5] == 1 )
-            {
-                bWasScrollCursed = true;
-            }
+			bool bWasScrollCursed = false;
+			if ( net_packet->data[5] == 1 )
+			{
+				bWasScrollCursed = true;
+			}
 
-            if ( bWasScrollCursed == true )
-            {
-                item->beatitude = 0;
-                return;
-            }
-            else
-            {
-                item->beatitude++;
-                return;
-            }
-        }
-        else
-        {
-            printlog("ERROR: clientHandlePacket() (CENA) - item is null.");
-        }
+			if ( bWasScrollCursed == true )
+			{
+				item->beatitude = 0;
+				return;
+			}
+			else
+			{
+				item->beatitude++;
+				return;
+			}
+		}
+		else
+		{
+			printlog("ERROR: clientHandlePacket() (CENA) - item is null.");
+		}
 
-        return;
-    } // "CENA" - Client Enchant Armor
+		return;
+	} // "CENA" - Client Enchant Armor
 } // serverHandlePacket()
 
 /*-------------------------------------------------------------------------------

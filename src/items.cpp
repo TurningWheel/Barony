@@ -551,48 +551,48 @@ Category itemCategory(const Item* item)
  */
 ItemArmorType getItemArmorType(const ItemType& itemType)
 {
-    // TODOR: This is a fix until Entities get refactored and Items become a separate thing. Then it'll be easy to just tag it as armor or not
+	// TODOR: This is a fix until Entities get refactored and Items become a separate thing. Then it'll be easy to just tag it as armor or not
 
-    if ( itemType == WOODEN_SHIELD || itemType == IRON_SHIELD || itemType == STEEL_SHIELD || itemType == STEEL_SHIELD_RESISTANCE || itemType == CRYSTAL_SHIELD || itemType == MIRROR_SHIELD )
-    { // Shields
-        return ItemArmorType::SHIELD;
-    }
-    else if ( itemType == HEALER_DOUBLET || itemType == WIZARD_DOUBLET || itemType == VAMPIRE_DOUBLET || itemType == LEATHER_BREASTPIECE || itemType == IRON_BREASTPIECE || itemType == STEEL_BREASTPIECE || itemType == CRYSTAL_BREASTPIECE || itemType == ARTIFACT_BREASTPIECE )
-    { // Breastpieces
-        return ItemArmorType::BREASTPIECE;
-    }
-    else if ( itemType == TOOL_GLASSES || itemType == TOOL_BLINDFOLD || itemType == TOOL_BLINDFOLD_FOCUS || itemType == TOOL_BLINDFOLD_TELEPATHY )
-    { // Masks
-        return ItemArmorType::MASK;
-    }
-    else if ( itemType == HAT_PHRYGIAN || itemType == HAT_HOOD || itemType == HAT_WIZARD || itemType == HAT_JESTER || itemType == LEATHER_HELM || itemType == STEEL_HELM || itemType == CRYSTAL_HELM || itemType == ARTIFACT_HELM )
-    { // Helms
-        return ItemArmorType::HELM;
-    }
-    else if ( itemType == LEATHER_BOOTS || itemType == LEATHER_BOOTS_SPEED || itemType == IRON_BOOTS || itemType == IRON_BOOTS_WATERWALKING || itemType == STEEL_BOOTS || itemType == STEEL_BOOTS_FEATHER || itemType == STEEL_BOOTS_LEVITATION || itemType == CRYSTAL_BOOTS || itemType == ARTIFACT_BOOTS )
-    { // Boots
-        return ItemArmorType::BOOTS;
-    }
-    else if ( itemType == GLOVES || itemType == GLOVES_DEXTERITY || itemType == BRASS_KNUCKLES || itemType == BRACERS || itemType == BRACERS_CONSTITUTION || itemType == IRON_KNUCKLES || itemType == GAUNTLETS || itemType == GAUNTLETS_STRENGTH || itemType == SPIKED_GAUNTLETS || itemType == CRYSTAL_GLOVES || itemType == ARTIFACT_GLOVES )
-    { // Gloves
-        return ItemArmorType::GLOVES;
-    }
-    else if ( itemType == RING_ADORNMENT || itemType == RING_SLOWDIGESTION || itemType == RING_PROTECTION || itemType == RING_WARNING || itemType == RING_STRENGTH || itemType == RING_CONSTITUTION || itemType == RING_INVISIBILITY || itemType == RING_MAGICRESISTANCE || itemType == RING_CONFLICT || itemType == RING_LEVITATION || itemType == RING_REGENERATION || itemType == RING_TELEPORTATION )
-    { // Rings
-        return ItemArmorType::RING;
-    }
-    else if ( itemType == AMULET_SEXCHANGE || itemType == AMULET_LIFESAVING || itemType == AMULET_WATERBREATHING || itemType == AMULET_MAGICREFLECTION || itemType == AMULET_STRANGULATION || itemType == AMULET_WATERBREATHING )
-    { // Amulets
-        return ItemArmorType::AMULET;
-    }
-    else if ( itemType == CLOAK || itemType == CLOAK_BLACK || itemType == CLOAK_MAGICREFLECTION || itemType == CLOAK_INVISIBILITY || itemType == CLOAK_PROTECTION || itemType == ARTIFACT_CLOAK )
-    { // Cloaks
-        return ItemArmorType::CLOAK;
-    }
-    else
-    {
-        return ItemArmorType::NOT_ARMOR;
-    }
+	if ( itemType == WOODEN_SHIELD || itemType == IRON_SHIELD || itemType == STEEL_SHIELD || itemType == STEEL_SHIELD_RESISTANCE || itemType == CRYSTAL_SHIELD || itemType == MIRROR_SHIELD )
+	{ // Shields
+		return ItemArmorType::SHIELD;
+	}
+	else if ( itemType == HEALER_DOUBLET || itemType == WIZARD_DOUBLET || itemType == VAMPIRE_DOUBLET || itemType == LEATHER_BREASTPIECE || itemType == IRON_BREASTPIECE || itemType == STEEL_BREASTPIECE || itemType == CRYSTAL_BREASTPIECE || itemType == ARTIFACT_BREASTPIECE )
+	{ // Breastpieces
+		return ItemArmorType::BREASTPIECE;
+	}
+	else if ( itemType == TOOL_GLASSES || itemType == TOOL_BLINDFOLD || itemType == TOOL_BLINDFOLD_FOCUS || itemType == TOOL_BLINDFOLD_TELEPATHY )
+	{ // Masks
+		return ItemArmorType::MASK;
+	}
+	else if ( itemType == HAT_PHRYGIAN || itemType == HAT_HOOD || itemType == HAT_WIZARD || itemType == HAT_JESTER || itemType == LEATHER_HELM || itemType == STEEL_HELM || itemType == CRYSTAL_HELM || itemType == ARTIFACT_HELM )
+	{ // Helms
+		return ItemArmorType::HELM;
+	}
+	else if ( itemType == LEATHER_BOOTS || itemType == LEATHER_BOOTS_SPEED || itemType == IRON_BOOTS || itemType == IRON_BOOTS_WATERWALKING || itemType == STEEL_BOOTS || itemType == STEEL_BOOTS_FEATHER || itemType == STEEL_BOOTS_LEVITATION || itemType == CRYSTAL_BOOTS || itemType == ARTIFACT_BOOTS )
+	{ // Boots
+		return ItemArmorType::BOOTS;
+	}
+	else if ( itemType == GLOVES || itemType == GLOVES_DEXTERITY || itemType == BRASS_KNUCKLES || itemType == BRACERS || itemType == BRACERS_CONSTITUTION || itemType == IRON_KNUCKLES || itemType == GAUNTLETS || itemType == GAUNTLETS_STRENGTH || itemType == SPIKED_GAUNTLETS || itemType == CRYSTAL_GLOVES || itemType == ARTIFACT_GLOVES )
+	{ // Gloves
+		return ItemArmorType::GLOVES;
+	}
+	else if ( itemType == RING_ADORNMENT || itemType == RING_SLOWDIGESTION || itemType == RING_PROTECTION || itemType == RING_WARNING || itemType == RING_STRENGTH || itemType == RING_CONSTITUTION || itemType == RING_INVISIBILITY || itemType == RING_MAGICRESISTANCE || itemType == RING_CONFLICT || itemType == RING_LEVITATION || itemType == RING_REGENERATION || itemType == RING_TELEPORTATION )
+	{ // Rings
+		return ItemArmorType::RING;
+	}
+	else if ( itemType == AMULET_SEXCHANGE || itemType == AMULET_LIFESAVING || itemType == AMULET_WATERBREATHING || itemType == AMULET_MAGICREFLECTION || itemType == AMULET_STRANGULATION || itemType == AMULET_WATERBREATHING )
+	{ // Amulets
+		return ItemArmorType::AMULET;
+	}
+	else if ( itemType == CLOAK || itemType == CLOAK_BLACK || itemType == CLOAK_MAGICREFLECTION || itemType == CLOAK_INVISIBILITY || itemType == CLOAK_PROTECTION || itemType == ARTIFACT_CLOAK )
+	{ // Cloaks
+		return ItemArmorType::CLOAK;
+	}
+	else
+	{
+		return ItemArmorType::NOT_ARMOR;
+	}
 }
 
 /*-------------------------------------------------------------------------------
@@ -998,11 +998,11 @@ void consumeItem(Item* item)
 		return;
 	}
 
-    // If the Item is currently being Appraised, stop the appraisal
-    if ( appraisalGUI->IsItemBeingAppraised(item) == true )
-    {
-        appraisalGUI->CloseGUI();
-    }
+	// If the Item is currently being Appraised, stop the appraisal
+	if ( appraisalGUI->IsItemBeingAppraised(item) == true )
+	{
+		appraisalGUI->CloseGUI();
+	}
 
 	item->count--;
 	if ( item->count <= 0 )
@@ -1311,60 +1311,61 @@ void useItem(Item* item, int player)
 		}
 	}
 
-    // 9-15-2017 - Lutz GUI Refactor - This is a quick hack to make itemModifyingGUI's work, it will need to be replaced with a refactor of net code/useItem later
-    switch ( item->type )
-    {
-        case SCROLL_IDENTIFY:  
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(0, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
-            return;
-        case SCROLL_ENCHANTWEAPON:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(3, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
-            return;
-        case SCROLL_ENCHANTARMOR:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(4, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
-            return;
-        case SCROLL_REMOVECURSE:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(1, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
-            return;
-        case SCROLL_REPAIR:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(2, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
-            return;
-    }
+	// 9-15-2017 - Lutz GUI Refactor - This is a quick hack to make itemModifyingGUI's work, it will need to be replaced with a refactor of net code/useItem later
+	switch ( item->type )
+	{
+		case SCROLL_IDENTIFY:
+			if ( !players[player]->entity->isBlind() )
+			{
+				itemModifyingGUI->OpenGUI(0, item);
+			}
+			else if ( player == clientnum )
+			{
+				messagePlayer(player, language[775]);
+			}
+			return;
+		case SCROLL_ENCHANTWEAPON:
+			if ( !players[player]->entity->isBlind() )
+			{
+				itemModifyingGUI->OpenGUI(3, item);
+			}
+			else if ( player == clientnum )
+			{
+				messagePlayer(player, language[775]);
+			}
+			return;
+		case SCROLL_ENCHANTARMOR:
+			if ( !players[player]->entity->isBlind() )
+			{
+				itemModifyingGUI->OpenGUI(4, item);
+			}
+			else if ( player == clientnum )
+			{
+				messagePlayer(player, language[775]);
+			}
+			return;
+		case SCROLL_REMOVECURSE:
+			if ( !players[player]->entity->isBlind() )
+			{
+				itemModifyingGUI->OpenGUI(1, item);
+			}
+			else if ( player == clientnum )
+			{
+				messagePlayer(player, language[775]);
+			}
+			return;
+		case SCROLL_REPAIR:
+			if ( !players[player]->entity->isBlind() )
+			{
+				itemModifyingGUI->OpenGUI(2, item);
+			}
+			else if ( player == clientnum )
+			{
+				messagePlayer(player, language[775]);
+			}
+			return;
+		default: break;
+	}
 
 	if ( multiplayer == CLIENT && !intro )
 	{
@@ -1552,14 +1553,7 @@ void useItem(Item* item, int player)
 			item_ScrollMail(item, player);
 			break;
 		case SCROLL_IDENTIFY:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(0, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
+			// Replaced by hack up above
 			break;
 		case SCROLL_LIGHT:
 			item_ScrollLight(item, player);
@@ -1572,34 +1566,13 @@ void useItem(Item* item, int player)
 			item_ScrollBlank(item, player);
 			break;
 		case SCROLL_ENCHANTWEAPON:
-			if ( !players[player]->entity->isBlind() )
-			{
-                itemModifyingGUI->OpenGUI(3, item);
-			}
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
+			// Replaced by hack up above
 			break;
 		case SCROLL_ENCHANTARMOR:
-			if ( !players[player]->entity->isBlind() )
-			{
-                itemModifyingGUI->OpenGUI(4, item);
-            }
-            else if(player == clientnum)
-            {
-                messagePlayer(player, language[775]);
-            }
+			// Replaced by hack up above
 			break;
 		case SCROLL_REMOVECURSE:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(1, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
+			// Replaced by hack up above
 			break;
 		case SCROLL_FIRE:
 			item_ScrollFire(item, player);
@@ -1623,14 +1596,7 @@ void useItem(Item* item, int player)
 			}
 			break;
 		case SCROLL_REPAIR:
-            if ( !players[player]->entity->isBlind() )
-            {
-                itemModifyingGUI->OpenGUI(2, item);
-            }
-            else if ( player == clientnum )
-            {
-                messagePlayer(player, language[775]);
-            }
+			// Replaced by hack up above
 			break;
 		case SCROLL_DESTROYARMOR:
 			item_ScrollDestroyArmor(item, player);
