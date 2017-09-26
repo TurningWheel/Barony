@@ -1652,7 +1652,7 @@ void clientHandlePacket()
 		{
 			// ... or lived
 			stats[clientnum]->HP = stats[clientnum]->MAXHP;
-            stats[clientnum]->MP = stats[clientnum]->MAXMP;
+			stats[clientnum]->MP = stats[clientnum]->MAXMP;
 			stats[clientnum]->HUNGER = 500;
 			for ( c = 0; c < NUMEFFECTS; c++ )
 			{
