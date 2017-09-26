@@ -214,20 +214,20 @@ void actHudWeapon(Entity* my)
 		throwGimpTimer--;
 	}
 
-    // Check to make sure the Player is not swimming
-    if ( players[clientnum] && players[clientnum]->entity )
-    {
-        if ( isSwimming(players[clientnum]->entity) == true )
-        {
-            // Player is swimming, hide their weapon
-            my->flags[INVISIBLE] = true;
-            if ( parent )
-            {
-                parent->flags[INVISIBLE] = true;
-            }
-            return;
-        }
-    }
+	// Check to make sure the Player is not swimming
+	if ( players[clientnum] && players[clientnum]->entity )
+	{
+		if ( isSwimming(players[clientnum]->entity) == true )
+		{
+			// Player is swimming, hide their weapon
+			my->flags[INVISIBLE] = true;
+			if ( parent )
+			{
+				parent->flags[INVISIBLE] = true;
+			}
+			return;
+		}
+	}
 
 	// select model
 	if ( stats[clientnum]->ring != nullptr )
@@ -1377,22 +1377,22 @@ void actHudShield(Entity* my)
 		}
 	}
 
-    // Check to make sure the Player is not swimming
-    bool isPlayerSwimming = false;
-    if ( players[clientnum] && players[clientnum]->entity )
-    {
-        if ( isSwimming(players[clientnum]->entity) == true )
-        {
-            // Player is swimming, hide their shield
-            my->flags[INVISIBLE] = true;
-            Entity* parent = uidToEntity(my->parent);
-            if ( parent )
-            {
-                parent->flags[INVISIBLE] = true;
-            }
-            isPlayerSwimming = true;
-        }
-    }
+	// Check to make sure the Player is not swimming
+	bool isPlayerSwimming = false;
+	if ( players[clientnum] && players[clientnum]->entity )
+	{
+		if ( isSwimming(players[clientnum]->entity) == true )
+		{
+			// Player is swimming, hide their shield
+			my->flags[INVISIBLE] = true;
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent )
+			{
+				parent->flags[INVISIBLE] = true;
+			}
+			isPlayerSwimming = true;
+		}
+	}
 
 	if (cast_animation.active)
 	{
@@ -1559,7 +1559,7 @@ void actHudShield(Entity* my)
 
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
-	if (stats[clientnum]->shield && isPlayerSwimming == false && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch)
+	if ( stats[clientnum]->shield && isPlayerSwimming == false && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch )
 	{
 		if (itemCategory(stats[clientnum]->shield) == TOOL)
 		{

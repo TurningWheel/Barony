@@ -110,16 +110,16 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
-    // Check to make sure the Caster is not swimming
-    if ( isSwimming(caster) == true )
-    {
-        // If the Caster is a Player, tell them they cannot cast while swimming
-        if ( player >= 0 )
-        {
-            messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
-        }
-        return;
-    }
+	// Check to make sure the Caster is not swimming
+	if ( isSwimming(caster) == true )
+	{
+		// If the Caster is a Player, tell them they cannot cast while swimming
+		if ( player >= 0 )
+		{
+			messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
+		}
+		return;
+	}
 
 	if ( stat->EFFECTS[EFF_PARALYZED] )
 	{
@@ -215,20 +215,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		}
 	}
 
-    // Check to make sure the Caster is not swimming
-    // This check prevents situations where the Caster starts swimming after starting to cast
-    if ( !trap )
-    {
-        if ( isSwimming(caster) == true )
-        {
-            // If the Caster is a Player, tell them they cannot cast while swimming
-            if ( player >= 0 )
-            {
-                messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
-            }
-            return nullptr;
-        }
-    }
+	// Check to make sure the Caster is not swimming
+	// This check prevents situations where the Caster starts swimming after starting to cast
+	if ( !trap )
+	{
+		if ( isSwimming(caster) == true )
+		{
+			// If the Caster is a Player, tell them they cannot cast while swimming
+			if ( player >= 0 )
+			{
+				messagePlayer(player, language[410]); // "Cannot cast spells while swimming!"
+			}
+			return nullptr;
+		}
+	}
 
 	bool newbie = false;
 	if ( !using_magicstaff && !trap)

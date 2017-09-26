@@ -272,13 +272,13 @@ void actLeftHandMagic(Entity* my)
 					entity->fskill[3] = 0.01;
 				}
 
-                // Check to make sure the Player is not swimming
-                if ( isSwimming(players[clientnum]->entity) == true )
-                {
-                    // The Player is swimming, cancel the cast
-                    spellcastingAnimationManager_deactivate(&cast_animation);
-                    return;
-                }
+				// Check to make sure the Player is not swimming
+				if ( isSwimming(players[clientnum]->entity) == true )
+				{
+					// The Player is swimming, cancel the cast
+					spellcastingAnimationManager_deactivate(&cast_animation);
+					return;
+				}
 
 				cast_animation.consume_timer--;
 				if ( cast_animation.consume_timer < 0 && cast_animation.mana_left > 0 )
