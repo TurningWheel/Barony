@@ -50,7 +50,7 @@ void updateCharacterSheet()
 	//pos.x=0; pos.y=196;
 	//pos.w=222; pos.h=392-196;
 	//drawTooltip(&pos);
-	drawWindowFancy(0, 196, 224, 428);
+	drawWindowFancy(0, 196, 224, 416);
 
 	// character sheet
 	double ofov = fov;
@@ -138,8 +138,7 @@ void updateCharacterSheet()
 	ttfPrintTextFormatted(ttf12, 8, 214, language[359], stats[clientnum]->LVL, language[1900 + client_classes[clientnum]]);
 	ttfPrintTextFormatted(ttf12, 8, 226, language[360], stats[clientnum]->EXP);
 	ttfPrintTextFormatted(ttf12, 8, 238, language[361], currentlevel);
-    ttfPrintTextFormatted(ttf12, 8, 262, language[2499], stats[clientnum]->HP, stats[clientnum]->MAXHP); 
-    ttfPrintTextFormatted(ttf12, 8, 274, language[2499], stats[clientnum]->MP, stats[clientnum]->MAXMP);
+	ttfPrintTextFormatted(ttf12, 8, 262, language[2499], stats[clientnum]->HP, stats[clientnum]->MAXHP, stats[clientnum]->MP, stats[clientnum]->MAXMP);
 
 	// attributes
 	Sint32 statModifier = 0;
@@ -147,32 +146,32 @@ void updateCharacterSheet()
 	//Uint32 statColor = uint32ColorWhite(*mainsurface);
 	//,
 	snprintf(statText, 64, language[1200], stats[clientnum]->STR);
-	ttfPrintTextFormatted(ttf12, 8, 298, statText);
-	printStatBonus(ttf12, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 298);
+	ttfPrintTextFormatted(ttf12, 8, 286, statText);
+	printStatBonus(ttf12, stats[clientnum]->STR, statGetSTR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 286);
 
 	snprintf(statText, 64, language[1201], stats[clientnum]->DEX);
-	ttfPrintTextFormatted(ttf12, 8, 310, statText);
-	printStatBonus(ttf12, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 310);
+	ttfPrintTextFormatted(ttf12, 8, 298, statText);
+	printStatBonus(ttf12, stats[clientnum]->DEX, statGetDEX(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 298);
 
 	snprintf(statText, 64, language[1202], stats[clientnum]->CON);
-	ttfPrintTextFormatted(ttf12, 8, 322, statText);
-	printStatBonus(ttf12, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 322);
+	ttfPrintTextFormatted(ttf12, 8, 310, statText);
+	printStatBonus(ttf12, stats[clientnum]->CON, statGetCON(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 310);
 
 	snprintf(statText, 64, language[1203], stats[clientnum]->INT);
-	ttfPrintTextFormatted(ttf12, 8, 334, statText);
-	printStatBonus(ttf12, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 334);
+	ttfPrintTextFormatted(ttf12, 8, 322, statText);
+	printStatBonus(ttf12, stats[clientnum]->INT, statGetINT(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 322);
 
 	snprintf(statText, 64, language[1204], stats[clientnum]->PER);
-	ttfPrintTextFormatted(ttf12, 8, 346, statText);
-	printStatBonus(ttf12, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 346);
+	ttfPrintTextFormatted(ttf12, 8, 334, statText);
+	printStatBonus(ttf12, stats[clientnum]->PER, statGetPER(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 334);
 
 	snprintf(statText, 64, language[1205], stats[clientnum]->CHR);
-	ttfPrintTextFormatted(ttf12, 8, 358, statText);
-	printStatBonus(ttf12, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 358);
+	ttfPrintTextFormatted(ttf12, 8, 346, statText);
+	printStatBonus(ttf12, stats[clientnum]->CHR, statGetCHR(stats[clientnum]), 8 + longestline(statText) * TTF12_WIDTH, 346);
 
 	// armor, gold, and weight
-	ttfPrintTextFormatted(ttf12, 8, 382, language[370], stats[clientnum]->GOLD);
-	ttfPrintTextFormatted(ttf12, 8, 394, language[371], AC(stats[clientnum]));
+	ttfPrintTextFormatted(ttf12, 8, 370, language[370], stats[clientnum]->GOLD);
+	ttfPrintTextFormatted(ttf12, 8, 382, language[371], AC(stats[clientnum]));
 	Uint32 weight = 0;
 	for ( node = stats[clientnum]->inventory.first; node != NULL; node = node->next )
 	{
@@ -180,7 +179,7 @@ void updateCharacterSheet()
 		weight += items[item->type].weight * item->count;
 	}
 	weight += stats[clientnum]->GOLD / 100;
-	ttfPrintTextFormatted(ttf12, 8, 406, language[372], weight);
+	ttfPrintTextFormatted(ttf12, 8, 394, language[372], weight);
 
 	drawSkillsSheet();
 	statsHoverText(stats[clientnum]);
