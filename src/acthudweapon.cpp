@@ -1318,17 +1318,6 @@ void actHudShield(Entity* my)
 		return;
 	}
 
-	// check levitating value
-	bool levitating = isLevitating(stats[clientnum]);
-
-	// water walking boots
-	bool waterwalkingboots = false;
-	if (stats[clientnum]->shoes != nullptr)
-		if (stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING)
-		{
-			waterwalkingboots = true;
-		}
-
 	// select model
 	bool wearingring = false;
 	if ( stats[clientnum]->ring != nullptr )
