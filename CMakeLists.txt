@@ -76,7 +76,7 @@ if( NOT WIN32 )
     set(MACOSX_BUNDLE_BUNDLE_VERSION 2.0.2)
     set(MACOSX_BUNDLE_ICON_FILE "barony.icns")
     #set(MACOSX_BUNDLE_ICON_FILE "game.icns")
-    set(CMAKE_CXX_FLAGS"${CMAKE_CXX_FLAGS} -stdlib=libc++")
+    set(CMAKE_CXX_FLAGS "${CMAKE_CXX_FLAGS} -stdlib=libc++")
   else()
     set (Apple 0)
     set (Linux 1) #TODO: Should not assume this? What if BSD/DOS/whatever-have-you?
