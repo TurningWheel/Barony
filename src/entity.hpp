@@ -518,6 +518,14 @@ static const int SPRITE_BOOT_LEFT_OFFSET = 2;
 
 int setGloveSprite(Stat * myStats, Entity* ent, int spriteOffset);
 bool isLevitating(Stat * myStats);
+/* entity.cpp
+ * @param entity - The Entity being checked if it is swimming or not
+ * @returns true - If the Entity is in a water tile, is not levitating, and is not wearing water walking boots
+ * @returns false - Any other case
+ * Returns whether or not the given Entity, @entity, is currently swimming. Calculated by if they are in a water tile, and are not levitating or water walking
+ * TODOR: This function should be replaced by a flag on Entities after a refactor
+ */
+bool IsSwimming(Entity* entity);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);

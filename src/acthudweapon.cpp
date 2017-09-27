@@ -214,33 +214,18 @@ void actHudWeapon(Entity* my)
 		throwGimpTimer--;
 	}
 
-	// check levitating value
-	bool levitating = isLevitating(stats[clientnum]);
-
-	// water walking boots
-	bool waterwalkingboots = false;
-	if (stats[clientnum]->shoes != nullptr)
-		if ( stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING )
-		{
-			waterwalkingboots = true;
-		}
-
-	// swimming
-	if (players[clientnum] && players[clientnum]->entity)
+	// Check to make sure the Player is not swimming
+	if ( players[clientnum] && players[clientnum]->entity )
 	{
-		if (!levitating && !waterwalkingboots)
+		if ( IsSwimming(players[clientnum]->entity) )
 		{
-			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+			// Player is swimming, hide their weapon
+			my->flags[INVISIBLE] = true;
+			if ( parent )
 			{
-				my->flags[INVISIBLE] = true;
-				if (parent)
-				{
-					parent->flags[INVISIBLE] = true;
-				}
-				return;
+				parent->flags[INVISIBLE] = true;
 			}
+			return;
 		}
 	}
 
@@ -1333,17 +1318,6 @@ void actHudShield(Entity* my)
 		return;
 	}
 
-	// check levitating value
-	bool levitating = isLevitating(stats[clientnum]);
-
-	// water walking boots
-	bool waterwalkingboots = false;
-	if (stats[clientnum]->shoes != nullptr)
-		if (stats[clientnum]->shoes->type == IRON_BOOTS_WATERWALKING)
-		{
-			waterwalkingboots = true;
-		}
-
 	// select model
 	bool wearingring = false;
 	if ( stats[clientnum]->ring != nullptr )
@@ -1392,24 +1366,20 @@ void actHudShield(Entity* my)
 		}
 	}
 
-	// swimming
-	bool swimming = false;
-	if (players[clientnum] && players[clientnum]->entity)
+	// Check to make sure the Player is not swimming
+	bool bIsPlayerSwimming = false;
+	if ( players[clientnum] && players[clientnum]->entity )
 	{
-		if (!levitating && !waterwalkingboots) //TODO: Swimming capstone?
+		if ( IsSwimming(players[clientnum]->entity) )
 		{
-			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
-			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+			// Player is swimming, hide their shield
+			my->flags[INVISIBLE] = true;
+			Entity* parent = uidToEntity(my->parent);
+			if ( parent )
 			{
-				my->flags[INVISIBLE] = true;
-				Entity* parent = uidToEntity(my->parent);
-				if (parent)
-				{
-					parent->flags[INVISIBLE] = true;
-				}
-				swimming = true;
+				parent->flags[INVISIBLE] = true;
 			}
+			bIsPlayerSwimming = true;
 		}
 	}
 
@@ -1419,7 +1389,7 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
-	if (!command && !swimming)
+	if ( !command && bIsPlayerSwimming )
 	{
 		if (stats[clientnum]->shield)
 		{
@@ -1578,7 +1548,7 @@ void actHudShield(Entity* my)
 
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
-	if (stats[clientnum]->shield && !swimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch)
+	if ( stats[clientnum]->shield && bIsPlayerSwimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch )
 	{
 		if (itemCategory(stats[clientnum]->shield) == TOOL)
 		{
