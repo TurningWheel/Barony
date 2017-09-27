@@ -6127,13 +6127,21 @@ bool isLevitating(Stat* mystats)
 
 /*-------------------------------------------------------------------------------
 
-isSwimming
+IsSwimming
 
 Returns true if the given Entity is swimming, or false if it is not
+TODOR: This function should be replaced by a flag on Entities after a refactor
 
 -------------------------------------------------------------------------------*/
 
-bool isSwimming(Entity* entity)
+/* entity.cpp
+ * @param entity - The Entity being checked if it is swimming or not
+ * @returns true - If the Entity is in a water tile, is not levitating, and is not wearing water walking boots
+ * @returns false - Any other case
+ * Returns whether or not the given Entity, @entity, is currently swimming. Calculated by if they are in a water tile, and are not levitating or water walking
+ * TODOR: This function should be replaced by a flag on Entities after a refactor
+ */
+bool IsSwimming(Entity* entity)
 {
 	if ( entity == nullptr )
 	{

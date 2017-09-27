@@ -217,7 +217,7 @@ void actHudWeapon(Entity* my)
 	// Check to make sure the Player is not swimming
 	if ( players[clientnum] && players[clientnum]->entity )
 	{
-		if ( isSwimming(players[clientnum]->entity) == true )
+		if ( IsSwimming(players[clientnum]->entity) )
 		{
 			// Player is swimming, hide their weapon
 			my->flags[INVISIBLE] = true;
@@ -1367,10 +1367,10 @@ void actHudShield(Entity* my)
 	}
 
 	// Check to make sure the Player is not swimming
-	bool isPlayerSwimming = false;
+	bool bIsPlayerSwimming = false;
 	if ( players[clientnum] && players[clientnum]->entity )
 	{
-		if ( isSwimming(players[clientnum]->entity) == true )
+		if ( IsSwimming(players[clientnum]->entity) )
 		{
 			// Player is swimming, hide their shield
 			my->flags[INVISIBLE] = true;
@@ -1379,7 +1379,7 @@ void actHudShield(Entity* my)
 			{
 				parent->flags[INVISIBLE] = true;
 			}
-			isPlayerSwimming = true;
+			bIsPlayerSwimming = true;
 		}
 	}
 
@@ -1389,7 +1389,7 @@ void actHudShield(Entity* my)
 	}
 
 	bool defending = false;
-	if ( !command && isPlayerSwimming == false )
+	if ( !command && bIsPlayerSwimming )
 	{
 		if (stats[clientnum]->shield)
 		{
@@ -1548,7 +1548,7 @@ void actHudShield(Entity* my)
 
 	// torch/lantern flames
 	my->flags[BRIGHT] = false;
-	if ( stats[clientnum]->shield && isPlayerSwimming == false && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch )
+	if ( stats[clientnum]->shield && bIsPlayerSwimming && players[clientnum]->entity->skill[3] == 0 && !cast_animation.active && !shieldSwitch )
 	{
 		if (itemCategory(stats[clientnum]->shield) == TOOL)
 		{

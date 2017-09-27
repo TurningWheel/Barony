@@ -111,7 +111,7 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 	}
 
 	// Check to make sure the Caster is not swimming
-	if ( isSwimming(caster) == true )
+	if ( IsSwimming(caster) )
 	{
 		// If the Caster is a Player, tell them they cannot cast while swimming
 		if ( player >= 0 )
@@ -219,7 +219,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	// This check prevents situations where the Caster starts swimming after starting to cast
 	if ( !trap )
 	{
-		if ( isSwimming(caster) == true )
+		if ( IsSwimming(caster) )
 		{
 			// If the Caster is a Player, tell them they cannot cast while swimming
 			if ( player >= 0 )

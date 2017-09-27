@@ -273,7 +273,7 @@ void actLeftHandMagic(Entity* my)
 				}
 
 				// Check to make sure the Player is not swimming
-				if ( isSwimming(players[clientnum]->entity) == true )
+				if ( IsSwimming(players[clientnum]->entity) )
 				{
 					// The Player is swimming, cancel the cast
 					spellcastingAnimationManager_deactivate(&cast_animation);

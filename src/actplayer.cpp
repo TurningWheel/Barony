@@ -883,13 +883,13 @@ void actPlayer(Entity* my)
 	}
 
 	// Check to make sure the Player is not swimming
-	bool isPlayerSwimming = false;
+	bool bIsPlayerSwimming = false;
 	if ( PLAYER_NUM == clientnum || multiplayer == SERVER )
 	{
-		if ( isSwimming(players[PLAYER_NUM]->entity) == true && noclip == false && skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) == false )
+		if ( IsSwimming(players[PLAYER_NUM]->entity) && noclip && skillCapstoneUnlocked(PLAYER_NUM, PRO_SWIMMING) )
 		{
 			// Player is swimming, lower them into the water
-			isPlayerSwimming = true;
+			bIsPlayerSwimming = true;
 			my->z = 7;
 
 			// Store their map position for future checks
@@ -949,7 +949,7 @@ void actPlayer(Entity* my)
 	}
 
 	// Update PLAYER_INWATER flag
-	if ( isPlayerSwimming != true )
+	if ( !(bIsPlayerSwimming) )
 	{
 		if ( PLAYER_INWATER )
 		{
@@ -964,7 +964,7 @@ void actPlayer(Entity* my)
 		// camera bobbing
 		if (bobbing)
 		{
-			if ( isPlayerSwimming == true )
+			if ( bIsPlayerSwimming )
 			{
 				if ( PLAYER_BOBMODE )
 				{
@@ -975,7 +975,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMOVE -= .03;
 				}
 			}
-			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && isPlayerSwimming != true )
+			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && (bIsPlayerSwimming) )
 			{
 				if (!stats[clientnum]->defending)
 				{
@@ -1000,13 +1000,13 @@ void actPlayer(Entity* my)
 					}
 				}
 			}
-			else if ( isPlayerSwimming != true )
+			else if ( (bIsPlayerSwimming) )
 			{
 				PLAYER_BOBMOVE = 0;
 				PLAYER_BOB = 0;
 				PLAYER_BOBMODE = 0;
 			}
-			if ( isPlayerSwimming != true && !stats[clientnum]->defending )
+			if ( (bIsPlayerSwimming) && !stats[clientnum]->defending )
 			{
 				if ( PLAYER_BOBMOVE > .2 )
 				{
@@ -1019,7 +1019,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMODE = 1;
 				}
 			}
-			else if ( isPlayerSwimming == true )
+			else if ( bIsPlayerSwimming )
 			{
 				if ( PLAYER_BOBMOVE > .3 )
 				{
@@ -1638,7 +1638,7 @@ void actPlayer(Entity* my)
 				amuletwaterbreathing = true;
 			}
 		}
-		if ( isPlayerSwimming == true && !amuletwaterbreathing )
+		if ( bIsPlayerSwimming && !amuletwaterbreathing )
 		{
 			PLAYER_VELX *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
 			PLAYER_VELY *= (((stats[PLAYER_NUM]->PROFICIENCIES[PRO_SWIMMING] / 100.f) * 50.f) + 50) / 100.f;
@@ -1947,7 +1947,7 @@ void actPlayer(Entity* my)
 						if ( entity->pitch < -PI / 4.0 )
 						{
 							entity->pitch = -PI / 4.0;
-							if ( bodypart == 2 && dist > .4 && !levitating && isPlayerSwimming != true )
+							if ( bodypart == 2 && dist > .4 && !levitating && (!bIsPlayerSwimming) )
 							{
 								node_t* tempNode = list_Node(&my->children, 2);
 								if ( tempNode )
@@ -1975,7 +1975,7 @@ void actPlayer(Entity* my)
 						if ( entity->pitch > PI / 4.0 )
 						{
 							entity->pitch = PI / 4.0;
-							if ( bodypart == 2 && dist > .4 && !levitating && isPlayerSwimming != true )
+							if ( bodypart == 2 && dist > .4 && !levitating && (!bIsPlayerSwimming) )
 							{
 								node_t* tempNode = list_Node(&my->children, 2);
 								if ( tempNode )
@@ -2453,7 +2453,7 @@ void actPlayer(Entity* my)
 			case 6:
 				if ( multiplayer != CLIENT )
 				{
-					if ( isPlayerSwimming == true )
+					if ( bIsPlayerSwimming )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -2562,7 +2562,7 @@ void actPlayer(Entity* my)
 			case 7:
 				if ( multiplayer != CLIENT )
 				{
-					if ( isPlayerSwimming == true )
+					if ( bIsPlayerSwimming )
 					{
 						entity->flags[INVISIBLE] = true;
 					}
