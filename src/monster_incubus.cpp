@@ -154,7 +154,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// right arm
-	entity = newEntity(448, 0, map.entities);
+	entity = newEntity(448, 0, map.entities); //595
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -172,7 +172,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	node->size = sizeof(Entity*);
 
 	// left arm
-	entity = newEntity(447, 0, map.entities);
+	entity = newEntity(447, 0, map.entities); //447
 	entity->sizex = 4;
 	entity->sizey = 4;
 	entity->skill[2] = my->getUID();
@@ -214,7 +214,7 @@ void incubusDie(Entity* my)
 	return;
 }
 
-#define INCUBUSWALKSPEED .25
+#define INCUBUSWALKSPEED .07
 
 void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
@@ -291,7 +291,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	//Move bodyparts
 	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -300,9 +300,9 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			if ( bodypart == 3 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 			{
 				rightbody = (Entity*)node->next->element;
 			}
@@ -514,28 +514,74 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
-				entity->x += 2 * cos(my->yaw + PI / 2); //-.20*cos(my->yaw);
-				entity->y += 2 * sin(my->yaw + PI / 2); //-.20*sin(my->yaw);
-				entity->z += 1;
-				entity->roll = -PI / 8;
+			case LIMB_HUMANOID_RIGHTARM:
+			{
+				node_t* weaponNode = list_Node(&my->children, LIMB_HUMANOID_WEAPON);
+				if ( true/*weaponNode*/ )
+				{
+					//Entity* weapon = (Entity*)weaponNode->element;
+					if ( MONSTER_ARMBENDED || (/*weapon->flags[INVISIBLE] &&*/ my->monsterState == MONSTER_STATE_WAIT) )
+					{
+						// if weapon invisible and I'm not attacking, relax arm.
+						entity->focalx = limbs[INCUBUS][4][0] - 0.25; // 0
+						entity->focaly = limbs[INCUBUS][4][1] - 0.25; // 0
+						entity->focalz = limbs[INCUBUS][4][2]; // 2
+						entity->sprite = 448;
+					}
+					else
+					{
+						// else flex arm.
+						entity->focalx = limbs[INCUBUS][4][0];
+						entity->focaly = limbs[INCUBUS][4][1];
+						entity->focalz = limbs[INCUBUS][4][2];
+						entity->sprite = 595;
+					}
+				}
+				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
+				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
+				entity->z += 0;
+				entity->roll = -PI / 32;
 				entity->yaw += MONSTER_WEAPONYAW;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
 					entity->pitch = 0;
 				}
 				break;
+			}
 			// left arm
 			case 6:
-				entity->x -= 2 * cos(my->yaw + PI / 2); //+.20*cos(my->yaw);
-				entity->y -= 2 * sin(my->yaw + PI / 2); //+.20*sin(my->yaw);
-				entity->z += 1;
-				entity->roll = PI / 8;
+			{
+				//node_t* weaponNode = list_Node(&my->children, LIMB_HUMANOID_WEAPON);
+				if ( true/*weaponNode*/ )
+				{
+					//Entity* weapon = (Entity*)weaponNode->element;
+					if ( MONSTER_ARMBENDED || (/*weapon->flags[INVISIBLE] &&*/ my->monsterState == MONSTER_STATE_WAIT) )
+					{
+						// if weapon invisible and I'm not attacking, relax arm.
+						entity->focalx = limbs[INCUBUS][5][0] - 0.25; // 0
+						entity->focaly = limbs[INCUBUS][5][1] + 0.25; // 0
+						entity->focalz = limbs[INCUBUS][5][2]; // 2
+						entity->sprite = 447;
+					}
+					else
+					{
+						// else flex arm.
+						entity->focalx = limbs[INCUBUS][5][0];
+						entity->focaly = limbs[INCUBUS][5][1];
+						entity->focalz = limbs[INCUBUS][5][2];
+						entity->sprite = 594;
+					}
+				}
+				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
+				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
+				entity->z += 0;
+				entity->roll = PI / 32;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
 					entity->pitch = 0;
 				}
 				break;
+			}
 		}
 	}
 	if ( MONSTER_ATTACK != 0 )
