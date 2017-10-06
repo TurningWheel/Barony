@@ -2655,14 +2655,14 @@ void createParticleErupt(Entity* parent, int sprite)
 	}
 }
 
-void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite)
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int sprite, int endSprite)
 {
 	// spawns the invisible 'center' of the magic particle
 	Entity* entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
-	entity->x = startx;
-	entity->y = starty;
+	entity->x = target->x;
+	entity->y = target->y;
 	entity->parent = (parent->getUID());
 	entity->yaw = parent->yaw + PI; // face towards the caster.
 	entity->skill[0] = 45;
@@ -2675,6 +2675,7 @@ void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int s
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
 	entity->flags[UNCLICKABLE] = true;
+	return entity;
 }
 
 void createParticleSap(Entity* parent)
@@ -2980,6 +2981,29 @@ void actParticleSapCenter(Entity* my)
 		// if reached the caster, delete self and spawn some particles.
 		if ( entityInsideEntity(my, parent) )
 		{
+			if ( my->skill[6] == 1 )
+			{
+				// found stolen item.
+				Item* item = newItemFromEntity(my);
+				if ( parent->behavior == &actPlayer )
+				{
+					itemPickup(parent->skill[2], item);
+				}
+				else if ( parent->behavior == &actMonster )
+				{
+					parent->addItemToMonsterInventory(item);
+					Stat *myStats = parent->getStats();
+					if ( myStats )
+					{
+						node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+						if ( weaponNode )
+						{
+							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false);
+						}
+					}
+				}
+				item = nullptr;
+			}
 			playSoundEntity(parent, 168, 128);
 			spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
 			list_RemoveNode(my->mynode);

@@ -558,7 +558,55 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				messagePlayerColor(player, color, language[2432]);
 			}
 
-			createParticleSapCenter(parent, hit.entity->x, hit.entity->y, my.sprite, my.sprite);
+			Entity* spellEntity = createParticleSapCenter(parent, hit.entity, my.sprite, my.sprite);
+			if ( spellEntity )
+			{
+				if ( hitstats->weapon )
+				{
+					spellEntity->skill[6] = 1; // found weapon
+
+					// store weapon data
+					spellEntity->skill[10] = hitstats->weapon->type;
+					spellEntity->skill[11] = hitstats->weapon->status;
+					spellEntity->skill[12] = hitstats->weapon->beatitude;
+					spellEntity->skill[13] = hitstats->weapon->count;
+					spellEntity->skill[14] = hitstats->weapon->appearance;
+					spellEntity->skill[15] = hitstats->weapon->identified;
+
+					if ( hit.entity->behavior == &actMonster )
+					{
+						free(hitstats->weapon);
+						hitstats->weapon = nullptr;
+					}
+					else
+					{
+						// player.
+						Item* weapon = hitstats->weapon;
+						Item** slot = itemSlot(hitstats, weapon);
+						if ( slot )
+						{
+							*slot = nullptr;
+						}
+						if ( weapon->node )
+						{
+							list_RemoveNode(weapon->node);
+						}
+						else
+						{
+							free(weapon);
+						}
+						/*if ( playerhit > 0 && multiplayer == SERVER )
+						{
+							strcpy((char*)net_packet->data, "STLA");
+							net_packet->data[4] = armornum;
+							net_packet->address.host = net_clients[playerhit - 1].host;
+							net_packet->address.port = net_clients[playerhit - 1].port;
+							net_packet->len = 5;
+							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
+						}*/
+					}
+				}
+			}
 		}
 		/*else if ( hit.entity->behavior == &actDoor )
 		{

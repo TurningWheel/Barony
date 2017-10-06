@@ -417,7 +417,7 @@ void createParticleDropRising(Entity* parent, int sprite);
 void createParticleDot(Entity* parent);
 void createParticleRock(Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
-void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite);
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int sprite, int endSprite);
 void createParticleSap(Entity* parent);
 
 spell_t* newSpell();
