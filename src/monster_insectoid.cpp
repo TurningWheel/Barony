@@ -1304,9 +1304,9 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 
 	// throwing weapons
 	// occurs less often against fellow monsters.
-	if ( monsterSpecialTimer == 0 && (ticks % HITRATE == 0) )
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		specialRoll = rand() % (20 + 20 * (target->behavior == &actMonster));
+		specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
 		if ( myStats->HP <= myStats->MAXHP * 0.6 )
 		{
 			bonusFromHP += 1; // +5% chance if on low health
