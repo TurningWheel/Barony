@@ -2995,7 +2995,7 @@ void actParticleSapCenter(Entity* my)
 					Stat *myStats = parent->getStats();
 					if ( myStats )
 					{
-						node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+						node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
 						if ( weaponNode )
 						{
 							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false);
