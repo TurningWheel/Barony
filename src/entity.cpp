@@ -6276,7 +6276,7 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6295,7 +6295,7 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP2;
 			}
-			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == COCKATRICE )
+			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == COCKATRICE || myStats->type == INCUBUS )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6324,7 +6324,7 @@ int Entity::getAttackPose() const
 		}
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6360,7 +6360,7 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6381,7 +6381,7 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -7174,6 +7174,11 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
 					weaponLimb->z = weaponArmLimb->z - .5;
 					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
+				}
+
+				if ( monsterType == INCUBUS )
+				{
+					weaponLimb->z += 1;
 				}
 			}
 			else

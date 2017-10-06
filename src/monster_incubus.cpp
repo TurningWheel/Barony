@@ -338,7 +338,15 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		{
+			// don't let the creatures's yaw move the casting arm
+
+		}
+		else
+		{
+			entity->yaw = my->yaw;
+		}
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
 			my->humanoidAnimateWalk(entity, node, bodypart, INCUBUSWALKSPEED, dist, 0.4);
@@ -405,13 +413,17 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( weaponNode )
 				{
 					Entity* weapon = (Entity*)weaponNode->element;
-					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT) )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState != MONSTER_STATE_ATTACK) )
 					{
 						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[INCUBUS][4][0] - 0.25; // 0
 						entity->focaly = limbs[INCUBUS][4][1] - 0.25; // 0
 						entity->focalz = limbs[INCUBUS][4][2]; // 2
 						entity->sprite = 448;
+						if ( my->monsterAttack == 0 )
+						{
+							entity->roll = -PI / 32;
+						}
 					}
 					else
 					{
@@ -424,8 +436,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
 				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += 0;
-				entity->roll = -PI / 32;
+				entity->z += 0.5;
 				entity->yaw += MONSTER_WEAPONYAW;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
@@ -434,19 +445,23 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 			{
-				node_t* weaponNode = list_Node(&my->children, LIMB_HUMANOID_WEAPON);
-				if ( weaponNode )
+				node_t* shieldNode = list_Node(&my->children, 8);
+				if ( shieldNode )
 				{
-					Entity* weapon = (Entity*)weaponNode->element;
-					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState != MONSTER_STATE_ATTACK) )
+					Entity* shield = (Entity*)shieldNode->element;
+					if ( shield->flags[INVISIBLE] && my->monsterState != MONSTER_STATE_ATTACK )
 					{
 						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[INCUBUS][5][0] - 0.25; // 0
 						entity->focaly = limbs[INCUBUS][5][1] + 0.25; // 0
 						entity->focalz = limbs[INCUBUS][5][2]; // 2
 						entity->sprite = 447;
+						if ( my->monsterAttack == 0 )
+						{
+							entity->roll = PI / 32;
+						}
 					}
 					else
 					{
@@ -459,8 +474,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 0;
-				entity->roll = PI / 32;
+				entity->z += 0.5;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
 					entity->pitch = 0;
@@ -580,7 +594,16 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 		}
 	}
-
+	// rotate shield a bit
+	node_t* shieldNode = list_Node(&my->children, 8);
+	if ( shieldNode )
+	{
+		Entity* shieldEntity = (Entity*)shieldNode->element;
+		if ( shieldEntity->sprite != items[TOOL_TORCH].index && shieldEntity->sprite != items[TOOL_LANTERN].index && shieldEntity->sprite != items[TOOL_CRYSTALSHARD].index )
+		{
+			shieldEntity->yaw -= PI / 6;
+		}
+	}
 	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;

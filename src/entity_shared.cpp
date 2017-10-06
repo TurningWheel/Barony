@@ -917,7 +917,6 @@ int canWearEquip(Entity* entity, int category)
 				case GHOUL:
 				case SCARAB:
 				case CRYSTALGOLEM:
-				case INCUBUS:
 				case COCKATRICE:
 					equipType = 0;
 					break;
@@ -931,6 +930,7 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
+				case INCUBUS:
 				case LICH_FIRE:
 				case LICH_ICE:
 					equipType = 2;
