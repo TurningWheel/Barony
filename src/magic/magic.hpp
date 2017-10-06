@@ -44,6 +44,7 @@ static const int SPELL_BLEED = 24;
 static const int SPELL_DOMINATE = 25;
 static const int SPELL_REFLECT_MAGIC = 26;
 static const int SPELL_ACID_SPRAY = 27;
+static const int SPELL_STEAL_WEAPON = 28;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -314,6 +315,9 @@ extern spellElement_t spellElement_dominate;
 
 extern spellElement_t spellElement_reflectMagic;
 
+/* Steal Weapon */
+extern spellElement_t spellElement_stealWeapon;
+
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -380,6 +384,7 @@ extern spell_t spell_bleed;
 extern spell_t spell_dominate;
 extern spell_t spell_reflectMagic;
 extern spell_t spell_acidSpray;
+extern spell_t spell_stealWeapon;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -479,5 +484,6 @@ spell_t* getSpellFromItem(Item* item);
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 
 void freeSpells();

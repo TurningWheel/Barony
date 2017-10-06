@@ -2107,6 +2107,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spellEffectAcid(*my, *element, parent, resistance);
 					return;
 				}
+				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
+				{
+					spellEffectStealWeapon(*my, *element, parent, resistance);
+					return;
+				}
 
 				my->removeLightField();
 				list_RemoveNode(my->mynode);

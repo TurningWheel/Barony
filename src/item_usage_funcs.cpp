@@ -2860,8 +2860,8 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_ACID_SPRAY:
 				addSpell(SPELL_ACID_SPRAY, player);
 				break;
-			case SPELLBOOK_BLANK_2:
-				messagePlayer(player, "Wot?! Blank speel?");
+			case SPELLBOOK_STEAL_WEAPON:
+				addSpell(SPELL_STEAL_WEAPON, player);
 				break;
 			case SPELLBOOK_BLANK_3:
 				messagePlayer(player, "No, you no can has!");

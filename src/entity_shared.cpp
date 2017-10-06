@@ -400,7 +400,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_dig",
 		"spellbook_reflect_magic",
 		"spellbook_acid_spray",
-		"spellbook_blank_2",
+		"spellbook_steal_weapon",
 		"spellbook_blank_3",
 		"spellbook_blank_4",
 		"spellbook_blank_5",

@@ -3500,6 +3500,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_ACID_SPRAY:
 							castSpell(uid, &spell_acidSpray, true, false);
 							break;
+						case SPELLBOOK_STEAL_WEAPON:
+							castSpell(uid, &spell_stealWeapon, true, false);
+							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 							//castSpell(uid, &spell_reflectMagic, true, false)
 							//break;

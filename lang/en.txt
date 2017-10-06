@@ -2936,7 +2936,7 @@ but it retracts beyond your might!#
 2393 Dominate#
 2394 Reflect Magic#
 2395 Spray Acid#
-2396 blank#
+2396 Steal Weapon#
 2397 blank#
 2398 blank#
 2399 blank#
