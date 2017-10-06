@@ -1302,9 +1302,9 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	int specialRoll = -1;
 	int bonusFromHP = 0;
 
-	// throwing weapons, chances compensated for how often this check is called.
+	// throwing weapons
 	// occurs less often against fellow monsters.
-	if ( monsterSpecialTimer == 0 )
+	if ( monsterSpecialTimer == 0 && (ticks % HITRATE == 0) )
 	{
 		specialRoll = rand() % (20 + 20 * (target->behavior == &actMonster));
 		if ( myStats->HP <= myStats->MAXHP * 0.6 )
