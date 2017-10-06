@@ -19,6 +19,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initIncubus(Entity* my, Stat* myStats)
 {
@@ -332,6 +333,11 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( my->monsterAttack != MONSTER_POSE_MAGIC_WINDUP3 && bodypart == 1 && multiplayer != CLIENT )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -341,7 +347,6 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
-
 		}
 		else
 		{
@@ -349,7 +354,27 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			my->humanoidAnimateWalk(entity, node, bodypart, INCUBUSWALKSPEED, dist, 0.4);
+			if ( bodypart == LIMB_HUMANOID_LEFTARM &&
+				(my->monsterSpecialState == INCUBUS_STEAL) )
+			{
+				Entity* weaponarm = nullptr;
+				// leftarm follows the right arm during special steal attack
+				node_t* weaponarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTARM);
+				if ( weaponarmNode )
+				{
+					weaponarm = (Entity*)weaponarmNode->element;
+				}
+				else
+				{
+					return;
+				}
+				entity->pitch = weaponarm->pitch;
+				entity->roll = -weaponarm->roll;
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, INCUBUSWALKSPEED, dist, 0.4);
+			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -357,9 +382,82 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK > 0 )
+				if ( my->monsterAttack > 0 )
 				{
-					my->handleWeaponArmAttack(entity);
+					Entity* rightbody = nullptr;
+					// set rightbody to left leg.
+					node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+					if ( rightbodyNode )
+					{
+						rightbody = (Entity*)rightbodyNode->element;
+					}
+					else
+					{
+						return;
+					}
+
+					// potion special throw
+					if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+						}
+
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP * 4 / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(1, 0, nullptr);
+							}
+						}
+						++my->monsterAttackTime;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+							// play casting sound
+							playSoundEntityLocal(my, 170, 64);
+							// monster scream
+							playSoundEntityLocal(my, 99, 128);
+						}
+
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 14 * PI / 8, true, 0.1);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 1 * PI / 8, false, 0.0);
+						}
+
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+							}
+						}
+					}
+					else
+					{
+						my->handleWeaponArmAttack(entity);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -470,6 +568,10 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focaly = limbs[INCUBUS][5][1];
 						entity->focalz = limbs[INCUBUS][5][2];
 						entity->sprite = 594;
+						if ( my->monsterSpecialState == INCUBUS_STEAL )
+						{
+							entity->yaw -= MONSTER_WEAPONYAW;
+						}
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -616,4 +718,98 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+void Entity::incubusChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer()
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	/*if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
+	{
+	return;
+	}*/
+
+	int specialRoll = -1;
+	int bonusFromHP = 0;
+
+	// occurs less often against fellow monsters.
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
+	{
+		specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+		if ( myStats->HP <= myStats->MAXHP * 0.6 )
+		{
+			bonusFromHP += 1; // +5% chance if on low health
+		}
+		if ( myStats->HP <= myStats->MAXHP * 0.3 )
+		{
+			bonusFromHP += 1; // +extra 5% chance if on lower health
+		}
+		messagePlayer(0, "rolled: %d", specialRoll);
+		if ( specialRoll < (1 + bonusFromHP) ) // +5% base
+		{
+			node_t* node = nullptr;
+			//node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), POTION);
+			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+			if ( node != nullptr )
+			{
+				swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
+				//monsterSpecialState = INCUBUS_CONFUSION;
+				monsterSpecialState = INCUBUS_STEAL;
+				return;
+			}
+		}
+	}
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	if ( inMeleeRange )
+	{
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
+			if ( !swapped )
+			{
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+
+	//Switch to a thrown weapon or a ranged weapon.
+	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	{
+		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		if ( !weaponNode )
+		{
+			return; //Nothing available
+		}
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
+		return;
+	}
+	return;
 }

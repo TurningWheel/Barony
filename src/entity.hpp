@@ -383,8 +383,8 @@ public:
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
-	// monster special attack handler
-	void handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
+	// monster special attack handler, returns true if monster should attack after calling this function.
+	bool handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
 	// monster attack handler
 	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
@@ -444,12 +444,16 @@ public:
 			case INSECTOID:
 				insectoidChooseWeapon(target, dist);
 				break;
+			case INCUBUS:
+				incubusChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
 	}
 	void goatmanChooseWeapon(const Entity* target, double dist);
 	void insectoidChooseWeapon(const Entity* target, double dist);
+	void incubusChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist)
 	{

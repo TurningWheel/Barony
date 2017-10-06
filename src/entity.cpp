@@ -6291,6 +6291,10 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP3;
 			}
+			else if ( myStats->type == INCUBUS && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL )
+			{
+				pose = MONSTER_POSE_MAGIC_WINDUP3;
+			}
 			else if ( myStats->type == COCKATRICE && this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP2;
@@ -6315,6 +6319,13 @@ int Entity::getAttackPose() const
 				else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
 				{
 					pose = MONSTER_POSE_MELEE_WINDUP1;
+				}
+			}
+			else if ( myStats->type == INCUBUS )
+			{
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION )
+				{
+					pose = MONSTER_POSE_SPECIAL_WINDUP1;
 				}
 			}
 			else
