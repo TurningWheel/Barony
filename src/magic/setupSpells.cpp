@@ -254,8 +254,8 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_acidSpray.name, language[2395]);
 
 	spellElementConstructor(&spellElement_stealWeapon);
-	spellElement_stealWeapon.mana = 5;
-	spellElement_stealWeapon.base_mana = 5;
+	spellElement_stealWeapon.mana = 80;
+	spellElement_stealWeapon.base_mana = 80;
 	spellElement_stealWeapon.overload_multiplier = 1;
 	spellElement_stealWeapon.damage = 0;
 	spellElement_stealWeapon.duration = 0; //TODO: Decide on something.
@@ -719,7 +719,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_acidSpray);
 	strcpy(spell_acidSpray.name, language[2395]);
 	spell_acidSpray.ID = SPELL_ACID_SPRAY;
-	spell_acidSpray.difficulty = 0;
+	spell_acidSpray.difficulty = 75;
 	node = list_AddNodeLast(&spell_acidSpray.elements);
 	node->element = copySpellElement(&spellElement_missile_trio);
 	node->size = sizeof(spellElement_t);
@@ -739,7 +739,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_stealWeapon);
 	strcpy(spell_stealWeapon.name, language[2396]);
 	spell_stealWeapon.ID = SPELL_STEAL_WEAPON;
-	spell_stealWeapon.difficulty = 0;
+	spell_stealWeapon.difficulty = 100;
 	node = list_AddNodeLast(&spell_stealWeapon.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
