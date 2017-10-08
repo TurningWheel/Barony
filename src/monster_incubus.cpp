@@ -58,7 +58,7 @@ void initIncubus(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				myStats->DEX = 10;
+				/*myStats->DEX = 10;
 				strcpy(myStats->name, "Lilith");
 				for ( c = 0; c < 2; c++ )
 				{
@@ -67,7 +67,7 @@ void initIncubus(Entity* my, Stat* myStats)
 					{
 						entity->parent = my->getUID();
 					}
-				}
+				}*/
 			}
 
 			// random effects
@@ -87,6 +87,15 @@ void initIncubus(Entity* my, Stat* myStats)
 			// always give special spell to incubus, undroppable.
 			newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
+			if ( rand() % 4 == 0 ) // 1 in 4
+			{
+				newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			}
+			else // 3 in 4
+			{
+				newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			}
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -100,13 +109,9 @@ void initIncubus(Entity* my, Stat* myStats)
 						newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
 					}
 				case 1:
-					if ( rand() % 4 == 0 ) // 1 in 4
+					if ( rand() % 3 == 0 ) // 1 in 3
 					{
-						newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
-					}
-					else // 3 in 4
-					{
-						newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, rand(), false, &myStats->inventory);
 					}
 					break;
 				default:
@@ -877,7 +882,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			//messagePlayer(0, "rolled: %d", specialRoll);
 			int requiredRoll = (1 + bonusFromHP + (targetStats->EFFECTS[EFF_CONFUSED] ? 4 : 0)
 				+ (targetStats->EFFECTS[EFF_DRUNK] ? 2 : 0)); // +2.5% base, + extra if target is inebriated
-			messagePlayer(0, "require: %d", requiredRoll);
+			//messagePlayer(0, "require: %d", requiredRoll);
 			if ( specialRoll < requiredRoll ) 
 			{
 				node_t* node = nullptr;
