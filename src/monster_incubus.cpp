@@ -84,6 +84,9 @@ void initIncubus(Entity* my, Stat* myStats)
 														 // count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			// always give special spell to incubus, undroppable.
+			newItem(SPELLBOOK_STEAL_WEAPON, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -92,10 +95,69 @@ void initIncubus(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
+					if ( rand() % 5 == 0 ) // 1 in 5
+					{
+						newItem(POTION_CONFUSION, SERVICABLE, 0, 1 + rand() % 2, rand(), false, &myStats->inventory);
+					}
 				case 1:
+					if ( rand() % 4 == 0 ) // 1 in 4
+					{
+						newItem(POTION_CONFUSION, SERVICABLE, 0, 0 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
+					else // 3 in 4
+					{
+						newItem(POTION_BOOZE, SERVICABLE, 0, 1 + rand() % 3, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
 					break;
 				default:
 					break;
+			}
+
+			//give weapon
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						myStats->weapon = newItem(CRYSTAL_SPEAR, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 4:
+					case 5:
+					case 6:
+						myStats->weapon = newItem(CROSSBOW, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 7:
+					case 8:
+						myStats->weapon = newItem(STEEL_HALBERD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					case 9:
+						myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+				}
+			}
+
+			// give shield
+			if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			{
+				switch ( rand() % 10 )
+				{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+					case 4:
+					case 5:
+					case 6:
+					case 7:
+						break;
+					case 8:
+					case 9:
+						myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(WORN + rand() % 2), -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+				}
 			}
 		}
 	}
@@ -483,7 +545,31 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->z += 2.5;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 450;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_RIGHT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x += 1 * cos(my->yaw + PI / 2) - .75 * cos(my->yaw);
 				entity->y += 1 * sin(my->yaw + PI / 2) - .75 * sin(my->yaw);
 				entity->z += 5;
@@ -495,6 +581,30 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			// left leg
 			case 4:
+				if ( multiplayer != CLIENT )
+				{
+					if ( myStats->shoes == nullptr )
+					{
+						entity->sprite = 449;
+					}
+					else
+					{
+						my->setBootSprite(entity, SPRITE_BOOT_LEFT_OFFSET);
+					}
+					if ( multiplayer == SERVER )
+					{
+						// update sprites for clients
+						if ( entity->skill[10] != entity->sprite )
+						{
+							entity->skill[10] = entity->sprite;
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+						if ( entity->getUID() % (TICKS_PER_SECOND * 10) == ticks % (TICKS_PER_SECOND * 10) )
+						{
+							serverUpdateEntityBodypart(my, bodypart);
+						}
+					}
+				}
 				entity->x -= 1 * cos(my->yaw + PI / 2) + .75 * cos(my->yaw);
 				entity->y -= 1 * sin(my->yaw + PI / 2) + .75 * sin(my->yaw);
 				entity->z += 5;
@@ -746,26 +856,51 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 	// occurs less often against fellow monsters.
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
-		if ( myStats->HP <= myStats->MAXHP * 0.6 )
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
 		{
-			bonusFromHP += 1; // +5% chance if on low health
+			return;
 		}
-		if ( myStats->HP <= myStats->MAXHP * 0.3 )
+
+		if ( targetStats->weapon )
 		{
-			bonusFromHP += 1; // +extra 5% chance if on lower health
+			// try to steal weapon if target is holding.
+			specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+			if ( myStats->HP <= myStats->MAXHP * 0.8 )
+			{
+				bonusFromHP += 1; // +2.5% chance if on low health
+			}
+			if ( myStats->HP <= myStats->MAXHP * 0.4 )
+			{
+				bonusFromHP += 1; // +extra 2.5% chance if on lower health
+			}
+			//messagePlayer(0, "rolled: %d", specialRoll);
+			int requiredRoll = (1 + bonusFromHP + (targetStats->EFFECTS[EFF_CONFUSED] ? 4 : 0)
+				+ (targetStats->EFFECTS[EFF_DRUNK] ? 2 : 0)); // +2.5% base, + extra if target is inebriated
+			messagePlayer(0, "require: %d", requiredRoll);
+			if ( specialRoll < requiredRoll ) 
+			{
+				node_t* node = nullptr;
+				node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+				if ( node != nullptr )
+				{
+					swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
+					monsterSpecialState = INCUBUS_STEAL;
+					return;
+				}
+			}
 		}
-		messagePlayer(0, "rolled: %d", specialRoll);
-		if ( specialRoll < (1 + bonusFromHP) ) // +5% base
+		
+		// try new roll for alternate special.
+		specialRoll = rand() % (30 + 30 * (target->behavior == &actMonster));
+		if ( specialRoll < (2 + bonusFromHP) ) // +5% base
 		{
 			node_t* node = nullptr;
-			//node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), POTION);
-			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), POTION);
 			if ( node != nullptr )
 			{
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
-				//monsterSpecialState = INCUBUS_CONFUSION;
-				monsterSpecialState = INCUBUS_STEAL;
+				monsterSpecialState = INCUBUS_CONFUSION;
 				return;
 			}
 		}

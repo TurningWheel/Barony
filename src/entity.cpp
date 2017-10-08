@@ -6053,6 +6053,7 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case SKELETON:
 		case GNOME:
 		case SHADOW:
+		case INCUBUS:
 			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
 			{
 				leg->sprite = 148 + spriteOffset;
