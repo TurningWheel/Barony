@@ -306,17 +306,6 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
-	if ( !hit.entity )
-	{
-		return;
-	}
-
-	int player = -1;
-	if ( hit.entity->behavior == &actPlayer )
-	{
-		player = hit.entity->skill[2];
-	}
-
 	playSoundEntity(&my, 173, 128);
 	if ( hit.entity )
 	{
@@ -413,6 +402,12 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 			}
 
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
 			if ( player >= 0 )
 			{
 				messagePlayerColor(player, color, language[2432]);
@@ -443,28 +438,18 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 		{
 			hit.entity->doorHandleDamageMagic(damage, my, parent);
 		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
 	}
-
-	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
 	my.removeLightField();
 	list_RemoveNode(my.mynode);
-	return;
 }
 
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance)
 {
-	if ( !hit.entity )
-	{
-		return;
-	}
-
-	int player = -1;
-	if ( hit.entity->behavior == &actPlayer )
-	{
-		player = hit.entity->skill[2];
-	}
-
-	playSoundEntity(&my, 173, 128);
 	if ( hit.entity )
 	{
 		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
@@ -480,54 +465,11 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					return;
 				}
 			}
-			playSoundEntity(&my, 173, 64);
-			playSoundEntity(hit.entity, 249, 64);
-			//playSoundEntity(hit.entity, 28, 64);
 
 			Stat* hitstats = hit.entity->getStats();
 			if ( !hitstats )
 			{
 				return;
-			}
-
-			/*damage *= damagetables[hitstats->type][5];
-			hit.entity->modHP(-damage);*/
-
-			// write the obituary
-			if ( parent )
-			{
-				parent->killedByMonsterObituary(hit.entity);
-			}
-
-			/*hitstats->EFFECTS[EFF_POISONED] = true;
-			hitstats->EFFECTS_TIMERS[EFF_POISONED] = (element.duration * (((element.mana) / static_cast<double>(element.base_mana)) * element.overload_multiplier));
-			hitstats->EFFECTS_TIMERS[EFF_POISONED] /= (1 + (int)resistance);*/
-			if ( hit.entity->behavior == &actPlayer )
-			{
-				serverUpdateEffects(hit.entity->skill[2]);
-			}
-			// hit messages
-			if ( parent )
-			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-				if ( parent->behavior == &actPlayer )
-				{
-					if ( strcmp(hitstats->name, "") )
-					{
-						messagePlayerColor(parent->skill[2], color, language[2430], hitstats->name);
-					}
-					else
-					{
-						if ( hitstats->type < KOBOLD ) //Original monster count
-						{
-							messagePlayerColor(parent->skill[2], color, language[2431], language[90 + hitstats->type]);
-						}
-						else if ( hitstats->type >= KOBOLD ) //New monsters
-						{
-							messagePlayerColor(parent->skill[2], color, language[2431], language[2000 + (hitstats->type - KOBOLD)]);
-						}
-					}
-				}
 			}
 
 			// update enemy bar for attacker
@@ -547,22 +489,20 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
 			}
 
-			if ( hitstats->HP <= 0 && parent )
-			{
-				parent->awardXP(hit.entity, true, true);
-			}
-
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-			if ( player >= 0 )
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
 			{
-				messagePlayerColor(player, color, language[2432]);
+				player = hit.entity->skill[2];
 			}
 
-			Entity* spellEntity = createParticleSapCenter(parent, hit.entity, my.sprite, my.sprite);
-			if ( spellEntity )
+			if ( hitstats->weapon )
 			{
-				if ( hitstats->weapon )
+				Entity* spellEntity = createParticleSapCenter(parent, hit.entity, my.sprite, my.sprite);
+				if ( spellEntity )
 				{
+					playSoundEntity(&my, 174, 128); // succeeded spell sound
 					spellEntity->skill[6] = 1; // found weapon
 
 					// store weapon data
@@ -573,12 +513,42 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 					spellEntity->skill[14] = hitstats->weapon->appearance;
 					spellEntity->skill[15] = hitstats->weapon->identified;
 
+					// hit messages
+					if ( player >= 0 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(player, color, language[2435], hitstats->weapon->getName());
+					}
+
+					if ( parent )
+					{
+						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( strcmp(hitstats->name, "") )
+							{
+								messagePlayerColor(parent->skill[2], color, language[2433], hitstats->name, hitstats->weapon->getName());
+							}
+							else
+							{
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									messagePlayerColor(parent->skill[2], color, language[2434], language[90 + hitstats->type], hitstats->weapon->getName());
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									messagePlayerColor(parent->skill[2], color, language[2434], language[2000 + (hitstats->type - KOBOLD)], hitstats->weapon->getName());
+								}
+							}
+						}
+					}
+
 					if ( hit.entity->behavior == &actMonster )
 					{
 						free(hitstats->weapon);
 						hitstats->weapon = nullptr;
 					}
-					else
+					else if ( hit.entity->behavior == &actPlayer )
 					{
 						// player.
 						Item* weapon = hitstats->weapon;
@@ -595,26 +565,58 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 						{
 							free(weapon);
 						}
-						/*if ( playerhit > 0 && multiplayer == SERVER )
+						if ( player > 0 && multiplayer == SERVER )
 						{
 							strcpy((char*)net_packet->data, "STLA");
-							net_packet->data[4] = armornum;
-							net_packet->address.host = net_clients[playerhit - 1].host;
-							net_packet->address.port = net_clients[playerhit - 1].port;
+							net_packet->data[4] = 5; // steal weapon index in STLA netcode.
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
 							net_packet->len = 5;
-							sendPacketSafe(net_sock, -1, net_packet, playerhit - 1);
-						}*/
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+					}
+				}
+			}
+			else
+			{
+				playSoundEntity(&my, 163, 128); // failed spell sound
+				// hit messages
+				if ( player >= 0 )
+				{
+					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(player, color, language[2438]);
+				}
+
+				if ( parent )
+				{
+					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					if ( parent->behavior == &actPlayer )
+					{
+						if ( strcmp(hitstats->name, "") )
+						{
+							messagePlayerColor(parent->skill[2], color, language[2436], hitstats->name);
+						}
+						else
+						{
+							if ( hitstats->type < KOBOLD ) //Original monster count
+							{
+								messagePlayerColor(parent->skill[2], color, language[2437], language[90 + hitstats->type]);
+							}
+							else if ( hitstats->type >= KOBOLD ) //New monsters
+							{
+								messagePlayerColor(parent->skill[2], color, language[2437], language[2000 + (hitstats->type - KOBOLD)]);
+							}
+						}
 					}
 				}
 			}
 		}
-		/*else if ( hit.entity->behavior == &actDoor )
-		{
-			hit.entity->doorHandleDamageMagic(damage, my, parent);
-		}*/
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
 	}
-
-	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
 	my.removeLightField();
 	list_RemoveNode(my.mynode);
 	return;
