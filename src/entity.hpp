@@ -199,6 +199,15 @@ public:
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
 
+	//--PUBLIC PARTICLE TIMER EFFECT SKILLS--
+	Sint32& particleTimerDuration;
+	Sint32& particleTimerEndAction;
+	Sint32& particleTimerEndSprite;
+	Sint32& particleTimerCountdownAction;
+	Sint32& particleTimerCountdownSprite;
+	Sint32& particleTimerTarget;
+	Sint32& particleTimerVariable1;
+
 	//--PUBLIC DOOR SKILLS--
 	Sint32& doorDir;
 	Sint32& doorInit;
@@ -265,8 +274,10 @@ public:
 
 	void attack(int pose, int charge, Entity* target);
 
-	void teleport(int x, int y);
+	bool teleport(int x, int y);
 	void teleportRandom();
+	// teleport entity to a target, within a radius dist (range in whole tile lengths)
+	bool teleportAroundEntity(const Entity* target, int dist);
 
 	//void entityAwardXP(Entity *dest, Entity *src, bool share, bool root);
 	void awardXP(Entity* src, bool share, bool root);

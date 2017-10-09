@@ -114,7 +114,14 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	doorTimer(skill[7]),
 	doorOldStatus(skill[8]),
 	doorMaxHealth(skill[9]),
-	doorStartAng(fskill[0])
+	doorStartAng(fskill[0]),
+	particleTimerDuration(skill[0]),
+	particleTimerEndAction(skill[1]),
+	particleTimerEndSprite(skill[3]),
+	particleTimerCountdownAction(skill[4]),
+	particleTimerCountdownSprite(skill[5]),
+	particleTimerTarget(skill[6]),
+	particleTimerVariable1(skill[7])
 
 {
 	int c;
@@ -4465,7 +4472,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							createParticleRock(hit.entity);
 							if ( multiplayer == SERVER )
 							{
-								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK);
+								serverSpawnMiscParticles(hit.entity, PARTICLE_EFFECT_ABILITY_ROCK, 0);
 							}
 							if ( target == nullptr )
 							{
@@ -5094,7 +5101,7 @@ int AC(Stat* stat)
 
 -------------------------------------------------------------------------------*/
 
-void Entity::teleport(int tele_x, int tele_y)
+bool Entity::teleport(int tele_x, int tele_y)
 {
 	int player = -1;
 
@@ -5106,7 +5113,7 @@ void Entity::teleport(int tele_x, int tele_y)
 	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
 	{
 		messagePlayer(player, language[707]);
-		return;
+		return false;
 	}
 
 	// play sound effect
@@ -5125,7 +5132,7 @@ void Entity::teleport(int tele_x, int tele_y)
 		{
 			messagePlayer(player, language[707]);
 		}
-		return;
+		return false;
 	}
 	if ( player > 0 && multiplayer == SERVER )
 	{
@@ -5140,6 +5147,7 @@ void Entity::teleport(int tele_x, int tele_y)
 
 	// play second sound effect
 	playSoundEntity(this, 77, 64);
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -5192,6 +5200,61 @@ void Entity::teleportRandom()
 			}
 		}
 	}
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::teleportAroundEntity
+
+Teleports the given entity within a radius of a target entity.
+
+-------------------------------------------------------------------------------*/
+
+bool Entity::teleportAroundEntity(const Entity* target, int dist)
+{
+	int numlocations = 0;
+	int pickedlocation;
+	int player = -1;
+	int ty = static_cast<int>(std::floor(target->y)) >> 4;
+	int tx = static_cast<int>(std::floor(target->x)) >> 4;
+
+	if ( behavior == &actPlayer )
+	{
+		player = skill[2];
+	}
+	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	{
+		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		{
+			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
+			{
+				numlocations++;
+			}
+		}
+	}
+	//messagePlayer(0, "locations: %d", numlocations);
+	if ( numlocations == 0 )
+	{
+		messagePlayer(player, language[708]);
+		return false;
+	}
+	pickedlocation = rand() % numlocations;
+	numlocations = 0;
+	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
+	{
+		for ( int ix = std::max(0, tx - dist); ix < std::min(tx + dist, static_cast<int>(map.width)); ++ix )
+		{
+			if ( !checkObstacle((ix << 4) + 8, (iy << 4) + 8, this, NULL) )
+			{
+				if ( numlocations == pickedlocation )
+				{
+					return teleport(ix, iy);
+				}
+				numlocations++;
+			}
+		}
+	}
+	return false;
 }
 
 /*-------------------------------------------------------------------------------

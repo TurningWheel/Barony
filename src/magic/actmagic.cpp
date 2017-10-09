@@ -2776,26 +2776,28 @@ void createParticleDropRising(Entity* parent, int sprite)
 		}
 		entity->setUID(-3);
 	}
+}
 
+Entity* createParticleTimer(Entity* parent, int duration, int sprite)
+{
 	Entity* entity = newEntity(-1, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->parent = (parent->getUID());
-	entity->skill[0] = 40; // lifetime/ticks before timer triggers
-	entity->skill[1] = 1; // behavior of timer.
-	entity->skill[3] = sprite; // sprite to use for timer function.
 	entity->behavior = &actParticleTimer;
+	entity->particleTimerDuration = duration;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[UNCLICKABLE] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
 	}
 	entity->setUID(-3);
+
+	return entity;
 }
 
 void actParticleErupt(Entity* my)
@@ -2839,36 +2841,27 @@ void actParticleErupt(Entity* my)
 
 void actParticleTimer(Entity* my)
 {
-	if(PARTICLE_LIFE < 0)
+	if( PARTICLE_LIFE < 0 )
 	{
-		if ( my->skill[1] == 1 )
+		if ( multiplayer != CLIENT )
 		{
-			Entity* parent = uidToEntity(my->parent);
-			if ( parent )
+			if ( my->particleTimerEndAction == 1 )
 			{
-				createParticleErupt(parent, my->skill[3]);
-			}
-			if ( multiplayer != CLIENT )
-			{
-				// insert host only functions here.
-
-				//list_t* aoeTargets = nullptr;
-				//getTargetsAroundEntity(my, nullptr, 16, PI, MONSTER_TARGET_ALL, &aoeTargets);
-				//if ( aoeTargets )
-				//{
-				//	for ( node_t* node = aoeTargets->first; node != nullptr; node = node->next )
-				//	{
-				//		Entity* entity = (Entity*)node->element;
-				//		if ( entity->getStats() != nullptr )
-				//		{
-				//			entity->getStats()->EFFECTS[EFF_INVISIBLE] = true;
-				//			entity->getStats()->EFFECTS_TIMERS[EFF_INVISIBLE] = 300;
-				//		}
-				//	}
-				//	//Free the list.
-				//	list_FreeAll(aoeTargets);
-				//	free(aoeTargets);
-				//}
+				// teleport spell.
+				Entity* parent = uidToEntity(my->parent);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( parent && target)
+				{
+					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) );
+					{
+						// teleport success.
+						createParticleErupt(parent, my->particleTimerEndSprite);
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
 			}
 		}
 		list_RemoveNode(my->mynode);
@@ -2877,6 +2870,33 @@ void actParticleTimer(Entity* my)
 	else
 	{
 		--PARTICLE_LIFE;
+		// shoot particles for the duration of the timer, centered at caster.
+		if ( my->particleTimerCountdownAction == 1 )
+		{
+			Entity* parent = uidToEntity(my->parent);
+			// shoot drops to the sky
+			if ( parent && my->particleTimerCountdownSprite != 0 )
+			{
+				Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities);
+				entity->sizex = 1;
+				entity->sizey = 1;
+				entity->x = parent->x - 4 + rand() % 9;
+				entity->y = parent->y - 4 + rand() % 9;
+				entity->z = 7.5;
+				entity->vel_z = -1;
+				entity->yaw = (rand() % 360) * PI / 180.0;
+				entity->particleDuration = 10 + rand() % 30;
+				entity->behavior = &actParticleDot;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					entity_uids--;
+				}
+				entity->setUID(-3);
+			}
+		}
 	}
 }
 
@@ -2998,7 +3018,7 @@ void actParticleSapCenter(Entity* my)
 						node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
 						if ( weaponNode )
 						{
-							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false);
+							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
 						}
 					}
 				}

@@ -94,6 +94,8 @@ static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
 static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
 static const int PARTICLE_EFFECT_SAP = 3;
 static const int PARTICLE_EFFECT_SHADOW_INVIS = 4;
+static const int PARTICLE_EFFECT_DROP_RISING = 5;
+static const int PARTICLE_EFFECT_ERUPT = 6;
 
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -418,6 +420,7 @@ void createParticleDot(Entity* parent);
 void createParticleRock(Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
 Entity* createParticleSapCenter(Entity* parent, Entity* target, int sprite, int endSprite);
+Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 
 spell_t* newSpell();

@@ -4949,7 +4949,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -4961,7 +4961,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -5033,7 +5033,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
@@ -5089,7 +5089,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						specialRoll = rand() % 20;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
-
+						messagePlayer(0, "insectoid roll %d", specialRoll);
 						if ( myStats->HP <= myStats->MAXHP * 0.5 )
 						{
 							bonusFromHP = 4; // +20% chance if on low health
@@ -5100,8 +5100,9 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							if ( node != nullptr )
 							{
 								monsterSpecialState = INSECTOID_ACID;
-								swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
+								serverUpdateEntitySkill(this, 33); // for clients to handle animation
 							}
 							break;
 						}
@@ -5135,7 +5136,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
-						swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 					}
 					else
 					{
@@ -5146,10 +5147,11 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					if ( monsterSpecialState == INSECTOID_ACID )
 					{
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						}
 						else
 						{
@@ -5163,7 +5165,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						}
 						else
 						{
@@ -5181,7 +5183,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						}
 						else
 						{
@@ -5194,7 +5196,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						}
 						else
 						{
@@ -5203,6 +5205,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						shouldAttack = false;
 					}
 					monsterSpecialState = 0;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				default:
 					break;

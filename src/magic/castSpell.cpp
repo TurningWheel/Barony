@@ -720,7 +720,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				}
 			}
 			createParticleDropRising(caster, 593);
-			serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS);
+			serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
 
 			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
 			playSoundEntity(caster, 167, 128);
@@ -839,11 +839,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
-				sprite = 171;
+				sprite = 597;
 				angle = PI / 16;
 				baseSpeed = 3;
 				baseSideSpeed = 2;
-				traveltime = 15;
+				traveltime = 20;
 			}
 
 			entity = newEntity(168, 1, map.entities); // red magic ball
