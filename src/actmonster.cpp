@@ -5089,7 +5089,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						specialRoll = rand() % 20;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
-						messagePlayer(0, "insectoid roll %d", specialRoll);
+						//messagePlayer(0, "insectoid roll %d", specialRoll);
 						if ( myStats->HP <= myStats->MAXHP * 0.5 )
 						{
 							bonusFromHP = 4; // +20% chance if on low health
