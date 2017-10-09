@@ -2,7 +2,7 @@
 
 	BARONY
 	File: sound.cpp
-	Desc: various sound functions
+	Desc: FMOD-based implementation of the sound interface.
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
