@@ -77,14 +77,14 @@ int makeDirsRecursive(const char * path)
 	{
 		char cur = *copying;
 		soFar[copying - path] = *copying;
-		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST)
+		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST && errno != EISDIR)
 		{
 			printlog("Failed to create %s: %s", soFar, strerror(errno));
 			return errno;
 		}
 		++copying;
 	}
-	if (mkdir(path, 0700) != 0 && errno != EEXIST)
+	if (mkdir(path, 0700) != 0 && errno != EEXIST && errno != EISDIR)
 	{
 		return errno;
 	}
@@ -116,16 +116,26 @@ void setDataDir(const char * const dir)
 FILE* openUserFile(const char * const filename, const char * const mode)
 {
 	// Initialise user dir only if it hasn't already been
-	if (userDir[0] == NULL)
+	if (userDir[0] == '\0')
 	{
 		char *xdg_config_home = getenv("XDG_CONFIG_HOME");
 		char *home = getenv("HOME");
 		if (xdg_config_home && *xdg_config_home)
+		{
 			snprintf(userDir, 1024, "%s/barony", xdg_config_home);
+		}
 		else if (home && *home)
+		{
+#ifdef APPLE
+			snprintf(userDir, 1024, "%s/Library/Application Support/barony", home);
+#else /*APPLE*/
 			snprintf(userDir, 1024, "%s/.config/barony", home);
+#endif /*APPLE*/
+		}
 		else
+		{
 			strncpy(userDir, ".", 1024);
+		}
 		int err = makeDirsRecursive(userDir);
 		if (err != 0)
 		{
