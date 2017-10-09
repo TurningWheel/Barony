@@ -24,7 +24,7 @@
 
 static void System_CreateSound (
 	FMOD_SYSTEM* system,
-	char* name_or_data,
+	const char* name_or_data,
 	FMOD_MODE mode,
 	FMOD_CREATESOUNDEXINFO* exinfo,
 	Sound** sound
@@ -40,7 +40,7 @@ static void System_CreateSound (
 
 static void System_CreateChannelGroup (
 	FMOD_SYSTEM* system,
-	char* name,
+	const char* name,
 	ChannelGroup** channelgroup
 ) {
 	FMOD_System_CreateChannelGroup(
