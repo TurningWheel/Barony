@@ -23,7 +23,7 @@
 #include "entity.hpp"
 
 static char userDir[1024] = {0};
-static char datadir[1024] = {0};
+static char datadir[1024] = ".";
 /*-------------------------------------------------------------------------------
 
 	glLoadTexture
