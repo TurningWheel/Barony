@@ -498,10 +498,9 @@ void crystalgolemMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						// init rotations
 						entity->pitch = 0;
 						entity->roll = 0;
+						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
-							createParticleDot(my);
-							serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_PURPLE);
 							myStats->EFFECTS[EFF_PARALYZED] = true;
 							myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
 						}
