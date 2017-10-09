@@ -2638,7 +2638,7 @@ bool inline isMeleeWeapon(const Item& item)
 	return ( !isRangedWeapon(item) );
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack)
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -2649,7 +2649,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false;
 	}
 
-	if ( myStats->weapon && myStats->weapon->beatitude < 0 )
+	if ( (myStats->weapon && myStats->weapon->beatitude < 0) && !overrideCursed )
 	{
 		return false; //Can't unequip cursed items!
 	}
@@ -2669,7 +2669,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			copyItem(item, myStats->weapon);
 			copyItem(myStats->weapon, tmpItem);
-			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}
@@ -2705,7 +2705,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			my->addItemToMonsterInventory(myStats->weapon);
 			myStats->weapon = tmpItem;
-			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}
