@@ -52,13 +52,16 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 }
 
 
-static bool completeDataPath(char *dest, const char * const filename) {
-	if (!(filename && filename[0])) {
+static bool completeDataPath(char *dest, const char * const filename)
+{
+	if (!(filename && filename[0]))
+	{
 		return false;
 	}
 
 	// Already absolute
-	if (filename[0] == '/') {
+	if (filename[0] == '/')
+	{
 		strncpy(dest, filename, 1024);
 		return true;
 	}
@@ -66,13 +69,16 @@ static bool completeDataPath(char *dest, const char * const filename) {
 	return true;
 }
 
-int makeDirsRecursive(const char * path) {
+int makeDirsRecursive(const char * path)
+{
 	const char * copying = path;
 	char soFar[1024] = {0};
-	while (*copying) {
+	while (*copying)
+	{
 		char cur = *copying;
 		soFar[copying - path] = *copying;
-		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST) {
+		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST)
+		{
 			printlog("Failed to create %s: %s", soFar, strerror(errno));
 			return errno;
 		}
@@ -83,27 +89,33 @@ int makeDirsRecursive(const char * path) {
 	return 0;
 }
 
-FILE* openDataFile(const char * const filename, const char * const mode) {
+FILE* openDataFile(const char * const filename, const char * const mode)
+{
 	char path[1024];
 	completeDataPath(path, filename);
 	FILE * result = fopen(path, mode);
-	if (!result) {
+	if (!result)
+	{
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
 	return result;
 }
 
-void setUserDir(const char * const dir) {
+void setUserDir(const char * const dir)
+{
 	strncpy(userDir, dir, 1024);
 }
 
-void setDataDir(const char * const dir) {
+void setDataDir(const char * const dir)
+{
 	strncpy(datadir, dir, 1024);
 }
 
-FILE* openUserFile(const char * const filename, const char * const mode) {
+FILE* openUserFile(const char * const filename, const char * const mode)
+{
 	// Initialise user dir only if it hasn't already been
-	if (userDir[0] == NULL) {
+	if (userDir[0] == NULL)
+	{
 		char *xdg_config_home = getenv("XDG_CONFIG_HOME");
 		char *home = getenv("HOME");
 		if (xdg_config_home && *xdg_config_home)
@@ -122,30 +134,35 @@ FILE* openUserFile(const char * const filename, const char * const mode) {
 	char path[1024];
 	snprintf(path, 1024, "%s/%s", userDir, filename);
 	FILE * result = fopen(path, mode);
-	if (!result) {
+	if (!result)
+	{
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
 	return result;
 }
 
-DIR* openDataDir(const char * const name) {
+DIR* openDataDir(const char * const name)
+{
 	char path[1024];
 	completeDataPath(path, name);
 	DIR * result = opendir(path);
-	if (!result) {
+	if (!result)
+	{
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
 	return result;
 }
 
-SDL_RWops * openDataFileSDL(const char * filename, const char * mode) {
+SDL_RWops * openDataFileSDL(const char * filename, const char * mode)
+{
 	char path[1024];
 	completeDataPath(path, filename);
 	return SDL_RWFromFile(path, mode);
 }
 
 
-bool dataPathExists(const char * const path) {
+bool dataPathExists(const char * const path)
+{
 	char full_path[1024];
 	completeDataPath(full_path, path);
 	return access(full_path, F_OK) != -1;
@@ -276,7 +293,8 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist)
 
 	printlog("LoadMap %s", filename2);
 
-	if (! (filename2 && filename2[0])) {
+	if (! (filename2 && filename2[0]))
+	{
 		printlog("map filename empty or null");
 		return -1;
 	}
@@ -801,22 +819,26 @@ char* readFile(const char* filename)
 	char* file_contents = NULL;
 	long input_file_size;
 	FILE* input_file = openDataFile(filename, "rb");
-	if (!input_file) {
+	if (!input_file)
+	{
 		printlog("Open failed: %s", strerror(errno));
 		goto out_input_file;
 	}
 
-	if (fseek(input_file, 0, SEEK_END) != 0) {
+	if (fseek(input_file, 0, SEEK_END) != 0)
+	{
 		printlog("Seek failed");
 		goto out_input_file;
 	}
 
-	if ((input_file_size = ftell(input_file)) == -1) {
+	if ((input_file_size = ftell(input_file)) == -1)
+	{
 		printlog("ftell failed");
 		goto out_input_file;
 	}
 
-	if (input_file_size > (1<<30)) {
+	if (input_file_size > (1<<30))
+	{
 		printlog("Unreasonable size: %ld", input_file_size);
 		goto out_input_file;
 	}
