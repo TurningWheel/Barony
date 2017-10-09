@@ -477,7 +477,8 @@ int initApp(const char* title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
-static void loadFont(TTF_Font** dest, SDL_RWops* file, int size) {
+static void loadFont(TTF_Font** dest, SDL_RWops* file, int size)
+{
 	file->seek(file, 0, 0);
 	if (*dest)
 		TTF_CloseFont(*dest);

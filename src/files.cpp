@@ -85,7 +85,9 @@ int makeDirsRecursive(const char * path)
 		++copying;
 	}
 	if (mkdir(path, 0700) != 0 && errno != EEXIST)
+	{
 		return errno;
+	}
 	return 0;
 }
 
