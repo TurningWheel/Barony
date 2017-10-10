@@ -644,7 +644,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					}
 					if ( players[clientnum]->entity->flags[BURNING] )
 					{
-						players[clientnum]->entity->flags[BURNING] = false;
+						players[i]->entity->flags[BURNING] = false;
 						serverUpdateEntityFlag(players[clientnum]->entity, BURNING);
 					}
 					serverUpdateEffects(player);
