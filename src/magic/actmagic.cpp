@@ -1749,52 +1749,65 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_locking.name))
+				else if ( !strcmp(element->name, spellElement_locking.name) )
 				{
 					if ( hit.entity )
 					{
-						if (hit.entity->behavior == &actDoor)
+						if ( hit.entity->behavior == &actDoor )
 						{
-							playSoundEntity(hit.entity, 92, 64);
-							hit.entity->skill[5] = 1; //Lock the door.
+							// Lock the Door
+							playSoundEntity(hit.entity, 92, 64); // "UnlockFailed.ogg"
+							hit.entity->skill[5] = 1; // Locks the Door
+
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[399]);
+									messagePlayer(parent->skill[2], language[399]); // "You lock the door!"
 								}
+							}
 						}
-						else if (hit.entity->behavior == &actChest)
+						else if ( hit.entity->behavior == &actChest )
 						{
-							//Lock chest
-							playSoundEntity(hit.entity, 92, 64);
+							// Lock the Chest
+							playSoundEntity(hit.entity, 92, 64); // "UnlockFailed.ogg"
+
 							if ( !hit.entity->skill[4] )
 							{
 								hit.entity->skill[4] = 1;
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[400]);
+										messagePlayer(parent->skill[2], language[400]); // "The spell locks the chest!"
 									}
+								}
 							}
 						}
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
 								}
+							}
+
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[402]);
+								messagePlayer(player, language[401]); // "No telling what it did..."
 							}
 						}
+
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						if (my->light != NULL)
+
+						if ( my->light != nullptr )
 						{
 							list_RemoveNode(my->light->node);
-							my->light = NULL;
+							my->light = nullptr;
 						}
+
 						list_RemoveNode(my->mynode);
 						return;
 					}
