@@ -114,10 +114,7 @@ void actFountain(Entity* my)
 					{
 						messagePlayer(i, language[468]);
 						players[i]->entity->flags[BURNING] = false;
-						if (i > 0)
-						{
-							serverUpdateEntityFlag(players[i]->entity, BURNING);
-						}
+						serverUpdateEntityFlag(players[i]->entity, BURNING);
 					}
 					switch (my->skill[1])
 					{
