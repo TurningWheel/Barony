@@ -1956,10 +1956,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->flags[BURNING] = false;
 				messagePlayer(player, language[647]);
-				if ( player > 0 && multiplayer == SERVER )
-				{
-					serverUpdateEntityFlag(this, BURNING);
-				}
+				serverUpdateEntityFlag(this, BURNING);
 			}
 		}
 	}
