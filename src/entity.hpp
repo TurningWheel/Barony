@@ -401,6 +401,8 @@ public:
 	void lookAtEntity(Entity& target);
 	// automaton specific function
 	void automatonRecycleItem();
+	// incubus teleport to target
+	void incubusTeleportToTarget(const Entity* target);
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.

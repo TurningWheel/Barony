@@ -2850,12 +2850,12 @@ void actParticleTimer(Entity* my)
 				// teleport spell.
 				Entity* parent = uidToEntity(my->parent);
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				createParticleErupt(parent, my->particleTimerEndSprite);
 				if ( parent && target)
 				{
 					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) );
 					{
 						// teleport success.
-						createParticleErupt(parent, my->particleTimerEndSprite);
 						if ( multiplayer == SERVER )
 						{
 							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
@@ -3019,6 +3019,11 @@ void actParticleSapCenter(Entity* my)
 						if ( weaponNode )
 						{
 							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
+							if ( myStats->type == INCUBUS )
+							{
+								parent->monsterSpecialState = INCUBUS_TELEPORT;
+								parent->monsterSpecialTimer = rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT;
+							}
 						}
 					}
 				}

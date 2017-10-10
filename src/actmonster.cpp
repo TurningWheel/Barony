@@ -5190,6 +5190,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, POTION);
 						}
 						shouldAttack = false;
+						monsterSpecialState = 0;
 					}
 					else if ( monsterSpecialState == INCUBUS_STEAL )
 					{
@@ -5203,8 +5204,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						}
 						shouldAttack = false;
+						monsterSpecialState = 0;
 					}
-					monsterSpecialState = 0;
+					else if ( monsterSpecialState == INCUBUS_TELEPORT )
+					{
+						// this flag will be cleared in incubusChooseWeapon
+					}
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				default:

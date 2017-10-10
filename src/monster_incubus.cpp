@@ -422,7 +422,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
 			if ( bodypart == LIMB_HUMANOID_LEFTARM &&
-				(my->monsterSpecialState == INCUBUS_STEAL) )
+				(my->monsterSpecialState == INCUBUS_STEAL && my->monsterAttack != 0 ) )
 			{
 				Entity* weaponarm = nullptr;
 				// leftarm follows the right arm during special steal attack
@@ -840,7 +840,12 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 	if ( monsterSpecialState != 0 )
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
-		//messagePlayer()
+		if ( monsterSpecialState == INCUBUS_TELEPORT && monsterSpecialTimer == 0 )
+		{
+			incubusTeleportToTarget(target);
+			monsterSpecialState = 0;
+			serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+		}
 		return;
 	}
 
@@ -889,8 +894,9 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 				node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 				if ( node != nullptr )
 				{
-					swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
+					swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
 					monsterSpecialState = INCUBUS_STEAL;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					return;
 				}
 			}
@@ -904,7 +910,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), POTION);
 			if ( node != nullptr )
 			{
-				swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
+				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
 				monsterSpecialState = INCUBUS_CONFUSION;
 				return;
 			}
@@ -924,7 +930,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 				return; //Resort to fists.
 			}
 
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
 			if ( !swapped )
 			{
 				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
@@ -948,8 +954,26 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		{
 			return; //Nothing available
 		}
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
 		return;
 	}
 	return;
+}
+
+void Entity::incubusTeleportToTarget(const Entity* target)
+{
+	Entity* spellTimer = createParticleTimer(this, 40, 593);
+	spellTimer->particleTimerEndAction = 1; // teleport behavior of timer.
+	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+	spellTimer->particleTimerCountdownAction = 1;
+	spellTimer->particleTimerCountdownSprite = 593;
+	if ( target != nullptr )
+	{
+		spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+	}
+	spellTimer->particleTimerVariable1 = 2; // distance of teleport
+	if ( multiplayer == SERVER )
+	{
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_DROP_RISING, 593);
+	}
 }

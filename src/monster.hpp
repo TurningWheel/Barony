@@ -390,6 +390,7 @@ static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT = 250;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -471,3 +472,4 @@ static const int INSECTOID_DOUBLETHROW_SECOND = 3;
 //--Incubus--
 static const int INCUBUS_CONFUSION = 1;
 static const int INCUBUS_STEAL = 2;
+static const int INCUBUS_TELEPORT = 3;
