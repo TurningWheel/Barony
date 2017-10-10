@@ -2901,7 +2901,7 @@ client (player %d) (direct ip)#
 2273 spellbook#
 2274 spellbook of spray acid#
 2275 spellbook#
-2276 blank spellbook 2#
+2276 spellbook of steal weapon#
 2277 spellbook#
 2278 blank spellbook 3#
 2279 spellbook#
@@ -2973,6 +2973,12 @@ dominate the %s into your service!#
 2430 %s is sprayed with corrosive acid!#
 2431 The %s is sprayed with corrosive acid!#
 2432 You are sprayed with corrosive acid!#
+2433 You magically coerce %s's %s out of their grasp!#
+2434 You magically coerce the %s's %s out of their grasp!#
+2435 Your %s is magically coerced from your grasp!#
+2436 %s is not wielding a weapon to steal!#
+2437 The %s is not wielding a weapon to steal!#
+2438 The spell fails to steal the non-existent weapon from your hand!#
 
 #More character creation screen stuff.
 2450 Random Name#
