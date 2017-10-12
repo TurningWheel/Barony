@@ -147,6 +147,8 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 			{
 				// stop the boulder
 				BOULDER_STOPPED = 1;
+				my->vel_x = 0.0; // TODOR: Anywhere this is could possible be changed to be a static 'if( BOULDER_ROLLING == 0 ) { vel = 0 }' instead of duplicating code everywhere
+				my->vel_y = 0.0;
 				BOULDER_ROLLING = 0;
 				playSoundEntity(my, 181, 128);
 				if ( my->flags[PASSABLE] )
@@ -436,6 +438,8 @@ void actBoulder(Entity* my)
 			y = std::min<unsigned int>(std::max<int>(0, y), map.height - 1);
 			if ( map.tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map.height] )
 			{
+				my->vel_x = 0.0;
+				my->vel_y = 0.0;
 				BOULDER_ROLLING = 0;
 			}
 			else
@@ -450,6 +454,8 @@ void actBoulder(Entity* my)
 					if ( my->x >= BOULDER_DESTX )
 					{
 						my->x = BOULDER_DESTX;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -458,6 +464,8 @@ void actBoulder(Entity* my)
 					if ( my->y >= BOULDER_DESTY )
 					{
 						my->y = BOULDER_DESTY;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -466,6 +474,8 @@ void actBoulder(Entity* my)
 					if ( my->x <= BOULDER_DESTX )
 					{
 						my->x = BOULDER_DESTX;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
@@ -474,6 +484,8 @@ void actBoulder(Entity* my)
 					if ( my->y <= BOULDER_DESTY )
 					{
 						my->y = BOULDER_DESTY;
+						my->vel_x = 0.0;
+						my->vel_y = 0.0;
 						BOULDER_ROLLING = 0;
 					}
 				}
