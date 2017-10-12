@@ -110,7 +110,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
-	if (stat->EFFECTS[EFF_PARALYZED])
+	// Entity cannot cast Spells while Paralyzed or Asleep
+	if ( stat->EFFECTS[EFF_PARALYZED] || stat->EFFECTS[EFF_ASLEEP] )
 	{
 		return;
 	}
