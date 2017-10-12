@@ -28,33 +28,60 @@
 #define BOULDER_DESTX my->skill[6]
 #define BOULDER_DESTY my->skill[7]
 
-/*-------------------------------------------------------------------------------
-
-	boulderCheckAgainstEntity
-
-	causes the boulder given in my to crush the object given in entity
-	or vice versa
-
--------------------------------------------------------------------------------*/
-
-int boulderCheckAgainstEntity(Entity* my, Entity* entity)
+/* actboulder.cpp
+ * @param my - A pointer to the Boulder which is checking for collisions
+ * @param entity - A pointer to the current Entity being checked against @my
+ * @param bWasBoulderPushed - True if the Boulder was pushed before calling this function
+ * @returns true - If the Boulder was destroyed as a result of a collision
+ * @returns false - Default case
+ * Checks for collisions against every Entity on the map
+ * Damages Players or Monsters. Can be destroyed if the Entity survives
+ * Destroys Doors and stops movement in every other case
+ */
+bool BoulderCheckAgainstEntity(Entity* const my, Entity* const entity, const bool bWasBoulderPushed)
 {
-	if (!my || !entity)
+	if ( my == nullptr || entity == nullptr )
 	{
-		return 0;
+		printlog("ERROR: BoulderCheckAgainstEntity() - A parameter is null. my = %d, entity = %d.", (my == nullptr), (entity == nullptr));
+		return false;
 	}
 
+	// Boulders crush or hurt Players and Monsters
 	if ( entity->behavior == &actPlayer || entity->behavior == &actMonster )
 	{
-		if ( entityInsideEntity( my, entity ) )
+		bool bWasEntityHit = false;
+
+		// Calculate collision differently if the Boulder was pushed
+		if ( bWasBoulderPushed )
 		{
-			Stat* stats = entity->getStats();
-			if ( stats )
+			// If the Boulder was pushed, check to see if the Entity is in front of the Boulder
+			if ( EntityInFrontOfEntity(my, entity, BOULDER_ROLLDIR) )
 			{
+				bWasEntityHit = true;
+			}
+		}
+		else
+		{
+			// Check if the Entity is inside of the Boulder
+			if ( entityInsideEntity(my, entity) )
+			{
+				bWasEntityHit = true;
+			}
+		}
+
+		// If the Entity was hit, damage them TODOR: (also handles killing them)
+		if ( bWasEntityHit )
+		{
+			Stat* entityStats = entity->getStats();
+			if ( entityStats != nullptr )
+			{
+				// If a Player was hit, message them to let them know, and shake the screen
 				if ( entity->behavior == &actPlayer )
 				{
 					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-					messagePlayerColor(entity->skill[2], color, language[455]);
+					messagePlayerColor(entity->skill[2], color, language[455]); // "You are struck by a boulder!"
+
+					// Shake the screen
 					if ( entity->skill[2] == clientnum )
 					{
 						camera_shakex += .1;
@@ -63,7 +90,7 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 					else
 					{
 						strcpy((char*)net_packet->data, "SHAK");
-						net_packet->data[4] = 10; // turns into .1
+						net_packet->data[4] = 10; // Turns into .1
 						net_packet->data[5] = 10;
 						net_packet->address.host = net_clients[entity->skill[2] - 1].host;
 						net_packet->address.port = net_clients[entity->skill[2] - 1].port;
@@ -71,23 +98,29 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						sendPacketSafe(net_sock, -1, net_packet, entity->skill[2] - 1);
 					}
 				}
-				playSoundEntity(my, 181, 128);
-				playSoundEntity(entity, 28, 64);
+
+				playSoundEntity(my, 181, 128); // "BoulderCrunch.ogg"
+				playSoundEntity(entity, 28, 64); // "Damage.ogg"
+
 				spawnGib(entity);
 				entity->modHP(-80);
-				entity->setObituary(language[1505]);
+				entity->setObituary(language[1505]); // "fails to dodge the incoming boulder."
+
+				// If a Player was hit, and killed, attempt to unlock the Steam Achievement "Throw Me The Whip!"
 				if ( entity->behavior == &actPlayer )
-					if ( stats->HP <= 0 )
+				{
+					if ( entityStats->HP <= 0 )
 					{
 						steamAchievementClient(entity->skill[2], "BARONY_ACH_THROW_ME_THE_WHIP");
 					}
-				if ( stats->HP > 0 )
-				{
-					// spawn several rock items
-					int i = 8 + rand() % 4;
+				}
 
-					int c;
-					for ( c = 0; c < i; c++ )
+				// If the Entity survived being hit by the Boulder, destroy the Boulder
+				if ( entityStats->HP > 0 )
+				{
+					// Spawn several Rock Items
+					Uint8 numberOfRocks = 8 + rand() % 4;
+					for ( Uint8 iRockIndex = 0; iRockIndex < numberOfRocks; iRockIndex++ )
 					{
 						Entity* entity = newEntity(-1, 1, map.entities);
 						entity->flags[INVISIBLE] = true;
@@ -103,52 +136,67 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 						entity->vel_z = -.25 - (rand() % 5) / 10.0;
 						entity->flags[PASSABLE] = true;
 						entity->behavior = &actItem;
-						entity->flags[USERFLAG1] = true; // no collision: helps performance
-						entity->skill[10] = GEM_ROCK;    // type
-						entity->skill[11] = WORN;        // status
-						entity->skill[12] = 0;           // beatitude
-						entity->skill[13] = 1;           // count
-						entity->skill[14] = 0;           // appearance
-						entity->skill[15] = false;       // identified
+						entity->flags[USERFLAG1] = true; // No collision, helps performance
+						entity->skill[10] = GEM_ROCK;    // Type
+						entity->skill[11] = WORN;        // Status
+						entity->skill[12] = 0;           // Beatitude
+						entity->skill[13] = 1;           // Count
+						entity->skill[14] = 0;           // Appearance
+						entity->skill[15] = false;       // Identified
 					}
 
-					double ox = my->x;
-					double oy = my->y;
-
-					// destroy the boulder
-					playSoundEntity(my, 67, 128);
-					list_RemoveNode(my->mynode);
-
-					// on sokoban, destroying boulders spawns scorpions
+					// On the Sokoban map, destroying Boulders spawns Scorpions
 					if ( !strcmp(map.name, "Sokoban") )
 					{
-						Entity* monster = summonMonster(SCORPION, ox, oy);
-						if ( monster )
+						Entity* sokobanScorpion = summonMonster(SCORPION, static_cast<long>(my->x), static_cast<long>(my->y));
+						if ( sokobanScorpion != nullptr )
 						{
-							int c;
-							for ( c = 0; c < MAXPLAYERS; c++ )
+							// Message all Players that a Scorpion was summoned
+							for ( Uint8 iPlayerIndex = 0; iPlayerIndex < MAXPLAYERS; iPlayerIndex++ )
 							{
+								// Don't message Players that are not connected
+								if ( client_disconnected[iPlayerIndex] )
+								{
+									continue;
+								}
+
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 128, 0);
-								messagePlayerColor(c, color, language[406]);
+								messagePlayerColor(iPlayerIndex, color, language[406]); // "You have angered the gods of Sokoban!"
 							}
 						}
 					}
 
-					return 1;
+					// Destroy the Boulder
+					playSoundEntity(my, 67, 128); // "BustWall.ogg"
+					list_RemoveNode(my->mynode);
+
+					return true;
 				}
 			}
+			else
+			{
+				printlog("ERROR: BoulderCheckAgainstEntity() - Entity Stats are null.");
+				return false;
+			}
 		}
+
+		return false;
 	}
+
+	// Boulders stop moving when hitting anything but Players, Monsters, and Doors
 	else if ( entity->behavior == &actGate || entity->behavior == &actBoulder || entity->behavior == &actChest || entity->behavior == &actHeadstone || entity->behavior == &actFountain || entity->behavior == &actSink )
 	{
+		// Passable Entities like open Gates wont block a Boulder
 		if ( !entity->flags[PASSABLE] )
 		{
-			if ( entityInsideEntity( my, entity ) )
+			if ( entityInsideEntity(my, entity) )
 			{
-				// stop the boulder
+				// Stop the Boulder
 				BOULDER_STOPPED = 1;
 				BOULDER_ROLLING = 0;
-				playSoundEntity(my, 181, 128);
+				playSoundEntity(my, 181, 128); // "BoulderCrunch.ogg"
+
+				// Make the Boulder impassable
 				if ( my->flags[PASSABLE] )
 				{
 					my->flags[PASSABLE] = false;
@@ -159,26 +207,37 @@ int boulderCheckAgainstEntity(Entity* my, Entity* entity)
 				}
 			}
 		}
+
+		return false;
 	}
+
+	// Boulders destroy Doors
 	else if ( entity->behavior == &actDoor )
 	{
-		if ( entityInsideEntity( my, entity ) )
+		if ( entityInsideEntity(my, entity) )
 		{
-			playSoundEntity(entity, 28, 64);
-			entity->skill[4] = 0;
-			if ( !entity->skill[0] )
+			playSoundEntity(entity, 28, 64); // "Damage.ogg"
+
+			entity->skill[4] = 0; // DOOR_HEALTH
+
+			// TODOR: What does this do?
+			if ( !entity->skill[0] ) // DOOR_DIR
 			{
-				entity->skill[6] = (my->x > entity->x);
+				entity->skill[6] = (my->x > entity->x); // DOOR_SMACKED
 			}
 			else
 			{
-				entity->skill[6] = (my->y < entity->y);
+				entity->skill[6] = (my->y < entity->y); // DOOR_SMACKED
 			}
-			playSoundEntity(my, 181, 128);
+
+			playSoundEntity(my, 181, 128); // "BoulderCrunch.ogg"
 		}
+
+		return false;
 	}
-	return 0;
-}
+
+	return false;
+} // BoulderCheckAgainstEntity()
 
 /*-------------------------------------------------------------------------------
 
@@ -208,10 +267,12 @@ void actBoulder(Entity* my)
 	// gravity
 	bool nobounce = true;
 	if ( !BOULDER_NOGROUND )
+	{
 		if ( noground )
 		{
 			BOULDER_NOGROUND = true;
 		}
+	}
 	if ( my->z < 0 || BOULDER_NOGROUND )
 	{
 		my->vel_z = std::min<real_t>(my->vel_z + .1, 3.0);
@@ -235,7 +296,7 @@ void actBoulder(Entity* my)
 					{
 						continue;
 					}
-					if ( boulderCheckAgainstEntity(my, entity) )
+					if ( BoulderCheckAgainstEntity(my, entity) )
 					{
 						return;
 					}
@@ -338,7 +399,7 @@ void actBoulder(Entity* my)
 					{
 						continue;
 					}
-					if ( boulderCheckAgainstEntity(my, entity) )
+					if ( BoulderCheckAgainstEntity(my, entity) )
 					{
 						return;
 					}
@@ -507,7 +568,7 @@ void actBoulder(Entity* my)
 						{
 							continue;
 						}
-						if ( boulderCheckAgainstEntity(my, entity) )
+						if ( BoulderCheckAgainstEntity(my, entity) )
 						{
 							return;
 						}
