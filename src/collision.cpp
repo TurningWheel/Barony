@@ -258,6 +258,87 @@ bool entityInsideEntity(Entity* entity1, Entity* entity2)
 
 /*-------------------------------------------------------------------------------
 
+	EntityInFrontOfEntity
+
+	Checks whether an entity is intersecting another entity from the front
+	Used for boulders to prevent harming the Player pushing the boulder
+
+-------------------------------------------------------------------------------*/
+
+bool EntityInFrontOfEntity(Entity* entity1, Entity* entity2, Sint32 direction)
+{
+	switch ( direction )
+	{
+		case 0: // East
+			if ( (entity1->x + entity1->sizex) > (entity2->x - entity2->sizex) )                // Check everything East  (+X) Is the Entity in front of the boulder?
+			{
+				if ( (entity1->x + entity1->sizex) < (entity2->x + entity2->sizex) )            // Check everything West  (-X) Is the Entity intersecting the boulder?
+				{
+					if ( (entity1->y - entity1->sizey) < (entity2->y + entity2->sizey) )        // Check everything North (-Y) Is the Entity not too far to the left  of the boulder?
+					{
+						if ( (entity1->y + entity1->sizey) > (entity2->y - entity2->sizey) )    // Check everything South (+Y) Is the Entity not too far to the right of the boulder?
+						{
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+			break;
+		case 1: // South
+			if ( (entity1->y + entity1->sizey) > (entity2->y - entity2->sizey) )                // Check everything South (+Y) Is the Entity in front of the boulder?
+			{
+				if ( (entity1->y + entity1->sizey) < (entity2->y + entity2->sizey) )            // Check everything North (-Y) Is the Entity intersecting the boulder?
+				{
+					if ( (entity1->x + entity1->sizex) > (entity2->x - entity2->sizex) )        // Check everything East  (+X) Is the Entity not too far to the left  of the boulder?
+					{
+						if ( (entity1->x - entity1->sizex) < (entity2->x + entity2->sizex) )    // Check everything West  (-X) Is the Entity not too far to the right of the boulder?
+						{
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+			break;
+		case 2: // West
+			if ( (entity1->x - entity1->sizex) < (entity2->x + entity2->sizex) )                // Check everything West  (-X) Is the Entity in front of the boulder?
+			{
+				if ( (entity1->x - entity1->sizex) > (entity2->x - entity2->sizex) )            // Check everything East  (+X) Is the Entity intersecting the boulder?
+				{
+					if ( (entity1->y + entity1->sizey) > (entity2->y - entity2->sizey) )        // Check everything South (+Y) Is the Entity too far to the left  of the boulder?
+					{
+						if ( (entity1->y - entity1->sizey) < (entity2->y + entity2->sizey) )    // Check everything North (-Y) Is the Entity too far to the right of the boulder?
+						{
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+			break;
+		case 3: // North
+			if ( (entity1->y - entity1->sizey) < (entity2->y + entity2->sizey) )                // Check everything North (-Y) Is the Entity in front of the boulder?
+			{
+				if ( (entity1->y - entity1->sizey) > (entity2->y - entity2->sizey) )            // Check everything South (+Y) Is the Entity intersecting the boulder?
+				{
+					if ( (entity1->x - entity1->sizex) < (entity2->x + entity2->sizex) )        // Check everything West  (-X) Is the Entity not too far to the left  of the boulder?
+					{
+						if ( (entity1->x + entity1->sizex) > (entity2->x - entity2->sizex) )    // Check everything East  (+X) Is the Entity not too far to the right of the boulder?
+						{
+							return true;
+						}
+					}
+				}
+			}
+			return false;
+			break;
+		default: return false; // Should never happen
+	}
+}
+
+/*-------------------------------------------------------------------------------
+
 	entityInsideSomething
 
 	checks whether an entity is intersecting any obstacle
