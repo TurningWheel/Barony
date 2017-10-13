@@ -1224,7 +1224,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//TODO: Teleport to target.
 	//TODO: Turn invisible.
 	//3. Mimic target's weapon & shield (only on initial cast).
-	//TODO: Random chance to mimic other things.
+	//4. Random chance to mimic other things.
 
 	Stat *myStats = getStats();
 	if ( !myStats )
@@ -1255,13 +1255,22 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	int numSpellsToMimic = 2;
 	int numSkillsToMimic = 3;
 
-	//TODO: Copy target's weapon & shield on initial activation of this ability only.
+	//3. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
 
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
-		dropItemMonster(myStats->weapon, this, myStats);
+		if ( itemCategory(myStats->weapon) == SPELLBOOK )
+		{
+			//Don't want to drop spellbooks, though. Then the shadow would lose the spell.
+			addItemToMonsterInventory(myStats->weapon);
+			myStats->weapon = nullptr;
+		}
+		else
+		{
+			dropItemMonster(myStats->weapon, this, myStats);
+		}
 		dropItemMonster(myStats->shield, this, myStats);
 
 		//Skills do not get reset.
@@ -1286,9 +1295,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 			monsterEquipItem(*wieldedCopy, &myStats->shield);
 		}
 
-		//TODO: On initial mimic, copy some random skills that the target is better at.
-		//TODO: Copy some of the target's spells.
-
+		//On initial mimic, copy more spells & skills.
 		numSkillsToMimic += rand()%3 + 1;
 		numSpellsToMimic += rand()%3 + 1;
 	}
