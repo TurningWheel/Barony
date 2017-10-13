@@ -500,6 +500,13 @@ void deinitGame()
 {
 	int c, x;
 
+	// XXX: This removes the timer so that timerCallback ceases to run on a
+	// regular basis. However, it is probably still susceptible to a race
+	// condition where the timer is removed but the last call of the callback
+	// has not yet completed. This may result in some resources that
+	// timerCallback expects to still be available getting freed over here.
+	SDL_RemoveTimer(timer);
+
 	// send disconnect messages
 	if (multiplayer == CLIENT)
 	{
