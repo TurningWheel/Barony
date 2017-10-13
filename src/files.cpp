@@ -924,27 +924,14 @@ std::list<std::string> directoryContents(const char* directory)
 std::vector<std::string> getLinesFromDataFile(std::string filename)
 {
 	std::vector<std::string> lines;
-	FILE *file = fopen(filename.c_str(), "r");
-	if ( !file )
+	std::ifstream file(filename);
+	for ( std::string line; std::getline(file, line); )
 	{
-		printlog("Error: Failed to open file \"%s\": ", filename.c_str(), strerror(errno));
-		return lines;
-	}
-	size_t line_size = 0, line_length;
-	char *line = NULL;
-	while ( (line_length = getline(&line, &line_size, file)) != -1 )
-	{
-		if (line[line_length-1] == '\n') line[line_length-1] = '\0';
-		std::string cxxline(line);
-		if ( !cxxline.empty() )
+		if ( !line.empty() )
 		{
-			lines.push_back(cxxline);
+			lines.push_back(line);
 		}
-		free(line);
-		line = NULL;
-		line_size = 0;
 	}
-	fclose(file);
 
 	return lines;
 }
