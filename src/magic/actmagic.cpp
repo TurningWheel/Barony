@@ -2849,9 +2849,9 @@ void actParticleTimer(Entity* my)
 			{
 				// teleport to random location spell.
 				Entity* parent = uidToEntity(my->parent);
-				createParticleErupt(parent, my->particleTimerEndSprite);
 				if ( parent )
 				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
 					if ( parent->teleportRandom() )
 					{
 						// teleport success.
@@ -2867,9 +2867,9 @@ void actParticleTimer(Entity* my)
 				// teleport to target spell.
 				Entity* parent = uidToEntity(my->parent);
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
-				createParticleErupt(parent, my->particleTimerEndSprite);
 				if ( parent && target )
 				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
 					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
 					{
 						// teleport success.
