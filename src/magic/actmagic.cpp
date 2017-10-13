@@ -3046,7 +3046,7 @@ void actParticleSapCenter(Entity* my)
 							if ( myStats->type == INCUBUS )
 							{
 								parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
-								parent->monsterSpecialTimer = rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+								parent->monsterSpecialTimer = 100 + rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
 							}
 						}
 					}
