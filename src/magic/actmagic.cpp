@@ -2845,15 +2845,32 @@ void actParticleTimer(Entity* my)
 	{
 		if ( multiplayer != CLIENT )
 		{
-			if ( my->particleTimerEndAction == 1 )
+			if ( my->particleTimerEndAction == PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL )
 			{
-				// teleport spell.
+				// teleport to random location spell.
+				Entity* parent = uidToEntity(my->parent);
+				createParticleErupt(parent, my->particleTimerEndSprite);
+				if ( parent )
+				{
+					if ( parent->teleportRandom() )
+					{
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET )
+			{
+				// teleport to target spell.
 				Entity* parent = uidToEntity(my->parent);
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
 				createParticleErupt(parent, my->particleTimerEndSprite);
-				if ( parent && target)
+				if ( parent && target )
 				{
-					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) );
+					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
 					{
 						// teleport success.
 						if ( multiplayer == SERVER )
@@ -2870,32 +2887,39 @@ void actParticleTimer(Entity* my)
 	else
 	{
 		--PARTICLE_LIFE;
-		// shoot particles for the duration of the timer, centered at caster.
-		if ( my->particleTimerCountdownAction == 1 )
+		if ( my->particleTimerPreDelay <= 0 )
 		{
-			Entity* parent = uidToEntity(my->parent);
-			// shoot drops to the sky
-			if ( parent && my->particleTimerCountdownSprite != 0 )
+			// shoot particles for the duration of the timer, centered at caster.
+			if ( my->particleTimerCountdownAction == 1 )
 			{
-				Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities);
-				entity->sizex = 1;
-				entity->sizey = 1;
-				entity->x = parent->x - 4 + rand() % 9;
-				entity->y = parent->y - 4 + rand() % 9;
-				entity->z = 7.5;
-				entity->vel_z = -1;
-				entity->yaw = (rand() % 360) * PI / 180.0;
-				entity->particleDuration = 10 + rand() % 30;
-				entity->behavior = &actParticleDot;
-				entity->flags[PASSABLE] = true;
-				entity->flags[NOUPDATE] = true;
-				entity->flags[UNCLICKABLE] = true;
-				if ( multiplayer != CLIENT )
+				Entity* parent = uidToEntity(my->parent);
+				// shoot drops to the sky
+				if ( parent && my->particleTimerCountdownSprite != 0 )
 				{
-					entity_uids--;
+					Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities);
+					entity->sizex = 1;
+					entity->sizey = 1;
+					entity->x = parent->x - 4 + rand() % 9;
+					entity->y = parent->y - 4 + rand() % 9;
+					entity->z = 7.5;
+					entity->vel_z = -1;
+					entity->yaw = (rand() % 360) * PI / 180.0;
+					entity->particleDuration = 10 + rand() % 30;
+					entity->behavior = &actParticleDot;
+					entity->flags[PASSABLE] = true;
+					entity->flags[NOUPDATE] = true;
+					entity->flags[UNCLICKABLE] = true;
+					if ( multiplayer != CLIENT )
+					{
+						entity_uids--;
+					}
+					entity->setUID(-3);
 				}
-				entity->setUID(-3);
 			}
+		}
+		else
+		{
+			--my->particleTimerPreDelay;
 		}
 	}
 }
@@ -3021,8 +3045,8 @@ void actParticleSapCenter(Entity* my)
 							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
 							if ( myStats->type == INCUBUS )
 							{
-								parent->monsterSpecialState = INCUBUS_TELEPORT;
-								parent->monsterSpecialTimer = rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT;
+								parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
+								parent->monsterSpecialTimer = rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
 							}
 						}
 					}

@@ -2050,13 +2050,21 @@ void clientHandlePacket()
 					case PARTICLE_EFFECT_SHADOW_INVIS:
 						createParticleDropRising(entity, sprite);
 						break;
-					case PARTICLE_EFFECT_DROP_RISING:
+					case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 80, sprite);
+						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownSprite = sprite;
+						spellTimer->particleTimerPreDelay = 40;
+					}
+						break;
+					case PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
 						spellTimer->particleTimerCountdownAction = 1;
 						spellTimer->particleTimerCountdownSprite = sprite;
 					}
-						break;
+					break;
 					case PARTICLE_EFFECT_ERUPT:
 						createParticleErupt(entity, sprite);
 						break;

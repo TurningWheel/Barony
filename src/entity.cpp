@@ -121,7 +121,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleTimerCountdownAction(skill[4]),
 	particleTimerCountdownSprite(skill[5]),
 	particleTimerTarget(skill[6]),
-	particleTimerVariable1(skill[7])
+	particleTimerPreDelay(skill[7]),
+	particleTimerVariable1(skill[8])
 
 {
 	int c;
@@ -3345,6 +3346,19 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
+			else if ( myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT )
+			{
+				// calls animation, but doesn't actually attack
+				monsterAttack = pose;
+				monsterAttackTime = 0;
+				if ( multiplayer == SERVER )
+				{
+					// be sure to update the clients with the new wind-up pose.
+					serverUpdateEntitySkill(this, 8);
+					serverUpdateEntitySkill(this, 9);
+				}
+				return; // don't execute the attack, let the monster animation call the attack() function again.
+			}
 			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
 			{
 				monsterAttack = pose;
@@ -5158,7 +5172,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 
 -------------------------------------------------------------------------------*/
 
-void Entity::teleportRandom()
+bool Entity::teleportRandom()
 {
 	int numlocations = 0;
 	int pickedlocation;
@@ -5181,7 +5195,7 @@ void Entity::teleportRandom()
 	if ( numlocations == 0 )
 	{
 		messagePlayer(player, language[708]);
-		return;
+		return false;
 	}
 	pickedlocation = rand() % numlocations;
 	numlocations = 0;
@@ -5194,12 +5208,13 @@ void Entity::teleportRandom()
 				if ( numlocations == pickedlocation )
 				{
 					teleport(ix, iy);
-					return;
+					return true;
 				}
 				numlocations++;
 			}
 		}
 	}
+	return false;
 }
 
 /*-------------------------------------------------------------------------------
@@ -7231,6 +7246,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					{
 						// adjust the z point halfway through swing.
 						weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
+						if ( monsterType == INCUBUS )
+						{
+							weaponLimb->z += 2;
+						}
 					}
 					else
 					{
@@ -7243,6 +7262,10 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						{
 							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
 						}
+						if ( monsterType == INCUBUS )
+						{
+							weaponLimb->z += 1.25;
+						}
 					}
 				}
 				// hold sword with pitch aligned to arm rotation.
@@ -7252,12 +7275,13 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
 					weaponLimb->z = weaponArmLimb->z - .5;
 					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
+					if ( monsterType == INCUBUS )
+					{
+						weaponLimb->z += 1;
+					}
 				}
 
-				if ( monsterType == INCUBUS )
-				{
-					weaponLimb->z += 1;
-				}
+				
 			}
 			else
 			{
@@ -7293,9 +7317,17 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	}
 	else
 	{
-		weaponLimb->focalx = limbs[monsterType][6][0] + 1; // 3.5
 		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
-		weaponLimb->focalz = limbs[monsterType][6][2] - 2; // -2.5
+		if ( monsterType == INCUBUS )
+		{
+			weaponLimb->focalx = limbs[monsterType][6][0] + 2; // 3.5
+			weaponLimb->focalz = limbs[monsterType][6][2] - 3.5; // -2.5
+		}
+		else
+		{
+			weaponLimb->focalx = limbs[monsterType][6][0] + 1; // 3.5
+			weaponLimb->focalz = limbs[monsterType][6][2] - 2; // -2.5
+		}
 		weaponLimb->yaw -= sin(weaponArmLimb->roll) * PI / 2;
 		weaponLimb->pitch += cos(weaponArmLimb->roll) * PI / 2;
 	}

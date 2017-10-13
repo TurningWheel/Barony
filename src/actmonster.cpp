@@ -5122,6 +5122,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL;
 						break;
 					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT )
+					{
+						// special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET;
+						break;
+					}
 					break;
 				default:
 					break;
@@ -5205,6 +5211,10 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT_STEAL )
+					{
+						// this flag will be cleared in incubusChooseWeapon
 					}
 					else if ( monsterSpecialState == INCUBUS_TELEPORT )
 					{

@@ -94,7 +94,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleTimerCountdownAction(skill[4]),
 	particleTimerCountdownSprite(skill[5]),
 	particleTimerTarget(skill[6]),
-	particleTimerVariable1(skill[7])
+	particleTimerPreDelay(skill[7]),
+	particleTimerVariable1(skill[8])
 {
 	int c;
 	// add the entity to the entity list

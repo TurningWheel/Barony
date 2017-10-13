@@ -206,6 +206,7 @@ public:
 	Sint32& particleTimerCountdownAction;
 	Sint32& particleTimerCountdownSprite;
 	Sint32& particleTimerTarget;
+	Sint32& particleTimerPreDelay;
 	Sint32& particleTimerVariable1;
 
 	//--PUBLIC DOOR SKILLS--
@@ -275,7 +276,7 @@ public:
 	void attack(int pose, int charge, Entity* target);
 
 	bool teleport(int x, int y);
-	void teleportRandom();
+	bool teleportRandom();
 	// teleport entity to a target, within a radius dist (range in whole tile lengths)
 	bool teleportAroundEntity(const Entity* target, int dist);
 
@@ -401,8 +402,9 @@ public:
 	void lookAtEntity(Entity& target);
 	// automaton specific function
 	void automatonRecycleItem();
-	// incubus teleport to target
+	// incubus teleport spells
 	void incubusTeleportToTarget(const Entity* target);
+	void incubusTeleportRandom();
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.

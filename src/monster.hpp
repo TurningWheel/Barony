@@ -376,6 +376,7 @@ static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
 //static const int MONSTER_POSE_SHADOW_TELEMIMICINVISI_WINDUP = 25;
 static const int MONSTER_POSE_INSECTOID_DOUBLETHROW = 25;
 static const int MONSTER_POSE_INCUBUS_CONFUSION = 26;
+static const int MONSTER_POSE_INCUBUS_TELEPORT = 27;
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -390,7 +391,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
-static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM = 200;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -472,4 +474,5 @@ static const int INSECTOID_DOUBLETHROW_SECOND = 3;
 //--Incubus--
 static const int INCUBUS_CONFUSION = 1;
 static const int INCUBUS_STEAL = 2;
-static const int INCUBUS_TELEPORT = 3;
+static const int INCUBUS_TELEPORT_STEAL = 3;
+static const int INCUBUS_TELEPORT = 4;
