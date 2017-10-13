@@ -73,6 +73,11 @@ static bool completeDataPath(char *dest, const char * const filename)
 	return true;
 }
 
+static std::string completeDataPath(std::string name)
+{
+	return std::string(datadir) + "/" + name;
+}
+
 int makeDirsRecursive(const char * path)
 {
 	const char * copying = path;
@@ -924,7 +929,7 @@ std::list<std::string> directoryContents(const char* directory)
 std::vector<std::string> getLinesFromDataFile(std::string filename)
 {
 	std::vector<std::string> lines;
-	std::ifstream file(filename);
+	std::ifstream file(completeDataPath(filename));
 	for ( std::string line; std::getline(file, line); )
 	{
 		if ( !line.empty() )
