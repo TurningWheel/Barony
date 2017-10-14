@@ -87,7 +87,7 @@ int makeDirsRecursive(const char * path)
 		char cur = *copying;
 		soFar[copying - path] = *copying;
 #ifdef WINDOWS
-		if (cur == '/' && mkdir(soFar) != 0 && errno != EEXIST && errno != EISDIR)
+		if (cur == '/' && _mkdir(soFar) != 0 && errno != EEXIST && errno != EISDIR)
 #else
 		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST && errno != EISDIR)
 #endif
@@ -98,7 +98,7 @@ int makeDirsRecursive(const char * path)
 		++copying;
 	}
 #ifdef WINDOWS
-	if (mkdir(path) != 0 && errno != EEXIST && errno != EISDIR)
+	if (_mkdir(path) != 0 && errno != EEXIST && errno != EISDIR)
 #else
 	if (mkdir(path, 0700) != 0 && errno != EEXIST && errno != EISDIR)
 #endif
