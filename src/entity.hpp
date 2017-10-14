@@ -440,7 +440,7 @@ public:
 	 * May refuses to do so and consequently return false in cases such as the shadow, which cannot lose its target until it's dead.
 	 * Returns true otherwise, if successfully zero-d out target.
 	 */
-	bool monsterReleaseAttackTarget();
+	bool monsterReleaseAttackTarget(bool force = false);
 
 	//Lets monsters swap out weapons.
 	void inline chooseWeapon(const Entity* target, double dist)
@@ -470,7 +470,7 @@ public:
 	void insectoidChooseWeapon(const Entity* target, double dist);
 	void incubusChooseWeapon(const Entity* target, double dist);
 
-	bool monsterInMeleeRange(const Entity* target, double dist)
+	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
 		return (dist < STRIKERANGE);
 	}
@@ -478,6 +478,22 @@ public:
 	node_t* addItemToMonsterInventory(Item* item);
 
 	//void returnWeaponarmToNeutral(Entity* weaponarm, Entity* rightbody); //TODO: Need a proper refactor?
+
+	void shadowSpecialAbility(bool initialMimic);
+
+	bool shadowCanMimickSpell(int spellID);
+
+	double monsterRotate();
+
+	//TODO: These two won't work with multiplayer because clients are stubborn little tater tots that refuse to surrender their inventories on demand.
+	//Here's the TODO: Fix it.
+	Item* getBestMeleeWeaponIHave() const;
+	Item* getBestShieldIHave() const;
+
+	void monsterEquipItem(Item& item, Item** slot);
+
+	bool monsterHasSpellbook(int spellbookType);
+	//bool monsterKnowsSpell(int spellID); //TODO: Should monsters use the spell item instead of spellbooks?
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
