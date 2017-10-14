@@ -1300,7 +1300,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		if ( !weaponNode )
 		{
 			//If couldn't find any, search the inventory for a ranged weapon.
-			weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+			weaponNode = getRangedWeaponItemNodeInInventory(myStats, false);
 		}
 
 		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);

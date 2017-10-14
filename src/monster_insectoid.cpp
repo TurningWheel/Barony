@@ -1370,8 +1370,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	//Switch to a thrown weapon or a ranged weapon.
 	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
 	{
-		//First search the inventory for a THROWN weapon.
-		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
 		if ( !weaponNode )
 		{
 			return; //Nothing available

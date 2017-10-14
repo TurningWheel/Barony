@@ -2570,7 +2570,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
 {
 	if ( myStats == nullptr )
 	{
@@ -2583,6 +2583,10 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
 		if ( item != nullptr )
 		{
 			if ( isRangedWeapon(*item) )
+			{
+				return node;
+			}
+			if ( includeMagicstaff && itemCategory(item) == MAGICSTAFF )
 			{
 				return node;
 			}
