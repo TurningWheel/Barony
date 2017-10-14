@@ -676,7 +676,7 @@ int getSpellIDFromSpellbook(int spellbookType)
 		case SPELLBOOK_ACID_SPRAY:
 			return spell_acidSpray.ID;
 		case SPELLBOOK_STEAL_WEAPON:
-			return spell_stealWeapon;
+			return spell_stealWeapon.ID;
 		default:
 			return SPELL_NONE;
 	}
