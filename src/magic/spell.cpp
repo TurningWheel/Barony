@@ -604,6 +604,9 @@ Item* getSpellbookFromSpellID(int spellID)
 		case SPELL_ACID_SPRAY:
 			itemType = SPELLBOOK_ACID_SPRAY;
 			break;
+		case SPELL_STEAL_WEAPON:
+			itemType = SPELLBOOK_STEAL_WEAPON;
+			break;
 		default:
 			break;
 	}
@@ -672,6 +675,8 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_reflectMagic.ID;
 		case SPELLBOOK_ACID_SPRAY:
 			return spell_acidSpray.ID;
+		case SPELLBOOK_STEAL_WEAPON:
+			return spell_stealWeapon;
 		default:
 			return SPELL_NONE;
 	}

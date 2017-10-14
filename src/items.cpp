@@ -2638,6 +2638,16 @@ bool inline isMeleeWeapon(const Item& item)
 	return ( !isRangedWeapon(item) );
 }
 
+bool Item::isShield() const
+{
+	if ( itemCategory(this) != ARMOR || checkEquipType(this) != TYPE_SHIELD )
+	{
+		return false;
+	}
+
+	return true;
+}
+
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed)
 {
 	//TODO: Does this work with multiplayer?
