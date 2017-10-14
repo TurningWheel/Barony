@@ -9,8 +9,6 @@
 
 -------------------------------------------------------------------------------*/
 
-#pragma once
-
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -3140,7 +3138,7 @@ bool Entity::isInvisible() const
 bool Entity::isMobile()
 {
 	Stat* entitystats;
-	if ( (entitystats = getStats()) == NULL )
+	if ( (entitystats = getStats()) == nullptr )
 	{
 		return true;
 	}
@@ -3161,6 +3159,11 @@ bool Entity::isMobile()
 	if ( entitystats->EFFECTS[EFF_STUNNED] )
 	{
 		return false;
+	}
+
+	if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	{
+		return false; //Shadows can't do anything while they are casting their special ability.
 	}
 
 	return true;
@@ -3389,6 +3392,15 @@ void Entity::attack(int pose, int charge, Entity* target)
 			if ( monsterSpecialState > 0 )
 			{
 				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
+			}
+		}
+		else if ( myStats->type == SHADOW )
+		{
+			if ( myStats->EFFECTS[EFF_INVISIBLE] )
+			{
+				//Shadows lose invisibility when they attack.
+				//TODO: How does this play with the passive invisibility?
+				myStats->EFFECTS[EFF_INVISIBLE] = false;
 			}
 		}
 
@@ -7551,7 +7563,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	}
 }
 
-bool Entity::monsterReleaseAttackTarget()
+bool Entity::monsterReleaseAttackTarget(bool force)
 {
 	Stat* myStats = getStats();
 	if ( !myStats )
@@ -7559,7 +7571,7 @@ bool Entity::monsterReleaseAttackTarget()
 		return false;
 	}
 
-	if ( monsterTarget && uidToEntity(monsterTarget) && myStats->type == SHADOW )
+	if ( !force && myStats->type == SHADOW && monsterTarget && uidToEntity(monsterTarget) )
 	{
 		//messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
 		return false; //Shadow cannot lose its target.
@@ -8014,6 +8026,100 @@ Item** Entity::shouldMonsterEquipThisArmor(const Item& item) const
 	}
 }
 
+double Entity::monsterRotate()
+{
+	double dir = yaw - monsterLookDir;
+	while ( dir >= PI )
+	{
+		dir -= PI * 2;
+	}
+	while ( dir < -PI )
+	{
+		dir += PI * 2;
+	}
+	yaw -= dir / 2;
+	while ( yaw < 0 )
+	{
+		yaw += 2 * PI;
+	}
+	while ( yaw >= 2 * PI )
+	{
+		yaw -= 2 * PI;
+	}
+
+	return dir;
+}
+
+Item* Entity::getBestMeleeWeaponIHave() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	Item* currentBest = nullptr;
+	if ( myStats->weapon && isMeleeWeapon(*myStats->weapon) )
+	{
+		currentBest = myStats->weapon;
+	}
+
+	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			if ( isMeleeWeapon(*item) && Item::isThisABetterWeapon(*item, currentBest) )
+			{
+				currentBest = item;
+			}
+		}
+	}
+
+	if ( currentBest )
+	{
+		messagePlayer(clientnum, "Found best melee weapon: \"%s\"", currentBest->description());
+	}
+
+	return currentBest;
+}
+
+Item* Entity::getBestShieldIHave() const
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	Item* currentBest = nullptr;
+	if ( myStats->shield && myStats->shield->isShield() )
+	{
+		currentBest = myStats->shield;
+	}
+
+	//Loop through the creature's inventory & find the best item. //TODO: Make it work on multiplayer clients?
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( item )
+		{
+			if ( item->isShield() && Item::isThisABetterArmor(*item, currentBest) )
+			{
+				currentBest = item;
+			}
+		}
+	}
+
+	if ( currentBest )
+	{
+		messagePlayer(clientnum, "Found best shield: \"%s\"", currentBest->description());
+	}
+
+	return currentBest;
+}
+
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
 	int playerhit = -1;
@@ -8110,3 +8216,59 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 
 	return true;
 }
+
+void Entity::monsterEquipItem(Item& item, Item** slot)
+{
+	if ( !slot )
+	{
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	dropItemMonster((*slot), this, myStats);
+
+	*slot = &item;
+}
+
+bool Entity::monsterHasSpellbook(int spellbookType)
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+
+	if ( myStats->weapon->type == spellbookType )
+	{
+		//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
+		//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+		return true;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node; node = node->next )
+	{
+		Item* item = static_cast<Item*>(node->element);
+		if ( !item )
+		{
+			continue;
+		}
+
+		if ( item->type == spellbookType )
+		{
+			//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+			//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+			return true;
+		}
+	}
+
+	return false;
+}
+
+
+
+

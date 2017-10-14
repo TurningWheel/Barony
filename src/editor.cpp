@@ -4512,12 +4512,26 @@ int main(int argc, char** argv)
 						keystatus[SDL_SCANCODE_M] = 0;
 						buttonAttributes(NULL);
 					}
+					//Cycle layer up.
+					if ( keystatus[SDL_SCANCODE_U] )
+					{
+						keystatus[SDL_SCANCODE_U] = 0;
+						drawlayer = std::min(drawlayer + 1, MAPLAYERS - 1);
+					}
+					//Cycle layer down.
+					if ( keystatus[SDL_SCANCODE_P] )
+					{
+						keystatus[SDL_SCANCODE_P] = 0;
+						drawlayer = std::max(drawlayer - 1, 0);
+					}
 					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
 						if ( keystatus[SDL_SCANCODE_N] )
 						{
 							keystatus[SDL_SCANCODE_N] = 0;
 							buttonClearMap(NULL);
 						}
+					}
 				}
 				else
 				{
