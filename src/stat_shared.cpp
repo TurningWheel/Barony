@@ -570,6 +570,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EXP = 0;
 			stats->LVL = 25;
 
+			stats->GOLD = 50;
+			stats->RANDOM_GOLD = 50;
+
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
 			//stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
