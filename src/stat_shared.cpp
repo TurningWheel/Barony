@@ -566,7 +566,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_INT = 2;
 			stats->PER = 10;
 			stats->RANDOM_PER = 5;
-			stats->CHR = -1;
+			stats->CHR = -3;
 			stats->EXP = 0;
 			stats->LVL = 25;
 
@@ -585,6 +585,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 33; // booze potion
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2] = 1;
 			stats->EDITOR_ITEMS[ITEM_SLOT_INV_2 + ITEM_CHANCE] = 20; // confusion potion
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_3 + ITEM_CHANCE] = 50; // magicstaff
+
 			break;
 		case 88:
 		case (1000 + VAMPIRE):

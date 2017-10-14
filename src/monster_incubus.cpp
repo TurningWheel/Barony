@@ -38,7 +38,7 @@ void initIncubus(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
@@ -103,6 +103,10 @@ void initIncubus(Entity* my, Stat* myStats)
 				case 5:
 				case 4:
 				case 3:
+					if ( rand() % 2 == 0 ) // 1 in 2
+					{
+						newItem(MAGICSTAFF_COLD, SERVICABLE, 0, 1, rand(), false, &myStats->inventory);
+					}
 				case 2:
 					if ( rand() % 5 == 0 ) // 1 in 5
 					{
@@ -333,6 +337,20 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
+		if ( myStats->ring != nullptr )
+		{
+			if ( myStats->ring->type == RING_INVISIBILITY )
+			{
+				wearingring = true;
+			}
+		}
+		if ( myStats->cloak != nullptr )
+		{
+			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
+			{
+				wearingring = true;
+			}
+		}
 		if ( myStats->EFFECTS[EFF_INVISIBLE] == true )
 		{
 			my->flags[INVISIBLE] = true;
@@ -428,19 +446,29 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				((my->monsterSpecialState == INCUBUS_STEAL && my->monsterAttack != 0 ) ||
 				my->monsterAttack == MONSTER_POSE_INCUBUS_TELEPORT) )
 			{
-				Entity* weaponarm = nullptr;
-				// leftarm follows the right arm during special steal/teleport attack
-				node_t* weaponarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTARM);
-				if ( weaponarmNode )
+				// leftarm follows the right arm during special steal state/teleport attack
+				// will not work when shield is visible
+				// else animate normally.
+				node_t* shieldNode = list_Node(&my->children, 8);
+				if ( shieldNode )
 				{
-					weaponarm = (Entity*)weaponarmNode->element;
+					Entity* shield = (Entity*)shieldNode->element;
+					if ( shield->flags[INVISIBLE] )
+					{
+						Entity* weaponarm = nullptr;
+						node_t* weaponarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTARM);
+						if ( weaponarmNode )
+						{
+							weaponarm = (Entity*)weaponarmNode->element;
+						}
+						else
+						{
+							return;
+						}
+						entity->pitch = weaponarm->pitch;
+						entity->roll = -weaponarm->roll;
+					}
 				}
-				else
-				{
-					return;
-				}
-				entity->pitch = weaponarm->pitch;
-				entity->roll = -weaponarm->roll;
 			}
 			else
 			{
@@ -477,7 +505,6 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->monsterArmbended = 0;
 							my->monsterWeaponYaw = 0;
 							weaponarm->roll = 0;
-							weaponarm->skill[1] = 0;
 							createParticleDot(my);
 						}
 
@@ -521,10 +548,12 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							if ( multiplayer != CLIENT )
 							{
+								// throw the spell
 								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
 							}
 						}
 					}
+					// teleport animation
 					else if( my->monsterAttack == MONSTER_POSE_INCUBUS_TELEPORT )
 					{
 						if ( my->monsterAttackTime == 0 )
@@ -534,11 +563,12 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->monsterArmbended = 0;
 							my->monsterWeaponYaw = 0;
 							weaponarm->roll = 0;
-							weaponarm->skill[1] = 0;
+							weaponarm->skill[1] = 0; // use this for direction of animation
 							// monster scream
 							playSoundEntityLocal(my, 99, 128);
 							if ( multiplayer != CLIENT )
 							{
+								// set overshoot for head, freeze incubus in place
 								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 								myStats->EFFECTS[EFF_PARALYZED] = true;
 								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 100;
@@ -562,17 +592,20 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 						if ( multiplayer != CLIENT )
 						{
-							// move the head
+							// move the head back and forth.
+							// keeps between PI and 0 (2PI) so we can lower the head at completion to 0 (2PI).
 							if ( my->monsterAnimationLimbOvershoot >= ANIMATE_OVERSHOOT_TO_SETPOINT )
 							{
 								limbAnimateWithOvershoot(my, ANIMATE_PITCH, -0.1, 7 * PI / 4, -0.1, 15 * PI / 8, ANIMATE_DIR_POSITIVE);
 							}
 							else
 							{
+								// after 1 cycle is complete, reset the overshoot flag and repeat the animation.
 								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
 							}
 						}
 
+						// animation takes roughly 2 seconds.
 						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP * 10 / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							weaponarm->skill[0] = rightbody->skill[0];
@@ -596,13 +629,15 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 								my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_NONE;
 							}
 						}
-						++my->monsterAttackTime;
+						++my->monsterAttackTime; // manually increment timer
 					}
 					else
 					{
 						my->handleWeaponArmAttack(weaponarm);
 						if ( my->monsterAttack != MONSTER_POSE_MELEE_WINDUP2 && my->monsterAttack != 2 )
 						{
+							// flare out the weapon arm to match neutral arm position. 
+							// breaks the horizontal chop attack animation so we skip it.
 							weaponarm->roll = -PI / 32;
 						}
 					}
@@ -625,7 +660,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				entity->x -= .5 * cos(my->yaw);
 				entity->y -= .5 * sin(my->yaw);
 				entity->z += 2.5;
@@ -666,7 +701,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
 				if ( multiplayer != CLIENT )
 				{
 					if ( myStats->shoes == nullptr )
@@ -819,18 +854,25 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				if ( weaponarm != nullptr )
 				{
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			}
-				// shield
+			// shield
 			case LIMB_HUMANOID_SHIELD:
 			{
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shield == NULL )
+					if ( myStats->shield == nullptr )
 					{
 						entity->flags[INVISIBLE] = true;
 						entity->sprite = 0;
@@ -863,6 +905,13 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
@@ -893,7 +942,7 @@ void incubusMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 	// rotate shield a bit
-	node_t* shieldNode = list_Node(&my->children, 8);
+	node_t* shieldNode = list_Node(&my->children, LIMB_HUMANOID_SHIELD);
 	if ( shieldNode )
 	{
 		Entity* shieldEntity = (Entity*)shieldNode->element;
@@ -923,6 +972,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
 		if ( monsterSpecialState == INCUBUS_TELEPORT_STEAL && monsterSpecialTimer == 0 )
 		{
+			// handle steal weapon random teleportation
 			incubusTeleportRandom();
 			monsterSpecialState = 0;
 			serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
@@ -930,6 +980,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		}
 		else if ( monsterSpecialState == INCUBUS_TELEPORT && monsterSpecialTimer == 0 )
 		{
+			// handle idle teleporting to target
 			monsterSpecialState = 0;
 			serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 		}
@@ -942,29 +993,21 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		return;
 	}
 
-	/*if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
-	{
-	return;
-	}*/
-
 	int specialRoll = -1;
 	int bonusFromHP = 0;
 
 	if ( ticks % 10 == 0 && monsterSpecialState != INCUBUS_TELEPORT_STEAL )
 	{
-		// teleport to target
+		// teleport to target, higher chance at greater distance or lower HP
 		specialRoll = rand() % 50;
-		messagePlayer(0, "rolled: %d", specialRoll);
-		if ( specialRoll < 1 + (dist > 80 ? 4 : 0) )
+		if ( specialRoll < (1 + (dist > 80 ? 4 : 0) + (myStats->HP <= myStats->MAXHP * 0.8 ? 4 : 0)) )
 		{
 			monsterSpecialState = INCUBUS_TELEPORT;
 			incubusTeleportToTarget(target);
-			//messagePlayer(0, "Target teleport");
 			return;
 		}
 	}
 
-	// occurs less often against fellow monsters.
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
 		Stat* targetStats = target->getStats();
@@ -976,6 +1019,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 		if ( targetStats->weapon )
 		{
 			// try to steal weapon if target is holding.
+			// occurs less often against fellow monsters.
 			specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
 			if ( myStats->HP <= myStats->MAXHP * 0.8 )
 			{
@@ -985,10 +1029,11 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			{
 				bonusFromHP += 1; // +extra 2.5% chance if on lower health
 			}
-			//messagePlayer(0, "rolled: %d", specialRoll);
+
 			int requiredRoll = (1 + bonusFromHP + (targetStats->EFFECTS[EFF_CONFUSED] ? 4 : 0)
 				+ (targetStats->EFFECTS[EFF_DRUNK] ? 2 : 0)); // +2.5% base, + extra if target is inebriated
-			//messagePlayer(0, "require: %d", requiredRoll);
+			requiredRoll += (myStats->weapon == nullptr ? 3 : 0); // bonus if no weapon held
+
 			if ( specialRoll < requiredRoll ) 
 			{
 				node_t* node = nullptr;
@@ -1003,7 +1048,8 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 			}
 		}
 		
-		// try new roll for alternate special.
+		// try new roll for alternate potion throw special.
+		// occurs less often against fellow monsters.
 		specialRoll = rand() % (30 + 30 * (target->behavior == &actMonster));
 		if ( specialRoll < (2 + bonusFromHP) ) // +5% base
 		{
@@ -1050,7 +1096,7 @@ void Entity::incubusChooseWeapon(const Entity* target, double dist)
 	//Switch to a thrown weapon or a ranged weapon.
 	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
 	{
-		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
 		if ( !weaponNode )
 		{
 			return; //Nothing available
@@ -1072,7 +1118,7 @@ void Entity::incubusTeleportToTarget(const Entity* target)
 	{
 		spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
 	}
-	spellTimer->particleTimerVariable1 = 3; // distance of teleport
+	spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
 	if ( multiplayer == SERVER )
 	{
 		serverSpawnMiscParticles(this, PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET, 593);
