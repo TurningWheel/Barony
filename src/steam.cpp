@@ -613,7 +613,7 @@ void steamAchievement(const char* achName)
 	return;
 #else
 
-	if ( !(svFlags & SV_FLAG_CHEATS) )
+	if ( svFlags & SV_FLAG_CHEATS )
 	{
 		// Cheats are enabled, therefore you cannot earn Steam Achievements
 		return;
@@ -651,7 +651,7 @@ void steamAchievementClient(int player, const char* achName)
 		return;
 	}
 
-	if ( !(svFlags & SV_FLAG_CHEATS) )
+	if ( svFlags & SV_FLAG_CHEATS )
 	{
 		// Cheats are enabled, therefore you cannot earn Steam Achievements. This check prevents needless packet sending
 		return;
