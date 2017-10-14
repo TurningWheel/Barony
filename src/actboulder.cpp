@@ -296,7 +296,8 @@ void actBoulder(Entity* my)
 					{
 						continue;
 					}
-					if ( BoulderCheckAgainstEntity(my, entity) )
+
+					if ( BoulderCheckAgainstEntity(my, entity, false) )
 					{
 						return;
 					}
@@ -399,7 +400,8 @@ void actBoulder(Entity* my)
 					{
 						continue;
 					}
-					if ( BoulderCheckAgainstEntity(my, entity) )
+
+					if ( BoulderCheckAgainstEntity(my, entity, false) )
 					{
 						return;
 					}
@@ -568,7 +570,7 @@ void actBoulder(Entity* my)
 						{
 							continue;
 						}
-						if ( BoulderCheckAgainstEntity(my, entity) )
+						if ( BoulderCheckAgainstEntity(my, entity, true) )
 						{
 							return;
 						}
