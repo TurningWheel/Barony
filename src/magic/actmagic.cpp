@@ -2227,6 +2227,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 	Entity* entity;
 
 	entity = newEntity(parentent->sprite, 1, map.entities);
+
 	entity->x = parentent->x + (rand() % 50 - 25) / 20.f;
 	entity->y = parentent->y + (rand() % 50 - 25) / 20.f;
 	entity->z = parentent->z + (rand() % 50 - 25) / 20.f;
@@ -2707,7 +2708,7 @@ void createParticleSap(Entity* parent)
 			}
 			else
 			{
-				sprite = 172;
+				sprite = 599;
 			}
 		}
 		Entity* entity = newEntity(sprite, 1, map.entities);

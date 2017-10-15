@@ -2903,7 +2903,7 @@ client (player %d) (direct ip)#
 2275 spellbook#
 2276 spellbook of steal weapon#
 2277 spellbook#
-2278 blank spellbook 3#
+2278 spellbook of drain soul#
 2279 spellbook#
 2280 blank spellbook 4#
 2281 spellbook#
@@ -2937,7 +2937,7 @@ but it retracts beyond your might!#
 2394 Reflect Magic#
 2395 Spray Acid#
 2396 Steal Weapon#
-2397 blank#
+2397 Drain Soul#
 2398 blank#
 2399 blank#
 
@@ -2979,6 +2979,13 @@ dominate the %s into your service!#
 2436 %s is not wielding a weapon to steal!#
 2437 The %s is not wielding a weapon to steal!#
 2438 The spell fails to steal the non-existent weapon from your hand!#
+2439 %s's life force is drained!#
+2440 The %s's life force is drained!#
+2441 Your life force is drained!#
+2442 You fail to drain %s's life force.#
+2443 You fail to drain the %s's life force.#
+2444 You resist the spell's drain!#
+2445 You feel restored!#
 
 #More character creation screen stuff.
 2450 Random Name#
