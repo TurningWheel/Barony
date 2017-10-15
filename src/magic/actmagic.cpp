@@ -2112,6 +2112,11 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					spellEffectStealWeapon(*my, *element, parent, resistance);
 					return;
 				}
+				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+				{
+					spellEffectDrainSoul(*my, *element, parent, resistance);
+					return;
+				}
 
 				my->removeLightField();
 				list_RemoveNode(my->mynode);
@@ -2655,8 +2660,12 @@ void createParticleErupt(Entity* parent, int sprite)
 	}
 }
 
-Entity* createParticleSapCenter(Entity* parent, Entity* target, int sprite, int endSprite)
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite)
 {
+	if ( !parent || !target )
+	{
+		return nullptr;
+	}
 	// spawns the invisible 'center' of the magic particle
 	Entity* entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
@@ -2670,6 +2679,7 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int sprite, int 
 	entity->skill[3] = 0; // init
 	entity->skill[4] = sprite; // visible sprites.
 	entity->skill[5] = sprite; // sprite to spawn on return to caster.
+	entity->skill[6] = spell;
 	entity->behavior = &actParticleSapCenter;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[PASSABLE] = true;
@@ -2684,7 +2694,23 @@ void createParticleSap(Entity* parent)
 	for ( int c = 0; c < 4; c++ )
 	{
 		// 4 particles, in an 'x' pattern around parent sprite.
-		Entity* entity = newEntity(parent->sprite, 1, map.entities);
+		int sprite = 0;
+		if ( parent->skill[6] == SPELL_STEAL_WEAPON )
+		{
+			sprite = parent->sprite;
+		}
+		else if ( parent->skill[6] == SPELL_DRAIN_SOUL )
+		{
+			if ( c == 0 || c == 3 )
+			{
+				sprite = parent->sprite;
+			}
+			else
+			{
+				sprite = 172;
+			}
+		}
+		Entity* entity = newEntity(sprite, 1, map.entities);
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x;
@@ -3025,36 +3051,51 @@ void actParticleSapCenter(Entity* my)
 		// if reached the caster, delete self and spawn some particles.
 		if ( entityInsideEntity(my, parent) )
 		{
-			if ( my->skill[6] == 1 )
+			if ( my->skill[6] == SPELL_STEAL_WEAPON )
 			{
-				// found stolen item.
-				Item* item = newItemFromEntity(my);
-				if ( parent->behavior == &actPlayer )
+				if ( my->skill[7] == 1 )
 				{
-					itemPickup(parent->skill[2], item);
-				}
-				else if ( parent->behavior == &actMonster )
-				{
-					parent->addItemToMonsterInventory(item);
-					Stat *myStats = parent->getStats();
-					if ( myStats )
+					// found stolen item.
+					Item* item = newItemFromEntity(my);
+					if ( parent->behavior == &actPlayer )
 					{
-						node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
-						if ( weaponNode )
+						itemPickup(parent->skill[2], item);
+					}
+					else if ( parent->behavior == &actMonster )
+					{
+						parent->addItemToMonsterInventory(item);
+						Stat *myStats = parent->getStats();
+						if ( myStats )
 						{
-							swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
-							if ( myStats->type == INCUBUS )
+							node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+							if ( weaponNode )
 							{
-								parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
-								parent->monsterSpecialTimer = 100 + rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+								swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
+								if ( myStats->type == INCUBUS )
+								{
+									parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
+									parent->monsterSpecialTimer = 100 + rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+								}
 							}
 						}
 					}
+					item = nullptr;
 				}
-				item = nullptr;
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
 			}
-			playSoundEntity(parent, 168, 128);
-			spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
+			else if ( my->skill[6] == SPELL_DRAIN_SOUL )
+			{
+				parent->modHP(my->skill[7]);
+				parent->modMP(my->skill[8]);
+				if ( parent->behavior == &actPlayer )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(parent->skill[2], color, language[2445]);
+				}
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
+			}
 			list_RemoveNode(my->mynode);
 			return;
 		}

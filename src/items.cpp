@@ -1667,7 +1667,7 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_REFLECT_MAGIC:
 		case SPELLBOOK_ACID_SPRAY:
 		case SPELLBOOK_STEAL_WEAPON:
-		case SPELLBOOK_BLANK_3:
+		case SPELLBOOK_DRAIN_SOUL:
 		case SPELLBOOK_BLANK_4:
 		case SPELLBOOK_BLANK_5:
 			item_Spellbook(item, player);

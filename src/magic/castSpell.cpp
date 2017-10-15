@@ -822,7 +822,6 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			else
 			{
 				playSoundEntity(entity, 169, 128 );
-				entity->skill[6] = 1;
 			}
 			result = entity;
 		}
@@ -1110,6 +1109,13 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 175;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 168;
 				}
 			}
 		}

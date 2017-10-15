@@ -3536,9 +3536,12 @@ void Entity::attack(int pose, int charge, Entity* target)
 						case SPELLBOOK_STEAL_WEAPON:
 							castSpell(uid, &spell_stealWeapon, true, false);
 							break;
-							//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
-							//castSpell(uid, &spell_reflectMagic, true, false)
-							//break;
+						case SPELLBOOK_DRAIN_SOUL:
+							castSpell(uid, &spell_drainSoul, true, false);
+							break;
+						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
+						//castSpell(uid, &spell_reflectMagic, true, false)
+						//break;
 						default:
 							break;
 					}

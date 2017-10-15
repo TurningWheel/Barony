@@ -48,6 +48,9 @@ void freeSpells()
 	list_FreeAll(&spell_bleed.elements);
 	list_FreeAll(&spell_dominate.elements);
 	list_FreeAll(&spell_reflectMagic.elements);
+	list_FreeAll(&spell_acidSpray.elements);
+	list_FreeAll(&spell_stealWeapon.elements);
+	list_FreeAll(&spell_drainSoul.elements);
 }
 
 void spell_magicMap(int player)
@@ -499,11 +502,11 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 
 			if ( hitstats->weapon )
 			{
-				Entity* spellEntity = createParticleSapCenter(parent, hit.entity, my.sprite, my.sprite);
+				Entity* spellEntity = createParticleSapCenter(parent, hit.entity, SPELL_STEAL_WEAPON, my.sprite, my.sprite);
 				if ( spellEntity )
 				{
 					playSoundEntity(&my, 174, 128); // succeeded spell sound
-					spellEntity->skill[6] = 1; // found weapon
+					spellEntity->skill[7] = 1; // found weapon
 
 					// store weapon data
 					spellEntity->skill[10] = hitstats->weapon->type;
@@ -605,6 +608,165 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 							else if ( hitstats->type >= KOBOLD ) //New monsters
 							{
 								messagePlayerColor(parent->skill[2], color, language[2437], language[2000 + (hitstats->type - KOBOLD)]);
+							}
+						}
+					}
+				}
+			}
+		}
+		spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
+	}
+	else
+	{
+		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
+	}
+	my.removeLightField();
+	list_RemoveNode(my.mynode);
+	return;
+}
+
+void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance)
+{
+	if ( hit.entity )
+	{
+		if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
+		{
+			Entity* parent = uidToEntity(my.parent);
+			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
+			{
+				// test for friendly fire
+				if ( parent && parent->checkFriend(hit.entity) )
+				{
+					my.removeLightField();
+					list_RemoveNode(my.mynode);
+					return;
+				}
+			}
+
+			Stat* hitstats = hit.entity->getStats();
+			if ( !hitstats )
+			{
+				return;
+			}
+
+			int damage = element.damage;
+			//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
+			damage /= (1 + (int)resistance);
+			damage *= damagetables[hitstats->type][5];
+
+			int damageHP = hitstats->HP;
+			int damageMP = hitstats->MP;
+			hit.entity->modHP(-damage);
+			hit.entity->modMP(-damage / 2);
+
+			damageHP -= hitstats->HP;
+			damageMP -= hitstats->MP;
+
+			// write the obituary
+			if ( parent )
+			{
+				parent->killedByMonsterObituary(hit.entity);
+			}
+
+			// update enemy bar for attacker
+			if ( !strcmp(hitstats->name, "") )
+			{
+				if ( hitstats->type < KOBOLD ) //Original monster count
+				{
+					updateEnemyBar(parent, hit.entity, language[90 + hitstats->type], hitstats->HP, hitstats->MAXHP);
+				}
+				else if ( hitstats->type >= KOBOLD ) //New monsters
+				{
+					updateEnemyBar(parent, hit.entity, language[2000 + (hitstats->type - KOBOLD)], hitstats->HP, hitstats->MAXHP);
+				}
+			}
+			else
+			{
+				updateEnemyBar(parent, hit.entity, hitstats->name, hitstats->HP, hitstats->MAXHP);
+			}
+
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+
+			int player = -1;
+			if ( hit.entity->behavior == &actPlayer )
+			{
+				player = hit.entity->skill[2];
+			}
+
+			if ( hitstats->HP <= 0 && parent )
+			{
+				parent->awardXP(hit.entity, true, true);
+			}
+
+			if ( damageHP > 0 )
+			{
+				Entity* spellEntity = createParticleSapCenter(parent, hit.entity, SPELL_DRAIN_SOUL, my.sprite, my.sprite);
+				if ( spellEntity )
+				{
+					playSoundEntity(&my, 167, 128); // succeeded spell sound
+					playSoundEntity(&my, 28, 128); // damage
+					spellEntity->skill[7] = damageHP; // damage taken to HP
+					spellEntity->skill[8] = damageMP; // damage taken tp MP
+
+					// hit messages
+					if ( player >= 0 )
+					{
+						color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+						messagePlayerColor(player, color, language[2441]);
+					}
+
+					if ( parent )
+					{
+						color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+						if ( parent->behavior == &actPlayer )
+						{
+							if ( strcmp(hitstats->name, "") )
+							{
+								messagePlayerColor(parent->skill[2], color, language[2439], hitstats->name);
+							}
+							else
+							{
+								if ( hitstats->type < KOBOLD ) //Original monster count
+								{
+									messagePlayerColor(parent->skill[2], color, language[2440], language[90 + hitstats->type]);
+								}
+								else if ( hitstats->type >= KOBOLD ) //New monsters
+								{
+									messagePlayerColor(parent->skill[2], color, language[2440], language[2000 + (hitstats->type - KOBOLD)]);
+								}
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				playSoundEntity(&my, 163, 128); // failed spell sound
+				// hit messages
+				if ( player >= 0 )
+				{
+					color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(player, color, language[2444]);
+				}
+
+				if ( parent )
+				{
+					color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+					if ( parent->behavior == &actPlayer )
+					{
+						if ( strcmp(hitstats->name, "") )
+						{
+							messagePlayerColor(parent->skill[2], color, language[2442], hitstats->name);
+						}
+						else
+						{
+							if ( hitstats->type < KOBOLD ) //Original monster count
+							{
+								messagePlayerColor(parent->skill[2], color, language[2443], language[90 + hitstats->type]);
+							}
+							else if ( hitstats->type >= KOBOLD ) //New monsters
+							{
+								messagePlayerColor(parent->skill[2], color, language[2443], language[2000 + (hitstats->type - KOBOLD)]);
 							}
 						}
 					}

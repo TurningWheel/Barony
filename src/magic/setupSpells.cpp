@@ -261,6 +261,14 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_stealWeapon.duration = 0; //TODO: Decide on something.
 	strcpy(spellElement_stealWeapon.name, language[2396]);
 
+	spellElementConstructor(&spellElement_drainSoul);
+	spellElement_drainSoul.mana = 5;
+	spellElement_drainSoul.base_mana = 5;
+	spellElement_drainSoul.overload_multiplier = 1;
+	spellElement_drainSoul.damage = 10;
+	spellElement_drainSoul.duration = 0; //TODO: Decide on something.
+	strcpy(spellElement_drainSoul.name, language[2397]);
+
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
 	spell_forcebolt.ID = SPELL_FORCEBOLT;
@@ -751,6 +759,26 @@ void setupSpells()   ///TODO: Verify this function.
 	element->elements.last = NULL;
 	node = list_AddNodeLast(&element->elements);
 	node->element = copySpellElement(&spellElement_stealWeapon);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node;
+
+	spellConstructor(&spell_drainSoul);
+	strcpy(spell_drainSoul.name, language[2397]);
+	spell_drainSoul.ID = SPELL_DRAIN_SOUL;
+	spell_drainSoul.difficulty = 0;
+	node = list_AddNodeLast(&spell_drainSoul.elements);
+	node->element = copySpellElement(&spellElement_missile);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	//Now for the second element.
+	element->elements.first = NULL;
+	element->elements.last = NULL;
+	node = list_AddNodeLast(&element->elements);
+	node->element = copySpellElement(&spellElement_drainSoul);
 	node->size = sizeof(spellElement_t);
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;

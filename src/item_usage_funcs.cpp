@@ -2863,8 +2863,8 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_STEAL_WEAPON:
 				addSpell(SPELL_STEAL_WEAPON, player);
 				break;
-			case SPELLBOOK_BLANK_3:
-				messagePlayer(player, "No, you no can has!");
+			case SPELLBOOK_DRAIN_SOUL:
+				addSpell(SPELL_DRAIN_SOUL, player);
 				break;
 			case SPELLBOOK_BLANK_4:
 				messagePlayer(player, "Oops, misplaced that spell...");

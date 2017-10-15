@@ -54,6 +54,7 @@ spellElement_t spellElement_dominate;
 spellElement_t spellElement_reflectMagic;
 spellElement_t spellElement_acidSpray;
 spellElement_t spellElement_stealWeapon;
+spellElement_t spellElement_drainSoul;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -84,6 +85,7 @@ spell_t spell_dominate;
 spell_t spell_reflectMagic;
 spell_t spell_acidSpray;
 spell_t spell_stealWeapon;
+spell_t spell_drainSoul;
 
 void addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -182,6 +184,9 @@ void addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_STEAL_WEAPON:
 			new_spell = copySpell(&spell_stealWeapon);
+			break;
+		case SPELL_DRAIN_SOUL:
+			new_spell = copySpell(&spell_drainSoul);
 			break;
 		default:
 			return;
@@ -509,6 +514,9 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_STEAL_WEAPON:
 			spell = &spell_stealWeapon;
 			break;
+		case SPELL_DRAIN_SOUL:
+			spell = &spell_drainSoul;
+			break;
 		default:
 			break;
 	}
@@ -607,6 +615,9 @@ Item* getSpellbookFromSpellID(int spellID)
 		case SPELL_STEAL_WEAPON:
 			itemType = SPELLBOOK_STEAL_WEAPON;
 			break;
+		case SPELL_DRAIN_SOUL:
+			itemType = SPELLBOOK_DRAIN_SOUL;
+			break;
 		default:
 			break;
 	}
@@ -677,6 +688,8 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_acidSpray.ID;
 		case SPELLBOOK_STEAL_WEAPON:
 			return spell_stealWeapon.ID;
+		case SPELLBOOK_DRAIN_SOUL:
+			return spell_drainSoul.ID;
 		default:
 			return SPELL_NONE;
 	}
