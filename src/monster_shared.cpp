@@ -376,7 +376,7 @@ void Entity::spawnBlood(int bloodSprite)
 				Entity* entity = newEntity(bloodSprite, 1, map.entities);
 				entity->x = this->x;
 				entity->y = this->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
+				entity->z = 8.0 + (rand() % 20) / 100.0;
 				entity->parent = getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
