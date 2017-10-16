@@ -10,9 +10,11 @@
 -------------------------------------------------------------------------------*/
 #include <sstream>
 #include "../main.hpp"
+#include "../files.hpp"
 #include "../game.hpp"
 #include "../stat.hpp"
 #include "../items.hpp"
+#include "../init.hpp"
 #include "../book.hpp"
 #include "../sound.hpp"
 #include "../menu.hpp"
@@ -30,7 +32,7 @@
 
 -------------------------------------------------------------------------------*/
 
-void consoleCommand(char* command_str)
+void consoleCommand(const char* command_str)
 {
 	node_t* node;
 	Entity* entity;
@@ -1115,8 +1117,10 @@ void consoleCommand(char* command_str)
 	}
 	else if (!strncmp(command_str, "/lang ", 6))
 	{
-		command_str[8] = 0;
-		loadLanguage(command_str + 6);
+		char lang[3];
+		strncpy(lang, command_str + 6, 2);
+		lang[2] = 0;
+		loadLanguage(lang);
 	}
 	else if (!strncmp(command_str, "/reloadlang", 11))
 	{

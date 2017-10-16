@@ -2587,30 +2587,6 @@ node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats)
 	return nullptr;
 }
 
-bool inline isRangedWeapon(const Item& item)
-{
-	switch ( item.type )
-	{
-		case SLING:
-		case SHORTBOW:
-		case CROSSBOW:
-		case ARTIFACT_BOW:
-			return true;
-		default:
-			return false;
-	}
-}
-
-bool inline isMeleeWeapon(const Item& item)
-{
-	if ( itemCategory(&item) != WEAPON )
-	{
-		return false;
-	}
-
-	return ( !isRangedWeapon(item) );
-}
-
 bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode)
 {
 	//TODO: Does this work with multiplayer?

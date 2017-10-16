@@ -12,6 +12,7 @@ See LICENSE for details.
 #include "main.hpp"
 #include "game.hpp"
 #include "items.hpp"
+#include "files.hpp"
 
 Uint32 itemuids = 1;
 ItemGeneric items[NUMITEMS];
@@ -181,7 +182,7 @@ int loadItems()
 	FILE* fp;
 	// load item types
 	printlog("loading items...\n");
-	fp = fopen("items/items.txt", "r");
+	fp = openDataFile("items/items.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
 		items[c].name_identified = language[1545 + c * 2];

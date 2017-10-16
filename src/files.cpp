@@ -9,6 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -17,9 +18,12 @@
 #include <string>
 
 #include "main.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
 
+static char userDir[1024] = {0};
+static char datadir[1024] = {0};
 /*-------------------------------------------------------------------------------
 
 	glLoadTexture
@@ -48,7 +52,7 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 }
 
 
-bool completePath(char *dest, const char * const filename) {
+static bool completeDataPath(char *dest, const char * const filename) {
 	if (!(filename && filename[0])) {
 		return false;
 	}
@@ -58,14 +62,65 @@ bool completePath(char *dest, const char * const filename) {
 		strncpy(dest, filename, 1024);
 		return true;
 	}
-
 	snprintf(dest, 1024, "%s/%s", datadir, filename);
 	return true;
 }
 
+int makeDirsRecursive(const char * path) {
+	const char * copying = path;
+	char soFar[1024] = {0};
+	while (*copying) {
+		char cur = *copying;
+		soFar[copying - path] = *copying;
+		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST) {
+			printlog("Failed to create %s: %s", soFar, strerror(errno));
+			return errno;
+		}
+		++copying;
+	}
+	if (mkdir(path, 0700) != 0 && errno != EEXIST)
+		return errno;
+	return 0;
+}
+
 FILE* openDataFile(const char * const filename, const char * const mode) {
 	char path[1024];
-	completePath(path, filename);
+	completeDataPath(path, filename);
+	FILE * result = fopen(path, mode);
+	if (!result) {
+		printlog("Could not open '%s': %s", path, strerror(errno));
+	}
+	return result;
+}
+
+void setUserDir(const char * const dir) {
+	strncpy(userDir, dir, 1024);
+}
+
+void setDataDir(const char * const dir) {
+	strncpy(datadir, dir, 1024);
+}
+
+FILE* openUserFile(const char * const filename, const char * const mode) {
+	// Initialise user dir only if it hasn't already been
+	if (userDir[0] == NULL) {
+		char *xdg_config_home = getenv("XDG_CONFIG_HOME");
+		char *home = getenv("HOME");
+		if (xdg_config_home && *xdg_config_home)
+			snprintf(userDir, 1024, "%s/barony", xdg_config_home);
+		else if (home && *home)
+			snprintf(userDir, 1024, "%s/.config/barony", home);
+		else
+			strncpy(userDir, ".", 1024);
+		int err = makeDirsRecursive(userDir);
+		if (err != 0)
+		{
+			printlog("Could not create user directory %s: %s", userDir, strerror(err));
+		}
+		printlog("Initialised userDir to %s", userDir);
+	}
+	char path[1024];
+	snprintf(path, 1024, "%s/%s", userDir, filename);
 	FILE * result = fopen(path, mode);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
@@ -75,7 +130,7 @@ FILE* openDataFile(const char * const filename, const char * const mode) {
 
 DIR* openDataDir(const char * const name) {
 	char path[1024];
-	completePath(path, name);
+	completeDataPath(path, name);
 	DIR * result = opendir(path);
 	if (!result) {
 		printlog("Could not open '%s': %s", path, strerror(errno));
@@ -83,10 +138,16 @@ DIR* openDataDir(const char * const name) {
 	return result;
 }
 
+SDL_RWops * openDataFileSDL(const char * filename, const char * mode) {
+	char path[1024];
+	completeDataPath(path, filename);
+	return SDL_RWFromFile(path, mode);
+}
+
 
 bool dataPathExists(const char * const path) {
 	char full_path[1024];
-	completePath(full_path, path);
+	completeDataPath(full_path, path);
 	return access(full_path, F_OK) != -1;
 }
 
@@ -100,10 +161,10 @@ bool dataPathExists(const char * const path) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* loadImage(char* filename)
+SDL_Surface* loadImage(const char* filename)
 {
 	char full_path[1024];
-	completePath(full_path, filename);
+	completeDataPath(full_path, filename);
 	SDL_Surface* originalSurface;
 
 	if ( imgref >= MAXTEXTURES )
@@ -195,7 +256,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist)
+int loadMap(const char* filename2, map_t* destmap, list_t* entlist)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -601,7 +662,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char* filename2)
+int saveMap(const char* filename2)
 {
 	FILE* fp;
 	Uint32 numentities = 0;
@@ -735,7 +796,7 @@ int saveMap(char* filename2)
 
 -------------------------------------------------------------------------------*/
 
-char* readFile(char* filename)
+char* readFile(const char* filename)
 {
 	char* file_contents = NULL;
 	long input_file_size;
@@ -759,7 +820,7 @@ char* readFile(char* filename)
 		printlog("Unreasonable size: %ld", input_file_size);
 		goto out_input_file;
 	}
-	
+
 	rewind(input_file);
 	file_contents = static_cast<char*>(malloc((input_file_size + 1) * sizeof(char)));
 	fread(file_contents, sizeof(char), input_file_size, input_file);
@@ -782,7 +843,7 @@ std::list<std::string> directoryContents(const char* directory)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
-	completePath(fullPath, directory);
+	completeDataPath(fullPath, directory);
 	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
 
@@ -812,4 +873,32 @@ std::list<std::string> directoryContents(const char* directory)
 	closedir(dir);
 
 	return list;
+}
+
+std::vector<std::string> getLinesFromDataFile(std::string filename)
+{
+	std::vector<std::string> lines;
+	FILE *file = fopen(filename.c_str(), "r");
+	if ( !file )
+	{
+		printlog("Error: Failed to open file \"%s\": ", filename.c_str(), strerror(errno));
+		return lines;
+	}
+	size_t line_size = 0, line_length;
+	char *line = NULL;
+	while ( (line_length = getline(&line, &line_size, file)) != -1 )
+	{
+		if (line[line_length-1] == '\n') line[line_length-1] = '\0';
+		std::string cxxline(line);
+		if ( !cxxline.empty() )
+		{
+			lines.push_back(cxxline);
+		}
+		free(line);
+		line = NULL;
+		line_size = 0;
+	}
+	fclose(file);
+
+	return lines;
 }

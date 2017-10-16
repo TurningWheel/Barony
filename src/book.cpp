@@ -10,6 +10,7 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "files.hpp"
 #include "game.hpp"
 #include "interface/interface.hpp"
 #include "book.hpp"
@@ -26,7 +27,7 @@ int numbooks = 0;
 
 //book_t *book_space_ninjas = NULL;
 
-int getBook(char* booktitle)
+int getBook(const char* booktitle)
 {
 	int c;
 	for ( c = 0; c < numbooks; c++ )

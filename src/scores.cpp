@@ -11,6 +11,7 @@
 
 #include "main.hpp"
 #include "game.hpp"
+#include "files.hpp"
 #include "stat.hpp"
 #include "menu.hpp"
 #include "monster.hpp"
@@ -463,7 +464,7 @@ void saveAllScores()
 	int c;
 
 	// open file
-	if ( (fp = fopen(SCORESFILE, "wb")) == NULL )
+	if ( (fp = openUserFile(SCORESFILE, "wb")) == NULL )
 	{
 		printlog("error: failed to save '%s!'\n", SCORESFILE);
 		return;
@@ -670,7 +671,7 @@ void loadAllScores()
 	list_FreeAll(&topscores);
 
 	// open file
-	if ( (fp = fopen(SCORESFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SCORESFILE, "rb")) == NULL )
 	{
 		return;
 	}
@@ -935,7 +936,7 @@ int saveGame()
 	{
 		messagePlayer(clientnum, language[1121]);
 	}
-	if ( (fp = fopen(SAVEGAMEFILE, "wb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "wb")) == NULL )
 	{
 		printlog("warning: failed to save '%s'!\n", SAVEGAMEFILE);
 		return 1;
@@ -1311,7 +1312,7 @@ int saveGame()
 	}
 
 	// now we save the follower information
-	if ( (fp = fopen(SAVEGAMEFILE2, "wb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE2, "wb")) == NULL )
 	{
 		printlog("warning: failed to save '%s'!\n", SAVEGAMEFILE2);
 		return 1;
@@ -1561,7 +1562,7 @@ int loadGame(int player)
 	int c;
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to load '%s'!\n", SAVEGAMEFILE);
 		return 1;
@@ -1977,7 +1978,7 @@ list_t* loadGameFollowers()
 	int c;
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE2, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE2, "rb")) == NULL )
 	{
 		printlog("error: failed to load '%s'!\n", SAVEGAMEFILE2);
 		return NULL;
@@ -2208,7 +2209,7 @@ bool saveGameExists()
 	else
 	{
 		FILE* fp;
-		if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+		if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 		{
 			return false;
 		}
@@ -2250,7 +2251,7 @@ char* getSaveGameName()
 	char* tempstr = (char*) calloc(1024, sizeof(char));
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to check name in '%s'!\n", SAVEGAMEFILE);
 		return NULL;
@@ -2375,7 +2376,7 @@ Uint32 getSaveGameUniqueGameKey()
 	Uint32 gameKey;
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to get map seed out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
@@ -2419,7 +2420,7 @@ int getSaveGameType()
 	int mul;
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to get game type out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
@@ -2464,7 +2465,7 @@ int getSaveGameClientnum()
 	int clientnum;
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to get clientnum out of '%s'!\n", SAVEGAMEFILE);
 		return 0;
@@ -2510,7 +2511,7 @@ Uint32 getSaveGameMapSeed()
 	Uint32 seed;
 
 	// open file
-	if ( (fp = fopen(SAVEGAMEFILE, "rb")) == NULL )
+	if ( (fp = openUserFile(SAVEGAMEFILE, "rb")) == NULL )
 	{
 		printlog("error: failed to get map seed out of '%s'!\n", SAVEGAMEFILE);
 		return 0;

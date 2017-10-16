@@ -10,11 +10,13 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "net.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "monster.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
@@ -179,7 +181,7 @@ int power(int a, int b)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayer(int player, char* message, ...)
+void messagePlayer(int player, const char* message, ...)
 {
 	if ( player < 0 || player >= MAXPLAYERS )
 	{
@@ -204,7 +206,7 @@ void messagePlayer(int player, char* message, ...)
 
 -------------------------------------------------------------------------------*/
 
-void messagePlayerColor(int player, Uint32 color, char* message, ...)
+void messagePlayerColor(int player, Uint32 color, const char* message, ...)
 {
 	char str[256] = { 0 };
 	va_list argptr;
@@ -1813,17 +1815,10 @@ void clientHandlePacket()
 		magicRightHand = NULL;
 
 		// stop all sounds
-#ifdef HAVE_FMOD
 		if ( sound_group )
 		{
-			FMOD_ChannelGroup_Stop(sound_group);
+			ChannelGroup_Stop(sound_group);
 		}
-#elif defined HAVE_OPENAL
-		if ( sound_group )
-		{
-			OPENAL_ChannelGroup_Stop(sound_group);
-		}
-#endif
 
 		// show loading message
 #define LOADSTR language[709]
