@@ -2918,7 +2918,7 @@ void serverHandlePacket()
 		{
 			if ( client_disconnected[c] == true )
 			{
-				return;
+				continue;
 			}
 			strncpy((char*)net_packet->data, "DISCONNECT", 10);
 			net_packet->data[10] = playerDisconnected;
