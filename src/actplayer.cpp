@@ -955,7 +955,7 @@ void actPlayer(Entity* my)
 		players[PLAYER_NUM]->entity = my;
 
 		// camera bobbing
-		if (bobbing)
+		if ( bobbing )
 		{
 			if ( swimming )
 			{
@@ -968,7 +968,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMOVE -= .03;
 				}
 			}
-			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && !swimming)
+			if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
 				if (!stats[clientnum]->defending)
 				{
