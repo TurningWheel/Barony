@@ -1262,6 +1262,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !hit.entity->flags[BURNING] )
 							{
 								hit.entity->flags[BURNING] = true;
+								serverUpdateEntityFlag(hit.entity, BURNING);
 							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
