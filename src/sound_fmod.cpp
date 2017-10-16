@@ -396,6 +396,7 @@ void deinitSound()
 	fmod_system = NULL;
 }
 
+extern "C" {
 static FMOD_RESULT openDataFileFmodCB(const char *name, int unicode, unsigned int *filesize, void **handle, void **userdata)
 {
 	std::cout << name << "\n";
@@ -410,6 +411,7 @@ static FMOD_RESULT openDataFileFmodCB(const char *name, int unicode, unsigned in
 }
 
 static FMOD_CREATESOUNDEXINFO info = { 0 };
+}
 
 Sound* createSound(SoundSystem* sys, const char *name)
 {
