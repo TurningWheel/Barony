@@ -1907,52 +1907,60 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						return;
 					}
 				}
-				else if (!strcmp(element->name, spellElement_opening.name))
+				else if ( !strcmp(element->name, spellElement_opening.name) )
 				{
-					if (hit.entity)
+					if ( hit.entity )
 					{
-						if (hit.entity->behavior == &actDoor)
+						if ( hit.entity->behavior == &actDoor )
 						{
-							//Open door
-							if (!hit.entity->skill[0] && !hit.entity->skill[3])
+							playSoundEntity(hit.entity, 91, 64);
+							hit.entity->skill[5] = 0; // Unlock the Door
+
+							// Open the Door
+							if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
 								hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
 								playSoundEntity(hit.entity, 21, 96);
 							}
-							else if (hit.entity->skill[0] && !hit.entity->skill[3])
+							else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
 								hit.entity->skill[3] = 1 + (my->x < hit.entity->x);
 								playSoundEntity(hit.entity, 21, 96);
 							}
+
 							if ( parent )
-								if ( parent->behavior == &actPlayer)
+							{
+								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], language[402]);
 								}
+							}
 						}
-						else if (hit.entity->behavior == &actGate)
+						else if ( hit.entity->behavior == &actGate )
 						{
-							//Open gate
+							// Open Gate
 							if ( hit.entity->skill[28] != 2 )
 							{
-								hit.entity->skill[28] = 2; // power it
+								hit.entity->skill[28] = 2; // Power the Gate
 								if ( parent )
-									if ( parent->behavior == &actPlayer)
+								{
+									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayer(parent->skill[2], language[403]);
 									}
+								}
 							}
 						}
-						else if (hit.entity->behavior == &actChest)
+						else if ( hit.entity->behavior == &actChest )
 						{
-							//Unlock chest
+							// Unlock the Chest
 							if ( hit.entity->chestLocked )
 							{
 								playSoundEntity(hit.entity, 91, 64);
 								hit.entity->unlockChest();
 								if ( parent )
 								{
-									if ( parent->behavior == &actPlayer)
+									if ( parent->behavior == &actPlayer )
 									{
 										messagePlayer(parent->skill[2], language[404]);
 									}
@@ -1964,8 +1972,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							Entity* childentity = static_cast<Entity*>((&hit.entity->children)->first->element);
 							if ( childentity != nullptr )
 							{
-
-								//Unlock crystal
+								// Unlock the Crystal
 								if ( childentity->crystalSpellToActivate )
 								{
 									playSoundEntity(hit.entity, 151, 128);
@@ -1983,17 +1990,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
 									messagePlayer(parent->skill[2], language[401]);
 								}
+							}
 							if ( player >= 0 )
 							{
 								messagePlayer(player, language[401]);
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						if (my->light != NULL)
+						if ( my->light != NULL )
 						{
 							list_RemoveNode(my->light->node);
 							my->light = NULL;
