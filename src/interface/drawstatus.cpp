@@ -430,35 +430,54 @@ void drawStatus()
 		//drawImage(textdown_bmp, NULL, &pos);
 	}*/
 
-	// health
+	// PLAYER HEALTH BAR
+	// Display Health bar Border
 	pos.x = 76;
 	pos.w = 38;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
+
+	// Display "HP" at top of Health bar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[306]);
 
+	// Display Border between actual Health bar and "HP"
+	pos.x = 76;
+	pos.w = 38;
+	pos.h = 1;
+	pos.y = yres - 148;
+	drawTooltip(&pos);
+
+	// Display the actual Health bar's faint background
 	pos.x = 80;
 	pos.w = 32;
 	pos.h = 128;
 	pos.y = yres - 16 - pos.h;
+
+	// Change the color depending on if you are poisoned
 	Uint32 color;
 	if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
 	{
 		if ( !colorblind )
 		{
+			// Display green
 			color = SDL_MapRGB(mainsurface->format, 0, 16, 0);
 		}
 		else
 		{
+			// Display blue
 			color = SDL_MapRGB(mainsurface->format, 0, 0, 16);
 		}
 	}
 	else
 	{
+		// Display red
 		color = SDL_MapRGB(mainsurface->format, 16, 0, 0);
 	}
+	// Draw the actual Health bar's faint background with specified color
 	drawRect(&pos, color, 255);
+
+	// If the Player is alive, base the size of the actual Health bar off remaining HP
 	if ( stats[clientnum]->HP > 0 )
 	{
 		pos.x = 80;
@@ -480,18 +499,31 @@ void drawStatus()
 		{
 			color = SDL_MapRGB(mainsurface->format, 128, 0, 0);
 		}
+		// Only draw the actual Health bar if the Player is alive
 		drawRect(&pos, color, 255);
 	}
+	// Print out the amount of HP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
 	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
-	// magic
+	// PLAYER MAGIC BAR
+	// Display the Magic bar Border
 	pos.x = 12;
 	pos.w = 39;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
+
+	// Display "MP" at the top of Magic bar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[307]);
+
+	// Display Border between actual Magic bar and "MP"
+	pos.x = 12;
+	pos.w = 39;
+	pos.h = 1;
+	pos.y = yres - 148;
+	drawTooltip(&pos);
+
 	pos.x = 16;
 	pos.w = 32;
 	pos.h = 128;

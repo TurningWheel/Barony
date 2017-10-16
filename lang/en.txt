@@ -2980,4 +2980,6 @@ dominate the %s into your service!#
 last of your magic is drained!#
 
 
-2499 end#
+2499 HP: %d/%d MP: %d/%d#
+
+2500 end#
