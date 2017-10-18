@@ -221,41 +221,6 @@ ALCdevice  *openal_device = NULL;
 
 //#define openal_maxchannels 100
 
-Sound** sounds = NULL;
-Uint32 numsounds = 0;
-Sound** minesmusic = NULL;
-Sound** swampmusic = NULL;
-Sound** labyrinthmusic = NULL;
-Sound** ruinsmusic = NULL;
-Sound** underworldmusic = NULL;
-Sound** hellmusic = NULL;
-Sound* intromusic = NULL;
-Sound* intermissionmusic = NULL;
-Sound* minetownmusic = NULL;
-Sound* splashmusic = NULL;
-Sound* librarymusic = NULL;
-Sound* shopmusic = NULL;
-Sound* storymusic = NULL;
-Sound** minotaurmusic = NULL;
-Sound* herxmusic = NULL;
-Sound* templemusic = NULL;
-Sound* endgamemusic = NULL;
-Sound* devilmusic = NULL;
-Sound* escapemusic = NULL;
-Sound* introductionmusic = NULL;
-bool levelmusicplaying = false;
-
-Channel* music_channel = NULL;
-Channel* music_channel2 = NULL;
-Channel* music_resume = NULL;
-
-ChannelGroup *sound_group = NULL;
-ChannelGroup *music_group = NULL;
-
-float fadein_increment = 0.002f;
-float default_fadein_increment = 0.002f;
-float fadeout_increment = 0.005f;
-float default_fadeout_increment = 0.005f;
 
 #define MAXSOUND 1024
 Channel openal_sounds[MAXSOUND];
