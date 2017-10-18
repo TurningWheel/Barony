@@ -454,7 +454,7 @@ int initApp(const char* title, int fullscreen)
 		while ( fgetc(fp) != '\n' )
 			if ( feof(fp) )
 				break;
-		sounds[c] = createSound(soundSystem, name);
+		sounds[c] = createSound(name);
 		if (!sounds[c])
 		{
 			printlog("warning: failed to load sound '%s' at line %d in sounds.txt", name, c+1);

@@ -193,8 +193,6 @@ unsigned int Sound_GetLength(Sound* sound)
 }
 
 
-SoundSystem* soundSystem = NULL;
-
 FMOD_SYSTEM* fmod_system = NULL;
 
 FMOD_RESULT fmod_result;
@@ -413,7 +411,7 @@ static FMOD_RESULT openDataFileFmodCB(const char *name, int unicode, unsigned in
 static FMOD_CREATESOUNDEXINFO info = { 0 };
 }
 
-Sound* createSound(SoundSystem* sys, const char *name)
+Sound* createSound(const char *name)
 {
 	if (info.cbsize == 0) {
 		info.cbsize = sizeof(FMOD_CREATESOUNDEXINFO);

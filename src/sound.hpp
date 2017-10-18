@@ -94,7 +94,6 @@ extern float fadein_increment, fadeout_increment, default_fadein_increment, defa
 
 
 
-struct SoundSystem;
 struct Sound;
 struct Channel;
 struct ChannelGroup;
@@ -109,7 +108,6 @@ extern bool olddarkmap;
 
 extern float fadein_increment, fadeout_increment, default_fadein_increment, default_fadeout_increment;
 
-extern SoundSystem *soundSystem;
 extern Sound** sounds;
 extern Uint32 numsounds;
 extern Sound** minesmusic;
@@ -152,7 +150,7 @@ Sound* CreateMusic(const char* name);
 void initSound();
 void deinitSound();
 void sound_update();
-Sound* createSound(SoundSystem*, const char* name);
+Sound* createSound(const char* name);
 void playmusic(Sound* sound, bool loop, bool crossfade, bool resume); //Automatically crossfades. NOTE: Resets fadein and fadeout increments to the defualts every time it is called. You'll have to change the fadein and fadeout increments AFTER calling this function.
 void handleLevelMusic();
 

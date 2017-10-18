@@ -256,7 +256,6 @@ float fadein_increment = 0.002f;
 float default_fadein_increment = 0.002f;
 float fadeout_increment = 0.005f;
 float default_fadeout_increment = 0.005f;
-SoundSystem *soundSystem = NULL;
 
 #define MAXSOUND 1024
 Channel openal_sounds[MAXSOUND];
@@ -610,7 +609,7 @@ void OPENAL_RemoveChannelGroup(Channel *channel, ChannelGroup *group) {
 	group->num--;
 }
 
-Sound* createSound(SoundSystem *sys, const char* name) {
+Sound* createSound(const char* name) {
 	Sound* result = (Sound*) malloc(sizeof(Sound));
 	strcpy(result->oggfile, name);	// for debugging purpose
 	result->stream = false;

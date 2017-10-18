@@ -9,11 +9,10 @@ Channel* playSound(Uint32 snd, int vol) {return NULL;}
 Channel* playSoundVelocity() {return NULL;}
 Uint32 numsounds = 0;
 Sound** sounds = NULL;
-SoundSystem *soundSystem = NULL;
 ChannelGroup *sound_group = NULL;
 bool levelmusicplaying;
 void ChannelGroup_SetVolume(ChannelGroup*, float) {}
 void initSound() {}
 void deinitSound() {}
-Sound* createSound(SoundSystem*, const char*) {return NULL;}
+Sound* createSound(const char*) {return NULL;}
 void Sound_Release(Sound*) {}
