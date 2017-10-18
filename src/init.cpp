@@ -430,42 +430,6 @@ int initApp(const char* title, int fullscreen)
 
 	GO_SwapBuffers(screen);
 
-	// load sound effects
-	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
-	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-	}
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		fclose(fp);
-		return 10;
-	}
-	sounds = (Sound**) malloc(sizeof(Sound*)*numsounds);
-	rewind(fp);
-	for ( c = 0; !feof(fp); c++ )
-	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' )
-			if ( feof(fp) )
-				break;
-		sounds[c] = createSound(name);
-		if (!sounds[c])
-		{
-			printlog("warning: failed to load sound '%s' at line %d in sounds.txt", name, c+1);
-		}
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	fclose(fp);
-	ChannelGroup_SetVolume(sound_group, sfxvolume / 128.0);
-	// set 3d settings?
-	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-
 	return 0;
 }
 
@@ -1909,24 +1873,6 @@ int deinitApp()
 			}
 		}
 		free(polymodels);
-	}
-
-	// free sounds
-	printlog("freeing sounds...\n");
-	if ( sounds != NULL )
-	{
-		for ( c = 0; c < numsounds; c++ )
-		{
-			if (sounds[c] != NULL)
-			{
-				if (sounds[c] != NULL)
-				{
-					Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
-				}
-				//free(sounds[c]); //Then free the sound itself.
-			}
-		}
-		free(sounds); //Then free the sound array.
 	}
 
 	// delete opengl buffers
