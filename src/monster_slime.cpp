@@ -164,7 +164,7 @@ void slimeDie(Entity* my)
 				}
 				entity->x = my->x;
 				entity->y = my->y;
-				entity->z = 7.4 + (rand() % 20) / 100.f;
+				entity->z = 8.0 + (rand() % 20) / 100.0;
 				entity->parent = my->getUID();
 				entity->sizex = 2;
 				entity->sizey = 2;
