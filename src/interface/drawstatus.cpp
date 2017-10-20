@@ -444,15 +444,15 @@ void drawStatus()
 	// Display border between actual Health bar and "HP"
 	pos.x = 76;
 	pos.w = 38;
-	pos.h = 1;
-	pos.y = yres - 148;
+	pos.h = 0;
+	pos.y = yres - 147;
 	drawTooltip(&pos);
 
 	// Display the actual Health bar's faint background
 	pos.x = 80;
-	pos.w = 32;
-	pos.h = 128;
-	pos.y = yres - 16 - pos.h;
+	pos.w = 33;
+	pos.h = 129;
+	pos.y = yres - 15 - pos.h;
 
 	// Change the color depending on if you are poisoned
 	Uint32 color = 0;
@@ -460,16 +460,16 @@ void drawStatus()
 	{
 		if ( colorblind )
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 0, 16); // Display blue
+			color = SDL_MapRGB(mainsurface->format, 0, 0, 48); // Display blue
 		}
 		else
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 16, 0); // Display green
+			color = SDL_MapRGB(mainsurface->format, 0, 48, 0); // Display green
 		}
 	}
 	else
 	{
-		color = SDL_MapRGB(mainsurface->format, 16, 0, 0); // Display red
+		color = SDL_MapRGB(mainsurface->format, 48, 0, 0); // Display red
 	}
 
 	// Draw the actual Health bar's faint background with specified color
@@ -479,9 +479,10 @@ void drawStatus()
 	if ( stats[clientnum]->HP > 0 )
 	{
 		pos.x = 80;
-		pos.w = 32;
-		pos.h = 128 * ((double)stats[clientnum]->HP / stats[clientnum]->MAXHP);
-		pos.y = yres - 16 - pos.h;
+		pos.w = 33;
+		pos.h = 129 * (static_cast<double>(stats[clientnum]->HP / stats[clientnum]->MAXHP));
+		pos.y = yres - 15 - pos.h;
+
 		if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
 		{
 			if ( !colorblind )
@@ -520,27 +521,36 @@ void drawStatus()
 	// Display border between actual Magic bar and "MP"
 	pos.x = 12;
 	pos.w = 39;
-	pos.h = 1;
-	pos.y = yres - 148;
+	pos.h = 0;
+	pos.y = yres - 147;
 	drawTooltip(&pos);
 
+	// Display the actual Magic bar's faint background
 	pos.x = 16;
-	pos.w = 32;
-	pos.h = 128;
-	pos.y = yres - 16 - pos.h;
-	drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 16), 255);
+	pos.w = 33;
+	pos.h = 129;
+	pos.y = yres - 15 - pos.h;
+
+	// Draw the actual Magic bar's faint background
+	drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255); // Display blue
+
+	// If the Player has MP, base the size of the actual Magic bar off remaining MP
 	if ( stats[clientnum]->MP > 0 )
 	{
 		pos.x = 16;
-		pos.w = 32;
-		pos.h = 128 * ((double)stats[clientnum]->MP / stats[clientnum]->MAXMP);
-		pos.y = yres - 16 - pos.h;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 128), 255);
+		pos.w = 33;
+		pos.h = 129 * ((double)stats[clientnum]->MP / stats[clientnum]->MAXMP);
+		pos.y = yres - 15 - pos.h;
+
+		// Only draw the actual Magic bar if the Player has MP
+		drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255); // Display blue
 	}
+
+	// Print out the amount of MP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
 	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr );
 
-	Item* item = NULL;
+	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
