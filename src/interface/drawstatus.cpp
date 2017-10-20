@@ -480,7 +480,7 @@ void drawStatus()
 	{
 		pos.x = 80;
 		pos.w = 33;
-		pos.h = 129 * (static_cast<double>(stats[clientnum]->HP / stats[clientnum]->MAXHP));
+		pos.h = 129 * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
 		pos.y = yres - 15 - pos.h;
 
 		if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
@@ -539,7 +539,7 @@ void drawStatus()
 	{
 		pos.x = 16;
 		pos.w = 33;
-		pos.h = 129 * ((double)stats[clientnum]->MP / stats[clientnum]->MAXMP);
+		pos.h = 129 * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
 		pos.y = yres - 15 - pos.h;
 
 		// Only draw the actual Magic bar if the Player has MP
