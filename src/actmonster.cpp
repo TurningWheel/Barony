@@ -3617,6 +3617,11 @@ timeToGoAgain:
 
 				// rotate monster
 				dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
+
+				// To prevent the Entity's position from being updated by dead reckoning on the CLient, set the velocity to 0 after usage
+				MONSTER_VELX = 0.0;
+				MONSTER_VELY = 0.0;
+
 				while ( dir >= PI )
 				{
 					dir -= PI * 2;
