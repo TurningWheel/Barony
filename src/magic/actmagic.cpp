@@ -1207,6 +1207,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !hit.entity->flags[BURNING] )
 							{
 								hit.entity->flags[BURNING] = true;
+								serverUpdateEntityFlag(hit.entity, BURNING);
 							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
@@ -1376,6 +1377,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_CONFUSED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							hit.entity->skill[1] = 0; //Remove the monster's target.
 							if ( parent )
 							{
@@ -1433,6 +1441,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / element->overload_multiplier) * element->damage;
 							damage *= damagetables[hitstats->type][5];
@@ -1506,6 +1521,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / element->base_mana) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							// update enemy bar for attacker
 							if ( parent )
 							{
@@ -1749,124 +1771,150 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 					}
 				}
-				else if (!strcmp(element->name, spellElement_locking.name))
+				else if ( !strcmp(element->name, spellElement_locking.name) )
 				{
 					if ( hit.entity )
 					{
-						if (hit.entity->behavior == &actDoor)
+						if ( hit.entity->behavior == &actDoor )
 						{
-							playSoundEntity(hit.entity, 92, 64);
-							hit.entity->skill[5] = 1; //Lock the door.
+							playSoundEntity(hit.entity, 92, 64); // "UnlockFailed.ogg"
+							hit.entity->skill[5] = 1; // Locks the Door
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[399]);
+									messagePlayer(parent->skill[2], language[399]); // "You lock the door!"
 								}
+							}
 						}
-						else if (hit.entity->behavior == &actChest)
+						else if ( hit.entity->behavior == &actChest )
 						{
-							//Lock chest
-							playSoundEntity(hit.entity, 92, 64);
+							// Lock the Chest
+							playSoundEntity(hit.entity, 92, 64); // "UnlockFailed.ogg"
 							if ( !hit.entity->skill[4] )
 							{
-								hit.entity->skill[4] = 1;
+								hit.entity->skill[4] = 1; // Locks the Chest
 								if ( parent )
+								{
 									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[400]);
+										messagePlayer(parent->skill[2], language[400]); // "The spell locks the chest!"
 									}
+								}
 							}
 						}
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
 								}
+							}
+
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[402]);
+								messagePlayer(player, language[401]); // "No telling what it did..."
 							}
 						}
+
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						if (my->light != NULL)
+
+						if ( my->light != nullptr )
 						{
 							list_RemoveNode(my->light->node);
-							my->light = NULL;
+							my->light = nullptr;
 						}
+
 						list_RemoveNode(my->mynode);
 						return;
 					}
 				}
-				else if (!strcmp(element->name, spellElement_opening.name))
+				else if ( !strcmp(element->name, spellElement_opening.name) )
 				{
-					if (hit.entity)
+					if ( hit.entity )
 					{
-						if (hit.entity->behavior == &actDoor)
+						if ( hit.entity->behavior == &actDoor )
 						{
-							//Open door
-							if (!hit.entity->skill[0] && !hit.entity->skill[3])
+							// Open the Door
+							playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+							hit.entity->skill[5] = 0; // Unlocks the Door
+
+							if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
-								hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
+								hit.entity->skill[3] = 1 + (my->x > hit.entity->x); // Opens the Door
+								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 							}
-							else if (hit.entity->skill[0] && !hit.entity->skill[3])
+							else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
-								hit.entity->skill[3] = 1 + (my->x < hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
+								hit.entity->skill[3] = 1 + (my->x < hit.entity->x); // Opens the Door
+								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 							}
+
 							if ( parent )
-								if ( parent->behavior == &actPlayer)
+							{
+								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[402]);
+									messagePlayer(parent->skill[2], language[402]); // "You open the door!"
 								}
+							}
 						}
-						else if (hit.entity->behavior == &actGate)
+						else if ( hit.entity->behavior == &actGate )
 						{
-							//Open gate
+							// Open the Gate
 							if ( hit.entity->skill[28] != 2 )
 							{
-								hit.entity->skill[28] = 2; // power it
+								hit.entity->skill[28] = 2; // Powers the Gate
 								if ( parent )
-									if ( parent->behavior == &actPlayer)
+								{
+									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[403]);
+										messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
 									}
+								}
 							}
 						}
-						else if (hit.entity->behavior == &actChest)
+						else if ( hit.entity->behavior == &actChest )
 						{
-							//Unlock chest
+							// Unlock the Chest
 							if ( hit.entity->skill[4] )
 							{
-								playSoundEntity(hit.entity, 91, 64);
-								hit.entity->skill[4] = 0;
+								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+								hit.entity->skill[4] = 0; // Unlocks the Chest
 								if ( parent )
-									if ( parent->behavior == &actPlayer)
+								{
+									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[404]);
+										messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
 									}
+								}
 							}
 						}
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
 								}
+							}
+
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, language[401]); // "No telling what it did..."
 							}
 						}
+
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						if (my->light != NULL)
+
+						if ( my->light != nullptr )
 						{
 							list_RemoveNode(my->light->node);
-							my->light = NULL;
+							my->light = nullptr;
 						}
+
 						list_RemoveNode(my->mynode);
 						return;
 					}
