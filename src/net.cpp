@@ -2017,7 +2017,7 @@ void clientHandlePacket()
 				{
 					if ( c < 1 || (c < 2 && entity->behavior == &actMonster) )
 					{
-						return;
+						continue;
 					}
 					Entity* tempEntity = (Entity*)tempNode->element;
 					if ( entity->behavior == &actMonster )
