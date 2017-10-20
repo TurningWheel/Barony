@@ -699,6 +699,7 @@ void gameLogic(void)
 								break;
 							}
 						result = loadMap(tempstr, &map, map.entities);
+						levelmusicplaying = false;
 					}
 					fclose(fp);
 					assignActions(&map);
@@ -2411,6 +2412,7 @@ int main(int argc, char** argv)
 								camera.ang = 5.0;
 								break;
 						}
+						levelmusicplaying = false;
 						numplayers = 0;
 						multiplayer = 0;
 						assignActions(&map);

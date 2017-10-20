@@ -1914,6 +1914,7 @@ void clientHandlePacket()
 					break;
 				}
 			result = loadMap(tempstr, &map, map.entities);
+			levelmusicplaying = false;
 		}
 		fclose(fp);
 		numplayers = 0;

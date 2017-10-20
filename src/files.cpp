@@ -618,13 +618,6 @@ int loadMap(const char* filename2, map_t* destmap, list_t* entlist)
 		nummonsters = 0;
 		minotaurlevel = 0;
 
-#if defined (HAVE_FMOD) || defined(HAVE_OPENAL)
-		if ( strcmp(oldmapname, map.name) )
-		{
-			levelmusicplaying = false;
-		}
-#endif
-
 		// create new lightmap
 		if ( lightmap != NULL )
 		{
