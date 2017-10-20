@@ -10,16 +10,19 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
 #include "game.hpp"
 #include "stat.hpp"
 #include "messages.hpp"
 #include "entity.hpp"
+#include "files.hpp"
 #include "menu.hpp"
 #include "classdescriptions.hpp"
 #include "interface/interface.hpp"
 #include "magic/magic.hpp"
 #include "sound.hpp"
 #include "items.hpp"
+#include "init.hpp"
 #include "shops.hpp"
 #include "monster.hpp"
 #include "scores.hpp"
@@ -576,17 +579,7 @@ void gameLogic(void)
 					magicRightHand = NULL;
 
 					// stop all sounds
-#ifdef HAVE_FMOD
-					if ( sound_group )
-					{
-						FMOD_ChannelGroup_Stop(sound_group);
-					}
-#elif defined HAVE_OPENAL
-					if ( sound_group )
-					{
-						OPENAL_ChannelGroup_Stop(sound_group);
-					}
-#endif
+					ChannelGroup_Stop(sound_group);
 
 					// show loading message
 					loading = true;
@@ -706,6 +699,7 @@ void gameLogic(void)
 								break;
 							}
 						result = loadMap(tempstr, &map, map.entities);
+						levelmusicplaying = false;
 					}
 					fclose(fp);
 					assignActions(&map);
@@ -2206,7 +2200,6 @@ int main(int argc, char** argv)
 		//SDL_Surface *sky_bmp;
 		light_t* light;
 
-		strcpy(datadir, "./");
 		// read command line arguments
 		if ( argc > 1 )
 		{
@@ -2246,12 +2239,15 @@ int main(int argc, char** argv)
 					}
 					else if (!strncmp(argv[c], "-datadir=", 9))
 					{
-						strcpy(datadir, argv[c] + 9);
+						setDataDir(argv[c] + 9);
+					}
+					else if (!strncmp(argv[c], "-userdir=", 9))
+					{
+						setUserDir(argv[c] + 9);
 					}
 				}
 			}
 		}
-		printlog("Data path is %s", datadir);
 
 
 		// load default language file (english)
@@ -2416,6 +2412,7 @@ int main(int argc, char** argv)
 								camera.ang = 5.0;
 								break;
 						}
+						levelmusicplaying = false;
 						numplayers = 0;
 						multiplayer = 0;
 						assignActions(&map);
@@ -2451,7 +2448,7 @@ int main(int argc, char** argv)
 
 					drawRect(NULL, 0, 255);
 					char* banner_text1 = language[738];
-					char* banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
+					const char* banner_text2 = "\n\n\n\n\n\n\n - Turning Wheel";
 					ttfPrintText(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, banner_text1);
 					Uint32 colorBlue = SDL_MapRGBA(mainsurface->format, 0, 92, 255, 255);
 					ttfPrintTextColor(ttf16, (xres / 2) - longestline(banner_text1)*TTF16_WIDTH / 2, yres / 2 - TTF16_HEIGHT / 2 * 7, colorBlue, true, banner_text2);

@@ -21,7 +21,6 @@ int mainloop = 1;
 bool initialized = false;
 Uint32 ticks = 0;
 bool stop = false;
-char datadir[1024];
 
 // language stuff
 char languageCode[32] = { 0 };
@@ -63,7 +62,7 @@ TCPsocket* net_tcpclients = NULL;
 SDLNet_SocketSet tcpset = NULL;
 list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
 bool receivedclientnum = false;
-char* window_title = NULL;
+const char* window_title = NULL;
 bool softwaremode = false;
 SDL_TimerID timer;
 SDL_Window* screen = NULL;
@@ -245,7 +244,7 @@ hit_t hit;
 
 -------------------------------------------------------------------------------*/
 
-int longestline(char* str)
+int longestline(const char* str)
 {
 	int c, x = 0, result = 0;
 	for ( c = 0; c < strlen(str); c++ )
@@ -270,7 +269,7 @@ int longestline(char* str)
 
 -------------------------------------------------------------------------------*/
 
-int concatedStringLength(char* str, ...)
+int concatedStringLength(const char* str, ...)
 {
 	va_list argptr;
 	char newstr[1024] = { 0 };

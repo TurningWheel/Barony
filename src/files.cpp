@@ -9,6 +9,7 @@
 
 -------------------------------------------------------------------------------*/
 
+#include <fstream>
 #include <sys/types.h>
 #include <sys/stat.h>
 #include <dirent.h>
@@ -17,9 +18,16 @@
 #include <string>
 
 #include "main.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "entity.hpp"
 
+#ifdef WINDOWS
+#include<direct.h>
+#endif
+
+static char userDir[1024] = {0};
+static char datadir[1024] = ".";
 /*-------------------------------------------------------------------------------
 
 	glLoadTexture
@@ -48,45 +56,144 @@ void glLoadTexture(SDL_Surface* image, int texnum)
 }
 
 
-bool completePath(char *dest, const char * const filename) {
-	if (!(filename && filename[0])) {
+static bool completeDataPath(char *dest, const char * const filename)
+{
+	if (!(filename && filename[0]))
+	{
 		return false;
 	}
 
 	// Already absolute
-	if (filename[0] == '/') {
+	if (filename[0] == '/')
+	{
 		strncpy(dest, filename, 1024);
 		return true;
 	}
-
 	snprintf(dest, 1024, "%s/%s", datadir, filename);
 	return true;
 }
 
-FILE* openDataFile(const char * const filename, const char * const mode) {
+static std::string completeDataPath(std::string name)
+{
+	return std::string(datadir) + "/" + name;
+}
+
+int makeDirsRecursive(const char * path)
+{
+	const char * copying = path;
+	char soFar[1024] = {0};
+	while (*copying)
+	{
+		char cur = *copying;
+		soFar[copying - path] = *copying;
+#ifdef WINDOWS
+		if (cur == '/' && _mkdir(soFar) != 0 && errno != EEXIST && errno != EISDIR)
+#else
+		if (cur == '/' && mkdir(soFar, 0700) != 0 && errno != EEXIST && errno != EISDIR)
+#endif
+		{
+			printlog("Failed to create %s: %s", soFar, strerror(errno));
+			return errno;
+		}
+		++copying;
+	}
+#ifdef WINDOWS
+	if (_mkdir(path) != 0 && errno != EEXIST && errno != EISDIR)
+#else
+	if (mkdir(path, 0700) != 0 && errno != EEXIST && errno != EISDIR)
+#endif
+	{
+		return errno;
+	}
+	return 0;
+}
+
+FILE* openDataFile(const char * const filename, const char * const mode)
+{
 	char path[1024];
-	completePath(path, filename);
+	completeDataPath(path, filename);
 	FILE * result = fopen(path, mode);
-	if (!result) {
+	if (!result)
+	{
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
 	return result;
 }
 
-DIR* openDataDir(const char * const name) {
+void setUserDir(const char * const dir)
+{
+	strncpy(userDir, dir, 1024);
+}
+
+void setDataDir(const char * const dir)
+{
+	strncpy(datadir, dir, 1024);
+}
+
+FILE* openUserFile(const char * const filename, const char * const mode)
+{
+	// Initialise user dir only if it hasn't already been
+	if (userDir[0] == '\0')
+	{
+		char *xdg_config_home = getenv("XDG_CONFIG_HOME");
+		char *home = getenv("HOME");
+		if (xdg_config_home && *xdg_config_home)
+		{
+			snprintf(userDir, 1024, "%s/barony", xdg_config_home);
+		}
+		else if (home && *home)
+		{
+#ifdef APPLE
+			snprintf(userDir, 1024, "%s/Library/Application Support/barony", home);
+#else /*APPLE*/
+			snprintf(userDir, 1024, "%s/.config/barony", home);
+#endif /*APPLE*/
+		}
+		else
+		{
+			strncpy(userDir, ".", 1024);
+		}
+		int err = makeDirsRecursive(userDir);
+		if (err != 0)
+		{
+			printlog("Could not create user directory %s: %s", userDir, strerror(err));
+		}
+		printlog("Initialised userDir to %s", userDir);
+	}
 	char path[1024];
-	completePath(path, name);
-	DIR * result = opendir(path);
-	if (!result) {
+	snprintf(path, 1024, "%s/%s", userDir, filename);
+	FILE * result = fopen(path, mode);
+	if (!result)
+	{
 		printlog("Could not open '%s': %s", path, strerror(errno));
 	}
 	return result;
 }
 
+DIR* openDataDir(const char * const name)
+{
+	char path[1024];
+	completeDataPath(path, name);
+	DIR * result = opendir(path);
+	if (!result)
+	{
+		printlog("Could not open '%s': %s", path, strerror(errno));
+	}
+	return result;
+}
 
-bool dataPathExists(const char * const path) {
+SDL_RWops * openDataFileSDL(const char * filename, const char * mode)
+{
+	char path[1024];
+	completeDataPath(path, filename);
+	return SDL_RWFromFile(path, mode);
+}
+
+
+bool dataPathExists(const char * const path)
+{
 	char full_path[1024];
-	completePath(full_path, path);
+	completeDataPath(full_path, path);
 	return access(full_path, F_OK) != -1;
 }
 
@@ -100,10 +207,10 @@ bool dataPathExists(const char * const path) {
 
 -------------------------------------------------------------------------------*/
 
-SDL_Surface* loadImage(char* filename)
+SDL_Surface* loadImage(const char* filename)
 {
 	char full_path[1024];
-	completePath(full_path, filename);
+	completeDataPath(full_path, filename);
 	SDL_Surface* originalSurface;
 
 	if ( imgref >= MAXTEXTURES )
@@ -195,7 +302,7 @@ voxel_t* loadVoxel(char* filename)
 
 -------------------------------------------------------------------------------*/
 
-int loadMap(char* filename2, map_t* destmap, list_t* entlist)
+int loadMap(const char* filename2, map_t* destmap, list_t* entlist)
 {
 	FILE* fp;
 	char valid_data[16];
@@ -215,7 +322,8 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 	printlog("LoadMap %s", filename2);
 
-	if (! (filename2 && filename2[0])) {
+	if (! (filename2 && filename2[0]))
+	{
 		printlog("map filename empty or null");
 		return -1;
 	}
@@ -510,13 +618,6 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 		nummonsters = 0;
 		minotaurlevel = 0;
 
-#if defined (HAVE_FMOD) || defined(HAVE_OPENAL)
-		if ( strcmp(oldmapname, map.name) )
-		{
-			levelmusicplaying = false;
-		}
-#endif
-
 		// create new lightmap
 		if ( lightmap != NULL )
 		{
@@ -601,7 +702,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 -------------------------------------------------------------------------------*/
 
-int saveMap(char* filename2)
+int saveMap(const char* filename2)
 {
 	FILE* fp;
 	Uint32 numentities = 0;
@@ -735,31 +836,35 @@ int saveMap(char* filename2)
 
 -------------------------------------------------------------------------------*/
 
-char* readFile(char* filename)
+char* readFile(const char* filename)
 {
 	char* file_contents = NULL;
 	long input_file_size;
 	FILE* input_file = openDataFile(filename, "rb");
-	if (!input_file) {
+	if (!input_file)
+	{
 		printlog("Open failed: %s", strerror(errno));
 		goto out_input_file;
 	}
 
-	if (fseek(input_file, 0, SEEK_END) != 0) {
+	if (fseek(input_file, 0, SEEK_END) != 0)
+	{
 		printlog("Seek failed");
 		goto out_input_file;
 	}
 
-	if ((input_file_size = ftell(input_file)) == -1) {
+	if ((input_file_size = ftell(input_file)) == -1)
+	{
 		printlog("ftell failed");
 		goto out_input_file;
 	}
 
-	if (input_file_size > (1<<30)) {
+	if (input_file_size > (1<<30))
+	{
 		printlog("Unreasonable size: %ld", input_file_size);
 		goto out_input_file;
 	}
-	
+
 	rewind(input_file);
 	file_contents = static_cast<char*>(malloc((input_file_size + 1) * sizeof(char)));
 	fread(file_contents, sizeof(char), input_file_size, input_file);
@@ -782,7 +887,7 @@ std::list<std::string> directoryContents(const char* directory)
 {
 	std::list<std::string> list;
 	char fullPath[1024];
-	completePath(fullPath, directory);
+	completeDataPath(fullPath, directory);
 	DIR* dir = opendir(fullPath);
 	struct dirent* entry = NULL;
 
@@ -812,4 +917,19 @@ std::list<std::string> directoryContents(const char* directory)
 	closedir(dir);
 
 	return list;
+}
+
+std::vector<std::string> getLinesFromDataFile(std::string filename)
+{
+	std::vector<std::string> lines;
+	std::ifstream file(completeDataPath(filename));
+	for ( std::string line; std::getline(file, line); )
+	{
+		if ( !line.empty() )
+		{
+			lines.push_back(line);
+		}
+	}
+
+	return lines;
 }

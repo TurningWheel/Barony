@@ -10,9 +10,12 @@
 -------------------------------------------------------------------------------*/
 
 #include "main.hpp"
+#include "draw.hpp"
+#include "files.hpp"
 #include "sound.hpp"
 #include "prng.hpp"
 #include "hash.hpp"
+#include "init.hpp"
 #include "net.hpp"
 #include "editor.hpp"
 #ifdef STEAMWORKS
@@ -50,7 +53,7 @@ GLuint fbo_ren = 0;
 FILE* logfile = nullptr;
 bool steam_init = false;
 
-int initApp(char* title, int fullscreen)
+int initApp(const char* title, int fullscreen)
 {
 	char name[128];
 	FILE* fp;
@@ -112,48 +115,7 @@ int initApp(char* title, int fullscreen)
 		return 2;
 	}*/
 
-#ifdef HAVE_FMOD
-	printlog("initializing FMOD...\n");
-	fmod_result = FMOD_System_Create(&fmod_system);
-	if (FMODErrorCheck())
-	{
-		printlog("Failed to create FMOD.\n");
-		no_sound = true;
-	}
-	if (!no_sound)
-	{
-		//FMOD_System_SetOutput(fmod_system, FMOD_OUTPUTTYPE_DSOUND);
-		fmod_result = FMOD_System_Init(fmod_system, fmod_maxchannels, FMOD_INIT_NORMAL | FMOD_INIT_3D_RIGHTHANDED, 0);
-		if (FMODErrorCheck())
-		{
-			printlog("Failed to initialize FMOD.\n");
-			no_sound = true;
-		}
-		if (!no_sound)
-		{
-			fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &sound_group);
-			if (FMODErrorCheck())
-			{
-				printlog("Failed to create sound channel group.\n");
-				no_sound = true;
-			}
-			if (!no_sound)
-			{
-				fmod_result = FMOD_System_CreateChannelGroup(fmod_system, NULL, &music_group);
-				if (FMODErrorCheck())
-				{
-					printlog("Failed to create music channel group.\n");
-					no_sound = true;
-				}
-			}
-		}
-	}
-#elif defined HAVE_OPENAL
-	if (!no_sound)
-	{
-		initOPENAL();
-	}
-#endif
+	initSound();
 	printlog("initializing SDL_net...\n");
 	if ( SDLNet_Init() < 0 )
 	{
@@ -468,77 +430,6 @@ int initApp(char* title, int fullscreen)
 
 	GO_SwapBuffers(screen);
 
-	// load sound effects
-#ifdef HAVE_FMOD
-	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
-	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-	}
-	fclose(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*numsounds);
-	fp = openDataFile("sound/sounds.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
-	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		//TODO: Might need to malloc the sounds[c]->sound
-		fmod_result = FMOD_System_CreateSound(fmod_system, name, (FMOD_MODE)(FMOD_SOFTWARE | FMOD_3D), NULL, &sounds[c]);
-		if (FMODErrorCheck())
-		{
-			printlog("warning: failed to load '%s' listed at line %d in sounds.txt\n", name, c + 1);
-		}
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	fclose(fp);
-	FMOD_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-#elif defined HAVE_OPENAL
-	printlog("loading sounds...\n");
-	fp = openDataFile("sound/sounds.txt", "r");
-	for ( numsounds = 0; !feof(fp); numsounds++ )
-	{
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-	}
-	fclose(fp);
-	if ( numsounds == 0 )
-	{
-		printlog("failed to identify any sounds in sounds.txt\n");
-		return 10;
-	}
-	sounds = (OPENAL_BUFFER**) malloc(sizeof(OPENAL_BUFFER*)*numsounds);
-	fp = openDataFile("sound/sounds.txt", "r");
-	for ( c = 0; !feof(fp); c++ )
-	{
-		fscanf(fp, "%s", name);
-		while ( fgetc(fp) != '\n' ) if ( feof(fp) )
-			{
-				break;
-			}
-		//TODO: Might need to malloc the sounds[c]->sound
-		OPENAL_CreateSound(name, true, &sounds[c]);
-		//TODO: set sound volume? Or otherwise handle sound volume.
-	}
-	fclose(fp);
-	OPENAL_ChannelGroup_SetVolume(sound_group, sfxvolume / 128.f);
-	//FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0); // This on is hardcoded, I've been lazy here'
-#endif
-
 	return 0;
 }
 
@@ -550,7 +441,24 @@ int initApp(char* title, int fullscreen)
 
 -------------------------------------------------------------------------------*/
 
-int loadLanguage(char* lang)
+static void loadFont(TTF_Font** dest, SDL_RWops* file, int size)
+{
+	file->seek(file, 0, 0);
+	if (*dest)
+		TTF_CloseFont(*dest);
+	*dest = TTF_OpenFontRW(file, false, size);
+	if (!*dest)
+	{
+		printlog("Could not load size %d TTF font: %s", size, TTF_GetError());
+	}
+	else
+	{
+		TTF_SetFontKerning(*dest, 0);
+		TTF_SetFontHinting(*dest, TTF_HINTING_MONO);
+	}
+}
+
+int loadLanguage(const char* lang)
 {
 	char filename[128] = { 0 };
 	FILE* fp;
@@ -592,51 +500,22 @@ int loadLanguage(char* lang)
 
 	// load fonts
 	char fontName[64] = { 0 };
-	char fontPath[1024];
 	snprintf(fontName, 63, "lang/%s.ttf", lang);
 	if ( !dataPathExists(fontName) )
 	{
 		strncpy(fontName, "lang/en.ttf", 63);
 	}
-	if ( !dataPathExists(fontName) )
-	{
-		printlog("error: default game font 'lang/en.ttf' not found");
+	SDL_RWops *fontFile = openDataFileSDL(fontName, "rb");
+	if (!fontFile) {
+		printlog("Could not open font file: %s", SDL_GetError());
+	}
+
+	loadFont(&ttf8, fontFile, TTF8_HEIGHT);
+	loadFont(&ttf12, fontFile, TTF12_HEIGHT);
+	loadFont(&ttf16, fontFile, TTF16_HEIGHT);
+
+	if (!(ttf8 && ttf12 && ttf16))
 		return 1;
-	}
-	completePath(fontPath, fontName);
-	if ( ttf8 )
-	{
-		TTF_CloseFont(ttf8);
-	}
-	if ((ttf8 = TTF_OpenFont(fontPath, TTF8_HEIGHT)) == NULL )
-	{
-		printlog("failed to load size 8 ttf: %s\n", TTF_GetError());
-		return 1;
-	}
-	TTF_SetFontKerning(ttf8, 0);
-	TTF_SetFontHinting(ttf8, TTF_HINTING_MONO);
-	if ( ttf12 )
-	{
-		TTF_CloseFont(ttf12);
-	}
-	if ((ttf12 = TTF_OpenFont(fontPath, TTF12_HEIGHT)) == NULL )
-	{
-		printlog("failed to load size 12 ttf: %s\n", TTF_GetError());
-		return 1;
-	}
-	TTF_SetFontKerning(ttf12, 0);
-	TTF_SetFontHinting(ttf12, TTF_HINTING_MONO);
-	if ( ttf16 )
-	{
-		TTF_CloseFont(ttf16);
-	}
-	if ((ttf16 = TTF_OpenFont(fontPath, TTF16_HEIGHT)) == NULL )
-	{
-		printlog("failed to load size 16 ttf: %s\n", TTF_GetError());
-		return 1;
-	}
-	TTF_SetFontKerning(ttf16, 0);
-	TTF_SetFontHinting(ttf16, TTF_HINTING_MONO);
 
 	// open language file
 	if ( (fp = openDataFile(filename, "r")) == NULL )
@@ -1846,9 +1725,7 @@ void generateVBOs(int start, int end)
 int deinitApp()
 {
 	Uint32 c;
-#ifdef HAVE_OPENAL
-	closeOPENAL();
-#endif
+	deinitSound();
 	// close engine
 	printlog("closing engine...\n");
 	printlog("removing engine timer...\n");
@@ -1998,26 +1875,6 @@ int deinitApp()
 		free(polymodels);
 	}
 
-	// free sounds
-#ifdef HAVE_FMOD
-	printlog("freeing sounds...\n");
-	if ( sounds != NULL )
-	{
-		for ( c = 0; c < numsounds; c++ )
-		{
-			if (sounds[c] != NULL)
-			{
-				if (sounds[c] != NULL)
-				{
-					FMOD_Sound_Release(sounds[c]);    //Free the sound's FMOD sound.
-				}
-				//free(sounds[c]); //Then free the sound itself.
-			}
-		}
-		free(sounds); //Then free the sound array.
-	}
-#endif
-
 	// delete opengl buffers
 	if ( allsurfaces != NULL )
 	{
@@ -2046,14 +1903,6 @@ int deinitApp()
 	IMG_Quit();
 	//Mix_HaltChannel(-1);
 	//Mix_CloseAudio();
-#ifdef HAVE_FMOD
-	if ( fmod_system )
-	{
-		FMOD_System_Close(fmod_system);
-		FMOD_System_Release(fmod_system);
-		fmod_system = NULL;
-	}
-#endif
 	if ( screen )
 	{
 		SDL_DestroyWindow(screen);

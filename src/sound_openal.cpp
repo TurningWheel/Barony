@@ -1,201 +1,50 @@
 /*-------------------------------------------------------------------------------
 
 	BARONY
-	File: sound.cpp
-	Desc: various sound functions
+	File: sound_openal.cpp
+	Desc: OpenAL-based implementation of the sound interface.
 
 	Copyright 2013-2016 (c) Turning Wheel LLC, all rights reserved.
 	See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 
-#include "main.hpp"
-//#include "game.hpp"
-#include "sound.hpp"
+#include "Config.hpp"
+#ifdef APPLE
+#include <OpenAL/al.h>
+#include <OpenAL/alc.h>
+#else /* APPLE */
+#include <AL/al.h>
+#include <AL/alc.h>
+#endif
 
-#ifdef HAVE_FMOD
-#include <fmod_errors.h>
-#elif defined HAVE_OPENAL
 #ifdef USE_TREMOR
 #include <tremor/ivorbisfile.h>
-#else
+#else /* USE_TREMOR */
 #include <ogg/ogg.h>
 #include <vorbis/vorbisfile.h>
 #include <vorbis/codec.h>
-#endif
-#endif
+#endif /* USE_TREMOR */
 
-#ifdef HAVE_FMOD
-FMOD_SYSTEM* fmod_system = NULL;
+#include "sound.hpp"
 
-FMOD_RESULT fmod_result;
+#include "main.hpp"
+#include "entity.hpp"
+#include "files.hpp"
+#include "game.hpp"
+#include "player.hpp"
+#include "sound.hpp"
 
-int fmod_maxchannels = 100;
-int fmod_flags;
-void* fmod_extdriverdata;
-
-FMOD_SOUND** sounds = NULL;
-Uint32 numsounds = 0;
-FMOD_SOUND** minesmusic = NULL;
-FMOD_SOUND** swampmusic = NULL;
-FMOD_SOUND** labyrinthmusic = NULL;
-FMOD_SOUND** ruinsmusic = NULL;
-FMOD_SOUND** underworldmusic = NULL;
-FMOD_SOUND** hellmusic = NULL;
-FMOD_SOUND* intromusic = NULL;
-FMOD_SOUND* intermissionmusic = NULL;
-FMOD_SOUND* minetownmusic = NULL;
-FMOD_SOUND* splashmusic = NULL;
-FMOD_SOUND* librarymusic = NULL;
-FMOD_SOUND* shopmusic = NULL;
-FMOD_SOUND* storymusic = NULL;
-FMOD_SOUND** minotaurmusic = NULL;
-FMOD_SOUND* herxmusic = NULL;
-FMOD_SOUND* templemusic = NULL;
-FMOD_SOUND* endgamemusic = NULL;
-FMOD_SOUND* devilmusic = NULL;
-FMOD_SOUND* escapemusic = NULL;
-FMOD_SOUND* introductionmusic = NULL;
-bool levelmusicplaying = false;
-
-FMOD_CHANNEL* music_channel = NULL;
-FMOD_CHANNEL* music_channel2 = NULL;
-FMOD_CHANNEL* music_resume = NULL;
-
-FMOD_CHANNELGROUP* sound_group = NULL;
-FMOD_CHANNELGROUP* music_group = NULL;
-
-float fadein_increment = 0.002f;
-float default_fadein_increment = 0.002f;
-float fadeout_increment = 0.005f;
-float default_fadeout_increment = 0.005f;
-
-bool FMODErrorCheck()
-{
-	if (no_sound)
-	{
-		return false;
-	}
-	if (fmod_result != FMOD_OK)
-	{
-		printlog("[FMOD Error] Error Code (%d): \"%s\"\n", fmod_result, FMOD_ErrorString(fmod_result)); //Report the FMOD error.
-		return true;
-	}
-
-	return false;
-}
-
-void sound_update()
-{
-	if (no_sound)
-	{
-		return;
-	}
-	if (!fmod_system)
-	{
-		return;
-	}
-
-	FMOD_VECTOR position, forward, up;
-	position.x = -camera.y;
-	position.y = -camera.z / 32;
-	position.z = -camera.x;
-
-	/*double cosroll = cos(0);
-	double cosyaw = cos(camera.ang);
-	double cospitch = cos(camera.vang);
-	double sinroll = sin(0);
-	double sinyaw = sin(camera.ang);
-	double sinpitch = sin(camera.vang);
-
-	double rx = sinroll*sinyaw - cosroll*sinpitch*cosyaw;
-	double ry = sinroll*cosyaw + cosroll*sinpitch*sinyaw;
-	double rz = cosroll*cospitch;*/
-
-	forward.x = 1 * sin(camera.ang);
-	forward.y = 0;
-	forward.z = 1 * cos(camera.ang);
-	/*forward.x = rx;
-	forward.y = ry;
-	forward.z = rz;*/
-
-	/*rx = sinroll*sinyaw - cosroll*cospitch*cosyaw;
-	ry = sinroll*cosyaw + cosroll*cospitch*sinyaw;
-	rz = cosroll*sinpitch;*/
-
-	up.x = 0;
-	up.y = 1;
-	up.z = 0;
-	/*up.x = rx;
-	up.y = ry;
-	up.z = rz;*/
-
-	//FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, &velocity, &forward, &up);
-	FMOD_System_Set3DListenerAttributes(fmod_system, 0, &position, 0, &forward, &up);
-
-	//Fade in the currently playing music.
-	if (music_channel)
-	{
-		FMOD_BOOL playing = false;
-		FMOD_Channel_IsPlaying(music_channel, &playing);
-		if (playing)
-		{
-			float volume = 1.0f;
-			FMOD_Channel_GetVolume(music_channel, &volume);
-
-			if (volume < 1.0f)
-			{
-				volume += fadein_increment * 2;
-				if (volume > 1.0f)
-				{
-					volume = 1.0f;
-				}
-				FMOD_Channel_SetVolume(music_channel, volume);
-			}
-		}
-	}
-	//The following makes crossfading possible. Fade out the last playing music. //TODO: Support for saving music so that it can be resumed (for stuff interrupting like combat music).
-	if (music_channel2)
-	{
-		FMOD_BOOL playing = false;
-		FMOD_Channel_IsPlaying(music_channel2, &playing);
-		if (playing)
-		{
-			float volume = 0.0f;
-			FMOD_Channel_GetVolume(music_channel2, &volume);
-
-			if (volume > 0.0f)
-			{
-				//volume -= 0.001f;
-				//volume -= 0.005f;
-				volume -= fadeout_increment * 2;
-				if (volume < 0.0f)
-				{
-					volume = 0.0f;
-				}
-				FMOD_Channel_SetVolume(music_channel2, volume);
-			}
-		}
-	}
-
-	FMOD_System_Update(fmod_system);
-
-	//TODO: Mute sound if focus lost.
-}
-#define SOUND
-
-#elif defined HAVE_OPENAL
-
-struct OPENAL_BUFFER {
+struct Sound {
 	ALuint id;
 	bool stream;
 	char oggfile[256];
 };
-struct OPENAL_SOUND {
+struct Channel {
 	ALuint id;
-	OPENAL_CHANNELGROUP *group;
+	ChannelGroup *group;
 	float volume;
-	OPENAL_BUFFER *buffer;
+	Sound *buffer;
 	bool active;
 	char* oggdata;
 	int oggdata_lenght;
@@ -209,17 +58,21 @@ struct OPENAL_SOUND {
 	int indice;
 };
 
-struct OPENAL_CHANNELGROUP {
+struct ChannelGroup {
 	float volume;
 	int num;
 	int cap;
-	OPENAL_SOUND **sounds;
+	Channel **sounds;
+};
+
+struct FMOD_VECTOR {
+	float x, y, z;
 };
 
 SDL_mutex *openal_mutex;
 
 static size_t openal_oggread(void* ptr, size_t size, size_t nmemb, void* datasource) {
-	OPENAL_SOUND* self = (OPENAL_SOUND*)datasource;
+	Channel* self = (Channel*)datasource;
 
 	int bytes = size*nmemb;
 	int remain = self->oggdata_lenght - self->ogg_seekoffset - bytes;
@@ -232,7 +85,7 @@ static size_t openal_oggread(void* ptr, size_t size, size_t nmemb, void* datasou
 }
 
 static int openal_oggseek(void* datasource, ogg_int64_t offset, int whence) {
-	OPENAL_SOUND* self = (OPENAL_SOUND*)datasource;
+	Channel* self = (Channel*)datasource;
 	int seek_offset;
 
 	switch(whence) {
@@ -259,13 +112,12 @@ static int openal_oggclose(void* datasource) {
 }
 
 static long int openal_oggtell(void* datasource) {
-	OPENAL_SOUND* self = (OPENAL_SOUND*)datasource;
+	Channel* self = (Channel*)datasource;
 	return self->ogg_seekoffset;
 }
 
-static int openal_oggopen(OPENAL_SOUND *self, const char* oggfile) {
+static int openal_oggopen(Channel *self, const char* oggfile) {
 	FILE *f = openDataFile(oggfile, "rb");
-	int err;
 
 	ov_callbacks oggcb = {openal_oggread, openal_oggseek, openal_oggclose, openal_oggtell};
 
@@ -294,7 +146,7 @@ static int openal_oggopen(OPENAL_SOUND *self, const char* oggfile) {
 	return 1;
 }
 
-static int openal_oggrelease(OPENAL_SOUND *self) {
+static int openal_oggrelease(Channel *self) {
 	alSourceStop(self->id);
 	ov_raw_seek(&self->oggStream, 0);
 	int queued;
@@ -309,7 +161,7 @@ static int openal_oggrelease(OPENAL_SOUND *self) {
 	return 1;
 }
 
-static int openal_streamread(OPENAL_SOUND *self, ALuint buffer) {
+static int openal_streamread(Channel *self, ALuint buffer) {
 	#define OGGSIZE 65536
 	char pcm[OGGSIZE];
 	int size = 0;
@@ -344,7 +196,7 @@ static int openal_streamread(OPENAL_SOUND *self, ALuint buffer) {
 	#undef OGGSIZE
 }
 
-static int openal_streamupdate(OPENAL_SOUND* self) {
+static int openal_streamupdate(Channel* self) {
 	int processed;
 	int active = 1;
 
@@ -369,53 +221,18 @@ ALCdevice  *openal_device = NULL;
 
 //#define openal_maxchannels 100
 
-OPENAL_BUFFER** sounds = NULL;
-Uint32 numsounds = 0;
-OPENAL_BUFFER** minesmusic = NULL;
-OPENAL_BUFFER** swampmusic = NULL;
-OPENAL_BUFFER** labyrinthmusic = NULL;
-OPENAL_BUFFER** ruinsmusic = NULL;
-OPENAL_BUFFER** underworldmusic = NULL;
-OPENAL_BUFFER** hellmusic = NULL;
-OPENAL_BUFFER* intromusic = NULL;
-OPENAL_BUFFER* intermissionmusic = NULL;
-OPENAL_BUFFER* minetownmusic = NULL;
-OPENAL_BUFFER* splashmusic = NULL;
-OPENAL_BUFFER* librarymusic = NULL;
-OPENAL_BUFFER* shopmusic = NULL;
-OPENAL_BUFFER* storymusic = NULL;
-OPENAL_BUFFER** minotaurmusic = NULL;
-OPENAL_BUFFER* herxmusic = NULL;
-OPENAL_BUFFER* templemusic = NULL;
-OPENAL_BUFFER* endgamemusic = NULL;
-OPENAL_BUFFER* devilmusic = NULL;
-OPENAL_BUFFER* escapemusic = NULL;
-OPENAL_BUFFER* introductionmusic = NULL;
-bool levelmusicplaying = false;
-
-OPENAL_SOUND* music_channel = NULL;
-OPENAL_SOUND* music_channel2 = NULL;
-OPENAL_SOUND* music_resume = NULL;
-
-OPENAL_CHANNELGROUP *sound_group = NULL;
-OPENAL_CHANNELGROUP *music_group = NULL;
-
-float fadein_increment = 0.002f;
-float default_fadein_increment = 0.002f;
-float fadeout_increment = 0.005f;
-float default_fadeout_increment = 0.005f;
 
 #define MAXSOUND 1024
-OPENAL_SOUND openal_sounds[MAXSOUND];
+Channel openal_sounds[MAXSOUND];
 int lower_freechannel = 0;
 int upper_unfreechannel = 0;
 
 SDL_Thread* openal_soundthread;
 bool OpenALSoundON = true;
 
-void OPENAL_RemoveChannelGroup(OPENAL_SOUND *channel, OPENAL_CHANNELGROUP *group);
+void OPENAL_RemoveChannelGroup(Channel *channel, ChannelGroup *group);
 
-static void private_OPENAL_Channel_Stop(OPENAL_SOUND* channel) {
+static void private_Channel_Stop(Channel* channel) {
 	// stop and delete Sound (channel)
 	channel->stream_active = false;
 	alSourceStop(channel->id);
@@ -447,7 +264,7 @@ int OPENAL_ThreadFunction(void* data) {
 				ALint state = AL_STOPPED;
 				alGetSourcei(openal_sounds[i].id, AL_SOURCE_STATE, &state);
 				if(!(state==AL_PLAYING || state==AL_PAUSED || state==AL_INITIAL)) {
-					private_OPENAL_Channel_Stop(&openal_sounds[i]);
+					private_Channel_Stop(&openal_sounds[i]);
 					if (lower_freechannel > i)
 						lower_freechannel = i;
 				}
@@ -463,19 +280,19 @@ int OPENAL_ThreadFunction(void* data) {
 	return 1;
 }
 
-int initOPENAL()
+void initSound()
 {
 	static int initialized = 0;
 	if(initialized)
-		return 1;
+		return;
 
 	openal_device = alcOpenDevice(NULL); // preferred device
 	if(!openal_device)
-		return 0;
+		return;
 
 	openal_context = alcCreateContext(openal_device,NULL);
 	if(!openal_context)
-		return 0;
+		return;
 
 	alcMakeContextCurrent(openal_context);
 
@@ -483,10 +300,10 @@ int initOPENAL()
 	alDopplerFactor(2.0f);
 
 	// creates channels groups
-	sound_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
-	music_group = (OPENAL_CHANNELGROUP*)malloc(sizeof(OPENAL_CHANNELGROUP));
-	memset(sound_group, 0, sizeof(OPENAL_CHANNELGROUP));
-	memset(music_group, 0, sizeof(OPENAL_CHANNELGROUP));
+	sound_group = (ChannelGroup*)malloc(sizeof(ChannelGroup));
+	music_group = (ChannelGroup*)malloc(sizeof(ChannelGroup));
+	memset(sound_group, 0, sizeof(ChannelGroup));
+	memset(music_group, 0, sizeof(ChannelGroup));
 	sound_group->volume = 1.0f;
 	music_group->volume = 1.0f;
 
@@ -499,14 +316,10 @@ int initOPENAL()
 	openal_soundthread = SDL_CreateThread(OPENAL_ThreadFunction, "openal", NULL);
 
 	initialized = 1;
-
-	return 1;
 }
 
-int closeOPENAL()
+void deinitSound()
 {
-	if(OpenALSoundON) return 0;
-
 	OpenALSoundON = false;
 	int i = 0;
 	SDL_WaitThread(openal_soundthread, &i);
@@ -522,7 +335,7 @@ int closeOPENAL()
 	// stop all remaining sound
 	for (int i=0; i<upper_unfreechannel; i++) {
 		if(openal_sounds[i].active && !openal_sounds[i].buffer->stream) {
-			private_OPENAL_Channel_Stop(&openal_sounds[i]);
+			private_Channel_Stop(&openal_sounds[i]);
 		}
 	}
 
@@ -532,9 +345,96 @@ int closeOPENAL()
 	alcCloseDevice(openal_device);
 	openal_device = NULL;
 	initialized = 0;
-
-	return 1;
 }
+
+void Channel_SetVolume(Channel *channel, float f) {
+	channel->volume = f;
+	if(channel->group)
+		f *= channel->group->volume;
+	alSourcef(channel->id, AL_GAIN, f);
+}
+
+void ChannelGroup_Stop(ChannelGroup* group) {
+	for (int i = 0; i< group->num; i++) {
+		if (group->sounds[i])
+			alSourceStop( group->sounds[i]->id );
+	}
+}
+
+void ChannelGroup_SetVolume(ChannelGroup* group, float f) {
+	group->volume = f;
+	for (int i = 0; i< group->num; i++) {
+		if (group->sounds[i])
+			alSourcef( group->sounds[i]->id, AL_GAIN, f*group->sounds[i]->volume );
+	}
+}
+
+bool Channel_IsPlaying(Channel* channel) {
+	ALint state;
+	alGetSourcei( channel->id, AL_SOURCE_STATE, &state );
+	return (state == AL_PLAYING);
+}
+
+void Channel_Stop(Channel* channel) {
+	SDL_LockMutex(openal_mutex);
+
+	if(channel==NULL || !channel->active) {
+		SDL_UnlockMutex(openal_mutex);
+		return;
+	}
+
+	int i = channel->indice;
+	private_Channel_Stop(channel);
+	if (lower_freechannel > i)
+		lower_freechannel = i;
+
+
+	SDL_UnlockMutex(openal_mutex);
+}
+
+void Channel_Set3DAttributes(Channel* channel, float x, float y, float z) {
+
+	alSourcei(channel->id,AL_SOURCE_RELATIVE, AL_FALSE);
+	alSource3f(channel->id, AL_POSITION, x, y, z);
+	alSourcef(channel->id, AL_REFERENCE_DISTANCE, 1.f);	// hardcoding FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
+	alSourcef(channel->id, AL_MAX_DISTANCE, 10.f);		// but this are simply OpenAL default (the 2.0f is used for Dopler only)
+}
+
+void Channel_Play(Channel* channel) {
+	SDL_LockMutex(openal_mutex);
+
+	ALint state;
+	alGetSourcei( channel->id, AL_SOURCE_STATE, &state );
+	if(state != AL_PLAYING && state != AL_PAUSED) {
+		if(channel->buffer->stream) {
+			int processed;
+			int num_buffers = 4;
+			int i;
+			ALuint trash[256];
+
+			alGetSourcei(channel->id, AL_BUFFERS_PROCESSED, &processed);
+			alSourceUnqueueBuffers(channel->id, processed, trash);
+
+			for(i=0; i<4; i++) {
+				if(!openal_streamread(channel, channel->streambuff[i])) {
+					num_buffers = i;
+					break;
+				}
+			}
+
+			alSourceQueueBuffers(channel->id, num_buffers, channel->streambuff);
+			channel->stream_active = true;
+		}
+	}
+	alSourcePlay(channel->id);
+
+	SDL_UnlockMutex(openal_mutex);
+}
+
+void Channel_Pause(Channel* channel) {
+	alSourcePause(channel->id);
+}
+
 
 
 static int get_firstfreechannel()
@@ -551,7 +451,7 @@ static int get_firstfreechannel()
 	while((i>0) && (!openal_sounds[i].buffer->stream))
 		--i;
 
-	private_OPENAL_Channel_Stop(&openal_sounds[i]);
+	private_Channel_Stop(&openal_sounds[i]);
 
 	return i;
 }
@@ -622,7 +522,7 @@ void sound_update()
 				{
 					volume = 1.0f;
 				}
-				OPENAL_Channel_SetVolume(music_channel, volume);
+				Channel_SetVolume(music_channel, volume);
 			}
 		}
 	}
@@ -644,62 +544,40 @@ void sound_update()
 				{
 					volume = 0.0f;
 				}
-				OPENAL_Channel_SetVolume(music_channel2, volume);
+				Channel_SetVolume(music_channel2, volume);
 			} else {
-				/*OPENAL_Channel_Stop(music_channel2);
+				/*Channel_Stop(music_channel2);
 				music_channel2 = NULL;*/
-				OPENAL_Channel_Pause(music_channel2);
+				Channel_Pause(music_channel2);
 			}
 		}
 	}
 }
 
-void OPENAL_Channel_SetVolume(OPENAL_SOUND *channel, float f) {
-	channel->volume = f;
-	if(channel->group)
-		f *= channel->group->volume;
-	alSourcef(channel->id, AL_GAIN, f);
-}
-
-void OPENAL_ChannelGroup_Stop(OPENAL_CHANNELGROUP* group) {
-	for (int i = 0; i< group->num; i++) {
-		if (group->sounds[i])
-			alSourceStop( group->sounds[i]->id );
-	}
-}
-
-void OPENAL_ChannelGroup_SetVolume(OPENAL_CHANNELGROUP* group, float f) {
-	group->volume = f;
-	for (int i = 0; i< group->num; i++) {
-		if (group->sounds[i])
-			alSourcef( group->sounds[i]->id, AL_GAIN, f*group->sounds[i]->volume );
-	}
-}
-
-void OPENAL_Channel_SetChannelGroup(OPENAL_SOUND *channel, OPENAL_CHANNELGROUP *group) {
+void Channel_SetChannelGroup(Channel *channel, ChannelGroup *group) {
 	if(group->num==group->cap) {
 		group->cap += 8;
-		group->sounds = (OPENAL_SOUND**)realloc(group->sounds, group->cap*sizeof(OPENAL_SOUND*));
+		group->sounds = (Channel**)realloc(group->sounds, group->cap*sizeof(Channel*));
 	}
 	alSourcef(channel->id, AL_GAIN, channel->volume * group->volume);
 	group->sounds[group->num++] = channel;
 	channel->group = group;
 }
 
-void OPENAL_RemoveChannelGroup(OPENAL_SOUND *channel, OPENAL_CHANNELGROUP *group) {
+void OPENAL_RemoveChannelGroup(Channel *channel, ChannelGroup *group) {
 	int i = 0;
 	while ((i<group->num) && (channel!=group->sounds[i]))
 		i++;
 	if(i==group->num)
 		return;
-	memmove(group->sounds+i, group->sounds+i+1, sizeof(OPENAL_SOUND*)*(group->num-(i+1)));
+	memcpy(group->sounds+i, group->sounds+i+1, sizeof(Channel*)*(group->num-(i+1)));
 	group->num--;
 }
 
-int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
-	*buffer = (OPENAL_BUFFER*)malloc(sizeof(OPENAL_BUFFER));
-	strcpy((*buffer)->oggfile, name);	// for debugging purpose
-	(*buffer)->stream = false;
+Sound* createSound(const char* name) {
+	Sound* result = (Sound*) malloc(sizeof(Sound));
+	strcpy(result->oggfile, name);	// for debugging purpose
+	result->stream = false;
 	FILE *f = openDataFile(name, "rb");
 	if(!f) {
 		printlog("Error loading sound %s\n", name);
@@ -730,7 +608,7 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 		sz+=bytes;
 	} while(bytes>0);
 	char *data2 = data;
-	if(b3D && channels==2) {
+	if(channels==2) {
 		// downmixing sound to mono, because 3D sounds NEEDS mono sound
 		data2 = (char*)malloc(sz/2);
 		int16_t *p1, *p2;
@@ -745,23 +623,23 @@ int OPENAL_CreateSound(const char* name, bool b3D, OPENAL_BUFFER **buffer) {
 	}
 
 	ov_clear(&oggFile);
-	alGenBuffers(1, &(*buffer)->id);
-	alBufferData((*buffer)->id, (channels==1)?AL_FORMAT_MONO16:AL_FORMAT_STEREO16, data2, sz, freq);
+	alGenBuffers(1, &result->id);
+	alBufferData(result->id, (channels==1)?AL_FORMAT_MONO16:AL_FORMAT_STEREO16, data2, sz, freq);
 	if(data2!=data)
 		free(data2);
 	free(data);
-	return 1;
+	return result;
 }
 
-int OPENAL_CreateStreamSound(const char* name, OPENAL_BUFFER **buffer) {
-	*buffer = (OPENAL_BUFFER*)malloc(sizeof(OPENAL_BUFFER));
-	(*buffer)->stream = true;
-	strcpy((*buffer)->oggfile, name);
-	return 1;
+Sound* CreateMusic(const char* name) {
+	Sound *buffer = (Sound*)malloc(sizeof(Sound));
+	buffer->stream = true;
+	strcpy(buffer->oggfile, name);
+	return buffer;
 }
 
-OPENAL_SOUND* OPENAL_CreateChannel(OPENAL_BUFFER* buffer) {
-	//OPENAL_SOUND *channel=(OPENAL_SOUND*)malloc(sizeof(OPENAL_SOUND));
+Channel* OPENAL_CreateChannel(Sound* buffer) {
+	//Channel *channel=(Channel*)malloc(sizeof(Channel));
 
 	SDL_LockMutex(openal_mutex);
 
@@ -771,7 +649,7 @@ OPENAL_SOUND* OPENAL_CreateChannel(OPENAL_BUFFER* buffer) {
 		upper_unfreechannel = i+1;
 	lower_freechannel = i+1;
 
-	OPENAL_SOUND *channel = &openal_sounds[i];
+	Channel *channel = &openal_sounds[i];
 	alGenSources(1,&channel->id);
 	channel->volume = 1.0f;
 	channel->group = NULL;
@@ -793,100 +671,171 @@ OPENAL_SOUND* OPENAL_CreateChannel(OPENAL_BUFFER* buffer) {
 	return channel;
 }
 
-void OPENAL_Channel_IsPlaying(void* channel, ALboolean *playing) {
-	ALint state;
-	alGetSourcei( ((OPENAL_SOUND*)channel)->id, AL_SOURCE_STATE, &state );
-	(*playing) = (state == AL_PLAYING);
-}
-
-void OPENAL_Channel_Stop(void* chan) {
-	SDL_LockMutex(openal_mutex);
-
-	OPENAL_SOUND* channel = (OPENAL_SOUND*)chan;
-	if(channel==NULL || !channel->active) {
-		SDL_UnlockMutex(openal_mutex);
-		return;
-	}
-
-	int i = channel->indice;
-	private_OPENAL_Channel_Stop(channel);
-	if (lower_freechannel > i)
-		lower_freechannel = i;
-
-
-	SDL_UnlockMutex(openal_mutex);
-}
-
-void OPENAL_Channel_Set3DAttributes(OPENAL_SOUND* channel, float x, float y, float z) {
-
-	alSourcei(channel->id,AL_SOURCE_RELATIVE, AL_FALSE);
-	alSource3f(channel->id, AL_POSITION, x, y, z);
-	alSourcef(channel->id, AL_REFERENCE_DISTANCE, 1.f);	// hardcoding FMOD_System_Set3DSettings(fmod_system, 1.0, 2.0, 1.0);
-	alSourcef(channel->id, AL_MAX_DISTANCE, 10.f);		// but this are simply OpenAL default (the 2.0f is used for Dopler only)
-}
-
-void OPENAL_Channel_Play(OPENAL_SOUND* channel) {
-	SDL_LockMutex(openal_mutex);
-
-	ALint state;
-	alGetSourcei( channel->id, AL_SOURCE_STATE, &state );
-	if(state != AL_PLAYING && state != AL_PAUSED) {
-		if(channel->buffer->stream) {
-			int processed;
-			int num_buffers = 4;
-			int i;
-			ALuint trash[256];
-
-			alGetSourcei(channel->id, AL_BUFFERS_PROCESSED, &processed);
-			alSourceUnqueueBuffers(channel->id, processed, trash);
-
-			for(i=0; i<4; i++) {
-				if(!openal_streamread(channel, channel->streambuff[i])) {
-					num_buffers = i;
-					break;
-				}
-			}
-
-			alSourceQueueBuffers(channel->id, num_buffers, channel->streambuff);
-			channel->stream_active = true;
-		}
-	}
-	alSourcePlay(channel->id);
-
-	SDL_UnlockMutex(openal_mutex);
-}
-
-void OPENAL_Channel_Pause(OPENAL_SOUND* channel) {
-	alSourcePause(channel->id);
-}
-
-void OPENAL_GetBuffer(OPENAL_SOUND* channel, OPENAL_BUFFER** buffer) {
+void OPENAL_GetBuffer(Channel* channel, Sound** buffer) {
 	(*buffer) = channel->buffer;
 }
 
-void OPENAL_SetLoop(OPENAL_SOUND* channel, ALboolean looping) {
+void OPENAL_SetLoop(Channel* channel, ALboolean looping) {
 	channel->loop = looping;
 	if(!channel->buffer->stream)
 		alSourcei(channel->id, AL_LOOPING, looping);
 }
 
-void OPENAL_Channel_GetPosition(OPENAL_SOUND* channel, unsigned int *position) {
-	alGetSourcei(channel->id, AL_BYTE_OFFSET, (GLint*)position);
+unsigned int Channel_GetPosition(Channel* channel) {
+	ALint position;
+	alGetSourcei(channel->id, AL_BYTE_OFFSET, &position);
+	return position;
 }
 
-void OPENAL_Sound_GetLength(OPENAL_BUFFER* buffer, unsigned int *length) {
-	if(!buffer) return;
-	alGetBufferi(buffer->id, AL_SIZE, (GLint*)length);
+unsigned int Sound_GetLength(Sound* buffer) {
+	if(!buffer)
+		return 0;
+	ALint length;
+	alGetBufferi(buffer->id, AL_SIZE, &length);
+	return length;
 }
 
-void OPENAL_Sound_Release(OPENAL_BUFFER* buffer) {
+void Sound_Release(Sound* buffer) {
 	if(!buffer) return;
 	if(!buffer->stream)
 		alDeleteBuffers( 1, &buffer->id );
 	free(buffer);
 }
 
-#define SOUND
+Channel* playSoundPosLocal(real_t x, real_t y, Uint32 snd, int vol)
+{
+	if (no_sound)
+	{
+		return NULL;
+	}
 
+#ifndef SOUND
+	return NULL;
 #endif
+
+	Channel* channel;
+
+	if (intro)
+	{
+		return NULL;
+	}
+	if (snd < 0 || snd >= numsounds)
+	{
+		return NULL;
+	}
+	if (sounds[snd] == NULL || vol == 0)
+	{
+		return NULL;
+	}
+
+	if (!openal_context)   //For the client.
+	{
+		return NULL;
+	}
+
+	channel = OPENAL_CreateChannel(sounds[snd]);
+	Channel_SetVolume(channel, vol / 128.f);
+	Channel_Set3DAttributes(channel, -y / 16.0, 0, -x / 16.0);
+	Channel_SetChannelGroup(channel, sound_group);
+	Channel_Play(channel);
+
+	return channel;
+}
+
+/*-------------------------------------------------------------------------------
+
+	playSound
+
+	plays a sound effect with the given volume and returns the channel that
+	the sound is playing in
+
+-------------------------------------------------------------------------------*/
+
+Channel* playSound(Uint32 snd, int vol)
+{
+	if (no_sound)
+	{
+		return NULL;
+	}
+#ifndef SOUND
+	return NULL;
+#endif
+	if (!openal_context || snd < 0 || snd >= numsounds || !sound_group)
+	{
+		return NULL;
+	}
+	if (sounds[snd] == NULL || vol == 0)
+	{
+		return NULL;
+	}
+	Channel* channel = OPENAL_CreateChannel(sounds[snd]);
+	Channel_SetVolume(channel, vol / 128.f);
+
+	Channel_SetChannelGroup(channel, sound_group);
+
+	Channel_Play(channel);
+
+	return channel;
+}
+
+void playmusic(Sound* sound, bool loop, bool crossfade, bool resume)
+{
+	if (no_sound)
+	{
+		return;
+	}
+#ifndef SOUND
+	return;
+#endif
+#ifndef MUSIC
+	return;
+#endif
+	fadein_increment = default_fadein_increment;
+	fadeout_increment = default_fadeout_increment;
+	if (!openal_context || !sound)
+	{
+		printlog("Can't play music.\n");
+		return;
+	}
+	if ( resume && music_channel2 )
+	{
+		Sound* lastmusic = NULL;
+		OPENAL_GetBuffer(music_channel2, &lastmusic);
+		if ( lastmusic == sound )
+		{
+			Channel* tempmusic = music_channel;
+			music_channel = music_channel2;
+			music_channel2 = tempmusic;
+		}
+		else
+		{
+			Channel_Stop(music_channel2);
+			music_channel2 = music_channel;
+			music_channel = OPENAL_CreateChannel(sound);
+		}
+	}
+	else
+	{
+		Channel_Stop(music_channel2);
+		music_channel2 = music_channel;
+		music_channel = OPENAL_CreateChannel(sound);
+	}
+	Channel_SetChannelGroup(music_channel, music_group);
+	if (crossfade == true)
+	{
+		//Start at volume 0 to get louder.
+		Channel_SetVolume(music_channel, 0.0f); //Start at 0 then pop up.
+	}
+	else
+	{
+		Channel_SetVolume(music_channel, 1.0f);
+		Channel_Stop(music_channel2);
+		music_channel2 = NULL;
+	}
+	if (loop == true)
+	{
+		OPENAL_SetLoop(music_channel, AL_TRUE);
+	}
+	Channel_Play(music_channel);
+}
 
