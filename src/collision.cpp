@@ -284,7 +284,6 @@ bool EntityInFrontOfEntity(Entity* entity1, Entity* entity2, Sint32 direction)
 				}
 			}
 			return false;
-			break;
 		case 1: // South
 			if ( (entity1->y + entity1->sizey) > (entity2->y - entity2->sizey) )                // Check everything South (+Y) Is the Entity in front of the boulder?
 			{
@@ -300,7 +299,6 @@ bool EntityInFrontOfEntity(Entity* entity1, Entity* entity2, Sint32 direction)
 				}
 			}
 			return false;
-			break;
 		case 2: // West
 			if ( (entity1->x - entity1->sizex) < (entity2->x + entity2->sizex) )                // Check everything West  (-X) Is the Entity in front of the boulder?
 			{
@@ -316,7 +314,6 @@ bool EntityInFrontOfEntity(Entity* entity1, Entity* entity2, Sint32 direction)
 				}
 			}
 			return false;
-			break;
 		case 3: // North
 			if ( (entity1->y - entity1->sizey) < (entity2->y + entity2->sizey) )                // Check everything North (-Y) Is the Entity in front of the boulder?
 			{
@@ -332,7 +329,6 @@ bool EntityInFrontOfEntity(Entity* entity1, Entity* entity2, Sint32 direction)
 				}
 			}
 			return false;
-			break;
 		default: return false; // Should never happen
 	}
 }
