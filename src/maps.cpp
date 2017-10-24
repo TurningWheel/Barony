@@ -2445,8 +2445,8 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->sprite = 245;
-				entity->sizex = 7;
-				entity->sizey = 7;
+				entity->sizex = 8;
+				entity->sizey = 8;
 				entity->behavior = &actBoulder;
 				entity->skill[0] = 1; // BOULDER_STOPPED
 				break;
