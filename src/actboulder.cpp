@@ -674,8 +674,8 @@ void actBoulderTrap(Entity* my)
 						entity->y = (y << 4) + 8;
 						entity->z = -64;
 						entity->yaw = c * (PI / 2.f);
-						entity->sizex = 7;
-						entity->sizey = 7;
+						entity->sizex = 8;
+						entity->sizey = 8;
 						if ( checkObstacle( entity->x + cos(entity->yaw) * 16, entity->y + sin(entity->yaw) * 16, entity, NULL ) )
 						{
 							entity->yaw += PI * (rand() % 2) - PI / 2;
