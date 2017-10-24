@@ -194,6 +194,25 @@ bool BoulderCheckAgainstEntity(Entity* const my, Entity* const entity, const boo
 				// Stop the Boulder
 				BOULDER_STOPPED = 1;
 				BOULDER_ROLLING = 0;
+
+				// Move the Boulder back to a solid tile
+				switch ( BOULDER_ROLLDIR )
+				{
+					case 0:
+						my->x += ((BOULDER_DESTX - 16) - my->x);
+						break;
+					case 1:
+						my->y += ((BOULDER_DESTY - 16) - my->y);
+						break;
+					case 2:
+						my->x += ((BOULDER_DESTX + 16) - my->x);
+						break;
+					case 3:
+						my->y += ((BOULDER_DESTY + 16) - my->y);
+						break;
+					default: printlog("ERROR: BoulderCheckAgainstEntity() - BOULDER_ROLLDIR is out of bounds."); break;
+				}
+
 				playSoundEntity(my, 181, 128); // "BoulderCrunch.ogg"
 
 				// Make the Boulder impassable
