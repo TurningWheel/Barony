@@ -89,8 +89,9 @@ void initVampire(Entity* my, Stat* myStats)
 				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
 				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
 			}
-
+			
 			// random effects
+			my->setEffect(EFF_VAMPIRICAURA, true, -1, true); //-1 duration, never expires.
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);

@@ -2399,6 +2399,11 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(80, 579, 10 + rand() % 40);
 	}
 
+	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
+	{
+		spawnAmbientParticles(80, 598, 10 + rand() % 40);
+	}
+
 	// burning
 	if ( this->flags[BURNING] )
 	{
@@ -4814,8 +4819,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hitstats->HP > 5 && damage > 0 && !hitstats->EFFECTS[EFF_BLEEDING] )
 						{
-							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || (rand() % 10 == 0 && weaponskill == PRO_SWORD)
-								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH) )
+							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || 
+								(rand() % 10 == 0 && weaponskill == PRO_SWORD) ||
+								(rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH) ||
+								(rand() % 8 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr) )
 							{
 								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120);
 								hitstats->EFFECTS[EFF_BLEEDING] = true;
@@ -4899,6 +4906,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							list_FreeAll(shakeTargets);
 							free(shakeTargets);
 						}
+					}
+					if ( myStats->EFFECTS[EFF_VAMPIRICAURA] == true )
+					{
+						this->modHP(damage);
+						spawnMagicEffectParticles(x, y, z, 169);
 					}
 				}
 			}
@@ -7434,6 +7446,11 @@ void Entity::handleEffectsClient()
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
 	{
 		spawnAmbientParticles(80, 579, 10 + rand() % 40);
+	}
+
+	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
+	{
+		spawnAmbientParticles(80, 598, 10 + rand() % 40);
 	}
 }
 
