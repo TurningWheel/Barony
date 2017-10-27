@@ -4870,39 +4870,50 @@ void Entity::attack(int pose, int charge, Entity* target)
 							camera_shakey += 5;
 						}
 					}
-					if ( !strcmp(myStats->name, "") )
-					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( myStats->type < KOBOLD ) //Original monster count
-						{
-							messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
-						}
-						else if ( myStats->type >= KOBOLD ) //New monsters
-						{
-							messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - KOBOLD)], language[2100 + (myStats->type - KOBOLD)]);
-						}
-					}
-					else
-					{
-						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						if ( myStats->type < KOBOLD ) //Original monster count
-						{
-							messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
-						}
-						else if ( myStats->type >= KOBOLD ) //New monsters
-						{
-							messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - KOBOLD)]);
-						}
-					}
+
 					if ( damage > 0 )
 					{
 						Entity* gib = spawnGib(hit.entity);
 						serverSpawnGibForClient(gib);
+						if ( !strcmp(myStats->name, "") )
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( myStats->type < KOBOLD ) //Original monster count
+							{
+								messagePlayerColor(playerhit, color, language[698], language[90 + myStats->type], language[132 + myStats->type]);
+							}
+							else if ( myStats->type >= KOBOLD ) //New monsters
+							{
+								messagePlayerColor(playerhit, color, language[698], language[2000 + (myStats->type - KOBOLD)], language[2100 + (myStats->type - KOBOLD)]);
+							}
+						}
+						else
+						{
+							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+							if ( myStats->type < KOBOLD ) //Original monster count
+							{
+								messagePlayerColor(playerhit, color, language[699], myStats->name, language[132 + myStats->type]);
+							}
+							else if ( myStats->type >= KOBOLD ) //New monsters
+							{
+								messagePlayerColor(playerhit, color, language[699], myStats->name, language[2100 + (myStats->type - KOBOLD)]);
+							}
+						}
 					}
 					else
 					{
-						messagePlayer(playerhit, language[700]);
+						// display 'blow bounces off' message
+						//messagePlayer(playerhit, language[700]);
+						if ( !strcmp(myStats->name, "") )
+						{
+							messagePlayer(playerhit, language[2457], this->getMonsterLangEntry());
+						}
+						else
+						{
+							messagePlayer(playerhit, language[2458], myStats->name);
+						}
 					}
+
 					playSoundEntity(hit.entity, 28, 64);
 
 					// chance of bleeding
