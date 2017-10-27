@@ -6859,10 +6859,10 @@ void buttonOpenCharacterCreationWindow(button_t* my)
 
 	//Random Name.
 	button = newButton();
-	strcpy(button->label, language[2450]);
+	strcpy(button->label, language[2498]);
 	button->x = button_back_x + button_back_width + 4;
 	button->y = suby2 - 24;
-	button->sizex = strlen(language[2450]) * 12 + 8;
+	button->sizex = strlen(language[2498]) * 12 + 8;
 	button->sizey = 20;
 	button->action = &buttonRandomName;
 	button->visible = 1;
