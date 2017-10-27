@@ -62,6 +62,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
 	particleDuration(skill[0]),
+	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
 	gateInit(skill[1]),

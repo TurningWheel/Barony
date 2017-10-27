@@ -87,6 +87,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
 	particleDuration(skill[0]),
+	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
 	gateInit(skill[1]),
@@ -909,7 +910,7 @@ void Entity::effectTimes()
 									{
 										if ( players[i]->entity == caster )
 										{
-											messagePlayer(i, language[2449]);
+											//messagePlayer(player, language[2449]);
 										}
 									}
 									list_RemoveNode(vampiricAura_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
@@ -923,6 +924,11 @@ void Entity::effectTimes()
 						}
 						if ( dissipate )
 						{
+							if ( myStats->HUNGER > 250 )
+							{
+								myStats->HUNGER = 252; // set to above 250 to trigger the hunger sound/messages when it decrements to 250.
+							}
+							serverUpdateHunger(player);
 							messagePlayer(player, language[2449]);
 							updateClient = true;
 						}
@@ -2003,10 +2009,10 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	int vampiricHunger = 0;
+	bool vampiricHunger = false;
 	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
 	{
-		vampiricHunger = 1;
+		vampiricHunger = true;
 	}
 	if ( (ticks % 30 == 0 && !hungerring) 
 		|| (ticks % 15 == 0 && hungerring < 0)
@@ -2474,12 +2480,12 @@ void Entity::handleEffects(Stat* myStats)
 
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
 	{
-		spawnAmbientParticles(80, 579, 10 + rand() % 40);
+		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
 	}
 
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
-		spawnAmbientParticles(80, 600, 10 + rand() % 40);
+		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
 
 	// burning
@@ -2890,7 +2896,11 @@ Sint32 statGetDEX(Stat* entitystats)
 	}
 
 	DEX = entitystats->DEX;
-	if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
+	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
+	{
+		DEX += 5;
+	}
+	else if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
 		DEX += 10;
 	}
@@ -4974,9 +4984,14 @@ void Entity::attack(int pose, int charge, Entity* target)
 								// message player of effect, skip if hit entity was already bleeding.
 								if ( hitstats->EFFECTS[EFF_BLEEDING] && (!wasBleeding || heavyBleedEffect) )
 								{
-									if ( player > 0 && multiplayer == SERVER )
+									if ( heavyBleedEffect )
 									{
-										serverUpdateEffects(player);
+										hitstats->EFFECTS[EFF_SLOW] = true;
+										hitstats->EFFECTS_TIMERS[EFF_SLOW] = 60;
+									}
+									if ( hit.entity->behavior == &actPlayer && multiplayer == SERVER )
+									{
+										serverUpdateEffects(hit.entity->skill[2]);
 									}
 									if ( playerhit >= 0 )
 									{
@@ -5072,6 +5087,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 
 						if ( lifestealSuccess )
 						{
+							if ( player >= 0 )
+							{
+								myStats->HUNGER += 100;
+							}
 							if ( playerhit >= 0 )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -7588,14 +7607,26 @@ void actAmbientParticleEffectIdle(Entity* my)
 	}
 	else
 	{
+		if ( my->particleShrink == 1 )
+		{
+			// shrink the particle.
+			my->scalex *= 0.95;
+			my->scaley *= 0.95;
+			my->scalez *= 0.95;
+		}
 		--my->particleDuration;
 		my->z += my->vel_z;
+		my->yaw += 0.1;
+		if ( my->yaw > 2 * PI )
+		{
+			my->yaw = 0;
+		}
 	}
 
 	return;
 }
 
-void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration)
+void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink)
 {
 	if ( rand() % chance == 0 )
 	{
@@ -7605,8 +7636,19 @@ void Entity::spawnAmbientParticles(int chance, int particleSprite, int duration)
 		spawnParticle->x = x + (-2 + rand() % 5);
 		spawnParticle->y = y + (-2 + rand() % 5);
 		spawnParticle->z = 7.5;
+		spawnParticle->scalex *= particleScale;
+		spawnParticle->scaley *= particleScale;
+		spawnParticle->scalez *= particleScale;
 		spawnParticle->vel_z = -1;
 		spawnParticle->particleDuration = duration;
+		if ( shrink )
+		{
+			spawnParticle->particleShrink = 1;
+		}
+		else
+		{
+			spawnParticle->particleShrink = 0;
+		}
 		spawnParticle->behavior = &actAmbientParticleEffectIdle;
 		spawnParticle->flags[PASSABLE] = true;
 		spawnParticle->setUID(-3);
@@ -7624,12 +7666,12 @@ void Entity::handleEffectsClient()
 
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
 	{
-		spawnAmbientParticles(80, 579, 10 + rand() % 40);
+		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
 	}
 
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
-		spawnAmbientParticles(80, 600, 10 + rand() % 40);
+		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
 }
 

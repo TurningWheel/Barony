@@ -198,6 +198,7 @@ public:
 
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
+	Sint32& particleShrink;
 
 	//--PUBLIC PARTICLE TIMER EFFECT SKILLS--
 	Sint32& particleTimerDuration;
@@ -422,7 +423,7 @@ public:
 	/*
 	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
 	 */
-	void spawnAmbientParticles(int chance, int particleSprite, int duration);
+	void spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink);
 
 	//Updates the EFFECTS variable for all clients for this entity.
 	void serverUpdateEffectsForEntity(bool guarantee);
