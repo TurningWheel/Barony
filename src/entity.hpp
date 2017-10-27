@@ -237,6 +237,8 @@ public:
 
 	void setObituary(char* obituary);
 
+	char* getMonsterLangEntry();
+
 	void killedByMonsterObituary(Entity* victim);
 
 	Sint32 getSTR();

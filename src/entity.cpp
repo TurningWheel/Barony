@@ -4896,43 +4896,104 @@ void Entity::attack(int pose, int charge, Entity* target)
 					playSoundEntity(hit.entity, 28, 64);
 
 					// chance of bleeding
+					bool wasBleeding = hitstats->EFFECTS[EFF_BLEEDING]; // check if currently bleeding when this roll occurred.
 					if ( gibtype[(int)hitstats->type] == 1 )
 					{
-						if ( hitstats->HP > 5 && damage > 0 && !hitstats->EFFECTS[EFF_BLEEDING] )
+						if ( hitstats->HP > 5 && damage > 0 )
 						{
-							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD) || 
-								(rand() % 10 == 0 && weaponskill == PRO_SWORD) ||
-								(rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH) ||
-								(rand() % 8 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr) )
+							if ( (rand() % 20 == 0 && weaponskill != PRO_SWORD)
+								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
+								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
+								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
+								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr) 
+							)
 							{
-								hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120);
-								hitstats->EFFECTS[EFF_BLEEDING] = true;
-								if ( player > 0 && multiplayer == SERVER )
+								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
+								if ( pose == MONSTER_POSE_GOLEM_SMASH )
 								{
-									serverUpdateEffects(player);
+									heavyBleedEffect = true;
 								}
-								if ( playerhit >= 0 )
+								else if ( myStats->type == VAMPIRE || myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-									messagePlayerColor(playerhit, color, language[701]);
+									if ( rand() % 2 == 0 ) // 50% for heavy bleed effect.
+									{
+										heavyBleedEffect = true;
+									}
 								}
-								else
+
+								char playerHitMessage[1024] = "";
+								char monsterHitMessage[1024] = "";
+
+								if ( !wasBleeding && !heavyBleedEffect )
 								{
-									Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+									// normal bleed effect
+									hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(480 + rand() % 360 - hit.entity->getCON() * 100, 120); // 2.4-16.8 seconds
+									hitstats->EFFECTS[EFF_BLEEDING] = true;
+									strcpy(playerHitMessage, language[701]);
 									if ( !strcmp(hitstats->name, "") )
 									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
+										strcpy(monsterHitMessage, language[702]);
+									}
+									else
+									{
+										strcpy(monsterHitMessage, language[703]);
+									}
+								}
+								else if ( heavyBleedEffect )
+								{
+									if ( !wasBleeding )
+									{
+										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] = std::max(500 + rand() % 500 - hit.entity->getCON() * 10, 250); // 5-20 seconds
+										hitstats->EFFECTS[EFF_BLEEDING] = true;
+										strcpy(playerHitMessage, language[2451]);
+										if ( !strcmp(hitstats->name, "") )
 										{
-											messagePlayerColor(player, color, language[702], language[90 + hitstats->type]);
+											strcpy(monsterHitMessage, language[2452]);
 										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
+										else
 										{
-											messagePlayerColor(player, color, language[702], language[2000 + (hitstats->type - KOBOLD)]);
+											strcpy(monsterHitMessage, language[2453]);
 										}
 									}
 									else
 									{
-										messagePlayerColor(player, color, language[703], hitstats->name);
+										hitstats->EFFECTS_TIMERS[EFF_BLEEDING] += std::max(rand() % 350 - hit.entity->getCON() * 5, 100); // 2-7 seconds in addition
+										hitstats->EFFECTS[EFF_BLEEDING] = true;
+										strcpy(playerHitMessage, language[2454]);
+										if ( !strcmp(hitstats->name, "") )
+										{
+											strcpy(monsterHitMessage, language[2455]);
+										}
+										else
+										{
+											strcpy(monsterHitMessage, language[2456]);
+										}
+									}
+								}
+								
+								// message player of effect, skip if hit entity was already bleeding.
+								if ( hitstats->EFFECTS[EFF_BLEEDING] && (!wasBleeding || heavyBleedEffect) )
+								{
+									if ( player > 0 && multiplayer == SERVER )
+									{
+										serverUpdateEffects(player);
+									}
+									if ( playerhit >= 0 )
+									{
+										Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+										messagePlayerColor(playerhit, color, playerHitMessage);
+									}
+									else
+									{
+										Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+										if ( !strcmp(hitstats->name, "") )
+										{
+											messagePlayerColor(player, color, monsterHitMessage, hit.entity->getMonsterLangEntry());
+										}
+										else
+										{
+											messagePlayerColor(player, color, monsterHitMessage, hitstats->name);
+										}
 									}
 								}
 							}
@@ -4988,10 +5049,47 @@ void Entity::attack(int pose, int charge, Entity* target)
 							free(shakeTargets);
 						}
 					}
-					if ( myStats->EFFECTS[EFF_VAMPIRICAURA] == true )
+					// lifesteal
+					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] == true && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
 					{
-						this->modHP(damage);
-						spawnMagicEffectParticles(x, y, z, 169);
+						bool lifestealSuccess = false;
+						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
+						{
+							// attack caused the target to bleed, trigger lifesteal tick
+							this->modHP(damage);
+							spawnMagicEffectParticles(x, y, z, 169);
+							playSoundEntity(this, 168, 128);
+							lifestealSuccess = true;
+						}
+						else if ( rand() % 8 == 0 )
+						{
+							// else low chance for lifesteal.
+							this->modHP(damage);
+							spawnMagicEffectParticles(x, y, z, 169);
+							playSoundEntity(this, 168, 128);
+							lifestealSuccess = true;
+						}
+
+						if ( lifestealSuccess )
+						{
+							if ( playerhit >= 0 )
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
+								messagePlayerColor(playerhit, color, language[2441]);
+							}
+							else
+							{
+								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+								if ( !strcmp(hitstats->name, "") )
+								{
+									messagePlayerColor(player, color, language[2440], hit.entity->getMonsterLangEntry());
+								}
+								else
+								{
+									messagePlayerColor(player, color, language[2439], hitstats->name);
+								}
+							}
+						}
 					}
 				}
 			}
@@ -8385,5 +8483,29 @@ bool Entity::isSpellcasterBeginner()
 	return false;
 }
 
+char* Entity::getMonsterLangEntry()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+	if ( !strcmp(myStats->name, "") )
+	{
+		if ( myStats->type < KOBOLD ) //Original monster count
+		{
+			return language[90 + myStats->type];
+		}
+		else if ( myStats->type >= KOBOLD ) //New monsters
+		{
+			return language[2000 + (myStats->type - KOBOLD)];
+		}
+	}
+	else
+	{
+		return myStats->name;
+	}
+	return nullptr;
+}
 
 
