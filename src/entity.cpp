@@ -2003,7 +2003,16 @@ void Entity::handleEffects(Stat* myStats)
 			}
 		}
 	}
-	if ( (ticks % 30 == 0 && !hungerring) || (ticks % 15 == 0 && hungerring < 0) || (ticks % 120 == 0 && hungerring > 0) )
+	int vampiricHunger = 0;
+	if ( myStats->EFFECTS[EFF_VAMPIRICAURA] )
+	{
+		vampiricHunger = 1;
+	}
+	if ( (ticks % 30 == 0 && !hungerring) 
+		|| (ticks % 15 == 0 && hungerring < 0)
+		|| (ticks % 120 == 0 && hungerring > 0) 
+		|| (ticks % 5 == 0 && vampiricHunger) 
+	)
 	{
 		if ( myStats->HUNGER > 0 )
 		{
@@ -2141,62 +2150,65 @@ void Entity::handleEffects(Stat* myStats)
 	// healing over time
 	int healring = 0;
 	int healthRegenInterval = 0;
-	if ( myStats->ring != NULL )
+	if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] || (myStats->breastplate != nullptr && myStats->breastplate->type == VAMPIRE_DOUBLET) )
 	{
-		if ( myStats->ring->type == RING_REGENERATION )
+		if ( myStats->ring != NULL )
 		{
-			if ( myStats->ring->beatitude >= 0 )
+			if ( myStats->ring->type == RING_REGENERATION )
 			{
-				healring++;
-			}
-			else
-			{
-				healring--;
+				if ( myStats->ring->beatitude >= 0 )
+				{
+					healring++;
+				}
+				else
+				{
+					healring--;
+				}
 			}
 		}
-	}
-	if ( myStats->breastplate != NULL )
-	{
-		if ( myStats->breastplate->type == ARTIFACT_BREASTPIECE )
+		if ( myStats->breastplate != NULL )
 		{
-			if ( myStats->breastplate->beatitude >= 0 )
+			if ( myStats->breastplate->type == ARTIFACT_BREASTPIECE )
 			{
-				healring++;
-			}
-			else
-			{
-				healring--;
+				if ( myStats->breastplate->beatitude >= 0 )
+				{
+					healring++;
+				}
+				else
+				{
+					healring--;
+				}
 			}
 		}
-	}
 
-	if ( healring > 0 )
-	{
-		healthRegenInterval = HEAL_TIME / (healring * 8);
-	}
-	else if ( healring < 0 )
-	{
-		healthRegenInterval = healring * HEAL_TIME * 4;
-	}
-	else if ( healring == 0 )
-	{
-		healthRegenInterval = HEAL_TIME;
-	}
-	if ( myStats->HP < myStats->MAXHP )
-	{
-		this->char_heal++;
-		if ( healring > 0 || svFlags & SV_FLAG_HUNGER )
+		if ( healring > 0 )
 		{
-			if ( this->char_heal >= healthRegenInterval )
+			healthRegenInterval = HEAL_TIME / (healring * 8);
+		}
+		else if ( healring < 0 )
+		{
+			healthRegenInterval = healring * HEAL_TIME * 4;
+		}
+		else if ( healring == 0 )
+		{
+			healthRegenInterval = HEAL_TIME;
+		}
+		if ( myStats->HP < myStats->MAXHP )
+		{
+			this->char_heal++;
+			if ( healring > 0 || svFlags & SV_FLAG_HUNGER )
 			{
-				this->char_heal = 0;
-				this->modHP(1);
+				if ( this->char_heal >= healthRegenInterval )
+				{
+					this->char_heal = 0;
+					this->modHP(1);
+				}
 			}
 		}
-	}
-	else
-	{
-		this->char_heal = 0;
+		else
+		{
+			this->char_heal = 0;
+		}
 	}
 
 	// random teleportation
