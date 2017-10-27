@@ -896,12 +896,19 @@ void Entity::effectTimes()
 							if ( caster )
 							{
 								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
-								bool deducted = caster->safeConsumeMP(2); //Consume 1 mana ever duration / mana seconds
+								bool deducted = caster->safeConsumeMP(3); //Consume 1 mana ever duration / mana seconds
 								if ( deducted )
 								{
 									sustained = true;
 									myStats->EFFECTS[c] = true;
 									myStats->EFFECTS_TIMERS[c] = vampiricAura_hijacked->channel_duration;
+
+									// monsters have a chance to un-sustain the spell each MP consume.
+									if ( caster->behavior == &actMonster && rand() % 4 == 0 )
+									{
+										sustained = false;
+										list_RemoveNode(vampiricAura_hijacked->magic_effects_node);
+									}
 								}
 								else
 								{
@@ -927,8 +934,8 @@ void Entity::effectTimes()
 							if ( myStats->HUNGER > 250 )
 							{
 								myStats->HUNGER = 252; // set to above 250 to trigger the hunger sound/messages when it decrements to 250.
+								serverUpdateHunger(player);
 							}
-							serverUpdateHunger(player);
 							messagePlayer(player, language[2449]);
 							updateClient = true;
 						}
@@ -3442,7 +3449,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
 			}
-			else if ( myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT )
+			else if ( (myStats->type == INCUBUS && pose == MONSTER_POSE_INCUBUS_TELEPORT)
+				|| (myStats->type == VAMPIRE && (pose == MONSTER_POSE_VAMPIRE_DRAIN || pose == MONSTER_POSE_VAMPIRE_AURA_CHARGE))
+			)
 			{
 				// calls animation, but doesn't actually attack
 				monsterAttack = pose;
@@ -3454,6 +3463,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					serverUpdateEntitySkill(this, 9);
 				}
 				return; // don't execute the attack, let the monster animation call the attack() function again.
+			}
+			else if ( myStats->type == VAMPIRE && pose == MONSTER_POSE_VAMPIRE_AURA_CAST )
+			{
+				monsterAttack = 0;
 			}
 			else if ( myStats->weapon != nullptr || myStats->type == CRYSTALGOLEM || myStats->type == COCKATRICE )
 			{
@@ -6618,6 +6631,21 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP2;
 			}
+			else if ( myStats->type == VAMPIRE )
+			{
+				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN )
+				{
+					pose = MONSTER_POSE_VAMPIRE_DRAIN;
+				}
+				else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA )
+				{
+					pose = MONSTER_POSE_VAMPIRE_AURA_CHARGE;
+				}
+				else
+				{
+					//pose = MONSTER_POSE_MAGIC_WINDUP1;
+				}
+			}
 			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == COCKATRICE || myStats->type == INCUBUS || myStats->type == VAMPIRE )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
@@ -8463,6 +8491,10 @@ bool Entity::backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon
 	}
 
 	if ( myStats.type == INSECTOID && monsterSpecialState > 0 )
+	{
+		return false;
+	}
+	if ( myStats.type == VAMPIRE && monsterSpecialState > 0 )
 	{
 		return false;
 	}

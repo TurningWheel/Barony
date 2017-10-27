@@ -888,6 +888,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							resistance += 1;
 						}
 					}
+					if ( hitstats->EFFECTS[EFF_MAGICRESIST] )
+					{
+						resistance += 1;
+					}
 				}
 				if ( resistance > 0 )
 				{
@@ -2779,7 +2783,7 @@ void createParticleSap(Entity* parent)
 	}
 }
 
-void createParticleDropRising(Entity* parent, int sprite)
+void createParticleDropRising(Entity* parent, int sprite, double scale)
 {
 	for ( int c = 0; c < 50; c++ )
 	{
@@ -2792,7 +2796,10 @@ void createParticleDropRising(Entity* parent, int sprite)
 		entity->z = 7.5 + rand() % 50;
 		entity->vel_z = -1;
 		//entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->skill[0] = 10 + rand() % 50;
+		entity->particleDuration = 10 + rand() % 50;
+		entity->scalex *= scale;
+		entity->scaley *= scale;
+		entity->scalez *= scale;
 		entity->behavior = &actParticleDot;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;

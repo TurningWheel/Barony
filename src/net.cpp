@@ -2048,7 +2048,7 @@ void clientHandlePacket()
 						createParticleRock(entity);
 						break;
 					case PARTICLE_EFFECT_SHADOW_INVIS:
-						createParticleDropRising(entity, sprite);
+						createParticleDropRising(entity, sprite, 1.0);
 						break;
 					case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
 					{
@@ -2067,6 +2067,9 @@ void clientHandlePacket()
 					break;
 					case PARTICLE_EFFECT_ERUPT:
 						createParticleErupt(entity, sprite);
+						break;
+					case PARTICLE_EFFECT_VAMPIRIC_AURA:
+						createParticleDropRising(entity, sprite, 0.5);
 						break;
 					default:
 						break;

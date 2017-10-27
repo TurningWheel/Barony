@@ -844,6 +844,7 @@ spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_
 	}
 
 	playSoundEntity(caster, 167, 128);
-	spawnMagicEffectParticles(caster->x, caster->y, caster->z, 600);
+	createParticleDropRising(caster, 600, 0.7);
+	serverSpawnMiscParticles(caster, PARTICLE_EFFECT_VAMPIRIC_AURA, 600);
 	return channeled_spell;
 }

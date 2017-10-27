@@ -466,6 +466,9 @@ public:
 			case INCUBUS:
 				incubusChooseWeapon(target, dist);
 				break;
+			case VAMPIRE:
+				vampireChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
@@ -473,6 +476,7 @@ public:
 	void goatmanChooseWeapon(const Entity* target, double dist);
 	void insectoidChooseWeapon(const Entity* target, double dist);
 	void incubusChooseWeapon(const Entity* target, double dist);
+	void vampireChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{

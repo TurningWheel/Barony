@@ -377,6 +377,10 @@ static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
 static const int MONSTER_POSE_INSECTOID_DOUBLETHROW = 25;
 static const int MONSTER_POSE_INCUBUS_CONFUSION = 26;
 static const int MONSTER_POSE_INCUBUS_TELEPORT = 27;
+static const int MONSTER_POSE_VAMPIRE_AURA_CHARGE = 28;
+static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
+static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
+
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -393,6 +397,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 800;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 500;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -476,3 +482,7 @@ static const int INCUBUS_CONFUSION = 1;
 static const int INCUBUS_STEAL = 2;
 static const int INCUBUS_TELEPORT_STEAL = 3;
 static const int INCUBUS_TELEPORT = 4;
+
+//--Vampire--
+static const int VAMPIRE_CAST_AURA = 1;
+static const int VAMPIRE_CAST_DRAIN = 2;

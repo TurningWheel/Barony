@@ -20,6 +20,7 @@ See LICENSE for details.
 #include "collision.hpp"
 #include "classdescriptions.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 void initVampire(Entity* my, Stat* myStats)
 {
@@ -83,15 +84,15 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 			else
 			{
-				myStats->HP = 100;
+				/*myStats->HP = 100;
 				myStats->MAXHP = 100;
 				strcpy(myStats->name, "Funny Bones");
 				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, nullptr);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);
+				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, nullptr);*/
 			}
 			
 			// random effects
-			my->setEffect(EFF_VAMPIRICAURA, true, -1, true); //-1 duration, never expires.
+			my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);
@@ -102,8 +103,11 @@ void initVampire(Entity* my, Stat* myStats)
 			// count if any custom inventory items from editor
 			int customItems = countCustomItems(myStats); //max limit of 6 custom items per entity.
 
-														 // count any inventory items set to default in edtior
+			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
+
+			newItem(SPELLBOOK_VAMPIRIC_AURA, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+			newItem(SPELLBOOK_DRAIN_SOUL, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
@@ -114,6 +118,10 @@ void initVampire(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					if ( rand() % 10 == 0 ) // 1 in 10
+					{
+						newItem(VAMPIRE_DOUBLET, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+					}
 					break;
 				default:
 					break;
@@ -502,7 +510,10 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			my->z = -1;
-			my->pitch = 0;
+			if ( my->monsterAttack == 0 )
+			{
+				my->pitch = 0;
+			}
 		}
 
 		// levitation
@@ -518,6 +529,15 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( multiplayer != CLIENT && bodypart == 1 )
+			{
+				if ( my->monsterAttack != MONSTER_POSE_VAMPIRE_DRAIN 
+					&& my->monsterAttack != MONSTER_POSE_VAMPIRE_AURA_CHARGE )
+				{
+					limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+				}
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -534,7 +554,43 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			my->humanoidAnimateWalk(entity, node, bodypart, VAMPIREWALKSPEED, dist, 0.4);
+			if ( bodypart == LIMB_HUMANOID_LEFTARM 
+				&& ((my->monsterSpecialState == VAMPIRE_CAST_DRAIN || my->monsterSpecialState == VAMPIRE_CAST_AURA )
+				&& my->monsterAttack != 0) )
+			{
+				// leftarm follows the right arm during special attack
+				// will not work when shield is visible
+				// else animate normally.
+				node_t* shieldNode = list_Node(&my->children, 8);
+				if ( shieldNode )
+				{
+					Entity* shield = (Entity*)shieldNode->element;
+					if ( shield->flags[INVISIBLE] )
+					{
+						Entity* weaponarm = nullptr;
+						node_t* weaponarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTARM);
+						if ( weaponarmNode )
+						{
+							weaponarm = (Entity*)weaponarmNode->element;
+						}
+						else
+						{
+							return;
+						}
+						entity->pitch = weaponarm->pitch;
+						entity->roll = -weaponarm->roll;
+					}
+				}
+			}
+			else
+			{
+				if ( bodypart == LIMB_HUMANOID_LEFTARM )
+				{
+					// for clients to adjust roll in case the above roll/pitch code was not cleared.
+					entity->roll = 0;
+				}
+				my->humanoidAnimateWalk(entity, node, bodypart, VAMPIREWALKSPEED, dist, 0.4);
+			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
 		{
@@ -544,7 +600,122 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( my->monsterAttack > 0 )
 				{
-					my->handleWeaponArmAttack(weaponarm);
+					Entity* rightbody = nullptr;
+					// set rightbody to left leg.
+					node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+					if ( rightbodyNode )
+					{
+						rightbody = (Entity*)rightbodyNode->element;
+					}
+					else
+					{
+						return;
+					}
+					Entity* leftarm = nullptr;
+					// set leftarm
+					node_t* leftarmNode = list_Node(&my->children, LIMB_HUMANOID_LEFTARM);
+					if ( leftarmNode )
+					{
+						leftarm = (Entity*)leftarmNode->element;
+					}
+					else
+					{
+						return;
+					}
+
+					if ( my->monsterAttack == MONSTER_POSE_VAMPIRE_DRAIN )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+							// play casting sound
+							playSoundEntityLocal(my, 170, 64);
+							// monster scream
+							playSoundEntityLocal(my, 99, 128);
+						}
+
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 14 * PI / 8, true, 0.1);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 2 * PI / 8, false, 0.0);
+						}
+
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								// throw the spell
+								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+							}
+						}
+						++my->monsterAttackTime;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_VAMPIRE_AURA_CHARGE )
+					{
+
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 6 * PI / 4;
+							leftarm->pitch = 6 * PI / 4;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+							// play casting sound
+							playSoundEntityLocal(my, 170, 64);
+							// monster scream
+							playSoundEntityLocal(my, 99, 128);
+							if ( multiplayer != CLIENT )
+							{
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 50;
+							}
+						}
+
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.05, 2 * PI / 8, true, 0.05);
+						limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.1, 15 * PI / 8, false, 0.0);
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 14 * PI / 8, true, 0.1);
+						}
+
+						if ( my->monsterAttackTime >= 6 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							// reset the limbs
+							weaponarm->skill[0] = rightbody->skill[0];
+							my->monsterWeaponYaw = 0;
+							weaponarm->pitch = rightbody->pitch;
+							weaponarm->roll = 0;
+							my->monsterArmbended = 0;
+							leftarm->roll = 0;
+							leftarm->pitch = 0;
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_VAMPIRE_AURA_CAST, 0, nullptr);
+							}
+						}
+						++my->monsterAttackTime;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_VAMPIRE_AURA_CAST )
+					{
+						weaponarm->roll = 0;
+						leftarm->roll = 0;
+					}
+					else
+					{
+						my->handleWeaponArmAttack(weaponarm);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -791,6 +962,10 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focaly = limbs[VAMPIRE][5][1];
 						entity->focalz = limbs[VAMPIRE][5][2] - 0.75;
 						entity->sprite += 2;
+						if ( my->monsterSpecialState == VAMPIRE_CAST_DRAIN || my->monsterSpecialState == VAMPIRE_CAST_AURA )
+						{
+							entity->yaw -= MONSTER_WEAPONYAW;
+						}
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -1135,4 +1310,123 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		// do nothing, don't reset attacktime or increment it.
 	}
+}
+
+void Entity::vampireChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	int specialRoll = -1;
+	int bonusFromHP = 0;
+
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
+	{
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
+		{
+			return;
+		}
+
+		// occurs less often against fellow monsters.
+		specialRoll = rand() % (10 + 50 * (target->behavior == &actMonster));
+		if ( myStats->HP <= myStats->MAXHP * 0.8 )
+		{
+			bonusFromHP += 1; // +2.5% chance if on low health
+		}
+		if ( myStats->HP <= myStats->MAXHP * 0.4 )
+		{
+			bonusFromHP += 3; // +extra 2.5% chance if on lower health
+		}
+
+		int requiredRoll = (1 + bonusFromHP);
+		if ( targetStats->type == HUMAN )
+		{
+			requiredRoll++; // tasty human
+		}
+		if ( targetStats->HUNGER < 500 )
+		{
+			requiredRoll++; // tasty weak human
+		}
+
+		// check the roll
+		if ( specialRoll < requiredRoll )
+		{
+			node_t* node = nullptr;
+			if ( rand() % 5 == 0 && !myStats->EFFECTS[EFF_VAMPIRICAURA] )
+			{
+				node = itemNodeInInventory(myStats, SPELLBOOK_VAMPIRIC_AURA, static_cast<Category>(-1));
+				if ( node != nullptr )
+				{
+					swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+					monsterSpecialState = VAMPIRE_CAST_AURA;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					monsterHitTime = HITRATE * 2; // force immediate attack
+					return;
+				}
+			}
+			else
+			{
+				node = itemNodeInInventory(myStats, SPELLBOOK_DRAIN_SOUL, static_cast<Category>(-1));
+				if ( node != nullptr )
+				{
+					swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+					monsterSpecialState = VAMPIRE_CAST_DRAIN;
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					monsterHitTime = HITRATE * 2; // force immediate attack
+					return;
+				}
+			}
+		}
+	}
+
+	//bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	//if ( inMeleeRange )
+	//{
+	//	//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+	//	if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+	//	{
+	//		node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+	//		if ( !weaponNode )
+	//		{
+	//			return; //Resort to fists.
+	//		}
+
+	//		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+	//		if ( !swapped )
+	//		{
+	//			//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+	//		}
+	//		else
+	//		{
+	//			return;
+	//		}
+	//	}
+	//	else
+	//	{
+	//		return;
+	//	}
+	//}
+
+	////Switch to a thrown weapon or a ranged weapon.
+	//if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	//{
+	//	node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
+	//	if ( !weaponNode )
+	//	{
+	//		return; //Nothing available
+	//	}
+	//	bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+	//	return;
+	//}
+	return;
 }

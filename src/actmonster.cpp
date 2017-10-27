@@ -5120,6 +5120,18 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						break;
 					}
 					break;
+				case VAMPIRE:
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					{
+						// special handled in vampireChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA;
+					}
+					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
+					{
+						// special handled in vampireChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN;
+					}
+					break;
 				default:
 					break;
 			}
@@ -5210,6 +5222,37 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					else if ( monsterSpecialState == INCUBUS_TELEPORT )
 					{
 						// this flag will be cleared in incubusChooseWeapon
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case VAMPIRE:
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
 					}
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
