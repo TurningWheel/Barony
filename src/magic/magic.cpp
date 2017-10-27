@@ -51,6 +51,7 @@ void freeSpells()
 	list_FreeAll(&spell_acidSpray.elements);
 	list_FreeAll(&spell_stealWeapon.elements);
 	list_FreeAll(&spell_drainSoul.elements);
+	list_FreeAll(&spell_vampiricAura.elements);
 }
 
 void spell_magicMap(int player)
@@ -782,4 +783,67 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 	my.removeLightField();
 	list_RemoveNode(my.mynode);
 	return;
+}
+
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use)
+{
+	//Also refactor the duration determining code.
+	node_t* node = spell->elements.first;
+	if ( !node )
+	{
+		return nullptr;
+	}
+	spellElement_t* element = static_cast<spellElement_t*>(node->element);
+	if ( !element )
+	{
+		return nullptr;
+	}
+	Stat* myStats = caster->getStats();
+	if ( !myStats )
+	{
+		return nullptr;
+	}
+
+	bool newbie = caster->isSpellcasterBeginner();
+
+	int duration = element->duration; // duration in ticks.
+	duration += (((element->mana + extramagic_to_use) - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->duration;
+	node_t* spellnode = list_AddNodeLast(&myStats->magic_effects);
+	spellnode->element = copySpell(spell); //We need to save the spell since this is a channeled spell.
+	spell_t* channeled_spell = (spell_t*)(spellnode->element);
+	channeled_spell->magic_effects_node = spellnode;
+	spellnode->size = sizeof(spell_t);
+	((spell_t*)spellnode->element)->caster = caster->getUID();
+	spellnode->deconstructor = &spellDeconstructor;
+	if ( newbie )
+	{
+		//This guy's a newbie. There's a chance they've screwed up and negatively impacted the efficiency of the spell.
+		int chance = rand() % 10;
+		// spellcasting power is 0 to 100, based on spellcasting and intelligence.
+		int spellcastingPower = std::min(std::max(0, myStats->PROFICIENCIES[PRO_SPELLCASTING] + statGetINT(myStats)), 100);
+		if ( chance >= spellcastingPower / 10 )
+		{
+			duration -= rand() % (1000 / (spellcastingPower + 1)); // reduce the duration by 0-20 seconds
+		}
+		if ( duration < 50 )
+		{
+			duration = 50;    //Range checking.
+		}
+	}
+	duration /= getCostOfSpell((spell_t*)spellnode->element);
+	channeled_spell->channel_duration = duration; //Tell the spell how long it's supposed to last so that it knows what to reset its timer to.
+	caster->setEffect(EFF_VAMPIRICAURA, true, duration, true);
+	for ( int i = 0; i < numplayers; ++i )
+	{
+		if ( caster == players[i]->entity )
+		{
+			serverUpdateEffects(i);
+			Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+			messagePlayerColor(i, color, language[2477]);
+		}
+	}
+
+	playSoundEntity(caster, 167, 128);
+	spawnMagicEffectParticles(caster->x, caster->y, caster->z, 600);
+	return channeled_spell;
 }

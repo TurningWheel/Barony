@@ -207,10 +207,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool newbie = false;
 	if ( !using_magicstaff && !trap)
 	{
-		if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)
-		{
-			newbie = true; //The caster has lower spellcasting skill. Cue happy fun times.
-		}
+		newbie = caster->isSpellcasterBeginner();
 
 		/*magiccost = getCostOfSpell(spell);
 		if (magiccost < 0) {
@@ -764,6 +761,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			playSoundEntity(caster, 166, 128 );
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+		}
+		else if ( !strcmp(element->name, spellElement_vampiricAura.name) )
+		{
+			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
+			//Also refactor the duration determining code.
 		}
 
 		if (propulsion == PROPULSION_MISSILE)

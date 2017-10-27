@@ -2866,8 +2866,8 @@ void item_Spellbook(Item* item, int player)
 			case SPELLBOOK_DRAIN_SOUL:
 				addSpell(SPELL_DRAIN_SOUL, player);
 				break;
-			case SPELLBOOK_BLANK_4:
-				messagePlayer(player, "Oops, misplaced that spell...");
+			case SPELLBOOK_VAMPIRIC_AURA:
+				addSpell(SPELL_VAMPIRIC_AURA, player);
 				break;
 			case SPELLBOOK_BLANK_5:
 				messagePlayer(player, "Nope. Spell doesn't exist yet.");

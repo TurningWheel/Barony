@@ -258,7 +258,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_stealWeapon.base_mana = 80;
 	spellElement_stealWeapon.overload_multiplier = 1;
 	spellElement_stealWeapon.damage = 0;
-	spellElement_stealWeapon.duration = 0; //TODO: Decide on something.
+	spellElement_stealWeapon.duration = 0;
 	strcpy(spellElement_stealWeapon.name, language[2396]);
 
 	spellElementConstructor(&spellElement_drainSoul);
@@ -266,8 +266,16 @@ void setupSpells()   ///TODO: Verify this function.
 	spellElement_drainSoul.base_mana = 5;
 	spellElement_drainSoul.overload_multiplier = 1;
 	spellElement_drainSoul.damage = 10;
-	spellElement_drainSoul.duration = 0; //TODO: Decide on something.
+	spellElement_drainSoul.duration = 0;
 	strcpy(spellElement_drainSoul.name, language[2397]);
+
+	spellElementConstructor(&spellElement_vampiricAura);
+	spellElement_vampiricAura.mana = 5;
+	spellElement_vampiricAura.base_mana = 5;
+	spellElement_vampiricAura.overload_multiplier = 1;
+	spellElement_vampiricAura.damage = 0;
+	spellElement_vampiricAura.duration = 1500; //TODO: Decide on something.
+	strcpy(spellElement_vampiricAura.name, language[2398]);
 
 	spellConstructor(&spell_forcebolt);
 	strcpy(spell_forcebolt.name, language[415]);
@@ -783,4 +791,18 @@ void setupSpells()   ///TODO: Verify this function.
 	node->deconstructor = &spellElementDeconstructor;
 	element = (spellElement_t*)node->element;
 	element->node = node;
+
+	spellConstructor(&spell_vampiricAura);
+	strcpy(spell_vampiricAura.name, language[2398]);
+	spell_vampiricAura.ID = SPELL_VAMPIRIC_AURA;
+	spell_vampiricAura.difficulty = 0;
+	spell_vampiricAura.elements.first = nullptr;
+	spell_vampiricAura.elements.last = nullptr;
+	node = list_AddNodeLast(&spell_vampiricAura.elements);
+	node->element = copySpellElement(&spellElement_vampiricAura);
+	node->size = sizeof(spellElement_t);
+	node->deconstructor = &spellElementDeconstructor;
+	element = (spellElement_t*)node->element;
+	element->node = node; //Tell the element what list it resides in.
+	element->channeled = true;
 }

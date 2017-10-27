@@ -46,6 +46,7 @@ static const int SPELL_REFLECT_MAGIC = 26;
 static const int SPELL_ACID_SPRAY = 27;
 static const int SPELL_STEAL_WEAPON = 28;
 static const int SPELL_DRAIN_SOUL = 29;
+static const int SPELL_VAMPIRIC_AURA = 30;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -321,10 +322,10 @@ extern spellElement_t spellElement_reflectMagic;
 
 /* Steal Weapon */
 extern spellElement_t spellElement_stealWeapon;
-
 /* Drain Soul */
 extern spellElement_t spellElement_drainSoul;
-
+/* Vampiric Aura */
+extern spellElement_t spellElement_vampiricAura;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -393,6 +394,7 @@ extern spell_t spell_reflectMagic;
 extern spell_t spell_acidSpray;
 extern spell_t spell_stealWeapon;
 extern spell_t spell_drainSoul;
+extern spell_t spell_vampiricAura;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -497,5 +499,6 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
 void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 
 void freeSpells();

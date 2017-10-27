@@ -526,6 +526,7 @@ void Entity::effectTimes()
 	spell_t* invisibility_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignores the invisibility timer since a spell is doing things. //TODO: Incorporate the spell into isInvisible() instead?
 	spell_t* levitation_hijacked = nullptr; //If NULL, function proceeds as normal. If points to something, it ignore the levitation timer since a spell is doing things.
 	spell_t* reflectMagic_hijacked = nullptr;
+	spell_t* vampiricAura_hijacked = nullptr;
 	//Handle magic effects (like invisibility)
 	for ( node = myStats->magic_effects.first; node; node = node->next, ++count )
 	{
@@ -621,7 +622,31 @@ void Entity::effectTimes()
 					{
 						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
 						{
-							messagePlayer(c, language[591]);
+							messagePlayer(c, language[2446]);
+						}
+					}
+					node_t* temp = nullptr;
+					if ( node->prev )
+					{
+						temp = node->prev;
+					}
+					else if ( node->next )
+					{
+						temp = node->next;
+					}
+					list_RemoveNode(node); //Remove this here node.
+					node = temp;
+				}
+				break;
+			case SPELL_VAMPIRIC_AURA:
+				vampiricAura_hijacked = spell;
+				if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] )
+				{
+					for ( c = 0; c < numplayers; ++c )
+					{
+						if ( players[c] && players[c]->entity == uidToEntity(spell->caster) && players[c]->entity != nullptr )
+						{
+							messagePlayer(c, language[2447]);
 						}
 					}
 					node_t* temp = nullptr;
@@ -858,6 +883,47 @@ void Entity::effectTimes()
 						if ( dissipate )
 						{
 							messagePlayer(player, language[2471]);
+							updateClient = true;
+						}
+						break;
+					case EFF_VAMPIRICAURA:
+						dissipate = true; //Remove the effect by default.
+						if ( vampiricAura_hijacked )
+						{
+							bool sustained = false;
+							Entity* caster = uidToEntity(vampiricAura_hijacked->caster);
+							if ( caster )
+							{
+								//Deduct mana from caster. Cancel spell if not enough mana (simply leave sustained at false).
+								bool deducted = caster->safeConsumeMP(2); //Consume 1 mana ever duration / mana seconds
+								if ( deducted )
+								{
+									sustained = true;
+									myStats->EFFECTS[c] = true;
+									myStats->EFFECTS_TIMERS[c] = vampiricAura_hijacked->channel_duration;
+								}
+								else
+								{
+									int i = 0;
+									for ( i = 0; i < 4; ++i )
+									{
+										if ( players[i]->entity == caster )
+										{
+											messagePlayer(i, language[2449]);
+										}
+									}
+									list_RemoveNode(vampiricAura_hijacked->magic_effects_node); //Remove it from the entity's magic effects. This has the side effect of removing it from the sustained spells list too.
+																								//list_RemoveNode(reflectMagic_hijacked->sustain_node); //Remove it from the channeled spells list.
+								}
+							}
+							if ( sustained )
+							{
+								dissipate = false; //Sustained the spell, so do not stop being invisible.
+							}
+						}
+						if ( dissipate )
+						{
+							messagePlayer(player, language[2449]);
 							updateClient = true;
 						}
 						break;
@@ -2401,7 +2467,7 @@ void Entity::handleEffects(Stat* myStats)
 
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
-		spawnAmbientParticles(80, 598, 10 + rand() % 40);
+		spawnAmbientParticles(80, 600, 10 + rand() % 40);
 	}
 
 	// burning
@@ -3543,6 +3609,9 @@ void Entity::attack(int pose, int charge, Entity* target)
 							break;
 						case SPELLBOOK_DRAIN_SOUL:
 							castSpell(uid, &spell_drainSoul, true, false);
+							break;
+						case SPELLBOOK_VAMPIRIC_AURA:
+							castSpell(uid, &spell_vampiricAura, true, false);
 							break;
 						//case SPELLBOOK_REFLECT_MAGIC: //TODO: Test monster support. Maybe better to just use a special ability that directly casts the spell.
 						//castSpell(uid, &spell_reflectMagic, true, false)
@@ -7450,7 +7519,7 @@ void Entity::handleEffectsClient()
 
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
-		spawnAmbientParticles(80, 598, 10 + rand() % 40);
+		spawnAmbientParticles(80, 600, 10 + rand() % 40);
 	}
 }
 
@@ -8290,6 +8359,19 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 	return false;
 }
 
+bool Entity::isSpellcasterBeginner()
+{
+	Stat* myStats = getStats();
+	if ( !myStats )
+	{
+		return false;
+	}
+	else if ( myStats->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER )
+	{
+		return true; //The caster has lower spellcasting skill. Cue happy fun times.
+	}
+	return false;
+}
 
 
 

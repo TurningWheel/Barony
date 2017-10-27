@@ -268,6 +268,7 @@ public:
 
 	Sint32 getAttack();
 	bool isBlind();
+	bool isSpellcasterBeginner();
 
 	bool isInvisible() const;
 

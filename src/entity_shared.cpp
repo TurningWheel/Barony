@@ -298,7 +298,7 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_acid_spray",
 	"spellbook_steal_weapon",
 	"spellbook_drain_soul",
-	"spellbook_blank_4",
+	"spellbook_vampiric_aura",
 	"spellbook_blank_5",
 	"potion_empty"
 	""
@@ -402,7 +402,7 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_acid_spray",
 		"spellbook_steal_weapon",
 		"spellbook_drain_soul",
-		"spellbook_blank_4",
+		"spellbook_vampiric_aura",
 		"spellbook_blank_5",
 		"tool_pickaxe",
 		"artifact_sword",
