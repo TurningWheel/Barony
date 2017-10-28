@@ -2699,7 +2699,7 @@ void createParticleSap(Entity* parent)
 	for ( int c = 0; c < 4; c++ )
 	{
 		// 4 particles, in an 'x' pattern around parent sprite.
-		int sprite = 0;
+		int sprite = parent->sprite;
 		if ( parent->skill[6] == SPELL_STEAL_WEAPON )
 		{
 			sprite = parent->sprite;
@@ -2715,6 +2715,23 @@ void createParticleSap(Entity* parent)
 				sprite = 599;
 			}
 		}
+		else if ( multiplayer == CLIENT )
+		{
+			// client won't receive the sprite skill data in time, fix for this until a solution is found!
+			if ( sprite == 598 )
+			{
+				if ( c == 0 || c == 3 )
+				{
+				// drain HP particle
+					sprite = parent->sprite;
+				}
+				else
+				{
+					// drain MP particle
+					sprite = 599;
+				}
+			}
+		}
 		Entity* entity = newEntity(sprite, 1, map.entities);
 		entity->sizex = 1;
 		entity->sizey = 1;
@@ -2724,6 +2741,12 @@ void createParticleSap(Entity* parent)
 		entity->scalex = 0.9;
 		entity->scaley = 0.9;
 		entity->scalez = 0.9;
+		if ( sprite == 598 || sprite == 599 )
+		{
+			entity->scalex = 0.5;
+			entity->scaley = 0.5;
+			entity->scalez = 0.5;
+		}
 		entity->parent = (parent->getUID());
 		entity->yaw = parent->yaw;
 		if ( c == 0 )
