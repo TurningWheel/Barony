@@ -393,7 +393,7 @@ int initApp(char* title, int fullscreen)
 	}
 	if ( !softwaremode )
 	{
-		generatePolyModels(0, nummodels);
+		generatePolyModels(0, nummodels, false);
 	}
 	fclose(fp);
 	// print a loading message
@@ -792,7 +792,7 @@ void freeLanguages()
 
 -------------------------------------------------------------------------------*/
 
-void generatePolyModels(int start, int end)
+void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
 	Sint32 x, y, z;
 	Sint32 c, i;
@@ -812,7 +812,7 @@ void generatePolyModels(int start, int end)
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-		if ( useModelCache )
+		if ( useModelCache && !forceCacheRebuild )
 		{
 			model_cache = openDataFile("models.cache", "rb");
 			if (model_cache) {
@@ -1754,7 +1754,7 @@ void generatePolyModels(int start, int end)
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
-	if (generateAll && useModelCache && (model_cache = openDataFile("models.cache", "wb"))) {
+	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) {
 		for (size_t model_index = 0; model_index < nummodels; model_index++) {
 			polymodel_t *cur = &polymodels[model_index];
 			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);

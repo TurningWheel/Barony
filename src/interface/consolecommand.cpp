@@ -962,7 +962,7 @@ void consoleCommand(char* command_str)
 		fclose(fp);
 		messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
-		generatePolyModels(startIndex, endIndex);
+		generatePolyModels(startIndex, endIndex, true);
 	}
 	else if (!strncmp(command_str, "/killmonsters", 13))
 	{
