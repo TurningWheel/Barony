@@ -812,16 +812,19 @@ void generatePolyModels(int start, int end)
 	if ( generateAll )
 	{
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
-		model_cache = openUserFile("models.cache", "rb");
-		if (model_cache) {
-			for (size_t model_index = 0; model_index < nummodels; model_index++) {
-				polymodel_t *cur = &polymodels[model_index];
-				fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
-				cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
-				fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+		if ( useModelCache )
+		{
+			model_cache = openDataFile("models.cache", "rb");
+			if (model_cache) {
+				for (size_t model_index = 0; model_index < nummodels; model_index++) {
+					polymodel_t *cur = &polymodels[model_index];
+					fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+					cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
+					fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+				}
+				fclose(model_cache);
+				return generateVBOs(start, end);
 			}
-			fclose(model_cache);
-			return generateVBOs(start, end);
 		}
 	}
 
@@ -1751,7 +1754,7 @@ void generatePolyModels(int start, int end)
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
-	if (generateAll && (model_cache = openUserFile("models.cache", "wb"))) {
+	if (generateAll && useModelCache && (model_cache = openDataFile("models.cache", "wb"))) {
 		for (size_t model_index = 0; model_index < nummodels; model_index++) {
 			polymodel_t *cur = &polymodels[model_index];
 			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);

@@ -520,6 +520,7 @@ extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
+extern bool useModelCache;
 extern Uint32 imgref, vboref;
 extern GLuint* texid;
 extern bool disablevbos;

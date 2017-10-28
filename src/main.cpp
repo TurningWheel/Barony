@@ -177,6 +177,7 @@ int* palette;
 
 // video definitions
 polymodel_t* polymodels = NULL;
+bool useModelCache = false;
 list_t ttfTextHash[HASH_SIZE];
 TTF_Font* ttf8 = NULL;
 TTF_Font* ttf12 = NULL;
