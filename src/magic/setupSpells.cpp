@@ -262,16 +262,16 @@ void setupSpells()   ///TODO: Verify this function.
 	strcpy(spellElement_stealWeapon.name, language[2396]);
 
 	spellElementConstructor(&spellElement_drainSoul);
-	spellElement_drainSoul.mana = 5;
-	spellElement_drainSoul.base_mana = 5;
+	spellElement_drainSoul.mana = 17;
+	spellElement_drainSoul.base_mana = 17;
 	spellElement_drainSoul.overload_multiplier = 1;
-	spellElement_drainSoul.damage = 10;
+	spellElement_drainSoul.damage = 18;
 	spellElement_drainSoul.duration = 0;
 	strcpy(spellElement_drainSoul.name, language[2397]);
 
 	spellElementConstructor(&spellElement_vampiricAura);
-	spellElement_vampiricAura.mana = 5;
-	spellElement_vampiricAura.base_mana = 5;
+	spellElement_vampiricAura.mana = 30;
+	spellElement_vampiricAura.base_mana = 30;
 	spellElement_vampiricAura.overload_multiplier = 1;
 	spellElement_vampiricAura.damage = 0;
 	spellElement_vampiricAura.duration = 1500; //TODO: Decide on something.
@@ -775,7 +775,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_drainSoul);
 	strcpy(spell_drainSoul.name, language[2397]);
 	spell_drainSoul.ID = SPELL_DRAIN_SOUL;
-	spell_drainSoul.difficulty = 0;
+	spell_drainSoul.difficulty = 75;
 	node = list_AddNodeLast(&spell_drainSoul.elements);
 	node->element = copySpellElement(&spellElement_missile);
 	node->size = sizeof(spellElement_t);
@@ -795,7 +795,7 @@ void setupSpells()   ///TODO: Verify this function.
 	spellConstructor(&spell_vampiricAura);
 	strcpy(spell_vampiricAura.name, language[2398]);
 	spell_vampiricAura.ID = SPELL_VAMPIRIC_AURA;
-	spell_vampiricAura.difficulty = 0;
+	spell_vampiricAura.difficulty = 50;
 	spell_vampiricAura.elements.first = nullptr;
 	spell_vampiricAura.elements.last = nullptr;
 	node = list_AddNodeLast(&spell_vampiricAura.elements);

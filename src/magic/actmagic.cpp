@@ -2026,6 +2026,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] /= (1 + (int)resistance);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= 4;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							if ( hit.entity->behavior == &actPlayer )
 							{
