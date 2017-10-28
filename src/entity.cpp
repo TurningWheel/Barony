@@ -2765,17 +2765,17 @@ Sint32 Entity::getAttack()
 	Stat* entitystats;
 	Sint32 attack = 0;
 
-	if ( (entitystats = this->getStats()) == NULL )
+	if ( (entitystats = this->getStats()) == nullptr )
 	{
 		return 0;
 	}
 
 	attack = 8; // base attack strength
-	if ( entitystats->weapon != NULL )
+	if ( entitystats->weapon != nullptr )
 	{
 		attack += entitystats->weapon->weaponGetAttack();
 	}
-	else if ( entitystats->weapon == NULL )
+	else if ( entitystats->weapon == nullptr )
 	{
 		// bare handed.
 		if ( entitystats->gloves )
@@ -2797,6 +2797,49 @@ Sint32 Entity::getAttack()
 	attack += this->getSTR();
 
 	return attack;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::getBonusAttackOnTarget
+
+returns the attack power depending on targets attributes, status effects and race
+
+-------------------------------------------------------------------------------*/
+
+Sint32 Entity::getBonusAttackOnTarget(Stat& hitstats)
+{
+	Stat* entitystats;
+	Sint32 bonusAttack = 0;
+
+	if ( (entitystats = this->getStats()) == nullptr )
+	{
+		return 0;
+	}
+
+	if ( entitystats->weapon )
+	{
+		if ( hitstats.EFFECTS_TIMERS[EFF_VAMPIRICAURA] )
+		{
+			// blessed weapons deal more damage under this effect.
+			bonusAttack += entitystats->weapon->beatitude;
+		}
+	}
+	else if ( entitystats->weapon == nullptr )
+	{
+		// bare handed.
+		if ( entitystats->gloves )
+		{
+			if ( entitystats->gloves->type == BRASS_KNUCKLES
+				|| entitystats->gloves->type == IRON_KNUCKLES
+				|| entitystats->gloves->type == SPIKED_GAUNTLETS )
+			{
+				bonusAttack += entitystats->gloves->beatitude;
+			}
+		}
+	}
+
+	return bonusAttack;
 }
 
 /*-------------------------------------------------------------------------------
@@ -4255,7 +4298,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 			}
 
-			if ( hitstats != NULL )
+			if ( hitstats != nullptr )
 			{
 				// hit chance
 				//int hitskill=5; // for unarmed combat
@@ -4287,11 +4330,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 					int damage = 0;
 					if ( weaponskill >= 0 )
 					{
-						damage = std::max(0, getAttack() - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
+						damage = std::max(0, getAttack() + getBonusAttackOnTarget(*hitstats) - AC(hitstats)) * damagetables[hitstats->type][weaponskill - PRO_SWORD];
 					}
 					else
 					{
-						damage = std::max(0, getAttack() - AC(hitstats));
+						damage = std::max(0, getAttack() + getBonusAttackOnTarget(*hitstats) - AC(hitstats));
 					}
 					if ( weaponskill == PRO_AXE )
 					{
@@ -4299,7 +4342,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					if ( myStats->type == VAMPIRE && myStats->EFFECTS[EFF_VAMPIRICAURA] )
 					{
-						damage += 5; // 5 bonus damage after armor.
+						damage += 5; // 5 bonus damage after reductions.
 					}
 
 					bool gungnir = false;

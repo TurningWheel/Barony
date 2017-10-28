@@ -270,6 +270,7 @@ public:
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
 	Sint32 getAttack();
+	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	bool isBlind();
 	bool isSpellcasterBeginner();
 
