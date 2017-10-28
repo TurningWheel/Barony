@@ -2906,6 +2906,10 @@ Sint32 statGetDEX(Stat* entitystats)
 	if ( entitystats->EFFECTS[EFF_VAMPIRICAURA] && !entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
 		DEX += 5;
+		if ( entitystats->type == VAMPIRE )
+		{
+			DEX += 3;
+		}
 	}
 	else if ( entitystats->EFFECTS[EFF_FAST] && !entitystats->EFFECTS[EFF_SLOW] )
 	{
@@ -4293,6 +4297,10 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						damage++;
 					}
+					if ( myStats->type == VAMPIRE && myStats->EFFECTS[EFF_VAMPIRICAURA] )
+					{
+						damage += 5; // 5 bonus damage after armor.
+					}
 
 					bool gungnir = false;
 					if ( myStats->weapon )
@@ -5089,12 +5097,20 @@ void Entity::attack(int pose, int charge, Entity* target)
 						}
 					}
 					// lifesteal
-					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] == true && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
+					if ( damage > 0 && (myStats->EFFECTS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr || myStats->type == VAMPIRE) )
 					{
 						bool lifestealSuccess = false;
 						if ( !wasBleeding && hitstats->EFFECTS[EFF_BLEEDING] )
 						{
 							// attack caused the target to bleed, trigger lifesteal tick
+							this->modHP(damage);
+							spawnMagicEffectParticles(x, y, z, 169);
+							playSoundEntity(this, 168, 128);
+							lifestealSuccess = true;
+						}
+						else if ( (rand() % 4 == 0) && (myStats->type == VAMPIRE && myStats->EFFECTS[EFF_VAMPIRICAURA]) )
+						{
+							// vampires under aura have higher chance.
 							this->modHP(damage);
 							spawnMagicEffectParticles(x, y, z, 169);
 							playSoundEntity(this, 168, 128);

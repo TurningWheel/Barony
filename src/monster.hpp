@@ -162,7 +162,7 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
+	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8 }, // vampire
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0 }, // shadow
 	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5 }, // cockatrice
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
@@ -397,8 +397,8 @@ static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM = 400;
 static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
-static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 800;
-static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;

@@ -92,7 +92,7 @@ void initVampire(Entity* my, Stat* myStats)
 			}
 			
 			// random effects
-			my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
+			//my->setEffect(EFF_MAGICRESIST, true, -1, true); //-1 duration, never expires.
 
 			// generates equipment and weapons if available from editor
 			createMonsterEquipment(myStats);
@@ -117,6 +117,10 @@ void initVampire(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
+					if ( rand() % 4 == 0 ) // 1 in 4
+					{
+						newItem(MAGICSTAFF_BLEED, static_cast<Status>(DECREPIT + rand() % 2), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+					}
 				case 1:
 					if ( rand() % 10 == 0 ) // 1 in 10
 					{
@@ -648,7 +652,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 2 * PI / 8, false, 0.0);
 						}
 
-						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							if ( multiplayer != CLIENT )
 							{
@@ -1337,14 +1341,14 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 		}
 
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (10 + 50 * (target->behavior == &actMonster));
+		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
 		if ( myStats->HP <= myStats->MAXHP * 0.8 )
 		{
-			bonusFromHP += 1; // +2.5% chance if on low health
+			bonusFromHP += 1; // +5% chance if on low health
 		}
 		if ( myStats->HP <= myStats->MAXHP * 0.4 )
 		{
-			bonusFromHP += 3; // +extra 2.5% chance if on lower health
+			bonusFromHP += 3; // +extra 15% chance if on lower health
 		}
 
 		int requiredRoll = (1 + bonusFromHP);
@@ -1361,7 +1365,26 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < requiredRoll )
 		{
 			node_t* node = nullptr;
-			if ( rand() % 5 == 0 && !myStats->EFFECTS[EFF_VAMPIRICAURA] )
+			bool chooseAura = false;
+			if ( !myStats->EFFECTS[EFF_VAMPIRICAURA] )
+			{
+				if ( myStats->HP <= myStats->MAXHP * 0.4)
+				{
+					if ( rand() % 4 > 0 )
+					{
+						chooseAura = true; // 75% chance if low HP
+					}
+				}
+				if ( !chooseAura )
+				{
+					if ( rand() % 5 == 0 )
+					{
+						chooseAura = true; // 20% chance base
+					}
+				}
+			}
+			
+			if ( chooseAura )
 			{
 				node = itemNodeInInventory(myStats, SPELLBOOK_VAMPIRIC_AURA, static_cast<Category>(-1));
 				if ( node != nullptr )
@@ -1388,45 +1411,45 @@ void Entity::vampireChooseWeapon(const Entity* target, double dist)
 		}
 	}
 
-	//bool inMeleeRange = monsterInMeleeRange(target, dist);
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
 
-	//if ( inMeleeRange )
-	//{
-	//	//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
-	//	if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
-	//	{
-	//		node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
-	//		if ( !weaponNode )
-	//		{
-	//			return; //Resort to fists.
-	//		}
+	if ( inMeleeRange )
+	{
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
 
-	//		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
-	//		if ( !swapped )
-	//		{
-	//			//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
-	//		}
-	//		else
-	//		{
-	//			return;
-	//		}
-	//	}
-	//	else
-	//	{
-	//		return;
-	//	}
-	//}
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+			if ( !swapped )
+			{
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
 
-	////Switch to a thrown weapon or a ranged weapon.
-	//if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
-	//{
-	//	node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
-	//	if ( !weaponNode )
-	//	{
-	//		return; //Nothing available
-	//	}
-	//	bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
-	//	return;
-	//}
+	//Switch to a thrown weapon or a ranged weapon.
+	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
+	{
+		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
+		if ( !weaponNode )
+		{
+			return; //Nothing available
+		}
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+		return;
+	}
 	return;
 }
