@@ -2905,7 +2905,7 @@ client (player %d) (direct ip)#
 2277 spellbook#
 2278 spellbook of drain soul#
 2279 spellbook#
-2280 blank spellbook 4#
+2280 spellbook of vampiric aura#
 2281 spellbook#
 2282 blank spellbook 5#
 2283 spellbook#
@@ -2938,7 +2938,7 @@ but it retracts beyond your might!#
 2395 Spray Acid#
 2396 Steal Weapon#
 2397 Drain Soul#
-2398 blank#
+2398 Vampiric Aura#
 2399 blank#
 
 2400 Gamepad#
@@ -2986,11 +2986,20 @@ dominate the %s into your service!#
 2443 You fail to drain the %s's life force.#
 2444 You resist the spell's drain!#
 2445 You feel restored!#
+2446 Your spell (reflect magic) was interrupted!#
+2447 Your spell (vampiric aura) was interrupted!#
+2448 Failed to sustain spell (vampiric aura).#
+2449 You begin to feel faint as your thirst for blood settles...#
 
-#More character creation screen stuff.
-2450 Random Name#
-
-#New effects.
+#New effects (contd.)
+2451 You are bleeding heavily!#
+2452 The %s is bleeding heavily!#
+2453 %s's is bleeding heavily!#
+2454 Your wounds rupture further open!#
+2455 The %s's wounds rupture further open!#
+2456 %s's wounds rupture further open!#
+2457 The %s's blow bounces off!#
+2458 %s's blow bounces off!#
 2470 You no longer feel magic weaken against you.#
 2471 You no longer feel magic bounce off you.#
 2472 You feel magic weaken against you.#
@@ -2999,6 +3008,9 @@ dominate the %s into your service!#
 2475 But you feel some energy go out and it bounces off!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
+2477 You are imbued with vampiric might!#
 
+#More character creation screen stuff.
+2498 Random Name#
 
 2499 end#
