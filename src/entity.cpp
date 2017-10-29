@@ -939,6 +939,8 @@ void Entity::effectTimes()
 							messagePlayer(player, language[2449]);
 							updateClient = true;
 						}
+					case EFF_SLOW:
+						messagePlayer(player, language[604]); // "You return to your normal speed."
 						break;
 					default:
 						break;
@@ -2021,10 +2023,10 @@ void Entity::handleEffects(Stat* myStats)
 	{
 		vampiricHunger = true;
 	}
-	if ( (ticks % 30 == 0 && !hungerring) 
+	if ( (ticks % 30 == 0 && !hungerring)
 		|| (ticks % 15 == 0 && hungerring < 0)
-		|| (ticks % 120 == 0 && hungerring > 0) 
-		|| (ticks % 5 == 0 && vampiricHunger) 
+		|| (ticks % 120 == 0 && hungerring > 0)
+		|| (ticks % 5 == 0 && vampiricHunger)
 	)
 	{
 		if ( myStats->HUNGER > 0 )
@@ -2465,7 +2467,7 @@ void Entity::handleEffects(Stat* myStats)
 					{
 						entity->x = this->x;
 						entity->y = this->y;
-						entity->z = 7.4 + (rand() % 20) / 100.f;
+						entity->z = 8.0 + (rand() % 20) / 100.0;
 						entity->parent = this->uid;
 						entity->sizex = 2;
 						entity->sizey = 2;
@@ -2563,10 +2565,7 @@ void Entity::handleEffects(Stat* myStats)
 			{
 				this->flags[BURNING] = false;
 				messagePlayer(player, language[647]);
-				if ( player > 0 && multiplayer == SERVER )
-				{
-					serverUpdateEntityFlag(this, BURNING);
-				}
+				serverUpdateEntityFlag(this, BURNING);
 			}
 		}
 	}
@@ -4990,7 +4989,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 								|| (rand() % 10 == 0 && weaponskill == PRO_SWORD)
 								|| (rand() % 4 == 0 && pose == MONSTER_POSE_GOLEM_SMASH)
 								|| (rand() % 10 == 0 && myStats->type == VAMPIRE && myStats->weapon == nullptr)
-								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr) 
+								|| (rand() % 8 == 0 && myStats->EFFECTS_TIMERS[EFF_VAMPIRICAURA] && myStats->weapon == nullptr)
 							)
 							{
 								bool heavyBleedEffect = false; // heavy bleed will have a greater starting duration, and add to existing duration.
@@ -5055,7 +5054,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 										}
 									}
 								}
-								
+
 								// message player of effect, skip if hit entity was already bleeding.
 								if ( hitstats->EFFECTS[EFF_BLEEDING] && (!wasBleeding || heavyBleedEffect) )
 								{
@@ -7292,7 +7291,7 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 			}
 		}
 	}
-	// swing arm to cast spell 
+	// swing arm to cast spell
 	else if ( monsterAttack == MONSTER_POSE_MAGIC_WINDUP2 )
 	{
 		if ( monsterAttackTime == 0 )
@@ -8651,5 +8650,3 @@ char* Entity::getMonsterLangEntry()
 	}
 	return nullptr;
 }
-
-
