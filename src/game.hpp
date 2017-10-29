@@ -12,6 +12,7 @@
 #pragma once
 
 #include <vector>
+#include <random>
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #define VERSION "v2.0.7"
