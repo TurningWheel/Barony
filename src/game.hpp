@@ -173,6 +173,8 @@ void actWallBuilder(Entity* my);
 void actPowerCrystalBase(Entity* my);
 void actPowerCrystal(Entity* my);
 void actPowerCrystalParticleIdle(Entity* my);
+void actPedestalBase(Entity* my);
+void actPedestalOrb(Entity* my);
 
 void startMessages();
 

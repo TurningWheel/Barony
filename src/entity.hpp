@@ -345,6 +345,7 @@ public:
 	void actChest();
 	void actPowerCrystal();
 	void actGate();
+	void actPedestalBase();
 
 	Monster getRace() const
 	{
