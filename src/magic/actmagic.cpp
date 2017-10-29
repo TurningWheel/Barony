@@ -1157,6 +1157,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !hit.entity->flags[BURNING] )
 							{
 								hit.entity->flags[BURNING] = true;
+								serverUpdateEntityFlag(hit.entity, BURNING);
 							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
@@ -1299,6 +1300,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_CONFUSED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							hit.entity->skill[1] = 0; //Remove the monster's target.
 							if ( parent )
 							{
@@ -1355,6 +1363,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
@@ -1434,6 +1449,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							// update enemy bar for attacker
 							if ( parent )
 							{
@@ -1708,16 +1730,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actDoor)
 						{
-							//Open door
-							if (!hit.entity->skill[0] && !hit.entity->skill[3])
+							// Open the Door
+							playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+							hit.entity->skill[5] = 0; // Unlocks the Door
+
+							if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
-								hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
+								hit.entity->skill[3] = 1 + (my->x > hit.entity->x); // Opens the Door
+								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 							}
-							else if (hit.entity->skill[0] && !hit.entity->skill[3])
+							else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
-								hit.entity->skill[3] = 1 + (my->x < hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
+								hit.entity->skill[3] = 1 + (my->x < hit.entity->x); // Opens the Door
+								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 							}
 							if ( parent )
 								if ( parent->behavior == &actPlayer)
@@ -1725,31 +1750,33 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									messagePlayer(parent->skill[2], language[402]);
 								}
 						}
-						else if (hit.entity->behavior == &actGate)
+						else if ( hit.entity->behavior == &actGate )
 						{
-							//Open gate
+							// Open the Gate
 							if ( hit.entity->skill[28] != 2 )
 							{
-								hit.entity->skill[28] = 2; // power it
+								hit.entity->skill[28] = 2; // Powers the Gate
 								if ( parent )
-									if ( parent->behavior == &actPlayer)
+								{
+									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[403]);
+										messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
 									}
+								}
 							}
 						}
-						else if (hit.entity->behavior == &actChest)
+						else if ( hit.entity->behavior == &actChest )
 						{
-							//Unlock chest
+							// Unlock the Chest
 							if ( hit.entity->chestLocked )
 							{
-								playSoundEntity(hit.entity, 91, 64);
+								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
 								hit.entity->unlockChest();
 								if ( parent )
 								{
 									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], language[404]);
+										messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
 									}
 								}
 							}
@@ -1780,15 +1807,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
 								}
+							}
+
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, language[401]); // "No telling what it did..."
 							}
 						}
+
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
