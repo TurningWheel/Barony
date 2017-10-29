@@ -663,7 +663,7 @@ Spawns misc particle effects for all clients
 
 -------------------------------------------------------------------------------*/
 
-void serverSpawnMiscParticles(Entity* entity, int particleType)
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite)
 {
 	int c;
 	if ( multiplayer != SERVER )
@@ -677,9 +677,10 @@ void serverSpawnMiscParticles(Entity* entity, int particleType)
 			strcpy((char*)net_packet->data, "SPPE");
 			SDLNet_Write32(entity->getUID(), &net_packet->data[4]);
 			net_packet->data[8] = particleType;
+			SDLNet_Write16(particleSprite, &net_packet->data[9]);
 			net_packet->address.host = net_clients[c - 1].host;
 			net_packet->address.port = net_clients[c - 1].port;
-			net_packet->len = 10;
+			net_packet->len = 12;
 			sendPacketSafe(net_sock, -1, net_packet, c - 1);
 		}
 	}
@@ -2036,7 +2037,8 @@ void clientHandlePacket()
 			entity = (Entity*)node->element;
 			if ( entity->getUID() == i )
 			{
-				int particleType = net_packet->data[8];
+				int particleType = static_cast<int>(net_packet->data[8]);
+				int sprite = static_cast<int>(SDLNet_Read16(&net_packet->data[9]));
 				switch ( particleType )
 				{
 					case PARTICLE_EFFECT_ABILITY_PURPLE:
@@ -2046,7 +2048,28 @@ void clientHandlePacket()
 						createParticleRock(entity);
 						break;
 					case PARTICLE_EFFECT_SHADOW_INVIS:
-						createParticleDropRising(entity, 593);
+						createParticleDropRising(entity, sprite, 1.0);
+						break;
+					case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 80, sprite);
+						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownSprite = sprite;
+						spellTimer->particleTimerPreDelay = 40;
+					}
+						break;
+					case PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownSprite = sprite;
+					}
+					break;
+					case PARTICLE_EFFECT_ERUPT:
+						createParticleErupt(entity, sprite);
+						break;
+					case PARTICLE_EFFECT_VAMPIRIC_AURA:
+						createParticleDropRising(entity, sprite, 0.5);
 						break;
 					default:
 						break;

@@ -162,7 +162,7 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
+	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8 }, // vampire
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0 }, // shadow
 	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5 }, // cockatrice
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
@@ -375,6 +375,12 @@ static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 23;
 static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
 //static const int MONSTER_POSE_SHADOW_TELEMIMICINVISI_WINDUP = 25;
 static const int MONSTER_POSE_INSECTOID_DOUBLETHROW = 25;
+static const int MONSTER_POSE_INCUBUS_CONFUSION = 26;
+static const int MONSTER_POSE_INCUBUS_TELEPORT = 27;
+static const int MONSTER_POSE_VAMPIRE_AURA_CHARGE = 28;
+static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
+static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
+
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
@@ -387,6 +393,12 @@ static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 200;
 static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK = 500;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM = 400;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
@@ -464,3 +476,13 @@ static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
 static const int INSECTOID_ACID = 1;
 static const int INSECTOID_DOUBLETHROW_FIRST = 2;
 static const int INSECTOID_DOUBLETHROW_SECOND = 3;
+
+//--Incubus--
+static const int INCUBUS_CONFUSION = 1;
+static const int INCUBUS_STEAL = 2;
+static const int INCUBUS_TELEPORT_STEAL = 3;
+static const int INCUBUS_TELEPORT = 4;
+
+//--Vampire--
+static const int VAMPIRE_CAST_AURA = 1;
+static const int VAMPIRE_CAST_DRAIN = 2;

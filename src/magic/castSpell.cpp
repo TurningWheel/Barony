@@ -207,10 +207,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 	bool newbie = false;
 	if ( !using_magicstaff && !trap)
 	{
-		if (stat->PROFICIENCIES[PRO_SPELLCASTING] < SPELLCASTING_BEGINNER)
-		{
-			newbie = true; //The caster has lower spellcasting skill. Cue happy fun times.
-		}
+		newbie = caster->isSpellcasterBeginner();
 
 		/*magiccost = getCostOfSpell(spell);
 		if (magiccost < 0) {
@@ -719,8 +716,8 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 					//createParticleDropRising(caster);
 				}
 			}
-			createParticleDropRising(caster, 593);
-			serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS);
+			createParticleDropRising(caster, 593, 1.0);
+			serverSpawnMiscParticles(caster, PARTICLE_EFFECT_SHADOW_INVIS, 593);
 
 			//createParticleSapCenter(caster, caster->x + 64 * cos(caster->yaw), caster->y + 64 * sin(caster->yaw), 172, 172);
 			playSoundEntity(caster, 167, 128);
@@ -764,6 +761,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 
 			playSoundEntity(caster, 166, 128 );
 			spawnMagicEffectParticles(caster->x, caster->y, caster->z, 174);
+		}
+		else if ( !strcmp(element->name, spellElement_vampiricAura.name) )
+		{
+			channeled_spell = spellEffectVampiricAura(caster, spell, extramagic_to_use);
+			//Also refactor the duration determining code.
 		}
 
 		if (propulsion == PROPULSION_MISSILE)
@@ -838,11 +840,11 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			}
 			else if ( !strcmp(spell->name, spell_acidSpray.name) )
 			{
-				sprite = 171;
+				sprite = 597;
 				angle = PI / 16;
 				baseSpeed = 3;
 				baseSideSpeed = 2;
-				traveltime = 15;
+				traveltime = 20;
 			}
 
 			entity = newEntity(168, 1, map.entities); // red magic ball
@@ -1102,6 +1104,20 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				if ( propulsion == PROPULSION_MISSILE )
 				{
 					entity->sprite = 171;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 175;
+				}
+			}
+			else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+			{
+				if ( propulsion == PROPULSION_MISSILE )
+				{
+					entity->sprite = 598;
 				}
 			}
 		}

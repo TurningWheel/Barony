@@ -227,9 +227,9 @@ typedef enum ItemType
 	SPELLBOOK_BLEED,
 	SPELLBOOK_REFLECT_MAGIC,
 	SPELLBOOK_ACID_SPRAY,
-	SPELLBOOK_BLANK_2,
-	SPELLBOOK_BLANK_3,
-	SPELLBOOK_BLANK_4,
+	SPELLBOOK_STEAL_WEAPON,
+	SPELLBOOK_DRAIN_SOUL,
+	SPELLBOOK_VAMPIRIC_AURA,
 	SPELLBOOK_BLANK_5,
 	POTION_EMPTY
 } ItemType;
@@ -447,11 +447,11 @@ bool inline isMeleeWeapon(const Item& item);
 
 void createCustomInventory(Stat* stats, int itemLimit);
 void copyItem(Item* itemToSet, Item* itemToCopy);
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack);
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed);
 bool monsterUnequipSlot(Stat* myStats, Item** slot, Item* itemToUnequip);
 bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat);
 node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat);
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats);
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff);
 node_t* getMeleeWeaponItemNodeInInventory(Stat* myStats);
 ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 
