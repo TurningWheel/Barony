@@ -296,9 +296,9 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_bleed",
 	"spellbook_reflect_magic",
 	"spellbook_acid_spray",
-	"spellbook_blank_2",
-	"spellbook_blank_3",
-	"spellbook_blank_4",
+	"spellbook_steal_weapon",
+	"spellbook_drain_soul",
+	"spellbook_vampiric_aura",
 	"spellbook_blank_5",
 	"potion_empty"
 	""
@@ -400,9 +400,9 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"spellbook_dig",
 		"spellbook_reflect_magic",
 		"spellbook_acid_spray",
-		"spellbook_blank_2",
-		"spellbook_blank_3",
-		"spellbook_blank_4",
+		"spellbook_steal_weapon",
+		"spellbook_drain_soul",
+		"spellbook_vampiric_aura",
 		"spellbook_blank_5",
 		"tool_pickaxe",
 		"artifact_sword",
@@ -917,7 +917,6 @@ int canWearEquip(Entity* entity, int category)
 				case GHOUL:
 				case SCARAB:
 				case CRYSTALGOLEM:
-				case INCUBUS:
 				case COCKATRICE:
 					equipType = 0;
 					break;
@@ -931,6 +930,7 @@ int canWearEquip(Entity* entity, int category)
 
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
+				case INCUBUS:
 				case LICH_FIRE:
 				case LICH_ICE:
 					equipType = 2;
