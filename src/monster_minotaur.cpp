@@ -847,7 +847,7 @@ void actMinotaurCeilingBuster(Entity* my)
 						}
 						else if (	entity->behavior == &actStalagCeiling	||
 									entity->behavior == &actStalagFloor		||
-									entity->behavior == &actStalagColumn 
+									entity->behavior == &actStalagColumn
 								)
 						{
 							// spawn several rock items

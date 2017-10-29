@@ -964,7 +964,7 @@ void actPlayer(Entity* my)
 					PLAYER_BOBMOVE -= .03;
 				}
 			}
-			if ( (*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent())) && !command && !swimming)
+			if ( ((*inputPressed(impulses[IN_FORWARD]) || *inputPressed(impulses[IN_BACK])) || (*inputPressed(impulses[IN_RIGHT]) - *inputPressed(impulses[IN_LEFT])) || (game_controller && (game_controller->getLeftXPercent() || game_controller->getLeftYPercent()))) && !command && !swimming)
 			{
 				if (!stats[clientnum]->defending)
 				{
@@ -1270,7 +1270,7 @@ void actPlayer(Entity* my)
 								entity = newEntity(160, 1, map.entities);
 								entity->x = my->x;
 								entity->y = my->y;
-								entity->z = 7.4 + (rand() % 20) / 100.f;
+								entity->z = 8.0 + (rand() % 20) / 100.0;
 								entity->parent = my->getUID();
 								entity->sizex = 2;
 								entity->sizey = 2;

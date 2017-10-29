@@ -110,7 +110,8 @@ void castSpellInit(Uint32 caster_uid, spell_t* spell)
 		return;
 	}
 
-	if ( stat->EFFECTS[EFF_PARALYZED] )
+	// Entity cannot cast Spells while Paralyzed or Asleep
+	if ( stat->EFFECTS[EFF_PARALYZED] || stat->EFFECTS[EFF_ASLEEP] )
 	{
 		return;
 	}
@@ -655,10 +656,10 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 						stats[i]->EFFECTS[c] = false;
 						stats[i]->EFFECTS_TIMERS[c] = 0;
 					}
-					if ( players[clientnum]->entity->flags[BURNING] )
+					if ( players[i]->entity->flags[BURNING] )
 					{
-						players[clientnum]->entity->flags[BURNING] = false;
-						serverUpdateEntityFlag(players[clientnum]->entity, BURNING);
+						players[i]->entity->flags[BURNING] = false;
+						serverUpdateEntityFlag(players[i]->entity, BURNING);
 					}
 					serverUpdateEffects(player);
 					playSoundEntity(entity, 168, 128);
