@@ -41,7 +41,8 @@ static const int EFF_BLEEDING = 14;
 static const int EFF_SLOW = 15;
 static const int EFF_MAGICRESIST = 16;
 static const int EFF_MAGICREFLECT = 17;
-static const int NUMEFFECTS = 18;
+static const int EFF_VAMPIRICAURA = 18;
+static const int NUMEFFECTS = 19;
 
 // stats
 static const int STAT_STR = 0;

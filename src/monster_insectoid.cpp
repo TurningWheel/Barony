@@ -604,7 +604,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
 			if ( bodypart == LIMB_HUMANOID_LEFTARM && 
-				(my->monsterSpecialState == INSECTOID_ACID) )
+				(my->monsterSpecialState == INSECTOID_ACID && my->monsterAttack != 0) )
 			{
 				Entity* weaponarm = nullptr;
 				// leftarm follows the right arm during special acid attack
@@ -1302,11 +1302,12 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	int specialRoll = -1;
 	int bonusFromHP = 0;
 
-	// throwing weapons, chances compensated for how often this check is called.
+	// throwing weapons
 	// occurs less often against fellow monsters.
-	if ( monsterSpecialTimer == 0 )
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		specialRoll = rand() % (20 + 20 * (target->behavior == &actMonster));
+		specialRoll = rand() % (40 + 40 * (target->behavior == &actMonster));
+		//messagePlayer(0, "rolled: %d", specialRoll);
 		if ( myStats->HP <= myStats->MAXHP * 0.6 )
 		{
 			bonusFromHP += 1; // +5% chance if on low health
@@ -1320,14 +1321,17 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 			node_t* node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
 			if ( node != nullptr )
 			{
-				swapMonsterWeaponWithInventoryItem(this, myStats, node, true);
-				if ( myStats->weapon->count > 1 )
+				bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+				if ( swapped )
 				{
-					monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + rand() % 2; // 50% for double throw.
-				}
-				else
-				{
-					monsterSpecialState = INSECTOID_DOUBLETHROW_SECOND;
+					if ( myStats->weapon->count > 1 )
+					{
+						monsterSpecialState = INSECTOID_DOUBLETHROW_FIRST + rand() % 2; // 50% for double throw.
+					}
+					else
+					{
+						monsterSpecialState = INSECTOID_DOUBLETHROW_SECOND;
+					}
 				}
 				return;
 			}
@@ -1347,7 +1351,7 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 				return; //Resort to fists.
 			}
 
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
 			if ( !swapped )
 			{
 				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
@@ -1366,13 +1370,12 @@ void Entity::insectoidChooseWeapon(const Entity* target, double dist)
 	//Switch to a thrown weapon or a ranged weapon.
 	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
 	{
-		//First search the inventory for a THROWN weapon.
-		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+		node_t *weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
 		if ( !weaponNode )
 		{
 			return; //Nothing available
 		}
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false);
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
 		return;
 	}
 	return;

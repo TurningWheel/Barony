@@ -537,10 +537,9 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->pitch = 0;
 						entity->roll = 0;
 						playSoundEntityLocal(my, 79, 128);
+						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
-							createParticleDot(my);
-							serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_PURPLE);
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
 							myStats->EFFECTS[EFF_STUNNED] = true;
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 20;
@@ -622,11 +621,10 @@ void cockatriceMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->roll = 0;
 						// set overshoot for z axis animation
 						playSoundEntityLocal(my, 79, 128);
+						createParticleDot(my);
 						if ( multiplayer != CLIENT )
 						{
 							my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
-							createParticleDot(my);
-							serverSpawnMiscParticles(my, PARTICLE_EFFECT_ABILITY_PURPLE);
 							// cockatrice can't be paralyzed, use EFF_STUNNED instead.
 							myStats->EFFECTS[EFF_STUNNED] = true;
 							myStats->EFFECTS_TIMERS[EFF_STUNNED] = 50;

@@ -62,6 +62,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
 	particleDuration(skill[0]),
+	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
 	itemNotMoving(skill[18]),
 	gateInit(skill[1]),
@@ -87,7 +88,15 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	doorTimer(skill[7]),
 	doorOldStatus(skill[8]),
 	doorMaxHealth(skill[9]),
-	doorStartAng(fskill[0])
+	doorStartAng(fskill[0]),
+	particleTimerDuration(skill[0]),
+	particleTimerEndAction(skill[1]),
+	particleTimerEndSprite(skill[3]),
+	particleTimerCountdownAction(skill[4]),
+	particleTimerCountdownSprite(skill[5]),
+	particleTimerTarget(skill[6]),
+	particleTimerPreDelay(skill[7]),
+	particleTimerVariable1(skill[8])
 {
 	int c;
 	// add the entity to the entity list

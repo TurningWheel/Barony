@@ -3929,6 +3929,11 @@ timeToGoAgain:
 
 				// rotate monster
 				dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
+
+				// To prevent the Entity's position from being updated by dead reckoning on the CLient, set the velocity to 0 after usage
+				MONSTER_VELX = 0.0;
+				MONSTER_VELY = 0.0;
+
 				while ( dir >= PI )
 				{
 					dir -= PI * 2;
@@ -4389,7 +4394,13 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		// check if ready to attack
 		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) || (this->monsterHitTime >= 5 && myStats->type == LICH) )
 		{
-			this->handleMonsterSpecialAttack(myStats, nullptr, dist);
+			bool shouldAttack = this->handleMonsterSpecialAttack(myStats, nullptr, dist);
+			if ( !shouldAttack )
+			{
+				// handleMonsterSpecialAttack processed an action where the monster should not try to attack this frame.
+				// e.g unequipping/swapping from special weapon, stops punching the air after casting a spell.
+				return;
+			}
 
 			if ( myStats->type == LICH )
 			{
@@ -4902,7 +4913,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 	return true;
 }
 
-void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist)
+bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist)
 {
 	int specialRoll = 0;
 	node_t* node = nullptr;
@@ -4914,7 +4925,8 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 	{
 		if ( myStats->type == LICH || myStats->type == DEVIL || myStats->type == SHOPKEEPER )
 		{
-			return;
+			// monster should attack after this function is called.
+			return true;
 		}
 
 		if ( this->monsterSpecialTimer == 0 )
@@ -4933,7 +4945,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -4945,7 +4957,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -5017,7 +5029,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
@@ -5073,7 +5085,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						specialRoll = rand() % 20;
 						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
-
+						//messagePlayer(0, "insectoid roll %d", specialRoll);
 						if ( myStats->HP <= myStats->MAXHP * 0.5 )
 						{
 							bonusFromHP = 4; // +20% chance if on low health
@@ -5084,13 +5096,46 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 							if ( node != nullptr )
 							{
 								monsterSpecialState = INSECTOID_ACID;
-								swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
+								serverUpdateEntitySkill(this, 33); // for clients to handle animation
 							}
 							break;
 						}
 					}
 					// throwing weapon special handled in insectoidChooseWeapon()
+					break;
+				case INCUBUS:
+					if ( monsterSpecialState == INCUBUS_CONFUSION )
+					{
+						// throwing weapon special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION;
+						break;
+					}
+					else if ( monsterSpecialState == INCUBUS_STEAL )
+					{
+						// special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL;
+						break;
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT )
+					{
+						// special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET;
+						break;
+					}
+					break;
+				case VAMPIRE:
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					{
+						// special handled in vampireChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA;
+					}
+					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
+					{
+						// special handled in vampireChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN;
+					}
 					break;
 				default:
 					break;
@@ -5098,13 +5143,14 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 		}
 		else if ( this->monsterSpecialTimer > 0 )
 		{
+			bool shouldAttack = true;
 			switch ( myStats->type )
 			{
 				case KOBOLD:
 					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
-						swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 					}
 					else
 					{
@@ -5115,15 +5161,17 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					if ( monsterSpecialState == INSECTOID_ACID )
 					{
 						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						}
 						else
 						{
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						}
+						shouldAttack = false;
 					}
 					else if ( monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
 					{
@@ -5131,24 +5179,97 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node, false);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 						}
 						else
 						{
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
 						}
+						shouldAttack = false;
 					}
 					break;
 				case COCKATRICE:
 					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 					break;
+				case INCUBUS:
+					if ( monsterSpecialState == INCUBUS_CONFUSION )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, POTION);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == INCUBUS_STEAL )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT_STEAL )
+					{
+						// this flag will be cleared in incubusChooseWeapon
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT )
+					{
+						// this flag will be cleared in incubusChooseWeapon
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case VAMPIRE:
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
 				default:
 					break;
 			}
+			// Whether monster should attack following the unequip action.
+			return shouldAttack;
 		}
 	}
-	
-	return;
+	// monster should attack after this function is called.
+	return true;
 }
 
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list)

@@ -283,11 +283,11 @@ void clickDescription(int player, Entity* entity)
 				{
 					if ( stat->type < KOBOLD ) //Original monster count
 					{
-						messagePlayer(player, language[253], language[90 + stat->type]);
+						messagePlayer(player, language[253], language[90 + stat->type], stat->name);
 					}
 					else if ( stat->type >= KOBOLD ) //New monsters
 					{
-						messagePlayer(player, language[253], language[2000 + (stat->type - KOBOLD)]);
+						messagePlayer(player, language[253], language[2000 + (stat->type - KOBOLD)], stat->name);
 					}
 				}
 			}

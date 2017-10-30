@@ -53,6 +53,9 @@ spellElement_t spellElement_bleed;
 spellElement_t spellElement_dominate;
 spellElement_t spellElement_reflectMagic;
 spellElement_t spellElement_acidSpray;
+spellElement_t spellElement_stealWeapon;
+spellElement_t spellElement_drainSoul;
+spellElement_t spellElement_vampiricAura;
 
 spell_t spell_forcebolt;
 spell_t spell_magicmissile;
@@ -82,6 +85,9 @@ spell_t spell_bleed;
 spell_t spell_dominate;
 spell_t spell_reflectMagic;
 spell_t spell_acidSpray;
+spell_t spell_stealWeapon;
+spell_t spell_drainSoul;
+spell_t spell_vampiricAura;
 
 void addSpell(int spell, int player, bool ignoreSkill)
 {
@@ -177,6 +183,15 @@ void addSpell(int spell, int player, bool ignoreSkill)
 			break;
 		case SPELL_ACID_SPRAY:
 			new_spell = copySpell(&spell_acidSpray);
+			break;
+		case SPELL_STEAL_WEAPON:
+			new_spell = copySpell(&spell_stealWeapon);
+			break;
+		case SPELL_DRAIN_SOUL:
+			new_spell = copySpell(&spell_drainSoul);
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			new_spell = copySpell(&spell_vampiricAura);
 			break;
 		default:
 			return;
@@ -501,6 +516,15 @@ spell_t* getSpellFromID(int ID)
 		case SPELL_ACID_SPRAY:
 			spell = &spell_acidSpray;
 			break;
+		case SPELL_STEAL_WEAPON:
+			spell = &spell_stealWeapon;
+			break;
+		case SPELL_DRAIN_SOUL:
+			spell = &spell_drainSoul;
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			spell = &spell_vampiricAura;
+			break;
 		default:
 			break;
 	}
@@ -596,6 +620,15 @@ Item* getSpellbookFromSpellID(int spellID)
 		case SPELL_ACID_SPRAY:
 			itemType = SPELLBOOK_ACID_SPRAY;
 			break;
+		case SPELL_STEAL_WEAPON:
+			itemType = SPELLBOOK_STEAL_WEAPON;
+			break;
+		case SPELL_DRAIN_SOUL:
+			itemType = SPELLBOOK_DRAIN_SOUL;
+			break;
+		case SPELL_VAMPIRIC_AURA:
+			itemType = SPELLBOOK_VAMPIRIC_AURA;
+			break;
 		default:
 			break;
 	}
@@ -664,6 +697,12 @@ int getSpellIDFromSpellbook(int spellbookType)
 			return spell_reflectMagic.ID;
 		case SPELLBOOK_ACID_SPRAY:
 			return spell_acidSpray.ID;
+		case SPELLBOOK_STEAL_WEAPON:
+			return spell_stealWeapon.ID;
+		case SPELLBOOK_DRAIN_SOUL:
+			return spell_drainSoul.ID;
+		case SPELLBOOK_VAMPIRIC_AURA:
+			return spell_vampiricAura.ID;
 		default:
 			return SPELL_NONE;
 	}

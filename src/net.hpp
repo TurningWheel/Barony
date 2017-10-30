@@ -33,7 +33,7 @@ void sendMapTCP(int c);
 void serverUpdateEntitySprite(Entity* entity);
 void serverUpdateEntitySkill(Entity* entity, int skill);
 void serverUpdateEntityFSkill(Entity* entity, int fskill);
-void serverSpawnMiscParticles(Entity* entity, int particleType);
+void serverSpawnMiscParticles(Entity* entity, int particleType, int particleSprite);
 void serverUpdateEntityFlag(Entity* entity, int flag);
 void serverUpdateBodypartIDs(Entity* entity);
 void serverUpdateEntityBodypart(Entity* entity, int bodypart);

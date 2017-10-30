@@ -198,6 +198,17 @@ public:
 
 	//--PUBLIC AMBIENT PARTICLE EFFECT SKILLS--
 	Sint32& particleDuration;
+	Sint32& particleShrink;
+
+	//--PUBLIC PARTICLE TIMER EFFECT SKILLS--
+	Sint32& particleTimerDuration;
+	Sint32& particleTimerEndAction;
+	Sint32& particleTimerEndSprite;
+	Sint32& particleTimerCountdownAction;
+	Sint32& particleTimerCountdownSprite;
+	Sint32& particleTimerTarget;
+	Sint32& particleTimerPreDelay;
+	Sint32& particleTimerVariable1;
 
 	//--PUBLIC DOOR SKILLS--
 	Sint32& doorDir;
@@ -226,6 +237,8 @@ public:
 	bool ranbehavior;
 
 	void setObituary(char* obituary);
+
+	char* getMonsterLangEntry();
 
 	void killedByMonsterObituary(Entity* victim);
 
@@ -257,7 +270,9 @@ public:
 	bool safeConsumeMP(int amount); //A function for the magic code. Attempts to remove mana without overdrawing the player. Returns true if success, returns false if didn't have enough mana.
 
 	Sint32 getAttack();
+	Sint32 getBonusAttackOnTarget(Stat& hitstats);
 	bool isBlind();
+	bool isSpellcasterBeginner();
 
 	bool isInvisible() const;
 
@@ -265,8 +280,10 @@ public:
 
 	void attack(int pose, int charge, Entity* target);
 
-	void teleport(int x, int y);
-	void teleportRandom();
+	bool teleport(int x, int y);
+	bool teleportRandom();
+	// teleport entity to a target, within a radius dist (range in whole tile lengths)
+	bool teleportAroundEntity(const Entity* target, int dist);
 
 	//void entityAwardXP(Entity *dest, Entity *src, bool share, bool root);
 	void awardXP(Entity* src, bool share, bool root);
@@ -383,13 +400,16 @@ public:
 	void handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb);
 	// server only function to set boot sprites on monsters.
 	bool setBootSprite(Entity* leg, int spriteOffset);
-	// monster special attack handler
-	void handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
+	// monster special attack handler, returns true if monster should attack after calling this function.
+	bool handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist);
 	// monster attack handler
 	void handleMonsterAttack(Stat* myStats, Entity* target, double dist);
 	void lookAtEntity(Entity& target);
 	// automaton specific function
 	void automatonRecycleItem();
+	// incubus teleport spells
+	void incubusTeleportToTarget(const Entity* target);
+	void incubusTeleportRandom();
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
@@ -404,7 +424,7 @@ public:
 	/*
 	 * 1 in @chance chance in spawning a particle with the given sprite and duration.
 	 */
-	void spawnAmbientParticles(int chance, int particleSprite, int duration);
+	void spawnAmbientParticles(int chance, int particleSprite, int duration, double particleScale, bool shrink);
 
 	//Updates the EFFECTS variable for all clients for this entity.
 	void serverUpdateEffectsForEntity(bool guarantee);
@@ -444,12 +464,20 @@ public:
 			case INSECTOID:
 				insectoidChooseWeapon(target, dist);
 				break;
+			case INCUBUS:
+				incubusChooseWeapon(target, dist);
+				break;
+			case VAMPIRE:
+				vampireChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
 	}
 	void goatmanChooseWeapon(const Entity* target, double dist);
 	void insectoidChooseWeapon(const Entity* target, double dist);
+	void incubusChooseWeapon(const Entity* target, double dist);
+	void vampireChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{

@@ -1526,7 +1526,7 @@ void handleButtons(void)
 			}
 		}
 		//Hide "Random Name" button if not on character naming screen.
-		if ( !strcmp(button->label, language[2450]) )
+		if ( !strcmp(button->label, language[2498]) )
 		{
 			if ( charcreation_step != 4 )
 			{
