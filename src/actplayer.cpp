@@ -1586,10 +1586,10 @@ void actPlayer(Entity* my)
 				}
 			}
 
-			PLAYER_VELX += y_force * cos(my->yaw) * .045 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += y_force * sin(my->yaw) * .045 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
-			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * (my->getDEX() + 10) * weightratio / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += y_force * cos(my->yaw) * .045 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += y_force * sin(my->yaw) * .045 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELX += x_force * cos(my->yaw + PI / 2) * .0225 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
+			PLAYER_VELY += x_force * sin(my->yaw + PI / 2) * .0225 * std::min((my->getDEX() * 0.5 + 10) * weightratio, 25 * 0.5 + 10) / (1 + stats[PLAYER_NUM]->defending);
 		}
 		PLAYER_VELX *= .75;
 		PLAYER_VELY *= .75;
