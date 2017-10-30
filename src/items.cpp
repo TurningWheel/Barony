@@ -924,14 +924,14 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		return nullptr;
 	}
 
-	if ( monsterStats->type == SHADOW )
+	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
-		//Shadows' items are fake! Don't drop them.
-		itemDroppable = false;
-	}
-	else if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
-	{
-		if ( (monsterStats->type == KOBOLD || monsterStats->type == COCKATRICE || monsterStats->type == INSECTOID ) && itemCategory(item) == SPELLBOOK )
+		if ( (monsterStats->type == KOBOLD 
+			|| monsterStats->type == COCKATRICE 
+			|| monsterStats->type == INSECTOID 
+			|| monsterStats->type == INCUBUS
+			|| monsterStats->type == VAMPIRE)
+			&& itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.
 			itemDroppable = false;
@@ -939,6 +939,11 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		if ( monsterStats->type == INSECTOID && itemCategory(item) == THROWN )
 		{
 			// insectoids won't drop their un-thrown daggers.
+			itemDroppable = false;
+		}
+		if ( monsterStats->type == INCUBUS && itemCategory(item) == POTION )
+		{
+			// incubus won't drop excess potions.
 			itemDroppable = false;
 		}
 	}
@@ -1666,9 +1671,9 @@ void useItem(Item* item, int player)
 		case SPELLBOOK_BLEED:
 		case SPELLBOOK_REFLECT_MAGIC:
 		case SPELLBOOK_ACID_SPRAY:
-		case SPELLBOOK_BLANK_2:
-		case SPELLBOOK_BLANK_3:
-		case SPELLBOOK_BLANK_4:
+		case SPELLBOOK_STEAL_WEAPON:
+		case SPELLBOOK_DRAIN_SOUL:
+		case SPELLBOOK_VAMPIRIC_AURA:
 		case SPELLBOOK_BLANK_5:
 			item_Spellbook(item, player);
 			break;
@@ -2570,7 +2575,7 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
-node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
+node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
 {
 	if ( myStats == nullptr )
 	{
@@ -2583,6 +2588,10 @@ node_t* getRangedWeaponItemNodeInInventory(Stat* myStats)
 		if ( item != nullptr )
 		{
 			if ( isRangedWeapon(*item) )
+			{
+				return node;
+			}
+			if ( includeMagicstaff && itemCategory(item) == MAGICSTAFF )
 			{
 				return node;
 			}
@@ -2648,7 +2657,7 @@ bool Item::isShield() const
 	return true;
 }
 
-bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack)
+bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inventoryNode, bool moveStack, bool overrideCursed)
 {
 	//TODO: Does this work with multiplayer?
 	Item* item = nullptr;
@@ -2659,7 +2668,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		return false;
 	}
 
-	if ( myStats->weapon && myStats->weapon->beatitude < 0 )
+	if ( (myStats->weapon && myStats->weapon->beatitude < 0) && !overrideCursed )
 	{
 		return false; //Can't unequip cursed items!
 	}
@@ -2679,7 +2688,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			copyItem(item, myStats->weapon);
 			copyItem(myStats->weapon, tmpItem);
-			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}
@@ -2715,7 +2724,7 @@ bool swapMonsterWeaponWithInventoryItem(Entity* my, Stat* myStats, node_t* inven
 		{
 			my->addItemToMonsterInventory(myStats->weapon);
 			myStats->weapon = tmpItem;
-			if ( multiplayer != CLIENT && itemCategory(myStats->weapon) == WEAPON )
+			if ( multiplayer != CLIENT && (itemCategory(myStats->weapon) == WEAPON || itemCategory(myStats->weapon) == THROWN) )
 			{
 				playSoundEntity(my, 40 + rand() % 4, 64);
 			}

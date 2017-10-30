@@ -888,6 +888,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							resistance += 1;
 						}
 					}
+					if ( hitstats->EFFECTS[EFF_MAGICRESIST] )
+					{
+						resistance += 1;
+					}
 				}
 				if ( resistance > 0 )
 				{
@@ -1153,6 +1157,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( !hit.entity->flags[BURNING] )
 							{
 								hit.entity->flags[BURNING] = true;
+								serverUpdateEntityFlag(hit.entity, BURNING);
 							}
 						if (hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer)
 						{
@@ -1295,6 +1300,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_CONFUSED] = true;
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_CONFUSED] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							hit.entity->skill[1] = 0; //Remove the monster's target.
 							if ( parent )
 							{
@@ -1351,6 +1363,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							int damage = element->damage;
 							//damage += ((element->mana - element->base_mana) / static_cast<double>(element->overload_multiplier)) * element->damage;
 							damage *= damagetables[hitstats->type][5];
@@ -1430,6 +1449,13 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
+
+							// If the Entity hit is a Player, update their status to be Slowed
+							if ( hit.entity->behavior == &actPlayer )
+							{
+								serverUpdateEffects(hit.entity->skill[2]);
+							}
+
 							// update enemy bar for attacker
 							if ( parent )
 							{
@@ -1704,16 +1730,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if (hit.entity->behavior == &actDoor)
 						{
-							//Open door
-							if (!hit.entity->skill[0] && !hit.entity->skill[3])
+							// Open the Door
+							playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
+							hit.entity->skill[5] = 0; // Unlocks the Door
+
+							if ( !hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
-								hit.entity->skill[3] = 1 + (my->x > hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
+								hit.entity->skill[3] = 1 + (my->x > hit.entity->x); // Opens the Door
+								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 							}
-							else if (hit.entity->skill[0] && !hit.entity->skill[3])
+							else if ( hit.entity->skill[0] && !hit.entity->skill[3] )
 							{
-								hit.entity->skill[3] = 1 + (my->x < hit.entity->x);
-								playSoundEntity(hit.entity, 21, 96);
+								hit.entity->skill[3] = 1 + (my->x < hit.entity->x); // Opens the Door
+								playSoundEntity(hit.entity, 21, 96); // "UnlockDoor.ogg"
 							}
 							if ( parent )
 								if ( parent->behavior == &actPlayer)
@@ -1721,31 +1750,33 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									messagePlayer(parent->skill[2], language[402]);
 								}
 						}
-						else if (hit.entity->behavior == &actGate)
+						else if ( hit.entity->behavior == &actGate )
 						{
-							//Open gate
+							// Open the Gate
 							if ( hit.entity->skill[28] != 2 )
 							{
-								hit.entity->skill[28] = 2; // power it
+								hit.entity->skill[28] = 2; // Powers the Gate
 								if ( parent )
-									if ( parent->behavior == &actPlayer)
+								{
+									if ( parent->behavior == &actPlayer )
 									{
-										messagePlayer(parent->skill[2], language[403]);
+										messagePlayer(parent->skill[2], language[403]); // "The spell opens the gate!"
 									}
+								}
 							}
 						}
-						else if (hit.entity->behavior == &actChest)
+						else if ( hit.entity->behavior == &actChest )
 						{
-							//Unlock chest
+							// Unlock the Chest
 							if ( hit.entity->chestLocked )
 							{
-								playSoundEntity(hit.entity, 91, 64);
+								playSoundEntity(hit.entity, 91, 64); // "UnlockDoor.ogg"
 								hit.entity->unlockChest();
 								if ( parent )
 								{
 									if ( parent->behavior == &actPlayer)
 									{
-										messagePlayer(parent->skill[2], language[404]);
+										messagePlayer(parent->skill[2], language[404]); // "The spell unlocks the chest!"
 									}
 								}
 							}
@@ -1776,15 +1807,19 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						else
 						{
 							if ( parent )
+							{
 								if ( parent->behavior == &actPlayer )
 								{
-									messagePlayer(parent->skill[2], language[401]);
+									messagePlayer(parent->skill[2], language[401]); // "No telling what it did..."
 								}
+							}
+
 							if ( player >= 0 )
 							{
-								messagePlayer(player, language[401]);
+								messagePlayer(player, language[401]); // "No telling what it did..."
 							}
 						}
+
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						my->removeLightField();
 						list_RemoveNode(my->mynode);
@@ -2022,6 +2057,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hitstats->EFFECTS_TIMERS[EFF_BLEEDING] /= (1 + (int)resistance);
 							hitstats->EFFECTS[EFF_SLOW] = true;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] = (element->duration * (((element->mana) / static_cast<double>(element->base_mana)) * element->overload_multiplier));
+							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= 4;
 							hitstats->EFFECTS_TIMERS[EFF_SLOW] /= (1 + (int)resistance);
 							if ( hit.entity->behavior == &actPlayer )
 							{
@@ -2105,6 +2141,16 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
 				{
 					spellEffectAcid(*my, *element, parent, resistance);
+					return;
+				}
+				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
+				{
+					spellEffectStealWeapon(*my, *element, parent, resistance);
+					return;
+				}
+				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
+				{
+					spellEffectDrainSoul(*my, *element, parent, resistance);
 					return;
 				}
 
@@ -2217,6 +2263,7 @@ Entity* spawnMagicParticle(Entity* parentent)
 	Entity* entity;
 
 	entity = newEntity(parentent->sprite, 1, map.entities);
+
 	entity->x = parentent->x + (rand() % 50 - 25) / 20.f;
 	entity->y = parentent->y + (rand() % 50 - 25) / 20.f;
 	entity->z = parentent->z + (rand() % 50 - 25) / 20.f;
@@ -2650,14 +2697,18 @@ void createParticleErupt(Entity* parent, int sprite)
 	}
 }
 
-void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite)
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite)
 {
+	if ( !parent || !target )
+	{
+		return nullptr;
+	}
 	// spawns the invisible 'center' of the magic particle
 	Entity* entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
-	entity->x = startx;
-	entity->y = starty;
+	entity->x = target->x;
+	entity->y = target->y;
 	entity->parent = (parent->getUID());
 	entity->yaw = parent->yaw + PI; // face towards the caster.
 	entity->skill[0] = 45;
@@ -2665,11 +2716,13 @@ void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int s
 	entity->skill[3] = 0; // init
 	entity->skill[4] = sprite; // visible sprites.
 	entity->skill[5] = sprite; // sprite to spawn on return to caster.
+	entity->skill[6] = spell;
 	entity->behavior = &actParticleSapCenter;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[UPDATENEEDED] = true;
 	entity->flags[UNCLICKABLE] = true;
+	return entity;
 }
 
 void createParticleSap(Entity* parent)
@@ -2678,7 +2731,40 @@ void createParticleSap(Entity* parent)
 	for ( int c = 0; c < 4; c++ )
 	{
 		// 4 particles, in an 'x' pattern around parent sprite.
-		Entity* entity = newEntity(parent->sprite, 1, map.entities);
+		int sprite = parent->sprite;
+		if ( parent->skill[6] == SPELL_STEAL_WEAPON )
+		{
+			sprite = parent->sprite;
+		}
+		else if ( parent->skill[6] == SPELL_DRAIN_SOUL )
+		{
+			if ( c == 0 || c == 3 )
+			{
+				sprite = parent->sprite;
+			}
+			else
+			{
+				sprite = 599;
+			}
+		}
+		else if ( multiplayer == CLIENT )
+		{
+			// client won't receive the sprite skill data in time, fix for this until a solution is found!
+			if ( sprite == 598 )
+			{
+				if ( c == 0 || c == 3 )
+				{
+				// drain HP particle
+					sprite = parent->sprite;
+				}
+				else
+				{
+					// drain MP particle
+					sprite = 599;
+				}
+			}
+		}
+		Entity* entity = newEntity(sprite, 1, map.entities);
 		entity->sizex = 1;
 		entity->sizey = 1;
 		entity->x = parent->x;
@@ -2687,6 +2773,12 @@ void createParticleSap(Entity* parent)
 		entity->scalex = 0.9;
 		entity->scaley = 0.9;
 		entity->scalez = 0.9;
+		if ( sprite == 598 || sprite == 599 )
+		{
+			entity->scalex = 0.5;
+			entity->scaley = 0.5;
+			entity->scalez = 0.5;
+		}
 		entity->parent = (parent->getUID());
 		entity->yaw = parent->yaw;
 		if ( c == 0 )
@@ -2746,7 +2838,7 @@ void createParticleSap(Entity* parent)
 	}
 }
 
-void createParticleDropRising(Entity* parent, int sprite)
+void createParticleDropRising(Entity* parent, int sprite, double scale)
 {
 	for ( int c = 0; c < 50; c++ )
 	{
@@ -2759,7 +2851,10 @@ void createParticleDropRising(Entity* parent, int sprite)
 		entity->z = 7.5 + rand() % 50;
 		entity->vel_z = -1;
 		//entity->yaw = (rand() % 360) * PI / 180.0;
-		entity->skill[0] = 10 + rand() % 50;
+		entity->particleDuration = 10 + rand() % 50;
+		entity->scalex *= scale;
+		entity->scaley *= scale;
+		entity->scalez *= scale;
 		entity->behavior = &actParticleDot;
 		entity->flags[PASSABLE] = true;
 		entity->flags[NOUPDATE] = true;
@@ -2770,26 +2865,28 @@ void createParticleDropRising(Entity* parent, int sprite)
 		}
 		entity->setUID(-3);
 	}
+}
 
+Entity* createParticleTimer(Entity* parent, int duration, int sprite)
+{
 	Entity* entity = newEntity(-1, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->parent = (parent->getUID());
-	entity->skill[0] = 40; // lifetime/ticks before timer triggers
-	entity->skill[1] = 1; // behavior of timer.
-	entity->skill[3] = sprite; // sprite to use for timer function.
 	entity->behavior = &actParticleTimer;
+	entity->particleTimerDuration = duration;
 	entity->flags[INVISIBLE] = true;
 	entity->flags[PASSABLE] = true;
 	entity->flags[NOUPDATE] = true;
-	entity->flags[UNCLICKABLE] = true;
 	if ( multiplayer != CLIENT )
 	{
 		entity_uids--;
 	}
 	entity->setUID(-3);
+
+	return entity;
 }
 
 void actParticleErupt(Entity* my)
@@ -2833,36 +2930,44 @@ void actParticleErupt(Entity* my)
 
 void actParticleTimer(Entity* my)
 {
-	if(PARTICLE_LIFE < 0)
+	if( PARTICLE_LIFE < 0 )
 	{
-		if ( my->skill[1] == 1 )
+		if ( multiplayer != CLIENT )
 		{
-			Entity* parent = uidToEntity(my->parent);
-			if ( parent )
+			if ( my->particleTimerEndAction == PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL )
 			{
-				createParticleErupt(parent, my->skill[3]);
+				// teleport to random location spell.
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent )
+				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
+					if ( parent->teleportRandom() )
+					{
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
 			}
-			if ( multiplayer != CLIENT )
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET )
 			{
-				// insert host only functions here.
-
-				//list_t* aoeTargets = nullptr;
-				//getTargetsAroundEntity(my, nullptr, 16, PI, MONSTER_TARGET_ALL, &aoeTargets);
-				//if ( aoeTargets )
-				//{
-				//	for ( node_t* node = aoeTargets->first; node != nullptr; node = node->next )
-				//	{
-				//		Entity* entity = (Entity*)node->element;
-				//		if ( entity->getStats() != nullptr )
-				//		{
-				//			entity->getStats()->EFFECTS[EFF_INVISIBLE] = true;
-				//			entity->getStats()->EFFECTS_TIMERS[EFF_INVISIBLE] = 300;
-				//		}
-				//	}
-				//	//Free the list.
-				//	list_FreeAll(aoeTargets);
-				//	free(aoeTargets);
-				//}
+				// teleport to target spell.
+				Entity* parent = uidToEntity(my->parent);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( parent && target )
+				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
+					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
+					{
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
 			}
 		}
 		list_RemoveNode(my->mynode);
@@ -2871,6 +2976,40 @@ void actParticleTimer(Entity* my)
 	else
 	{
 		--PARTICLE_LIFE;
+		if ( my->particleTimerPreDelay <= 0 )
+		{
+			// shoot particles for the duration of the timer, centered at caster.
+			if ( my->particleTimerCountdownAction == 1 )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				// shoot drops to the sky
+				if ( parent && my->particleTimerCountdownSprite != 0 )
+				{
+					Entity* entity = newEntity(my->particleTimerCountdownSprite, 1, map.entities);
+					entity->sizex = 1;
+					entity->sizey = 1;
+					entity->x = parent->x - 4 + rand() % 9;
+					entity->y = parent->y - 4 + rand() % 9;
+					entity->z = 7.5;
+					entity->vel_z = -1;
+					entity->yaw = (rand() % 360) * PI / 180.0;
+					entity->particleDuration = 10 + rand() % 30;
+					entity->behavior = &actParticleDot;
+					entity->flags[PASSABLE] = true;
+					entity->flags[NOUPDATE] = true;
+					entity->flags[UNCLICKABLE] = true;
+					if ( multiplayer != CLIENT )
+					{
+						entity_uids--;
+					}
+					entity->setUID(-3);
+				}
+			}
+		}
+		else
+		{
+			--my->particleTimerPreDelay;
+		}
 	}
 }
 
@@ -2975,8 +3114,51 @@ void actParticleSapCenter(Entity* my)
 		// if reached the caster, delete self and spawn some particles.
 		if ( entityInsideEntity(my, parent) )
 		{
-			playSoundEntity(parent, 168, 128);
-			spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
+			if ( my->skill[6] == SPELL_STEAL_WEAPON )
+			{
+				if ( my->skill[7] == 1 )
+				{
+					// found stolen item.
+					Item* item = newItemFromEntity(my);
+					if ( parent->behavior == &actPlayer )
+					{
+						itemPickup(parent->skill[2], item);
+					}
+					else if ( parent->behavior == &actMonster )
+					{
+						parent->addItemToMonsterInventory(item);
+						Stat *myStats = parent->getStats();
+						if ( myStats )
+						{
+							node_t* weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON);
+							if ( weaponNode )
+							{
+								swapMonsterWeaponWithInventoryItem(parent, myStats, weaponNode, false, true);
+								if ( myStats->type == INCUBUS )
+								{
+									parent->monsterSpecialState = INCUBUS_TELEPORT_STEAL;
+									parent->monsterSpecialTimer = 100 + rand() % MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM;
+								}
+							}
+						}
+					}
+					item = nullptr;
+				}
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
+			}
+			else if ( my->skill[6] == SPELL_DRAIN_SOUL )
+			{
+				parent->modHP(my->skill[7]);
+				parent->modMP(my->skill[8]);
+				if ( parent->behavior == &actPlayer )
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+					messagePlayerColor(parent->skill[2], color, language[2445]);
+				}
+				playSoundEntity(parent, 168, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
+			}
 			list_RemoveNode(my->mynode);
 			return;
 		}

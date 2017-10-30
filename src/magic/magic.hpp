@@ -44,6 +44,9 @@ static const int SPELL_BLEED = 24;
 static const int SPELL_DOMINATE = 25;
 static const int SPELL_REFLECT_MAGIC = 26;
 static const int SPELL_ACID_SPRAY = 27;
+static const int SPELL_STEAL_WEAPON = 28;
+static const int SPELL_DRAIN_SOUL = 29;
+static const int SPELL_VAMPIRIC_AURA = 30;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.
@@ -93,6 +96,10 @@ static const int PARTICLE_EFFECT_ABILITY_ROCK = 1;
 static const int PARTICLE_EFFECT_ABILITY_PURPLE = 2;
 static const int PARTICLE_EFFECT_SAP = 3;
 static const int PARTICLE_EFFECT_SHADOW_INVIS = 4;
+static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL = 5;
+static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET = 6;
+static const int PARTICLE_EFFECT_ERUPT = 7;
+static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
 
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -314,6 +321,12 @@ extern spellElement_t spellElement_dominate;
 
 extern spellElement_t spellElement_reflectMagic;
 
+/* Steal Weapon */
+extern spellElement_t spellElement_stealWeapon;
+/* Drain Soul */
+extern spellElement_t spellElement_drainSoul;
+/* Vampiric Aura */
+extern spellElement_t spellElement_vampiricAura;
 /*
  */
 //TODO: Differentiate between touch spells, enchantment spells, personal spells, ranged spells, area of effect spells, close blast/burst spells, and enemy/ally target spells.
@@ -380,6 +393,9 @@ extern spell_t spell_bleed;
 extern spell_t spell_dominate;
 extern spell_t spell_reflectMagic;
 extern spell_t spell_acidSpray;
+extern spell_t spell_stealWeapon;
+extern spell_t spell_drainSoul;
+extern spell_t spell_vampiricAura;
 //TODO: Armor/protection/warding spells.
 //TODO: Targeting method?
 
@@ -408,11 +424,12 @@ void actParticleTimer(Entity* my);
 void actParticleSap(Entity* my);
 void actParticleSapCenter(Entity* my);
 
-void createParticleDropRising(Entity* parent, int sprite);
+void createParticleDropRising(Entity* parent, int sprite, double scale);
 void createParticleDot(Entity* parent);
 void createParticleRock(Entity* parent);
 void createParticleErupt(Entity* parent, int sprite);
-void createParticleSapCenter(Entity* parent, real_t startx, real_t starty, int sprite, int endSprite);
+Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int sprite, int endSprite);
+Entity* createParticleTimer(Entity* parent, int duration, int sprite);
 void createParticleSap(Entity* parent);
 
 spell_t* newSpell();
@@ -481,5 +498,8 @@ int getSpellIDFromSpellbook(int spellbookType);
 //Spell implementation stuff.
 bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, Entity* parent);
 void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, int resistance);
+spell_t* spellEffectVampiricAura(Entity* caster, spell_t* spell, int extramagic_to_use);
 
 void freeSpells();
