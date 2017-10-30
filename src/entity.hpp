@@ -410,6 +410,8 @@ public:
 	// incubus teleport spells
 	void incubusTeleportToTarget(const Entity* target);
 	void incubusTeleportRandom();
+	//Shadow teleport spells.
+	void shadowTeleportToTarget(const Entity* target);
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
