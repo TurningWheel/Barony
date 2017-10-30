@@ -930,7 +930,8 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 			|| monsterStats->type == COCKATRICE 
 			|| monsterStats->type == INSECTOID 
 			|| monsterStats->type == INCUBUS
-			|| monsterStats->type == VAMPIRE)
+			|| monsterStats->type == VAMPIRE
+			|| monsterStats->type == SHADOW)
 			&& itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.

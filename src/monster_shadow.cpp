@@ -1394,6 +1394,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 		if ( spellbook )
 		{
+			spellbook->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
 			addItemToMonsterInventory(spellbook);
 
 			//TODO: Delete debug.
