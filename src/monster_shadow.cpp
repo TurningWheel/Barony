@@ -1404,6 +1404,8 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
 	}
+
+	shadowTeleportToTarget(target);
 }
 
 bool Entity::shadowCanMimickSpell(int spellID)
@@ -1424,6 +1426,24 @@ bool Entity::shadowCanMimickSpell(int spellID)
 			return true;
 		default:
 			return false;
+	}
+}
+
+void Entity::shadowTeleportToTarget(const Entity* target)
+{
+	Entity* spellTimer = createParticleTimer(this, 40, 593);
+	spellTimer->particleTimerEndAction = PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET; // teleport behavior of timer. //TODO: Use correct particles for Shadows.
+	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+	spellTimer->particleTimerCountdownAction = 1;
+	spellTimer->particleTimerCountdownSprite = 593;
+	if ( target != nullptr )
+	{
+		spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+	}
+	spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
+	if ( multiplayer == SERVER )
+	{
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET, 593);
 	}
 }
 
