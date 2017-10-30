@@ -14,7 +14,7 @@
     <ProjectGuid>{A4A170FF-C081-4F33-94FE-5C60E89C5990}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
     <RootNamespace>barony</RootNamespace>
-    <ProjectName>barony</ProjectName>
+    <ProjectName>barony_test</ProjectName>
     <WindowsTargetPlatformVersion>8.1</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -60,6 +60,7 @@
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;_DEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <ShowIncludes>true</ShowIncludes>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -77,6 +78,7 @@
       <IntrinsicFunctions>true</IntrinsicFunctions>
       <PreprocessorDefinitions>_CRT_SECURE_NO_WARNINGS;WIN32;NDEBUG;_WINDOWS;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>"$(SolutionDir)\..\VS-includes"</AdditionalIncludeDirectories>
+      <MultiProcessorCompilation>true</MultiProcessorCompilation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -106,9 +108,11 @@
     <ClCompile Include="..\..\src\actladder.cpp" />
     <ClCompile Include="..\..\src\actmonster.cpp" />
     <ClCompile Include="..\..\src\actplayer.cpp" />
+    <ClCompile Include="..\..\src\actpowercrystal.cpp" />
     <ClCompile Include="..\..\src\actsink.cpp" />
     <ClCompile Include="..\..\src\actspeartrap.cpp" />
     <ClCompile Include="..\..\src\actsprite.cpp" />
+    <ClCompile Include="..\..\src\actsummontrap.cpp" />
     <ClCompile Include="..\..\src\actthrown.cpp" />
     <ClCompile Include="..\..\src\acttorch.cpp" />
     <ClCompile Include="..\..\src\actwallbuster.cpp" />
@@ -117,6 +121,7 @@
     <ClCompile Include="..\..\src\collision.cpp" />
     <ClCompile Include="..\..\src\draw.cpp" />
     <ClCompile Include="..\..\src\entity.cpp" />
+    <ClCompile Include="..\..\src\entity_shared.cpp" />
     <ClCompile Include="..\..\src\files.cpp" />
     <ClCompile Include="..\..\src\game.cpp" />
     <ClCompile Include="..\..\src\hash.cpp" />
@@ -138,6 +143,7 @@
     <ClCompile Include="..\..\src\interface\updatechestinventory.cpp" />
     <ClCompile Include="..\..\src\interface\updaterightsidebar.cpp" />
     <ClCompile Include="..\..\src\items.cpp" />
+    <ClCompile Include="..\..\src\item_tool.cpp" />
     <ClCompile Include="..\..\src\item_usage_funcs.cpp" />
     <ClCompile Include="..\..\src\light.cpp" />
     <ClCompile Include="..\..\src\list.cpp" />
@@ -152,23 +158,36 @@
     <ClCompile Include="..\..\src\mechanisms.cpp" />
     <ClCompile Include="..\..\src\menu.cpp" />
     <ClCompile Include="..\..\src\messages.cpp" />
+    <ClCompile Include="..\..\src\monster_automaton.cpp" />
+    <ClCompile Include="..\..\src\monster_cockatrice.cpp" />
+    <ClCompile Include="..\..\src\monster_crystalgolem.cpp" />
     <ClCompile Include="..\..\src\monster_demon.cpp" />
     <ClCompile Include="..\..\src\monster_devil.cpp" />
     <ClCompile Include="..\..\src\monster_ghoul.cpp" />
     <ClCompile Include="..\..\src\monster_gnome.cpp" />
+    <ClCompile Include="..\..\src\monster_goatman.cpp" />
     <ClCompile Include="..\..\src\monster_goblin.cpp" />
     <ClCompile Include="..\..\src\monster_human.cpp" />
     <ClCompile Include="..\..\src\monster_imp.cpp" />
+    <ClCompile Include="..\..\src\monster_incubus.cpp" />
+    <ClCompile Include="..\..\src\monster_insectoid.cpp" />
+    <ClCompile Include="..\..\src\monster_kobold.cpp" />
     <ClCompile Include="..\..\src\monster_lich.cpp" />
+    <ClCompile Include="..\..\src\monster_lichfire.cpp" />
+    <ClCompile Include="..\..\src\monster_lichice.cpp" />
     <ClCompile Include="..\..\src\monster_minotaur.cpp" />
     <ClCompile Include="..\..\src\monster_rat.cpp" />
+    <ClCompile Include="..\..\src\monster_scarab.cpp" />
     <ClCompile Include="..\..\src\monster_scorpion.cpp" />
+    <ClCompile Include="..\..\src\monster_shadow.cpp" />
+    <ClCompile Include="..\..\src\monster_shared.cpp" />
     <ClCompile Include="..\..\src\monster_shopkeeper.cpp" />
     <ClCompile Include="..\..\src\monster_skeleton.cpp" />
     <ClCompile Include="..\..\src\monster_slime.cpp" />
     <ClCompile Include="..\..\src\monster_spider.cpp" />
     <ClCompile Include="..\..\src\monster_succubus.cpp" />
     <ClCompile Include="..\..\src\monster_troll.cpp" />
+    <ClCompile Include="..\..\src\monster_vampire.cpp" />
     <ClCompile Include="..\..\src\net.cpp" />
     <ClCompile Include="..\..\src\objects.cpp" />
     <ClCompile Include="..\..\src\opengl.cpp" />
@@ -181,15 +200,16 @@
     <ClCompile Include="..\..\src\sound.cpp" />
     <ClCompile Include="..\..\src\sound_game.cpp" />
     <ClCompile Include="..\..\src\stat.cpp" />
+    <ClCompile Include="..\..\src\stat_shared.cpp" />
     <ClCompile Include="..\..\src\steam.cpp" />
   </ItemGroup>
   <ItemGroup>
     <ClInclude Include="..\..\src\book.hpp" />
     <ClInclude Include="..\..\src\classdescriptions.hpp" />
+    <ClInclude Include="..\..\src\cppfuncs.hpp" />
     <ClInclude Include="..\..\src\credits.hpp" />
     <ClInclude Include="..\..\src\entity.hpp" />
     <ClInclude Include="..\..\src\game.hpp" />
-    <ClInclude Include="..\..\src\herxlines.hpp" />
     <ClInclude Include="..\..\src\interface\interface.hpp" />
     <ClInclude Include="..\..\src\items.hpp" />
     <ClInclude Include="..\..\src\magic\magic.hpp" />
@@ -203,9 +223,7 @@
     <ClInclude Include="..\..\src\savepng.hpp" />
     <ClInclude Include="..\..\src\scores.hpp" />
     <ClInclude Include="..\..\src\scrolls.hpp" />
-    <ClInclude Include="..\..\src\shoplines.hpp" />
     <ClInclude Include="..\..\src\shops.hpp" />
-    <ClInclude Include="..\..\src\skillnames.hpp" />
     <ClInclude Include="..\..\src\sound.hpp" />
     <ClInclude Include="..\..\src\stat.hpp" />
     <ClInclude Include="..\..\src\steam.hpp" />
