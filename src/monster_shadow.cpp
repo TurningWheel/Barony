@@ -1221,10 +1221,10 @@ bool Entity::shadowCanWieldItem(const Item& item) const
 
 void Entity::shadowSpecialAbility(bool initialMimic)
 {
-	//TODO: Teleport to target.
 	//TODO: Turn invisible.
-	//3. Mimic target's weapon & shield (only on initial cast).
-	//4. Random chance to mimic other things.
+	//2. Mimic target's weapon & shield (only on initial cast).
+	//3. Random chance to mimic other things.
+	//4. Teleport to target.
 
 	Stat *myStats = getStats();
 	if ( !myStats )
@@ -1255,7 +1255,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	int numSpellsToMimic = 2;
 	int numSkillsToMimic = 3;
 
-	//3. Copy target's weapon & shield on initial activation of this ability only.
+	//2. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
 
@@ -1300,6 +1300,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		numSpellsToMimic += rand()%3 + 1;
 	}
 
+	//3. Random chance to mimic other things.
 	//Mimic target's skills (proficiencies).
 	//First, get proficiencies to mimic:
 	std::vector<int> skillsCanMimic;
