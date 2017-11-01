@@ -196,6 +196,11 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 {
 	if ( entity.behavior == &actPedestalBase )
 	{
+		if ( multiplayer == CLIENT )
+		{
+			consumeItem(stats[player]->weapon);
+			return;
+		}
 		messagePlayer(player, language[2368]);
 
 		if ( type == ARTIFACT_ORB_BLUE && entity.pedestalOrbType == 1 )
@@ -219,7 +224,6 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			messagePlayer(player, language[2369]);
 		}
 		
-		consumeItem(stats[player]->weapon);
 		if ( multiplayer != CLIENT )
 		{
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;

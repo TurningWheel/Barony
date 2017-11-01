@@ -2381,6 +2381,11 @@ void Item::apply(int player, Entity* entity)
 		return;
 	}
 
+	if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+	{
+		applyOrb(player, type, *entity);
+	}
+
 	// for clients:
 	if ( multiplayer == CLIENT )
 	{
@@ -2408,10 +2413,6 @@ void Item::apply(int player, Entity* entity)
 	else if ( type == TOOL_LOCKPICK )
 	{
 		applyLockpick(player, *entity);
-	}
-	else if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
-	{
-		applyOrb(player, type, *entity);
 	}
 }
 
