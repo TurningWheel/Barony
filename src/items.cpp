@@ -2409,6 +2409,10 @@ void Item::apply(int player, Entity* entity)
 	{
 		applyLockpick(player, *entity);
 	}
+	else if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+	{
+		applyOrb(player, type, *entity);
+	}
 }
 
 SummonProperties::SummonProperties()

@@ -567,7 +567,7 @@ void actHudWeapon(Entity* my)
 						{
 							HUDWEAPON_CHOP = 7; // magicstaffs lunge
 						}
-						else if (item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY)
+						else if (item->type == TOOL_LOCKPICK || item->type == TOOL_SKELETONKEY )
 						{
 							// keys and lockpicks
 							HUDWEAPON_MOVEX = 5;
@@ -581,6 +581,28 @@ void actHudWeapon(Entity* my)
 							else
 							{
 								messagePlayer(clientnum, language[503], item->getName());
+							}
+						}
+						else if ( item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN )
+						{
+							HUDWEAPON_MOVEX = 5;
+							HUDWEAPON_CHOP = 3;
+							Entity* player = players[clientnum]->entity;
+							lineTrace(player, player->x, player->y, player->yaw, STRIKERANGE, 0, false);
+							if ( hit.entity && stats[clientnum]->weapon )
+							{
+								stats[clientnum]->weapon->apply(clientnum, hit.entity);
+							}
+							else
+							{
+								if ( statGetINT(stats[clientnum]) <= 5 )
+								{
+									messagePlayer(clientnum, language[2373], item->getName());
+								}
+								else
+								{
+									messagePlayer(clientnum, language[2372], item->getName());
+								}
 							}
 						}
 						else if ((itemCategory(item) == POTION || itemCategory(item) == GEM || itemCategory(item) == THROWN ) && !throwGimpTimer)
@@ -879,7 +901,13 @@ void actHudWeapon(Entity* my)
 			Item* item = stats[clientnum]->weapon;
 			if ( item )
 			{
-				if ( !rangedweapon && item->type != TOOL_SKELETONKEY && item->type != TOOL_LOCKPICK && itemCategory(item) != POTION && itemCategory(item) != GEM && itemCategory(item) != THROWN )
+				if ( !rangedweapon 
+					&& item->type != TOOL_SKELETONKEY 
+					&& item->type != TOOL_LOCKPICK 
+					&& itemCategory(item) != POTION 
+					&& itemCategory(item) != GEM 
+					&& itemCategory(item) != THROWN
+					&& !(item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN) )
 				{
 					if ( stats[clientnum]->weapon->type != TOOL_PICKAXE )
 					{
@@ -1263,7 +1291,8 @@ void actHudWeapon(Entity* my)
 		Item* item = stats[clientnum]->weapon;
 		if (item)
 		{
-			if (item->type == TOOL_SKELETONKEY || item->type == TOOL_LOCKPICK)
+			if (item->type == TOOL_SKELETONKEY || item->type == TOOL_LOCKPICK
+				|| (item->type >= ARTIFACT_ORB_BLUE && item->type <= ARTIFACT_ORB_GREEN) )
 			{
 				defaultpitch = -PI / 8.f;
 			}
