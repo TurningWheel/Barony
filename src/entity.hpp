@@ -81,6 +81,11 @@ class Entity
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
 
+	// Pedestal Orb skills
+	Sint32& orbInitialised; // 1 if init, else 0
+	Sint32& orbHoverDirection; // animation, waiting/up/down floating state
+	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
+
 	// Item skills
 	Sint32& itemNotMoving;
 
@@ -222,6 +227,18 @@ public:
 	Sint32& doorMaxHealth;
 	real_t& doorStartAng;
 
+	//--PUBLIC PEDESTAL SKILLS--
+	Sint32& pedestalHasOrb;
+	Sint32& pedestalOrbType;
+	Sint32& pedestalInvertedPower;
+
+	real_t& orbStartZ; // mid point of animation, starting height.
+	real_t& orbMaxZVelocity;
+	real_t& orbMinZVelocity;
+	real_t& orbTurnVelocity; // how fast to turn.
+
+	void pedestalOrbInit(); // init orb properties
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 
@@ -346,6 +363,7 @@ public:
 	void actPowerCrystal();
 	void actGate();
 	void actPedestalBase();
+	void actPedestalOrb();
 
 	Monster getRace() const
 	{
@@ -602,7 +620,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 213;
+static const int NUM_ITEM_STRINGS = 218;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
 static const int NUM_EDITOR_SPRITES = 116;
 static const int NUM_EDITOR_TILES = 208;

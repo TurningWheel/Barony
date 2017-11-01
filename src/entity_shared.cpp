@@ -300,7 +300,11 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_drain_soul",
 	"spellbook_vampiric_aura",
 	"spellbook_blank_5",
-	"potion_empty"
+	"potion_empty",
+	"artifact_orb_blue",
+	"artifact_orb_red",
+	"artifact_orb_purple",
+	"artifact_orb_green",
 	""
 };
 
@@ -500,6 +504,10 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
+		"artifact_orb_blue",
+		"artifact_orb_red",
+		"artifact_orb_purple",
+		"artifact_orb_green",
 		""
 	},
 	{
