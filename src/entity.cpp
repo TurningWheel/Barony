@@ -1563,13 +1563,21 @@ void Entity::handleEffects(Stat* myStats)
 				serverUpdateHunger(player);
 				if ( player >= 0 )   // bad guys don't starve. Sorry.
 				{
-					this->modHP(-4);
+					if ( buddhamode )
+					{
+						if ( myStats->HP - 4 > 0 )
+						{
+							this->modHP(-4);
+
+							if ( myStats->HP > 0 )
+							{
+								messagePlayer(player, language[633]);
+							}
+
+							this->setObituary(language[1530]);
+						}
+					}
 				}
-				if ( myStats->HP > 0 )
-				{
-					messagePlayer(player, language[633]);
-				}
-				this->setObituary(language[1530]);
 			}
 		}
 	}
