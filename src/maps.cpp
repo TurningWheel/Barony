@@ -4031,8 +4031,12 @@ void assignActions(map_t* map)
 				entity->sprite = 601; //pedestal base
 				//entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->flags[PASSABLE] = false;
+				if ( multiplayer != CLIENT )
+				{
+					entity->pedestalOrbType = rand() % 4 + 1;
+				}
 
-				childEntity = newEntity(602 + rand() % 4, 0, map->entities); //floating crystal
+				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities); //floating orb
 				childEntity->parent = entity->getUID();
 				childEntity->behavior = &actPedestalOrb;
 

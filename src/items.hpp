@@ -338,6 +338,7 @@ public:
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
+	void applyOrb(int player, ItemType type, Entity& entity);
 
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*

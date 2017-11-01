@@ -58,6 +58,17 @@ void Entity::actPedestalBase()
 		return;
 	}
 
+	if ( circuit_status < CIRCUIT_OFF )
+	{
+		circuit_status = CIRCUIT_OFF; // set the entity to be a circuit if not already set.
+	}
+
+	if ( pedestalHasOrb == pedestalOrbType && circuit_status == CIRCUIT_OFF )
+	{
+		mechanismPowerOn();
+		updateCircuitNeighbors();
+	}
+
 	// handle player interaction
 	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
@@ -67,27 +78,23 @@ void Entity::actPedestalBase()
 			{
 				if ( players[i] && players[i]->entity )
 				{
-					/*playSoundEntity(this, 151, 128);
-					orbTurning = 1;
-					orbTurnStartDir = static_cast<Sint32>(this->yaw / (PI / 2));
-					serverUpdateEntitySkill(this, 3);
-					serverUpdateEntitySkill(this, 4);*/
-					messagePlayer(i, language[2364]);
-					if ( circuit_status == CIRCUIT_OFF )
+					node_t* node = children.first;
+					Entity* orbEntity = (Entity*)(node->element);
+					if ( orbEntity && pedestalHasOrb > 0 )
 					{
-						mechanismPowerOn();
+						Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
+						itemPickup(i, itemOrb);
+						pedestalHasOrb = 0;
+						serverUpdateEntitySkill(this, 0); // update orb status.
+						mechanismPowerOff();
 						updateCircuitNeighbors();
+						messagePlayer(i, language[2374], itemOrb->getName());
 					}
 					else
 					{
-						mechanismPowerOff();
-						updateCircuitNeighbors();
+						messagePlayer(i, language[2364]);
 					}
 				}
-				/*else if ( !orbInitialised )
-				{
-					messagePlayer(i, language[2357]);
-				}*/
 			}	
 		}
 	}
@@ -133,7 +140,67 @@ void Entity::actPedestalOrb()
 
 	real_t acceleration = 0.95;
 
+	Entity* parent = uidToEntity(this->parent);
+	if ( !parent )
+	{
+		return;
+	}
+	
 	pedestalOrbInit();
+
+	if ( parent->pedestalHasOrb == 0 )
+	{
+		flags[INVISIBLE] = true;
+		flags[UNCLICKABLE] = true;
+		flags[PASSABLE] = true;
+		return;
+	}
+	else
+	{
+		sprite = parent->pedestalHasOrb + 602 - 1;
+
+		// handle player interaction
+		if ( multiplayer != CLIENT )
+		{
+			for ( int i = 0; i < MAXPLAYERS; i++ )
+			{
+				if ( ((i == 0 && selectedEntity == this) || (client_selected[i] == this)) )
+				{
+					if ( inrange[i] )
+					{
+						if ( players[i] && players[i]->entity )
+						{
+							if ( parent->pedestalHasOrb > 0 )
+							{
+								Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
+								itemPickup(i, itemOrb);
+								parent->pedestalHasOrb = 0;
+								parent->mechanismPowerOff();
+								serverUpdateEntitySkill(parent, 0);
+								parent->updateCircuitNeighbors();
+								messagePlayer(i, language[2374], itemOrb->getName());
+							}
+						}
+					}
+				}
+			}
+		}
+
+		if ( parent->pedestalHasOrb != parent->pedestalOrbType )
+		{
+			// not properly activated - return early, no animate.
+			flags[INVISIBLE] = false;
+			flags[UNCLICKABLE] = false;
+			flags[PASSABLE] = false;
+			return;
+		}
+		else if ( parent->pedestalHasOrb == parent->pedestalOrbType )
+		{
+			flags[INVISIBLE] = false;
+			flags[UNCLICKABLE] = false;
+			flags[PASSABLE] = false;
+		}
+	}
 
 	if ( orbHoverDirection == CRYSTAL_HOVER_UP ) //rise state
 	{
@@ -199,39 +266,45 @@ void Entity::actPedestalOrb()
 	}
 
 	yaw += orbTurnVelocity;
+
 	int particleSprite = 606;
 
 	switch ( sprite )
 	{
 		case 602:
-			particleSprite = 606;
-			break;
 		case 603:
-			particleSprite = 607;
-			break;
 		case 604:
-			particleSprite = 608;
-			break;
 		case 605:
-			particleSprite = 609;
+			particleSprite = sprite + 4;
 			break;
 		default:
+			particleSprite = -1;
 			break;
 	}
-	spawnAmbientParticles(80, particleSprite, 10 + rand() % 40, 1.0, false);
+	spawnAmbientParticles(40, particleSprite, 10 + rand() % 40, 1.0, false);
 }
 
 void Entity::pedestalOrbInit()
 {
+	Entity* parent = uidToEntity(this->parent);
+
 	if ( !orbInitialised )
 	{
-		Entity* parent = uidToEntity(this->parent);
 		x = parent->x;
 		y = parent->y;
 		z = -2;
 		sizex = 2;
 		sizey = 2;
-		flags[PASSABLE] = false;
+		if ( parent->pedestalHasOrb == parent->pedestalOrbType )
+		{
+			flags[UNCLICKABLE] = false;
+			flags[INVISIBLE] = false;
+		}
+		else
+		{
+			flags[UNCLICKABLE] = true;
+			flags[INVISIBLE] = true;
+		}
 		orbStartZ = z;
 		z = orbStartZ - 0.4 + ((rand() % 8) * 0.1); // start the height randomly
 		orbMaxZVelocity = 0.02; //max velocity
@@ -239,6 +312,11 @@ void Entity::pedestalOrbInit()
 		vel_z = crystalMaxZVelocity * ((rand() % 100) * 0.01); // start the velocity randomly
 		orbTurnVelocity = 0.02;
 		orbInitialised = 1;
+		if ( multiplayer != CLIENT )
+		{
+			serverUpdateEntitySkill(parent, 0);
+			serverUpdateEntitySkill(parent, 1);
+		}
 	}
 }
 

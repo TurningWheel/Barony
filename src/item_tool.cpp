@@ -191,3 +191,44 @@ void Item::applyLockpick(int player, Entity& entity)
 		messagePlayer(player, language[1101], getName());
 	}
 }
+
+void Item::applyOrb(int player, ItemType type, Entity& entity)
+{
+	if ( entity.behavior == &actPedestalBase )
+	{
+		messagePlayer(player, language[2368]);
+
+		if ( type == ARTIFACT_ORB_BLUE && entity.pedestalOrbType == 1 )
+		{
+			messagePlayer(player, language[2370]);
+		}
+		else if ( type == ARTIFACT_ORB_RED && entity.pedestalOrbType == 2 )
+		{
+			messagePlayer(player, language[2370]);
+		}
+		else if ( type == ARTIFACT_ORB_PURPLE && entity.pedestalOrbType == 3 )
+		{
+			messagePlayer(player, language[2370]);
+		}
+		else if ( type == ARTIFACT_ORB_GREEN && entity.pedestalOrbType == 4 )
+		{
+			messagePlayer(player, language[2370]);
+		}
+		else
+		{
+			messagePlayer(player, language[2369]);
+		}
+		
+		consumeItem(stats[player]->weapon);
+		if ( multiplayer != CLIENT )
+		{
+			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
+			serverUpdateEntitySkill(&entity, 0); // update orb status.
+			consumeItem(stats[player]->weapon);
+		}
+	}
+	else
+	{
+		messagePlayer(player, language[2371]);
+	}
+}
