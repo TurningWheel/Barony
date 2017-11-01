@@ -78,6 +78,9 @@ int checkSpriteType(Sint32 sprite)
 		//boulder traps
 		return 7;
 		break;
+	case 116:
+		//pedestal
+		return 8;
 	default:
 		return 0;
 		break;
@@ -646,7 +649,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"STALAGTITE MULTIPLE",
 	"GATE INVERTED (North-South)",
 	"GATE INVERTED (East-West)",
-	"LEVER WITH TIMER"
+	"LEVER WITH TIMER",
+	"PEDESTAL"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1155,6 +1159,24 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->boulderTrapRefireDelay = 3;
 			entityNew->boulderTrapRefireAmount = 0;
 			entityNew->boulderTrapPreDelay = 0;
+		}
+	}
+	// pedestal
+	else if ( spriteType == 8 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->pedestalOrbType = entityToCopy->pedestalOrbType;
+			entityNew->pedestalHasOrb = entityToCopy->pedestalHasOrb;
+			entityNew->pedestalInvertedPower = entityToCopy->pedestalInvertedPower;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->pedestalOrbType = 0;
+			entityNew->pedestalHasOrb = 0;
+			entityNew->pedestalInvertedPower = 0;
 		}
 	}
 

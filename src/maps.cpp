@@ -4029,12 +4029,13 @@ void assignActions(map_t* map)
 				entity->z = 4.5;
 				entity->behavior = &actPedestalBase;
 				entity->sprite = 601; //pedestal base
-				//entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
 				entity->flags[PASSABLE] = false;
-				if ( multiplayer != CLIENT )
+				entity->pedestalOrbType = entity->pedestalOrbType + 1;// set in editor as 0-3, need 1-4.
+				if ( entity->pedestalHasOrb == 1 ) // set in editor
 				{
-					entity->pedestalOrbType = rand() % 4 + 1;
+					entity->pedestalHasOrb = entity->pedestalOrbType;
 				}
+				//entity->pedestalInvertedPower // set in editor
 
 				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities); //floating orb
 				childEntity->parent = entity->getUID();

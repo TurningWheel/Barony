@@ -60,13 +60,29 @@ void Entity::actPedestalBase()
 
 	if ( circuit_status < CIRCUIT_OFF )
 	{
-		circuit_status = CIRCUIT_OFF; // set the entity to be a circuit if not already set.
+		// set the entity to be a circuit if not already set.
+		if ( !pedestalInvertedPower )
+		{
+			circuit_status = CIRCUIT_OFF; 
+		}
+		else
+		{
+			circuit_status = CIRCUIT_ON;
+		}
 	}
 
-	if ( pedestalHasOrb == pedestalOrbType && circuit_status == CIRCUIT_OFF )
+	if ( pedestalHasOrb == pedestalOrbType )
 	{
-		mechanismPowerOn();
-		updateCircuitNeighbors();
+		if ( circuit_status == CIRCUIT_OFF && !pedestalInvertedPower )
+		{
+			mechanismPowerOn();
+			updateCircuitNeighbors();
+		}
+		else if ( circuit_status == CIRCUIT_ON && pedestalInvertedPower )
+		{
+			mechanismPowerOff();
+			updateCircuitNeighbors();
+		}
 	}
 
 	// handle player interaction
@@ -86,7 +102,14 @@ void Entity::actPedestalBase()
 						itemPickup(i, itemOrb);
 						pedestalHasOrb = 0;
 						serverUpdateEntitySkill(this, 0); // update orb status.
-						mechanismPowerOff();
+						if ( !pedestalInvertedPower )
+						{
+							mechanismPowerOff();
+						}
+						else
+						{
+							mechanismPowerOn();
+						}
 						updateCircuitNeighbors();
 						messagePlayer(i, language[2374], itemOrb->getName());
 					}
@@ -175,8 +198,15 @@ void Entity::actPedestalOrb()
 								Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
 								itemPickup(i, itemOrb);
 								parent->pedestalHasOrb = 0;
-								parent->mechanismPowerOff();
-								serverUpdateEntitySkill(parent, 0);
+								if ( !parent->pedestalInvertedPower )
+								{
+									parent->mechanismPowerOff();
+								}
+								else
+								{
+									parent->mechanismPowerOn();
+								}
+								serverUpdateEntitySkill(parent, 0); // update orb status 
 								parent->updateCircuitNeighbors();
 								messagePlayer(i, language[2374], itemOrb->getName());
 							}
