@@ -1576,6 +1576,11 @@ void Entity::handleEffects(Stat* myStats)
 
 							this->setObituary(language[1530]);
 						}
+						else
+						{
+							// Instead of killing the Buddha Player, set their HP to 1
+							this->setHP(1);
+						}
 					}
 				}
 			}
