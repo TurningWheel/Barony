@@ -1806,6 +1806,11 @@ void Entity::handleEffects(Stat* myStats)
 
 					this->setObituary(language[1531]);
 				}
+				else
+				{
+					// Instead of killing the Buddha Player, set their HP to 1
+					this->setHP(1);
+				}
 			}
 
 			playSoundEntity(this, 28, 64);
