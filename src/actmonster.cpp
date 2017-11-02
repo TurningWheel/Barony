@@ -1160,17 +1160,21 @@ void actMonster(Entity* my)
 	if ( !strcmp(myStats->name, "") )
 	{
 		// only for monsters that have no name
-		switch ( myStats->type )
+
+		// Prevent Entities from picking up new equipment if they are Asleep
+		if ( myStats->EFFECTS[EFF_ASLEEP] == false )
 		{
-			case GOBLIN:
-				//messagePlayer(0, "BLARG.");
-				my->checkBetterEquipment(myStats);
-				break;
-			case HUMAN:
-				my->checkBetterEquipment(myStats);
-				break;
-			default:
-				break;
+			switch ( myStats->type )
+			{
+				case GOBLIN:
+					my->checkBetterEquipment(myStats);
+					break;
+				case HUMAN:
+					my->checkBetterEquipment(myStats);
+					break;
+				default:
+					break;
+			}
 		}
 	}
 
