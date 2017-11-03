@@ -393,7 +393,7 @@ int initApp(char* title, int fullscreen)
 	}
 	if ( !softwaremode )
 	{
-		generatePolyModels(0, nummodels);
+		generatePolyModels(0, nummodels, false);
 	}
 	fclose(fp);
 	// print a loading message
@@ -792,7 +792,7 @@ void freeLanguages()
 
 -------------------------------------------------------------------------------*/
 
-void generatePolyModels(int start, int end)
+void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
 	Sint32 x, y, z;
 	Sint32 c, i;
@@ -802,14 +802,30 @@ void generatePolyModels(int start, int end)
 	polyquad_t* quad1, *quad2;
 	Uint32 numquads;
 	list_t quads;
+	FILE *model_cache;
+	bool generateAll = start == 0 && end == nummodels;
 
 	quads.first = NULL;
 	quads.last = NULL;
 
 	printlog("generating poly models...\n");
-	if ( start == 0 && end == nummodels )
+	if ( generateAll )
 	{
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
+		if ( useModelCache && !forceCacheRebuild )
+		{
+			model_cache = openDataFile("models.cache", "rb");
+			if (model_cache) {
+				for (size_t model_index = 0; model_index < nummodels; model_index++) {
+					polymodel_t *cur = &polymodels[model_index];
+					fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+					cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
+					fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+				}
+				fclose(model_cache);
+				return generateVBOs(start, end);
+			}
+		}
 	}
 
 	for ( c = start; c < end; ++c )
@@ -1737,6 +1753,14 @@ void generatePolyModels(int start, int end)
 
 		// free up quads for the next model
 		list_FreeAll(&quads);
+	}
+	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) {
+		for (size_t model_index = 0; model_index < nummodels; model_index++) {
+			polymodel_t *cur = &polymodels[model_index];
+			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+			fwrite(cur->faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+		}
+		fclose(model_cache);
 	}
 
 	// now store models into VBOs

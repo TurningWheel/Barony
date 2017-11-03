@@ -173,6 +173,22 @@ static double damagetables[NUMMONSTERS][6] =
 
 };
 
+static std::vector<std::vector<int>> classStatGrowth =
+{
+	// stat weightings for classes on level up
+	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
+	{	6,	5,	2,	2,	4,	5 }, // BARB 0
+	{	7,	2,	6,	1,	2,	6 }, // WARRIOR 1
+	{	4,	2,	5,	5,	4,	4 }, // CLERIC 2
+	{	3,	3,	4,	6,	5,	3 }, // HEALER 3
+	{	5,	4,	5,	3,	5,	2 }, // WANDERER 4
+	{	2,	7,	1,	2,	7,	5 }, // ROGUE 5
+	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 6
+	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
+	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 8
+	{	4,	4,	4,	4,	4,	4 }  // JOKER 9
+};
+
 #define WAIT_FOLLOWDIST 48
 #define HUNT_FOLLOWDIST 64
 

@@ -907,6 +907,10 @@ int saveConfig(char* filename)
 	{
 		fprintf(fp, "/splitscreen\n");
 	}
+	if ( useModelCache )
+	{
+		fprintf(fp, "/usemodelcache\n");
+	}
 	fprintf(fp, "/gamepad_deadzone %d\n", gamepad_deadzone);
 	fprintf(fp, "/gamepad_trigger_deadzone %d\n", gamepad_trigger_deadzone);
 	fprintf(fp, "/gamepad_leftx_sensitivity %d\n", gamepad_leftx_sensitivity);

@@ -59,6 +59,14 @@ void consoleCommand(char* command_str)
 			pingtime = SDL_GetTicks();
 		}
 	}
+	else if ( !strncmp(command_str, "/usemodelcache", 14) )
+	{
+		useModelCache = true;
+	}
+	else if ( !strncmp(command_str, "/disablemodelcache", 14) )
+	{
+		useModelCache = false;
+	}
 	else if (!strncmp(command_str, "/fov", 4))
 	{
 		fov = atoi(&command_str[5]);
@@ -954,7 +962,7 @@ void consoleCommand(char* command_str)
 		fclose(fp);
 		messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
-		generatePolyModels(startIndex, endIndex);
+		generatePolyModels(startIndex, endIndex, true);
 	}
 	else if (!strncmp(command_str, "/killmonsters", 13))
 	{

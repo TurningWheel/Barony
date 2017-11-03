@@ -4028,43 +4028,25 @@ void assignActions(map_t* map)
 				entity->y += 8;
 				entity->z = 4.5;
 				entity->behavior = &actPedestalBase;
-				entity->sprite = 601; //crystal base
-				//entity->yaw = entity->yaw * (PI / 2); // rotate as set in editor
+				entity->sprite = 601; //pedestal base
 				entity->flags[PASSABLE] = false;
+				entity->pedestalOrbType = entity->pedestalOrbType + 1;// set in editor as 0-3, need 1-4.
+				if ( entity->pedestalHasOrb == 1 ) // set in editor
+				{
+					entity->pedestalHasOrb = entity->pedestalOrbType;
+				}
+				//entity->pedestalInvertedPower // set in editor
 
-				//childEntity = newEntity(578, 0, map->entities); //floating crystal
-				//childEntity->parent = entity->getUID();
+				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities); //floating orb
+				childEntity->parent = entity->getUID();
+				childEntity->behavior = &actPedestalOrb;
 
-				//childEntity->x = entity->x;
-				//childEntity->y = entity->y;
-				//childEntity->sizex = 4;
-				//childEntity->sizey = 4;
-				//childEntity->crystalStartZ = entity->z - 10; //start position
-				//childEntity->z = childEntity->crystalStartZ - 0.4 + ((prng_get_uint() % 8) * 0.1); // start the height randomly
-				//childEntity->crystalMaxZVelocity = 0.02; //max velocity
-				//childEntity->crystalMinZVelocity = 0.001; //min velocity
-				//childEntity->crystalTurnVelocity = 0.2; //yaw turning velocity
-				//childEntity->vel_z = childEntity->crystalMaxZVelocity * ((prng_get_uint() % 100) * 0.01); // start the velocity randomly
+				childEntity->pedestalOrbInit();
 
-				//childEntity->crystalNumElectricityNodes = entity->crystalNumElectricityNodes; //number of electricity nodes to generate in facing direction.
-				//childEntity->crystalTurnReverse = entity->crystalTurnReverse;
-				//childEntity->crystalSpellToActivate = entity->crystalSpellToActivate;
-				//if ( childEntity->crystalSpellToActivate )
-				//{
-				//	childEntity->z = childEntity->crystalStartZ + 5;
-				//	childEntity->vel_z = childEntity->crystalMaxZVelocity * 2;
-				//}
-				//childEntity->yaw = entity->yaw;
-				//childEntity->sizex = 4;
-				//childEntity->sizey = 4;
-				//childEntity->behavior = &actPowerCrystal;
-				//childEntity->flags[PASSABLE] = true;
-
-				//node_t* tempNode = list_AddNodeLast(&entity->children);
-				//tempNode->element = childEntity; // add the node to the children list.
-				//tempNode->deconstructor = &emptyDeconstructor;
-				//tempNode->size = sizeof(Entity*);
-
+				node_t* tempNode = list_AddNodeLast(&entity->children);
+				tempNode->element = childEntity; // add the node to the children list.
+				tempNode->deconstructor = &emptyDeconstructor;
+				tempNode->size = sizeof(Entity*);
 				break;
 			}
 			default:

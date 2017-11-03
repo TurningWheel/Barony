@@ -1395,6 +1395,21 @@ void buttonSpriteProperties(button_t* my)
 			suby2 = yres / 2 + 100;
 			strcpy(subtext, "Boulder Trap Properties:");
 			break;
+		case 8:
+			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->pedestalOrbType));
+			snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
+			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 10;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 100;
+			suby2 = yres / 2 + 100;
+			strcpy(subtext, "Pedestal Properties:");
+			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -2211,6 +2226,11 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				{
 					selectedEntity->boulderTrapPreDelay = (Sint32)atoi(spriteProperties[2]);
 				}
+				break;
+			case 8: //pedestal
+				selectedEntity->pedestalOrbType = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
 				break;
 			default:
 				break;
