@@ -2911,6 +2911,14 @@ client (player %d) (direct ip)#
 2283 spellbook#
 2284 empty bottle#
 2285 empty bottle#
+2286 blue mystic orb#
+2287 blue mystic orb#
+2288 red mystic orb#
+2289 red mystic orb#
+2290 purple mystic orb#
+2291 purple mystic orb#
+2292 green mystic orb#
+2293 green mystic orb#
 
 #Additional ingame text.
 2350 A fragment breaks away from your %s.#
@@ -2928,6 +2936,17 @@ client (player %d) (direct ip)#
 2362 You hear a click from the mechanism!#
 2363 You attempt to pull the lever back,
 but it retracts beyond your might!#
+2364 Pedestal Reply1#
+2365 Pedestal Reply2#
+2366 Pedestal Reply3#
+2367 Pedestal Reply4#
+2368 You place the orb in the receptacle...#
+2369 But it had no effect.#
+2370 The orb starts floating!#
+2371 This item has no use here.#
+2372 This %s appears to be a missing part of some contraption.#
+2373 This %s looks shiny, must be useful! #
+2374 You retrieve the %s from the pedestal.#
 
 #New spells (2390-2399)
 2390 Conjure Familiar#
