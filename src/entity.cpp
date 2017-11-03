@@ -121,7 +121,17 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleTimerCountdownSprite(skill[5]),
 	particleTimerTarget(skill[6]),
 	particleTimerPreDelay(skill[7]),
-	particleTimerVariable1(skill[8])
+	particleTimerVariable1(skill[8]),
+	pedestalHasOrb(skill[0]),
+	pedestalOrbType(skill[1]),
+	pedestalInvertedPower(skill[3]),
+	orbInitialised(skill[1]),
+	orbHoverDirection(skill[7]),
+	orbHoverWaitTimer(skill[8]),
+	orbStartZ(fskill[0]),
+	orbMaxZVelocity(fskill[1]),
+	orbMinZVelocity(fskill[2]),
+	orbTurnVelocity(fskill[3])
 
 {
 	int c;
@@ -1822,37 +1832,7 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 
 		// now pick three attributes to increase
-		// changed rolls to be unique for each possibility.
-		increasestat[0] = rand() % 6;
-		int r = rand() % 6;
-		while ( r == increasestat[0] ) {
-			r = rand() % 6;
-		}
-		increasestat[1] = r;
-		r = rand() % 6;
-		while ( r == increasestat[0] || r == increasestat[1] ) {
-			r = rand() % 6;
-		}
-		increasestat[2] = r;
-
-		// debug
-		// messagePlayer(0, "Stats rolled: %d %d %d", increasestat[0], increasestat[1], increasestat[2]);
-
-		/*increasestat[0] = rand() % 6;
-		increasestat[1] = rand() % 5;
-		increasestat[2] = rand() % 4;
-		if ( increasestat[1] >= increasestat[0] )
-		{
-		increasestat[1]++;
-		}
-		if ( increasestat[2] >= increasestat[0] )
-		{
-		increasestat[2]++;
-		}
-		if ( increasestat[2] >= increasestat[1] )
-		{
-		increasestat[2]++;
-		}*/
+		playerStatIncrease(client_classes[player], increasestat);
 
 		for ( i = 0; i < NUMSTATS * 2; ++i )
 		{
@@ -8649,4 +8629,35 @@ char* Entity::getMonsterLangEntry()
 		return myStats->name;
 	}
 	return nullptr;
+}
+
+void playerStatIncrease(int playerClass, int chosenStats[3])
+{
+	std::mt19937 seed(rand()); // seed of distribution.
+	
+	std::vector<int> statWeights = classStatGrowth[playerClass];
+
+	// debug to print which vector values are being used.
+	//for ( std::vector<int>::const_iterator i = statWeights.begin(); i != statWeights.end(); ++i )
+	//{
+	//	messagePlayer(0, "%2d, ", *i);
+	//}
+
+	std::discrete_distribution<> distr1(statWeights.begin(), statWeights.end()); // generate a distribution.
+	chosenStats[0] = distr1(seed); // get first stat.
+	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.
+
+	std::discrete_distribution<> distr2(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
+	chosenStats[1] = distr2(seed); // get second stat.
+	statWeights[chosenStats[1]] = 0; // remove the chance in the local stat vector.
+
+	std::discrete_distribution<> distr3(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
+	chosenStats[2] = distr3(seed); // get third stat.
+
+	if ( chosenStats[0] == chosenStats[1] || chosenStats[0] == chosenStats[2] || chosenStats[1] == chosenStats[2] )
+	{
+		printlog("Err: duplicate stat index chosen on level up of player with class %d!\n", playerClass);
+	}
+
+	return;
 }

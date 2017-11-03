@@ -231,9 +231,13 @@ typedef enum ItemType
 	SPELLBOOK_DRAIN_SOUL,
 	SPELLBOOK_VAMPIRIC_AURA,
 	SPELLBOOK_BLANK_5,
-	POTION_EMPTY
+	POTION_EMPTY,
+	ARTIFACT_ORB_BLUE,
+	ARTIFACT_ORB_RED,
+	ARTIFACT_ORB_PURPLE,
+	ARTIFACT_ORB_GREEN
 } ItemType;
-const int NUMITEMS = 211;
+const int NUMITEMS = 215;
 
 //NOTE: If you change this, make sure to update NUMCATEGORIES in game.h to reflect the total number of categories. Not doing that will make bad things happen.
 typedef enum Category
@@ -334,6 +338,7 @@ public:
 	//Item usage functions.
 	void applySkeletonKey(int player, Entity& entity);
 	void applyLockpick(int player, Entity& entity);
+	void applyOrb(int player, ItemType type, Entity& entity);
 
 	//-----ITEM COMPARISON FUNCTIONS-----
 	/*

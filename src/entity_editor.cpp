@@ -96,7 +96,17 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleTimerCountdownSprite(skill[5]),
 	particleTimerTarget(skill[6]),
 	particleTimerPreDelay(skill[7]),
-	particleTimerVariable1(skill[8])
+	particleTimerVariable1(skill[8]),
+	pedestalHasOrb(skill[0]),
+	pedestalOrbType(skill[1]),
+	pedestalInvertedPower(skill[3]),
+	orbInitialised(skill[1]),
+	orbHoverDirection(skill[7]),
+	orbHoverWaitTimer(skill[8]),
+	orbStartZ(fskill[0]),
+	orbMaxZVelocity(fskill[1]),
+	orbMinZVelocity(fskill[2]),
+	orbTurnVelocity(fskill[3])
 {
 	int c;
 	// add the entity to the entity list

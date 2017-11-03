@@ -512,6 +512,11 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 							setSpriteAttributes(entity, nullptr, nullptr);
 						}
 						break;
+					case 8:
+						fread(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -740,6 +745,11 @@ int saveMap(char* filename2)
 					fwrite(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1, fp);
 					fwrite(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1, fp);
 					fwrite(&entity->boulderTrapPreDelay, sizeof(Sint32), 1, fp);
+					break;
+				case 8:
+					fwrite(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;
