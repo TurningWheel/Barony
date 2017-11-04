@@ -72,9 +72,7 @@ void Entity::actPedestalBase()
 			pedestalInGround = 0;
 			if ( multiplayer != CLIENT )
 			{
-				flags[PASSABLE] = false;
 				serverUpdateEntitySkill(this, 4);
-				serverUpdateEntityFlag(this, PASSABLE);
 			}
 		}
 	}
@@ -109,6 +107,32 @@ void Entity::actPedestalBase()
 		{
 			mechanismPowerOff();
 			updateCircuitNeighbors();
+		}
+	}
+
+	if ( flags[PASSABLE] && pedestalInGround == 0 )
+	{
+		// see if any entity is currently inside, otherwise set PASSABLE to false
+		bool somebodyInside = false;
+		node_t* node2 = nullptr;
+		for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
+		{
+			Entity* entity = (Entity*)node2->element;
+			if ( entity == this || entity->flags[PASSABLE]
+				|| entity->sprite == 1 || entity == orbEntity )
+			{
+				continue;
+			}
+			if ( entityInsideEntity(this, entity) )
+			{
+				somebodyInside = true;
+				break;
+			}
+		}
+		if ( !somebodyInside )
+		{
+			flags[PASSABLE] = false;
+			serverUpdateEntityFlag(this, PASSABLE);
 		}
 	}
 
