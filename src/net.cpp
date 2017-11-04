@@ -996,6 +996,15 @@ void clientActions(Entity* entity)
 		case 586:
 			entity->behavior = &actSwitchWithTimer;
 			break;
+		case 601:
+			entity->behavior = &actPedestalBase;
+			break;
+		case 602:
+		case 603:
+		case 604:
+		case 605:
+			entity->behavior = &actPedestalOrb;
+			break;
 		default:
 			break;
 	}
@@ -2064,12 +2073,15 @@ void clientHandlePacket()
 						spellTimer->particleTimerCountdownAction = 1;
 						spellTimer->particleTimerCountdownSprite = sprite;
 					}
-					break;
+						break;
 					case PARTICLE_EFFECT_ERUPT:
 						createParticleErupt(entity, sprite);
 						break;
 					case PARTICLE_EFFECT_VAMPIRIC_AURA:
 						createParticleDropRising(entity, sprite, 0.5);
+						break;
+					case PARTICLE_EFFECT_RISING_DROP:
+						createParticleDropRising(entity, sprite, 1.0);
 						break;
 					default:
 						break;
