@@ -4022,8 +4022,8 @@ void assignActions(map_t* map)
 			// pedestal
 			case 116:
 			{
-				entity->sizex = 3;
-				entity->sizey = 3;
+				entity->sizex = 4;
+				entity->sizey = 4;
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = 4.5;
