@@ -175,39 +175,7 @@ void Entity::actPedestalBase()
 			}	
 		}
 	}
-
-	return;
 }
-
-//// ambient particle effects.
-//void actPowerCrystalParticleIdle(Entity* my)
-//{
-//	if ( !my )
-//	{
-//		return;
-//	}
-//
-//	if ( my->skill[0] < 0 )
-//	{
-//		list_RemoveNode(my->mynode);
-//		return;
-//	}
-//	else
-//	{
-//		--my->skill[0];
-//		my->z += my->vel_z;
-//		//my->z -= 0.01;
-//	}
-//	return;
-//}
-//
-//void Entity::pedestalCreateElectricityNodes()
-//{
-//	this->mechanismPowerOn();
-//	this->updateCircuitNeighbors();
-//
-//	return;
-//}
 
 void Entity::actPedestalOrb()
 {
