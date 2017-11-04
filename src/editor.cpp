@@ -144,11 +144,12 @@ char boulderTrapPropertyNames[3][42] =
 	"Pre-delay for first time trigger (0-999s)"
 };
 
-char pedestalPropertyNames[3][32] =
+char pedestalPropertyNames[4][35] =
 {
 	"Orb Type (0-3)",
 	"Pre-loaded with Orb (0-1)",
-	"Inverted power generation (0-1)"
+	"Inverted power generation (0-1)",
+	"Pedestal start beneath ground(0-1)"
 };
 
 int recentUsedTiles[9][9] = { 0 };
@@ -4495,6 +4496,26 @@ int main(int argc, char** argv)
 										else
 										{
 											strcpy(tmpStr, "non-inverted (orb to power)");
+										}
+										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
+									}
+								}
+								else if ( i == 3 )
+								{
+									if ( propertyInt > 1 || propertyInt < 0 )
+									{
+										propertyPageError(i, 0); // reset to default 0 normal height.
+									}
+									else
+									{
+										char tmpStr[32] = "";
+										if ( propertyInt == 1 )
+										{
+											strcpy(tmpStr, "true");
+										}
+										else
+										{
+											strcpy(tmpStr, "false");
 										}
 										printTextFormattedColor(font8x8_bmp, inputFieldFeedback_x, inputField_y, color, tmpStr);
 									}

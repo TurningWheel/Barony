@@ -4036,11 +4036,30 @@ void assignActions(map_t* map)
 					entity->pedestalHasOrb = entity->pedestalOrbType;
 				}
 				//entity->pedestalInvertedPower // set in editor
+				entity->pedestalInit = 0;
+				//entity->pedestalInGround = 0; // set in editor
+				if ( entity->pedestalInGround )
+				{
+					entity->z += 7;
+					entity->flags[PASSABLE] = true;
+				}
 
 				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities); //floating orb
 				childEntity->parent = entity->getUID();
 				childEntity->behavior = &actPedestalOrb;
-
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				childEntity->z = -2;
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->flags[UNCLICKABLE] = true;
+				childEntity->flags[PASSABLE] = true;
+				childEntity->flags[INVISIBLE] = false;
+				if ( entity->pedestalInGround )
+				{
+					childEntity->z += 7;
+					childEntity->orbStartZ = -2;
+				}
 				childEntity->pedestalOrbInit();
 
 				node_t* tempNode = list_AddNodeLast(&entity->children);

@@ -231,6 +231,8 @@ public:
 	Sint32& pedestalHasOrb;
 	Sint32& pedestalOrbType;
 	Sint32& pedestalInvertedPower;
+	Sint32& pedestalInGround;
+	Sint32& pedestalInit;
 
 	real_t& orbStartZ; // mid point of animation, starting height.
 	real_t& orbMaxZVelocity;

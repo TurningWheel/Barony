@@ -85,6 +85,30 @@ void Entity::actPedestalBase()
 		}
 	}
 
+	node_t* node = children.first;
+	Entity* orbEntity = (Entity*)(node->element);
+
+	if ( pedestalInGround )
+	{
+		if ( z > 4.5 )
+		{
+			vel_z = -0.05;
+			z += vel_z;
+			orbEntity->vel_z = vel_z;
+			orbEntity->z += orbEntity->vel_z;
+		}
+		else
+		{
+			z = 4.5;
+			orbEntity->z = -2;
+			vel_z = 0;
+			orbEntity->vel_z = 0;
+			pedestalInGround = 0;
+			serverUpdateEntitySkill(this, 4);
+			flags[PASSABLE] = false;
+		}
+	}
+
 	// handle player interaction
 	for ( int i = 0; i < MAXPLAYERS; i++ )
 	{
@@ -94,23 +118,25 @@ void Entity::actPedestalBase()
 			{
 				if ( players[i] && players[i]->entity )
 				{
-					node_t* node = children.first;
-					Entity* orbEntity = (Entity*)(node->element);
 					if ( orbEntity && pedestalHasOrb > 0 )
 					{
 						Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
 						itemPickup(i, itemOrb);
+						if ( pedestalHasOrb == pedestalOrbType )
+						{
+							// only update power when right orb is in place.
+							if ( !pedestalInvertedPower )
+							{
+								mechanismPowerOff();
+							}
+							else
+							{
+								mechanismPowerOn();
+							}
+							updateCircuitNeighbors();
+						}
 						pedestalHasOrb = 0;
 						serverUpdateEntitySkill(this, 0); // update orb status.
-						if ( !pedestalInvertedPower )
-						{
-							mechanismPowerOff();
-						}
-						else
-						{
-							mechanismPowerOn();
-						}
-						updateCircuitNeighbors();
 						messagePlayer(i, language[2374], itemOrb->getName());
 					}
 					else
@@ -168,8 +194,11 @@ void Entity::actPedestalOrb()
 	{
 		return;
 	}
-	
-	pedestalOrbInit();
+
+	if ( !parent->pedestalInGround )
+	{
+		pedestalOrbInit();
+	}
 
 	if ( parent->pedestalHasOrb == 0 )
 	{
@@ -178,7 +207,7 @@ void Entity::actPedestalOrb()
 		flags[PASSABLE] = true;
 		return;
 	}
-	else
+	else if ( orbInitialised )
 	{
 		sprite = parent->pedestalHasOrb + 602 - 1;
 
@@ -197,17 +226,21 @@ void Entity::actPedestalOrb()
 							{
 								Item* itemOrb = newItem(static_cast<ItemType>(ARTIFACT_ORB_BLUE + parent->pedestalHasOrb - 1), EXCELLENT, 0, 1, rand(), true, nullptr);
 								itemPickup(i, itemOrb);
+								if ( parent->pedestalHasOrb == parent->pedestalOrbType )
+								{
+									// only update power when right orb is in place.
+									if ( !pedestalInvertedPower )
+									{
+										parent->mechanismPowerOff();
+									}
+									else
+									{
+										parent->mechanismPowerOn();
+									}
+									updateCircuitNeighbors();
+								}
 								parent->pedestalHasOrb = 0;
-								if ( !parent->pedestalInvertedPower )
-								{
-									parent->mechanismPowerOff();
-								}
-								else
-								{
-									parent->mechanismPowerOn();
-								}
 								serverUpdateEntitySkill(parent, 0); // update orb status 
-								parent->updateCircuitNeighbors();
 								messagePlayer(i, language[2374], itemOrb->getName());
 							}
 						}
@@ -230,6 +263,10 @@ void Entity::actPedestalOrb()
 			flags[UNCLICKABLE] = false;
 			flags[PASSABLE] = false;
 		}
+	}
+	else
+	{
+		return;
 	}
 
 	if ( orbHoverDirection == CRYSTAL_HOVER_UP ) //rise state
@@ -295,7 +332,7 @@ void Entity::actPedestalOrb()
 		vel_z = orbMaxZVelocity; // reset velocity at the mid point of animation
 	}
 
-	yaw += orbTurnVelocity;
+	yaw += (orbTurnVelocity * abs((vel_z / orbMaxZVelocity)) + orbTurnVelocity) * 2;
 
 	int particleSprite = 606;
 
@@ -318,7 +355,7 @@ void Entity::pedestalOrbInit()
 {
 	Entity* parent = uidToEntity(this->parent);
 
-	if ( !orbInitialised )
+	if ( !orbInitialised && !parent->pedestalInGround )
 	{
 		x = parent->x;
 		y = parent->y;
@@ -335,8 +372,12 @@ void Entity::pedestalOrbInit()
 			flags[UNCLICKABLE] = true;
 			flags[INVISIBLE] = true;
 		}
-		orbStartZ = z;
-		z = orbStartZ - 0.4 + ((rand() % 8) * 0.1); // start the height randomly
+		flags[PASSABLE] = true;
+		if ( orbStartZ != z )
+		{
+			orbStartZ = z;
+			z = orbStartZ - 0.4 + ((rand() % 8) * 0.1); // start the height randomly
+		}
 		orbMaxZVelocity = 0.02; //max velocity
 		orbMinZVelocity = 0.001; //min velocity
 		vel_z = crystalMaxZVelocity * ((rand() % 100) * 0.01); // start the velocity randomly
