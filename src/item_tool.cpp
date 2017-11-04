@@ -17,6 +17,7 @@
 #include "stat.hpp"
 #include "colors.hpp"
 #include "items.hpp"
+#include "magic/magic.hpp"
 
 void Item::applySkeletonKey(int player, Entity& entity)
 {
@@ -194,7 +195,7 @@ void Item::applyLockpick(int player, Entity& entity)
 
 void Item::applyOrb(int player, ItemType type, Entity& entity)
 {
-	if ( entity.behavior == &actPedestalBase )
+	if ( entity.behavior == &actPedestalBase && entity.pedestalHasOrb == 0 )
 	{
 		if ( multiplayer == CLIENT )
 		{
@@ -202,6 +203,7 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 			return;
 		}
 		messagePlayer(player, language[2368]);
+		bool playSound = true;
 
 		if ( type == ARTIFACT_ORB_BLUE && entity.pedestalOrbType == 1 )
 		{
@@ -221,11 +223,19 @@ void Item::applyOrb(int player, ItemType type, Entity& entity)
 		}
 		else
 		{
+			// incorrect orb.
 			messagePlayer(player, language[2369]);
+			playSound = false;
 		}
-		
+
 		if ( multiplayer != CLIENT )
 		{
+			if ( playSound )
+			{
+				playSoundEntity(&entity, 166, 128); // invisible.ogg
+				createParticleDropRising(&entity, entity.pedestalOrbType + 605, 1.0);
+				serverSpawnMiscParticles(&entity, PARTICLE_EFFECT_RISING_DROP, entity.pedestalOrbType + 605);
+			}
 			entity.pedestalHasOrb = type - ARTIFACT_ORB_BLUE + 1;
 			serverUpdateEntitySkill(&entity, 0); // update orb status.
 			consumeItem(stats[player]->weapon);

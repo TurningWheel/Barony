@@ -51,7 +51,33 @@ void actPedestalOrb(Entity* my)
 
 void Entity::actPedestalBase()
 {
-	//Entity* entity;
+	node_t* node = children.first;
+	Entity* orbEntity = (Entity*)(node->element);
+
+	if ( pedestalInGround != 0 )
+	{
+		if ( z > 4.5 )
+		{
+			vel_z = -0.05;
+			z += vel_z;
+			orbEntity->vel_z = vel_z;
+			orbEntity->z += orbEntity->vel_z;
+		}
+		else
+		{
+			z = 4.5;
+			orbEntity->z = -2;
+			vel_z = 0;
+			orbEntity->vel_z = 0;
+			pedestalInGround = 0;
+			if ( multiplayer != CLIENT )
+			{
+				flags[PASSABLE] = false;
+				serverUpdateEntitySkill(this, 4);
+				serverUpdateEntityFlag(this, PASSABLE);
+			}
+		}
+	}
 
 	if ( multiplayer == CLIENT )
 	{
@@ -73,6 +99,7 @@ void Entity::actPedestalBase()
 
 	if ( pedestalHasOrb == pedestalOrbType )
 	{
+		// power on/off the circuit if it hasn't updated
 		if ( circuit_status == CIRCUIT_OFF && !pedestalInvertedPower )
 		{
 			mechanismPowerOn();
@@ -82,30 +109,6 @@ void Entity::actPedestalBase()
 		{
 			mechanismPowerOff();
 			updateCircuitNeighbors();
-		}
-	}
-
-	node_t* node = children.first;
-	Entity* orbEntity = (Entity*)(node->element);
-
-	if ( pedestalInGround )
-	{
-		if ( z > 4.5 )
-		{
-			vel_z = -0.05;
-			z += vel_z;
-			orbEntity->vel_z = vel_z;
-			orbEntity->z += orbEntity->vel_z;
-		}
-		else
-		{
-			z = 4.5;
-			orbEntity->z = -2;
-			vel_z = 0;
-			orbEntity->vel_z = 0;
-			pedestalInGround = 0;
-			serverUpdateEntitySkill(this, 4);
-			flags[PASSABLE] = false;
 		}
 	}
 
@@ -134,6 +137,7 @@ void Entity::actPedestalBase()
 								mechanismPowerOn();
 							}
 							updateCircuitNeighbors();
+							removeLightField();
 						}
 						pedestalHasOrb = 0;
 						serverUpdateEntitySkill(this, 0); // update orb status.
@@ -205,6 +209,7 @@ void Entity::actPedestalOrb()
 		flags[INVISIBLE] = true;
 		flags[UNCLICKABLE] = true;
 		flags[PASSABLE] = true;
+		orbTurnVelocity = 0.5; // reset the speed of the orb.
 		return;
 	}
 	else if ( orbInitialised )
@@ -238,6 +243,7 @@ void Entity::actPedestalOrb()
 										parent->mechanismPowerOn();
 									}
 									updateCircuitNeighbors();
+									removeLightField();
 								}
 								parent->pedestalHasOrb = 0;
 								serverUpdateEntitySkill(parent, 0); // update orb status 
@@ -332,7 +338,11 @@ void Entity::actPedestalOrb()
 		vel_z = orbMaxZVelocity; // reset velocity at the mid point of animation
 	}
 
-	yaw += (orbTurnVelocity * abs((vel_z / orbMaxZVelocity)) + orbTurnVelocity) * 2;
+	yaw += (orbTurnVelocity * abs((vel_z / orbMaxZVelocity)) + orbTurnVelocity);
+	if ( orbTurnVelocity > 0.04 )
+	{
+		orbTurnVelocity -= 0.01;
+	}
 
 	int particleSprite = 606;
 
@@ -381,7 +391,7 @@ void Entity::pedestalOrbInit()
 		orbMaxZVelocity = 0.02; //max velocity
 		orbMinZVelocity = 0.001; //min velocity
 		vel_z = crystalMaxZVelocity * ((rand() % 100) * 0.01); // start the velocity randomly
-		orbTurnVelocity = 0.02;
+		orbTurnVelocity = 0.5;
 		orbInitialised = 1;
 		if ( multiplayer != CLIENT )
 		{

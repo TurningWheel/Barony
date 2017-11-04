@@ -100,6 +100,7 @@ static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL = 5;
 static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET = 6;
 static const int PARTICLE_EFFECT_ERUPT = 7;
 static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
+static const int PARTICLE_EFFECT_RISING_DROP = 9;
 
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
