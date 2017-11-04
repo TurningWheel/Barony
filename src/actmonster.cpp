@@ -1859,6 +1859,7 @@ void actMonster(Entity* my)
 	{
 		if ( !my->isMobile() )
 		{
+			// message the player, "the %s doesn't respond"
 			if ( !strcmp(myStats->name, "") )
 			{
 				if ( myStats->type < KOBOLD ) //Original monster count
@@ -1879,6 +1880,7 @@ void actMonster(Entity* my)
 		{
 			if (my->monsterTarget == players[monsterclicked]->entity->getUID() && my->monsterState != 4)
 			{
+				// angry at the player, "En Guarde!"
 				switch (myStats->type)
 				{
 					case SHOPKEEPER:
@@ -1891,6 +1893,7 @@ void actMonster(Entity* my)
 			}
 			else if (my->monsterState == MONSTER_STATE_TALK)
 			{
+				// for shopkeepers trading with a player, "I am somewhat busy now."
 				if (my->monsterTarget != players[monsterclicked]->entity->getUID())
 				{
 					switch (myStats->type)
@@ -1907,9 +1910,17 @@ void actMonster(Entity* my)
 			}
 			else
 			{
+				// handle followers/trading
 				if ( myStats->type != SHOPKEEPER )
 				{
-					makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+					if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+					{
+						makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+					}
+					else
+					{
+						handleMonsterChatter(monsterclicked, ringconflict, namesays, my, myStats);
+					}
 					my->lookAtEntity(*players[monsterclicked]->entity);
 				}
 				else
@@ -5356,4 +5367,68 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 		free(aoeTargets);
 	}
 	return count;
+}
+
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats)
+{
+	if ( ringconflict || myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+	{
+		//Instant fail if ring of conflict is in effect/not NPC
+		return false;
+	}
+
+	int NPCtype = myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF; // get NPC type, lowest 8 bits.
+	int NPClastLine = (myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF00) >> 8; // get last line said, next 8 bits.
+
+	int numLines = 0;
+	int startLine = 2700 + (NPCtype - 1) * MONSTER_NPC_DIALOGUE_LINES; // lang line to start from.
+	int currentLine = startLine + 1;
+
+	bool isSequential = false;
+
+	if ( !strcmp(language[startLine], "type:seq") )
+	{
+		isSequential = true;
+	}
+
+	for ( int i = 1; i < MONSTER_NPC_DIALOGUE_LINES; ++i )
+	{
+		// find the next 9 lines if available.
+		if ( !strcmp(language[currentLine], "") )
+		{
+			break;
+		}
+		++currentLine;
+		++numLines;
+	}
+
+	// choose a dialogue line.
+	if ( numLines > 0 )
+	{
+		if ( isSequential )
+		{
+			// say the next line in series.
+			if ( NPClastLine != 0 )
+			{
+				++NPClastLine;
+				if ( (NPClastLine) > numLines )
+				{
+					// reset to beginning
+					NPClastLine = 1;
+				}
+			}
+			else
+			{
+				// first line being said, choose the first.
+				NPClastLine = 1;
+			}
+		}
+		else if ( !isSequential )
+		{
+			// choose randomly
+			NPClastLine = 1 + rand() % numLines;
+		}
+		messagePlayer(monsterclicked, language[startLine + NPClastLine], namesays);
+		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
+	}
 }
