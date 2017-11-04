@@ -134,7 +134,6 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	orbMaxZVelocity(fskill[1]),
 	orbMinZVelocity(fskill[2]),
 	orbTurnVelocity(fskill[3])
-
 {
 	int c;
 	// add the entity to the entity list

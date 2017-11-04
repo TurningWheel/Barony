@@ -2119,6 +2119,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 						{
 							tmpSpriteStats->RANDOM_CHR = 0;
 						}
+						tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC] = (Sint32)atoi(spriteProperties[25]);
 					}
 				}
 				break;
@@ -2535,8 +2536,8 @@ void initMonsterPropertiesWindow() {
 	newwindow = 2;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 180;
-	suby2 = yres / 2 + 180;
+	suby1 = yres / 2 - 190;
+	suby2 = yres / 2 + 190;
 	strcpy(subtext, "Sprite properties: ");
 	strcat(subtext, spriteEditorNameStrings[selectedEntity->sprite]);
 }
@@ -2570,6 +2571,7 @@ void copyMonsterStatToPropertyStrings(Stat* tmpSpriteStats)
 		snprintf(spriteProperties[22], 4, "%d", tmpSpriteStats->RANDOM_INT + tmpSpriteStats->INT);
 		snprintf(spriteProperties[23], 4, "%d", tmpSpriteStats->RANDOM_PER + tmpSpriteStats->PER);
 		snprintf(spriteProperties[24], 4, "%d", tmpSpriteStats->RANDOM_CHR + tmpSpriteStats->CHR);
+		snprintf(spriteProperties[25], 4, "%d", tmpSpriteStats->MISC_FLAGS[STAT_FLAG_NPC]);
 	}
 	return;
 }
