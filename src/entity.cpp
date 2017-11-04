@@ -8644,8 +8644,7 @@ void playerStatIncrease(int playerClass, int chosenStats[3])
 	//	messagePlayer(0, "%2d, ", *i);
 	//}
 
-	std::discrete_distribution<> distr1(statWeights.begin(), statWeights.end()); // generate a distribution.
-	chosenStats[0] = distr1(seed); // get first stat.
+	chosenStats[0] = rand() % 6; // get first stat randomly.
 	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.
 
 	std::discrete_distribution<> distr2(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
