@@ -48,7 +48,7 @@ int errorArr[8] =
 	0, 0, 0, 0, 0, 0, 0, 0
 };
 
-char monsterPropertyNames[13][11] = 
+char monsterPropertyNames[14][11] = 
 {
 	"Name:",
 	"MAX HP:",
@@ -62,7 +62,8 @@ char monsterPropertyNames[13][11] =
 	"CON:",
 	"INT:",
 	"PER:",
-	"CHR:"
+	"CHR:",
+	"Is NPC:"
 };
 
 char chestPropertyNames[3][40] =
@@ -2907,7 +2908,7 @@ int main(int argc, char** argv)
 										// print right text
 										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 16), pad_y1, spriteProperties[i + 12]);
 									}
-									else
+									else if ( i < 13 )
 									{
 										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
 										pad_y1 += spacing + 10;
@@ -2924,9 +2925,22 @@ int main(int argc, char** argv)
 										// print right text
 										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 16), pad_y1, spriteProperties[i + 12]);
 									}
+									else if ( i >= 13 )
+									{
+										if ( i == 13 )
+										{
+											pad_y1 += 10;
+										}
+										color = SDL_MapRGB(mainsurface->format, 255, 255, 255);
+										pad_y1 += spacing + 10;
+										drawDepressed(pad_x1 + pad_x2 - 4, pad_y1 - 4, pad_x1 + pad_x2 + pad_x3 - 4, pad_y1 + 16 - 4);
+										// print property name
+										printTextFormattedColor(font8x8_bmp, pad_x1, pad_y1, color, tmpPropertyName);
+										// print left text
+										printText(font8x8_bmp, pad_x1 + pad_x2, pad_y1, spriteProperties[i + 12]);
+									}
 								}
 							}
-
 							
 							// Cycle properties with TAB.
 							if ( keystatus[SDL_SCANCODE_TAB] )
@@ -2934,9 +2948,9 @@ int main(int argc, char** argv)
 								keystatus[SDL_SCANCODE_TAB] = 0;
 								cursorflash = ticks;
 								editproperty++;
-								if ( editproperty == numProperties * 2 - 1 )
+								if ( editproperty == numProperties * 2 - 2 )
 								{
-									// limit of properties is twice the vertical count, minus 1 for name (every property has a random component)
+									// limit of properties is twice the vertical count
 									editproperty = 0;
 								}
 								
@@ -2977,7 +2991,7 @@ int main(int argc, char** argv)
 												cursorflash = ticks;
 											}
 										}
-										else
+										else if ( i < 13 )
 										{
 											pad_y1 += spacing + 10;
 											// check if mouse is in left property box
@@ -2995,9 +3009,23 @@ int main(int argc, char** argv)
 												cursorflash = ticks;
 											}
 										}
+										else if ( i >= 13 )
+										{
+											if ( i == 13 )
+											{
+												pad_y1 += 10;
+											}
+											pad_y1 += spacing + 10;
+											// check if mouse is in left property box
+											if ( omousex >= pad_x1 + pad_x2 - 4 && omousey >= pad_y1 - 4 && omousex < pad_x1 + pad_x2 + pad_x3 - 4 && omousey < pad_y1 + 16 - 4 )
+											{
+												inputstr = spriteProperties[i + 12];
+												editproperty = i + 12;
+												cursorflash = ticks;
+											}
+										}
 									}
 								}
-
 							}
 
 							//items for monster
@@ -3047,9 +3075,9 @@ int main(int argc, char** argv)
 							printTextFormattedColor(font8x8_bmp, pad_x4 - 8, pad_y2, color, "Inventory");
 
 
-							if ( editproperty < numProperties * 2 - 1 )   // edit property values
+							if ( editproperty < numProperties * 2 - 2 )   // edit property values
 							{
-								// limit of properties is twice the vertical count, minus 1 for name  (every property has a random component)
+								// limit of properties is twice the vertical count
 								if ( !SDL_IsTextInputActive() )
 								{
 									SDL_StartTextInput();
@@ -3101,6 +3129,14 @@ int main(int argc, char** argv)
 										pad_y1 += spacing + 10;
 										// right box
 										printText(font8x8_bmp, pad_x1 + pad_x2 + (pad_x3 + 20) + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
+									}
+									else if ( editproperty >= 25 )
+									{
+										pad_y1 = suby1 + 28 + (editproperty - 12) * spacing;
+										pad_y1 += spacing;
+										pad_y1 += spacing + 20;
+										// left box
+										printText(font8x8_bmp, pad_x1 + pad_x2 + strlen(spriteProperties[editproperty]) * 8, pad_y1, "\26");
 									}
 								}
 							}
