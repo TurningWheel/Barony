@@ -1399,6 +1399,7 @@ void buttonSpriteProperties(button_t* my)
 			snprintf(spriteProperties[0], 2, "%d", static_cast<int>(selectedEntity->pedestalOrbType));
 			snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
 			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
+			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->pedestalInGround));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -2231,6 +2232,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->pedestalOrbType = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->pedestalInGround = (Sint32)atoi(spriteProperties[3]);
 				break;
 			default:
 				break;

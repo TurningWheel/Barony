@@ -516,6 +516,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
 						fread(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
 						fread(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
 						break;
 					default:
 						break;
@@ -750,6 +751,7 @@ int saveMap(char* filename2)
 					fwrite(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
 					fwrite(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
 					fwrite(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

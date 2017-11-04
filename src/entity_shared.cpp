@@ -1170,6 +1170,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->pedestalOrbType = entityToCopy->pedestalOrbType;
 			entityNew->pedestalHasOrb = entityToCopy->pedestalHasOrb;
 			entityNew->pedestalInvertedPower = entityToCopy->pedestalInvertedPower;
+			entityNew->pedestalInGround = entityToCopy->pedestalInGround;
 		}
 		else
 		{
@@ -1177,6 +1178,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->pedestalOrbType = 0;
 			entityNew->pedestalHasOrb = 0;
 			entityNew->pedestalInvertedPower = 0;
+			entityNew->pedestalInGround = 0;
 		}
 	}
 
