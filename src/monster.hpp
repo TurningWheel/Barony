@@ -465,6 +465,9 @@ static const int MONSTER_SPELLCAST_NONE = 0;
 static const int MONSTER_SPELLCAST_SMALL_HUMANOID = 1;
 static const int MONSTER_SPELLCAST_HUMANOID = 2;
 
+//--monster NPC language lines
+static const int MONSTER_NPC_DIALOGUE_LINES = 10;
+
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
@@ -477,6 +480,8 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
+// monster custom NPC chatter
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
 
 //-----RACE SPECIFIC CONSTANTS-----
 
