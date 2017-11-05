@@ -2346,8 +2346,8 @@ void createParticle1(Entity* caster, int player)
 	Entity* entity = newEntity(-1, 1, map.entities);
 	entity->sizex = 0;
 	entity->sizey = 0;
-	entity->x = caster->x + 32 * cos(caster->yaw);
-	entity->y = caster->y + 32 * sin(caster->yaw);
+	entity->x = caster->x;
+	entity->y = caster->y;
 	entity->z = -7;
 	entity->vel_z = 0.3;
 	entity->yaw = (rand() % 360) * PI / 180.0;
@@ -2360,34 +2360,20 @@ void createParticle1(Entity* caster, int player)
 	entity->flags[INVISIBLE] = true;
 	entity->setUID(-3);
 
-	createParticle2(entity);
-	createParticleDot(entity);
-	/*entity = newEntity(574, 1, map.entities);
-	entity->sizex = 1;
-	entity->sizey = 1;
-	entity->x = x;
-	entity->y = y;
-	entity->z = 0;
-	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->skill[0] = 1000;
-	entity->behavior = &actParticleCircle;
-	entity->sprite = 574;
-	entity->flags[PASSABLE] = true;
-	entity->setUID(-3);*/
 }
 
-void createParticle2(Entity* parent)
+void createParticleCircling(Entity* parent, int duration, int sprite)
 {
-	Entity* entity = newEntity(174, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 8;
 	entity->z = -7;
-	entity->vel_z = 0.3;
+	entity->vel_z = 0.15;
 	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->skill[0] = 60;
+	entity->skill[0] = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2398,16 +2384,16 @@ void createParticle2(Entity* parent)
 
 	real_t tmp = entity->yaw;
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 8;
 	entity->z = -7;
-	entity->vel_z = 0.3;
+	entity->vel_z = 0.15;
 	entity->yaw = tmp + (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2416,16 +2402,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 8;
 	entity->z = -7;
-	entity->vel_z = 0.3;
+	entity->vel_z = 0.15;
 	entity->yaw = tmp - (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2434,16 +2420,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 16;
 	entity->z = -12;
-	entity->vel_z = 0.4;
+	entity->vel_z = 0.2;
 	entity->yaw = tmp;
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2452,16 +2438,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 16;
 	entity->z = -12;
-	entity->vel_z = 0.4;
+	entity->vel_z = 0.2;
 	entity->yaw = tmp + (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2470,16 +2456,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 16;
 	entity->z = -12;
-	entity->vel_z = 0.4;
+	entity->vel_z = 0.2;
 	entity->yaw = tmp - (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2494,18 +2480,8 @@ void createParticle2(Entity* parent)
 
 void actParticleCircle(Entity* my)
 {
-	//Entity* entity = newEntity(sprite, 1, map.entities);
 	if ( PARTICLE_LIFE < 0 )
 	{
-		if ( PARTICLE_CASTER != -1 )
-		{
-			//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
-			//spell_summonFamiliar(PARTICLE_CASTER);
-			playSoundEntity(my, 164, 128);
-			spawnExplosion(my->x, my->y, 0);
-			//summonMonster(SKELETON, my->x, my->y);
-		}
-		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -2518,27 +2494,20 @@ void actParticleCircle(Entity* my)
 			my->fskill[0] = my->fskill[0] * 1.05;
 		}
 		my->z += my->vel_z;
-		if ( PARTICLE_CASTER == -1 )
+		if ( my->focalx > 0.05 )
 		{
-
-			if ( my->focalx > 0.05 )
+			if ( my->vel_z == 0.15 )
 			{
-				if ( my->vel_z == 0.3 )
-				{
-					my->focalx = my->focalx * 0.98;
-				}
-				else
-				{
-					my->focalx = my->focalx * 0.95;
-				}
+				my->focalx = my->focalx * 0.97;
 			}
-			my->scalex *= 0.99;
-			my->scaley *= 0.99;
-			my->scalez *= 0.99;
-			//my->scalex = my->scalex * 1.1;
-			//my->scaley = my->scaley * 1.1;
+			else
+			{
+				my->focalx = my->focalx * 0.97;
+			}
 		}
-		//my->z -= 0.01;
+		my->scalex *= 0.995;
+		my->scaley *= 0.995;
+		my->scalez *= 0.995;
 	}
 }
 
@@ -2969,6 +2938,18 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_PORTAL_SPAWN )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent )
+				{
+					parent->flags[INVISIBLE] = false;
+					serverUpdateEntityFlag(parent, INVISIBLE);
+					playSoundEntity(parent, 164, 128);
+				}
+				spawnExplosion(my->x, my->y, 0);
+				my->removeLightField();
+			}
 		}
 		list_RemoveNode(my->mynode);
 		return;
@@ -2979,7 +2960,7 @@ void actParticleTimer(Entity* my)
 		if ( my->particleTimerPreDelay <= 0 )
 		{
 			// shoot particles for the duration of the timer, centered at caster.
-			if ( my->particleTimerCountdownAction == 1 )
+			if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SHOOT_PARTICLES )
 			{
 				Entity* parent = uidToEntity(my->parent);
 				// shoot drops to the sky
@@ -3003,6 +2984,18 @@ void actParticleTimer(Entity* my)
 						entity_uids--;
 					}
 					entity->setUID(-3);
+				}
+			}
+			// fire once off.
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SPAWN_PORTAL )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent && my->particleTimerCountdownAction < 100 )
+				{
+					playSoundEntityLocal(parent, 167, 128);
+					createParticleDot(parent);
+					createParticleCircling(parent, 100, my->particleTimerCountdownSprite);
+					my->particleTimerCountdownAction = 0;
 				}
 			}
 		}

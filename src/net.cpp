@@ -2062,7 +2062,7 @@ void clientHandlePacket()
 					case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 80, sprite);
-						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 						spellTimer->particleTimerCountdownSprite = sprite;
 						spellTimer->particleTimerPreDelay = 40;
 					}
@@ -2070,7 +2070,7 @@ void clientHandlePacket()
 					case PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
-						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 						spellTimer->particleTimerCountdownSprite = sprite;
 					}
 						break;
@@ -2082,6 +2082,14 @@ void clientHandlePacket()
 						break;
 					case PARTICLE_EFFECT_RISING_DROP:
 						createParticleDropRising(entity, sprite, 1.0);
+						break;
+					case PARTICLE_EFFECT_PORTAL_SPAWN:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 100, sprite);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPAWN_PORTAL;
+						spellTimer->particleTimerCountdownSprite = 174;
+						spellTimer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
+					}
 						break;
 					default:
 						break;

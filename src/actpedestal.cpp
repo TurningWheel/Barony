@@ -19,6 +19,7 @@ See LICENSE for details.
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -66,6 +67,11 @@ void Entity::actPedestalBase()
 		playSoundEntityLocal(this, 149, 64);
 	}
 
+	if ( !light )
+	{
+		light = lightSphereShadow(x / 16, y / 16, 3, 255);
+	}
+
 	if ( pedestalInGround )
 	{
 		if ( pedestalInit == 0 )
@@ -103,7 +109,7 @@ void Entity::actPedestalBase()
 		{
 			if ( z == 4.5 + 11 )
 			{
-				playSoundEntityLocal(players[clientnum]->entity, 151, 128);
+				playSoundEntityLocal(players[clientnum]->entity, 250, 128);
 			}
 			vel_z = -0.1;
 			z += vel_z;

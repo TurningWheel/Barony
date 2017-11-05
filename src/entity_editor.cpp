@@ -109,7 +109,12 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	orbStartZ(fskill[0]),
 	orbMaxZVelocity(fskill[1]),
 	orbMinZVelocity(fskill[2]),
-	orbTurnVelocity(fskill[3])
+	orbTurnVelocity(fskill[3]),
+	portalAmbience(skill[0]),
+	portalInit(skill[1]),
+	portalNotSecret(skill[3]),
+	portalVictoryType(skill[4]),
+	portalFireAnimation(skill[5])
 {
 	int c;
 	// add the entity to the entity list
