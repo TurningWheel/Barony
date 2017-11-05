@@ -374,6 +374,7 @@ public:
 	void actGate();
 	void actPedestalBase();
 	void actPedestalOrb();
+	void actMidGamePortal();
 
 	Monster getRace() const
 	{
