@@ -54,8 +54,19 @@ void Entity::actPedestalBase()
 	node_t* node = children.first;
 	Entity* orbEntity = (Entity*)(node->element);
 
-	if ( pedestalInGround != 0 )
+	if ( pedestalInit == 0 && !pedestalInGround )
 	{
+		pedestalInit = 1;
+	}
+
+	if ( pedestalInGround )
+	{
+		if ( pedestalInit == 0 )
+		{
+			// wait for external source to trigger the initialisation.
+			return;
+		}
+
 		if ( z > 4.5 )
 		{
 			if ( z == 4.5 + 7 )
