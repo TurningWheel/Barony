@@ -3451,6 +3451,7 @@ void assignActions(map_t* map)
 				if ( strstr(map->name, "Boss") )
 				{
 					entity->flags[INVISIBLE] = true;
+					entity->skill[28] = 1; // is a mechanism
 				}
 				if ( strstr(map->name, "Hell") )
 				{
@@ -4040,7 +4041,7 @@ void assignActions(map_t* map)
 				//entity->pedestalInGround = 0; // set in editor
 				if ( entity->pedestalInGround )
 				{
-					entity->z += 7;
+					entity->z += 11;
 					entity->flags[PASSABLE] = true;
 				}
 
@@ -4057,7 +4058,7 @@ void assignActions(map_t* map)
 				childEntity->flags[INVISIBLE] = false;
 				if ( entity->pedestalInGround )
 				{
-					childEntity->z += 7;
+					childEntity->z += 11;
 					childEntity->orbStartZ = -2;
 				}
 				childEntity->pedestalOrbInit();

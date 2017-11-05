@@ -233,6 +233,7 @@ public:
 	Sint32& pedestalInvertedPower;
 	Sint32& pedestalInGround;
 	Sint32& pedestalInit;
+	Sint32& pedestalAmbience;
 
 	real_t& orbStartZ; // mid point of animation, starting height.
 	real_t& orbMaxZVelocity;

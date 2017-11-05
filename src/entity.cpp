@@ -127,6 +127,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	pedestalInvertedPower(skill[3]),
 	pedestalInGround(skill[4]),
 	pedestalInit(skill[5]),
+	pedestalAmbience(skill[6]),
 	orbInitialised(skill[1]),
 	orbHoverDirection(skill[7]),
 	orbHoverWaitTimer(skill[8]),
