@@ -58,10 +58,21 @@ void Entity::actPedestalBase()
 	{
 		if ( z > 4.5 )
 		{
+			if ( z == 4.5 + 7 )
+			{
+				playSoundEntityLocal(players[clientnum]->entity, 151, 128);
+			}
 			vel_z = -0.05;
 			z += vel_z;
 			orbEntity->vel_z = vel_z;
 			orbEntity->z += orbEntity->vel_z;
+			// shake camera if in range.
+			real_t dist = entityDist(players[clientnum]->entity, this);
+			if ( dist < 512 && ticks % 5 == 0 )
+			{
+				camera_shakex += .02;
+				camera_shakey += 2;
+			}
 		}
 		else
 		{
@@ -161,7 +172,6 @@ void Entity::actPedestalBase()
 								mechanismPowerOn();
 							}
 							updateCircuitNeighbors();
-							removeLightField();
 						}
 						pedestalHasOrb = 0;
 						serverUpdateEntitySkill(this, 0); // update orb status.
@@ -202,6 +212,7 @@ void Entity::actPedestalOrb()
 		flags[UNCLICKABLE] = true;
 		flags[PASSABLE] = true;
 		orbTurnVelocity = 0.5; // reset the speed of the orb.
+		removeLightField();
 		return;
 	}
 	else if ( orbInitialised )
@@ -235,7 +246,6 @@ void Entity::actPedestalOrb()
 										parent->mechanismPowerOn();
 									}
 									updateCircuitNeighbors();
-									removeLightField();
 								}
 								parent->pedestalHasOrb = 0;
 								serverUpdateEntitySkill(parent, 0); // update orb status 
@@ -260,6 +270,10 @@ void Entity::actPedestalOrb()
 			flags[INVISIBLE] = false;
 			flags[UNCLICKABLE] = false;
 			flags[PASSABLE] = false;
+			if ( !light )
+			{
+				light = lightSphereShadow(x / 16, y / 16, 5, 192);
+			}
 		}
 	}
 	else
