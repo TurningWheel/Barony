@@ -99,6 +99,7 @@ extern bool shootmode;
 extern char classnames[10][10];
 extern char address[64];
 extern bool loadnextlevel;
+extern int skipLevelsOnLoad;
 extern int currentlevel;
 extern bool secretlevel;
 extern bool darkmap;
@@ -176,6 +177,7 @@ void actPowerCrystal(Entity* my);
 void actPowerCrystalParticleIdle(Entity* my);
 void actPedestalBase(Entity* my);
 void actPedestalOrb(Entity* my);
+void actMidGamePortal(Entity* my);
 
 void startMessages();
 

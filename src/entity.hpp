@@ -633,7 +633,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 218;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 117;
+static const int NUM_EDITOR_SPRITES = 118;
 static const int NUM_EDITOR_TILES = 208;
 
 int checkSpriteType(Sint32 sprite);

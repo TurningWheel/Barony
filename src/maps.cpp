@@ -4069,6 +4069,31 @@ void assignActions(map_t* map)
 				tempNode->size = sizeof(Entity*);
 				break;
 			}
+			// mid game portal:
+			case 117:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 278;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = PI / 2;
+				entity->behavior = &actMidGamePortal;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				if ( strstr(map->name, "Boss") )
+				{
+					entity->flags[INVISIBLE] = true;
+					entity->skill[28] = 1; // is a mechanism
+				}
+				/*if ( strstr(map->name, "Hell") )
+				{
+					entity->skill[4] = 2;
+				}
+				else
+				{
+					entity->skill[4] = 1;
+				}*/
+				break;
 			default:
 				break;
 		}
