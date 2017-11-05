@@ -3032,4 +3032,61 @@ last of your magic is drained!#
 #More character creation screen stuff.
 2498 Random Name#
 
-2499 end#
+# NPC Chatter. Groups of 10 lines for each NPC type
+2700 type:seq#
+2701 %s Response 1, %s.#
+2702 %s Response 2.#
+2703 %s Response 3.#
+2704 %s Response 4.#
+2705 %s Response 5.#
+
+2710 type:rand#
+2711 %s Response 1.#
+2712 %s Response 2.#
+
+2720 type:rand#
+2721 %s Response 1.#
+
+2730 type:rand#
+2731 %s Response 1.#
+
+2740 type:rand#
+2741 %s Response 1.#
+
+2750 type:rand#
+2751 %s Response 1.#
+
+2760 type:rand#
+2761 %s Response 1.#
+
+2770 type:rand#
+2771 %s Response 1.#
+
+2780 type:rand#
+2781 %s Response 1.#
+
+2790 type:rand#
+2791 %s Response 1.#
+
+2800 type:rand#
+2801 %s Response 1.#
+
+2810 type:rand#
+2811 %s Response 1.#
+
+2820 type:rand#
+2821 %s Response 1.#
+
+2830 type:rand#
+2831 %s Response 1.#
+
+2840 type:rand#
+2841 %s Response 1.#
+
+2850 type:rand#
+2851 %s Response 1.#
+
+2860 type:rand#
+2861 %s Response 1.#
+
+2999 end#
