@@ -155,6 +155,7 @@ void actItem(Entity* my)
 							{
 								free(item);
 							}
+							my->removeLightField();
 							list_RemoveNode(my->mynode);
 							return;
 						}
@@ -166,6 +167,21 @@ void actItem(Entity* my)
 
 	if (ITEM_NOTMOVING)
 	{
+		switch ( my->sprite )
+		{
+			case 610:
+			case 611:
+			case 612:
+			case 613:
+				my->spawnAmbientParticles(80, my->sprite - 4, 10 + rand() % 40, 1.0, false);
+				if ( !my->light )
+				{
+					my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 192);
+				}
+				break;
+			default:
+				break;
+		}
 		return;
 	}
 
@@ -193,7 +209,8 @@ void actItem(Entity* my)
 	{
 		if ( my->x >= 0 && my->y >= 0 && my->x < map.width << 4 && my->y < map.height << 4 )
 		{
-			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] )
+			if ( map.tiles[(int)(my->y / 16)*MAPLAYERS + (int)(my->x / 16)*MAPLAYERS * map.height] 
+				|| (my->sprite >= 610 && my->sprite <= 613) )
 			{
 				// land
 				ITEM_VELZ *= -.7;
@@ -270,6 +287,10 @@ void actItem(Entity* my)
 	{
 		ITEM_NOTMOVING = 1;
 		my->flags[UPDATENEEDED] = false;
+		if ( multiplayer != CLIENT )
+		{
+			serverUpdateEntitySkill(my, 18);
+		}
 		return;
 	}
 

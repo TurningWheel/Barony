@@ -2523,9 +2523,19 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
-			if ( entity->behavior == &actWinningPortal )
+			if ( strstr(map.name, "Hell") )
 			{
-				entity->flags[INVISIBLE] = false;
+				if ( entity->behavior == &actWinningPortal )
+				{
+					entity->flags[INVISIBLE] = false;
+				}
+			}
+			else if ( strstr(map.name, "Boss") )
+			{
+				if ( entity->behavior == &actPedestalBase )
+				{
+					entity->pedestalInit = 1;
+				}
 			}
 		}
 		if ( strstr(map.name, "Hell") )

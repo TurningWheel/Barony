@@ -59,30 +59,65 @@ void Entity::actPedestalBase()
 		pedestalInit = 1;
 	}
 
+	pedestalAmbience--;
+	if ( pedestalAmbience <= 0 )
+	{
+		pedestalAmbience = TICKS_PER_SECOND * 30;
+		playSoundEntityLocal(this, 149, 64);
+	}
+
 	if ( pedestalInGround )
 	{
 		if ( pedestalInit == 0 )
 		{
+			if ( this->ticks < 50 )
+			{
+				return;
+			}
 			// wait for external source to trigger the initialisation.
+			if ( multiplayer != CLIENT )
+			{
+				node_t* node;
+				for ( node = map.entities->first; node != NULL; node = node->next )
+				{
+					Entity* entity = (Entity*)node->element;
+					if ( entity->behavior == &actMonster )
+					{
+						Stat* stats = entity->getStats();
+						if ( stats )
+						{
+							if ( stats->type == LICH )
+							{
+								return;
+							}
+						}
+					}
+				}
+				pedestalInit = 1;
+				serverUpdateEntitySkill(this, 5);
+			}
 			return;
 		}
 
 		if ( z > 4.5 )
 		{
-			if ( z == 4.5 + 7 )
+			if ( z == 4.5 + 11 )
 			{
 				playSoundEntityLocal(players[clientnum]->entity, 151, 128);
 			}
-			vel_z = -0.05;
+			vel_z = -0.1;
 			z += vel_z;
 			orbEntity->vel_z = vel_z;
 			orbEntity->z += orbEntity->vel_z;
 			// shake camera if in range.
-			real_t dist = entityDist(players[clientnum]->entity, this);
-			if ( dist < 512 && ticks % 5 == 0 )
+			if ( players[clientnum] && players[clientnum]->entity )
 			{
-				camera_shakex += .02;
-				camera_shakey += 2;
+				real_t dist = entityDist(players[clientnum]->entity, this);
+				if ( dist < 512 && ticks % 5 == 0 )
+				{
+					camera_shakex += .02;
+					camera_shakey += 2;
+				}
 			}
 		}
 		else

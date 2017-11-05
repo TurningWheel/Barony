@@ -265,7 +265,20 @@ void actWinningPortal(Entity* my)
 					}
 				}
 			}
-			my->flags[INVISIBLE] = false;
+			if ( my->skill[28] != 0 )
+			{
+				if ( my->skill[28] == 2 )
+				{
+					// powered on.
+					my->flags[INVISIBLE] = false;
+					serverUpdateEntityFlag(my, INVISIBLE);
+				}
+			}
+			else
+			{
+				// hell map doesn't need signal.
+				my->flags[INVISIBLE] = false;
+			}
 		}
 	}
 	else
