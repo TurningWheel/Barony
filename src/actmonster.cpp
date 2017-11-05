@@ -2408,7 +2408,8 @@ void actMonster(Entity* my)
 					{
 						for ( y = 0; y < map.height; y++ )
 						{
-							if ( x << 4 >= MONSTER_SHOPXS && x << 4 <= MONSTER_SHOPXE && y << 4 >= MONSTER_SHOPYS && y << 4 <= MONSTER_SHOPYE )
+							if ( x << 4 >= my->monsterPathBoundaryXStart && x << 4 <= my->monsterPathBoundaryXEnd
+								&& y << 4 >= my->monsterPathBoundaryYStart && y << 4 <= my->monsterPathBoundaryYEnd )
 								if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 								{
 									goodspots++;
@@ -2423,7 +2424,7 @@ void actMonster(Entity* my)
 					bool foundit = false;
 					x = 0;
 					y = 0;
-					if ( myStats->type != SHOPKEEPER )
+					if ( myStats->type != SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 					{
 						for ( x = 0; x < map.width; x++ )
 						{
@@ -2454,7 +2455,8 @@ void actMonster(Entity* my)
 						{
 							for ( y = 0; y < map.height; y++ )
 							{
-								if ( x << 4 >= MONSTER_SHOPXS && x << 4 <= MONSTER_SHOPXE && y << 4 >= MONSTER_SHOPYS && y << 4 <= MONSTER_SHOPYE )
+								if ( x << 4 >= my->monsterPathBoundaryXStart && x << 4 <= my->monsterPathBoundaryXEnd 
+									&& y << 4 >= my->monsterPathBoundaryYStart && y << 4 <= my->monsterPathBoundaryYEnd )
 								{
 									if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 									{

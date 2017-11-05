@@ -203,11 +203,6 @@ static std::vector<std::vector<int>> classStatGrowth =
 #define MONSTER_SPOTSND my->skill[11]
 #define MONSTER_SPOTVAR my->skill[12]
 #define MONSTER_CLICKED my->skill[13]
-#define MONSTER_SHOPXS my->skill[14]
-#define MONSTER_SHOPYS my->skill[15]
-#define MONSTER_SHOPXE my->skill[16]
-#define MONSTER_SHOPYE my->skill[17]
-#define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
 
 #define MONSTER_IDLEVAR myStats->monster_idlevar
