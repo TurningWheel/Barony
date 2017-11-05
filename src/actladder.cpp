@@ -18,6 +18,7 @@
 #include "net.hpp"
 #include "collision.hpp"
 #include "player.hpp"
+#include "magic/magic.hpp"
 
 /*-------------------------------------------------------------------------------
 
@@ -130,26 +131,22 @@ void actLadderUp(Entity* my)
 	}
 }
 
-#define PORTAL_AMBIENCE my->skill[0]
-#define PORTAL_INIT my->skill[1]
-#define PORTAL_NOTSECRET my->skill[3]
-
 void actPortal(Entity* my)
 {
 	int playercount = 0;
 	double dist;
 	int i, c;
 
-	if ( !PORTAL_INIT )
+	if ( !my->portalInit )
 	{
-		PORTAL_INIT = 1;
+		my->portalInit = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
 	}
 
-	PORTAL_AMBIENCE--;
-	if ( PORTAL_AMBIENCE <= 0 )
+	my->portalAmbience--;
+	if ( my->portalAmbience <= 0 )
 	{
-		PORTAL_AMBIENCE = TICKS_PER_SECOND * 2;
+		my->portalAmbience = TICKS_PER_SECOND * 2;
 		playSoundEntityLocal( my, 154, 128 );
 	}
 
@@ -227,7 +224,7 @@ void actPortal(Entity* my)
 							break;
 					}
 				}
-				if ( !PORTAL_NOTSECRET )
+				if ( !my->portalNotSecret )
 				{
 					secretlevel = (secretlevel == false);  // toggle level lists
 				}
@@ -236,8 +233,6 @@ void actPortal(Entity* my)
 		}
 	}
 }
-
-#define PORTAL_VICTORYTYPE my->skill[4]
 
 void actWinningPortal(Entity* my)
 {
@@ -270,8 +265,15 @@ void actWinningPortal(Entity* my)
 				if ( my->skill[28] == 2 )
 				{
 					// powered on.
-					my->flags[INVISIBLE] = false;
-					serverUpdateEntityFlag(my, INVISIBLE);
+					if ( !my->portalFireAnimation )
+					{
+						Entity* timer = createParticleTimer(my, 100, 174);
+						timer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPAWN_PORTAL;
+						timer->particleTimerCountdownSprite = 174;
+						timer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
+						serverSpawnMiscParticles(my, PARTICLE_EFFECT_PORTAL_SPAWN, 174);
+						my->portalFireAnimation = 1;
+					}
 				}
 			}
 			else
@@ -289,16 +291,16 @@ void actWinningPortal(Entity* my)
 		}
 	}
 
-	if ( !PORTAL_INIT )
+	if ( !my->portalInit )
 	{
-		PORTAL_INIT = 1;
+		my->portalInit = 1;
 		my->light = lightSphereShadow(my->x / 16, my->y / 16, 3, 255);
 	}
 
-	PORTAL_AMBIENCE--;
-	if ( PORTAL_AMBIENCE <= 0 )
+	my->portalAmbience--;
+	if ( my->portalAmbience <= 0 )
 	{
-		PORTAL_AMBIENCE = TICKS_PER_SECOND * 2;
+		my->portalAmbience = TICKS_PER_SECOND * 2;
 		playSoundEntityLocal( my, 154, 128 );
 	}
 
@@ -334,7 +336,7 @@ void actWinningPortal(Entity* my)
 						return;
 					}
 				}
-				victory = PORTAL_VICTORYTYPE;
+				victory = my->portalVictoryType;
 				if ( multiplayer == SERVER )
 				{
 					for ( c = 0; c < MAXPLAYERS; c++ )

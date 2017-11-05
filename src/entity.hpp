@@ -240,6 +240,13 @@ public:
 	real_t& orbMinZVelocity;
 	real_t& orbTurnVelocity; // how fast to turn.
 
+	//--PUBLIC PORTAL SKILLS--
+	Sint32& portalAmbience;;
+	Sint32& portalInit;
+	Sint32& portalNotSecret;
+	Sint32& portalVictoryType;
+	Sint32& portalFireAnimation;
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)

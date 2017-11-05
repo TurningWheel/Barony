@@ -1112,7 +1112,7 @@ void Entity::incubusTeleportToTarget(const Entity* target)
 	Entity* spellTimer = createParticleTimer(this, 40, 593);
 	spellTimer->particleTimerEndAction = PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET; // teleport behavior of timer.
 	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
-	spellTimer->particleTimerCountdownAction = 1;
+	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 	spellTimer->particleTimerCountdownSprite = 593;
 	if ( target != nullptr )
 	{
@@ -1130,7 +1130,7 @@ void Entity::incubusTeleportRandom()
 	Entity* spellTimer = createParticleTimer(this, 80, 593);
 	spellTimer->particleTimerEndAction = PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL; // teleport behavior of timer.
 	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
-	spellTimer->particleTimerCountdownAction = 1;
+	spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 	spellTimer->particleTimerCountdownSprite = 593;
 	spellTimer->particleTimerPreDelay = 40;
 	if ( multiplayer == SERVER )

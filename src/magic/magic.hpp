@@ -101,6 +101,11 @@ static const int PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET = 6;
 static const int PARTICLE_EFFECT_ERUPT = 7;
 static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
 static const int PARTICLE_EFFECT_RISING_DROP = 9;
+static const int PARTICLE_EFFECT_PORTAL_SPAWN = 10;
+
+// misc particle timer actions
+static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;
+static const int PARTICLE_TIMER_ACTION_SPAWN_PORTAL = 2;
 
 void addSpell(int spell, int player, bool ignoreSkill = false); //Adds a spell to the client's spell list. Note: Do not use this to add custom spells.
 
@@ -415,7 +420,7 @@ void actMagicParticle(Entity* my);
 Entity* spawnMagicParticle(Entity* parentent);
 void spawnMagicEffectParticles(Sint16 x, Sint16 y, Sint16 z, Uint32 sprite);
 void createParticle1(Entity* caster, int player);
-void createParticle2(Entity* parent);
+void createParticleCircling(Entity* parent, int duration, int sprite);
 void actParticleCircle(Entity* my);
 void actParticleDot(Entity* my);
 void actParticleRock(Entity* my);
