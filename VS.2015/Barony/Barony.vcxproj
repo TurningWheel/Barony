@@ -114,6 +114,7 @@
     <ClCompile Include="..\..\src\actspeartrap.cpp" />
     <ClCompile Include="..\..\src\actsprite.cpp" />
     <ClCompile Include="..\..\src\actsummontrap.cpp" />
+    <ClCompile Include="..\..\src\actteleporter.cpp" />
     <ClCompile Include="..\..\src\actthrown.cpp" />
     <ClCompile Include="..\..\src\acttorch.cpp" />
     <ClCompile Include="..\..\src\actwallbuster.cpp" />

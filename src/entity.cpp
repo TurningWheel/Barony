@@ -144,7 +144,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	portalInit(skill[1]),
 	portalNotSecret(skill[3]),
 	portalVictoryType(skill[4]),
-	portalFireAnimation(skill[5])
+	portalFireAnimation(skill[5]),
+	teleporterX(skill[0]),
+	teleporterY(skill[1]),
+	teleporterType(skill[3]),
+	teleporterAmbience(skill[4])
 {
 	int c;
 	// add the entity to the entity list
@@ -5569,6 +5573,68 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 		}
 	}
 	return false;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::teleporterMove
+
+Teleports the given entity to the given (x, y) location on the map,
+in map coordinates. Will not teleport if the destination is an obstacle.
+
+-------------------------------------------------------------------------------*/
+
+bool Entity::teleporterMove(int tele_x, int tele_y, int type)
+{
+	int player = -1;
+
+	if ( behavior == &actPlayer )
+	{
+		player = skill[2];
+	}
+	// Can be inside entities?
+	//if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
+	//{
+	//	messagePlayer(player, language[707]);
+	//	return false;
+	//}
+
+	// relocate entity
+	double oldx = x;
+	double oldy = y;
+	x = (tele_x << 4) + 8;
+	y = (tele_y << 4) + 8;
+	if ( entityInsideSomething(this) )
+	{
+		x = oldx;
+		y = oldy;
+		if ( multiplayer == SERVER && player > 0 )
+		{
+			messagePlayer(player, language[707]);
+		}
+		return false;
+	}
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		strcpy((char*)net_packet->data, "TELE");
+		net_packet->data[4] = x;
+		net_packet->data[5] = y;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 6;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+
+	// play sound effect
+	if ( type == 0 || type == 1 )
+	{
+		playSoundEntity(this, 96, 64);
+	}
+	else if ( type == 2 )
+	{
+		playSoundEntity(this, 154, 64);
+	}
+	return true;
 }
 
 /*-------------------------------------------------------------------------------

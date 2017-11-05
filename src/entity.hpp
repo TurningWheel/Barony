@@ -252,6 +252,12 @@ public:
 	Sint32& portalVictoryType;
 	Sint32& portalFireAnimation;
 
+	//--PUBLIC TELEPORTER SKILLS--
+	Sint32& teleporterX;
+	Sint32& teleporterY;
+	Sint32& teleporterType;
+	Sint32& teleporterAmbience;
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
@@ -316,6 +322,8 @@ public:
 	bool teleportRandom();
 	// teleport entity to a target, within a radius dist (range in whole tile lengths)
 	bool teleportAroundEntity(const Entity* target, int dist);
+	// teleport entity to fixed position with appropriate sounds, for actTeleporter.
+	bool teleporterMove(int x, int y, int type);
 
 	//void entityAwardXP(Entity *dest, Entity *src, bool share, bool root);
 	void awardXP(Entity* src, bool share, bool root);
@@ -382,6 +390,7 @@ public:
 	void actPedestalBase();
 	void actPedestalOrb();
 	void actMidGamePortal();
+	void actTeleporter();
 
 	Monster getRace() const
 	{
@@ -640,7 +649,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 218;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 118;
+static const int NUM_EDITOR_SPRITES = 119;
 static const int NUM_EDITOR_TILES = 208;
 
 int checkSpriteType(Sint32 sprite);

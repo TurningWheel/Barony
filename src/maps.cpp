@@ -4094,6 +4094,49 @@ void assignActions(map_t* map)
 					entity->skill[4] = 1;
 				}*/
 				break;
+			// teleporter.
+			case 118:
+				entity->x += 8;
+				entity->y += 8;
+				entity->flags[PASSABLE] = true;
+				if ( entity->teleporterType == 0 )
+				{
+					entity->sprite = 253; // ladder hole
+					entity->behavior = &actTeleporter;
+					x = entity->x / 16;
+					y = entity->y / 16;
+					if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+					{
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							entity->z = -21.49;
+						}
+						else
+						{
+							entity->z = -5.49;
+						}
+					}
+				}
+				else if ( entity->teleporterType == 1 )
+				{
+					entity->sizex = 4;
+					entity->sizey = 4;
+					entity->z = 5.45;
+					entity->flags[PASSABLE] = true;
+					entity->behavior = &actTeleporter;
+					entity->sprite = 161; // ladder
+				}
+				else
+				{
+					entity->sprite = 254;
+					entity->sizex = 4;
+					entity->sizey = 4;
+					entity->yaw = PI / 2;
+					entity->behavior = &actTeleporter;
+					entity->flags[PASSABLE] = true;
+					entity->flags[BRIGHT] = true;
+				}
+				break;
 			default:
 				break;
 		}
