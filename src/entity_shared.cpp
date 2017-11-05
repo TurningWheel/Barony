@@ -650,7 +650,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"GATE INVERTED (North-South)",
 	"GATE INVERTED (East-West)",
 	"LEVER WITH TIMER",
-	"PEDESTAL"
+	"PEDESTAL",
+	"MID PORTAL"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =

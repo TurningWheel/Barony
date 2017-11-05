@@ -442,7 +442,7 @@ void Entity::actMidGamePortal()
 	}
 
 	yaw += 0.01; // rotate slowly on my axis
-	sprite = 278 + (this->ticks / 20) % 4; // animate
+	sprite = 614 + (this->ticks / 20) % 4; // animate
 
 	if ( multiplayer == CLIENT )
 	{
@@ -482,21 +482,20 @@ void Entity::actMidGamePortal()
 						{
 							continue;
 						}
-						strcpy((char*)net_packet->data, "WING");
-						net_packet->data[4] = victory;
+						strcpy((char*)net_packet->data, "MIDG");
 						net_packet->address.host = net_clients[c - 1].host;
 						net_packet->address.port = net_clients[c - 1].port;
-						net_packet->len = 8;
+						net_packet->len = 7;
 						sendPacketSafe(net_sock, -1, net_packet, c - 1);
 					}
 				}
 				subwindow = 0;
-				introstage = 5; // prepares win game sequence
 				fadeout = true;
 				if ( !intro )
 				{
 					pauseGame(2, false);
 				}
+				introstage = 9; // prepares mid game sequence
 				return;
 			}
 		}

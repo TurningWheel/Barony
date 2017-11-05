@@ -1841,6 +1841,15 @@ void clientHandlePacket()
 			return;
 		}
 
+		if ( introstage == 9 )
+		{
+			thirdendmovietime = 0;
+			movie = false; // allow normal pause screen.
+			thirdendmoviestage = 0;
+			introstage = 1; // return to normal game functionality
+			pauseGame(1, false); // unpause game
+		}
+
 		// hack to fix these things from breaking everything...
 		hudarm = NULL;
 		hudweapon = NULL;
@@ -2636,6 +2645,32 @@ void clientHandlePacket()
 		{
 			pauseGame(2, false);
 		}
+		return;
+	}
+
+	// mid game movie
+	else if ( !strncmp((char*)net_packet->data, "MIDG", 4) )
+	{
+		subwindow = 0;
+		fadeout = true;
+		if ( !intro )
+		{
+			pauseGame(2, false);
+		}
+		introstage = 9; // prepares mid game sequence
+		return;
+	}
+
+	// mid game jump level
+	else if ( !strncmp((char*)net_packet->data, "MIDJ", 4) )
+	{
+		subwindow = 0;
+		fadeout = true;
+		if ( !intro )
+		{
+			pauseGame(2, false);
+		}
+		introstage = 9; // prepares mid game sequence
 		return;
 	}
 
