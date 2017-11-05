@@ -119,7 +119,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	portalInit(skill[1]),
 	portalNotSecret(skill[3]),
 	portalVictoryType(skill[4]),
-	portalFireAnimation(skill[5])
+	portalFireAnimation(skill[5]),
+	teleporterX(skill[0]),
+	teleporterY(skill[1]),
+	teleporterType(skill[3]),
+	teleporterAmbience(skill[4])
 {
 	int c;
 	// add the entity to the entity list

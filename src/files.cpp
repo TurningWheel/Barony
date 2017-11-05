@@ -518,6 +518,11 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
 						fread(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
 						break;
+					case 9:
+						fread(&entity->teleporterX, sizeof(Sint32), 1, fp);
+						fread(&entity->teleporterY, sizeof(Sint32), 1, fp);
+						fread(&entity->teleporterType, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -753,6 +758,10 @@ int saveMap(char* filename2)
 					fwrite(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
 					fwrite(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
 					break;
+				case 9:
+					fwrite(&entity->teleporterX, sizeof(Sint32), 1, fp);
+					fwrite(&entity->teleporterY, sizeof(Sint32), 1, fp);
+					fwrite(&entity->teleporterType, sizeof(Sint32), 1, fp);
 				default:
 					break;
 			}

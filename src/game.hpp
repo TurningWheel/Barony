@@ -178,6 +178,7 @@ void actPowerCrystalParticleIdle(Entity* my);
 void actPedestalBase(Entity* my);
 void actPedestalOrb(Entity* my);
 void actMidGamePortal(Entity* my);
+void actTeleporter(Entity* my);
 
 void startMessages();
 

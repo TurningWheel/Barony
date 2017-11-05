@@ -227,8 +227,8 @@ void buttonNew(button_t* my)
 	newwindow = 1;
 	subx1 = xres / 2 - 200;
 	subx2 = xres / 2 + 200;
-	suby1 = yres / 2 - 120;
-	suby2 = yres / 2 + 120;
+	suby1 = yres / 2 - 200;
+	suby2 = yres / 2 + 200;
 	strcpy(subtext, "New map:");
 
 	button = newButton();
@@ -1411,6 +1411,21 @@ void buttonSpriteProperties(button_t* my)
 			suby2 = yres / 2 + 100;
 			strcpy(subtext, "Pedestal Properties:");
 			break;
+		case 9:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->teleporterX));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->teleporterY));
+			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->teleporterType));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 11;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 100;
+			suby2 = yres / 2 + 100;
+			strcpy(subtext, "Teleporter Properties:");
+			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -2234,6 +2249,11 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->pedestalInGround = (Sint32)atoi(spriteProperties[3]);
+				break;
+			case 9: //teleporter
+				selectedEntity->teleporterX = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->teleporterY = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->teleporterType = (Sint32)atoi(spriteProperties[2]);
 				break;
 			default:
 				break;

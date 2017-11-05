@@ -81,6 +81,9 @@ int checkSpriteType(Sint32 sprite)
 	case 116:
 		//pedestal
 		return 8;
+	case 118:
+		//teleporter
+		return 9;
 	default:
 		return 0;
 		break;
@@ -651,7 +654,8 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"GATE INVERTED (East-West)",
 	"LEVER WITH TIMER",
 	"PEDESTAL",
-	"MID PORTAL"
+	"MID PORTAL",
+	"TELEPORTER"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1180,6 +1184,24 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->pedestalHasOrb = 0;
 			entityNew->pedestalInvertedPower = 0;
 			entityNew->pedestalInGround = 0;
+		}
+	}
+	// teleporter
+	else if ( spriteType == 9 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->teleporterX = entityToCopy->teleporterX;
+			entityNew->teleporterY = entityToCopy->teleporterY;
+			entityNew->teleporterType = entityToCopy->teleporterType;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->teleporterX = 1;
+			entityNew->teleporterY = 1;
+			entityNew->teleporterType = 0;
 		}
 	}
 
