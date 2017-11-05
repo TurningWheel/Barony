@@ -164,6 +164,11 @@ public:
 	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
 	Sint32& monsterHitTime;
+	Sint32& monsterPathBoundaryXStart;
+	Sint32& monsterPathBoundaryYStart;
+	Sint32& monsterPathBoundaryXEnd;
+	Sint32& monsterPathBoundaryYEnd;
+	Sint32& monsterStoreType;
 
 	real_t& monsterLookDir;
 
@@ -327,6 +332,8 @@ public:
 	bool insectoidCanWieldItem(const Item& item) const;
 
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
+
+	void createPathBoundariesNPC();
 
 	/*
 	 * Check if the goatman can wield the item, and if so, is it something it wants? E.g. does it really want to carry 2 sets of armor?

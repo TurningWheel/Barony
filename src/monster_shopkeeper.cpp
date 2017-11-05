@@ -36,59 +36,11 @@ void initShopkeeper(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
+		my->createPathBoundariesNPC();
 
-		int x, y;
-		MONSTER_SHOPXS = my->x / 16;
-		MONSTER_SHOPXE = my->x / 16;
-		MONSTER_SHOPYS = my->y / 16;
-		MONSTER_SHOPYE = my->y / 16;
-		for ( x = my->x; x >= 0; x -= 16 )
+		for ( int x = my->monsterPathBoundaryXStart - 16; x <= my->monsterPathBoundaryXEnd + 16; x += 16 )
 		{
-			if ( !checkObstacle(x, my->y, my, NULL) )
-			{
-				MONSTER_SHOPXS = x;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( x = my->x; x < map.width << 4; x += 16 )
-		{
-			if ( !checkObstacle(x, my->y, my, NULL) )
-			{
-				MONSTER_SHOPXE = x;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( y = my->y; y >= 0; y -= 16 )
-		{
-			if ( !checkObstacle(my->x, y, my, NULL) )
-			{
-				MONSTER_SHOPYS = y;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( y = my->y; y < map.height << 4; y += 16 )
-		{
-			if ( !checkObstacle(my->x, y, my, NULL) )
-			{
-				MONSTER_SHOPYE = y;
-			}
-			else
-			{
-				break;
-			}
-		}
-		for ( x = MONSTER_SHOPXS - 16; x <= MONSTER_SHOPXE + 16; x += 16 )
-		{
-			for ( y = MONSTER_SHOPYS - 16; y <= MONSTER_SHOPYE + 16; y += 16 )
+			for ( int y = my->monsterPathBoundaryYStart - 16; y <= my->monsterPathBoundaryYEnd + 16; y += 16 )
 			{
 				if ( x / 16 >= 0 && x / 16 < map.width && y / 16 >= 0 && y / 16 < map.height )
 				{
@@ -153,13 +105,13 @@ void initShopkeeper(Entity* my, Stat* myStats)
 		}
 
 		// give shopkeeper items
-		MONSTER_STORETYPE = rand() % 9;
-		if ( MONSTER_STORETYPE == 8 )
+		my->monsterStoreType = rand() % 9;
+		if ( my->monsterStoreType == 8 )
 		{
-			MONSTER_STORETYPE++;
+			my->monsterStoreType++;
 		}
 		int numitems = 10 + rand() % 5;
-		switch ( MONSTER_STORETYPE )
+		switch ( my->monsterStoreType )
 		{
 			case 0:
 				// arms & armor store

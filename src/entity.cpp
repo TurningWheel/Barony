@@ -86,6 +86,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
+	monsterPathBoundaryXStart(skill[14]),
+	monsterPathBoundaryYStart(skill[15]),
+	monsterPathBoundaryXEnd(skill[16]),
+	monsterPathBoundaryYEnd(skill[17]),
+	monsterStoreType(skill[18]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -8666,4 +8671,69 @@ void playerStatIncrease(int playerClass, int chosenStats[3])
 	}
 
 	return;
+}
+
+void Entity::createPathBoundariesNPC()
+{
+	Stat* myStats = this->getStats();
+
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] != 0 || myStats->type == SHOPKEEPER )
+	{
+		// is NPC, find the bounds which movement is restricted to by finding the "box" it spawned in.
+		int i, j;
+		monsterPathBoundaryXStart = x / 16;
+		monsterPathBoundaryXEnd = x / 16;
+		monsterPathBoundaryYStart = y / 16;
+		monsterPathBoundaryYEnd = y / 16;
+		for ( i = x; i >= 0; i -= 16 )
+		{
+			if ( !checkObstacle(i, y, this, nullptr) )
+			{
+				monsterPathBoundaryXStart = i;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for ( i = x; i < map.width << 4; i += 16 )
+		{
+			if ( !checkObstacle(i, y, this, nullptr) )
+			{
+				monsterPathBoundaryXEnd = i;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for ( j = y; j >= 0; j -= 16 )
+		{
+			if ( !checkObstacle(x, j, this, nullptr) )
+			{
+				monsterPathBoundaryYStart = j;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for ( j = y; j < map.height << 4; j += 16 )
+		{
+			if ( !checkObstacle(x, j, this, nullptr) )
+			{
+				monsterPathBoundaryYEnd = j;
+			}
+			else
+			{
+				break;
+			}
+		}
+		messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
+	}
 }
