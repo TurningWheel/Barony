@@ -5619,20 +5619,21 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 		strcpy((char*)net_packet->data, "TELM");
 		net_packet->data[4] = tele_x;
 		net_packet->data[5] = tele_y;
+		net_packet->data[6] = type;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
-		net_packet->len = 6;
+		net_packet->len = 7;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
 	// play sound effect
 	if ( type == 0 || type == 1 )
 	{
-		playSoundEntity(this, 96, 64);
+		playSoundEntityLocal(this, 96, 64);
 	}
 	else if ( type == 2 )
 	{
-		playSoundEntity(this, 154, 64);
+		playSoundEntityLocal(this, 154, 64);
 	}
 	return true;
 }
