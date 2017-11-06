@@ -4137,6 +4137,19 @@ void assignActions(map_t* map)
 					entity->flags[BRIGHT] = true;
 				}
 				break;
+			// ceiling tile:
+			case 119:
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = -24;
+				entity->sprite = 621;
+				entity->sizex = 8;
+				entity->sizey = 8;
+				//entity->yaw = PI / 2;
+				entity->behavior = &actCeilingTile;
+				entity->flags[PASSABLE] = true;
+				//entity->flags[BRIGHT] = true;
+				break;
 			default:
 				break;
 		}

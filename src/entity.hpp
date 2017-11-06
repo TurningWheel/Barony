@@ -639,6 +639,9 @@ void actStalagFloor(Entity* my);
 void actStalagCeiling(Entity* my);
 void actStalagColumn(Entity* my);
 
+//---Ceiling Tile functions---
+void actCeilingTile(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
