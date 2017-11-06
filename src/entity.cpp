@@ -6799,7 +6799,7 @@ int Entity::getAttackPose() const
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-				|| myStats->type == HUMAN )
+				|| myStats->type == HUMAN || myStats->type == GOBLIN )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6834,13 +6834,14 @@ int Entity::getAttackPose() const
 				}
 				else
 				{
-					//pose = MONSTER_POSE_MAGIC_WINDUP1;
+					pose = MONSTER_POSE_MAGIC_WINDUP1;
 				}
 			}
 			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == COCKATRICE || myStats->type == INCUBUS 
-				|| myStats->type == VAMPIRE || myStats->type == HUMAN )
+				|| myStats->type == VAMPIRE || myStats->type == HUMAN
+				|| myStats->type == GOBLIN )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6879,7 +6880,7 @@ int Entity::getAttackPose() const
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-				|| myStats->type == HUMAN )
+				|| myStats->type == HUMAN || myStats->type == GOBLIN )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6918,7 +6919,7 @@ int Entity::getAttackPose() const
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-				|| myStats->type == HUMAN )
+				|| myStats->type == HUMAN || myStats->type == GOBLIN )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6942,7 +6943,7 @@ int Entity::getAttackPose() const
 		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-			|| myStats->type == HUMAN )
+			|| myStats->type == HUMAN || myStats->type == GOBLIN )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
