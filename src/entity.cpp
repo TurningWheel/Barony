@@ -1801,7 +1801,7 @@ hunger, level ups, poison, etc.
 
 void Entity::handleEffects(Stat* myStats)
 {
-	int increasestat[3];
+	int increasestat[3] = { 0, 0, 0 };
 	int i, c;
 	int player = -1;
 
@@ -1848,105 +1848,176 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 
 		// now pick three attributes to increase
-		playerStatIncrease(client_classes[player], increasestat);
 
-		for ( i = 0; i < NUMSTATS * 2; ++i )
+		if ( player >= 0 )
 		{
-			myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
+			// players only.
+			playerStatIncrease(client_classes[player], increasestat);
+		}
+		else
+		{
+			// monsters use this.
+			increasestat[0] = rand() % 6;
+			int r = rand() % 6;
+			while ( r == increasestat[0] ) {
+				r = rand() % 6;
+			}
+			increasestat[1] = r;
+			r = rand() % 6;
+			while ( r == increasestat[0] || r == increasestat[1] ) {
+				r = rand() % 6;
+			}
+			increasestat[2] = r;
+
+			for ( i = 0; i < 3; i++ )
+			{
+				switch ( increasestat[i] )
+				{
+					case STAT_STR:
+						myStats->STR++;
+						break;
+					case STAT_DEX:
+						myStats->DEX++;
+						break;
+					case STAT_CON:
+						myStats->CON++;
+						break;
+					case STAT_INT:
+						myStats->INT++;
+						break;
+					case STAT_PER:
+						myStats->PER++;
+						break;
+					case STAT_CHR:
+						myStats->CHR++;
+						break;
+				}
+			}
+
+			if ( myStats->leader_uid )
+			{
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( leader )
+				{
+					for ( i = 0; i < MAXPLAYERS; ++i )
+					{
+						if ( players[i] && players[i]->entity == leader )
+						{
+							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							if ( myStats->type < KOBOLD ) //Original monster count
+							{
+								messagePlayerColor(i, color, language[2379], language[90 + myStats->type]);
+							}
+							else if ( myStats->type >= KOBOLD ) //New monsters
+							{
+								messagePlayerColor(i, color, language[2379], language[2000 + (myStats->type - KOBOLD)]);
+							}
+						}
+					}
+				}
+			}
 		}
 
-		bool rolledBonusStat = false;
-		int statIconTicks = 250;
-
-		for ( i = 0; i < 3; i++ )
+		if ( player >= 0 )
 		{
-			messagePlayerColor(player, color, language[623 + increasestat[i]]);
-			switch ( increasestat[i] )
+			for ( i = 0; i < NUMSTATS * 2; ++i )
 			{
-				case STAT_STR: // STR
-					myStats->STR++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+				myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
+			}
+
+			bool rolledBonusStat = false;
+			int statIconTicks = 250;
+
+			for ( i = 0; i < 3; i++ )
+			{
+				messagePlayerColor(player, color, language[623 + increasestat[i]]);
+				switch ( increasestat[i] )
+				{
+					case STAT_STR: // STR
+						myStats->STR++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->STR++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->STR++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_DEX: // DEX
-					myStats->DEX++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_DEX: // DEX
+						myStats->DEX++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->DEX++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->DEX++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_CON: // CON
-					myStats->CON++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_CON: // CON
+						myStats->CON++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->CON++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->CON++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_INT: // INT
-					myStats->INT++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_INT: // INT
+						myStats->INT++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->INT++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->INT++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_PER: // PER
-					myStats->PER++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_PER: // PER
+						myStats->PER++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->PER++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->PER++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_CHR: // CHR
-					myStats->CHR++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_CHR: // CHR
+						myStats->CHR++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->CHR++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->CHR++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
+						break;
+				}
 			}
 		}
 
@@ -6896,6 +6967,10 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
 			}
+		}
+		else if ( myStats->type == TROLL )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
 		else
 		{
