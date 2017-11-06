@@ -800,12 +800,12 @@ void goblinMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							serverUpdateEntityBodypart(my, bodypart);
 						}
 					}
-					else
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
 					{
-						if ( entity->sprite <= 0 )
-						{
-							entity->flags[INVISIBLE] = true;
-						}
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( weaponarm != nullptr )
