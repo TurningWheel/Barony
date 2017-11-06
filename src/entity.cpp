@@ -5604,7 +5604,7 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 	double oldy = y;
 	x = (tele_x << 4) + 8;
 	y = (tele_y << 4) + 8;
-	if ( entityInsideSomething(this) )
+	/*if ( entityInsideSomething(this) )
 	{
 		x = oldx;
 		y = oldy;
@@ -5613,12 +5613,12 @@ bool Entity::teleporterMove(int tele_x, int tele_y, int type)
 			messagePlayer(player, language[707]);
 		}
 		return false;
-	}
+	}*/
 	if ( player > 0 && multiplayer == SERVER )
 	{
-		strcpy((char*)net_packet->data, "TELE");
-		net_packet->data[4] = x;
-		net_packet->data[5] = y;
+		strcpy((char*)net_packet->data, "TELM");
+		net_packet->data[4] = tele_x;
+		net_packet->data[5] = tele_y;
 		net_packet->address.host = net_clients[player - 1].host;
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 6;

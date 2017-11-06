@@ -1209,6 +1209,20 @@ void clientHandlePacket()
 		return;
 	}
 
+	// teleport player
+	else if ( !strncmp((char*)net_packet->data, "TELM", 4) )
+	{
+		if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
+		{
+			return;
+		}
+		x = net_packet->data[4];
+		y = net_packet->data[5];
+		players[clientnum]->entity->x = x << 4 + 8;
+		players[clientnum]->entity->y = y << 4 + 8;
+		return;
+	}
+
 	// delete entity
 	else if (!strncmp((char*)net_packet->data, "ENTD", 4))
 	{
