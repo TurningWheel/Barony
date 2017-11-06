@@ -342,6 +342,7 @@ public:
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
 
 	void createPathBoundariesNPC();
+	void humanSetLimbsClient(int bodypart);
 
 	/*
 	 * Check if the goatman can wield the item, and if so, is it something it wants? E.g. does it really want to carry 2 sets of armor?
