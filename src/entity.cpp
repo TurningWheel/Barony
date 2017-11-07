@@ -6800,7 +6800,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
-				|| myStats->type == SKELETON )
+				|| myStats->type == SKELETON || myStats->type == GNOME )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6842,7 +6842,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == COCKATRICE || myStats->type == INCUBUS 
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
-				|| myStats->type == GOBLIN || myStats->type == SKELETON )
+				|| myStats->type == GOBLIN || myStats->type == SKELETON 
+				|| myStats->type == GNOME )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6882,7 +6883,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN 
-				|| myStats->type == SKELETON )
+				|| myStats->type == SKELETON || myStats->type == GNOME )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6922,7 +6923,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
-				|| myStats->type == SKELETON )
+				|| myStats->type == SKELETON || myStats->type == GNOME )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6947,7 +6948,8 @@ int Entity::getAttackPose() const
 			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 			|| myStats->type == HUMAN || myStats->type == GOBLIN
-			|| myStats->type == GHOUL || myStats->type == SKELETON )
+			|| myStats->type == GHOUL || myStats->type == SKELETON
+			|| myStats->type == GNOME )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
