@@ -41,6 +41,8 @@ struct spell_t;
 // entity class
 class Entity
 {
+
+private:
 	Sint32& char_gonnavomit;
 	Sint32& char_heal;
 	Sint32& char_energize;
@@ -126,6 +128,8 @@ public:
 	light_t* light;    // every entity has a specialized light pointer
 	list_t children;   // every entity has a list of child objects
 	Uint32 parent;     // id of the entity's "parent" entity
+
+	bool hostilePlayers[4] = {false}; // An array of whether or not the Player is hostile, position in array corresponds to position in players[] array
 
 	//--PUBLIC CHEST SKILLS--
 
