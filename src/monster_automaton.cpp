@@ -814,7 +814,7 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					entity->pitch = 0;
 				}
 				break;
-				// left arm
+			// left arm
 			}
 			case LIMB_HUMANOID_LEFTARM:
 			{
@@ -887,6 +887,13 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				if ( weaponarm != nullptr )
 				{
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
@@ -927,6 +934,13 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -987,6 +1001,13 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
 				entity->yaw += PI / 2;
@@ -1026,6 +1047,13 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != items[STEEL_HELM].index )
@@ -1109,6 +1137,13 @@ void automatonMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != 165 )
