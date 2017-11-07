@@ -6847,7 +6847,7 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
-			else if ( myStats->type == DEMON )
+			else if ( myStats->type == DEMON || myStats->type == CREATURE_IMP )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6953,7 +6953,8 @@ int Entity::getAttackPose() const
 			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 			|| myStats->type == HUMAN || myStats->type == GOBLIN
 			|| myStats->type == GHOUL || myStats->type == SKELETON
-			|| myStats->type == GNOME || myStats->type == DEMON )
+			|| myStats->type == GNOME || myStats->type == DEMON
+			|| myStats->type == CREATURE_IMP )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
