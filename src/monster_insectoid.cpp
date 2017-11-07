@@ -984,6 +984,13 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				if ( weaponarm != nullptr )
 				{
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
@@ -1024,6 +1031,13 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -1084,6 +1098,13 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
 				entity->yaw += PI / 2;
@@ -1123,6 +1144,13 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != items[STEEL_HELM].index )
@@ -1206,6 +1234,13 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != 165 )
