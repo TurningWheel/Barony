@@ -6799,7 +6799,8 @@ int Entity::getAttackPose() const
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-				|| myStats->type == HUMAN || myStats->type == GOBLIN )
+				|| myStats->type == HUMAN || myStats->type == GOBLIN
+				|| myStats->type == SKELETON )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6841,7 +6842,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == COCKATRICE || myStats->type == INCUBUS 
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
-				|| myStats->type == GOBLIN )
+				|| myStats->type == GOBLIN || myStats->type == SKELETON )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6880,7 +6881,8 @@ int Entity::getAttackPose() const
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-				|| myStats->type == HUMAN || myStats->type == GOBLIN )
+				|| myStats->type == HUMAN || myStats->type == GOBLIN 
+				|| myStats->type == SKELETON )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6919,7 +6921,8 @@ int Entity::getAttackPose() const
 			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-				|| myStats->type == HUMAN || myStats->type == GOBLIN )
+				|| myStats->type == HUMAN || myStats->type == GOBLIN
+				|| myStats->type == SKELETON )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6944,7 +6947,7 @@ int Entity::getAttackPose() const
 			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 			|| myStats->type == HUMAN || myStats->type == GOBLIN
-			|| myStats->type == GHOUL )
+			|| myStats->type == GHOUL || myStats->type == SKELETON )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
