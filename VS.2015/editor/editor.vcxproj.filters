@@ -80,16 +80,10 @@
     <ClCompile Include="..\..\src\entity_editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
-    <ClCompile Include="..\..\src\entity_shared.cpp">
+    <ClCompile Include="..\..\src\items_editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
     <ClCompile Include="..\..\src\stat_editor.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\stat_shared.cpp">
-      <Filter>Source Files</Filter>
-    </ClCompile>
-    <ClCompile Include="..\..\src\items_editor.cpp">
       <Filter>Source Files</Filter>
     </ClCompile>
   </ItemGroup>
