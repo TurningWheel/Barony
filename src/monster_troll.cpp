@@ -450,32 +450,6 @@ void trollMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							entity->roll = -leftarm->roll;
 						}
 					}
-					/*if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
-						}
-					}*/
 				}
 				else
 				{
