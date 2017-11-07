@@ -6847,6 +6847,10 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
+			else if ( myStats->type == DEMON )
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1;
+			}
 			else
 			{
 				pose = 1;  // vertical swing
@@ -6949,7 +6953,7 @@ int Entity::getAttackPose() const
 			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 			|| myStats->type == HUMAN || myStats->type == GOBLIN
 			|| myStats->type == GHOUL || myStats->type == SKELETON
-			|| myStats->type == GNOME )
+			|| myStats->type == GNOME || myStats->type == DEMON )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
