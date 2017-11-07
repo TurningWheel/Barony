@@ -6943,7 +6943,8 @@ int Entity::getAttackPose() const
 		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
 			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
-			|| myStats->type == HUMAN || myStats->type == GOBLIN )
+			|| myStats->type == HUMAN || myStats->type == GOBLIN
+			|| myStats->type == GHOUL )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
