@@ -6961,7 +6961,7 @@ int Entity::getAttackPose() const
 			|| myStats->type == GHOUL || myStats->type == SKELETON
 			|| myStats->type == GNOME || myStats->type == DEMON
 			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
-			|| myStats->type == SHOPKEEPER )
+			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
