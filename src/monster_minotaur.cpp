@@ -389,89 +389,79 @@ void minotaurMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			if ( bodypart == 6 )
 			{
-				if ( MONSTER_ATTACK == 1 )
+				if ( my->monsterAttack > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// vertical chop windup
+					if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( my->monsterAttackTime == 0 )
 						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
+							// init rotations
+							entity->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
 							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							entity->skill[1] = 0;
 						}
-						else
+
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
-							entity->pitch += .25;
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(1, 0, nullptr);
+							}
 						}
 					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// ceiling buster chop windup
+					if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
 					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
+						if ( my->monsterAttackTime == 0 )
 						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
+							// init rotations
+							entity->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
 							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							entity->skill[1] = 0;
 						}
-						else
+
+						limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
-							MONSTER_WEAPONYAW += .25;
+							my->monsterAttack = 1;
 						}
 					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
+					// vertical chop attack
+					else if ( my->monsterAttack == 1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( MONSTER_ATTACKTIME >= 5 )
+						if ( entity->pitch >= 3 * PI / 2 )
 						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
+							my->monsterArmbended = 1;
 						}
-						if ( MONSTER_ATTACKTIME >= 10 )
+
+						if ( entity->skill[1] == 0 )
 						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
+							// chop forwards
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								entity->skill[1] = 1;
+							}
+						}
+						else if ( entity->skill[1] == 1 )
+						{
+							// return to neutral
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								my->monsterWeaponYaw = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+							}
 						}
 					}
 				}
@@ -740,11 +730,23 @@ void actMinotaurCeilingBuster(Entity* my)
 				int index = (MAPLAYERS - 1) + ((int)floor(y / 16)) * MAPLAYERS + ((int)floor(x / 16)) * MAPLAYERS * map.height;
 				if ( map.tiles[index] )
 				{
+					if ( my->monsterAttack == 0 )
+					{
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(MONSTER_POSE_MELEE_WINDUP2, 0, nullptr);
+						}
+						return;
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP2 )
+					{
+						return;
+					}
 					map.tiles[index] = 0;
 					if ( multiplayer != CLIENT )
 					{
 						playSoundEntity(my, 67, 128);
-						MONSTER_ATTACK = 1;
+						//MONSTER_ATTACK = 1;
 						Stat* myStats = my->getStats();
 						if ( myStats )
 						{
