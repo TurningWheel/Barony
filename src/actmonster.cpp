@@ -2273,7 +2273,7 @@ void actMonster(Entity* my)
 					}
 					return;
 				}
-				else if ( myStats->type == SHADOW && my->monsterTarget )
+				else if ( myStats->type == SHADOW && my->monsterTarget && my->monsterState != MONSTER_STATE_ATTACK )
 				{
 					//Fix shadow state.
 					my->monsterState = MONSTER_STATE_PATH;

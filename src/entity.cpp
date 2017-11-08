@@ -7879,13 +7879,16 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 
-	if ( !monsterReleaseAttackTarget() )
+	if ( &target != uidToEntity(monsterTarget) && !monsterReleaseAttackTarget() )
 	{
 		//messagePlayer(clientnum, "Entity failed to acquire target!");
 		return;
 	}
 
-	messagePlayer(clientnum, "Entity acquired target!");
+	if ( &target != uidToEntity(monsterTarget) )
+	{
+		messagePlayer(clientnum, "Entity acquired new target!");
+	}
 
 	monsterState = state;
 	monsterTarget = target.getUID();
