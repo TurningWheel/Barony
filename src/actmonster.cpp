@@ -2499,6 +2499,11 @@ void actMonster(Entity* my)
 				{
 					serverUpdateEntitySkill(my, 0);
 				}
+				if ( myStats->type == SHADOW )
+				{
+					messagePlayer(0, "Shadow lost entity.");
+					my->monsterReleaseAttackTarget(true);
+				}
 				return;
 			}
 			if ( entity != nullptr )
