@@ -1994,6 +1994,8 @@ void actMonster(Entity* my)
 			}
 		}
 
+		CheckForPlayerHostility(my, myStats);
+
 		// state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
 		{
@@ -5155,4 +5157,62 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 		free(aoeTargets);
 	}
 	return count;
+}
+
+/* actmonster.cpp
+ * @param pMonster - A pointer to the Monster's Entity
+ * @param pMonsterStats - A pointer to the Monster's Stats
+ * Checks to see if a Player has been hostile towards this Monster. Currently only handles Humans
+ * If a Player was Hostile, then this Human will be permanently Hostile towards only that Player
+ * Sets 'pMonster->hostilePlayers[iPlayerIndex] = true' if there was hostility
+ * If @pMonster is a Follower of the Hostile Player, then they will be removed from the 'stats[iPlayerIndex]->FOLLOWERS' list 
+ */
+void CheckForPlayerHostility(Entity* const pMonster, Stat* const pMonsterStats)
+{
+	// Check if a Player has been Hostile
+	if ( pMonsterStats->type == HUMAN && pMonsterStats->HP > 0 && pMonster->monsterTarget > 0 )
+	{
+		// Individual Humans hold a grudge against individual Players
+		for ( Uint8 iPlayerIndex = 0; iPlayerIndex < MAXPLAYERS; iPlayerIndex++ )
+		{
+			if ( players[iPlayerIndex] && players[iPlayerIndex]->entity )
+			{
+				// Skip already hostile Players
+				if ( pMonster->hostilePlayers[iPlayerIndex] == true )
+				{
+					continue;
+				}
+
+				// Only process hostility on this Human against that Player
+				if ( pMonster->monsterTarget != players[iPlayerIndex]->entity->getUID() )
+				{
+					continue;
+				}
+
+				// If the Player is the target, then hold a grudge
+				if ( pMonster->monsterTarget == players[iPlayerIndex]->entity->getUID() )
+				{
+					pMonster->hostilePlayers[iPlayerIndex] = true;
+
+					// If the Player is your Leader, stop being a Follower
+					if ( pMonsterStats->leader_uid != 0 )
+					{
+						Entity* pOldLeader = uidToEntity(pMonsterStats->leader_uid);
+
+						if ( pOldLeader == players[iPlayerIndex]->entity )
+						{
+							Stat* pOldLeaderStats = pOldLeader->getStats();
+
+							if ( pOldLeaderStats != nullptr )
+							{
+								list_RemoveNodeWithElement<Uint32>(pOldLeaderStats->FOLLOWERS, pMonster->getUID());
+							}
+						}
+					}
+
+					break;
+				}
+			}
+		}
+	}
 }

@@ -5382,6 +5382,22 @@ bool Entity::checkEnemy(Entity* your)
 		return false;
 	}
 
+	if ( myStats->type == HUMAN )
+	{
+		// Individual Humans hold a grudge against individual Players
+		for ( Uint8 iPlayerIndex = 0; iPlayerIndex < MAXPLAYERS; iPlayerIndex++ )
+		{
+			if ( players[iPlayerIndex] && players[iPlayerIndex]->entity )
+			{
+				// Check if this Player is an Enemy
+				if ( players[iPlayerIndex]->entity == your )
+				{
+					return hostilePlayers[iPlayerIndex];
+				}
+			}
+		}
+	}
+
 	// if you have a leader, check whether we are enemies instead
 	Entity* yourLeader = NULL;
 	if ( yourStats->leader_uid )
@@ -5554,6 +5570,23 @@ bool Entity::checkFriend(Entity* your)
 		}
 		if ( !foundFollower )
 		{
+			// First do a check to see if there is a grudge against the Player
+			if ( myStats->type == HUMAN )
+			{
+				// Individual Humans hold a grudge against individual Players
+				for ( Uint8 iPlayerIndex = 0; iPlayerIndex < MAXPLAYERS; iPlayerIndex++ )
+				{
+					if ( players[iPlayerIndex] && players[iPlayerIndex]->entity )
+					{
+						// Check if this Player is an Enemy
+						if ( players[iPlayerIndex]->entity == your )
+						{
+							return !hostilePlayers[iPlayerIndex];
+						}
+					}
+				}
+			}
+
 			// no leader, default to allegiance table
 			result = monsterally[myStats->type][yourStats->type];
 		}
