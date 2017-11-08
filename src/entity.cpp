@@ -2554,6 +2554,14 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
+	if ( player >= 0 && myStats->EFFECTS[EFF_LEVITATING] && MAPFLAG_DISABLELEVITATION)
+	{
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+		messagePlayerColor(player, color, language[2382]); // disabled levitation.
+		myStats->EFFECTS[EFF_LEVITATING] = false;
+		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
+	}
+
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
 	{
 		spawnAmbientParticles(80, 579, 10 + rand() % 40, 1.0, false);
@@ -6651,13 +6659,31 @@ returns true if the given entity is levitating, or false if it cannot
 
 bool isLevitating(Stat* mystats)
 {
-	if ( mystats == NULL )
+	if ( mystats == nullptr )
 	{
 		return false;
 	}
 
 	// check levitating value
 	bool levitating = false;
+	if ( MAPFLAG_DISABLELEVITATION )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( client_disconnected[i] )
+			{
+				continue;
+			}
+			// check if mystats is a player, and levitation flag is disabled.
+			if ( players[i] && players[i]->entity )
+			{
+				if ( players[i]->entity->getStats() == mystats )
+				{
+					return false;
+				}
+			}
+		}
+	}
 	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
 	{
 		return true;
