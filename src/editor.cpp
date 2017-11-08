@@ -2434,6 +2434,9 @@ int main(int argc, char** argv)
 					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENMONSTERMAX]);
 
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Digging:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLEDIGGING]);
+
 					pad_y1 += 24;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Item Qty:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 128, start_y + pad_y1 + rowheight - 4);
@@ -2442,6 +2445,9 @@ int main(int argc, char** argv)
 					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENLOOTMAX]);
 
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Teleportation:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLETELEPORT]);
+
 					pad_y1 += 24;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Deco Qty:");
 					drawDepressed(subx1 + 104, start_y + pad_y1 - 4, subx1 + 128, start_y + pad_y1 + rowheight - 4);
@@ -2449,6 +2455,9 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, subx1 + 132, start_y + pad_y1, "-");
 					drawDepressed(subx1 + 144, start_y + pad_y1 - 4, subx1 + 168, start_y + pad_y1 + rowheight - 4);
 					printText(font8x8_bmp, subx1 + 144 + 4, start_y + pad_y1, mapflagtext[MAP_FLAG_GENDECORATIONMAX]);
+
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Levitation:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELEVITATION]);
 
 					start_y = suby2 - 44;
 					pad_y1 = 0;
@@ -2552,6 +2561,42 @@ int main(int argc, char** argv)
 							else
 							{
 								strcpy(mapflagtext[MAP_FLAG_DISABLELOOT], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 172 && omousex < start_x3 + 24 && omousey < suby1 + 180 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 196 && omousex < start_x3 + 24 && omousey < suby1 + 204 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 220 && omousex < start_x3 + 24 && omousey < suby1 + 228 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]");
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
