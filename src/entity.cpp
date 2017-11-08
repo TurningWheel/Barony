@@ -6570,6 +6570,7 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case SHADOW:
 		case INCUBUS:
 		case VAMPIRE:
+		case SUCCUBUS:
 			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
 			{
 				leg->sprite = 148 + spriteOffset;
@@ -6800,7 +6801,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
-				|| myStats->type == SKELETON || myStats->type == GNOME )
+				|| myStats->type == SKELETON || myStats->type == GNOME
+				|| myStats->type == SUCCUBUS )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6843,7 +6845,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == COCKATRICE || myStats->type == INCUBUS 
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
 				|| myStats->type == GOBLIN || myStats->type == SKELETON 
-				|| myStats->type == GNOME )
+				|| myStats->type == GNOME || myStats->type == SUCCUBUS )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6887,7 +6889,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN 
-				|| myStats->type == SKELETON || myStats->type == GNOME )
+				|| myStats->type == SKELETON || myStats->type == GNOME
+				|| myStats->type == SUCCUBUS )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6927,7 +6930,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
-				|| myStats->type == SKELETON || myStats->type == GNOME )
+				|| myStats->type == SKELETON || myStats->type == GNOME
+				|| myStats->type == SUCCUBUS )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6954,7 +6958,7 @@ int Entity::getAttackPose() const
 			|| myStats->type == HUMAN || myStats->type == GOBLIN
 			|| myStats->type == GHOUL || myStats->type == SKELETON
 			|| myStats->type == GNOME || myStats->type == DEMON
-			|| myStats->type == CREATURE_IMP )
+			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -7730,7 +7734,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					{
 						// adjust the z point halfway through swing.
 						weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
-						if ( monsterType == INCUBUS )
+						if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 						{
 							weaponLimb->z += 2;
 						}
@@ -7746,7 +7750,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						{
 							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
 						}
-						if ( monsterType == INCUBUS )
+						if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 						{
 							weaponLimb->z += 1.25;
 						}
@@ -7759,7 +7763,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
 					weaponLimb->z = weaponArmLimb->z - .5;
 					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
-					if ( monsterType == INCUBUS )
+					if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 					{
 						weaponLimb->z += 1;
 					}
@@ -7802,7 +7806,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	else
 	{
 		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
-		if ( monsterType == INCUBUS )
+		if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 		{
 			weaponLimb->focalx = limbs[monsterType][6][0] + 2; // 3.5
 			weaponLimb->focalz = limbs[monsterType][6][2] - 3.5; // -2.5
