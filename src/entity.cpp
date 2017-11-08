@@ -7885,10 +7885,10 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		return;
 	}
 
-	if ( &target != uidToEntity(monsterTarget) )
+	/*if ( &target != uidToEntity(monsterTarget) )
 	{
 		messagePlayer(clientnum, "Entity acquired new target!");
-	}
+	}*/
 
 	monsterState = state;
 	monsterTarget = target.getUID();
@@ -7897,7 +7897,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 
 	if ( !hadOldTarget && myStats->type == SHADOW )
 	{
-		messagePlayer(clientnum, "TODO: Shadow got new target.");
+		//messagePlayer(clientnum, "TODO: Shadow got new target.");
 		//TODO: Activate special ability initially for Shadow.
 		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
@@ -7926,7 +7926,7 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 
 	if ( myStats->type == SHADOW )
 	{
-		messagePlayer(0, "Entity::monsterReleaseAttackTarget().");
+		messagePlayer(0, "DEBUG: Shadow: Entity::monsterReleaseAttackTarget().");
 	}
 
 	monsterTarget = 0;

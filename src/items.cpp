@@ -924,6 +924,12 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		return nullptr;
 	}
 
+	/*if ( monsterStats->type == SHADOW && itemCategory(item) == SPELLBOOK )
+	{
+		//Shadows don't drop spellbooks.
+		itemDroppable = false;
+	}*/
+
 	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
 		if ( (monsterStats->type == KOBOLD 

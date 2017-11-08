@@ -2013,7 +2013,7 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
-		if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget) )
+		/*if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget) )
 		{
 			std::string state_string;
 
@@ -2039,9 +2039,8 @@ void actMonster(Entity* my)
 				break;
 			}
 
-			//TODO:
-			messagePlayer(0, "My state is %s", state_string.c_str());
-		}
+			messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
+		}*/
 
 		//Begin state machine
 		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
@@ -2531,7 +2530,7 @@ void actMonster(Entity* my)
 				}
 				if ( myStats->type == SHADOW )
 				{
-					messagePlayer(0, "Shadow lost entity.");
+					messagePlayer(0, "DEBUG: Shadow lost entity.");
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
@@ -3017,13 +3016,13 @@ timeToGoAgain:
 			node->element = path;
 			node->deconstructor = &listDeconstructor;
 			my->monsterState = MONSTER_STATE_HUNT; // hunt state
-			if ( myStats->type == SHADOW && entity )
+			/*if ( myStats->type == SHADOW && entity )
 			{
 				if ( path == nullptr )
 				{
 					messagePlayer(0, "Warning: Shadow failed to generate a path to its target.");
 				}
-			}
+			}*/
 		} //End path state.
 		else if ( my->monsterState == MONSTER_STATE_HUNT ) //Begin hunt state
 		{
@@ -3549,10 +3548,10 @@ timeToGoAgain:
 						if ( target )
 						{
 							my->lookAtEntity(*target);
-							if ( myStats->type == SHADOW )
+							/*if ( myStats->type == SHADOW )
 							{
 								messagePlayer(0, "[SHADOW] No path #1: Resetting to wait state.");
-							}
+							}*/
 						}
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 					}
@@ -3566,10 +3565,10 @@ timeToGoAgain:
 						my->monsterLookTime = 1;
 						my->monsterMoveTime = rand() % 10 + 1;
 						my->monsterLookDir = tangent;
-						if ( myStats->type == SHADOW )
+						/*if ( myStats->type == SHADOW )
 						{
 							messagePlayer(0, "[SHADOW] No path #2: Resetting to wait state.");
-						}
+						}*/
 					}
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 				}
@@ -3583,10 +3582,10 @@ timeToGoAgain:
 					my->monsterLookTime = 1;
 					my->monsterMoveTime = rand() % 10 + 1;
 					my->monsterLookDir = tangent;
-					if ( myStats->type == SHADOW )
+					/*if ( myStats->type == SHADOW )
 					{
 						messagePlayer(0, "[SHADOW] No path #3: Resetting to wait state.");
-					}
+					}*/
 				}
 				my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 				//TODO: Replace with lookAtEntity();
