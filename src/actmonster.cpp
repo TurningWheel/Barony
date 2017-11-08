@@ -2013,8 +2013,8 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
-		// state machine
-		if ( my->monsterState == MONSTER_STATE_WAIT ) // wait state
+		//Begin state machine
+		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
 		{
 			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
 			my->monsterReleaseAttackTarget();
@@ -2241,6 +2241,15 @@ void actMonster(Entity* my)
 					{
 						serverUpdateEntitySkill(my, 0);
 					}
+					return;
+				}
+				else if ( myStats->type == SHADOW )
+				{
+					//Fix shadow state.
+					my->monsterState = MONSTER_STATE_PATH;
+					//my->monsterTargetX = my->monsterTarget.x;
+					//my->monsterTargetY = my->monsterTarget.y;
+					serverUpdateEntitySkill(my, 0); //Update monster state because it changed.
 					return;
 				}
 			}
@@ -2479,8 +2488,8 @@ void actMonster(Entity* my)
 
 			// rotate monster
 			dir = my->monsterRotate();
-		}
-		else if ( my->monsterState == MONSTER_STATE_ATTACK ) // charge state
+		} //End wait state
+		else if ( my->monsterState == MONSTER_STATE_ATTACK ) //Begin charge state
 		{
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity == nullptr )
@@ -2925,8 +2934,8 @@ timeToGoAgain:
 					my->yaw -= 2 * PI;
 				}
 			}
-		}
-		else if ( my->monsterState == MONSTER_STATE_PATH )     // path state
+		} //End charge state
+		else if ( my->monsterState == MONSTER_STATE_PATH )     //Begin path state
 		{
 			if ( myStats->type == DEVIL )
 			{
@@ -2966,8 +2975,8 @@ timeToGoAgain:
 			node->element = path;
 			node->deconstructor = &listDeconstructor;
 			my->monsterState = MONSTER_STATE_HUNT; // hunt state
-		}
-		else if ( my->monsterState == MONSTER_STATE_HUNT ) // hunt state
+		} //End path state.
+		else if ( my->monsterState == MONSTER_STATE_HUNT ) //Begin hunt state
 		{
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
@@ -3509,7 +3518,7 @@ timeToGoAgain:
 				//TODO: Replace with lookAtEntity();
 			}
 		}
-		else if ( my->monsterState == MONSTER_STATE_TALK )     // talk state
+		else if ( my->monsterState == MONSTER_STATE_TALK )     //Begin talk state
 		{
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
@@ -3570,7 +3579,7 @@ timeToGoAgain:
 				my->monsterState = MONSTER_STATE_WAIT;
 				my->monsterTarget = 0;
 			}
-		}
+		} //End talk state
 		else if ( my->monsterState == MONSTER_STATE_LICH_DODGE )     // dodge state (herx)
 		{
 			double dist = 0;
@@ -4237,7 +4246,7 @@ timeToGoAgain:
 					my->monsterTargetY = playertotrack->y;
 				}
 			}
-		}
+		} //End state machine.
 	}
 	else
 	{
