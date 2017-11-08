@@ -6571,6 +6571,7 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case INCUBUS:
 		case VAMPIRE:
 		case SUCCUBUS:
+		case SHOPKEEPER:
 			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
 			{
 				leg->sprite = 148 + spriteOffset;
@@ -6802,7 +6803,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6845,7 +6846,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == COCKATRICE || myStats->type == INCUBUS 
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
 				|| myStats->type == GOBLIN || myStats->type == SKELETON 
-				|| myStats->type == GNOME || myStats->type == SUCCUBUS )
+				|| myStats->type == GNOME || myStats->type == SUCCUBUS
+				|| myStats->type == SHOPKEEPER )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6890,7 +6892,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN 
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6931,7 +6933,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6958,7 +6960,8 @@ int Entity::getAttackPose() const
 			|| myStats->type == HUMAN || myStats->type == GOBLIN
 			|| myStats->type == GHOUL || myStats->type == SKELETON
 			|| myStats->type == GNOME || myStats->type == DEMON
-			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS )
+			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
+			|| myStats->type == SHOPKEEPER )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}

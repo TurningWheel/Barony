@@ -1795,6 +1795,7 @@ void actMonster(Entity* my)
 		case SHADOW:
 		case VAMPIRE:
 		case SUCCUBUS:
+		case SHOPKEEPER:
 			handleinvisible = false;
 			break;
 		default:
