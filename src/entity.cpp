@@ -5273,54 +5273,67 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
-							playSoundPos(hit.x, hit.y, 67, 128);
-
-							// spawn several rock items
-							i = 8 + rand() % 4;
-							for ( c = 0; c < i; c++ )
+							if ( this->behavior == &actPlayer && MAPFLAG_DISABLEDIGGING )
 							{
-								entity = newEntity(-1, 1, map.entities);
-								entity->flags[INVISIBLE] = true;
-								entity->flags[UPDATENEEDED] = true;
-								entity->x = hit.mapx * 16 + 4 + rand() % 8;
-								entity->y = hit.mapy * 16 + 4 + rand() % 8;
-								entity->z = -6 + rand() % 12;
-								entity->sizex = 4;
-								entity->sizey = 4;
-								entity->yaw = rand() % 360 * PI / 180;
-								entity->vel_x = (rand() % 20 - 10) / 10.0;
-								entity->vel_y = (rand() % 20 - 10) / 10.0;
-								entity->vel_z = -.25 - (rand() % 5) / 10.0;
-								entity->flags[PASSABLE] = true;
-								entity->behavior = &actItem;
-								entity->flags[USERFLAG1] = true; // no collision: helps performance
-								entity->skill[10] = GEM_ROCK;    // type
-								entity->skill[11] = WORN;        // status
-								entity->skill[12] = 0;           // beatitude
-								entity->skill[13] = 1;           // count
-								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = false;       // identified
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+								messagePlayerColor(this->skill[2], color, language[2380]); // disabled digging.
+								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
+								// bang
+								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 							}
-
-							map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
-							// send wall destroy info to clients
-							if ( multiplayer == SERVER )
+							else
 							{
-								for ( c = 0; c < MAXPLAYERS; c++ )
+								playSoundPos(hit.x, hit.y, 67, 128); // bust wall
+								// spawn several rock items
+								i = 8 + rand() % 4;
+								for ( c = 0; c < i; c++ )
 								{
-									if ( client_disconnected[c] == true )
-									{
-										continue;
-									}
-									strcpy((char*)net_packet->data, "WALD");
-									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-									net_packet->address.host = net_clients[c - 1].host;
-									net_packet->address.port = net_clients[c - 1].port;
-									net_packet->len = 8;
-									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									entity = newEntity(-1, 1, map.entities);
+									entity->flags[INVISIBLE] = true;
+									entity->flags[UPDATENEEDED] = true;
+									entity->x = hit.mapx * 16 + 4 + rand() % 8;
+									entity->y = hit.mapy * 16 + 4 + rand() % 8;
+									entity->z = -6 + rand() % 12;
+									entity->sizex = 4;
+									entity->sizey = 4;
+									entity->yaw = rand() % 360 * PI / 180;
+									entity->vel_x = (rand() % 20 - 10) / 10.0;
+									entity->vel_y = (rand() % 20 - 10) / 10.0;
+									entity->vel_z = -.25 - (rand() % 5) / 10.0;
+									entity->flags[PASSABLE] = true;
+									entity->behavior = &actItem;
+									entity->flags[USERFLAG1] = true; // no collision: helps performance
+									entity->skill[10] = GEM_ROCK;    // type
+									entity->skill[11] = WORN;        // status
+									entity->skill[12] = 0;           // beatitude
+									entity->skill[13] = 1;           // count
+									entity->skill[14] = 0;           // appearance
+									entity->skill[15] = false;       // identified
 								}
+
+								map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
+								// send wall destroy info to clients
+								if ( multiplayer == SERVER )
+								{
+									for ( c = 0; c < MAXPLAYERS; c++ )
+									{
+										if ( client_disconnected[c] == true )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "WALD");
+										SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+										SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+										net_packet->address.host = net_clients[c - 1].host;
+										net_packet->address.port = net_clients[c - 1].port;
+										net_packet->len = 8;
+										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									}
+								}
+								// Update the paths so that monsters know they can walk through it
+								generatePathMaps();
 							}
+
 							if ( rand() % 2 )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
@@ -5345,8 +5358,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 
-							// Update the paths so that monsters know they can walk through it
-							generatePathMaps();
 						}
 						else
 						{
@@ -5496,6 +5507,14 @@ bool Entity::teleport(int tele_x, int tele_y)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( MAPFLAG_DISABLETELEPORT )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			// play sound effect
+			playSoundEntity(this, 77, 64);
+			messagePlayerColor(player, color, language[2381]);
+			return false;
+		}
 	}
 
 	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
@@ -5555,6 +5574,15 @@ bool Entity::teleportRandom()
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( MAPFLAG_DISABLETELEPORT )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			// play sound effect
+			playSoundEntity(this, 77, 64);
+			messagePlayerColor(player, color, language[2381]);
+			return false;
+		}
+
 	}
 	for ( int iy = 0; iy < map.height; ++iy )
 	{
@@ -5610,6 +5638,14 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( MAPFLAG_DISABLETELEPORT )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			// play sound effect
+			playSoundEntity(this, 77, 64);
+			messagePlayerColor(player, color, language[2381]);
+			return false;
+		}
 	}
 	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{

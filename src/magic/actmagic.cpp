@@ -1834,51 +1834,59 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
 							{
-								playSoundEntity(my, 66, 128);
-								playSoundEntity(my, 67, 128);
-
-								// spawn several rock items //TODO: This should really be its own function.
-								i = 8 + rand() % 4;
-								for ( c = 0; c < i; c++ )
+								if ( parent && parent->behavior == &actPlayer && MAPFLAG_DISABLEDIGGING )
 								{
-									entity = newEntity(-1, 1, map.entities);
-									entity->flags[INVISIBLE] = true;
-									entity->flags[UPDATENEEDED] = true;
-									entity->x = hit.mapx * 16 + 4 + rand() % 8;
-									entity->y = hit.mapy * 16 + 4 + rand() % 8;
-									entity->z = -6 + rand() % 12;
-									entity->sizex = 4;
-									entity->sizey = 4;
-									entity->yaw = rand() % 360 * PI / 180;
-									entity->vel_x = (rand() % 20 - 10) / 10.0;
-									entity->vel_y = (rand() % 20 - 10) / 10.0;
-									entity->vel_z = -.25 - (rand() % 5) / 10.0;
-									entity->flags[PASSABLE] = true;
-									entity->behavior = &actItem;
-									entity->flags[USERFLAG1] = true; // no collision: helps performance
-									entity->skill[10] = GEM_ROCK;    // type
-									entity->skill[11] = WORN;        // status
-									entity->skill[12] = 0;           // beatitude
-									entity->skill[13] = 1;           // count
-									entity->skill[14] = 0;           // appearance
-									entity->skill[15] = false;       // identified
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
 								}
-
-								map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
-								// send wall destroy info to clients
-								for ( c = 1; c < MAXPLAYERS; c++ )
+								else
 								{
-									if ( client_disconnected[c] == true )
+									playSoundEntity(my, 66, 128);
+									playSoundEntity(my, 67, 128);
+
+									// spawn several rock items //TODO: This should really be its own function.
+									i = 8 + rand() % 4;
+									for ( c = 0; c < i; c++ )
 									{
-										continue;
+										entity = newEntity(-1, 1, map.entities);
+										entity->flags[INVISIBLE] = true;
+										entity->flags[UPDATENEEDED] = true;
+										entity->x = hit.mapx * 16 + 4 + rand() % 8;
+										entity->y = hit.mapy * 16 + 4 + rand() % 8;
+										entity->z = -6 + rand() % 12;
+										entity->sizex = 4;
+										entity->sizey = 4;
+										entity->yaw = rand() % 360 * PI / 180;
+										entity->vel_x = (rand() % 20 - 10) / 10.0;
+										entity->vel_y = (rand() % 20 - 10) / 10.0;
+										entity->vel_z = -.25 - (rand() % 5) / 10.0;
+										entity->flags[PASSABLE] = true;
+										entity->behavior = &actItem;
+										entity->flags[USERFLAG1] = true; // no collision: helps performance
+										entity->skill[10] = GEM_ROCK;    // type
+										entity->skill[11] = WORN;        // status
+										entity->skill[12] = 0;           // beatitude
+										entity->skill[13] = 1;           // count
+										entity->skill[14] = 0;           // appearance
+										entity->skill[15] = false;       // identified
 									}
-									strcpy((char*)net_packet->data, "WALD");
-									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-									net_packet->address.host = net_clients[c - 1].host;
-									net_packet->address.port = net_clients[c - 1].port;
-									net_packet->len = 8;
-									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
+									// send wall destroy info to clients
+									for ( c = 1; c < MAXPLAYERS; c++ )
+									{
+										if ( client_disconnected[c] == true )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "WALD");
+										SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+										SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+										net_packet->address.host = net_clients[c - 1].host;
+										net_packet->address.port = net_clients[c - 1].port;
+										net_packet->len = 8;
+										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									}
 								}
 							}
 						}
