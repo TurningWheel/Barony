@@ -2584,10 +2584,16 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 
 node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 {
+	if ( spellIDToFind == SPELL_NONE )
+	{
+		return nullptr;
+	}
+
 	if ( myStats == nullptr )
 	{
 		return nullptr;
 	}
+	messagePlayer(clientnum, "Got into spellbookNodeInInventory().");
 
 	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
 	{
@@ -2596,7 +2602,16 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 		{
 			return node;
 		}
+		else
+		{
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
+			}
+		}
 	}
+
+	messagePlayer(clientnum, "Spellbook not found.");
 
 	return nullptr;
 }
