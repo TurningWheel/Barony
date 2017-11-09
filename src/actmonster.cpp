@@ -2026,8 +2026,37 @@ void actMonster(Entity* my)
 			my->automatonRecycleItem();
 		}
 
-		// state machine
-		if ( my->monsterState == MONSTER_STATE_WAIT ) // wait state
+		/*if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget) )
+		{
+			std::string state_string;
+
+			switch(my->monsterState)
+			{
+			case MONSTER_STATE_WAIT:
+				state_string = "WAIT";
+				break;
+			case MONSTER_STATE_ATTACK:
+				state_string = "CHARGE";
+				break;
+			case MONSTER_STATE_PATH:
+				state_string = "PATH";
+				break;
+			case MONSTER_STATE_HUNT:
+				state_string = "HUNT";
+				break;
+			case MONSTER_STATE_TALK:
+				state_string = "TALK";
+				break;
+			default:
+				state_string = "Unknown state";
+				break;
+			}
+
+			messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
+		}*/
+
+		//Begin state machine
+		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
 		{
 			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
 			my->monsterReleaseAttackTarget();
@@ -2254,6 +2283,15 @@ void actMonster(Entity* my)
 					{
 						serverUpdateEntitySkill(my, 0);
 					}
+					return;
+				}
+				else if ( myStats->type == SHADOW && my->monsterTarget && my->monsterState != MONSTER_STATE_ATTACK )
+				{
+					//Fix shadow state.
+					my->monsterState = MONSTER_STATE_PATH;
+					//my->monsterTargetX = my->monsterTarget.x;
+					//my->monsterTargetY = my->monsterTarget.y;
+					serverUpdateEntitySkill(my, 0); //Update monster state because it changed.
 					return;
 				}
 			}
@@ -2494,8 +2532,8 @@ void actMonster(Entity* my)
 
 			// rotate monster
 			dir = my->monsterRotate();
-		}
-		else if ( my->monsterState == MONSTER_STATE_ATTACK ) // charge state
+		} //End wait state
+		else if ( my->monsterState == MONSTER_STATE_ATTACK ) //Begin charge state
 		{
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity == nullptr )
@@ -2504,6 +2542,13 @@ void actMonster(Entity* my)
 				if ( previousMonsterState != my->monsterState )
 				{
 					serverUpdateEntitySkill(my, 0);
+				}
+				if ( myStats->type == SHADOW )
+				{
+					messagePlayer(0, "DEBUG: Shadow lost entity.");
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
 				}
 				return;
 			}
@@ -2940,8 +2985,8 @@ timeToGoAgain:
 					my->yaw -= 2 * PI;
 				}
 			}
-		}
-		else if ( my->monsterState == MONSTER_STATE_PATH )     // path state
+		} //End charge state
+		else if ( my->monsterState == MONSTER_STATE_PATH )     //Begin path state
 		{
 			if ( myStats->type == DEVIL )
 			{
@@ -2952,9 +2997,11 @@ timeToGoAgain:
 				}
 				return;
 			}
+
+			//Don't path if your target dieded!
 			if ( uidToEntity(my->monsterTarget) == nullptr && my->monsterTarget != 0 )
 			{
-				my->monsterTarget = 0;
+				my->monsterReleaseAttackTarget(true);
 				my->monsterState = MONSTER_STATE_WAIT; // wait state
 				if ( previousMonsterState != my->monsterState )
 				{
@@ -2962,6 +3009,7 @@ timeToGoAgain:
 				}
 				return;
 			}
+
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity != nullptr )
 			{
@@ -2969,6 +3017,8 @@ timeToGoAgain:
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
+				my->monsterTargetX = entity->x;
+				my->monsterTargetY = entity->y;
 			}
 			x = ((int)floor(my->monsterTargetX)) >> 4;
 			y = ((int)floor(my->monsterTargetY)) >> 4;
@@ -2981,8 +3031,15 @@ timeToGoAgain:
 			node->element = path;
 			node->deconstructor = &listDeconstructor;
 			my->monsterState = MONSTER_STATE_HUNT; // hunt state
-		}
-		else if ( my->monsterState == MONSTER_STATE_HUNT ) // hunt state
+			/*if ( myStats->type == SHADOW && entity )
+			{
+				if ( path == nullptr )
+				{
+					messagePlayer(0, "Warning: Shadow failed to generate a path to its target.");
+				}
+			}*/
+		} //End path state.
+		else if ( my->monsterState == MONSTER_STATE_HUNT ) //Begin hunt state
 		{
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
@@ -3201,6 +3258,19 @@ timeToGoAgain:
 					}
 					return;
 				}
+			}
+			else if ( myStats->type == SHADOW && my->monsterTarget && (ticks % 180 == 0) )
+			{
+				if ( !uidToEntity(my->monsterTarget) )
+				{
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
+					return;
+				}
+				my->monsterState = MONSTER_STATE_PATH;
+				serverUpdateEntitySkill(my, 0); //Update state.
+				return;
 			}
 
 			// lich cooldown
@@ -3493,6 +3563,10 @@ timeToGoAgain:
 						if ( target )
 						{
 							my->lookAtEntity(*target);
+							/*if ( myStats->type == SHADOW )
+							{
+								messagePlayer(0, "[SHADOW] No path #1: Resetting to wait state.");
+							}*/
 						}
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 					}
@@ -3506,6 +3580,10 @@ timeToGoAgain:
 						my->monsterLookTime = 1;
 						my->monsterMoveTime = rand() % 10 + 1;
 						my->monsterLookDir = tangent;
+						/*if ( myStats->type == SHADOW )
+						{
+							messagePlayer(0, "[SHADOW] No path #2: Resetting to wait state.");
+						}*/
 					}
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 				}
@@ -3519,12 +3597,16 @@ timeToGoAgain:
 					my->monsterLookTime = 1;
 					my->monsterMoveTime = rand() % 10 + 1;
 					my->monsterLookDir = tangent;
+					/*if ( myStats->type == SHADOW )
+					{
+						messagePlayer(0, "[SHADOW] No path #3: Resetting to wait state.");
+					}*/
 				}
 				my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 				//TODO: Replace with lookAtEntity();
 			}
 		}
-		else if ( my->monsterState == MONSTER_STATE_TALK )     // talk state
+		else if ( my->monsterState == MONSTER_STATE_TALK )     //Begin talk state
 		{
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
@@ -3585,7 +3667,7 @@ timeToGoAgain:
 				my->monsterState = MONSTER_STATE_WAIT;
 				my->monsterTarget = 0;
 			}
-		}
+		} //End talk state
 		else if ( my->monsterState == MONSTER_STATE_LICH_DODGE )     // dodge state (herx)
 		{
 			double dist = 0;
@@ -4252,7 +4334,7 @@ timeToGoAgain:
 					my->monsterTargetY = playertotrack->y;
 				}
 			}
-		}
+		} //End state machine.
 	}
 	else
 	{
@@ -5152,6 +5234,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN;
 					}
 					break;
+				case SHADOW:
+					if ( monsterSpecialState == SHADOW_SPELLCAST )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
+					}
+					break;
 				default:
 					break;
 			}
@@ -5271,6 +5359,28 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						{
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case SHADOW:
+					if ( monsterSpecialState == SHADOW_SPELLCAST ) //TODO: This code is destroying spells?
+					{
+						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
+						messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						/*Item *spellbook = newItem(static_cast<ItemType>(0), static_cast<Status>(0), 0, 1, rand(), 0, &myStats->inventory);
+						copyItem(spellbook, myStats->weapon);
+						dropItemMonster(myStats->weapon, this, myStats, 1);*/
 						shouldAttack = false;
 						monsterSpecialState = 0;
 					}

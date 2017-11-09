@@ -86,6 +86,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
+	monsterShadowInitialMimic(skill[34]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
@@ -8109,13 +8110,16 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 
 	bool hadOldTarget = (uidToEntity(monsterTarget) != nullptr);
 
-	if ( !monsterReleaseAttackTarget() )
+	if ( &target != uidToEntity(monsterTarget) && !monsterReleaseAttackTarget() )
 	{
 		//messagePlayer(clientnum, "Entity failed to acquire target!");
 		return;
 	}
 
-	messagePlayer(clientnum, "Entity acquired target!");
+	/*if ( &target != uidToEntity(monsterTarget) )
+	{
+		messagePlayer(clientnum, "Entity acquired new target!");
+	}*/
 
 	monsterState = state;
 	monsterTarget = target.getUID();
@@ -8124,16 +8128,22 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 
 	if ( !hadOldTarget && myStats->type == SHADOW )
 	{
-		messagePlayer(clientnum, "TODO: Shadow got new target.");
-		//TODO: Activate special ability initially for Shadow.
+		//messagePlayer(clientnum, "TODO: Shadow got new target.");
+		//Activate special ability initially for Shadow.
 		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
+		monsterShadowInitialMimic = 1; //true!
 		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 	}
 }
 
 bool Entity::monsterReleaseAttackTarget(bool force)
 {
+	if ( !monsterTarget )
+	{
+		return true;
+	}
+
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
@@ -8144,6 +8154,11 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 	{
 		//messagePlayer(clientnum, "Shadow cannot lose target until it's dead!");
 		return false; //Shadow cannot lose its target.
+	}
+
+	if ( myStats->type == SHADOW )
+	{
+		messagePlayer(0, "DEBUG: Shadow: Entity::monsterReleaseAttackTarget().");
 	}
 
 	monsterTarget = 0;
@@ -8763,6 +8778,11 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 	// retreating monsters will not try path when losing sight of target
 
+	if ( myStats.type == SHADOW )
+	{
+		return false;
+	}
+
 	if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
 	{
 		return true;
@@ -8810,16 +8830,22 @@ void Entity::monsterEquipItem(Item& item, Item** slot)
 
 bool Entity::monsterHasSpellbook(int spellbookType)
 {
+	if (spellbookType == SPELL_NONE )
+	{
+		messagePlayer(clientnum, "[DEBUG: Entity::monsterHasSpellbook()] skipping SPELL_NONE");
+		return false;
+	}
+
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
 		return false;
 	}
 
-	if ( myStats->weapon && myStats->weapon->type == spellbookType )
+	if ( myStats->weapon && getSpellIDFromSpellbook(myStats->weapon->type) == spellbookType )
 	{
-		//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
-		//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+		spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
+		messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->name);
 		return true;
 	}
 
@@ -8831,10 +8857,10 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 			continue;
 		}
 
-		if ( item->type == spellbookType )
+		if ( getSpellIDFromSpellbook(item->type) == spellbookType )
 		{
-			//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-			//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+			messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
 			return true;
 		}
 	}
@@ -8974,4 +9000,54 @@ void Entity::createPathBoundariesNPC()
 		}
 		//messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
 	}
+}
+
+node_t* Entity::chooseAttackSpellbookFromInventory()
+{
+	Stat* myStats = getStats();
+	if (!myStats )
+	{
+		return nullptr;
+	}
+
+	node_t* spellbook = nullptr;
+	std::vector<int> spellbooks;
+
+	//Ok, first, compile a list of all spells it has on it.
+	//Then choose one and return it.
+	for ( int i = 1; i < NUM_SPELLS; ++i ) //Skip 0, which = SPELL_NONE.
+	{
+		if ( monsterHasSpellbook(i) )
+		{
+			if ( myStats->type == SHADOW ) //TODO: Replace this if-else block with an "isAttackSpell() && monsterCanUseSpell()"
+			{
+				if ( shadowCanMimickSpell(i) )
+				{
+					//messagePlayer(clientnum, "I can mimic spell %d!", i);
+					spellbooks.push_back(i);
+				}
+				else
+				{
+					//messagePlayer(clientnum, "I no can does spell %d", i);
+				}
+			}
+			else
+			{
+				messagePlayer(clientnum, "TODO: Only shadow has CanCastSpell() checking implemented! Need to update other relevant monsters.");
+			}
+		}
+	}
+
+	if ( spellbooks.size() == 0 )
+	{
+		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] No applicable spellbooks on me!");
+		return nullptr;
+	}
+
+	spellbook = spellbookNodeInInventory(myStats, spellbooks[rand()%spellbooks.size()]); //Choose a random spell and return it.
+	if (!spellbook )
+	{
+		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
+	}
+	return spellbook;
 }

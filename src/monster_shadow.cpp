@@ -394,7 +394,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	//Shadow stares you down while he does his special ability windup, and any of his spellcasting animations.
+	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -417,7 +418,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 
-		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
 		}
@@ -583,7 +584,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 ) //TODO: The animation is bork.
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST ) //TODO: The animation is bork.
 				{
 					// magic wiggle hands
 					if ( my->monsterAttackTime == 0 )
@@ -664,7 +665,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// swing the arm after we prepped the spell
 							//this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
 							messagePlayer(clientnum, "TODO: Shadow invisibility mimic teleport and stuff.");
-							my->shadowSpecialAbility(true);
+							my->shadowSpecialAbility(my->monsterShadowInitialMimic); //Parameter: Initial mimic if monster target ain't an entity.
 						}
 					}
 				}
@@ -1221,10 +1222,10 @@ bool Entity::shadowCanWieldItem(const Item& item) const
 
 void Entity::shadowSpecialAbility(bool initialMimic)
 {
-	//TODO: Teleport to target.
 	//TODO: Turn invisible.
-	//3. Mimic target's weapon & shield (only on initial cast).
-	//TODO: Random chance to mimic other things.
+	//2. Mimic target's weapon & shield (only on initial cast).
+	//3. Random chance to mimic other things.
+	//4. Teleport to target.
 
 	Stat *myStats = getStats();
 	if ( !myStats )
@@ -1255,13 +1256,23 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	int numSpellsToMimic = 2;
 	int numSkillsToMimic = 3;
 
-	//TODO: Copy target's weapon & shield on initial activation of this ability only.
+	//2. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
-
+		monsterShadowInitialMimic = false;
+		messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
-		dropItemMonster(myStats->weapon, this, myStats);
+		if ( itemCategory(myStats->weapon) == SPELLBOOK )
+		{
+			//Don't want to drop spellbooks, though. Then the shadow would lose the spell.
+			addItemToMonsterInventory(myStats->weapon);
+			myStats->weapon = nullptr;
+		}
+		else
+		{
+			dropItemMonster(myStats->weapon, this, myStats);
+		}
 		dropItemMonster(myStats->shield, this, myStats);
 
 		//Skills do not get reset.
@@ -1286,13 +1297,12 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 			monsterEquipItem(*wieldedCopy, &myStats->shield);
 		}
 
-		//TODO: On initial mimic, copy some random skills that the target is better at.
-		//TODO: Copy some of the target's spells.
-
+		//On initial mimic, copy more spells & skills.
 		numSkillsToMimic += rand()%3 + 1;
 		numSpellsToMimic += rand()%3 + 1;
 	}
 
+	//3. Random chance to mimic other things.
 	//Mimic target's skills (proficiencies).
 	//First, get proficiencies to mimic:
 	std::vector<int> skillsCanMimic;
@@ -1322,7 +1332,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	if ( target->behavior == actMonster && itemCategory(targetStats->weapon) == SPELLBOOK )
 	{
 		int spellID = getSpellIDFromSpellbook(targetStats->weapon->type);
-		if ( spellID != SPELL_NONE && shadowCanMimickSpell(spellID) && !monsterHasSpellbook(targetStats->weapon->type) )
+		if ( spellID != SPELL_NONE && shadowCanMimickSpell(spellID) && !monsterHasSpellbook(getSpellIDFromSpellbook(targetStats->weapon->type)) )
 		{
 			spellsCanMimic.push_back(spellID);
 		}
@@ -1355,7 +1365,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 				continue;
 			}
 
-			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(spellbook->type) )
+			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(getSpellIDFromSpellbook(spellbook->type)) )
 			{
 				spellsCanMimic.push_back(spell->ID);
 			}
@@ -1372,7 +1382,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 
-			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(item->type) )
+			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(getSpellIDFromSpellbook(item->type)) )
 			{
 				spellsCanMimic.push_back(spell->ID);
 			}
@@ -1387,6 +1397,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 		if ( spellbook )
 		{
+			spellbook->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
 			addItemToMonsterInventory(spellbook);
 
 			//TODO: Delete debug.
@@ -1396,6 +1407,8 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
 	}
+
+	shadowTeleportToTarget(target);
 }
 
 bool Entity::shadowCanMimickSpell(int spellID)
@@ -1417,6 +1430,125 @@ bool Entity::shadowCanMimickSpell(int spellID)
 		default:
 			return false;
 	}
+}
+
+void Entity::shadowTeleportToTarget(const Entity* target)
+{
+	Entity* spellTimer = createParticleTimer(this, 40, 593);
+	spellTimer->particleTimerEndAction = PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET; // teleport behavior of timer. //TODO: Use correct particles for Shadows.
+	spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
+	spellTimer->particleTimerCountdownAction = 1;
+	spellTimer->particleTimerCountdownSprite = 593;
+	if ( target != nullptr )
+	{
+		spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+	}
+	spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
+	if ( multiplayer == SERVER )
+	{
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET, 593);
+	}
+}
+
+void Entity::shadowChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer(clientnum, "Shadow not choosing.");
+		return;
+	}
+	//messagePlayer(clientnum, "Shadow choosing.");
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	int specialRoll = -1;
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
+	{
+		//messagePlayer(clientnum, "Preliminary special check.");
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
+		{
+			return;
+		}
+
+		// occurs less often against fellow monsters.
+		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+
+		int requiredRoll = 10;
+
+		// check the roll
+		if ( specialRoll < requiredRoll )
+		//if ( rand() % 150 )
+		{
+			messagePlayer(clientnum, "Rolled the special!");
+			node_t* node = nullptr;
+			bool telemimic = (rand()%4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			if ( monsterState != MONSTER_STATE_ATTACK )
+			{
+				//If it's hunting down the player, always want it to teleport and find them.
+				telemimic = true;
+				//messagePlayer(clientnum, "Forcing tele-mimic!");
+			}
+
+			if ( telemimic )
+			{
+				//Do the tele-mimic-invisibility special ability.
+				//messagePlayer(clientnum, "Executing telemimic.");
+				monsterShadowInitialMimic = 0; //False!
+				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
+				attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+				return;
+			}
+
+			messagePlayer(clientnum, "Defaulting to spell.");
+			node = chooseAttackSpellbookFromInventory();
+			if ( node != nullptr )
+			{
+				messagePlayer(clientnum, "Shadow equipped a spell!");
+				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+				monsterSpecialState = SHADOW_SPELLCAST;
+				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+				monsterHitTime = HITRATE * 2; // force immediate attack
+				return;
+			}
+		}
+	}
+
+	if ( inMeleeRange ) //Shadows are paunchy people, they don't like to shoost much.
+	{
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+			if ( !swapped )
+			{
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+	return;
 }
 
 

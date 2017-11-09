@@ -153,6 +153,87 @@ Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint
 	return item;
 }
 
+void addItemToMonsterInventory(Item &item, list_t& inventory)
+{
+	// add the item to the inventory
+
+	item.node = list_AddNodeLast(&inventory);
+	item.node->element = &item;
+	item.node->deconstructor = &defaultDeconstructor;
+	item.node->size = sizeof(Item);
+
+	int x, y;
+	bool notfree = false, foundaspot = false;
+
+	bool is_spell = false;
+	if (itemCategory(&item) == SPELL_CAT)
+	{
+		is_spell = true;
+	}
+
+	x = 0;
+	while ( 1 )
+	{
+		for ( y = 0; y < INVENTORY_SIZEY; ++y )
+		{
+			node_t* node;
+			for ( node = inventory.first; node != nullptr; node = node->next )
+			{
+				Item* tempItem = (Item*)node->element;
+				if ( tempItem == &item )
+				{
+					continue;
+				}
+				if ( tempItem )
+				{
+					if ( tempItem->x == x && tempItem->y == y )
+					{
+						if (is_spell && itemCategory(tempItem) == SPELL_CAT)
+						{
+							notfree = true;  //Both spells. Can't fit in the same slot.
+						}
+						else if (!is_spell && itemCategory(tempItem) != SPELL_CAT)
+						{
+							notfree = true;  //Both not spells. Can't fit in the same slot.
+						}
+					}
+				}
+			}
+			if ( notfree )
+			{
+				notfree = false;
+				continue;
+			}
+			item.x = x;
+			item.y = y;
+			foundaspot = true;
+			break;
+		}
+		if ( foundaspot )
+		{
+			break;
+		}
+		++x;
+	}
+
+	// add the item to the hotbar automatically
+	if ( !intro && auto_hotbar_new_items )
+	{
+		if ( &inventory == &stats[clientnum]->inventory )
+		{
+			int c;
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			{
+				if ( !uidToItem(hotbar[c].item) )
+				{
+					hotbar[c].item = item.uid;
+					break;
+				}
+			}
+		}
+	}
+}
+
 /*-------------------------------------------------------------------------------
 
 	uidToItem
@@ -924,13 +1005,20 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 		return nullptr;
 	}
 
+	/*if ( monsterStats->type == SHADOW && itemCategory(item) == SPELLBOOK )
+	{
+		//Shadows don't drop spellbooks.
+		itemDroppable = false;
+	}*/
+
 	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
 		if ( (monsterStats->type == KOBOLD 
 			|| monsterStats->type == COCKATRICE 
 			|| monsterStats->type == INSECTOID 
 			|| monsterStats->type == INCUBUS
-			|| monsterStats->type == VAMPIRE)
+			|| monsterStats->type == VAMPIRE
+			|| monsterStats->type == SHADOW)
 			&& itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.
@@ -2610,6 +2698,40 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
+node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
+{
+	if ( spellIDToFind == SPELL_NONE )
+	{
+		return nullptr;
+	}
+
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+	//messagePlayer(clientnum, "Got into spellbookNodeInInventory().");
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr && itemCategory(item) == SPELLBOOK && getSpellIDFromSpellbook(item->type) == spellIDToFind )
+		{
+			return node;
+		}
+		else
+		{
+			if ( itemCategory(item) == SPELLBOOK )
+			{
+				//messagePlayer(clientnum, "Well...I found a spellbook? Type: %d. Looking for: %d.", getSpellIDFromSpellbook(item->type), spellIDToFind);
+			}
+		}
+	}
+
+	messagePlayer(clientnum, "Spellbook %d not found.", spellIDToFind);
+
+	return nullptr;
+}
+
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
 {
 	if ( myStats == nullptr )
@@ -2834,8 +2956,13 @@ bool monsterUnequipSlotFromCategory(Stat* myStats, Item** slot, Category cat)
 	return false;
 }
 
-void copyItem(Item* itemToSet, Item* itemToCopy)
+void copyItem(Item* itemToSet, Item* itemToCopy) //This should probably use references instead...
 {
+	if ( !itemToSet || !itemToCopy )
+	{
+		return;
+	}
+
 	itemToSet->type = itemToCopy->type;
 	itemToSet->status = itemToCopy->status;
 	itemToSet->beatitude = itemToCopy->beatitude;
