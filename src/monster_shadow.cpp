@@ -1480,13 +1480,13 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		}
 
 		// occurs less often against fellow monsters.
-		//specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
 
-		//int requiredRoll = 10;
+		int requiredRoll = 10;
 
 		// check the roll
-		//if ( specialRoll < requiredRoll )
-		if ( rand() % 150 )
+		if ( specialRoll < requiredRoll )
+		//if ( rand() % 150 )
 		{
 			messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
