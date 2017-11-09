@@ -176,6 +176,9 @@ public:
 	Sint32& monsterAnimationLimbDirection;
 	Sint32& monsterAnimationLimbOvershoot;
 
+	//--PUBLIC MONSTER SHADOW SKILLS--
+	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
+
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
 	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
@@ -457,6 +460,8 @@ public:
 	// incubus teleport spells
 	void incubusTeleportToTarget(const Entity* target);
 	void incubusTeleportRandom();
+	//Shadow teleport spells.
+	void shadowTeleportToTarget(const Entity* target);
 	// check for nearby items to add to monster's inventory
 	void monsterAddNearbyItemToInventory(Stat* myStats, int rangeToFind, int maxInventoryItems);
 	// degrade chosen armor piece by 1 on entity, update clients.
@@ -517,6 +522,9 @@ public:
 			case VAMPIRE:
 				vampireChooseWeapon(target, dist);
 				break;
+			case SHADOW:
+				shadowChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
@@ -525,6 +533,7 @@ public:
 	void insectoidChooseWeapon(const Entity* target, double dist);
 	void incubusChooseWeapon(const Entity* target, double dist);
 	void vampireChooseWeapon(const Entity* target, double dist);
+	void shadowChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
@@ -550,6 +559,7 @@ public:
 
 	bool monsterHasSpellbook(int spellbookType);
 	//bool monsterKnowsSpell(int spellID); //TODO: Should monsters use the spell item instead of spellbooks?
+	node_t* chooseAttackSpellbookFromInventory();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
