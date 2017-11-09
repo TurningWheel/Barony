@@ -86,6 +86,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterAttackTime(skill[9]),
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
+	monsterShadowInitialMimic(skill[34]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -7898,9 +7899,10 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 	if ( !hadOldTarget && myStats->type == SHADOW )
 	{
 		//messagePlayer(clientnum, "TODO: Shadow got new target.");
-		//TODO: Activate special ability initially for Shadow.
+		//Activate special ability initially for Shadow.
 		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
+		monsterShadowInitialMimic = 1; //true!
 		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 	}
 }
@@ -8696,12 +8698,12 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 			{
 				if ( shadowCanMimickSpell(i) )
 				{
-					messagePlayer(clientnum, "I can mimic spell %d!", i);
+					//messagePlayer(clientnum, "I can mimic spell %d!", i);
 					spellbooks.push_back(i);
 				}
 				else
 				{
-					messagePlayer(clientnum, "I no can does spell %d", i);
+					//messagePlayer(clientnum, "I no can does spell %d", i);
 				}
 			}
 			else
@@ -8720,7 +8722,7 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 	spellbook = spellbookNodeInInventory(myStats, spellbooks[rand()%spellbooks.size()]); //Choose a random spell and return it.
 	if (!spellbook )
 	{
-		messagePlayer(clientnum, "Error: Failed to spawn a spellbook!");
+		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
 	}
 	return spellbook;
 }

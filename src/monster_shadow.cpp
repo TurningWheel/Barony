@@ -394,7 +394,8 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 
-	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	//Shadow stares you down while he does his special ability windup, and any of his spellcasting animations.
+	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -417,7 +418,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 
-		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 && bodypart == LIMB_HUMANOID_RIGHTARM )
+		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
 		}
@@ -583,7 +584,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 ) //TODO: The animation is bork.
+				else if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST ) //TODO: The animation is bork.
 				{
 					// magic wiggle hands
 					if ( my->monsterAttackTime == 0 )
@@ -664,7 +665,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// swing the arm after we prepped the spell
 							//this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
 							messagePlayer(clientnum, "TODO: Shadow invisibility mimic teleport and stuff.");
-							my->shadowSpecialAbility(true);
+							my->shadowSpecialAbility(my->monsterShadowInitialMimic); //Parameter: Initial mimic if monster target ain't an entity.
 						}
 					}
 				}
@@ -1258,7 +1259,8 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//2. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
-
+		monsterShadowInitialMimic = false;
+		messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
 		if ( itemCategory(myStats->weapon) == SPELLBOOK )
@@ -1330,7 +1332,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	if ( target->behavior == actMonster && itemCategory(targetStats->weapon) == SPELLBOOK )
 	{
 		int spellID = getSpellIDFromSpellbook(targetStats->weapon->type);
-		if ( spellID != SPELL_NONE && shadowCanMimickSpell(spellID) && !monsterHasSpellbook(targetStats->weapon->type) )
+		if ( spellID != SPELL_NONE && shadowCanMimickSpell(spellID) && !monsterHasSpellbook(getSpellIDFromSpellbook(targetStats->weapon->type)) )
 		{
 			spellsCanMimic.push_back(spellID);
 		}
@@ -1363,7 +1365,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 				continue;
 			}
 
-			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(spellbook->type) )
+			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(getSpellIDFromSpellbook(spellbook->type)) )
 			{
 				spellsCanMimic.push_back(spell->ID);
 			}
@@ -1380,7 +1382,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 
-			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(item->type) )
+			if ( shadowCanMimickSpell(spell->ID) && !monsterHasSpellbook(getSpellIDFromSpellbook(item->type)) )
 			{
 				spellsCanMimic.push_back(spell->ID);
 			}
@@ -1470,7 +1472,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
-		messagePlayer(clientnum, "Preliminary special check.");
+		//messagePlayer(clientnum, "Preliminary special check.");
 		Stat* targetStats = target->getStats();
 		if ( !targetStats )
 		{
@@ -1478,12 +1480,13 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		}
 
 		// occurs less often against fellow monsters.
-		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+		//specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
 
-		int requiredRoll = 10;
+		//int requiredRoll = 10;
 
 		// check the roll
-		if ( specialRoll < requiredRoll )
+		//if ( specialRoll < requiredRoll )
+		if ( rand() % 150 )
 		{
 			messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
@@ -1492,13 +1495,14 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 			{
 				//If it's hunting down the player, always want it to teleport and find them.
 				telemimic = true;
-				messagePlayer(clientnum, "Forcing tele-mimic!");
+				//messagePlayer(clientnum, "Forcing tele-mimic!");
 			}
 
 			if ( telemimic )
 			{
 				//Do the tele-mimic-invisibility special ability.
-				messagePlayer(clientnum, "Executing telemimic.");
+				//messagePlayer(clientnum, "Executing telemimic.");
+				monsterShadowInitialMimic = 0; //False!
 				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 				attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				return;
@@ -1510,7 +1514,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 			{
 				messagePlayer(clientnum, "Shadow equipped a spell!");
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
-				monsterSpecialState = VAMPIRE_CAST_DRAIN; //TODO: MONSTER_CAST_SPELL
+				monsterSpecialState = SHADOW_SPELLCAST;
 				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 				monsterHitTime = HITRATE * 2; // force immediate attack
 				return;

@@ -166,6 +166,9 @@ public:
 	Sint32& monsterAnimationLimbDirection;
 	Sint32& monsterAnimationLimbOvershoot;
 
+	//--PUBLIC MONSTER SHADOW SKILLS--
+	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
+
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
 	Sint32& crystalNumElectricityNodes; // how many nodes to spawn in the facing dir
