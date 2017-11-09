@@ -1453,8 +1453,10 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 	if ( monsterSpecialState != 0 )
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		//messagePlayer(clientnum, "Shadow not choosing.");
 		return;
 	}
+	//messagePlayer(clientnum, "Shadow choosing.");
 
 	Stat *myStats = getStats();
 	if ( !myStats )
@@ -1468,6 +1470,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 
 	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
+		messagePlayer(clientnum, "Preliminary special check.");
 		Stat* targetStats = target->getStats();
 		if ( !targetStats )
 		{
@@ -1477,30 +1480,35 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		// occurs less often against fellow monsters.
 		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
 
-		int requiredRoll = 2;
+		int requiredRoll = 10;
 
 		// check the roll
 		if ( specialRoll < requiredRoll )
 		{
+			messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
 			bool telemimic = (rand()%4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
 			{
 				//If it's hunting down the player, always want it to teleport and find them.
 				telemimic = true;
+				messagePlayer(clientnum, "Forcing tele-mimic!");
 			}
 
 			if ( telemimic )
 			{
 				//Do the tele-mimic-invisibility special ability.
+				messagePlayer(clientnum, "Executing telemimic.");
 				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 				attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				return;
 			}
 
+			messagePlayer(clientnum, "Defaulting to spell.");
 			node = chooseAttackSpellbookFromInventory();
 			if ( node != nullptr )
 			{
+				messagePlayer(clientnum, "Shadow equipped a spell!");
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
 				monsterSpecialState = VAMPIRE_CAST_DRAIN; //TODO: MONSTER_CAST_SPELL
 				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation

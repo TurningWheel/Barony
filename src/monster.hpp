@@ -486,3 +486,7 @@ static const int INCUBUS_TELEPORT = 4;
 //--Vampire--
 static const int VAMPIRE_CAST_AURA = 1;
 static const int VAMPIRE_CAST_DRAIN = 2;
+
+
+//--Shadow--
+static const int SHADOW_SPELLCAST = 1;

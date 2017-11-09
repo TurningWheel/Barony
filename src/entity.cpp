@@ -8599,10 +8599,10 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 		return false;
 	}
 
-	if ( myStats->weapon && myStats->weapon->type == spellbookType )
+	if ( myStats->weapon && getSpellIDFromSpellbook(myStats->weapon->type) == spellbookType )
 	{
-		//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
-		//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+		spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
+		messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->name);
 		return true;
 	}
 
@@ -8616,8 +8616,8 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 
 		if ( item->type == spellbookType )
 		{
-			//spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-			//messagePlayer(clientnum, "DEBUG: Monster knows spell %s.", spell->name);
+			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
+			messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
 			return true;
 		}
 	}
@@ -8679,11 +8679,19 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 	//Then choose one and return it.
 	for ( int i = 0; i < NUM_SPELLS; ++i )
 	{
-		if ( monsterHasSpellbook(i) )
+		if ( monsterHasSpellbook(i)																																																																																																	 )
 		{
-			if ( myStats->type == SHADOW && shadowCanMimickSpell(i) ) //TODO: Replace this if-else block with an "isAttackSpell() && monsterCanUseSpell()"
+			if ( myStats->type == SHADOW ) //TODO: Replace this if-else block with an "isAttackSpell() && monsterCanUseSpell()"
 			{
-				spellbooks.push_back(i);
+				if ( shadowCanMimickSpell(i) )
+				{
+					messagePlayer(clientnum, "I can mimic spell %d!", i);
+					spellbooks.push_back(i);
+				}
+				else
+				{
+					messagePlayer(clientnum, "I no can does spell %d", i);
+				}
 			}
 			else
 			{
@@ -8694,8 +8702,14 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 
 	if ( spellbooks.size() == 0 )
 	{
+		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] No applicable spellbooks on me!");
 		return nullptr;
 	}
 
-	return spellbookNodeInInventory(myStats, rand()%spellbooks.size()); //Choose a random spell and return it.
+	spellbook = spellbookNodeInInventory(myStats, spellbooks[rand()%spellbooks.size()]); //Choose a random spell and return it.
+	if (!spellbook )
+	{
+		messagePlayer(clientnum, "Error: Failed to spawn a spellbook!");
+	}
+	return spellbook;
 }
