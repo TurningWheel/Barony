@@ -394,7 +394,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Shadow stares you down while he does his special ability windup, and any of his spellcasting animations.
-	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST )
+	if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
 	{
 		//Always turn to face the target.
 		Entity* target = uidToEntity(my->monsterTarget);
@@ -410,6 +410,14 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	{
 		if ( bodypart < 2 )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( multiplayer != CLIENT && bodypart == 1 )
+			{
+				if ( my->monsterAttack != MONSTER_POSE_MAGIC_WINDUP3 )
+				{
+					limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+				}
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -417,7 +425,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 
-		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST) && bodypart == LIMB_HUMANOID_RIGHTARM )
+		if ( (MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 ) && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
 			// don't let the creatures's yaw move the casting arm
 		}
@@ -428,11 +436,11 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			if ( bodypart == LIMB_HUMANOID_LEFTARM
-				/*((my->monsterSpecialState == SHADOW_STEAL && my->monsterAttack != 0) ||
-					my->monsterAttack == MONSTER_POSE_SHADOW_TELEPORT)*/ )
+			if ( bodypart == LIMB_HUMANOID_LEFTARM && 
+				(my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3
+					|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1) )
 			{
-				// leftarm follows the right arm during special steal state/teleport attack
+				// leftarm follows the right arm during special mimic attack
 				// will not work when shield is visible
 				// else animate normally.
 				node_t* shieldNode = list_Node(&my->children, 8);
@@ -481,92 +489,97 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						return;
 					}
 				
-					//if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterSpecialState == SHADOW_SPELLCAST ) //TODO: The animation is bork.
-					//{
-					//	// magic wiggle hands
-					//	if ( my->monsterAttackTime == 0 )
-					//	{
-					//		// init rotations
-					//		my->monsterArmbended = 0;
-					//		my->monsterWeaponYaw = 0;
-					//		weaponarm->roll = 0;
-					//		weaponarm->pitch = 0;
-					//		weaponarm->yaw = my->yaw;
-					//		weaponarm->skill[1] = 0;
-					//		// casting particles
-					//		createParticleDot(my);
-					//		// play casting sound
-					//		playSoundEntityLocal(my, 170, 32);
-					//	}
+					if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							createParticleDot(my);
+							// play casting sound
+							playSoundEntityLocal(my, 170, 64);
+							// monster scream
+							playSoundEntityLocal(my, 99, 128);
+							if ( multiplayer != CLIENT )
+							{
+								// freeze in place.
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 100;
+							}
+						}
 
-					//	double animationYawSetpoint = 0.f;
-					//	double animationYawEndpoint = 0.f;
-					//	double armSwingRate = 0.f;
-					//	double animationPitchSetpoint = 0.f;
-					//	double animationPitchEndpoint = 0.f;
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 14 * PI / 8, true, 0.1);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 1 * PI / 8, false, 0.0);
+						}
 
-					//	switch ( my->monsterSpellAnimation )
-					//	{
-					//	case MONSTER_SPELLCAST_NONE:
-					//		break;
-					//	case MONSTER_SPELLCAST_SMALL_HUMANOID:
-					//		// smaller models so arms can wave in a larger radius and faster.
-					//		animationYawSetpoint = normaliseAngle2PI(my->yaw + 2 * PI / 8);
-					//		animationYawEndpoint = normaliseAngle2PI(my->yaw - 2 * PI / 8);
-					//		animationPitchSetpoint = 2 * PI / 8;
-					//		animationPitchEndpoint = 14 * PI / 8;
-					//		armSwingRate = 0.3;
-					//		if ( my->monsterAttackTime == 0 )
-					//		{
-					//			weaponarm->yaw = my->yaw - PI / 8;
-					//		}
-					//		break;
-					//	case MONSTER_SPELLCAST_HUMANOID:
-					//		animationYawSetpoint = normaliseAngle2PI(my->yaw + 1 * PI / 8);
-					//		animationYawEndpoint = normaliseAngle2PI(my->yaw - 1 * PI / 8);
-					//		animationPitchSetpoint = 1 * PI / 8;
-					//		animationPitchEndpoint = 15 * PI / 8;
-					//		armSwingRate = 0.15;
-					//		break;
-					//	default:
-					//		break;
-					//	}
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								// cast spell on target.
+								Entity* target = uidToEntity(my->monsterTarget);
+								if ( target )
+								{
+									Entity* spellEntity = createParticleSapCenter(my, target, SHADOW_SPELLCAST, 624, 624);
+									if ( spellEntity )
+									{
+										playSoundEntity(target, 251, 128); // play sound on hit target.
+									}
+									my->attack(MONSTER_POSE_SPECIAL_WINDUP1, 0, nullptr);
+									my->shadowTeleportToTarget(target, 7);
+									myStats->EFFECTS[EFF_INVISIBLE] = true;
+									myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = TICKS_PER_SECOND * 10; // 10 seconds.
+								}
+							}
+						}
+					}
+					else if ( my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
+					{
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->skill[1] = 0;
+						}
 
-					//	if ( weaponarm->skill[1] == 0 )
-					//	{
-					//		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, armSwingRate, animationPitchSetpoint, false, 0.0) )
-					//		{
-					//			if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, armSwingRate, animationYawSetpoint, false, 0.0) )
-					//			{
-					//				weaponarm->skill[1] = 1;
-					//			}
-					//		}
-					//	}
-					//	else
-					//	{
-					//		if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -armSwingRate, animationPitchEndpoint, false, 0.0) )
-					//		{
-					//			if ( limbAnimateToLimit(weaponarm, ANIMATE_YAW, -armSwingRate, animationYawEndpoint, false, 0.0) )
-					//			{
-					//				weaponarm->skill[1] = 0;
-					//			}
-					//		}
-					//	}
-
-					//	if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP_SHADOW_SPECIAL / (monsterGlobalAnimationMultiplier / 10.0) )
-					//	{
-					//		//TODO: my->returnWeaponarmToNeutral()?
-					//		MONSTER_ATTACK = 0;
-					//		if ( multiplayer != CLIENT )
-					//		{
-					//			// swing the arm after we prepped the spell
-					//			//this->attack(MONSTER_POSE_MAGIC_WINDUP2, 0, nullptr);
-					//			messagePlayer(clientnum, "TODO: Shadow invisibility mimic teleport and stuff.");
-					//			my->shadowSpecialAbility(my->monsterShadowInitialMimic); //Parameter: Initial mimic if monster target ain't an entity.
-					//		}
-					//	}
-					//}
-					//else
+						if ( weaponarm->skill[1] == 0 && my->monsterAttackTime > 2 * ANIMATE_DURATION_WINDUP )
+						{
+							// swing and flare out arm.
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.25, 1 * PI / 4, false, 0.0) && limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.1, 30 * PI / 16, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] == 1 )
+						{
+							// return to neutral pitch.
+							limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 0, false, 0.0);
+						}
+						if ( my->monsterAttackTime >= 4 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							weaponarm->skill[0] = rightbody->skill[0];
+							weaponarm->pitch = rightbody->pitch;
+							weaponarm->roll = 0;
+							my->monsterWeaponYaw = 0;
+							my->monsterArmbended = 0;
+							my->monsterAttack = 0;
+							Entity* leftarm = nullptr;
+							node_t* leftarmNode = list_Node(&my->children, LIMB_HUMANOID_LEFTARM);
+							if ( leftarmNode )
+							{
+								leftarm = (Entity*)leftarmNode->element;
+								leftarm->roll = 0;
+							}
+						}
+					}
+					else
 					{
 						my->handleWeaponArmAttack(weaponarm);
 					}
@@ -698,10 +711,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						entity->focaly = limbs[SHADOW][5][1];
 						entity->focalz = limbs[SHADOW][5][2];
 						entity->sprite = 432;
-						/*if ( my->monsterSpecialState == SHADOW_STEAL )
+						if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 						{
 							entity->yaw -= MONSTER_WEAPONYAW;
-						}*/
+						}
 					}
 				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
@@ -1263,7 +1276,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
 	}
 
-	shadowTeleportToTarget(target);
+	//shadowTeleportToTarget(target);
 }
 
 bool Entity::shadowCanMimickSpell(int spellID)
@@ -1287,22 +1300,23 @@ bool Entity::shadowCanMimickSpell(int spellID)
 	}
 }
 
-void Entity::shadowTeleportToTarget(const Entity* target)
+void Entity::shadowTeleportToTarget(const Entity* target, int range)
 {
-	//Entity* spellTimer = createParticleTimer(this, 40, 593);
-	//spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SHADOW_TELEPORT_TARGET; // teleport behavior of timer. //TODO: Use correct particles for Shadows.
-	//spellTimer->particleTimerEndSprite = 593; // sprite to use for end of timer function.
-	//spellTimer->particleTimerCountdownAction = 1;
-	//spellTimer->particleTimerCountdownSprite = 593;
-	//if ( target != nullptr )
-	//{
-	//	spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
-	//}
-	//spellTimer->particleTimerVariable1 = 3; // distance of teleport in tiles
-	//if ( multiplayer == SERVER )
-	//{
-	//	serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHADOW_TELEPORT_TARGET, 593);
-	//}
+	Entity* spellTimer = createParticleTimer(this, 60, 625);
+	spellTimer->particleTimerPreDelay = 20; // wait 20 ticks before animation.
+	spellTimer->particleTimerEndAction = PARTICLE_EFFECT_SHADOW_TELEPORT; // teleport behavior of timer.
+	spellTimer->particleTimerEndSprite = 625; // sprite to use for end of timer function.
+	spellTimer->particleTimerCountdownAction = 1;
+	spellTimer->particleTimerCountdownSprite = 625;
+	if ( target != nullptr )
+	{
+		spellTimer->particleTimerTarget = static_cast<Sint32>(target->getUID()); // get the target to teleport around.
+	}
+	spellTimer->particleTimerVariable1 = range; // distance of teleport in tiles
+	if ( multiplayer == SERVER )
+	{
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHADOW_TELEPORT, 593);
+	}
 }
 
 void Entity::shadowChooseWeapon(const Entity* target, double dist)
@@ -1311,6 +1325,12 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
 		//messagePlayer(clientnum, "Shadow not choosing.");
+		// handle idle teleporting to target
+		if ( monsterSpecialState == SHADOW_TELEPORT_ONLY && monsterSpecialTimer == 0 )
+		{
+			monsterSpecialState = 0;
+			serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+		}
 		return;
 	}
 	//messagePlayer(clientnum, "Shadow choosing.");
@@ -1334,10 +1354,24 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 			return;
 		}
 
+		/* THIS NEEDS TO BE ELSEWHERE, TO BE CALLED CONSTANTLY TO ALLOW SHADOW TO TELEPORT IF NO PATH/ DISTANCE IS TOO GREAT */
+		//if ( myStats->type == SHADOW && ticks % 10 == 0 && my->monsterSpecialTimer == 0 )
+		//{
+		//	// check for pathing teleport to target.
+		//	int specialRoll = rand() % 50;
+		//	messagePlayer(0, "roll %d", specialRoll);
+		//	double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+		//	if ( specialRoll < (1 + (targetdist > 80 ? 4 : 0)) )
+		//	{
+		//		my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+		//		my->shadowTeleportToTarget(entity, 5); // teleport in closer range
+		//	}
+		//}
+
 		// occurs less often against fellow monsters.
 		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
 
-		int requiredRoll = 1000;
+		int requiredRoll = 10;
 
 		// check the roll
 		if ( specialRoll < requiredRoll )
@@ -1345,7 +1379,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		{
 			messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
-			bool telemimic = (rand()%4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			bool telemimic = true; // = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
 			{
 				//If it's hunting down the player, always want it to teleport and find them.

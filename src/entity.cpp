@@ -2573,6 +2573,11 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->EFFECTS[EFF_INVISIBLE] && myStats->type == SHADOW )
+	{
+		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
+	}
+
 	// burning
 	if ( this->flags[BURNING] )
 	{
