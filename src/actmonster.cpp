@@ -5219,6 +5219,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN;
 					}
 					break;
+				case SHADOW:
+					if ( monsterSpecialState == SHADOW_SPELLCAST )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
+					}
+					break;
 				default:
 					break;
 			}
@@ -5338,6 +5344,28 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						{
 							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
 						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case SHADOW:
+					if ( monsterSpecialState == SHADOW_SPELLCAST ) //TODO: This code is destroying spells?
+					{
+						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
+						messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						/*Item *spellbook = newItem(static_cast<ItemType>(0), static_cast<Status>(0), 0, 1, rand(), 0, &myStats->inventory);
+						copyItem(spellbook, myStats->weapon);
+						dropItemMonster(myStats->weapon, this, myStats, 1);*/
 						shouldAttack = false;
 						monsterSpecialState = 0;
 					}

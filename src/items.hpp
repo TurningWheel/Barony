@@ -415,6 +415,7 @@ void item_Spellbook(Item* item, int player);
 
 //General functions.
 Item* newItem(ItemType type, Status status, Sint16 beatitude, Sint16 count, Uint32 appearance, bool identified, list_t* inventory);
+void addItemToMonsterInventory(Item &item, list_t& inventory);
 Item* uidToItem(Uint32 uid);
 ItemType itemCurve(Category cat);
 Item* newItemFromEntity(Entity* entity); //Make sure to call free(item).
