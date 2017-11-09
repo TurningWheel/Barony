@@ -3451,6 +3451,7 @@ void assignActions(map_t* map)
 				if ( strstr(map->name, "Boss") )
 				{
 					entity->flags[INVISIBLE] = true;
+					entity->skill[28] = 1; // is a mechanism
 				}
 				if ( strstr(map->name, "Hell") )
 				{
@@ -4018,6 +4019,136 @@ void assignActions(map_t* map)
 				childEntity->roll = -PI / 4; // "off" position
 				childEntity->flags[PASSABLE] = true;
 				childEntity->behavior = &actSwitchWithTimer;
+				break;
+			// pedestal
+			case 116:
+			{
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 4.5;
+				entity->behavior = &actPedestalBase;
+				entity->sprite = 601; //pedestal base
+				entity->flags[PASSABLE] = false;
+				entity->pedestalOrbType = entity->pedestalOrbType + 1;// set in editor as 0-3, need 1-4.
+				if ( entity->pedestalHasOrb == 1 ) // set in editor
+				{
+					entity->pedestalHasOrb = entity->pedestalOrbType;
+				}
+				//entity->pedestalInvertedPower // set in editor
+				entity->pedestalInit = 0;
+				//entity->pedestalInGround = 0; // set in editor
+				if ( entity->pedestalInGround )
+				{
+					entity->z += 11;
+					entity->flags[PASSABLE] = true;
+				}
+
+				childEntity = newEntity(602 + entity->pedestalOrbType - 1, 0, map->entities); //floating orb
+				childEntity->parent = entity->getUID();
+				childEntity->behavior = &actPedestalOrb;
+				childEntity->x = entity->x;
+				childEntity->y = entity->y;
+				childEntity->z = -2;
+				childEntity->sizex = 2;
+				childEntity->sizey = 2;
+				childEntity->flags[UNCLICKABLE] = true;
+				childEntity->flags[PASSABLE] = true;
+				childEntity->flags[INVISIBLE] = false;
+				if ( entity->pedestalInGround )
+				{
+					childEntity->z += 11;
+					childEntity->orbStartZ = -2;
+				}
+				childEntity->pedestalOrbInit();
+
+				node_t* tempNode = list_AddNodeLast(&entity->children);
+				tempNode->element = childEntity; // add the node to the children list.
+				tempNode->deconstructor = &emptyDeconstructor;
+				tempNode->size = sizeof(Entity*);
+				break;
+			}
+			// mid game portal:
+			case 117:
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 278;
+				entity->sizex = 4;
+				entity->sizey = 4;
+				entity->yaw = PI / 2;
+				entity->behavior = &actMidGamePortal;
+				entity->flags[PASSABLE] = true;
+				entity->flags[BRIGHT] = true;
+				if ( strstr(map->name, "Boss") )
+				{
+					entity->flags[INVISIBLE] = true;
+					entity->skill[28] = 1; // is a mechanism
+				}
+				/*if ( strstr(map->name, "Hell") )
+				{
+					entity->skill[4] = 2;
+				}
+				else
+				{
+					entity->skill[4] = 1;
+				}*/
+				break;
+			// teleporter.
+			case 118:
+				entity->x += 8;
+				entity->y += 8;
+				entity->flags[PASSABLE] = true;
+				if ( entity->teleporterType == 0 )
+				{
+					entity->sprite = 253; // ladder hole
+					entity->behavior = &actTeleporter;
+					x = entity->x / 16;
+					y = entity->y / 16;
+					if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+					{
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							entity->z = -21.49;
+						}
+						else
+						{
+							entity->z = -5.49;
+						}
+					}
+				}
+				else if ( entity->teleporterType == 1 )
+				{
+					entity->sizex = 4;
+					entity->sizey = 4;
+					entity->z = 5.45;
+					entity->flags[PASSABLE] = true;
+					entity->behavior = &actTeleporter;
+					entity->sprite = 161; // ladder
+				}
+				else
+				{
+					entity->sprite = 254;
+					entity->sizex = 4;
+					entity->sizey = 4;
+					entity->yaw = PI / 2;
+					entity->behavior = &actTeleporter;
+					entity->flags[PASSABLE] = true;
+					entity->flags[BRIGHT] = true;
+				}
+				break;
+			// ceiling tile:
+			case 119:
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = -24;
+				entity->sprite = 621;
+				entity->sizex = 8;
+				entity->sizey = 8;
+				//entity->yaw = PI / 2;
+				entity->behavior = &actCeilingTile;
+				entity->flags[PASSABLE] = true;
+				//entity->flags[BRIGHT] = true;
 				break;
 			default:
 				break;

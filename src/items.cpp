@@ -1876,9 +1876,39 @@ void useItem(Item* item, int player)
 		case ARTIFACT_BOW:
 			equipItem(item, &stats[player]->weapon, player);
 			break;
+		case ARTIFACT_ORB_BLUE:
+		case ARTIFACT_ORB_RED:
+		case ARTIFACT_ORB_PURPLE:
+		case ARTIFACT_ORB_GREEN:
+			equipItem(item, &stats[player]->weapon, player);
+			break;
 		default:
 			printlog("error: item %d used, but it has no use case!\n", (int)item->type);
 			break;
+	}
+
+	if ( multiplayer != CLIENT )
+	{
+		if ( item->type == RING_LEVITATION || item->type == STEEL_BOOTS_LEVITATION )
+		{
+			if ( !MAPFLAG_DISABLELEVITATION )
+			{
+				messagePlayer(player, language[767]); // you begin to float through the air
+			}
+			else
+			{
+				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+				messagePlayerColor(player, color, language[2382]); // disabled levitation.
+			}
+		}
+		else if ( item->type == RING_INVISIBILITY )
+		{
+			messagePlayer(player, language[766]); // you can no longer see yourself
+		}
+		else if ( item->type == STEEL_BOOTS_FEATHER )
+		{
+			messagePlayer(player, language[768]); // you feel much quicker.
+		}
 	}
 }
 
@@ -2461,6 +2491,11 @@ void Item::apply(int player, Entity* entity)
 	if ( !entity )
 	{
 		return;
+	}
+
+	if ( type >= ARTIFACT_ORB_BLUE && type <= ARTIFACT_ORB_GREEN )
+	{
+		applyOrb(player, type, *entity);
 	}
 
 	// for clients:

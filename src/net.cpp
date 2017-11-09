@@ -996,6 +996,15 @@ void clientActions(Entity* entity)
 		case 586:
 			entity->behavior = &actSwitchWithTimer;
 			break;
+		case 601:
+			entity->behavior = &actPedestalBase;
+			break;
+		case 602:
+		case 603:
+		case 604:
+		case 605:
+			entity->behavior = &actPedestalOrb;
+			break;
 		default:
 			break;
 	}
@@ -1197,6 +1206,30 @@ void clientHandlePacket()
 		y = net_packet->data[5];
 		players[clientnum]->entity->x = x;
 		players[clientnum]->entity->y = y;
+		return;
+	}
+
+	// teleport player
+	else if ( !strncmp((char*)net_packet->data, "TELM", 4) )
+	{
+		if ( players[clientnum] == nullptr || players[clientnum]->entity == nullptr )
+		{
+			return;
+		}
+		x = net_packet->data[4];
+		y = net_packet->data[5];
+		int type = net_packet->data[6];
+		players[clientnum]->entity->x = x << 4 + 8;
+		players[clientnum]->entity->y = y << 4 + 8;
+		// play sound effect
+		if ( type == 0 || type == 1 )
+		{
+			playSoundEntityLocal(players[clientnum]->entity, 96, 64);
+		}
+		else if ( type == 2 )
+		{
+			playSoundEntityLocal(players[clientnum]->entity, 154, 64);
+		}
 		return;
 	}
 
@@ -1832,6 +1865,15 @@ void clientHandlePacket()
 			return;
 		}
 
+		if ( introstage == 9 )
+		{
+			thirdendmovietime = 0;
+			movie = false; // allow normal pause screen.
+			thirdendmoviestage = 0;
+			introstage = 1; // return to normal game functionality
+			pauseGame(1, false); // unpause game
+		}
+
 		// hack to fix these things from breaking everything...
 		hudarm = NULL;
 		hudweapon = NULL;
@@ -2053,7 +2095,7 @@ void clientHandlePacket()
 					case PARTICLE_EFFECT_INCUBUS_TELEPORT_STEAL:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 80, sprite);
-						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 						spellTimer->particleTimerCountdownSprite = sprite;
 						spellTimer->particleTimerPreDelay = 40;
 					}
@@ -2061,15 +2103,26 @@ void clientHandlePacket()
 					case PARTICLE_EFFECT_INCUBUS_TELEPORT_TARGET:
 					{
 						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
-						spellTimer->particleTimerCountdownAction = 1;
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
 						spellTimer->particleTimerCountdownSprite = sprite;
 					}
-					break;
+						break;
 					case PARTICLE_EFFECT_ERUPT:
 						createParticleErupt(entity, sprite);
 						break;
 					case PARTICLE_EFFECT_VAMPIRIC_AURA:
 						createParticleDropRising(entity, sprite, 0.5);
+						break;
+					case PARTICLE_EFFECT_RISING_DROP:
+						createParticleDropRising(entity, sprite, 1.0);
+						break;
+					case PARTICLE_EFFECT_PORTAL_SPAWN:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 100, sprite);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SPAWN_PORTAL;
+						spellTimer->particleTimerCountdownSprite = 174;
+						spellTimer->particleTimerEndAction = PARTICLE_EFFECT_PORTAL_SPAWN;
+					}
 						break;
 					default:
 						break;
@@ -2511,9 +2564,19 @@ void clientHandlePacket()
 		for ( node = map.entities->first; node != NULL; node = node->next )
 		{
 			Entity* entity = (Entity*)node->element;
-			if ( entity->behavior == &actWinningPortal )
+			if ( strstr(map.name, "Hell") )
 			{
-				entity->flags[INVISIBLE] = false;
+				if ( entity->behavior == &actWinningPortal )
+				{
+					entity->flags[INVISIBLE] = false;
+				}
+			}
+			else if ( strstr(map.name, "Boss") )
+			{
+				if ( entity->behavior == &actPedestalBase )
+				{
+					entity->pedestalInit = 1;
+				}
 			}
 		}
 		if ( strstr(map.name, "Hell") )
@@ -2606,6 +2669,32 @@ void clientHandlePacket()
 		{
 			pauseGame(2, false);
 		}
+		return;
+	}
+
+	// mid game movie
+	else if ( !strncmp((char*)net_packet->data, "MIDG", 4) )
+	{
+		subwindow = 0;
+		fadeout = true;
+		if ( !intro )
+		{
+			pauseGame(2, false);
+		}
+		introstage = 9; // prepares mid game sequence
+		return;
+	}
+
+	// mid game jump level
+	else if ( !strncmp((char*)net_packet->data, "MIDJ", 4) )
+	{
+		subwindow = 0;
+		fadeout = true;
+		if ( !intro )
+		{
+			pauseGame(2, false);
+		}
+		introstage = 9; // prepares mid game sequence
 		return;
 	}
 

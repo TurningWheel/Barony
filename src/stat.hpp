@@ -125,6 +125,9 @@ static const int NUMCATEGORIES = 14;
 #define ITEM_CUSTOM_SLOT_LIMIT 6
 #define ITEM_SLOT_NUM ITEM_SLOT_INV_6 + ITEM_SLOT_NUMPROPERTIES
 
+//--Stat Flag constants--
+static const int STAT_FLAG_NPC = 0;
+
 typedef enum
 {
 	MALE,

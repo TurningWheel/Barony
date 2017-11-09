@@ -114,6 +114,10 @@ void gameLogic(void)
 	{
 		secondendmovietime++;
 	}
+	if ( thirdendmoviestage > 0 )
+	{
+		thirdendmovietime++;
+	}
 
 #ifdef SOUND
 	sound_update(); //Update FMOD and whatnot.
@@ -648,7 +652,15 @@ void gameLogic(void)
 					// signal clients about level change
 					mapseed = rand();
 					lastEntityUIDs = entity_uids;
-					currentlevel++;
+					if ( skipLevelsOnLoad > 0 )
+					{
+						currentlevel += skipLevelsOnLoad;
+					}
+					else
+					{
+						++currentlevel;
+					}
+					skipLevelsOnLoad = 0;
 					if ( multiplayer == SERVER )
 					{
 						for ( c = 1; c < MAXPLAYERS; c++ )
@@ -2014,6 +2026,10 @@ void pauseGame(int mode, int ignoreplayer)
 		return;
 	}
 	if ( mode == 2 && gamePaused )
+	{
+		return;
+	}
+	if ( introstage == 9 )
 	{
 		return;
 	}
