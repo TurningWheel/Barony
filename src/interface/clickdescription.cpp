@@ -250,7 +250,8 @@ void clickDescription(int player, Entity* entity)
 				{
 					messagePlayer(player, language[271]);
 				}
-				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal )
+				else if ( entity->behavior == &actPortal || entity->behavior == &actWinningPortal
+					|| entity->behavior == &actMidGamePortal )
 				{
 					messagePlayer(player, language[272]);
 				}
@@ -264,6 +265,18 @@ void clickDescription(int player, Entity* entity)
 					{
 						messagePlayer(player, language[274]);
 					}
+				}
+				else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+				{
+					messagePlayer(player, language[2375]);
+				}
+				else if ( entity->behavior == &actPedestalBase )
+				{
+					messagePlayer(player, language[2376]);
+				}
+				else if ( entity->behavior == &actPedestalOrb )
+				{
+					messagePlayer(player, language[2377]);
 				}
 			}
 			else

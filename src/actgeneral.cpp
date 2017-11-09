@@ -322,3 +322,11 @@ void actStalagColumn(Entity* my)
 
 	//my->actStalagColumn();
 }
+
+void actCeilingTile(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+}

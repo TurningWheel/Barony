@@ -12,6 +12,7 @@
 #pragma once
 
 #include <vector>
+#include <random>
 
 // REMEMBER TO CHANGE THIS WITH EVERY NEW OFFICIAL VERSION!!!
 #define VERSION "v2.0.7"
@@ -98,6 +99,7 @@ extern bool shootmode;
 extern char classnames[10][10];
 extern char address[64];
 extern bool loadnextlevel;
+extern int skipLevelsOnLoad;
 extern int currentlevel;
 extern bool secretlevel;
 extern bool darkmap;
@@ -173,6 +175,10 @@ void actWallBuilder(Entity* my);
 void actPowerCrystalBase(Entity* my);
 void actPowerCrystal(Entity* my);
 void actPowerCrystalParticleIdle(Entity* my);
+void actPedestalBase(Entity* my);
+void actPedestalOrb(Entity* my);
+void actMidGamePortal(Entity* my);
+void actTeleporter(Entity* my);
 
 void startMessages();
 

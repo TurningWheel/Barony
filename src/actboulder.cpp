@@ -78,6 +78,10 @@ bool doesEntityStopBoulder(Entity* entity)
 	{
 		return true;
 	}
+	else if ( entity->behavior == &actPedestalBase )
+	{
+		return true;
+	}
 	return false;
 }
 

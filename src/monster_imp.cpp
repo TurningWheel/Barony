@@ -36,7 +36,7 @@ void initImp(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
@@ -92,9 +92,9 @@ void initImp(Entity* my, Stat* myStats)
 			}
 
 			//give weapon
-			if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 			{
-				myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, NULL);
+				myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 0, 1, 0, false, nullptr);
 			}
 		}
 	}
@@ -256,8 +256,8 @@ void impDie(Entity* my)
 void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL;
-	Entity* rightbody = NULL;
+	Entity* entity = nullptr;
+	Entity* rightbody = nullptr;
 	int bodypart;
 
 	// set invisibility //TODO: isInvisible()?
@@ -268,9 +268,9 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
@@ -293,9 +293,9 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
-				if ( bodypart < 2 )
+				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
 					bodypart++;
 					continue;
@@ -330,9 +330,9 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
-		if ( bodypart < 2 )
+		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
 			continue;
 		}
@@ -341,13 +341,13 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		entity->y = my->y;
 		entity->z = my->z;
 		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
 		{
-			if ( bodypart == 3 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
 			{
 				rightbody = (Entity*)node->next->element;
 			}
-			if ( bodypart == 3 || !MONSTER_ATTACK )
+			if ( bodypart == LIMB_HUMANOID_RIGHTLEG || !my->monsterAttack )
 			{
 				if ( !rightbody->skill[0] )
 				{
@@ -376,73 +376,65 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else
 			{
-				// vertical chop
-				if ( MONSTER_ATTACKTIME == 0 )
+				// vertical chop windup
+				if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 				{
-					MONSTER_ARMBENDED = 0;
-					MONSTER_WEAPONYAW = 0;
-					entity->pitch = -3 * PI / 4;
-					entity->roll = 0;
-				}
-				else
-				{
-					if ( entity->pitch >= -PI / 2 )
+					if ( my->monsterAttackTime == 0 )
 					{
-						MONSTER_ARMBENDED = 1;
-					}
-					if ( entity->pitch >= PI / 4 )
-					{
-						entity->skill[0] = rightbody->skill[0];
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = rightbody->pitch;
+						// init rotations
+						entity->pitch = 0;
 						entity->roll = 0;
-						MONSTER_ARMBENDED = 0;
-						MONSTER_ATTACK = 0;
 					}
-					else
+
+					limbAnimateToLimit(entity, ANIMATE_PITCH, -0.25, 6 * PI / 4, false, 0);
+					entity->skill[0] = 0;
+
+					if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP )
 					{
-						entity->pitch += .25;
+						if ( multiplayer != CLIENT )
+						{
+							my->attack(1, 0, nullptr);
+						}
+					}
+				}
+				// vertical chop attack
+				else if ( my->monsterAttack == 1 )
+				{
+					if ( my->monsterAttackTime > 0 )
+					{
+						if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 3, false, 0.0) == 1 )
+						{
+							entity->skill[0] = rightbody->skill[0];
+							entity->pitch = rightbody->pitch;
+							MONSTER_ATTACK = 0;
+						}
 					}
 				}
 			}
 		}
-		else if ( bodypart == 4 || bodypart == 5 )
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
-			if ( bodypart == 5 )
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
-				if ( MONSTER_ATTACK )
+				if ( my->monsterAttack > 0 )
 				{
 					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
+					// get leftarm from bodypart 6 element if ready to attack
+					Entity* leftarm = (Entity*)node->next->element;
+
+					if ( my->monsterAttack == 1 || my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
 					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( leftarm != nullptr )
 						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
+							// follow the right arm animation.
+							entity->pitch = leftarm->pitch;
+							entity->roll = -leftarm->roll;
 						}
 					}
 				}
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
+			if ( bodypart != LIMB_HUMANOID_RIGHTARM || (my->monsterAttack == 0 && my->monsterAttackTime == 0) )
 			{
 				if ( entity->skill[0] )
 				{
@@ -466,7 +458,15 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else if ( bodypart == 7 || bodypart == 8 )
 		{
-			entity->fskill[1] += .1;
+			if ( my->monsterAttack == MONSTER_POSE_MELEE_WINDUP1 )
+			{
+				// flap wings faster during windup
+				entity->fskill[1] += .4;
+			}
+			else
+			{
+				entity->fskill[1] += .1;
+			}
 			if ( entity->fskill[1] >= PI * 2 )
 			{
 				entity->fskill[1] -= PI * 2;
@@ -475,32 +475,32 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				entity->x -= 2 * cos(my->yaw);
 				entity->y -= 2 * sin(my->yaw);
 				entity->z += 2.75;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
 				entity->x += 1 * cos(my->yaw + PI / 2);
 				entity->y += 1 * sin(my->yaw + PI / 2);
 				entity->z += 6;
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
 				entity->x -= 1 * cos(my->yaw + PI / 2);
 				entity->y -= 1 * sin(my->yaw + PI / 2);
 				entity->z += 6;
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 				entity->x += 3 * cos(my->yaw + PI / 2) - 1 * cos(my->yaw);
 				entity->y += 3 * sin(my->yaw + PI / 2) - 1 * sin(my->yaw);
 				entity->z += 1;
 				entity->yaw += MONSTER_WEAPONYAW;
 				break;
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 				entity->x -= 3 * cos(my->yaw + PI / 2) + 1 * cos(my->yaw);
 				entity->y -= 3 * sin(my->yaw + PI / 2) + 1 * sin(my->yaw);
 				entity->z += 1;
@@ -521,12 +521,16 @@ void impMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( my->monsterAttack > 0 && my->monsterAttack <= MONSTER_POSE_MAGIC_CAST3 )
 	{
-		MONSTER_ATTACKTIME++;
+		my->monsterAttackTime++;
+	}
+	else if ( my->monsterAttack == 0 )
+	{
+		my->monsterAttackTime = 0;
 	}
 	else
 	{
-		MONSTER_ATTACKTIME = 0;
+		// do nothing, don't reset attacktime or increment it.
 	}
 }
