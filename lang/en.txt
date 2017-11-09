@@ -2951,6 +2951,16 @@ but it retracts beyond your might!#
 2376 You see a pedestal.#
 2377 You see a mystical orb sitting atop a pedestal.#
 2378 You climb the ladder.#
+2379 Your ally %s gained a level!#
+2380 The wall is fortified! It doesn't even make a dent!#
+2381 A magical force prevents teleportation in this area!#
+2382 A magical force prevents levitation in this area!#
+2384 ring adornment#
+2385 ring slowdig#
+2386 ring protection#
+2387 ring warn#
+2388 ring stre#
+2389 You slip on the ring and feel your skin harden slightly.#
 
 #New spells (2390-2399)
 2390 Conjure Familiar#
@@ -2979,6 +2989,14 @@ but it retracts beyond your might!#
 2410 Menu Y-Axis Sensitivity#
 
 2411 Frames Per Second (FPS)#
+2412 ringinvis#
+2413 ringmagicresist#
+2414 conflict#
+2415 ring lev#
+2416 ringregen#
+2417 ringteleport#
+2418 bootsfeather#
+2419 bootslev#
 
 #New spell effects (2420-2440)
 2420 %s is paralyzed!#
