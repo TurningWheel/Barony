@@ -472,6 +472,9 @@ public:
 			case VAMPIRE:
 				vampireChooseWeapon(target, dist);
 				break;
+			case SHADOW:
+				shadowChooseWeapon(target, dist);
+				break;
 			default:
 				break;
 		}
@@ -480,6 +483,7 @@ public:
 	void insectoidChooseWeapon(const Entity* target, double dist);
 	void incubusChooseWeapon(const Entity* target, double dist);
 	void vampireChooseWeapon(const Entity* target, double dist);
+	void shadowChooseWeapon(const Entity* target, double dist);
 
 	bool monsterInMeleeRange(const Entity* target, double dist) const
 	{
@@ -505,6 +509,7 @@ public:
 
 	bool monsterHasSpellbook(int spellbookType);
 	//bool monsterKnowsSpell(int spellID); //TODO: Should monsters use the spell item instead of spellbooks?
+	node_t* chooseAttackSpellbookFromInventory();
 };
 
 extern list_t entitiesToDelete[MAXPLAYERS];
