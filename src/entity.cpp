@@ -8593,6 +8593,12 @@ void Entity::monsterEquipItem(Item& item, Item** slot)
 
 bool Entity::monsterHasSpellbook(int spellbookType)
 {
+	if (spellbookType == SPELL_NONE )
+	{
+		messagePlayer(clientnum, "[DEBUG: Entity::monsterHasSpellbook()] skipping SPELL_NONE");
+		return false;
+	}
+
 	Stat* myStats = getStats();
 	if ( !myStats )
 	{
@@ -8614,7 +8620,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 			continue;
 		}
 
-		if ( item->type == spellbookType )
+		if ( getSpellIDFromSpellbook(item->type) == spellbookType )
 		{
 			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
 			messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
@@ -8677,9 +8683,9 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 
 	//Ok, first, compile a list of all spells it has on it.
 	//Then choose one and return it.
-	for ( int i = 0; i < NUM_SPELLS; ++i )
+	for ( int i = 1; i < NUM_SPELLS; ++i ) //Skip 0, which = SPELL_NONE.
 	{
-		if ( monsterHasSpellbook(i)																																																																																																	 )
+		if ( monsterHasSpellbook(i) )
 		{
 			if ( myStats->type == SHADOW ) //TODO: Replace this if-else block with an "isAttackSpell() && monsterCanUseSpell()"
 			{

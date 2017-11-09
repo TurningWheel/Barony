@@ -2584,6 +2584,11 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 
 node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 {
+	if ( spellIDToFind == SPELL_NONE )
+	{
+		return nullptr;
+	}
+
 	if ( myStats == nullptr )
 	{
 		return nullptr;
