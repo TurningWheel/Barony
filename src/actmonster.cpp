@@ -5239,6 +5239,12 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					{
 						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
 					}
+					else if ( monsterSpecialState == SHADOW_TELEPORT_ONLY )
+					{
+						// special handled in shadowChooseWeapon(), teleport code in path state.
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEPORT;
+						break;
+					}
 					break;
 				default:
 					break;

@@ -2692,7 +2692,7 @@ Entity* createParticleSapCenter(Entity* parent, Entity* target, int spell, int s
 	entity->skill[2] = -13; // so clients know my behavior.
 	entity->skill[3] = 0; // init
 	entity->skill[4] = sprite; // visible sprites.
-	entity->skill[5] = sprite; // sprite to spawn on return to caster.
+	entity->skill[5] = endSprite; // sprite to spawn on return to caster.
 	entity->skill[6] = spell;
 	entity->behavior = &actParticleSapCenter;
 	entity->flags[INVISIBLE] = true;
@@ -2709,7 +2709,7 @@ void createParticleSap(Entity* parent)
 	{
 		// 4 particles, in an 'x' pattern around parent sprite.
 		int sprite = parent->sprite;
-		if ( parent->skill[6] == SPELL_STEAL_WEAPON )
+		if ( parent->skill[6] == SPELL_STEAL_WEAPON || parent->skill[6] == SHADOW_SPELLCAST )
 		{
 			sprite = parent->sprite;
 		}
@@ -2958,6 +2958,24 @@ void actParticleTimer(Entity* my)
 				spawnExplosion(my->x, my->y, 0);
 				my->removeLightField();
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_SHADOW_TELEPORT )
+			{
+				// teleport to target spell.
+				Entity* parent = uidToEntity(my->parent);
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( parent && target )
+				{
+					createParticleErupt(parent, my->particleTimerEndSprite);
+					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
+					{
+						// teleport success.
+						if ( multiplayer == SERVER )
+						{
+							serverSpawnMiscParticles(parent, PARTICLE_EFFECT_ERUPT, my->particleTimerEndSprite);
+						}
+					}
+				}
+			}
 		}
 		list_RemoveNode(my->mynode);
 		return;
@@ -3159,6 +3177,12 @@ void actParticleSapCenter(Entity* my)
 				}
 				playSoundEntity(parent, 168, 128);
 				spawnMagicEffectParticles(parent->x, parent->y, parent->z, 169);
+			}
+			else if ( my->skill[6] == SHADOW_SPELLCAST )
+			{
+				parent->shadowSpecialAbility(parent->monsterShadowInitialMimic);
+				playSoundEntity(parent, 166, 128);
+				spawnMagicEffectParticles(parent->x, parent->y, parent->z, my->skill[5]);
 			}
 			list_RemoveNode(my->mynode);
 			return;

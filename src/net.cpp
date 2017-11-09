@@ -2107,6 +2107,13 @@ void clientHandlePacket()
 						spellTimer->particleTimerCountdownSprite = sprite;
 					}
 						break;
+					case PARTICLE_EFFECT_SHADOW_TELEPORT:
+					{
+						Entity* spellTimer = createParticleTimer(entity, 40, sprite);
+						spellTimer->particleTimerCountdownAction = PARTICLE_TIMER_ACTION_SHOOT_PARTICLES;
+						spellTimer->particleTimerCountdownSprite = sprite;
+					}
+					break;
 					case PARTICLE_EFFECT_ERUPT:
 						createParticleErupt(entity, sprite);
 						break;
