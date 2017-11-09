@@ -8546,6 +8546,11 @@ bool Entity::shouldRetreat(Stat& myStats)
 
 	// retreating monsters will not try path when losing sight of target
 
+	if ( myStats.type == SHADOW )
+	{
+		return false;
+	}
+
 	if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
 	{
 		return true;
