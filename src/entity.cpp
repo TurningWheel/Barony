@@ -3383,10 +3383,10 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
-	{
-		return false; //Shadows can't do anything while they are casting their special ability.
-	}
+	//if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	//{
+	//	return false; //Shadows can't do anything while they are casting their special ability.
+	//}
 
 	return true;
 }
@@ -6866,7 +6866,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6910,7 +6911,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
 				|| myStats->type == GOBLIN || myStats->type == SKELETON 
 				|| myStats->type == GNOME || myStats->type == SUCCUBUS
-				|| myStats->type == SHOPKEEPER )
+				|| myStats->type == SHOPKEEPER || myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6955,7 +6956,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN 
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == SHADOW )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6996,7 +6998,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == SHADOW )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -7024,7 +7027,8 @@ int Entity::getAttackPose() const
 			|| myStats->type == GHOUL || myStats->type == SKELETON
 			|| myStats->type == GNOME || myStats->type == DEMON
 			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
-			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR )
+			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR
+			|| myStats->type == SHADOW )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -8133,7 +8137,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
 		monsterShadowInitialMimic = 1; //true!
-		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+		//attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 	}
 }
 
