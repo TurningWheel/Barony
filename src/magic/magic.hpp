@@ -47,6 +47,7 @@ static const int SPELL_ACID_SPRAY = 27;
 static const int SPELL_STEAL_WEAPON = 28;
 static const int SPELL_DRAIN_SOUL = 29;
 static const int SPELL_VAMPIRIC_AURA = 30;
+static const int NUM_SPELLS = 31;
 
 
 #define SPELLELEMENT_CONFUSE_BASE_DURATION 2//In seconds.

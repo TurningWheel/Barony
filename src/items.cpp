@@ -2582,6 +2582,25 @@ node_t* itemNodeInInventory(Stat* myStats, ItemType itemToFind, Category cat)
 	return nullptr;
 }
 
+node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
+{
+	if ( myStats == nullptr )
+	{
+		return nullptr;
+	}
+
+	for ( node_t* node = myStats->inventory.first; node != nullptr; node = node->next )
+	{
+		Item* item = (Item*)node->element;
+		if ( item != nullptr && itemCategory(item) == SPELLBOOK && getSpellIDFromSpellbook(item->type) == spellIDToFind )
+		{
+			return node;
+		}
+	}
+
+	return nullptr;
+}
+
 node_t* getRangedWeaponItemNodeInInventory(Stat* myStats, bool includeMagicstaff)
 {
 	if ( myStats == nullptr )

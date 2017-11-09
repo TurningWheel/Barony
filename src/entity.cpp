@@ -8663,3 +8663,39 @@ char* Entity::getMonsterLangEntry()
 	}
 	return nullptr;
 }
+
+node_t* Entity::chooseAttackSpellbookFromInventory()
+{
+	Stat* myStats = getStats();
+	if (!myStats )
+	{
+		return nullptr;
+	}
+
+	node_t* spellbook = nullptr;
+	std::vector<int> spellbooks;
+
+	//Ok, first, compile a list of all spells it has on it.
+	//Then choose one and return it.
+	for ( int i = 0; i < NUM_SPELLS; ++i )
+	{
+		if ( monsterHasSpellbook(i) )
+		{
+			if ( myStats->type == SHADOW && shadowCanMimickSpell(i) ) //TODO: Replace this if-else block with an "isAttackSpell() && monsterCanUseSpell()"
+			{
+				spellbooks.push_back(i);
+			}
+			else
+			{
+				messagePlayer(clientnum, "TODO: Only shadow has CanCastSpell() checking implemented! Need to update other relevant monsters.");
+			}
+		}
+	}
+
+	if ( spellbooks.size() == 0 )
+	{
+		return nullptr;
+	}
+
+	return spellbookNodeInInventory(myStats, rand()%spellbooks.size()); //Choose a random spell and return it.
+}

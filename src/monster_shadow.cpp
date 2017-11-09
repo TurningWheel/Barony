@@ -1448,6 +1448,97 @@ void Entity::shadowTeleportToTarget(const Entity* target)
 	}
 }
 
+void Entity::shadowChooseWeapon(const Entity* target, double dist)
+{
+	if ( monsterSpecialState != 0 )
+	{
+		//Holding a weapon assigned from the special attack. Don't switch weapons.
+		return;
+	}
+
+	Stat *myStats = getStats();
+	if ( !myStats )
+	{
+		return;
+	}
+
+	int specialRoll = -1;
+
+	bool inMeleeRange = monsterInMeleeRange(target, dist);
+
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
+	{
+		Stat* targetStats = target->getStats();
+		if ( !targetStats )
+		{
+			return;
+		}
+
+		// occurs less often against fellow monsters.
+		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
+
+		int requiredRoll = 2;
+
+		// check the roll
+		if ( specialRoll < requiredRoll )
+		{
+			node_t* node = nullptr;
+			bool telemimic = (rand()%4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			if ( monsterState != MONSTER_STATE_ATTACK )
+			{
+				//If it's hunting down the player, always want it to teleport and find them.
+				telemimic = true;
+			}
+
+			if ( telemimic )
+			{
+				//Do the tele-mimic-invisibility special ability.
+				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
+				attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+				return;
+			}
+
+			node = chooseAttackSpellbookFromInventory();
+			if ( node != nullptr )
+			{
+				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
+				monsterSpecialState = VAMPIRE_CAST_DRAIN; //TODO: MONSTER_CAST_SPELL
+				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+				monsterHitTime = HITRATE * 2; // force immediate attack
+				return;
+			}
+		}
+	}
+
+	if ( inMeleeRange ) //Shadows are paunchy people, they don't like to shoost much.
+	{
+		//Switch to a melee weapon if not already wielding one. Unless monster special state is overriding the AI.
+		if ( !myStats->weapon || !isMeleeWeapon(*myStats->weapon) )
+		{
+			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
+			if ( !weaponNode )
+			{
+				return; //Resort to fists.
+			}
+
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
+			if ( !swapped )
+			{
+				//Don't return so that monsters will at least equip ranged weapons in melee range if they don't have anything else.
+			}
+			else
+			{
+				return;
+			}
+		}
+		else
+		{
+			return;
+		}
+	}
+	return;
+}
+
 
 
 
