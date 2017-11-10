@@ -1887,27 +1887,73 @@ void useItem(Item* item, int player)
 			break;
 	}
 
+	// on-equip messages.
 	if ( multiplayer != CLIENT )
 	{
-		if ( item->type == RING_LEVITATION || item->type == STEEL_BOOTS_LEVITATION )
+		switch ( item->type )
 		{
-			if ( !MAPFLAG_DISABLELEVITATION )
-			{
-				messagePlayer(player, language[767]); // you begin to float through the air
-			}
-			else
-			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(player, color, language[2382]); // disabled levitation.
-			}
-		}
-		else if ( item->type == RING_INVISIBILITY )
-		{
-			messagePlayer(player, language[766]); // you can no longer see yourself
-		}
-		else if ( item->type == STEEL_BOOTS_FEATHER )
-		{
-			messagePlayer(player, language[768]); // you feel much quicker.
+			case RING_ADORNMENT:
+				messagePlayer(player, language[2384]);
+				break;
+			case RING_SLOWDIGESTION:
+				messagePlayer(player, language[2385]);
+				break;
+			case RING_PROTECTION:
+				messagePlayer(player, language[2386]);
+				break;
+			case RING_WARNING:
+				messagePlayer(player, language[2387]);
+				break;
+			case RING_STRENGTH:
+				messagePlayer(player, language[2388]);
+				break;
+			case RING_CONSTITUTION:
+				messagePlayer(player, language[2389]);
+				break;
+			case RING_INVISIBILITY:
+				messagePlayer(player, language[2412]);
+				break;
+			case RING_MAGICRESISTANCE:
+				messagePlayer(player, language[2413]);
+				break;
+			case RING_CONFLICT:
+				messagePlayer(player, language[2414]);
+				break;
+			case RING_LEVITATION:
+				if ( !MAPFLAG_DISABLELEVITATION )
+				{
+					// can levitate
+					messagePlayer(player, language[2415]);
+				}
+				else
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+					messagePlayerColor(player, color, language[2382]);
+				}
+				break;
+			case RING_REGENERATION:
+				messagePlayer(player, language[2416]);
+				break;
+			case RING_TELEPORTATION:
+				messagePlayer(player, language[2417]);
+				break;
+			case STEEL_BOOTS_FEATHER:
+				messagePlayer(player, language[2418]); // you feel much quicker.
+				break;
+			case STEEL_BOOTS_LEVITATION:
+				if ( !MAPFLAG_DISABLELEVITATION )
+				{
+					// can levitate
+					messagePlayer(player, language[2419]);
+				}
+				else
+				{
+					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+					messagePlayerColor(player, color, language[2382]);
+				}
+				break;
+			default:
+				break;
 		}
 	}
 }
