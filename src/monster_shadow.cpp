@@ -306,7 +306,7 @@ void shadowDie(Entity* my)
 	return;
 }
 
-#define SHADOWWALKSPEED .13
+#define SHADOWWALKSPEED .05
 
 void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
@@ -390,7 +390,20 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->z = -1;
+			if ( multiplayer != CLIENT )
+			{
+				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+				{
+					my->z = -1.2;
+					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+				if ( dist < 0.1 )
+				{
+					// not moving, float.
+					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -2, 0.01, -1.2, ANIMATE_DIR_NEGATIVE);
+				}
+			}
+			//my->z = -2;
 		}
 	}
 
@@ -467,7 +480,78 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else
 			{
-				my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+				if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+				{
+					Entity* rightbody = nullptr;
+					// set rightbody to left leg.
+					node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+					if ( rightbodyNode )
+					{
+						rightbody = (Entity*)rightbodyNode->element;
+					}
+					else
+					{
+						return;
+					}
+
+					node_t* shieldNode = list_Node(&my->children, 8);
+					if ( shieldNode )
+					{
+						Entity* shield = (Entity*)shieldNode->element;
+						if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0) )
+						{
+							// walking to destination
+							if ( !rightbody->skill[0] )
+							{
+								entity->pitch -= dist * SHADOWWALKSPEED / 2.0;
+								if ( entity->pitch < 0 )
+								{
+									entity->pitch = 0;
+									if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+									{
+										entity->skill[0] = 1;
+									}
+								}
+							}
+							else
+							{
+								entity->pitch += dist * SHADOWWALKSPEED / 2.0;
+								if ( entity->pitch > 3 * PI / 8.0 )
+								{
+									entity->pitch = 3 * PI / 8.0;
+									if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+									{
+										entity->skill[0] = 0;
+									}
+								}
+							}
+						}
+						else
+						{
+							// coming to a stop
+							if ( entity->pitch < PI / 4 )
+							{
+								entity->pitch += 1 / fmax(dist * .1, 10.0);
+								if ( entity->pitch > PI / 4 )
+								{
+									entity->pitch = PI / 4;
+								}
+							}
+							else if ( entity->pitch > PI / 4 )
+							{
+								entity->pitch -= 1 / fmax(dist * .1, 10.0);
+								if ( entity->pitch < PI / 4 )
+								{
+									entity->pitch = PI / 4;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+				}
 			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
@@ -590,7 +674,56 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+			if ( bodypart == LIMB_HUMANOID_LEFTLEG )
+			{
+				if ( bodypart != LIMB_HUMANOID_RIGHTARM || (my->monsterAttack == 0 && my->monsterAttackTime == 0) )
+				{
+					if ( dist > 0.1 )
+					{
+						if ( entity->skill[0] )
+						{
+							entity->pitch -= dist * SHADOWWALKSPEED / 2.0;
+							if ( entity->pitch < 0 )
+							{
+								entity->skill[0] = 0;
+								entity->pitch = 0;
+							}
+						}
+						else
+						{
+							entity->pitch += dist * SHADOWWALKSPEED / 2.0;
+							if ( entity->pitch > 3 * PI / 8.0 )
+							{
+								entity->skill[0] = 1;
+								entity->pitch = 3 * PI / 8.0;
+							}
+						}
+					}
+					else
+					{
+						if ( entity->pitch < PI / 4 )
+						{
+							entity->pitch += 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch > PI / 4 )
+							{
+								entity->pitch = PI / 4;
+							}
+						}
+						else if ( entity->pitch > PI / 4 )
+						{
+							entity->pitch -= 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch < PI / 4 )
+							{
+								entity->pitch = PI / 4;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+			}
 
 			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
@@ -696,7 +829,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( shield->flags[INVISIBLE] && (my->monsterState == MONSTER_STATE_WAIT) )
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
 						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[SHADOW][5][0] - 0.25; // 0
