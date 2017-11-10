@@ -769,6 +769,18 @@ void gameLogic(void)
 								break;
 						}
 					}
+					if ( MFLAG_DISABLETELEPORT )
+					{
+						messagePlayer(clientnum, language[2382]);
+					}
+					if ( MFLAG_DISABLELEVITATION )
+					{
+						messagePlayer(clientnum, language[2383]);
+					}
+					if ( MFLAG_DISABLEDIGGING )
+					{
+						messagePlayer(clientnum, language[2450]);
+					}
 					loadnextlevel = false;
 					loading = false;
 					fadeout = false;
