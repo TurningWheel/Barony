@@ -2953,13 +2953,16 @@ but it retracts beyond your might!#
 2378 You climb the ladder.#
 2379 Your ally %s gained a level!#
 2380 The wall is fortified! It doesn't even make a dent!#
-2381 A magical force prevents teleportation in this area!#
-2382 A magical force prevents levitation in this area!#
-2384 ring adornment#
-2385 ring slowdig#
-2386 ring protection#
-2387 ring warn#
-2388 ring stre#
+2381 An unseen force drags your feet to the floor!#
+2382 The air here feels like it's swirling gently around you.#
+2383 A tingle rolls over your body and through each of your footsteps.#
+
+#Equip Effects
+2384 This ring has you feeling quite confident about your appearance.#
+2385 The ring gives you a sense of calm when you wear it.#
+2386 The ring makes your whole body feel scaly.#
+2387 As you don the ring, you feel threads reaching into the darkness from your mind.#
+2388 You feel the ring feeding energy into your arms.#
 2389 You slip on the ring and feel your skin harden slightly.#
 
 #New spells (2390-2399)
@@ -2989,14 +2992,17 @@ but it retracts beyond your might!#
 2410 Menu Y-Axis Sensitivity#
 
 2411 Frames Per Second (FPS)#
-2412 ringinvis#
-2413 ringmagicresist#
-2414 conflict#
-2415 ring lev#
-2416 ringregen#
-2417 ringteleport#
-2418 bootsfeather#
-2419 bootslev#
+
+#Equip Effects
+
+2412 You slip the ring onto your finger and your body vanishes before your eyes.#
+2413 The ring slips on, radiating a fuzzy sensation all over your body.#
+2414 You put on the ring and are overwhelmed with paranoia.#
+2415 A hollow pulse flows from your fingers to your feet and you begin floating.#
+2416 You feel itchy all over when you wear the ring.#
+2417 The ring begins gently yanking at your finger.#
+2418 Your footsteps feel lighter in these boots.#
+2419 The footwear pushes you above the floor. You're levitating!#
 
 #New spell effects (2420-2440)
 2420 %s is paralyzed!#
@@ -3031,6 +3037,7 @@ dominate the %s into your service!#
 2447 Your spell (vampiric aura) was interrupted!#
 2448 Failed to sustain spell (vampiric aura).#
 2449 You begin to feel faint as your thirst for blood settles...#
+2450 The craftsmanship of the walls here is immaculate.#
 
 #New effects (contd.)
 2451 You are bleeding heavily!#
@@ -3050,6 +3057,23 @@ dominate the %s into your service!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
 2477 You are imbued with vampiric might!#
+
+# Equip effects
+2478 You feel a sense of great purpose when wearing the amulet.#
+2479 The air beyond the cord of the amulet smells crisp and sweet.#
+2480 The amulet makes your whole body tingle slightly.#
+2481 The hat seems to give you ideas.#
+2482 You get the urge to punch something.#
+2483 The hat seems to lift your mood.#
+2484 The inside of the boots are squishy with moisture.#
+2485 The comfortable boots seem to put pep in your step.#
+2486 The cloak whirls around your body and hides your form.#
+2487 The cloak is firm, but comfortable.#
+2488 The cloak buzzes gently against your body as you put it on.#
+2489 Your fingers feel more nimble as they slip into the gloves.#
+2490 You feel your skin harden slightly when you put the bracers on.#
+2491 The gauntlets are warm. You feel a tingling sensation flow up through to your shoulders.#
+2492 The amulet feels cool and pleasant against the veins of your neck.#
 
 #More character creation screen stuff.
 2498 Random Name#
