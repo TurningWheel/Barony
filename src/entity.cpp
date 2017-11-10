@@ -3633,7 +3633,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				//Shadows lose invisibility when they attack.
 				//TODO: How does this play with the passive invisibility?
-				myStats->EFFECTS[EFF_INVISIBLE] = false;
+				setEffect(EFF_INVISIBLE, false, 0, true);
 			}
 		}
 
@@ -8009,6 +8009,11 @@ void Entity::handleEffectsClient()
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
+	}
+
+	if ( myStats->EFFECTS[EFF_INVISIBLE] && getMonsterTypeFromSprite() == SHADOW )
+	{
+		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
 	}
 }
 
