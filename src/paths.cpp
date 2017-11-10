@@ -148,7 +148,14 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( entity->sprite == 14 || entity->sprite == 15 || entity->sprite == 19 || entity->sprite == 20 || entity->sprite == 39 || entity->sprite == 44 )
+		if ( entity->sprite == 14 
+			|| entity->sprite == 15 
+			|| entity->sprite == 19 
+			|| entity->sprite == 20 
+			|| entity->sprite == 39 
+			|| entity->sprite == 44
+			|| entity->sprite == 106
+			|| entity->sprite == 116 )
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
 			{
@@ -753,6 +760,10 @@ bool isPathObstacle(Entity* entity)
 		return true;
 	}
 	else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPedestalBase || entity->behavior == &actPedestalOrb )
 	{
 		return true;
 	}

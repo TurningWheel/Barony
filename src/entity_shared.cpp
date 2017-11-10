@@ -78,6 +78,12 @@ int checkSpriteType(Sint32 sprite)
 		//boulder traps
 		return 7;
 		break;
+	case 116:
+		//pedestal
+		return 8;
+	case 118:
+		//teleporter
+		return 9;
 	default:
 		return 0;
 		break;
@@ -300,7 +306,11 @@ char itemNameStrings[NUM_ITEM_STRINGS][32] =
 	"spellbook_drain_soul",
 	"spellbook_vampiric_aura",
 	"spellbook_blank_5",
-	"potion_empty"
+	"potion_empty",
+	"artifact_orb_blue",
+	"artifact_orb_red",
+	"artifact_orb_purple",
+	"artifact_orb_green",
 	""
 };
 
@@ -500,6 +510,10 @@ char itemStringsByType[10][NUM_ITEM_STRINGS_BY_TYPE][32] =
 		"tool_glasses",
 		"tool_blindfold_focus",
 		"tool_blindfold_telepathy",
+		"artifact_orb_blue",
+		"artifact_orb_red",
+		"artifact_orb_purple",
+		"artifact_orb_green",
 		""
 	},
 	{
@@ -638,7 +652,10 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"STALAGTITE MULTIPLE",
 	"GATE INVERTED (North-South)",
 	"GATE INVERTED (East-West)",
-	"LEVER WITH TIMER"
+	"LEVER WITH TIMER",
+	"PEDESTAL",
+	"MID PORTAL",
+	"TELEPORTER"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -911,7 +928,6 @@ int canWearEquip(Entity* entity, int category)
 				case TROLL:
 				case RAT:
 				case SLIME:
-				case SUCCUBUS:
 				case SCORPION:
 				case MINOTAUR:
 				case GHOUL:
@@ -931,6 +947,7 @@ int canWearEquip(Entity* entity, int category)
 				//monsters with cloak/weapon/shield/boots/mask/gloves (no helm)
 				case GNOME:
 				case INCUBUS:
+				case SUCCUBUS:
 				case LICH_FIRE:
 				case LICH_ICE:
 					equipType = 2;
@@ -1147,6 +1164,44 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->boulderTrapRefireDelay = 3;
 			entityNew->boulderTrapRefireAmount = 0;
 			entityNew->boulderTrapPreDelay = 0;
+		}
+	}
+	// pedestal
+	else if ( spriteType == 8 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->pedestalOrbType = entityToCopy->pedestalOrbType;
+			entityNew->pedestalHasOrb = entityToCopy->pedestalHasOrb;
+			entityNew->pedestalInvertedPower = entityToCopy->pedestalInvertedPower;
+			entityNew->pedestalInGround = entityToCopy->pedestalInGround;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->pedestalOrbType = 0;
+			entityNew->pedestalHasOrb = 0;
+			entityNew->pedestalInvertedPower = 0;
+			entityNew->pedestalInGround = 0;
+		}
+	}
+	// teleporter
+	else if ( spriteType == 9 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->teleporterX = entityToCopy->teleporterX;
+			entityNew->teleporterY = entityToCopy->teleporterY;
+			entityNew->teleporterType = entityToCopy->teleporterType;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->teleporterX = 1;
+			entityNew->teleporterY = 1;
+			entityNew->teleporterType = 0;
 		}
 	}
 

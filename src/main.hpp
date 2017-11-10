@@ -289,6 +289,13 @@ static const int MAP_FLAG_GENLOOTMIN = 8;
 static const int MAP_FLAG_GENLOOTMAX = 9;
 static const int MAP_FLAG_GENDECORATIONMIN = 10;
 static const int MAP_FLAG_GENDECORATIONMAX = 11;
+static const int MAP_FLAG_DISABLEDIGGING = 12;
+static const int MAP_FLAG_DISABLETELEPORT = 13;
+static const int MAP_FLAG_DISABLELEVITATION = 14;
+
+#define MAPFLAG_DISABLEDIGGING (map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF // first leftmost byte
+#define MAPFLAG_DISABLETELEPORT (map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF // second leftmost byte
+#define MAPFLAG_DISABLELEVITATION (map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF // third leftmost byte
 
 // light structure
 typedef struct light_t
@@ -470,7 +477,7 @@ extern int minotaurlevel;
 #define DIRECTCLIENT 4
 
 // language stuff
-#define NUMLANGENTRIES 2500
+#define NUMLANGENTRIES 3000
 extern char languageCode[32];
 extern char** language;
 
@@ -520,6 +527,7 @@ extern SDL_Surface** sprites;
 extern SDL_Surface** tiles;
 extern voxel_t** models;
 extern polymodel_t* polymodels;
+extern bool useModelCache;
 extern Uint32 imgref, vboref;
 extern GLuint* texid;
 extern bool disablevbos;
@@ -551,7 +559,7 @@ int initApp(char* title, int fullscreen);
 int deinitApp();
 bool initVideo();
 bool changeVideoMode();
-void generatePolyModels(int start, int end);
+void generatePolyModels(int start, int end, bool forceCacheRebuild);
 void generateVBOs(int start, int end);
 int loadLanguage(char* lang);
 int reloadLanguage();
