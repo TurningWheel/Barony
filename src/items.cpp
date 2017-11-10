@@ -1888,10 +1888,57 @@ void useItem(Item* item, int player)
 	}
 
 	// on-equip messages.
-	if ( multiplayer != CLIENT )
+	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
 	{
 		switch ( item->type )
 		{
+			case AMULET_LIFESAVING:
+				messagePlayer(player, language[2478]);
+				break;
+			case AMULET_WATERBREATHING:
+				messagePlayer(player, language[2479]);
+				break;
+			case AMULET_MAGICREFLECTION:
+				messagePlayer(player, language[2480]);
+				break;
+			case HAT_WIZARD:
+				messagePlayer(player, language[2481]);
+				break;
+			case SPIKED_GAUNTLETS:
+			case BRASS_KNUCKLES:
+			case IRON_KNUCKLES:
+				messagePlayer(player, language[2482]);
+				break;
+			case HAT_JESTER:
+				messagePlayer(player, language[2483]);
+				break;
+			case IRON_BOOTS_WATERWALKING:
+				messagePlayer(player, language[2484]);
+				break;
+			case LEATHER_BOOTS_SPEED:
+				messagePlayer(player, language[2485]);
+				break;
+			case CLOAK_INVISIBILITY:
+				messagePlayer(player, language[2486]);
+				break;
+			case CLOAK_PROTECTION:
+				messagePlayer(player, language[2487]);
+				break;
+			case CLOAK_MAGICREFLECTION:
+				messagePlayer(player, language[2488]);
+				break;
+			case GLOVES_DEXTERITY:
+				messagePlayer(player, language[2489]);
+				break;
+			case BRACERS_CONSTITUTION:
+				messagePlayer(player, language[2490]);
+				break;
+			case GAUNTLETS_STRENGTH:
+				messagePlayer(player, language[2491]);
+				break;
+			case AMULET_POISONRESISTANCE:
+				messagePlayer(player, language[2492]);
+				break;
 			case RING_ADORNMENT:
 				messagePlayer(player, language[2384]);
 				break;
@@ -1927,8 +1974,7 @@ void useItem(Item* item, int player)
 				}
 				else
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-					messagePlayerColor(player, color, language[2382]);
+					messagePlayer(player, language[2381]);
 				}
 				break;
 			case RING_REGENERATION:
@@ -1938,7 +1984,7 @@ void useItem(Item* item, int player)
 				messagePlayer(player, language[2417]);
 				break;
 			case STEEL_BOOTS_FEATHER:
-				messagePlayer(player, language[2418]); // you feel much quicker.
+				messagePlayer(player, language[2418]);
 				break;
 			case STEEL_BOOTS_LEVITATION:
 				if ( !MAPFLAG_DISABLELEVITATION )
@@ -1948,8 +1994,7 @@ void useItem(Item* item, int player)
 				}
 				else
 				{
-					Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-					messagePlayerColor(player, color, language[2382]);
+					messagePlayer(player, language[2381]);
 				}
 				break;
 			default:
