@@ -400,7 +400,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( dist < 0.1 )
 				{
 					// not moving, float.
-					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.01, -2, 0.01, -1.2, ANIMATE_DIR_NEGATIVE);
+					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
 				}
 			}
 			//my->z = -2;
@@ -452,7 +452,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			if ( bodypart == LIMB_HUMANOID_LEFTARM && 
 				(my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3
-					|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1) )
+					|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 
+					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
+					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
+					|| (my->monsterAttack == MONSTER_POSE_MAGIC_CAST1)) )
 			{
 				// leftarm follows the right arm during special mimic attack
 				// will not work when shield is visible
@@ -663,6 +666,48 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							}
 						}
 					}
+					// vertical chop attack
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_CAST1 )
+					{
+						if ( weaponarm->pitch >= 3 * PI / 2 )
+						{
+							my->monsterArmbended = 1;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							// chop forwards
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] == 1 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								weaponarm->skill[0] = rightbody->skill[0];
+								my->monsterWeaponYaw = 0;
+								weaponarm->pitch = rightbody->pitch;
+								weaponarm->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+								Entity* leftarm = nullptr;
+								// set leftbody to right leg.
+								node_t* leftarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTLEG);
+								if ( leftarmNode )
+								{
+									leftarm = (Entity*)leftarmNode->element;
+									leftarm->pitch = PI / 16;
+									leftarm->roll = 0;
+								}
+								else
+								{
+									return;
+								}
+							}
+						}
+					}
 					else
 					{
 						my->handleWeaponArmAttack(weaponarm);
@@ -847,6 +892,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 						{
 							entity->yaw -= MONSTER_WEAPONYAW;
+						}
+						else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 )
+						{
+							entity->yaw += (my->yaw - weaponarm->yaw);
 						}
 					}
 				}
