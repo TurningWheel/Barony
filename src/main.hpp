@@ -293,9 +293,9 @@ static const int MAP_FLAG_DISABLEDIGGING = 12;
 static const int MAP_FLAG_DISABLETELEPORT = 13;
 static const int MAP_FLAG_DISABLELEVITATION = 14;
 
-#define MAPFLAG_DISABLEDIGGING (map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF // first leftmost byte
-#define MAPFLAG_DISABLETELEPORT (map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF // second leftmost byte
-#define MAPFLAG_DISABLELEVITATION (map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF // third leftmost byte
+#define MFLAG_DISABLEDIGGING (map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF // first leftmost byte
+#define MFLAG_DISABLETELEPORT (map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF // second leftmost byte
+#define MFLAG_DISABLELEVITATION (map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF // third leftmost byte
 
 // light structure
 typedef struct light_t

@@ -2555,7 +2555,7 @@ void Entity::handleEffects(Stat* myStats)
 		}
 	}
 
-	if ( player >= 0 && myStats->EFFECTS[EFF_LEVITATING] && MAPFLAG_DISABLELEVITATION)
+	if ( player >= 0 && myStats->EFFECTS[EFF_LEVITATING] && MFLAG_DISABLELEVITATION)
 	{
 		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 		messagePlayerColor(player, color, language[2382]); // disabled levitation.
@@ -5287,7 +5287,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
-							if ( this->behavior == &actPlayer && MAPFLAG_DISABLEDIGGING )
+							if ( this->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 							{
 								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 								messagePlayerColor(this->skill[2], color, language[2380]); // disabled digging.
@@ -5521,7 +5521,7 @@ bool Entity::teleport(int tele_x, int tele_y)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
-		if ( MAPFLAG_DISABLETELEPORT )
+		if ( MFLAG_DISABLETELEPORT )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 			// play sound effect
@@ -5588,7 +5588,7 @@ bool Entity::teleportRandom()
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
-		if ( MAPFLAG_DISABLETELEPORT )
+		if ( MFLAG_DISABLETELEPORT )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 			// play sound effect
@@ -5652,7 +5652,7 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
-		if ( MAPFLAG_DISABLETELEPORT )
+		if ( MFLAG_DISABLETELEPORT )
 		{
 			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 			// play sound effect
@@ -6672,7 +6672,7 @@ bool isLevitating(Stat* mystats)
 
 	// check levitating value
 	bool levitating = false;
-	if ( MAPFLAG_DISABLELEVITATION )
+	if ( MFLAG_DISABLELEVITATION )
 	{
 		for ( int i = 0; i < MAXPLAYERS; ++i )
 		{

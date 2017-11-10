@@ -1967,7 +1967,7 @@ void useItem(Item* item, int player)
 				messagePlayer(player, language[2414]);
 				break;
 			case RING_LEVITATION:
-				if ( !MAPFLAG_DISABLELEVITATION )
+				if ( !MFLAG_DISABLELEVITATION )
 				{
 					// can levitate
 					messagePlayer(player, language[2415]);
@@ -1987,7 +1987,7 @@ void useItem(Item* item, int player)
 				messagePlayer(player, language[2418]);
 				break;
 			case STEEL_BOOTS_LEVITATION:
-				if ( !MAPFLAG_DISABLELEVITATION )
+				if ( !MFLAG_DISABLELEVITATION )
 				{
 					// can levitate
 					messagePlayer(player, language[2419]);
