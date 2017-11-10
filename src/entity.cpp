@@ -7190,7 +7190,6 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		}
 		else if ( weaponarm->skill[1] == 1 )
 		{
-			// return to neutral //TODO: Does client need this in shadow code, or just monsterAttack = 0?
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
 			{
 				weaponarm->skill[0] = rightbody->skill[0];
@@ -7548,7 +7547,15 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		{
 			if ( multiplayer != CLIENT )
 			{
-				this->attack(1, 0, nullptr);
+				Stat* stats = this->getStats();
+				if ( stats && stats->type == SHADOW )
+				{
+					this->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
+				}
+				else
+				{
+					this->attack(1, 0, nullptr);
+				}
 			}
 		}
 	}
