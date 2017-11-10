@@ -8147,7 +8147,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
 		monsterShadowInitialMimic = 1; //true!
-		//attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 	}
 }
 
