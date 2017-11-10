@@ -1090,7 +1090,7 @@ bool Entity::shadowCanWieldItem(const Item& item) const
 
 void Entity::shadowSpecialAbility(bool initialMimic)
 {
-	//TODO: Turn invisible.
+	//1. Turn invisible.
 	//2. Mimic target's weapon & shield (only on initial cast).
 	//3. Random chance to mimic other things.
 	//4. Teleport to target.
@@ -1116,7 +1116,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		return;
 	}
 
-	//TODO: Turn invisible.
+	//1. Turn invisible.
 	//myStats->EFFECTS[EFF_INVISIBLE] = true;
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
 	messagePlayer(clientnum, "Turned invisible!");
@@ -1127,7 +1127,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//2. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
-		monsterShadowInitialMimic = false;
+		monsterShadowInitialMimic = 0;
 		messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
@@ -1155,6 +1155,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		{
 			Item* wieldedCopy = new Item();
 			copyItem(wieldedCopy, bestMeleeWeapon);
+			wieldedCopy->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
 			monsterEquipItem(*wieldedCopy, &myStats->weapon);
 		}
 
@@ -1162,6 +1163,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		{
 			Item* wieldedCopy = new Item();
 			copyItem(wieldedCopy, bestShield);
+			wieldedCopy->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
 			monsterEquipItem(*wieldedCopy, &myStats->shield);
 		}
 
@@ -1379,7 +1381,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		{
 			messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
-			bool telemimic = true; // = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			bool telemimic  = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
 			{
 				//If it's hunting down the player, always want it to teleport and find them.
@@ -1391,7 +1393,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 			{
 				//Do the tele-mimic-invisibility special ability.
 				//messagePlayer(clientnum, "Executing telemimic.");
-				monsterShadowInitialMimic = 0; //False!
+				//monsterShadowInitialMimic = 0; //False!
 				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 				attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				return;
