@@ -87,6 +87,11 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
 	monsterShadowInitialMimic(skill[34]),
+	monsterPathBoundaryXStart(skill[14]),
+	monsterPathBoundaryYStart(skill[15]),
+	monsterPathBoundaryXEnd(skill[16]),
+	monsterPathBoundaryYEnd(skill[17]),
+	monsterStoreType(skill[18]),
 	particleDuration(skill[0]),
 	particleShrink(skill[1]),
 	monsterHitTime(skill[7]),
@@ -122,8 +127,29 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	particleTimerCountdownSprite(skill[5]),
 	particleTimerTarget(skill[6]),
 	particleTimerPreDelay(skill[7]),
-	particleTimerVariable1(skill[8])
-
+	particleTimerVariable1(skill[8]),
+	pedestalHasOrb(skill[0]),
+	pedestalOrbType(skill[1]),
+	pedestalInvertedPower(skill[3]),
+	pedestalInGround(skill[4]),
+	pedestalInit(skill[5]),
+	pedestalAmbience(skill[6]),
+	orbInitialised(skill[1]),
+	orbHoverDirection(skill[7]),
+	orbHoverWaitTimer(skill[8]),
+	orbStartZ(fskill[0]),
+	orbMaxZVelocity(fskill[1]),
+	orbMinZVelocity(fskill[2]),
+	orbTurnVelocity(fskill[3]),
+	portalAmbience(skill[0]),
+	portalInit(skill[1]),
+	portalNotSecret(skill[3]),
+	portalVictoryType(skill[4]),
+	portalFireAnimation(skill[5]),
+	teleporterX(skill[0]),
+	teleporterY(skill[1]),
+	teleporterType(skill[3]),
+	teleporterAmbience(skill[4])
 {
 	int c;
 	// add the entity to the entity list
@@ -1776,7 +1802,7 @@ hunger, level ups, poison, etc.
 
 void Entity::handleEffects(Stat* myStats)
 {
-	int increasestat[3];
+	int increasestat[3] = { 0, 0, 0 };
 	int i, c;
 	int player = -1;
 
@@ -1823,135 +1849,176 @@ void Entity::handleEffects(Stat* myStats)
 		myStats->MP = std::min(myStats->MP, myStats->MAXMP);
 
 		// now pick three attributes to increase
-		// changed rolls to be unique for each possibility.
-		increasestat[0] = rand() % 6;
-		int r = rand() % 6;
-		while ( r == increasestat[0] ) {
+
+		if ( player >= 0 )
+		{
+			// players only.
+			playerStatIncrease(client_classes[player], increasestat);
+		}
+		else
+		{
+			// monsters use this.
+			increasestat[0] = rand() % 6;
+			int r = rand() % 6;
+			while ( r == increasestat[0] ) {
+				r = rand() % 6;
+			}
+			increasestat[1] = r;
 			r = rand() % 6;
-		}
-		increasestat[1] = r;
-		r = rand() % 6;
-		while ( r == increasestat[0] || r == increasestat[1] ) {
-			r = rand() % 6;
-		}
-		increasestat[2] = r;
+			while ( r == increasestat[0] || r == increasestat[1] ) {
+				r = rand() % 6;
+			}
+			increasestat[2] = r;
 
-		// debug
-		// messagePlayer(0, "Stats rolled: %d %d %d", increasestat[0], increasestat[1], increasestat[2]);
-
-		/*increasestat[0] = rand() % 6;
-		increasestat[1] = rand() % 5;
-		increasestat[2] = rand() % 4;
-		if ( increasestat[1] >= increasestat[0] )
-		{
-		increasestat[1]++;
-		}
-		if ( increasestat[2] >= increasestat[0] )
-		{
-		increasestat[2]++;
-		}
-		if ( increasestat[2] >= increasestat[1] )
-		{
-		increasestat[2]++;
-		}*/
-
-		for ( i = 0; i < NUMSTATS * 2; ++i )
-		{
-			myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
-		}
-
-		bool rolledBonusStat = false;
-		int statIconTicks = 250;
-
-		for ( i = 0; i < 3; i++ )
-		{
-			messagePlayerColor(player, color, language[623 + increasestat[i]]);
-			switch ( increasestat[i] )
+			for ( i = 0; i < 3; i++ )
 			{
-				case STAT_STR: // STR
-					myStats->STR++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+				switch ( increasestat[i] )
+				{
+					case STAT_STR:
+						myStats->STR++;
+						break;
+					case STAT_DEX:
+						myStats->DEX++;
+						break;
+					case STAT_CON:
+						myStats->CON++;
+						break;
+					case STAT_INT:
+						myStats->INT++;
+						break;
+					case STAT_PER:
+						myStats->PER++;
+						break;
+					case STAT_CHR:
+						myStats->CHR++;
+						break;
+				}
+			}
+
+			if ( myStats->leader_uid )
+			{
+				Entity* leader = uidToEntity(myStats->leader_uid);
+				if ( leader )
+				{
+					for ( i = 0; i < MAXPLAYERS; ++i )
 					{
-						if ( rand() % 5 == 0 )
+						if ( players[i] && players[i]->entity == leader )
 						{
-							myStats->STR++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
+							if ( myStats->type < KOBOLD ) //Original monster count
+							{
+								messagePlayerColor(i, color, language[2379], language[90 + myStats->type]);
+							}
+							else if ( myStats->type >= KOBOLD ) //New monsters
+							{
+								messagePlayerColor(i, color, language[2379], language[2000 + (myStats->type - KOBOLD)]);
+							}
 						}
 					}
-					break;
-				case STAT_DEX: // DEX
-					myStats->DEX++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+				}
+			}
+		}
+
+		if ( player >= 0 )
+		{
+			for ( i = 0; i < NUMSTATS * 2; ++i )
+			{
+				myStats->PLAYER_LVL_STAT_TIMER[i] = 0;
+			}
+
+			bool rolledBonusStat = false;
+			int statIconTicks = 250;
+
+			for ( i = 0; i < 3; i++ )
+			{
+				messagePlayerColor(player, color, language[623 + increasestat[i]]);
+				switch ( increasestat[i] )
+				{
+					case STAT_STR: // STR
+						myStats->STR++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->DEX++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->STR++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_CON: // CON
-					myStats->CON++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_DEX: // DEX
+						myStats->DEX++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->CON++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->DEX++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_INT: // INT
-					myStats->INT++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_CON: // CON
+						myStats->CON++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->INT++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->CON++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_PER: // PER
-					myStats->PER++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_INT: // INT
+						myStats->INT++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->PER++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->INT++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
-				case STAT_CHR: // CHR
-					myStats->CHR++;
-					myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
-					if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
-					{
-						if ( rand() % 5 == 0 )
+						break;
+					case STAT_PER: // PER
+						myStats->PER++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
 						{
-							myStats->CHR++;
-							rolledBonusStat = true;
-							myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
-							//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							if ( rand() % 5 == 0 )
+							{
+								myStats->PER++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
 						}
-					}
-					break;
+						break;
+					case STAT_CHR: // CHR
+						myStats->CHR++;
+						myStats->PLAYER_LVL_STAT_TIMER[increasestat[i]] = statIconTicks;
+						if ( myStats->PLAYER_LVL_STAT_BONUS[increasestat[i]] >= PRO_LOCKPICKING && !rolledBonusStat )
+						{
+							if ( rand() % 5 == 0 )
+							{
+								myStats->CHR++;
+								rolledBonusStat = true;
+								myStats->PLAYER_LVL_STAT_TIMER[increasestat[i] + NUMSTATS] = statIconTicks;
+								//messagePlayer(0, "Rolled bonus in %d", increasestat[i]);
+							}
+						}
+						break;
+				}
 			}
 		}
 
@@ -2486,6 +2553,14 @@ void Entity::handleEffects(Stat* myStats)
 				serverUpdateEffects(player);
 			}
 		}
+	}
+
+	if ( player >= 0 && myStats->EFFECTS[EFF_LEVITATING] && MAPFLAG_DISABLELEVITATION)
+	{
+		Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+		messagePlayerColor(player, color, language[2382]); // disabled levitation.
+		myStats->EFFECTS[EFF_LEVITATING] = false;
+		myStats->EFFECTS_TIMERS[EFF_LEVITATING] = 0;
 	}
 
 	if ( myStats->EFFECTS[EFF_MAGICREFLECT] )
@@ -5207,54 +5282,67 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						if ( hit.mapx >= 1 && hit.mapx < map.width - 1 && hit.mapy >= 1 && hit.mapy < map.height - 1 )
 						{
-							playSoundPos(hit.x, hit.y, 67, 128);
-
-							// spawn several rock items
-							i = 8 + rand() % 4;
-							for ( c = 0; c < i; c++ )
+							if ( this->behavior == &actPlayer && MAPFLAG_DISABLEDIGGING )
 							{
-								entity = newEntity(-1, 1, map.entities);
-								entity->flags[INVISIBLE] = true;
-								entity->flags[UPDATENEEDED] = true;
-								entity->x = hit.mapx * 16 + 4 + rand() % 8;
-								entity->y = hit.mapy * 16 + 4 + rand() % 8;
-								entity->z = -6 + rand() % 12;
-								entity->sizex = 4;
-								entity->sizey = 4;
-								entity->yaw = rand() % 360 * PI / 180;
-								entity->vel_x = (rand() % 20 - 10) / 10.0;
-								entity->vel_y = (rand() % 20 - 10) / 10.0;
-								entity->vel_z = -.25 - (rand() % 5) / 10.0;
-								entity->flags[PASSABLE] = true;
-								entity->behavior = &actItem;
-								entity->flags[USERFLAG1] = true; // no collision: helps performance
-								entity->skill[10] = GEM_ROCK;    // type
-								entity->skill[11] = WORN;        // status
-								entity->skill[12] = 0;           // beatitude
-								entity->skill[13] = 1;           // count
-								entity->skill[14] = 0;           // appearance
-								entity->skill[15] = false;       // identified
+								Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+								messagePlayerColor(this->skill[2], color, language[2380]); // disabled digging.
+								playSoundPos(hit.x, hit.y, 66, 128); // strike wall
+								// bang
+								spawnBang(hit.x - cos(yaw) * 2, hit.y - sin(yaw) * 2, 0);
 							}
-
-							map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
-							// send wall destroy info to clients
-							if ( multiplayer == SERVER )
+							else
 							{
-								for ( c = 0; c < MAXPLAYERS; c++ )
+								playSoundPos(hit.x, hit.y, 67, 128); // bust wall
+								// spawn several rock items
+								i = 8 + rand() % 4;
+								for ( c = 0; c < i; c++ )
 								{
-									if ( client_disconnected[c] == true )
-									{
-										continue;
-									}
-									strcpy((char*)net_packet->data, "WALD");
-									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-									net_packet->address.host = net_clients[c - 1].host;
-									net_packet->address.port = net_clients[c - 1].port;
-									net_packet->len = 8;
-									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									entity = newEntity(-1, 1, map.entities);
+									entity->flags[INVISIBLE] = true;
+									entity->flags[UPDATENEEDED] = true;
+									entity->x = hit.mapx * 16 + 4 + rand() % 8;
+									entity->y = hit.mapy * 16 + 4 + rand() % 8;
+									entity->z = -6 + rand() % 12;
+									entity->sizex = 4;
+									entity->sizey = 4;
+									entity->yaw = rand() % 360 * PI / 180;
+									entity->vel_x = (rand() % 20 - 10) / 10.0;
+									entity->vel_y = (rand() % 20 - 10) / 10.0;
+									entity->vel_z = -.25 - (rand() % 5) / 10.0;
+									entity->flags[PASSABLE] = true;
+									entity->behavior = &actItem;
+									entity->flags[USERFLAG1] = true; // no collision: helps performance
+									entity->skill[10] = GEM_ROCK;    // type
+									entity->skill[11] = WORN;        // status
+									entity->skill[12] = 0;           // beatitude
+									entity->skill[13] = 1;           // count
+									entity->skill[14] = 0;           // appearance
+									entity->skill[15] = false;       // identified
 								}
+
+								map.tiles[OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height] = 0;
+								// send wall destroy info to clients
+								if ( multiplayer == SERVER )
+								{
+									for ( c = 0; c < MAXPLAYERS; c++ )
+									{
+										if ( client_disconnected[c] == true )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "WALD");
+										SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+										SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+										net_packet->address.host = net_clients[c - 1].host;
+										net_packet->address.port = net_clients[c - 1].port;
+										net_packet->len = 8;
+										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									}
+								}
+								// Update the paths so that monsters know they can walk through it
+								generatePathMaps();
 							}
+
 							if ( rand() % 2 )
 							{
 								myStats->weapon->status = static_cast<Status>(myStats->weapon->status - 1);
@@ -5279,8 +5367,6 @@ void Entity::attack(int pose, int charge, Entity* target)
 								}
 							}
 
-							// Update the paths so that monsters know they can walk through it
-							generatePathMaps();
 						}
 						else
 						{
@@ -5430,6 +5516,14 @@ bool Entity::teleport(int tele_x, int tele_y)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( MAPFLAG_DISABLETELEPORT )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			// play sound effect
+			playSoundEntity(this, 77, 64);
+			messagePlayerColor(player, color, language[2381]);
+			return false;
+		}
 	}
 
 	if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
@@ -5489,6 +5583,15 @@ bool Entity::teleportRandom()
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( MAPFLAG_DISABLETELEPORT )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			// play sound effect
+			playSoundEntity(this, 77, 64);
+			messagePlayerColor(player, color, language[2381]);
+			return false;
+		}
+
 	}
 	for ( int iy = 0; iy < map.height; ++iy )
 	{
@@ -5544,6 +5647,14 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 	if ( behavior == &actPlayer )
 	{
 		player = skill[2];
+		if ( MAPFLAG_DISABLETELEPORT )
+		{
+			Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+			// play sound effect
+			playSoundEntity(this, 77, 64);
+			messagePlayerColor(player, color, language[2381]);
+			return false;
+		}
 	}
 	for ( int iy = std::max(0, ty - dist); iy < std::min(ty + dist, static_cast<int>(map.height)); ++iy )
 	{
@@ -5578,6 +5689,69 @@ bool Entity::teleportAroundEntity(const Entity* target, int dist)
 		}
 	}
 	return false;
+}
+
+/*-------------------------------------------------------------------------------
+
+Entity::teleporterMove
+
+Teleports the given entity to the given (x, y) location on the map,
+in map coordinates. Will not teleport if the destination is an obstacle.
+
+-------------------------------------------------------------------------------*/
+
+bool Entity::teleporterMove(int tele_x, int tele_y, int type)
+{
+	int player = -1;
+
+	if ( behavior == &actPlayer )
+	{
+		player = skill[2];
+	}
+	// Can be inside entities?
+	//if ( strstr(map.name, "Minotaur") || checkObstacle((tele_x << 4) + 8, (tele_y << 4) + 8, this, NULL) )
+	//{
+	//	messagePlayer(player, language[707]);
+	//	return false;
+	//}
+
+	// relocate entity
+	double oldx = x;
+	double oldy = y;
+	x = (tele_x << 4) + 8;
+	y = (tele_y << 4) + 8;
+	/*if ( entityInsideSomething(this) )
+	{
+		x = oldx;
+		y = oldy;
+		if ( multiplayer == SERVER && player > 0 )
+		{
+			messagePlayer(player, language[707]);
+		}
+		return false;
+	}*/
+	if ( player > 0 && multiplayer == SERVER )
+	{
+		strcpy((char*)net_packet->data, "TELM");
+		net_packet->data[4] = tele_x;
+		net_packet->data[5] = tele_y;
+		net_packet->data[6] = type;
+		net_packet->address.host = net_clients[player - 1].host;
+		net_packet->address.port = net_clients[player - 1].port;
+		net_packet->len = 7;
+		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+
+	// play sound effect
+	if ( type == 0 || type == 1 )
+	{
+		playSoundEntityLocal(this, 96, 64);
+	}
+	else if ( type == 2 )
+	{
+		playSoundEntityLocal(this, 154, 64);
+	}
+	return true;
 }
 
 /*-------------------------------------------------------------------------------
@@ -6441,6 +6615,8 @@ bool Entity::setBootSprite(Entity* leg, int spriteOffset)
 		case SHADOW:
 		case INCUBUS:
 		case VAMPIRE:
+		case SUCCUBUS:
+		case SHOPKEEPER:
 			if ( myStats->shoes->type == LEATHER_BOOTS || myStats->shoes->type == LEATHER_BOOTS_SPEED )
 			{
 				leg->sprite = 148 + spriteOffset;
@@ -6484,13 +6660,31 @@ returns true if the given entity is levitating, or false if it cannot
 
 bool isLevitating(Stat* mystats)
 {
-	if ( mystats == NULL )
+	if ( mystats == nullptr )
 	{
 		return false;
 	}
 
 	// check levitating value
 	bool levitating = false;
+	if ( MAPFLAG_DISABLELEVITATION )
+	{
+		for ( int i = 0; i < MAXPLAYERS; ++i )
+		{
+			if ( client_disconnected[i] )
+			{
+				continue;
+			}
+			// check if mystats is a player, and levitation flag is disabled.
+			if ( players[i] && players[i]->entity )
+			{
+				if ( players[i]->entity->getStats() == mystats )
+				{
+					return false;
+				}
+			}
+		}
+	}
 	if ( mystats->EFFECTS[EFF_LEVITATING] == true )
 	{
 		return true;
@@ -6667,7 +6861,12 @@ int Entity::getAttackPose() const
 	{
 		if ( itemCategory(myStats->weapon) == MAGICSTAFF )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS || myStats->type == VAMPIRE )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
+				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
+				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
+				|| myStats->type == HUMAN || myStats->type == GOBLIN
+				|| myStats->type == SKELETON || myStats->type == GNOME
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6702,12 +6901,22 @@ int Entity::getAttackPose() const
 				}
 				else
 				{
-					//pose = MONSTER_POSE_MAGIC_WINDUP1;
+					pose = MONSTER_POSE_MAGIC_WINDUP1;
 				}
 			}
-			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == COCKATRICE || myStats->type == INCUBUS || myStats->type == VAMPIRE )
+			else if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
+				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
+				|| myStats->type == COCKATRICE || myStats->type == INCUBUS 
+				|| myStats->type == VAMPIRE || myStats->type == HUMAN
+				|| myStats->type == GOBLIN || myStats->type == SKELETON 
+				|| myStats->type == GNOME || myStats->type == SUCCUBUS
+				|| myStats->type == SHOPKEEPER )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
+			}
+			else if ( myStats->type == DEMON || myStats->type == CREATURE_IMP )
+			{
+				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
 			else
 			{
@@ -6741,7 +6950,12 @@ int Entity::getAttackPose() const
 		}
 		else if ( this->hasRangedWeapon() )
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS || myStats->type == VAMPIRE )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
+				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
+				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
+				|| myStats->type == HUMAN || myStats->type == GOBLIN 
+				|| myStats->type == SKELETON || myStats->type == GNOME
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6777,7 +6991,12 @@ int Entity::getAttackPose() const
 		}
 		else
 		{
-			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS || myStats->type == VAMPIRE )
+			if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
+				|| myStats->type == GOATMAN || myStats->type == INSECTOID 
+				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
+				|| myStats->type == HUMAN || myStats->type == GOBLIN
+				|| myStats->type == SKELETON || myStats->type == GNOME
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -6798,7 +7017,14 @@ int Entity::getAttackPose() const
 	// fists
 	else
 	{
-		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON || myStats->type == GOATMAN || myStats->type == INSECTOID || myStats->type == INCUBUS || myStats->type == VAMPIRE )
+		if ( myStats->type == KOBOLD || myStats->type == AUTOMATON 
+			|| myStats->type == GOATMAN || myStats->type == INSECTOID 
+			|| myStats->type == INCUBUS || myStats->type == VAMPIRE
+			|| myStats->type == HUMAN || myStats->type == GOBLIN
+			|| myStats->type == GHOUL || myStats->type == SKELETON
+			|| myStats->type == GNOME || myStats->type == DEMON
+			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
+			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -6823,6 +7049,10 @@ int Entity::getAttackPose() const
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1 + rand() % 2;
 			}
+		}
+		else if ( myStats->type == TROLL )
+		{
+			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
 		else
 		{
@@ -7570,7 +7800,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					{
 						// adjust the z point halfway through swing.
 						weaponLimb->z = weaponArmLimb->z + 1.5 - 2 * cos(weaponArmLimb->pitch / 2);
-						if ( monsterType == INCUBUS )
+						if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 						{
 							weaponLimb->z += 2;
 						}
@@ -7586,7 +7816,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 						{
 							limbAnimateToLimit(weaponLimb, ANIMATE_PITCH, 0.5, PI * 0.5, false, 0);
 						}
-						if ( monsterType == INCUBUS )
+						if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 						{
 							weaponLimb->z += 1.25;
 						}
@@ -7599,7 +7829,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 					weaponLimb->y = weaponArmLimb->y + .5 * sin(weaponArmLimb->yaw) * (this->monsterAttack == 0);
 					weaponLimb->z = weaponArmLimb->z - .5;
 					weaponLimb->pitch = weaponArmLimb->pitch + .25 * (this->monsterAttack == 0);
-					if ( monsterType == INCUBUS )
+					if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 					{
 						weaponLimb->z += 1;
 					}
@@ -7642,7 +7872,7 @@ void Entity::handleHumanoidWeaponLimb(Entity* weaponLimb, Entity* weaponArmLimb)
 	else
 	{
 		weaponLimb->focaly = limbs[monsterType][6][1]; // 0
-		if ( monsterType == INCUBUS )
+		if ( monsterType == INCUBUS || monsterType == SUCCUBUS )
 		{
 			weaponLimb->focalx = limbs[monsterType][6][0] + 2; // 3.5
 			weaponLimb->focalz = limbs[monsterType][6][2] - 3.5; // -2.5
@@ -8675,6 +8905,101 @@ char* Entity::getMonsterLangEntry()
 		return myStats->name;
 	}
 	return nullptr;
+}
+
+void playerStatIncrease(int playerClass, int chosenStats[3])
+{
+	std::mt19937 seed(rand()); // seed of distribution.
+	
+	std::vector<int> statWeights = classStatGrowth[playerClass];
+
+	// debug to print which vector values are being used.
+	//for ( std::vector<int>::const_iterator i = statWeights.begin(); i != statWeights.end(); ++i )
+	//{
+	//	messagePlayer(0, "%2d, ", *i);
+	//}
+
+	chosenStats[0] = rand() % 6; // get first stat randomly.
+	statWeights[chosenStats[0]] = 0; // remove the chance of the local stat vector.
+
+	std::discrete_distribution<> distr2(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
+	chosenStats[1] = distr2(seed); // get second stat.
+	statWeights[chosenStats[1]] = 0; // remove the chance in the local stat vector.
+
+	std::discrete_distribution<> distr3(statWeights.begin(), statWeights.end()); // regen the distribution with new weights.
+	chosenStats[2] = distr3(seed); // get third stat.
+
+	if ( chosenStats[0] == chosenStats[1] || chosenStats[0] == chosenStats[2] || chosenStats[1] == chosenStats[2] )
+	{
+		printlog("Err: duplicate stat index chosen on level up of player with class %d!\n", playerClass);
+	}
+
+	return;
+}
+
+void Entity::createPathBoundariesNPC()
+{
+	Stat* myStats = this->getStats();
+
+	if ( !myStats )
+	{
+		return;
+	}
+
+	if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] != 0 || myStats->type == SHOPKEEPER )
+	{
+		// is NPC, find the bounds which movement is restricted to by finding the "box" it spawned in.
+		int i, j;
+		monsterPathBoundaryXStart = x / 16;
+		monsterPathBoundaryXEnd = x / 16;
+		monsterPathBoundaryYStart = y / 16;
+		monsterPathBoundaryYEnd = y / 16;
+		for ( i = x; i >= 0; i -= 16 )
+		{
+			if ( !checkObstacle(i, y, this, nullptr) )
+			{
+				monsterPathBoundaryXStart = i;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for ( i = x; i < map.width << 4; i += 16 )
+		{
+			if ( !checkObstacle(i, y, this, nullptr) )
+			{
+				monsterPathBoundaryXEnd = i;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for ( j = y; j >= 0; j -= 16 )
+		{
+			if ( !checkObstacle(x, j, this, nullptr) )
+			{
+				monsterPathBoundaryYStart = j;
+			}
+			else
+			{
+				break;
+			}
+		}
+		for ( j = y; j < map.height << 4; j += 16 )
+		{
+			if ( !checkObstacle(x, j, this, nullptr) )
+			{
+				monsterPathBoundaryYEnd = j;
+			}
+			else
+			{
+				break;
+			}
+		}
+		//messagePlayer(0, "restricted to (%d, %d), (%d, %d)", monsterPathBoundaryXStart >> 4, monsterPathBoundaryYStart >> 4, monsterPathBoundaryXEnd >> 4, monsterPathBoundaryYEnd >> 4);
+	}
 }
 
 node_t* Entity::chooseAttackSpellbookFromInventory()

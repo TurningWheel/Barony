@@ -173,6 +173,22 @@ static double damagetables[NUMMONSTERS][6] =
 
 };
 
+static std::vector<std::vector<int>> classStatGrowth =
+{
+	// stat weightings for classes on level up
+	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
+	{	6,	5,	2,	2,	4,	5 }, // BARB 0
+	{	7,	2,	6,	1,	2,	6 }, // WARRIOR 1
+	{	4,	2,	5,	5,	4,	4 }, // CLERIC 2
+	{	3,	3,	4,	6,	5,	3 }, // HEALER 3
+	{	5,	4,	5,	3,	5,	2 }, // WANDERER 4
+	{	2,	7,	1,	2,	7,	5 }, // ROGUE 5
+	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 6
+	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
+	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 8
+	{	4,	4,	4,	4,	4,	4 }  // JOKER 9
+};
+
 #define WAIT_FOLLOWDIST 48
 #define HUNT_FOLLOWDIST 64
 
@@ -187,11 +203,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_SPOTSND my->skill[11]
 #define MONSTER_SPOTVAR my->skill[12]
 #define MONSTER_CLICKED my->skill[13]
-#define MONSTER_SHOPXS my->skill[14]
-#define MONSTER_SHOPYS my->skill[15]
-#define MONSTER_SHOPXE my->skill[16]
-#define MONSTER_SHOPYE my->skill[17]
-#define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
 
 #define MONSTER_IDLEVAR myStats->monster_idlevar
@@ -450,6 +461,9 @@ static const int MONSTER_SPELLCAST_NONE = 0;
 static const int MONSTER_SPELLCAST_SMALL_HUMANOID = 1;
 static const int MONSTER_SPELLCAST_HUMANOID = 2;
 
+//--monster NPC language lines
+static const int MONSTER_NPC_DIALOGUE_LINES = 10;
+
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
@@ -462,6 +476,8 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
+// monster custom NPC chatter
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
 
 //-----RACE SPECIFIC CONSTANTS-----
 

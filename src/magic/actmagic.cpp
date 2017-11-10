@@ -1834,51 +1834,59 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
 							{
-								playSoundEntity(my, 66, 128);
-								playSoundEntity(my, 67, 128);
-
-								// spawn several rock items //TODO: This should really be its own function.
-								i = 8 + rand() % 4;
-								for ( c = 0; c < i; c++ )
+								if ( parent && parent->behavior == &actPlayer && MAPFLAG_DISABLEDIGGING )
 								{
-									entity = newEntity(-1, 1, map.entities);
-									entity->flags[INVISIBLE] = true;
-									entity->flags[UPDATENEEDED] = true;
-									entity->x = hit.mapx * 16 + 4 + rand() % 8;
-									entity->y = hit.mapy * 16 + 4 + rand() % 8;
-									entity->z = -6 + rand() % 12;
-									entity->sizex = 4;
-									entity->sizey = 4;
-									entity->yaw = rand() % 360 * PI / 180;
-									entity->vel_x = (rand() % 20 - 10) / 10.0;
-									entity->vel_y = (rand() % 20 - 10) / 10.0;
-									entity->vel_z = -.25 - (rand() % 5) / 10.0;
-									entity->flags[PASSABLE] = true;
-									entity->behavior = &actItem;
-									entity->flags[USERFLAG1] = true; // no collision: helps performance
-									entity->skill[10] = GEM_ROCK;    // type
-									entity->skill[11] = WORN;        // status
-									entity->skill[12] = 0;           // beatitude
-									entity->skill[13] = 1;           // count
-									entity->skill[14] = 0;           // appearance
-									entity->skill[15] = false;       // identified
+									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
+									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.
 								}
-
-								map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
-								// send wall destroy info to clients
-								for ( c = 1; c < MAXPLAYERS; c++ )
+								else
 								{
-									if ( client_disconnected[c] == true )
+									playSoundEntity(my, 66, 128);
+									playSoundEntity(my, 67, 128);
+
+									// spawn several rock items //TODO: This should really be its own function.
+									i = 8 + rand() % 4;
+									for ( c = 0; c < i; c++ )
 									{
-										continue;
+										entity = newEntity(-1, 1, map.entities);
+										entity->flags[INVISIBLE] = true;
+										entity->flags[UPDATENEEDED] = true;
+										entity->x = hit.mapx * 16 + 4 + rand() % 8;
+										entity->y = hit.mapy * 16 + 4 + rand() % 8;
+										entity->z = -6 + rand() % 12;
+										entity->sizex = 4;
+										entity->sizey = 4;
+										entity->yaw = rand() % 360 * PI / 180;
+										entity->vel_x = (rand() % 20 - 10) / 10.0;
+										entity->vel_y = (rand() % 20 - 10) / 10.0;
+										entity->vel_z = -.25 - (rand() % 5) / 10.0;
+										entity->flags[PASSABLE] = true;
+										entity->behavior = &actItem;
+										entity->flags[USERFLAG1] = true; // no collision: helps performance
+										entity->skill[10] = GEM_ROCK;    // type
+										entity->skill[11] = WORN;        // status
+										entity->skill[12] = 0;           // beatitude
+										entity->skill[13] = 1;           // count
+										entity->skill[14] = 0;           // appearance
+										entity->skill[15] = false;       // identified
 									}
-									strcpy((char*)net_packet->data, "WALD");
-									SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
-									SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
-									net_packet->address.host = net_clients[c - 1].host;
-									net_packet->address.port = net_clients[c - 1].port;
-									net_packet->len = 8;
-									sendPacketSafe(net_sock, -1, net_packet, c - 1);
+
+									map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] = 0;
+									// send wall destroy info to clients
+									for ( c = 1; c < MAXPLAYERS; c++ )
+									{
+										if ( client_disconnected[c] == true )
+										{
+											continue;
+										}
+										strcpy((char*)net_packet->data, "WALD");
+										SDLNet_Write16((Uint16)hit.mapx, &net_packet->data[4]);
+										SDLNet_Write16((Uint16)hit.mapy, &net_packet->data[6]);
+										net_packet->address.host = net_clients[c - 1].host;
+										net_packet->address.port = net_clients[c - 1].port;
+										net_packet->len = 8;
+										sendPacketSafe(net_sock, -1, net_packet, c - 1);
+									}
 								}
 							}
 						}
@@ -2346,8 +2354,8 @@ void createParticle1(Entity* caster, int player)
 	Entity* entity = newEntity(-1, 1, map.entities);
 	entity->sizex = 0;
 	entity->sizey = 0;
-	entity->x = caster->x + 32 * cos(caster->yaw);
-	entity->y = caster->y + 32 * sin(caster->yaw);
+	entity->x = caster->x;
+	entity->y = caster->y;
 	entity->z = -7;
 	entity->vel_z = 0.3;
 	entity->yaw = (rand() % 360) * PI / 180.0;
@@ -2360,34 +2368,20 @@ void createParticle1(Entity* caster, int player)
 	entity->flags[INVISIBLE] = true;
 	entity->setUID(-3);
 
-	createParticle2(entity);
-	createParticleDot(entity);
-	/*entity = newEntity(574, 1, map.entities);
-	entity->sizex = 1;
-	entity->sizey = 1;
-	entity->x = x;
-	entity->y = y;
-	entity->z = 0;
-	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->skill[0] = 1000;
-	entity->behavior = &actParticleCircle;
-	entity->sprite = 574;
-	entity->flags[PASSABLE] = true;
-	entity->setUID(-3);*/
 }
 
-void createParticle2(Entity* parent)
+void createParticleCircling(Entity* parent, int duration, int sprite)
 {
-	Entity* entity = newEntity(174, 1, map.entities);
+	Entity* entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 8;
 	entity->z = -7;
-	entity->vel_z = 0.3;
+	entity->vel_z = 0.15;
 	entity->yaw = (rand() % 360) * PI / 180.0;
-	entity->skill[0] = 60;
+	entity->skill[0] = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2398,16 +2392,16 @@ void createParticle2(Entity* parent)
 
 	real_t tmp = entity->yaw;
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 8;
 	entity->z = -7;
-	entity->vel_z = 0.3;
+	entity->vel_z = 0.15;
 	entity->yaw = tmp + (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2416,16 +2410,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 8;
 	entity->z = -7;
-	entity->vel_z = 0.3;
+	entity->vel_z = 0.15;
 	entity->yaw = tmp - (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2434,16 +2428,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 16;
 	entity->z = -12;
-	entity->vel_z = 0.4;
+	entity->vel_z = 0.2;
 	entity->yaw = tmp;
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2452,16 +2446,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 16;
 	entity->z = -12;
-	entity->vel_z = 0.4;
+	entity->vel_z = 0.2;
 	entity->yaw = tmp + (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2470,16 +2464,16 @@ void createParticle2(Entity* parent)
 	entity->flags[PASSABLE] = true;
 	entity->setUID(-3);
 
-	entity = newEntity(174, 1, map.entities);
+	entity = newEntity(sprite, 1, map.entities);
 	entity->sizex = 1;
 	entity->sizey = 1;
 	entity->x = parent->x;
 	entity->y = parent->y;
 	entity->focalx = 16;
 	entity->z = -12;
-	entity->vel_z = 0.4;
+	entity->vel_z = 0.2;
 	entity->yaw = tmp - (2 * PI / 3);
-	entity->skill[0] = 60;
+	entity->particleDuration = duration;
 	entity->skill[1] = -1;
 	//entity->scalex = 0.01;
 	//entity->scaley = 0.01;
@@ -2494,18 +2488,8 @@ void createParticle2(Entity* parent)
 
 void actParticleCircle(Entity* my)
 {
-	//Entity* entity = newEntity(sprite, 1, map.entities);
 	if ( PARTICLE_LIFE < 0 )
 	{
-		if ( PARTICLE_CASTER != -1 )
-		{
-			//spawnMagicEffectParticles(my->x, my->y, my->z, 171);
-			//spell_summonFamiliar(PARTICLE_CASTER);
-			playSoundEntity(my, 164, 128);
-			spawnExplosion(my->x, my->y, 0);
-			//summonMonster(SKELETON, my->x, my->y);
-		}
-		my->removeLightField();
 		list_RemoveNode(my->mynode);
 		return;
 	}
@@ -2518,27 +2502,20 @@ void actParticleCircle(Entity* my)
 			my->fskill[0] = my->fskill[0] * 1.05;
 		}
 		my->z += my->vel_z;
-		if ( PARTICLE_CASTER == -1 )
+		if ( my->focalx > 0.05 )
 		{
-
-			if ( my->focalx > 0.05 )
+			if ( my->vel_z == 0.15 )
 			{
-				if ( my->vel_z == 0.3 )
-				{
-					my->focalx = my->focalx * 0.98;
-				}
-				else
-				{
-					my->focalx = my->focalx * 0.95;
-				}
+				my->focalx = my->focalx * 0.97;
 			}
-			my->scalex *= 0.99;
-			my->scaley *= 0.99;
-			my->scalez *= 0.99;
-			//my->scalex = my->scalex * 1.1;
-			//my->scaley = my->scaley * 1.1;
+			else
+			{
+				my->focalx = my->focalx * 0.97;
+			}
 		}
-		//my->z -= 0.01;
+		my->scalex *= 0.995;
+		my->scaley *= 0.995;
+		my->scalez *= 0.995;
 	}
 }
 
@@ -2969,6 +2946,18 @@ void actParticleTimer(Entity* my)
 					}
 				}
 			}
+			else if ( my->particleTimerEndAction == PARTICLE_EFFECT_PORTAL_SPAWN )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent )
+				{
+					parent->flags[INVISIBLE] = false;
+					serverUpdateEntityFlag(parent, INVISIBLE);
+					playSoundEntity(parent, 164, 128);
+				}
+				spawnExplosion(my->x, my->y, 0);
+				my->removeLightField();
+			}
 		}
 		list_RemoveNode(my->mynode);
 		return;
@@ -2979,7 +2968,7 @@ void actParticleTimer(Entity* my)
 		if ( my->particleTimerPreDelay <= 0 )
 		{
 			// shoot particles for the duration of the timer, centered at caster.
-			if ( my->particleTimerCountdownAction == 1 )
+			if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SHOOT_PARTICLES )
 			{
 				Entity* parent = uidToEntity(my->parent);
 				// shoot drops to the sky
@@ -3003,6 +2992,18 @@ void actParticleTimer(Entity* my)
 						entity_uids--;
 					}
 					entity->setUID(-3);
+				}
+			}
+			// fire once off.
+			else if ( my->particleTimerCountdownAction == PARTICLE_TIMER_ACTION_SPAWN_PORTAL )
+			{
+				Entity* parent = uidToEntity(my->parent);
+				if ( parent && my->particleTimerCountdownAction < 100 )
+				{
+					playSoundEntityLocal(parent, 167, 128);
+					createParticleDot(parent);
+					createParticleCircling(parent, 100, my->particleTimerCountdownSprite);
+					my->particleTimerCountdownAction = 0;
 				}
 			}
 		}

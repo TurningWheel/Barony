@@ -81,6 +81,11 @@ class Entity
 	Sint32& crystalHoverDirection; // animation, waiting/up/down floating state
 	Sint32& crystalHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
 
+	// Pedestal Orb skills
+	Sint32& orbInitialised; // 1 if init, else 0
+	Sint32& orbHoverDirection; // animation, waiting/up/down floating state
+	Sint32& orbHoverWaitTimer; // animation, if waiting state, then wait this many ticks before moving to next state
+
 	// Item skills
 	Sint32& itemNotMoving;
 
@@ -159,6 +164,11 @@ public:
 	real_t& monsterWeaponYaw;
 	Sint32& monsterMoveTime;
 	Sint32& monsterHitTime;
+	Sint32& monsterPathBoundaryXStart;
+	Sint32& monsterPathBoundaryYStart;
+	Sint32& monsterPathBoundaryXEnd;
+	Sint32& monsterPathBoundaryYEnd;
+	Sint32& monsterStoreType;
 
 	real_t& monsterLookDir;
 
@@ -225,6 +235,34 @@ public:
 	Sint32& doorMaxHealth;
 	real_t& doorStartAng;
 
+	//--PUBLIC PEDESTAL SKILLS--
+	Sint32& pedestalHasOrb;
+	Sint32& pedestalOrbType;
+	Sint32& pedestalInvertedPower;
+	Sint32& pedestalInGround;
+	Sint32& pedestalInit;
+	Sint32& pedestalAmbience;
+
+	real_t& orbStartZ; // mid point of animation, starting height.
+	real_t& orbMaxZVelocity;
+	real_t& orbMinZVelocity;
+	real_t& orbTurnVelocity; // how fast to turn.
+
+	//--PUBLIC PORTAL SKILLS--
+	Sint32& portalAmbience;;
+	Sint32& portalInit;
+	Sint32& portalNotSecret;
+	Sint32& portalVictoryType;
+	Sint32& portalFireAnimation;
+
+	//--PUBLIC TELEPORTER SKILLS--
+	Sint32& teleporterX;
+	Sint32& teleporterY;
+	Sint32& teleporterType;
+	Sint32& teleporterAmbience;
+
+	void pedestalOrbInit(); // init orb properties
+
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
 
@@ -287,6 +325,8 @@ public:
 	bool teleportRandom();
 	// teleport entity to a target, within a radius dist (range in whole tile lengths)
 	bool teleportAroundEntity(const Entity* target, int dist);
+	// teleport entity to fixed position with appropriate sounds, for actTeleporter.
+	bool teleporterMove(int x, int y, int type);
 
 	//void entityAwardXP(Entity *dest, Entity *src, bool share, bool root);
 	void awardXP(Entity* src, bool share, bool root);
@@ -303,6 +343,9 @@ public:
 	bool insectoidCanWieldItem(const Item& item) const;
 
 	bool monsterWantsItem(const Item& item, Item**& shouldEquip, node_t*& replaceInventoryItem) const;
+
+	void createPathBoundariesNPC();
+	void humanSetLimbsClient(int bodypart);
 
 	/*
 	 * Check if the goatman can wield the item, and if so, is it something it wants? E.g. does it really want to carry 2 sets of armor?
@@ -348,6 +391,10 @@ public:
 	void actChest();
 	void actPowerCrystal();
 	void actGate();
+	void actPedestalBase();
+	void actPedestalOrb();
+	void actMidGamePortal();
+	void actTeleporter();
 
 	Monster getRace() const
 	{
@@ -603,6 +650,9 @@ void actStalagFloor(Entity* my);
 void actStalagCeiling(Entity* my);
 void actStalagColumn(Entity* my);
 
+//---Ceiling Tile functions---
+void actCeilingTile(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
@@ -611,9 +661,9 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 //checks if a sprite falls in certain sprite ranges
 
-static const int NUM_ITEM_STRINGS = 213;
+static const int NUM_ITEM_STRINGS = 218;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 116;
+static const int NUM_EDITOR_SPRITES = 119;
 static const int NUM_EDITOR_TILES = 208;
 
 int checkSpriteType(Sint32 sprite);
@@ -641,3 +691,4 @@ bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
+void playerStatIncrease(int playerClass, int chosenStats[3]);

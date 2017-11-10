@@ -111,6 +111,7 @@ bool* shoparea = NULL;
 bool shootmode = false;
 Sint8 minimap[64][64];
 bool loadnextlevel = false;
+int skipLevelsOnLoad = 0;
 bool loading = false;
 int currentlevel = 0, minotaurlevel = 0;
 bool secretlevel = false;
@@ -177,6 +178,7 @@ int* palette;
 
 // video definitions
 polymodel_t* polymodels = NULL;
+bool useModelCache = false;
 list_t ttfTextHash[HASH_SIZE];
 TTF_Font* ttf8 = NULL;
 TTF_Font* ttf12 = NULL;
