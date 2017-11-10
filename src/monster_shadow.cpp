@@ -376,6 +376,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -535,8 +536,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 									}
 									my->attack(MONSTER_POSE_SPECIAL_WINDUP1, 0, nullptr);
 									my->shadowTeleportToTarget(target, 7);
-									myStats->EFFECTS[EFF_INVISIBLE] = true;
-									myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = TICKS_PER_SECOND * 10; // 10 seconds.
+									my->setEffect(EFF_INVISIBLE, true, TICKS_PER_SECOND * 10, true);
 								}
 							}
 						}
@@ -1317,7 +1317,7 @@ void Entity::shadowTeleportToTarget(const Entity* target, int range)
 	spellTimer->particleTimerVariable1 = range; // distance of teleport in tiles
 	if ( multiplayer == SERVER )
 	{
-		serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHADOW_TELEPORT, 593);
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHADOW_TELEPORT, 625);
 	}
 }
 
