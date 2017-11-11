@@ -892,8 +892,10 @@ void actPlayer(Entity* my)
 		{
 			int x = std::min(std::max<unsigned int>(0, floor(my->x / 16)), map.width - 1);
 			int y = std::min(std::max<unsigned int>(0, floor(my->y / 16)), map.height - 1);
-			if ( animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]]
+				|| lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
+				// can swim in lavatiles or swimmingtiles only.
 				if ( rand() % 400 == 0 && multiplayer != CLIENT )
 				{
 					my->increaseSkill(PRO_SWIMMING);
@@ -907,14 +909,14 @@ void actPlayer(Entity* my)
 					{
 						messagePlayer(PLAYER_NUM, language[573]);
 					}
-					else
+					else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						playSound(136, 128);
 					}
 				}
 				if ( multiplayer != CLIENT )
 				{
-					if ( !lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+					if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 					{
 						if ( my->flags[BURNING] )
 						{

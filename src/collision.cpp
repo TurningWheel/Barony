@@ -218,7 +218,8 @@ bool entityInsideTile(Entity* entity, int x, int y, int z)
 							{
 								isMonster = true;
 							}
-						if ( animatedtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster )
+						if ( (swimmingtiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[z + y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+							&& isMonster )
 						{
 							return true;
 						}
@@ -370,7 +371,9 @@ int barony_clear(real_t tx, real_t ty, Entity* my)
 					return 0;
 				}
 	
-				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] || (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] && isMonster)) )
+				if ( !levitating && (!map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height] 
+					|| ((swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+						&& isMonster)) )
 				{
 					// no floor
 					hit.x = x * 16 + 8;
@@ -846,7 +849,8 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || swimmingtiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -987,7 +991,8 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 				{
 					isMonster = true;
 				}
-			if ( !map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster) )
+			if ( !map.tiles[index] 
+				|| ((swimmingtiles[map.tiles[index]] || swimmingtiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
