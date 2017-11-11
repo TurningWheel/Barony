@@ -25,7 +25,7 @@ char datadir[1024];
 
 // language stuff
 char languageCode[32] = { 0 };
-char** language = NULL;
+char** language = nullptr;
 
 // input stuff
 int reversemouse = 0;
@@ -34,12 +34,12 @@ Uint32 impulses[NUMIMPULSES];
 Uint32 joyimpulses[NUM_JOY_IMPULSES];
 Uint32 lastkeypressed = 0;
 Sint8 keystatus[512];
-char* inputstr = NULL;
+char* inputstr = nullptr;
 int inputlen = 0;
 Sint8 mousestatus[6];
 Sint8 joystatus[NUM_JOY_STATUS];
 Sint8 joy_trigger_status[NUM_JOY_TRIGGER_STATUS];
-Entity** clickmap = NULL;
+Entity** clickmap = nullptr;
 bool capture_mouse = true;
 string lastname;
 
@@ -55,31 +55,31 @@ bool directConnect = true;
 #endif
 char address[64];
 IPaddress net_server;
-IPaddress* net_clients = NULL;
-UDPsocket net_sock = NULL;
-TCPsocket net_tcpsock = NULL;
-UDPpacket* net_packet = NULL;
-TCPsocket* net_tcpclients = NULL;
-SDLNet_SocketSet tcpset = NULL;
+IPaddress* net_clients = nullptr;
+UDPsocket net_sock = nullptr;
+TCPsocket net_tcpsock = nullptr;
+UDPpacket* net_packet = nullptr;
+TCPsocket* net_tcpclients = nullptr;
+SDLNet_SocketSet tcpset = nullptr;
 list_t safePacketsSent, safePacketsReceived[MAXPLAYERS];
 bool receivedclientnum = false;
-char* window_title = NULL;
+char* window_title = nullptr;
 bool softwaremode = false;
 SDL_TimerID timer;
-SDL_Window* screen = NULL;
+SDL_Window* screen = nullptr;
 #ifdef APPLE
-SDL_Renderer* renderer = NULL;
+SDL_Renderer* renderer = nullptr;
 #else
 SDL_GLContext renderer;
 #endif
-SDL_Surface* mainsurface = NULL;
+SDL_Surface* mainsurface = nullptr;
 SDL_Event event;
 bool firstmouseevent = true;
 int fullscreen = 0;
 bool smoothlighting = false;
 list_t removedEntities;
 list_t entitiesToDelete[MAXPLAYERS];
-Entity* client_selected[MAXPLAYERS] = {NULL, NULL, NULL, NULL};
+Entity* client_selected[MAXPLAYERS] = {nullptr, nullptr, nullptr, nullptr};
 bool inrange[MAXPLAYERS];
 Sint32 client_classes[MAXPLAYERS];
 Uint32 client_keepalive[MAXPLAYERS];
@@ -101,11 +101,11 @@ Sint32 newcamx, newcamy;
 Uint32 entity_uids = 1, lastEntityUIDs = 1;
 view_t camera;
 map_t map;
-voxel_t** models = NULL;
+voxel_t** models = nullptr;
 list_t button_l;
 list_t light_l;
 Uint32 mapseed;
-bool* shoparea = NULL;
+bool* shoparea = nullptr;
 
 // game variables
 bool shootmode = false;
@@ -134,7 +134,7 @@ int kills[NUMMONSTERS];
 // messages
 list_t messages;
 list_t command_history;
-node_t* chosen_command = NULL;
+node_t* chosen_command = nullptr;
 bool command = false;
 char command_str[128];
 
@@ -162,7 +162,7 @@ int openwindow = 0, savewindow = 0, newwindow = 0;
 int slidery = 0, slidersize = 16;
 int menuDisappear = 0;
 int selectedFile = 0;
-char** d_names = NULL;
+char** d_names = nullptr;
 unsigned long d_names_length = 0;
 char filename[128];
 char oldfilename[128];
@@ -177,32 +177,34 @@ SDL_Cursor* cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill
 int* palette;
 
 // video definitions
-polymodel_t* polymodels = NULL;
+polymodel_t* polymodels = nullptr;
 bool useModelCache = false;
 list_t ttfTextHash[HASH_SIZE];
-TTF_Font* ttf8 = NULL;
-TTF_Font* ttf12 = NULL;
-TTF_Font* ttf16 = NULL;
-SDL_Surface* font8x8_bmp = NULL;
-SDL_Surface* font12x12_bmp = NULL;
-SDL_Surface* font16x16_bmp = NULL;
-SDL_Surface* fancyWindow_bmp = NULL;
-SDL_Surface** sprites = NULL;
-SDL_Surface** tiles = NULL;
+TTF_Font* ttf8 = nullptr;
+TTF_Font* ttf12 = nullptr;
+TTF_Font* ttf16 = nullptr;
+SDL_Surface* font8x8_bmp = nullptr;
+SDL_Surface* font12x12_bmp = nullptr;
+SDL_Surface* font16x16_bmp = nullptr;
+SDL_Surface* fancyWindow_bmp = nullptr;
+SDL_Surface** sprites = nullptr;
+SDL_Surface** tiles = nullptr;
 Uint32 imgref = 1, vboref = 1;
-GLuint* texid = NULL;
+GLuint* texid = nullptr;
 bool disablevbos = false;
 Uint32 fov = 65;
 Uint32 fpsLimit = 60;
-//GLuint *vboid=NULL, *vaoid=NULL;
+//GLuint *vboid=nullptr, *vaoid=nullptr;
 SDL_Surface** allsurfaces;
 Uint32 numsprites, numtiles, nummodels;
-bool* animatedtiles = NULL, *lavatiles = NULL;
+bool *animatedtiles = nullptr;
+bool *lavatiles = nullptr;
+bool *swimmingtiles = nullptr;
 int rscale = 1;
 real_t vidgamma = 1.0f;
-real_t* zbuffer = NULL;
-Sint32* lightmap = NULL;
-bool* vismap = NULL;
+real_t* zbuffer = nullptr;
+Sint32* lightmap = nullptr;
+bool* vismap = nullptr;
 bool mode3d = false;
 
 // audio definitions
@@ -214,10 +216,10 @@ int sfxvolume = 64;
 int musvolume = 48;
 
 // fun stuff
-SDL_Surface* title_bmp = NULL;
-SDL_Surface* logo_bmp = NULL;
-SDL_Surface* cursor_bmp = NULL;
-SDL_Surface* cross_bmp = NULL;
+SDL_Surface* title_bmp = nullptr;
+SDL_Surface* logo_bmp = nullptr;
+SDL_Surface* cursor_bmp = nullptr;
+SDL_Surface* cross_bmp = nullptr;
 int shaking = 0, bobbing = 0;
 bool fadeout = false, fadefinished = false;
 int fadealpha = 0;
@@ -310,7 +312,7 @@ int sgn(real_t x)
 
 int numdigits_sint16(Sint16 x)
 {
-	return snprintf(NULL, 0, "%d", x);
+	return snprintf(nullptr, 0, "%d", x);
 }
 
 /*-------------------------------------------------------------------------------
