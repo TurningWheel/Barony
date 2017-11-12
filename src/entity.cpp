@@ -4295,13 +4295,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
-						if ( hit.entity->skill[0] == 0 )
+						switch ( hit.entity->furnitureType )
 						{
-							messagePlayer(player, language[668]);
-						}
-						else
-						{
-							messagePlayer(player, language[669]);
+							case FURNITURE_CHAIR:
+								messagePlayer(player, language[669]);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(player, language[668]);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(player, language[2509], language[2505]);
+								break;
+							case FURNITURE_BUNKBED:
+								messagePlayer(player, language[2509], language[2506]);
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(player, language[2509], language[2507]);
+								break;
+							default:
+								break;
 						}
 					}
 				}
@@ -4326,13 +4338,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 					}
 					else if ( hit.entity->behavior == &::actFurniture )
 					{
-						if ( hit.entity->skill[0] == 0 )
+						switch ( hit.entity->furnitureType )
 						{
-							messagePlayer(player, language[672]);
-						}
-						else
-						{
-							messagePlayer(player, language[673]);
+							case FURNITURE_CHAIR:
+								messagePlayer(player, language[673]);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(player, language[672]);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(player, language[2510], language[2505]);
+								break;
+							case FURNITURE_BUNKBED:
+								messagePlayer(player, language[2510], language[2506]);
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(player, language[2510], language[2507]);
+								break;
+							default:
+								break;
 						}
 					}
 				}
@@ -4346,13 +4370,25 @@ void Entity::attack(int pose, int charge, Entity* target)
 				}
 				else if ( hit.entity->behavior == &::actFurniture )
 				{
-					if ( hit.entity->skill[0] == 0 )
+					switch ( hit.entity->furnitureType )
 					{
-						updateEnemyBar(this, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
-					}
-					else
-					{
-						updateEnemyBar(this, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
+						case FURNITURE_CHAIR:
+							updateEnemyBar(this, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_TABLE:
+							updateEnemyBar(this, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_BED:
+							updateEnemyBar(this, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_BUNKBED:
+							updateEnemyBar(this, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_PODIUM:
+							updateEnemyBar(this, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						default:
+							break;
 					}
 				}
 			}
