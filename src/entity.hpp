@@ -274,6 +274,7 @@ public:
 	Sint32& spellTrapAmbience;
 	Sint32& spellTrapInit;
 	Sint32& spellTrapCounter;
+	Sint32& spellTrapReset;
 
 	void pedestalOrbInit(); // init orb properties
 	bool magicFallingCollision();

@@ -134,6 +134,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	spellTrapAmbience(skill[6]),
 	spellTrapInit(skill[7]),
 	spellTrapCounter(skill[8]),
+	spellTrapReset(skill[9]),
 	ceilingTileModel(skill[0])
 {
 	int c;

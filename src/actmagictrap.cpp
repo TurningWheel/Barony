@@ -55,10 +55,10 @@ void Entity::actMagicTrapCeiling()
 	}
 	if ( circuit_status != CIRCUIT_ON )
 	{
+		spellTrapReset = 0;
 		spellTrapCounter = spellTrapRefireRate; //shoost instantly!
 		return;
 	}
-
 
 	if ( !spellTrapInit )
 	{
@@ -107,12 +107,18 @@ void Entity::actMagicTrapCeiling()
 	if ( spellTrapCounter > spellTrapRefireRate )
 	{
 		spellTrapCounter = 0; // reset timer.
+		if ( spellTrapReset == 0 )
+		{
+			// once off magic particles. reset once power is cut.
+			spawnMagicEffectParticles(x, y, z, 171);
+			spellTrapReset = 1;
+		}
 		Entity* entity = castSpell(getUID(), getSpellFromID(spellTrapType), false, true);
 		if ( ceilingModel && entity )
 		{
 			entity->x = x;
 			entity->y = y;
-			entity->z = ceilingModel->z + 10;
+			entity->z = ceilingModel->z - 5;
 			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(spellTrapType)->elements.first->element))->overload_multiplier);
 			entity->vel_x = 0.0;
 			entity->vel_y = 0.0;
