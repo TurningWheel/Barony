@@ -84,6 +84,12 @@ int checkSpriteType(Sint32 sprite)
 	case 118:
 		//teleporter
 		return 9;
+	case 119:
+		//ceiling tile model
+		return 10;
+	case 120:
+		//magic ceiling trap
+		return 11;
 	default:
 		return 0;
 		break;
@@ -655,7 +661,9 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"LEVER WITH TIMER",
 	"PEDESTAL",
 	"MID PORTAL",
-	"TELEPORTER"
+	"TELEPORTER",
+	"CEILING TILE MODEL",
+	"SPELL TRAP CEILING"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
@@ -1176,6 +1184,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->pedestalHasOrb = entityToCopy->pedestalHasOrb;
 			entityNew->pedestalInvertedPower = entityToCopy->pedestalInvertedPower;
 			entityNew->pedestalInGround = entityToCopy->pedestalInGround;
+			entityNew->pedestalLockOrb = entityToCopy->pedestalLockOrb;
 		}
 		else
 		{
@@ -1184,6 +1193,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->pedestalHasOrb = 0;
 			entityNew->pedestalInvertedPower = 0;
 			entityNew->pedestalInGround = 0;
+			entityNew->pedestalLockOrb = 0;
 		}
 	}
 	// teleporter
@@ -1202,6 +1212,43 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->teleporterX = 1;
 			entityNew->teleporterY = 1;
 			entityNew->teleporterType = 0;
+		}
+	}
+	// ceiling tile
+	else if ( spriteType == 10 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->ceilingTileModel = entityToCopy->ceilingTileModel;
+		}
+		else
+		{
+			// set default new entity attributes.
+			entityNew->ceilingTileModel = 0;
+		}
+	}
+	// spell trap
+	else if ( spriteType == 11 )
+	{
+		if ( entityToCopy != nullptr )
+		{
+			// copy old entity attributes to newly created.
+			entityNew->spellTrapType = entityToCopy->spellTrapType;
+			entityNew->spellTrapRefire = entityToCopy->spellTrapRefire;
+			entityNew->spellTrapLatchPower = entityToCopy->spellTrapLatchPower;
+			entityNew->spellTrapCeilingModel = entityToCopy->spellTrapCeilingModel;
+			entityNew->spellTrapRefireRate = entityToCopy->spellTrapRefireRate;
+		}
+		else
+		{
+			// set default new entity attributes.
+			// copy old entity attributes to newly created.
+			entityNew->spellTrapType = -1;
+			entityNew->spellTrapRefire = -1;
+			entityNew->spellTrapLatchPower = 0;
+			entityNew->spellTrapCeilingModel = 0;
+			entityNew->spellTrapRefireRate = 1;
 		}
 	}
 

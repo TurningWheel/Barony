@@ -1481,6 +1481,7 @@ void buttonSpriteProperties(button_t* my)
 			snprintf(spriteProperties[1], 2, "%d", static_cast<int>(selectedEntity->pedestalHasOrb));
 			snprintf(spriteProperties[2], 2, "%d", static_cast<int>(selectedEntity->pedestalInvertedPower));
 			snprintf(spriteProperties[3], 2, "%d", static_cast<int>(selectedEntity->pedestalInGround));
+			snprintf(spriteProperties[4], 2, "%d", static_cast<int>(selectedEntity->pedestalLockOrb));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
 			menuVisible = 0;
@@ -1488,8 +1489,8 @@ void buttonSpriteProperties(button_t* my)
 			newwindow = 10;
 			subx1 = xres / 2 - 170;
 			subx2 = xres / 2 + 170;
-			suby1 = yres / 2 - 100;
-			suby2 = yres / 2 + 100;
+			suby1 = yres / 2 - 110;
+			suby2 = yres / 2 + 110;
 			strcpy(subtext, "Pedestal Properties:");
 			break;
 		case 9:
@@ -1506,6 +1507,36 @@ void buttonSpriteProperties(button_t* my)
 			suby1 = yres / 2 - 100;
 			suby2 = yres / 2 + 100;
 			strcpy(subtext, "Teleporter Properties:");
+			break;
+		case 10:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->ceilingTileModel));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 12;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
+			strcpy(subtext, "Ceiling Tile Properties:");
+			break;
+		case 11:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
+			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
+			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
+			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapCeilingModel));
+			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 13;
+			subx1 = xres / 2 - 200;
+			subx2 = xres / 2 + 200;
+			suby1 = yres / 2 - 110;
+			suby2 = yres / 2 + 110;
+			strcpy(subtext, "Spell Trap Properties:");
 			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
@@ -2330,11 +2361,22 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->pedestalHasOrb = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->pedestalInvertedPower = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->pedestalInGround = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->pedestalLockOrb = (Sint32)atoi(spriteProperties[4]);
 				break;
 			case 9: //teleporter
 				selectedEntity->teleporterX = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->teleporterY = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->teleporterType = (Sint32)atoi(spriteProperties[2]);
+				break;
+			case 10: //ceiling tile model
+				selectedEntity->ceilingTileModel = (Sint32)atoi(spriteProperties[0]);
+				break;
+			case 11: //spell trap ceiling
+				selectedEntity->spellTrapType = (Sint32)atoi(spriteProperties[0]);
+				selectedEntity->spellTrapRefire = (Sint32)atoi(spriteProperties[1]);
+				selectedEntity->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
+				selectedEntity->spellTrapCeilingModel = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->spellTrapRefireRate= (Sint32)atoi(spriteProperties[4]);
 				break;
 			default:
 				break;
