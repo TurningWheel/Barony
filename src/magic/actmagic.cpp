@@ -877,9 +877,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 						else if (hit.entity->behavior == &actDoor)
 						{
@@ -937,9 +934,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -999,9 +993,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 						else if (hit.entity->behavior == &actDoor)
 						{
@@ -1130,9 +1121,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 						else if (hit.entity->behavior == &actDoor)
 						{
@@ -1255,10 +1243,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[392]);
 							}
-							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -1343,9 +1328,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[395]);
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -1404,10 +1386,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[395]);
 							}
-							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -1460,10 +1439,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 									}
 								}
 							}
-							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -1523,9 +1499,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								parent->awardXP( hit.entity, true, true );
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 						else if (hit.entity->behavior == &actDoor)
 						{
@@ -1588,9 +1561,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								}
 							}
 							playSoundEntity(hit.entity, 28, 128);
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -1639,9 +1609,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							}
 						}
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						my->removeLightField();
-						list_RemoveNode(my->mynode);
-						return;
 					}
 				}
 				else if (!strcmp(element->name, spellElement_opening.name))
@@ -1741,9 +1708,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						}
 
 						spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-						my->removeLightField();
-						list_RemoveNode(my->mynode);
-						return;
 					}
 				}
 				else if (!strcmp(element->name, spellElement_dig.name))
@@ -1941,10 +1905,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[2422]);
 							}
-							my->removeLightField();
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -2048,9 +2009,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[2425]);
 							}
-							my->removeLightField();
-							list_RemoveNode(my->mynode);
-							return;
 						}
 					}
 				}
@@ -2104,7 +2062,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 				}
 
 				my->removeLightField();
-				list_RemoveNode(my->mynode);
+				if ( my->mynode )
+				{
+					list_RemoveNode(my->mynode);
+				}
 				return;
 			}
 		}

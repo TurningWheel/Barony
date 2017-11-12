@@ -976,6 +976,7 @@ void Entity::effectTimes()
 							messagePlayer(player, language[2449]);
 							updateClient = true;
 						}
+						break;
 					case EFF_SLOW:
 						messagePlayer(player, language[604]); // "You return to your normal speed."
 						break;
