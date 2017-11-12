@@ -166,13 +166,13 @@ void Entity::actFurniture()
 		furnitureInit = 1;
 		if ( !furnitureType )
 		{
-			furnitureInit = 15 + rand() % 5;
+			furnitureHealth = 15 + rand() % 5;
 		}
 		else
 		{
-			furnitureInit = 4 + rand() % 4;
+			furnitureHealth = 4 + rand() % 4;
 		}
-		furnitureMaxHealth = furnitureInit;
+		furnitureMaxHealth = furnitureHealth;
 		flags[BURNABLE] = true;
 	}
 	else
@@ -184,12 +184,12 @@ void Entity::actFurniture()
 			{
 				if ( ticks % 15 == 0 )
 				{
-					furnitureInit--;
+					furnitureHealth--;
 				}
 			}
 
 			// furniture mortality :p
-			if ( furnitureInit <= 0 )
+			if ( furnitureHealth <= 0 )
 			{
 				int c;
 				for ( c = 0; c < 5; c++ )
