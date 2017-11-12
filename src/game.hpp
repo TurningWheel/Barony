@@ -179,6 +179,7 @@ void actPedestalBase(Entity* my);
 void actPedestalOrb(Entity* my);
 void actMidGamePortal(Entity* my);
 void actTeleporter(Entity* my);
+void actMagicTrapCeiling(Entity* my);
 
 void startMessages();
 

@@ -271,8 +271,12 @@ public:
 	Sint32& spellTrapLatchPower;
 	Sint32& spellTrapCeilingModel;
 	Sint32& spellTrapRefireRate;
+	Sint32& spellTrapAmbience;
+	Sint32& spellTrapInit;
+	Sint32& spellTrapCounter;
 
 	void pedestalOrbInit(); // init orb properties
+	bool magicFallingCollision();
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -406,6 +410,7 @@ public:
 	void actPedestalOrb();
 	void actMidGamePortal();
 	void actTeleporter();
+	void actMagicTrapCeiling();
 
 	Monster getRace() const
 	{
