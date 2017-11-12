@@ -3094,6 +3094,9 @@ last of your magic is drained!#
 2505 bed#
 2506 bunkbed#
 2507 podium#
+2508 Your spell destroys the %s!#
+2509 You hit the %s!#
+2510 The %s breaks into pieces!#
 
 2600 Lorem ipsum dolor sit amet, consectetur adipiscing elit, sed do eiusmod tempor 
 incididunt ut labore et dolore magna aliqua. Ut enim ad minim veniam, quis nostrud 
