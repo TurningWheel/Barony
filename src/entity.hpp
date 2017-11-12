@@ -275,6 +275,13 @@ public:
 	Sint32& spellTrapInit;
 	Sint32& spellTrapCounter;
 	Sint32& spellTrapReset;
+	
+	//--PUBLIC FURNITURE SKILLS--
+	Sint32& furnitureType;
+	Sint32& furnitureInit;
+	Sint32& furnitureDir;
+	Sint32& furnitureHealth;
+	Sint32& furnitureMaxHealth;
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -412,6 +419,7 @@ public:
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	bool magicFallingCollision();
+	void actFurniture();
 
 	Monster getRace() const
 	{

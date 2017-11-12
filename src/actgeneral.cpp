@@ -149,51 +149,56 @@ void actEmpty(Entity* my)
 	// used on clients to permit dead reckoning and other interpolation
 }
 
-#define FURNITURE_TYPE my->skill[0]
-#define FURNITURE_INIT my->skill[1]
-#define FURNITURE_HEALTH my->skill[4]
-#define FURNITURE_MAXHEALTH my->skill[9]
-
 void actFurniture(Entity* my)
 {
-	if ( !FURNITURE_INIT )
+	if ( !my )
 	{
-		FURNITURE_INIT = 1;
-		if ( !FURNITURE_TYPE )
+		return;
+	}
+
+	my->actFurniture();
+}
+
+void Entity::actFurniture()
+{
+	if ( !furnitureInit )
+	{
+		furnitureInit = 1;
+		if ( !furnitureType )
 		{
-			FURNITURE_HEALTH = 15 + rand() % 5;
+			furnitureInit = 15 + rand() % 5;
 		}
 		else
 		{
-			FURNITURE_HEALTH = 4 + rand() % 4;
+			furnitureInit = 4 + rand() % 4;
 		}
-		FURNITURE_MAXHEALTH = FURNITURE_HEALTH;
-		my->flags[BURNABLE] = true;
+		furnitureMaxHealth = furnitureInit;
+		flags[BURNABLE] = true;
 	}
 	else
 	{
 		if ( multiplayer != CLIENT )
 		{
 			// burning
-			if ( my->flags[BURNING] )
+			if ( flags[BURNING] )
 			{
 				if ( ticks % 15 == 0 )
 				{
-					FURNITURE_HEALTH--;
+					furnitureInit--;
 				}
 			}
 
 			// furniture mortality :p
-			if ( FURNITURE_HEALTH <= 0 )
+			if ( furnitureInit <= 0 )
 			{
 				int c;
 				for ( c = 0; c < 5; c++ )
 				{
-					Entity* entity = spawnGib(my);
+					Entity* entity = spawnGib(this);
 					entity->flags[INVISIBLE] = false;
 					entity->sprite = 187; // Splinter.vox
-					entity->x = floor(my->x / 16) * 16 + 8;
-					entity->y = floor(my->y / 16) * 16 + 8;
+					entity->x = floor(x / 16) * 16 + 8;
+					entity->y = floor(y / 16) * 16 + 8;
 					entity->y += -3 + rand() % 6;
 					entity->x += -3 + rand() % 6;
 					entity->z = -5 + rand() % 10;
@@ -206,14 +211,14 @@ void actFurniture(Entity* my)
 					entity->fskill[3] = 0.04;
 					serverSpawnGibForClient(entity);
 				}
-				playSoundEntity(my, 176, 128);
+				playSoundEntity(this, 176, 128);
 				Entity* entity;
-				if ( (entity = uidToEntity(my->parent)) != NULL )
+				if ( (entity = uidToEntity(parent)) != NULL )
 				{
 					entity->skill[18] = 0; // drop the item that was on the table
 					serverUpdateEntitySkill(entity, 18);
 				}
-				list_RemoveNode(my->mynode);
+				list_RemoveNode(mynode);
 				return;
 			}
 
@@ -221,11 +226,11 @@ void actFurniture(Entity* my)
 			int i;
 			for (i = 0; i < MAXPLAYERS; i++)
 			{
-				if ( (i == 0 && selectedEntity == my) || (client_selected[i] == my) )
+				if ( (i == 0 && selectedEntity == this) || (client_selected[i] == this) )
 				{
 					if (inrange[i])
 					{
-						if ( FURNITURE_TYPE )
+						if ( furnitureType )
 						{
 							messagePlayer(i, language[476]);
 						}
