@@ -303,8 +303,6 @@ bool spellEffectDominate(Entity& my, spellElement_t& element, Entity& caster, En
 	}
 
 	spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my.sprite);
-	my.removeLightField();
-	list_RemoveNode(my.mynode);
 	return true;
 }
 
@@ -448,8 +446,6 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 	{
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
-	my.removeLightField();
-	list_RemoveNode(my.mynode);
 }
 
 void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent, int resistance)
@@ -621,8 +617,6 @@ void spellEffectStealWeapon(Entity& my, spellElement_t& element, Entity* parent,
 	{
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
-	my.removeLightField();
-	list_RemoveNode(my.mynode);
 	return;
 }
 
@@ -780,8 +774,6 @@ void spellEffectDrainSoul(Entity& my, spellElement_t& element, Entity* parent, i
 	{
 		spawnMagicEffectParticles(my.x, my.y, my.z, my.sprite);
 	}
-	my.removeLightField();
-	list_RemoveNode(my.mynode);
 	return;
 }
 
