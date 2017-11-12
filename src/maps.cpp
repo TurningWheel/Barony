@@ -4174,6 +4174,7 @@ void assignActions(map_t* map)
 
 				x = ((int)(entity->x)) >> 4;
 				y = ((int)(entity->y)) >> 4;
+				map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height] = 208; //entity->spellTrapCeilingModel
 				Entity* childEntity = nullptr;
 				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
 				{

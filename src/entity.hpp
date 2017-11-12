@@ -269,7 +269,7 @@ public:
 	Sint32& spellTrapType;
 	Sint32& spellTrapRefire;
 	Sint32& spellTrapLatchPower;
-	Sint32& spellTrapCeilingModel;
+	Sint32& spellTrapFloorTile;
 	Sint32& spellTrapRefireRate;
 	Sint32& spellTrapAmbience;
 	Sint32& spellTrapInit;

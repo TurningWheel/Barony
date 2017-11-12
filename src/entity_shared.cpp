@@ -1237,7 +1237,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->spellTrapType = entityToCopy->spellTrapType;
 			entityNew->spellTrapRefire = entityToCopy->spellTrapRefire;
 			entityNew->spellTrapLatchPower = entityToCopy->spellTrapLatchPower;
-			entityNew->spellTrapCeilingModel = entityToCopy->spellTrapCeilingModel;
+			entityNew->spellTrapFloorTile = entityToCopy->spellTrapFloorTile;
 			entityNew->spellTrapRefireRate = entityToCopy->spellTrapRefireRate;
 		}
 		else
@@ -1247,7 +1247,7 @@ void setSpriteAttributes(Entity* entityNew, Entity* entityToCopy, Entity* entity
 			entityNew->spellTrapType = -1;
 			entityNew->spellTrapRefire = -1;
 			entityNew->spellTrapLatchPower = 0;
-			entityNew->spellTrapCeilingModel = 0;
+			entityNew->spellTrapFloorTile = 0;
 			entityNew->spellTrapRefireRate = 1;
 		}
 	}
