@@ -277,7 +277,6 @@ public:
 	Sint32& spellTrapReset;
 
 	void pedestalOrbInit(); // init orb properties
-	bool magicFallingCollision();
 
 	// a pointer to the entity's location in a list (ie the map list of entities)
 	node_t* mynode;
@@ -412,6 +411,7 @@ public:
 	void actMidGamePortal();
 	void actTeleporter();
 	void actMagicTrapCeiling();
+	bool magicFallingCollision();
 
 	Monster getRace() const
 	{
