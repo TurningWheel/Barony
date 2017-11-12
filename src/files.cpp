@@ -534,6 +534,9 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->spellTrapFloorTile, sizeof(Sint32), 1, fp);
 						fread(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
 						break;
+					case 12:
+						fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+						break;
 					default:
 						break;
 				}
@@ -784,6 +787,9 @@ int saveMap(char* filename2)
 					fwrite(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
 					fwrite(&entity->spellTrapFloorTile, sizeof(Sint32), 1, fp);
 					fwrite(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
+					break;
+				case 12:
+					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
 					break;
 				default:
 					break;

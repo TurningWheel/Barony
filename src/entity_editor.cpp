@@ -140,7 +140,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
 	furnitureHealth(skill[4]),
-	furnitureMaxHealth(skill[9])
+	furnitureMaxHealth(skill[9]),
+	pistonCamDir(skill[0]),
+	pistonCamTimer(skill[1]),
+	pistonCamRotateSpeed(fskill[0])
 {
 	int c;
 	// add the entity to the entity list

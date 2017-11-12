@@ -165,7 +165,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	furnitureInit(skill[1]),
 	furnitureDir(skill[3]),
 	furnitureHealth(skill[4]),
-	furnitureMaxHealth(skill[9])
+	furnitureMaxHealth(skill[9]),
+	pistonCamDir(skill[0]),
+	pistonCamTimer(skill[1]),
+	pistonCamRotateSpeed(fskill[0])
 {
 	int c;
 	// add the entity to the entity list
@@ -4247,7 +4250,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					hit.entity = ohitentity;
 				}
 			}
-			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &::actChest )
+			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest )
 			{
 				int axe = 0;
 				if ( myStats->weapon )
@@ -4290,7 +4293,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, language[667]);
 					}
-					else if ( hit.entity->behavior == &actFurniture )
+					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						if ( hit.entity->skill[0] == 0 )
 						{
@@ -4321,7 +4324,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, language[671]);
 					}
-					else if ( hit.entity->behavior == &actFurniture )
+					else if ( hit.entity->behavior == &::actFurniture )
 					{
 						if ( hit.entity->skill[0] == 0 )
 						{
@@ -4341,7 +4344,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					updateEnemyBar(this, hit.entity, language[675], hit.entity->skill[3], hit.entity->skill[8]);
 				}
-				else if ( hit.entity->behavior == &actFurniture )
+				else if ( hit.entity->behavior == &::actFurniture )
 				{
 					if ( hit.entity->skill[0] == 0 )
 					{
