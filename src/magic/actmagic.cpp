@@ -23,117 +23,6 @@
 #include "../player.hpp"
 #include "magic.hpp"
 
-/*-------------------------------------------------------------------------------
-
-	act*
-
-	The following function describes an entity behavior. The function
-	takes a pointer to the entity that uses it as an argument.
-
--------------------------------------------------------------------------------*/
-
-#define MAGICTRAP_INIT my->skill[0]
-#define MAGICTRAP_SPELL my->skill[1]
-#define MAGICTRAP_DIRECTION my->skill[3]
-
-void actMagicTrap(Entity* my)
-{
-	if ( !MAGICTRAP_INIT )
-	{
-		MAGICTRAP_INIT = 1;
-		switch ( rand() % 8 )
-		{
-			case 0:
-				MAGICTRAP_SPELL = SPELL_FORCEBOLT;
-				break;
-			case 1:
-				MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
-				break;
-			case 2:
-				MAGICTRAP_SPELL = SPELL_COLD;
-				break;
-			case 3:
-				MAGICTRAP_SPELL = SPELL_FIREBALL;
-				break;
-			case 4:
-				MAGICTRAP_SPELL = SPELL_LIGHTNING;
-				break;
-			case 5:
-				MAGICTRAP_SPELL = SPELL_SLEEP;
-				break;
-			case 6:
-				MAGICTRAP_SPELL = SPELL_CONFUSE;
-				break;
-			case 7:
-				MAGICTRAP_SPELL = SPELL_SLOW;
-				break;
-			default:
-				MAGICTRAP_SPELL = SPELL_MAGICMISSILE;
-				break;
-		}
-		my->light = lightSphere(my->x / 16, my->y / 16, 3, 192);
-	}
-
-	// eliminate traps that have been destroyed.
-	if ( !checkObstacle(my->x, my->y, my, NULL) )
-	{
-		my->removeLightField();
-		list_RemoveNode(my->mynode);
-		return;
-	}
-
-	if ( multiplayer == CLIENT )
-	{
-		return;
-	}
-
-	if (my->ticks % TICKS_PER_SECOND == 0)
-	{
-		int oldir = 0;
-		int x = 0, y = 0;
-		switch (MAGICTRAP_DIRECTION)
-		{
-			case 0:
-				x = 12;
-				y = 0;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION++;
-				break;
-			case 1:
-				x = 0;
-				y = 12;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION++;
-				break;
-			case 2:
-				x = -12;
-				y = 0;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION++;
-				break;
-			case 3:
-				x = 0;
-				y = -12;
-				oldir = MAGICTRAP_DIRECTION;
-				MAGICTRAP_DIRECTION = 0;
-				break;
-		}
-		int u = std::min<int>(std::max<int>(0.0, (my->x + x) / 16), map.width - 1);
-		int v = std::min<int>(std::max<int>(0.0, (my->y + y) / 16), map.height - 1);
-		if ( !map.tiles[OBSTACLELAYER + v * MAPLAYERS + u * MAPLAYERS * map.height] )
-		{
-			Entity* entity = castSpell(my->getUID(), getSpellFromID(MAGICTRAP_SPELL), false, true);
-			entity->x = my->x + x;
-			entity->y = my->y + y;
-			entity->z = my->z;
-			entity->yaw = oldir * (PI / 2.f);
-			double missile_speed = 4 * ((double)(((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->mana) / ((spellElement_t*)(getSpellFromID(MAGICTRAP_SPELL)->elements.first->element))->overload_multiplier);
-			entity->vel_x = cos(entity->yaw) * (missile_speed);
-			entity->vel_y = sin(entity->yaw) * (missile_speed);
-		}
-	}
-}
-
 void actMagiclightBall(Entity* my)
 {
 	Entity* caster = NULL;
@@ -571,10 +460,25 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 			node = spell->elements.first;
 			//element = (spellElement_t *) spell->elements->first->element;
 			element = (spellElement_t*)node->element;
+			Sint32 entityHealth = 0;
+			double dist = 0.f;
+			bool hitFromAbove = false;
+			if ( parent && parent->behavior == &actMagicTrapCeiling )
+			{
+				// moving vertically.
+				my->z += my->vel_z;
+				hitFromAbove = my->magicFallingCollision();
+				if ( !hitFromAbove )
+				{
+					// nothing hit yet, let's keep trying...
+				}
+			}
+			else
+			{
+				dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
+			}
 
-			double dist = clipMove(&my->x, &my->y, my->vel_x, my->vel_y, my);
-
-			if ( dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
+			if ( hitFromAbove || dist != sqrt(my->vel_x * my->vel_x + my->vel_y * my->vel_y) )
 			{
 				node = element->elements.first;
 				//element = (spellElement_t *) element->elements->first->element;
@@ -590,6 +494,10 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						player = hit.entity->skill[2];
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
 						messagePlayerColor(player, color, language[376]);
+						if ( hitstats )
+						{
+							entityHealth = hitstats->HP;
+						}
 					}
 					if ( parent && hitstats )
 					{
@@ -733,6 +641,18 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
+						if ( parent->behavior == &actMagicTrapCeiling )
+						{
+							// this missile came from the ceiling, let's redirect it..
+							my->x = hit.entity->x + cos(hit.entity->yaw);
+							my->y = hit.entity->y + sin(hit.entity->yaw);
+							my->yaw = hit.entity->yaw;
+							my->z = -1;
+							my->vel_x = 4 * cos(hit.entity->yaw);
+							my->vel_y = 4 * sin(hit.entity->yaw);
+							my->vel_z = 0;
+							my->pitch = 0;
+						}
 						my->parent = hit.entity->getUID();
 					}
 					// reflection of 3 does not degrade.
@@ -2141,25 +2061,46 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					{
 						if ( spellEffectDominate(*my, *element, *caster, parent) )
 						{
-							//Abort if successfully run, since do not need to execute the proceeding code..
-							return;
+							//Success
 						}
 					}
 				}
 				else if ( !strcmp(element->name, spellElement_acidSpray.name) )
 				{
 					spellEffectAcid(*my, *element, parent, resistance);
-					return;
 				}
 				else if ( !strcmp(element->name, spellElement_stealWeapon.name) )
 				{
 					spellEffectStealWeapon(*my, *element, parent, resistance);
-					return;
 				}
 				else if ( !strcmp(element->name, spellElement_drainSoul.name) )
 				{
 					spellEffectDrainSoul(*my, *element, parent, resistance);
-					return;
+				}
+
+				if ( hitstats && player >= 0 )
+				{
+					entityHealth -= hitstats->HP;
+					if ( entityHealth > 0 )
+					{
+						// entity took damage, shake screen.
+						if ( multiplayer == SERVER && player > 0 )
+						{
+							strcpy((char*)net_packet->data, "SHAK");
+							net_packet->data[4] = 10; // turns into .1
+							net_packet->data[5] = 10;
+							net_packet->address.host = net_clients[player - 1].host;
+							net_packet->address.port = net_clients[player - 1].port;
+							net_packet->len = 6;
+							sendPacketSafe(net_sock, -1, net_packet, player - 1);
+						}
+						else if ( player == 0 )
+						{
+							camera_shakex += .1;
+							camera_shakey += 10;
+							messagePlayer(0, "shak");
+						}
+					}
 				}
 
 				my->removeLightField();
@@ -3213,4 +3154,37 @@ void actParticleSapCenter(Entity* my)
 	{
 		--PARTICLE_LIFE;
 	}
+}
+
+bool Entity::magicFallingCollision()
+{
+	hit.entity = nullptr;
+	if ( z <= -5 || fabs(vel_z) < 0.01 )
+	{
+		// check if particle stopped or too high.
+		return false;
+	}
+
+	if ( z >= 7.5 )
+	{
+		return true;
+	}
+
+	node_t* node;
+	for ( node = map.entities->first; node != NULL; node = node->next )
+	{
+		Entity* entity = (Entity*)node->element;
+		if ( entity == this )
+		{
+			continue;
+		}
+		if ( entityInsideEntity(this, entity) && !entity->flags[PASSABLE] )
+		{
+			hit.entity = entity;
+			//hit.side = HORIZONTAL;
+			return true;
+		}
+	}
+
+	return false;
 }

@@ -156,6 +156,9 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	spellTrapLatchPower(skill[3]),
 	spellTrapCeilingModel(skill[4]),
 	spellTrapRefireRate(skill[5]),
+	spellTrapAmbience(skill[6]),
+	spellTrapInit(skill[7]),
+	spellTrapCounter(skill[8]),
 	ceilingTileModel(skill[0])
 {
 	int c;
