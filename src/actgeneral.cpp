@@ -164,7 +164,7 @@ void Entity::actFurniture()
 	if ( !furnitureInit )
 	{
 		furnitureInit = 1;
-		if ( !furnitureType )
+		if ( furnitureType == FURNITURE_TABLE || FURNITURE_BUNKBED || FURNITURE_BED || FURNITURE_PODIUM )
 		{
 			furnitureHealth = 15 + rand() % 5;
 		}
@@ -230,13 +230,33 @@ void Entity::actFurniture()
 				{
 					if (inrange[i])
 					{
-						if ( furnitureType )
+						switch ( furnitureType )
 						{
-							messagePlayer(i, language[476]);
-						}
-						else
-						{
-							messagePlayer(i, language[477]);
+							case FURNITURE_CHAIR:
+								messagePlayer(i, language[476]);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(i, language[477]);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(i, language[2493]);
+								break;
+							case FURNITURE_BUNKBED:
+								if ( i == 0 || i == 2 )
+								{
+									messagePlayer(i, language[2494]);
+								}
+								else
+								{
+									messagePlayer(i, language[2495]);
+								}
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(i, language[2496]);
+								break;
+							default:
+								messagePlayer(i, language[477]);
+								break;
 						}
 					}
 				}
@@ -313,7 +333,6 @@ void actStalagCeiling(Entity* my)
 	{
 		return;
 	}
-
 	//my->actStalagCeiling();
 }
 
@@ -328,10 +347,97 @@ void actStalagColumn(Entity* my)
 	//my->actStalagColumn();
 }
 
+void actColumn(Entity* my)
+{
+	//TODO: something?
+	if ( !my )
+	{
+		return;
+	}
+}
+
 void actCeilingTile(Entity* my)
 {
 	if ( !my )
 	{
 		return;
+	}
+}
+
+void actPistonBase(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+}
+
+void actPistonCam(Entity* my)
+{
+	if ( !my )
+	{
+		return;
+	}
+	my->actPistonCam();
+}
+
+void Entity::actPistonCam()
+{
+	yaw += pistonCamRotateSpeed;
+	while ( yaw > 2 * PI )
+	{
+		yaw -= 2 * PI;
+	}
+	while ( yaw < 0 )
+	{
+		yaw += 2 * PI;
+	}
+	if ( (pistonCamDir == 0 || pistonCamDir == 2) && pistonCamRotateSpeed > 0 )
+	{
+		if ( yaw <= PI && yaw >= -pistonCamRotateSpeed + PI )
+		{
+			yaw = PI;
+			pistonCamRotateSpeed = 0;
+		}
+	}
+	--pistonCamTimer;
+
+	if ( pistonCamDir == 0 ) // bottom
+	{
+		if ( pistonCamTimer <= 0 )
+		{
+			pistonCamDir = 1; // up
+			pistonCamRotateSpeed = 0.2;
+			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+		}
+	}
+	if ( pistonCamDir == 1 ) // up
+	{
+		z -= 0.1;
+		if ( z < -1.75 )
+		{
+			z = -1.75;
+			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamDir = 2; // top
+		}
+	}
+	else if ( pistonCamDir == 2 ) // top
+	{
+		if ( pistonCamTimer <= 0 )
+		{
+			pistonCamDir = 3; // down
+			pistonCamRotateSpeed = -0.2;
+			pistonCamTimer = rand() % 5 * TICKS_PER_SECOND;
+		}
+	}
+	else if ( pistonCamDir == 3 ) // down
+	{
+		z += 0.1;
+		if ( z > 1.75 )
+		{
+			z = 1.75;
+			pistonCamRotateSpeed *= rand() % 2 == 0 ? -1 : 1;
+			pistonCamDir = 0; // down
+		}
 	}
 }
