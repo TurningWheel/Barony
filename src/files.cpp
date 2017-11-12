@@ -517,11 +517,22 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
 						fread(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
 						fread(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalLockOrb, sizeof(Sint32), 1, fp);
 						break;
 					case 9:
 						fread(&entity->teleporterX, sizeof(Sint32), 1, fp);
 						fread(&entity->teleporterY, sizeof(Sint32), 1, fp);
 						fread(&entity->teleporterType, sizeof(Sint32), 1, fp);
+						break;
+					case 10:
+						fread(&entity->ceilingTileModel, sizeof(Sint32), 1, fp);
+						break;
+					case 11:
+						fread(&entity->spellTrapType, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapRefire, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapCeilingModel, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
 						break;
 					default:
 						break;
@@ -757,11 +768,23 @@ int saveMap(char* filename2)
 					fwrite(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
 					fwrite(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
 					fwrite(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalLockOrb, sizeof(Sint32), 1, fp);
 					break;
 				case 9:
 					fwrite(&entity->teleporterX, sizeof(Sint32), 1, fp);
 					fwrite(&entity->teleporterY, sizeof(Sint32), 1, fp);
 					fwrite(&entity->teleporterType, sizeof(Sint32), 1, fp);
+					break;
+				case 10:
+					fwrite(&entity->ceilingTileModel, sizeof(Sint32), 1, fp);
+					break;
+				case 11:
+					fwrite(&entity->spellTrapType, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapRefire, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapCeilingModel, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
+					break;
 				default:
 					break;
 			}

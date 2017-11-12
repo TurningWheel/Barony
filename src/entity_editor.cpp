@@ -109,6 +109,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	pedestalInGround(skill[4]),
 	pedestalInit(skill[5]),
 	pedestalAmbience(skill[6]),
+	pedestalLockOrb(skill[7]),
 	orbInitialised(skill[1]),
 	orbHoverDirection(skill[7]),
 	orbHoverWaitTimer(skill[8]),
@@ -124,7 +125,13 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	teleporterX(skill[0]),
 	teleporterY(skill[1]),
 	teleporterType(skill[3]),
-	teleporterAmbience(skill[4])
+	teleporterAmbience(skill[4]),
+	spellTrapType(skill[0]),
+	spellTrapRefire(skill[1]),
+	spellTrapLatchPower(skill[3]),
+	spellTrapCeilingModel(skill[4]),
+	spellTrapRefireRate(skill[5]),
+	ceilingTileModel(skill[0])
 {
 	int c;
 	// add the entity to the entity list
