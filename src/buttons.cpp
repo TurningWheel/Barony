@@ -1525,7 +1525,7 @@ void buttonSpriteProperties(button_t* my)
 			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->spellTrapType));
 			snprintf(spriteProperties[1], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefire));
 			snprintf(spriteProperties[2], 4, "%d", static_cast<int>(selectedEntity->spellTrapLatchPower));
-			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapCeilingModel));
+			snprintf(spriteProperties[3], 4, "%d", static_cast<int>(selectedEntity->spellTrapFloorTile));
 			snprintf(spriteProperties[4], 4, "%d", static_cast<int>(selectedEntity->spellTrapRefireRate));
 			inputstr = spriteProperties[0];
 			cursorflash = ticks;
@@ -2375,7 +2375,7 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->spellTrapType = (Sint32)atoi(spriteProperties[0]);
 				selectedEntity->spellTrapRefire = (Sint32)atoi(spriteProperties[1]);
 				selectedEntity->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
-				selectedEntity->spellTrapCeilingModel = (Sint32)atoi(spriteProperties[3]);
+				selectedEntity->spellTrapFloorTile = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity->spellTrapRefireRate= (Sint32)atoi(spriteProperties[4]);
 				break;
 			default:
