@@ -168,7 +168,10 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	furnitureMaxHealth(skill[9]),
 	pistonCamDir(skill[0]),
 	pistonCamTimer(skill[1]),
-	pistonCamRotateSpeed(fskill[0])
+	pistonCamRotateSpeed(fskill[0]),
+	arrowPower(skill[3]),
+	arrowPoisonTime(skill[4]),
+	arrowArmorPierce(skill[5])
 {
 	int c;
 	// add the entity to the entity list
@@ -3845,14 +3848,8 @@ void Entity::attack(int pose, int charge, Entity* target)
 				entity->flags[UPDATENEEDED] = true;
 				entity->flags[PASSABLE] = true;
 
-				// arrow power
-				entity->skill[3] = getAttack() - 1 + myStats->PROFICIENCIES[PRO_RANGED] / 20;
-
-				// poison arrow
-				if ( myStats->weapon->type == ARTIFACT_BOW )
-				{
-					entity->skill[4] = 540;    // 9 seconds of poison
-				}
+				// set properties of the arrow.
+				entity->setRangedProjectileAttack(*this, *myStats);
 				return;
 			}
 
@@ -9125,4 +9122,42 @@ int Entity::getManaRegenInterval(Stat& myStats)
 		return regenTime;
 	}
 	return MAGIC_REGEN_TIME;
+}
+
+void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
+{
+	// get arrow power.
+	int attack = 7; // base ranged attack strength
+	if ( myStats.weapon != nullptr )
+	{
+		attack += myStats.weapon->weaponGetAttack();
+	}
+	attack += marksman.getDEX();
+	attack += myStats.PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack.
+	this->arrowPower = attack;
+
+	// get arrow effects.
+	if ( myStats.weapon )
+	{
+		if ( myStats.weapon->type == ARTIFACT_BOW )
+		{
+			// poison arrow
+			this->arrowPoisonTime = 540;    // 9 seconds of poison
+		}
+
+		if ( myStats.weapon->type != SLING )
+		{
+			// get armor pierce chance.
+			int statChance = std::min(std::max(marksman.getPER() / 2, 0), 50); // 0 to 50 value.
+			int chance = rand() % 100;
+			if ( chance < statChance )
+			{
+				this->arrowArmorPierce = 1; // pierce half of armor in damage calc.
+			}
+			else
+			{
+				this->arrowArmorPierce = 0;
+			}
+		}
+	}
 }
