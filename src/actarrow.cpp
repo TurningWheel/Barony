@@ -276,7 +276,28 @@ void actArrow(Entity* my)
 					else if ( hit.entity->behavior == &actPlayer )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(hit.entity->skill[2], color, language[451]);
+						if ( my )
+						{
+							if ( my->sprite == 78 )
+							{
+								// rock.
+								messagePlayerColor(hit.entity->skill[2], color, language[2512]);
+							}
+							else if (my->sprite == 167)
+							{
+								// bolt.
+								messagePlayerColor(hit.entity->skill[2], color, language[2511]);
+							}
+							else
+							{
+								// arrow.
+								messagePlayerColor(hit.entity->skill[2], color, language[451]);
+							}
+						}
+						else
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[451]);
+						}
 						if ( damage == 0 )
 						{
 							messagePlayer(hit.entity->skill[2], language[452]);
