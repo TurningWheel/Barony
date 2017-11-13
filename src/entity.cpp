@@ -9133,6 +9133,10 @@ void Entity::setRangedProjectileAttack(Entity& marksman, Stat& myStats)
 		attack += myStats.weapon->weaponGetAttack();
 	}
 	attack += marksman.getDEX();
+	if ( marksman.behavior == &actMonster )
+	{
+		attack += marksman.getPER(); // monsters take PER into their ranged attacks to avoid having to increase their speed.
+	}
 	attack += myStats.PROFICIENCIES[PRO_RANGED] / 20; // 0 to 5 bonus attack.
 	this->arrowPower = attack;
 
