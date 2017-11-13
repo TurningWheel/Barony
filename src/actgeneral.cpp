@@ -323,7 +323,12 @@ void actStalagFloor(Entity* my)
 		return;
 	}
 
-	//my->actStalagFloor();
+	my->actStalagFloor();
+}
+
+void Entity::actStalagFloor()
+{
+
 }
 
 void actStalagCeiling(Entity* my)
@@ -333,7 +338,12 @@ void actStalagCeiling(Entity* my)
 	{
 		return;
 	}
-	//my->actStalagCeiling();
+	my->actStalagCeiling();
+}
+
+void Entity::actStalagCeiling()
+{
+
 }
 
 void actStalagColumn(Entity* my)
@@ -344,7 +354,12 @@ void actStalagColumn(Entity* my)
 		return;
 	}
 
-	//my->actStalagColumn();
+	my->actStalagColumn();
+}
+
+void Entity::actStalagColumn()
+{
+
 }
 
 void actColumn(Entity* my)
@@ -354,6 +369,12 @@ void actColumn(Entity* my)
 	{
 		return;
 	}
+	my->actColumn();
+}
+
+void Entity::actColumn()
+{
+
 }
 
 void actCeilingTile(Entity* my)

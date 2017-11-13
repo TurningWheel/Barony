@@ -279,19 +279,20 @@ void clickDescription(int player, Entity* entity)
 							break;
 					}
 				}
-				else if ( entity->behavior == &actPistonBase || entity->behavior == &actPistonCam )
+				// need to check the sprite since these are all empty behaviors.
+				else if ( entity->sprite >= 631 && entity->sprite <= 633 ) // piston
 				{
 					messagePlayer(player, language[2501]);
 				}
-				else if ( entity->behavior == &actColumn || entity->behavior == &actStalagColumn )
+				else if  (entity->sprite == 629 || entity->sprite == 580 ) // column
 				{
 					messagePlayer(player, language[2502]);
 				}
-				else if ( entity->behavior == &actStalagFloor )
+				else if ( entity->sprite == 581 || entity->sprite == 582 ) // floor stalag
 				{
 					messagePlayer(player, language[2503]);
 				}
-				else if ( entity->behavior == &actStalagCeiling )
+				else if ( entity->sprite == 583 || entity->sprite == 584 ) // ceiling stalag
 				{
 					messagePlayer(player, language[2504]);
 				}

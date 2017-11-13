@@ -4350,6 +4350,7 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y + 2.25;
 				childEntity->behavior = &actPistonCam;
 				childEntity->pistonCamRotateSpeed = 0.2;
+				childEntity->flags[UNCLICKABLE] = true;
 				if ( multiplayer != CLIENT )
 				{
 					childEntity->setUID(-3);
@@ -4361,6 +4362,7 @@ void assignActions(map_t* map)
 				childEntity->y = entity->y - 2.25;
 				childEntity->behavior = &actPistonCam;
 				childEntity->pistonCamRotateSpeed = -0.2;
+				childEntity->flags[UNCLICKABLE] = true;
 				if ( multiplayer != CLIENT )
 				{
 					childEntity->setUID(-3);

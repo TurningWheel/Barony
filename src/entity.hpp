@@ -426,6 +426,10 @@ public:
 	bool magicFallingCollision();
 	void actFurniture();
 	void actPistonCam();
+	void actStalagCeiling();
+	void actStalagFloor();
+	void actStalagColumn();
+	void actColumn();
 
 	Monster getRace() const
 	{
