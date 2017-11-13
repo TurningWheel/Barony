@@ -7696,7 +7696,7 @@ void Entity::humanoidAnimateWalk(Entity* limb, node_t* bodypartNode, int bodypar
 			else
 			{
 				// coming to a stop
-				if ( limb->pitch < 0 )
+				if ( limb->pitch < 0 || (limb->pitch > PI && limb->pitch < 2 * PI) )
 				{
 					limb->pitch += 1 / fmax(dist * .1, 10.0);
 					if ( limb->pitch > 0 )
