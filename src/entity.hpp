@@ -505,6 +505,8 @@ public:
 	bool shouldRetreat(Stat& myStats);
 	// check if monster should retreat or stand still when less than given distance
 	bool backupWithRangedWeapon(Stat& myStats, int dist, int hasrangedweapon);
+	// calc time required for a mana regen tick.
+	int getManaRegenInterval(Stat& myStats); 
 
 	spell_t* getActiveMagicEffect(int spellID);
 

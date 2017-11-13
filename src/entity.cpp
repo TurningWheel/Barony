@@ -2327,49 +2327,7 @@ void Entity::handleEffects(Stat* myStats)
 	}
 
 	// regaining energy over time
-	int manaring = 0;
-	int manaRegenInterval = 0;
-	if ( myStats->breastplate != NULL )
-	{
-		if ( myStats->breastplate->type == VAMPIRE_DOUBLET )
-		{
-			if ( myStats->breastplate->beatitude >= 0 )
-			{
-				manaring++;
-			}
-			else
-			{
-				manaring--;
-			}
-		}
-	}
-	if ( myStats->cloak != NULL )
-	{
-		if ( myStats->cloak->type == ARTIFACT_CLOAK )
-		{
-			if ( myStats->cloak->beatitude >= 0 )
-			{
-				manaring++;
-			}
-			else
-			{
-				manaring--;
-			}
-		}
-	}
-
-	if ( manaring > 0 )
-	{
-		manaRegenInterval = MAGIC_REGEN_TIME / (manaring * 8);
-	}
-	else if ( manaring < 0 )
-	{
-		manaRegenInterval = manaring * MAGIC_REGEN_TIME * 4;
-	}
-	else if ( manaring == 0 )
-	{
-		manaRegenInterval = MAGIC_REGEN_TIME;
-	}
+	int manaRegenInterval = getManaRegenInterval(*myStats);
 
 	if ( myStats->MP < myStats->MAXMP )
 	{
@@ -9115,4 +9073,56 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
 	}
 	return spellbook;
+}
+
+int Entity::getManaRegenInterval(Stat& myStats)
+{
+	// reduced time from intelligence and spellcasting ability, 0-150 ticks of 300.
+	int profMultiplier = (myStats.PROFICIENCIES[PRO_SPELLCASTING] / 20) + 1; // 1 to 6
+	int statMultiplier = std::max(getINT(), 0); // get intelligence
+
+	int regenTime = (MAGIC_REGEN_TIME - std::min(profMultiplier * statMultiplier, 150)); // return 300-150 ticks, 6-3 seconds.
+
+	int manaring = 0;
+	if ( myStats.breastplate != nullptr )
+	{
+		if ( myStats.breastplate->type == VAMPIRE_DOUBLET )
+		{
+			if ( myStats.breastplate->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( myStats.cloak != nullptr )
+	{
+		if ( myStats.cloak->type == ARTIFACT_CLOAK )
+		{
+			if ( myStats.cloak->beatitude >= 0 )
+			{
+				manaring++;
+			}
+			else
+			{
+				manaring--;
+			}
+		}
+	}
+	if ( manaring > 0 )
+	{
+		return regenTime / (manaring * 6);
+	}
+	else if ( manaring < 0 )
+	{
+		return regenTime * manaring * 4;
+	}
+	else if ( manaring == 0 )
+	{
+		return regenTime;
+	}
+	return MAGIC_REGEN_TIME;
 }
