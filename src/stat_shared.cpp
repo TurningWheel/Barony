@@ -273,7 +273,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->DEX = 0;
 			stats->CON = 2;
 			stats->INT = -1;
-			stats->PER = 0;
+			stats->PER = 2;
 			stats->CHR = -1;
 			stats->EXP = 0;
 			stats->LVL = 6;
@@ -299,7 +299,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_MACE] = 50;
 			stats->PROFICIENCIES[PRO_AXE] = 45;
 			stats->PROFICIENCIES[PRO_POLEARM] = 25;
-			stats->PROFICIENCIES[PRO_RANGED] = 35;
+			stats->PROFICIENCIES[PRO_RANGED] = 100;
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 			break;
@@ -393,8 +393,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_CON = 3;
 			stats->INT = -1;
 			stats->RANDOM_INT = 3;
-			stats->PER = -2;
-			stats->RANDOM_PER = 3;
+			stats->PER = -3;
+			stats->RANDOM_PER = 4;
 			stats->CHR = -3;
 			stats->RANDOM_CHR = 3;
 			stats->EXP = 0;
@@ -422,7 +422,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->PROFICIENCIES[PRO_MACE] = 35;
 			stats->PROFICIENCIES[PRO_AXE] = 35;
 			stats->PROFICIENCIES[PRO_POLEARM] = 45;
-			stats->PROFICIENCIES[PRO_RANGED] = 40;
+			//stats->PROFICIENCIES[PRO_RANGED] = 40;
 			stats->PROFICIENCIES[PRO_SHIELD] = 35;
 
 			break;
@@ -857,7 +857,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->DEX = -1;
 			stats->CON = 0;
 			stats->INT = -1;
-			stats->PER = 1;
+			stats->PER = 2;
 			stats->CHR = -3;
 			stats->EXP = 0;
 			stats->LVL = 2;
