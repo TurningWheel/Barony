@@ -641,7 +641,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 					}
 					if (hit.entity)
 					{
-						if ( parent->behavior == &actMagicTrapCeiling )
+						if ( parent && parent->behavior == &actMagicTrapCeiling )
 						{
 							// this missile came from the ceiling, let's redirect it..
 							my->x = hit.entity->x + cos(hit.entity->yaw);
