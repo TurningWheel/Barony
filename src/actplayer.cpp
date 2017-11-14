@@ -1538,7 +1538,7 @@ void actPlayer(Entity* my)
 		weightratio = fmin(fmax(0, weightratio), 1);
 
 		// calculate movement forces
-		if ( !command )
+		if ( !command && my->isMobile() )
 		{
 			//x_force and y_force represent the amount of percentage pushed on that respective axis. Given a keyboard, it's binary; either you're pushing "move left" or you aren't. On an analog stick, it can range from whatever value to whatever.
 			float x_force = 0;
