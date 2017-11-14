@@ -1091,7 +1091,8 @@ int checkObstacle(long x, long y, Entity* my, Entity* target)
 					isMonster = true;
 				}
 			}
-			if ( !levitating && (!map.tiles[index] || (animatedtiles[map.tiles[index]] && isMonster)) )   // no floor
+			if ( !levitating && (!map.tiles[index] ||
+				(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )   // no floor
 			{
 				return 1;
 			}
