@@ -271,6 +271,7 @@ void actThrown(Entity* my)
 		if ( hit.entity != nullptr )
 		{
 			Entity* parent = uidToEntity(my->parent);
+			Stat* parentStats = parent->getStats();
 			Stat* hitstats = hit.entity->getStats();
 
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
@@ -285,12 +286,18 @@ void actThrown(Entity* my)
 			if ( hit.entity->behavior == &actMonster || hit.entity->behavior == &actPlayer )
 			{
 				int damage = (9 - (AC(hit.entity->getStats()) / 2) + item->beatitude); // thrown takes half of armor into account.
-				if ( hitstats )
+				if ( parentStats )
 				{
-					damage += hitstats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 5 increase.
+					damage += parentStats->PROFICIENCIES[PRO_RANGED] / 5; // 0 to 5 increase.
+				}
+				if ( hitstats && !hitstats->defending )
+				{
+					// zero out the damage if negative, thrown weapons will do piercing damage if not blocking.
+					damage = std::max(0, damage);
 				}
 				switch ( item->type )
 				{
+					// thrown weapons do damage if absorbed by armor.
 					case BRONZE_TOMAHAWK:
 						damage += 2;
 						break;
@@ -307,7 +314,6 @@ void actThrown(Entity* my)
 						break;
 				}
 				damage = std::max(0, damage);
-
 				hit.entity->modHP(-damage);
 
 				// set the obituary
@@ -434,6 +440,10 @@ void actThrown(Entity* my)
 				}
 				else
 				{
+					if ( cat == THROWN )
+					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
+					}
 					if ( hit.entity->behavior == &actPlayer )
 					{
 						if ( hit.entity->skill[2] == clientnum )
