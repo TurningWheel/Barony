@@ -104,7 +104,14 @@ void actArrow(Entity* my)
 					// do damage
 					if ( my->arrowArmorPierce > 0 && AC(hitstats) > 0 )
 					{
-						damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
+						if ( hit.entity->behavior == &actPlayer && hitstats && !hitstats->defending )
+						{
+							damage = std::max(my->arrowPower - (AC(hitstats) / 2), 0); // pierce half armor.
+						}
+						else
+						{
+							damage = std::max(my->arrowPower - AC(hitstats), 0); // normal damage.
+						}
 					}
 					else
 					{
@@ -176,6 +183,7 @@ void actArrow(Entity* my)
 					}
 					else
 					{
+						playSoundEntity(hit.entity, 66, 64); //*tink*
 						if ( hit.entity->behavior == &actPlayer )
 						{
 							if ( hit.entity->skill[2] == clientnum )
