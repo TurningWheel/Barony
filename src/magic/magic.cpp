@@ -328,7 +328,7 @@ void spellEffectAcid(Entity& my, spellElement_t& element, Entity* parent, int re
 					return;
 				}
 			}
-			playSoundEntity(&my, 173, 64);
+			//playSoundEntity(&my, 173, 64);
 			playSoundEntity(hit.entity, 249, 64);
 			//playSoundEntity(hit.entity, 28, 64);
 
