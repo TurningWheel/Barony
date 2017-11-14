@@ -110,7 +110,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 						newItem(SHORTBOW, SERVICABLE, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 					}
 				case 1:
-					newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 7, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					newItem(IRON_DAGGER, SERVICABLE, 0, 2 + rand() % 4, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					break;
 				default:
 					break;
@@ -734,7 +734,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 4 * PI / 8, false, 0.0);
 						}
 
-						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= 4 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							if ( multiplayer != CLIENT )
 							{
