@@ -849,7 +849,11 @@ void consoleCommand(char* command_str)
 			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			consoleCommand("/levelskill 9");
-			consoleCommand("/nextlevel");
+			//consoleCommand("/nextlevel");
+			while ( myStats->PROFICIENCIES[PRO_APPRAISAL] < 50 )
+			{
+				consoleCommand("/levelskill 3");
+			}
 		}
 		else
 		{
