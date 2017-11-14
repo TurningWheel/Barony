@@ -2298,8 +2298,11 @@ Sint32 Item::weaponGetAttack() const
 	{
 		attack += 7;
 	}
-	attack *= (double)(status / 5.0);
-
+	// old formula
+	//attack *= (double)(status / 5.0);
+	//
+	// new formula
+	attack += status - 3;
 	return attack;
 }
 
