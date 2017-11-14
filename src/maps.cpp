@@ -181,7 +181,7 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Caves", 5) )
 	{
-		switch ( rand() % 20 )
+		switch ( rand() % 17 )
 		{
 			case 0:
 			case 1:
@@ -200,11 +200,11 @@ int monsterCurve(int level)
 				return AUTOMATON;
 			case 12:
 			case 13:
+				return CRYSTALGOLEM;
 			case 14:
-				return INSECTOID;
 			case 15:
 			case 16:
-				return CRYSTALGOLEM;
+				return INSECTOID;
 			case 17:
 				return GOATMAN;
 			case 18:
@@ -1332,7 +1332,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			else
 			{
-				if ( prng_get_uint() % 2 && currentlevel > 5 )
+				if ( prng_get_uint() % 2 && (currentlevel > 5 && currentlevel <= 25) )
 				{
 					arrowtrapspawn = true;
 				}
@@ -1452,6 +1452,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 		for ( x = 0; x < map.width; x++ )
 		{
 			if ( checkObstacle( x * 16 + 8, y * 16 + 8, NULL, NULL ) || firstroomtile[y + x * map.height] )
+			{
+				possiblelocations[y + x * map.height] = false;
+				numpossiblelocations--;
+			}
+			else if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
@@ -1596,6 +1601,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				bool nopath = false;
 				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+				if ( !hellLadderFix )
+				{
+					hellLadderFix = !strncmp(map.name, "Caves", 4);
+				}
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
@@ -1725,7 +1734,21 @@ int generateDungeon(char* levelset, Uint32 seed)
 					}
 					else
 					{
-						entity = newEntity(64, 1, map.entities); // spear trap
+						if ( currentlevel <= 25 )
+						{
+							entity = newEntity(64, 1, map.entities); // spear trap
+						}
+						else
+						{
+							if ( prng_get_uint() % 2 == 0 )
+							{
+								entity = newEntity(120, 1, map.entities); // vertical spell trap.
+							}
+							else
+							{
+								entity = newEntity(64, 1, map.entities); // spear trap
+							}
+						}
 						Entity* also = newEntity(33, 1, map.entities);
 						also->x = x * 16;
 						also->y = y * 16;
@@ -1837,7 +1860,21 @@ int generateDungeon(char* levelset, Uint32 seed)
 					}
 					else
 					{
-						entity = newEntity(64, 1, map.entities); // spear trap
+						if ( currentlevel <= 25 )
+						{
+							entity = newEntity(64, 1, map.entities); // spear trap
+						}
+						else
+						{
+							if ( prng_get_uint() % 2 == 0 )
+							{
+								entity = newEntity(120, 1, map.entities); // vertical spell trap.
+							}
+							else
+							{
+								entity = newEntity(64, 1, map.entities); // spear trap
+							}
+						}
 						Entity* also = newEntity(33, 1, map.entities);
 						also->x = x * 16;
 						also->y = y * 16;
@@ -1853,7 +1890,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 			entity->y = y * 16;
 			//printlog("9 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 		}
-
 		// mark this location as inelligible for reselection
 		possiblelocations[y + x * map.height] = false;
 		numpossiblelocations--;
@@ -1881,6 +1917,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
+	messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
 }
 
