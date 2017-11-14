@@ -2108,7 +2108,6 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							camera_shakex += .1;
 							camera_shakey += 10;
-							messagePlayer(0, "shak");
 						}
 					}
 				}
