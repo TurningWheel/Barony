@@ -332,6 +332,10 @@ void actArrow(Entity* my)
 						{
 							messagePlayer(hit.entity->skill[2], language[452]);
 						}
+						else if (my->arrowArmorPierce > 0 && AC(hitstats) > 0)
+						{
+							messagePlayerColor(hit.entity->skill[2], color, language[2515]);
+						}
 					}
 					if ( my->arrowPoisonTime > 0 && damage > 0 )
 					{
