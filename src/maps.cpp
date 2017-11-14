@@ -1601,10 +1601,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				bool nopath = false;
 				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
-				if ( !hellLadderFix )
+				/*if ( !hellLadderFix )
 				{
 					hellLadderFix = !strncmp(map.name, "Caves", 4);
-				}
+				}*/
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
