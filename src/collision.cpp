@@ -850,7 +850,7 @@ real_t lineTrace( Entity* my, real_t x1, real_t y1, real_t angle, real_t range, 
 					isMonster = true;
 				}
 			if ( !map.tiles[index] 
-				|| ((swimmingtiles[map.tiles[index]] || swimmingtiles[map.tiles[index]]) && isMonster) )
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
@@ -992,7 +992,7 @@ real_t lineTraceTarget( Entity* my, real_t x1, real_t y1, real_t angle, real_t r
 					isMonster = true;
 				}
 			if ( !map.tiles[index] 
-				|| ((swimmingtiles[map.tiles[index]] || swimmingtiles[map.tiles[index]]) && isMonster) )
+				|| ((swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) && isMonster) )
 			{
 				hit.x = ix;
 				hit.y = iy;
