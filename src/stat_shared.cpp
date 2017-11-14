@@ -269,9 +269,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 20;
 			stats->MAXMP = 20;
 			stats->OLDHP = stats->HP;
-			stats->STR = 6;
+			stats->STR = 5;
 			stats->DEX = 0;
-			stats->CON = 2;
+			stats->CON = 3;
 			stats->INT = -1;
 			stats->PER = 2;
 			stats->CHR = -1;
@@ -880,9 +880,9 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 30;
 			stats->MAXMP = 30;
 			stats->OLDHP = stats->HP;
-			stats->STR = 1;
+			stats->STR = 0;
 			stats->DEX = -1;
-			stats->CON = 0;
+			stats->CON = 1;
 			stats->INT = -1;
 			stats->PER = 2;
 			stats->CHR = -3;
