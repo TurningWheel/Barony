@@ -3369,11 +3369,6 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	//if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
-	//{
-	//	return false; //Shadows can't do anything while they are casting their special ability.
-	//}
-
 	return true;
 }
 
