@@ -439,7 +439,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->MP = 60;
 			stats->MAXMP = 60;
 			stats->OLDHP = stats->HP;
-			stats->STR = 25;
+			stats->STR = 20;
 			stats->RANDOM_STR = 5;
 			stats->DEX = 5;
 			stats->RANDOM_DEX = 5;
@@ -447,7 +447,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_CON = 2;
 			stats->INT = -2;
 			stats->RANDOM_INT = 4;
-			stats->PER = 0;
+			stats->PER = 18;
 			stats->RANDOM_PER = 5;
 			stats->CHR = 3;
 			stats->RANDOM_CHR = 2;
@@ -479,8 +479,8 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = NULL;
 			stats->inventory.last = NULL;
-			stats->HP = 40;
-			stats->MAXHP = 40;
+			stats->HP = 60;
+			stats->MAXHP = 60;
 			stats->MP = 20;
 			stats->MAXMP = 20;
 			stats->OLDHP = stats->HP;
@@ -517,10 +517,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->OLDHP = stats->HP;
 			stats->STR = 40;
 			stats->RANDOM_STR = 5;
-			stats->DEX = 5;
-			stats->RANDOM_DEX = 5;
+			stats->DEX = 1;
+			stats->RANDOM_DEX = 3;
 			stats->CON = 20;
-			stats->RANDOM_CON = 20;
+			stats->RANDOM_CON = 0;
 			stats->INT = -2;
 			stats->RANDOM_INT = 0;
 			stats->PER = 5;
@@ -600,7 +600,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
 			stats->HP = 500;
-			stats->RANDOM_HP = 500;
+			stats->RANDOM_HP = 0;
 			stats->MAXHP = stats->HP;
 			stats->RANDOM_MAXHP = stats->RANDOM_HP;
 			stats->MP = 50;
@@ -828,8 +828,35 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 		case 93:
 		case (1000 + AUTOMATON):
 			stats->type = AUTOMATON;
-			stats->RANDOM_MAXHP = stats->RANDOM_HP;
-			stats->RANDOM_MAXMP = stats->RANDOM_MP;
+			stats->sex = static_cast<sex_t>(rand() % 2);
+			stats->appearance = rand();
+			stats->inventory.first = nullptr;
+			stats->inventory.last = nullptr;
+			stats->MAXHP = 110;
+			stats->HP = stats->MAXHP;
+			stats->MAXMP = 20;
+			stats->MP = stats->MAXMP;
+			stats->OLDHP = stats->HP;
+			stats->RANDOM_MAXHP = 20;
+			stats->RANDOM_HP = stats->RANDOM_MAXHP;
+			//stats->RANDOM_MAXMP = 20;
+			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
+			stats->STR = 20;
+			stats->DEX = 5;
+			stats->CON = 10;
+			stats->INT = -1;
+			stats->PER = 10;
+			stats->CHR = -3;
+			stats->EXP = 0;
+			stats->LVL = 20;
+			stats->HUNGER = 900;
+
+			stats->PROFICIENCIES[PRO_SWORD] = 60;
+			stats->PROFICIENCIES[PRO_MACE] = 60;
+			stats->PROFICIENCIES[PRO_AXE] = 60;
+			stats->PROFICIENCIES[PRO_RANGED] = 60;
+			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
+			stats->PROFICIENCIES[PRO_SHIELD] = 60;
 			break;
 		case 94:
 		case (1000 + LICH_ICE):
