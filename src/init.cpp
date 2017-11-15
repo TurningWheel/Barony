@@ -20,6 +20,8 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+#include "items.hpp"
+#include "cppfuncs.hpp"
 
 #ifdef HAVE_FMOD
 #include "fmod.h"
@@ -2408,5 +2410,111 @@ bool changeVideoMode()
 	}
 #endif
 	// success
+	return true;
+}
+
+/*-------------------------------------------------------------------------------
+
+loadItemLists()
+
+loads the global item whitelist/blacklists and level curve.
+
+-------------------------------------------------------------------------------*/
+
+bool loadItemLists()
+{
+	char filename[128] = { 0 };
+	//FILE* fp;
+	int c;
+
+	// open log file
+	if ( !logfile )
+	{
+		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
+
+	// compose filename
+	strcpy(filename, "items/items_global.txt");
+	// check if item list is valid
+	if ( !dataPathExists(filename) )
+	{
+		// file doesn't exist
+		printlog("error: unable to locate tile palette file: '%s'", filename);
+		return false;
+	}
+
+	std::vector<std::string> itemLevels = getLinesFromFile(filename);
+	std::string line;
+
+	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
+		// process i
+		line = *i;
+		if ( line[0] == '#' || line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find('#');
+		if ( found != std::string::npos )
+		{
+			char tmp[128];
+			line = line.substr(0, found);
+			strncpy(tmp, line.c_str(), line.length());
+			inputstr[std::min<size_t>(line.length(), 128)] = '\0';
+			printlog("%s", tmp);
+		}
+	}
+	
+	int itemIndex = 0;
+
+	//// read file
+	//for ( c = 0; !feof(fp); ++c )
+	//{
+	//	//printlog( "loading line %d...\n", line);
+	//	char data[1024];
+
+	//	// read line from file
+	//	int i;
+	//	bool fileEnd = false;
+	//	for ( i = 0; ; ++i )
+	//	{
+	//		data[i] = fgetc(fp);
+	//		if ( feof(fp) )
+	//		{
+	//			fileEnd = true;
+	//			break;
+	//		}
+
+	//		// blank or comment lines stop reading at a newline
+	//		if ( data[i] == '\n' )
+	//		{
+	//			break;
+	//		}
+	//	}
+
+	//	if ( fileEnd )
+	//	{
+	//		break;
+	//	}
+
+	//	// skip blank and comment lines
+	//	if ( data[0] == '#' );
+	//	{
+	//		printlog("%c", data[0]);
+	//		continue;
+	//	}
+	//	for ( i = 0; data[i] != '#'; ++i )
+	//	{
+
+	//	}
+	//	printlog("%d\n", i);
+	//	// process line
+	//	items[itemIndex].level = atoi(data);
+	//	printlog("read item number '%d', data '%d' \n", itemIndex, atoi(data));
+	//	++itemIndex;
+	//}
+
+	// close file
+	//fclose(fp);
+	printlog("successfully loaded global item list '%s', itemIndex %d \n", filename, itemIndex);
 	return true;
 }

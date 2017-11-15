@@ -302,12 +302,12 @@ int initGame()
 		}
 	}
 	fclose(fp);
-
 	createBooks();
 	setupSpells();
 
 	randomPlayerNamesMale = getLinesFromFile(datadir + PLAYERNAMES_MALE_FILE);
 	randomPlayerNamesFemale = getLinesFromFile(datadir + PLAYERNAMES_FEMALE_FILE);
+	loadItemLists();
 
 	// print a loading message
 	drawClearBuffers();
