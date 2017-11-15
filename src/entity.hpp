@@ -525,3 +525,13 @@ bool isLevitating(Stat * myStats);
 int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
+
+/* actmonster.cpp
+ * @param pMonster - A pointer to the Monster's Entity
+ * @param pMonsterStats - A pointer to the Monster's Stats
+ * Checks to see if a Player has been hostile towards this Monster. Currently only handles Humans
+ * If a Player was Hostile, then this Human will be permanently Hostile towards only that Player
+ * Sets 'pMonster->hostilePlayers[iPlayerIndex] = true' if there was hostility
+ * If @pMonster is a Follower of the Hostile Player, then they will be removed from the 'stats[iPlayerIndex]->FOLLOWERS' list
+ */
+void CheckForPlayerHostility(Entity* const pMonster, Stat* const pMonsterStats);
