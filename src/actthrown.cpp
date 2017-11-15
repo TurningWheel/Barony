@@ -271,7 +271,11 @@ void actThrown(Entity* my)
 		if ( hit.entity != nullptr )
 		{
 			Entity* parent = uidToEntity(my->parent);
-			Stat* parentStats = parent->getStats();
+			Stat* parentStats = nullptr;
+			if ( parent )
+			{
+				parentStats = parent->getStats();
+			}
 			Stat* hitstats = hit.entity->getStats();
 
 			if ( !(svFlags & SV_FLAG_FRIENDLYFIRE) )
