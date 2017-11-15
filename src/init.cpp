@@ -2461,16 +2461,16 @@ bool loadItemLists()
 			std::string sub = line.substr(0, found);
 			strncpy(tmp, sub.c_str(), sub.length());
 			tmp[sub.length()] = '\0';
-			printlog("%s", tmp);
+			//printlog("%s", tmp);
 			items[itemIndex].level = atoi(tmp);
 			++itemIndex;
 		}
 	}
 
 	printlog("successfully loaded global item list '%s' \n", filename);
-	/*for ( c = 0; c < NUMITEMS; ++c )
+	for ( c = 0; c < NUMITEMS; ++c )
 	{
 		printlog("%s level: %d", items[c].name_identified, items[c].level);
-	}*/
+	}
 	return true;
 }
