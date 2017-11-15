@@ -2445,6 +2445,7 @@ bool loadItemLists()
 
 	std::vector<std::string> itemLevels = getLinesFromFile(filename);
 	std::string line;
+	int itemIndex = 0;
 
 	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
 		// process i
@@ -2457,64 +2458,19 @@ bool loadItemLists()
 		if ( found != std::string::npos )
 		{
 			char tmp[128];
-			line = line.substr(0, found);
-			strncpy(tmp, line.c_str(), line.length());
-			inputstr[std::min<size_t>(line.length(), 128)] = '\0';
+			std::string sub = line.substr(0, found);
+			strncpy(tmp, sub.c_str(), sub.length());
+			tmp[sub.length()] = '\0';
 			printlog("%s", tmp);
+			items[itemIndex].level = atoi(tmp);
+			++itemIndex;
 		}
 	}
-	
-	int itemIndex = 0;
 
-	//// read file
-	//for ( c = 0; !feof(fp); ++c )
-	//{
-	//	//printlog( "loading line %d...\n", line);
-	//	char data[1024];
-
-	//	// read line from file
-	//	int i;
-	//	bool fileEnd = false;
-	//	for ( i = 0; ; ++i )
-	//	{
-	//		data[i] = fgetc(fp);
-	//		if ( feof(fp) )
-	//		{
-	//			fileEnd = true;
-	//			break;
-	//		}
-
-	//		// blank or comment lines stop reading at a newline
-	//		if ( data[i] == '\n' )
-	//		{
-	//			break;
-	//		}
-	//	}
-
-	//	if ( fileEnd )
-	//	{
-	//		break;
-	//	}
-
-	//	// skip blank and comment lines
-	//	if ( data[0] == '#' );
-	//	{
-	//		printlog("%c", data[0]);
-	//		continue;
-	//	}
-	//	for ( i = 0; data[i] != '#'; ++i )
-	//	{
-
-	//	}
-	//	printlog("%d\n", i);
-	//	// process line
-	//	items[itemIndex].level = atoi(data);
-	//	printlog("read item number '%d', data '%d' \n", itemIndex, atoi(data));
-	//	++itemIndex;
-	//}
-
-	// close file
-	//fclose(fp);
-	printlog("successfully loaded global item list '%s', itemIndex %d \n", filename, itemIndex);
+	printlog("successfully loaded global item list '%s' \n", filename);
+	/*for ( c = 0; c < NUMITEMS; ++c )
+	{
+		printlog("%s level: %d", items[c].name_identified, items[c].level);
+	}*/
 	return true;
 }
