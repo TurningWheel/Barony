@@ -40,10 +40,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		//TODO: Update with new goatman sound effects.
-		MONSTER_SPOTSND = 60;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 98;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_SPOTSND = 265;
+		MONSTER_SPOTVAR = 4;
+		MONSTER_IDLESND = 260;
+		MONSTER_IDLEVAR = 5;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -460,7 +460,7 @@ void goatmanDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 63 + rand() % 3, 128);
+	playSoundEntity(my, 257 + rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
