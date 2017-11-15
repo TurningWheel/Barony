@@ -626,10 +626,10 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.05);
 							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.25, 14 * PI / 8, false, 0.0);
 						}
-						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.1);
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.0);
 						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
 
-						if ( my->monsterAttackTime >= 2 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							if ( multiplayer != CLIENT )
 							{
@@ -1206,7 +1206,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 
 		if ( specialRoll == 0 )
 		{
-			monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
+			monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK;
 			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
 			{
 				//Try to get a health potion.
@@ -1236,6 +1236,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			{
 				//Couldn't find a healing potion? Try for a potion of booze.
 				hasPotion = itemNodeInInventory(myStats, POTION_BOOZE, static_cast<Category>(-1));
+				monsterSpecialState = 1;
 			}
 		}
 	}
@@ -1283,7 +1284,6 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			else
 			{
 				monsterSpecialState = 1;
-				return;
 			}
 		}
 

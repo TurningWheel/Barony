@@ -6939,14 +6939,19 @@ int Entity::getAttackPose() const
 		{
 			if ( myStats->type == GOATMAN )
 			{
-				if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
+				/*if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK )
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP3;
 				}
 				else if ( this->monsterSpecialTimer == MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW )
 				{
 					pose = MONSTER_POSE_MELEE_WINDUP1;
+				}*/
+				if ( monsterSpecialState > 0 )
+				{
+					pose = MONSTER_POSE_RANGED_WINDUP3;
 				}
+
 			}
 			else if ( myStats->type == INCUBUS )
 			{
