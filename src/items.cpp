@@ -1034,6 +1034,11 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 			// incubus won't drop excess potions.
 			itemDroppable = false;
 		}
+		if ( monsterStats->type == GOATMAN && itemCategory(item) == POTION )
+		{
+			// goatman sometimes won't drop excess potions.
+			itemDroppable = false;
+		}
 	}
 	else if ( monsterStats->HP <= 0 )
 	{
