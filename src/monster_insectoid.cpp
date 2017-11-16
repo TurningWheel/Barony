@@ -661,7 +661,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
 
-						if ( my->monsterAttackTime >= ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							if ( multiplayer != CLIENT )
 							{
@@ -724,6 +724,11 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							playSoundEntityLocal(my, 170, 64);
 							// monster scream
 							playSoundEntityLocal(my, 99, 128);
+							if ( multiplayer != CLIENT )
+							{
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 60;
+							}
 						}
 
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
@@ -734,7 +739,7 @@ void insectoidMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, 0.25, 4 * PI / 8, false, 0.0);
 						}
 
-						if ( my->monsterAttackTime >= 4 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= 6 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							if ( multiplayer != CLIENT )
 							{
