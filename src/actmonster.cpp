@@ -4469,11 +4469,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	node_t* node = nullptr;
 	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
-	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
 
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
 	chooseWeapon(target, dist);
+	bool hasrangedweapon = this->hasRangedWeapon();
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
@@ -4483,7 +4483,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		int bow = 1;
 		if ( hasrangedweapon )
 		{
-			if ( myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
+			if ( myStats->weapon && myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
 			{
 				bow = 2;
 			}
