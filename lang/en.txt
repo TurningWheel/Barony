@@ -2979,5 +2979,6 @@ dominate the %s into your service!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
 
+2499 You are hit by a stone!#
 
-2499 end#
+2500 end#

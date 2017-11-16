@@ -276,7 +276,22 @@ void actArrow(Entity* my)
 					else if ( hit.entity->behavior == &actPlayer )
 					{
 						Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
-						messagePlayerColor(hit.entity->skill[2], color, language[451]);
+
+						// Display a message telling the Player what they were hit by
+						switch ( my->sprite )
+						{
+							case 78: // "Rock.vox"
+								messagePlayerColor(hit.entity->skill[2], color, language[2499]); // "You are hit by a stone!"
+								break;
+							case 166: // "Arrow.vox"
+								// Intentional Fall-through TODOR: Should there be a separate message for bolts and arrows?
+							case 167: // "Bolt.vox"
+								messagePlayerColor(hit.entity->skill[2], color, language[451]); // "You are hit by an arrow!"
+								break;
+							default:
+								printlog("WARNING: actArrow() - 'You are hit by X' message not implemented for Model #%d", my->sprite); break;
+						}
+
 						if ( damage == 0 )
 						{
 							messagePlayer(hit.entity->skill[2], language[452]);
