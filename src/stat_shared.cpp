@@ -557,10 +557,10 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			stats->RANDOM_MAXMP = 0;
 			stats->RANDOM_MP = stats->RANDOM_MAXMP;
-			stats->STR = 25;
+			stats->STR = 20;
 			stats->RANDOM_STR = 5;
 			stats->DEX = 10;
-			stats->CON = 5;
+			stats->CON = 3;
 			stats->RANDOM_CON = 2;
 			stats->INT = -2;
 			stats->RANDOM_INT = 2;
@@ -790,7 +790,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_HP = stats->RANDOM_MAXHP;
 			//stats->RANDOM_MAXMP = 20;
 			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
-			stats->STR = 30;
+			stats->STR = 15;
 			stats->DEX = 5;
 			stats->CON = 5;
 			stats->INT = -1;
@@ -812,14 +812,17 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->HUNGER = 900;
 
 			stats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] = 1;
-			//TODO: Armor needs to be fitted onto them.
-			//stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
-			//stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
-			//stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
-			//stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_HELM] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] = 1;
+
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1] = 1;
+			stats->EDITOR_ITEMS[ITEM_SLOT_INV_1 + ITEM_CHANCE] = 5; // spellbook
 
 			//stats->PROFICIENCIES[PRO_SWORD] = 35;
-			stats->PROFICIENCIES[PRO_MACE] = 45;
+			stats->PROFICIENCIES[PRO_MACE] = 80;
 			stats->PROFICIENCIES[PRO_AXE] = 60;
 			//stats->PROFICIENCIES[PRO_POLEARM] = 25;
 			stats->PROFICIENCIES[PRO_RANGED] = 60; //Chuck booze at you.
@@ -832,7 +835,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->appearance = rand();
 			stats->inventory.first = nullptr;
 			stats->inventory.last = nullptr;
-			stats->MAXHP = 110;
+			stats->MAXHP = 130;
 			stats->HP = stats->MAXHP;
 			stats->MAXMP = 20;
 			stats->MP = stats->MAXMP;
@@ -843,7 +846,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			//stats->RANDOM_MP = stats->RANDOM_MAXMP;
 			stats->STR = 20;
 			stats->DEX = 5;
-			stats->CON = 10;
+			stats->CON = 5;
 			stats->INT = -1;
 			stats->PER = 10;
 			stats->CHR = -3;
