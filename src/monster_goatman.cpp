@@ -114,6 +114,12 @@ void initGoatman(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			bool isShaman = false;
+			if ( rand() % 2 )
+			{
+				isShaman = true;
+			}
+			
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -123,15 +129,34 @@ void initGoatman(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					if ( isShaman )
+					{
+						switch ( rand() % 4 )
+						{
+							case 0:
+								newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								break;
+							case 1:
+								newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								break;
+							case 2:
+								newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								break;
+							case 3:
+								newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								break;
+						}
+					}
 					break;
 				default:
 					break;
 			}
 
+
 			//Give weapons.
 			if ( !boss )
 			{
-				if ( rand() % 2 == 0 )
+				if ( !isShaman && rand() % 2 == 0 )
 				{
 					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
@@ -157,112 +182,257 @@ void initGoatman(Entity* my, Stat* myStats)
 				}
 			}
 
-			/*
-			//TODO: Armor needs to be fitted.
-			//give shield
-			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+			if ( isShaman )
 			{
-				// give shield
-				switch ( rand() % 10 )
+				//give shield
+				if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					case 0:
-					case 1:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
+					// give shield
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						case 8:
+							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						default:
+							myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+					}
+				}
+				// give cloak
+				if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							break;
+						default:
+							myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+					}
+				}
+				// give helmet
+				if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+						default:
+							myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+					}
+				}
+				// give armor
+				if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						case 2:
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+							break;
+						default:
+							break;
+					}
+				}
+				// give booties
+				if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+						case 19:
+							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+						default:
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+					}
+				}
+				// give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+						case 9:
+							switch ( rand() % 4 )
+							{
+								case 0:
+									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									break;
+								case 1:
+									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									break;
+								case 2:
+									myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									break;
+								case 3:
+									myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									break;
+							}
+							break;
+						default:
+							myStats->weapon = newItem(MAGICSTAFF_SLOW, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+							break;
+					}
 				}
 			}
-
-			// give cloak
-			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			else
 			{
-				switch ( rand() % 10 )
+				////give shield
+				//if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				//{
+				//	switch ( rand() % 20 )
+				//	{
+				//	case 0:
+				//	case 1:
+				//	case 2:
+				//	case 3:
+				//	case 4:
+				//	case 5:
+				//	case 6:
+				//	case 7:
+				//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+				//		break;
+				//	case 8:
+				//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+				//		break;
+				//	default:
+				//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+				//		break;
+				//	}
+				//}
+				// give cloak
+				/*if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
+					switch ( rand() % 10 )
+					{
 					case 0:
 					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
 						break;
-					case 6:
-					case 7:
-					case 8:
+					default:
 						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
-					case 9:
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
-						break;
-				}
-			}
-
-			// give helmet
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
-			{
-				switch ( rand() % 10 )
+					}
+				}*/
+				//// give helmet
+				//if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				//{
+				//	switch ( rand() % 10 )
+				//	{
+				//	case 0:
+				//	case 1:
+				//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+				//		break;
+				//	default:
+				//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+				//		break;
+				//	}
+				//}
+				// give armor
+				if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
+					switch ( rand() % 20 )
+					{
 					case 0:
 					case 1:
 					case 2:
+						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 					case 3:
 					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
 					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
-						break;
 					case 6:
-					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+					case 19:
+						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
 						break;
+					default:
+						break;
+					}
 				}
-			}
-
-			// give armor
-			if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
-			{
-				switch ( rand() % 10 )
+				// give booties
+				if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
+					switch ( rand() % 20 )
+					{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+						break;
+					case 19:
+						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+						break;
+					default:
+						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						break;
+					}
+				}
+				// give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 					case 4:
-						break;
 					case 5:
 					case 6:
 					case 7:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
 						break;
-					case 8:
-					case 9:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+					case 18:
+						myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
 						break;
+					case 19:
+						myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						break;
+					default:
+						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						break;
+					}
 				}
-			}*/
-
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				myStats->weapon = newItem(rand()%2? STEEL_AXE : STEEL_MACE, static_cast<Status>(EXCELLENT - rand()%1), 0, 1, rand(), false, nullptr);
 			}
 		}
 	}
@@ -1202,7 +1372,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		return;
 	}
 
-	if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
+	if ( myStats->weapon && (itemCategory(myStats->weapon) == SPELLBOOK) )
 	{
 		return;
 	}
@@ -1332,6 +1502,10 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
 			if ( !weaponNode )
 			{
+				if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
+				{
+					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
+				}
 				return; //Resort to fists.
 			}
 
@@ -1387,7 +1561,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		if ( !weaponNode )
 		{
 			//If couldn't find any, search the inventory for a ranged weapon.
-			weaponNode = getRangedWeaponItemNodeInInventory(myStats, false);
+			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
 		}
 
 		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
