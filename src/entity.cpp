@@ -3596,14 +3596,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			}
 		}
 
-		if ( myStats->type == GOATMAN )
-		{
-			if ( monsterSpecialState > 0 )
-			{
-				monsterSpecialState = 0; //Resume the weapon choosing AI for a goatman, since he's now chucking his held item.
-			}
-		}
-		else if ( myStats->type == SHADOW )
+		if ( myStats->type == SHADOW )
 		{
 			if ( myStats->EFFECTS[EFF_INVISIBLE] )
 			{
@@ -6947,7 +6940,7 @@ int Entity::getAttackPose() const
 				{
 					pose = MONSTER_POSE_MELEE_WINDUP1;
 				}*/
-				if ( monsterSpecialState > 0 )
+				if ( monsterSpecialState == GOATMAN_POTION )
 				{
 					pose = MONSTER_POSE_RANGED_WINDUP3;
 				}
