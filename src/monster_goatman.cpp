@@ -619,6 +619,11 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							my->monsterWeaponYaw = 0;
 							weaponarm->roll = 0;
 							weaponarm->skill[1] = 0;
+							if ( multiplayer != CLIENT )
+							{
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 40;
+							}
 						}
 						if ( multiplayer != CLIENT )
 						{
@@ -629,7 +634,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.0);
 						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
 
-						if ( my->monsterAttackTime >= 3 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						if ( my->monsterAttackTime >= 4 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
 						{
 							if ( multiplayer != CLIENT )
 							{
@@ -1163,7 +1168,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 {
-	if ( monsterSpecialState == 1 )
+	if ( monsterSpecialState != 0 )
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
 		//messagePlayer()
@@ -1199,14 +1204,13 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	node_t* hasPotion = nullptr;
 	bool isHealingPotion = false;
 
-	if ( monsterSpecialTimer == 0 )
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
 		//messagePlayer(clientnum, "Cooldown done!");
-		specialRoll = rand()%20;
+		specialRoll = rand()%10;
 
 		if ( specialRoll == 0 )
 		{
-			monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK;
 			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
 			{
 				//Try to get a health potion.
@@ -1225,9 +1229,26 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 						}
 						else
 						{
-							monsterSpecialState = 1;
+							monsterSpecialState = GOATMAN_POTION;
+							//monsterHitTime = 2 * HITRATE;
 							return;
 						}
+					}
+				}
+				else
+				{
+					//Equip and chuck it now.
+					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+					if ( !swapped )
+					{
+						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+					}
+					else
+					{
+						monsterSpecialState = GOATMAN_POTION;
+						//monsterHitTime = 2 * HITRATE;
+						return;
 					}
 				}
 			}
@@ -1236,7 +1257,22 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			{
 				//Couldn't find a healing potion? Try for a potion of booze.
 				hasPotion = itemNodeInInventory(myStats, POTION_BOOZE, static_cast<Category>(-1));
-				monsterSpecialState = 1;
+				if ( hasPotion )
+				{
+					//Equip and chuck it now.
+					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+					if ( !swapped )
+					{
+						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+					}
+					else
+					{
+						monsterSpecialState = GOATMAN_POTION;
+						//monsterHitTime = 2 * HITRATE;
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -1245,10 +1281,10 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 
 	if ( inMeleeRange )
 	{
-		if ( specialRoll == 0 )
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && specialRoll == 0 )
 		{
 			bool tryChakram = true;
-			if ( hasPotion && rand()%2 )
+			if ( hasPotion && rand()%10 )
 			{
 				tryChakram = false;
 			}
@@ -1267,23 +1303,10 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 					}
 					else
 					{
-						monsterSpecialState = 1;
+						monsterSpecialState = GOATMAN_THROW;
 						return;
 					}
 				}
-			}
-		}
-		if ( hasPotion )
-		{
-			//Equip the potion.
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
-			if ( !swapped )
-			{
-				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand (melee block)! Cursed? (%d)", myStats->weapon->beatitude);
-			}
-			else
-			{
-				monsterSpecialState = 1;
 			}
 		}
 
@@ -1313,26 +1336,38 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		}
 	}
 
-	if ( hasPotion )
-	{
-		//Try to equip the potion first. If fails, then equip normal ranged.
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
-		if ( !swapped )
-		{
-			printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
-		}
-		else
-		{
-			monsterSpecialState = 1;
-			return;
-		}
-	}
+	//if ( hasPotion )
+	//{
+	//	//Try to equip the potion first. If fails, then equip normal ranged.
+	//	bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+	//	if ( !swapped )
+	//	{
+	//		printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
+	//	}
+	//	else
+	//	{
+	//		monsterSpecialState = GOATMAN_POTION;
+	//		return;
+	//	}
+	//}
 
 	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
 	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
 	{
 		//First search the inventory for a THROWN weapon.
-		node_t *weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+		node_t *weaponNode = nullptr;
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && rand() % 10 == 0 )
+		{
+			weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			if ( weaponNode )
+			{
+				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )
+				{
+					monsterSpecialState = GOATMAN_THROW;
+					return;
+				}
+			}
+		}
 		if ( !weaponNode )
 		{
 			//If couldn't find any, search the inventory for a ranged weapon.

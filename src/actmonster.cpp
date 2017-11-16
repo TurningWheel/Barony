@@ -5245,6 +5245,15 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEPORT;
 						break;
 					}
+				case GOATMAN:
+					if ( monsterSpecialState == GOATMAN_POTION )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK;
+					}
+					else if ( monsterSpecialState == GOATMAN_THROW )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
+					}
 					break;
 				default:
 					break;
@@ -5387,6 +5396,37 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						/*Item *spellbook = newItem(static_cast<ItemType>(0), static_cast<Status>(0), 0, 1, rand(), 0, &myStats->inventory);
 						copyItem(spellbook, myStats->weapon);
 						dropItemMonster(myStats->weapon, this, myStats, 1);*/
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case GOATMAN:
+					if ( monsterSpecialState == GOATMAN_POTION )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, POTION);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == GOATMAN_THROW )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+						}
 						shouldAttack = false;
 						monsterSpecialState = 0;
 					}
