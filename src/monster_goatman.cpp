@@ -131,19 +131,28 @@ void initGoatman(Entity* my, Stat* myStats)
 			//Give weapons.
 			if ( !boss )
 			{
-				if ( rand()%2 == 0 )
+				if ( rand() % 2 == 0 )
 				{
 					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
-				if ( rand()%4 > 0 )
+				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
+				if ( rand() % 5 == 0 )
 				{
-					if ( rand()%3 == 0 )
+					int numhealpotion = rand() % 2 + 1;
+					newItem(POTION_HEALING, static_cast<Status>(rand() % 3 + DECREPIT), 0, numhealpotion, rand(), false, &myStats->inventory);
+					numpotions -= numhealpotion;
+				}
+				if ( rand() % 4 > 0 )
+				{
+					if ( rand() % 3 == 0 )
 					{
-						newItem(POTION_BOOZE, static_cast<Status>(rand()%3 + DECREPIT), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+						// droppable
+						newItem(POTION_BOOZE, static_cast<Status>(rand()%3 + DECREPIT), 0, numpotions, rand(), false, &myStats->inventory);
 					}
 					else
 					{
-						newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand() % NUM_GOATMAN_POTIONS + 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+						// undroppable
+						newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 					}
 				}
 			}
