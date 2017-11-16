@@ -133,11 +133,18 @@ void initGoatman(Entity* my, Stat* myStats)
 			{
 				if ( rand()%2 == 0 )
 				{
-					newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
 				if ( rand()%4 > 0 )
 				{
-					newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+					if ( rand()%3 == 0 )
+					{
+						newItem(POTION_BOOZE, static_cast<Status>(rand()%3 + DECREPIT), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+					}
+					else
+					{
+						newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand() % NUM_GOATMAN_POTIONS + 2, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
+					}
 				}
 			}
 
