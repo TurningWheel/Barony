@@ -4512,6 +4512,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 								degradeWeapon = true;
 							}
 
+							if ( myStats->type == SHADOW )
+							{
+								degradeWeapon = false; //Shadow's weapons don't degrade.
+							}
+
 							if ( degradeWeapon )
 							{
 								if ( player == clientnum || player < 0 )
