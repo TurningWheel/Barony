@@ -103,6 +103,7 @@ static const int PARTICLE_EFFECT_ERUPT = 7;
 static const int PARTICLE_EFFECT_VAMPIRIC_AURA = 8;
 static const int PARTICLE_EFFECT_RISING_DROP = 9;
 static const int PARTICLE_EFFECT_PORTAL_SPAWN = 10;
+static const int PARTICLE_EFFECT_SHADOW_TELEPORT = 11;
 
 // misc particle timer actions
 static const int PARTICLE_TIMER_ACTION_SHOOT_PARTICLES = 1;

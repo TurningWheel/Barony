@@ -2573,6 +2573,11 @@ void Entity::handleEffects(Stat* myStats)
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
 
+	if ( myStats->EFFECTS[EFF_INVISIBLE] && myStats->type == SHADOW )
+	{
+		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
+	}
+
 	// burning
 	if ( this->flags[BURNING] )
 	{
@@ -3383,10 +3388,10 @@ bool Entity::isMobile()
 		return false;
 	}
 
-	if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
-	{
-		return false; //Shadows can't do anything while they are casting their special ability.
-	}
+	//if ( entitystats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+	//{
+	//	return false; //Shadows can't do anything while they are casting their special ability.
+	//}
 
 	return true;
 }
@@ -3628,7 +3633,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				//Shadows lose invisibility when they attack.
 				//TODO: How does this play with the passive invisibility?
-				myStats->EFFECTS[EFF_INVISIBLE] = false;
+				setEffect(EFF_INVISIBLE, false, 0, true);
 			}
 		}
 
@@ -6866,7 +6871,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MELEE_WINDUP1;
 			}
@@ -6910,7 +6916,7 @@ int Entity::getAttackPose() const
 				|| myStats->type == VAMPIRE || myStats->type == HUMAN
 				|| myStats->type == GOBLIN || myStats->type == SKELETON 
 				|| myStats->type == GNOME || myStats->type == SUCCUBUS
-				|| myStats->type == SHOPKEEPER )
+				|| myStats->type == SHOPKEEPER || myStats->type == SHADOW )
 			{
 				pose = MONSTER_POSE_MAGIC_WINDUP1;
 			}
@@ -6955,7 +6961,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN 
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == SHADOW )
 			{
 				if ( myStats->weapon->type == CROSSBOW )
 				{
@@ -6996,7 +7003,8 @@ int Entity::getAttackPose() const
 				|| myStats->type == INCUBUS || myStats->type == VAMPIRE
 				|| myStats->type == HUMAN || myStats->type == GOBLIN
 				|| myStats->type == SKELETON || myStats->type == GNOME
-				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER )
+				|| myStats->type == SUCCUBUS || myStats->type == SHOPKEEPER
+				|| myStats->type == SHADOW )
 			{
 				if ( getWeaponSkill(myStats->weapon) == PRO_AXE || getWeaponSkill(myStats->weapon) == PRO_MACE )
 				{
@@ -7024,7 +7032,8 @@ int Entity::getAttackPose() const
 			|| myStats->type == GHOUL || myStats->type == SKELETON
 			|| myStats->type == GNOME || myStats->type == DEMON
 			|| myStats->type == CREATURE_IMP || myStats->type == SUCCUBUS
-			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR )
+			|| myStats->type == SHOPKEEPER || myStats->type == MINOTAUR
+			|| myStats->type == SHADOW )
 		{
 			pose = MONSTER_POSE_MELEE_WINDUP1;
 		}
@@ -7181,7 +7190,6 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		}
 		else if ( weaponarm->skill[1] == 1 )
 		{
-			// return to neutral //TODO: Does client need this in shadow code, or just monsterAttack = 0?
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
 			{
 				weaponarm->skill[0] = rightbody->skill[0];
@@ -7539,7 +7547,15 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		{
 			if ( multiplayer != CLIENT )
 			{
-				this->attack(1, 0, nullptr);
+				Stat* stats = this->getStats();
+				if ( stats && stats->type == SHADOW )
+				{
+					this->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
+				}
+				else
+				{
+					this->attack(1, 0, nullptr);
+				}
 			}
 		}
 	}
@@ -8000,6 +8016,11 @@ void Entity::handleEffectsClient()
 	if (myStats->EFFECTS[EFF_VAMPIRICAURA])
 	{
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
+	}
+
+	if ( myStats->EFFECTS[EFF_INVISIBLE] && getMonsterTypeFromSprite() == SHADOW )
+	{
+		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
 	}
 }
 
