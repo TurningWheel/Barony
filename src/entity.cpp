@@ -8732,6 +8732,11 @@ Item* Entity::getBestShieldIHave() const
 
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
+	if ( hitstats.type == SHADOW )
+	{
+		return; //Shadows' armor and shields don't break.
+	}
+
 	int playerhit = -1;
 
 	if ( this->behavior == &actPlayer )
