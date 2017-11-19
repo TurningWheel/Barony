@@ -559,7 +559,7 @@ void setDefaultMonsterStats(Stat* stats, int sprite)
 			stats->RANDOM_MP = stats->RANDOM_MAXMP;
 			stats->STR = 20;
 			stats->RANDOM_STR = 5;
-			stats->DEX = 10;
+			stats->DEX = 8;
 			stats->CON = 3;
 			stats->RANDOM_CON = 2;
 			stats->INT = -2;
