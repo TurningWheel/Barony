@@ -20,6 +20,8 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+#include "items.hpp"
+#include "cppfuncs.hpp"
 
 #ifdef HAVE_FMOD
 #include "fmod.h"
@@ -2408,5 +2410,67 @@ bool changeVideoMode()
 	}
 #endif
 	// success
+	return true;
+}
+
+/*-------------------------------------------------------------------------------
+
+loadItemLists()
+
+loads the global item whitelist/blacklists and level curve.
+
+-------------------------------------------------------------------------------*/
+
+bool loadItemLists()
+{
+	char filename[128] = { 0 };
+	//FILE* fp;
+	int c;
+
+	// open log file
+	if ( !logfile )
+	{
+		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
+
+	// compose filename
+	strcpy(filename, "items/items_global.txt");
+	// check if item list is valid
+	if ( !dataPathExists(filename) )
+	{
+		// file doesn't exist
+		printlog("error: unable to locate tile palette file: '%s'", filename);
+		return false;
+	}
+
+	std::vector<std::string> itemLevels = getLinesFromFile(filename);
+	std::string line;
+	int itemIndex = 0;
+
+	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
+		// process i
+		line = *i;
+		if ( line[0] == '#' || line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find('#');
+		if ( found != std::string::npos )
+		{
+			char tmp[128];
+			std::string sub = line.substr(0, found);
+			strncpy(tmp, sub.c_str(), sub.length());
+			tmp[sub.length()] = '\0';
+			//printlog("%s", tmp);
+			items[itemIndex].level = atoi(tmp);
+			++itemIndex;
+		}
+	}
+
+	printlog("successfully loaded global item list '%s' \n", filename);
+	for ( c = 0; c < NUMITEMS; ++c )
+	{
+		printlog("%s level: %d", items[c].name_identified, items[c].level);
+	}
 	return true;
 }
