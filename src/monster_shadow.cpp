@@ -9,6 +9,7 @@ See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 
+#include <string>
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -25,6 +26,11 @@ void initShadow(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
+	my->monsterShadowDontChangeName = 0; //By default, it does.
+	if ( myStats && strcmp(myStats->name, "") != 0 )
+	{
+		my->monsterShadowDontChangeName = 1; //User set a name.
+	}
 
 	my->initMonster(481);
 
@@ -54,6 +60,7 @@ void initShadow(Entity* my, Stat* myStats)
 			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
 			{
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
+				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
 				myStats->GOLD = 1000;
 				myStats->RANDOM_GOLD = 500;
 				myStats->LVL = 50; // >:U
@@ -1309,6 +1316,20 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//2. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
+		if ( !monsterShadowDontChangeName )
+		{
+			std::string newName = "Shadow of ";
+			if ( strcmp(targetStats->name, "") != 0 )
+			{
+				newName += targetStats->name;
+			}
+			else
+			{
+				newName += monstertypename[targetStats->type];
+			}
+			strcpy(myStats->name, newName.c_str());
+		}
+
 		monsterShadowInitialMimic = 0;
 		messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
