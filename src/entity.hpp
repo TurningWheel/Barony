@@ -262,6 +262,8 @@ public:
 	Sint32& teleporterType;
 	Sint32& teleporterAmbience;
 
+	int semiTranslucent; //EXPERIMENTAL FUNCTIONALITY PLEASE IGNORE.
+
 	void pedestalOrbInit(); // init orb properties
 
 	// a pointer to the entity's location in a list (ie the map list of entities)

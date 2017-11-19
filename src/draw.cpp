@@ -1098,13 +1098,22 @@ void drawEntities3D(view_t* camera, int mode)
 		}
 		x = entity->x / 16;
 		y = entity->y / 16;
+		bool render = true;
+		if ( entity->getRace() == SHADOW || entity->semiTranslucent )
+		{
+			render = ticks%3 != 0; //Shadow to appear semi-translucent.
+		}
+
 		if ( x >= 0 && y >= 0 && x < map.width && y < map.height )
 		{
 			if ( vismap[y + x * map.height] || entity->flags[OVERDRAW] )
 			{
 				if ( entity->flags[SPRITE] == false )
 				{
-					glDrawVoxel(camera, entity, mode);
+					if ( render )
+					{
+						glDrawVoxel(camera, entity, mode);
+					}
 				}
 				else
 				{
@@ -1116,7 +1125,10 @@ void drawEntities3D(view_t* camera, int mode)
 		{
 			if ( entity->flags[SPRITE] == false )
 			{
-				glDrawVoxel(camera, entity, mode);
+				if ( render )
+				{
+					glDrawVoxel(camera, entity, mode);
+				}
 			}
 			else
 			{

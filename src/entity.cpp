@@ -242,6 +242,8 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 
 	clientStats = nullptr;
 	clientsHaveItsStats = false;
+
+	semiTranslucent = 0;
 }
 
 void Entity::setUID(Uint32 new_uid) {

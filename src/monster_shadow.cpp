@@ -98,6 +98,8 @@ void initShadow(Entity* my, Stat* myStats)
 		}
 	}
 
+	my->semiTranslucent = 1;
+
 	// torso
 	Entity* entity = newEntity(482, 0, map.entities);
 	entity->sizex = 4;
@@ -114,6 +116,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][1][2]; // 0
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -132,6 +135,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][2][2]; // 2
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -150,6 +154,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][3][2]; // 2
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -168,6 +173,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][4][2]; // 1.5
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -186,6 +192,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][5][2]; // 1.5
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -205,6 +212,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
 	entity->pitch = .25;
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -223,6 +231,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][7][2]; // 0
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -241,6 +250,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][8][2]; // 4
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -262,6 +272,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][9][2]; // -2
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
@@ -280,6 +291,7 @@ void initShadow(Entity* my, Stat* myStats)
 	entity->focalz = limbs[SHADOW][10][2]; // .25
 	entity->behavior = &actShadowLimb;
 	entity->parent = my->getUID();
+	entity->semiTranslucent = 1;
 	node = list_AddNodeLast(&my->children);
 	node->element = entity;
 	node->deconstructor = &emptyDeconstructor;
