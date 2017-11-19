@@ -4687,7 +4687,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 							// if no armor piece was chosen to break, grant chance to improve shield skill.
 							if ( itemCategory(hitstats->shield) == ARMOR )
 							{
-								if ( (rand() % 10 == 0 && damage > 0) || (damage == 0 && rand() % 3 == 0) )
+								if ( (rand() % 15 == 0 && damage > 0) || (damage == 0 && rand() % 8 == 0) )
 								{
 									hit.entity->increaseSkill(PRO_SHIELD); // increase shield skill
 								}
