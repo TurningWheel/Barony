@@ -2916,11 +2916,30 @@ void actParticleTimer(Entity* my)
 			{
 				// teleport to target spell.
 				Entity* parent = uidToEntity(my->parent);
-				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
-				if ( parent && target )
+				if ( parent )
 				{
+					if ( parent->monsterSpecialState == SHADOW_TELEPORT_ONLY )
+					{
+						//messagePlayer(0, "Resetting shadow's monsterSpecialState!");
+						parent->monsterSpecialState = 0;
+						serverUpdateEntitySkill(parent, 33); // for clients to keep track of animation
+					}
+				}
+				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
+				if ( parent )
+				{
+					bool teleported = false;
 					createParticleErupt(parent, my->particleTimerEndSprite);
-					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
+					if ( target )
+					{
+						teleported = parent->teleportAroundEntity(target, my->particleTimerVariable1);
+					}
+					else
+					{
+						teleported = parent->teleportRandom();
+					}
+
+					if ( teleported )
 					{
 						// teleport success.
 						if ( multiplayer == SERVER )

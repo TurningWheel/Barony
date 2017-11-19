@@ -87,6 +87,7 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	monsterArmbended(skill[10]),
 	monsterWeaponYaw(fskill[5]),
 	monsterShadowInitialMimic(skill[34]),
+	monsterShadowDontChangeName(skill[35]),
 	monsterPathBoundaryXStart(skill[14]),
 	monsterPathBoundaryYStart(skill[15]),
 	monsterPathBoundaryXEnd(skill[16]),
@@ -3653,7 +3654,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 			{
 				//Shadows lose invisibility when they attack.
 				//TODO: How does this play with the passive invisibility?
-				myStats->EFFECTS[EFF_INVISIBLE] = false;
+				setEffect(EFF_INVISIBLE, false, 0, true);
 			}
 		}
 
@@ -4566,6 +4567,11 @@ void Entity::attack(int pose, int charge, Entity* target)
 							else if ( !isWeakWeapon && ((rand() % 4 == 0 && damage == 0) || (rand() % 50 == 0 && damage > 0)) )
 							{
 								degradeWeapon = true;
+							}
+
+							if ( myStats->type == SHADOW )
+							{
+								degradeWeapon = false; //Shadow's weapons don't degrade.
 							}
 
 							if ( degradeWeapon )
@@ -5620,6 +5626,20 @@ bool Entity::teleport(int tele_x, int tele_y)
 		net_packet->address.port = net_clients[player - 1].port;
 		net_packet->len = 6;
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
+	}
+
+
+	if ( behavior == actMonster )
+	{
+		if ( getRace() != LICH && getRace() != DEVIL && getRace() != LICH_FIRE && getRace() != LICH_ICE )
+		{
+			//messagePlayer(0, "Resetting monster's path after teleport.");
+			monsterState = MONSTER_STATE_PATH;
+			/*if ( children.first != nullptr )
+			{
+				list_RemoveNode(children.first);
+			}*/
+		}
 	}
 
 	// play second sound effect
@@ -7246,7 +7266,6 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		}
 		else if ( weaponarm->skill[1] == 1 )
 		{
-			// return to neutral //TODO: Does client need this in shadow code, or just monsterAttack = 0?
 			if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
 			{
 				weaponarm->skill[0] = rightbody->skill[0];
@@ -7604,7 +7623,15 @@ void Entity::handleWeaponArmAttack(Entity* weaponarm)
 		{
 			if ( multiplayer != CLIENT )
 			{
-				this->attack(1, 0, nullptr);
+				Stat* stats = this->getStats();
+				if ( stats && stats->type == SHADOW )
+				{
+					this->attack(MONSTER_POSE_MAGIC_CAST1, 0, nullptr);
+				}
+				else
+				{
+					this->attack(1, 0, nullptr);
+				}
 			}
 		}
 	}
@@ -8066,6 +8093,11 @@ void Entity::handleEffectsClient()
 	{
 		spawnAmbientParticles(30, 600, 20 + rand() % 30, 0.5, true);
 	}
+
+	if ( myStats->EFFECTS[EFF_INVISIBLE] && getMonsterTypeFromSprite() == SHADOW )
+	{
+		spawnAmbientParticles(20, 175, 20 + rand() % 30, 0.5, true);
+	}
 }
 
 void Entity::serverUpdateEffectsForEntity(bool guarantee)
@@ -8198,7 +8230,7 @@ void Entity::monsterAcquireAttackTarget(const Entity& target, Sint32 state)
 		monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 		//pose = MONSTER_POSE_MAGIC_WINDUP1;
 		monsterShadowInitialMimic = 1; //true!
-		//attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
+		attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 	}
 }
 
@@ -8771,6 +8803,11 @@ Item* Entity::getBestShieldIHave() const
 
 void Entity::degradeArmor(Stat& hitstats, Item& armor, int armornum)
 {
+	if ( hitstats.type == SHADOW )
+	{
+		return; //Shadows' armor and shields don't break.
+	}
+
 	int playerhit = -1;
 
 	if ( this->behavior == &actPlayer )
