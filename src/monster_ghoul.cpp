@@ -101,7 +101,7 @@ void initGhoul(Entity* my, Stat* myStats)
 				case 2:
 					if ( rand() % 10 == 0 )
 					{
-						newItem(itemCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
+						newItem(itemLevelCurve(TOOL), DECREPIT, 1, 1, rand(), false, &myStats->inventory);
 					}
 				case 1:
 					if ( rand() % 4 == 0 )
