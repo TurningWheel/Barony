@@ -8197,10 +8197,10 @@ bool Entity::monsterReleaseAttackTarget(bool force)
 		return false; //Shadow cannot lose its target.
 	}
 
-	if ( myStats->type == SHADOW )
+	/*if ( myStats->type == SHADOW )
 	{
 		messagePlayer(0, "DEBUG: Shadow: Entity::monsterReleaseAttackTarget().");
-	}
+	}*/
 
 	monsterTarget = 0;
 
@@ -8737,10 +8737,10 @@ Item* Entity::getBestShieldIHave() const
 		}
 	}
 
-	if ( currentBest )
+	/*if ( currentBest )
 	{
 		messagePlayer(clientnum, "Found best shield: \"%s\"", currentBest->description());
-	}
+	}*/
 
 	return currentBest;
 }
@@ -8878,7 +8878,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 {
 	if (spellbookType == SPELL_NONE )
 	{
-		messagePlayer(clientnum, "[DEBUG: Entity::monsterHasSpellbook()] skipping SPELL_NONE");
+		//messagePlayer(clientnum, "[DEBUG: Entity::monsterHasSpellbook()] skipping SPELL_NONE");
 		return false;
 	}
 
@@ -8891,7 +8891,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 	if ( myStats->weapon && getSpellIDFromSpellbook(myStats->weapon->type) == spellbookType )
 	{
 		spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(myStats->weapon->type));
-		messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->name);
+		//messagePlayer(clientnum, "DEBUG: Monster has spell %s.", spell->name);
 		return true;
 	}
 
@@ -8906,7 +8906,7 @@ bool Entity::monsterHasSpellbook(int spellbookType)
 		if ( getSpellIDFromSpellbook(item->type) == spellbookType )
 		{
 			spell_t *spell = getSpellFromID(getSpellIDFromSpellbook(item->type));
-			messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Monster HAS spell %s.", spell->name);
 			return true;
 		}
 	}
@@ -9079,21 +9079,21 @@ node_t* Entity::chooseAttackSpellbookFromInventory()
 			}
 			else
 			{
-				messagePlayer(clientnum, "TODO: Only shadow has CanCastSpell() checking implemented! Need to update other relevant monsters.");
+				//messagePlayer(clientnum, "TODO: Only shadow has CanCastSpell() checking implemented! Need to update other relevant monsters.");
 			}
 		}
 	}
 
 	if ( spellbooks.size() == 0 )
 	{
-		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] No applicable spellbooks on me!");
+		//messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] No applicable spellbooks on me!");
 		return nullptr;
 	}
 
 	spellbook = spellbookNodeInInventory(myStats, spellbooks[rand()%spellbooks.size()]); //Choose a random spell and return it.
 	if (!spellbook )
 	{
-		messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
+		//messagePlayer(clientnum, "[DEBUG:Entity::chooseAttackSpellbookFromInventory()] Error: Failed to choose a spellbook!");
 	}
 	return spellbook;
 }
