@@ -1293,7 +1293,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	Entity *target = uidToEntity(monsterTarget);
 	if ( !target )
 	{
-		messagePlayer(clientnum, "Shadow's target deaded!");
+		//messagePlayer(clientnum, "Shadow's target deaded!");
 		monsterReleaseAttackTarget();
 		return;
 	}
@@ -1308,7 +1308,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//1. Turn invisible.
 	//myStats->EFFECTS[EFF_INVISIBLE] = true;
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
-	messagePlayer(clientnum, "Turned invisible!");
+	//messagePlayer(clientnum, "Turned invisible!");
 
 	int numSpellsToMimic = 2;
 	int numSkillsToMimic = 3;
@@ -1331,7 +1331,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		}
 
 		monsterShadowInitialMimic = 0;
-		messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
+		//messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
 		if ( itemCategory(myStats->weapon) == SPELLBOOK )
@@ -1393,7 +1393,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		int choosen = rand()%skillsCanMimic.size();
 		myStats->PROFICIENCIES[skillsCanMimic[choosen]] = targetStats->PROFICIENCIES[skillsCanMimic[choosen]];
 
-		messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
+		//messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
 		skillsCanMimic.erase(skillsCanMimic.begin() + choosen); //No longer an eligible skill.
 	}
 
@@ -1475,7 +1475,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			//TODO: Delete debug.
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(spellbook->type));
-			messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
 		}
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
