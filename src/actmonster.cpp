@@ -2532,6 +2532,16 @@ void actMonster(Entity* my)
 
 			// rotate monster
 			dir = my->monsterRotate();
+
+			if ( myStats->type == SHADOW && !uidToEntity(my->monsterTarget) && my->monsterSpecialTimer == 0 && my->monsterSpecialState == 0 && ticks%500 == 0 && rand()%5 == 0 )
+			{
+				//Random chance for a shadow to teleport around the map if it has nothing better to do.
+				//messagePlayer(0, "Shadow idle telepotty.");
+				my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+				my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
+				my->shadowTeleportToTarget(nullptr, 3); // teleport in closer range
+				my->monsterState = MONSTER_STATE_WAIT;
+			}
 		} //End wait state
 		else if ( my->monsterState == MONSTER_STATE_ATTACK ) //Begin charge state
 		{
@@ -2545,7 +2555,7 @@ void actMonster(Entity* my)
 				}
 				if ( myStats->type == SHADOW )
 				{
-					messagePlayer(0, "DEBUG: Shadow lost entity.");
+					//messagePlayer(0, "DEBUG: Shadow lost entity.");
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
