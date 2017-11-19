@@ -1601,6 +1601,11 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 				monsterHitTime = HITRATE * 2; // force immediate attack
 				return;
 			}
+			else
+			{
+				//Always set the cooldown, even if didn't cast anything.
+				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
+			}
 		}
 	}
 
