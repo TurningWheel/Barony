@@ -1461,6 +1461,11 @@ int generateDungeon(char* levelset, Uint32 seed)
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
 			}
+			else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			{
+				possiblelocations[y + x * map.height] = false;
+				numpossiblelocations--;
+			}
 			else
 			{
 				possiblelocations[y + x * map.height] = true;
