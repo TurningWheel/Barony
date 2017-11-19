@@ -8796,7 +8796,14 @@ bool Entity::shouldRetreat(Stat& myStats)
 		return false;
 	}
 
-	if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
+	if ( myStats.MAXHP >= 100 )
+	{
+		if ( myStats.HP <= myStats.MAXHP / 6 && this->getCHR() >= -2 )
+		{
+			return true;
+		}
+	}
+	else if ( myStats.HP <= myStats.MAXHP / 3 && this->getCHR() >= -2 )
 	{
 		return true;
 	}

@@ -119,6 +119,10 @@ void initGoatman(Entity* my, Stat* myStats)
 			{
 				isShaman = true;
 			}
+			else
+			{
+				myStats->DEX += 3; // more speed for brawlers.
+			}
 			
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )

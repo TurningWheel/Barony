@@ -239,7 +239,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 			}*/
 
 			// give armor
-			if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+			/*if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 			{
 				switch ( rand() % 10 )
 				{
@@ -259,7 +259,7 @@ void initInsectoid(Entity* my, Stat* myStats)
 						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(DECREPIT + rand() % 4), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 				}
-			}
+			}*/
 
 			// give booties
 			if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )

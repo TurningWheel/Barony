@@ -181,21 +181,21 @@ int monsterCurve(int level)
 	}
 	else if ( !strncmp(map.name, "Caves", 5) )
 	{
-		switch ( rand() % 18 )
+		switch ( rand() % 20 )
 		{
 			case 0:
 			case 1:
 			case 2:
 			case 3:
-				return KOBOLD;
 			case 4:
+				return KOBOLD;
 			case 5:
-				return SCARAB;
 			case 6:
+				return SCARAB;
 			case 7:
 			case 8:
-				return AUTOMATON;
 			case 9:
+				return AUTOMATON;
 			case 10:
 			case 11:
 				return CRYSTALGOLEM;
