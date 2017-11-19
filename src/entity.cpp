@@ -6156,7 +6156,7 @@ void createMonsterEquipment(Stat* stats)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemCurve(static_cast<Category>(category - 1));
+					itemId = itemLevelCurve(static_cast<Category>(category - 1));
 				}
 				else
 				{
@@ -6167,11 +6167,11 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(WEAPON));
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(ARMOR));
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR));
 						}
 					}
 					else if ( category == 15 )
@@ -6180,11 +6180,11 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(AMULET));
+							itemId = itemLevelCurve(static_cast<Category>(AMULET));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(RING));
+							itemId = itemLevelCurve(static_cast<Category>(RING));
 						}
 					}
 					else if ( category == 16 )
@@ -6193,15 +6193,15 @@ void createMonsterEquipment(Stat* stats)
 						randType = rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(SCROLL));
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK));
 						}
 					}
 				}

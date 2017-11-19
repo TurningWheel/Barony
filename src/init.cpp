@@ -2468,9 +2468,9 @@ bool loadItemLists()
 	}
 
 	printlog("successfully loaded global item list '%s' \n", filename);
-	for ( c = 0; c < NUMITEMS; ++c )
+	/*for ( c = 0; c < NUMITEMS; ++c )
 	{
 		printlog("%s level: %d", items[c].name_identified, items[c].level);
-	}
+	}*/
 	return true;
 }

@@ -402,6 +402,113 @@ ItemType itemCurve(Category cat)
 
 /*-------------------------------------------------------------------------------
 
+itemLevelCurve
+
+Selects an item type from the given category of items by factoring in
+dungeon level and defined level of the item
+
+-------------------------------------------------------------------------------*/
+
+ItemType itemLevelCurve(Category cat)
+{
+	int numitems = NUMITEMS;
+	bool chances[NUMITEMS];
+	int c;
+
+	if ( cat < 0 || cat >= NUMCATEGORIES )
+	{
+		printlog("warning: itemLevelCurve() called with bad category value!\n");
+		return GEM_ROCK;
+	}
+
+	Uint32 numoftype = 0;
+	for ( c = 0; c < numitems; ++c )
+	{
+		chances[c] = false;
+		if ( items[c].category == cat )
+		{
+			if ( items[c].level != -1 && (items[c].level <= currentlevel) )
+			{
+				chances[c] = true;
+				numoftype++;
+				if ( cat == TOOL )
+				{
+					switch ( (ItemType)c )
+					{
+						case TOOL_TINOPENER:
+							if ( prng_get_uint() % 2 )   // 50% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						case TOOL_LANTERN:
+							if ( prng_get_uint() % 4 == 0 )   // 25% chance
+							{
+								chances[c] = false;
+							}
+							break;
+						default:
+							break;
+					}
+				}
+			}
+		}
+	}
+	if ( numoftype == 0 )
+	{
+		printlog("warning: category passed to itemLevelCurve has no items!\n");
+		return GEM_ROCK;
+	}
+
+	// calculate number of items left
+	Uint32 numleft = 0;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( chances[c] == true )
+		{
+			numleft++;
+		}
+	}
+	if ( numleft == 0 )
+	{
+		return GEM_ROCK;
+	}
+
+	// most gems are worthless pieces of glass
+	if ( cat == GEM )
+	{
+		if ( prng_get_uint() % 10 )
+		{
+			return GEM_GLASS;
+		}
+	}
+
+	// pick the item
+	int pick = prng_get_uint() % numleft;
+	for ( c = 0; c < numitems; c++ )
+	{
+		if ( items[c].category == cat )
+		{
+			if ( chances[c] == true )
+			{
+				if ( pick == 0 )
+				{
+					messagePlayer(0, "Chose item: %s of %d items.", items[c].name_identified ,numleft);
+					return static_cast<ItemType>(c);
+				}
+				else
+				{
+					pick--;
+				}
+			}
+		}
+	}
+
+	return GEM_ROCK;
+}
+
+/*-------------------------------------------------------------------------------
+
 	Item::description
 
 	Returns a string that describes the given item's properties
@@ -2675,7 +2782,7 @@ void createCustomInventory(Stat* stats, int itemLimit)
 			{
 				if ( category > 0 && category <= 13 )
 				{
-					itemId = itemCurve(static_cast<Category>(category - 1));
+					itemId = itemLevelCurve(static_cast<Category>(category - 1));
 				}
 				else
 				{
@@ -2686,11 +2793,11 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(WEAPON));
+							itemId = itemLevelCurve(static_cast<Category>(WEAPON));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(ARMOR));
+							itemId = itemLevelCurve(static_cast<Category>(ARMOR));
 						}
 					}
 					else if ( category == 15 )
@@ -2699,11 +2806,11 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 2;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(AMULET));
+							itemId = itemLevelCurve(static_cast<Category>(AMULET));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(RING));
+							itemId = itemLevelCurve(static_cast<Category>(RING));
 						}
 					}
 					else if ( category == 16 )
@@ -2712,15 +2819,15 @@ void createCustomInventory(Stat* stats, int itemLimit)
 						randType = rand() % 3;
 						if ( randType == 0 )
 						{
-							itemId = itemCurve(static_cast<Category>(SCROLL));
+							itemId = itemLevelCurve(static_cast<Category>(SCROLL));
 						}
 						else if ( randType == 1 )
 						{
-							itemId = itemCurve(static_cast<Category>(MAGICSTAFF));
+							itemId = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
 						}
 						else
 						{
-							itemId = itemCurve(static_cast<Category>(SPELLBOOK));
+							itemId = itemLevelCurve(static_cast<Category>(SPELLBOOK));
 						}
 					}
 				}
