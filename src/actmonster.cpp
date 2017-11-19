@@ -5446,6 +5446,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						dropItemMonster(myStats->weapon, this, myStats, 1);*/
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
 					}
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
