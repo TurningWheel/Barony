@@ -1120,12 +1120,16 @@ Entity* dropItemMonster(Item* item, Entity* monster, Stat* monsterStats, Sint16 
 
 	if ( item->appearance == MONSTER_ITEM_UNDROPPABLE_APPEARANCE )
 	{
+		if ( monsterStats->type == SHADOW )
+		{
+			itemDroppable = false;
+		}
+
 		if ( (monsterStats->type == KOBOLD 
 			|| monsterStats->type == COCKATRICE 
 			|| monsterStats->type == INSECTOID 
 			|| monsterStats->type == INCUBUS
-			|| monsterStats->type == VAMPIRE
-			|| monsterStats->type == SHADOW)
+			|| monsterStats->type == VAMPIRE)
 			&& itemCategory(item) == SPELLBOOK )
 		{
 			// monsters with special spell attacks won't drop their book.
