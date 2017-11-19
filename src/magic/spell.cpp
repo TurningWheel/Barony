@@ -635,7 +635,7 @@ Item* getSpellbookFromSpellID(int spellID)
 
 	if ( itemType > 0 )
 	{
-		spellbook = newItem(static_cast<ItemType>(itemType), static_cast<Status>(0), 0, 1, rand(), true, nullptr);
+		spellbook = newItem(static_cast<ItemType>(itemType), static_cast<Status>(DECREPIT), 0, 1, rand(), true, nullptr);
 	}
 
 	return spellbook;
