@@ -1373,6 +1373,11 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		//On initial mimic, copy more spells & skills.
 		numSkillsToMimic += rand()%3 + 1;
 		numSpellsToMimic += rand()%3 + 1;
+
+		if ( target->behavior == actPlayer )
+		{
+			messagePlayer(target->skill[2], language[2478]);
+		}
 	}
 
 	//3. Random chance to mimic other things.

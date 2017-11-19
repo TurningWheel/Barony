@@ -8702,10 +8702,10 @@ Item* Entity::getBestMeleeWeaponIHave() const
 		}
 	}
 
-	if ( currentBest )
+	/*if ( currentBest )
 	{
 		messagePlayer(clientnum, "Found best melee weapon: \"%s\"", currentBest->description());
-	}
+	}*/
 
 	return currentBest;
 }
