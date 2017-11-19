@@ -2962,6 +2962,15 @@ void actParticleTimer(Entity* my)
 			{
 				// teleport to target spell.
 				Entity* parent = uidToEntity(my->parent);
+				if ( parent )
+				{
+					if ( parent->monsterSpecialState == SHADOW_TELEPORT_ONLY )
+					{
+						//messagePlayer(0, "Resetting shadow's monsterSpecialState!");
+						parent->monsterSpecialState = 0;
+						serverUpdateEntitySkill(parent, 33); // for clients to keep track of animation
+					}
+				}
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
 				if ( parent && target )
 				{

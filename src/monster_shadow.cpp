@@ -1560,18 +1560,6 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		}
 
 		/* THIS NEEDS TO BE ELSEWHERE, TO BE CALLED CONSTANTLY TO ALLOW SHADOW TO TELEPORT IF NO PATH/ DISTANCE IS TOO GREAT */
-		//if ( myStats->type == SHADOW && ticks % 10 == 0 && my->monsterSpecialTimer == 0 )
-		//{
-		//	// check for pathing teleport to target.
-		//	int specialRoll = rand() % 50;
-		//	messagePlayer(0, "roll %d", specialRoll);
-		//	double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-		//	if ( specialRoll < (1 + (targetdist > 80 ? 4 : 0)) )
-		//	{
-		//		my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
-		//		my->shadowTeleportToTarget(entity, 5); // teleport in closer range
-		//	}
-		//}
 
 		// occurs less often against fellow monsters.
 		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));

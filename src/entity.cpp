@@ -5572,6 +5572,20 @@ bool Entity::teleport(int tele_x, int tele_y)
 		sendPacketSafe(net_sock, -1, net_packet, player - 1);
 	}
 
+
+	if ( behavior == actMonster )
+	{
+		if ( getRace() != LICH && getRace() != DEVIL && getRace() != LICH_FIRE && getRace() != LICH_ICE )
+		{
+			//messagePlayer(0, "Resetting monster's path after teleport.");
+			monsterState = MONSTER_STATE_PATH;
+			/*if ( children.first != nullptr )
+			{
+				list_RemoveNode(children.first);
+			}*/
+		}
+	}
+
 	// play second sound effect
 	playSoundEntity(this, 77, 64);
 	return true;
