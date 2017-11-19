@@ -2972,10 +2972,20 @@ void actParticleTimer(Entity* my)
 					}
 				}
 				Entity* target = uidToEntity(static_cast<Uint32>(my->particleTimerTarget));
-				if ( parent && target )
+				if ( parent )
 				{
+					bool teleported = false;
 					createParticleErupt(parent, my->particleTimerEndSprite);
-					if ( parent->teleportAroundEntity(target, my->particleTimerVariable1) )
+					if ( target )
+					{
+						teleported = parent->teleportAroundEntity(target, my->particleTimerVariable1);
+					}
+					else
+					{
+						teleported = parent->teleportRandom();
+					}
+
+					if ( teleported )
 					{
 						// teleport success.
 						if ( multiplayer == SERVER )
