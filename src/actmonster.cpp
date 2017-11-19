@@ -3041,6 +3041,63 @@ timeToGoAgain:
 		} //End path state.
 		else if ( my->monsterState == MONSTER_STATE_HUNT ) //Begin hunt state
 		{
+			if ( myStats->type == SHADOW && my->monsterSpecialState == SHADOW_TELEPORT_ONLY )
+			{
+				//messagePlayer(0, "Shadow in special state teleport only! Aborting hunt state.");
+				my->monsterState = MONSTER_STATE_WAIT;
+				return; //Don't do anything, yer casting a spell!
+			}
+			//Do the shadow's passive teleport to catch up to their target..
+			if ( myStats->type == SHADOW && my->monsterSpecialTimer == 0 && my->monsterTarget )
+			{
+				Entity* target = uidToEntity(my->monsterTarget);
+				if ( !target )
+				{
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
+					return;
+				}
+
+				//If shadow has no path to target, then should do the passive teleport.
+				bool passiveTeleport = false;
+				if ( my->children.first ) //First child is the path.
+				{
+					if ( !my->children.first->element )
+					{
+						//messagePlayer(0, "No path for shadow!");
+						passiveTeleport = true;
+					}
+				}
+				else
+				{
+					//messagePlayer(0, "No path for shadow!");
+					passiveTeleport = true; //Path is saved as first child. If no first child, no path!
+				}
+
+				//Shadow has path to target, but still passive teleport if far enough away.
+				if ( !passiveTeleport )
+				{
+					int specialRoll = rand() % 50;
+					//messagePlayer(0, "roll %d", specialRoll);
+					double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+					if ( specialRoll <= (1 + (targetdist > 80 ? 4 : 0)) )
+					{
+						passiveTeleport = true;
+					}
+				}
+
+				if ( passiveTeleport )
+				{
+					//messagePlayer(0, "Shadow is doing a passive tele.");
+					my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+					my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
+					my->shadowTeleportToTarget(target, 3); // teleport in closer range
+					my->monsterState = MONSTER_STATE_WAIT;
+					return;
+				}
+			}
+
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
 				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
