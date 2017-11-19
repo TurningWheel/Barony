@@ -375,6 +375,7 @@ public:
 	list_t images;              // item image filenames (inventory)
 	list_t surfaces;            // item image surfaces (inventory)
 	Category category;          // item category
+	int level;					// item level for random generation
 };
 extern ItemGeneric items[NUMITEMS];
 
@@ -464,3 +465,5 @@ ItemType itemTypeWithinGoldValue(Category cat, int minValue, int maxValue);
 
 // unique monster item appearance to avoid being dropped on death.
 static const int MONSTER_ITEM_UNDROPPABLE_APPEARANCE = 1234567890;
+
+bool loadItemLists();
