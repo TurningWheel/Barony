@@ -1575,7 +1575,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < requiredRoll )
 		//if ( rand() % 150 )
 		{
-			messagePlayer(clientnum, "Rolled the special!");
+			//messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
 			bool telemimic  = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
@@ -1595,11 +1595,11 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 				return;
 			}
 
-			messagePlayer(clientnum, "Defaulting to spell.");
+			//messagePlayer(clientnum, "Defaulting to spell.");
 			node = chooseAttackSpellbookFromInventory();
 			if ( node != nullptr )
 			{
-				messagePlayer(clientnum, "Shadow equipped a spell!");
+				//messagePlayer(clientnum, "Shadow equipped a spell!");
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
 				monsterSpecialState = SHADOW_SPELLCAST;
 				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
