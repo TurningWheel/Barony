@@ -158,7 +158,7 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
-	{ 0.9, 1.2, 1.2, 0.9, 1.1, 1.3 }, // kobold
+	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2 }, // kobold
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
 	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
