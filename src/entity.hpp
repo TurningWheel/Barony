@@ -178,6 +178,7 @@ public:
 
 	//--PUBLIC MONSTER SHADOW SKILLS--
 	Sint32& monsterShadowInitialMimic; //skill[34]. 0 = false, 1 = true.
+	Sint32& monsterShadowDontChangeName; //skill[35]. 0 = false, 1 = true. Doesn't change name in its mimic if = 1.
 
 	//--PUBLIC POWER CRYSTAL SKILLS--
 	Sint32& crystalTurnReverse; // 0 Clockwise, 1 Anti-Clockwise
