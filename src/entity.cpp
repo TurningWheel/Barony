@@ -2234,24 +2234,27 @@ void Entity::handleEffects(Stat* myStats)
 	if ( myStats->EFFECTS[EFF_VOMITING] && ticks % 2 == 0 )
 	{
 		Entity* entity = spawnGib(this);
-		entity->sprite = 29;
-		entity->flags[SPRITE] = true;
-		entity->flags[GENIUS] = true;
-		entity->flags[INVISIBLE] = false;
-		entity->yaw = this->yaw - 0.1 + (rand() % 20) * 0.01;
-		entity->pitch = (rand() % 360) * PI / 180.0;
-		entity->roll = (rand() % 360) * PI / 180.0;
-		double vel = (rand() % 15) / 10.f;
-		entity->vel_x = vel * cos(entity->yaw);
-		entity->vel_y = vel * sin(entity->yaw);
-		entity->vel_z = -.5;
-		myStats->HUNGER -= 40;
-		if ( myStats->HUNGER <= 50 )
+		if ( entity )
 		{
-			myStats->HUNGER = 50;
-			myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+			entity->sprite = 29;
+			entity->flags[SPRITE] = true;
+			entity->flags[GENIUS] = true;
+			entity->flags[INVISIBLE] = false;
+			entity->yaw = this->yaw - 0.1 + (rand() % 20) * 0.01;
+			entity->pitch = (rand() % 360) * PI / 180.0;
+			entity->roll = (rand() % 360) * PI / 180.0;
+			double vel = (rand() % 15) / 10.f;
+			entity->vel_x = vel * cos(entity->yaw);
+			entity->vel_y = vel * sin(entity->yaw);
+			entity->vel_z = -.5;
+			myStats->HUNGER -= 40;
+			if ( myStats->HUNGER <= 50 )
+			{
+				myStats->HUNGER = 50;
+				myStats->EFFECTS_TIMERS[EFF_VOMITING] = 1;
+			}
+			serverSpawnGibForClient(entity);
 		}
-		serverSpawnGibForClient(entity);
 	}
 
 	// healing over time
