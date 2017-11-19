@@ -465,6 +465,24 @@ int fmod_result;
 			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &minotaurmusic[c]);
 		}
 	}
+	if ( NUMCAVESMUSIC > 0 )
+	{
+		cavesmusic = (FMOD_SOUND**) malloc(sizeof(FMOD_SOUND*)*NUMCAVESMUSIC);
+		for ( c = 0; c < NUMCAVESMUSIC; c++ )
+		{
+			snprintf(tempstr, 1000, "music/caves%02d.ogg", c);
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &cavesmusic[c]);
+		}
+	}
+	if ( NUMCITADELMUSIC > 0 )
+	{
+		citadelmusic = (FMOD_SOUND**)malloc(sizeof(FMOD_SOUND*)*NUMCITADELMUSIC);
+		for ( c = 0; c < NUMCITADELMUSIC; c++ )
+		{
+			snprintf(tempstr, 1000, "music/citadel%02d.ogg", c);
+			fmod_result = FMOD_System_CreateStream(fmod_system, tempstr, FMOD_SOFTWARE, NULL, &citadelmusic[c]);
+		}
+	}
 #ifdef HAVE_OPENAL
 #undef FMOD_ChannelGroup_SetVolume
 #undef fmod_system
@@ -736,6 +754,22 @@ void deinitGame()
 	if ( minotaurmusic )
 	{
 		free(minotaurmusic);
+	}
+	for ( c = 0; c < NUMCAVESMUSIC; c++ )
+	{
+		FMOD_Sound_Release(cavesmusic[c]);
+	}
+	if ( cavesmusic )
+	{
+		free(cavesmusic);
+	}
+	for ( c = 0; c < NUMCITADELMUSIC; c++ )
+	{
+		FMOD_Sound_Release(citadelmusic[c]);
+	}
+	if ( citadelmusic )
+	{
+		free(citadelmusic);
 	}
 #ifdef HAVE_OPENAL
 #undef FMOD_Channel_Stop
