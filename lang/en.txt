@@ -3050,6 +3050,7 @@ dominate the %s into your service!#
 2476 You feel the reflect magic spell fail as the
 last of your magic is drained!#
 2477 You are imbued with vampiric might!#
+2478 You feel as if a part of your essence is seized!#
 
 #More character creation screen stuff.
 2498 Random Name#
