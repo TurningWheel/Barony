@@ -3104,6 +3104,10 @@ timeToGoAgain:
 					my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
 					my->shadowTeleportToTarget(target, 3); // teleport in closer range
 					my->monsterState = MONSTER_STATE_WAIT;
+					if ( target && target->behavior == actPlayer )
+					{
+						messagePlayer(target->skill[2], language[2518]);
+					}
 					return;
 				}
 			}
@@ -5450,7 +5454,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					if ( monsterSpecialState == SHADOW_SPELLCAST ) //TODO: This code is destroying spells?
 					{
 						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
-						messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
+						//messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
