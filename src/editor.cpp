@@ -1828,7 +1828,7 @@ int main(int argc, char** argv)
 						{
 							if ( (omousex + camx) >> TEXTUREPOWER == entity->x / 16 && (omousey + camy) >> TEXTUREPOWER == entity->y / 16 )
 							{
-								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool != 1 )
+								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool != 1 && selectedTool != 2 )
 								{
 									// select sprite
 									selectedEntity = entity;
