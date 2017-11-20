@@ -3167,6 +3167,13 @@ Now wait for your leader to advance onward...#
 
 2606 Click to continue.#
 
+
+## 2516 - ???, More effect messages
+2516 You feel as if a part of your essence is seized!#
+2517 You feel as if a sliver of your essence is taken!#
+2518 You feel something tug at your essence and pull itself near...#
+
+
 # NPC Chatter. Groups of 10 lines for each NPC type
 2700 type:seq#
 2701 %s Response 1, %s.#
