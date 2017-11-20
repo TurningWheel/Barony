@@ -9,6 +9,7 @@ See LICENSE for details.
 
 -------------------------------------------------------------------------------*/
 
+#include <string>
 #include "main.hpp"
 #include "game.hpp"
 #include "stat.hpp"
@@ -25,6 +26,11 @@ void initShadow(Entity* my, Stat* myStats)
 {
 	int c;
 	node_t* node;
+	my->monsterShadowDontChangeName = 0; //By default, it does.
+	if ( myStats && strcmp(myStats->name, "") != 0 )
+	{
+		my->monsterShadowDontChangeName = 1; //User set a name.
+	}
 
 	my->initMonster(481);
 
@@ -54,6 +60,7 @@ void initShadow(Entity* my, Stat* myStats)
 			if ( rand() % 50 == 0 && !my->flags[USERFLAG2] )
 			{
 				strcpy(myStats->name, "Baratheon"); //Long live the king, who commands his grue army.
+				my->monsterShadowDontChangeName = 1; //Special monsters don't change their name either.
 				myStats->GOLD = 1000;
 				myStats->RANDOM_GOLD = 500;
 				myStats->LVL = 50; // >:U
@@ -306,7 +313,7 @@ void shadowDie(Entity* my)
 	return;
 }
 
-#define SHADOWWALKSPEED .13
+#define SHADOWWALKSPEED .05
 
 void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
@@ -390,7 +397,20 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 		else
 		{
-			my->z = -1;
+			if ( multiplayer != CLIENT )
+			{
+				if ( my->monsterAnimationLimbOvershoot == ANIMATE_OVERSHOOT_NONE )
+				{
+					my->z = -1.2;
+					my->monsterAnimationLimbOvershoot = ANIMATE_OVERSHOOT_TO_SETPOINT;
+				}
+				if ( dist < 0.1 )
+				{
+					// not moving, float.
+					limbAnimateWithOvershoot(my, ANIMATE_Z, 0.005, -2, 0.005, -1.2, ANIMATE_DIR_NEGATIVE);
+				}
+			}
+			//my->z = -2;
 		}
 	}
 
@@ -439,7 +459,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		{
 			if ( bodypart == LIMB_HUMANOID_LEFTARM && 
 				(my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3
-					|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1) )
+					|| my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 
+					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1
+					|| my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP2
+					|| (my->monsterAttack == MONSTER_POSE_MAGIC_CAST1)) )
 			{
 				// leftarm follows the right arm during special mimic attack
 				// will not work when shield is visible
@@ -467,7 +490,78 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			}
 			else
 			{
-				my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+				if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+				{
+					Entity* rightbody = nullptr;
+					// set rightbody to left leg.
+					node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+					if ( rightbodyNode )
+					{
+						rightbody = (Entity*)rightbodyNode->element;
+					}
+					else
+					{
+						return;
+					}
+
+					node_t* shieldNode = list_Node(&my->children, 8);
+					if ( shieldNode )
+					{
+						Entity* shield = (Entity*)shieldNode->element;
+						if ( dist > 0.1 && (bodypart != LIMB_HUMANOID_LEFTARM || shield->sprite == 0) )
+						{
+							// walking to destination
+							if ( !rightbody->skill[0] )
+							{
+								entity->pitch -= dist * SHADOWWALKSPEED / 2.0;
+								if ( entity->pitch < 0 )
+								{
+									entity->pitch = 0;
+									if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+									{
+										entity->skill[0] = 1;
+									}
+								}
+							}
+							else
+							{
+								entity->pitch += dist * SHADOWWALKSPEED / 2.0;
+								if ( entity->pitch > 3 * PI / 8.0 )
+								{
+									entity->pitch = 3 * PI / 8.0;
+									if ( bodypart == LIMB_HUMANOID_RIGHTLEG )
+									{
+										entity->skill[0] = 0;
+									}
+								}
+							}
+						}
+						else
+						{
+							// coming to a stop
+							if ( entity->pitch < PI / 4 )
+							{
+								entity->pitch += 1 / fmax(dist * .1, 10.0);
+								if ( entity->pitch > PI / 4 )
+								{
+									entity->pitch = PI / 4;
+								}
+							}
+							else if ( entity->pitch > PI / 4 )
+							{
+								entity->pitch -= 1 / fmax(dist * .1, 10.0);
+								if ( entity->pitch < PI / 4 )
+								{
+									entity->pitch = PI / 4;
+								}
+							}
+						}
+					}
+				}
+				else
+				{
+					my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+				}
 			}
 		}
 		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
@@ -536,8 +630,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 									}
 									my->attack(MONSTER_POSE_SPECIAL_WINDUP1, 0, nullptr);
 									my->shadowTeleportToTarget(target, 7);
-									myStats->EFFECTS[EFF_INVISIBLE] = true;
-									myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = TICKS_PER_SECOND * 10; // 10 seconds.
+									my->setEffect(EFF_INVISIBLE, true, TICKS_PER_SECOND * 10, true);
 								}
 							}
 						}
@@ -580,6 +673,48 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							}
 						}
 					}
+					// vertical chop attack
+					else if ( my->monsterAttack == MONSTER_POSE_MAGIC_CAST1 )
+					{
+						if ( weaponarm->pitch >= 3 * PI / 2 )
+						{
+							my->monsterArmbended = 1;
+						}
+
+						if ( weaponarm->skill[1] == 0 )
+						{
+							// chop forwards
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, 0.4, PI / 3, false, 0.0) )
+							{
+								weaponarm->skill[1] = 1;
+							}
+						}
+						else if ( weaponarm->skill[1] == 1 )
+						{
+							if ( limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, false, 0.0) )
+							{
+								weaponarm->skill[0] = rightbody->skill[0];
+								my->monsterWeaponYaw = 0;
+								weaponarm->pitch = rightbody->pitch;
+								weaponarm->roll = 0;
+								my->monsterArmbended = 0;
+								my->monsterAttack = 0;
+								Entity* leftarm = nullptr;
+								// set leftbody to right leg.
+								node_t* leftarmNode = list_Node(&my->children, LIMB_HUMANOID_RIGHTLEG);
+								if ( leftarmNode )
+								{
+									leftarm = (Entity*)leftarmNode->element;
+									leftarm->pitch = PI / 16;
+									leftarm->roll = 0;
+								}
+								else
+								{
+									return;
+								}
+							}
+						}
+					}
 					else
 					{
 						my->handleWeaponArmAttack(weaponarm);
@@ -591,7 +726,56 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->pitch = entity->fskill[0];
 			}
 
-			my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+			if ( bodypart == LIMB_HUMANOID_LEFTLEG )
+			{
+				if ( bodypart != LIMB_HUMANOID_RIGHTARM || (my->monsterAttack == 0 && my->monsterAttackTime == 0) )
+				{
+					if ( dist > 0.1 )
+					{
+						if ( entity->skill[0] )
+						{
+							entity->pitch -= dist * SHADOWWALKSPEED / 2.0;
+							if ( entity->pitch < 0 )
+							{
+								entity->skill[0] = 0;
+								entity->pitch = 0;
+							}
+						}
+						else
+						{
+							entity->pitch += dist * SHADOWWALKSPEED / 2.0;
+							if ( entity->pitch > 3 * PI / 8.0 )
+							{
+								entity->skill[0] = 1;
+								entity->pitch = 3 * PI / 8.0;
+							}
+						}
+					}
+					else
+					{
+						if ( entity->pitch < PI / 4 )
+						{
+							entity->pitch += 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch > PI / 4 )
+							{
+								entity->pitch = PI / 4;
+							}
+						}
+						else if ( entity->pitch > PI / 4 )
+						{
+							entity->pitch -= 1 / fmax(dist * .1, 10.0);
+							if ( entity->pitch < PI / 4 )
+							{
+								entity->pitch = PI / 4;
+							}
+						}
+					}
+				}
+			}
+			else
+			{
+				my->humanoidAnimateWalk(entity, node, bodypart, SHADOWWALKSPEED, dist, 0.4);
+			}
 
 			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
@@ -697,7 +881,7 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( shieldNode )
 				{
 					Entity* shield = (Entity*)shieldNode->element;
-					if ( shield->flags[INVISIBLE] && (my->monsterState == MONSTER_STATE_WAIT) )
+					if ( shield->flags[INVISIBLE] && my->monsterState == MONSTER_STATE_WAIT )
 					{
 						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[SHADOW][5][0] - 0.25; // 0
@@ -715,6 +899,10 @@ void shadowMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 || my->monsterAttack == MONSTER_POSE_SPECIAL_WINDUP1 )
 						{
 							entity->yaw -= MONSTER_WEAPONYAW;
+						}
+						else if ( my->monsterAttack == MONSTER_POSE_MAGIC_WINDUP1 )
+						{
+							entity->yaw += (my->yaw - weaponarm->yaw);
 						}
 					}
 				}
@@ -1091,7 +1279,7 @@ bool Entity::shadowCanWieldItem(const Item& item) const
 
 void Entity::shadowSpecialAbility(bool initialMimic)
 {
-	//TODO: Turn invisible.
+	//1. Turn invisible.
 	//2. Mimic target's weapon & shield (only on initial cast).
 	//3. Random chance to mimic other things.
 	//4. Teleport to target.
@@ -1105,7 +1293,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	Entity *target = uidToEntity(monsterTarget);
 	if ( !target )
 	{
-		messagePlayer(clientnum, "Shadow's target deaded!");
+		//messagePlayer(clientnum, "Shadow's target deaded!");
 		monsterReleaseAttackTarget();
 		return;
 	}
@@ -1117,10 +1305,10 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		return;
 	}
 
-	//TODO: Turn invisible.
+	//1. Turn invisible.
 	//myStats->EFFECTS[EFF_INVISIBLE] = true;
 	//myStats->EFFECTS_TIMERS[EFF_INVISIBLE] = 0; //Does not deactivate until it attacks.
-	messagePlayer(clientnum, "Turned invisible!");
+	//messagePlayer(clientnum, "Turned invisible!");
 
 	int numSpellsToMimic = 2;
 	int numSkillsToMimic = 3;
@@ -1128,8 +1316,22 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 	//2. Copy target's weapon & shield on initial activation of this ability only.
 	if ( initialMimic )
 	{
-		monsterShadowInitialMimic = false;
-		messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
+		if ( !monsterShadowDontChangeName )
+		{
+			std::string newName = "Shadow of ";
+			if ( strcmp(targetStats->name, "") != 0 )
+			{
+				newName += targetStats->name;
+			}
+			else
+			{
+				newName += monstertypename[targetStats->type];
+			}
+			strcpy(myStats->name, newName.c_str());
+		}
+
+		monsterShadowInitialMimic = 0;
+		//messagePlayer(clientnum, "[DEBUG: Entity::shadowSpecialAbility() ] Initial mimic.");
 		//TODO: On initial mimic, need to reset some the tracking info on what's already been mimic'ed.
 		//Such as dropping already equipped items.
 		if ( itemCategory(myStats->weapon) == SPELLBOOK )
@@ -1156,6 +1358,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		{
 			Item* wieldedCopy = new Item();
 			copyItem(wieldedCopy, bestMeleeWeapon);
+			wieldedCopy->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
 			monsterEquipItem(*wieldedCopy, &myStats->weapon);
 		}
 
@@ -1163,12 +1366,25 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		{
 			Item* wieldedCopy = new Item();
 			copyItem(wieldedCopy, bestShield);
+			wieldedCopy->appearance = MONSTER_ITEM_UNDROPPABLE_APPEARANCE;
 			monsterEquipItem(*wieldedCopy, &myStats->shield);
 		}
 
 		//On initial mimic, copy more spells & skills.
 		numSkillsToMimic += rand()%3 + 1;
 		numSpellsToMimic += rand()%3 + 1;
+
+		if ( target->behavior == actPlayer )
+		{
+			messagePlayer(target->skill[2], language[2516]);
+		}
+	}
+	else
+	{
+		if ( target->behavior == actPlayer )
+		{
+			messagePlayer(target->skill[2], language[2517]);
+		}
 	}
 
 	//3. Random chance to mimic other things.
@@ -1189,7 +1405,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		int choosen = rand()%skillsCanMimic.size();
 		myStats->PROFICIENCIES[skillsCanMimic[choosen]] = targetStats->PROFICIENCIES[skillsCanMimic[choosen]];
 
-		messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
+		//messagePlayer(clientnum, "DEBUG: Shadow mimicked skill %d.", skillsCanMimic[choosen]);
 		skillsCanMimic.erase(skillsCanMimic.begin() + choosen); //No longer an eligible skill.
 	}
 
@@ -1271,7 +1487,7 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 			//TODO: Delete debug.
 			spell_t* spell = getSpellFromID(getSpellIDFromSpellbook(spellbook->type));
-			messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
+			//messagePlayer(clientnum, "DEBUG: Shadow mimicked spell %s.", spell->name);
 		}
 
 		spellsCanMimic.erase(spellsCanMimic.begin() + choosen); //No longer an eligible spell.
@@ -1316,7 +1532,7 @@ void Entity::shadowTeleportToTarget(const Entity* target, int range)
 	spellTimer->particleTimerVariable1 = range; // distance of teleport in tiles
 	if ( multiplayer == SERVER )
 	{
-		serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHADOW_TELEPORT, 593);
+		serverSpawnMiscParticles(this, PARTICLE_EFFECT_SHADOW_TELEPORT, 625);
 	}
 }
 
@@ -1356,18 +1572,6 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		}
 
 		/* THIS NEEDS TO BE ELSEWHERE, TO BE CALLED CONSTANTLY TO ALLOW SHADOW TO TELEPORT IF NO PATH/ DISTANCE IS TOO GREAT */
-		//if ( myStats->type == SHADOW && ticks % 10 == 0 && my->monsterSpecialTimer == 0 )
-		//{
-		//	// check for pathing teleport to target.
-		//	int specialRoll = rand() % 50;
-		//	messagePlayer(0, "roll %d", specialRoll);
-		//	double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-		//	if ( specialRoll < (1 + (targetdist > 80 ? 4 : 0)) )
-		//	{
-		//		my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
-		//		my->shadowTeleportToTarget(entity, 5); // teleport in closer range
-		//	}
-		//}
 
 		// occurs less often against fellow monsters.
 		specialRoll = rand() % (20 + 50 * (target->behavior == &actMonster));
@@ -1378,9 +1582,9 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < requiredRoll )
 		//if ( rand() % 150 )
 		{
-			messagePlayer(clientnum, "Rolled the special!");
+			//messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
-			bool telemimic = true; // = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
+			bool telemimic  = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
 			{
 				//If it's hunting down the player, always want it to teleport and find them.
@@ -1392,22 +1596,27 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 			{
 				//Do the tele-mimic-invisibility special ability.
 				//messagePlayer(clientnum, "Executing telemimic.");
-				monsterShadowInitialMimic = 0; //False!
+				//monsterShadowInitialMimic = 0; //False!
 				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK;
 				attack(MONSTER_POSE_MAGIC_WINDUP3, 0, nullptr);
 				return;
 			}
 
-			messagePlayer(clientnum, "Defaulting to spell.");
+			//messagePlayer(clientnum, "Defaulting to spell.");
 			node = chooseAttackSpellbookFromInventory();
 			if ( node != nullptr )
 			{
-				messagePlayer(clientnum, "Shadow equipped a spell!");
+				//messagePlayer(clientnum, "Shadow equipped a spell!");
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
 				monsterSpecialState = SHADOW_SPELLCAST;
 				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 				monsterHitTime = HITRATE * 2; // force immediate attack
 				return;
+			}
+			else
+			{
+				//Always set the cooldown, even if didn't cast anything.
+				monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
 			}
 		}
 	}

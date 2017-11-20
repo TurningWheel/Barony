@@ -2532,6 +2532,16 @@ void actMonster(Entity* my)
 
 			// rotate monster
 			dir = my->monsterRotate();
+
+			if ( myStats->type == SHADOW && !uidToEntity(my->monsterTarget) && my->monsterSpecialTimer == 0 && my->monsterSpecialState == 0 && ticks%500 == 0 && rand()%5 == 0 )
+			{
+				//Random chance for a shadow to teleport around the map if it has nothing better to do.
+				//messagePlayer(0, "Shadow idle telepotty.");
+				my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+				my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
+				my->shadowTeleportToTarget(nullptr, 3); // teleport in closer range
+				my->monsterState = MONSTER_STATE_WAIT;
+			}
 		} //End wait state
 		else if ( my->monsterState == MONSTER_STATE_ATTACK ) //Begin charge state
 		{
@@ -2545,7 +2555,7 @@ void actMonster(Entity* my)
 				}
 				if ( myStats->type == SHADOW )
 				{
-					messagePlayer(0, "DEBUG: Shadow lost entity.");
+					//messagePlayer(0, "DEBUG: Shadow lost entity.");
 					my->monsterReleaseAttackTarget(true);
 					my->monsterState = MONSTER_STATE_WAIT;
 					serverUpdateEntitySkill(my, 0); //Update state.
@@ -3041,6 +3051,67 @@ timeToGoAgain:
 		} //End path state.
 		else if ( my->monsterState == MONSTER_STATE_HUNT ) //Begin hunt state
 		{
+			if ( myStats->type == SHADOW && my->monsterSpecialState == SHADOW_TELEPORT_ONLY )
+			{
+				//messagePlayer(0, "Shadow in special state teleport only! Aborting hunt state.");
+				my->monsterState = MONSTER_STATE_WAIT;
+				return; //Don't do anything, yer casting a spell!
+			}
+			//Do the shadow's passive teleport to catch up to their target..
+			if ( myStats->type == SHADOW && my->monsterSpecialTimer == 0 && my->monsterTarget )
+			{
+				Entity* target = uidToEntity(my->monsterTarget);
+				if ( !target )
+				{
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
+					return;
+				}
+
+				//If shadow has no path to target, then should do the passive teleport.
+				bool passiveTeleport = false;
+				if ( my->children.first ) //First child is the path.
+				{
+					if ( !my->children.first->element )
+					{
+						//messagePlayer(0, "No path for shadow!");
+						passiveTeleport = true;
+					}
+				}
+				else
+				{
+					//messagePlayer(0, "No path for shadow!");
+					passiveTeleport = true; //Path is saved as first child. If no first child, no path!
+				}
+
+				//Shadow has path to target, but still passive teleport if far enough away.
+				if ( !passiveTeleport )
+				{
+					int specialRoll = rand() % 50;
+					//messagePlayer(0, "roll %d", specialRoll);
+					double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+					if ( specialRoll <= (1 + (targetdist > 80 ? 4 : 0)) )
+					{
+						passiveTeleport = true;
+					}
+				}
+
+				if ( passiveTeleport )
+				{
+					//messagePlayer(0, "Shadow is doing a passive tele.");
+					my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+					my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
+					my->shadowTeleportToTarget(target, 3); // teleport in closer range
+					my->monsterState = MONSTER_STATE_WAIT;
+					if ( target && target->behavior == actPlayer )
+					{
+						messagePlayer(target->skill[2], language[2518]);
+					}
+					return;
+				}
+			}
+
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
 				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
@@ -5374,7 +5445,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 					if ( monsterSpecialState == SHADOW_SPELLCAST ) //TODO: This code is destroying spells?
 					{
 						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
-						messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
+						//messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 						if ( node != nullptr )
 						{
@@ -5389,6 +5460,7 @@ bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						dropItemMonster(myStats->weapon, this, myStats, 1);*/
 						shouldAttack = false;
 						monsterSpecialState = 0;
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
 					}
 					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
