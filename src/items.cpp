@@ -2822,7 +2822,7 @@ node_t* spellbookNodeInInventory(Stat* myStats, int spellIDToFind)
 		}
 	}
 
-	messagePlayer(clientnum, "Spellbook %d not found.", spellIDToFind);
+	//messagePlayer(clientnum, "Spellbook %d not found.", spellIDToFind);
 
 	return nullptr;
 }

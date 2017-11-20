@@ -1373,6 +1373,18 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 		//On initial mimic, copy more spells & skills.
 		numSkillsToMimic += rand()%3 + 1;
 		numSpellsToMimic += rand()%3 + 1;
+
+		if ( target->behavior == actPlayer )
+		{
+			messagePlayer(target->skill[2], language[2516]);
+		}
+	}
+	else
+	{
+		if ( target->behavior == actPlayer )
+		{
+			messagePlayer(target->skill[2], language[2517]);
+		}
 	}
 
 	//3. Random chance to mimic other things.
@@ -1570,7 +1582,7 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 		if ( specialRoll < requiredRoll )
 		//if ( rand() % 150 )
 		{
-			messagePlayer(clientnum, "Rolled the special!");
+			//messagePlayer(clientnum, "Rolled the special!");
 			node_t* node = nullptr;
 			bool telemimic  = (rand() % 4 == 0); //By default, 25% chance it'll telepotty instead of casting a spell.
 			if ( monsterState != MONSTER_STATE_ATTACK )
@@ -1590,11 +1602,11 @@ void Entity::shadowChooseWeapon(const Entity* target, double dist)
 				return;
 			}
 
-			messagePlayer(clientnum, "Defaulting to spell.");
+			//messagePlayer(clientnum, "Defaulting to spell.");
 			node = chooseAttackSpellbookFromInventory();
 			if ( node != nullptr )
 			{
-				messagePlayer(clientnum, "Shadow equipped a spell!");
+				//messagePlayer(clientnum, "Shadow equipped a spell!");
 				swapMonsterWeaponWithInventoryItem(this, myStats, node, true, true);
 				monsterSpecialState = SHADOW_SPELLCAST;
 				serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
