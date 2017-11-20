@@ -3104,6 +3104,10 @@ timeToGoAgain:
 					my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
 					my->shadowTeleportToTarget(target, 3); // teleport in closer range
 					my->monsterState = MONSTER_STATE_WAIT;
+					if ( target && target->behavior == actPlayer )
+					{
+						messagePlayer(target->skill[2], language[2518]);
+					}
 					return;
 				}
 			}

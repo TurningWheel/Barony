@@ -1376,7 +1376,14 @@ void Entity::shadowSpecialAbility(bool initialMimic)
 
 		if ( target->behavior == actPlayer )
 		{
-			messagePlayer(target->skill[2], language[2478]);
+			messagePlayer(target->skill[2], language[2516]);
+		}
+	}
+	else
+	{
+		if ( target->behavior == actPlayer )
+		{
+			messagePlayer(target->skill[2], language[2517]);
 		}
 	}
 
