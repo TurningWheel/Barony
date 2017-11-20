@@ -5247,9 +5247,100 @@ int main(int argc, char** argv)
 							buttonClearMap(NULL);
 						}
 					}
+					if ( keystatus[SDL_SCANCODE_DOWN] )
+					{
+						keystatus[SDL_SCANCODE_DOWN] = 0;
+						// move selection
+						if ( selectedarea_y2 < map.height - 1 )
+						{
+							selectedarea_y2 += 1;
+							if ( selectedarea_y1 < map.height - 1 )
+							{
+								selectedarea_y1 += 1;
+							}
+						}
+					}
+					else if ( keystatus[SDL_SCANCODE_UP] )
+					{
+						keystatus[SDL_SCANCODE_UP] = 0;
+						// move selection
+						if ( selectedarea_y1 > 0 )
+						{
+							selectedarea_y1 -= 1;
+							if ( selectedarea_y2 > 0 )
+							{
+								selectedarea_y2 -= 1;
+							}
+						}
+					}
+					else if ( keystatus[SDL_SCANCODE_LEFT] )
+					{
+						keystatus[SDL_SCANCODE_LEFT] = 0;
+						// move selection
+						if ( selectedarea_x1 > 0 )
+						{
+							selectedarea_x1 -= 1;
+							if ( selectedarea_x2 > 0 )
+							{
+								selectedarea_x2 -= 1;
+							}
+						}
+					}
+					else if ( keystatus[SDL_SCANCODE_RIGHT] )
+					{
+						keystatus[SDL_SCANCODE_RIGHT] = 0;
+						// move selection
+						if ( selectedarea_x2 < map.width - 1 )
+						{
+							selectedarea_x2 += 1;
+							if ( selectedarea_x1 < map.width - 1 )
+							{
+								selectedarea_x1 += 1;
+							}
+						}
+					}
 				}
 				else
 				{
+					if ( keystatus[SDL_SCANCODE_LSHIFT] || keystatus[SDL_SCANCODE_RSHIFT] )
+					{
+						if ( keystatus[SDL_SCANCODE_DOWN] )
+						{
+							keystatus[SDL_SCANCODE_DOWN] = 0;
+							// resize selection
+							if ( selectedarea_y2 < map.height - 1 )
+							{
+								selectedarea_y2 += 1;
+							}
+						}
+						else if ( keystatus[SDL_SCANCODE_UP] )
+						{
+							keystatus[SDL_SCANCODE_UP] = 0;
+							// resize selection
+							if ( selectedarea_y2 > selectedarea_y1 )
+							{
+								selectedarea_y2 -= 1;
+							}
+						}
+						else if ( keystatus[SDL_SCANCODE_LEFT] )
+						{
+							keystatus[SDL_SCANCODE_LEFT] = 0;
+							// resize selection
+							if ( selectedarea_x2 > selectedarea_x1 )
+							{
+								selectedarea_x2 -= 1;
+							}
+						}
+						else if ( keystatus[SDL_SCANCODE_RIGHT] )
+						{
+							keystatus[SDL_SCANCODE_RIGHT] = 0;
+							// resize selection
+							if ( selectedarea_x2 < map.width - 1 )
+							{
+								selectedarea_x2 += 1;
+							}
+						}
+					}
 					if ( keystatus[SDL_SCANCODE_S] )
 					{
 						keystatus[SDL_SCANCODE_S] = 0;
@@ -5297,6 +5388,114 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_F4] = 0;
 						buttonExit(NULL);
+					}
+					if ( keystatus[SDL_SCANCODE_DOWN] )
+					{
+						keystatus[SDL_SCANCODE_DOWN] = 0;
+						// move entities
+						makeUndo();
+						if ( selectedarea_y2 < map.height - 1 )
+						{
+							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							{
+								for ( node = map.entities->first; node != nullptr; node = nextnode )
+								{
+									nextnode = node->next;
+									entity = (Entity*)node->element;
+									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
+										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
+									{
+										entity->y += 16;
+									}
+								}
+							}
+							selectedarea_y2 += 1;
+							if ( selectedarea_y1 < map.height - 1 )
+							{
+								selectedarea_y1 += 1;
+							}
+						}
+					}
+					else if ( keystatus[SDL_SCANCODE_UP] )
+					{
+						keystatus[SDL_SCANCODE_UP] = 0;
+						// move entities
+						makeUndo();
+						if ( selectedarea_y1 > 0 )
+						{
+							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							{
+								for ( node = map.entities->first; node != nullptr; node = nextnode )
+								{
+									nextnode = node->next;
+									entity = (Entity*)node->element;
+									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
+										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
+									{
+										entity->y -= 16;
+									}
+								}
+							}
+							selectedarea_y1 -= 1;
+							if ( selectedarea_y2 > 0 )
+							{
+								selectedarea_y2 -= 1;
+							}
+						}
+					}
+					else if ( keystatus[SDL_SCANCODE_LEFT] )
+					{
+						keystatus[SDL_SCANCODE_LEFT] = 0;
+						// move entities
+						makeUndo();
+						if ( selectedarea_x1 > 0 )
+						{
+							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							{
+								for ( node = map.entities->first; node != nullptr; node = nextnode )
+								{
+									nextnode = node->next;
+									entity = (Entity*)node->element;
+									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
+										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
+									{
+										entity->x -= 16;
+									}
+								}
+							}
+							selectedarea_x1 -= 1;
+							if ( selectedarea_x2 > 0 )
+							{
+								selectedarea_x2 -= 1;
+							}
+						}
+					}
+					else if ( keystatus[SDL_SCANCODE_RIGHT] )
+					{
+						keystatus[SDL_SCANCODE_RIGHT] = 0;
+						// move entities
+						makeUndo();
+						if ( selectedarea_x2 < map.width - 1 )
+						{
+							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							{
+								for ( node = map.entities->first; node != nullptr; node = nextnode )
+								{
+									nextnode = node->next;
+									entity = (Entity*)node->element;
+									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
+										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
+									{
+										entity->x += 16;
+									}
+								}
+							}
+							selectedarea_x2 += 1;
+							if ( selectedarea_x1 < map.width - 1 )
+							{
+								selectedarea_x1 += 1;
+							}
+						}
 					}
 				}
 				if ( keystatus[SDL_SCANCODE_DELETE] )
