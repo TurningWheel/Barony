@@ -926,8 +926,12 @@ char tileEditorNameStrings[NUM_EDITOR_TILES][44] =
 	"Cave Wall Reinforced Right Cap",
 	"Crystal Wall Reinforced No Beam",
 	"Crystal Wall Reinforced Left Cap",
-	"Crystal Wall Reinforced Right Cap"
-
+	"Crystal Wall Reinforced Right Cap",
+	"Crystal Floor Trap 1",
+	"Crystal Floor Trap 2",
+	"Crystal Floor Trap 3",
+	"Crystal Floor Trap 4",
+	"DO NOT USE - NEEDED FOR ANIMATED TILE"
 };
 
 int canWearEquip(Entity* entity, int category)
