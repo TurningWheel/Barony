@@ -1834,7 +1834,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						{
 							if ( map.tiles[(int)(OBSTACLELAYER + hit.mapy * MAPLAYERS + hit.mapx * MAPLAYERS * map.height)] != 0 )
 							{
-								if ( parent && parent->behavior == &actPlayer && MAPFLAG_DISABLEDIGGING )
+								if ( parent && parent->behavior == &actPlayer && MFLAG_DISABLEDIGGING )
 								{
 									Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
 									messagePlayerColor(parent->skill[2], color, language[2380]); // disabled digging.

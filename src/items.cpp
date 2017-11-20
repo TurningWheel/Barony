@@ -1891,27 +1891,118 @@ void useItem(Item* item, int player)
 			break;
 	}
 
-	if ( multiplayer != CLIENT )
+	// on-equip messages.
+	if ( multiplayer != CLIENT && itemIsEquipped(item, player) )
 	{
-		if ( item->type == RING_LEVITATION || item->type == STEEL_BOOTS_LEVITATION )
+		switch ( item->type )
 		{
-			if ( !MAPFLAG_DISABLELEVITATION )
-			{
-				messagePlayer(player, language[767]); // you begin to float through the air
-			}
-			else
-			{
-				Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 255);
-				messagePlayerColor(player, color, language[2382]); // disabled levitation.
-			}
-		}
-		else if ( item->type == RING_INVISIBILITY )
-		{
-			messagePlayer(player, language[766]); // you can no longer see yourself
-		}
-		else if ( item->type == STEEL_BOOTS_FEATHER )
-		{
-			messagePlayer(player, language[768]); // you feel much quicker.
+			case AMULET_LIFESAVING:
+				messagePlayer(player, language[2478]);
+				break;
+			case AMULET_WATERBREATHING:
+				messagePlayer(player, language[2479]);
+				break;
+			case AMULET_MAGICREFLECTION:
+				messagePlayer(player, language[2480]);
+				break;
+			case HAT_WIZARD:
+				messagePlayer(player, language[2481]);
+				break;
+			case SPIKED_GAUNTLETS:
+			case BRASS_KNUCKLES:
+			case IRON_KNUCKLES:
+				messagePlayer(player, language[2482]);
+				break;
+			case HAT_JESTER:
+				messagePlayer(player, language[2483]);
+				break;
+			case IRON_BOOTS_WATERWALKING:
+				messagePlayer(player, language[2484]);
+				break;
+			case LEATHER_BOOTS_SPEED:
+				messagePlayer(player, language[2485]);
+				break;
+			case CLOAK_INVISIBILITY:
+				messagePlayer(player, language[2486]);
+				break;
+			case CLOAK_PROTECTION:
+				messagePlayer(player, language[2487]);
+				break;
+			case CLOAK_MAGICREFLECTION:
+				messagePlayer(player, language[2488]);
+				break;
+			case GLOVES_DEXTERITY:
+				messagePlayer(player, language[2489]);
+				break;
+			case BRACERS_CONSTITUTION:
+				messagePlayer(player, language[2490]);
+				break;
+			case GAUNTLETS_STRENGTH:
+				messagePlayer(player, language[2491]);
+				break;
+			case AMULET_POISONRESISTANCE:
+				messagePlayer(player, language[2492]);
+				break;
+			case RING_ADORNMENT:
+				messagePlayer(player, language[2384]);
+				break;
+			case RING_SLOWDIGESTION:
+				messagePlayer(player, language[2385]);
+				break;
+			case RING_PROTECTION:
+				messagePlayer(player, language[2386]);
+				break;
+			case RING_WARNING:
+				messagePlayer(player, language[2387]);
+				break;
+			case RING_STRENGTH:
+				messagePlayer(player, language[2388]);
+				break;
+			case RING_CONSTITUTION:
+				messagePlayer(player, language[2389]);
+				break;
+			case RING_INVISIBILITY:
+				messagePlayer(player, language[2412]);
+				break;
+			case RING_MAGICRESISTANCE:
+				messagePlayer(player, language[2413]);
+				break;
+			case RING_CONFLICT:
+				messagePlayer(player, language[2414]);
+				break;
+			case RING_LEVITATION:
+				if ( !MFLAG_DISABLELEVITATION )
+				{
+					// can levitate
+					messagePlayer(player, language[2415]);
+				}
+				else
+				{
+					messagePlayer(player, language[2381]);
+				}
+				break;
+			case RING_REGENERATION:
+				messagePlayer(player, language[2416]);
+				break;
+			case RING_TELEPORTATION:
+				messagePlayer(player, language[2417]);
+				break;
+			case STEEL_BOOTS_FEATHER:
+				messagePlayer(player, language[2418]);
+				break;
+			case STEEL_BOOTS_LEVITATION:
+				if ( !MFLAG_DISABLELEVITATION )
+				{
+					// can levitate
+					messagePlayer(player, language[2419]);
+				}
+				else
+				{
+					messagePlayer(player, language[2381]);
+				}
+				break;
+			default:
+				break;
 		}
 	}
 }
