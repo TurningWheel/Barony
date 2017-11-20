@@ -82,10 +82,10 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 6:
 						case 7:
 						case 8:
-							newItem(POTION_BOOZE, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+							newItem(POTION_BOOZE, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 							break;
 						case 9:
-							newItem(POTION_HEALING, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+							newItem(POTION_HEALING, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
 							break;
 						default:
 							printlog("Tried to spawn goatman boss \"Gharbad\" invalid potion.");
@@ -133,21 +133,21 @@ void initGoatman(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
-					if ( isShaman )
+					if ( isShaman && rand() % 20 == 0 )
 					{
 						switch ( rand() % 4 )
 						{
 							case 0:
-								newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 								break;
 							case 1:
-								newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 								break;
 							case 2:
-								newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 								break;
 							case 3:
-								newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, &myStats->inventory);
+								newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
 								break;
 						}
 					}
@@ -173,23 +173,15 @@ void initGoatman(Entity* my, Stat* myStats)
 				}
 				if ( rand() % 4 > 0 )
 				{
-					if ( rand() % 3 == 0 )
-					{
-						// droppable
-						newItem(POTION_BOOZE, static_cast<Status>(rand()%3 + DECREPIT), 0, numpotions, rand(), false, &myStats->inventory);
-					}
-					else
-					{
-						// undroppable
-						newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
-					}
+					// undroppable
+					newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 			}
 
 			if ( isShaman )
 			{
 				//give shield
-				if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
 					// give shield
 					switch ( rand() % 20 )
@@ -202,18 +194,18 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 8:
-							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						default:
-							myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+							myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 				// give cloak
-				if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -221,42 +213,42 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 1:
 							break;
 						default:
-							myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
+							myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 				// give helmet
-				if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
 							break;
 						default:
-							myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 				// give armor
-				if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+							myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 2:
-							myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						default:
 							break;
 					}
 				}
 				// give booties
-				if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
 					switch ( rand() % 20 )
 					{
@@ -264,13 +256,13 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 1:
 						case 2:
 						case 3:
-							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 19:
-							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						default:
-							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 					}
 				}
@@ -284,33 +276,33 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 2:
 						case 3:
 						case 4:
-							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 5:
 						case 6:
 						case 7:
 						case 8:
-							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 							break;
 						case 9:
 							switch ( rand() % 4 )
 							{
 								case 0:
-									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 1:
-									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 2:
-									myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 								case 3:
-									myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+									myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
 									break;
 							}
 							break;
 						default:
-							myStats->weapon = newItem(MAGICSTAFF_SLOW, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+							myStats->weapon = newItem(MAGICSTAFF_SLOW, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 							break;
 					}
 				}
@@ -318,7 +310,7 @@ void initGoatman(Entity* my, Stat* myStats)
 			else
 			{
 				////give shield
-				//if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				//if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				//{
 				//	switch ( rand() % 20 )
 				//	{
@@ -330,18 +322,18 @@ void initGoatman(Entity* my, Stat* myStats)
 				//	case 5:
 				//	case 6:
 				//	case 7:
-				//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+				//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 				//		break;
 				//	case 8:
-				//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+				//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 				//		break;
 				//	default:
-				//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+				//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 				//		break;
 				//	}
 				//}
 				// give cloak
-				/*if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				/*if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -349,51 +341,51 @@ void initGoatman(Entity* my, Stat* myStats)
 					case 1:
 						break;
 					default:
-						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					}
 				}*/
 				//// give helmet
-				//if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				//if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				//{
 				//	switch ( rand() % 10 )
 				//	{
 				//	case 0:
 				//	case 1:
-				//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+				//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
 				//		break;
 				//	default:
-				//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+				//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 				//		break;
 				//	}
 				//}
 				// give armor
-				if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
 					switch ( rand() % 20 )
 					{
 					case 0:
 					case 1:
 					case 2:
-						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 3:
 					case 4:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 5:
 					case 6:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 19:
-						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					default:
 						break;
 					}
 				}
 				// give booties
-				if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
 					switch ( rand() % 20 )
 					{
@@ -401,13 +393,13 @@ void initGoatman(Entity* my, Stat* myStats)
 					case 1:
 					case 2:
 					case 3:
-						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					case 19:
-						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					default:
-						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					}
 				}
@@ -424,16 +416,16 @@ void initGoatman(Entity* my, Stat* myStats)
 					case 5:
 					case 6:
 					case 7:
-						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					case 18:
-						myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					case 19:
-						myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					default:
-						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
 					}
 				}
@@ -672,12 +664,12 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->ring != NULL )
+		if ( myStats->ring != nullptr )
 			if ( myStats->ring->type == RING_INVISIBILITY )
 			{
 				wearingring = true;
 			}
-		if ( myStats->cloak != NULL )
+		if ( myStats->cloak != nullptr )
 			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
 			{
 				wearingring = true;
@@ -687,7 +679,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
@@ -712,7 +704,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
@@ -751,7 +743,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
@@ -858,7 +850,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == nullptr )
 					{
 						entity->sprite = 466;
 					}
@@ -1074,7 +1066,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shield == NULL )
+					if ( myStats->shield == nullptr )
 					{
 						entity->flags[INVISIBLE] = true;
 						entity->sprite = 0;
@@ -1144,7 +1136,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1193,7 +1185,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1272,7 +1264,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1280,7 +1272,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( myStats->mask != NULL )
+					if ( myStats->mask != nullptr )
 					{
 						if ( myStats->mask->type == TOOL_GLASSES )
 						{
