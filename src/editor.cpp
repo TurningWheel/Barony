@@ -39,6 +39,9 @@ int game = 0;
 Uint32 timerCallback(Uint32 interval, void* param);
 void handleEvents(void);
 void mainLogic(void);
+std::vector<Entity*> groupedEntities;
+bool moveSelectionNegativeX = false;
+bool moveSelectionNegativeY = false;
 
 map_t copymap;
 
@@ -1926,6 +1929,12 @@ int main(int argc, char** argv)
 									{
 										selectedarea_y1 = std::min<unsigned int>(std::max(0, odrawy), map.height - 1); //TODO: Why are int and unsigned int being compared?
 										selectedarea_y2 = std::min<unsigned int>(std::max(0, drawy), map.height - 1); //TODO: Why are int and unsigned int being compared?
+									}
+									if ( map.entities->first != nullptr && viewsprites && allowediting )
+									{
+										reselectEntityGroup();
+										moveSelectionNegativeX = false;
+										moveSelectionNegativeY = false;
 									}
 								}
 							}
@@ -5151,6 +5160,7 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_N] = 0;
 						buttonNew(NULL);
+						groupedEntities.clear();
 					}
 					if ( keystatus[SDL_SCANCODE_S] )
 					{
@@ -5161,6 +5171,7 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_O] = 0;
 						buttonOpen(NULL);
+						groupedEntities.clear();
 					}
 					if ( keystatus[SDL_SCANCODE_X] )
 					{
@@ -5171,26 +5182,31 @@ int main(int argc, char** argv)
 					{
 						keystatus[SDL_SCANCODE_C] = 0;
 						buttonCopy(NULL);
+						groupedEntities.clear();
 					}
 					if ( keystatus[SDL_SCANCODE_V] )
 					{
 						keystatus[SDL_SCANCODE_V] = 0;
 						buttonPaste(NULL);
+						groupedEntities.clear();
 					}
 					if ( keystatus[SDL_SCANCODE_A] )
 					{
 						keystatus[SDL_SCANCODE_A] = 0;
 						buttonSelectAll(NULL);
+						reselectEntityGroup();
 					}
 					if ( keystatus[SDL_SCANCODE_Z] )
 					{
 						keystatus[SDL_SCANCODE_Z] = 0;
 						buttonUndo(NULL);
+						groupedEntities.clear();
 					}
 					if ( keystatus[SDL_SCANCODE_Y] )
 					{
 						keystatus[SDL_SCANCODE_Y] = 0;
 						buttonRedo(NULL);
+						groupedEntities.clear();
 					}
 					if ( keystatus[SDL_SCANCODE_G] )
 					{
@@ -5245,6 +5261,7 @@ int main(int argc, char** argv)
 						{
 							keystatus[SDL_SCANCODE_N] = 0;
 							buttonClearMap(NULL);
+							groupedEntities.clear();
 						}
 					}
 					if ( keystatus[SDL_SCANCODE_DOWN] )
@@ -5258,6 +5275,7 @@ int main(int argc, char** argv)
 							{
 								selectedarea_y1 += 1;
 							}
+							reselectEntityGroup();
 						}
 					}
 					else if ( keystatus[SDL_SCANCODE_UP] )
@@ -5271,6 +5289,7 @@ int main(int argc, char** argv)
 							{
 								selectedarea_y2 -= 1;
 							}
+							reselectEntityGroup();
 						}
 					}
 					else if ( keystatus[SDL_SCANCODE_LEFT] )
@@ -5284,6 +5303,7 @@ int main(int argc, char** argv)
 							{
 								selectedarea_x2 -= 1;
 							}
+							reselectEntityGroup();
 						}
 					}
 					else if ( keystatus[SDL_SCANCODE_RIGHT] )
@@ -5297,6 +5317,7 @@ int main(int argc, char** argv)
 							{
 								selectedarea_x1 += 1;
 							}
+							reselectEntityGroup();
 						}
 					}
 				}
@@ -5308,36 +5329,100 @@ int main(int argc, char** argv)
 						{
 							keystatus[SDL_SCANCODE_DOWN] = 0;
 							// resize selection
-							if ( selectedarea_y2 < map.height - 1 )
+							if ( selectedarea_y2 < map.height - 1 && !moveSelectionNegativeY )
 							{
 								selectedarea_y2 += 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_y1 < selectedarea_y2
+								&& selectedarea_y1 < map.height - 1 && moveSelectionNegativeY )
+							{
+								selectedarea_y1 += 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_y1 == selectedarea_y2 )
+							{
+								moveSelectionNegativeY = false;
+								if ( selectedarea_y2 < map.height - 1 )
+								{
+									selectedarea_y2 += 1;
+									reselectEntityGroup();
+								}
 							}
 						}
 						else if ( keystatus[SDL_SCANCODE_UP] )
 						{
 							keystatus[SDL_SCANCODE_UP] = 0;
 							// resize selection
-							if ( selectedarea_y2 > selectedarea_y1 )
+							if ( selectedarea_y2 > selectedarea_y1 && !moveSelectionNegativeY )
 							{
 								selectedarea_y2 -= 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_y1 < selectedarea_y2 
+								&& selectedarea_y1 > 0 && moveSelectionNegativeY )
+							{
+								selectedarea_y1 -= 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_y1 == selectedarea_y2 )
+							{
+								moveSelectionNegativeY = true;
+								if ( selectedarea_y1 > 0 )
+								{
+									selectedarea_y1 -= 1;
+									reselectEntityGroup();
+								}
 							}
 						}
 						else if ( keystatus[SDL_SCANCODE_LEFT] )
 						{
 							keystatus[SDL_SCANCODE_LEFT] = 0;
 							// resize selection
-							if ( selectedarea_x2 > selectedarea_x1 )
+							if ( selectedarea_x2 > selectedarea_x1 && !moveSelectionNegativeX )
 							{
 								selectedarea_x2 -= 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_x1 < selectedarea_x2
+								&& selectedarea_x1 > 0 && moveSelectionNegativeX )
+							{
+								selectedarea_x1 -= 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_x1 == selectedarea_x2 )
+							{
+								moveSelectionNegativeX = true;
+								if ( selectedarea_x1 > 0 )
+								{
+									selectedarea_x1 -= 1;
+									reselectEntityGroup();
+								}
 							}
 						}
 						else if ( keystatus[SDL_SCANCODE_RIGHT] )
 						{
 							keystatus[SDL_SCANCODE_RIGHT] = 0;
 							// resize selection
-							if ( selectedarea_x2 < map.width - 1 )
+							if ( selectedarea_x2 < map.width - 1 && !moveSelectionNegativeX)
 							{
 								selectedarea_x2 += 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_x1 < selectedarea_x2
+								&& selectedarea_x1 < map.width - 1 && moveSelectionNegativeX )
+							{
+								selectedarea_x1 += 1;
+								reselectEntityGroup();
+							}
+							else if ( selectedarea_x1 == selectedarea_x2 )
+							{
+								moveSelectionNegativeX = false;
+								if ( selectedarea_x2 < map.width - 1 )
+								{
+									selectedarea_x2 += 1;
+									reselectEntityGroup();
+								}
 							}
 						}
 					}
@@ -5396,18 +5481,10 @@ int main(int argc, char** argv)
 						makeUndo();
 						if ( selectedarea_y2 < map.height - 1 )
 						{
-							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							for ( std::vector<Entity*>::iterator it = groupedEntities.begin(); it != groupedEntities.end(); ++it )
 							{
-								for ( node = map.entities->first; node != nullptr; node = nextnode )
-								{
-									nextnode = node->next;
-									entity = (Entity*)node->element;
-									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
-										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
-									{
-										entity->y += 16;
-									}
-								}
+								Entity* tmpEntity = *it;
+								tmpEntity->y += 16;
 							}
 							selectedarea_y2 += 1;
 							if ( selectedarea_y1 < map.height - 1 )
@@ -5423,18 +5500,10 @@ int main(int argc, char** argv)
 						makeUndo();
 						if ( selectedarea_y1 > 0 )
 						{
-							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							for ( std::vector<Entity*>::iterator it = groupedEntities.begin(); it != groupedEntities.end(); ++it )
 							{
-								for ( node = map.entities->first; node != nullptr; node = nextnode )
-								{
-									nextnode = node->next;
-									entity = (Entity*)node->element;
-									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
-										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
-									{
-										entity->y -= 16;
-									}
-								}
+								Entity* tmpEntity = *it;
+								tmpEntity->y -= 16;
 							}
 							selectedarea_y1 -= 1;
 							if ( selectedarea_y2 > 0 )
@@ -5450,18 +5519,10 @@ int main(int argc, char** argv)
 						makeUndo();
 						if ( selectedarea_x1 > 0 )
 						{
-							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							for ( std::vector<Entity*>::iterator it = groupedEntities.begin(); it != groupedEntities.end(); ++it )
 							{
-								for ( node = map.entities->first; node != nullptr; node = nextnode )
-								{
-									nextnode = node->next;
-									entity = (Entity*)node->element;
-									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
-										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
-									{
-										entity->x -= 16;
-									}
-								}
+								Entity* tmpEntity = *it;
+								tmpEntity->x -= 16;
 							}
 							selectedarea_x1 -= 1;
 							if ( selectedarea_x2 > 0 )
@@ -5477,18 +5538,10 @@ int main(int argc, char** argv)
 						makeUndo();
 						if ( selectedarea_x2 < map.width - 1 )
 						{
-							if ( map.entities->first != nullptr && viewsprites && allowediting )
+							for ( std::vector<Entity*>::iterator it = groupedEntities.begin(); it != groupedEntities.end(); ++it )
 							{
-								for ( node = map.entities->first; node != nullptr; node = nextnode )
-								{
-									nextnode = node->next;
-									entity = (Entity*)node->element;
-									if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
-										&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
-									{
-										entity->x += 16;
-									}
-								}
+								Entity* tmpEntity = *it;
+								tmpEntity->x += 16;
 							}
 							selectedarea_x2 += 1;
 							if ( selectedarea_x1 < map.width - 1 )
@@ -5502,6 +5555,7 @@ int main(int argc, char** argv)
 				{
 					keystatus[SDL_SCANCODE_DELETE] = 0;
 					buttonDelete(NULL);
+					groupedEntities.clear();
 				}
 				if ( keystatus[SDL_SCANCODE_C] )
 				{
@@ -5965,6 +6019,23 @@ void propertyPageCursorFlash(int rowSpacing)
 	if ( (ticks - cursorflash) % TICKS_PER_SECOND < TICKS_PER_SECOND / 2 )
 	{
 		printText(font8x8_bmp, subx1 + 8 + strlen(spriteProperties[editproperty]) * 8, suby1 + 44 + editproperty * rowSpacing, "\26");
+	}
+}
+
+void reselectEntityGroup()
+{
+	groupedEntities.clear();
+	node_t* nextnode = nullptr;
+	Entity* entity = nullptr;
+	for ( node_t* node = map.entities->first; node != nullptr; node = nextnode )
+	{
+		nextnode = node->next;
+		entity = (Entity*)node->element;
+		if ( entity->x / 16 >= selectedarea_x1 && entity->x / 16 <= selectedarea_x2
+			&& entity->y / 16 >= selectedarea_y1 && entity->y / 16 <= selectedarea_y2 )
+		{
+			groupedEntities.push_back(entity);
+		}
 	}
 }
 
