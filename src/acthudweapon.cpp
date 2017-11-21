@@ -61,6 +61,14 @@ void actHudArm(Entity* my)
 	}
 
 	// sprite
+	my->scalex = 1.f;
+	my->scaley = 1.f;
+	my->scalez = 1.f;
+	// position
+	my->x = parent->x;
+	my->y = parent->y;
+	my->z = parent->z - 2.5;
+
 	bool noGloves = false;
 	if (stats[clientnum]->gloves == nullptr)
 	{
@@ -68,56 +76,63 @@ void actHudArm(Entity* my)
 	}
 	else
 	{
-		if ( setGloveSprite(stats[clientnum], my, SPRITE_GLOVE_RIGHT_OFFSET) != 0 )
+		if ( stats[clientnum]->gloves->type == GLOVES || stats[clientnum]->gloves->type == GLOVES_DEXTERITY )
 		{
-			// successfully set sprite for the human model
+			my->sprite = 637;
 		}
-		else
+		else if ( stats[clientnum]->gloves->type == BRACERS || stats[clientnum]->gloves->type == BRACERS_CONSTITUTION )
 		{
-			noGloves = true;
+			my->sprite = 638;
+		}
+		else if ( stats[clientnum]->gloves->type == GAUNTLETS || stats[clientnum]->gloves->type == GAUNTLETS_STRENGTH )
+		{
+			my->sprite = 639;
+		}
+		else if ( stats[clientnum]->gloves->type == BRASS_KNUCKLES )
+		{
+			my->sprite = 640;
+		}
+		else if ( stats[clientnum]->gloves->type == IRON_KNUCKLES )
+		{
+			my->sprite = 641;
+		}
+		else if ( stats[clientnum]->gloves->type == SPIKED_GAUNTLETS )
+		{
+			my->sprite = 642;
+		}
+		if ( stats[clientnum]->weapon == nullptr )
+		{
+			my->scalex = 0.8f;
+			my->scaley = 0.8f;
+			my->scalez = 0.8f;
+			//my->x += 0.5 * cos(parent->yaw);
+			//my->y += 0.5 * sin(parent->yaw);
 		}
 	}
 	if ( noGloves )
 	{
 		if ( stats[clientnum]->appearance / 6 == 0 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 121;
-			}
-			else
-			{
-				my->sprite = 109;
-			}
+			my->sprite = 634;
 		}
 		else if ( stats[clientnum]->appearance / 6 == 1 )
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 350;
-			}
-			else
-			{
-				my->sprite = 337;
-			}
+			my->sprite = 635;
 		}
 		else
 		{
-			if ( stats[clientnum]->sex == FEMALE )
-			{
-				my->sprite = 376;
-			}
-			else
-			{
-				my->sprite = 363;
-			}
+			my->sprite = 636;
 		}
+		/*if ( stats[clientnum]->weapon == nullptr )
+		{
+			my->scalex = 0.8f;
+			my->scaley = 0.8f;
+			my->scalez = 0.8f;
+			my->x += 0.5 * cos(parent->yaw);
+			my->y += 0.5 * sin(parent->yaw);
+		}*/
 	}
 
-	// position
-	my->x = parent->x;
-	my->y = parent->y;
-	my->z = parent->z - 2.5;
 
 	// rotation
 	//my->yaw = atan2( my->y-camera.y*16, my->x-camera.x*16 );
