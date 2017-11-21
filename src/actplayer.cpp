@@ -177,6 +177,7 @@ void actDeathCam(Entity* my)
 #define PLAYER_DYAW my->fskill[5]
 #define PLAYER_ROTX my->fskill[6]
 #define PLAYER_ROTY my->fskill[7]
+#define PLAYER_SHIELDYAW my->fskill[8]
 #define PLAYERWALKSPEED .12
 
 void actPlayer(Entity* my)
@@ -187,9 +188,10 @@ void actPlayer(Entity* my)
 	}
 
 	Entity* entity;
-	Entity* entity2 = NULL;
-	Entity* rightbody = NULL;
-	Entity* weaponarm = NULL;
+	Entity* entity2 = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
+	Entity* shieldarm = nullptr;
 	node_t* node;
 	Item* item;
 	int i, bodypart;
@@ -1923,6 +1925,10 @@ void actPlayer(Entity* my)
 			{
 				rightbody = (Entity*)node->next->element;
 			}
+			if ( bodypart == 5 )
+			{
+				shieldarm = entity;
+			}
 			node_t* shieldNode = list_Node(&my->children, 7);
 			if ( shieldNode )
 			{
@@ -2019,27 +2025,36 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_ARMBENDED = 0;
 						PLAYER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
+						entity->pitch = 0;
 						entity->roll = 0;
+						entity->skill[1] = 0;
 					}
 					else
 					{
-						if ( entity->pitch >= -PI / 2 )
+						if ( entity->skill[1] == 0 )
 						{
-							PLAYER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							PLAYER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							PLAYER_ARMBENDED = 0;
-							PLAYER_ATTACK = 0;
+							// upswing
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 5 * PI / 4, false, 0.0) )
+							{
+								entity->skill[1] = 1;
+							}
 						}
 						else
 						{
-							entity->pitch += .25;
+							if ( entity->pitch >= 3 * PI / 2 )
+							{
+								PLAYER_ARMBENDED = 1;
+							}
+							if ( limbAnimateToLimit(entity, ANIMATE_PITCH, 0.3, PI / 4, false, 0.0) )
+							{
+								entity->skill[0] = rightbody->skill[0];
+								entity->skill[1] = 0;
+								PLAYER_WEAPONYAW = 0;
+								entity->pitch = rightbody->pitch;
+								entity->roll = 0;
+								PLAYER_ARMBENDED = 0;
+								PLAYER_ATTACK = 0;
+							}
 						}
 					}
 				}
@@ -2077,7 +2092,7 @@ void actPlayer(Entity* my)
 					{
 						PLAYER_ARMBENDED = 0;
 						PLAYER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
+						entity->pitch = 0;
 						entity->roll = 0;
 					}
 					else
@@ -2085,7 +2100,11 @@ void actPlayer(Entity* my)
 						if ( PLAYER_ATTACKTIME >= 5 )
 						{
 							PLAYER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
+							limbAnimateToLimit(entity, ANIMATE_PITCH, -0.5, 11 * PI / 6, false, 0.0);
+						}
+						else
+						{
+							limbAnimateToLimit(entity, ANIMATE_PITCH, 0.4, 2 * PI / 3, false, 0.0);
 						}
 						if ( PLAYER_ATTACKTIME >= 10 )
 						{
@@ -2435,6 +2454,23 @@ void actPlayer(Entity* my)
 				{
 					entity->pitch = 0;
 				}
+				if ( multiplayer != CLIENT )
+				{
+					real_t prevYaw = PLAYER_SHIELDYAW;
+					if ( stats[PLAYER_NUM]->defending )
+					{
+						PLAYER_SHIELDYAW = PI / 5;
+					}
+					else
+					{
+						PLAYER_SHIELDYAW = 0;
+					}
+					if ( prevYaw != PLAYER_SHIELDYAW || ticks % 200 == 0 )
+					{
+						serverUpdateEntityFSkill(players[PLAYER_NUM]->entity, 8);
+					}
+				}
+				entity->yaw += PLAYER_SHIELDYAW;
 				break;
 			}
 			// weapon
@@ -2607,6 +2643,9 @@ void actPlayer(Entity* my)
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
+				entity->yaw = shieldarm->yaw;
+				entity->roll = 0;
+				entity->pitch = 0;
 				if ( entity->sprite == items[TOOL_TORCH].index )
 				{
 					entity2 = spawnFlame(entity, SPRITE_FLAME);
@@ -2614,8 +2653,8 @@ void actPlayer(Entity* my)
 					{
 						entity2->flags[GENIUS] = true;
 					}
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
+					entity2->x += 2 * cos(shieldarm->yaw);
+					entity2->y += 2 * sin(shieldarm->yaw);
 					entity2->z -= 2;
 					if ( my->skill[2] == clientnum )
 					{
@@ -2633,8 +2672,8 @@ void actPlayer(Entity* my)
 					{
 						entity2->flags[GENIUS] = true;
 					}
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
+					entity2->x += 2 * cos(shieldarm->yaw);
+					entity2->y += 2 * sin(shieldarm->yaw);
 					entity2->z -= 2;
 					if ( my->skill[2] == clientnum )
 					{
@@ -2653,8 +2692,8 @@ void actPlayer(Entity* my)
 					{
 						entity2->flags[GENIUS] = true;
 					}
-					entity2->x += 2 * cos(my->yaw);
-					entity2->y += 2 * sin(my->yaw);
+					entity2->x += 2 * cos(shieldarm->yaw);
+					entity2->y += 2 * sin(shieldarm->yaw);
 					entity2->z += 1;
 					if ( my->skill[2] == clientnum )
 					{
@@ -2663,6 +2702,25 @@ void actPlayer(Entity* my)
 					else
 					{
 						entity2->setUID(-3);
+					}
+				}
+				if ( PLAYER_SHIELDYAW > PI / 32 )
+				{
+					if ( entity->sprite != items[TOOL_TORCH].index && entity->sprite != items[TOOL_LANTERN].index && entity->sprite != items[TOOL_CRYSTALSHARD].index )
+					{
+						// shield, so rotate a little.
+						entity->roll += PI / 64;
+					}
+					else
+					{
+						entity->x += 0.25 * cos(my->yaw);
+						entity->y += 0.25 * sin(my->yaw);
+						entity->pitch += PI / 16;
+						if ( entity2 )
+						{
+							entity2->x += 0.75 * cos(shieldarm->yaw);
+							entity2->y += 0.75 * sin(shieldarm->yaw);
+						}
 					}
 				}
 				break;
