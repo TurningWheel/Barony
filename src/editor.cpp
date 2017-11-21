@@ -2488,6 +2488,10 @@ int main(int argc, char** argv)
 					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Disable Levitation:");
 					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_DISABLELEVITATION]);
 
+					pad_y1 += 24;
+					printText(font8x8_bmp, start_x2, start_y + pad_y1, "Gen Adjacent Rooms:");
+					printText(font8x8_bmp, start_x3, start_y + pad_y1, mapflagtext[MAP_FLAG_GENADJACENTROOMS]);
+
 					start_y = suby2 - 44;
 					pad_y1 = 0;
 					printText(font8x8_bmp, subx1 + 8, start_y + pad_y1, "Map Width:");
@@ -2593,7 +2597,7 @@ int main(int argc, char** argv)
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
-						if ( omousex >= start_x3 && omousey >= suby1 + 172 && omousex < start_x3 + 24 && omousey < suby1 + 180 )
+						if ( omousex >= start_x3 && omousey >= suby1 + 172 && omousex < start_x3 + 24 && omousey < suby1 + 188 )
 						{
 							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLEDIGGING], "[x]", 3) )
 							{
@@ -2605,7 +2609,7 @@ int main(int argc, char** argv)
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
-						if ( omousex >= start_x3 && omousey >= suby1 + 196 && omousex < start_x3 + 24 && omousey < suby1 + 204 )
+						if ( omousex >= start_x3 && omousey >= suby1 + 196 && omousex < start_x3 + 24 && omousey < suby1 + 212 )
 						{
 							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLETELEPORT], "[x]", 3) )
 							{
@@ -2617,7 +2621,7 @@ int main(int argc, char** argv)
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
-						if ( omousex >= start_x3 && omousey >= suby1 + 220 && omousex < start_x3 + 24 && omousey < suby1 + 228 )
+						if ( omousex >= start_x3 && omousey >= suby1 + 220 && omousex < start_x3 + 24 && omousey < suby1 + 236 )
 						{
 							if ( !strncmp(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]", 3) )
 							{
@@ -2626,6 +2630,18 @@ int main(int argc, char** argv)
 							else
 							{
 								strcpy(mapflagtext[MAP_FLAG_DISABLELEVITATION], "[x]");
+							}
+							mousestatus[SDL_BUTTON_LEFT] = 0;
+						}
+						if ( omousex >= start_x3 && omousey >= suby1 + 244 && omousex < start_x3 + 24 && omousey < suby1 + 260 )
+						{
+							if ( !strncmp(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]", 3) )
+							{
+								strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[ ]");
+							}
+							else
+							{
+								strcpy(mapflagtext[MAP_FLAG_GENADJACENTROOMS], "[x]");
 							}
 							mousestatus[SDL_BUTTON_LEFT] = 0;
 						}
