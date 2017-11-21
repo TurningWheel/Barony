@@ -779,28 +779,60 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 
 			// otherwise, choose a location from those available (to be stored in x/y)
-			pickedlocation = prng_get_uint() % numpossiblelocations;
-			i = -1;
-			x = 0;
-			y = 0;
-			while ( 1 )
+			if ( MFLAG_GENADJACENTROOMS )
 			{
-				if ( possiblelocations2[x + y * map.width] == true )
+				pickedlocation = 0;
+				i = -1;
+				x = 0;
+				y = 0;
+				while ( 1 )
 				{
-					i++;
-					if ( i == pickedlocation )
+					if ( possiblelocations2[x + y * map.width] == true )
 					{
-						break;
+						i++;
+						if ( i == pickedlocation )
+						{
+							break;
+						}
+					}
+					x++;
+					if ( x >= map.width )
+					{
+						x = 0;
+						y++;
+						if ( y >= map.height )
+						{
+							y = 0;
+							pickedlocation++;
+						}
 					}
 				}
-				x++;
-				if ( x >= map.width )
+			}
+			else
+			{
+				pickedlocation = prng_get_uint() % numpossiblelocations;
+				i = -1;
+				x = 0;
+				y = 0;
+				while ( 1 )
 				{
-					x = 0;
-					y++;
-					if ( y >= map.height )
+					if ( possiblelocations2[x + y * map.width] == true )
 					{
-						y = 0;
+						i++;
+						if ( i == pickedlocation )
+						{
+							break;
+						}
+					}
+					x++;
+					if ( x >= map.width )
+					{
+						x = 0;
+						y++;
+						if ( y >= map.height )
+						{
+							y = 0;
+						}
 					}
 				}
 			}
