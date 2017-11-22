@@ -102,9 +102,10 @@ void actHudArm(Entity* my)
 		}
 		if ( stats[clientnum]->weapon == nullptr )
 		{
-			my->scalex = 0.8f;
-			my->scaley = 0.8f;
-			my->scalez = 0.8f;
+			my->scalex = 0.5f;
+			my->scaley = 0.5f;
+			my->scalez = 0.5f;
+			my->z -= 0.75;
 			//my->x += 0.5 * cos(parent->yaw);
 			//my->y += 0.5 * sin(parent->yaw);
 		}
@@ -123,14 +124,15 @@ void actHudArm(Entity* my)
 		{
 			my->sprite = 636;
 		}
-		/*if ( stats[clientnum]->weapon == nullptr )
+		if ( stats[clientnum]->weapon == nullptr )
 		{
-			my->scalex = 0.8f;
-			my->scaley = 0.8f;
-			my->scalez = 0.8f;
-			my->x += 0.5 * cos(parent->yaw);
-			my->y += 0.5 * sin(parent->yaw);
-		}*/
+			my->scalex = 0.5f;
+			my->scaley = 0.5f;
+			my->scalez = 0.5f;
+			my->z -= 0.75;
+			//my->x += 0.5 * cos(parent->yaw);
+			//my->y += 0.5 * sin(parent->yaw);
+		}
 	}
 
 
