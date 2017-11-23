@@ -1220,9 +1220,10 @@ int main(int argc, char** argv)
 	undolist.first = NULL;
 	undolist.last = NULL;
 
-	// load cursors
+	// Load Cursors
 	cursorArrow = SDL_GetCursor();
 	cursorPencil = newCursor(cursor_pencil);
+	cursorPoint = newCursor(cursor_point);
 	cursorBrush = newCursor(cursor_brush);
 	cursorSelect = cursorArrow;
 	cursorFill = newCursor(cursor_fill);
@@ -1364,13 +1365,13 @@ int main(int argc, char** argv)
 	button->action = &buttonSprite;
 
 	// Pencil Tool Button
-	+button = butPencil = newButton();
-	+strcpy(button->label, "Pencil");
-	+button->x = xres - 96;
-	+button->y = 204;
-	+button->sizex = 64;
-	+button->sizey = 16;
-	+button->action = &buttonPencil;
+	button = butPencil = newButton();
+	strcpy(button->label, "Pencil");
+	button->x = xres - 96;
+	button->y = 204;
+	button->sizex = 64;
+	button->sizey = 16;
+	button->action = &buttonPencil;
 
 	// Point Tool Button
 	button = butPoint = newButton();
@@ -1738,7 +1739,7 @@ int main(int argc, char** argv)
 						break;
 				}
 
-				// move entities
+				// Move Entities
 				if ( map.entities->first != NULL && viewsprites && allowediting )
 				{
 					for ( node = map.entities->first; node != NULL; node = nextnode )
@@ -1789,7 +1790,7 @@ int main(int argc, char** argv)
 						{
 							if ( (omousex + camx) >> TEXTUREPOWER == entity->x / 16 && (omousey + camy) >> TEXTUREPOWER == entity->y / 16 )
 							{
-								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool != 1 )
+								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool == 1 )
 								{
 									// select sprite
 									selectedEntity = entity;
@@ -1802,7 +1803,7 @@ int main(int argc, char** argv)
 										makeUndo();
 									}
 								}
-								else if ( mousestatus[SDL_BUTTON_RIGHT] )
+								else if ( mousestatus[SDL_BUTTON_RIGHT] && selectedTool == 1 )
 								{
 									// duplicate sprite
 									duplicatedSprite = true;
@@ -1822,7 +1823,7 @@ int main(int argc, char** argv)
 					}
 				}
 
-				// modify world
+				// Modify World
 				if ( mousestatus[SDL_BUTTON_LEFT] && selectedEntity == NULL )
 				{
 					if ( allowediting )
@@ -1832,26 +1833,36 @@ int main(int argc, char** argv)
 							savedundo = true;
 							makeUndo();
 						}
-						if ( !pasting )   // not pasting, normal editing mode
+						if ( !pasting )   // Not Pasting, Normal Editing Mode
 						{
-							if ( selectedTool == 0 )   // point draw
+							if ( selectedTool == 0 )		// Process Pencil Tool functionality
 							{
 								if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 								{
 									map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height] = selectedTile;
 								}
 							}
-							else if ( selectedTool == 1 )     // brush tool
+							else if ( selectedTool == 1 )	// Process Point Tool functionality
 							{
-								for (x = drawx - 1; x <= drawx + 1; x++)
-									for (y = drawy - 1; y <= drawy + 1; y++)
+								// All functionality of the Point Tool is encapsulated above in the "Move Entities" section
+							}
+							else if ( selectedTool == 2 )	// Process Brush Tool functionality
+							{
+								for ( x = drawx - 1; x <= drawx + 1; x++ )
+								{
+									for ( y = drawy - 1; y <= drawy + 1; y++ )
+									{
 										if ( (x != drawx - 1 || y != drawy - 1) && (x != drawx + 1 || y != drawy - 1) && (x != drawx - 1 || y != drawy + 1) && (x != drawx + 1 || y != drawy + 1) )
+										{
 											if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 											{
 												map.tiles[drawlayer + y * MAPLAYERS + x * MAPLAYERS * map.height] = selectedTile;
 											}
+										}
+									}
+								}
 							}
-							else if ( selectedTool == 2 )     // select tool
+							else if ( selectedTool == 3 )	// Process Select Tool functionality
 							{
 								if ( selectingspace == false )
 								{
@@ -1893,7 +1904,7 @@ int main(int argc, char** argv)
 									}
 								}
 							}
-							else if ( selectedTool == 3 )     // fill tool
+							else if ( selectedTool == 4 )	// Process Fill Tool functionality
 							{
 								if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 								{
@@ -1930,7 +1941,7 @@ int main(int argc, char** argv)
 				}
 				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL )
 				{
-					if ( selectedTool != 2 )
+					if ( selectedTool != 3 )
 					{
 						if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 						{
