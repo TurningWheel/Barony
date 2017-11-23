@@ -2359,7 +2359,6 @@ void clientHandlePacket()
 			if ( entity->getUID() == i )
 			{
 				entity->fskill[net_packet->data[8]] = (SDLNet_Read16(&net_packet->data[9]) / 256.0);
-				messagePlayer(1, "Read %f", entity->fskill[8]);
 			}
 		}
 		return;
