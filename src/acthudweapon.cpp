@@ -232,7 +232,7 @@ void actHudWeapon(Entity* my)
 		{
 			int x = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<unsigned>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				my->flags[INVISIBLE] = true;
 				if (parent)
@@ -1429,7 +1429,7 @@ void actHudShield(Entity* my)
 		{
 			int x = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(players[clientnum]->entity->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				my->flags[INVISIBLE] = true;
 				Entity* parent = uidToEntity(my->parent);

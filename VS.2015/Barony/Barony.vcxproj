@@ -106,6 +106,7 @@
     <ClCompile Include="..\..\src\acthudweapon.cpp" />
     <ClCompile Include="..\..\src\actitem.cpp" />
     <ClCompile Include="..\..\src\actladder.cpp" />
+    <ClCompile Include="..\..\src\actmagictrap.cpp" />
     <ClCompile Include="..\..\src\actmonster.cpp" />
     <ClCompile Include="..\..\src\actpedestal.cpp" />
     <ClCompile Include="..\..\src\actplayer.cpp" />

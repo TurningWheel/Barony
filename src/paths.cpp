@@ -497,7 +497,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 	bool obstacle = true;
 
 	int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
-	if ( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] && !animatedtiles[map.tiles[index]] )
+	if ( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] 
+		&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
 	{
 		obstacle = false;
 	}
@@ -589,7 +590,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = v * MAPLAYERS + (u + 1) * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
 								{
 									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = true;
@@ -635,7 +637,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = v * MAPLAYERS + (u - 1) * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
 								{
 									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = true;
@@ -681,7 +684,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = (v + 1) * MAPLAYERS + u * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
 								{
 									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = true;
@@ -727,7 +731,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = (v - 1) * MAPLAYERS + u * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
 								{
 									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = true;

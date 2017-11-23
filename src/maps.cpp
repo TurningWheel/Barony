@@ -4142,7 +4142,14 @@ void assignActions(map_t* map)
 				entity->x += 8;
 				entity->y += 8;
 				entity->z = -24;
-				entity->sprite = 621;
+				if ( entity->ceilingTileModel != 0 )
+				{
+					entity->sprite = entity->ceilingTileModel;
+				}
+				else
+				{
+					entity->sprite = 621;
+				}
 				entity->sizex = 8;
 				entity->sizey = 8;
 				//entity->yaw = PI / 2;
@@ -4150,6 +4157,51 @@ void assignActions(map_t* map)
 				entity->flags[PASSABLE] = true;
 				//entity->flags[BRIGHT] = true;
 				break;
+			// spell trap ceiling
+			case 120:
+			{
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->behavior = &actMagicTrapCeiling;
+				entity->flags[SPRITE] = true;
+				entity->flags[INVISIBLE] = true;
+				entity->flags[PASSABLE] = true;
+				entity->flags[NOUPDATE] = true;
+				entity->skill[28] = 1; // is a mechanism
+				entity->spellTrapRefireRate = entity->spellTrapRefireRate * TICKS_PER_SECOND; // convert seconds to ticks from editor
+
+				x = ((int)(entity->x)) >> 4;
+				y = ((int)(entity->y)) >> 4;
+				map->tiles[y * MAPLAYERS + x * MAPLAYERS * map->height] = 208; //entity->spellTrapCeilingModel
+				Entity* childEntity = nullptr;
+				if ( x >= 0 && y >= 0 && x < map->width && y < map->height )
+				{
+					if ( !map->tiles[OBSTACLELAYER + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+					{
+						childEntity = newEntity(252, 1, map->entities);
+						childEntity->parent = entity->getUID();
+						childEntity->x = entity->x;
+						childEntity->y = entity->y;
+						//printlog("30 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",childEntity->sprite,childEntity->getUID(),childEntity->x,childEntity->y);
+						childEntity->flags[PASSABLE] = true;
+						if ( !map->tiles[(MAPLAYERS - 1) + y * MAPLAYERS + x * MAPLAYERS * map->height] )
+						{
+							childEntity->z = -26.99;
+						}
+						else
+						{
+							childEntity->z = -10.99;
+						}
+						node_t* tempNode = list_AddNodeLast(&entity->children);
+						tempNode->element = childEntity; // add the node to the children list.
+						tempNode->deconstructor = &emptyDeconstructor;
+						tempNode->size = sizeof(Entity*);
+					}
+				}
+				break;
+			}
 			default:
 				break;
 		}

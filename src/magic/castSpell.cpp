@@ -287,7 +287,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 		{
 			int x = std::min<int>(std::max<int>(0, floor(caster->x / 16)), map.width - 1);
 			int y = std::min<int>(std::max<int>(0, floor(caster->y / 16)), map.height - 1);
-			if (animatedtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]])
+			if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] || lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				swimming = true;
 			}
@@ -827,6 +827,16 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 				playSoundEntity(entity, 169, 128 );
 			}
 			result = entity;
+
+			if ( trap )
+			{
+				if ( caster->behavior == &actMagicTrapCeiling )
+				{
+					node_t* node = caster->children.first;
+					Entity* ceilingModel = (Entity*)(node->element);
+					entity->z = ceilingModel->z;
+				}
+			}
 		}
 		else if ( propulsion == PROPULSION_MISSILE_TRIO )
 		{

@@ -443,7 +443,7 @@ void gameLogic(void)
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
@@ -1182,7 +1182,7 @@ void gameLogic(void)
 											// bubbling lava
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 155, 100 );
 										}
-										else
+										else if ( swimmingtiles[map.tiles[index]] )
 										{
 											// running water
 											playSoundPosLocal( x * 16 + 8, y * 16 + 8, 135, 32 );
