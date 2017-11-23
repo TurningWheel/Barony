@@ -1325,6 +1325,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							{
 								messagePlayerColor(player, color, language[395]);
 							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
 						}
 					}
 				}
@@ -1969,6 +1970,12 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							if ( player >= 0 )
 							{
 								messagePlayerColor(player, color, language[2425]);
+							}
+							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
+							for ( int gibs = 0; gibs < 10; ++gibs )
+							{
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
 							}
 						}
 					}
