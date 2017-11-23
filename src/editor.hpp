@@ -36,7 +36,7 @@ extern int selectedTile;
 extern int tilepalette;
 extern int spritepalette;
 extern int mclick;
-extern int selectedTool; // 0: point draw 1: brush 2: select 3: fill
+extern int selectedTool; // 0: Pencil 1: Point 2: Brush 3: Select 4: Fill
 extern int allowediting; // only turned on when the mouse is over paintable screen region
 extern int openwindow, savewindow, newwindow;
 extern int slidery, slidersize;
@@ -50,7 +50,7 @@ extern char message[48];
 extern int messagetime;
 extern char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[4];
 extern int editproperty;
-extern SDL_Cursor* cursorArrow, *cursorPencil, *cursorBrush, *cursorSelect, *cursorFill;
+extern SDL_Cursor* cursorArrow, *cursorPencil, *cursorPoint, *cursorBrush, *cursorSelect, *cursorFill;
 extern int* palette;
 
 // button definitions
