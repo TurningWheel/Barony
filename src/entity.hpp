@@ -750,3 +750,10 @@ int getWeaponSkill(Item* weapon);
 int getStatForProficiency(int skill);
 void setSpriteAttributes(Entity* entityToSet, Entity* entityToCopy, Entity* entityStatToCopy);
 void playerStatIncrease(int playerClass, int chosenStats[3]);
+
+static const int MSG_DESCRIPTION = 0;
+static const int MSG_COMBAT = 1;
+static const int MSG_OBITUARY = 2;
+static const int MSG_GENERIC = 3;
+static const int MSG_ATTACKS = 4;
+void messagePlayerMonsterEvent(int player, Uint32 color, Stat& monsterStats, char* msgGeneric, char* msgNamed, int detailType);

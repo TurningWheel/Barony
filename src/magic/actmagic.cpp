@@ -504,21 +504,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 						if ( parent->behavior == &actPlayer )
 						{
 							Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
-							if ( strcmp(hitstats->name, "") )
-							{
-								messagePlayerColor(parent->skill[2], color, language[377], hitstats->name);
-							}
-							else
-							{
-								if ( hitstats->type < KOBOLD ) //Original monster count
-								{
-									messagePlayerColor(parent->skill[2], color, language[378], language[90 + hitstats->type]);
-								}
-								else if ( hitstats->type >= KOBOLD ) //New monsters
-								{
-									messagePlayerColor(parent->skill[2], color, language[378], language[2000 + (hitstats->type - KOBOLD)]);
-								}
-							}
+							messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[378], language[377], MSG_COMBAT);
 						}
 					}
 				}
@@ -1260,21 +1246,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[390], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[391], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[391], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[391], language[390], MSG_COMBAT);
 								}
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1345,21 +1317,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[393], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
 								}
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1403,21 +1361,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[393], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[394], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[394], language[393], MSG_COMBAT);
 								}
 							}
 							Uint32 color = SDL_MapRGB(mainsurface->format, 255, 0, 0);
@@ -1468,21 +1412,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[397], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[398], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[398], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[398], language[397], MSG_COMBAT);
 								}
 							}
 							spawnMagicEffectParticles(hit.entity->x, hit.entity->y, hit.entity->z, my->sprite);
@@ -1941,21 +1871,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[2420], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[2421], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[2421], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2421], language[2420], MSG_COMBAT);
 								}
 							}
 
@@ -2017,21 +1933,7 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 								Uint32 color = SDL_MapRGB(mainsurface->format, 0, 255, 0);
 								if ( parent->behavior == &actPlayer )
 								{
-									if ( strcmp(hitstats->name, "") )
-									{
-										messagePlayerColor(parent->skill[2], color, language[2423], hitstats->name);
-									}
-									else
-									{
-										if ( hitstats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayerColor(parent->skill[2], color, language[2424], language[90 + hitstats->type]);
-										}
-										else if ( hitstats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayerColor(parent->skill[2], color, language[2424], language[2000 + (hitstats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(parent->skill[2], color, *hitstats, language[2424], language[2423], MSG_COMBAT);
 								}
 							}
 
