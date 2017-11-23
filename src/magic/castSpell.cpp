@@ -1044,7 +1044,7 @@ Entity* castSpell(Uint32 caster_uid, spell_t* spell, bool using_magicstaff, bool
 			{
 				if ( propulsion == PROPULSION_MISSILE )
 				{
-					entity->sprite = 173;
+					entity->sprite = 643;
 				}
 			}
 			else if (!strcmp(element->name, spellElement_confuse.name))
