@@ -20,6 +20,7 @@ button_t* butX;
 button_t* but_;
 button_t* butTilePalette;
 button_t* butSprite;
+button_t* butPencil;
 button_t* butPoint;
 button_t* butBrush;
 button_t* butSelect;
@@ -144,27 +145,33 @@ void buttonSprite(button_t* my)
 	spritepalette = 1;
 }
 
-void buttonPoint(button_t* my)
+void buttonPencil(button_t* my)
 {
 	selectedTool = 0;
 	selectedarea = false;
 }
 
-void buttonBrush(button_t* my)
+void buttonPoint(button_t* my)
 {
 	selectedTool = 1;
 	selectedarea = false;
 }
 
-void buttonSelect(button_t* my)
+void buttonBrush(button_t* my)
 {
 	selectedTool = 2;
 	selectedarea = false;
 }
 
-void buttonFill(button_t* my)
+void buttonSelect(button_t* my)
 {
 	selectedTool = 3;
+	selectedarea = false;
+}
+
+void buttonFill(button_t* my)
+{
+	selectedTool = 4;
 	selectedarea = false;
 }
 
@@ -658,7 +665,7 @@ void buttonDelete(button_t* my)
 void buttonSelectAll(button_t* my)
 {
 	menuVisible = 0;
-	selectedTool = 2;
+	selectedTool = 3;
 	selectedarea = true;
 	selectingspace = false;
 	selectedarea_x1 = 0;
