@@ -541,7 +541,7 @@ extern Uint32 nummodels;
 extern Sint32 audio_rate, audio_channels, audio_buffers;
 extern Uint16 audio_format;
 extern int sfxvolume;
-extern bool* animatedtiles, *lavatiles;
+extern bool *animatedtiles, *swimmingtiles, *lavatiles;
 extern char tempstr[1024];
 extern Sint8 minimap[64][64];
 extern Uint32 mapseed;

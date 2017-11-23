@@ -243,6 +243,7 @@ public:
 	Sint32& pedestalInGround;
 	Sint32& pedestalInit;
 	Sint32& pedestalAmbience;
+	Sint32& pedestalLockOrb;
 
 	real_t& orbStartZ; // mid point of animation, starting height.
 	real_t& orbMaxZVelocity;
@@ -261,6 +262,20 @@ public:
 	Sint32& teleporterY;
 	Sint32& teleporterType;
 	Sint32& teleporterAmbience;
+
+	//--PUBLIC CEILING TILE SKILLS--
+	Sint32& ceilingTileModel;
+
+	//--PUBLIC SPELL TRAP SKILLS--
+	Sint32& spellTrapType;
+	Sint32& spellTrapRefire;
+	Sint32& spellTrapLatchPower;
+	Sint32& spellTrapFloorTile;
+	Sint32& spellTrapRefireRate;
+	Sint32& spellTrapAmbience;
+	Sint32& spellTrapInit;
+	Sint32& spellTrapCounter;
+	Sint32& spellTrapReset;
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -396,6 +411,8 @@ public:
 	void actPedestalOrb();
 	void actMidGamePortal();
 	void actTeleporter();
+	void actMagicTrapCeiling();
+	bool magicFallingCollision();
 
 	Monster getRace() const
 	{
@@ -664,7 +681,7 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 218;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 119;
+static const int NUM_EDITOR_SPRITES = 121;
 static const int NUM_EDITOR_TILES = 208;
 
 int checkSpriteType(Sint32 sprite);

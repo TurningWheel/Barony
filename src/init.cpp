@@ -422,6 +422,7 @@ int initApp(char* title, int fullscreen)
 	tiles = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numtiles);
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
+	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
 	fp = openDataFile("images/tiles.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
@@ -433,12 +434,14 @@ int initApp(char* title, int fullscreen)
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = false;
 		lavatiles[c] = false;
+		swimmingtiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
 			for (x = 0; x < strlen(name); x++)
 			{
-				if ( name[x] >= 48 && name[x] < 58 )
+				if ( name[x] >= '0' && name[x] < '9' )
 				{
+					// animated tiles if the tile name ends in a number 0-9.
 					animatedtiles[c] = true;
 					break;
 				}
@@ -446,6 +449,10 @@ int initApp(char* title, int fullscreen)
 			if ( strstr(name, "Lava") || strstr(name, "lava") )
 			{
 				lavatiles[c] = true;
+			}
+			if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+			{
+				swimmingtiles[c] = true;
 			}
 		}
 		else
@@ -1953,12 +1960,17 @@ int deinitApp()
 	if ( animatedtiles )
 	{
 		free(animatedtiles);
-		animatedtiles = NULL;
+		animatedtiles = nullptr;
 	}
 	if ( lavatiles )
 	{
 		free(lavatiles);
-		lavatiles = NULL;
+		lavatiles = nullptr;
+	}
+	if ( swimmingtiles )
+	{
+		free(swimmingtiles);
+		swimmingtiles = nullptr;
 	}
 
 	// free sprites
