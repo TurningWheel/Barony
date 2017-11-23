@@ -161,7 +161,15 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	spellTrapInit(skill[7]),
 	spellTrapCounter(skill[8]),
 	spellTrapReset(skill[9]),
-	ceilingTileModel(skill[0])
+	ceilingTileModel(skill[0]),
+	furnitureType(skill[0]),
+	furnitureInit(skill[1]),
+	furnitureDir(skill[3]),
+	furnitureHealth(skill[4]),
+	furnitureMaxHealth(skill[9]),
+	pistonCamDir(skill[0]),
+	pistonCamTimer(skill[1]),
+	pistonCamRotateSpeed(fskill[0])
 {
 	int c;
 	// add the entity to the entity list
@@ -4243,7 +4251,7 @@ void Entity::attack(int pose, int charge, Entity* target)
 					hit.entity = ohitentity;
 				}
 			}
-			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &actFurniture || hit.entity->behavior == &::actChest )
+			else if ( hit.entity->behavior == &actDoor || hit.entity->behavior == &::actFurniture || hit.entity->behavior == &::actChest )
 			{
 				int axe = 0;
 				if ( myStats->weapon )
@@ -4286,15 +4294,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, language[667]);
 					}
-					else if ( hit.entity->behavior == &actFurniture )
+					else if ( hit.entity->behavior == &::actFurniture )
 					{
-						if ( hit.entity->skill[0] == 0 )
+						switch ( hit.entity->furnitureType )
 						{
-							messagePlayer(player, language[668]);
-						}
-						else
-						{
-							messagePlayer(player, language[669]);
+							case FURNITURE_CHAIR:
+								messagePlayer(player, language[669]);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(player, language[668]);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(player, language[2509], language[2505]);
+								break;
+							case FURNITURE_BUNKBED:
+								messagePlayer(player, language[2509], language[2506]);
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(player, language[2509], language[2507]);
+								break;
+							default:
+								break;
 						}
 					}
 				}
@@ -4317,15 +4337,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 					{
 						messagePlayer(player, language[671]);
 					}
-					else if ( hit.entity->behavior == &actFurniture )
+					else if ( hit.entity->behavior == &::actFurniture )
 					{
-						if ( hit.entity->skill[0] == 0 )
+						switch ( hit.entity->furnitureType )
 						{
-							messagePlayer(player, language[672]);
-						}
-						else
-						{
-							messagePlayer(player, language[673]);
+							case FURNITURE_CHAIR:
+								messagePlayer(player, language[673]);
+								break;
+							case FURNITURE_TABLE:
+								messagePlayer(player, language[672]);
+								break;
+							case FURNITURE_BED:
+								messagePlayer(player, language[2510], language[2505]);
+								break;
+							case FURNITURE_BUNKBED:
+								messagePlayer(player, language[2510], language[2506]);
+								break;
+							case FURNITURE_PODIUM:
+								messagePlayer(player, language[2510], language[2507]);
+								break;
+							default:
+								break;
 						}
 					}
 				}
@@ -4337,15 +4369,27 @@ void Entity::attack(int pose, int charge, Entity* target)
 				{
 					updateEnemyBar(this, hit.entity, language[675], hit.entity->skill[3], hit.entity->skill[8]);
 				}
-				else if ( hit.entity->behavior == &actFurniture )
+				else if ( hit.entity->behavior == &::actFurniture )
 				{
-					if ( hit.entity->skill[0] == 0 )
+					switch ( hit.entity->furnitureType )
 					{
-						updateEnemyBar(this, hit.entity, language[676], hit.entity->skill[4], hit.entity->skill[9]);
-					}
-					else
-					{
-						updateEnemyBar(this, hit.entity, language[677], hit.entity->skill[4], hit.entity->skill[9]);
+						case FURNITURE_CHAIR:
+							updateEnemyBar(this, hit.entity, language[677], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_TABLE:
+							updateEnemyBar(this, hit.entity, language[676], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_BED:
+							updateEnemyBar(this, hit.entity, language[2505], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_BUNKBED:
+							updateEnemyBar(this, hit.entity, language[2506], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						case FURNITURE_PODIUM:
+							updateEnemyBar(this, hit.entity, language[2507], hit.entity->furnitureHealth, hit.entity->furnitureMaxHealth);
+							break;
+						default:
+							break;
 					}
 				}
 			}

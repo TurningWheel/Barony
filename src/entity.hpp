@@ -276,6 +276,18 @@ public:
 	Sint32& spellTrapInit;
 	Sint32& spellTrapCounter;
 	Sint32& spellTrapReset;
+	
+	//--PUBLIC FURNITURE SKILLS--
+	Sint32& furnitureType;
+	Sint32& furnitureInit;
+	Sint32& furnitureDir;
+	Sint32& furnitureHealth;
+	Sint32& furnitureMaxHealth;
+
+	//--PUBLIC PISTON SKILLS--
+	Sint32& pistonCamDir;
+	Sint32& pistonCamTimer;
+	real_t& pistonCamRotateSpeed;
 
 	void pedestalOrbInit(); // init orb properties
 
@@ -413,6 +425,12 @@ public:
 	void actTeleporter();
 	void actMagicTrapCeiling();
 	bool magicFallingCollision();
+	void actFurniture();
+	void actPistonCam();
+	void actStalagCeiling();
+	void actStalagFloor();
+	void actStalagColumn();
+	void actColumn();
 
 	Monster getRace() const
 	{
@@ -671,6 +689,12 @@ void actStalagColumn(Entity* my);
 //---Ceiling Tile functions---
 void actCeilingTile(Entity* my);
 
+//--Piston functions--
+void actPistonBase(Entity* my);
+void actPistonCam(Entity* my);
+
+void actColumn(Entity* my);
+
 //---Magic entity functions---
 void actMagiclightBall(Entity* my);
 
@@ -681,8 +705,15 @@ void actAmbientParticleEffectIdle(Entity* my);
 
 static const int NUM_ITEM_STRINGS = 218;
 static const int NUM_ITEM_STRINGS_BY_TYPE = 90;
-static const int NUM_EDITOR_SPRITES = 121;
+static const int NUM_EDITOR_SPRITES = 127;
 static const int NUM_EDITOR_TILES = 208;
+
+// furniture types.
+static const int FURNITURE_TABLE = 0;
+static const int FURNITURE_CHAIR = 1;
+static const int FURNITURE_BED = 2;
+static const int FURNITURE_BUNKBED = 3;
+static const int FURNITURE_PODIUM = 4;
 
 int checkSpriteType(Sint32 sprite);
 extern char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64];

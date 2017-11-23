@@ -136,7 +136,15 @@ Entity::Entity(Sint32 in_sprite, Uint32 pos, list_t* entlist) :
 	spellTrapInit(skill[7]),
 	spellTrapCounter(skill[8]),
 	spellTrapReset(skill[9]),
-	ceilingTileModel(skill[0])
+	ceilingTileModel(skill[0]),
+	furnitureType(skill[0]),
+	furnitureInit(skill[1]),
+	furnitureDir(skill[3]),
+	furnitureHealth(skill[4]),
+	furnitureMaxHealth(skill[9]),
+	pistonCamDir(skill[0]),
+	pistonCamTimer(skill[1]),
+	pistonCamRotateSpeed(fskill[0])
 {
 	int c;
 	// add the entity to the entity list

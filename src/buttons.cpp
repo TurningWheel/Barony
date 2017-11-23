@@ -1538,6 +1538,19 @@ void buttonSpriteProperties(button_t* my)
 			suby2 = yres / 2 + 110;
 			strcpy(subtext, "Spell Trap Properties:");
 			break;
+		case 12:
+			snprintf(spriteProperties[0], 4, "%d", static_cast<int>(selectedEntity->furnitureDir));
+			inputstr = spriteProperties[0];
+			cursorflash = ticks;
+			menuVisible = 0;
+			subwindow = 1;
+			newwindow = 14;
+			subx1 = xres / 2 - 170;
+			subx2 = xres / 2 + 170;
+			suby1 = yres / 2 - 60;
+			suby2 = yres / 2 + 60;
+			strcpy(subtext, "Furniture Properties:");
+			break;
 		default:
 			strcpy(message, "No properties available for current sprite.");
 			messagetime = 60;
@@ -2377,6 +2390,9 @@ void buttonSpritePropertiesConfirm(button_t* my)
 				selectedEntity->spellTrapLatchPower = (Sint32)atoi(spriteProperties[2]);
 				selectedEntity->spellTrapFloorTile = (Sint32)atoi(spriteProperties[3]);
 				selectedEntity->spellTrapRefireRate= (Sint32)atoi(spriteProperties[4]);
+				break;
+			case 12: //furniture
+				selectedEntity->furnitureDir = (Sint32)atoi(spriteProperties[0]);
 				break;
 			default:
 				break;

@@ -4847,35 +4847,35 @@ void handleMainMenu(bool mode)
 			thirdendmoviealpha[8] = std::min(thirdendmoviealpha[8] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[8]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2506]);
+			ttfPrintTextColor(ttf16, 16, yres - 32, color, true, language[2606]);
 		}
 		if ( thirdendmoviestage >= 2 )
 		{
 			thirdendmoviealpha[0] = std::min(thirdendmoviealpha[0] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[0]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, language[2500]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 22, color, true, language[2600]);
 		}
 		if ( thirdendmoviestage >= 3 )
 		{
 			thirdendmoviealpha[1] = std::min(thirdendmoviealpha[1] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[1]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2501]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2601]);
 		}
 		if ( thirdendmoviestage >= 4 )
 		{
 			thirdendmoviealpha[2] = std::min(thirdendmoviealpha[2] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[2]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2502]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2602]);
 		}
 		if ( thirdendmoviestage >= 5 )
 		{
 			thirdendmoviealpha[3] = std::min(thirdendmoviealpha[3] + 2, 255);
 			color = 0x00FFFFFF;
 			color += std::min(std::max(0, thirdendmoviealpha[3]), 255) << 24;
-			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2503]);
+			ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2603]);
 		}
 		if ( thirdendmoviestage >= 6 )
 		{
@@ -4884,11 +4884,11 @@ void handleMainMenu(bool mode)
 			color += std::min(std::max(0, thirdendmoviealpha[4]), 255) << 24;
 			if ( multiplayer == CLIENT )
 			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2505]);
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2605]);
 			}
 			else
 			{
-				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2504]);
+				ttfPrintTextColor(ttf16, 16 + (xres - 960) / 2, 16 + (yres - 600) / 2, color, true, language[2604]);
 			}
 		}
 	}

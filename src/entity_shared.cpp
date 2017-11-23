@@ -90,6 +90,14 @@ int checkSpriteType(Sint32 sprite)
 	case 120:
 		//magic ceiling trap
 		return 11;
+	case 121:
+	case 122:
+	case 123:
+	case 124:
+	case 125:
+		// general furniture/misc.
+		return 12;
+		break;
 	default:
 		return 0;
 		break;
@@ -663,7 +671,13 @@ char spriteEditorNameStrings[NUM_EDITOR_SPRITES][64] =
 	"MID PORTAL",
 	"TELEPORTER",
 	"CEILING TILE MODEL",
-	"SPELL TRAP CEILING"
+	"SPELL TRAP CEILING",
+	"ARCANE CHAIR",
+	"ARCANE BED",
+	"BUNK BED",
+	"COLUMN DECO",
+	"PODIUM",
+	"PISTONS"
 };
 
 char monsterEditorNameStrings[NUMMONSTERS][13] =
