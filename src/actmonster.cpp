@@ -696,14 +696,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 	else
 	{
 		//This one can't speak, so generic "The %s decides to follow you!" message.
-		if ( myStats->type < KOBOLD ) //Original monster count
-		{
-			messagePlayer(monsterclicked, language[529], language[90 + myStats->type]);
-		}
-		else if ( myStats->type >= KOBOLD ) //New monsters
-		{
-			messagePlayer(monsterclicked, language[529], language[2000 + (myStats->type - KOBOLD)]);
-		}
+		messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[529], language[529], MSG_COMBAT);
 	}
 
 	monsterMoveAside(my, players[monsterclicked]->entity);
@@ -1408,23 +1401,7 @@ void actMonster(Entity* my)
 				{
 					continue;
 				}
-				char whatever[256];
-				if ( strcmp(myStats->name, "") )
-				{
-					snprintf(whatever, 255, "%s %s", myStats->name, myStats->obituary);
-				}
-				else
-				{
-					if ( myStats->type < KOBOLD ) //Original monster count
-					{
-						snprintf(whatever, 255, language[1499], stats[c]->name, language[90 + myStats->type], myStats->obituary);
-					}
-					else if ( myStats->type >= KOBOLD ) //New monsters
-					{
-						snprintf(whatever, 255, language[1499], stats[c]->name, language[2000 + (myStats->type - KOBOLD)], myStats->obituary);
-					}
-				}
-				messagePlayer(c, whatever);
+				messagePlayerMonsterEvent(c, 0xFFFFFFFF, *myStats, language[1499], language[1499], MSG_OBITUARY);
 			}
 		}
 
@@ -1862,21 +1839,7 @@ void actMonster(Entity* my)
 		if ( !my->isMobile() )
 		{
 			// message the player, "the %s doesn't respond"
-			if ( !strcmp(myStats->name, "") )
-			{
-				if ( myStats->type < KOBOLD ) //Original monster count
-				{
-					messagePlayer(monsterclicked, language[514], language[90 + myStats->type]);
-				}
-				else if ( myStats->type >= KOBOLD ) //New monsters
-				{
-					messagePlayer(monsterclicked, language[514], language[2000 + (myStats->type - KOBOLD)]);
-				}
-			}
-			else
-			{
-				messagePlayer(monsterclicked, language[515], myStats->name);
-			}
+			messagePlayerMonsterEvent(monsterclicked, 0xFFFFFFFF, *myStats, language[515], language[514], MSG_COMBAT);
 		}
 		else
 		{

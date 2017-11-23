@@ -807,21 +807,7 @@ void gameLogic(void)
 
 									Stat* monsterStats = (Stat*)newNode->element;
 									monsterStats->leader_uid = players[c]->entity->getUID();
-									if (strcmp(monsterStats->name, ""))
-									{
-										messagePlayer(c, language[720], monsterStats->name);
-									}
-									else
-									{
-										if ( monsterStats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayer(c, language[721], language[90 + monsterStats->type]);
-										}
-										else if ( monsterStats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayer(c, language[721], language[2000 + (monsterStats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *monsterStats, language[721], language[720], MSG_COMBAT);
 									if (!monsterally[HUMAN][monsterStats->type])
 									{
 										monster->flags[USERFLAG2] = true;
@@ -845,21 +831,7 @@ void gameLogic(void)
 								}
 								else
 								{
-									if ( strcmp(tempStats->name, "") )
-									{
-										messagePlayer(c, language[722], tempStats->name);
-									}
-									else
-									{
-										if ( (int)tempStats->type < KOBOLD ) //Original monster count
-										{
-											messagePlayer(c, language[723], language[90 + (int)tempStats->type]);
-										}
-										else if ( (int)tempStats->type >= KOBOLD ) //New monsters
-										{
-											messagePlayer(c, language[723], language[2000 + ((int)tempStats->type - KOBOLD)]);
-										}
-									}
+									messagePlayerMonsterEvent(c, 0xFFFFFFFF, *tempStats, language[723], language[722], MSG_COMBAT);
 								}
 							}
 						}
