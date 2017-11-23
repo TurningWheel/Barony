@@ -148,7 +148,12 @@ int pathCheckObstacle(long x, long y, Entity* my, Entity* target)
 	for ( node = map.entities->first; node != NULL; node = node->next )
 	{
 		Entity* entity = (Entity*)node->element;
-		if ( entity->sprite == 14 || entity->sprite == 15 || entity->sprite == 19 || entity->sprite == 20 || entity->sprite == 39 || entity->sprite == 44 )
+		if ( entity->sprite == 14 
+			|| entity->sprite == 15 
+			|| entity->sprite == 19 
+			|| entity->sprite == 20 
+			|| entity->sprite == 39 
+			|| entity->sprite == 44 )
 		{
 			if ( (int)floor(entity->x / 16) == u && (int)floor(entity->y / 16) == v )
 			{
@@ -490,7 +495,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 	bool obstacle = true;
 
 	int index = y * MAPLAYERS + x * MAPLAYERS * map.height;
-	if ( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] && !animatedtiles[map.tiles[index]] )
+	if ( !map.tiles[OBSTACLELAYER + index] && map.tiles[index] 
+		&& !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )
 	{
 		obstacle = false;
 	}
@@ -582,7 +588,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = v * MAPLAYERS + (u + 1) * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
 								{
 									pathMap[v + (u + 1)*map.height] = zone;
 									repeat = true;
@@ -628,7 +635,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = v * MAPLAYERS + (u - 1) * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
 								{
 									pathMap[v + (u - 1)*map.height] = zone;
 									repeat = true;
@@ -674,7 +682,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = (v + 1) * MAPLAYERS + u * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]])) ) )
 								{
 									pathMap[(v + 1) + u * map.height] = zone;
 									repeat = true;
@@ -720,7 +729,8 @@ void fillPathMap(int* pathMap, int x, int y, int zone)
 							if ( !foundWallModifier && !foundObstacle )
 							{
 								int index = (v - 1) * MAPLAYERS + u * MAPLAYERS * map.height;
-								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying || (map.tiles[index] && !animatedtiles[map.tiles[index]])) )
+								if ( !map.tiles[OBSTACLELAYER + index] && (pathMap == pathMapFlying 
+									|| (map.tiles[index] && !(swimmingtiles[map.tiles[index]] || lavatiles[map.tiles[index]]) )) )
 								{
 									pathMap[(v - 1) + u * map.height] = zone;
 									repeat = true;
@@ -753,6 +763,10 @@ bool isPathObstacle(Entity* entity)
 		return true;
 	}
 	else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
+	{
+		return true;
+	}
+	else if ( entity->behavior == &actPedestalBase || entity->behavior == &actPedestalOrb )
 	{
 		return true;
 	}

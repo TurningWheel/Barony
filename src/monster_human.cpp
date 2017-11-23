@@ -37,12 +37,14 @@ void initHuman(Entity* my, Stat* myStats)
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
-		if ( myStats != NULL )
+		if ( myStats != nullptr )
 		{
 			if ( !myStats->leader_uid )
 			{
 				myStats->leader_uid = 0;
 			}
+
+			my->createPathBoundariesNPC();
 
 			// apply random stat increases if set in stat_shared.cpp or editor
 			setRandomMonsterStats(myStats);
@@ -79,9 +81,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = -2;
 							myStats->PER = -2;
 							myStats->CHR = 4;
-							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, 0, false, NULL);
-							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, NULL);
-							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, 0, false, NULL);
+							myStats->helmet = newItem(HAT_PHRYGIAN, EXCELLENT, 1, 1, 0, false, nullptr);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 2, false, nullptr);
+							myStats->weapon = newItem(QUARTERSTAFF, EXCELLENT, 1, 1, 0, false, nullptr);
 							break;
 						case 1:
 							// king arthur
@@ -99,12 +101,12 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 5;
 							myStats->PER = 5;
 							myStats->CHR = 5;
-							myStats->breastplate = newItem(STEEL_BREASTPIECE, EXCELLENT, 1, 1, 1, true, NULL);
-							myStats->gloves = newItem(GAUNTLETS, EXCELLENT, 1, 1, 1, true, NULL);
-							myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, NULL);
-							myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, NULL);
-							myStats->weapon = newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), true, NULL);
-							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, NULL);
+							myStats->breastplate = newItem(STEEL_BREASTPIECE, EXCELLENT, 1, 1, 1, true, nullptr);
+							myStats->gloves = newItem(GAUNTLETS, EXCELLENT, 1, 1, 1, true, nullptr);
+							myStats->shoes = newItem(STEEL_BOOTS, EXCELLENT, 1, 1, 1, true, nullptr);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 2, 1, 2, true, nullptr);
+							myStats->weapon = newItem(ARTIFACT_SWORD, EXCELLENT, 1, 1, rand(), true, nullptr);
+							myStats->shield = newItem(STEEL_SHIELD_RESISTANCE, EXCELLENT, 1, 1, 1, true, nullptr);
 							break;
 						case 2:
 							// merlin
@@ -122,11 +124,11 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 11;
 							myStats->PER = 10;
 							myStats->CHR = 2;
-							myStats->helmet = newItem(HAT_WIZARD, EXCELLENT, 2, 1, 2, false, NULL);
-							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 2, 1, 2, false, NULL);
-							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 5, 1, 3, false, NULL);
-							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 2, 1, 2, false, NULL);
-							myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 2, 1, 2, false, NULL);
+							myStats->helmet = newItem(HAT_WIZARD, EXCELLENT, 2, 1, 2, false, nullptr);
+							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 2, 1, 2, false, nullptr);
+							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 5, 1, 3, false, nullptr);
+							myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 2, 1, 2, false, nullptr);
+							myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 2, 1, 2, false, nullptr);
 							break;
 						case 3:
 							// robin hood
@@ -144,10 +146,10 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 2;
 							myStats->PER = 3;
 							myStats->CHR = 5;
-							myStats->gloves = newItem(GLOVES, EXCELLENT, 1, 1, 3, true, NULL);
-							myStats->shoes = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 3, true, NULL);
-							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 0, true, NULL);
-							myStats->weapon = newItem(SHORTBOW, EXCELLENT, 1, 1, 3, true, NULL);
+							myStats->gloves = newItem(GLOVES, EXCELLENT, 1, 1, 3, true, nullptr);
+							myStats->shoes = newItem(LEATHER_BOOTS, SERVICABLE, 1, 1, 3, true, nullptr);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 1, 1, 0, true, nullptr);
+							myStats->weapon = newItem(SHORTBOW, EXCELLENT, 1, 1, 3, true, nullptr);
 							break;
 						case 4:
 							// conan
@@ -165,9 +167,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 3;
 							myStats->PER = 3;
 							myStats->CHR = 20;
-							myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, rand(), false, NULL);
-							myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, rand(), false, NULL);
-							myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, rand(), false, NULL);
+							myStats->helmet = newItem(LEATHER_HELM, EXCELLENT, 2, 1, rand(), false, nullptr);
+							myStats->shield = newItem(WOODEN_SHIELD, EXCELLENT, 2, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_AXE, EXCELLENT, 2, 1, rand(), false, nullptr);
 							break;
 						case 5:
 							// othello
@@ -185,10 +187,10 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 3;
 							myStats->PER = 0;
 							myStats->CHR = 30;
-							myStats->gloves = newItem(BRACERS, EXCELLENT, -1, 1, rand(), false, NULL);
-							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, rand(), false, NULL);
-							myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, rand(), false, NULL);
-							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, NULL);
+							myStats->gloves = newItem(BRACERS, EXCELLENT, -1, 1, rand(), false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(STEEL_SWORD, EXCELLENT, 2, 1, rand(), false, nullptr);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
 							break;
 						case 6:
 							// anansi
@@ -206,8 +208,8 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 20;
 							myStats->PER = 20;
 							myStats->CHR = 10;
-							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, NULL);
-							myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), false, NULL);
+							myStats->helmet = newItem(HAT_JESTER, EXCELLENT, 5, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(ARTIFACT_MACE, EXCELLENT, 1, 1, rand(), false, nullptr);
 							int c;
 							for ( c = 0; c < 2; c++ )
 							{
@@ -235,8 +237,8 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 20;
 							myStats->PER = 10;
 							myStats->CHR = 10;
-							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 3, 1, 1, false, NULL);
-							myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 3, 1, 1, false, NULL);
+							myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 3, 1, 1, false, nullptr);
+							myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 3, 1, 1, false, nullptr);
 							break;
 						case 8:
 							// vishpala
@@ -254,11 +256,11 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 5;
 							myStats->PER = 5;
 							myStats->CHR = 10;
-							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, NULL);
-							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, NULL);
-							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, NULL);
-							myStats->weapon = newItem(ARTIFACT_SPEAR, EXCELLENT, 1, 1, rand(), false, NULL);
-							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, NULL);
+							myStats->cloak = newItem(CLOAK, EXCELLENT, 0, 1, 2, false, nullptr);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, EXCELLENT, 0, 1, rand(), false, nullptr);
+							myStats->shoes = newItem(IRON_BOOTS, EXCELLENT, 0, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(ARTIFACT_SPEAR, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->shield = newItem(BRONZE_SHIELD, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
 						case 9:
 							// kali
@@ -276,9 +278,9 @@ void initHuman(Entity* my, Stat* myStats)
 							myStats->INT = 20;
 							myStats->PER = 20;
 							myStats->CHR = 20;
-							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, NULL);
-							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, rand(), false, NULL);
-							myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, rand(), false, NULL);
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, nullptr);
+							myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 1, 1, rand(), false, nullptr);
+							myStats->weapon = newItem(SPELLBOOK_FIREBALL, EXCELLENT, 1, 1, rand(), false, nullptr);
 							break;
 						default:
 							break;
@@ -303,13 +305,13 @@ void initHuman(Entity* my, Stat* myStats)
 				myStats->INT = 3;
 				myStats->PER = 10;
 				myStats->CHR = 10;
-				myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 2, 1, 3, false, NULL);
-				myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 2, false, NULL);
-				myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 0, 1, 2, false, NULL);
-				myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 2, false, NULL);
-				myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 2, 1, 3, false, NULL);
-				myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 1, 1, 2, false, NULL);
-				myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, NULL);
+				myStats->helmet = newItem(HAT_HOOD, EXCELLENT, 2, 1, 3, false, nullptr);
+				myStats->gloves = newItem(GLOVES, EXCELLENT, 0, 1, 2, false, nullptr);
+				myStats->shoes = newItem(LEATHER_BOOTS_SPEED, EXCELLENT, 0, 1, 2, false, nullptr);
+				myStats->breastplate = newItem(LEATHER_BREASTPIECE, EXCELLENT, 0, 1, 2, false, nullptr);
+				myStats->cloak = newItem(CLOAK_PROTECTION, EXCELLENT, 2, 1, 3, false, nullptr);
+				myStats->weapon = newItem(MAGICSTAFF_LIGHTNING, EXCELLENT, 1, 1, 2, false, nullptr);
+				myStats->amulet = newItem(AMULET_MAGICREFLECTION, EXCELLENT, 1, 1, 2, false, nullptr);
 			}
 
 			// random effects
@@ -351,66 +353,66 @@ void initHuman(Entity* my, Stat* myStats)
 				// generate random equipment if not a named special human
 
 				//give shield
-				if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
 						case 0:
 						case 1:
 						case 2:
-							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, NULL);
+							myStats->shield = newItem(TOOL_TORCH, SERVICABLE, 0, 1, rand(), false, nullptr);
 							break;
 						case 3:
 						case 4:
 							break;
 						case 5:
 						case 6:
-							myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, NULL);
+							myStats->shield = newItem(WOODEN_SHIELD, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 7:
 						case 8:
-							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, NULL);
+							myStats->shield = newItem(BRONZE_SHIELD, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, NULL);
+							myStats->shield = newItem(IRON_SHIELD, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 
 				//give weapon
-				if ( myStats->weapon == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
 						case 0:
 						case 1:
-							myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(SHORTBOW, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 2:
 						case 3:
-							myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(BRONZE_AXE, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 4:
 						case 5:
-							myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(BRONZE_SWORD, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 6:
-							myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(IRON_SPEAR, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 7:
-							myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(IRON_AXE, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 8:
-							myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(IRON_SWORD, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, NULL);
+							myStats->weapon = newItem(CROSSBOW, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 
 				// give helmet
-				if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -419,27 +421,27 @@ void initHuman(Entity* my, Stat* myStats)
 						case 2:
 							break;
 						case 3:
-							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, NULL);
+							myStats->helmet = newItem(HAT_HOOD, WORN, 0, 1, rand() % 4, false, nullptr);
 							break;
 						case 4:
-							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, 0, false, NULL);
+							myStats->helmet = newItem(HAT_PHRYGIAN, WORN, 0, 1, 0, false, nullptr);
 							break;
 						case 5:
-							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, 0, false, NULL);
+							myStats->helmet = newItem(HAT_WIZARD, WORN, 0, 1, 0, false, nullptr);
 							break;
 						case 6:
 						case 7:
-							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, 0, false, NULL);
+							myStats->helmet = newItem(LEATHER_HELM, WORN, 0, 1, 0, false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, 0, false, NULL);
+							myStats->helmet = newItem(IRON_HELM, WORN, 0, 1, 0, false, nullptr);
 							break;
 					}
 				}
 
 				// give cloak
-				if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -453,16 +455,16 @@ void initHuman(Entity* my, Stat* myStats)
 						case 6:
 						case 7:
 						case 8:
-							myStats->cloak = newItem(CLOAK, WORN, 0, 1, rand(), false, NULL);
+							myStats->cloak = newItem(CLOAK, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 9:
-							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
+							myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 
 				// give armor
-				if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -475,17 +477,17 @@ void initHuman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, rand(), false, NULL);
+							myStats->breastplate = newItem(IRON_BREASTPIECE, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 
 				// give gloves
-				if ( myStats->gloves == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
+				if ( myStats->gloves == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_GLOVES] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -498,17 +500,17 @@ void initHuman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->gloves = newItem(GLOVES, WORN, 0, 1, rand(), false, NULL);
+							myStats->gloves = newItem(GLOVES, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, rand(), false, NULL);
+							myStats->gloves = newItem(GAUNTLETS, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
 
 				// give boots
-				if ( myStats->shoes == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
 					switch ( rand() % 10 )
 					{
@@ -521,11 +523,11 @@ void initHuman(Entity* my, Stat* myStats)
 						case 5:
 						case 6:
 						case 7:
-							myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, rand(), false, NULL);
+							myStats->shoes = newItem(LEATHER_BOOTS, WORN, 0, 1, rand(), false, nullptr);
 							break;
 						case 8:
 						case 9:
-							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rand(), false, NULL);
+							myStats->shoes = newItem(IRON_BOOTS, WORN, 0, 1, rand(), false, nullptr);
 							break;
 					}
 				}
@@ -781,21 +783,21 @@ void humanDie(Entity* my)
 void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 {
 	node_t* node;
-	Entity* entity = NULL, *entity2 = NULL;
-	Entity* rightbody = NULL;
-	Entity* weaponarm = NULL;
+	Entity* entity = nullptr, *entity2 = nullptr;
+	Entity* rightbody = nullptr;
+	Entity* weaponarm = nullptr;
 	int bodypart;
 	bool wearingring = false;
 
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->ring != NULL )
+		if ( myStats->ring != nullptr )
 			if ( myStats->ring->type == RING_INVISIBILITY )
 			{
 				wearingring = true;
 			}
-		if ( myStats->cloak != NULL )
+		if ( myStats->cloak != nullptr )
 			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
 			{
 				wearingring = true;
@@ -805,7 +807,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -830,7 +832,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < 2 )
 				{
@@ -846,6 +848,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -860,7 +863,10 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			my->z = -1;
-			my->pitch = 0;
+			if ( my->monsterAttack == 0 )
+			{
+				my->pitch = 0;
+			}
 		}
 
 		// levitation
@@ -872,256 +878,54 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	}
 
 	// move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
 		if ( bodypart < 2 )
 		{
+			if ( multiplayer == CLIENT )
+			{
+				for ( int i = LIMB_HUMANOID_TORSO; i <= LIMB_HUMANOID_LEFTARM; i++ )
+				{
+					my->humanSetLimbsClient(i);
+				}
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
 		entity->x = my->x;
 		entity->y = my->y;
 		entity->z = my->z;
-		entity->yaw = my->yaw;
-		if ( bodypart == 3 || bodypart == 6 )
+		if ( MONSTER_ATTACK == MONSTER_POSE_MAGIC_WINDUP1 && bodypart == LIMB_HUMANOID_RIGHTARM )
 		{
-			if ( bodypart == 3 )
-			{
-				rightbody = (Entity*)node->next->element;
-			}
-			node_t* shieldNode = list_Node(&my->children, 8);
-			if ( shieldNode )
-			{
-				Entity* shield = (Entity*)shieldNode->element;
-				if ( dist > 0.1 && (bodypart != 6 || shield->flags[INVISIBLE]) )
-				{
-					if ( !rightbody->skill[0] )
-					{
-						entity->pitch -= dist * HUMANWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->pitch = -PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 1;
-								if ( dist > .4 )
-								{
-									node_t* tempNode = list_Node(&my->children, 3);
-									if ( tempNode )
-									{
-										Entity* foot = (Entity*)tempNode->element;
-										if ( foot->sprite == 152 || foot->sprite == 153 )
-										{
-											playSoundEntityLocal(my, 7 + rand() % 7, 32);
-										}
-										else if ( foot->sprite == 156 || foot->sprite == 157 )
-										{
-											playSoundEntityLocal(my, 14 + rand() % 7, 32);
-										}
-										else
-										{
-											playSoundEntityLocal(my, rand() % 7, 32);
-										}
-									}
-								}
-							}
-						}
-					}
-					else
-					{
-						entity->pitch += dist * HUMANWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->pitch = PI / 4.0;
-							if (bodypart == 3)
-							{
-								entity->skill[0] = 0;
-								if ( dist > .4 )
-								{
-									node_t* tempNode = list_Node(&my->children, 3);
-									if ( tempNode )
-									{
-										Entity* foot = (Entity*)tempNode->element;
-										if ( foot->sprite == 152 || foot->sprite == 153 )
-										{
-											playSoundEntityLocal(my, 7 + rand() % 7, 32);
-										}
-										else if ( foot->sprite == 156 || foot->sprite == 157 )
-										{
-											playSoundEntityLocal(my, 14 + rand() % 7, 32);
-										}
-										else
-										{
-											playSoundEntityLocal(my, rand() % 7, 32);
-										}
-									}
-								}
-							}
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
+			// don't let the creatures's yaw move the casting arm
 		}
-		else if ( bodypart == 4 || bodypart == 5 || bodypart == 9 )
+		else
 		{
-			if ( bodypart == 5 )
+			entity->yaw = my->yaw;
+		}
+		if ( bodypart == LIMB_HUMANOID_RIGHTLEG || bodypart == LIMB_HUMANOID_LEFTARM )
+		{
+			my->humanoidAnimateWalk(entity, node, bodypart, HUMANWALKSPEED, dist, 0.4);
+		}
+		else if ( bodypart == LIMB_HUMANOID_LEFTLEG || bodypart == LIMB_HUMANOID_RIGHTARM || bodypart == LIMB_HUMANOID_CLOAK )
+		{
+			// left leg, right arm, cloak.
+			if ( bodypart == LIMB_HUMANOID_RIGHTARM )
 			{
 				weaponarm = entity;
-				if ( MONSTER_ATTACK == 1 )
+				if ( my->monsterAttack > 0 )
 				{
-					// vertical chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = -3 * PI / 4;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( entity->pitch >= -PI / 2 )
-						{
-							MONSTER_ARMBENDED = 1;
-						}
-						if ( entity->pitch >= PI / 4 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							entity->pitch += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 2 )
-				{
-					// horizontal chop
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 1;
-						MONSTER_WEAPONYAW = -3 * PI / 4;
-						entity->pitch = 0;
-						entity->roll = -PI / 2;
-					}
-					else
-					{
-						if ( MONSTER_WEAPONYAW >= PI / 8 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-						else
-						{
-							MONSTER_WEAPONYAW += .25;
-						}
-					}
-				}
-				else if ( MONSTER_ATTACK == 3 )
-				{
-					// stab
-					if ( MONSTER_ATTACKTIME == 0 )
-					{
-						MONSTER_ARMBENDED = 0;
-						MONSTER_WEAPONYAW = 0;
-						entity->pitch = 2 * PI / 3;
-						entity->roll = 0;
-					}
-					else
-					{
-						if ( MONSTER_ATTACKTIME >= 5 )
-						{
-							MONSTER_ARMBENDED = 1;
-							entity->pitch = -PI / 6;
-						}
-						if ( MONSTER_ATTACKTIME >= 10 )
-						{
-							entity->skill[0] = rightbody->skill[0];
-							MONSTER_WEAPONYAW = 0;
-							entity->pitch = rightbody->pitch;
-							entity->roll = 0;
-							MONSTER_ARMBENDED = 0;
-							MONSTER_ATTACK = 0;
-						}
-					}
+					my->handleWeaponArmAttack(weaponarm);
 				}
 			}
-			else if ( bodypart == 9 )
+			else if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->pitch = entity->fskill[0];
 			}
 
-			if ( bodypart != 5 || (MONSTER_ATTACK == 0 && MONSTER_ATTACKTIME == 0) )
-			{
-				if ( dist > 0.1 )
-				{
-					if ( entity->skill[0] )
-					{
-						entity->pitch -= dist * HUMANWALKSPEED;
-						if ( entity->pitch < -PI / 4.0 )
-						{
-							entity->skill[0] = 0;
-							entity->pitch = -PI / 4.0;
-						}
-					}
-					else
-					{
-						entity->pitch += dist * HUMANWALKSPEED;
-						if ( entity->pitch > PI / 4.0 )
-						{
-							entity->skill[0] = 1;
-							entity->pitch = PI / 4.0;
-						}
-					}
-				}
-				else
-				{
-					if ( entity->pitch < 0 )
-					{
-						entity->pitch += 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch > 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-					else if ( entity->pitch > 0 )
-					{
-						entity->pitch -= 1 / fmax(dist * .1, 10.0);
-						if ( entity->pitch < 0 )
-						{
-							entity->pitch = 0;
-						}
-					}
-				}
-			}
-			if ( bodypart == 9 )
+			my->humanoidAnimateWalk(entity, node, bodypart, HUMANWALKSPEED, dist, 0.4);
+
+			if ( bodypart == LIMB_HUMANOID_CLOAK )
 			{
 				entity->fskill[0] = entity->pitch;
 				entity->roll = my->roll - fabs(entity->pitch) / 2;
@@ -1131,10 +935,10 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		switch ( bodypart )
 		{
 			// torso
-			case 2:
+			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == nullptr )
 					{
 						switch ( myStats->appearance / 6 )
 						{
@@ -1167,15 +971,16 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+
 				entity->x -= .25 * cos(my->yaw);
 				entity->y -= .25 * sin(my->yaw);
 				entity->z += 2.5;
 				break;
 			// right leg
-			case 3:
+			case LIMB_HUMANOID_RIGHTLEG:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shoes == NULL )
+					if ( myStats->shoes == nullptr )
 					{
 						switch ( myStats->appearance / 6 )
 						{
@@ -1218,10 +1023,10 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// left leg
-			case 4:
+			case LIMB_HUMANOID_LEFTLEG:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shoes == NULL )
+					if ( myStats->shoes == nullptr )
 					{
 						switch ( myStats->appearance / 6 )
 						{
@@ -1264,11 +1069,11 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// right arm
-			case 5:
+			case LIMB_HUMANOID_RIGHTARM:
 			{
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->gloves == NULL )
+					if ( myStats->gloves == nullptr )
 					{
 						switch ( myStats->appearance / 6 )
 						{
@@ -1303,43 +1108,58 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							serverUpdateEntityBodypart(my, bodypart);
 						}
 					}
-					if ( !MONSTER_ARMBENDED )
+				}
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
 					{
-						entity->sprite += 2 * (myStats->weapon != NULL);
+						if ( entity->sprite >= 109 && entity->sprite <= 110 )
+						{
+							// these are the default arms.
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
 					}
 				}
-				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
-				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
-				entity->z += 1.5;
-				node_t* tempNode = list_Node(&my->children, 7);
+
+				node_t* tempNode = list_Node(&my->children, LIMB_HUMANOID_WEAPON);
 				if ( tempNode )
 				{
 					Entity* weapon = (Entity*)tempNode->element;
-					if ( multiplayer == CLIENT )
+					if ( MONSTER_ARMBENDED || (weapon->flags[INVISIBLE] && my->monsterState != MONSTER_STATE_ATTACK) )
 					{
-						if ( !MONSTER_ARMBENDED )
-						{
-							if ( entity->skill[7] == 0 )
-							{
-								entity->skill[7] = entity->sprite;
-							}
-							entity->sprite = entity->skill[7];
-							entity->sprite += 2 * (weapon->flags[INVISIBLE] != true);
-						}
-					}
-					if ( weapon->flags[INVISIBLE] || MONSTER_ARMBENDED )
-					{
+						// if weapon invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[HUMAN][4][0]; // 0
 						entity->focaly = limbs[HUMAN][4][1]; // 0
 						entity->focalz = limbs[HUMAN][4][2]; // 1.5
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[HUMAN][4][0] + 0.75;
 						entity->focaly = limbs[HUMAN][4][1];
 						entity->focalz = limbs[HUMAN][4][2] - 0.75;
+						entity->sprite += 2;
 					}
 				}
+
+				entity->x += 2.5 * cos(my->yaw + PI / 2) - .20 * cos(my->yaw);
+				entity->y += 2.5 * sin(my->yaw + PI / 2) - .20 * sin(my->yaw);
+				entity->z += 1.5;
 				entity->yaw += MONSTER_WEAPONYAW;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
@@ -1348,11 +1168,11 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// left arm
-			case 6:
+			case LIMB_HUMANOID_LEFTARM:
 			{
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->gloves == NULL )
+					if ( myStats->gloves == nullptr )
 					{
 						switch ( myStats->appearance / 6 )
 						{
@@ -1374,7 +1194,6 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// successfully set sprite for the human model
 						}
 					}
-					entity->sprite += 2 * (myStats->shield != NULL);
 					if ( multiplayer == SERVER )
 					{
 						// update sprites for clients
@@ -1389,26 +1208,56 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
-				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
-				entity->z += 1.5;
-				node_t* tempNode = list_Node(&my->children, 8);
+
+				if ( multiplayer == CLIENT )
+				{
+					if ( entity->skill[7] == 0 )
+					{
+						if ( entity->sprite >= 109 && entity->sprite <= 110 )
+						{
+							// these are the default arms.
+							// chances are they may be wrong if sent by the server, 
+						}
+						else
+						{
+							// otherwise we're being sent gloves armor etc so it's probably right.
+							entity->skill[7] = entity->sprite;
+						}
+					}
+					if ( entity->skill[7] == 0 )
+					{
+						// we set this ourselves until proper initialisation.
+						my->humanSetLimbsClient(bodypart);
+					}
+					else
+					{
+						entity->sprite = entity->skill[7];
+					}
+				}
+
+				node_t* tempNode = list_Node(&my->children, LIMB_HUMANOID_SHIELD);
 				if ( tempNode )
 				{
 					Entity* shield = (Entity*)tempNode->element;
-					if ( shield->flags[INVISIBLE] )
+					if ( shield->flags[INVISIBLE] && (my->monsterState != MONSTER_STATE_ATTACK) )
 					{
+						// if shield invisible and I'm not attacking, relax arm.
 						entity->focalx = limbs[HUMAN][5][0]; // 0
 						entity->focaly = limbs[HUMAN][5][1]; // 0
 						entity->focalz = limbs[HUMAN][5][2]; // 1.5
 					}
 					else
 					{
+						// else flex arm.
 						entity->focalx = limbs[HUMAN][5][0] + 0.75;
 						entity->focaly = limbs[HUMAN][5][1];
 						entity->focalz = limbs[HUMAN][5][2] - 0.75;
+						entity->sprite += 2;
 					}
 				}
+				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
+				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
+				entity->z += 1.5;
 				if ( my->z >= 1.4 && my->z <= 1.6 )
 				{
 					entity->pitch = 0;
@@ -1416,10 +1265,10 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				break;
 			}
 			// weapon
-			case 7:
+			case LIMB_HUMANOID_WEAPON:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->weapon == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->weapon == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1454,70 +1303,23 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
-				if ( weaponarm != NULL )
+				else
 				{
-					if ( entity->sprite == items[SHORTBOW].index )
+					if ( entity->sprite <= 0 )
 					{
-						entity->x = weaponarm->x - .5 * cos(weaponarm->yaw);
-						entity->y = weaponarm->y - .5 * sin(weaponarm->yaw);
-						entity->z = weaponarm->z + 1;
-						entity->pitch = weaponarm->pitch + .25;
+						entity->flags[INVISIBLE] = true;
 					}
-					else if ( entity->sprite == items[ARTIFACT_BOW].index )
-					{
-						entity->x = weaponarm->x - 1.5 * cos(weaponarm->yaw);
-						entity->y = weaponarm->y - 1.5 * sin(weaponarm->yaw);
-						entity->z = weaponarm->z + 2;
-						entity->pitch = weaponarm->pitch + .25;
-					}
-					else if ( entity->sprite == items[CROSSBOW].index )
-					{
-						entity->x = weaponarm->x;
-						entity->y = weaponarm->y;
-						entity->z = weaponarm->z + 1;
-						entity->pitch = weaponarm->pitch;
-					}
-					else if ( entity->sprite == items[TOOL_LOCKPICK].index )
-					{
-						entity->x = weaponarm->x + 1.5 * cos(weaponarm->yaw);
-						entity->y = weaponarm->y + 1.5 * sin(weaponarm->yaw);
-						entity->z = weaponarm->z + 1.5;
-						entity->pitch = weaponarm->pitch + .25;
-					}
-					else
-					{
-						entity->x = weaponarm->x + .5 * cos(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-						entity->y = weaponarm->y + .5 * sin(weaponarm->yaw) * (MONSTER_ATTACK == 0);
-						entity->z = weaponarm->z - .5 * (MONSTER_ATTACK == 0);
-						entity->pitch = weaponarm->pitch + .25 * (MONSTER_ATTACK == 0);
-					}
-					entity->yaw = weaponarm->yaw;
-					entity->roll = weaponarm->roll;
-					if ( !MONSTER_ARMBENDED )
-					{
-						entity->focalx = limbs[HUMAN][6][0]; // 1.5
-						if ( entity->sprite == items[CROSSBOW].index )
-						{
-							entity->focalx += 2;
-						}
-						entity->focaly = limbs[HUMAN][6][1]; // 0
-						entity->focalz = limbs[HUMAN][6][2]; // -.5
-					}
-					else
-					{
-						entity->focalx = limbs[HUMAN][6][0] + 1.5; // 3
-						entity->focaly = limbs[HUMAN][6][1]; // 0
-						entity->focalz = limbs[HUMAN][6][2] - 2; // -2.5
-						entity->yaw -= sin(weaponarm->roll) * PI / 2;
-						entity->pitch += cos(weaponarm->roll) * PI / 2;
-					}
+				}
+				if ( weaponarm != nullptr )
+				{
+					my->handleHumanoidWeaponLimb(entity, weaponarm);
 				}
 				break;
 			// shield
-			case 8:
+			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shield == NULL )
+					if ( myStats->shield == nullptr )
 					{
 						entity->flags[INVISIBLE] = true;
 						entity->sprite = 0;
@@ -1550,6 +1352,13 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
@@ -1577,10 +1386,10 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// cloak
-			case 9:
+			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1608,12 +1417,19 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
 				entity->yaw += PI / 2;
 				break;
 			// helm
-			case 10:
+			case LIMB_HUMANOID_HELMET:
 				entity->focalx = limbs[HUMAN][9][0]; // 0
 				entity->focaly = limbs[HUMAN][9][1]; // 0
 				entity->focalz = limbs[HUMAN][9][2]; // -1.75
@@ -1622,7 +1438,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1649,6 +1465,14 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+
 				if ( entity->sprite != items[STEEL_HELM].index )
 				{
 					if ( entity->sprite == items[HAT_PHRYGIAN].index )
@@ -1682,7 +1506,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				}
 				break;
 			// mask
-			case 11:
+			case LIMB_HUMANOID_MASK:
 				entity->focalx = limbs[HUMAN][10][0]; // 0
 				entity->focaly = limbs[HUMAN][10][1]; // 0
 				entity->focalz = limbs[HUMAN][10][2]; // .5
@@ -1690,7 +1514,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1698,7 +1522,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( myStats->mask != NULL )
+					if ( myStats->mask != nullptr )
 					{
 						if ( myStats->mask->type == TOOL_GLASSES )
 						{
@@ -1728,6 +1552,14 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
+
 				if ( entity->sprite != 165 )
 				{
 					entity->focalx = limbs[HUMAN][10][0] + .35; // .35
@@ -1744,7 +1576,7 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		}
 	}
 	// rotate shield a bit
-	node_t* shieldNode = list_Node(&my->children, 8);
+	node_t* shieldNode = list_Node(&my->children, LIMB_HUMANOID_SHIELD);
 	if ( shieldNode )
 	{
 		Entity* shieldEntity = (Entity*)shieldNode->element;
@@ -1753,13 +1585,17 @@ void humanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			shieldEntity->yaw -= PI / 6;
 		}
 	}
-	if ( MONSTER_ATTACK != 0 )
+	if ( MONSTER_ATTACK > 0 && MONSTER_ATTACK <= MONSTER_POSE_MAGIC_CAST3 )
 	{
 		MONSTER_ATTACKTIME++;
 	}
-	else
+	else if ( MONSTER_ATTACK == 0 )
 	{
 		MONSTER_ATTACKTIME = 0;
+	}
+	else
+	{
+		// do nothing, don't reset attacktime or increment it.
 	}
 }
 
@@ -1786,4 +1622,128 @@ bool Entity::humanCanWieldItem(const Item& item) const
 	}
 
 	return false;
+}
+
+void Entity::humanSetLimbsClient(int bodypart)
+{
+	int skinColor = 0;
+	int sex = MALE;
+
+	// get the skinColor/sex from the head sprite.
+
+	if ( (sprite >= 113 && sprite < 118) 
+		|| (sprite >= 125 && sprite < 130) 
+		|| (sprite >= 332 && sprite < 334) )
+	{
+		skinColor = 0; // light.
+		if ( sprite >= 125 && sprite < 130
+			|| sprite == 333 )
+		{
+			sex = FEMALE;
+		}
+	}
+	else if ( (sprite >= 341 && sprite < 347)
+		|| (sprite >= 354 && sprite < 360) )
+	{
+		skinColor = 1; // medium.
+		if ( sprite >= 354 && sprite < 360 )
+		{
+			sex = FEMALE;
+		}
+	}
+	else if ( (sprite >= 367 && sprite < 373)
+		|| (sprite >= 380 && sprite < 386) )
+	{
+		skinColor = 2; // dark.
+		if ( sprite >= 380 && sprite < 386 )
+		{
+			sex = FEMALE;
+		}
+	}
+
+	node_t* limbNode = list_Node(&this->children, bodypart);
+	Entity* limb = nullptr;
+	if ( limbNode )
+	{
+		limb = (Entity*)limbNode->element;
+	}
+
+	if ( !limb )
+	{
+		return;
+	}
+
+	switch ( bodypart )
+	{
+		case LIMB_HUMANOID_TORSO:
+			switch ( skinColor )
+			{
+				case 1:
+					limb->sprite = 334 + 13 * sex;
+					break;
+				case 2:
+					limb->sprite = 360 + 13 * sex;
+					break;
+				default:
+					limb->sprite = 106 + 12 * sex;
+					break;
+			}
+			break;
+		case LIMB_HUMANOID_RIGHTLEG:
+			switch ( skinColor )
+			{
+				case 1:
+					limb->sprite = 335 + 13 * sex;
+					break;
+				case 2:
+					limb->sprite = 361 + 13 * sex;
+					break;
+				default:
+					limb->sprite = 107 + 12 * sex;
+					break;
+			}
+			break;
+		case LIMB_HUMANOID_LEFTLEG:
+			switch ( skinColor )
+			{
+				case 1:
+					limb->sprite = 336 + 13 * sex;
+					break;
+				case 2:
+					limb->sprite = 362 + 13 * sex;
+					break;
+				default:
+					limb->sprite = 108 + 12 * sex;
+					break;
+			}
+			break;
+		case LIMB_HUMANOID_RIGHTARM:
+			switch ( skinColor )
+			{
+				case 1:
+					limb->sprite = 337 + 13 * sex;
+					break;
+				case 2:
+					limb->sprite = 363 + 13 * sex;
+					break;
+				default:
+					limb->sprite = 109 + 12 * sex;
+					break;
+			}
+			break;
+		case LIMB_HUMANOID_LEFTARM:
+			switch ( skinColor )
+			{
+				case 1:
+					limb->sprite = 338 + 13 * sex;
+					break;
+				case 2:
+					limb->sprite = 364 + 13 * sex;
+					break;
+				default:
+					limb->sprite = 110 + 12 * sex;
+					break;
+			}
+			break;
+	}
 }

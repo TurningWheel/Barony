@@ -53,11 +53,7 @@ void actSprite(Entity* my)
 			my->sprite -= SPRITE_FRAMES;
 			if ( SPRITE_DESTROY )
 			{
-				if ( my->light )
-				{
-					list_RemoveNode(my->light->node);
-					my->light = NULL;
-				}
+				my->removeLightField();
 				list_RemoveNode(my->mynode);
 				return;
 			}

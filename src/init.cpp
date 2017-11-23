@@ -20,6 +20,8 @@
 #include "steam.hpp"
 #endif
 #include "player.hpp"
+#include "items.hpp"
+#include "cppfuncs.hpp"
 
 #ifdef HAVE_FMOD
 #include "fmod.h"
@@ -393,7 +395,7 @@ int initApp(char* title, int fullscreen)
 	}
 	if ( !softwaremode )
 	{
-		generatePolyModels(0, nummodels);
+		generatePolyModels(0, nummodels, false);
 	}
 	fclose(fp);
 	// print a loading message
@@ -422,6 +424,7 @@ int initApp(char* title, int fullscreen)
 	tiles = (SDL_Surface**) malloc(sizeof(SDL_Surface*)*numtiles);
 	animatedtiles = (bool*) malloc(sizeof(bool) * numtiles);
 	lavatiles = (bool*) malloc(sizeof(bool) * numtiles);
+	swimmingtiles = (bool*)malloc(sizeof(bool) * numtiles);
 	fp = openDataFile("images/tiles.txt", "r");
 	for ( c = 0; !feof(fp); c++ )
 	{
@@ -433,12 +436,14 @@ int initApp(char* title, int fullscreen)
 		tiles[c] = loadImage(name);
 		animatedtiles[c] = false;
 		lavatiles[c] = false;
+		swimmingtiles[c] = false;
 		if ( tiles[c] != NULL )
 		{
 			for (x = 0; x < strlen(name); x++)
 			{
-				if ( name[x] >= 48 && name[x] < 58 )
+				if ( name[x] >= '0' && name[x] < '9' )
 				{
+					// animated tiles if the tile name ends in a number 0-9.
 					animatedtiles[c] = true;
 					break;
 				}
@@ -446,6 +451,10 @@ int initApp(char* title, int fullscreen)
 			if ( strstr(name, "Lava") || strstr(name, "lava") )
 			{
 				lavatiles[c] = true;
+			}
+			if ( strstr(name, "Water") || strstr(name, "water") || strstr(name, "swimtile") || strstr(name, "Swimtile") )
+			{
+				swimmingtiles[c] = true;
 			}
 		}
 		else
@@ -792,7 +801,7 @@ void freeLanguages()
 
 -------------------------------------------------------------------------------*/
 
-void generatePolyModels(int start, int end)
+void generatePolyModels(int start, int end, bool forceCacheRebuild)
 {
 	Sint32 x, y, z;
 	Sint32 c, i;
@@ -802,14 +811,30 @@ void generatePolyModels(int start, int end)
 	polyquad_t* quad1, *quad2;
 	Uint32 numquads;
 	list_t quads;
+	FILE *model_cache;
+	bool generateAll = start == 0 && end == nummodels;
 
 	quads.first = NULL;
 	quads.last = NULL;
 
 	printlog("generating poly models...\n");
-	if ( start == 0 && end == nummodels )
+	if ( generateAll )
 	{
 		polymodels = (polymodel_t*) malloc(sizeof(polymodel_t) * nummodels);
+		if ( useModelCache && !forceCacheRebuild )
+		{
+			model_cache = openDataFile("models.cache", "rb");
+			if (model_cache) {
+				for (size_t model_index = 0; model_index < nummodels; model_index++) {
+					polymodel_t *cur = &polymodels[model_index];
+					fread(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+					cur->faces = (polytriangle_t *) calloc(sizeof(polytriangle_t), cur->numfaces);
+					fread(polymodels[model_index].faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+				}
+				fclose(model_cache);
+				return generateVBOs(start, end);
+			}
+		}
 	}
 
 	for ( c = start; c < end; ++c )
@@ -1738,6 +1763,14 @@ void generatePolyModels(int start, int end)
 		// free up quads for the next model
 		list_FreeAll(&quads);
 	}
+	if (useModelCache && (model_cache = openDataFile("models.cache", "wb"))) {
+		for (size_t model_index = 0; model_index < nummodels; model_index++) {
+			polymodel_t *cur = &polymodels[model_index];
+			fwrite(&cur->numfaces, sizeof(cur->numfaces), 1, model_cache);
+			fwrite(cur->faces, sizeof(polytriangle_t), cur->numfaces, model_cache);
+		}
+		fclose(model_cache);
+	}
 
 	// now store models into VBOs
 	if ( !disablevbos )
@@ -1929,12 +1962,17 @@ int deinitApp()
 	if ( animatedtiles )
 	{
 		free(animatedtiles);
-		animatedtiles = NULL;
+		animatedtiles = nullptr;
 	}
 	if ( lavatiles )
 	{
 		free(lavatiles);
-		lavatiles = NULL;
+		lavatiles = nullptr;
+	}
+	if ( swimmingtiles )
+	{
+		free(swimmingtiles);
+		swimmingtiles = nullptr;
 	}
 
 	// free sprites
@@ -2372,5 +2410,67 @@ bool changeVideoMode()
 	}
 #endif
 	// success
+	return true;
+}
+
+/*-------------------------------------------------------------------------------
+
+loadItemLists()
+
+loads the global item whitelist/blacklists and level curve.
+
+-------------------------------------------------------------------------------*/
+
+bool loadItemLists()
+{
+	char filename[128] = { 0 };
+	//FILE* fp;
+	int c;
+
+	// open log file
+	if ( !logfile )
+	{
+		logfile = freopen("log.txt", "wb" /*or "wt"*/, stderr);
+	}
+
+	// compose filename
+	strcpy(filename, "items/items_global.txt");
+	// check if item list is valid
+	if ( !dataPathExists(filename) )
+	{
+		// file doesn't exist
+		printlog("error: unable to locate tile palette file: '%s'", filename);
+		return false;
+	}
+
+	std::vector<std::string> itemLevels = getLinesFromFile(filename);
+	std::string line;
+	int itemIndex = 0;
+
+	for ( std::vector<std::string>::const_iterator i = itemLevels.begin(); i != itemLevels.end(); ++i ) {
+		// process i
+		line = *i;
+		if ( line[0] == '#' || line[0] == '\n' )
+		{
+			continue;
+		}
+		std::size_t found = line.find('#');
+		if ( found != std::string::npos )
+		{
+			char tmp[128];
+			std::string sub = line.substr(0, found);
+			strncpy(tmp, sub.c_str(), sub.length());
+			tmp[sub.length()] = '\0';
+			//printlog("%s", tmp);
+			items[itemIndex].level = atoi(tmp);
+			++itemIndex;
+		}
+	}
+
+	printlog("successfully loaded global item list '%s' \n", filename);
+	/*for ( c = 0; c < NUMITEMS; ++c )
+	{
+		printlog("%s level: %d", items[c].name_identified, items[c].level);
+	}*/
 	return true;
 }
