@@ -834,7 +834,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
-								spawnGib(hit.entity);
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
 							}
 
 							if (parent)
@@ -962,7 +963,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							hit.entity->modHP(-damage);
 							for (i = 0; i < damage; i += 2)   //Spawn a gib for every two points of damage.
 							{
-								spawnGib(hit.entity);
+								Entity* gib = spawnGib(hit.entity);
+								serverSpawnGibForClient(gib);
 							}
 
 							// write the obituary
@@ -1103,7 +1105,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
 							//for (i = 0; i < damage; i += 2) { //Spawn a gib for every two points of damage.
-							spawnGib(hit.entity);
+							Entity* gib = spawnGib(hit.entity);
+							serverSpawnGibForClient(gib);
 							//}
 
 							// write the obituary
@@ -1291,7 +1294,8 @@ void actMagicMissile(Entity* my)   //TODO: Verify this function.
 							damage *= damagetables[hitstats->type][5];
 							damage /= (1 + (int)resistance);
 							hit.entity->modHP(-damage);
-							spawnGib(hit.entity);
+							Entity* gib = spawnGib(hit.entity);
+							serverSpawnGibForClient(gib);
 
 							// write the obituary
 							hit.entity->setObituary(language[1502]);
