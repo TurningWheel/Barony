@@ -111,6 +111,7 @@ extern int messagetime;
 extern char message[48];
 extern Uint32 cursorflash;
 extern char widthtext[4], heighttext[4], nametext[32], authortext[32], skyboxtext[4];
+extern char mapflagtext[MAPFLAGS][32];
 extern char spriteProperties[32][128];
 extern char tmpSpriteProperties[32][128];
 extern int editproperty;
@@ -163,6 +164,7 @@ void buttonCut(button_t* my);
 void buttonCopy(button_t* my);
 void buttonPaste(button_t* my);
 void buttonDelete(button_t* my);
+void buttonCycleSprites(button_t* my);
 void buttonSelectAll(button_t* my);
 void buttonUndo(button_t* my);
 void buttonRedo(button_t* my);
@@ -193,4 +195,8 @@ extern int itemSelect;
 extern int itemSlotSelected;
 int loadItems();
 
+void propertyPageTextAndInput(int numProperties, int width);
+void propertyPageError(int rowIndex, int resetValue);
+void propertyPageCursorFlash(int rowSpacing);
+void reselectEntityGroup(); // selects group of entities within current selection
 #define TICKS_PER_SECOND 50

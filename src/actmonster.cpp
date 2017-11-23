@@ -51,16 +51,16 @@ bool swornenemies[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
 	{ 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DEVIL
 	{ 0, 0, 1, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SCARAB
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // CRYSTALGOLEM
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // INCUBUS
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // VAMPIRE
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHADOW
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // COCKATRICE
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // INSECTOID
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOATMAN
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // AUTOMATON
+	{ 0, 1, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0 }, // KOBOLD
+	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 1, 0, 1, 0, 1, 0, 1, 0, 1, 1, 0, 0 }, // SCARAB
+	{ 0, 1, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }, // CRYSTALGOLEM
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // INCUBUS
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // VAMPIRE
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHADOW
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // COCKATRICE
+	{ 0, 1, 0, 1, 1, 1, 0, 0, 1, 1, 0, 1, 0, 1, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0 }, // INSECTOID
+	{ 0, 1, 1, 1, 1, 1, 0, 1, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // GOATMAN
+	{ 0, 1, 1, 0, 0, 0, 0, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }, // AUTOMATON
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // LICH_ICE
 	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }  // LICH_FIRE
 };
@@ -88,17 +88,17 @@ bool monsterally[NUMMONSTERS][NUMMONSTERS] =
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // LICH
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // MINOTAUR
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // DEVIL
-	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // SHOPKEEPER
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // KOBOLD
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }, // SCARAB
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, // CRYSTALGOLEM
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0 }, // INCUBUS
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1 }, // VAMPIRE
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 1, 1 }, // SHADOW
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0 }, // COCKATRICE
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0 }, // INSECTOID
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 1, 0, 0, 0 }, // GOATMAN
-	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0 }, // AUTOMATON
+	{ 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 1, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0 }, // SHOPKEEPER
+	{ 1, 0, 1, 1, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1 }, // KOBOLD
+	{ 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 1, 1, 0, 0, 1, 1, 1, 1, 1, 0, 0, 1, 0, 1, 0, 1, 0, 1, 0, 0, 1, 1 }, // SCARAB
+	{ 1, 0, 0, 0, 0, 1, 1, 0, 0, 0, 0, 0, 1, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1 }, // CRYSTALGOLEM
+	{ 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // INCUBUS
+	{ 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // VAMPIRE
+	{ 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // SHADOW
+	{ 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // COCKATRICE
+	{ 1, 0, 1, 0, 0, 0, 1, 1, 0, 0, 1, 0, 1, 0, 0, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 0, 1, 1, 1, 1, 1, 1, 1 }, // INSECTOID
+	{ 1, 0, 0, 0, 0, 0, 1, 0, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1 }, // GOATMAN
+	{ 1, 0, 0, 1, 1, 1, 1, 0, 1, 1, 0, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1, 1, 0, 1, 1, 1, 1 }, // AUTOMATON
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }, // LICH_ICE
 	{ 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 0, 1, 1 }  // LICH_FIRE
 };
@@ -132,7 +132,7 @@ double sightranges[NUMMONSTERS] =
 	192,   // CRYSTALGOLEM
 	256,  // INCUBUS
 	192,  // VAMPIRE
-	256,  // SHADOW
+	768,  // SHADOW
 	256,  // COCKATRICE
 	256,  // INSECTOID
 	256,  // GOATMAN
@@ -565,7 +565,7 @@ bool monsterMoveAside(Entity* my, Entity* entity)
 	if ( x != 0 || y != 0 )
 	{
 		my->monsterState = MONSTER_STATE_PATH;
-		my->monsterTarget = 0;
+		my->monsterReleaseAttackTarget();
 		my->monsterTargetX = my->x + x;
 		my->monsterTargetY = my->y + y;
 		serverUpdateEntitySkill(my, 0);
@@ -1132,6 +1132,7 @@ void actMonster(Entity* my)
 					initGoatman ( my, myStats );
 					break;
 				case AUTOMATON:
+					my->flags[BURNABLE] = false;
 					initAutomaton (my, myStats);
 					break;
 				case LICH_ICE:
@@ -1205,6 +1206,18 @@ void actMonster(Entity* my)
 		for ( c = 0; c < MAXPLAYERS; c++ )
 		{
 			assailant[c] = true; // as long as this is active, combat music doesn't turn off
+		}
+	}
+
+	if ( myStats->type == SHADOW && my->monsterTarget != 0 )
+	{
+		for ( int c = 0; c < MAXPLAYERS; ++c )
+		{
+			if ( players[c] && players[c]->entity && players[c]->entity->getUID() == my->monsterTarget )
+			{
+				assailant[c] = true; //Keeps combat music on as long as a shadow is hunting you down down down!
+				break;
+			}
 		}
 	}
 
@@ -1561,11 +1574,6 @@ void actMonster(Entity* my)
 
 	my->checkGroundForItems();
 
-	if ( myStats->type == AUTOMATON )
-	{
-		my->automatonRecycleItem();
-	}
-
 	// check to see if monster can scream again
 	if ( MONSTER_SOUND != NULL )
 	{
@@ -1786,6 +1794,8 @@ void actMonster(Entity* my)
 		case INCUBUS:
 		case SHADOW:
 		case VAMPIRE:
+		case SUCCUBUS:
+		case SHOPKEEPER:
 			handleinvisible = false;
 			break;
 		default:
@@ -1851,6 +1861,7 @@ void actMonster(Entity* my)
 	{
 		if ( !my->isMobile() )
 		{
+			// message the player, "the %s doesn't respond"
 			if ( !strcmp(myStats->name, "") )
 			{
 				if ( myStats->type < KOBOLD ) //Original monster count
@@ -1871,6 +1882,7 @@ void actMonster(Entity* my)
 		{
 			if (my->monsterTarget == players[monsterclicked]->entity->getUID() && my->monsterState != 4)
 			{
+				// angry at the player, "En Guarde!"
 				switch (myStats->type)
 				{
 					case SHOPKEEPER:
@@ -1883,6 +1895,7 @@ void actMonster(Entity* my)
 			}
 			else if (my->monsterState == MONSTER_STATE_TALK)
 			{
+				// for shopkeepers trading with a player, "I am somewhat busy now."
 				if (my->monsterTarget != players[monsterclicked]->entity->getUID())
 				{
 					switch (myStats->type)
@@ -1899,9 +1912,17 @@ void actMonster(Entity* my)
 			}
 			else
 			{
+				// handle followers/trading
 				if ( myStats->type != SHOPKEEPER )
 				{
-					makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+					if ( myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+					{
+						makeFollower(monsterclicked, ringconflict, namesays, my, myStats);
+					}
+					else
+					{
+						handleMonsterChatter(monsterclicked, ringconflict, namesays, my, myStats);
+					}
 					my->lookAtEntity(*players[monsterclicked]->entity);
 				}
 				else
@@ -1994,10 +2015,51 @@ void actMonster(Entity* my)
 			}
 		}
 
-		// state machine
-		if ( my->monsterState == MONSTER_STATE_WAIT )   // wait state
+		if ( myStats->type != LICH && myStats->type != DEVIL && my->monsterSpecialTimer > 0 )
 		{
-			my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
+			--my->monsterSpecialTimer;
+		}
+
+
+		if ( myStats->type == AUTOMATON )
+		{
+			my->automatonRecycleItem();
+		}
+
+		/*if ( myStats->type == SHADOW && uidToEntity(my->monsterTarget) )
+		{
+			std::string state_string;
+
+			switch(my->monsterState)
+			{
+			case MONSTER_STATE_WAIT:
+				state_string = "WAIT";
+				break;
+			case MONSTER_STATE_ATTACK:
+				state_string = "CHARGE";
+				break;
+			case MONSTER_STATE_PATH:
+				state_string = "PATH";
+				break;
+			case MONSTER_STATE_HUNT:
+				state_string = "HUNT";
+				break;
+			case MONSTER_STATE_TALK:
+				state_string = "TALK";
+				break;
+			default:
+				state_string = "Unknown state";
+				break;
+			}
+
+			messagePlayer(0, "My state is %s", state_string.c_str()); //Debug message.
+		}*/
+
+		//Begin state machine
+		if ( my->monsterState == MONSTER_STATE_WAIT ) //Begin wait state
+		{
+			//my->monsterTarget = -1; //TODO: Setting it to -1 = Bug? -1 may not work properly for cases such as: if ( !my->monsterTarget )
+			my->monsterReleaseAttackTarget();
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
 			if ( myReflex )
@@ -2049,8 +2111,9 @@ void actMonster(Entity* my)
 							{
 								light = TOUCHRANGE;
 							}
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
+								//See invisible.
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -2092,8 +2155,9 @@ void actMonster(Entity* my)
 							}
 							if ( visiontest )   // vision cone
 							{
-								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+								if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 								{
+									//See invisible
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								else
@@ -2221,6 +2285,15 @@ void actMonster(Entity* my)
 					}
 					return;
 				}
+				else if ( myStats->type == SHADOW && my->monsterTarget && my->monsterState != MONSTER_STATE_ATTACK )
+				{
+					//Fix shadow state.
+					my->monsterState = MONSTER_STATE_PATH;
+					//my->monsterTargetX = my->monsterTarget.x;
+					//my->monsterTargetY = my->monsterTarget.y;
+					serverUpdateEntitySkill(my, 0); //Update monster state because it changed.
+					return;
+				}
 			}
 
 			// follow the leader :)
@@ -2232,7 +2305,7 @@ void actMonster(Entity* my)
 					double dist = sqrt(pow(my->x - leader->x, 2) + pow(my->y - leader->y, 2));
 					if ( dist > WAIT_FOLLOWDIST )
 					{
-						my->monsterTarget = 0;
+						my->monsterReleaseAttackTarget();
 						x = ((int)floor(leader->x)) >> 4;
 						y = ((int)floor(leader->y)) >> 4;
 						int u, v;
@@ -2275,7 +2348,7 @@ void actMonster(Entity* my)
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
-							my->monsterTarget = 0;
+							my->monsterReleaseAttackTarget();
 							x = ((int)floor(leader->x)) >> 4;
 							y = ((int)floor(leader->y)) >> 4;
 							int u, v;
@@ -2375,7 +2448,8 @@ void actMonster(Entity* my)
 					{
 						for ( y = 0; y < map.height; y++ )
 						{
-							if ( x << 4 >= MONSTER_SHOPXS && x << 4 <= MONSTER_SHOPXE && y << 4 >= MONSTER_SHOPYS && y << 4 <= MONSTER_SHOPYE )
+							if ( x << 4 >= my->monsterPathBoundaryXStart && x << 4 <= my->monsterPathBoundaryXEnd
+								&& y << 4 >= my->monsterPathBoundaryYStart && y << 4 <= my->monsterPathBoundaryYEnd )
 								if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 								{
 									goodspots++;
@@ -2390,7 +2464,7 @@ void actMonster(Entity* my)
 					bool foundit = false;
 					x = 0;
 					y = 0;
-					if ( myStats->type != SHOPKEEPER )
+					if ( myStats->type != SHOPKEEPER && myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
 					{
 						for ( x = 0; x < map.width; x++ )
 						{
@@ -2421,7 +2495,8 @@ void actMonster(Entity* my)
 						{
 							for ( y = 0; y < map.height; y++ )
 							{
-								if ( x << 4 >= MONSTER_SHOPXS && x << 4 <= MONSTER_SHOPXE && y << 4 >= MONSTER_SHOPYS && y << 4 <= MONSTER_SHOPYE )
+								if ( x << 4 >= my->monsterPathBoundaryXStart && x << 4 <= my->monsterPathBoundaryXEnd 
+									&& y << 4 >= my->monsterPathBoundaryYStart && y << 4 <= my->monsterPathBoundaryYEnd )
 								{
 									if ( !checkObstacle(x << 4, y << 4, my, NULL) )
 									{
@@ -2456,26 +2531,19 @@ void actMonster(Entity* my)
 			}
 
 			// rotate monster
-			dir = my->yaw - my->monsterLookDir;
-			while ( dir >= PI )
+			dir = my->monsterRotate();
+
+			if ( myStats->type == SHADOW && !uidToEntity(my->monsterTarget) && my->monsterSpecialTimer == 0 && my->monsterSpecialState == 0 && ticks%500 == 0 && rand()%5 == 0 )
 			{
-				dir -= PI * 2;
+				//Random chance for a shadow to teleport around the map if it has nothing better to do.
+				//messagePlayer(0, "Shadow idle telepotty.");
+				my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+				my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
+				my->shadowTeleportToTarget(nullptr, 3); // teleport in closer range
+				my->monsterState = MONSTER_STATE_WAIT;
 			}
-			while ( dir < -PI )
-			{
-				dir += PI * 2;
-			}
-			my->yaw -= dir / 2;
-			while ( my->yaw < 0 )
-			{
-				my->yaw += 2 * PI;
-			}
-			while ( my->yaw >= 2 * PI )
-			{
-				my->yaw -= 2 * PI;
-			}
-		}
-		else if ( my->monsterState == MONSTER_STATE_ATTACK )     // charge state
+		} //End wait state
+		else if ( my->monsterState == MONSTER_STATE_ATTACK ) //Begin charge state
 		{
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity == nullptr )
@@ -2484,6 +2552,13 @@ void actMonster(Entity* my)
 				if ( previousMonsterState != my->monsterState )
 				{
 					serverUpdateEntitySkill(my, 0);
+				}
+				if ( myStats->type == SHADOW )
+				{
+					//messagePlayer(0, "DEBUG: Shadow lost entity.");
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
 				}
 				return;
 			}
@@ -2541,14 +2616,16 @@ void actMonster(Entity* my)
 				{
 					light = TOUCHRANGE;
 				}
-				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+				if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 				{
+					//See invisible.
 					light = 1000;
 				}
 				double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
 				if ( targetdist > sightranges[myStats->type] )
 				{
-					if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+					// if target has left my sight, decide whether or not to path or retreat (stay put).
+					if ( my->shouldRetreat(*myStats) )
 					{
 						my->monsterMoveTime = 0;
 						my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2572,11 +2649,15 @@ void actMonster(Entity* my)
 							lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 						}
 						if ( hit.entity == entity )
+						{	
 							if ( rand() % 100 == 0 )
 							{
 								entity->increaseSkill(PRO_STEALTH);
 							}
-						if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+						}
+						// if target is within sight range but light level is too low and out of melee range.
+						// decide whether or not to path or retreat (stay put).
+						if ( my->shouldRetreat(*myStats) )
 						{
 							my->monsterMoveTime = 0;
 							my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2607,7 +2688,9 @@ void actMonster(Entity* my)
 
 						if ( hit.entity != entity && myReflex )
 						{
-							if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+							// if I currently lost sight of my target in a straight line in front of me
+							// decide whether or not to path or retreat (stay put).
+							if ( my->shouldRetreat(*myStats) )
 							{
 								my->monsterMoveTime = 0;
 								my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2626,7 +2709,7 @@ void actMonster(Entity* my)
 							// get movement dir
 							int goAgain = 0;
 timeToGoAgain:
-							if ( targetdist > TOUCHRANGE * 1.5 && !hasrangedweapon && (myStats->HP > myStats->MAXHP / 3 || my->getCHR() < -1) && my->getINT() > -2 )
+							if ( targetdist > TOUCHRANGE * 1.5 && !hasrangedweapon && !my->shouldRetreat(*myStats) && my->getINT() > -2 )
 							{
 								if ( MONSTER_FLIPPEDANGLE < 5 )
 								{
@@ -2676,16 +2759,16 @@ timeToGoAgain:
 
 							MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
 							MONSTER_VELY = sin(tangent2) * .045 * (my->getDEX() + 10) * weightratio;
-							if ( (dist > 16 && !hasrangedweapon && (myStats->HP > myStats->MAXHP / 3 || my->getCHR() < -1)) || (dist > 160 && hasrangedweapon) )
+							if ( (dist > 16 && !hasrangedweapon && !my->shouldRetreat(*myStats)) || (dist > 160 && hasrangedweapon) )
 							{
-								if ( myStats->HP > myStats->MAXHP / 3 || my->getCHR() < -1 )
+								if ( my->shouldRetreat(*myStats) )
 								{
+									MONSTER_VELX *= -.5;
+									MONSTER_VELY *= -.5;
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 								}
 								else
 								{
-									MONSTER_VELX *= -.5;
-									MONSTER_VELY *= -.5;
 									dist2 = clipMove(&my->x, &my->y, MONSTER_VELX, MONSTER_VELY, my);
 								}
 								if ( hit.entity != NULL )
@@ -2737,7 +2820,7 @@ timeToGoAgain:
 									}
 									else
 									{
-										if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+										if ( my->shouldRetreat(*myStats) )
 										{
 											my->monsterMoveTime = 0;
 											my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2750,7 +2833,7 @@ timeToGoAgain:
 								}
 								else
 								{
-									if ( myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2 )
+									if ( my->shouldRetreat(*myStats) )
 									{
 										my->monsterMoveTime = 0;
 										my->monsterState = MONSTER_STATE_WAIT; // wait state
@@ -2763,7 +2846,7 @@ timeToGoAgain:
 							}
 							else
 							{
-								if ( (hasrangedweapon && dist < 100) || (myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2) )
+								if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 								{
 									// injured monsters or monsters with ranged weapons back up
 									MONSTER_VELX = cos(tangent2) * .045 * (my->getDEX() + 10) * weightratio * -.5;
@@ -2789,7 +2872,7 @@ timeToGoAgain:
 							}*/
 
 							// rotate monster
-							if ( (hasrangedweapon && dist < 100) || (myStats->HP <= myStats->MAXHP / 3 && my->getCHR() >= -2) )
+							if ( my->backupWithRangedWeapon(*myStats, dist, hasrangedweapon) || my->shouldRetreat(*myStats) )
 							{
 								dir = my->yaw - atan2( -MONSTER_VELY, -MONSTER_VELX );
 							}
@@ -2912,8 +2995,8 @@ timeToGoAgain:
 					my->yaw -= 2 * PI;
 				}
 			}
-		}
-		else if ( my->monsterState == MONSTER_STATE_PATH )     // path state
+		} //End charge state
+		else if ( my->monsterState == MONSTER_STATE_PATH )     //Begin path state
 		{
 			if ( myStats->type == DEVIL )
 			{
@@ -2924,9 +3007,11 @@ timeToGoAgain:
 				}
 				return;
 			}
+
+			//Don't path if your target dieded!
 			if ( uidToEntity(my->monsterTarget) == nullptr && my->monsterTarget != 0 )
 			{
-				my->monsterTarget = 0;
+				my->monsterReleaseAttackTarget(true);
 				my->monsterState = MONSTER_STATE_WAIT; // wait state
 				if ( previousMonsterState != my->monsterState )
 				{
@@ -2934,16 +3019,21 @@ timeToGoAgain:
 				}
 				return;
 			}
+
 			entity = uidToEntity(my->monsterTarget);
-			if ( entity != NULL )
+			if ( entity != nullptr )
+			{
 				if ( entity->behavior == &actPlayer )
 				{
 					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
 				}
+				my->monsterTargetX = entity->x;
+				my->monsterTargetY = entity->y;
+			}
 			x = ((int)floor(my->monsterTargetX)) >> 4;
 			y = ((int)floor(my->monsterTargetY)) >> 4;
 			path = generatePath( (int)floor(my->x / 16), (int)floor(my->y / 16), x, y, my, uidToEntity(my->monsterTarget) );
-			if ( my->children.first != NULL )
+			if ( my->children.first != nullptr )
 			{
 				list_RemoveNode(my->children.first);
 			}
@@ -2951,12 +3041,80 @@ timeToGoAgain:
 			node->element = path;
 			node->deconstructor = &listDeconstructor;
 			my->monsterState = MONSTER_STATE_HUNT; // hunt state
-		}
-		else if ( my->monsterState == MONSTER_STATE_HUNT ) // hunt state
+			/*if ( myStats->type == SHADOW && entity )
+			{
+				if ( path == nullptr )
+				{
+					messagePlayer(0, "Warning: Shadow failed to generate a path to its target.");
+				}
+			}*/
+		} //End path state.
+		else if ( my->monsterState == MONSTER_STATE_HUNT ) //Begin hunt state
 		{
+			if ( myStats->type == SHADOW && my->monsterSpecialState == SHADOW_TELEPORT_ONLY )
+			{
+				//messagePlayer(0, "Shadow in special state teleport only! Aborting hunt state.");
+				my->monsterState = MONSTER_STATE_WAIT;
+				return; //Don't do anything, yer casting a spell!
+			}
+			//Do the shadow's passive teleport to catch up to their target..
+			if ( myStats->type == SHADOW && my->monsterSpecialTimer == 0 && my->monsterTarget )
+			{
+				Entity* target = uidToEntity(my->monsterTarget);
+				if ( !target )
+				{
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
+					return;
+				}
+
+				//If shadow has no path to target, then should do the passive teleport.
+				bool passiveTeleport = false;
+				if ( my->children.first ) //First child is the path.
+				{
+					if ( !my->children.first->element )
+					{
+						//messagePlayer(0, "No path for shadow!");
+						passiveTeleport = true;
+					}
+				}
+				else
+				{
+					//messagePlayer(0, "No path for shadow!");
+					passiveTeleport = true; //Path is saved as first child. If no first child, no path!
+				}
+
+				//Shadow has path to target, but still passive teleport if far enough away.
+				if ( !passiveTeleport )
+				{
+					int specialRoll = rand() % 50;
+					//messagePlayer(0, "roll %d", specialRoll);
+					double targetdist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+					if ( specialRoll <= (1 + (targetdist > 80 ? 4 : 0)) )
+					{
+						passiveTeleport = true;
+					}
+				}
+
+				if ( passiveTeleport )
+				{
+					//messagePlayer(0, "Shadow is doing a passive tele.");
+					my->monsterSpecialState = SHADOW_TELEPORT_ONLY;
+					my->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT;
+					my->shadowTeleportToTarget(target, 3); // teleport in closer range
+					my->monsterState = MONSTER_STATE_WAIT;
+					if ( target && target->behavior == actPlayer )
+					{
+						messagePlayer(target->skill[2], language[2518]);
+					}
+					return;
+				}
+			}
+
 			if ( myReflex && (myStats->type != LICH || my->monsterSpecialTimer <= 0) )
 			{
-				for ( node2 = map.entities->first; node2 != NULL; node2 = node2->next )
+				for ( node2 = map.entities->first; node2 != nullptr; node2 = node2->next )
 				{
 					entity = (Entity*)node2->element;
 					if ( entity == my || entity->flags[PASSABLE] )
@@ -2964,7 +3122,7 @@ timeToGoAgain:
 						continue;
 					}
 					hitstats = entity->getStats();
-					if ( hitstats != NULL )
+					if ( hitstats != nullptr )
 					{
 						if ( (my->checkEnemy(entity) || my->monsterTarget == entity->getUID() || ringconflict) )
 						{
@@ -3003,8 +3161,9 @@ timeToGoAgain:
 							{
 								light = TOUCHRANGE;
 							}
-							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE )
+							if ( (myStats->type >= LICH && myStats->type < KOBOLD) || myStats->type == LICH_FIRE || myStats->type == LICH_ICE || myStats->type == SHADOW )
 							{
+								//See invisible.
 								light = 1000;
 							}
 							double targetdist = sqrt( pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2) );
@@ -3023,10 +3182,12 @@ timeToGoAgain:
 									lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, false);
 								}
 								if ( hit.entity == entity )
+								{
 									if ( rand() % 100 == 0 )
 									{
 										entity->increaseSkill(PRO_STEALTH);
 									}
+								}
 								continue;
 							}
 							bool visiontest = false;
@@ -3169,6 +3330,19 @@ timeToGoAgain:
 					return;
 				}
 			}
+			else if ( myStats->type == SHADOW && my->monsterTarget && (ticks % 180 == 0) )
+			{
+				if ( !uidToEntity(my->monsterTarget) )
+				{
+					my->monsterReleaseAttackTarget(true);
+					my->monsterState = MONSTER_STATE_WAIT;
+					serverUpdateEntitySkill(my, 0); //Update state.
+					return;
+				}
+				my->monsterState = MONSTER_STATE_PATH;
+				serverUpdateEntitySkill(my, 0); //Update state.
+				return;
+			}
 
 			// lich cooldown
 			if ( myStats->type == LICH )
@@ -3231,7 +3405,7 @@ timeToGoAgain:
 						lineTrace(my, my->x, my->y, tangent, sightranges[myStats->type], 0, true);
 						if ( hit.entity != leader )
 						{
-							my->monsterTarget = 0;
+							my->monsterReleaseAttackTarget();
 							int x = ((int)floor(leader->x)) >> 4;
 							int y = ((int)floor(leader->y)) >> 4;
 							int u, v;
@@ -3275,10 +3449,12 @@ timeToGoAgain:
 
 			entity = uidToEntity(my->monsterTarget);
 			if ( entity != NULL )
+			{
 				if ( entity->behavior == &actPlayer )
 				{
-					assailant[entity->skill[2]] = true;  // as long as this is active, combat music doesn't turn off
+					assailant[entity->skill[2]] = true; // as long as this is active, combat music doesn't turn off
 				}
+			}
 			if ( my->children.first != NULL )
 			{
 				if ( my->children.first->element != NULL )
@@ -3458,6 +3634,10 @@ timeToGoAgain:
 						if ( target )
 						{
 							my->lookAtEntity(*target);
+							/*if ( myStats->type == SHADOW )
+							{
+								messagePlayer(0, "[SHADOW] No path #1: Resetting to wait state.");
+							}*/
 						}
 						my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 					}
@@ -3471,6 +3651,10 @@ timeToGoAgain:
 						my->monsterLookTime = 1;
 						my->monsterMoveTime = rand() % 10 + 1;
 						my->monsterLookDir = tangent;
+						/*if ( myStats->type == SHADOW )
+						{
+							messagePlayer(0, "[SHADOW] No path #2: Resetting to wait state.");
+						}*/
 					}
 					my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 				}
@@ -3484,12 +3668,16 @@ timeToGoAgain:
 					my->monsterLookTime = 1;
 					my->monsterMoveTime = rand() % 10 + 1;
 					my->monsterLookDir = tangent;
+					/*if ( myStats->type == SHADOW )
+					{
+						messagePlayer(0, "[SHADOW] No path #3: Resetting to wait state.");
+					}*/
 				}
 				my->monsterState = MONSTER_STATE_WAIT; // no path, return to wait state
 				//TODO: Replace with lookAtEntity();
 			}
 		}
-		else if ( my->monsterState == MONSTER_STATE_TALK )     // talk state
+		else if ( my->monsterState == MONSTER_STATE_TALK )     //Begin talk state
 		{
 			MONSTER_VELX = 0;
 			MONSTER_VELY = 0;
@@ -3550,7 +3738,7 @@ timeToGoAgain:
 				my->monsterState = MONSTER_STATE_WAIT;
 				my->monsterTarget = 0;
 			}
-		}
+		} //End talk state
 		else if ( my->monsterState == MONSTER_STATE_LICH_DODGE )     // dodge state (herx)
 		{
 			double dist = 0;
@@ -3909,6 +4097,11 @@ timeToGoAgain:
 
 				// rotate monster
 				dir = my->yaw - atan2( MONSTER_VELY, MONSTER_VELX );
+
+				// To prevent the Entity's position from being updated by dead reckoning on the CLient, set the velocity to 0 after usage
+				MONSTER_VELX = 0.0;
+				MONSTER_VELY = 0.0;
+
 				while ( dir >= PI )
 				{
 					dir -= PI * 2;
@@ -4212,7 +4405,7 @@ timeToGoAgain:
 					my->monsterTargetY = playertotrack->y;
 				}
 			}
-		}
+		} //End state machine.
 	}
 	else
 	{
@@ -4347,17 +4540,11 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 	node_t* node = nullptr;
 	Entity* entity = nullptr;
 	Stat* hitstats = nullptr;
-	bool hasrangedweapon = this->hasRangedWeapon();
 	int charge = 1;
 
-	if ( myStats->type != LICH && myStats->type != DEVIL && this->monsterSpecialTimer > 0 )
-	{
-		--this->monsterSpecialTimer;
-	}
-
-	//TODO: Goatman choose weapon.
 	//TODO: I don't like this function getting called every frame. Find a better place to put it.
 	chooseWeapon(target, dist);
+	bool hasrangedweapon = this->hasRangedWeapon();
 
 	// check the range to the target, depending on ranged weapon or melee.
 	if ( (dist < STRIKERANGE && !hasrangedweapon) || (dist < 160 && hasrangedweapon) )
@@ -4367,7 +4554,7 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		int bow = 1;
 		if ( hasrangedweapon )
 		{
-			if ( myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
+			if ( myStats->weapon && myStats->weapon->type == SLING || myStats->weapon->type == SHORTBOW || myStats->weapon->type == ARTIFACT_BOW )
 			{
 				bow = 2;
 			}
@@ -4375,7 +4562,13 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 		// check if ready to attack
 		if ( (this->monsterHitTime >= HITRATE * monsterGlobalAttackTimeMultiplier * bow && myStats->type != LICH) || (this->monsterHitTime >= 5 && myStats->type == LICH) )
 		{
-			this->handleMonsterSpecialAttack(myStats, nullptr, dist);
+			bool shouldAttack = this->handleMonsterSpecialAttack(myStats, nullptr, dist);
+			if ( !shouldAttack )
+			{
+				// handleMonsterSpecialAttack processed an action where the monster should not try to attack this frame.
+				// e.g unequipping/swapping from special weapon, stops punching the air after casting a spell.
+				return;
+			}
 
 			if ( myStats->type == LICH )
 			{
@@ -4434,7 +4627,15 @@ void Entity::handleMonsterAttack(Stat* myStats, Entity* target, double dist)
 					// turn to the target, then reset my yaw.
 					double oYaw = this->yaw;
 					this->yaw = newTangent;
-					this->attack(pose, charge, nullptr); // attacku! D:<
+					//if ( myStats->type == SHADOW && monsterAttack == MONSTER_POSE_MAGIC_WINDUP3 )
+					//{
+						//Do nothing, already handled in shadow's actLimnbs thing.
+						//Otherwise, this will make the shadow beat on players.
+					//}
+					//else
+					//{
+						this->attack(pose, charge, nullptr); // attacku! D:<
+					//}
 					this->yaw = oYaw;
 				}
 			}
@@ -4880,7 +5081,7 @@ bool forceFollower(Entity& leader, Entity& follower)
 	return true;
 }
 
-void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist)
+bool Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double dist)
 {
 	int specialRoll = 0;
 	node_t* node = nullptr;
@@ -4892,7 +5093,8 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 	{
 		if ( myStats->type == LICH || myStats->type == DEVIL || myStats->type == SHOPKEEPER )
 		{
-			return;
+			// monster should attack after this function is called.
+			return true;
 		}
 
 		if ( this->monsterSpecialTimer == 0 )
@@ -4911,7 +5113,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -4923,7 +5125,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 								node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 								if ( node != nullptr )
 								{
-									swapMonsterWeaponWithInventoryItem(this, myStats, node);
+									swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 									this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_KOBOLD;
 								}
 							}
@@ -4995,7 +5197,7 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
 						if ( node != nullptr )
 						{
-							swapMonsterWeaponWithInventoryItem(this, myStats, node);
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 							this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE;
 						}
 						break;
@@ -5039,35 +5241,278 @@ void Entity::handleMonsterSpecialAttack(Stat* myStats, Entity* target, double di
 						}
 					}
 					break;
+				case INSECTOID:
+					if ( monsterSpecialState == INSECTOID_DOUBLETHROW_FIRST || monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
+					{
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW;
+						break;
+					}
+
+					// spray acid
+					if ( dist < STRIKERANGE * 2 )
+					{
+						specialRoll = rand() % 20;
+						enemiesNearby = std::min(numTargetsAroundEntity(this, STRIKERANGE * 2, PI, MONSTER_TARGET_ENEMY), 4);
+						//messagePlayer(0, "insectoid roll %d", specialRoll);
+						if ( myStats->HP <= myStats->MAXHP * 0.5 )
+						{
+							bonusFromHP = 4; // +20% chance if on low health
+						}
+						if ( specialRoll < (enemiesNearby * 2 + bonusFromHP) ) // +10% for each enemy, capped at 40%
+						{
+							node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), SPELLBOOK);
+							if ( node != nullptr )
+							{
+								monsterSpecialState = INSECTOID_ACID;
+								swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+								this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID;
+								serverUpdateEntitySkill(this, 33); // for clients to handle animation
+							}
+							break;
+						}
+					}
+					// throwing weapon special handled in insectoidChooseWeapon()
+					break;
+				case INCUBUS:
+					if ( monsterSpecialState == INCUBUS_CONFUSION )
+					{
+						// throwing weapon special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION;
+						break;
+					}
+					else if ( monsterSpecialState == INCUBUS_STEAL )
+					{
+						// special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL;
+						break;
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT )
+					{
+						// special handled in incubusChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET;
+						break;
+					}
+					break;
+				case VAMPIRE:
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					{
+						// special handled in vampireChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA;
+					}
+					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
+					{
+						// special handled in vampireChooseWeapon()
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN;
+					}
+					break;
+				case SHADOW:
+					if ( monsterSpecialState == SHADOW_SPELLCAST )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
+					}
+					else if ( monsterSpecialState == SHADOW_TELEPORT_ONLY )
+					{
+						// special handled in shadowChooseWeapon(), teleport code in path state.
+						this->monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEPORT;
+						break;
+					}
+				case GOATMAN:
+					if ( monsterSpecialState == GOATMAN_POTION )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK;
+					}
+					else if ( monsterSpecialState == GOATMAN_THROW )
+					{
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
+					}
+					break;
 				default:
 					break;
 			}
 		}
 		else if ( this->monsterSpecialTimer > 0 )
 		{
+			bool shouldAttack = true;
 			switch ( myStats->type )
 			{
 				case KOBOLD:
 					node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
 					if ( node != nullptr )
 					{
-						swapMonsterWeaponWithInventoryItem(this, myStats, node);
+						swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
 					}
 					else
 					{
 						monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);	
 					}
 					break;
+				case INSECTOID:
+					if ( monsterSpecialState == INSECTOID_ACID )
+					{
+						monsterSpecialState = 0;
+						serverUpdateEntitySkill(this, 33); // for clients to handle animation
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+					}
+					else if ( monsterSpecialState == INSECTOID_DOUBLETHROW_SECOND )
+					{
+						monsterSpecialState = 0;
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+						}
+						shouldAttack = false;
+					}
+					break;
 				case COCKATRICE:
 					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+					break;
+				case INCUBUS:
+					if ( monsterSpecialState == INCUBUS_CONFUSION )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, POTION);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == INCUBUS_STEAL )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT_STEAL )
+					{
+						// this flag will be cleared in incubusChooseWeapon
+					}
+					else if ( monsterSpecialState == INCUBUS_TELEPORT )
+					{
+						// this flag will be cleared in incubusChooseWeapon
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case VAMPIRE:
+					if ( monsterSpecialState == VAMPIRE_CAST_AURA )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == VAMPIRE_CAST_DRAIN )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case SHADOW:
+					if ( monsterSpecialState == SHADOW_SPELLCAST ) //TODO: This code is destroying spells?
+					{
+						//TODO: Nope, this code isn't destroying spells. Something *before* this code is.
+						//messagePlayer(clientnum, "[DEBUG: handleMonsterSpecialAttack()] Resolving shadow's spellcast.");
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, SPELLBOOK);
+						}
+						/*Item *spellbook = newItem(static_cast<ItemType>(0), static_cast<Status>(0), 0, 1, rand(), 0, &myStats->inventory);
+						copyItem(spellbook, myStats->weapon);
+						dropItemMonster(myStats->weapon, this, myStats, 1);*/
+						shouldAttack = false;
+						monsterSpecialState = 0;
+						monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
+					break;
+				case GOATMAN:
+					if ( monsterSpecialState == GOATMAN_POTION )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, POTION);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					else if ( monsterSpecialState == GOATMAN_THROW )
+					{
+						node = itemNodeInInventory(myStats, static_cast<ItemType>(-1), WEAPON); // find weapon to re-equip
+						if ( node != nullptr )
+						{
+							swapMonsterWeaponWithInventoryItem(this, myStats, node, false, true);
+						}
+						else
+						{
+							monsterUnequipSlotFromCategory(myStats, &myStats->weapon, THROWN);
+						}
+						shouldAttack = false;
+						monsterSpecialState = 0;
+					}
+					serverUpdateEntitySkill(this, 33); // for clients to keep track of animation
 					break;
 				default:
 					break;
 			}
+			// Whether monster should attack following the unequip action.
+			return shouldAttack;
 		}
 	}
-	
-	return;
+	// monster should attack after this function is called.
+	return true;
 }
 
 void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFind, real_t angleToSearch, int searchType, list_t** list)
@@ -5075,65 +5520,64 @@ void getTargetsAroundEntity(Entity* my, Entity* originalTarget, double distToFin
 	Entity* entity = nullptr;
 	node_t* node = nullptr;
 	node_t* node2 = nullptr;
-	Stat* myStats = my->getStats();
 
-	if ( myStats != nullptr )
+	// aoe
+	for ( node = map.entities->first; node != nullptr; node = node->next )
 	{
-		// aoe
-		for ( node = map.entities->first; node != nullptr; node = node->next )
+		entity = (Entity*)node->element;
+		if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
 		{
-			entity = (Entity*)node->element;
-			if ( (entity->behavior == &actMonster || entity->behavior == &actPlayer) && entity != originalTarget && entity != my )
+			if ( searchType == MONSTER_TARGET_ENEMY )
 			{
-				if ( searchType == MONSTER_TARGET_ENEMY )
+				if ( !my->checkEnemy(entity) )
 				{
-					if ( !my->checkEnemy(entity) )
-					{
-						continue;
-					}
+					continue;
 				}
-				else if ( searchType == MONSTER_TARGET_FRIEND )
+			}
+			else if ( searchType == MONSTER_TARGET_FRIEND )
+			{
+				if ( !my->checkFriend(entity) )
 				{
-					if ( !my->checkFriend(entity) )
-					{
-						continue;
-					}
+					continue;
 				}
-				else if ( searchType == MONSTER_TARGET_PLAYER )
+			}
+			else if ( searchType == MONSTER_TARGET_PLAYER )
+			{
+				if ( !(entity->behavior == &actPlayer) )
 				{
-					if ( !(entity->behavior == &actPlayer) )
-					{
-						continue;
-					}
+					continue;
 				}
+			}
+			else if ( searchType == MONSTER_TARGET_ALL )
+			{
+			}
 
-				double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
-				real_t angle = my->yaw - aoeTangent;
-				while ( angle >= PI )
+			double aoeTangent = atan2(entity->y - my->y, entity->x - my->x);
+			real_t angle = my->yaw - aoeTangent;
+			while ( angle >= PI )
+			{
+				angle -= PI * 2;
+			}
+			while ( angle < -PI )
+			{
+				angle += PI * 2;
+			}
+			if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
+			{
+				double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
+				if ( dist < distToFind )
 				{
-					angle -= PI * 2;
-				}
-				while ( angle < -PI )
-				{
-					angle += PI * 2;
-				}
-				if ( abs(angle) <= angleToSearch ) // searches in 2x the given angle, +/- from yaw.
-				{
-					double dist = sqrt(pow(my->x - entity->x, 2) + pow(my->y - entity->y, 2));
-					if ( dist < distToFind )
+					//If this is the first entity found, the list needs to be created.
+					if ( !(*list) )
 					{
-						//If this is the first entity found, the list needs to be created.
-						if ( !(*list) )
-						{
-							*list = (list_t*)malloc(sizeof(list_t));
-							(*list)->first = nullptr;
-							(*list)->last = nullptr;
-						}
-						node2 = list_AddNodeLast(*list);
-						node2->element = entity;
-						node2->deconstructor = &emptyDeconstructor;
-						node2->size = sizeof(Entity*);
+						*list = (list_t*)malloc(sizeof(list_t));
+						(*list)->first = nullptr;
+						(*list)->last = nullptr;
 					}
+					node2 = list_AddNodeLast(*list);
+					node2->element = entity;
+					node2->deconstructor = &emptyDeconstructor;
+					node2->size = sizeof(Entity*);
 				}
 			}
 		}
@@ -5155,4 +5599,68 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 		free(aoeTargets);
 	}
 	return count;
+}
+
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats)
+{
+	if ( ringconflict || myStats->MISC_FLAGS[STAT_FLAG_NPC] == 0 )
+	{
+		//Instant fail if ring of conflict is in effect/not NPC
+		return false;
+	}
+
+	int NPCtype = myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF; // get NPC type, lowest 8 bits.
+	int NPClastLine = (myStats->MISC_FLAGS[STAT_FLAG_NPC] & 0xFF00) >> 8; // get last line said, next 8 bits.
+
+	int numLines = 0;
+	int startLine = 2700 + (NPCtype - 1) * MONSTER_NPC_DIALOGUE_LINES; // lang line to start from.
+	int currentLine = startLine + 1;
+
+	bool isSequential = false;
+
+	if ( !strcmp(language[startLine], "type:seq") )
+	{
+		isSequential = true;
+	}
+
+	for ( int i = 1; i < MONSTER_NPC_DIALOGUE_LINES; ++i )
+	{
+		// find the next 9 lines if available.
+		if ( !strcmp(language[currentLine], "") )
+		{
+			break;
+		}
+		++currentLine;
+		++numLines;
+	}
+
+	// choose a dialogue line.
+	if ( numLines > 0 )
+	{
+		if ( isSequential )
+		{
+			// say the next line in series.
+			if ( NPClastLine != 0 )
+			{
+				++NPClastLine;
+				if ( (NPClastLine) > numLines )
+				{
+					// reset to beginning
+					NPClastLine = 1;
+				}
+			}
+			else
+			{
+				// first line being said, choose the first.
+				NPClastLine = 1;
+			}
+		}
+		else if ( !isSequential )
+		{
+			// choose randomly
+			NPClastLine = 1 + rand() % numLines;
+		}
+		messagePlayer(monsterclicked, language[startLine + NPClastLine], namesays, stats[monsterclicked]->name);
+		myStats->MISC_FLAGS[STAT_FLAG_NPC] = NPCtype + (NPClastLine << 8);
+	}
 }

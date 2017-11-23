@@ -243,7 +243,12 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 
 	// read map version number
 	fread(valid_data, sizeof(char), strlen("BARONY LMPV2.0"), fp);
-	if ( strncmp(valid_data, "BARONY LMPV2.3", strlen("BARONY LMPV2.0")) == 0 )
+	if ( strncmp(valid_data, "BARONY LMPV2.4", strlen("BARONY LMPV2.0")) == 0 )
+	{
+		// V2.4 version of editor - boulder trap properties
+		editorVersion = 24;
+	}
+	else if ( strncmp(valid_data, "BARONY LMPV2.3", strlen("BARONY LMPV2.0")) == 0 )
 	{
 		// V2.3 version of editor - map flags
 		editorVersion = 23;
@@ -346,6 +351,8 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 				case 3:
 				case 4:
 				case 5:
+				case 6:
+				case 7:
 					setSpriteAttributes(entity, nullptr, nullptr);
 					break;
 				default:
@@ -356,6 +363,7 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 			case 21:
 			case 22:
 			case 23:
+			case 24:
 				// V2.0+ of editor version
 				switch ( checkSpriteType(sprite) )
 				{
@@ -488,6 +496,46 @@ int loadMap(char* filename2, map_t* destmap, list_t* entlist)
 						fread(&entity->crystalNumElectricityNodes, sizeof(Sint32), 1, fp);
 						fread(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
 						fread(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
+						break;
+					case 6:
+						fread(&entity->leverTimerTicks, sizeof(Sint32), 1, fp);
+						break;
+					case 7:
+						if ( editorVersion >= 24 )
+						{
+							fread(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1, fp);
+							fread(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1, fp);
+							fread(&entity->boulderTrapPreDelay, sizeof(Sint32), 1, fp);
+						}
+						else
+						{
+							setSpriteAttributes(entity, nullptr, nullptr);
+						}
+						break;
+					case 8:
+						fread(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
+						fread(&entity->pedestalLockOrb, sizeof(Sint32), 1, fp);
+						break;
+					case 9:
+						fread(&entity->teleporterX, sizeof(Sint32), 1, fp);
+						fread(&entity->teleporterY, sizeof(Sint32), 1, fp);
+						fread(&entity->teleporterType, sizeof(Sint32), 1, fp);
+						break;
+					case 10:
+						fread(&entity->ceilingTileModel, sizeof(Sint32), 1, fp);
+						break;
+					case 11:
+						fread(&entity->spellTrapType, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapRefire, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapFloorTile, sizeof(Sint32), 1, fp);
+						fread(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
+						break;
+					case 12:
+						fread(&entity->furnitureDir, sizeof(Sint32), 1, fp);
 						break;
 					default:
 						break;
@@ -626,7 +674,7 @@ int saveMap(char* filename2)
 			return 1;
 		}
 
-		fwrite("BARONY LMPV2.3", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
+		fwrite("BARONY LMPV2.4", sizeof(char), strlen("BARONY LMPV2.0"), fp); // magic code
 		fwrite(map.name, sizeof(char), 32, fp); // map filename
 		fwrite(map.author, sizeof(char), 32, fp); // map author
 		fwrite(&map.width, sizeof(Uint32), 1, fp); // map width
@@ -710,9 +758,43 @@ int saveMap(char* filename2)
 					fwrite(&entity->crystalTurnReverse, sizeof(Sint32), 1, fp);
 					fwrite(&entity->crystalSpellToActivate, sizeof(Sint32), 1, fp);
 					break;
+				case 6:
+					fwrite(&entity->leverTimerTicks, sizeof(Sint32), 1, fp);
+					break;
+				case 7:
+					fwrite(&entity->boulderTrapRefireAmount, sizeof(Sint32), 1, fp);
+					fwrite(&entity->boulderTrapRefireDelay, sizeof(Sint32), 1, fp);
+					fwrite(&entity->boulderTrapPreDelay, sizeof(Sint32), 1, fp);
+					break;
+				case 8:
+					fwrite(&entity->pedestalOrbType, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalHasOrb, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalInvertedPower, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalInGround, sizeof(Sint32), 1, fp);
+					fwrite(&entity->pedestalLockOrb, sizeof(Sint32), 1, fp);
+					break;
+				case 9:
+					fwrite(&entity->teleporterX, sizeof(Sint32), 1, fp);
+					fwrite(&entity->teleporterY, sizeof(Sint32), 1, fp);
+					fwrite(&entity->teleporterType, sizeof(Sint32), 1, fp);
+					break;
+				case 10:
+					fwrite(&entity->ceilingTileModel, sizeof(Sint32), 1, fp);
+					break;
+				case 11:
+					fwrite(&entity->spellTrapType, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapRefire, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapLatchPower, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapFloorTile, sizeof(Sint32), 1, fp);
+					fwrite(&entity->spellTrapRefireRate, sizeof(Sint32), 1, fp);
+					break;
+				case 12:
+					fwrite(&entity->furnitureDir, sizeof(Sint32), 1, fp);
+					break;
 				default:
 					break;
 			}
+
 			x = entity->x;
 			y = entity->y;
 			fwrite(&x, sizeof(Sint32), 1, fp);

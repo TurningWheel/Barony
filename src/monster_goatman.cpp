@@ -40,10 +40,10 @@ void initGoatman(Entity* my, Stat* myStats)
 	if ( multiplayer != CLIENT )
 	{
 		//TODO: Update with new goatman sound effects.
-		MONSTER_SPOTSND = 60;
-		MONSTER_SPOTVAR = 3;
-		MONSTER_IDLESND = 98;
-		MONSTER_IDLEVAR = 3;
+		MONSTER_SPOTSND = 265;
+		MONSTER_SPOTVAR = 4;
+		MONSTER_IDLESND = 260;
+		MONSTER_IDLEVAR = 5;
 	}
 
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
@@ -82,10 +82,10 @@ void initGoatman(Entity* my, Stat* myStats)
 						case 6:
 						case 7:
 						case 8:
-							newItem(POTION_BOOZE, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+							newItem(POTION_BOOZE, EXCELLENT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 							break;
 						case 9:
-							newItem(POTION_HEALING, EXCELLENT, 0, 1, rand(), true, &myStats->inventory);
+							newItem(POTION_HEALING, EXCELLENT, 0, 1, rand(), false, &myStats->inventory);
 							break;
 						default:
 							printlog("Tried to spawn goatman boss \"Gharbad\" invalid potion.");
@@ -114,6 +114,16 @@ void initGoatman(Entity* my, Stat* myStats)
 			// count any inventory items set to default in edtior
 			int defaultItems = countDefaultItems(myStats);
 
+			bool isShaman = false;
+			if ( rand() % 2 )
+			{
+				isShaman = true;
+			}
+			else
+			{
+				myStats->DEX += 3; // more speed for brawlers.
+			}
+			
 			// generate the default inventory items for the monster, provided the editor sprite allowed enough default slots
 			switch ( defaultItems )
 			{
@@ -123,130 +133,302 @@ void initGoatman(Entity* my, Stat* myStats)
 				case 3:
 				case 2:
 				case 1:
+					if ( isShaman && rand() % 20 == 0 )
+					{
+						switch ( rand() % 4 )
+						{
+							case 0:
+								newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								break;
+							case 1:
+								newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								break;
+							case 2:
+								newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								break;
+							case 3:
+								newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+								break;
+						}
+					}
 					break;
 				default:
 					break;
 			}
 
+
 			//Give weapons.
 			if ( !boss )
 			{
-				if ( rand()%2 == 0 )
+				if ( !isShaman && rand() % 2 == 0 )
 				{
-					newItem(STEEL_CHAKRAM, static_cast<Status>(WORN + (2 - rand()%4)), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
+					newItem(STEEL_CHAKRAM, static_cast<Status>(rand() % 3 + DECREPIT), 0, rand()%NUM_GOATMAN_THROWN_WEAPONS + 1, rand(), false, &myStats->inventory);
 				}
-				if ( rand()%4 > 0 )
+				int numpotions = rand() % NUM_GOATMAN_POTIONS + 2;
+				if ( rand() % 5 == 0 )
 				{
-					newItem(POTION_BOOZE, static_cast<Status>(rand()%3), 0, rand()%NUM_GOATMAN_POTIONS + 2, rand(), false, &myStats->inventory);
+					int numhealpotion = rand() % 2 + 1;
+					newItem(POTION_HEALING, static_cast<Status>(rand() % 3 + DECREPIT), 0, numhealpotion, rand(), false, &myStats->inventory);
+					numpotions -= numhealpotion;
 				}
-			}
-
-			/*
-			//TODO: Armor needs to be fitted.
-			//give shield
-			if ( myStats->shield == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
-			{
-				// give shield
-				switch ( rand() % 10 )
+				if ( rand() % 4 > 0 )
 				{
-					case 0:
-					case 1:
-						myStats->shield = newItem(TOOL_TORCH, SERVICABLE, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 2:
-					case 3:
-					case 4:
-						break;
-					case 5:
-					case 6:
-						myStats->shield = newItem(WOODEN_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 7:
-					case 8:
-						myStats->shield = newItem(BRONZE_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->shield = newItem(IRON_SHIELD, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
+					// undroppable
+					newItem(POTION_BOOZE, static_cast<Status>(rand() % 3 + DECREPIT), 0, numpotions, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 				}
 			}
 
-			// give cloak
-			if ( myStats->cloak == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+			if ( isShaman )
 			{
-				switch ( rand() % 10 )
+				//give shield
+				if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
 				{
-					case 0:
-					case 1:
-					case 2:
-					case 3:
-					case 4:
-					case 5:
-						break;
-					case 6:
-					case 7:
-					case 8:
-						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, NULL);
-						break;
-					case 9:
-						myStats->cloak = newItem(CLOAK_MAGICREFLECTION, WORN, 0, 1, rand(), false, NULL);
-						break;
+					// give shield
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+						case 5:
+						case 6:
+						case 7:
+							myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 8:
+							myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+				// give cloak
+				if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							break;
+						default:
+							myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+				// give helmet
+				if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+							break;
+						default:
+							myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+				// give armor
+				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				{
+					switch ( rand() % 10 )
+					{
+						case 0:
+						case 1:
+							myStats->breastplate = newItem(WIZARD_DOUBLET, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 2:
+							myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							break;
+					}
+				}
+				// give booties
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+							myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 19:
+							myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						default:
+							myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+					}
+				}
+				// give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
+						case 0:
+						case 1:
+						case 2:
+						case 3:
+						case 4:
+							myStats->weapon = newItem(MAGICSTAFF_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 5:
+						case 6:
+						case 7:
+						case 8:
+							myStats->weapon = newItem(MAGICSTAFF_FIRE, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+							break;
+						case 9:
+							switch ( rand() % 4 )
+							{
+								case 0:
+									myStats->weapon = newItem(SPELLBOOK_SLOW, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									break;
+								case 1:
+									myStats->weapon = newItem(SPELLBOOK_FIREBALL, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									break;
+								case 2:
+									myStats->weapon = newItem(SPELLBOOK_COLD, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									break;
+								case 3:
+									myStats->weapon = newItem(SPELLBOOK_FORCEBOLT, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, nullptr);
+									break;
+							}
+							break;
+						default:
+							myStats->weapon = newItem(MAGICSTAFF_SLOW, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
+							break;
+					}
 				}
 			}
-
-			// give helmet
-			if ( myStats->helmet == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+			else
 			{
-				switch ( rand() % 10 )
+				////give shield
+				//if ( myStats->shield == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_SHIELD] == 1 )
+				//{
+				//	switch ( rand() % 20 )
+				//	{
+				//	case 0:
+				//	case 1:
+				//	case 2:
+				//	case 3:
+				//	case 4:
+				//	case 5:
+				//	case 6:
+				//	case 7:
+				//		myStats->shield = newItem(TOOL_CRYSTALSHARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+				//		break;
+				//	case 8:
+				//		myStats->shield = newItem(MIRROR_SHIELD, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
+				//		break;
+				//	default:
+				//		myStats->shield = newItem(TOOL_LANTERN, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
+				//		break;
+				//	}
+				//}
+				// give cloak
+				/*if ( myStats->cloak == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_CLOAK] == 1 )
 				{
+					switch ( rand() % 10 )
+					{
+					case 0:
+					case 1:
+						break;
+					default:
+						myStats->cloak = newItem(CLOAK, WORN, -1 + rand() % 3, 1, rand(), false, nullptr);
+						break;
+					}
+				}*/
+				//// give helmet
+				//if ( myStats->helmet == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_HELM] == 1 )
+				//{
+				//	switch ( rand() % 10 )
+				//	{
+				//	case 0:
+				//	case 1:
+				//		myStats->helmet = newItem(HAT_HOOD, WORN, -1 + rand() % 3, 1, 0, false, nullptr);
+				//		break;
+				//	default:
+				//		myStats->helmet = newItem(HAT_WIZARD, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
+				//		break;
+				//	}
+				//}
+				// give armor
+				if ( myStats->breastplate == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
 					case 0:
 					case 1:
 					case 2:
+						myStats->breastplate = newItem(STEEL_BREASTPIECE, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 3:
 					case 4:
-						myStats->helmet = newItem(HAT_PHRYGIAN, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->breastplate = newItem(LEATHER_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
 					case 5:
-						myStats->helmet = newItem(HAT_WIZARD, WORN, -1 + rand() % 3, 1, 0, false, NULL);
-						break;
 					case 6:
-					case 7:
-						myStats->helmet = newItem(LEATHER_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+						myStats->breastplate = newItem(IRON_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
-					case 8:
-					case 9:
-						myStats->helmet = newItem(IRON_HELM, WORN, -1 + rand() % 3, 1, 0, false, NULL);
+					case 19:
+						myStats->breastplate = newItem(CRYSTAL_BREASTPIECE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, rand(), false, nullptr);
 						break;
+					default:
+						break;
+					}
 				}
-			}
-
-			// give armor
-			if ( myStats->breastplate == NULL && myStats->EDITOR_ITEMS[ITEM_SLOT_ARMOR] == 1 )
-			{
-				switch ( rand() % 10 )
+				// give booties
+				if ( myStats->shoes == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_BOOTS] == 1 )
 				{
+					switch ( rand() % 20 )
+					{
+					case 0:
+					case 1:
+					case 2:
+					case 3:
+						myStats->shoes = newItem(IRON_BOOTS, static_cast<Status>(rand() % 3 + DECREPIT), -1 + rand() % 3, 1, 0, false, nullptr);
+						break;
+					case 19:
+						myStats->shoes = newItem(CRYSTAL_BOOTS, static_cast<Status>(rand() % 4 + DECREPIT), -1 + rand() % 3, 1, 0, false, nullptr);
+						break;
+					default:
+						myStats->shoes = newItem(STEEL_BOOTS, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
+						break;
+					}
+				}
+				// give weapon
+				if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
+				{
+					switch ( rand() % 20 )
+					{
 					case 0:
 					case 1:
 					case 2:
 					case 3:
 					case 4:
-						break;
 					case 5:
 					case 6:
 					case 7:
-						myStats->breastplate = newItem(LEATHER_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+						myStats->weapon = newItem(STEEL_AXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
-					case 8:
-					case 9:
-						myStats->breastplate = newItem(IRON_BREASTPIECE, DECREPIT, -1 + rand() % 3, 1, rand(), false, NULL);
+					case 18:
+						myStats->weapon = newItem(CRYSTAL_BATTLEAXE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
 						break;
+					case 19:
+						myStats->weapon = newItem(CRYSTAL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
+						break;
+					default:
+						myStats->weapon = newItem(STEEL_MACE, static_cast<Status>(rand() % 3 + WORN), -1 + rand() % 3, 1, 0, false, nullptr);
+						break;
+					}
 				}
-			}*/
-
-			if ( myStats->weapon == nullptr && myStats->EDITOR_ITEMS[ITEM_SLOT_WEAPON] == 1 )
-			{
-				myStats->weapon = newItem(rand()%2? STEEL_AXE : STEEL_MACE, static_cast<Status>(EXCELLENT - rand()%1), 0, 1, rand(), false, nullptr);
 			}
 		}
 	}
@@ -460,7 +642,7 @@ void goatmanDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 63 + rand() % 3, 128);
+	playSoundEntity(my, 257 + rand() % 3, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -482,12 +664,12 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 	// set invisibility //TODO: isInvisible()?
 	if ( multiplayer != CLIENT )
 	{
-		if ( myStats->ring != NULL )
+		if ( myStats->ring != nullptr )
 			if ( myStats->ring->type == RING_INVISIBILITY )
 			{
 				wearingring = true;
 			}
-		if ( myStats->cloak != NULL )
+		if ( myStats->cloak != nullptr )
 			if ( myStats->cloak->type == CLOAK_INVISIBILITY )
 			{
 				wearingring = true;
@@ -497,7 +679,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = true;
 			my->flags[BLOCKSIGHT] = false;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
@@ -522,7 +704,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			my->flags[INVISIBLE] = false;
 			my->flags[BLOCKSIGHT] = true;
 			bodypart = 0;
-			for (node = my->children.first; node != NULL; node = node->next)
+			for (node = my->children.first; node != nullptr; node = node->next)
 			{
 				if ( bodypart < LIMB_HUMANOID_TORSO )
 				{
@@ -538,6 +720,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				{
 					entity->flags[INVISIBLE] = false;
 					serverUpdateEntityBodypart(my, bodypart);
+					serverUpdateEntityFlag(my, INVISIBLE);
 				}
 				bodypart++;
 			}
@@ -552,15 +735,23 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 		else
 		{
 			my->z = 0;
-			my->pitch = 0;
+			if ( my->monsterAttack == 0 )
+			{
+				my->pitch = 0;
+			}
 		}
 	}
 
 	//Move bodyparts
-	for (bodypart = 0, node = my->children.first; node != NULL; node = node->next, bodypart++)
+	for (bodypart = 0, node = my->children.first; node != nullptr; node = node->next, bodypart++)
 	{
 		if ( bodypart < LIMB_HUMANOID_TORSO )
 		{
+			// post-swing head animation. client doesn't need to adjust the entity pitch, server will handle.
+			if ( my->monsterAttack != MONSTER_POSE_RANGED_WINDUP3 && bodypart == 1 && multiplayer != CLIENT )
+			{
+				limbAnimateToLimit(my, ANIMATE_PITCH, 0.1, 0, false, 0.0);
+			}
 			continue;
 		}
 		entity = (Entity*)node->element;
@@ -588,7 +779,55 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				weaponarm = entity;
 				if ( MONSTER_ATTACK > 0 )
 				{
-					my->handleWeaponArmAttack(entity);
+					if ( my->monsterAttack == MONSTER_POSE_RANGED_WINDUP3 )
+					{
+						Entity* rightbody = nullptr;
+						// set rightbody to left leg.
+						node_t* rightbodyNode = list_Node(&my->children, LIMB_HUMANOID_LEFTLEG);
+						if ( rightbodyNode )
+						{
+							rightbody = (Entity*)rightbodyNode->element;
+						}
+						else
+						{
+							return;
+						}
+
+						if ( my->monsterAttackTime == 0 )
+						{
+							// init rotations
+							weaponarm->pitch = 0;
+							my->monsterArmbended = 0;
+							my->monsterWeaponYaw = 0;
+							weaponarm->roll = 0;
+							weaponarm->skill[1] = 0;
+							if ( multiplayer != CLIENT )
+							{
+								myStats->EFFECTS[EFF_PARALYZED] = true;
+								myStats->EFFECTS_TIMERS[EFF_PARALYZED] = 40;
+							}
+						}
+						if ( multiplayer != CLIENT )
+						{
+							// move the head and weapon yaw
+							limbAnimateToLimit(my, ANIMATE_PITCH, -0.1, 11 * PI / 6, true, 0.05);
+							limbAnimateToLimit(my, ANIMATE_WEAPON_YAW, -0.25, 14 * PI / 8, false, 0.0);
+						}
+						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 7 * PI / 4, true, 0.0);
+						//limbAnimateToLimit(weaponarm, ANIMATE_ROLL, -0.25, 7 * PI / 4, false, 0.0);
+
+						if ( my->monsterAttackTime >= 4 * ANIMATE_DURATION_WINDUP / (monsterGlobalAnimationMultiplier / 10.0) )
+						{
+							if ( multiplayer != CLIENT )
+							{
+								my->attack(MONSTER_POSE_MELEE_WINDUP1, 0, nullptr);
+							}
+						}
+					}
+					else
+					{
+						my->handleWeaponArmAttack(entity);
+					}
 				}
 			}
 			else if ( bodypart == LIMB_HUMANOID_CLOAK )
@@ -611,7 +850,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_TORSO:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->breastplate == NULL )
+					if ( myStats->breastplate == nullptr )
 					{
 						entity->sprite = 466;
 					}
@@ -811,6 +1050,13 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				if ( weaponarm != nullptr )
 				{
 					my->handleHumanoidWeaponLimb(entity, weaponarm);
@@ -820,7 +1066,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_SHIELD:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->shield == NULL )
+					if ( myStats->shield == nullptr )
 					{
 						entity->flags[INVISIBLE] = true;
 						entity->sprite = 0;
@@ -853,6 +1099,13 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= 2.5 * cos(my->yaw + PI / 2) + .20 * cos(my->yaw);
 				entity->y -= 2.5 * sin(my->yaw + PI / 2) + .20 * sin(my->yaw);
 				entity->z += 2.5;
@@ -883,7 +1136,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 			case LIMB_HUMANOID_CLOAK:
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->cloak == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->cloak == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -911,6 +1164,13 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						}
 					}
 				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
+					}
+				}
 				entity->x -= cos(my->yaw);
 				entity->y -= sin(my->yaw);
 				entity->yaw += PI / 2;
@@ -925,7 +1185,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				if ( multiplayer != CLIENT )
 				{
 					entity->sprite = itemModel(myStats->helmet);
-					if ( myStats->helmet == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->helmet == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -950,6 +1210,13 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != items[STEEL_HELM].index )
@@ -997,7 +1264,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 				entity->roll = PI / 2;
 				if ( multiplayer != CLIENT )
 				{
-					if ( myStats->mask == NULL || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
+					if ( myStats->mask == nullptr || myStats->EFFECTS[EFF_INVISIBLE] || wearingring ) //TODO: isInvisible()?
 					{
 						entity->flags[INVISIBLE] = true;
 					}
@@ -1005,7 +1272,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 					{
 						entity->flags[INVISIBLE] = false;
 					}
-					if ( myStats->mask != NULL )
+					if ( myStats->mask != nullptr )
 					{
 						if ( myStats->mask->type == TOOL_GLASSES )
 						{
@@ -1033,6 +1300,13 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 						{
 							serverUpdateEntityBodypart(my, bodypart);
 						}
+					}
+				}
+				else
+				{
+					if ( entity->sprite <= 0 )
+					{
+						entity->flags[INVISIBLE] = true;
 					}
 				}
 				if ( entity->sprite != 165 )
@@ -1076,7 +1350,7 @@ void goatmanMoveBodyparts(Entity* my, Stat* myStats, double dist)
 
 void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 {
-	if ( monsterSpecialState == 1 )
+	if ( monsterSpecialState != 0 )
 	{
 		//Holding a weapon assigned from the special attack. Don't switch weapons.
 		//messagePlayer()
@@ -1094,7 +1368,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		return;
 	}
 
-	if ( myStats->weapon && (itemCategory(myStats->weapon) == MAGICSTAFF || itemCategory(myStats->weapon) == SPELLBOOK) )
+	if ( myStats->weapon && (itemCategory(myStats->weapon) == SPELLBOOK) )
 	{
 		return;
 	}
@@ -1112,14 +1386,13 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 	node_t* hasPotion = nullptr;
 	bool isHealingPotion = false;
 
-	if ( monsterSpecialTimer == 0 )
+	if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 )
 	{
 		//messagePlayer(clientnum, "Cooldown done!");
-		specialRoll = rand()%20;
+		specialRoll = rand()%10;
 
 		if ( specialRoll == 0 )
 		{
-			monsterSpecialTimer = MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW;
 			if ( myStats->HP <= myStats->MAXHP / 3 * 2 )
 			{
 				//Try to get a health potion.
@@ -1130,7 +1403,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 					if ( hasPotion )
 					{
 						//Equip and chuck it now.
-						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
+						bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
 						if ( !swapped )
 						{
 							printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
@@ -1138,9 +1411,26 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 						}
 						else
 						{
-							monsterSpecialState = 1;
+							monsterSpecialState = GOATMAN_POTION;
+							//monsterHitTime = 2 * HITRATE;
 							return;
 						}
+					}
+				}
+				else
+				{
+					//Equip and chuck it now.
+					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+					if ( !swapped )
+					{
+						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+					}
+					else
+					{
+						monsterSpecialState = GOATMAN_POTION;
+						//monsterHitTime = 2 * HITRATE;
+						return;
 					}
 				}
 			}
@@ -1149,6 +1439,22 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			{
 				//Couldn't find a healing potion? Try for a potion of booze.
 				hasPotion = itemNodeInInventory(myStats, POTION_BOOZE, static_cast<Category>(-1));
+				if ( hasPotion )
+				{
+					//Equip and chuck it now.
+					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+					if ( !swapped )
+					{
+						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap healing potion into hand!");
+						//Don't return, want to try equipping either a potion of booze, or one of the other weapon routes (e.h. a THROWN special if in melee or just an axe if worst comes to worst).
+					}
+					else
+					{
+						monsterSpecialState = GOATMAN_POTION;
+						//monsterHitTime = 2 * HITRATE;
+						return;
+					}
+				}
 			}
 		}
 	}
@@ -1157,10 +1463,10 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 
 	if ( inMeleeRange )
 	{
-		if ( specialRoll == 0 )
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && specialRoll == 0 )
 		{
 			bool tryChakram = true;
-			if ( hasPotion && rand()%2 )
+			if ( hasPotion && rand()%10 )
 			{
 				tryChakram = false;
 			}
@@ -1171,7 +1477,7 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 				node_t* thrownNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
 				if ( thrownNode )
 				{
-					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode);
+					bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, thrownNode, false, false);
 					if ( !swapped )
 					{
 						printlog("Error in Entity::goatmanChooseWeapon(): failed to swap THROWN into hand! Cursed? (%d)", myStats->weapon->beatitude);
@@ -1179,24 +1485,10 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 					}
 					else
 					{
-						monsterSpecialState = 1;
+						monsterSpecialState = GOATMAN_THROW;
 						return;
 					}
 				}
-			}
-		}
-		if ( hasPotion )
-		{
-			//Equip the potion.
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
-			if ( !swapped )
-			{
-				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand (melee block)! Cursed? (%d)", myStats->weapon->beatitude);
-			}
-			else
-			{
-				monsterSpecialState = 1;
-				return;
 			}
 		}
 
@@ -1206,10 +1498,14 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 			node_t* weaponNode = getMeleeWeaponItemNodeInInventory(myStats);
 			if ( !weaponNode )
 			{
+				if ( myStats->weapon && myStats->weapon->type == MAGICSTAFF_SLOW )
+				{
+					monsterUnequipSlotFromCategory(myStats, &myStats->weapon, MAGICSTAFF);
+				}
 				return; //Resort to fists.
 			}
 
-			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+			bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
 			if ( !swapped )
 			{
 				printlog("Error in Entity::goatmanChooseWeapon(): failed to swap melee weapon into hand! Cursed? (%d)", myStats->weapon->beatitude);
@@ -1226,33 +1522,45 @@ void Entity::goatmanChooseWeapon(const Entity* target, double dist)
 		}
 	}
 
-	if ( hasPotion )
-	{
-		//Try to equip the potion first. If fails, then equip normal ranged.
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion);
-		if ( !swapped )
-		{
-			printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
-		}
-		else
-		{
-			monsterSpecialState = 1;
-			return;
-		}
-	}
+	//if ( hasPotion )
+	//{
+	//	//Try to equip the potion first. If fails, then equip normal ranged.
+	//	bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, hasPotion, false, false);
+	//	if ( !swapped )
+	//	{
+	//		printlog("Error in Entity::goatmanChooseWeapon(): failed to swap non-healing potion into hand! (non-melee block) Cursed? (%d)", myStats->weapon->beatitude);
+	//	}
+	//	else
+	//	{
+	//		monsterSpecialState = GOATMAN_POTION;
+	//		return;
+	//	}
+	//}
 
 	//Switch to a thrown weapon or a ranged weapon. Potions are reserved as a special attack.
 	if ( !myStats->weapon || isMeleeWeapon(*myStats->weapon) )
 	{
 		//First search the inventory for a THROWN weapon.
-		node_t *weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+		node_t *weaponNode = nullptr;
+		if ( monsterSpecialTimer == 0 && (ticks % 10 == 0) && monsterAttack == 0 && rand() % 10 == 0 )
+		{
+			weaponNode = itemNodeInInventory(myStats, static_cast<ItemType>(-1), THROWN);
+			if ( weaponNode )
+			{
+				if ( swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false) )
+				{
+					monsterSpecialState = GOATMAN_THROW;
+					return;
+				}
+			}
+		}
 		if ( !weaponNode )
 		{
 			//If couldn't find any, search the inventory for a ranged weapon.
-			weaponNode = getRangedWeaponItemNodeInInventory(myStats);
+			weaponNode = getRangedWeaponItemNodeInInventory(myStats, true);
 		}
 
-		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode);
+		bool swapped = swapMonsterWeaponWithInventoryItem(this, myStats, weaponNode, false, false);
 		return;
 	}
 

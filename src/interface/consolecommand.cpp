@@ -59,6 +59,14 @@ void consoleCommand(char* command_str)
 			pingtime = SDL_GetTicks();
 		}
 	}
+	else if ( !strncmp(command_str, "/usemodelcache", 14) )
+	{
+		useModelCache = true;
+	}
+	else if ( !strncmp(command_str, "/disablemodelcache", 14) )
+	{
+		useModelCache = false;
+	}
 	else if (!strncmp(command_str, "/fov", 4))
 	{
 		fov = atoi(&command_str[5]);
@@ -803,6 +811,49 @@ void consoleCommand(char* command_str)
 			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
 			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+
+		}
+		else
+		{
+			messagePlayer(clientnum, language[299]);
+		}
+	}
+	else if ( !strncmp(command_str, "/maxout3", 8) )
+	{
+		if ( !(svFlags & SV_FLAG_CHEATS) )
+		{
+			messagePlayer(clientnum, language[277]);
+			return;
+		}
+
+		if ( multiplayer == SINGLE )
+		{
+			int c;
+			Stat* myStats = stats[0];
+			skipLevelsOnLoad = 26;
+			for ( c = 0; c < 24; c++ )
+			{
+				consoleCommand("/levelup");
+			}
+			for ( c = 0; c < NUM_HOTBAR_SLOTS; c++ )
+			{
+				hotbar[c].item = 0;
+			}
+			myStats->weapon = newItem(STEEL_SWORD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			newItem(CROSSBOW, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			newItem(MAGICSTAFF_LIGHT, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->shield = newItem(STEEL_SHIELD, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->helmet = newItem(HAT_HOOD, SERVICABLE, 0, 1, 2, true, &myStats->inventory);
+			myStats->shoes = newItem(STEEL_BOOTS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->breastplate = newItem(STEEL_BREASTPIECE, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->gloves = newItem(GAUNTLETS, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			myStats->cloak = newItem(CLOAK_BLACK, SERVICABLE, 0, 1, rand(), true, &myStats->inventory);
+			consoleCommand("/levelskill 9");
+			//consoleCommand("/nextlevel");
+			while ( myStats->PROFICIENCIES[PRO_APPRAISAL] < 50 )
+			{
+				consoleCommand("/levelskill 3");
+			}
 		}
 		else
 		{
@@ -954,7 +1005,7 @@ void consoleCommand(char* command_str)
 		fclose(fp);
 		messagePlayer(clientnum, language[2354]);
 		messagePlayer(clientnum, language[2355], startIndex, endIndex);
-		generatePolyModels(startIndex, endIndex);
+		generatePolyModels(startIndex, endIndex, true);
 	}
 	else if (!strncmp(command_str, "/killmonsters", 13))
 	{

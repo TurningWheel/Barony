@@ -430,41 +430,59 @@ void drawStatus()
 		//drawImage(textdown_bmp, NULL, &pos);
 	}*/
 
-	// health
+	// PLAYER HEALTH BAR
+	// Display Health bar border
 	pos.x = 76;
 	pos.w = 38;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
+
+	// Display "HP" at top of Health bar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[306]);
 
+	// Display border between actual Health bar and "HP"
+	pos.x = 76;
+	pos.w = 38;
+	pos.h = 0;
+	pos.y = yres - 147;
+	drawTooltip(&pos);
+
+	// Display the actual Health bar's faint background
 	pos.x = 80;
-	pos.w = 32;
-	pos.h = 128;
-	pos.y = yres - 16 - pos.h;
-	Uint32 color;
+	pos.w = 33;
+	pos.h = 129;
+	pos.y = yres - 15 - pos.h;
+
+	// Change the color depending on if you are poisoned
+	Uint32 color = 0;
 	if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
 	{
-		if ( !colorblind )
+		if ( colorblind )
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 16, 0);
+			color = SDL_MapRGB(mainsurface->format, 0, 0, 48); // Display blue
 		}
 		else
 		{
-			color = SDL_MapRGB(mainsurface->format, 0, 0, 16);
+			color = SDL_MapRGB(mainsurface->format, 0, 48, 0); // Display green
 		}
 	}
 	else
 	{
-		color = SDL_MapRGB(mainsurface->format, 16, 0, 0);
+		color = SDL_MapRGB(mainsurface->format, 48, 0, 0); // Display red
 	}
+
+	// Draw the actual Health bar's faint background with specified color
 	drawRect(&pos, color, 255);
+
+	// If the Player is alive, base the size of the actual Health bar off remaining HP
 	if ( stats[clientnum]->HP > 0 )
 	{
 		pos.x = 80;
-		pos.w = 32;
-		pos.h = 128 * ((double)stats[clientnum]->HP / stats[clientnum]->MAXHP);
-		pos.y = yres - 16 - pos.h;
+		pos.w = 33;
+		pos.h = 129 * (static_cast<double>(stats[clientnum]->HP) / stats[clientnum]->MAXHP);
+		pos.y = yres - 15 - pos.h;
+
 		if ( stats[clientnum]->EFFECTS[EFF_POISONED] )
 		{
 			if ( !colorblind )
@@ -480,35 +498,59 @@ void drawStatus()
 		{
 			color = SDL_MapRGB(mainsurface->format, 128, 0, 0);
 		}
+
+		// Only draw the actual Health bar if the Player is alive
 		drawRect(&pos, color, 255);
 	}
+
+	// Print out the amount of HP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->HP);
 	printTextFormatted(font12x12_bmp, 96 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
-	// magic
+	// PLAYER MAGIC BAR
+	// Display the Magic bar border
 	pos.x = 12;
 	pos.w = 39;
 	pos.h = 156;
 	pos.y = yres - 168;
 	drawTooltip(&pos);
+
+	// Display "MP" at the top of Magic bar
 	ttfPrintText(ttf12, pos.x + 8, pos.y + 6, language[307]);
+
+	// Display border between actual Magic bar and "MP"
+	pos.x = 12;
+	pos.w = 39;
+	pos.h = 0;
+	pos.y = yres - 147;
+	drawTooltip(&pos);
+
+	// Display the actual Magic bar's faint background
 	pos.x = 16;
-	pos.w = 32;
-	pos.h = 128;
-	pos.y = yres - 16 - pos.h;
-	drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 16), 255);
+	pos.w = 33;
+	pos.h = 129;
+	pos.y = yres - 15 - pos.h;
+
+	// Draw the actual Magic bar's faint background
+	drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 48), 255); // Display blue
+
+	// If the Player has MP, base the size of the actual Magic bar off remaining MP
 	if ( stats[clientnum]->MP > 0 )
 	{
 		pos.x = 16;
-		pos.w = 32;
-		pos.h = 128 * ((double)stats[clientnum]->MP / stats[clientnum]->MAXMP);
-		pos.y = yres - 16 - pos.h;
-		drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 0, 128), 255);
+		pos.w = 33;
+		pos.h = 129 * (static_cast<double>(stats[clientnum]->MP) / stats[clientnum]->MAXMP);
+		pos.y = yres - 15 - pos.h;
+
+		// Only draw the actual Magic bar if the Player has MP
+		drawRect(&pos, SDL_MapRGB(mainsurface->format, 0, 24, 128), 255); // Display blue
 	}
+
+	// Print out the amount of MP the Player currently has
 	snprintf(tempstr, 4, "%d", stats[clientnum]->MP);
 	printTextFormatted(font12x12_bmp, 32 - strlen(tempstr) * 6, yres - 16 - 64 - 6, tempstr);
 
-	Item* item = NULL;
+	Item* item = nullptr;
 	//Now the hotbar.
 	int num = 0;
 	//Reset the position to the top left corner of the status bar to draw the hotbar slots..
@@ -947,7 +989,6 @@ void drawStatus()
 	{
 		if ( stats[clientnum]->PLAYER_LVL_STAT_TIMER[i] > 0 && ((ticks % 50) - (ticks % 10)) )
 		{
-
 			stats[clientnum]->PLAYER_LVL_STAT_TIMER[i]--;
 
 			switch ( i )

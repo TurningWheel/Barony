@@ -158,12 +158,12 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 1.f, 1.f, 1.f, 1.f, 1.f, 1.f }, // minotaur
 	{ 2.f, 2.f, 2.f, 2.f, 1.f, 1.f }, // devil
 	{ 0.5, 0.5, 0.5, 0.5, 0.5, 0.5 }, // shopkeeper
-	{ 0.9, 1.2, 1.2, 0.9, 1.1, 1.3 }, // kobold
+	{ 0.9, 1.2, 1.2, 0.9, 1.1, 0.2 }, // kobold
 	{ 1.5, 1.1, 1.4, 0.7, 1.1, 0.2 }, // scarab
 	{ 1.f, 1.5, 1.3, 0.8, 0.6, 0.6 }, // crystal golem
-	{ 1.2, 1.f, 1.f, 0.9, 1.f, 0.8 }, // incubus
-	{ 0.5, 1.4, 0.8, 1.3, 0.5, 0.8 }, // vampire
-	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // shadow
+	{ 1.2, 1.f, 1.f, 0.9, 1.3, 0.8 }, // incubus
+	{ 0.8, 1.2, 0.8, 1.1, 0.5, 0.8 }, // vampire
+	{ 0.5, 0.5, 0.5, 0.5, 0.5, 2.0 }, // shadow
 	{ 1.6, 1.1, 1.3, 1.8, 0.5, 0.5 }, // cockatrice
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // insectoid
 	{ 0.9, 1.f, 1.1, 1.1, 1.1, 1.f }, // goatman
@@ -171,6 +171,22 @@ static double damagetables[NUMMONSTERS][6] =
 	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }, // lich ice
 	{ 2.5, 2.5, 2.5, 2.5, 1.f, 1.f }  // lich fire
 
+};
+
+static std::vector<std::vector<int>> classStatGrowth =
+{
+	// stat weightings for classes on level up
+	//	STR	DEX	CON	INT	PER	CHR -- sum is approx 24.
+	{	6,	5,	2,	2,	4,	5 }, // BARB 0
+	{	7,	2,	6,	1,	2,	6 }, // WARRIOR 1
+	{	4,	2,	5,	5,	4,	4 }, // CLERIC 2
+	{	3,	3,	4,	6,	5,	3 }, // HEALER 3
+	{	5,	4,	5,	3,	5,	2 }, // WANDERER 4
+	{	2,	7,	1,	2,	7,	5 }, // ROGUE 5
+	{	2,	6,	2,	6,	6,	2 }, // ARCANIST 6
+	{	1,	3,	2,	7,	6,	5 }, // WIZARD 7
+	{	3,	2,	4,	3,	5,	7 }, // MERCHANT 8
+	{	4,	4,	4,	4,	4,	4 }  // JOKER 9
 };
 
 #define WAIT_FOLLOWDIST 48
@@ -187,11 +203,6 @@ static double damagetables[NUMMONSTERS][6] =
 #define MONSTER_SPOTSND my->skill[11]
 #define MONSTER_SPOTVAR my->skill[12]
 #define MONSTER_CLICKED my->skill[13]
-#define MONSTER_SHOPXS my->skill[14]
-#define MONSTER_SHOPYS my->skill[15]
-#define MONSTER_SHOPXE my->skill[16]
-#define MONSTER_SHOPYE my->skill[17]
-#define MONSTER_STORETYPE my->skill[18]
 #define MONSTER_IDLESND my->skill[19]
 
 #define MONSTER_IDLEVAR myStats->monster_idlevar
@@ -371,20 +382,43 @@ static const int MONSTER_POSE_MAGIC_CAST1 = 19;
 static const int MONSTER_POSE_MAGIC_CAST2 = 20;
 static const int MONSTER_POSE_MAGIC_CAST3 = 21;
 static const int MONSTER_POSE_GOLEM_SMASH = 22;
-static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 22;
+static const int MONSTER_POSE_COCKATRICE_DOUBLEATTACK = 23;
+static const int MONSTER_POSE_AUTOMATON_RECYCLE = 24;
+//static const int MONSTER_POSE_SHADOW_TELEMIMICINVISI_WINDUP = 25;
+static const int MONSTER_POSE_INSECTOID_DOUBLETHROW = 25;
+static const int MONSTER_POSE_INCUBUS_CONFUSION = 26;
+static const int MONSTER_POSE_INCUBUS_TELEPORT = 27;
+static const int MONSTER_POSE_VAMPIRE_AURA_CHARGE = 28;
+static const int MONSTER_POSE_VAMPIRE_DRAIN = 29;
+static const int MONSTER_POSE_VAMPIRE_AURA_CAST = 30;
+
 
 //--monster special cooldowns
 static const int MONSTER_SPECIAL_COOLDOWN_GOLEM = 150;
 static const int MONSTER_SPECIAL_COOLDOWN_KOBOLD = 250;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_ATK = 100;
 static const int MONSTER_SPECIAL_COOLDOWN_COCKATRICE_STONE = 250;
-static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 250;
-static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_AUTOMATON_RECYCLE = 1000;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_THROW = 300;
+static const int MONSTER_SPECIAL_COOLDOWN_GOATMAN_DRINK = 350;
+static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEMIMICINVISI_ATTACK = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_PASIVE_TELEPORT = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_SPELLCAST = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_SHADOW_TELEPORT = 300;
+static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_THROW = 250;
+static const int MONSTER_SPECIAL_COOLDOWN_INSECTOID_ACID = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_CONFUSION = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_STEAL = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_RANDOM = 400;
+static const int MONSTER_SPECIAL_COOLDOWN_INCUBUS_TELEPORT_TARGET = 200;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_AURA = 500;
+static const int MONSTER_SPECIAL_COOLDOWN_VAMPIRE_DRAIN = 300;
 
 //--monster target search types
 static const int MONSTER_TARGET_ENEMY = 0;
 static const int MONSTER_TARGET_FRIEND = 1;
 static const int MONSTER_TARGET_PLAYER = 2;
+static const int MONSTER_TARGET_ALL = 3;
 
 //--monster animation handler
 static const int ANIMATE_YAW = 1;
@@ -415,6 +449,7 @@ static const int LIMB_HUMANOID_MASK = 11;
 
 //--monster attack windup duration, in ticks, roughly 180ms
 static const int ANIMATE_DURATION_WINDUP = 9;
+static const int ANIMATE_DURATION_WINDUP_SHADOW_SPECIAL = 50;
 
 //--monster footstep sounds
 static const int MONSTER_FOOTSTEP_NONE = 0;
@@ -428,6 +463,9 @@ static const int MONSTER_SPELLCAST_NONE = 0;
 static const int MONSTER_SPELLCAST_SMALL_HUMANOID = 1;
 static const int MONSTER_SPELLCAST_HUMANOID = 2;
 
+//--monster NPC language lines
+static const int MONSTER_NPC_DIALOGUE_LINES = 10;
+
 //--animates the selected limb to setpoint along the axis, at the given rate.
 int limbAnimateToLimit(Entity* limb, int axis, double rate, double setpoint, bool shake, double shakerate);
 //--animates the selected limb to setpoint, then endpoint along the axis, provided MONSTER_LIMB_OVERSHOOT is set
@@ -440,9 +478,37 @@ int numTargetsAroundEntity(Entity* my, double distToFind, real_t angleToSearch, 
 extern int monsterGlobalAnimationMultiplier;
 // change attacktime for debugging, default value 1.
 extern int monsterGlobalAttackTimeMultiplier;
+// monster custom NPC chatter
+bool handleMonsterChatter(int monsterclicked, bool ringconflict, char namesays[32], Entity* my, Stat* myStats);
 
 //-----RACE SPECIFIC CONSTANTS-----
 
 //--Goatman--
 static const int GOATMAN_HEALINGPOTION_MOD = 3;
 static const int GOATMAN_HEALING_POTION_SPEED_BOOST_DURATION = 1800;
+static const int GOATMAN_POTION = 1;
+static const int GOATMAN_THROW = 2;
+
+//--Automaton--
+static const int AUTOMATON_RECYCLE_ANIMATION_WAITING = 0;
+static const int AUTOMATON_RECYCLE_ANIMATION_COMPLETE = 1;
+
+//--Insectoid--
+static const int INSECTOID_ACID = 1;
+static const int INSECTOID_DOUBLETHROW_FIRST = 2;
+static const int INSECTOID_DOUBLETHROW_SECOND = 3;
+
+//--Incubus--
+static const int INCUBUS_CONFUSION = 1;
+static const int INCUBUS_STEAL = 2;
+static const int INCUBUS_TELEPORT_STEAL = 3;
+static const int INCUBUS_TELEPORT = 4;
+
+//--Vampire--
+static const int VAMPIRE_CAST_AURA = 1;
+static const int VAMPIRE_CAST_DRAIN = 2;
+
+
+//--Shadow--
+static const int SHADOW_SPELLCAST = 1;
+static const int SHADOW_TELEPORT_ONLY = 2;
