@@ -257,14 +257,44 @@ void clickDescription(int player, Entity* entity)
 				}
 				else if ( entity->behavior == &actFurniture )
 				{
-					if ( entity->skill[0] )
+					switch ( entity->furnitureType )
 					{
-						messagePlayer(player, language[273]);
+						case FURNITURE_CHAIR:
+							messagePlayer(player, language[273]);
+							break;
+						case FURNITURE_TABLE:
+							messagePlayer(player, language[274]);
+							break;
+						case FURNITURE_BED:
+							messagePlayer(player, language[2497]);
+							break;
+						case FURNITURE_BUNKBED:
+							messagePlayer(player, language[2499]);
+							break;
+						case FURNITURE_PODIUM:
+							messagePlayer(player, language[2500]);
+							break;
+						default:
+							messagePlayer(player, language[273]);
+							break;
 					}
-					else
-					{
-						messagePlayer(player, language[274]);
-					}
+				}
+				// need to check the sprite since these are all empty behaviors.
+				else if ( entity->sprite >= 631 && entity->sprite <= 633 ) // piston
+				{
+					messagePlayer(player, language[2501]);
+				}
+				else if  (entity->sprite == 629 || entity->sprite == 580 ) // column
+				{
+					messagePlayer(player, language[2502]);
+				}
+				else if ( entity->sprite == 581 || entity->sprite == 582 ) // floor stalag
+				{
+					messagePlayer(player, language[2503]);
+				}
+				else if ( entity->sprite == 583 || entity->sprite == 584 ) // ceiling stalag
+				{
+					messagePlayer(player, language[2504]);
 				}
 				else if ( entity->behavior == &actPowerCrystal || entity->behavior == &actPowerCrystalBase )
 				{

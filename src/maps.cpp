@@ -3372,6 +3372,7 @@ void assignActions(map_t* map)
 				entity->sprite = 271;
 				entity->behavior = &actFurniture;
 				entity->flags[BURNABLE] = true;
+				entity->furnitureType = FURNITURE_TABLE;
 				if ( prng_get_uint() % 4 == 0 || !strcmp(map->name, "Start Map") )
 				{
 					// put an item on the table
@@ -3411,7 +3412,7 @@ void assignActions(map_t* map)
 			}
 			// chair
 			case 60:
-				entity->skill[0] = 1; // so everything knows I'm a chair
+				entity->furnitureType = FURNITURE_CHAIR; // so everything knows I'm a chair
 				entity->sizex = 2;
 				entity->sizey = 2;
 				entity->x += 8;
@@ -4202,12 +4203,211 @@ void assignActions(map_t* map)
 				}
 				break;
 			}
+			// arcane chair
+			case 121:
+				entity->furnitureType = FURNITURE_CHAIR; // so everything knows I'm a chair
+				entity->sizex = 2;
+				entity->sizey = 2;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 8;
+				entity->focalz = -5;
+				entity->sprite = 626;
+				entity->behavior = &actFurniture;
+				entity->flags[BURNABLE] = true;
+				if ( entity->furnitureDir == -1 && !entity->yaw )
+				{
+					entity->yaw = (prng_get_uint() % 360) * (PI / 180.f);
+				}
+				else
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				break;
+			// arcane bed
+			case 122:
+				entity->furnitureType = FURNITURE_BED; // so everything knows I'm a bed
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 4;
+				entity->sprite = 627;
+				entity->behavior = &actFurniture;
+				entity->flags[BURNABLE] = true;
+				if ( entity->furnitureDir == -1 && !entity->yaw )
+				{
+					entity->furnitureDir = (prng_get_uint() % 4);
+					entity->furnitureDir *= 2; // create an even number
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				else
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				if ( entity->furnitureDir == 0 || entity->furnitureDir == 4 )
+				{
+					entity->sizex = 8;
+					entity->sizey = 4;
+				}
+				else if ( entity->furnitureDir == 2 || entity->furnitureDir == 6 )
+				{
+					entity->sizex = 4;
+					entity->sizey = 8;
+				}
+				else
+				{
+					entity->sizex = 8;
+					entity->sizey = 8;
+				}
+				break;
+			// bunk bed
+			case 123:
+				entity->furnitureType = FURNITURE_BUNKBED; // so everything knows I'm a bunkbed
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 1.75;
+				entity->sprite = 628;
+				entity->behavior = &actFurniture;
+				entity->flags[BURNABLE] = true;
+				if ( entity->furnitureDir == -1 && !entity->yaw )
+				{
+					entity->furnitureDir = (prng_get_uint() % 4);
+					entity->furnitureDir *= 2; // create an even number
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				else
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				if ( entity->furnitureDir == 0 || entity->furnitureDir == 4 )
+				{
+					entity->sizex = 8;
+					entity->sizey = 4;
+				}
+				else if ( entity->furnitureDir == 2 || entity->furnitureDir == 6 )
+				{
+					entity->sizex = 4;
+					entity->sizey = 8;
+				}
+				else
+				{
+					entity->sizex = 8;
+					entity->sizey = 8;
+				}
+				break;
+			// column.
+			case 124:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 629;
+				entity->sizex = 6;
+				entity->sizey = 6;
+				entity->z = -7.75;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->behavior = &actColumn;
+				break;
+			}
+			// podium
+			case 125:
+			{
+				entity->sizex = 3;
+				entity->sizey = 3;
+				entity->x += 8;
+				entity->y += 8;
+				entity->z = 7.75;
+				entity->focalz = -3;
+				entity->sprite = 630;
+				entity->behavior = &actFurniture;
+				entity->furnitureType = FURNITURE_PODIUM;
+				entity->flags[BURNABLE] = true;
+				if ( entity->furnitureDir == -1 && !entity->yaw )
+				{
+					entity->furnitureDir = (prng_get_uint() % 4);
+					entity->furnitureDir *= 2; // create an even number
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				else
+				{
+					entity->yaw = entity->furnitureDir * 45 * (PI / 180.f);
+				}
+				break;
+			}
+			// piston.
+			case 126:
+			{
+				entity->x += 8;
+				entity->y += 8;
+				entity->sprite = 631;
+				entity->sizex = 8;
+				entity->sizey = 8;
+				entity->z = 0;
+				entity->flags[BLOCKSIGHT] = false;
+				entity->behavior = &actPistonBase;
+
+				childEntity = newEntity(632, 1, map->entities); //cam1
+				childEntity->parent = entity->getUID();
+				childEntity->x = entity->x + 2.25;
+				childEntity->y = entity->y + 2.25;
+				childEntity->behavior = &actPistonCam;
+				childEntity->pistonCamRotateSpeed = 0.2;
+				childEntity->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					childEntity->setUID(-3);
+					entity_uids--;
+				}
+				childEntity = newEntity(633, 1, map->entities); //cam2
+				childEntity->parent = entity->getUID();
+				childEntity->x = entity->x - 2.25;
+				childEntity->y = entity->y - 2.25;
+				childEntity->behavior = &actPistonCam;
+				childEntity->pistonCamRotateSpeed = -0.2;
+				childEntity->flags[UNCLICKABLE] = true;
+				if ( multiplayer != CLIENT )
+				{
+					childEntity->setUID(-3);
+					entity_uids--;
+				}
+				break;
+			}
 			default:
 				break;
 		}
 		if ( entity )
 		{
 			nextnode = node->next;
+		}
+	}
+
+	for ( node = map->entities->first; node != nullptr; node = node->next )
+	{
+		Entity* itemEnt = (Entity*)node->element;
+		if ( itemEnt->behavior == &actItem )
+		{
+			// see if there's any platforms to set items upon.
+			for ( node_t* tmpnode = map->entities->first; tmpnode != nullptr; tmpnode = tmpnode->next )
+			{
+				Entity* tmpentity = (Entity*)tmpnode->element;
+				if ( (tmpentity->behavior == &actFurniture
+						&& (tmpentity->x == itemEnt->x) && (tmpentity->y == itemEnt->y)
+					) )
+				{
+					if ( itemEnt->z > 4 )
+					{
+						if ( tmpentity->sprite == 271 )
+						{
+							// is table
+							itemEnt->z -= 6;
+						}
+						else if ( tmpentity->sprite == 630 )
+						{
+							// is podium
+							itemEnt->z -= 6;
+						}
+					}
+					break;
+				}
+			}
 		}
 	}
 }

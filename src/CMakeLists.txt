@@ -99,7 +99,7 @@ list(APPEND GAME_SOURCES
 	"${CMAKE_CURRENT_SOURCE_DIR}/monster_shared.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actpedestal.cpp"
 	"${CMAKE_CURRENT_SOURCE_DIR}/actteleporter.cpp"
-	"${CMAKE_CURRENT_SOURCE_DIR}/actmagictrap.cpp"
+    "${CMAKE_CURRENT_SOURCE_DIR}/actmagictrap.cpp"
 )
 
 if( WIN32 )
