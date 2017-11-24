@@ -5937,7 +5937,7 @@ int main(int argc, char** argv)
 			if (!mousestatus[SDL_BUTTON_LEFT] && mclick)
 			{
 				// select the tile under the mouse
-				if (palette[mousey + mousex * yres] >= 0)
+				if ( (mousex <= xres && mousey <= yres) && palette[mousey + mousex * yres] >= 0)
 				{
 					selectedTile = palette[mousey + mousex * yres];
 					updateRecentTileList(selectedTile);
@@ -5953,7 +5953,7 @@ int main(int argc, char** argv)
 
 			int numtiles = static_cast<int>(sizeof(tileEditorNameStrings) / sizeof(tileEditorNameStrings[0]));
 
-			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
+			if ( (mousex <= xres && mousey <= yres) && palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numtiles)
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Tile index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", tileEditorNameStrings[palette[mousey + mousex * yres]]);
