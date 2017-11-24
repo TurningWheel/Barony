@@ -1272,9 +1272,10 @@ int main(int argc, char** argv)
 	undolist.first = NULL;
 	undolist.last = NULL;
 
-	// load cursors
+	// Load Cursors
 	cursorArrow = SDL_GetCursor();
 	cursorPencil = newCursor(cursor_pencil);
+	cursorPoint = newCursor(cursor_point);
 	cursorBrush = newCursor(cursor_brush);
 	cursorSelect = cursorArrow;
 	cursorFill = newCursor(cursor_fill);
@@ -1415,34 +1416,47 @@ int main(int argc, char** argv)
 	button->sizey = 16;
 	button->action = &buttonSprite;
 
-	button = butPoint = newButton();
-	strcpy(button->label, "Point");
+	// Pencil Tool Button
+	button = butPencil = newButton();
+	strcpy(button->label, "Pencil");
 	button->x = xres - 96;
 	button->y = 204;
 	button->sizex = 64;
 	button->sizey = 16;
-	button->action = &buttonPoint;
+	button->action = &buttonPencil;
 
-	button = butBrush = newButton();
-	strcpy(button->label, "Brush");
+	// Point Tool Button
+	button = butPoint = newButton();
+	strcpy(button->label, "Point");
 	button->x = xres - 96;
 	button->y = 220;
 	button->sizex = 64;
 	button->sizey = 16;
-	button->action = &buttonBrush;
+	button->action = &buttonPoint;
 
-	button = butSelect = newButton();
-	strcpy(button->label, "Select");
+	// Brush Tool Button
+	button = butBrush = newButton();
+	strcpy(button->label, "Brush");
 	button->x = xres - 96;
 	button->y = 236;
 	button->sizex = 64;
 	button->sizey = 16;
+	button->action = &buttonBrush;
+
+	// Select Tool Button
+	button = butSelect = newButton();
+	strcpy(button->label, "Select");
+	button->x = xres - 96;
+	button->y = 252;
+	button->sizex = 64;
+	button->sizey = 16;
 	button->action = &buttonSelect;
 
+	// Fill Tool Button
 	button = butFill = newButton();
 	strcpy(button->label, "Fill");
 	button->x = xres - 96;
-	button->y = 252;
+	button->y = 268;
 	button->sizex = 64;
 	button->sizey = 16;
 	button->action = &buttonFill;
@@ -1754,19 +1768,22 @@ int main(int argc, char** argv)
 				odrawx = (omousex + ocamx) >> TEXTUREPOWER;
 				odrawy = (omousey + ocamy) >> TEXTUREPOWER;
 
-				// set the cursor
+				// Set the Cursor to the corresponding tool
 				switch ( selectedTool )
 				{
-					case 0:
+					case 0: // Pencil
 						SDL_SetCursor(cursorPencil);
 						break;
-					case 1:
+					case 1: // Point
+						SDL_SetCursor(cursorPoint);
+						break;
+					case 2: // Brush
 						SDL_SetCursor(cursorBrush);
 						break;
-					case 2:
+					case 3: // Select
 						SDL_SetCursor(cursorSelect);
 						break;
-					case 3:
+					case 4: // Fill
 						SDL_SetCursor(cursorFill);
 						break;
 					default:
@@ -1774,7 +1791,7 @@ int main(int argc, char** argv)
 						break;
 				}
 
-				// move entities
+				// Move Entities
 				if ( map.entities->first != NULL && viewsprites && allowediting )
 				{
 					for ( node = map.entities->first; node != NULL; node = nextnode )
@@ -1792,9 +1809,6 @@ int main(int argc, char** argv)
 									{
 										duplicatedSprite = false;
 										makeUndo();
-									}
-									else
-									{
 									}
 								}
 								mousestatus[SDL_BUTTON_LEFT] = 0;
@@ -1828,7 +1842,7 @@ int main(int argc, char** argv)
 						{
 							if ( (omousex + camx) >> TEXTUREPOWER == entity->x / 16 && (omousey + camy) >> TEXTUREPOWER == entity->y / 16 )
 							{
-								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool != 1 && selectedTool != 2 )
+								if ( mousestatus[SDL_BUTTON_LEFT] && selectedTool == 1 )
 								{
 									// select sprite
 									selectedEntity = entity;
@@ -1841,7 +1855,7 @@ int main(int argc, char** argv)
 										makeUndo();
 									}
 								}
-								else if ( mousestatus[SDL_BUTTON_RIGHT] )
+								else if ( mousestatus[SDL_BUTTON_RIGHT] && selectedTool == 1 )
 								{
 									// duplicate sprite
 									duplicatedSprite = true;
@@ -1861,7 +1875,7 @@ int main(int argc, char** argv)
 					}
 				}
 
-				// modify world
+				// Modify World
 				if ( mousestatus[SDL_BUTTON_LEFT] && selectedEntity == NULL )
 				{
 					if ( allowediting )
@@ -1871,26 +1885,36 @@ int main(int argc, char** argv)
 							savedundo = true;
 							makeUndo();
 						}
-						if ( !pasting )   // not pasting, normal editing mode
+						if ( !pasting )   // Not Pasting, Normal Editing Mode
 						{
-							if ( selectedTool == 0 )   // point draw
+							if ( selectedTool == 0 )		// Process Pencil Tool functionality
 							{
 								if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 								{
 									map.tiles[drawlayer + drawy * MAPLAYERS + drawx * MAPLAYERS * map.height] = selectedTile;
 								}
 							}
-							else if ( selectedTool == 1 )     // brush tool
+							else if ( selectedTool == 1 )	// Process Point Tool functionality
 							{
-								for (x = drawx - 1; x <= drawx + 1; x++)
-									for (y = drawy - 1; y <= drawy + 1; y++)
+								// All functionality of the Point Tool is encapsulated above in the "Move Entities" section
+							}
+							else if ( selectedTool == 2 )	// Process Brush Tool functionality
+							{
+								for ( x = drawx - 1; x <= drawx + 1; x++ )
+								{
+									for ( y = drawy - 1; y <= drawy + 1; y++ )
+									{
 										if ( (x != drawx - 1 || y != drawy - 1) && (x != drawx + 1 || y != drawy - 1) && (x != drawx - 1 || y != drawy + 1) && (x != drawx + 1 || y != drawy + 1) )
+										{
 											if ( x >= 0 && x < map.width && y >= 0 && y < map.height )
 											{
 												map.tiles[drawlayer + y * MAPLAYERS + x * MAPLAYERS * map.height] = selectedTile;
 											}
+										}
+									}
+								}
 							}
-							else if ( selectedTool == 2 )     // select tool
+							else if ( selectedTool == 3 )	// Process Select Tool functionality
 							{
 								if ( selectingspace == false )
 								{
@@ -1938,7 +1962,7 @@ int main(int argc, char** argv)
 									}
 								}
 							}
-							else if ( selectedTool == 3 )     // fill tool
+							else if ( selectedTool == 4 )	// Process Fill Tool functionality
 							{
 								if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 								{
@@ -1975,7 +1999,7 @@ int main(int argc, char** argv)
 				}
 				if ( mousestatus[SDL_BUTTON_RIGHT] && selectedEntity == NULL )
 				{
-					if ( selectedTool != 2 )
+					if ( selectedTool != 3 )
 					{
 						if ( drawx >= 0 && drawx < map.width && drawy >= 0 && drawy < map.height )
 						{
@@ -2120,20 +2144,23 @@ int main(int argc, char** argv)
 				printText(font8x8_bmp, xres - 124, 332, "Selected:");
 				printText(font8x8_bmp, xres - 124, 372, "   Above:");
 
-				// print selected tool
+				// Print the name of the selected tool below the Tool Buttons
 				switch ( selectedTool )
 				{
-					case 0:
-						printText(font8x8_bmp, xres - 84, 276, "POINT");
+					case 0: // Pencil
+						printText(font8x8_bmp, xres - 84, 292, "PENCIL");
 						break;
-					case 1:
-						printText(font8x8_bmp, xres - 84, 276, "BRUSH");
+					case 1: // Point
+						printText(font8x8_bmp, xres - 84, 292, "POINT");
 						break;
-					case 2:
-						printText(font8x8_bmp, xres - 88, 276, "SELECT");
+					case 2: // Brush
+						printText(font8x8_bmp, xres - 84, 292, "BRUSH");
 						break;
-					case 3:
-						printText(font8x8_bmp, xres - 80, 276, "FILL");
+					case 3: // Select
+						printText(font8x8_bmp, xres - 88, 292, "SELECT");
+						break;
+					case 4: // Fill
+						printText(font8x8_bmp, xres - 80, 292, "FILL");
 						break;
 				}
 
@@ -5583,28 +5610,34 @@ int main(int argc, char** argv)
 					keystatus[SDL_SCANCODE_F1] = 0;
 					buttonAbout(NULL);
 				}
-				if ( keystatus[SDL_SCANCODE_1] )
+				if ( keystatus[SDL_SCANCODE_1] ) // Switch to Pencil Tool
 				{
 					keystatus[SDL_SCANCODE_1] = 0;
 					selectedTool = 0;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_2] )
+				if ( keystatus[SDL_SCANCODE_2] ) // Switch to Point Tool
 				{
 					keystatus[SDL_SCANCODE_2] = 0;
 					selectedTool = 1;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_3] )
+				if ( keystatus[SDL_SCANCODE_3] ) // Switch to Brush Tool
 				{
 					keystatus[SDL_SCANCODE_3] = 0;
 					selectedTool = 2;
 					selectedarea = false;
 				}
-				if ( keystatus[SDL_SCANCODE_4] )
+				if ( keystatus[SDL_SCANCODE_4] ) // Switch to Select Tool
 				{
 					keystatus[SDL_SCANCODE_4] = 0;
 					selectedTool = 3;
+					selectedarea = false;
+				}
+				if ( keystatus[SDL_SCANCODE_5] ) // Switch to Fill Tool
+				{
+					keystatus[SDL_SCANCODE_5] = 0;
+					selectedTool = 4;
 					selectedarea = false;
 				}
 				if ( keystatus[SDL_SCANCODE_F2] )
@@ -5973,6 +6006,7 @@ int main(int argc, char** argv)
 	// deinit
 	SDL_SetCursor(cursorArrow);
 	SDL_FreeCursor(cursorPencil);
+	SDL_FreeCursor(cursorPoint);
 	SDL_FreeCursor(cursorBrush);
 	SDL_FreeCursor(cursorFill);
 	if ( palette != NULL )
