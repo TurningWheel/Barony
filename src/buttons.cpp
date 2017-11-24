@@ -866,6 +866,7 @@ void buttonToolbox(button_t* my)
 {
 	toolbox = (toolbox == 0);
 	butTilePalette->visible = (butTilePalette->visible == 0);
+	butPencil->visible = (butPencil->visible == 0);
 	butSprite->visible = (butSprite->visible == 0);
 	butPoint->visible = (butPoint->visible == 0);
 	butBrush->visible = (butBrush->visible == 0);

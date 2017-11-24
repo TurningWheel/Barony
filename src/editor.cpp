@@ -1699,6 +1699,7 @@ int main(int argc, char** argv)
 		}*/
 		butTilePalette->x = xres - 112;
 		butSprite->x = xres - 112;
+		butPencil->x = xres - 96;
 		butPoint->x = xres - 96;
 		butBrush->x = xres - 96;
 		butSelect->x = xres - 96;
@@ -5834,7 +5835,7 @@ int main(int argc, char** argv)
 
 			int numsprites = static_cast<int>(sizeof(spriteEditorNameStrings) / sizeof(spriteEditorNameStrings[0]));
 
-			if ( palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
+			if ( (mousex <= xres && mousey <= yres) && palette[mousey + mousex * yres] >= 0 && palette[mousey + mousex * yres] <= numsprites )
 			{
 				printTextFormatted(font8x8_bmp, 0, yres - 8, "Sprite index:%5d", palette[mousey + mousex * yres]);
 				printTextFormatted(font8x8_bmp, 0, yres - 16, "%s", spriteEditorNameStrings[palette[mousey + mousex * yres]]);
