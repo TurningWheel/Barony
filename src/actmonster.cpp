@@ -721,6 +721,7 @@ bool makeFollower(int monsterclicked, bool ringconflict, char namesays[32], Enti
 		net_packet->len = 8;
 		sendPacketSafe(net_sock, -1, net_packet, monsterclicked - 1);
 	}
+	return true;
 }
 
 //int devilintro=0;
