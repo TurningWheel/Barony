@@ -292,10 +292,12 @@ static const int MAP_FLAG_GENDECORATIONMAX = 11;
 static const int MAP_FLAG_DISABLEDIGGING = 12;
 static const int MAP_FLAG_DISABLETELEPORT = 13;
 static const int MAP_FLAG_DISABLELEVITATION = 14;
+static const int MAP_FLAG_GENADJACENTROOMS = 15;
 
 #define MFLAG_DISABLEDIGGING (map.flags[MAP_FLAG_GENBYTES3] >> 24) & 0xFF // first leftmost byte
 #define MFLAG_DISABLETELEPORT (map.flags[MAP_FLAG_GENBYTES3] >> 16) & 0xFF // second leftmost byte
 #define MFLAG_DISABLELEVITATION (map.flags[MAP_FLAG_GENBYTES3] >> 8) & 0xFF // third leftmost byte
+#define MFLAG_GENADJACENTROOMS (map.flags[MAP_FLAG_GENBYTES3] >> 0) & 0xFF // fourth leftmost byte
 
 // light structure
 typedef struct light_t
@@ -677,8 +679,9 @@ SDL_Cursor* newCursor(char* image[]);
 int generateDungeon(char* levelset, Uint32 seed);
 void assignActions(map_t* map);
 
-// cursor bitmap definitions
+// Cursor bitmap definitions
 extern char* cursor_pencil[];
+extern char* cursor_point[];
 extern char* cursor_brush[];
 extern char* cursor_fill[];
 
