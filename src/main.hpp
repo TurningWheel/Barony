@@ -31,6 +31,9 @@ using std::string; //Instead of including an entire namespace, please explicitly
 #define STEAM_APPID 371970
 #endif
 
+extern bool spamming;
+extern bool showfirst;
+
 #include <dirent.h>
 #include <stdlib.h>
 #include <stdio.h>
