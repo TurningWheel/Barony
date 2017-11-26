@@ -51,43 +51,43 @@ void initAutomaton(Entity* my, Stat* myStats)
 			int customItemsToGenerate = ITEM_CUSTOM_SLOT_LIMIT;
 
 			// boss variants
-			if ( rand() % 50 || my->flags[USERFLAG2] )
-			{
-				if ( strncmp(map.name, "Underworld", 10) )
-				{
-					switch ( rand() % 10 )
-					{
-						case 0:
-						case 1:
-							//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 2:
-						case 3:
-							//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 4:
-						case 5:
-							//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 6:
-						case 7:
-							//myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-						case 8:
-						case 9:
-							//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
-							break;
-					}
-				}
-			}
-			else
-			{
-				myStats->HP = 100;
-				myStats->MAXHP = 100;
-				strcpy(myStats->name, "Funny Bones");
-				myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
-				myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
-			}
+			//if ( rand() % 50 || my->flags[USERFLAG2] )
+			//{
+			//	if ( strncmp(map.name, "Underworld", 10) )
+			//	{
+			//		switch ( rand() % 10 )
+			//		{
+			//			case 0:
+			//			case 1:
+			//				//myStats->weapon = newItem(BRONZE_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				break;
+			//			case 2:
+			//			case 3:
+			//				//myStats->weapon = newItem(BRONZE_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				break;
+			//			case 4:
+			//			case 5:
+			//				//myStats->weapon = newItem(IRON_SPEAR, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				break;
+			//			case 6:
+			//			case 7:
+			//				//myStats->weapon = newItem(IRON_AXE, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				break;
+			//			case 8:
+			//			case 9:
+			//				//myStats->weapon = newItem(IRON_SWORD, WORN, -1 + rand() % 2, 1, rand(), false, NULL);
+			//				break;
+			//		}
+			//	}
+			//}
+			//else
+			//{
+			//	myStats->HP = 100;
+			//	myStats->MAXHP = 100;
+			//	strcpy(myStats->name, "Funny Bones");
+			//	myStats->weapon = newItem(ARTIFACT_AXE, EXCELLENT, 1, 1, rand(), true, NULL);
+			//	myStats->cloak = newItem(CLOAK_PROTECTION, WORN, 0, 1, 2, true, NULL);
+			//}
 
 			// random effects
 

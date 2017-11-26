@@ -187,24 +187,24 @@ int monsterCurve(int level)
 			case 1:
 			case 2:
 			case 3:
-				return KOBOLD;
 			case 4:
+				return KOBOLD;
 			case 5:
 			case 6:
-			case 7:
 				return SCARAB;
+			case 7:
 			case 8:
 			case 9:
+				return AUTOMATON;
 			case 10:
 			case 11:
-				return AUTOMATON;
+				return CRYSTALGOLEM;
 			case 12:
 			case 13:
 			case 14:
 				return INSECTOID;
 			case 15:
 			case 16:
-				return CRYSTALGOLEM;
 			case 17:
 				return GOATMAN;
 			case 18:
@@ -1332,7 +1332,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 			}
 			else
 			{
-				if ( prng_get_uint() % 2 && currentlevel > 5 )
+				if ( prng_get_uint() % 2 && (currentlevel > 5 && currentlevel <= 25) )
 				{
 					arrowtrapspawn = true;
 				}
@@ -1452,6 +1452,16 @@ int generateDungeon(char* levelset, Uint32 seed)
 		for ( x = 0; x < map.width; x++ )
 		{
 			if ( checkObstacle( x * 16 + 8, y * 16 + 8, NULL, NULL ) || firstroomtile[y + x * map.height] )
+			{
+				possiblelocations[y + x * map.height] = false;
+				numpossiblelocations--;
+			}
+			else if ( lavatiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
+			{
+				possiblelocations[y + x * map.height] = false;
+				numpossiblelocations--;
+			}
+			else if ( swimmingtiles[map.tiles[y * MAPLAYERS + x * MAPLAYERS * map.height]] )
 			{
 				possiblelocations[y + x * map.height] = false;
 				numpossiblelocations--;
@@ -1596,6 +1606,10 @@ int generateDungeon(char* levelset, Uint32 seed)
 			{
 				bool nopath = false;
 				bool hellLadderFix = !strncmp(map.name, "Hell", 4);
+				/*if ( !hellLadderFix )
+				{
+					hellLadderFix = !strncmp(map.name, "Caves", 4);
+				}*/
 				for ( node = map.entities->first; node != NULL; node = node->next )
 				{
 					entity2 = (Entity*)node->element;
@@ -1725,7 +1739,21 @@ int generateDungeon(char* levelset, Uint32 seed)
 					}
 					else
 					{
-						entity = newEntity(64, 1, map.entities); // spear trap
+						if ( currentlevel <= 25 )
+						{
+							entity = newEntity(64, 1, map.entities); // spear trap
+						}
+						else
+						{
+							if ( prng_get_uint() % 2 == 0 )
+							{
+								entity = newEntity(120, 1, map.entities); // vertical spell trap.
+							}
+							else
+							{
+								entity = newEntity(64, 1, map.entities); // spear trap
+							}
+						}
 						Entity* also = newEntity(33, 1, map.entities);
 						also->x = x * 16;
 						also->y = y * 16;
@@ -1837,7 +1865,21 @@ int generateDungeon(char* levelset, Uint32 seed)
 					}
 					else
 					{
-						entity = newEntity(64, 1, map.entities); // spear trap
+						if ( currentlevel <= 25 )
+						{
+							entity = newEntity(64, 1, map.entities); // spear trap
+						}
+						else
+						{
+							if ( prng_get_uint() % 2 == 0 )
+							{
+								entity = newEntity(120, 1, map.entities); // vertical spell trap.
+							}
+							else
+							{
+								entity = newEntity(64, 1, map.entities); // spear trap
+							}
+						}
 						Entity* also = newEntity(33, 1, map.entities);
 						also->x = x * 16;
 						also->y = y * 16;
@@ -1853,7 +1895,6 @@ int generateDungeon(char* levelset, Uint32 seed)
 			entity->y = y * 16;
 			//printlog("9 Generated entity. Sprite: %d Uid: %d X: %.2f Y: %.2f\n",entity->sprite,entity->getUID(),entity->x,entity->y);
 		}
-
 		// mark this location as inelligible for reselection
 		possiblelocations[y + x * map.height] = false;
 		numpossiblelocations--;
@@ -1881,6 +1922,7 @@ int generateDungeon(char* levelset, Uint32 seed)
 	list_FreeAll(&mapList);
 	list_FreeAll(&doorList);
 	printlog("successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
+	messagePlayer(0, "successfully generated a dungeon with %d rooms, %d monsters, %d gold, %d items, %d decorations.\n", roomcount, nummonsters, numGenGold, numGenItems, numGenDecorations);
 	return secretlevelexit;
 }
 
@@ -2225,7 +2267,12 @@ void assignActions(map_t* map)
 								if ( prng_get_uint() % 2 == 0 )
 								{
 									// possible magicstaff
-									entity->skill[10] = itemCurve(static_cast<Category>(prng_get_uint() % (NUMCATEGORIES - 1)));
+									int randType = prng_get_uint() % (NUMCATEGORIES - 1);
+									if ( randType == THROWN && prng_get_uint() % 3 ) // THROWN items 66% to be re-roll.
+									{
+										randType = prng_get_uint() % (NUMCATEGORIES - 1);
+									}
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType));
 								}
 								else
 								{
@@ -2235,12 +2282,20 @@ void assignActions(map_t* map)
 									{
 										randType++;
 									}
-									entity->skill[10] = itemCurve(static_cast<Category>(randType));
+									if ( randType == THROWN && prng_get_uint() % 3 ) // THROWN items 66% to be re-roll.
+									{
+										randType = prng_get_uint() % (NUMCATEGORIES - 2);
+										if ( randType >= MAGICSTAFF )
+										{
+											randType++;
+										}
+									}
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(randType));
 								}
 							}
 							else
 							{
-								entity->skill[10] = itemCurve(FOOD);
+								entity->skill[10] = itemLevelCurve(FOOD);
 							}
 						}
 					}
@@ -2249,7 +2304,7 @@ void assignActions(map_t* map)
 						// editor set the random category of the item to be spawned.
 						if ( entity->skill[16] > 0 && entity->skill[16] <= 13 )
 						{
-							entity->skill[10] = itemCurve(static_cast<Category>(entity->skill[16] - 1));
+							entity->skill[10] = itemLevelCurve(static_cast<Category>(entity->skill[16] - 1));
 						}
 						else
 						{
@@ -2260,11 +2315,11 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(WEAPON));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(WEAPON));
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(ARMOR));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(ARMOR));
 								}
 							}
 							else if ( entity->skill[16] == 15 )
@@ -2273,11 +2328,11 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 2;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(AMULET));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(AMULET));
 								}
 								else
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(RING));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(RING));
 								}
 							}
 							else if ( entity->skill[16] == 16 )
@@ -2286,15 +2341,15 @@ void assignActions(map_t* map)
 								randType = prng_get_uint() % 3;
 								if ( randType == 0 )
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(SCROLL));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SCROLL));
 								}
 								else if ( randType == 1 )
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(MAGICSTAFF));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(MAGICSTAFF));
 								}
 								else
 								{
-									entity->skill[10] = itemCurve(static_cast<Category>(SPELLBOOK));
+									entity->skill[10] = itemLevelCurve(static_cast<Category>(SPELLBOOK));
 								}
 							}
 						}

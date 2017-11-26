@@ -32,10 +32,10 @@ void initVampire(Entity* my, Stat* myStats)
 
 	if ( multiplayer != CLIENT )
 	{
-		MONSTER_SPOTSND = -1;
+		MONSTER_SPOTSND = 256;
 		MONSTER_SPOTVAR = 1;
-		MONSTER_IDLESND = -1;
-		MONSTER_IDLEVAR = 1;
+		MONSTER_IDLESND = 254;
+		MONSTER_IDLEVAR = 2;
 	}
 	if ( multiplayer != CLIENT && !MONSTER_INIT )
 	{
@@ -418,7 +418,7 @@ void vampireDie(Entity* my)
 
 	my->spawnBlood();
 
-	playSoundEntity(my, 28, 128);
+	playSoundEntity(my, 253, 128);
 
 	my->removeMonsterDeathNodes();
 
@@ -642,7 +642,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// play casting sound
 							playSoundEntityLocal(my, 170, 64);
 							// monster scream
-							playSoundEntityLocal(my, 99, 128);
+							playSoundEntityLocal(my, MONSTER_SPOTSND, 128);
 						}
 
 						limbAnimateToLimit(weaponarm, ANIMATE_PITCH, -0.25, 5 * PI / 4, false, 0.0);
@@ -679,7 +679,7 @@ void vampireMoveBodyparts(Entity* my, Stat* myStats, double dist)
 							// play casting sound
 							playSoundEntityLocal(my, 170, 64);
 							// monster scream
-							playSoundEntityLocal(my, 99, 128);
+							playSoundEntityLocal(my, MONSTER_SPOTSND, 128);
 							if ( multiplayer != CLIENT )
 							{
 								myStats->EFFECTS[EFF_PARALYZED] = true;

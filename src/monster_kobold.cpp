@@ -106,10 +106,21 @@ void initKobold(Entity* my, Stat* myStats)
 				case 4:
 				case 3:
 				case 2:
+					if ( rand() % 5 == 0 ) // 20% chance
+					{
+						if ( rand() % 2 )
+						{
+							newItem(TOOL_TINOPENER, WORN, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						}
+						else
+						{
+							newItem(TOOL_TOWEL, WORN, -1 + rand() % 3, 1, rand(), false, &myStats->inventory);
+						}
+					}
 				case 1:
 					if ( my->hasRangedWeapon() )
 					{
-						if ( rand() % 2 == 0 ) // 50% chance
+						if ( rand() % 5 > 0 ) // 80% chance
 						{
 							newItem(SPELLBOOK_SLOW, DECREPIT, 0, 1, MONSTER_ITEM_UNDROPPABLE_APPEARANCE, false, &myStats->inventory);
 						}
